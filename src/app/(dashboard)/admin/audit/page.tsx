@@ -15,6 +15,10 @@ export default async function AdminAuditPage({
   const page = parseInt(sp.page ?? "1");
   const limit = 50;
 
+  type AuditLogWithActor = Awaited<ReturnType<typeof prisma.auditLog.findMany<{
+    include: { actor: { select: { name: true; email: true } } };
+  }>>>[number];
+
   const [logs, total] = await Promise.all([
     prisma.auditLog.findMany({
       include: { actor: { select: { name: true, email: true } } },
@@ -64,7 +68,7 @@ export default async function AdminAuditPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {logs.map((log) => (
+              {(logs as AuditLogWithActor[]).map((log) => (
                 <tr key={log.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3 text-gray-400 text-xs whitespace-nowrap">
                     {new Date(log.createdAt).toLocaleString()}
