@@ -1,0 +1,263 @@
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
+
+interface UserBasic { id: string; name: string | null; email: string }
+interface CourseBasic { id: string; title: string }
+
+interface GroupData {
+  id: string;
+  name: string;
+  description: string | null;
+  _count: { members: number; courses: number };
+  members: { user: UserBasic }[];
+  courses: { course: CourseBasic }[];
+}
+
+export function GroupsClient({
+  groups: initial,
+  allUsers,
+  allCourses,
+}: {
+  groups: GroupData[];
+  allUsers: UserBasic[];
+  allCourses: CourseBasic[];
+}) {
+  const router = useRouter();
+  const [groups, setGroups] = useState(initial);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function createGroup(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    const res = await fetch("/api/admin/groups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, description: desc }),
+    });
+    const g = await res.json();
+    setGroups((prev) => [{ ...g, _count: { members: 0, courses: 0 }, members: [], courses: [] }, ...prev]);
+    setName(""); setDesc(""); setShowCreate(false);
+    setLoading(false);
+  }
+
+  async function deleteGroup(id: string) {
+    if (!confirm("Delete this group?")) return;
+    await fetch(`/api/admin/groups/${id}`, { method: "DELETE" });
+    setGroups((prev) => prev.filter((g) => g.id !== id));
+  }
+
+  async function addMember(groupId: string, userId: string) {
+    await fetch(`/api/admin/groups/${groupId}/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userIds: [userId] }),
+    });
+    router.refresh();
+  }
+
+  async function removeMember(groupId: string, userId: string) {
+    await fetch(`/api/admin/groups/${groupId}/members`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    router.refresh();
+  }
+
+  async function addCourse(groupId: string, courseId: string) {
+    await fetch(`/api/admin/groups/${groupId}/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ courseIds: [courseId] }),
+    });
+    router.refresh();
+  }
+
+  async function removeCourse(groupId: string, courseId: string) {
+    await fetch(`/api/admin/groups/${groupId}/members`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ courseId }),
+    });
+    router.refresh();
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowCreate(true)}
+          className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700"
+        >
+          + New Group
+        </button>
+      </div>
+
+      {groups.map((group) => {
+        const open = expanded === group.id;
+        return (
+          <div key={group.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div
+              className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50"
+              onClick={() => setExpanded(open ? null : group.id)}
+            >
+              <div className="flex items-center gap-3">
+                {open ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronRight size={16} className="text-gray-400" />}
+                <div>
+                  <p className="font-semibold text-gray-900">{group.name}</p>
+                  {group.description && <p className="text-xs text-gray-400">{group.description}</p>}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-xs text-gray-500">{group._count.members} members</span>
+                <span className="text-xs text-gray-500">{group._count.courses} courses</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteGroup(group.id); }}
+                  className="text-gray-400 hover:text-red-500"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+
+            {open && (
+              <div className="border-t border-gray-100 px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Members */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-gray-700">Members</p>
+                    <AddSelect
+                      placeholder="Add user…"
+                      options={allUsers
+                        .filter((u) => !group.members.some((m) => m.user.id === u.id))
+                        .map((u) => ({ value: u.id, label: u.name ?? u.email }))}
+                      onAdd={(id) => addMember(group.id, id)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    {group.members.map((m) => (
+                      <div key={m.user.id} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-gray-50">
+                        <span>{m.user.name ?? m.user.email}</span>
+                        <button onClick={() => removeMember(group.id, m.user.id)} className="text-gray-300 hover:text-red-400">
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    {group.members.length === 0 && (
+                      <p className="text-xs text-gray-400 px-2">No members yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Courses */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-gray-700">Courses</p>
+                    <AddSelect
+                      placeholder="Add course…"
+                      options={allCourses
+                        .filter((c) => !group.courses.some((gc) => gc.course.id === c.id))
+                        .map((c) => ({ value: c.id, label: c.title }))}
+                      onAdd={(id) => addCourse(group.id, id)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    {group.courses.map((gc) => (
+                      <div key={gc.course.id} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-gray-50">
+                        <span>{gc.course.title}</span>
+                        <button onClick={() => removeCourse(group.id, gc.course.id)} className="text-gray-300 hover:text-red-400">
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    {group.courses.length === 0 && (
+                      <p className="text-xs text-gray-400 px-2">No courses assigned.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {groups.length === 0 && (
+        <div className="text-center py-12 text-gray-400">No groups yet. Create one to get started.</div>
+      )}
+
+      {showCreate && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">New Group</h3>
+            <form onSubmit={createGroup} className="space-y-3">
+              <input
+                placeholder="Group name *"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              />
+              <textarea
+                placeholder="Description (optional)"
+                rows={3}
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              />
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium"
+                >
+                  Create
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreate(false)}
+                  className="flex-1 border border-gray-200 rounded-lg py-2 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddSelect({
+  placeholder,
+  options,
+  onAdd,
+}: {
+  placeholder: string;
+  options: { value: string; label: string }[];
+  onAdd: (id: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <select
+        defaultValue=""
+        onChange={(e) => {
+          if (e.target.value) { onAdd(e.target.value); e.target.value = ""; }
+        }}
+        className="text-xs border border-gray-200 rounded px-2 py-1 bg-white max-w-[160px]"
+      >
+        <option value="" disabled>{placeholder}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      <Plus size={12} className="text-gray-400" />
+    </div>
+  );
+}

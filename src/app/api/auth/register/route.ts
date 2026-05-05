@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       name,
       email,
       password: hashed,
-      role: userCount === 0 ? "admin" : "learner", // first user becomes admin
+      role: userCount === 0 ? "superadmin" : "user",
     },
   });
 

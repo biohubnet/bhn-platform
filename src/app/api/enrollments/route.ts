@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSession } from "@/lib/auth";
+import { requireSession, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const courseId = searchParams.get("courseId");
 
   const filterUserId =
-    (userRole === "admin" || userRole === "instructor") && targetUserId
+    isAdmin(userRole ?? "") && targetUserId
       ? targetUserId
       : userId;
 

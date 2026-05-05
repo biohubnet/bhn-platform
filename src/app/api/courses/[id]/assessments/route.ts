@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: courseId } = await params;
-  await requireRole("instructor");
+  await requireRole("admin");
 
   const data = await req.json();
 

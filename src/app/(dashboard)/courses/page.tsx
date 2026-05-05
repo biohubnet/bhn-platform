@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+import { getSession, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { CourseCard } from "@/components/lms/CourseCard";
@@ -12,7 +12,7 @@ export default async function CoursesPage({
   const session = await getSession();
   const sp = await searchParams;
   const role = (session!.user as { role?: string }).role ?? "learner";
-  const isStaff = role === "admin" || role === "instructor";
+  const isStaff = isAdmin(role);
 
   const courses = await prisma.course.findMany({
     where: {

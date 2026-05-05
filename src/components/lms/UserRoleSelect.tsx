@@ -10,10 +10,10 @@ export function UserRoleSelect({ userId, currentRole }: { userId: string; curren
   async function handleChange(newRole: string) {
     setSaving(true);
     setRole(newRole);
-    await fetch("/api/admin/users", {
+    await fetch(`/api/admin/users/${userId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, role: newRole }),
+      body: JSON.stringify({ role: newRole }),
     });
     setSaving(false);
     router.refresh();
@@ -26,9 +26,10 @@ export function UserRoleSelect({ userId, currentRole }: { userId: string; curren
       disabled={saving}
       className="text-xs border border-gray-200 rounded px-2 py-1 bg-white disabled:opacity-60 focus:outline-none focus:ring-1 focus:ring-blue-400"
     >
-      <option value="learner">Learner</option>
-      <option value="instructor">Instructor</option>
+      <option value="user">User</option>
+      <option value="evaluating">Evaluating</option>
       <option value="admin">Admin</option>
+      <option value="superadmin">Superadmin</option>
     </select>
   );
 }

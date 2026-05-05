@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+import { getSession, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn, statusColor, formatScore } from "@/lib/utils";
 
@@ -6,7 +6,7 @@ export default async function GradebookPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
   const role = (session!.user as { role?: string }).role ?? "learner";
-  const isStaff = role === "admin" || role === "instructor";
+  const isStaff = isAdmin(role);
 
   const enrollments = await prisma.enrollment.findMany({
     where: { userId },

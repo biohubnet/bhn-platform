@@ -13,36 +13,89 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  Coins,
+  FileText,
+  Megaphone,
+  ShieldCheck,
+  ClipboardList,
+  UsersRound,
+  Link2,
 } from "lucide-react";
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
-  roles?: string[];
+  minRole?: "admin" | "superadmin";
+  exact?: boolean;
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
   { label: "Course Catalog", href: "/courses", icon: BookOpen },
   { label: "My Courses", href: "/my-courses", icon: GraduationCap },
   { label: "Gradebook", href: "/gradebook", icon: BarChart3 },
   { label: "Certificates", href: "/certificates", icon: Award },
-  { label: "Admin", href: "/admin", icon: Users, roles: ["admin"] },
-  { label: "Settings", href: "/settings", icon: Settings, roles: ["admin", "instructor"] },
+  { label: "My Credits", href: "/credits", icon: Coins },
 ];
+
+const adminItems: NavItem[] = [
+  { label: "Overview", href: "/admin", icon: LayoutDashboard, exact: true, minRole: "admin" },
+  { label: "Users", href: "/admin/users", icon: Users, minRole: "admin" },
+  { label: "Enrollments", href: "/admin/enrollments", icon: ClipboardList, minRole: "admin" },
+  { label: "Groups", href: "/admin/groups", icon: UsersRound, minRole: "admin" },
+  { label: "Certificates", href: "/admin/certificates", icon: Award, minRole: "admin" },
+  { label: "Announcements", href: "/admin/announcements", icon: Megaphone, minRole: "admin" },
+  { label: "Reports", href: "/admin/reports", icon: FileText, minRole: "admin" },
+  { label: "Audit Log", href: "/admin/audit", icon: ShieldCheck, minRole: "admin" },
+  { label: "LTI Config", href: "/admin/lti", icon: Link2, minRole: "superadmin" },
+  { label: "Settings", href: "/admin/settings", icon: Settings, minRole: "superadmin" },
+];
+
+const ROLE_RANK: Record<string, number> = {
+  user: 0,
+  evaluating: 0,
+  admin: 1,
+  superadmin: 2,
+};
 
 interface SidebarProps {
   role: string;
   user: { name?: string | null; email?: string | null; image?: string | null };
+  credits?: number;
 }
 
-export function Sidebar({ role, user }: SidebarProps) {
-  const pathname = usePathname();
-
-  const visible = navItems.filter(
-    (item) => !item.roles || item.roles.includes(role)
+function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+  const active = item.exact
+    ? pathname === item.href
+    : pathname === item.href || pathname.startsWith(item.href + "/");
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+        active
+          ? "bg-blue-50 text-blue-700"
+          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+      )}
+    >
+      <Icon size={16} />
+      <span className="flex-1">{item.label}</span>
+      {active && <ChevronRight size={14} className="text-blue-400" />}
+    </Link>
   );
+}
+
+export function Sidebar({ role, user, credits }: SidebarProps) {
+  const pathname = usePathname();
+  const userRank = ROLE_RANK[role] ?? 0;
+  const isAdmin = userRank >= ROLE_RANK["admin"];
+
+  const visibleAdmin = adminItems.filter((item) => {
+    const required = ROLE_RANK[item.minRole ?? "admin"] ?? 1;
+    return userRank >= required;
+  });
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
@@ -59,29 +112,38 @@ export function Sidebar({ role, user }: SidebarProps) {
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {visible.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                active
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              )}
-            >
-              <Icon size={16} />
-              <span className="flex-1">{item.label}</span>
-              {active && <ChevronRight size={14} className="text-blue-400" />}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {navItems.map((item) => (
+          <NavLink key={item.href} item={item} pathname={pathname} />
+        ))}
+
+        {isAdmin && (
+          <>
+            <div className="pt-4 pb-1 px-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Administration
+              </p>
+            </div>
+            {visibleAdmin.map((item) => (
+              <NavLink key={item.href} item={item} pathname={pathname} />
+            ))}
+          </>
+        )}
       </nav>
+
+      {/* Credits badge for regular users */}
+      {!isAdmin && credits !== undefined && (
+        <div className="px-4 py-3 border-t border-gray-100">
+          <div className="flex items-center gap-2 bg-amber-50 rounded-lg px-3 py-2">
+            <Coins size={14} className="text-amber-500 shrink-0" />
+            <div>
+              <p className="text-xs text-amber-700 font-semibold">
+                {credits.toLocaleString()} BHN Credits
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* User */}
       <div className="px-3 py-4 border-t border-gray-200">

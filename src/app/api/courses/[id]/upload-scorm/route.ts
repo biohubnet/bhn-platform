@@ -8,7 +8,7 @@ import unzipper from "unzipper";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: courseId } = await params;
-  await requireRole("instructor");
+  await requireRole("admin");
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;

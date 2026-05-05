@@ -1,47 +1,50 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { cn, statusColor, formatScore } from "@/lib/utils";
-import { Users, BookOpen, TrendingUp, Award } from "lucide-react";
-import { UserRoleSelect } from "@/components/lms/UserRoleSelect";
+import { cn, statusColor } from "@/lib/utils";
+import { Users, BookOpen, TrendingUp, Award, Coins, ClipboardList } from "lucide-react";
 import Link from "next/link";
 
 export default async function AdminPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
 
-  const [users, courses, stats] = await Promise.all([
-    prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        _count: { select: { enrollments: true, certificates: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.course.findMany({
+  const [
+    totalUsers,
+    activeUsers,
+    publishedCourses,
+    totalEnrollments,
+    completedEnrollments,
+    totalCerts,
+    totalCreditsGranted,
+    recentEnrollments,
+    recentUsers,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { isActive: true } }),
+    prisma.course.count({ where: { status: "published" } }),
+    prisma.enrollment.count(),
+    prisma.enrollment.count({ where: { status: "completed" } }),
+    prisma.certificate.count({ where: { revokedAt: null } }),
+    prisma.user.aggregate({ _sum: { credits: true } }),
+    prisma.enrollment.findMany({
+      take: 8,
+      orderBy: { enrolledAt: "desc" },
       include: {
-        instructor: { select: { name: true } },
-        _count: { select: { enrollments: true } },
+        user: { select: { name: true, email: true } },
+        course: { select: { title: true } },
       },
-      orderBy: { createdAt: "desc" },
     }),
-    Promise.all([
-      prisma.user.count(),
-      prisma.course.count({ where: { status: "published" } }),
-      prisma.enrollment.count(),
-      prisma.enrollment.count({ where: { status: "completed" } }),
-      prisma.certificate.count(),
-    ]),
+    prisma.user.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, email: true, role: true, createdAt: true, credits: true },
+    }),
   ]);
 
-  const [totalUsers, publishedCourses, totalEnrollments, completedEnrollments, totalCerts] = stats;
-  const completionRate = totalEnrollments > 0
-    ? Math.round((completedEnrollments / totalEnrollments) * 100)
-    : 0;
+  const completionRate =
+    totalEnrollments > 0 ? Math.round((completedEnrollments / totalEnrollments) * 100) : 0;
+  const totalCredits = totalCreditsGranted._sum.credits ?? 0;
 
   return (
     <div className="space-y-8">
@@ -51,12 +54,14 @@ export default async function AdminPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {[
-          { label: "Total Users", value: totalUsers, icon: Users, color: "blue" },
+          { label: "Total Users", value: totalUsers, sub: `${activeUsers} active`, icon: Users, color: "blue" },
           { label: "Published Courses", value: publishedCourses, icon: BookOpen, color: "green" },
-          { label: "Completion Rate", value: `${completionRate}%`, icon: TrendingUp, color: "amber" },
+          { label: "Total Enrollments", value: totalEnrollments, icon: ClipboardList, color: "indigo" },
+          { label: "Completion Rate", value: `${completionRate}%`, sub: `${completedEnrollments} completed`, icon: TrendingUp, color: "amber" },
           { label: "Certificates", value: totalCerts, icon: Award, color: "purple" },
+          { label: "Credits in Circulation", value: totalCredits.toLocaleString(), icon: Coins, color: "orange" },
         ].map((stat) => {
           const Icon = stat.icon;
           const colors: Record<string, string> = {
@@ -64,6 +69,8 @@ export default async function AdminPage() {
             amber: "bg-amber-50 text-amber-600",
             green: "bg-green-50 text-green-600",
             purple: "bg-purple-50 text-purple-600",
+            indigo: "bg-indigo-50 text-indigo-600",
+            orange: "bg-orange-50 text-orange-600",
           };
           return (
             <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
@@ -72,89 +79,91 @@ export default async function AdminPage() {
               </div>
               <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
               <p className="text-sm text-gray-500 mt-0.5">{stat.label}</p>
+              {stat.sub && <p className="text-xs text-gray-400 mt-0.5">{stat.sub}</p>}
             </div>
           );
         })}
       </div>
 
-      {/* Users table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900">Users ({totalUsers})</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
-                <th className="px-5 py-3">Name / Email</th>
-                <th className="px-5 py-3">Role</th>
-                <th className="px-5 py-3">Enrollments</th>
-                <th className="px-5 py-3">Certificates</th>
-                <th className="px-5 py-3">Joined</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3">
-                    <p className="font-medium text-gray-900">{user.name ?? "—"}</p>
-                    <p className="text-xs text-gray-400">{user.email}</p>
-                  </td>
-                  <td className="px-5 py-3">
-                    <UserRoleSelect userId={user.id} currentRole={user.role} />
-                  </td>
-                  <td className="px-5 py-3 text-gray-600">{user._count.enrollments}</td>
-                  <td className="px-5 py-3 text-gray-600">{user._count.certificates}</td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Quick links */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Manage Users", href: "/admin/users", color: "bg-blue-600" },
+          { label: "Enrollments", href: "/admin/enrollments", color: "bg-indigo-600" },
+          { label: "Groups", href: "/admin/groups", color: "bg-violet-600" },
+          { label: "Compliance Report", href: "/admin/reports", color: "bg-green-600" },
+          { label: "Certificates", href: "/admin/certificates", color: "bg-purple-600" },
+          { label: "Announcements", href: "/admin/announcements", color: "bg-amber-500" },
+          { label: "Audit Log", href: "/admin/audit", color: "bg-gray-700" },
+          { label: "Platform Settings", href: "/admin/settings", color: "bg-slate-600" },
+        ].map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className={`${l.color} text-white text-sm font-medium rounded-lg px-4 py-3 text-center hover:opacity-90 transition-opacity`}
+          >
+            {l.label}
+          </Link>
+        ))}
       </div>
 
-      {/* Courses table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900">All Courses ({courses.length})</h2>
-          <Link href="/courses" className="text-sm text-blue-600 hover:underline">Manage</Link>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Enrollments */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900">Recent Enrollments</h2>
+            <Link href="/admin/enrollments" className="text-sm text-blue-600 hover:underline">View all</Link>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {recentEnrollments.map((e) => (
+              <div key={e.id} className="px-5 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{e.user.name ?? e.user.email}</p>
+                  <p className="text-xs text-gray-400">{e.course.title}</p>
+                </div>
+                <div className="text-right">
+                  <span className={cn("text-xs px-2 py-0.5 rounded-full", statusColor(e.status))}>
+                    {e.status}
+                  </span>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(e.enrolledAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
-                <th className="px-5 py-3">Course</th>
-                <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Enrollments</th>
-                <th className="px-5 py-3">Instructor</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {courses.map((course) => (
-                <tr key={course.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3">
-                    <Link
-                      href={`/courses/${course.id}`}
-                      className="font-medium text-gray-900 hover:text-blue-600"
-                    >
-                      {course.title}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3 text-gray-500 uppercase text-xs">{course.courseType}</td>
-                  <td className="px-5 py-3">
-                    <span className={cn("text-xs px-2 py-0.5 rounded-full", statusColor(course.status))}>
-                      {course.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-gray-600">{course._count.enrollments}</td>
-                  <td className="px-5 py-3 text-gray-500">{course.instructor?.name ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        {/* New Users */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900">New Users</h2>
+            <Link href="/admin/users" className="text-sm text-blue-600 hover:underline">View all</Link>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {recentUsers.map((u) => (
+              <div key={u.id} className="px-5 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{u.name ?? "—"}</p>
+                  <p className="text-xs text-gray-400">{u.email}</p>
+                </div>
+                <div className="text-right">
+                  <span className={cn(
+                    "text-xs px-2 py-0.5 rounded-full",
+                    u.role === "superadmin" ? "bg-red-100 text-red-700" :
+                    u.role === "admin" ? "bg-blue-100 text-blue-700" :
+                    u.role === "evaluating" ? "bg-amber-100 text-amber-700" :
+                    "bg-gray-100 text-gray-600"
+                  )}>
+                    {u.role}
+                  </span>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {u.credits.toLocaleString()} credits
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

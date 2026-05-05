@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+import { getSession, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { ModuleReader } from "@/components/lms/ModuleReader";
@@ -17,7 +17,7 @@ export default async function LearnPage({
 
   const userId = (session.user as { id?: string }).id!;
   const role = (session.user as { role?: string }).role ?? "learner";
-  const isStaff = role === "admin" || role === "instructor";
+  const isStaff = isAdmin(role);
 
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId } },

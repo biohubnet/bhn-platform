@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Roles: user | admin | superadmin | evaluating
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -14,18 +15,24 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          String    @default("learner") // admin | instructor | learner
+  role          String    @default("user") // user | admin | superadmin | evaluating
+  isActive      Boolean   @default(true)
+  credits       Float     @default(5000)
+  lastLoginAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts          Account[]
-  sessions          Session[]
-  enrollments       Enrollment[]
-  scormSessions     ScormSession[]
-  xapiStatements    XapiStatement[]
-  certificates      Certificate[]
-  instructedCourses Course[] @relation("Instructor")
+  accounts           Account[]
+  sessions           Session[]
+  enrollments        Enrollment[]
+  scormSessions      ScormSession[]
+  xapiStatements     XapiStatement[]
+  certificates       Certificate[]
+  instructedCourses  Course[]          @relation("Instructor")
   assessmentAttempts AssessmentAttempt[]
+  creditTransactions CreditTransaction[]
+  groupMemberships   GroupMembership[]
+  auditLogs          AuditLog[]
 }
 
 model Account {
@@ -67,11 +74,12 @@ model Course {
   thumbnail    String?
   category     String?
   tags         String?
-  status       String   @default("draft") // draft | published | archived
-  courseType   String   @default("scorm") // scorm | xapi | content | assessment
+  status       String   @default("draft")
+  courseType   String   @default("scorm")
   passingScore Float    @default(80)
   maxAttempts  Int      @default(0)
   duration     Int?
+  creditCost   Float    @default(0)
   instructorId String?
   instructor   User?    @relation("Instructor", fields: [instructorId], references: [id])
   createdAt    DateTime @default(now())
@@ -82,13 +90,14 @@ model Course {
   enrollments  Enrollment[]
   assessments  Assessment[]
   certificates Certificate[]
+  groupCourses GroupCourse[]
 }
 
 model ScormPackage {
   id           String   @id @default(cuid())
   courseId     String   @unique
   course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  version      String   // SCORM_12 | SCORM_2004
+  version      String
   entryPoint   String
   manifestData String
   uploadPath   String
@@ -123,7 +132,7 @@ model Module {
   title       String
   description String?
   order       Int
-  type        String   @default("content") // content | video | quiz | file
+  type        String   @default("content")
   content     String?
   videoUrl    String?
   fileUrl     String?
@@ -140,7 +149,7 @@ model ModuleProgress {
   id          String   @id @default(cuid())
   userId      String
   moduleId    String
-  status      String   @default("not_started") // not_started | in_progress | completed
+  status      String   @default("not_started")
   score       Float?
   timeSpent   Int?
   completedAt DateTime?
@@ -155,7 +164,7 @@ model Enrollment {
   id          String    @id @default(cuid())
   userId      String
   courseId    String
-  status      String    @default("active") // active | completed | failed | suspended | withdrawn
+  status      String    @default("active")
   score       Float?
   progress    Float     @default(0)
   attempts    Int       @default(0)
@@ -188,7 +197,7 @@ model Question {
   id            String   @id @default(cuid())
   assessmentId  String
   text          String
-  type          String   // multiple_choice | true_false | short_answer | matching
+  type          String
   options       String?
   correctAnswer String?
   points        Float    @default(1)
@@ -248,9 +257,54 @@ model Certificate {
   expiryDate DateTime?
   metadata   String?
   pdfUrl     String?
+  revokedAt  DateTime?
+  revokedBy  String?
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   course     Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   @@unique([userId, courseId])
+}
+
+model CreditTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Float
+  type        String   // credit | debit
+  reason      String   // enrollment | refund | admin_grant | initial
+  courseId    String?
+  balanceAfter Float
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members  GroupMembership[]
+  courses  GroupCourse[]
+}
+
+model GroupMembership {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  addedAt   DateTime @default(now())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([groupId, userId])
+}
+
+model GroupCourse {
+  id       String @id @default(cuid())
+  groupId  String
+  courseId String
+  addedAt  DateTime @default(now())
+  group    Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  @@unique([groupId, courseId])
 }
 
 model Announcement {
@@ -259,5 +313,25 @@ model Announcement {
   body      String
   courseId  String?
   authorId  String
+  pinned    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String   // user.create | user.deactivate | course.publish | enrollment.create | credit.grant …
+  targetType String?  // user | course | enrollment | certificate
+  targetId   String?
+  detail     String?  // JSON
+  ip         String?
+  createdAt  DateTime @default(now())
+  actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+}
+
+model PlatformSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 }

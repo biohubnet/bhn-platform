@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+import { getSession, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { ScormPlayer } from "@/components/lms/ScormPlayer";
@@ -19,7 +19,7 @@ export default async function PlayerPage({
   });
 
   const role = (session.user as { role?: string }).role ?? "learner";
-  const isStaff = role === "admin" || role === "instructor";
+  const isStaff = isAdmin(role);
 
   if (!enrollment && !isStaff) redirect(`/courses/${courseId}`);
 

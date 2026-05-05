@@ -1,11 +1,11 @@
-import { getSession } from "@/lib/auth";
+import { getSession, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { EnrollButton } from "@/components/lms/EnrollButton";
 import { ScormUploadButton } from "@/components/lms/ScormUploadButton";
 import { PublishToggle } from "@/components/lms/PublishToggle";
 import { formatDuration, statusColor, cn } from "@/lib/utils";
-import { BookOpen, Clock, Users, Award, Play, Upload } from "lucide-react";
+import { BookOpen, Clock, Users, Award, Play, Upload, Coins } from "lucide-react";
 import Link from "next/link";
 
 export default async function CourseDetailPage({
@@ -16,8 +16,11 @@ export default async function CourseDetailPage({
   const { id } = await params;
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
-  const role = (session!.user as { role?: string }).role ?? "learner";
-  const isStaff = role === "admin" || role === "instructor";
+  const role = (session!.user as { role?: string }).role ?? "user";
+  const isStaff = isAdmin(role);
+  const userCredits = !isStaff
+    ? (await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } }))?.credits ?? 0
+    : Infinity;
 
   const course = await prisma.course.findUnique({
     where: { id },
@@ -87,6 +90,22 @@ export default async function CourseDetailPage({
                 <span className="flex items-center gap-1.5">
                   <BookOpen size={14} />
                   {course.instructor.name}
+                </span>
+              )}
+              {course.creditCost > 0 && (
+                <span className={cn(
+                  "flex items-center gap-1.5 font-medium",
+                  !isStaff && userCredits < course.creditCost ? "text-red-500" : "text-amber-600"
+                )}>
+                  <Coins size={14} />
+                  {course.creditCost.toLocaleString()} BHN Credits
+                  {!isStaff && userCredits < course.creditCost && " (insufficient)"}
+                </span>
+              )}
+              {course.creditCost === 0 && (
+                <span className="flex items-center gap-1.5 text-green-600">
+                  <Coins size={14} />
+                  Free
                 </span>
               )}
             </div>

@@ -33,7 +33,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as { role?: string }).role ?? "learner";
+        token.role = (user as { role?: string }).role ?? "user";
         token.id = user.id;
       }
       return token;
@@ -56,14 +56,22 @@ export async function requireSession() {
   return session;
 }
 
-export async function requireRole(role: "admin" | "instructor") {
+const ROLE_RANK: Record<string, number> = {
+  user: 0,
+  evaluating: 0,
+  admin: 1,
+  superadmin: 2,
+};
+
+export async function requireRole(minRole: "admin" | "superadmin") {
   const session = await requireSession();
-  const userRole = (session.user as { role?: string }).role;
-  if (role === "instructor" && userRole !== "admin" && userRole !== "instructor") {
-    throw new Error("Forbidden");
-  }
-  if (role === "admin" && userRole !== "admin") {
-    throw new Error("Forbidden");
-  }
+  const userRole = (session.user as { role?: string }).role ?? "user";
+  const required = ROLE_RANK[minRole] ?? 1;
+  const actual = ROLE_RANK[userRole] ?? 0;
+  if (actual < required) throw new Error("Forbidden");
   return session;
+}
+
+export function isAdmin(role: string) {
+  return ROLE_RANK[role] >= ROLE_RANK["admin"];
 }
