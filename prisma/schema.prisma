@@ -1,0 +1,263 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("learner") // admin | instructor | learner
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts          Account[]
+  sessions          Session[]
+  enrollments       Enrollment[]
+  scormSessions     ScormSession[]
+  xapiStatements    XapiStatement[]
+  certificates      Certificate[]
+  instructedCourses Course[] @relation("Instructor")
+  assessmentAttempts AssessmentAttempt[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+model Course {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  thumbnail    String?
+  category     String?
+  tags         String?
+  status       String   @default("draft") // draft | published | archived
+  courseType   String   @default("scorm") // scorm | xapi | content | assessment
+  passingScore Float    @default(80)
+  maxAttempts  Int      @default(0)
+  duration     Int?
+  instructorId String?
+  instructor   User?    @relation("Instructor", fields: [instructorId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  scormPackage ScormPackage?
+  modules      Module[]
+  enrollments  Enrollment[]
+  assessments  Assessment[]
+  certificates Certificate[]
+}
+
+model ScormPackage {
+  id           String   @id @default(cuid())
+  courseId     String   @unique
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  version      String   // SCORM_12 | SCORM_2004
+  entryPoint   String
+  manifestData String
+  uploadPath   String
+  uploadedAt   DateTime @default(now())
+  sessions     ScormSession[]
+}
+
+model ScormSession {
+  id            String   @id @default(cuid())
+  userId        String
+  packageId     String
+  attemptNumber Int      @default(1)
+  status        String   @default("not attempted")
+  score         Float?
+  scoreMin      Float?
+  scoreMax      Float?
+  timeSpent     String?
+  location      String?
+  suspendData   String?
+  interactions  String?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package ScormPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  order       Int
+  type        String   @default("content") // content | video | quiz | file
+  content     String?
+  videoUrl    String?
+  fileUrl     String?
+  duration    Int?
+  isRequired  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course   Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress ModuleProgress[]
+}
+
+model ModuleProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  moduleId    String
+  status      String   @default("not_started") // not_started | in_progress | completed
+  score       Float?
+  timeSpent   Int?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  @@unique([userId, moduleId])
+}
+
+model Enrollment {
+  id          String    @id @default(cuid())
+  userId      String
+  courseId    String
+  status      String    @default("active") // active | completed | failed | suspended | withdrawn
+  score       Float?
+  progress    Float     @default(0)
+  attempts    Int       @default(0)
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+  dueDate     DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  @@unique([userId, courseId])
+}
+
+model Assessment {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  timeLimit   Int?
+  passingScore Float   @default(80)
+  maxAttempts Int      @default(0)
+  shuffleQ    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course    Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  AssessmentAttempt[]
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  assessmentId  String
+  text          String
+  type          String   // multiple_choice | true_false | short_answer | matching
+  options       String?
+  correctAnswer String?
+  points        Float    @default(1)
+  order         Int
+  explanation   String?
+  assessment    Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}
+
+model AssessmentAttempt {
+  id           String    @id @default(cuid())
+  assessmentId String
+  userId       String
+  score        Float?
+  maxScore     Float?
+  passed       Boolean?
+  answers      String
+  timeSpent    Int?
+  startedAt    DateTime  @default(now())
+  submittedAt  DateTime?
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model XapiStatement {
+  id          String   @id @default(cuid())
+  statementId String   @unique
+  userId      String
+  verb        String
+  object      String
+  result      String?
+  context     String?
+  timestamp   DateTime @default(now())
+  stored      DateTime @default(now())
+  authority   String?
+  version     String   @default("1.0.3")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LtiConfig {
+  id            String   @id @default(cuid())
+  name          String
+  issuer        String
+  clientId      String
+  authEndpoint  String
+  tokenEndpoint String
+  jwksEndpoint  String
+  deploymentId  String
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+model Certificate {
+  id         String    @id @default(cuid())
+  userId     String
+  courseId   String
+  issueDate  DateTime  @default(now())
+  expiryDate DateTime?
+  metadata   String?
+  pdfUrl     String?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course     Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  @@unique([userId, courseId])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  courseId  String?
+  authorId  String
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SCORM Loader</title>
+  <style>body,html{margin:0;padding:0;height:100%;overflow:hidden;}iframe{width:100%;height:100%;border:none;}</style>
+</head>
+<body>
+<iframe id="scorm" allowfullscreen></iframe>
+<script>
+  const params = new URLSearchParams(location.search);
+  const src = params.get('src');
+  const version = params.get('version') || 'SCORM_12';
+  const isScorm12 = version === 'SCORM_12';
+
+  // SCORM API shim — bridges iframe postMessage ↔ parent window
+  const API_NAME = isScorm12 ? 'API' : 'API_1484_11';
+  const parentOrigin = window.parent;
+
+  function callParent(method, element, value) {
+    return new Promise(resolve => {
+      const handler = (e) => {
+        if (e.data?.type === 'SCORM_RESULT' && e.data.method === method) {
+          window.removeEventListener('message', handler);
+          resolve(e.data.result);
+        }
+      };
+      window.addEventListener('message', handler);
+      parentOrigin.postMessage({ type: 'SCORM_API', method, element, value }, '*');
+      setTimeout(() => { window.removeEventListener('message', handler); resolve(''); }, 3000);
+    });
+  }
+
+  // Build the API object and inject into the SCORM content's window
+  const api = {};
+  if (isScorm12) {
+    api.LMSInitialize = (s) => { callParent('LMSInitialize'); return 'true'; };
+    api.LMSFinish = (s) => { callParent('LMSFinish'); return 'true'; };
+    api.LMSGetValue = (e) => { let r = ''; callParent('LMSGetValue', e).then(v => r = v); return r; };
+    api.LMSSetValue = (e, v) => { callParent('LMSSetValue', e, v); return 'true'; };
+    api.LMSCommit = (s) => { callParent('LMSCommit'); return 'true'; };
+    api.LMSGetLastError = () => '0';
+    api.LMSGetErrorString = () => '';
+    api.LMSGetDiagnostic = () => '';
+  } else {
+    api.Initialize = (s) => { callParent('Initialize'); return 'true'; };
+    api.Terminate = (s) => { callParent('Finish'); return 'true'; };
+    api.GetValue = (e) => { let r = ''; callParent('GetValue', e).then(v => r = v); return r; };
+    api.SetValue = (e, v) => { callParent('SetValue', e, v); return 'true'; };
+    api.Commit = (s) => { callParent('Commit'); return 'true'; };
+    api.GetLastError = () => '0';
+    api.GetErrorString = () => '';
+    api.GetDiagnostic = () => '';
+  }
+
+  const iframe = document.getElementById('scorm');
+  iframe.onload = function() {
+    try {
+      iframe.contentWindow[API_NAME] = api;
+    } catch(e) {}
+  };
+  iframe.src = src;
+
+  // Also expose on this window for same-origin SCORM content that walks up the tree
+  window[API_NAME] = api;
+</script>
+</body>
+</html>
