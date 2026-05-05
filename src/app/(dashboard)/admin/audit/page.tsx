@@ -2,11 +2,17 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import type { Prisma } from "@prisma/client";
-
-type AuditLogWithActor = Prisma.AuditLogGetPayload<{
-  include: { actor: { select: { name: true; email: true } } };
-}>;
+interface AuditLogWithActor {
+  id: string;
+  actorId: string;
+  action: string;
+  targetType: string | null;
+  targetId: string | null;
+  detail: string | null;
+  ip: string | null;
+  createdAt: Date;
+  actor: { name: string | null; email: string };
+}
 
 export default async function AdminAuditPage({
   searchParams,
