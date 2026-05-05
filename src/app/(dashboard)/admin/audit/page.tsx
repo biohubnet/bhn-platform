@@ -2,6 +2,11 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
+
+type AuditLogWithActor = Prisma.AuditLogGetPayload<{
+  include: { actor: { select: { name: true; email: true } } };
+}>;
 
 export default async function AdminAuditPage({
   searchParams,
@@ -14,10 +19,6 @@ export default async function AdminAuditPage({
   const sp = await searchParams;
   const page = parseInt(sp.page ?? "1");
   const limit = 50;
-
-  type AuditLogWithActor = Awaited<ReturnType<typeof prisma.auditLog.findMany<{
-    include: { actor: { select: { name: true; email: true } } };
-  }>>>[number];
 
   const [logs, total] = await Promise.all([
     prisma.auditLog.findMany({
