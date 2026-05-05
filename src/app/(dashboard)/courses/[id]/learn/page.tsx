@@ -39,7 +39,7 @@ export default async function LearnPage({
   if (!course) notFound();
 
   const progress = await prisma.moduleProgress.findMany({
-    where: { userId, moduleId: { in: course.modules.map((m) => m.id) } },
+    where: { userId, moduleId: { in: course.modules.map((m: { id: string }) => m.id) } },
   });
   const progressMap = Object.fromEntries(progress.map((p) => [p.moduleId, p]));
 
