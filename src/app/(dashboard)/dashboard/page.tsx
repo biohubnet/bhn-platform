@@ -3,10 +3,29 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { BookOpen, Award, Clock, TrendingUp } from "lucide-react";
 
+interface EnrollmentWithCourse {
+  id: string;
+  courseId: string;
+  status: string;
+  progress: number;
+  score: number | null;
+  enrolledAt: Date;
+  course: { id: string; title: string; category: string | null; thumbnail: string | null };
+}
+
+interface ScormSessionWithCourse {
+  id: string;
+  attemptNumber: number;
+  status: string;
+  score: number | null;
+  package: {
+    course: { id: string; title: string };
+  };
+}
+
 export default async function DashboardPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
-  const role = (session!.user as { role?: string }).role;
 
   const [enrollments, certificates, recentActivity] = await Promise.all([
     prisma.enrollment.findMany({
@@ -14,14 +33,14 @@ export default async function DashboardPage() {
       include: { course: { select: { id: true, title: true, category: true, thumbnail: true } } },
       orderBy: { enrolledAt: "desc" },
       take: 6,
-    }),
+    }) as Promise<EnrollmentWithCourse[]>,
     prisma.certificate.count({ where: { userId } }),
     prisma.scormSession.findMany({
       where: { userId },
       include: { package: { include: { course: { select: { id: true, title: true } } } } },
       orderBy: { updatedAt: "desc" },
       take: 5,
-    }),
+    }) as Promise<ScormSessionWithCourse[]>,
   ]);
 
   const completed = enrollments.filter((e) => e.status === "completed").length;
@@ -73,7 +92,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {enrollments.filter((e) => e.status === "active").slice(0, 3).map((enrollment) => (
+            {enrollments.filter((e) => e.status === "active").slice(0, 3).map((enrollment: EnrollmentWithCourse) => (
               <Link
                 key={enrollment.id}
                 href={`/courses/${enrollment.courseId}`}
@@ -115,7 +134,7 @@ export default async function DashboardPage() {
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
           <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-            {recentActivity.map((s) => (
+            {recentActivity.map((s: ScormSessionWithCourse) => (
               <div key={s.id} className="flex items-center justify-between px-5 py-3">
                 <div>
                   <p className="text-sm font-medium text-gray-900">

@@ -4,6 +4,22 @@ import Link from "next/link";
 import { cn, statusColor, formatDuration } from "@/lib/utils";
 import { Play, CheckCircle, Clock } from "lucide-react";
 
+interface MyEnrollment {
+  id: string;
+  courseId: string;
+  status: string;
+  progress: number;
+  score: number | null;
+  enrolledAt: Date;
+  course: {
+    id: string;
+    title: string;
+    duration: number | null;
+    scormPackage: { id: string; version: string } | null;
+    _count: { modules: number };
+  };
+}
+
 export default async function MyCoursesPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
@@ -19,12 +35,12 @@ export default async function MyCoursesPage() {
       },
     },
     orderBy: { enrolledAt: "desc" },
-  });
+  }) as MyEnrollment[];
 
   const active = enrollments.filter((e) => e.status === "active");
   const completed = enrollments.filter((e) => e.status === "completed");
 
-  function EnrollmentRow({ e }: { e: (typeof enrollments)[0] }) {
+  function EnrollmentRow({ e }: { e: MyEnrollment }) {
     return (
       <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-200 transition-colors">
         <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">

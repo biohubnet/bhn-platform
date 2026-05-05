@@ -4,6 +4,22 @@ import Link from "next/link";
 import { CourseCard } from "@/components/lms/CourseCard";
 import { NewCourseButton } from "@/components/lms/NewCourseButton";
 
+interface CourseListItem {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  thumbnail: string | null;
+  status: string;
+  courseType: string;
+  duration: number | null;
+  creditCost: number;
+  createdAt: Date;
+  instructor: { name: string | null } | null;
+  _count: { enrollments: number; modules: number };
+  scormPackage: { version: string } | null;
+}
+
 export default async function CoursesPage({
   searchParams,
 }: {
@@ -26,7 +42,7 @@ export default async function CoursesPage({
       scormPackage: { select: { version: true } },
     },
     orderBy: { createdAt: "desc" },
-  });
+  }) as CourseListItem[];
 
   const categories = await prisma.course.findMany({
     where: { ...(isStaff ? {} : { status: "published" }), category: { not: null } },
@@ -54,7 +70,7 @@ export default async function CoursesPage({
         >
           All
         </Link>
-        {categories.map((c) => (
+        {categories.map((c: { category: string | null }) => (
           <Link
             key={c.category}
             href={`/courses?category=${c.category}`}
@@ -78,7 +94,7 @@ export default async function CoursesPage({
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {courses.map((course) => (
+          {courses.map((course: CourseListItem) => (
             <CourseCard key={course.id} course={course} role={role} />
           ))}
         </div>

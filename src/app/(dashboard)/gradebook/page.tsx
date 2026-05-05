@@ -2,6 +2,35 @@ import { getSession, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn, statusColor, formatScore } from "@/lib/utils";
 
+interface EnrollmentGrade {
+  id: string;
+  courseId: string;
+  status: string;
+  progress: number;
+  score: number | null;
+  enrolledAt: Date;
+  course: { id: string; title: string; category: string | null; passingScore: number };
+}
+
+interface ScormSessionGrade {
+  id: string;
+  attemptNumber: number;
+  status: string;
+  score: number | null;
+  timeSpent: string | null;
+  createdAt: Date;
+  packageId: string;
+  package: { course: { title: string } };
+}
+
+interface AssessmentAttemptGrade {
+  id: string;
+  score: number | null;
+  passed: boolean | null;
+  startedAt: Date;
+  assessment: { title: string; passingScore: number; course: { title: string } };
+}
+
 export default async function GradebookPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
@@ -14,7 +43,7 @@ export default async function GradebookPage() {
       course: { select: { id: true, title: true, category: true, passingScore: true } },
     },
     orderBy: { enrolledAt: "desc" },
-  });
+  }) as EnrollmentGrade[];
 
   const scormSessions = await prisma.scormSession.findMany({
     where: { userId },
@@ -22,7 +51,7 @@ export default async function GradebookPage() {
       package: { include: { course: { select: { title: true } } } },
     },
     orderBy: [{ packageId: "asc" }, { attemptNumber: "asc" }],
-  });
+  }) as ScormSessionGrade[];
 
   const assessmentAttempts = await prisma.assessmentAttempt.findMany({
     where: { userId },
@@ -32,7 +61,7 @@ export default async function GradebookPage() {
       },
     },
     orderBy: { startedAt: "desc" },
-  });
+  }) as AssessmentAttemptGrade[];
 
   const avg =
     enrollments.filter((e) => e.score != null).length > 0
@@ -72,7 +101,7 @@ export default async function GradebookPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {enrollments.map((e) => {
+              {enrollments.map((e: EnrollmentGrade) => {
                 const passed = e.score != null && e.score >= e.course.passingScore;
                 return (
                   <tr key={e.id} className="hover:bg-gray-50">
@@ -132,7 +161,7 @@ export default async function GradebookPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {scormSessions.map((s) => (
+              {scormSessions.map((s: ScormSessionGrade) => (
                 <tr key={s.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3 text-gray-900">{s.package.course.title}</td>
                   <td className="px-5 py-3 text-gray-500">#{s.attemptNumber}</td>
@@ -170,7 +199,7 @@ export default async function GradebookPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {assessmentAttempts.map((a) => (
+              {assessmentAttempts.map((a: AssessmentAttemptGrade) => (
                 <tr key={a.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3 text-gray-900">{a.assessment.title}</td>
                   <td className="px-5 py-3 text-gray-500">{a.assessment.course.title}</td>

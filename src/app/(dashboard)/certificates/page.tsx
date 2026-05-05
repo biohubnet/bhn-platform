@@ -2,6 +2,16 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Award, Download } from "lucide-react";
 
+interface CertWithCourse {
+  id: string;
+  issueDate: Date;
+  expiryDate: Date | null;
+  metadata: string | null;
+  pdfUrl: string | null;
+  revokedAt: Date | null;
+  course: { title: string; category: string | null };
+}
+
 export default async function CertificatesPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
@@ -31,7 +41,7 @@ export default async function CertificatesPage() {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {certificates.map((cert) => {
+          {(certificates as CertWithCourse[]).map((cert: CertWithCourse) => {
             const meta = cert.metadata ? JSON.parse(cert.metadata) : {};
             return (
               <div
