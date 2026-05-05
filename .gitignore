@@ -50,3 +50,5 @@ prisma/*.db-journal
 /public/uploads/scorm/
 /public/uploads/thumbnails/
 /public/uploads/certificates/
+
+!.env.example
