@@ -3,6 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { CertificateActions } from "@/components/admin/CertificateActions";
+import { RevokeButton } from "@/components/admin/RevokeButton";
+
+interface CertRow {
+  id: string;
+  issueDate: Date;
+  expiryDate: Date | null;
+  revokedAt: Date | null;
+  user: { id: string; name: string | null; email: string };
+  course: { id: string; title: string };
+}
 
 export default async function AdminCertificatesPage() {
   const session = await requireRole("admin").catch(() => null);
@@ -16,7 +26,7 @@ export default async function AdminCertificatesPage() {
       },
       orderBy: { issueDate: "desc" },
       take: 300,
-    }),
+    }) as Promise<CertRow[]>,
     prisma.user.findMany({
       where: { isActive: true },
       select: { id: true, name: true, email: true },
@@ -53,7 +63,7 @@ export default async function AdminCertificatesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {certs.map((cert) => (
+              {certs.map((cert: CertRow) => (
                 <tr key={cert.id} className={cn("hover:bg-gray-50", cert.revokedAt && "opacity-50")}>
                   <td className="px-5 py-3">
                     <p className="font-medium text-gray-900">{cert.user.name ?? "—"}</p>
@@ -86,5 +96,3 @@ export default async function AdminCertificatesPage() {
     </div>
   );
 }
-
-import { RevokeButton } from "@/components/admin/RevokeButton";

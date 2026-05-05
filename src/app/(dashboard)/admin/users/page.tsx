@@ -5,6 +5,18 @@ import { cn } from "@/lib/utils";
 import { UserActionsBar } from "@/components/admin/UserActionsBar";
 import { UserRowClient } from "@/components/admin/UserRowClient";
 
+interface UserRow {
+  id: string;
+  name: string | null;
+  email: string;
+  role: string;
+  isActive: boolean;
+  credits: number;
+  createdAt: Date;
+  lastLoginAt: Date | null;
+  _count: { enrollments: number; certificates: number };
+}
+
 export default async function AdminUsersPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
@@ -51,7 +63,7 @@ export default async function AdminUsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {users.map((user) => (
+              {(users as UserRow[]).map((user: UserRow) => (
                 <tr key={user.id} className={cn("hover:bg-gray-50", !user.isActive && "opacity-50")}>
                   <td className="px-5 py-3">
                     <p className="font-medium text-gray-900">{user.name ?? "—"}</p>

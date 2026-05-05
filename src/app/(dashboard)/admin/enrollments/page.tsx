@@ -4,6 +4,18 @@ import { redirect } from "next/navigation";
 import { cn, statusColor } from "@/lib/utils";
 import { EnrollmentActions } from "@/components/admin/EnrollmentActions";
 
+interface EnrollmentRow {
+  id: string;
+  status: string;
+  progress: number;
+  score: number | null;
+  enrolledAt: Date;
+  completedAt: Date | null;
+  dueDate: Date | null;
+  user: { id: string; name: string | null; email: string };
+  course: { id: string; title: string };
+}
+
 export default async function AdminEnrollmentsPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
@@ -55,7 +67,7 @@ export default async function AdminEnrollmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {enrollments.map((e) => (
+              {(enrollments as EnrollmentRow[]).map((e: EnrollmentRow) => (
                 <tr key={e.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3">
                     <p className="font-medium text-gray-900">{e.user.name ?? "—"}</p>

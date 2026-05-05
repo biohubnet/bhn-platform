@@ -5,6 +5,16 @@ import { cn, statusColor } from "@/lib/utils";
 import { Users, BookOpen, TrendingUp, Award, Coins, ClipboardList } from "lucide-react";
 import Link from "next/link";
 
+interface RecentEnrollment {
+  id: string; status: string; enrolledAt: Date;
+  user: { name: string | null; email: string };
+  course: { title: string };
+}
+interface RecentUser {
+  id: string; name: string | null; email: string;
+  role: string; createdAt: Date; credits: number;
+}
+
 export default async function AdminPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
@@ -115,7 +125,7 @@ export default async function AdminPage() {
             <Link href="/admin/enrollments" className="text-sm text-blue-600 hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-gray-50">
-            {recentEnrollments.map((e) => (
+            {(recentEnrollments as RecentEnrollment[]).map((e: RecentEnrollment) => (
               <div key={e.id} className="px-5 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-900">{e.user.name ?? e.user.email}</p>
@@ -141,7 +151,7 @@ export default async function AdminPage() {
             <Link href="/admin/users" className="text-sm text-blue-600 hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-gray-50">
-            {recentUsers.map((u) => (
+            {(recentUsers as RecentUser[]).map((u: RecentUser) => (
               <div key={u.id} className="px-5 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-900">{u.name ?? "—"}</p>
