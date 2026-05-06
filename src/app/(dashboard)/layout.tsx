@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Sidebar } from "@/components/lms/Sidebar";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
+import { Onboarding } from "@/components/onboarding/Onboarding";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -29,6 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {actingAs && <ImpersonationBanner actingAs={actingAs} />}
         <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
       </main>
+      <Onboarding />
     </div>
   );
 }

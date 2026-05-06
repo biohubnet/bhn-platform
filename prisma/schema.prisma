@@ -22,6 +22,8 @@ model User {
   lastLoginAt   DateTime?
   newsletterSubscribed   Boolean   @default(false)
   newsletterSubscribedAt DateTime?
+  /// Onboarding progress: { version, seenStepIds[], minimized, dismissed, completedAt }
+  onboarding    Json?
   phone         String?
   bio           String?
   organization  String?
@@ -103,6 +105,8 @@ model Course {
   // AI-generated summary of the course (visible to learners; refreshable by staff).
   aiSummary    String?
   embeddedAt   DateTime?
+  /// 384-d BGE-small embedding; managed via raw SQL (pgvector).
+  embedding    Unsupported("vector(384)")?
 
   scormPackage ScormPackage?
   modules      Module[]
@@ -158,6 +162,8 @@ model Module {
   fileUrl     String?
   duration    Int?
   isRequired  Boolean  @default(true)
+  /// 384-d BGE-small embedding; managed via raw SQL (pgvector).
+  embedding   Unsupported("vector(384)")?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -298,6 +304,8 @@ model Pathway {
   creditCost   Float    @default(0)
   createdById  String?
   embeddedAt   DateTime?
+  /// 384-d BGE-small embedding; managed via raw SQL (pgvector).
+  embedding    Unsupported("vector(384)")?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
