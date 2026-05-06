@@ -58,6 +58,7 @@ const adminItems: NavItem[] = [
 
 const ROLE_RANK: Record<string, number> = {
   user: 0,
+  trainee: 0,
   evaluating: 0,
   instructor: 1,
   admin: 2,

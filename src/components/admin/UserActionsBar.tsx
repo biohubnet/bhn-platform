@@ -8,7 +8,7 @@ export function UserActionsBar() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState("trainee");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -26,7 +26,7 @@ export function UserActionsBar() {
       setError(d.error ?? "Failed");
     } else {
       // set role if not default
-      if (role !== "user") {
+      if (role !== "trainee") {
         const data = await res.json();
         await fetch(`/api/admin/users/${data.id}`, {
           method: "PATCH",
@@ -35,7 +35,7 @@ export function UserActionsBar() {
         });
       }
       setShowCreate(false);
-      setName(""); setEmail(""); setPassword(""); setRole("user");
+      setName(""); setEmail(""); setPassword(""); setRole("trainee");
       router.refresh();
     }
     setLoading(false);
@@ -83,7 +83,7 @@ export function UserActionsBar() {
                 onChange={(e) => setRole(e.target.value)}
                 className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               >
-                <option value="user">user</option>
+                <option value="trainee">trainee</option>
                 <option value="evaluating">evaluating</option>
                 <option value="admin">admin</option>
                 <option value="superadmin">superadmin</option>

@@ -16,7 +16,7 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          String    @default("user") // user | admin | superadmin | evaluating
+  role          String    @default("trainee") // trainee | evaluating | instructor | admin | superadmin
   isActive      Boolean   @default(true)
   credits       Float     @default(5000)
   lastLoginAt   DateTime?

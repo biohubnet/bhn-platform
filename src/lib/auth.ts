@@ -81,20 +81,21 @@ export async function requireSession() {
 
 /**
  * Roles, ordered:
- *   user / evaluating  → learner (0)
- *   instructor         → can author courses, modules, assessments, upload SCORM (1)
- *   admin              → can manage users, enrollments, certificates, audit, settings (2)
- *   superadmin         → admin + LTI config, platform settings (3)
+ *   trainee / evaluating → learner (0)        [legacy alias: 'user']
+ *   instructor           → authors courses (1)
+ *   admin                → manages users, audit, settings (2)
+ *   superadmin           → admin + LTI, platform settings (3)
  */
 export const ROLE_RANK: Record<string, number> = {
-  user: 0,
+  user: 0,        // legacy
+  trainee: 0,
   evaluating: 0,
   instructor: 1,
   admin: 2,
   superadmin: 3,
 };
 
-export type Role = "user" | "evaluating" | "instructor" | "admin" | "superadmin";
+export type Role = "trainee" | "evaluating" | "instructor" | "admin" | "superadmin";
 
 export async function requireRole(minRole: "instructor" | "admin" | "superadmin") {
   const session = await requireSession();

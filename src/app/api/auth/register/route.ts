@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       name,
       email,
       password: hashed,
-      role: userCount === 0 ? "superadmin" : "user",
+      role: userCount === 0 ? "superadmin" : "trainee",
       newsletterSubscribed: subscribed,
       newsletterSubscribedAt: subscribed ? new Date() : null,
     },
