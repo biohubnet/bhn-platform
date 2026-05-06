@@ -42,8 +42,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(data.passingScore !== undefined ? { passingScore: data.passingScore } : {}),
       ...(data.maxAttempts !== undefined ? { maxAttempts: data.maxAttempts } : {}),
       ...(data.duration !== undefined ? { duration: data.duration } : {}),
-      ...(data.tags !== undefined ? { tags: JSON.stringify(data.tags) } : {}),
+      ...(data.tags !== undefined ? { tags: typeof data.tags === "string" ? data.tags : JSON.stringify(data.tags) } : {}),
       ...(data.thumbnail !== undefined ? { thumbnail: data.thumbnail } : {}),
+      ...(data.creditCost !== undefined ? { creditCost: data.creditCost } : {}),
     },
   });
 

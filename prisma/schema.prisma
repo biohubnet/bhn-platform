@@ -92,6 +92,7 @@ model Course {
   assessments  Assessment[]
   certificates Certificate[]
   groupCourses GroupCourse[]
+  pathways     PathwayCourse[]
 }
 
 model ScormPackage {
@@ -253,7 +254,9 @@ model LtiConfig {
 model Certificate {
   id         String    @id @default(cuid())
   userId     String
-  courseId   String
+  courseId   String?
+  pathwayId  String?
+  kind       String    @default("course") // course | pathway
   issueDate  DateTime  @default(now())
   expiryDate DateTime?
   metadata   String?
@@ -261,8 +264,49 @@ model Certificate {
   revokedAt  DateTime?
   revokedBy  String?
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course     Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course     Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  pathway    Pathway?  @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
   @@unique([userId, courseId])
+  @@unique([userId, pathwayId])
+}
+
+model Pathway {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  thumbnail    String?
+  category     String?
+  status       String   @default("draft") // draft | published
+  creditCost   Float    @default(0)
+  createdById  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  courses      PathwayCourse[]
+  enrollments  PathwayEnrollment[]
+  certificates Certificate[]
+}
+
+model PathwayCourse {
+  id        String  @id @default(cuid())
+  pathwayId String
+  courseId  String
+  order     Int     @default(0)
+  required  Boolean @default(true)
+  pathway   Pathway @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  @@unique([pathwayId, courseId])
+}
+
+model PathwayEnrollment {
+  id          String    @id @default(cuid())
+  userId      String
+  pathwayId   String
+  status      String    @default("active") // active | completed
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+  pathway     Pathway   @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  @@unique([userId, pathwayId])
 }
 
 model CreditTransaction {

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { EnrollButton } from "@/components/lms/EnrollButton";
 import { ScormUploadButton } from "@/components/lms/ScormUploadButton";
 import { PublishToggle } from "@/components/lms/PublishToggle";
+import { CourseEditButton } from "@/components/lms/CourseEditButton";
 import { formatDuration, statusColor, cn } from "@/lib/utils";
 import { BookOpen, Clock, Users, Award, Play, Upload, Coins } from "lucide-react";
 import Link from "next/link";
@@ -112,6 +113,22 @@ export default async function CourseDetailPage({
           </div>
 
           <div className="flex flex-col gap-2 flex-shrink-0">
+            {isStaff && (
+              <CourseEditButton
+                course={{
+                  id: course.id,
+                  title: course.title,
+                  description: course.description,
+                  category: course.category,
+                  status: course.status,
+                  passingScore: course.passingScore,
+                  maxAttempts: course.maxAttempts,
+                  duration: course.duration,
+                  creditCost: course.creditCost,
+                  thumbnail: course.thumbnail,
+                }}
+              />
+            )}
             {isStaff && <PublishToggle courseId={id} status={course.status} />}
             {!enrollment && !isStaff && course.status === "published" && (
               <EnrollButton courseId={id} />

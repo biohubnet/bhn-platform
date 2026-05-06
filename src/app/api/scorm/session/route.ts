@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { onCourseCompleted } from "@/lib/pathway-completion";
 
 // GET: fetch or create a SCORM session
 export async function GET(req: NextRequest) {
@@ -92,6 +93,10 @@ export async function PATCH(req: NextRequest) {
         where: { userId, courseId: pkg.courseId },
         data: enrollmentData,
       });
+    }
+    if (enrollmentData.status === "completed") {
+      // Fire and forget — issues pathway certificates if all required courses are done.
+      onCourseCompleted(userId, pkg.courseId).catch((e) => console.error("pathway sweep:", e));
     }
   }
 

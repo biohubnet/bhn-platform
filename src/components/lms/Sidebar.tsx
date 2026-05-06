@@ -20,6 +20,7 @@ import {
   ClipboardList,
   UsersRound,
   Link2,
+  Layers,
 } from "lucide-react";
 
 interface NavItem {
@@ -33,6 +34,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
   { label: "Course Catalog", href: "/courses", icon: BookOpen },
+  { label: "Pathways", href: "/pathways", icon: Layers },
   { label: "My Courses", href: "/my-courses", icon: GraduationCap },
   { label: "Gradebook", href: "/gradebook", icon: BarChart3 },
   { label: "Certificates", href: "/certificates", icon: Award },
@@ -76,13 +78,13 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
       className={cn(
         "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
         active
-          ? "bg-blue-50 text-blue-700"
-          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          ? "bg-brand-50 text-brand-700"
+          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
       )}
     >
       <Icon size={16} />
       <span className="flex-1">{item.label}</span>
-      {active && <ChevronRight size={14} className="text-blue-400" />}
+      {active && <ChevronRight size={14} className="text-brand-400" />}
     </Link>
   );
 }
@@ -98,19 +100,19 @@ export function Sidebar({ role, user, credits }: SidebarProps) {
   });
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-gray-200">
+      <Link href="/dashboard" className="px-6 py-5 border-b border-slate-100 block hover:bg-slate-50/50 transition-colors">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center shadow-md shadow-brand-600/20">
             <span className="text-white font-bold text-sm">B</span>
           </div>
           <div>
-            <p className="font-semibold text-gray-900 text-sm">BHN Training</p>
-            <p className="text-xs text-gray-400 capitalize">{role}</p>
+            <p className="font-semibold text-slate-900 text-sm">BHN Training</p>
+            <p className="text-xs text-slate-400 capitalize">{role}</p>
           </div>
         </div>
-      </div>
+      </Link>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { onCourseCompleted } from "@/lib/pathway-completion";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: assessmentId } = await params;
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         metadata: JSON.stringify({ score, passed }),
       },
     });
+    onCourseCompleted(userId, assessment.courseId).catch((e) => console.error("pathway sweep:", e));
   }
 
   return NextResponse.json({ ...attempt, score, passed, maxScore });
