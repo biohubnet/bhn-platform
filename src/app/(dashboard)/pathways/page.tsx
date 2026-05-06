@@ -1,4 +1,4 @@
-import { getSession, isAdmin } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Layers, Award, BookOpen, Users } from "lucide-react";
@@ -20,7 +20,7 @@ export default async function PathwaysPage() {
   const session = await getSession();
   const role = (session!.user as { role?: string }).role ?? "user";
   const userId = (session!.user as { id?: string }).id!;
-  const isStaff = isAdmin(role);
+  const isStaff = checkIsStaff(role);
 
   const pathways = await prisma.pathway.findMany({
     where: isStaff ? {} : { status: "published" },

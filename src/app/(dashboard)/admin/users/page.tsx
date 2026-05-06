@@ -72,10 +72,11 @@ export default async function AdminUsersPage() {
                   <td className="px-5 py-3">
                     <span className={cn(
                       "text-xs px-2 py-0.5 rounded-full font-medium",
-                      user.role === "superadmin" ? "bg-red-100 text-red-700" :
+                      user.role === "superadmin" ? "bg-rose-100 text-rose-700" :
                       user.role === "admin" ? "bg-brand-100 text-brand-700" :
+                      user.role === "instructor" ? "bg-violet-100 text-violet-700" :
                       user.role === "evaluating" ? "bg-amber-100 text-amber-700" :
-                      "bg-gray-100 text-gray-600"
+                      "bg-slate-100 text-slate-600"
                     )}>
                       {user.role}
                     </span>

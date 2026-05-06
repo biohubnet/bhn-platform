@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await requireRole("admin").catch(() => null);
+  const session = await requireRole("instructor").catch(() => null);
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const data = await req.json();

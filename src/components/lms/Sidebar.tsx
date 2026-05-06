@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { LogoMark } from "@/components/ui/Logo";
 import {
   LayoutDashboard,
   BookOpen,
@@ -27,7 +28,7 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
-  minRole?: "admin" | "superadmin";
+  minRole?: "instructor" | "admin" | "superadmin";
   exact?: boolean;
 }
 
@@ -57,8 +58,9 @@ const adminItems: NavItem[] = [
 const ROLE_RANK: Record<string, number> = {
   user: 0,
   evaluating: 0,
-  admin: 1,
-  superadmin: 2,
+  instructor: 1,
+  admin: 2,
+  superadmin: 3,
 };
 
 interface SidebarProps {
@@ -93,9 +95,10 @@ export function Sidebar({ role, user, credits }: SidebarProps) {
   const pathname = usePathname();
   const userRank = ROLE_RANK[role] ?? 0;
   const isAdmin = userRank >= ROLE_RANK["admin"];
+  const isStaff = userRank >= ROLE_RANK["instructor"];
 
   const visibleAdmin = adminItems.filter((item) => {
-    const required = ROLE_RANK[item.minRole ?? "admin"] ?? 1;
+    const required = ROLE_RANK[item.minRole ?? "admin"] ?? ROLE_RANK.admin;
     return userRank >= required;
   });
 
@@ -104,12 +107,10 @@ export function Sidebar({ role, user, credits }: SidebarProps) {
       {/* Logo */}
       <Link href="/dashboard" className="px-6 py-5 border-b border-slate-100 block hover:bg-slate-50/50 transition-colors">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center shadow-md shadow-brand-600/20">
-            <span className="text-white font-bold text-sm">B</span>
-          </div>
-          <div>
-            <p className="font-semibold text-slate-900 text-sm">BHN Training</p>
-            <p className="text-xs text-slate-400 capitalize">{role}</p>
+          <LogoMark size={36} className="drop-shadow-sm" />
+          <div className="leading-tight">
+            <p className="font-bold text-slate-900 text-sm">BHN <span className="text-brand-600 font-semibold">Training</span></p>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400 mt-0.5">{role}</p>
           </div>
         </div>
       </Link>
@@ -133,8 +134,8 @@ export function Sidebar({ role, user, credits }: SidebarProps) {
         )}
       </nav>
 
-      {/* Credits badge for regular users */}
-      {!isAdmin && credits !== undefined && (
+      {/* Credits badge for non-staff */}
+      {!isStaff && credits !== undefined && (
         <div className="px-4 py-3 border-t border-gray-100">
           <div className="flex items-center gap-2 bg-amber-50 rounded-lg px-3 py-2">
             <Coins size={14} className="text-amber-500 shrink-0" />

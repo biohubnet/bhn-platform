@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Logo } from "@/components/ui/Logo";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -30,11 +31,8 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4 py-8">
       <div className="w-full max-w-md">
-        <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-lg shadow-brand-600/30">
-            <span className="text-white text-lg font-bold">B</span>
-          </div>
-          <span className="font-semibold text-slate-900 text-lg">BHN Training</span>
+        <Link href="/" className="flex justify-center mb-8">
+          <Logo size="lg" />
         </Link>
 
         <div className="bg-white rounded-2xl shadow-xl shadow-brand-900/5 border border-slate-100 p-8">

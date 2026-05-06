@@ -1,4 +1,4 @@
-import { getSession, isAdmin } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -26,7 +26,7 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
   const session = await getSession();
   const role = (session!.user as { role?: string }).role ?? "user";
   const userId = (session!.user as { id?: string }).id!;
-  const isStaff = isAdmin(role);
+  const isStaff = checkIsStaff(role);
 
   const pathway = await prisma.pathway.findUnique({
     where: { id },

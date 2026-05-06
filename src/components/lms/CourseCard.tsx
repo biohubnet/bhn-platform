@@ -21,7 +21,7 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course, role }: CourseCardProps) {
-  const isStaff = role === "admin" || role === "superadmin";
+  const isStaff = role === "admin" || role === "superadmin" || role === "instructor";
 
   return (
     <Link

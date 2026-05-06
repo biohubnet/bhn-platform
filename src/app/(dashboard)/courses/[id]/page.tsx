@@ -1,4 +1,4 @@
-import { getSession, isAdmin } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { EnrollButton } from "@/components/lms/EnrollButton";
@@ -18,7 +18,7 @@ export default async function CourseDetailPage({
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
   const role = (session!.user as { role?: string }).role ?? "user";
-  const isStaff = isAdmin(role);
+  const isStaff = checkIsStaff(role);
   const userCredits = !isStaff
     ? (await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } }))?.credits ?? 0
     : Infinity;

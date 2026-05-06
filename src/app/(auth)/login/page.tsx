@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,11 +27,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4 py-8">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-lg shadow-brand-600/30">
-            <span className="text-white text-lg font-bold">B</span>
-          </div>
-          <span className="font-semibold text-slate-900 text-lg">BHN Training</span>
+        <Link href="/" className="flex justify-center mb-8">
+          <Logo size="lg" />
         </Link>
 
         {/* Sign in card */}

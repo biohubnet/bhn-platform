@@ -6,6 +6,7 @@ import {
   GraduationCap, Award, Layers, ShieldCheck, BarChart3, Coins,
   ArrowRight, Sparkles, BookOpen,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 export default async function HomePage() {
   const session = await getSession();
@@ -22,9 +23,8 @@ export default async function HomePage() {
     <div className="min-h-screen bg-gradient-to-b from-brand-50 via-white to-white">
       <header className="border-b border-slate-100 bg-white/70 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md shadow-brand-600/20">B</div>
-            <span className="font-semibold text-slate-900">BHN Training</span>
+          <Link href="/" className="flex items-center">
+            <Logo size="md" />
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm text-slate-600">
             <a href="#features" className="hover:text-slate-900">Features</a>

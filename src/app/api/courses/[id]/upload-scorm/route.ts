@@ -13,7 +13,7 @@ export const maxDuration = 300; // seconds — Pro plan only; safe to leave for 
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: courseId } = await params;
-  await requireRole("admin");
+  await requireRole("instructor");
 
   if (!R2_PUBLIC_URL) {
     return NextResponse.json(

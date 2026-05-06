@@ -56,22 +56,38 @@ export async function requireSession() {
   return session;
 }
 
-const ROLE_RANK: Record<string, number> = {
+/**
+ * Roles, ordered:
+ *   user / evaluating  → learner (0)
+ *   instructor         → can author courses, modules, assessments, upload SCORM (1)
+ *   admin              → can manage users, enrollments, certificates, audit, settings (2)
+ *   superadmin         → admin + LTI config, platform settings (3)
+ */
+export const ROLE_RANK: Record<string, number> = {
   user: 0,
   evaluating: 0,
-  admin: 1,
-  superadmin: 2,
+  instructor: 1,
+  admin: 2,
+  superadmin: 3,
 };
 
-export async function requireRole(minRole: "admin" | "superadmin") {
+export type Role = "user" | "evaluating" | "instructor" | "admin" | "superadmin";
+
+export async function requireRole(minRole: "instructor" | "admin" | "superadmin") {
   const session = await requireSession();
   const userRole = (session.user as { role?: string }).role ?? "user";
-  const required = ROLE_RANK[minRole] ?? 1;
+  const required = ROLE_RANK[minRole] ?? ROLE_RANK.admin;
   const actual = ROLE_RANK[userRole] ?? 0;
   if (actual < required) throw new Error("Forbidden");
   return session;
 }
 
+/** Admin or higher — manages users, audit, settings. */
 export function isAdmin(role: string) {
-  return ROLE_RANK[role] >= ROLE_RANK["admin"];
+  return (ROLE_RANK[role] ?? 0) >= ROLE_RANK["admin"];
+}
+
+/** Instructor or higher — authors courses. */
+export function isStaff(role: string) {
+  return (ROLE_RANK[role] ?? 0) >= ROLE_RANK["instructor"];
 }
