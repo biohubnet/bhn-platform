@@ -10,19 +10,30 @@ export default function Icon() {
         style={{
           width: 64,
           height: 64,
-          borderRadius: 14,
-          background: "linear-gradient(135deg,#3b6cef 0%,#1c2f7a 100%)",
+          borderRadius: 9999,
+          background: "linear-gradient(135deg,#5e8ff7 0%,#2a4fdb 55%,#1c2f7a 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        {/* Mortarboard rhombus */}
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-          <path d="M20 8 L33 16 L20 24 L7 16 Z" fill="#ffffff" />
-          <circle cx="20" cy="16" r="1.6" fill="#1c2f7a" />
-          <path d="M33 16 Q33 20 31.5 23" stroke="#fbbf24" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-          <circle cx="31.5" cy="23.5" r="1.4" fill="#fbbf24" />
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <path
+            d="M11 35 C 16 27, 22 22, 30 16"
+            stroke="#ffffff"
+            strokeWidth="3"
+            strokeLinecap="round"
+            fill="none"
+          />
+          <path
+            d="M14 38 C 19 30, 25 25, 33 19"
+            stroke="#ffffff"
+            strokeOpacity="0.4"
+            strokeWidth="2"
+            strokeLinecap="round"
+            fill="none"
+          />
+          <circle cx="32" cy="14" r="3.5" fill="#fbbf24" />
         </svg>
       </div>
     ),

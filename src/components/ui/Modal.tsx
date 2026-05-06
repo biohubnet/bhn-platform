@@ -47,7 +47,7 @@ export function Modal({ open, onClose, title, description, footer, size = "md", 
         role="dialog"
         aria-modal="true"
         className={cn(
-          "relative w-full bg-card rounded-2xl shadow-2xl border border-line my-auto animate-slide-up-in",
+          "relative w-full bg-card-solid rounded-[var(--radius-xl)] shadow-2xl border border-line my-auto animate-slide-up-in overflow-hidden",
           sizeClass[size]
         )}
       >
@@ -71,7 +71,7 @@ export function Modal({ open, onClose, title, description, footer, size = "md", 
         )}
         <div className="px-6 py-5">{children}</div>
         {footer && (
-          <div className="px-6 py-4 bg-elevated border-t border-line rounded-b-2xl flex items-center justify-end gap-2">
+          <div className="px-6 py-4 bg-elevated/60 border-t border-line flex items-center justify-end gap-2">
             {footer}
           </div>
         )}

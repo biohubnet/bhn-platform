@@ -2,19 +2,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 export const THEMES = [
-  // Light · neutral & cool
-  { id: "light",     name: "Daylight",   group: "Light",  description: "Clean blue daylight" },
-  { id: "slate",     name: "Slate",      group: "Light",  description: "Neutral monochrome" },
-  { id: "ocean",     name: "Ocean",      group: "Light",  description: "Cool teal accent" },
-  { id: "forest",    name: "Forest",     group: "Light",  description: "Earthy green" },
-  // Light · warm
-  { id: "sunset",    name: "Sunset",     group: "Warm",   description: "Amber & terracotta" },
-  { id: "rose",      name: "Rose",       group: "Warm",   description: "Soft mauve" },
-  { id: "lavender",  name: "Lavender",   group: "Warm",   description: "Calming violet" },
-  // Dark
-  { id: "dark",      name: "Twilight",   group: "Dark",   description: "Deep navy" },
-  { id: "midnight",  name: "Midnight",   group: "Dark",   description: "True black & electric blue" },
-  { id: "espresso",  name: "Espresso",   group: "Dark",   description: "Warm cream on coffee" },
+  { id: "light",  name: "Daylight",  description: "Calm, near-white tech surfaces" },
+  { id: "dark",   name: "Nightfall", description: "Deep navy with electric accents" },
+  { id: "aurora", name: "Aurora",    description: "Soft curves, magenta-violet flow" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
@@ -51,8 +41,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setThemeState(t);
     document.documentElement.dataset.theme = t;
     try { localStorage.setItem(STORAGE_KEY, t); } catch {}
-    // Fire-and-forget analytics — kept inline so the bundle for ThemeProvider
-    // stays small and we don't add a hard dep on the tracker module.
     try {
       const body = JSON.stringify({ name: "theme_change", path: location.pathname, props: { theme: t } });
       if (navigator.sendBeacon) {

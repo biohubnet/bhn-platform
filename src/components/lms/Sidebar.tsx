@@ -120,7 +120,7 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
   });
 
   return (
-    <aside className="w-64 bg-card border-r border-line flex flex-col">
+    <aside className="w-64 glass border-r border-line flex flex-col relative z-10">
       {/* Logo */}
       <Link href="/dashboard" className="px-6 py-5 border-b border-line block hover:bg-elevated/50 transition-colors">
         <div className="flex items-center gap-3">

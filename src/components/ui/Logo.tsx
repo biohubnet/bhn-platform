@@ -6,16 +6,16 @@ interface LogoMarkProps {
 }
 
 /**
- * BHN Training mark — a graduation cap (mortarboard) viewed top-down with
- * a hanging tassel, set in a brand-gradient rounded tile. Reads instantly
- * as "training / credentialed learning" at every size.
+ * BHN Training mark — soft circular medallion with a flowing rising arc
+ * that ends in a small destination dot. Reads as "ascent / continuous
+ * learning" and pairs naturally with the curved Aurora theme.
  */
-export function LogoMark({ size = 32, className }: LogoMarkProps) {
+export function LogoMark({ size = 36, className }: LogoMarkProps) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 40 40"
+      viewBox="0 0 48 48"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
@@ -23,47 +23,45 @@ export function LogoMark({ size = 32, className }: LogoMarkProps) {
       className={cn("inline-block", className)}
     >
       <defs>
-        <linearGradient id="bhn-tile" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#3b6cef" />
+        <linearGradient id="bhn-medallion" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"  stopColor="#5e8ff7" />
+          <stop offset="55%" stopColor="#2a4fdb" />
           <stop offset="100%" stopColor="#1c2f7a" />
         </linearGradient>
-        <linearGradient id="bhn-cap" x1="20" y1="6" x2="20" y2="26" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#dbe7fe" />
+        <linearGradient id="bhn-arc" x1="8" y1="38" x2="40" y2="10" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.95" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.55" />
         </linearGradient>
+        <radialGradient id="bhn-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </radialGradient>
       </defs>
 
-      {/* Background tile */}
-      <rect width="40" height="40" rx="9" fill="url(#bhn-tile)" />
+      {/* Outer medallion — soft circle replaces the rounded square. */}
+      <circle cx="24" cy="24" r="22" fill="url(#bhn-medallion)" />
+      <circle cx="20" cy="18" r="14" fill="url(#bhn-glow)" />
 
-      {/* Mortarboard (rhombus) — the cap from above */}
+      {/* Two flowing curves rise from lower-left to upper-right. */}
       <path
-        d="M20 8 L33 16 L20 24 L7 16 Z"
-        fill="url(#bhn-cap)"
-        stroke="#ffffff"
-        strokeWidth="0.5"
-      />
-
-      {/* Center button */}
-      <circle cx="20" cy="16" r="1.6" fill="#2a4fdb" />
-
-      {/* Tassel cord descending from the right corner */}
-      <path
-        d="M33 16 Q33 20 31.5 23"
-        stroke="#fbbf24"
-        strokeWidth="1.6"
+        d="M11 35 C 16 27, 22 22, 30 16"
+        stroke="url(#bhn-arc)"
+        strokeWidth="3"
         strokeLinecap="round"
         fill="none"
       />
-      {/* Tassel knot */}
-      <circle cx="31.5" cy="23.5" r="1.2" fill="#fbbf24" />
-      {/* Tassel strands */}
       <path
-        d="M30.6 24.6 L30.2 28 M31.5 24.7 L31.5 28.3 M32.4 24.6 L32.8 28"
-        stroke="#fbbf24"
-        strokeWidth="1"
+        d="M14 38 C 19 30, 25 25, 33 19"
+        stroke="#ffffff"
+        strokeOpacity="0.32"
+        strokeWidth="2"
         strokeLinecap="round"
+        fill="none"
       />
+
+      {/* Destination/credential dot at the arc's terminus. */}
+      <circle cx="32" cy="14" r="5.5" fill="#fbbf24" fillOpacity="0.18" />
+      <circle cx="32" cy="14" r="3" fill="#fbbf24" />
     </svg>
   );
 }
@@ -78,17 +76,21 @@ const markSize = { sm: 28, md: 36, lg: 44 };
 const wordmarkSize = { sm: "text-sm", md: "text-base", lg: "text-lg" };
 
 /**
- * Mark + wordmark for headers, sidebars, splash screens.
- * `variant="light"` for use on dark gradient backgrounds.
+ * Mark + wordmark. The wordmark is intentionally thin on "Training"
+ * for an airy, modern flow.
  */
 export function Logo({ size = "md", variant = "default", className }: LogoProps) {
   const isLight = variant === "light";
   return (
-    <div className={cn("flex items-center gap-2.5", className)}>
-      <LogoMark size={markSize[size]} className="drop-shadow-sm" />
+    <div className={cn("flex items-center gap-3", className)}>
+      <LogoMark size={markSize[size]} className="drop-shadow-[0_3px_10px_rgba(42,79,219,0.25)]" />
       <div className="leading-tight">
-        <p className={cn("font-bold tracking-tight", wordmarkSize[size], isLight ? "text-white" : "text-fg")}>
-          BHN<span className={cn("font-medium ml-1.5", isLight ? "text-brand-100" : "text-brand-600")}>Training</span>
+        <p className={cn(
+          "font-semibold tracking-tight",
+          wordmarkSize[size],
+          isLight ? "text-white" : "text-fg"
+        )}>
+          BHN<span className={cn("font-light ml-1.5", isLight ? "text-brand-100" : "text-brand-600")}>Training</span>
         </p>
       </div>
     </div>

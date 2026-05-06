@@ -4,14 +4,23 @@ import { cn } from "@/lib/utils";
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   hover?: boolean;
+  /** Forces a full-opacity surface for content needing high contrast. */
+  solid?: boolean;
 }
 
-export function Card({ children, className, hover, ...rest }: CardProps) {
+/**
+ * Translucent glass card with soft shadow — replaces hard-bordered boxes.
+ * The default surface uses `--card` (semi-transparent), with `--card-solid`
+ * available via the `solid` prop for forms and tables.
+ */
+export function Card({ children, className, hover, solid, ...rest }: CardProps) {
   return (
     <div
       className={cn(
-        "bg-card rounded-xl border border-line shadow-sm",
-        hover && "transition-all hover:border-brand-200 hover:shadow-md hover:-translate-y-0.5",
+        "rounded-[var(--radius-lg)] border border-line",
+        solid ? "bg-card-solid" : "bg-card backdrop-blur-md",
+        "shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_rgba(15,23,42,0.06)]",
+        hover && "transition-all hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_16px_40px_rgba(15,23,42,0.10)] hover:-translate-y-0.5",
         className
       )}
       {...rest}
@@ -28,5 +37,9 @@ export function CardBody({ children, className }: { children: ReactNode; classNa
   return <div className={cn("px-5 py-4", className)}>{children}</div>;
 }
 export function CardFooter({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("px-5 py-3 border-t border-line bg-elevated/50 rounded-b-xl", className)}>{children}</div>;
+  return (
+    <div className={cn("px-5 py-3 border-t border-line bg-elevated/40 rounded-b-[var(--radius-lg)]", className)}>
+      {children}
+    </div>
+  );
 }
