@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseManifest } from "@/lib/scorm-parser";
-import { putR2Object, deleteR2Prefix, r2PublicUrl, R2_PUBLIC_URL } from "@/lib/r2";
+import { putR2Object, deleteR2Prefix, R2_PUBLIC_URL } from "@/lib/r2";
 import path from "path";
 import fs from "fs";
 import os from "os";
@@ -76,7 +76,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       );
     }
 
-    const uploadPath = r2PublicUrl(r2Prefix); // e.g. https://pub-xxx.r2.dev/scorm/{id}
+    // Serve via same-origin proxy so SCORM content can talk to the LMS API.
+    // (Cross-origin R2 URLs break window.parent.API discovery.)
+    const uploadPath = `/scorm-files/${courseId}`;
 
     const pkg = await prisma.scormPackage.upsert({
       where: { courseId },

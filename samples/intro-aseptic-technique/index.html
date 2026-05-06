@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Introduction to Aseptic Technique</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">BHN · Aseptic Technique</div>
+      <div class="status" id="lms-status">Connecting…</div>
+    </header>
+
+    <nav class="progress">
+      <ol id="steps">
+        <li data-page="overview">1. Overview</li>
+        <li data-page="contamination">2. Contamination Sources</li>
+        <li data-page="practices">3. Best Practices</li>
+        <li data-page="quiz">4. Knowledge Check</li>
+      </ol>
+    </nav>
+
+    <main class="content">
+      <iframe id="frame" name="contentFrame" src="pages/01-overview.html"></iframe>
+    </main>
+
+    <footer class="controls">
+      <button id="prev" type="button">← Previous</button>
+      <span id="page-indicator">Page 1 of 4</span>
+      <button id="next" type="button">Next →</button>
+    </footer>
+  </div>
+  <script src="assets/scorm-api.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
