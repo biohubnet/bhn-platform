@@ -5,6 +5,8 @@ import { EnrollButton } from "@/components/lms/EnrollButton";
 import { ScormUploadButton } from "@/components/lms/ScormUploadButton";
 import { PublishToggle } from "@/components/lms/PublishToggle";
 import { CourseEditButton } from "@/components/lms/CourseEditButton";
+import { CourseAISummary } from "@/components/lms/CourseAISummary";
+import { CourseTutorWidget } from "@/components/lms/CourseTutorWidget";
 import { formatDuration, statusColor, cn } from "@/lib/utils";
 import { BookOpen, Clock, Users, Award, Play, Upload, Coins } from "lucide-react";
 import Link from "next/link";
@@ -174,6 +176,13 @@ export default async function CourseDetailPage({
         )}
       </div>
 
+      {/* AI summary — visible to learners; staff can (re)generate */}
+      <CourseAISummary
+        courseId={id}
+        initialSummary={course.aiSummary}
+        canManage={isStaff}
+      />
+
       {/* SCORM Upload (instructors) */}
       {isStaff && (
         <div className="bg-card rounded-xl border border-line p-6">
@@ -258,6 +267,9 @@ export default async function CourseDetailPage({
           </div>
         </div>
       )}
+
+      {/* AI tutor — only for enrolled learners and staff */}
+      {(enrollment || isStaff) && <CourseTutorWidget courseId={id} />}
     </div>
   );
 }

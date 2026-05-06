@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { CourseCard } from "@/components/lms/CourseCard";
 import { NewCourseButton } from "@/components/lms/NewCourseButton";
+import { CourseSearchBar } from "@/components/lms/CourseSearchBar";
 
 interface CourseListItem {
   id: string;
@@ -59,6 +60,9 @@ export default async function CoursesPage({
         </div>
         {isStaff && <NewCourseButton />}
       </div>
+
+      {/* AI-powered semantic search */}
+      <CourseSearchBar />
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">

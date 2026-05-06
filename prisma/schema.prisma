@@ -100,6 +100,10 @@ model Course {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // AI-generated summary of the course (visible to learners; refreshable by staff).
+  aiSummary    String?
+  embeddedAt   DateTime?
+
   scormPackage ScormPackage?
   modules      Module[]
   enrollments  Enrollment[]
@@ -293,6 +297,7 @@ model Pathway {
   status       String   @default("draft") // draft | published
   creditCost   Float    @default(0)
   createdById  String?
+  embeddedAt   DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -429,6 +434,25 @@ model AuditLog {
   ip         String?
   createdAt  DateTime @default(now())
   actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+}
+
+/// Audit + cost log for every AI call (chat, embed, summarize, search,
+/// tutor). Powers the AI section of the analytics dashboard.
+model AIInteraction {
+  id               String   @id @default(cuid())
+  userId           String?
+  kind             String   // chat | embed | summarize | search | tutor | classify
+  provider         String   // cloudflare | gemini
+  model            String
+  promptTokens     Int?
+  completionTokens Int?
+  latencyMs        Int?
+  success          Boolean  @default(true)
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([kind, createdAt])
 }
 
 model PlatformSetting {
