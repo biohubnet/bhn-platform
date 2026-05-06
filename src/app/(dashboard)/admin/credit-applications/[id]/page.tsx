@@ -60,9 +60,9 @@ export default async function AdminCreditApplicationDetailPage({ params }: { par
         </div>
       </Card>
 
-      {/* Use case */}
+      {/* Learning goals */}
       <Card className="p-5">
-        <h3 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-2">Use case</h3>
+        <h3 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-2">Learning goals</h3>
         <p className="text-sm text-fg leading-relaxed whitespace-pre-line">{app.useCase}</p>
       </Card>
 
@@ -95,13 +95,32 @@ export default async function AdminCreditApplicationDetailPage({ params }: { par
       </Card>
 
       {/* Review action OR past decision */}
-      {app.status === "pending" ? (
-        <CreditApplicationReview applicationId={app.id} requestedAmount={app.requestedAmount} />
-      ) : (
+      {app.status === "pending" && (
+        <CreditApplicationReview applicationId={app.id} status={app.status} requestedAmount={app.requestedAmount} />
+      )}
+      {app.status === "rejected" && (
+        <>
+          <Card className="p-5">
+            <h3 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-2">Previous decision</h3>
+            <p className="text-sm text-fg">
+              <span className="font-medium">Rejected</span>
+              {app.reviewer?.name ? ` by ${app.reviewer.name}` : ""}
+              {app.reviewedAt ? ` on ${new Date(app.reviewedAt).toLocaleString()}.` : "."}
+            </p>
+            {app.reviewerNote && (
+              <p className="mt-3 text-sm text-muted leading-relaxed bg-elevated rounded-lg p-3 whitespace-pre-line">
+                {app.reviewerNote}
+              </p>
+            )}
+          </Card>
+          <CreditApplicationReview applicationId={app.id} status={app.status} requestedAmount={app.requestedAmount} />
+        </>
+      )}
+      {app.status === "approved" && (
         <Card className="p-5">
-          <h3 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-2">Review</h3>
+          <h3 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-2">Decision</h3>
           <p className="text-sm text-fg">
-            <span className="font-medium">{app.status === "approved" ? "Approved" : "Rejected"}</span>
+            <span className="font-medium">Approved</span>
             {app.reviewer?.name ? ` by ${app.reviewer.name}` : ""}
             {app.reviewedAt ? ` on ${new Date(app.reviewedAt).toLocaleString()}.` : "."}
           </p>

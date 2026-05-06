@@ -98,15 +98,18 @@ export function CreditApplicationForm({ defaultName = "" }: { defaultName?: stri
 
       <Card className="p-6 space-y-4">
         <div>
-          <h2 className="font-semibold text-fg">Why you need additional credits</h2>
-          <p className="text-xs text-subtle mt-0.5">A few sentences is enough — what training pathway, certification, or compliance need is this for?</p>
+          <h2 className="font-semibold text-fg">Your learning goals</h2>
+          <p className="text-xs text-subtle mt-0.5">
+            Briefly tell us about your learning objective or career goal — what you&apos;re hoping
+            BHN Training will help you achieve.
+          </p>
         </div>
-        <Field label="Use case" required hint={`${useCase.trim().length}/30 characters minimum`}>
+        <Field label="Tell us about your goals" required hint={`${useCase.trim().length}/30 characters minimum`}>
           <Textarea
             value={useCase}
             onChange={(e) => setUseCase(e.target.value)}
             rows={5}
-            placeholder="e.g. I'm being onboarded to an aseptic fill-finish team and need to complete the GMP cleanroom pathway before our next campaign."
+            placeholder="e.g. I'm transitioning into upstream bioprocessing and want to build foundational skills in cell culture and aseptic technique to qualify for a manufacturing associate role."
           />
         </Field>
       </Card>

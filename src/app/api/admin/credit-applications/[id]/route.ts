@@ -25,21 +25,62 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
 
-  const decision = body.decision as "approve" | "reject";
+  const decision = body.decision as "approve" | "reject" | "reopen";
   const note = (body.note as string | undefined)?.trim() ?? null;
   const approvedAmount = body.approvedAmount != null ? Number(body.approvedAmount) : 4800;
 
-  if (decision !== "approve" && decision !== "reject") {
+  if (decision !== "approve" && decision !== "reject" && decision !== "reopen") {
     return NextResponse.json({ error: "Invalid decision" }, { status: 400 });
   }
 
   const existing = await prisma.creditApplication.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (existing.status !== "pending") {
+
+  // State machine:
+  //   pending → approve | reject  (normal review)
+  //   rejected → approve (reverse-and-grant) | reopen (set back to pending)
+  //   approved → no further action
+  if (existing.status === "approved") {
     return NextResponse.json(
-      { error: `Application already ${existing.status}. Cannot review again.` },
+      { error: "Application is already approved. Credits cannot be granted twice." },
       { status: 409 }
     );
+  }
+  if (existing.status === "rejected" && decision === "reject") {
+    return NextResponse.json({ error: "Application is already rejected." }, { status: 409 });
+  }
+
+  // Reopen: clear reviewer fields and set back to pending
+  if (decision === "reopen") {
+    if (existing.status !== "rejected") {
+      return NextResponse.json({ error: "Only rejected applications can be reopened." }, { status: 409 });
+    }
+    const reopened = await prisma.creditApplication.update({
+      where: { id },
+      data: {
+        status: "pending",
+        reviewerId: null,
+        reviewerNote: null,
+        reviewedAt: null,
+      },
+    });
+    await prisma.auditLog.create({
+      data: {
+        actorId: reviewerId,
+        action: "credit_application.reopen",
+        targetType: "credit_application",
+        targetId: id,
+        detail: JSON.stringify({ userId: existing.userId, previousStatus: "rejected" }),
+        ip: req.headers.get("x-forwarded-for") ?? undefined,
+      },
+    });
+    trackServer({
+      userId: reviewerId,
+      role: "admin",
+      name: "credit_app_reopened",
+      props: { applicationId: id, applicantId: existing.userId },
+    });
+    return NextResponse.json(reopened);
   }
 
   if (decision === "reject") {

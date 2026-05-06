@@ -7,8 +7,28 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
-  const days = Math.min(365, Math.max(7, Number(searchParams.get("days")) || 30));
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rawDays = searchParams.get("days") ?? "30";
+  // 'all' or 0 means since the very beginning of the platform
+  const allTime = rawDays === "all" || rawDays === "0";
+  const days = allTime
+    ? 0
+    : Math.min(3650, Math.max(1, Number(rawDays) || 30));
+
+  // For all-time, anchor 'since' at the earliest user creation; falling back
+  // to a far-past date if there are no users yet.
+  let since: Date;
+  if (allTime) {
+    const oldest = await prisma.user.findFirst({
+      orderBy: { createdAt: "asc" },
+      select: { createdAt: true },
+    });
+    since = oldest?.createdAt ?? new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+  } else {
+    since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  }
+  const effectiveDays = allTime
+    ? Math.max(1, Math.ceil((Date.now() - since.getTime()) / (24 * 60 * 60 * 1000)))
+    : days;
 
   // Parallel aggregations
   const [
@@ -123,12 +143,12 @@ export async function GET(req: NextRequest) {
     : [];
   const titleMap = new Map(courseLookup.map((c) => [c.id, c.title]));
 
-  // Build daily series with zero-fills
+  // Build daily series with zero-fills across the requested window
   function fillDays<T extends { d: Date }>(rows: T[]): Array<T & { day: string }> {
     const map = new Map<string, T>();
     for (const r of rows) map.set(r.d.toISOString().slice(0, 10), r);
     const out: Array<T & { day: string }> = [];
-    for (let i = days - 1; i >= 0; i--) {
+    for (let i = effectiveDays - 1; i >= 0; i--) {
       const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
       const key = d.toISOString().slice(0, 10);
       const row = map.get(key);
@@ -138,7 +158,7 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({
-    range: { days, since: since.toISOString() },
+    range: { days: effectiveDays, since: since.toISOString(), allTime },
     summary: {
       totalUsers,
       newUsers: newUsersInRange,

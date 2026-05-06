@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend,
@@ -8,12 +8,12 @@ import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Field";
 import {
   Users, Activity, ClipboardList, Award, TrendingUp, Sparkles,
-  ArrowDownRight, ArrowUpRight, RefreshCw,
+  ArrowDownRight, RefreshCw, Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AnalyticsData {
-  range: { days: number; since: string };
+  range: { days: number; since: string; allTime?: boolean };
   summary: {
     totalUsers: number; newUsers: number; totalEvents: number; eventsInRange: number;
     activeUsers: number; enrollments: number; completions: number; certificates: number;
@@ -42,16 +42,18 @@ function shortDate(s: unknown) {
 }
 
 export function AnalyticsClient() {
-  const [days, setDays] = useState(30);
+  const [range, setRange] = useState("30"); // "7" | "30" | "90" | "180" | "365" | "all"
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
-  async function load(d = days) {
+  async function load(r = range) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/analytics?days=${d}`);
+      const res = await fetch(`/api/admin/analytics?days=${r}`);
       if (!res.ok) throw new Error("Request failed");
       const json = (await res.json()) as AnalyticsData;
       setData(json);
@@ -61,7 +63,57 @@ export function AnalyticsClient() {
       setLoading(false);
     }
   }
-  useEffect(() => { load(days); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [days]);
+  useEffect(() => { load(range); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [range]);
+
+  async function downloadPdf() {
+    if (!reportRef.current || !data) return;
+    setExporting(true);
+    try {
+      const [{ default: html2canvas }, jspdfMod] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const jsPDF = (jspdfMod as unknown as { jsPDF: typeof import("jspdf").jsPDF }).jsPDF;
+
+      // Capture the report area as a canvas. Resolve current background
+      // and foreground from CSS vars so dark themes export legibly.
+      const styles = getComputedStyle(document.documentElement);
+      const bg = styles.getPropertyValue("--bg").trim() || "#ffffff";
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: bg,
+        scale: 2,
+        useCORS: true,
+        windowWidth: reportRef.current.scrollWidth,
+        windowHeight: reportRef.current.scrollHeight,
+      });
+
+      // Single landscape A4 (mm) — fit everything on one page.
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 6;
+      const availW = pageW - margin * 2;
+      const availH = pageH - margin * 2;
+
+      // Scale image to fit within available area while preserving aspect ratio
+      const ratio = Math.min(availW / canvas.width, availH / canvas.height);
+      const drawW = canvas.width * ratio;
+      const drawH = canvas.height * ratio;
+      const offsetX = (pageW - drawW) / 2;
+      const offsetY = (pageH - drawH) / 2;
+
+      const imgData = canvas.toDataURL("image/png", 0.95);
+      pdf.addImage(imgData, "PNG", offsetX, offsetY, drawW, drawH, undefined, "FAST");
+
+      const stamp = new Date().toISOString().slice(0, 10);
+      const label = data.range.allTime ? "all-time" : `${data.range.days}d`;
+      pdf.save(`bhn-analytics-${label}-${stamp}.pdf`);
+    } catch (e) {
+      alert("Couldn't generate PDF: " + (e as Error).message);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   if (!data && !error) {
     return <div className="text-center py-16 text-muted text-sm">Loading analytics…</div>;
@@ -79,23 +131,37 @@ export function AnalyticsClient() {
   ];
   const funnelMax = Math.max(...funnelSteps.map((s) => data.funnel[s.key]), 1);
 
+  const windowLabel = data.range.allTime
+    ? `All time · since ${new Date(data.range.since).toLocaleDateString()}`
+    : `Last ${data.range.days} days`;
+
   return (
     <div className="space-y-6">
-      {/* Range selector */}
+      {/* Range selector + export — kept outside the captured area */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-subtle uppercase tracking-wider">
-            Window: last {data.range.days} days
+            Window: {windowLabel}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={days} onChange={(e) => setDays(Number(e.target.value))} className="w-32">
-            <option value={7}>7 days</option>
-            <option value={30}>30 days</option>
-            <option value={90}>90 days</option>
-            <option value={180}>180 days</option>
-            <option value={365}>365 days</option>
+          <Select value={range} onChange={(e) => setRange(e.target.value)} className="w-36">
+            <option value="7">7 days</option>
+            <option value="30">30 days</option>
+            <option value="90">90 days</option>
+            <option value="180">180 days</option>
+            <option value="365">365 days</option>
+            <option value="all">All time</option>
           </Select>
+          <button
+            onClick={downloadPdf}
+            disabled={exporting}
+            className="px-3 py-2 rounded-lg text-muted hover:bg-elevated hover:text-fg transition-colors flex items-center gap-1.5 text-xs font-medium border border-line"
+            aria-label="Download PDF report"
+          >
+            <Download size={13} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting…" : "PDF report"}
+          </button>
           <button
             onClick={() => load()}
             disabled={loading}
@@ -106,6 +172,13 @@ export function AnalyticsClient() {
           </button>
         </div>
       </div>
+
+      {/* Captured report root */}
+      <div ref={reportRef} className="space-y-6 bg-page p-1">
+        {/* PDF-only header — visible only inside the captured area */}
+        <div className="hidden print:block">
+          <h1 className="text-xl font-bold text-fg">BHN Training · Analytics report</h1>
+        </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -310,11 +383,13 @@ export function AnalyticsClient() {
         <Donut title="Themes selected" data={data.themes.map((t) => ({ label: t.theme, value: t.count }))} icon={Sparkles} empty="No theme changes recorded yet." />
       </div>
 
-      {/* Footer note */}
-      <p className="text-xs text-subtle text-center">
-        Data refreshes on demand · {fmt(data.summary.eventsInRange)} events in this window ·
-        {" "}{fmt(data.summary.totalEvents)} total tracked
-      </p>
+        {/* Footer note */}
+        <p className="text-xs text-subtle text-center pt-2">
+          {windowLabel} · {fmt(data.summary.eventsInRange)} events in this window ·
+          {" "}{fmt(data.summary.totalEvents)} total tracked ·
+          {" "}generated {new Date().toLocaleString()}
+        </p>
+      </div>
     </div>
   );
 }
