@@ -2,7 +2,10 @@ import { NextAuthOptions, getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
+import { cookies } from "next/headers";
 import { prisma } from "./prisma";
+
+export const ACT_AS_COOKIE = "bhn-act-as";
 
 const DAY = 24 * 60 * 60;
 const LONG_SESSION = 30 * DAY;
@@ -71,7 +74,37 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-export const getSession = () => getServerSession(authOptions);
+/** Raw session — never modified for impersonation. Use for auth on
+ *  endpoints that toggle the act-as cookie itself. */
+export const getRawSession = () => getServerSession(authOptions);
+
+/**
+ * getSession(). If the caller is a superadmin and has an active
+ * `bhn-act-as` cookie, the returned session.user.role reflects the
+ * impersonated role while session.user.realRole keeps the true role
+ * and session.user.actingAs flags that we're in view-as mode.
+ *
+ * This means requireRole("admin") will (correctly) fail when a
+ * superadmin is viewing as a trainee — so the experience is faithful.
+ */
+export async function getSession() {
+  const session = await getRawSession();
+  if (!session) return null;
+  const realRole = (session.user as { role?: string }).role;
+  (session.user as { realRole?: string }).realRole = realRole;
+  if (realRole === "superadmin") {
+    try {
+      const actAs = (await cookies()).get(ACT_AS_COOKIE)?.value;
+      if (actAs && actAs !== "superadmin" && ROLE_RANK[actAs] !== undefined) {
+        (session.user as { role?: string }).role = actAs;
+        (session.user as { actingAs?: string }).actingAs = actAs;
+      }
+    } catch {
+      // cookies() can throw outside a request scope — ignore.
+    }
+  }
+  return session;
+}
 
 export async function requireSession() {
   const session = await getSession();

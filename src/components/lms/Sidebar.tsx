@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/ui/Logo";
 import { ThemePicker } from "@/components/ui/ThemePicker";
+import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
 import {
   LayoutDashboard,
   BookOpen,
@@ -72,6 +73,8 @@ const ROLE_RANK: Record<string, number> = {
 
 interface SidebarProps {
   role: string;
+  realRole?: string;
+  actingAs?: string | null;
   user: { name?: string | null; email?: string | null; image?: string | null };
   credits?: number;
 }
@@ -98,7 +101,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-export function Sidebar({ role, user, credits }: SidebarProps) {
+export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProps) {
   const pathname = usePathname();
   const userRank = ROLE_RANK[role] ?? 0;
   const isAdmin = userRank >= ROLE_RANK["admin"];
@@ -157,6 +160,13 @@ export function Sidebar({ role, user, credits }: SidebarProps) {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Superadmin-only role switcher */}
+      {realRole === "superadmin" && (
+        <div className="px-3 py-2 border-t border-line">
+          <RoleSwitcher actingAs={actingAs ?? null} />
         </div>
       )}
 
