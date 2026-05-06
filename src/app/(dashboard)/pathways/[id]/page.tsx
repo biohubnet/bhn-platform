@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PathwayEnrollButton } from "@/components/lms/PathwayEnrollButton";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
+import { PathwayEnrollmentSettings } from "@/components/admin/PathwayEnrollmentSettings";
+import { resolvePathwayWindow, waitlistPosition } from "@/lib/pathway-enrollment";
 
 interface PathwayCourseRow {
   id: string;
@@ -45,6 +47,10 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
   const enrollment = await prisma.pathwayEnrollment.findUnique({
     where: { userId_pathwayId: { userId, pathwayId: id } },
   });
+  const window = await resolvePathwayWindow(id);
+  const queuePos = enrollment?.status === "waitlisted"
+    ? await waitlistPosition(id, enrollment.id)
+    : null;
 
   const courseIds = pathway.courses.map((pc) => pc.courseId);
   const myCourseEnrollments = await prisma.enrollment.findMany({
@@ -108,10 +114,46 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
               />
             )}
             {!isStaff && !enrollment && pathway.status === "published" && (
-              <PathwayEnrollButton pathwayId={pathway.id} />
+              <PathwayEnrollButton
+                pathwayId={pathway.id}
+                windowState={window?.state ?? "closed"}
+                windowReason={window?.reason ?? null}
+                allowWaitlist={!!window?.config.allowWaitlist}
+              />
             )}
-            {enrollment && (
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 min-w-[200px]">
+            {enrollment && enrollment.status === "pending" && (
+              <div className="bg-white/10 backdrop-blur-md border border-amber-300/40 rounded-xl px-4 py-3 min-w-[220px]">
+                <p className="text-xs uppercase tracking-wider text-amber-200 mb-1">Request submitted</p>
+                <p className="text-base font-bold">Pending admin review</p>
+                <p className="text-xs text-brand-100 mt-1.5">We&apos;ll let you know as soon as it&apos;s decided.</p>
+              </div>
+            )}
+            {enrollment && enrollment.status === "waitlisted" && (
+              <div className="bg-white/10 backdrop-blur-md border border-amber-300/40 rounded-xl px-4 py-3 min-w-[220px]">
+                <p className="text-xs uppercase tracking-wider text-amber-200 mb-1">On the waitlist</p>
+                <p className="text-2xl font-bold">{queuePos != null ? `#${queuePos}` : "—"}</p>
+                <p className="text-xs text-brand-100 mt-1.5">
+                  We&apos;ll move you in as seats open up.
+                </p>
+              </div>
+            )}
+            {enrollment && enrollment.status === "rejected" && (
+              <div className="bg-white/10 backdrop-blur-md border border-rose-300/40 rounded-xl px-4 py-3 min-w-[220px]">
+                <p className="text-xs uppercase tracking-wider text-rose-200 mb-1">Request not approved</p>
+                {enrollment.reviewerNote && (
+                  <p className="text-xs text-brand-100 leading-relaxed">{enrollment.reviewerNote}</p>
+                )}
+                <PathwayEnrollButton
+                  pathwayId={pathway.id}
+                  windowState={window?.state ?? "closed"}
+                  windowReason={window?.reason ?? null}
+                  allowWaitlist={!!window?.config.allowWaitlist}
+                  reapply
+                />
+              </div>
+            )}
+            {enrollment && (enrollment.status === "approved" || enrollment.status === "completed") && (
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 min-w-[220px]">
                 <p className="text-xs text-brand-200 mb-1">Your progress</p>
                 <p className="text-2xl font-bold">{progress}%</p>
                 <div className="mt-2 h-1.5 bg-white/20 rounded-full overflow-hidden">
@@ -123,6 +165,17 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
       </div>
+
+      {/* Admin enrollment settings card */}
+      {isStaff && (
+        <PathwayEnrollmentSettings
+          pathwayId={pathway.id}
+          enrollmentStatus={pathway.enrollmentStatus}
+          enrollmentClosesAt={pathway.enrollmentClosesAt?.toISOString() ?? null}
+          capacity={pathway.capacity ?? null}
+          allowWaitlist={pathway.allowWaitlist}
+        />
+      )}
 
       {/* Certificate banner */}
       {certificate && (

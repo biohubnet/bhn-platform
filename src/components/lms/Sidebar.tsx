@@ -57,6 +57,7 @@ const adminItems: NavItem[] = [
   { label: "Groups", href: "/admin/groups", icon: UsersRound, minRole: "admin" },
   { label: "Credit applications", href: "/admin/credit-applications", icon: CoinsIcon, minRole: "admin" },
   { label: "Role requests", href: "/admin/role-requests", icon: UserCog, minRole: "admin" },
+  { label: "Pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers, minRole: "admin" },
   { label: "Certificates", href: "/admin/certificates", icon: Award, minRole: "admin" },
   { label: "Announcements", href: "/admin/announcements", icon: Megaphone, minRole: "admin" },
   { label: "Analytics", href: "/admin/analytics", icon: LineChart, minRole: "admin" },

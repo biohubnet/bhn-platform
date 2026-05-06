@@ -293,6 +293,13 @@ model Pathway {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Enrollment management
+  enrollmentStatus    String    @default("open")   // open | closed | full
+  enrollmentOpensAt   DateTime?
+  enrollmentClosesAt  DateTime?
+  capacity            Int?
+  allowWaitlist       Boolean   @default(true)
+
   courses      PathwayCourse[]
   enrollments  PathwayEnrollment[]
   certificates Certificate[]
@@ -313,11 +320,19 @@ model PathwayEnrollment {
   id          String    @id @default(cuid())
   userId      String
   pathwayId   String
-  status      String    @default("active") // active | completed
-  enrolledAt  DateTime  @default(now())
-  completedAt DateTime?
-  pathway     Pathway   @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  // pending | approved | rejected | waitlisted | withdrawn | completed
+  status        String    @default("pending")
+  requestReason String?
+  reviewerId    String?
+  reviewerNote  String?
+  reviewedAt    DateTime?
+  enrolledAt    DateTime  @default(now())  // request created
+  approvedAt    DateTime?
+  completedAt   DateTime?
+  pathway       Pathway   @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+
   @@unique([userId, pathwayId])
+  @@index([pathwayId, status, enrolledAt])
 }
 
 /// Application from a trainee for additional starter credits beyond the

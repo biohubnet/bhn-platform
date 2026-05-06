@@ -58,7 +58,7 @@ export async function onCourseCompleted(userId: string, courseId: string) {
   const memberships = await prisma.pathwayEnrollment.findMany({
     where: {
       userId,
-      status: "active",
+      status: "approved",
       pathway: { courses: { some: { courseId } } },
     },
     select: { pathwayId: true },

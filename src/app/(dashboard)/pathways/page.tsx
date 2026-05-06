@@ -85,8 +85,12 @@ export default async function PathwaysPage() {
                     </h3>
                     {myStatus === "completed" ? (
                       <Badge tone="success">Completed</Badge>
-                    ) : myStatus === "active" ? (
+                    ) : myStatus === "approved" ? (
                       <Badge tone="brand">Enrolled</Badge>
+                    ) : myStatus === "pending" ? (
+                      <Badge tone="amber">Requested</Badge>
+                    ) : myStatus === "waitlisted" ? (
+                      <Badge tone="warning">Waitlist</Badge>
                     ) : isStaff && p.status === "draft" ? (
                       <Badge tone="warning">Draft</Badge>
                     ) : null}
