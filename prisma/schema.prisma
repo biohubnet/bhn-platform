@@ -22,6 +22,11 @@ model User {
   lastLoginAt   DateTime?
   newsletterSubscribed   Boolean   @default(false)
   newsletterSubscribedAt DateTime?
+  phone         String?
+  bio           String?
+  organization  String?
+  jobTitle      String?
+  country       String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -38,6 +43,8 @@ model User {
   auditLogs          AuditLog[]
   creditApplications CreditApplication[]   @relation("Applicant")
   reviewedApplications CreditApplication[] @relation("Reviewer")
+  roleRequests       RoleChangeRequest[]   @relation("RoleRequester")
+  reviewedRoleRequests RoleChangeRequest[] @relation("RoleReviewer")
 }
 
 model Account {
@@ -411,6 +418,28 @@ model PlatformSetting {
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
+}
+
+/// User-initiated request to change their own role. Admins review and
+/// approve or reject; on approval, the user's role is updated.
+model RoleChangeRequest {
+  id           String    @id @default(cuid())
+  userId       String
+  fromRole     String
+  toRole       String
+  reason       String?
+  status       String    @default("pending")  // pending | approved | rejected
+  reviewerId   String?
+  reviewerNote String?
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user     User  @relation("RoleRequester", fields: [userId],     references: [id], onDelete: Cascade)
+  reviewer User? @relation("RoleReviewer",  fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
 }
 
 /// User activity events. Lightweight, append-only audit of behavior used

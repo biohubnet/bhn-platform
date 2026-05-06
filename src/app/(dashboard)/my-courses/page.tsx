@@ -1,8 +1,10 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { cn, statusColor, formatDuration } from "@/lib/utils";
-import { Play, CheckCircle, Clock } from "lucide-react";
+import { cn, formatDuration } from "@/lib/utils";
+import { Play, CheckCircle, Clock, XCircle } from "lucide-react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Badge } from "@/components/ui/Badge";
 
 interface MyEnrollment {
   id: string;
@@ -11,6 +13,7 @@ interface MyEnrollment {
   progress: number;
   score: number | null;
   enrolledAt: Date;
+  completedAt: Date | null;
   course: {
     id: string;
     title: string;
@@ -18,6 +21,15 @@ interface MyEnrollment {
     scormPackage: { id: string; version: string } | null;
     _count: { modules: number };
   };
+}
+
+const COMPLETED_STATES = new Set(["completed", "passed", "complete"]);
+const FAILED_STATES = new Set(["failed", "fail"]);
+function classifyStatus(status: string, progress: number) {
+  if (COMPLETED_STATES.has(status)) return "completed" as const;
+  if (FAILED_STATES.has(status)) return "failed" as const;
+  if (progress > 0) return "in_progress" as const;
+  return "active" as const;
 }
 
 export default async function MyCoursesPage() {
@@ -37,104 +49,134 @@ export default async function MyCoursesPage() {
     orderBy: { enrolledAt: "desc" },
   }) as MyEnrollment[];
 
-  const active = enrollments.filter((e) => e.status === "active");
-  const completed = enrollments.filter((e) => e.status === "completed");
-
-  function EnrollmentRow({ e }: { e: MyEnrollment }) {
-    return (
-      <div className="flex items-center gap-4 p-4 bg-card rounded-xl border border-line hover:border-brand-200 transition-colors">
-        <div className="w-10 h-10 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
-          {e.status === "completed" ? (
-            <CheckCircle size={18} className="text-green-600" />
-          ) : (
-            <Clock size={18} className="text-brand-600" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <Link
-            href={`/courses/${e.courseId}`}
-            className="font-medium text-fg text-sm hover:text-brand-600 transition-colors"
-          >
-            {e.course.title}
-          </Link>
-          <div className="flex items-center gap-3 mt-1">
-            <span className={cn("text-xs px-1.5 py-0.5 rounded", statusColor(e.status))}>
-              {e.status}
-            </span>
-            {e.course.duration && (
-              <span className="text-xs text-subtle">{formatDuration(e.course.duration)}</span>
-            )}
-            {e.score != null && (
-              <span className="text-xs text-muted">Score: {Math.round(e.score)}%</span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="text-right hidden sm:block">
-            <p className="text-xs text-subtle mb-1">{Math.round(e.progress)}%</p>
-            <div className="w-20 h-1.5 bg-raised rounded-full">
-              <div
-                className="h-1.5 bg-brand-500 rounded-full"
-                style={{ width: `${e.progress}%` }}
-              />
-            </div>
-          </div>
-          {e.course.scormPackage && (
-            <Link
-              href={`/player/${e.courseId}`}
-              className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-            >
-              <Play size={12} />
-              {e.status === "completed" ? "Review" : "Launch"}
-            </Link>
-          )}
-        </div>
-      </div>
-    );
+  const buckets = {
+    in_progress: [] as MyEnrollment[],
+    active: [] as MyEnrollment[],
+    completed: [] as MyEnrollment[],
+    failed: [] as MyEnrollment[],
+  };
+  for (const e of enrollments) {
+    buckets[classifyStatus(e.status, e.progress)].push(e);
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-fg">My Courses</h1>
-        <p className="text-muted text-sm mt-1">
-          {enrollments.length} total · {active.length} in progress · {completed.length} completed
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="My Courses"
+        description={
+          enrollments.length === 0
+            ? "Browse the catalog to start your first course."
+            : `${enrollments.length} enrolled · ${buckets.in_progress.length} in progress · ${buckets.completed.length} completed${buckets.failed.length ? ` · ${buckets.failed.length} failed` : ""}`
+        }
+      />
 
-      {active.length > 0 && (
-        <div>
-          <h2 className="text-base font-semibold text-fg mb-3">In Progress</h2>
-          <div className="space-y-2">
-            {active.map((e) => (
-              <EnrollmentRow key={e.id} e={e} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {completed.length > 0 && (
-        <div>
-          <h2 className="text-base font-semibold text-fg mb-3">Completed</h2>
-          <div className="space-y-2">
-            {completed.map((e) => (
-              <EnrollmentRow key={e.id} e={e} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {enrollments.length === 0 && (
+      {enrollments.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-xl border border-line">
           <p className="text-muted">No enrollments yet</p>
           <Link
             href="/courses"
-            className="inline-block mt-4 bg-brand-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-brand-700"
+            className="inline-block mt-4 bg-brand-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-brand-700 transition-colors"
           >
             Browse Courses
           </Link>
         </div>
+      ) : (
+        <div className="space-y-8">
+          <Section title="In progress" emptyHint="Courses you've started will show here." rows={buckets.in_progress} />
+          <Section title="Not yet started" emptyHint={null} rows={buckets.active} />
+          <Section title="Completed"  emptyHint={null} rows={buckets.completed} />
+          {buckets.failed.length > 0 && (
+            <Section title="Did not pass" emptyHint={null} rows={buckets.failed} />
+          )}
+        </div>
       )}
+    </div>
+  );
+}
+
+function Section({ title, rows, emptyHint }: { title: string; rows: MyEnrollment[]; emptyHint: string | null }) {
+  if (rows.length === 0 && !emptyHint) return null;
+  return (
+    <div>
+      <h2 className="text-base font-semibold text-fg mb-3">{title} <span className="text-subtle text-sm font-normal">· {rows.length}</span></h2>
+      {rows.length === 0 ? (
+        <p className="text-sm text-subtle px-4 py-3 bg-elevated/50 rounded-lg">{emptyHint}</p>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((e) => <Row key={e.id} e={e} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Row({ e }: { e: MyEnrollment }) {
+  const klass = classifyStatus(e.status, e.progress);
+  const tone =
+    klass === "completed" ? "success" as const :
+    klass === "failed"    ? "danger"  as const :
+    klass === "in_progress" ? "brand"  as const :
+                              "neutral" as const;
+  const Icon =
+    klass === "completed" ? CheckCircle :
+    klass === "failed"    ? XCircle :
+                            Clock;
+
+  return (
+    <div className="flex items-center gap-4 p-4 bg-card rounded-xl border border-line hover:border-brand-200 transition-colors">
+      <div className={cn(
+        "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+        klass === "completed" ? "bg-emerald-50 text-emerald-600" :
+        klass === "failed"    ? "bg-rose-50 text-rose-600" :
+                                "bg-brand-50 text-brand-600",
+      )}>
+        <Icon size={18} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <Link
+          href={`/courses/${e.courseId}`}
+          className="font-medium text-fg text-sm hover:text-brand-600 transition-colors"
+        >
+          {e.course.title}
+        </Link>
+        <div className="flex items-center gap-3 mt-1 flex-wrap">
+          <Badge tone={tone}>{e.status}</Badge>
+          {e.course.duration && (
+            <span className="text-xs text-subtle">{formatDuration(e.course.duration)}</span>
+          )}
+          {e.score != null && (
+            <span className="text-xs text-muted">Score: {Math.round(e.score)}%</span>
+          )}
+          {e.completedAt && (
+            <span className="text-xs text-subtle">Completed {new Date(e.completedAt).toLocaleDateString()}</span>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="text-right hidden sm:block">
+          <p className="text-xs text-subtle mb-1">{Math.round(e.progress)}%</p>
+          <div className="w-20 h-1.5 bg-raised rounded-full">
+            <div
+              className={cn(
+                "h-1.5 rounded-full transition-all",
+                klass === "completed" ? "bg-emerald-500" :
+                klass === "failed"    ? "bg-rose-500" :
+                                        "bg-brand-500"
+              )}
+              style={{ width: `${e.progress}%` }}
+            />
+          </div>
+        </div>
+        {e.course.scormPackage && (
+          <Link
+            href={`/player/${e.courseId}`}
+            className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Play size={12} />
+            {klass === "completed" ? "Review" : klass === "failed" ? "Retry" : "Launch"}
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

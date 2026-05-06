@@ -27,6 +27,7 @@ import {
   Sparkles,
   LineChart,
   Coins as CoinsIcon,
+  UserCog,
 } from "lucide-react";
 
 interface NavItem {
@@ -55,6 +56,7 @@ const adminItems: NavItem[] = [
   { label: "Enrollments", href: "/admin/enrollments", icon: ClipboardList, minRole: "admin" },
   { label: "Groups", href: "/admin/groups", icon: UsersRound, minRole: "admin" },
   { label: "Credit applications", href: "/admin/credit-applications", icon: CoinsIcon, minRole: "admin" },
+  { label: "Role requests", href: "/admin/role-requests", icon: UserCog, minRole: "admin" },
   { label: "Certificates", href: "/admin/certificates", icon: Award, minRole: "admin" },
   { label: "Announcements", href: "/admin/announcements", icon: Megaphone, minRole: "admin" },
   { label: "Analytics", href: "/admin/analytics", icon: LineChart, minRole: "admin" },
@@ -179,17 +181,17 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
 
       {/* User */}
       <div className="px-3 py-4 border-t border-line">
-        <div className="flex items-center gap-3 px-3 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-raised flex items-center justify-center text-sm font-medium text-muted">
+        <Link href="/profile" className="flex items-center gap-3 px-3 py-2 mb-1 rounded-lg hover:bg-elevated transition-colors group">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center text-sm font-bold shadow-sm">
             {user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "?"}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-fg truncate">
               {user.name ?? "User"}
             </p>
-            <p className="text-xs text-subtle truncate">{user.email}</p>
+            <p className="text-xs text-subtle truncate group-hover:text-muted">{user.email}</p>
           </div>
-        </div>
+        </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-muted hover:bg-elevated hover:text-fg transition-colors"
