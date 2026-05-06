@@ -20,6 +20,8 @@ model User {
   isActive      Boolean   @default(true)
   credits       Float     @default(5000)
   lastLoginAt   DateTime?
+  newsletterSubscribed   Boolean   @default(false)
+  newsletterSubscribedAt DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

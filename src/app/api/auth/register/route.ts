@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
-  const { name, email, password } = await req.json();
+  const { name, email, password, newsletter } = await req.json();
 
   if (!email || !password) {
     return NextResponse.json({ error: "Email and password required" }, { status: 400 });
@@ -17,14 +17,20 @@ export async function POST(req: NextRequest) {
   const hashed = await bcrypt.hash(password, 12);
   const userCount = await prisma.user.count();
 
+  const subscribed = newsletter === true;
   const user = await prisma.user.create({
     data: {
       name,
       email,
       password: hashed,
       role: userCount === 0 ? "superadmin" : "user",
+      newsletterSubscribed: subscribed,
+      newsletterSubscribedAt: subscribed ? new Date() : null,
     },
   });
+
+  // TODO: when a real ESP (Mailchimp / MailerLite / etc.) is wired in,
+  // enqueue a subscription job here for `email`. For now we record intent.
 
   return NextResponse.json({ id: user.id, email: user.email, role: user.role }, { status: 201 });
 }
