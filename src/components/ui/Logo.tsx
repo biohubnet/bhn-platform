@@ -6,15 +6,16 @@ interface LogoMarkProps {
 }
 
 /**
- * BHN Training mark: three stacked layers in brand gradient with a check on top.
- * Reads as "tiers of learning, certified" — distinct, scales cleanly to favicon size.
+ * BHN Training mark — a graduation cap (mortarboard) viewed top-down with
+ * a hanging tassel, set in a brand-gradient rounded tile. Reads instantly
+ * as "training / credentialed learning" at every size.
  */
 export function LogoMark({ size = 32, className }: LogoMarkProps) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 32 32"
+      viewBox="0 0 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
@@ -22,32 +23,46 @@ export function LogoMark({ size = 32, className }: LogoMarkProps) {
       className={cn("inline-block", className)}
     >
       <defs>
-        <linearGradient id="bhn-logo-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#5e8ff7" />
-          <stop offset="60%" stopColor="#2a4fdb" />
+        <linearGradient id="bhn-tile" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#3b6cef" />
           <stop offset="100%" stopColor="#1c2f7a" />
         </linearGradient>
-        <linearGradient id="bhn-logo-grad-2" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#3b6cef" />
-          <stop offset="100%" stopColor="#1e3499" />
+        <linearGradient id="bhn-cap" x1="20" y1="6" x2="20" y2="26" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#dbe7fe" />
         </linearGradient>
       </defs>
-      {/* Background tile with subtle inner shadow feel */}
-      <rect x="0" y="0" width="32" height="32" rx="8" fill="url(#bhn-logo-grad-2)" />
-      {/* Layer 3 (back, faintest) */}
-      <rect x="6" y="20.5" width="20" height="5" rx="1.5" fill="white" fillOpacity="0.25" />
-      {/* Layer 2 (middle) */}
-      <rect x="6" y="14" width="20" height="5" rx="1.5" fill="white" fillOpacity="0.55" />
-      {/* Layer 1 (top, fully white) */}
-      <rect x="6" y="6.5" width="20" height="6" rx="1.5" fill="url(#bhn-logo-grad)" stroke="white" strokeWidth="0.5" />
-      {/* Check on top layer */}
+
+      {/* Background tile */}
+      <rect width="40" height="40" rx="9" fill="url(#bhn-tile)" />
+
+      {/* Mortarboard (rhombus) — the cap from above */}
       <path
-        d="M11.5 9.6 L13.6 11.7 L17.5 7.8"
-        stroke="white"
+        d="M20 8 L33 16 L20 24 L7 16 Z"
+        fill="url(#bhn-cap)"
+        stroke="#ffffff"
+        strokeWidth="0.5"
+      />
+
+      {/* Center button */}
+      <circle cx="20" cy="16" r="1.6" fill="#2a4fdb" />
+
+      {/* Tassel cord descending from the right corner */}
+      <path
+        d="M33 16 Q33 20 31.5 23"
+        stroke="#fbbf24"
         strokeWidth="1.6"
         strokeLinecap="round"
-        strokeLinejoin="round"
         fill="none"
+      />
+      {/* Tassel knot */}
+      <circle cx="31.5" cy="23.5" r="1.2" fill="#fbbf24" />
+      {/* Tassel strands */}
+      <path
+        d="M30.6 24.6 L30.2 28 M31.5 24.7 L31.5 28.3 M32.4 24.6 L32.8 28"
+        stroke="#fbbf24"
+        strokeWidth="1"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -59,12 +74,11 @@ interface LogoProps {
   className?: string;
 }
 
-const markSize = { sm: 24, md: 32, lg: 40 };
+const markSize = { sm: 28, md: 36, lg: 44 };
 const wordmarkSize = { sm: "text-sm", md: "text-base", lg: "text-lg" };
-const subSize = { sm: "text-[9px]", md: "text-[10px]", lg: "text-xs" };
 
 /**
- * Mark + wordmark, suitable for headers, sidebars, splash.
+ * Mark + wordmark for headers, sidebars, splash screens.
  * `variant="light"` for use on dark gradient backgrounds.
  */
 export function Logo({ size = "md", variant = "default", className }: LogoProps) {
@@ -74,10 +88,7 @@ export function Logo({ size = "md", variant = "default", className }: LogoProps)
       <LogoMark size={markSize[size]} className="drop-shadow-sm" />
       <div className="leading-tight">
         <p className={cn("font-bold tracking-tight", wordmarkSize[size], isLight ? "text-white" : "text-slate-900")}>
-          BHN <span className={cn("font-semibold", isLight ? "text-brand-100" : "text-brand-600")}>Training</span>
-        </p>
-        <p className={cn("uppercase tracking-[0.18em] font-medium", subSize[size], isLight ? "text-brand-200" : "text-slate-400")}>
-          Learning · Certified
+          BHN<span className={cn("font-medium ml-1.5", isLight ? "text-brand-100" : "text-brand-600")}>Training</span>
         </p>
       </div>
     </div>

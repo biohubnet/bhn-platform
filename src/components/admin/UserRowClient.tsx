@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const ROLES = ["user", "evaluating", "admin", "superadmin"];
+const ROLES = ["user", "evaluating", "instructor", "admin", "superadmin"];
 
 interface UserData {
   id: string;
