@@ -26,10 +26,10 @@ export function CourseCard({ course, role }: CourseCardProps) {
   return (
     <Link
       href={`/courses/${course.id}`}
-      className="bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all overflow-hidden group flex flex-col"
+      className="bg-white rounded-xl border border-gray-200 hover:border-brand-300 hover:shadow-md transition-all overflow-hidden group flex flex-col"
     >
       {/* Thumbnail */}
-      <div className="h-36 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+      <div className="h-36 bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center">
         {course.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={course.thumbnail} alt="" className="w-full h-full object-cover" />
@@ -40,7 +40,7 @@ export function CourseCard({ course, role }: CourseCardProps) {
 
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
+          <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2 group-hover:text-brand-600 transition-colors">
             {course.title}
           </h3>
           {isStaff && (

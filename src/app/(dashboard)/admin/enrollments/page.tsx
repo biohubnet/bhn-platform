@@ -83,7 +83,7 @@ export default async function AdminEnrollmentsPage() {
                     <div className="flex items-center gap-2">
                       <div className="flex-1 bg-gray-100 rounded-full h-1.5 w-16">
                         <div
-                          className="bg-blue-500 h-1.5 rounded-full"
+                          className="bg-brand-500 h-1.5 rounded-full"
                           style={{ width: `${e.progress}%` }}
                         />
                       </div>

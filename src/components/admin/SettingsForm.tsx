@@ -77,7 +77,7 @@ export function SettingsForm({
         <button
           type="submit"
           disabled={saving}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="bg-brand-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
         >
           {saving ? "Saving…" : "Save Settings"}
         </button>

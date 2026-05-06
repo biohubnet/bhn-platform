@@ -75,7 +75,7 @@ export default async function AdminPage() {
         ].map((stat) => {
           const Icon = stat.icon;
           const colors: Record<string, string> = {
-            blue: "bg-blue-50 text-blue-600",
+            blue: "bg-brand-50 text-brand-600",
             amber: "bg-amber-50 text-amber-600",
             green: "bg-green-50 text-green-600",
             purple: "bg-purple-50 text-purple-600",
@@ -98,7 +98,7 @@ export default async function AdminPage() {
       {/* Quick links */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Manage Users", href: "/admin/users", color: "bg-blue-600" },
+          { label: "Manage Users", href: "/admin/users", color: "bg-brand-600" },
           { label: "Enrollments", href: "/admin/enrollments", color: "bg-indigo-600" },
           { label: "Groups", href: "/admin/groups", color: "bg-violet-600" },
           { label: "Compliance Report", href: "/admin/reports", color: "bg-green-600" },
@@ -122,7 +122,7 @@ export default async function AdminPage() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-semibold text-gray-900">Recent Enrollments</h2>
-            <Link href="/admin/enrollments" className="text-sm text-blue-600 hover:underline">View all</Link>
+            <Link href="/admin/enrollments" className="text-sm text-brand-600 hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-gray-50">
             {(recentEnrollments as RecentEnrollment[]).map((e: RecentEnrollment) => (
@@ -148,7 +148,7 @@ export default async function AdminPage() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-semibold text-gray-900">New Users</h2>
-            <Link href="/admin/users" className="text-sm text-blue-600 hover:underline">View all</Link>
+            <Link href="/admin/users" className="text-sm text-brand-600 hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-gray-50">
             {(recentUsers as RecentUser[]).map((u: RecentUser) => (
@@ -161,7 +161,7 @@ export default async function AdminPage() {
                   <span className={cn(
                     "text-xs px-2 py-0.5 rounded-full",
                     u.role === "superadmin" ? "bg-red-100 text-red-700" :
-                    u.role === "admin" ? "bg-blue-100 text-blue-700" :
+                    u.role === "admin" ? "bg-brand-100 text-brand-700" :
                     u.role === "evaluating" ? "bg-amber-100 text-amber-700" :
                     "bg-gray-100 text-gray-600"
                   )}>

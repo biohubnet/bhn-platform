@@ -35,7 +35,7 @@ export function NewCourseButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
       >
         <Plus size={16} />
         New Course
@@ -55,7 +55,7 @@ export function NewCourseButton() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
                 <input
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="Course title"
@@ -64,7 +64,7 @@ export function NewCourseButton() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   rows={3}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -75,7 +75,7 @@ export function NewCourseButton() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <input
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     value={form.category}
                     onChange={(e) => setForm({ ...form, category: e.target.value })}
                     placeholder="e.g. Safety"
@@ -84,7 +84,7 @@ export function NewCourseButton() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                   <select
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     value={form.courseType}
                     onChange={(e) => setForm({ ...form, courseType: e.target.value })}
                   >
@@ -103,7 +103,7 @@ export function NewCourseButton() {
                   type="number"
                   min={0}
                   max={100}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   value={form.passingScore}
                   onChange={(e) => setForm({ ...form, passingScore: parseInt(e.target.value) })}
                 />
@@ -120,7 +120,7 @@ export function NewCourseButton() {
               <button
                 onClick={create}
                 disabled={!form.title || loading}
-                className="flex-1 bg-blue-600 disabled:opacity-60 text-white text-sm font-medium py-2 rounded-lg hover:bg-blue-700"
+                className="flex-1 bg-brand-600 disabled:opacity-60 text-white text-sm font-medium py-2 rounded-lg hover:bg-brand-700"
               >
                 {loading ? "Creating…" : "Create"}
               </button>

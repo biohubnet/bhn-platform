@@ -55,7 +55,7 @@ export default async function CourseDetailPage({
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               {course.category && (
-                <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-medium">
+                <span className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded font-medium">
                   {course.category}
                 </span>
               )}
@@ -136,7 +136,7 @@ export default async function CourseDetailPage({
             {enrollment && course.scormPackage && (
               <Link
                 href={`/player/${id}`}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
               >
                 <Play size={14} />
                 {scormSession ? "Continue" : "Start Course"}
@@ -145,7 +145,7 @@ export default async function CourseDetailPage({
             {enrollment && !course.scormPackage && course.modules.length > 0 && (
               <Link
                 href={`/courses/${id}/learn`}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
               >
                 <Play size={14} />
                 {enrollment.progress > 0 ? "Continue Learning" : "Start Learning"}
@@ -163,7 +163,7 @@ export default async function CourseDetailPage({
             </div>
             <div className="h-2 bg-gray-100 rounded-full">
               <div
-                className="h-2 bg-blue-500 rounded-full transition-all"
+                className="h-2 bg-brand-500 rounded-full transition-all"
                 style={{ width: `${enrollment.progress}%` }}
               />
             </div>
@@ -248,7 +248,7 @@ export default async function CourseDetailPage({
                 {enrollment && (
                   <Link
                     href={`/assessments/${a.id}`}
-                    className="text-sm text-blue-600 hover:underline font-medium"
+                    className="text-sm text-brand-600 hover:underline font-medium"
                   >
                     Take
                   </Link>

@@ -128,7 +128,7 @@ export default async function GradebookPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-20 h-1.5 bg-gray-100 rounded-full">
                           <div
-                            className="h-1.5 bg-blue-500 rounded-full"
+                            className="h-1.5 bg-brand-500 rounded-full"
                             style={{ width: `${e.progress}%` }}
                           />
                         </div>

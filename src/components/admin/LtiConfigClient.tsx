@@ -76,7 +76,7 @@ export function LtiConfigClient({ configs: initial }: { configs: LtiConfig[] }) 
       <div className="flex justify-end">
         <button
           onClick={() => setShow(true)}
-          className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-brand-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-brand-700"
         >
           + Add LTI Platform
         </button>
@@ -175,7 +175,7 @@ export function LtiConfigClient({ configs: initial }: { configs: LtiConfig[] }) 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium"
+                  className="flex-1 bg-brand-600 text-white rounded-lg py-2 text-sm font-medium"
                 >
                   {loading ? "Saving…" : "Add Platform"}
                 </button>

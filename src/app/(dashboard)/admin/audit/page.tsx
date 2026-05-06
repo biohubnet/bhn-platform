@@ -42,7 +42,7 @@ export default async function AdminAuditPage({
     "user.create": "bg-green-50 text-green-700",
     "user.deactivate": "bg-red-50 text-red-600",
     "user.reactivate": "bg-green-50 text-green-700",
-    "user.update": "bg-blue-50 text-blue-600",
+    "user.update": "bg-brand-50 text-brand-600",
     "user.delete": "bg-red-100 text-red-700",
     "enrollment.create": "bg-indigo-50 text-indigo-600",
     "enrollment.delete": "bg-orange-50 text-orange-600",

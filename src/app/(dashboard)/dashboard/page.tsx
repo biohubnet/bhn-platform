@@ -1,7 +1,11 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { BookOpen, Award, Clock, TrendingUp } from "lucide-react";
+import {
+  BookOpen, Award, Clock, TrendingUp, Layers, Coins, ArrowRight,
+  GraduationCap, Sparkles, Calendar,
+} from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -18,107 +22,235 @@ interface ScormSessionWithCourse {
   attemptNumber: number;
   status: string;
   score: number | null;
-  package: {
-    course: { id: string; title: string };
+  updatedAt: Date;
+  package: { course: { id: string; title: string } };
+}
+
+interface PathwayEnrollmentRow {
+  id: string;
+  status: string;
+  pathway: {
+    id: string;
+    title: string;
+    category: string | null;
+    courses: { courseId: string }[];
   };
+}
+
+interface FeaturedPathwayRow {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  _count: { courses: number; enrollments: number };
 }
 
 export default async function DashboardPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
+  const firstName = session!.user?.name?.split(" ")[0] ?? "Learner";
 
-  const [enrollments, certificates, recentActivity] = await Promise.all([
-    prisma.enrollment.findMany({
-      where: { userId },
-      include: { course: { select: { id: true, title: true, category: true, thumbnail: true } } },
-      orderBy: { enrolledAt: "desc" },
-      take: 6,
-    }) as Promise<EnrollmentWithCourse[]>,
-    prisma.certificate.count({ where: { userId } }),
-    prisma.scormSession.findMany({
-      where: { userId },
-      include: { package: { include: { course: { select: { id: true, title: true } } } } },
-      orderBy: { updatedAt: "desc" },
-      take: 5,
-    }) as Promise<ScormSessionWithCourse[]>,
-  ]);
+  const [enrollments, certificates, recentActivity, user, myPathways, featuredPathways, suggestedCourses] =
+    await Promise.all([
+      prisma.enrollment.findMany({
+        where: { userId },
+        include: { course: { select: { id: true, title: true, category: true, thumbnail: true } } },
+        orderBy: { enrolledAt: "desc" },
+        take: 12,
+      }) as Promise<EnrollmentWithCourse[]>,
+      prisma.certificate.count({ where: { userId, revokedAt: null } }),
+      prisma.scormSession.findMany({
+        where: { userId },
+        include: { package: { include: { course: { select: { id: true, title: true } } } } },
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+      }) as Promise<ScormSessionWithCourse[]>,
+      prisma.user.findUnique({ where: { id: userId }, select: { credits: true, role: true } }),
+      prisma.pathwayEnrollment.findMany({
+        where: { userId },
+        include: {
+          pathway: {
+            select: {
+              id: true,
+              title: true,
+              category: true,
+              courses: { select: { courseId: true } },
+            },
+          },
+        },
+        orderBy: { enrolledAt: "desc" },
+        take: 4,
+      }) as Promise<PathwayEnrollmentRow[]>,
+      prisma.pathway.findMany({
+        where: { status: "published" },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          category: true,
+          _count: { select: { courses: true, enrollments: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 3,
+      }) as Promise<FeaturedPathwayRow[]>,
+      prisma.course.findMany({
+        where: {
+          status: "published",
+          enrollments: { none: { userId } },
+        },
+        select: { id: true, title: true, category: true, duration: true },
+        orderBy: { createdAt: "desc" },
+        take: 4,
+      }),
+    ]);
 
   const completed = enrollments.filter((e) => e.status === "completed").length;
   const inProgress = enrollments.filter((e) => e.status === "active").length;
 
+  // Compute pathway progress for "my pathways"
+  const courseIdsAcrossPathways = Array.from(
+    new Set(myPathways.flatMap((p) => p.pathway.courses.map((c) => c.courseId)))
+  );
+  const courseEnrollmentMap = new Map(
+    enrollments
+      .filter((e) => courseIdsAcrossPathways.includes(e.courseId))
+      .map((e) => [e.courseId, e])
+  );
+
+  const activeContinue = enrollments.filter((e) => e.status === "active").slice(0, 3);
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {session!.user?.name?.split(" ")[0] ?? "Learner"}
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">Here&apos;s your learning progress</p>
+      {/* Hero welcome */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 text-white shadow-xl shadow-brand-900/20 px-8 py-8">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-brand-300/10 rounded-full blur-3xl" />
+        <div className="relative grid md:grid-cols-2 gap-6 items-center">
+          <div>
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-brand-200">
+              <Sparkles size={12} /> {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+            </span>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">
+              Welcome back, {firstName}.
+            </h1>
+            <p className="mt-3 text-brand-100 leading-relaxed max-w-lg">
+              {inProgress > 0
+                ? `You have ${inProgress} course${inProgress === 1 ? "" : "s"} in progress. Pick up where you left off.`
+                : completed > 0
+                  ? `You've completed ${completed} course${completed === 1 ? "" : "s"}. Keep the streak going.`
+                  : "Browse the catalog or jump into a training pathway to get started."}
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Link
+                href={inProgress > 0 ? "/my-courses" : "/courses"}
+                className="inline-flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-5 py-2.5 rounded-lg shadow-md transition-all hover:-translate-y-0.5"
+              >
+                {inProgress > 0 ? "Continue learning" : "Browse courses"} <ArrowRight size={16} />
+              </Link>
+              <Link
+                href="/pathways"
+                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 text-white hover:bg-white/20 text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+              >
+                <Layers size={16} /> Explore pathways
+              </Link>
+            </div>
+          </div>
+
+          {/* Side stat panel */}
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { icon: BookOpen, label: "Enrolled", value: enrollments.length },
+              { icon: Clock, label: "In progress", value: inProgress },
+              { icon: TrendingUp, label: "Completed", value: completed },
+              { icon: Award, label: "Certificates", value: certificates },
+            ].map((s) => {
+              const Icon = s.icon;
+              return (
+                <div key={s.label} className="bg-white/10 backdrop-blur border border-white/15 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-2 text-brand-100 text-xs">
+                    <Icon size={12} /> {s.label}
+                  </div>
+                  <p className="text-2xl font-bold mt-1">{s.value}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Quick actions row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Enrolled Courses", value: enrollments.length, icon: BookOpen, color: "blue" },
-          { label: "In Progress", value: inProgress, icon: Clock, color: "amber" },
-          { label: "Completed", value: completed, icon: TrendingUp, color: "green" },
-          { label: "Certificates", value: certificates, icon: Award, color: "purple" },
-        ].map((stat) => {
-          const Icon = stat.icon;
-          const colors: Record<string, string> = {
-            blue: "bg-blue-50 text-blue-600",
-            amber: "bg-amber-50 text-amber-600",
-            green: "bg-green-50 text-green-600",
-            purple: "bg-purple-50 text-purple-600",
+          { href: "/courses", label: "Catalog", icon: BookOpen, tone: "brand" },
+          { href: "/pathways", label: "Pathways", icon: Layers, tone: "violet" },
+          { href: "/certificates", label: "Certificates", icon: Award, tone: "amber" },
+          { href: "/credits", label: `${(user?.credits ?? 0).toLocaleString()} Credits`, icon: Coins, tone: "emerald" },
+        ].map((a) => {
+          const Icon = a.icon;
+          const tones: Record<string, string> = {
+            brand: "from-brand-500 to-brand-700 shadow-brand-600/20",
+            violet: "from-violet-500 to-violet-700 shadow-violet-600/20",
+            amber: "from-amber-400 to-amber-600 shadow-amber-500/20",
+            emerald: "from-emerald-500 to-emerald-700 shadow-emerald-600/20",
           };
           return (
-            <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
-              <div className={`inline-flex p-2 rounded-lg mb-3 ${colors[stat.color]}`}>
+            <Link
+              key={a.href}
+              href={a.href}
+              className="group bg-white border border-slate-200 rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-md hover:border-brand-200 transition-all flex items-center gap-3"
+            >
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${tones[a.tone]} text-white flex items-center justify-center shadow-md shrink-0`}>
                 <Icon size={18} />
               </div>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-sm text-gray-500 mt-0.5">{stat.label}</p>
-            </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-900 truncate">{a.label}</p>
+                <p className="text-xs text-slate-400 mt-0.5">Open →</p>
+              </div>
+            </Link>
           );
         })}
       </div>
 
-      {/* Continue Learning */}
-      {enrollments.length > 0 && (
-        <div>
+      {/* Continue learning */}
+      {activeContinue.length > 0 && (
+        <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Continue Learning</h2>
-            <Link href="/my-courses" className="text-sm text-blue-600 hover:underline">
-              View all
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Continue learning</h2>
+              <p className="text-sm text-slate-500">Pick up where you left off.</p>
+            </div>
+            <Link href="/my-courses" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+              View all →
             </Link>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {enrollments.filter((e) => e.status === "active").slice(0, 3).map((enrollment: EnrollmentWithCourse) => (
+            {activeContinue.map((enrollment) => (
               <Link
                 key={enrollment.id}
                 href={`/courses/${enrollment.courseId}`}
-                className="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all"
+                className="group bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-md hover:-translate-y-0.5 transition-all"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <BookOpen size={18} className="text-blue-600" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center shrink-0 group-hover:from-brand-200 transition-colors">
+                    <BookOpen size={18} className="text-brand-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 text-sm truncate">
+                    <p className="font-semibold text-slate-900 text-sm leading-tight group-hover:text-brand-700 transition-colors line-clamp-2">
                       {enrollment.course.title}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-slate-400 mt-1">
                       {enrollment.course.category ?? "General"}
                     </p>
                   </div>
                 </div>
                 <div className="mt-4">
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <div className="flex justify-between text-xs text-slate-500 mb-1.5">
                     <span>Progress</span>
-                    <span>{Math.round(enrollment.progress)}%</span>
+                    <span className="font-semibold text-slate-700">{Math.round(enrollment.progress)}%</span>
                   </div>
-                  <div className="h-1.5 bg-gray-100 rounded-full">
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className="h-1.5 bg-blue-500 rounded-full"
+                      className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all"
                       style={{ width: `${enrollment.progress}%` }}
                     />
                   </div>
@@ -126,47 +258,168 @@ export default async function DashboardPage() {
               </Link>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Recent Activity */}
-      {recentActivity.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
-          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-            {recentActivity.map((s: ScormSessionWithCourse) => (
-              <div key={s.id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {s.package.course.title}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Attempt #{s.attemptNumber} · {s.status}
-                  </p>
-                </div>
-                <div className="text-right">
-                  {s.score != null && (
-                    <span className="text-sm font-semibold text-gray-700">
-                      {Math.round(s.score)}%
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+      {/* My pathways */}
+      {myPathways.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Your pathways</h2>
+              <p className="text-sm text-slate-500">Multi-course journeys you've enrolled in.</p>
+            </div>
+            <Link href="/pathways" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+              All pathways →
+            </Link>
           </div>
-        </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {myPathways.map((pe) => {
+              const total = pe.pathway.courses.length;
+              const done = pe.pathway.courses.filter(
+                (c) => courseEnrollmentMap.get(c.courseId)?.status === "completed"
+              ).length;
+              const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+              return (
+                <Link
+                  key={pe.id}
+                  href={`/pathways/${pe.pathway.id}`}
+                  className="group bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 text-white flex items-center justify-center shadow-md shadow-violet-600/20 shrink-0">
+                      <Layers size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-slate-900 truncate group-hover:text-brand-700 transition-colors">
+                          {pe.pathway.title}
+                        </p>
+                        {pe.status === "completed" && <Badge tone="success">Done</Badge>}
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {pe.pathway.category ?? "Pathway"} · {done}/{total} complete
+                      </p>
+                    </div>
+                  </div>
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
       )}
 
+      {/* Two column lower section */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Recent activity */}
+        <section className="lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Recent activity</h2>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            {recentActivity.length === 0 ? (
+              <div className="p-12 text-center">
+                <Calendar size={32} className="mx-auto text-slate-300 mb-3" />
+                <p className="text-sm text-slate-500">No activity yet.</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-50">
+                {recentActivity.map((s) => {
+                  const tone = s.status === "passed" || s.status === "completed"
+                    ? "success" as const
+                    : s.status === "failed" ? "danger" as const : "neutral" as const;
+                  return (
+                    <li key={s.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/50">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+                          <GraduationCap size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-900 truncate">{s.package.course.title}</p>
+                          <p className="text-xs text-slate-400">Attempt #{s.attemptNumber} · {new Date(s.updatedAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 pl-3">
+                        {s.score != null && (
+                          <span className="text-sm font-semibold text-slate-700">{Math.round(s.score)}%</span>
+                        )}
+                        <Badge tone={tone}>{s.status}</Badge>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </section>
+
+        {/* Right column: featured + suggested */}
+        <aside className="space-y-6">
+          {featuredPathways.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <Layers size={14} className="text-violet-500" /> Featured pathways
+              </h3>
+              <div className="space-y-2">
+                {featuredPathways.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/pathways/${p.id}`}
+                    className="block bg-white border border-slate-200 rounded-xl p-3 hover:border-brand-300 hover:shadow-sm transition-all group"
+                  >
+                    <p className="text-sm font-medium text-slate-900 group-hover:text-brand-700 line-clamp-1">{p.title}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {p._count.courses} courses · {p._count.enrollments} learners
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {suggestedCourses.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <Sparkles size={14} className="text-amber-500" /> Suggested for you
+              </h3>
+              <div className="space-y-2">
+                {suggestedCourses.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/courses/${c.id}`}
+                    className="block bg-white border border-slate-200 rounded-xl p-3 hover:border-brand-300 hover:shadow-sm transition-all group"
+                  >
+                    <p className="text-sm font-medium text-slate-900 group-hover:text-brand-700 line-clamp-1">{c.title}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {c.category ?? "General"}{c.duration ? ` · ${c.duration} min` : ""}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </aside>
+      </div>
+
+      {/* Empty state if truly nothing */}
       {enrollments.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-          <BookOpen size={40} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-600 font-medium">No courses yet</p>
-          <p className="text-sm text-gray-400 mt-1">Browse the catalog to get started</p>
+        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
+            <BookOpen size={20} />
+          </div>
+          <p className="text-slate-700 font-semibold">Ready to start your first course?</p>
+          <p className="text-sm text-slate-500 mt-1">Browse the catalog to find something for your role.</p>
           <Link
             href="/courses"
-            className="inline-block mt-4 bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-blue-700"
+            className="inline-flex items-center gap-2 mt-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg shadow-md shadow-brand-600/20 transition-all hover:-translate-y-0.5"
           >
-            Browse Courses
+            Browse courses <ArrowRight size={14} />
           </Link>
         </div>
       )}

@@ -17,7 +17,7 @@ export function EnrollButton({ courseId }: { courseId: string }) {
     <button
       onClick={enroll}
       disabled={loading}
-      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+      className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
     >
       {loading ? "Enrolling…" : "Enroll Now"}
     </button>

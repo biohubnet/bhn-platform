@@ -64,7 +64,7 @@ export function AnnouncementsClient({
       <div className="flex justify-end">
         <button
           onClick={() => setShowForm(true)}
-          className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-brand-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-brand-700"
         >
           + New Announcement
         </button>
@@ -85,7 +85,7 @@ export function AnnouncementsClient({
                   {a.pinned && <Pin size={12} className="text-amber-500" />}
                   <h3 className="font-semibold text-gray-900">{a.title}</h3>
                   {a.courseId && (
-                    <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full">
                       {courses.find((c) => c.id === a.courseId)?.title ?? "Course"}
                     </span>
                   )}
@@ -164,7 +164,7 @@ export function AnnouncementsClient({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium"
+                  className="flex-1 bg-brand-600 text-white rounded-lg py-2 text-sm font-medium"
                 >
                   Post
                 </button>

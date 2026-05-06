@@ -42,18 +42,18 @@ export default async function MyCoursesPage() {
 
   function EnrollmentRow({ e }: { e: MyEnrollment }) {
     return (
-      <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-200 transition-colors">
-        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+      <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-brand-200 transition-colors">
+        <div className="w-10 h-10 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
           {e.status === "completed" ? (
             <CheckCircle size={18} className="text-green-600" />
           ) : (
-            <Clock size={18} className="text-blue-600" />
+            <Clock size={18} className="text-brand-600" />
           )}
         </div>
         <div className="flex-1 min-w-0">
           <Link
             href={`/courses/${e.courseId}`}
-            className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors"
+            className="font-medium text-gray-900 text-sm hover:text-brand-600 transition-colors"
           >
             {e.course.title}
           </Link>
@@ -74,7 +74,7 @@ export default async function MyCoursesPage() {
             <p className="text-xs text-gray-400 mb-1">{Math.round(e.progress)}%</p>
             <div className="w-20 h-1.5 bg-gray-100 rounded-full">
               <div
-                className="h-1.5 bg-blue-500 rounded-full"
+                className="h-1.5 bg-brand-500 rounded-full"
                 style={{ width: `${e.progress}%` }}
               />
             </div>
@@ -82,7 +82,7 @@ export default async function MyCoursesPage() {
           {e.course.scormPackage && (
             <Link
               href={`/player/${e.courseId}`}
-              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
             >
               <Play size={12} />
               {e.status === "completed" ? "Review" : "Launch"}
@@ -129,7 +129,7 @@ export default async function MyCoursesPage() {
           <p className="text-gray-500">No enrollments yet</p>
           <Link
             href="/courses"
-            className="inline-block mt-4 bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-blue-700"
+            className="inline-block mt-4 bg-brand-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-brand-700"
           >
             Browse Courses
           </Link>

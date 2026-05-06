@@ -48,7 +48,7 @@ export function ComplianceReport({ courses }: { courses: Course[] }) {
         <button
           onClick={load}
           disabled={loading}
-          className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="bg-brand-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-brand-700 disabled:opacity-50"
         >
           {loading ? "Loading…" : "Generate Report"}
         </button>
@@ -69,7 +69,7 @@ export function ComplianceReport({ courses }: { courses: Course[] }) {
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span>{cr.total} enrolled</span>
               <span className="text-green-600 font-medium">{cr.completed} completed</span>
-              <span className="text-blue-600">{cr.inProgress} in progress</span>
+              <span className="text-brand-600">{cr.inProgress} in progress</span>
               <span className="text-gray-400">
                 {cr.total > 0 ? Math.round((cr.completed / cr.total) * 100) : 0}% completion rate
               </span>
@@ -99,7 +99,7 @@ export function ComplianceReport({ courses }: { courses: Course[] }) {
                       <span className={cn(
                         "text-xs px-2 py-0.5 rounded-full",
                         row.status === "completed" ? "bg-green-50 text-green-700" :
-                        row.status === "active" ? "bg-blue-50 text-blue-600" :
+                        row.status === "active" ? "bg-brand-50 text-brand-600" :
                         "bg-gray-100 text-gray-500"
                       )}>
                         {row.status}

@@ -28,70 +28,76 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-xl mb-4">
-            <span className="text-white text-2xl font-bold">B</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4 py-8">
+      <div className="w-full max-w-md">
+        <Link href="/" className="flex items-center justify-center gap-2 mb-8">
+          <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-lg shadow-brand-600/30">
+            <span className="text-white text-lg font-bold">B</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-500 text-sm mt-1">Join BHN Training Platform</p>
-        </div>
+          <span className="font-semibold text-slate-900 text-lg">BHN Training</span>
+        </Link>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-              {error}
+        <div className="bg-white rounded-2xl shadow-xl shadow-brand-900/5 border border-slate-100 p-8">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
+            <p className="text-slate-500 text-sm mt-1">Free to get started — 5,000 BHN credits included.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-lg px-4 py-3">
+                {error}
+              </div>
+            )}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">Full name</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                placeholder="Jane Smith"
+              />
             </div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Jane Smith"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
-              minLength={8}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Min. 8 characters"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
-          >
-            {loading ? "Creating account…" : "Create account"}
-          </button>
-        </form>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">Email</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">Password</label>
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                required
+                minLength={8}
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                placeholder="At least 8 characters"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 disabled:opacity-60 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md shadow-brand-600/25 text-sm"
+            >
+              {loading ? "Creating account…" : "Create account"}
+            </button>
+          </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Already have an account?{" "}
-          <Link href="/login" className="text-blue-600 hover:underline font-medium">
-            Sign in
-          </Link>
-        </p>
+          <p className="text-center text-sm text-slate-500 mt-6">
+            Already have an account?{" "}
+            <Link href="/login" className="text-brand-600 hover:text-brand-700 hover:underline font-medium">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -79,7 +79,7 @@ export default async function CertificatesPage() {
                     <a
                       href={cert.pdfUrl}
                       download
-                      className="flex items-center gap-1.5 mt-3 text-xs text-blue-600 hover:underline"
+                      className="flex items-center gap-1.5 mt-3 text-xs text-brand-600 hover:underline"
                     >
                       <Download size={12} />
                       Download PDF

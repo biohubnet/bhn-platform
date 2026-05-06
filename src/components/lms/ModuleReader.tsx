@@ -116,7 +116,7 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
               <span>{Math.round((completedCount / Math.max(totalItems, 1)) * 100)}%</span>
             </div>
             <div className="h-1.5 bg-gray-100 rounded-full">
-              <div className="h-1.5 bg-blue-500 rounded-full transition-all" style={{ width: `${(completedCount / Math.max(totalItems, 1)) * 100}%` }} />
+              <div className="h-1.5 bg-brand-500 rounded-full transition-all" style={{ width: `${(completedCount / Math.max(totalItems, 1)) * 100}%` }} />
             </div>
           </div>
         </div>
@@ -132,13 +132,13 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
                 onClick={() => { setCurrentId(mod.id); setQuizMode(null); setQuizResult(null); }}
                 className={cn(
                   "flex items-start gap-2.5 w-full text-left px-2 py-2 rounded-lg text-sm transition-colors",
-                  active ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50"
+                  active ? "bg-brand-50 text-brand-700" : "text-gray-600 hover:bg-gray-50"
                 )}
               >
                 {done ? (
                   <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
                 ) : (
-                  <Circle size={16} className={cn("mt-0.5 flex-shrink-0", active ? "text-blue-400" : "text-gray-300")} />
+                  <Circle size={16} className={cn("mt-0.5 flex-shrink-0", active ? "text-brand-400" : "text-gray-300")} />
                 )}
                 <span className="leading-snug">{mod.title}</span>
               </button>
@@ -157,7 +157,7 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
                     onClick={() => { setQuizMode(a.id); setQuizAnswers({}); setQuizResult(null); }}
                     className={cn(
                       "flex items-start gap-2.5 w-full text-left px-2 py-2 rounded-lg text-sm transition-colors",
-                      active ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50"
+                      active ? "bg-brand-50 text-brand-700" : "text-gray-600 hover:bg-gray-50"
                     )}
                   >
                     <ClipboardList size={16} className={cn("mt-0.5 flex-shrink-0", lastAttempt?.passed ? "text-green-500" : "text-gray-300")} />
@@ -198,7 +198,7 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
                 </p>
                 <button
                   onClick={() => { setQuizAnswers({}); setQuizResult(null); }}
-                  className="mt-4 text-sm text-blue-600 hover:underline"
+                  className="mt-4 text-sm text-brand-600 hover:underline"
                 >
                   Retake assessment
                 </button>
@@ -219,7 +219,7 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
                               key={opt}
                               className={cn(
                                 "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                                quizAnswers[q.id] === opt ? "border-blue-400 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
+                                quizAnswers[q.id] === opt ? "border-brand-400 bg-brand-50" : "border-gray-200 hover:bg-gray-50"
                               )}
                             >
                               <input
@@ -228,7 +228,7 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
                                 value={opt}
                                 checked={quizAnswers[q.id] === opt}
                                 onChange={() => setQuizAnswers((a) => ({ ...a, [q.id]: opt }))}
-                                className="text-blue-600"
+                                className="text-brand-600"
                               />
                               <span className="text-sm text-gray-700">{opt}</span>
                             </label>
@@ -242,7 +242,7 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
                               key={opt}
                               className={cn(
                                 "flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors",
-                                quizAnswers[q.id] === opt ? "border-blue-400 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
+                                quizAnswers[q.id] === opt ? "border-brand-400 bg-brand-50" : "border-gray-200 hover:bg-gray-50"
                               )}
                             >
                               <input
@@ -263,7 +263,7 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
                 <button
                   onClick={() => submitQuiz(activeAssessment.id)}
                   disabled={submitting || Object.keys(quizAnswers).length < activeAssessment.questions.length}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium py-3 rounded-xl transition-colors"
+                  className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-medium py-3 rounded-xl transition-colors"
                 >
                   {submitting ? "Grading…" : "Submit Assessment"}
                 </button>
@@ -309,7 +309,7 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
                 {nextModule && (
                   <button
                     onClick={() => { markComplete(currentModule.id); setCurrentId(nextModule.id); }}
-                    className="flex items-center gap-2 text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 text-sm bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors"
                   >
                     Next <ChevronRight size={16} />
                   </button>
@@ -317,7 +317,7 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
                 {!nextModule && course.assessments.length > 0 && (
                   <button
                     onClick={() => { markComplete(currentModule.id); setQuizMode(course.assessments[0].id); setQuizAnswers({}); setQuizResult(null); }}
-                    className="flex items-center gap-2 text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 text-sm bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors"
                   >
                     Take Assessment <ChevronRight size={16} />
                   </button>

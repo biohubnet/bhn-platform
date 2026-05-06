@@ -65,7 +65,7 @@ export default async function CoursesPage({
         <Link
           href="/courses"
           className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-            !sp.category ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+            !sp.category ? "bg-brand-600 text-white border-brand-600" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
           }`}
         >
           All
@@ -76,7 +76,7 @@ export default async function CoursesPage({
             href={`/courses?category=${c.category}`}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
               sp.category === c.category
-                ? "bg-blue-600 text-white border-blue-600"
+                ? "bg-brand-600 text-white border-brand-600"
                 : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
             }`}
           >
