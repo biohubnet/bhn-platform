@@ -23,6 +23,7 @@ import {
   UsersRound,
   Link2,
   Layers,
+  Sparkles,
 } from "lucide-react";
 
 interface NavItem {
@@ -41,6 +42,8 @@ const navItems: NavItem[] = [
   { label: "Gradebook", href: "/gradebook", icon: BarChart3 },
   { label: "Certificates", href: "/certificates", icon: Award },
   { label: "My Credits", href: "/credits", icon: Coins },
+  // Label is overridden per-role below ("What's new" for trainees, "Change log" for staff).
+  { label: "Change log", href: "/changelog", icon: Sparkles },
 ];
 
 const adminItems: NavItem[] = [
@@ -118,9 +121,14 @@ export function Sidebar({ role, user, credits }: SidebarProps) {
       </Link>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} />
-        ))}
+        {navItems.map((item) => {
+          // Trainees see the changelog as "What's new"; staff as "Change log".
+          const labeled =
+            item.href === "/changelog" && !isStaff
+              ? { ...item, label: "What's new" }
+              : item;
+          return <NavLink key={item.href} item={labeled} pathname={pathname} />;
+        })}
 
         {isAdmin && (
           <>
