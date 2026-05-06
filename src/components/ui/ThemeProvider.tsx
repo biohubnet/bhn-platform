@@ -2,11 +2,19 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 export const THEMES = [
-  { id: "light",  name: "Light",  description: "Clean blue daylight" },
-  { id: "dark",   name: "Dark",   description: "Deep navy for low-light" },
-  { id: "ocean",  name: "Ocean",  description: "Cool teal accent" },
-  { id: "sunset", name: "Sunset", description: "Warm amber accent" },
-  { id: "forest", name: "Forest", description: "Earthy green accent" },
+  // Light · neutral & cool
+  { id: "light",     name: "Daylight",   group: "Light",  description: "Clean blue daylight" },
+  { id: "slate",     name: "Slate",      group: "Light",  description: "Neutral monochrome" },
+  { id: "ocean",     name: "Ocean",      group: "Light",  description: "Cool teal accent" },
+  { id: "forest",    name: "Forest",     group: "Light",  description: "Earthy green" },
+  // Light · warm
+  { id: "sunset",    name: "Sunset",     group: "Warm",   description: "Amber & terracotta" },
+  { id: "rose",      name: "Rose",       group: "Warm",   description: "Soft mauve" },
+  { id: "lavender",  name: "Lavender",   group: "Warm",   description: "Calming violet" },
+  // Dark
+  { id: "dark",      name: "Twilight",   group: "Dark",   description: "Deep navy" },
+  { id: "midnight",  name: "Midnight",   group: "Dark",   description: "True black & electric blue" },
+  { id: "espresso",  name: "Espresso",   group: "Dark",   description: "Warm cream on coffee" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
@@ -26,14 +34,12 @@ const STORAGE_KEY = "bhn-theme";
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeId>("light");
 
-  // Read persisted choice on mount
   useEffect(() => {
     const saved = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY)) as ThemeId | null;
     if (saved && THEMES.some((t) => t.id === saved)) {
       setThemeState(saved);
       document.documentElement.dataset.theme = saved;
     } else {
-      // Honor OS preference for first-time visitors
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const initial: ThemeId = prefersDark ? "dark" : "light";
       setThemeState(initial);
@@ -54,7 +60,6 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-/** Inline script that runs before hydration to set theme attribute and avoid FOUC. */
 export function ThemeScript() {
   const code = `(function(){try{var s=localStorage.getItem('${STORAGE_KEY}');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var t=s||(d?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
   return <script dangerouslySetInnerHTML={{ __html: code }} />;

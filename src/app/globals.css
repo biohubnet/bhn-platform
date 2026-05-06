@@ -134,6 +134,131 @@
   --brand-900: #064e3b;
 }
 
+/* ───── Midnight (true-black dark, electric blue accent) ───── */
+[data-theme="midnight"] {
+  --bg:        #050507;
+  --card:      #0d0e15;
+  --elevated:  #14151f;
+  --raised:    #1c1e2c;
+  --fg:        #f5f5f7;
+  --fg-muted:  #b8b9c2;
+  --fg-subtle: #6e6f7a;
+  --line:      #1f2030;
+  --line-strong:#2d2f44;
+  --backdrop:  rgba(0, 0, 0, 0.85);
+
+  --brand-50:  #14245a;
+  --brand-100: #1e3c9c;
+  --brand-200: #2853c2;
+  --brand-300: #366ddd;
+  --brand-400: #4f8ef7;
+  --brand-500: #6ea7ff;
+  --brand-600: #8fbcff;
+  --brand-700: #b7d1ff;
+  --brand-800: #d6e4ff;
+  --brand-900: #ecf3ff;
+}
+
+/* ───── Slate (light, neutral monochrome — professional) ───── */
+[data-theme="slate"] {
+  --bg:        #f7f7f8;
+  --card:      #ffffff;
+  --elevated:  #f1f1f3;
+  --raised:    #e8e8eb;
+  --fg:        #18181b;
+  --fg-muted:  #52525b;
+  --fg-subtle: #a1a1aa;
+  --line:      #e4e4e7;
+  --line-strong:#d4d4d8;
+  --backdrop:  rgba(24, 24, 27, 0.5);
+
+  --brand-50:  #f4f5f7;
+  --brand-100: #e4e7ec;
+  --brand-200: #c8cdd6;
+  --brand-300: #98a0af;
+  --brand-400: #647082;
+  --brand-500: #44505f;
+  --brand-600: #2f3a48;
+  --brand-700: #1f2937;
+  --brand-800: #161e2b;
+  --brand-900: #0c121d;
+}
+
+/* ───── Rose (light, soft mauve — warm hospitality) ───── */
+[data-theme="rose"] {
+  --bg:        #fdf6f8;
+  --card:      #ffffff;
+  --elevated:  #fbecef;
+  --raised:    #f7d8df;
+  --fg:        #3a1721;
+  --fg-muted:  #6e3340;
+  --fg-subtle: #a37380;
+  --line:      #f3d6dc;
+  --line-strong:#e5b3bd;
+  --backdrop:  rgba(58, 23, 33, 0.5);
+
+  --brand-50:  #fff1f4;
+  --brand-100: #ffe0e8;
+  --brand-200: #ffc0cf;
+  --brand-300: #ff96ad;
+  --brand-400: #ee6886;
+  --brand-500: #d35a78;
+  --brand-600: #b03e5e;
+  --brand-700: #8c2d49;
+  --brand-800: #7c1f3d;
+  --brand-900: #5b1530;
+}
+
+/* ───── Lavender (light, calming purple) ───── */
+[data-theme="lavender"] {
+  --bg:        #f8f6fd;
+  --card:      #ffffff;
+  --elevated:  #f0eafa;
+  --raised:    #e1d6f3;
+  --fg:        #1f1638;
+  --fg-muted:  #4d4172;
+  --fg-subtle: #918bb0;
+  --line:      #e5deec;
+  --line-strong:#cdc1de;
+  --backdrop:  rgba(31, 22, 56, 0.5);
+
+  --brand-50:  #f5f3ff;
+  --brand-100: #ede9fe;
+  --brand-200: #ddd6fe;
+  --brand-300: #c4b5fd;
+  --brand-400: #a78bfa;
+  --brand-500: #8b5cf6;
+  --brand-600: #7c3aed;
+  --brand-700: #6d28d9;
+  --brand-800: #5b21b6;
+  --brand-900: #4c1d95;
+}
+
+/* ───── Espresso (warm dark — cream + copper) ───── */
+[data-theme="espresso"] {
+  --bg:        #14110d;
+  --card:      #1f1a14;
+  --elevated:  #2a221a;
+  --raised:    #3a2f24;
+  --fg:        #f3ead7;
+  --fg-muted:  #c0b298;
+  --fg-subtle: #8a7d62;
+  --line:      #2c241b;
+  --line-strong:#443628;
+  --backdrop:  rgba(0, 0, 0, 0.75);
+
+  --brand-50:  #2a1f12;
+  --brand-100: #4a3520;
+  --brand-200: #6b4d2e;
+  --brand-300: #8d6840;
+  --brand-400: #b28453;
+  --brand-500: #d4a36a;
+  --brand-600: #e2bb86;
+  --brand-700: #ecceaa;
+  --brand-800: #f3ddc6;
+  --brand-900: #faecdc;
+}
+
 /* ───── Tailwind theme bindings ───── */
 @theme inline {
   --color-background: var(--bg);
