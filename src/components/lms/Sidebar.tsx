@@ -28,6 +28,7 @@ import {
   LineChart,
   Coins as CoinsIcon,
   UserCog,
+  HeartHandshake,
 } from "lucide-react";
 
 interface NavItem {
@@ -46,6 +47,7 @@ const navItems: NavItem[] = [
   { label: "Gradebook", href: "/gradebook", icon: BarChart3 },
   { label: "Certificates", href: "/certificates", icon: Award },
   { label: "My Credits", href: "/credits", icon: Coins },
+  { label: "Learning buddies", href: "/buddy", icon: HeartHandshake },
   // Label is overridden per-role below ("What's new" for trainees, "Change log" for staff).
   { label: "Change log", href: "/changelog", icon: Sparkles },
 ];

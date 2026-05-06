@@ -119,8 +119,38 @@ export default async function DashboardPage() {
 
   const activeContinue = enrollments.filter((e) => e.status === "active").slice(0, 3);
 
+  // Pending buddy invites (incoming) — surfaced as a top banner
+  const pendingBuddyInvites = await prisma.buddyPair.findMany({
+    where: { partnerId: userId, status: "invited" },
+    include: { initiator: { select: { name: true, email: true } } },
+    take: 3,
+  });
+
   return (
     <div className="space-y-8">
+      {/* Pending buddy invites banner */}
+      {pendingBuddyInvites.length > 0 && (
+        <Link
+          href="/buddy"
+          className="block bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-2xl px-5 py-3 hover:border-amber-300 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+              💛
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-900">
+                {pendingBuddyInvites.length === 1
+                  ? `${pendingBuddyInvites[0].initiator.name ?? pendingBuddyInvites[0].initiator.email} invited you to be their learning buddy`
+                  : `${pendingBuddyInvites.length} learning buddy invites are waiting for you`}
+              </p>
+              <p className="text-xs text-amber-800">Open Learning buddies to accept or decline.</p>
+            </div>
+            <ArrowRight size={16} className="text-amber-700" />
+          </div>
+        </Link>
+      )}
+
       {/* Hero welcome */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 text-white shadow-xl shadow-brand-900/20 px-8 py-8">
         <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full blur-3xl" />

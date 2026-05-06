@@ -45,6 +45,9 @@ model User {
   reviewedApplications CreditApplication[] @relation("Reviewer")
   roleRequests       RoleChangeRequest[]   @relation("RoleRequester")
   reviewedRoleRequests RoleChangeRequest[] @relation("RoleReviewer")
+  buddiesInitiated   BuddyPair[]           @relation("InitiatorBuddies")
+  buddiesPartnered   BuddyPair[]           @relation("PartnerBuddies")
+  buddyMessages      BuddyMessage[]        @relation("BuddyMessageSender")
 }
 
 model Account {
@@ -433,6 +436,49 @@ model PlatformSetting {
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
+}
+
+/// Two-person learning buddy relationship. Either side can end it at any
+/// time. Pairs are unique per (initiator, partner); a 'reverse' invite
+/// from the partner reuses the same row by flipping who initiated.
+model BuddyPair {
+  id           String   @id @default(cuid())
+  initiatorId  String
+  partnerId    String
+  status       String   @default("invited")  // invited | active | declined | ended
+  focusType    String?  // course | pathway | open
+  focusId      String?
+  goalNote     String?
+  invitedAt    DateTime @default(now())
+  acceptedAt   DateTime?
+  endedAt      DateTime?
+  endedById    String?
+
+  initiator User @relation("InitiatorBuddies", fields: [initiatorId], references: [id], onDelete: Cascade)
+  partner   User @relation("PartnerBuddies",   fields: [partnerId],   references: [id], onDelete: Cascade)
+  messages  BuddyMessage[]
+
+  @@unique([initiatorId, partnerId])
+  @@index([partnerId, status])
+  @@index([initiatorId, status])
+}
+
+/// Async messages between buddies — tied to a pair. Optionally anchored
+/// to a course/module/pathway via refType+refId for deep-link context.
+model BuddyMessage {
+  id        String    @id @default(cuid())
+  pairId    String
+  senderId  String
+  body      String
+  refType   String?   // course | pathway | module
+  refId     String?
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  pair   BuddyPair @relation(fields: [pairId], references: [id], onDelete: Cascade)
+  sender User      @relation("BuddyMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([pairId, createdAt])
 }
 
 /// User-initiated request to change their own role. Admins review and
