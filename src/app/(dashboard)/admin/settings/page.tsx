@@ -25,8 +25,8 @@ export default async function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Platform Settings</h1>
-        <p className="text-gray-500 text-sm mt-1">Superadmin only. Changes take effect immediately.</p>
+        <h1 className="text-2xl font-bold text-fg">Platform Settings</h1>
+        <p className="text-muted text-sm mt-1">Superadmin only. Changes take effect immediately.</p>
       </div>
       <SettingsForm defaults={DEFAULT_SETTINGS} values={values} />
     </div>

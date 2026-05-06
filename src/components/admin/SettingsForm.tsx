@@ -44,11 +44,11 @@ export function SettingsForm({
   return (
     <form onSubmit={save} className="space-y-4">
       {Object.entries(defaults).map(([key, def]) => (
-        <div key={key} className="bg-white rounded-xl border border-gray-200 p-5">
+        <div key={key} className="bg-card rounded-xl border border-line p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-900 mb-0.5">{def.label}</label>
-              <p className="text-xs text-gray-400 mb-3">{def.description}</p>
+              <label className="block text-sm font-medium text-fg mb-0.5">{def.label}</label>
+              <p className="text-xs text-subtle mb-3">{def.description}</p>
               {def.type === "boolean" ? (
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -57,18 +57,18 @@ export function SettingsForm({
                     onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.checked ? "true" : "false" }))}
                     className="rounded w-4 h-4"
                   />
-                  <span className="text-sm text-gray-700">{form[key] === "true" ? "Enabled" : "Disabled"}</span>
+                  <span className="text-sm text-muted">{form[key] === "true" ? "Enabled" : "Disabled"}</span>
                 </label>
               ) : (
                 <input
                   type={def.type}
                   value={form[key]}
                   onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="w-full max-w-md border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                  className="w-full max-w-md border border-line rounded-lg px-3 py-2 text-sm"
                 />
               )}
             </div>
-            <span className="text-xs text-gray-400 mt-1 shrink-0 font-mono">{key}</span>
+            <span className="text-xs text-subtle mt-1 shrink-0 font-mono">{key}</span>
           </div>
         </div>
       ))}

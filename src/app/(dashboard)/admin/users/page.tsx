@@ -40,17 +40,17 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-          <p className="text-gray-500 text-sm mt-1">{users.length} total users</p>
+          <h1 className="text-2xl font-bold text-fg">Users</h1>
+          <p className="text-muted text-sm mt-1">{users.length} total users</p>
         </div>
         <UserActionsBar />
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-card rounded-xl border border-line overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
+              <tr className="border-b border-line text-left text-xs text-muted uppercase tracking-wide">
                 <th className="px-5 py-3">User</th>
                 <th className="px-5 py-3">Role</th>
                 <th className="px-5 py-3">Status</th>
@@ -62,12 +62,12 @@ export default async function AdminUsersPage() {
                 <th className="px-5 py-3">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line">
               {(users as UserRow[]).map((user: UserRow) => (
-                <tr key={user.id} className={cn("hover:bg-gray-50", !user.isActive && "opacity-50")}>
+                <tr key={user.id} className={cn("hover:bg-elevated", !user.isActive && "opacity-50")}>
                   <td className="px-5 py-3">
-                    <p className="font-medium text-gray-900">{user.name ?? "—"}</p>
-                    <p className="text-xs text-gray-400">{user.email}</p>
+                    <p className="font-medium text-fg">{user.name ?? "—"}</p>
+                    <p className="text-xs text-subtle">{user.email}</p>
                   </td>
                   <td className="px-5 py-3">
                     <span className={cn(
@@ -76,7 +76,7 @@ export default async function AdminUsersPage() {
                       user.role === "admin" ? "bg-brand-100 text-brand-700" :
                       user.role === "instructor" ? "bg-violet-100 text-violet-700" :
                       user.role === "evaluating" ? "bg-amber-100 text-amber-700" :
-                      "bg-slate-100 text-slate-600"
+                      "bg-raised text-muted"
                     )}>
                       {user.role}
                     </span>
@@ -89,15 +89,15 @@ export default async function AdminUsersPage() {
                       {user.isActive ? "active" : "inactive"}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-gray-600 font-mono text-xs">
+                  <td className="px-5 py-3 text-muted font-mono text-xs">
                     {user.credits.toLocaleString()}
                   </td>
-                  <td className="px-5 py-3 text-gray-500">{user._count.enrollments}</td>
-                  <td className="px-5 py-3 text-gray-500">{user._count.certificates}</td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">
+                  <td className="px-5 py-3 text-muted">{user._count.enrollments}</td>
+                  <td className="px-5 py-3 text-muted">{user._count.certificates}</td>
+                  <td className="px-5 py-3 text-subtle text-xs">
                     {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : "—"}
                   </td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">
+                  <td className="px-5 py-3 text-subtle text-xs">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-5 py-3">

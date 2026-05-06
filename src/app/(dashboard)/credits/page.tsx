@@ -47,8 +47,8 @@ export default async function CreditsPage() {
   return (
     <div className="space-y-8 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My BHN Credits</h1>
-        <p className="text-gray-500 text-sm mt-1">Credits are used to enroll in paid courses.</p>
+        <h1 className="text-2xl font-bold text-fg">My BHN Credits</h1>
+        <p className="text-muted text-sm mt-1">Credits are used to enroll in paid courses.</p>
       </div>
 
       {/* Balance card */}
@@ -62,14 +62,14 @@ export default async function CreditsPage() {
       </div>
 
       {/* Transaction history */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Transaction History</h2>
+      <div className="bg-card rounded-xl border border-line overflow-hidden">
+        <div className="px-5 py-4 border-b border-line">
+          <h2 className="font-semibold text-fg">Transaction History</h2>
         </div>
         {transactions.length === 0 ? (
-          <div className="px-5 py-8 text-center text-gray-400">No transactions yet.</div>
+          <div className="px-5 py-8 text-center text-subtle">No transactions yet.</div>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-line">
             {transactions.map((tx) => (
               <div key={tx.id} className="px-5 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -79,13 +79,13 @@ export default async function CreditsPage() {
                     <ArrowDownCircle size={18} className="text-red-400 shrink-0" />
                   )}
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-fg">
                       {reasonLabel[tx.reason] ?? tx.reason}
                     </p>
                     {tx.courseId && courseTitles[tx.courseId] && (
-                      <p className="text-xs text-gray-400">{courseTitles[tx.courseId]}</p>
+                      <p className="text-xs text-subtle">{courseTitles[tx.courseId]}</p>
                     )}
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-subtle">
                       {new Date(tx.createdAt).toLocaleString()}
                     </p>
                   </div>
@@ -97,7 +97,7 @@ export default async function CreditsPage() {
                   )}>
                     {tx.type === "credit" ? "+" : ""}{tx.amount.toLocaleString()}
                   </p>
-                  <p className="text-xs text-gray-400">Balance: {tx.balanceAfter.toLocaleString()}</p>
+                  <p className="text-xs text-subtle">Balance: {tx.balanceAfter.toLocaleString()}</p>
                 </div>
               </div>
             ))}

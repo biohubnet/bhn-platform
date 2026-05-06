@@ -87,7 +87,7 @@ export function Logo({ size = "md", variant = "default", className }: LogoProps)
     <div className={cn("flex items-center gap-2.5", className)}>
       <LogoMark size={markSize[size]} className="drop-shadow-sm" />
       <div className="leading-tight">
-        <p className={cn("font-bold tracking-tight", wordmarkSize[size], isLight ? "text-white" : "text-slate-900")}>
+        <p className={cn("font-bold tracking-tight", wordmarkSize[size], isLight ? "text-white" : "text-fg")}>
           BHN<span className={cn("font-medium ml-1.5", isLight ? "text-brand-100" : "text-brand-600")}>Training</span>
         </p>
       </div>

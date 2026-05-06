@@ -143,7 +143,7 @@ export default async function DashboardPage() {
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <Link
                 href={inProgress > 0 ? "/my-courses" : "/courses"}
-                className="inline-flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-5 py-2.5 rounded-lg shadow-md transition-all hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 bg-card text-brand-700 hover:bg-brand-50 font-semibold text-sm px-5 py-2.5 rounded-lg shadow-md transition-all hover:-translate-y-0.5"
               >
                 {inProgress > 0 ? "Continue learning" : "Browse courses"} <ArrowRight size={16} />
               </Link>
@@ -197,14 +197,14 @@ export default async function DashboardPage() {
             <Link
               key={a.href}
               href={a.href}
-              className="group bg-white border border-slate-200 rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-md hover:border-brand-200 transition-all flex items-center gap-3"
+              className="group bg-card border border-line rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-md hover:border-brand-200 transition-all flex items-center gap-3"
             >
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${tones[a.tone]} text-white flex items-center justify-center shadow-md shrink-0`}>
                 <Icon size={18} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-900 truncate">{a.label}</p>
-                <p className="text-xs text-slate-400 mt-0.5">Open →</p>
+                <p className="text-sm font-semibold text-fg truncate">{a.label}</p>
+                <p className="text-xs text-subtle mt-0.5">Open →</p>
               </div>
             </Link>
           );
@@ -216,8 +216,8 @@ export default async function DashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Continue learning</h2>
-              <p className="text-sm text-slate-500">Pick up where you left off.</p>
+              <h2 className="text-lg font-semibold text-fg">Continue learning</h2>
+              <p className="text-sm text-muted">Pick up where you left off.</p>
             </div>
             <Link href="/my-courses" className="text-sm font-medium text-brand-600 hover:text-brand-700">
               View all →
@@ -228,27 +228,27 @@ export default async function DashboardPage() {
               <Link
                 key={enrollment.id}
                 href={`/courses/${enrollment.courseId}`}
-                className="group bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-md hover:-translate-y-0.5 transition-all"
+                className="group bg-card rounded-2xl border border-line p-5 hover:border-brand-300 hover:shadow-md hover:-translate-y-0.5 transition-all"
               >
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center shrink-0 group-hover:from-brand-200 transition-colors">
                     <BookOpen size={18} className="text-brand-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900 text-sm leading-tight group-hover:text-brand-700 transition-colors line-clamp-2">
+                    <p className="font-semibold text-fg text-sm leading-tight group-hover:text-brand-700 transition-colors line-clamp-2">
                       {enrollment.course.title}
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-subtle mt-1">
                       {enrollment.course.category ?? "General"}
                     </p>
                   </div>
                 </div>
                 <div className="mt-4">
-                  <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+                  <div className="flex justify-between text-xs text-muted mb-1.5">
                     <span>Progress</span>
-                    <span className="font-semibold text-slate-700">{Math.round(enrollment.progress)}%</span>
+                    <span className="font-semibold text-muted">{Math.round(enrollment.progress)}%</span>
                   </div>
-                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-raised rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all"
                       style={{ width: `${enrollment.progress}%` }}
@@ -266,8 +266,8 @@ export default async function DashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Your pathways</h2>
-              <p className="text-sm text-slate-500">Multi-course journeys you've enrolled in.</p>
+              <h2 className="text-lg font-semibold text-fg">Your pathways</h2>
+              <p className="text-sm text-muted">Multi-course journeys you've enrolled in.</p>
             </div>
             <Link href="/pathways" className="text-sm font-medium text-brand-600 hover:text-brand-700">
               All pathways →
@@ -284,7 +284,7 @@ export default async function DashboardPage() {
                 <Link
                   key={pe.id}
                   href={`/pathways/${pe.pathway.id}`}
-                  className="group bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-md transition-all"
+                  className="group bg-card rounded-2xl border border-line p-5 hover:border-brand-300 hover:shadow-md transition-all"
                 >
                   <div className="flex items-start gap-3 mb-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 text-white flex items-center justify-center shadow-md shadow-violet-600/20 shrink-0">
@@ -292,17 +292,17 @@ export default async function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-slate-900 truncate group-hover:text-brand-700 transition-colors">
+                        <p className="font-semibold text-fg truncate group-hover:text-brand-700 transition-colors">
                           {pe.pathway.title}
                         </p>
                         {pe.status === "completed" && <Badge tone="success">Done</Badge>}
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-subtle mt-0.5">
                         {pe.pathway.category ?? "Pathway"} · {done}/{total} complete
                       </p>
                     </div>
                   </div>
-                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-raised rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full"
                       style={{ width: `${pct}%` }}
@@ -320,34 +320,34 @@ export default async function DashboardPage() {
         {/* Recent activity */}
         <section className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Recent activity</h2>
+            <h2 className="text-lg font-semibold text-fg">Recent activity</h2>
           </div>
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-card rounded-2xl border border-line overflow-hidden">
             {recentActivity.length === 0 ? (
               <div className="p-12 text-center">
-                <Calendar size={32} className="mx-auto text-slate-300 mb-3" />
-                <p className="text-sm text-slate-500">No activity yet.</p>
+                <Calendar size={32} className="mx-auto text-subtle mb-3" />
+                <p className="text-sm text-muted">No activity yet.</p>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-50">
+              <ul className="divide-y divide-line">
                 {recentActivity.map((s) => {
                   const tone = s.status === "passed" || s.status === "completed"
                     ? "success" as const
                     : s.status === "failed" ? "danger" as const : "neutral" as const;
                   return (
-                    <li key={s.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/50">
+                    <li key={s.id} className="flex items-center justify-between px-5 py-3 hover:bg-elevated/50">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
                           <GraduationCap size={16} />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-slate-900 truncate">{s.package.course.title}</p>
-                          <p className="text-xs text-slate-400">Attempt #{s.attemptNumber} · {new Date(s.updatedAt).toLocaleDateString()}</p>
+                          <p className="text-sm font-medium text-fg truncate">{s.package.course.title}</p>
+                          <p className="text-xs text-subtle">Attempt #{s.attemptNumber} · {new Date(s.updatedAt).toLocaleDateString()}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0 pl-3">
                         {s.score != null && (
-                          <span className="text-sm font-semibold text-slate-700">{Math.round(s.score)}%</span>
+                          <span className="text-sm font-semibold text-muted">{Math.round(s.score)}%</span>
                         )}
                         <Badge tone={tone}>{s.status}</Badge>
                       </div>
@@ -363,7 +363,7 @@ export default async function DashboardPage() {
         <aside className="space-y-6">
           {featuredPathways.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-muted mb-3 flex items-center gap-2">
                 <Layers size={14} className="text-violet-500" /> Featured pathways
               </h3>
               <div className="space-y-2">
@@ -371,10 +371,10 @@ export default async function DashboardPage() {
                   <Link
                     key={p.id}
                     href={`/pathways/${p.id}`}
-                    className="block bg-white border border-slate-200 rounded-xl p-3 hover:border-brand-300 hover:shadow-sm transition-all group"
+                    className="block bg-card border border-line rounded-xl p-3 hover:border-brand-300 hover:shadow-sm transition-all group"
                   >
-                    <p className="text-sm font-medium text-slate-900 group-hover:text-brand-700 line-clamp-1">{p.title}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-sm font-medium text-fg group-hover:text-brand-700 line-clamp-1">{p.title}</p>
+                    <p className="text-xs text-subtle mt-0.5">
                       {p._count.courses} courses · {p._count.enrollments} learners
                     </p>
                   </Link>
@@ -385,7 +385,7 @@ export default async function DashboardPage() {
 
           {suggestedCourses.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-muted mb-3 flex items-center gap-2">
                 <Sparkles size={14} className="text-amber-500" /> Suggested for you
               </h3>
               <div className="space-y-2">
@@ -393,10 +393,10 @@ export default async function DashboardPage() {
                   <Link
                     key={c.id}
                     href={`/courses/${c.id}`}
-                    className="block bg-white border border-slate-200 rounded-xl p-3 hover:border-brand-300 hover:shadow-sm transition-all group"
+                    className="block bg-card border border-line rounded-xl p-3 hover:border-brand-300 hover:shadow-sm transition-all group"
                   >
-                    <p className="text-sm font-medium text-slate-900 group-hover:text-brand-700 line-clamp-1">{c.title}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-sm font-medium text-fg group-hover:text-brand-700 line-clamp-1">{c.title}</p>
+                    <p className="text-xs text-subtle mt-0.5">
                       {c.category ?? "General"}{c.duration ? ` · ${c.duration} min` : ""}
                     </p>
                   </Link>
@@ -409,12 +409,12 @@ export default async function DashboardPage() {
 
       {/* Empty state if truly nothing */}
       {enrollments.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
+        <div className="text-center py-16 bg-card rounded-2xl border border-line">
           <div className="w-12 h-12 mx-auto rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
             <BookOpen size={20} />
           </div>
-          <p className="text-slate-700 font-semibold">Ready to start your first course?</p>
-          <p className="text-sm text-slate-500 mt-1">Browse the catalog to find something for your role.</p>
+          <p className="text-muted font-semibold">Ready to start your first course?</p>
+          <p className="text-sm text-muted mt-1">Browse the catalog to find something for your role.</p>
           <Link
             href="/courses"
             className="inline-flex items-center gap-2 mt-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg shadow-md shadow-brand-600/20 transition-all hover:-translate-y-0.5"

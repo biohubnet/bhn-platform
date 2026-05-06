@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/ui/Logo";
+import { ThemePicker } from "@/components/ui/ThemePicker";
 import {
   LayoutDashboard,
   BookOpen,
@@ -81,7 +82,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
         "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
         active
           ? "bg-brand-50 text-brand-700"
-          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          : "text-muted hover:bg-raised hover:text-fg"
       )}
     >
       <Icon size={16} />
@@ -103,14 +104,14 @@ export function Sidebar({ role, user, credits }: SidebarProps) {
   });
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
+    <aside className="w-64 bg-card border-r border-line flex flex-col">
       {/* Logo */}
-      <Link href="/dashboard" className="px-6 py-5 border-b border-slate-100 block hover:bg-slate-50/50 transition-colors">
+      <Link href="/dashboard" className="px-6 py-5 border-b border-line block hover:bg-elevated/50 transition-colors">
         <div className="flex items-center gap-3">
           <LogoMark size={36} className="drop-shadow-sm" />
           <div className="leading-tight">
-            <p className="font-bold text-slate-900 text-sm">BHN <span className="text-brand-600 font-semibold">Training</span></p>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400 mt-0.5">{role}</p>
+            <p className="font-bold text-fg text-sm">BHN <span className="text-brand-600 font-semibold">Training</span></p>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-subtle mt-0.5">{role}</p>
           </div>
         </div>
       </Link>
@@ -123,7 +124,7 @@ export function Sidebar({ role, user, credits }: SidebarProps) {
         {isAdmin && (
           <>
             <div className="pt-4 pb-1 px-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-subtle uppercase tracking-wider">
                 Administration
               </p>
             </div>
@@ -136,7 +137,7 @@ export function Sidebar({ role, user, credits }: SidebarProps) {
 
       {/* Credits badge for non-staff */}
       {!isStaff && credits !== undefined && (
-        <div className="px-4 py-3 border-t border-gray-100">
+        <div className="px-4 py-3 border-t border-line">
           <div className="flex items-center gap-2 bg-amber-50 rounded-lg px-3 py-2">
             <Coins size={14} className="text-amber-500 shrink-0" />
             <div>
@@ -148,22 +149,27 @@ export function Sidebar({ role, user, credits }: SidebarProps) {
         </div>
       )}
 
+      {/* Theme picker */}
+      <div className="px-3 py-2 border-t border-line">
+        <ThemePicker />
+      </div>
+
       {/* User */}
-      <div className="px-3 py-4 border-t border-gray-200">
+      <div className="px-3 py-4 border-t border-line">
         <div className="flex items-center gap-3 px-3 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-600">
+          <div className="w-8 h-8 rounded-full bg-raised flex items-center justify-center text-sm font-medium text-muted">
             {user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "?"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-sm font-medium text-fg truncate">
               {user.name ?? "User"}
             </p>
-            <p className="text-xs text-gray-400 truncate">{user.email}</p>
+            <p className="text-xs text-subtle truncate">{user.email}</p>
           </div>
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-muted hover:bg-elevated hover:text-fg transition-colors"
         >
           <LogOut size={16} />
           Sign out

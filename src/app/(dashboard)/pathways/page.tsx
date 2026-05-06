@@ -51,12 +51,12 @@ export default async function PathwaysPage() {
       />
 
       {pathways.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
+        <div className="bg-card rounded-2xl border border-line p-16 text-center">
           <div className="w-12 h-12 mx-auto rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
             <Layers size={20} />
           </div>
-          <p className="font-medium text-slate-700">No pathways yet</p>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="font-medium text-muted">No pathways yet</p>
+          <p className="text-sm text-muted mt-1">
             {isStaff ? "Create your first pathway to bundle courses into a certified curriculum." : "Check back soon — pathways are coming."}
           </p>
         </div>
@@ -68,7 +68,7 @@ export default async function PathwaysPage() {
               <Link
                 key={p.id}
                 href={`/pathways/${p.id}`}
-                className="group bg-white rounded-2xl border border-slate-200 hover:border-brand-300 hover:shadow-md transition-all overflow-hidden"
+                className="group bg-card rounded-2xl border border-line hover:border-brand-300 hover:shadow-md transition-all overflow-hidden"
               >
                 <div className="h-28 bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 relative">
                   <Layers className="absolute top-4 right-4 text-white/30" size={48} />
@@ -80,7 +80,7 @@ export default async function PathwaysPage() {
                 </div>
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-slate-900 leading-tight group-hover:text-brand-700 transition-colors">
+                    <h3 className="font-semibold text-fg leading-tight group-hover:text-brand-700 transition-colors">
                       {p.title}
                     </h3>
                     {myStatus === "completed" ? (
@@ -92,9 +92,9 @@ export default async function PathwaysPage() {
                     ) : null}
                   </div>
                   {p.description && (
-                    <p className="text-sm text-slate-500 line-clamp-2 mb-4">{p.description}</p>
+                    <p className="text-sm text-muted line-clamp-2 mb-4">{p.description}</p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-slate-500">
+                  <div className="flex items-center gap-4 text-xs text-muted">
                     <span className="inline-flex items-center gap-1"><BookOpen size={12} /> {p._count.courses} courses</span>
                     <span className="inline-flex items-center gap-1"><Users size={12} /> {p._count.enrollments} learners</span>
                     <span className="inline-flex items-center gap-1 ml-auto text-amber-600"><Award size={12} /> Certified</span>

@@ -54,7 +54,7 @@ export function UserRowClient({ user }: { user: UserData }) {
         value={user.role}
         disabled={loading}
         onChange={(e) => patch({ role: e.target.value })}
-        className="text-xs border border-gray-200 rounded px-1.5 py-1 bg-white"
+        className="text-xs border border-line rounded px-1.5 py-1 bg-card"
       >
         {ROLES.map((r) => (
           <option key={r} value={r}>{r}</option>
@@ -63,7 +63,7 @@ export function UserRowClient({ user }: { user: UserData }) {
       <button
         onClick={() => patch({ isActive: !user.isActive })}
         disabled={loading}
-        className="text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+        className="text-xs px-2 py-1 rounded border border-line hover:bg-elevated"
       >
         {user.isActive ? "Deactivate" : "Activate"}
       </button>
@@ -77,7 +77,7 @@ export function UserRowClient({ user }: { user: UserData }) {
       <button
         onClick={resetPassword}
         disabled={loading}
-        className="text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+        className="text-xs px-2 py-1 rounded border border-line hover:bg-elevated"
       >
         Reset PW
       </button>

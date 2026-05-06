@@ -12,8 +12,8 @@ export default async function AdminLtiPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">LTI 1.3 Platform Configurations</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-fg">LTI 1.3 Platform Configurations</h1>
+        <p className="text-muted text-sm mt-1">
           Connect external LMS platforms via LTI 1.3. Superadmin only.
         </p>
       </div>

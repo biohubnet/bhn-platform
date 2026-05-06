@@ -44,14 +44,14 @@ export function CertificateActions({
 
       {show && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Issue Certificate</h3>
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-fg mb-4">Issue Certificate</h3>
             <form onSubmit={issue} className="space-y-3">
               <select
                 required
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">Select user…</option>
                 {users.map((u) => (
@@ -62,7 +62,7 @@ export function CertificateActions({
                 required
                 value={courseId}
                 onChange={(e) => setCourseId(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">Select course…</option>
                 {courses.map((c) => (
@@ -70,12 +70,12 @@ export function CertificateActions({
                 ))}
               </select>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Expiry Date (optional)</label>
+                <label className="text-xs text-muted block mb-1">Expiry Date (optional)</label>
                 <input
                   type="date"
                   value={expiryDate}
                   onChange={(e) => setExpiryDate(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm"
                 />
               </div>
               <div className="flex gap-2 pt-2">
@@ -86,7 +86,7 @@ export function CertificateActions({
                 >
                   Issue
                 </button>
-                <button type="button" onClick={() => setShow(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm">
+                <button type="button" onClick={() => setShow(false)} className="flex-1 border border-line rounded-lg py-2 text-sm">
                   Cancel
                 </button>
               </div>

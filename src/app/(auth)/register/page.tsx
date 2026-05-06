@@ -29,16 +29,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-card to-brand-100 px-4 py-8">
       <div className="w-full max-w-md">
         <Link href="/" className="flex justify-center mb-8">
           <Logo size="lg" />
         </Link>
 
-        <div className="bg-white rounded-2xl shadow-xl shadow-brand-900/5 border border-slate-100 p-8">
+        <div className="bg-card rounded-2xl shadow-xl shadow-brand-900/5 border border-line p-8">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
-            <p className="text-slate-500 text-sm mt-1">Free to get started — 5,000 BHN credits included.</p>
+            <h1 className="text-2xl font-bold text-fg">Create your account</h1>
+            <p className="text-muted text-sm mt-1">Free to get started — 5,000 BHN credits included.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -48,35 +48,35 @@ export default function RegisterPage() {
               </div>
             )}
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">Full name</label>
+              <label className="block text-xs font-medium text-muted mb-1.5">Full name</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
                 placeholder="Jane Smith"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">Email</label>
+              <label className="block text-xs font-medium text-muted mb-1.5">Email</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
                 placeholder="you@example.com"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">Password</label>
+              <label className="block text-xs font-medium text-muted mb-1.5">Password</label>
               <input
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
                 minLength={8}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
                 placeholder="At least 8 characters"
               />
             </div>
@@ -89,7 +89,7 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-500 mt-6">
+          <p className="text-center text-sm text-muted mt-6">
             Already have an account?{" "}
             <Link href="/login" className="text-brand-600 hover:text-brand-700 hover:underline font-medium">
               Sign in

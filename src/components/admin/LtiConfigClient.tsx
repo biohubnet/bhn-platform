@@ -84,73 +84,73 @@ export function LtiConfigClient({ configs: initial }: { configs: LtiConfig[] }) 
 
       <div className="space-y-3">
         {initial.map((cfg) => (
-          <div key={cfg.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div key={cfg.id} className="bg-card rounded-xl border border-line overflow-hidden">
             <div
-              className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50"
+              className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-elevated"
               onClick={() => setExpanded(expanded === cfg.id ? null : cfg.id)}
             >
               <div className="flex items-center gap-3">
-                <ChevronDown size={16} className={cn("text-gray-400 transition-transform", expanded !== cfg.id && "-rotate-90")} />
+                <ChevronDown size={16} className={cn("text-subtle transition-transform", expanded !== cfg.id && "-rotate-90")} />
                 <div>
-                  <p className="font-semibold text-gray-900">{cfg.name}</p>
-                  <p className="text-xs text-gray-400">{cfg.issuer}</p>
+                  <p className="font-semibold text-fg">{cfg.name}</p>
+                  <p className="text-xs text-subtle">{cfg.issuer}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <span className={cn(
                   "text-xs px-2 py-0.5 rounded-full",
-                  cfg.active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
+                  cfg.active ? "bg-green-50 text-green-700" : "bg-raised text-muted"
                 )}>
                   {cfg.active ? "Active" : "Inactive"}
                 </span>
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleActive(cfg.id, cfg.active); }}
-                  className="text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+                  className="text-xs px-2 py-1 rounded border border-line hover:bg-elevated"
                 >
                   {cfg.active ? "Disable" : "Enable"}
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); del(cfg.id); }}
-                  className="text-gray-400 hover:text-red-500"
+                  className="text-subtle hover:text-red-500"
                 >
                   <Trash2 size={14} />
                 </button>
               </div>
             </div>
             {expanded === cfg.id && (
-              <div className="border-t border-gray-100 px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="border-t border-line px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 {fields.map((f) => (
                   <div key={f.key}>
-                    <p className="text-xs text-gray-400 mb-0.5">{f.label}</p>
-                    <p className="font-mono text-xs text-gray-700 break-all">
+                    <p className="text-xs text-subtle mb-0.5">{f.label}</p>
+                    <p className="font-mono text-xs text-muted break-all">
                       {(cfg as unknown as Record<string, string>)[f.key]}
                     </p>
                   </div>
                 ))}
                 <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Added</p>
-                  <p className="text-xs text-gray-500">{new Date(cfg.createdAt).toLocaleDateString()}</p>
+                  <p className="text-xs text-subtle mb-0.5">Added</p>
+                  <p className="text-xs text-muted">{new Date(cfg.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
             )}
           </div>
         ))}
         {initial.length === 0 && (
-          <div className="text-center py-12 text-gray-400">No LTI platforms configured.</div>
+          <div className="text-center py-12 text-subtle">No LTI platforms configured.</div>
         )}
       </div>
 
       {show && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add LTI 1.3 Platform</h3>
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-fg mb-4">Add LTI 1.3 Platform</h3>
             <form onSubmit={create} className="space-y-3">
               <input
                 placeholder="Platform name *"
                 required
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               />
               {fields.map((f) => (
                 <input
@@ -159,7 +159,7 @@ export function LtiConfigClient({ configs: initial }: { configs: LtiConfig[] }) 
                   required
                   value={(form as Record<string, string | boolean>)[f.key] as string}
                   onChange={(e) => set(f.key, e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm"
                 />
               ))}
               <label className="flex items-center gap-2 text-sm">
@@ -179,7 +179,7 @@ export function LtiConfigClient({ configs: initial }: { configs: LtiConfig[] }) 
                 >
                   {loading ? "Saving…" : "Add Platform"}
                 </button>
-                <button type="button" onClick={() => setShow(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm">
+                <button type="button" onClick={() => setShow(false)} className="flex-1 border border-line rounded-lg py-2 text-sm">
                   Cancel
                 </button>
               </div>

@@ -170,34 +170,34 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
             {/* Selected order list */}
             <Field label={`Course order · ${ordered.length} selected`}>
               {ordered.length === 0 ? (
-                <div className="text-xs text-slate-400 px-3 py-4 bg-slate-50 rounded-lg border border-slate-100 text-center">
+                <div className="text-xs text-subtle px-3 py-4 bg-elevated rounded-lg border border-line text-center">
                   No courses selected yet — pick from the list →
                 </div>
               ) : (
                 <ol className="space-y-1.5">
                   {ordered.map((c, i) => (
-                    <li key={c.id} className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 rounded-lg px-2 py-1.5 text-sm group">
+                    <li key={c.id} className="flex items-center gap-2 bg-elevated hover:bg-raised rounded-lg px-2 py-1.5 text-sm group">
                       <GripVertical size={14} className="text-slate-300" />
-                      <span className="text-xs text-slate-400 font-mono w-5 text-center">{i + 1}</span>
+                      <span className="text-xs text-subtle font-mono w-5 text-center">{i + 1}</span>
                       <span className="flex-1 truncate text-slate-800">{c.title}</span>
                       <button
                         type="button"
                         onClick={() => move(i, -1)}
                         disabled={i === 0}
-                        className="text-slate-400 hover:text-slate-700 disabled:opacity-30 px-1 text-xs"
+                        className="text-subtle hover:text-muted disabled:opacity-30 px-1 text-xs"
                         aria-label="Move up"
                       >↑</button>
                       <button
                         type="button"
                         onClick={() => move(i, 1)}
                         disabled={i === ordered.length - 1}
-                        className="text-slate-400 hover:text-slate-700 disabled:opacity-30 px-1 text-xs"
+                        className="text-subtle hover:text-muted disabled:opacity-30 px-1 text-xs"
                         aria-label="Move down"
                       >↓</button>
                       <button
                         type="button"
                         onClick={() => toggle(c.id)}
-                        className="text-slate-400 hover:text-rose-600 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="text-subtle hover:text-rose-600 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                         aria-label="Remove"
                       >
                         <X size={12} />
@@ -210,7 +210,7 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
           </div>
 
           {/* Right: course picker */}
-          <div className="space-y-2 md:border-l md:pl-6 md:border-slate-100">
+          <div className="space-y-2 md:border-l md:pl-6 md:border-line">
             <Field label="Add courses" hint={`${courses.length} courses in catalog`}>
               <Input
                 placeholder="Filter…"
@@ -218,9 +218,9 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
                 onChange={(e) => setFilter(e.target.value)}
               />
             </Field>
-            <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-100 divide-y divide-slate-50 bg-white">
+            <div className="max-h-80 overflow-y-auto rounded-lg border border-line divide-y divide-line bg-card">
               {filtered.length === 0 && (
-                <div className="text-xs text-slate-400 p-4 text-center">No courses match.</div>
+                <div className="text-xs text-subtle p-4 text-center">No courses match.</div>
               )}
               {filtered.map((c) => {
                 const checked = selectedIds.includes(c.id);
@@ -228,7 +228,7 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
                   <label
                     key={c.id}
                     className={
-                      "flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-slate-50 " +
+                      "flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-elevated " +
                       (checked ? "bg-brand-50/50" : "")
                     }
                   >
@@ -240,7 +240,7 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-slate-800 truncate">{c.title}</p>
-                      {c.category && <p className="text-xs text-slate-400">{c.category}</p>}
+                      {c.category && <p className="text-xs text-subtle">{c.category}</p>}
                     </div>
                   </label>
                 );

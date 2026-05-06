@@ -56,7 +56,7 @@ export function EnrollmentActions({ users, courses }: { users: User[]; courses: 
     <div className="flex gap-2">
       <button
         onClick={() => setShowCsv(true)}
-        className="border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50"
+        className="border border-line text-muted text-sm px-4 py-2 rounded-lg hover:bg-elevated"
       >
         CSV Import
       </button>
@@ -69,14 +69,14 @@ export function EnrollmentActions({ users, courses }: { users: User[]; courses: 
 
       {show && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Manual Enrollment</h3>
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-fg mb-4">Manual Enrollment</h3>
             <form onSubmit={enroll} className="space-y-3">
               <select
                 required
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">Select user…</option>
                 {users.map((u) => (
@@ -87,7 +87,7 @@ export function EnrollmentActions({ users, courses }: { users: User[]; courses: 
                 required
                 value={courseId}
                 onChange={(e) => setCourseId(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">Select course…</option>
                 {courses.map((c) => (
@@ -95,12 +95,12 @@ export function EnrollmentActions({ users, courses }: { users: User[]; courses: 
                 ))}
               </select>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Due Date (optional)</label>
+                <label className="text-xs text-muted block mb-1">Due Date (optional)</label>
                 <input
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm"
                 />
               </div>
               <div className="flex gap-2 pt-2">
@@ -111,7 +111,7 @@ export function EnrollmentActions({ users, courses }: { users: User[]; courses: 
                 >
                   Enroll
                 </button>
-                <button type="button" onClick={() => setShow(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm">
+                <button type="button" onClick={() => setShow(false)} className="flex-1 border border-line rounded-lg py-2 text-sm">
                   Cancel
                 </button>
               </div>
@@ -122,9 +122,9 @@ export function EnrollmentActions({ users, courses }: { users: User[]; courses: 
 
       {showCsv && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">CSV Bulk Import</h3>
-            <p className="text-xs text-gray-400 mb-3">
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-lg p-6">
+            <h3 className="text-lg font-semibold text-fg mb-2">CSV Bulk Import</h3>
+            <p className="text-xs text-subtle mb-3">
               Header row: <code>email,course_title,due_date</code> (due_date optional, YYYY-MM-DD)
             </p>
             <form onSubmit={importCsv} className="space-y-3">
@@ -133,7 +133,7 @@ export function EnrollmentActions({ users, courses }: { users: User[]; courses: 
                 placeholder={"email,course_title,due_date\njohn@example.com,My Course,2025-12-31"}
                 value={csvText}
                 onChange={(e) => setCsvText(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm font-mono"
               />
               {csvResult && <p className="text-sm text-green-700">{csvResult}</p>}
               <div className="flex gap-2">
@@ -147,7 +147,7 @@ export function EnrollmentActions({ users, courses }: { users: User[]; courses: 
                 <button
                   type="button"
                   onClick={() => { setShowCsv(false); setCsvText(""); setCsvResult(""); }}
-                  className="flex-1 border border-gray-200 rounded-lg py-2 text-sm"
+                  className="flex-1 border border-line rounded-lg py-2 text-sm"
                 >
                   Close
                 </button>

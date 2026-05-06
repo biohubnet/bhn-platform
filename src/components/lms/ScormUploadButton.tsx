@@ -36,7 +36,7 @@ export function ScormUploadButton({ courseId }: { courseId: string }) {
       <button
         onClick={() => inputRef.current?.click()}
         disabled={state === "uploading"}
-        className="flex items-center gap-2 text-sm font-medium border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50 disabled:opacity-60 transition-colors"
+        className="flex items-center gap-2 text-sm font-medium border border-gray-300 text-muted px-3 py-1.5 rounded-lg hover:bg-elevated disabled:opacity-60 transition-colors"
       >
         <Upload size={14} />
         {state === "uploading" ? "Uploading…" : "Upload SCORM (.zip)"}

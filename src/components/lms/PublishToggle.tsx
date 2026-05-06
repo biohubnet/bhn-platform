@@ -24,7 +24,7 @@ export function PublishToggle({ courseId, status }: { courseId: string; status: 
       disabled={loading}
       className={`text-sm font-medium px-4 py-2 rounded-lg border transition-colors disabled:opacity-60 ${
         status === "published"
-          ? "border-gray-300 text-gray-600 hover:bg-gray-50"
+          ? "border-gray-300 text-muted hover:bg-elevated"
           : "border-green-300 text-green-700 bg-green-50 hover:bg-green-100"
       }`}
     >

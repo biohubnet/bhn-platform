@@ -147,40 +147,40 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
 
       {/* Courses checklist */}
       <Card className="overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Courses in this pathway</h2>
-          <span className="text-xs text-slate-500">{completedCount}/{courseIds.length} complete</span>
+        <div className="px-5 py-4 border-b border-line flex items-center justify-between">
+          <h2 className="font-semibold text-fg">Courses in this pathway</h2>
+          <span className="text-xs text-muted">{completedCount}/{courseIds.length} complete</span>
         </div>
         {pathway.courses.length === 0 ? (
-          <div className="p-12 text-center text-sm text-slate-400">
+          <div className="p-12 text-center text-sm text-subtle">
             No courses in this pathway yet.
           </div>
         ) : (
-          <ol className="divide-y divide-slate-100">
+          <ol className="divide-y divide-line">
             {(pathway.courses as PathwayCourseRow[]).map((pc, i) => {
               const e = courseStateMap.get(pc.course.id);
               const done = e?.status === "completed";
               const pct = e ? Math.round(e.progress ?? 0) : 0;
               return (
-                <li key={pc.id} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50/50">
+                <li key={pc.id} className="flex items-center gap-4 px-5 py-4 hover:bg-elevated/50">
                   <div className={
                     "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 " +
                     (done
                       ? "bg-emerald-500 text-white"
                       : e
                       ? "bg-brand-100 text-brand-700"
-                      : "bg-slate-100 text-slate-500")
+                      : "bg-raised text-muted")
                   }>
                     {done ? <CheckCircle2 size={16} /> : i + 1}
                   </div>
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/courses/${pc.course.id}`}
-                      className="font-medium text-slate-900 hover:text-brand-700 transition-colors"
+                      className="font-medium text-fg hover:text-brand-700 transition-colors"
                     >
                       {pc.course.title}
                     </Link>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted">
                       {pc.course.category && <span>{pc.course.category}</span>}
                       {pc.course.duration && (
                         <span className="inline-flex items-center gap-1"><Clock size={11} />{pc.course.duration}m</span>
@@ -193,13 +193,13 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
                       <Badge tone="success">Completed</Badge>
                     ) : e ? (
                       <div>
-                        <p className="text-xs text-slate-500 mb-1">{pct}%</p>
-                        <div className="w-16 h-1.5 bg-slate-100 rounded-full">
+                        <p className="text-xs text-muted mb-1">{pct}%</p>
+                        <div className="w-16 h-1.5 bg-raised rounded-full">
                           <div className="h-full bg-brand-500 rounded-full" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     ) : (
-                      <Circle size={16} className="text-slate-300 ml-auto" />
+                      <Circle size={16} className="text-subtle ml-auto" />
                     )}
                   </div>
                 </li>

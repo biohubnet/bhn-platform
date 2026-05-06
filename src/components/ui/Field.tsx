@@ -3,7 +3,7 @@ import { ReactNode, InputHTMLAttributes, TextareaHTMLAttributes, SelectHTMLAttri
 import { cn } from "@/lib/utils";
 
 const inputClass =
-  "w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg shadow-sm placeholder:text-slate-400 " +
+  "w-full px-3 py-2 text-sm bg-card border border-line rounded-lg shadow-sm placeholder:text-subtle " +
   "focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all";
 
 interface FieldProps {
@@ -19,13 +19,13 @@ export function Field({ label, hint, error, required, children, className }: Fie
   return (
     <div className={cn("space-y-1.5", className)}>
       {label && (
-        <label className="block text-xs font-medium text-slate-700">
+        <label className="block text-xs font-medium text-muted">
           {label}
           {required && <span className="text-rose-500 ml-0.5">*</span>}
         </label>
       )}
       {children}
-      {hint && !error && <p className="text-xs text-slate-400">{hint}</p>}
+      {hint && !error && <p className="text-xs text-subtle">{hint}</p>}
       {error && <p className="text-xs text-rose-500">{error}</p>}
     </div>
   );

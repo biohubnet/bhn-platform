@@ -26,7 +26,7 @@ export function CourseCard({ course, role }: CourseCardProps) {
   return (
     <Link
       href={`/courses/${course.id}`}
-      className="bg-white rounded-xl border border-gray-200 hover:border-brand-300 hover:shadow-md transition-all overflow-hidden group flex flex-col"
+      className="bg-card rounded-xl border border-line hover:border-brand-300 hover:shadow-md transition-all overflow-hidden group flex flex-col"
     >
       {/* Thumbnail */}
       <div className="h-36 bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center">
@@ -40,7 +40,7 @@ export function CourseCard({ course, role }: CourseCardProps) {
 
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2 group-hover:text-brand-600 transition-colors">
+          <h3 className="font-semibold text-fg text-sm leading-snug line-clamp-2 group-hover:text-brand-600 transition-colors">
             {course.title}
           </h3>
           {isStaff && (
@@ -51,10 +51,10 @@ export function CourseCard({ course, role }: CourseCardProps) {
         </div>
 
         {course.description && (
-          <p className="text-xs text-gray-500 line-clamp-2 mb-3">{course.description}</p>
+          <p className="text-xs text-muted line-clamp-2 mb-3">{course.description}</p>
         )}
 
-        <div className="mt-auto flex items-center gap-3 text-xs text-gray-400">
+        <div className="mt-auto flex items-center gap-3 text-xs text-subtle">
           <span className="flex items-center gap-1">
             <Users size={12} />
             {course._count.enrollments}
@@ -75,7 +75,7 @@ export function CourseCard({ course, role }: CourseCardProps) {
 
         {course.category && (
           <div className="mt-2">
-            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
+            <span className="text-xs bg-raised text-muted px-2 py-0.5 rounded">
               {course.category}
             </span>
           </div>

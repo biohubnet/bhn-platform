@@ -102,24 +102,24 @@ export function GroupsClient({
       {groups.map((group) => {
         const open = expanded === group.id;
         return (
-          <div key={group.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div key={group.id} className="bg-card rounded-xl border border-line overflow-hidden">
             <div
-              className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50"
+              className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-elevated"
               onClick={() => setExpanded(open ? null : group.id)}
             >
               <div className="flex items-center gap-3">
-                {open ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronRight size={16} className="text-gray-400" />}
+                {open ? <ChevronDown size={16} className="text-subtle" /> : <ChevronRight size={16} className="text-subtle" />}
                 <div>
-                  <p className="font-semibold text-gray-900">{group.name}</p>
-                  {group.description && <p className="text-xs text-gray-400">{group.description}</p>}
+                  <p className="font-semibold text-fg">{group.name}</p>
+                  {group.description && <p className="text-xs text-subtle">{group.description}</p>}
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-xs text-gray-500">{group._count.members} members</span>
-                <span className="text-xs text-gray-500">{group._count.courses} courses</span>
+                <span className="text-xs text-muted">{group._count.members} members</span>
+                <span className="text-xs text-muted">{group._count.courses} courses</span>
                 <button
                   onClick={(e) => { e.stopPropagation(); deleteGroup(group.id); }}
-                  className="text-gray-400 hover:text-red-500"
+                  className="text-subtle hover:text-red-500"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -127,11 +127,11 @@ export function GroupsClient({
             </div>
 
             {open && (
-              <div className="border-t border-gray-100 px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="border-t border-line px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Members */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-700">Members</p>
+                    <p className="text-sm font-medium text-muted">Members</p>
                     <AddSelect
                       placeholder="Add user…"
                       options={allUsers
@@ -142,15 +142,15 @@ export function GroupsClient({
                   </div>
                   <div className="space-y-1">
                     {group.members.map((m) => (
-                      <div key={m.user.id} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-gray-50">
+                      <div key={m.user.id} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-elevated">
                         <span>{m.user.name ?? m.user.email}</span>
-                        <button onClick={() => removeMember(group.id, m.user.id)} className="text-gray-300 hover:text-red-400">
+                        <button onClick={() => removeMember(group.id, m.user.id)} className="text-subtle hover:text-red-400">
                           <Trash2 size={12} />
                         </button>
                       </div>
                     ))}
                     {group.members.length === 0 && (
-                      <p className="text-xs text-gray-400 px-2">No members yet.</p>
+                      <p className="text-xs text-subtle px-2">No members yet.</p>
                     )}
                   </div>
                 </div>
@@ -158,7 +158,7 @@ export function GroupsClient({
                 {/* Courses */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-700">Courses</p>
+                    <p className="text-sm font-medium text-muted">Courses</p>
                     <AddSelect
                       placeholder="Add course…"
                       options={allCourses
@@ -169,15 +169,15 @@ export function GroupsClient({
                   </div>
                   <div className="space-y-1">
                     {group.courses.map((gc) => (
-                      <div key={gc.course.id} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-gray-50">
+                      <div key={gc.course.id} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-elevated">
                         <span>{gc.course.title}</span>
-                        <button onClick={() => removeCourse(group.id, gc.course.id)} className="text-gray-300 hover:text-red-400">
+                        <button onClick={() => removeCourse(group.id, gc.course.id)} className="text-subtle hover:text-red-400">
                           <Trash2 size={12} />
                         </button>
                       </div>
                     ))}
                     {group.courses.length === 0 && (
-                      <p className="text-xs text-gray-400 px-2">No courses assigned.</p>
+                      <p className="text-xs text-subtle px-2">No courses assigned.</p>
                     )}
                   </div>
                 </div>
@@ -188,27 +188,27 @@ export function GroupsClient({
       })}
 
       {groups.length === 0 && (
-        <div className="text-center py-12 text-gray-400">No groups yet. Create one to get started.</div>
+        <div className="text-center py-12 text-subtle">No groups yet. Create one to get started.</div>
       )}
 
       {showCreate && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">New Group</h3>
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-fg mb-4">New Group</h3>
             <form onSubmit={createGroup} className="space-y-3">
               <input
                 placeholder="Group name *"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               />
               <textarea
                 placeholder="Description (optional)"
                 rows={3}
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               />
               <div className="flex gap-2 pt-2">
                 <button
@@ -221,7 +221,7 @@ export function GroupsClient({
                 <button
                   type="button"
                   onClick={() => setShowCreate(false)}
-                  className="flex-1 border border-gray-200 rounded-lg py-2 text-sm"
+                  className="flex-1 border border-line rounded-lg py-2 text-sm"
                 >
                   Cancel
                 </button>
@@ -250,14 +250,14 @@ function AddSelect({
         onChange={(e) => {
           if (e.target.value) { onAdd(e.target.value); e.target.value = ""; }
         }}
-        className="text-xs border border-gray-200 rounded px-2 py-1 bg-white max-w-[160px]"
+        className="text-xs border border-line rounded px-2 py-1 bg-card max-w-[160px]"
       >
         <option value="" disabled>{placeholder}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
-      <Plus size={12} className="text-gray-400" />
+      <Plus size={12} className="text-subtle" />
     </div>
   );
 }

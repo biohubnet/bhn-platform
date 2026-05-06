@@ -16,8 +16,8 @@ export default async function AdminReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Compliance Reports</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-fg">Compliance Reports</h1>
+        <p className="text-muted text-sm mt-1">
           Per-course completion tracking. Export to CSV for audits.
         </p>
       </div>

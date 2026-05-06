@@ -136,7 +136,7 @@ export function ScormPlayer({
       <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700">
         <Link
           href={`/courses/${courseId}`}
-          className="flex items-center gap-2 text-gray-300 hover:text-white text-sm transition-colors"
+          className="flex items-center gap-2 text-subtle hover:text-white text-sm transition-colors"
         >
           <ArrowLeft size={16} />
           Back to course
@@ -146,7 +146,7 @@ export function ScormPlayer({
           href={entryPoint}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-gray-400 hover:text-white text-xs transition-colors"
+          className="flex items-center gap-1 text-subtle hover:text-white text-xs transition-colors"
         >
           <ExternalLink size={14} />
           Open

@@ -59,8 +59,8 @@ export default async function AdminPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-500 text-sm mt-1">Platform overview and management</p>
+        <h1 className="text-2xl font-bold text-fg">Admin Dashboard</h1>
+        <p className="text-muted text-sm mt-1">Platform overview and management</p>
       </div>
 
       {/* Stats */}
@@ -83,13 +83,13 @@ export default async function AdminPage() {
             orange: "bg-orange-50 text-orange-600",
           };
           return (
-            <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
+            <div key={stat.label} className="bg-card rounded-xl border border-line p-5">
               <div className={`inline-flex p-2 rounded-lg mb-3 ${colors[stat.color]}`}>
                 <Icon size={18} />
               </div>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-sm text-gray-500 mt-0.5">{stat.label}</p>
-              {stat.sub && <p className="text-xs text-gray-400 mt-0.5">{stat.sub}</p>}
+              <p className="text-2xl font-bold text-fg">{stat.value}</p>
+              <p className="text-sm text-muted mt-0.5">{stat.label}</p>
+              {stat.sub && <p className="text-xs text-subtle mt-0.5">{stat.sub}</p>}
             </div>
           );
         })}
@@ -119,23 +119,23 @@ export default async function AdminPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Enrollments */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Recent Enrollments</h2>
+        <div className="bg-card rounded-xl border border-line overflow-hidden">
+          <div className="px-5 py-4 border-b border-line flex items-center justify-between">
+            <h2 className="font-semibold text-fg">Recent Enrollments</h2>
             <Link href="/admin/enrollments" className="text-sm text-brand-600 hover:underline">View all</Link>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-line">
             {(recentEnrollments as RecentEnrollment[]).map((e: RecentEnrollment) => (
               <div key={e.id} className="px-5 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{e.user.name ?? e.user.email}</p>
-                  <p className="text-xs text-gray-400">{e.course.title}</p>
+                  <p className="text-sm font-medium text-fg">{e.user.name ?? e.user.email}</p>
+                  <p className="text-xs text-subtle">{e.course.title}</p>
                 </div>
                 <div className="text-right">
                   <span className={cn("text-xs px-2 py-0.5 rounded-full", statusColor(e.status))}>
                     {e.status}
                   </span>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-subtle mt-1">
                     {new Date(e.enrolledAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -145,17 +145,17 @@ export default async function AdminPage() {
         </div>
 
         {/* New Users */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">New Users</h2>
+        <div className="bg-card rounded-xl border border-line overflow-hidden">
+          <div className="px-5 py-4 border-b border-line flex items-center justify-between">
+            <h2 className="font-semibold text-fg">New Users</h2>
             <Link href="/admin/users" className="text-sm text-brand-600 hover:underline">View all</Link>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-line">
             {(recentUsers as RecentUser[]).map((u: RecentUser) => (
               <div key={u.id} className="px-5 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{u.name ?? "—"}</p>
-                  <p className="text-xs text-gray-400">{u.email}</p>
+                  <p className="text-sm font-medium text-fg">{u.name ?? "—"}</p>
+                  <p className="text-xs text-subtle">{u.email}</p>
                 </div>
                 <div className="text-right">
                   <span className={cn(
@@ -164,11 +164,11 @@ export default async function AdminPage() {
                     u.role === "admin" ? "bg-brand-100 text-brand-700" :
                     u.role === "instructor" ? "bg-violet-100 text-violet-700" :
                     u.role === "evaluating" ? "bg-amber-100 text-amber-700" :
-                    "bg-slate-100 text-slate-600"
+                    "bg-raised text-muted"
                   )}>
                     {u.role}
                   </span>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-subtle mt-1">
                     {u.credits.toLocaleString()} credits
                   </p>
                 </div>

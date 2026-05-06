@@ -24,7 +24,7 @@ export function UserRoleSelect({ userId, currentRole }: { userId: string; curren
       value={role}
       onChange={(e) => handleChange(e.target.value)}
       disabled={saving}
-      className="text-xs border border-gray-200 rounded px-2 py-1 bg-white disabled:opacity-60 focus:outline-none focus:ring-1 focus:ring-brand-400"
+      className="text-xs border border-line rounded px-2 py-1 bg-card disabled:opacity-60 focus:outline-none focus:ring-1 focus:ring-brand-400"
     >
       <option value="user">User</option>
       <option value="evaluating">Evaluating</option>

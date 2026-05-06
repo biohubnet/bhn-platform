@@ -4,9 +4,13 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
+const DAY = 24 * 60 * 60;
+const LONG_SESSION = 30 * DAY;
+const SHORT_SESSION = 1 * DAY;
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: LONG_SESSION },
   pages: {
     signIn: "/login",
     error: "/login",
@@ -17,6 +21,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        remember: { label: "Remember me", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
@@ -26,15 +31,33 @@ export const authOptions: NextAuthOptions = {
         if (!user?.password) return null;
         const valid = await bcrypt.compare(credentials.password, user.password);
         if (!valid) return null;
-        return { id: user.id, email: user.email, name: user.name, role: user.role };
+        // Pass the remember flag through to the JWT callback
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          remember: credentials.remember !== "false",
+        } as unknown as { id: string; email: string; name: string | null; role: string };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.role = (user as { role?: string }).role ?? "user";
         token.id = user.id;
+        const remember = (user as { remember?: boolean }).remember;
+        if (remember === false) {
+          token.shortSession = true;
+          token.exp = Math.floor(Date.now() / 1000) + SHORT_SESSION;
+        } else {
+          token.shortSession = false;
+        }
+      }
+      // Honor exp on subsequent calls so JWT effectively has shorter lifespan when shortSession is set
+      if (trigger === "update" && token.shortSession) {
+        token.exp = Math.floor(Date.now() / 1000) + SHORT_SESSION;
       }
       return token;
     },

@@ -50,7 +50,7 @@ export default async function CourseDetailPage({
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-card rounded-xl border border-line p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
@@ -63,16 +63,16 @@ export default async function CourseDetailPage({
                 {course.status}
               </span>
               {course.scormPackage && (
-                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
+                <span className="text-xs bg-raised text-muted px-2 py-0.5 rounded">
                   {course.scormPackage.version === "SCORM_2004" ? "SCORM 2004" : "SCORM 1.2"}
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
+            <h1 className="text-2xl font-bold text-fg">{course.title}</h1>
             {course.description && (
-              <p className="text-gray-600 mt-2 text-sm">{course.description}</p>
+              <p className="text-muted mt-2 text-sm">{course.description}</p>
             )}
-            <div className="flex items-center gap-4 mt-4 text-sm text-gray-500">
+            <div className="flex items-center gap-4 mt-4 text-sm text-muted">
               <span className="flex items-center gap-1.5">
                 <Users size={14} />
                 {course._count.enrollments} enrolled
@@ -156,19 +156,19 @@ export default async function CourseDetailPage({
 
         {/* Enrollment status */}
         {enrollment && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="mt-4 pt-4 border-t border-line">
             <div className="flex items-center justify-between text-sm mb-1">
-              <span className="text-gray-600">Your progress</span>
-              <span className="font-medium text-gray-900">{Math.round(enrollment.progress)}%</span>
+              <span className="text-muted">Your progress</span>
+              <span className="font-medium text-fg">{Math.round(enrollment.progress)}%</span>
             </div>
-            <div className="h-2 bg-gray-100 rounded-full">
+            <div className="h-2 bg-raised rounded-full">
               <div
                 className="h-2 bg-brand-500 rounded-full transition-all"
                 style={{ width: `${enrollment.progress}%` }}
               />
             </div>
             {enrollment.score != null && (
-              <p className="text-xs text-gray-500 mt-1">Last score: {Math.round(enrollment.score)}%</p>
+              <p className="text-xs text-muted mt-1">Last score: {Math.round(enrollment.score)}%</p>
             )}
           </div>
         )}
@@ -176,13 +176,13 @@ export default async function CourseDetailPage({
 
       {/* SCORM Upload (instructors) */}
       {isStaff && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="bg-card rounded-xl border border-line p-6">
+          <h2 className="text-base font-semibold text-fg mb-4 flex items-center gap-2">
             <Upload size={16} />
             SCORM Package
           </h2>
           {course.scormPackage ? (
-            <div className="text-sm text-gray-600 space-y-1">
+            <div className="text-sm text-muted space-y-1">
               <p>
                 <span className="font-medium">Version:</span>{" "}
                 {course.scormPackage.version === "SCORM_2004" ? "SCORM 2004" : "SCORM 1.2"}
@@ -190,12 +190,12 @@ export default async function CourseDetailPage({
               <p>
                 <span className="font-medium">Entry:</span> {course.scormPackage.entryPoint}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-subtle">
                 Uploaded {new Date(course.scormPackage.uploadedAt).toLocaleDateString()}
               </p>
             </div>
           ) : (
-            <p className="text-sm text-gray-500 mb-3">No SCORM package uploaded yet.</p>
+            <p className="text-sm text-muted mb-3">No SCORM package uploaded yet.</p>
           )}
           <div className="mt-3">
             <ScormUploadButton courseId={id} />
@@ -205,24 +205,24 @@ export default async function CourseDetailPage({
 
       {/* Modules */}
       {course.modules.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Course Content</h2>
+        <div className="bg-card rounded-xl border border-line p-6">
+          <h2 className="text-base font-semibold text-fg mb-4">Course Content</h2>
           <div className="space-y-2">
             {course.modules.map((mod, i) => (
               <div
                 key={mod.id}
-                className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 text-sm"
+                className="flex items-center gap-3 p-3 rounded-lg border border-line text-sm"
               >
-                <div className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-raised text-muted flex items-center justify-center text-xs font-medium flex-shrink-0">
                   {i + 1}
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-gray-800">{mod.title}</p>
+                  <p className="font-medium text-fg">{mod.title}</p>
                   {mod.duration && (
-                    <p className="text-xs text-gray-400">{formatDuration(mod.duration)}</p>
+                    <p className="text-xs text-subtle">{formatDuration(mod.duration)}</p>
                   )}
                 </div>
-                <span className="text-xs text-gray-400 capitalize">{mod.type}</span>
+                <span className="text-xs text-subtle capitalize">{mod.type}</span>
               </div>
             ))}
           </div>
@@ -231,17 +231,17 @@ export default async function CourseDetailPage({
 
       {/* Assessments */}
       {course.assessments.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Assessments</h2>
+        <div className="bg-card rounded-xl border border-line p-6">
+          <h2 className="text-base font-semibold text-fg mb-4">Assessments</h2>
           <div className="space-y-2">
             {course.assessments.map((a) => (
               <div
                 key={a.id}
-                className="flex items-center justify-between p-3 rounded-lg border border-gray-100"
+                className="flex items-center justify-between p-3 rounded-lg border border-line"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-800">{a.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-sm font-medium text-fg">{a.title}</p>
+                  <p className="text-xs text-subtle mt-0.5">
                     {a._count.questions} questions · Pass: {a.passingScore}%
                   </p>
                 </div>

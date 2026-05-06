@@ -74,24 +74,24 @@ export default async function GradebookPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Gradebook</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-fg">Gradebook</h1>
+        <p className="text-muted text-sm mt-1">
           {enrollments.filter((e) => e.score != null).length} scored ·{" "}
           {avg != null ? `Avg: ${Math.round(avg)}%` : "No scores yet"}
         </p>
       </div>
 
       {/* Course summary */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Course Grades</h2>
+      <div className="bg-card rounded-xl border border-line overflow-hidden">
+        <div className="px-5 py-4 border-b border-line">
+          <h2 className="font-semibold text-fg">Course Grades</h2>
         </div>
         {enrollments.length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-gray-400">No enrollments</div>
+          <div className="px-5 py-8 text-center text-sm text-subtle">No enrollments</div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
+              <tr className="border-b border-line text-left text-xs text-muted uppercase tracking-wide">
                 <th className="px-5 py-3">Course</th>
                 <th className="px-5 py-3">Category</th>
                 <th className="px-5 py-3">Status</th>
@@ -100,19 +100,19 @@ export default async function GradebookPage() {
                 <th className="px-5 py-3">Progress</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line">
               {enrollments.map((e: EnrollmentGrade) => {
                 const passed = e.score != null && e.score >= e.course.passingScore;
                 return (
-                  <tr key={e.id} className="hover:bg-gray-50">
-                    <td className="px-5 py-3 font-medium text-gray-900">{e.course.title}</td>
-                    <td className="px-5 py-3 text-gray-500">{e.course.category ?? "—"}</td>
+                  <tr key={e.id} className="hover:bg-elevated">
+                    <td className="px-5 py-3 font-medium text-fg">{e.course.title}</td>
+                    <td className="px-5 py-3 text-muted">{e.course.category ?? "—"}</td>
                     <td className="px-5 py-3">
                       <span className={cn("text-xs px-2 py-0.5 rounded-full", statusColor(e.status))}>
                         {e.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 font-semibold text-gray-900">
+                    <td className="px-5 py-3 font-semibold text-fg">
                       {formatScore(e.score)}
                     </td>
                     <td className="px-5 py-3">
@@ -121,18 +121,18 @@ export default async function GradebookPage() {
                           {passed ? "Pass" : "Fail"}
                         </span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-subtle">—</span>
                       )}
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-20 h-1.5 bg-gray-100 rounded-full">
+                        <div className="w-20 h-1.5 bg-raised rounded-full">
                           <div
                             className="h-1.5 bg-brand-500 rounded-full"
                             style={{ width: `${e.progress}%` }}
                           />
                         </div>
-                        <span className="text-xs text-gray-400">{Math.round(e.progress)}%</span>
+                        <span className="text-xs text-subtle">{Math.round(e.progress)}%</span>
                       </div>
                     </td>
                   </tr>
@@ -145,13 +145,13 @@ export default async function GradebookPage() {
 
       {/* SCORM attempt history */}
       {scormSessions.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">SCORM Attempt History</h2>
+        <div className="bg-card rounded-xl border border-line overflow-hidden">
+          <div className="px-5 py-4 border-b border-line">
+            <h2 className="font-semibold text-fg">SCORM Attempt History</h2>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
+              <tr className="border-b border-line text-left text-xs text-muted uppercase tracking-wide">
                 <th className="px-5 py-3">Course</th>
                 <th className="px-5 py-3">Attempt</th>
                 <th className="px-5 py-3">Status</th>
@@ -160,19 +160,19 @@ export default async function GradebookPage() {
                 <th className="px-5 py-3">Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line">
               {scormSessions.map((s: ScormSessionGrade) => (
-                <tr key={s.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3 text-gray-900">{s.package.course.title}</td>
-                  <td className="px-5 py-3 text-gray-500">#{s.attemptNumber}</td>
+                <tr key={s.id} className="hover:bg-elevated">
+                  <td className="px-5 py-3 text-fg">{s.package.course.title}</td>
+                  <td className="px-5 py-3 text-muted">#{s.attemptNumber}</td>
                   <td className="px-5 py-3">
                     <span className={cn("text-xs px-2 py-0.5 rounded-full", statusColor(s.status))}>
                       {s.status}
                     </span>
                   </td>
                   <td className="px-5 py-3 font-semibold">{formatScore(s.score)}</td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">{s.timeSpent ?? "—"}</td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">
+                  <td className="px-5 py-3 text-subtle text-xs">{s.timeSpent ?? "—"}</td>
+                  <td className="px-5 py-3 text-subtle text-xs">
                     {new Date(s.createdAt).toLocaleDateString()}
                   </td>
                 </tr>
@@ -184,13 +184,13 @@ export default async function GradebookPage() {
 
       {/* Assessment results */}
       {assessmentAttempts.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Assessment Results</h2>
+        <div className="bg-card rounded-xl border border-line overflow-hidden">
+          <div className="px-5 py-4 border-b border-line">
+            <h2 className="font-semibold text-fg">Assessment Results</h2>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
+              <tr className="border-b border-line text-left text-xs text-muted uppercase tracking-wide">
                 <th className="px-5 py-3">Assessment</th>
                 <th className="px-5 py-3">Course</th>
                 <th className="px-5 py-3">Score</th>
@@ -198,11 +198,11 @@ export default async function GradebookPage() {
                 <th className="px-5 py-3">Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line">
               {assessmentAttempts.map((a: AssessmentAttemptGrade) => (
-                <tr key={a.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3 text-gray-900">{a.assessment.title}</td>
-                  <td className="px-5 py-3 text-gray-500">{a.assessment.course.title}</td>
+                <tr key={a.id} className="hover:bg-elevated">
+                  <td className="px-5 py-3 text-fg">{a.assessment.title}</td>
+                  <td className="px-5 py-3 text-muted">{a.assessment.course.title}</td>
                   <td className="px-5 py-3 font-semibold">{formatScore(a.score)}</td>
                   <td className="px-5 py-3">
                     {a.passed != null ? (
@@ -213,7 +213,7 @@ export default async function GradebookPage() {
                       "—"
                     )}
                   </td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">
+                  <td className="px-5 py-3 text-subtle text-xs">
                     {new Date(a.startedAt).toLocaleDateString()}
                   </td>
                 </tr>

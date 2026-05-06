@@ -35,8 +35,8 @@ export default async function AdminGroupsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Groups / Cohorts</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-fg">Groups / Cohorts</h1>
+        <p className="text-muted text-sm mt-1">
           Add users and courses to a group — members are auto-enrolled in group courses.
         </p>
       </div>

@@ -21,8 +21,8 @@ export default async function AdminAnnouncementsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
-        <p className="text-gray-500 text-sm mt-1">Post platform-wide or course-scoped announcements.</p>
+        <h1 className="text-2xl font-bold text-fg">Announcements</h1>
+        <p className="text-muted text-sm mt-1">Post platform-wide or course-scoped announcements.</p>
       </div>
       <AnnouncementsClient announcements={announcements} courses={courses} />
     </div>

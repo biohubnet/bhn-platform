@@ -43,17 +43,17 @@ export default async function AdminCertificatesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Certificate Management</h1>
-          <p className="text-gray-500 text-sm mt-1">{certs.length} certificates</p>
+          <h1 className="text-2xl font-bold text-fg">Certificate Management</h1>
+          <p className="text-muted text-sm mt-1">{certs.length} certificates</p>
         </div>
         <CertificateActions users={users} courses={courses} />
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-card rounded-xl border border-line overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
+              <tr className="border-b border-line text-left text-xs text-muted uppercase tracking-wide">
                 <th className="px-5 py-3">User</th>
                 <th className="px-5 py-3">Course</th>
                 <th className="px-5 py-3">Status</th>
@@ -62,14 +62,14 @@ export default async function AdminCertificatesPage() {
                 <th className="px-5 py-3">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line">
               {certs.map((cert: CertRow) => (
-                <tr key={cert.id} className={cn("hover:bg-gray-50", cert.revokedAt && "opacity-50")}>
+                <tr key={cert.id} className={cn("hover:bg-elevated", cert.revokedAt && "opacity-50")}>
                   <td className="px-5 py-3">
-                    <p className="font-medium text-gray-900">{cert.user.name ?? "—"}</p>
-                    <p className="text-xs text-gray-400">{cert.user.email}</p>
+                    <p className="font-medium text-fg">{cert.user.name ?? "—"}</p>
+                    <p className="text-xs text-subtle">{cert.user.email}</p>
                   </td>
-                  <td className="px-5 py-3 text-gray-700">{cert.course.title}</td>
+                  <td className="px-5 py-3 text-muted">{cert.course.title}</td>
                   <td className="px-5 py-3">
                     <span className={cn(
                       "text-xs px-2 py-0.5 rounded-full",
@@ -78,10 +78,10 @@ export default async function AdminCertificatesPage() {
                       {cert.revokedAt ? "Revoked" : "Valid"}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">
+                  <td className="px-5 py-3 text-subtle text-xs">
                     {new Date(cert.issueDate).toLocaleDateString()}
                   </td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">
+                  <td className="px-5 py-3 text-subtle text-xs">
                     {cert.expiryDate ? new Date(cert.expiryDate).toLocaleDateString() : "No expiry"}
                   </td>
                   <td className="px-5 py-3">

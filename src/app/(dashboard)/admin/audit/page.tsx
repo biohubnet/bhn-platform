@@ -50,7 +50,7 @@ export default async function AdminAuditPage({
     "certificate.revoke": "bg-red-50 text-red-600",
     "certificate.reinstate": "bg-green-50 text-green-700",
     "credit.grant": "bg-amber-50 text-amber-700",
-    "settings.update": "bg-slate-50 text-slate-600",
+    "settings.update": "bg-elevated text-muted",
     "group.create": "bg-violet-50 text-violet-600",
     "lti.create": "bg-cyan-50 text-cyan-600",
   };
@@ -58,15 +58,15 @@ export default async function AdminAuditPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
-        <p className="text-gray-500 text-sm mt-1">{total.toLocaleString()} events recorded</p>
+        <h1 className="text-2xl font-bold text-fg">Audit Log</h1>
+        <p className="text-muted text-sm mt-1">{total.toLocaleString()} events recorded</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-card rounded-xl border border-line overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
+              <tr className="border-b border-line text-left text-xs text-muted uppercase tracking-wide">
                 <th className="px-5 py-3">Time</th>
                 <th className="px-5 py-3">Actor</th>
                 <th className="px-5 py-3">Action</th>
@@ -74,26 +74,26 @@ export default async function AdminAuditPage({
                 <th className="px-5 py-3">Detail</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line">
               {(logs as AuditLogWithActor[]).map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3 text-gray-400 text-xs whitespace-nowrap">
+                <tr key={log.id} className="hover:bg-elevated">
+                  <td className="px-5 py-3 text-subtle text-xs whitespace-nowrap">
                     {new Date(log.createdAt).toLocaleString()}
                   </td>
                   <td className="px-5 py-3">
-                    <p className="text-gray-900 font-medium text-xs">{log.actor.name ?? "—"}</p>
-                    <p className="text-xs text-gray-400">{log.actor.email}</p>
+                    <p className="text-fg font-medium text-xs">{log.actor.name ?? "—"}</p>
+                    <p className="text-xs text-subtle">{log.actor.email}</p>
                   </td>
                   <td className="px-5 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${actionColor[log.action] ?? "bg-gray-100 text-gray-600"}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${actionColor[log.action] ?? "bg-raised text-muted"}`}>
                       {log.action}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-xs text-gray-500">
+                  <td className="px-5 py-3 text-xs text-muted">
                     {log.targetType && <span className="font-medium">{log.targetType}</span>}
-                    {log.targetId && <span className="text-gray-400 ml-1 font-mono">{log.targetId.slice(0, 8)}…</span>}
+                    {log.targetId && <span className="text-subtle ml-1 font-mono">{log.targetId.slice(0, 8)}…</span>}
                   </td>
-                  <td className="px-5 py-3 text-xs text-gray-400 max-w-xs truncate font-mono">
+                  <td className="px-5 py-3 text-xs text-subtle max-w-xs truncate font-mono">
                     {log.detail}
                   </td>
                 </tr>
@@ -109,16 +109,16 @@ export default async function AdminAuditPage({
           {page > 1 && (
             <Link
               href={`/admin/audit?page=${page - 1}`}
-              className="px-3 py-1.5 border border-gray-200 rounded text-sm hover:bg-gray-50"
+              className="px-3 py-1.5 border border-line rounded text-sm hover:bg-elevated"
             >
               ← Prev
             </Link>
           )}
-          <span className="text-sm text-gray-500">Page {page} of {pages}</span>
+          <span className="text-sm text-muted">Page {page} of {pages}</span>
           {page < pages && (
             <Link
               href={`/admin/audit?page=${page + 1}`}
-              className="px-3 py-1.5 border border-gray-200 rounded text-sm hover:bg-gray-50"
+              className="px-3 py-1.5 border border-line rounded text-sm hover:bg-elevated"
             >
               Next →
             </Link>

@@ -54,8 +54,8 @@ export default async function CoursesPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Course Catalog</h1>
-          <p className="text-gray-500 text-sm mt-1">{courses.length} courses available</p>
+          <h1 className="text-2xl font-bold text-fg">Course Catalog</h1>
+          <p className="text-muted text-sm mt-1">{courses.length} courses available</p>
         </div>
         {isStaff && <NewCourseButton />}
       </div>
@@ -65,7 +65,7 @@ export default async function CoursesPage({
         <Link
           href="/courses"
           className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-            !sp.category ? "bg-brand-600 text-white border-brand-600" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+            !sp.category ? "bg-brand-600 text-white border-brand-600" : "bg-card text-muted border-line hover:border-line-strong"
           }`}
         >
           All
@@ -77,7 +77,7 @@ export default async function CoursesPage({
             className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
               sp.category === c.category
                 ? "bg-brand-600 text-white border-brand-600"
-                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                : "bg-card text-muted border-line hover:border-line-strong"
             }`}
           >
             {c.category}
@@ -86,10 +86,10 @@ export default async function CoursesPage({
       </div>
 
       {courses.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-          <p className="text-gray-500">No courses found</p>
+        <div className="text-center py-16 bg-card rounded-xl border border-line">
+          <p className="text-muted">No courses found</p>
           {isStaff && (
-            <p className="text-sm text-gray-400 mt-1">Create your first course to get started</p>
+            <p className="text-sm text-subtle mt-1">Create your first course to get started</p>
           )}
         </div>
       ) : (

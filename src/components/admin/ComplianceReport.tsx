@@ -38,7 +38,7 @@ export function ComplianceReport({ courses }: { courses: Course[] }) {
         <select
           value={selectedCourse}
           onChange={(e) => { setSelectedCourse(e.target.value); setReport(null); }}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          className="border border-line rounded-lg px-3 py-2 text-sm"
         >
           <option value="">All published courses</option>
           {courses.map((c) => (
@@ -63,14 +63,14 @@ export function ComplianceReport({ courses }: { courses: Course[] }) {
       </div>
 
       {report && report.map((cr) => (
-        <div key={cr.courseId} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
-            <h2 className="font-semibold text-gray-900">{cr.courseTitle}</h2>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+        <div key={cr.courseId} className="bg-card rounded-xl border border-line overflow-hidden">
+          <div className="px-5 py-4 border-b border-line flex items-center justify-between flex-wrap gap-2">
+            <h2 className="font-semibold text-fg">{cr.courseTitle}</h2>
+            <div className="flex items-center gap-4 text-sm text-muted">
               <span>{cr.total} enrolled</span>
               <span className="text-green-600 font-medium">{cr.completed} completed</span>
               <span className="text-brand-600">{cr.inProgress} in progress</span>
-              <span className="text-gray-400">
+              <span className="text-subtle">
                 {cr.total > 0 ? Math.round((cr.completed / cr.total) * 100) : 0}% completion rate
               </span>
             </div>
@@ -78,7 +78,7 @@ export function ComplianceReport({ courses }: { courses: Course[] }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-50 text-left text-xs text-gray-400 uppercase tracking-wide">
+                <tr className="border-b border-gray-50 text-left text-xs text-subtle uppercase tracking-wide">
                   <th className="px-5 py-2">User</th>
                   <th className="px-5 py-2">Status</th>
                   <th className="px-5 py-2">Progress</th>
@@ -88,28 +88,28 @@ export function ComplianceReport({ courses }: { courses: Course[] }) {
                   <th className="px-5 py-2">Completed</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-line">
                 {cr.rows.map((row) => (
-                  <tr key={row.userId} className="hover:bg-gray-50">
+                  <tr key={row.userId} className="hover:bg-elevated">
                     <td className="px-5 py-2">
-                      <p className="text-gray-900">{row.name || "—"}</p>
-                      <p className="text-xs text-gray-400">{row.email}</p>
+                      <p className="text-fg">{row.name || "—"}</p>
+                      <p className="text-xs text-subtle">{row.email}</p>
                     </td>
                     <td className="px-5 py-2">
                       <span className={cn(
                         "text-xs px-2 py-0.5 rounded-full",
                         row.status === "completed" ? "bg-green-50 text-green-700" :
                         row.status === "active" ? "bg-brand-50 text-brand-600" :
-                        "bg-gray-100 text-gray-500"
+                        "bg-raised text-muted"
                       )}>
                         {row.status}
                       </span>
                     </td>
-                    <td className="px-5 py-2 text-gray-500 text-xs">{Math.round(row.progress)}%</td>
-                    <td className="px-5 py-2 text-gray-500 text-xs">
+                    <td className="px-5 py-2 text-muted text-xs">{Math.round(row.progress)}%</td>
+                    <td className="px-5 py-2 text-muted text-xs">
                       {row.score != null ? `${row.score}%` : "—"}
                     </td>
-                    <td className="px-5 py-2 text-gray-400 text-xs">
+                    <td className="px-5 py-2 text-subtle text-xs">
                       {new Date(row.enrolledAt).toLocaleDateString()}
                     </td>
                     <td className="px-5 py-2 text-xs">
@@ -117,13 +117,13 @@ export function ComplianceReport({ courses }: { courses: Course[] }) {
                         <span className={cn(
                           new Date(row.dueDate) < new Date() && row.status !== "completed"
                             ? "text-red-500 font-medium"
-                            : "text-gray-400"
+                            : "text-subtle"
                         )}>
                           {new Date(row.dueDate).toLocaleDateString()}
                         </span>
                       ) : "—"}
                     </td>
-                    <td className="px-5 py-2 text-gray-400 text-xs">
+                    <td className="px-5 py-2 text-subtle text-xs">
                       {row.completedAt ? new Date(row.completedAt).toLocaleDateString() : "—"}
                     </td>
                   </tr>

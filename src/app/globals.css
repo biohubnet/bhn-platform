@@ -1,10 +1,26 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* BHN Blue Design System */
-:root {
-  --background: #f5f8fc;
-  --foreground: #0f1f3d;
+/* ============================================================
+ * BHN Theme System
+ * Switch via [data-theme="..."] on <html>.
+ * Each theme defines: surface, text, border, brand scale.
+ * Tailwind utility classes bg-card / text-fg / border-line use
+ * these via @theme tokens below.
+ * ============================================================ */
+
+/* ───── Light (default) ───── */
+:root, [data-theme="light"] {
+  --bg:        #f5f8fc;
+  --card:      #ffffff;
+  --elevated:  #f1f5f9;
+  --raised:    #eaf1fa;
+  --fg:        #0f1f3d;
+  --fg-muted:  #475569;
+  --fg-subtle: #94a3b8;
+  --line:      #e2e8f0;
+  --line-strong:#cbd5e1;
+  --backdrop:  rgba(15, 23, 42, 0.5);
 
   --brand-50:  #eff5ff;
   --brand-100: #dbe7fe;
@@ -16,20 +32,116 @@
   --brand-700: #233ec0;
   --brand-800: #1e3499;
   --brand-900: #1c2f7a;
-
-  --surface-0: #ffffff;
-  --surface-1: #f5f8fc;
-  --surface-2: #eaf1fa;
-
-  --ring: rgba(42, 79, 219, 0.35);
 }
 
+/* ───── Dark ───── */
+[data-theme="dark"] {
+  --bg:        #060d1f;
+  --card:      #0f1d3d;
+  --elevated:  #142a55;
+  --raised:    #1c3672;
+  --fg:        #e8edf7;
+  --fg-muted:  #b3c0db;
+  --fg-subtle: #7889ad;
+  --line:      #1c3268;
+  --line-strong:#284285;
+  --backdrop:  rgba(0, 0, 0, 0.7);
+
+  --brand-50:  #1c2f7a;
+  --brand-100: #233ec0;
+  --brand-200: #2a4fdb;
+  --brand-300: #3b6cef;
+  --brand-400: #5e8ff7;
+  --brand-500: #8eb4fb;
+  --brand-600: #b9d1fd;
+  --brand-700: #dbe7fe;
+  --brand-800: #eff5ff;
+  --brand-900: #ffffff;
+}
+
+/* ───── Ocean (light, teal accent) ───── */
+[data-theme="ocean"] {
+  --bg:        #f1fbfa;
+  --card:      #ffffff;
+  --elevated:  #ecfdf7;
+  --raised:    #d1faf2;
+  --fg:        #0c2d2a;
+  --fg-muted:  #305953;
+  --fg-subtle: #6f9b96;
+  --line:      #c7eee7;
+  --line-strong:#9bdfd4;
+  --backdrop:  rgba(12, 45, 42, 0.5);
+
+  --brand-50:  #ecfeff;
+  --brand-100: #cffafe;
+  --brand-200: #a5f3fc;
+  --brand-300: #67e8f9;
+  --brand-400: #22d3ee;
+  --brand-500: #06b6d4;
+  --brand-600: #0891b2;
+  --brand-700: #0e7490;
+  --brand-800: #155e75;
+  --brand-900: #164e63;
+}
+
+/* ───── Sunset (light, warm orange accent) ───── */
+[data-theme="sunset"] {
+  --bg:        #fff8f0;
+  --card:      #ffffff;
+  --elevated:  #fff1e0;
+  --raised:    #ffe4c4;
+  --fg:        #3d1f0a;
+  --fg-muted:  #6b3a17;
+  --fg-subtle: #a37250;
+  --line:      #f5d9b9;
+  --line-strong:#e8b886;
+  --backdrop:  rgba(61, 31, 10, 0.5);
+
+  --brand-50:  #fff7ed;
+  --brand-100: #ffedd5;
+  --brand-200: #fed7aa;
+  --brand-300: #fdba74;
+  --brand-400: #fb923c;
+  --brand-500: #f97316;
+  --brand-600: #ea580c;
+  --brand-700: #c2410c;
+  --brand-800: #9a3412;
+  --brand-900: #7c2d12;
+}
+
+/* ───── Forest (light, deep-green accent) ───── */
+[data-theme="forest"] {
+  --bg:        #f4faf2;
+  --card:      #ffffff;
+  --elevated:  #ecfdf5;
+  --raised:    #d1fae5;
+  --fg:        #0d2818;
+  --fg-muted:  #2d5a3d;
+  --fg-subtle: #6b8e7c;
+  --line:      #c5e8d2;
+  --line-strong:#9ad4ad;
+  --backdrop:  rgba(13, 40, 24, 0.5);
+
+  --brand-50:  #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-200: #a7f3d0;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-800: #065f46;
+  --brand-900: #064e3b;
+}
+
+/* ───── Tailwind theme bindings ───── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
+  /* Brand scale */
   --color-brand-50:  var(--brand-50);
   --color-brand-100: var(--brand-100);
   --color-brand-200: var(--brand-200);
@@ -41,32 +153,52 @@
   --color-brand-800: var(--brand-800);
   --color-brand-900: var(--brand-900);
 
-  --color-surface-0: var(--surface-0);
-  --color-surface-1: var(--surface-1);
-  --color-surface-2: var(--surface-2);
+  /* Semantic surface tokens */
+  --color-page:     var(--bg);
+  --color-card:     var(--card);
+  --color-elevated: var(--elevated);
+  --color-raised:   var(--raised);
+  --color-fg:       var(--fg);
+  --color-muted:    var(--fg-muted);
+  --color-subtle:   var(--fg-subtle);
+  --color-line:     var(--line);
+  --color-line-strong: var(--line-strong);
+
+  /* Legacy surface aliases */
+  --color-surface-0: var(--card);
+  --color-surface-1: var(--bg);
+  --color-surface-2: var(--elevated);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--fg);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 250ms ease, color 250ms ease;
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(15, 31, 61, 0.15);
+  background: var(--line-strong);
   border-radius: 6px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(15, 31, 61, 0.3); background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--fg-subtle); background-clip: padding-box; }
 
 :focus-visible {
   outline: 2px solid var(--brand-500);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/* Smooth color transitions when swapping themes */
+[data-theme] *, [data-theme] {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: ease;
+  transition-duration: 200ms;
 }
 
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

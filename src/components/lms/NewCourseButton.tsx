@@ -43,17 +43,17 @@ export function NewCourseButton() {
 
       {open && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+          <div className="bg-card rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">Create Course</h2>
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <h2 className="text-lg font-semibold text-fg">Create Course</h2>
+              <button onClick={() => setOpen(false)} className="text-subtle hover:text-muted">
                 <X size={20} />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                <label className="block text-sm font-medium text-muted mb-1">Title *</label>
                 <input
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   value={form.title}
@@ -62,7 +62,7 @@ export function NewCourseButton() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-muted mb-1">Description</label>
                 <textarea
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   rows={3}
@@ -73,7 +73,7 @@ export function NewCourseButton() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-muted mb-1">Category</label>
                   <input
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     value={form.category}
@@ -82,7 +82,7 @@ export function NewCourseButton() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <label className="block text-sm font-medium text-muted mb-1">Type</label>
                   <select
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     value={form.courseType}
@@ -96,7 +96,7 @@ export function NewCourseButton() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-muted mb-1">
                   Passing Score (%)
                 </label>
                 <input
@@ -113,7 +113,7 @@ export function NewCourseButton() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setOpen(false)}
-                className="flex-1 border border-gray-200 text-gray-600 text-sm font-medium py-2 rounded-lg hover:bg-gray-50"
+                className="flex-1 border border-line text-muted text-sm font-medium py-2 rounded-lg hover:bg-elevated"
               >
                 Cancel
               </button>

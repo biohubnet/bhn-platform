@@ -75,23 +75,23 @@ export function AnnouncementsClient({
           <div
             key={a.id}
             className={cn(
-              "bg-white rounded-xl border p-5",
-              a.pinned ? "border-amber-300 bg-amber-50" : "border-gray-200"
+              "bg-card rounded-xl border p-5",
+              a.pinned ? "border-amber-300 bg-amber-50" : "border-line"
             )}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   {a.pinned && <Pin size={12} className="text-amber-500" />}
-                  <h3 className="font-semibold text-gray-900">{a.title}</h3>
+                  <h3 className="font-semibold text-fg">{a.title}</h3>
                   {a.courseId && (
                     <span className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full">
                       {courses.find((c) => c.id === a.courseId)?.title ?? "Course"}
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 whitespace-pre-wrap">{a.body}</p>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-sm text-muted whitespace-pre-wrap">{a.body}</p>
+                <p className="text-xs text-subtle mt-2">
                   {new Date(a.createdAt).toLocaleDateString()}
                 </p>
               </div>
@@ -99,8 +99,8 @@ export function AnnouncementsClient({
                 <button
                   onClick={() => togglePin(a.id, a.pinned)}
                   className={cn(
-                    "p-1.5 rounded hover:bg-gray-100",
-                    a.pinned ? "text-amber-500" : "text-gray-400"
+                    "p-1.5 rounded hover:bg-raised",
+                    a.pinned ? "text-amber-500" : "text-subtle"
                   )}
                   title={a.pinned ? "Unpin" : "Pin"}
                 >
@@ -108,7 +108,7 @@ export function AnnouncementsClient({
                 </button>
                 <button
                   onClick={() => del(a.id)}
-                  className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
+                  className="p-1.5 rounded hover:bg-red-50 text-subtle hover:text-red-500"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -117,21 +117,21 @@ export function AnnouncementsClient({
           </div>
         ))}
         {initial.length === 0 && (
-          <div className="text-center py-12 text-gray-400">No announcements yet.</div>
+          <div className="text-center py-12 text-subtle">No announcements yet.</div>
         )}
       </div>
 
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">New Announcement</h3>
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-lg p-6">
+            <h3 className="text-lg font-semibold text-fg mb-4">New Announcement</h3>
             <form onSubmit={create} className="space-y-3">
               <input
                 placeholder="Title *"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               />
               <textarea
                 placeholder="Body *"
@@ -139,19 +139,19 @@ export function AnnouncementsClient({
                 rows={4}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               />
               <select
                 value={courseId}
                 onChange={(e) => setCourseId(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">Platform-wide (no course)</option>
                 {courses.map((c) => (
                   <option key={c.id} value={c.id}>{c.title}</option>
                 ))}
               </select>
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-muted cursor-pointer">
                 <input
                   type="checkbox"
                   checked={pinned}
@@ -168,7 +168,7 @@ export function AnnouncementsClient({
                 >
                   Post
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm">
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 border border-line rounded-lg py-2 text-sm">
                   Cancel
                 </button>
               </div>

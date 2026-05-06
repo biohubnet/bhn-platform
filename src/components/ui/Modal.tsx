@@ -47,21 +47,21 @@ export function Modal({ open, onClose, title, description, footer, size = "md", 
         role="dialog"
         aria-modal="true"
         className={cn(
-          "relative w-full bg-white rounded-2xl shadow-2xl border border-slate-200 my-auto animate-slide-up-in",
+          "relative w-full bg-card rounded-2xl shadow-2xl border border-line my-auto animate-slide-up-in",
           sizeClass[size]
         )}
       >
         {(title || description) && (
-          <div className="px-6 pt-5 pb-4 border-b border-slate-100">
+          <div className="px-6 pt-5 pb-4 border-b border-line">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                {title && <h2 className="text-lg font-semibold text-slate-900">{title}</h2>}
-                {description && <p className="text-sm text-slate-500 mt-0.5">{description}</p>}
+                {title && <h2 className="text-lg font-semibold text-fg">{title}</h2>}
+                {description && <p className="text-sm text-muted mt-0.5">{description}</p>}
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 -mr-1 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                className="p-1.5 -mr-1 rounded-lg text-subtle hover:bg-raised hover:text-muted transition-colors"
                 aria-label="Close"
               >
                 <X size={18} />
@@ -71,7 +71,7 @@ export function Modal({ open, onClose, title, description, footer, size = "md", 
         )}
         <div className="px-6 py-5">{children}</div>
         {footer && (
-          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 rounded-b-2xl flex items-center justify-end gap-2">
+          <div className="px-6 py-4 bg-elevated border-t border-line rounded-b-2xl flex items-center justify-end gap-2">
             {footer}
           </div>
         )}

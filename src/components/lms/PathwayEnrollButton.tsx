@@ -21,7 +21,7 @@ export function PathwayEnrollButton({ pathwayId }: { pathwayId: string }) {
   }
 
   return (
-    <Button onClick={enroll} loading={loading} className="bg-white text-brand-700 hover:bg-brand-50">
+    <Button onClick={enroll} loading={loading} className="bg-card text-brand-700 hover:bg-brand-50">
       Enroll in pathway
     </Button>
   );

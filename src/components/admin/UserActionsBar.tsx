@@ -52,14 +52,14 @@ export function UserActionsBar() {
 
       {showCreate && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Create User</h3>
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-fg mb-4">Create User</h3>
             <form onSubmit={createUser} className="space-y-3">
               <input
                 placeholder="Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               />
               <input
                 placeholder="Email *"
@@ -67,7 +67,7 @@ export function UserActionsBar() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               />
               <input
                 placeholder="Password *"
@@ -76,12 +76,12 @@ export function UserActionsBar() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               />
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm"
               >
                 <option value="user">user</option>
                 <option value="evaluating">evaluating</option>
@@ -100,7 +100,7 @@ export function UserActionsBar() {
                 <button
                   type="button"
                   onClick={() => setShowCreate(false)}
-                  className="flex-1 border border-gray-200 rounded-lg py-2 text-sm hover:bg-gray-50"
+                  className="flex-1 border border-line rounded-lg py-2 text-sm hover:bg-elevated"
                 >
                   Cancel
                 </button>
