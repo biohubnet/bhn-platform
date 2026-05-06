@@ -1,0 +1,127 @@
+import { requireRole } from "@/lib/auth";
+import { redirect, notFound } from "next/navigation";
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { ArrowLeft, FileText, Mail, Phone, MapPin, Building2, User as UserIcon, Coins, Calendar } from "lucide-react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { CreditApplicationReview } from "@/components/admin/CreditApplicationReview";
+
+interface DocEntry { key: string; name: string; size: number; contentType: string }
+
+export default async function AdminCreditApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await requireRole("admin").catch(() => null);
+  if (!session) redirect("/dashboard");
+  const { id } = await params;
+
+  const app = await prisma.creditApplication.findUnique({
+    where: { id },
+    include: {
+      user: { select: { id: true, name: true, email: true, role: true, credits: true, createdAt: true } },
+      reviewer: { select: { id: true, name: true, email: true } },
+    },
+  });
+  if (!app) notFound();
+
+  const docs = (app.documents as unknown as DocEntry[]) ?? [];
+
+  return (
+    <div className="max-w-4xl space-y-5">
+      <Link
+        href="/admin/credit-applications"
+        className="text-xs text-muted hover:text-fg inline-flex items-center gap-1"
+      >
+        <ArrowLeft size={12} /> Back to applications
+      </Link>
+
+      <PageHeader
+        title={app.fullName}
+        description={`Application submitted ${new Date(app.submittedAt).toLocaleString()}`}
+        actions={
+          app.status === "pending"  ? <Badge tone="amber">Pending</Badge> :
+          app.status === "approved" ? <Badge tone="success">Approved · +{(app.approvedAmount ?? 0).toLocaleString()} credits</Badge> :
+                                       <Badge tone="danger">Rejected</Badge>
+        }
+      />
+
+      {/* Applicant context */}
+      <Card className="p-5">
+        <h3 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-3">Applicant</h3>
+        <div className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
+          <Detail icon={UserIcon} label="Account">{app.user.name ?? "—"}</Detail>
+          <Detail icon={Mail} label="Email">{app.user.email}</Detail>
+          <Detail icon={Coins} label="Current balance">{app.user.credits.toLocaleString()} credits</Detail>
+          <Detail icon={Calendar} label="Joined">{new Date(app.user.createdAt).toLocaleDateString()}</Detail>
+          {app.organization && <Detail icon={Building2} label="Organization">{app.organization}</Detail>}
+          {app.title && <Detail icon={UserIcon} label="Role/title">{app.title}</Detail>}
+          {app.country && <Detail icon={MapPin} label="Country">{app.country}</Detail>}
+          {app.phone && <Detail icon={Phone} label="Phone">{app.phone}</Detail>}
+        </div>
+      </Card>
+
+      {/* Use case */}
+      <Card className="p-5">
+        <h3 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-2">Use case</h3>
+        <p className="text-sm text-fg leading-relaxed whitespace-pre-line">{app.useCase}</p>
+      </Card>
+
+      {/* Documents */}
+      <Card className="p-5">
+        <h3 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-3">
+          Supporting documents · {docs.length}
+        </h3>
+        {docs.length === 0 ? (
+          <p className="text-sm text-subtle">No documents.</p>
+        ) : (
+          <ul className="space-y-2">
+            {docs.map((d) => (
+              <li key={d.key} className="flex items-center gap-3 bg-elevated rounded-lg px-3 py-2 text-sm">
+                <FileText size={16} className="text-muted shrink-0" />
+                <span className="flex-1 truncate text-fg">{d.name}</span>
+                <span className="text-xs text-subtle">{(d.size / 1024).toFixed(0)} KB</span>
+                <a
+                  href={`/api/admin/credit-applications/${app.id}/document?key=${encodeURIComponent(d.key)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                >
+                  Open →
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {/* Review action OR past decision */}
+      {app.status === "pending" ? (
+        <CreditApplicationReview applicationId={app.id} requestedAmount={app.requestedAmount} />
+      ) : (
+        <Card className="p-5">
+          <h3 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-2">Review</h3>
+          <p className="text-sm text-fg">
+            <span className="font-medium">{app.status === "approved" ? "Approved" : "Rejected"}</span>
+            {app.reviewer?.name ? ` by ${app.reviewer.name}` : ""}
+            {app.reviewedAt ? ` on ${new Date(app.reviewedAt).toLocaleString()}.` : "."}
+          </p>
+          {app.reviewerNote && (
+            <p className="mt-3 text-sm text-muted leading-relaxed bg-elevated rounded-lg p-3 whitespace-pre-line">
+              {app.reviewerNote}
+            </p>
+          )}
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function Detail({ icon: Icon, label, children }: { icon: React.ElementType; label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <Icon size={13} className="text-subtle shrink-0" />
+      <span className="text-xs text-subtle">{label}:</span>
+      <span className="text-fg truncate">{children}</span>
+    </div>
+  );
+}

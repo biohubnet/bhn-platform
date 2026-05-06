@@ -18,7 +18,7 @@ model User {
   password      String?
   role          String    @default("trainee") // trainee | evaluating | instructor | admin | superadmin
   isActive      Boolean   @default(true)
-  credits       Float     @default(5000)
+  credits       Float     @default(200)
   lastLoginAt   DateTime?
   newsletterSubscribed   Boolean   @default(false)
   newsletterSubscribedAt DateTime?
@@ -36,6 +36,8 @@ model User {
   creditTransactions CreditTransaction[]
   groupMemberships   GroupMembership[]
   auditLogs          AuditLog[]
+  creditApplications CreditApplication[]   @relation("Applicant")
+  reviewedApplications CreditApplication[] @relation("Reviewer")
 }
 
 model Account {
@@ -309,6 +311,34 @@ model PathwayEnrollment {
   completedAt DateTime?
   pathway     Pathway   @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
   @@unique([userId, pathwayId])
+}
+
+/// Application from a trainee for additional starter credits beyond the
+/// 200 granted at registration. Reviewed manually by admin staff.
+model CreditApplication {
+  id            String    @id @default(cuid())
+  userId        String
+  status        String    @default("pending")  // pending | approved | rejected
+  requestedAmount Float   @default(4800)
+  approvedAmount  Float?
+  fullName      String
+  organization  String?
+  title         String?
+  country       String?
+  phone         String?
+  useCase       String     // why they need the credits
+  documents     Json       // array of { key, name, size, contentType }
+  reviewerId    String?
+  reviewerNote  String?
+  reviewedAt    DateTime?
+  submittedAt   DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  user      User  @relation("Applicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer  User? @relation("Reviewer",  fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([status, submittedAt])
+  @@index([userId, submittedAt])
 }
 
 model CreditTransaction {

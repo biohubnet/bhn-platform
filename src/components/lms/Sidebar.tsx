@@ -26,6 +26,7 @@ import {
   Layers,
   Sparkles,
   LineChart,
+  Coins as CoinsIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -53,6 +54,7 @@ const adminItems: NavItem[] = [
   { label: "Users", href: "/admin/users", icon: Users, minRole: "admin" },
   { label: "Enrollments", href: "/admin/enrollments", icon: ClipboardList, minRole: "admin" },
   { label: "Groups", href: "/admin/groups", icon: UsersRound, minRole: "admin" },
+  { label: "Credit applications", href: "/admin/credit-applications", icon: CoinsIcon, minRole: "admin" },
   { label: "Certificates", href: "/admin/certificates", icon: Award, minRole: "admin" },
   { label: "Announcements", href: "/admin/announcements", icon: Megaphone, minRole: "admin" },
   { label: "Analytics", href: "/admin/analytics", icon: LineChart, minRole: "admin" },

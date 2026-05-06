@@ -143,7 +143,7 @@ export default function LoginPage() {
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-fg">New to BHN Training?</p>
               <p className="text-sm text-muted mt-0.5">
-                Create a free account in under a minute. New learners start with 5,000 BHN credits.
+                Create a free account and start with 200 BHN credits. Apply for an additional 4,800 once you&apos;re in.
               </p>
             </div>
           </div>

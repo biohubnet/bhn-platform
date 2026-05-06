@@ -40,7 +40,7 @@ export default function RegisterPage() {
         <div className="bg-card rounded-2xl shadow-xl shadow-brand-900/5 border border-line p-8">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-fg">Create your account</h1>
-            <p className="text-muted text-sm mt-1">Free to get started — 5,000 BHN credits included.</p>
+            <p className="text-muted text-sm mt-1">Free to get started — 200 BHN credits to begin, with 4,800 more available after admin review.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
