@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession, isAdmin } from "@/lib/auth";
+import { trackServer } from "@/lib/analytics";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: courseId } = await params;
@@ -52,6 +53,13 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     where: { userId_courseId: { userId, courseId } },
     update: { status: "active" },
     create: { userId, courseId, status: "active" },
+  });
+
+  await trackServer({
+    userId,
+    role,
+    name: "enroll",
+    props: { courseId, courseTitle: course.title, creditCost: course.creditCost },
   });
 
   return NextResponse.json(enrollment, { status: 201 });

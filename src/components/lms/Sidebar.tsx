@@ -24,6 +24,7 @@ import {
   Link2,
   Layers,
   Sparkles,
+  LineChart,
 } from "lucide-react";
 
 interface NavItem {
@@ -53,6 +54,7 @@ const adminItems: NavItem[] = [
   { label: "Groups", href: "/admin/groups", icon: UsersRound, minRole: "admin" },
   { label: "Certificates", href: "/admin/certificates", icon: Award, minRole: "admin" },
   { label: "Announcements", href: "/admin/announcements", icon: Megaphone, minRole: "admin" },
+  { label: "Analytics", href: "/admin/analytics", icon: LineChart, minRole: "admin" },
   { label: "Reports", href: "/admin/reports", icon: FileText, minRole: "admin" },
   { label: "Audit Log", href: "/admin/audit", icon: ShieldCheck, minRole: "admin" },
   { label: "LTI Config", href: "/admin/lti", icon: Link2, minRole: "superadmin" },

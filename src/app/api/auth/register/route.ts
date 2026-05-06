@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { trackServer } from "@/lib/analytics";
 
 export async function POST(req: NextRequest) {
   const { name, email, password, newsletter } = await req.json();
@@ -31,6 +32,13 @@ export async function POST(req: NextRequest) {
 
   // TODO: when a real ESP (Mailchimp / MailerLite / etc.) is wired in,
   // enqueue a subscription job here for `email`. For now we record intent.
+
+  await trackServer({
+    userId: user.id,
+    role: user.role,
+    name: "register",
+    props: { newsletter: subscribed, isFirstUser: userCount === 0 },
+  });
 
   return NextResponse.json({ id: user.id, email: user.email, role: user.role }, { status: 201 });
 }

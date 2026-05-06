@@ -383,6 +383,30 @@ model PlatformSetting {
   updatedAt DateTime @updatedAt
 }
 
+/// User activity events. Lightweight, append-only audit of behavior used
+/// to power the analytics dashboard and UX research. Distinct from AuditLog
+/// (which records sensitive admin actions) and XapiStatement (which records
+/// formal SCORM/xAPI learning statements).
+model Event {
+  id         String   @id @default(cuid())
+  userId     String?
+  sessionId  String?
+  name       String   // page_view | course_view | enroll | scorm_start | scorm_complete | theme_change | login | register | search | feature_use
+  path       String?
+  referrer   String?
+  props      Json?
+  role       String?  // snapshot of role at event time
+  device     String?  // desktop | mobile | tablet
+  country    String?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
+}
+
 /// Public release / what's-new feed. Each entry's audience is controlled
 /// by the visibleTo array — roles in this list will see the entry on the
 /// /changelog page (trainees see it as "What's new", staff as "Change log").

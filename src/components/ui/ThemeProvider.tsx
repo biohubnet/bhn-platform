@@ -51,6 +51,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setThemeState(t);
     document.documentElement.dataset.theme = t;
     try { localStorage.setItem(STORAGE_KEY, t); } catch {}
+    // Fire-and-forget analytics — kept inline so the bundle for ThemeProvider
+    // stays small and we don't add a hard dep on the tracker module.
+    try {
+      const body = JSON.stringify({ name: "theme_change", path: location.pathname, props: { theme: t } });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon("/api/analytics/track", new Blob([body], { type: "application/json" }));
+      }
+    } catch {}
   }
 
   return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
