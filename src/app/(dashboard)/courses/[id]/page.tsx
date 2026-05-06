@@ -5,6 +5,7 @@ import { EnrollButton } from "@/components/lms/EnrollButton";
 import { ScormUploadButton } from "@/components/lms/ScormUploadButton";
 import { PublishToggle } from "@/components/lms/PublishToggle";
 import { CourseEditButton } from "@/components/lms/CourseEditButton";
+import { ThumbnailGenerator } from "@/components/lms/ThumbnailGenerator";
 import { CourseAISummary } from "@/components/lms/CourseAISummary";
 import { CourseTutorWidget } from "@/components/lms/CourseTutorWidget";
 import { formatDuration, statusColor, cn } from "@/lib/utils";
@@ -51,8 +52,27 @@ export default async function CourseDetailPage({
 
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Thumbnail hero — only when present, or when staff for the generator */}
+      {(course.thumbnail || isStaff) && (
+        <div className="relative aspect-[16/6] w-full rounded-[var(--radius-xl)] overflow-hidden bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 group">
+          {course.thumbnail && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={course.thumbnail} alt="" className="w-full h-full object-cover" />
+          )}
+          {isStaff && (
+            <div className="absolute top-3 right-3 opacity-90 hover:opacity-100">
+              <ThumbnailGenerator
+                endpoint={`/api/courses/${id}/thumbnail`}
+                currentUrl={course.thumbnail}
+                compact
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Header */}
-      <div className="bg-card rounded-xl border border-line p-6">
+      <div className="bg-card backdrop-blur-md rounded-[var(--radius-lg)] border border-line p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">

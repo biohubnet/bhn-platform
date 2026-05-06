@@ -26,7 +26,7 @@ export function CourseCard({ course, role }: CourseCardProps) {
   return (
     <Link
       href={`/courses/${course.id}`}
-      className="bg-card rounded-xl border border-line hover:border-brand-300 hover:shadow-md transition-all overflow-hidden group flex flex-col"
+      className="bg-card backdrop-blur-md rounded-[var(--radius-lg)] border border-line hover:border-brand-300 transition-all overflow-hidden group flex flex-col shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_16px_40px_rgba(15,23,42,0.10)] hover:-translate-y-0.5"
     >
       {/* Thumbnail */}
       <div className="h-36 bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center">

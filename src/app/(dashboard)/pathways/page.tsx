@@ -70,8 +70,12 @@ export default async function PathwaysPage() {
                 href={`/pathways/${p.id}`}
                 className="group bg-card rounded-2xl border border-line hover:border-brand-300 hover:shadow-md transition-all overflow-hidden"
               >
-                <div className="h-28 bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 relative">
-                  <Layers className="absolute top-4 right-4 text-white/30" size={48} />
+                <div className="h-28 bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 relative overflow-hidden">
+                  {p.thumbnail && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  )}
+                  <Layers className="absolute top-4 right-4 text-white/40 z-10 drop-shadow" size={48} />
                   {p.category && (
                     <span className="absolute top-3 left-3 text-xs bg-white/15 backdrop-blur-sm text-white border border-white/20 px-2 py-0.5 rounded">
                       {p.category}

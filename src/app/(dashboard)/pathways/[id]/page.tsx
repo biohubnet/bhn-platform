@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { PathwayEnrollButton } from "@/components/lms/PathwayEnrollButton";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
 import { PathwayEnrollmentSettings } from "@/components/admin/PathwayEnrollmentSettings";
+import { ThumbnailGenerator } from "@/components/lms/ThumbnailGenerator";
 import { resolvePathwayWindow, waitlistPosition } from "@/lib/pathway-enrollment";
 
 interface PathwayCourseRow {
@@ -76,9 +77,27 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <div className="rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 text-white shadow-xl shadow-brand-900/20 px-8 py-10 relative overflow-hidden">
+      <div className="rounded-[var(--radius-xl)] bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 text-white shadow-xl shadow-brand-900/20 px-8 py-10 relative overflow-hidden">
+        {/* AI thumbnail behind the gradient — opacity-controlled so the hero stays readable */}
+        {pathway.thumbnail && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={pathway.thumbnail}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay"
+          />
+        )}
         <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-brand-300/10 rounded-full blur-3xl" />
+        {isStaff && (
+          <div className="absolute top-4 right-4 z-10">
+            <ThumbnailGenerator
+              endpoint={`/api/admin/pathways/${pathway.id}/thumbnail`}
+              currentUrl={pathway.thumbnail}
+              compact
+            />
+          </div>
+        )}
         <div className="relative flex items-start justify-between gap-6">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-3">

@@ -15,8 +15,9 @@ const CF_TOKEN   = process.env.CF_AI_TOKEN;
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
 
 export const AI_CONFIGURED = {
-  chat: !!CF_TOKEN || !!GEMINI_KEY,
+  chat:  !!CF_TOKEN || !!GEMINI_KEY,
   embed: !!CF_TOKEN,                 // BGE only on Cloudflare
+  image: !!CF_TOKEN,                 // SDXL Lightning on Cloudflare
 };
 
 export interface ChatMessage {
@@ -200,4 +201,83 @@ export async function embed(texts: string[], opts: EmbedOpts = {}): Promise<numb
 /** Format a number[] into a Postgres pgvector literal: `[0.1, 0.2, …]`. */
 export function toVectorLiteral(v: number[]): string {
   return `[${v.join(",")}]`;
+}
+
+interface ImageOpts extends BaseOpts {
+  /** Stable Diffusion sampling steps. SDXL Lightning is sharp at 4–8. */
+  steps?: number;
+  negativePrompt?: string;
+}
+
+/**
+ * Generate an image from a text prompt. Returns raw PNG bytes (Uint8Array)
+ * suitable for streaming straight into R2, or null on failure.
+ */
+export async function generateImage(prompt: string, opts: ImageOpts = {}): Promise<Uint8Array | null> {
+  if (!CF_TOKEN) return null;
+  const start = Date.now();
+  const model = "@cf/bytedance/stable-diffusion-xl-lightning";
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/${model}`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${CF_TOKEN}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          num_steps: opts.steps ?? 8,
+          negative_prompt:
+            opts.negativePrompt ??
+            "text, words, letters, watermark, signature, low quality, blurry, distorted, ugly",
+        }),
+      }
+    );
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`Image gen failed: ${res.status} ${t.slice(0, 200)}`);
+    }
+    const buf = new Uint8Array(await res.arrayBuffer());
+    await logInteraction({
+      userId: opts.userId,
+      kind: opts.feature ?? "image",
+      provider: "cloudflare",
+      model: "sdxl-lightning",
+      latencyMs: Date.now() - start,
+      success: true,
+    });
+    return buf;
+  } catch (e) {
+    await logInteraction({
+      userId: opts.userId,
+      kind: opts.feature ?? "image",
+      provider: "cloudflare",
+      model: "sdxl-lightning",
+      latencyMs: Date.now() - start,
+      success: false,
+      errorMessage: (e as Error).message,
+    });
+    return null;
+  }
+}
+
+/**
+ * Build a styled prompt for course/pathway thumbnails. Tries to align with
+ * a clean, modern, brand-blue editorial aesthetic — no text, no people,
+ * no logos. Subjects are bioprocess/scientific themes.
+ */
+export function buildThumbnailPrompt(input: {
+  title: string;
+  description?: string | null;
+  category?: string | null;
+}): string {
+  const subject = [input.category, input.title].filter(Boolean).join(" — ");
+  const desc = input.description ? ` (${input.description.slice(0, 200)})` : "";
+  return (
+    `Editorial illustration for a biomanufacturing training module. ` +
+    `Subject: ${subject}${desc}. ` +
+    `Style: minimal, abstract, geometric, soft gradients in deep blues with hints of violet and cyan, ` +
+    `subtle scientific motifs (waves, curves, particles, molecular shapes), ` +
+    `clean composition with negative space, premium magazine-cover feel, ` +
+    `flat vector aesthetic, no text, no logo, no people.`
+  );
 }
