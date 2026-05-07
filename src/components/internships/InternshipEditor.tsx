@@ -64,10 +64,11 @@ export function InternshipEditor({
           };
       const res = await fetch("/api/admin/internships/parse", init);
       const j = (await res.json().catch(() => ({}))) as {
-        ok?: boolean; posting?: Partial<PostingValues>; error?: string;
+        ok?: boolean; posting?: Partial<PostingValues>; error?: string; raw?: string;
       };
       if (!res.ok || !j.posting) {
-        setParseError(j.error ?? "Couldn't parse.");
+        const detail = j.raw ? ` (model said: ${j.raw.slice(0, 200)}…)` : "";
+        setParseError((j.error ?? "Couldn't parse.") + detail);
         return;
       }
       setValues((cur) => ({

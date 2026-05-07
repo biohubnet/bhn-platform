@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
-import { chat, AI_CONFIGURED } from "@/lib/ai";
+import { AI_CONFIGURED } from "@/lib/ai";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const CF_ACCOUNT = process.env.CF_ACCOUNT_ID;
 const CF_TOKEN = process.env.CF_AI_TOKEN;
+
+// Bigger model for the structured-output task — Llama 3.1 8B (the
+// default chat model) routinely adds preamble or breaks JSON; the 70B
+// Fast variant is dramatically more reliable for "return ONLY JSON"
+// prompts and still on Cloudflare's free tier.
+const STRUCTURED_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 const MAX_FILE = 20 * 1024 * 1024; // 20 MB
 const ACCEPTED_FILE_TYPES = new Set([
@@ -113,17 +119,7 @@ export async function POST(req: NextRequest) {
             { status: 422 }
           );
         }
-        const result = await chat(
-          [
-            { role: "system", content: SYSTEM },
-            { role: "user", content: flat.slice(0, 12000) },
-          ],
-          { feature: "internship_parse_pdf", maxTokens: 1500, temperature: 0.1 }
-        );
-        if (!result.ok) {
-          return NextResponse.json({ error: result.error || "AI parse failed." }, { status: 502 });
-        }
-        rawAi = result.text;
+        rawAi = await callCloudflareText(flat.slice(0, 12000));
       } else if (file.type.startsWith("image/")) {
         // Images: Cloudflare Llama 3.2 Vision (free tier).
         if (!CF_TOKEN || !CF_ACCOUNT) {
@@ -137,17 +133,7 @@ export async function POST(req: NextRequest) {
       } else {
         // text/plain, text/markdown, text/html — read directly.
         const text = await file.text();
-        const result = await chat(
-          [
-            { role: "system", content: SYSTEM },
-            { role: "user", content: text.slice(0, 12000) },
-          ],
-          { feature: "internship_parse_text", maxTokens: 1500, temperature: 0.1 }
-        );
-        if (!result.ok) {
-          return NextResponse.json({ error: result.error || "AI parse failed." }, { status: 502 });
-        }
-        rawAi = result.text;
+        rawAi = await callCloudflareText(text.slice(0, 12000));
       }
     } catch (e) {
       return NextResponse.json(
@@ -164,33 +150,30 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const result = await chat(
-      [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: text.slice(0, 12000) },
-      ],
-      { feature: "internship_parse", maxTokens: 1500, temperature: 0.1 }
-    );
-    if (!result.ok) {
-      return NextResponse.json({ error: result.error || "AI parse failed." }, { status: 502 });
+    try {
+      rawAi = await callCloudflareText(text.slice(0, 12000));
+    } catch (e) {
+      return NextResponse.json(
+        { error: (e as Error).message || "AI parse failed." },
+        { status: 502 }
+      );
     }
-    rawAi = result.text;
   }
 
-  // The model sometimes wraps in ```json fences despite instructions —
-  // strip them defensively before JSON.parse.
-  const raw = rawAi
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/, "")
-    .replace(/```\s*$/, "")
-    .trim();
+  // Models routinely add preamble ("Here is the JSON:") or trailing
+  // commentary, plus the occasional ```json fence. Pull the first
+  // balanced { … } block out of the response and try to parse that.
+  const cleaned = extractJson(rawAi);
 
   let parsed: Parsed;
   try {
-    parsed = JSON.parse(raw) as Parsed;
+    parsed = JSON.parse(cleaned) as Parsed;
   } catch {
     return NextResponse.json(
-      { error: "AI returned non-JSON. Try editing the source and parsing again.", raw },
+      {
+        error: "AI returned non-JSON. Try editing the source and parsing again.",
+        raw: rawAi.slice(0, 1200),
+      },
       { status: 502 }
     );
   }
@@ -213,6 +196,82 @@ export async function POST(req: NextRequest) {
   };
 
   return NextResponse.json({ ok: true, posting: safe });
+}
+
+/**
+ * Send a chunk of text to Cloudflare's Llama 3.3 70B (Fast) model with
+ * the SYSTEM prompt. Bigger model than the default chat() helper, picked
+ * specifically because Llama 3.1 8B was unreliable at "return ONLY JSON".
+ */
+async function callCloudflareText(input: string): Promise<string> {
+  if (!CF_TOKEN || !CF_ACCOUNT) {
+    throw new Error("AI not configured (set CF_AI_TOKEN + CF_ACCOUNT_ID).");
+  }
+  const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/${STRUCTURED_MODEL}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${CF_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: "system", content: SYSTEM },
+        { role: "user", content: input },
+      ],
+      max_tokens: 1500,
+      temperature: 0.05,
+      // Cloudflare honours response_format on Llama 3.3 — request raw
+      // JSON object so the model is biased toward valid output.
+      response_format: { type: "json_object" },
+    }),
+  });
+  const j = await res.json();
+  if (!j.success) {
+    const msg = j.errors?.[0]?.message ?? j.messages?.[0]?.message ?? "Cloudflare AI call failed";
+    throw new Error(msg);
+  }
+  const text = (j.result?.response ?? "") as string;
+  if (!text.trim()) throw new Error("Cloudflare AI returned an empty response.");
+  return text;
+}
+
+/**
+ * Pull the first balanced JSON object out of arbitrary model output —
+ * handles preamble ("Here is the JSON:"), code fences, and trailing
+ * commentary. Falls back to fence-stripping if no { … } is found.
+ */
+function extractJson(text: string): string {
+  const fenced = text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/, "")
+    .trim();
+  // Walk the string tracking brace depth (respecting strings/escapes)
+  // so a substring like {"a":"}"} doesn't trip us up.
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < fenced.length; i++) {
+    const ch = fenced[i];
+    if (escaped) { escaped = false; continue; }
+    if (inString) {
+      if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === "{") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        return fenced.slice(start, i + 1);
+      }
+    }
+  }
+  return fenced;
 }
 
 /**
