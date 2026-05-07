@@ -2,6 +2,7 @@ import { getSession, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ChangeLogClient } from "@/components/lms/ChangeLogClient";
+import { ChangeLogDashboard, buildChangeLogDashboard } from "@/components/lms/ChangeLogDashboard";
 import { ensureChangelogEntries } from "@/lib/changelog/registry";
 
 export default async function ChangeLogPage() {
@@ -20,6 +21,8 @@ export default async function ChangeLogPage() {
     orderBy: { publishedAt: "desc" },
   });
 
+  const dashData = buildChangeLogDashboard(entries);
+
   return (
     <div>
       <PageHeader
@@ -30,6 +33,8 @@ export default async function ChangeLogPage() {
             : "Release notes for the BHN Training Platform. Visibility per entry is configurable."
         }
       />
+
+      <ChangeLogDashboard data={dashData} />
 
       <ChangeLogClient
         entries={entries.map((e) => ({

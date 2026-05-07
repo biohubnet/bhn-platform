@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Changelog page got a dashboard + timeline view",
+    body: "Open /changelog and you'll see a stat panel up top — total entries, this-month / last-30-day counts, days since the last update, by-kind breakdown chips, and a 12-month sparkbar showing release cadence. Below it, entries now flow as a vertical timeline with month sub-headings and a rail of coloured dots, so it's easy to scan how busy a given period was at a glance.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Sidebar group titles now describe the programmes underneath",
     body: "Hover (or focus) the ENGAGE / EXPERIENCE labels in the sidebar — a small popover slides out to the right with BioHubNet's official one-line description and the named programmes inside each track. ENGAGE: industry-led training, workshops, and mentorship — Medical Affairs Learning Pathway (MSL Accelerator with Agilis Health) and Entrepreneurship Learning Pathway. EXPERIENCE: bridging theory and practice — Knowledge Exchange Round 4 (1/4/6-month placements), Talent Application, and Internship Opportunities.",
     kind: "improvement",

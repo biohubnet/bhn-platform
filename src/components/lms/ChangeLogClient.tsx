@@ -135,73 +135,14 @@ export function ChangeLogClient({ entries, canManage }: Props) {
           <p className="text-sm text-muted mt-1">Updates will appear as the platform evolves.</p>
         </div>
       ) : (
-        <ol className="space-y-5">
-          {entries.map((e) => {
-            const meta = KIND_META[e.kind] ?? KIND_META.feature;
-            const Icon = meta.icon;
-            const isEveryone = e.visibleTo.length === ALL_ROLES.length;
-            return (
-              <li
-                key={e.id}
-                className="bg-card rounded-2xl border border-line p-5 hover:border-brand-200 transition-colors group"
-              >
-                <div className="flex items-start gap-4">
-                  <div className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                    meta.tone === "brand"   && "bg-brand-50 text-brand-600",
-                    meta.tone === "success" && "bg-emerald-50 text-emerald-600",
-                    meta.tone === "amber"   && "bg-amber-50 text-amber-600",
-                    meta.tone === "neutral" && "bg-elevated text-muted",
-                  )}>
-                    <Icon size={18} />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center flex-wrap gap-2 mb-1">
-                      <Badge tone={meta.tone}>{meta.label}</Badge>
-                      {e.version && <Badge tone="neutral">v{e.version}</Badge>}
-                      <span className="text-xs text-subtle">
-                        {new Date(e.publishedAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
-                      </span>
-                      {canManage && (
-                        <span className="ml-auto flex items-center gap-1 text-[11px] text-subtle">
-                          {isEveryone ? (
-                            <span className="inline-flex items-center gap-1"><Eye size={11} /> everyone</span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1"><EyeOff size={11} /> {e.visibleTo.length} role{e.visibleTo.length === 1 ? "" : "s"}</span>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-semibold text-fg leading-snug">{e.title}</h3>
-                    {e.body && (
-                      <p className="text-sm text-muted mt-1.5 leading-relaxed whitespace-pre-line">{e.body}</p>
-                    )}
-                    {canManage && (
-                      <div className="mt-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => openEdit(e)}
-                          className="text-xs text-muted hover:text-brand-600 inline-flex items-center gap-1"
-                        >
-                          <Pencil size={12} /> Edit
-                        </button>
-                        <button
-                          onClick={() => remove(e.id)}
-                          className="text-xs text-muted hover:text-rose-600 inline-flex items-center gap-1"
-                        >
-                          <Trash2 size={12} /> Delete
-                        </button>
-                        <span className="text-xs text-subtle ml-2">
-                          Visible to: {e.visibleTo.map((r) => r === "trainee" ? "trainees" : r + "s").join(" · ")}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+        // Vertical timeline grouped by month. Entries are already
+        // newest-first server-side; preserve that order.
+        <Timeline
+          entries={entries}
+          canManage={canManage}
+          onEdit={openEdit}
+          onDelete={remove}
+        />
       )}
 
       <Modal
@@ -263,6 +204,108 @@ export function ChangeLogClient({ entries, canManage }: Props) {
           </Field>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+/** Vertical timeline: month sub-headings with a rail and per-entry dots. */
+function Timeline({
+  entries, canManage, onEdit, onDelete,
+}: {
+  entries: ChangeLogEntry[];
+  canManage: boolean;
+  onEdit: (e: ChangeLogEntry) => void;
+  onDelete: (id: string) => void;
+}) {
+  type Group = { ym: string; label: string; items: ChangeLogEntry[] };
+  const groups: Group[] = [];
+  for (const e of entries) {
+    const d = new Date(e.publishedAt);
+    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    const last = groups[groups.length - 1];
+    if (last && last.ym === ym) last.items.push(e);
+    else groups.push({ ym, label, items: [e] });
+  }
+
+  return (
+    <div className="relative">
+      {/* Continuous rail running the height of the timeline */}
+      <div className="absolute left-[19px] top-2 bottom-2 w-px bg-line" aria-hidden />
+      <div className="space-y-8">
+        {groups.map((g) => (
+          <section key={g.ym}>
+            <div className="pl-12 pb-2 pt-1">
+              <h2 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                {g.label}
+              </h2>
+            </div>
+            <ol className="space-y-3">
+              {g.items.map((e) => {
+                const meta = KIND_META[e.kind] ?? KIND_META.feature;
+                const Icon = meta.icon;
+                const isEveryone = e.visibleTo.length === ALL_ROLES.length;
+                return (
+                  <li key={e.id} className="relative pl-12 group">
+                    <div
+                      className={cn(
+                        "absolute left-0 top-1.5 w-10 h-10 rounded-full flex items-center justify-center shadow-sm border z-10 bg-card-solid",
+                        meta.tone === "brand"   && "text-brand-600 border-brand-200",
+                        meta.tone === "success" && "text-emerald-600 border-emerald-200",
+                        meta.tone === "amber"   && "text-amber-600 border-amber-200",
+                        meta.tone === "neutral" && "text-muted border-line",
+                      )}
+                    >
+                      <Icon size={16} />
+                    </div>
+                    <div className="bg-card border border-line rounded-2xl p-5 hover:border-brand-200 transition-colors">
+                      <div className="flex items-center flex-wrap gap-2 mb-1">
+                        <Badge tone={meta.tone}>{meta.label}</Badge>
+                        {e.version && <Badge tone="neutral">v{e.version}</Badge>}
+                        <span className="text-xs text-subtle">
+                          {new Date(e.publishedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        </span>
+                        {canManage && (
+                          <span className="ml-auto flex items-center gap-1 text-[11px] text-subtle">
+                            {isEveryone ? (
+                              <span className="inline-flex items-center gap-1"><Eye size={11} /> everyone</span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1"><EyeOff size={11} /> {e.visibleTo.length} role{e.visibleTo.length === 1 ? "" : "s"}</span>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-semibold text-fg leading-snug">{e.title}</h3>
+                      {e.body && (
+                        <p className="text-sm text-muted mt-1.5 leading-relaxed whitespace-pre-line">{e.body}</p>
+                      )}
+                      {canManage && (
+                        <div className="mt-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => onEdit(e)}
+                            className="text-xs text-muted hover:text-brand-600 inline-flex items-center gap-1"
+                          >
+                            <Pencil size={12} /> Edit
+                          </button>
+                          <button
+                            onClick={() => onDelete(e.id)}
+                            className="text-xs text-muted hover:text-rose-600 inline-flex items-center gap-1"
+                          >
+                            <Trash2 size={12} /> Delete
+                          </button>
+                          <span className="text-xs text-subtle ml-2">
+                            Visible to: {e.visibleTo.map((r) => r === "trainee" ? "trainees" : r + "s").join(" · ")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
