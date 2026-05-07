@@ -117,6 +117,31 @@ model EventForm {
   submissions EventFormSubmission[]
 }
 
+/// Internship / job-board posting. Admins create either by filling
+/// fields manually or by pasting a job description and letting the
+/// AI parser pre-fill the form.
+model InternshipPosting {
+  id              String    @id @default(cuid())
+  companyName     String
+  website         String?
+  title           String
+  duration        String?
+  hours           String?
+  location        String?
+  type            String?
+  compensation    String?
+  deadline        DateTime?
+  keySkills       String[]
+  positionDetails String
+  /// "active" | "closed" | "draft"
+  status          String    @default("active")
+  createdById     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status, createdAt])
+}
+
 /// Individual answer set for an EventForm. `data` is keyed by field id.
 model EventFormSubmission {
   id        String    @id @default(cuid())

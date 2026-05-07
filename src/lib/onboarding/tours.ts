@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07f";
+export const TOUR_VERSION = "2026.05.07g";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -224,6 +224,15 @@ export const TOUR_STEPS: TourStep[] = [
     since: "2026.05.07a",
     roles: ["instructor", "admin", "superadmin"],
     cta: { label: "Open the catalog", href: "/courses" },
+  },
+  {
+    id: "internship-board",
+    title: "Internship Opportunities is live",
+    body: "EXPERIENCE → Internship Opportunities lists open postings from BioHubNet's industry partners. Browse, then apply through the company's own site. Admins post by pasting a job description — the AI parses it into structured fields.",
+    path: "/internships",
+    placement: "center",
+    since: "2026.05.07g",
+    cta: { label: "Open the board", href: "/internships" },
   },
   {
     id: "experience-track",

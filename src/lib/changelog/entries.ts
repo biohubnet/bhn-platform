@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Internship Opportunities — a job board, AI-assisted",
+    body: "EXPERIENCE → Internship Opportunities lists open internships and co-ops from BioHubNet's industry partners. Each posting shows the company, role, location, duration, hours, compensation, deadline, key skills, and full position details, with a one-click link to apply on the company site. Admins create new postings by pasting a job description from any source — email, PDF, web page, doc — and the AI parses it into structured fields they can review and save.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "EXPERIENCE track is open — apply through the Talent Application",
     body: "The new EXPERIENCE section in the sidebar opens with the Talent Application — a structured intake for students and postdocs applying to BioHubNet's industry-placement track. It collects your bio, citizenship and locations, French proficiency, education timeline, supervisor letter (PDF), 650-character pitch, one-minute STAR video, resume (PDF), and a supporting transcript. Resume / video upload directly to BioHubNet's encrypted storage; admins review every submission and export to CSV.",
     kind: "feature",

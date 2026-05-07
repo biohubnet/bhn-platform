@@ -58,7 +58,8 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 
 // EXPERIENCE — applications and connections to industry placements.
 const experienceItems: (NavItem & { labelKey: string })[] = [
-  { label: "Talent Application", labelKey: "nav.talent", href: "/forms/talent-application", icon: Briefcase },
+  { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase },
+  { label: "Internship Opportunities",  labelKey: "nav.internships", href: "/internships",              icon: Briefcase },
 ];
 
 // Other top-level items rendered after the groups.
