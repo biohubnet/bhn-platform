@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05";
+export const TOUR_VERSION = "2026.05.07";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -206,6 +206,14 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05",
     cta: { label: "Open Pathways", href: "/pathways" },
+  },
+  {
+    id: "more-themes",
+    title: "Six new themes",
+    body: "Open the Theme picker at the bottom of the sidebar — there are now nine looks. Modern strips it down to mono with a red accent, Scientific goes paper-and-blue, Hi-Tech glows neon on black, Pink and Lab Mouse are playful, and Lab is sterile white-and-emerald. Try a few — corner radii change too.",
+    selector: "[aria-label=\"Change theme\"]",
+    placement: "right",
+    since: "2026.05.07",
   },
   {
     id: "complete",

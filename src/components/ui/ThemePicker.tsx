@@ -5,15 +5,34 @@ import { useTheme, THEMES, type ThemeId } from "@/components/ui/ThemeProvider";
 import { cn } from "@/lib/utils";
 
 const SWATCH: Record<ThemeId, [string, string, string]> = {
-  light:  ["#ffffff", "#3b6cef", "#0b1b3b"],
-  dark:   ["#0f1d3d", "#5e8ff7", "#eaf0fb"],
-  aurora: ["#fbf6fb", "#a855f7", "#1f1430"],
+  light:      ["#ffffff", "#3b6cef", "#0b1b3b"],
+  dark:       ["#0f1d3d", "#5e8ff7", "#eaf0fb"],
+  aurora:     ["#fbf6fb", "#a855f7", "#1f1430"],
+  modern:     ["#ffffff", "#ef4444", "#18181b"],
+  scientific: ["#ffffff", "#0ea5e9", "#1e293b"],
+  hitech:     ["#0d1929", "#06b6d4", "#d6f5f5"],
+  pink:       ["#fffaff", "#ec4899", "#500724"],
+  lab:        ["#ffffff", "#10b981", "#0f172a"],
+  labmouse:   ["#fffaf3", "#ec4899", "#431407"],
+};
+
+// Each theme picks its own corner-roundness for the swatch, mirroring
+// its own --radius scale so the picker previews the silhouette too.
+const SWATCH_RADIUS: Record<ThemeId, string> = {
+  light:      "10px",
+  dark:       "10px",
+  aurora:     "9999px",
+  modern:     "3px",
+  scientific: "8px",
+  hitech:     "4px",
+  pink:       "14px",
+  lab:        "12px",
+  labmouse:   "16px",
 };
 
 function Swatch({ id, size = 24 }: { id: ThemeId; size?: number }) {
   const [card, accent, fg] = SWATCH[id];
-  // Aurora gets larger radius to match its theme
-  const radius = id === "aurora" ? "9999px" : "10px";
+  const radius = SWATCH_RADIUS[id];
   return (
     <span
       className="relative inline-block overflow-hidden border border-line shadow-sm"

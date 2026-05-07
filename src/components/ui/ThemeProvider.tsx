@@ -2,9 +2,15 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 export const THEMES = [
-  { id: "light",  name: "Daylight",  description: "Calm, near-white tech surfaces" },
-  { id: "dark",   name: "Nightfall", description: "Deep navy with electric accents" },
-  { id: "aurora", name: "Aurora",    description: "Soft curves, magenta-violet flow" },
+  { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces" },
+  { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents" },
+  { id: "aurora",     name: "Aurora",     description: "Soft curves, magenta-violet flow" },
+  { id: "modern",     name: "Modern",     description: "Minimalist mono with bold red" },
+  { id: "scientific", name: "Scientific", description: "Cool sky-blue, paper-like surfaces" },
+  { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black" },
+  { id: "pink",       name: "Pink",       description: "Soft rose, friendly and bright" },
+  { id: "lab",        name: "Lab",        description: "Sterile white with emerald accents" },
+  { id: "labmouse",   name: "Lab Mouse",  description: "Warm cream and mouse-pink whimsy" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];

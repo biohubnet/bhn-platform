@@ -8,6 +8,13 @@ const ADMINS = ["admin", "superadmin"];
 
 const entries = [
   {
+    title: "Six new theme designs to choose from",
+    body: "The Theme picker now ships nine looks: Modern (minimalist red), Scientific (cool sky-blue), Hi-Tech (neon cyan on near-black), Pink (rose), Lab (sterile white + emerald), and Lab Mouse (warm cream + mouse pink), in addition to Daylight, Nightfall, and Aurora. Each theme reshapes corner radii too, so the platform's silhouette changes with the palette.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Event registration forms now live on Pathways",
     body: "The OBIO Entrepreneurship Bootcamp registration is the first one — you'll see it as a teal card on the Pathways page. Submit once and we keep your last response on file. Admins can edit the form fields in place (add, remove, reorder) and export every submission as a CSV.",
     kind: "feature",

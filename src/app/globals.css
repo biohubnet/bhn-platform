@@ -163,6 +163,253 @@
   --radius-xl: 44px;
 }
 
+/* ───── Modern (minimalist black + bold red) ───── */
+[data-theme="modern"] {
+  --popover-bg: #f4f4f5;
+  --bg:        #fafaf9;
+  --bg-mesh:   none;
+  --card:      rgba(255,255,255,0.96);
+  --card-solid: #ffffff;
+  --elevated:  #f4f4f5;
+  --raised:    #e4e4e7;
+  --fg:        #18181b;
+  --fg-muted:  #52525b;
+  --fg-subtle: #a1a1aa;
+  --line:      rgba(24,24,27,0.10);
+  --line-strong: rgba(24,24,27,0.18);
+  --backdrop:  rgba(24,24,27,0.45);
+
+  --brand-50:  #fef2f2;
+  --brand-100: #fee2e2;
+  --brand-200: #fecaca;
+  --brand-300: #fca5a5;
+  --brand-400: #f87171;
+  --brand-500: #ef4444;
+  --brand-600: #dc2626;
+  --brand-700: #b91c1c;
+  --brand-800: #991b1b;
+  --brand-900: #7f1d1d;
+
+  /* Sharp corners — modernist geometric */
+  --radius-sm: 3px;
+  --radius:    5px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+/* ───── Scientific (academic blue, structured) ───── */
+[data-theme="scientific"] {
+  --popover-bg: #eef4f9;
+  --bg:        #f5f7fa;
+  --bg-mesh:
+    radial-gradient(at 0% 0%, rgba(14,165,233,0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(99,102,241,0.05) 0px, transparent 45%);
+  --card:      rgba(255,255,255,0.92);
+  --card-solid: #ffffff;
+  --elevated:  #eef2f6;
+  --raised:    #e2e8f0;
+  --fg:        #1e293b;
+  --fg-muted:  #475569;
+  --fg-subtle: #94a3b8;
+  --line:      rgba(15,23,42,0.08);
+  --line-strong: rgba(15,23,42,0.16);
+  --backdrop:  rgba(15,23,42,0.45);
+
+  --brand-50:  #f0f9ff;
+  --brand-100: #e0f2fe;
+  --brand-200: #bae6fd;
+  --brand-300: #7dd3fc;
+  --brand-400: #38bdf8;
+  --brand-500: #0ea5e9;
+  --brand-600: #0284c7;
+  --brand-700: #0369a1;
+  --brand-800: #075985;
+  --brand-900: #0c4a6e;
+
+  /* Subtle, paper-like radii */
+  --radius-sm: 6px;
+  --radius:    8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* ───── Hi-tech (neon cyan on near-black) ───── */
+[data-theme="hitech"] {
+  --popover-bg: #0a1f24;
+  --bg:        #050608;
+  --bg-mesh:
+    radial-gradient(at 18% 22%, rgba(0,255,209,0.18) 0px, transparent 55%),
+    radial-gradient(at 82% 8%, rgba(190,75,255,0.12) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(0,200,255,0.16) 0px, transparent 55%);
+  --card:      rgba(15,30,42,0.82);
+  --card-solid: #0d1929;
+  --elevated:  rgba(20,42,55,0.78);
+  --raised:    rgba(28,58,76,0.85);
+  --fg:        #d6f5f5;
+  --fg-muted:  #99cccc;
+  --fg-subtle: #7090a0;
+  --line:      rgba(0,255,209,0.16);
+  --line-strong: rgba(0,255,209,0.32);
+  --backdrop:  rgba(0,0,0,0.72);
+
+  /* Hybrid scale: 50–200 are deep tints (subtle bg), 600/700 saturated
+   * cyan so white text reads on CTAs, 800/900 are bright neon. */
+  --brand-50:  #022c34;
+  --brand-100: #064c54;
+  --brand-200: #0e7490;
+  --brand-300: #06b6d4;
+  --brand-400: #22d3ee;
+  --brand-500: #67e8f9;
+  --brand-600: #0891b2;
+  --brand-700: #06b6d4;
+  --brand-800: #22d3ee;
+  --brand-900: #67e8f9;
+
+  /* Sharp tech edges */
+  --radius-sm: 4px;
+  --radius:    6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+}
+
+/* ───── Pink (rose, soft, friendly) ───── */
+[data-theme="pink"] {
+  --popover-bg: #fbe7f1;
+  --bg:        #fdf2f8;
+  --bg-mesh:
+    radial-gradient(at 15% 22%, rgba(244,114,182,0.14) 0px, transparent 55%),
+    radial-gradient(at 85% 12%, rgba(251,113,133,0.10) 0px, transparent 50%),
+    radial-gradient(at 90% 90%, rgba(232,121,249,0.10) 0px, transparent 55%);
+  --card:      rgba(255,250,252,0.92);
+  --card-solid: #fffaff;
+  --elevated:  #fce7f3;
+  --raised:    #fbcfe8;
+  --fg:        #500724;
+  --fg-muted:  #9d174d;
+  --fg-subtle: #c026d3;
+  --line:      rgba(80,7,36,0.08);
+  --line-strong: rgba(80,7,36,0.18);
+  --backdrop:  rgba(80,7,36,0.4);
+
+  --brand-50:  #fff1f2;
+  --brand-100: #ffe4e6;
+  --brand-200: #fecdd3;
+  --brand-300: #fda4af;
+  --brand-400: #fb7185;
+  --brand-500: #f43f5e;
+  --brand-600: #e11d48;
+  --brand-700: #be123c;
+  --brand-800: #9f1239;
+  --brand-900: #881337;
+
+  /* Round, friendly */
+  --radius-sm: 12px;
+  --radius:    18px;
+  --radius-lg: 26px;
+  --radius-xl: 34px;
+}
+
+/* ───── Lab (sterile white + emerald accents) ───── */
+[data-theme="lab"] {
+  --popover-bg: #ecfdf5;
+  --bg:        #f8fafc;
+  --bg-mesh:
+    radial-gradient(at 0% 0%, rgba(16,185,129,0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(20,184,166,0.05) 0px, transparent 45%);
+  --card:      rgba(255,255,255,0.94);
+  --card-solid: #ffffff;
+  --elevated:  #f1f5f9;
+  --raised:    #e2e8f0;
+  --fg:        #0f172a;
+  --fg-muted:  #475569;
+  --fg-subtle: #94a3b8;
+  --line:      rgba(15,23,42,0.07);
+  --line-strong: rgba(15,23,42,0.15);
+  --backdrop:  rgba(15,23,42,0.4);
+
+  --brand-50:  #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-200: #a7f3d0;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-800: #065f46;
+  --brand-900: #064e3b;
+
+  /* Clean, lab-equipment radii */
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+}
+
+/* ───── Lab mouse (warm cream + mouse pink) ───── */
+[data-theme="labmouse"] {
+  --popover-bg: #fef3c7;
+  --bg:        #fff7ed;
+  --bg-mesh:
+    radial-gradient(at 18% 22%, rgba(251,146,60,0.14) 0px, transparent 55%),
+    radial-gradient(at 80% 12%, rgba(244,114,182,0.10) 0px, transparent 50%),
+    radial-gradient(at 95% 90%, rgba(254,215,170,0.16) 0px, transparent 55%);
+  --card:      rgba(255,251,242,0.92);
+  --card-solid: #fffaf3;
+  --elevated:  #fed7aa;
+  --raised:    #fdba74;
+  --fg:        #431407;
+  --fg-muted:  #7c2d12;
+  --fg-subtle: #b45309;
+  --line:      rgba(67,20,7,0.08);
+  --line-strong: rgba(67,20,7,0.18);
+  --backdrop:  rgba(67,20,7,0.4);
+
+  --brand-50:  #fdf2f8;
+  --brand-100: #fce7f3;
+  --brand-200: #fbcfe8;
+  --brand-300: #f9a8d4;
+  --brand-400: #f472b6;
+  --brand-500: #ec4899;
+  --brand-600: #db2777;
+  --brand-700: #be185d;
+  --brand-800: #9d174d;
+  --brand-900: #831843;
+
+  /* Cute, very rounded */
+  --radius-sm: 14px;
+  --radius:    20px;
+  --radius-lg: 28px;
+  --radius-xl: 40px;
+}
+
+/* Hi-tech inherits the same Tailwind state-color tames + deep-text
+ * lifts as Nightfall. Apply both. */
+[data-theme="hitech"] {
+  --color-rose-50:    rgba(244, 63, 94, 0.12);
+  --color-rose-100:   rgba(244, 63, 94, 0.18);
+  --color-rose-200:   rgba(244, 63, 94, 0.28);
+  --color-amber-50:   rgba(245, 158, 11, 0.10);
+  --color-amber-100:  rgba(245, 158, 11, 0.16);
+  --color-amber-200:  rgba(245, 158, 11, 0.26);
+  --color-emerald-50: rgba(16, 185, 129, 0.12);
+  --color-emerald-100:rgba(16, 185, 129, 0.18);
+  --color-emerald-200:rgba(16, 185, 129, 0.26);
+  --color-sky-50:     rgba(14, 165, 233, 0.12);
+  --color-sky-100:    rgba(14, 165, 233, 0.18);
+}
+[data-theme="hitech"] .text-rose-700    { color: #fb7185; }
+[data-theme="hitech"] .text-rose-800    { color: #f87171; }
+[data-theme="hitech"] .text-rose-900    { color: #fca5a5; }
+[data-theme="hitech"] .text-amber-700   { color: #fbbf24; }
+[data-theme="hitech"] .text-amber-800   { color: #fcd34d; }
+[data-theme="hitech"] .text-amber-900   { color: #fde68a; }
+[data-theme="hitech"] .text-emerald-700 { color: #34d399; }
+[data-theme="hitech"] .text-emerald-800 { color: #6ee7b7; }
+[data-theme="hitech"] .text-emerald-900 { color: #a7f3d0; }
+[data-theme="hitech"] .text-sky-700     { color: #38bdf8; }
+[data-theme="hitech"] .text-sky-800     { color: #7dd3fc; }
+[data-theme="hitech"] .text-sky-900     { color: #bae6fd; }
+
 /* ───── Tailwind theme bindings ───── */
 @theme inline {
   --color-background: var(--bg);
