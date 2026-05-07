@@ -1,9 +1,11 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
 import { CourseCard } from "@/components/lms/CourseCard";
 import { NewCourseButton } from "@/components/lms/NewCourseButton";
 import { CourseSearchBar } from "@/components/lms/CourseSearchBar";
+import { PageHero } from "@/components/ui/PageHero";
 
 interface CourseListItem {
   id: string;
@@ -52,15 +54,16 @@ export default async function CoursesPage({
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-fg">Course Catalog</h1>
-          <p className="text-muted text-sm mt-1">{courses.length} courses available</p>
-        </div>
-        {isStaff && <NewCourseButton />}
-      </div>
+    <div>
+      <PageHero
+        eyebrow={<><BookOpen size={11} /> Course catalog</>}
+        title={`${courses.length} courses to explore`}
+        description="Self-paced modules, SCORM-backed simulations, and instructor-led series — all in one library. Filter by category or use the search."
+        tone="brand"
+        actions={isStaff ? <NewCourseButton /> : null}
+      />
 
+      <div className="space-y-6">
       {/* AI-powered semantic search */}
       <CourseSearchBar />
 
@@ -103,6 +106,7 @@ export default async function CoursesPage({
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

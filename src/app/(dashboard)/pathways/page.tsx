@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Layers, Award, BookOpen, Users, ClipboardList, Check } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { PageHero } from "@/components/ui/PageHero";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
 import { ensureRegisteredForms } from "@/lib/forms/registry";
 
@@ -73,9 +73,10 @@ export default async function PathwaysPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Training Pathways"
-        description="Curated course collections that culminate in a single certificate."
+      <PageHero
+        eyebrow={<><Layers size={11} /> Training programmes</>}
+        title="Pathways and registrations"
+        description="Stack of courses that ladder up to a single certificate, plus open registrations for live programmes. Pick something to build toward."
         actions={isStaff ? <PathwayManageButton mode="create" courses={courses} /> : null}
       />
 

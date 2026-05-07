@@ -8,6 +8,13 @@ const ADMINS = ["admin", "superadmin"];
 
 const entries = [
   {
+    title: "Bolder, more organic interface — full-bleed heroes, drifting blobs",
+    body: "The dashboard, pathways, and course catalog now open with a bold full-bleed hero band: mesh gradient backgrounds, decorative blobs that drift gently behind the headline, asymmetric organic-cornered cards, and a curved organic edge into the content below. The hero greets you by name in gradient type and shows your stats in tiles with hand-shaped corners. Less generic, more intentional.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Course catalog: AI-generated thumbnails for every course",
     body: "Run scripts/auto-thumbnail-courses.ts to fill in cover art for the entire catalog. Each course gets a one-word focal subject (the strongest word from its title or category) rendered as an editorial brand-blue illustration via Cloudflare SDXL, uploaded to R2, and saved on the Course row. Idempotent — re-running only fills in what's still missing, or pass --force to regenerate.",
     kind: "feature",

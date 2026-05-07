@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07a";
+export const TOUR_VERSION = "2026.05.07b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -206,6 +206,14 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05",
     cta: { label: "Open Pathways", href: "/pathways" },
+  },
+  {
+    id: "bold-hero",
+    title: "A bolder welcome",
+    body: "The dashboard, pathways, and catalog now open with a full-bleed hero — mesh gradient, drifting organic blobs, your name in gradient type, and stat tiles with asymmetric corners. Less of a default form, more of a place that recognises you.",
+    path: "/dashboard",
+    placement: "center",
+    since: "2026.05.07b",
   },
   {
     id: "auto-thumbnails",

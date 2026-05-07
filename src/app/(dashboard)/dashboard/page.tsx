@@ -151,62 +151,74 @@ export default async function DashboardPage() {
         </Link>
       )}
 
-      {/* Hero welcome */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 text-white shadow-xl shadow-brand-900/20 px-8 py-8">
-        <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-brand-300/10 rounded-full blur-3xl" />
-        <div className="relative grid md:grid-cols-2 gap-6 items-center">
-          <div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-brand-200">
-              <Sparkles size={12} /> {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-            </span>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">
-              Welcome back, {firstName}.
-            </h1>
-            <p className="mt-3 text-brand-100 leading-relaxed max-w-lg">
-              {inProgress > 0
-                ? `You have ${inProgress} course${inProgress === 1 ? "" : "s"} in progress. Pick up where you left off.`
-                : completed > 0
-                  ? `You've completed ${completed} course${completed === 1 ? "" : "s"}. Keep the streak going.`
-                  : "Browse the catalog or jump into a training pathway to get started."}
-            </p>
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <Link
-                href={inProgress > 0 ? "/my-courses" : "/courses"}
-                className="inline-flex items-center gap-2 bg-card text-brand-700 hover:bg-brand-50 font-semibold text-sm px-5 py-2.5 rounded-lg shadow-md transition-all hover:-translate-y-0.5"
-              >
-                {inProgress > 0 ? "Continue learning" : "Browse courses"} <ArrowRight size={16} />
-              </Link>
-              <Link
-                href="/pathways"
-                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 text-white hover:bg-white/20 text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
-              >
-                <Layers size={16} /> Explore pathways
-              </Link>
+      {/* Hero — bold full-bleed welcome with drifting organic blobs */}
+      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-10 hero-mesh-brand">
+        {/* Drifting blobs */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="blob-shape blob-soft drift" style={{ width: 560, height: 560, top: -200, left: -160 }} />
+          <div className="blob-shape blob-soft drift-slow" style={{ width: 700, height: 700, bottom: -300, right: -200, opacity: 0.55 }} />
+          <div className="blob-shape drift" style={{ width: 320, height: 320, top: "20%", left: "58%", opacity: 0.35 }} />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-20">
+          <div className="grid md:grid-cols-[2fr_1fr] gap-10 md:gap-14 items-end">
+            <div>
+              <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
+                <Sparkles size={12} />
+                {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+              </span>
+              <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.05] mt-3">
+                Hi, <span className="gradient-text">{firstName}</span>.
+              </h1>
+              <p className="mt-5 text-white/90 leading-relaxed max-w-xl text-lg">
+                {inProgress > 0
+                  ? `You have ${inProgress} course${inProgress === 1 ? "" : "s"} in progress. Pick up where you left off.`
+                  : completed > 0
+                    ? `You've completed ${completed} course${completed === 1 ? "" : "s"}. Keep the streak going.`
+                    : "Browse the catalog or jump into a training pathway to get started."}
+              </p>
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link
+                  href={inProgress > 0 ? "/my-courses" : "/courses"}
+                  className="inline-flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-6 py-3 organic-card shadow-lg shadow-brand-900/30 transition-all hover:-translate-y-0.5"
+                >
+                  {inProgress > 0 ? "Continue learning" : "Browse courses"} <ArrowRight size={16} />
+                </Link>
+                <Link
+                  href="/pathways"
+                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/25 text-white hover:bg-white/20 text-sm font-semibold px-6 py-3 organic-card-alt transition-colors"
+                >
+                  <Layers size={16} /> Explore pathways
+                </Link>
+              </div>
+            </div>
+
+            {/* Side stat panel — organic-cornered tiles */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: BookOpen,    label: "Enrolled",     value: enrollments.length, alt: false },
+                { icon: Clock,       label: "In progress",  value: inProgress,         alt: true },
+                { icon: TrendingUp,  label: "Completed",    value: completed,          alt: true },
+                { icon: Award,       label: "Certificates", value: certificates,       alt: false },
+              ].map((s, i) => {
+                const Icon = s.icon;
+                return (
+                  <div
+                    key={s.label}
+                    className={`bg-white/10 backdrop-blur border border-white/20 px-4 py-3.5 ${(i % 2 === 0) ? "organic-card" : "organic-card-alt"}`}
+                  >
+                    <div className="flex items-center gap-2 text-white/75 text-[11px] uppercase tracking-wider">
+                      <Icon size={12} /> {s.label}
+                    </div>
+                    <p className="text-3xl font-bold mt-1">{s.value}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
-
-          {/* Side stat panel */}
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { icon: BookOpen, label: "Enrolled", value: enrollments.length },
-              { icon: Clock, label: "In progress", value: inProgress },
-              { icon: TrendingUp, label: "Completed", value: completed },
-              { icon: Award, label: "Certificates", value: certificates },
-            ].map((s) => {
-              const Icon = s.icon;
-              return (
-                <div key={s.label} className="bg-white/10 backdrop-blur border border-white/15 rounded-xl px-4 py-3">
-                  <div className="flex items-center gap-2 text-brand-100 text-xs">
-                    <Icon size={12} /> {s.label}
-                  </div>
-                  <p className="text-2xl font-bold mt-1">{s.value}</p>
-                </div>
-              );
-            })}
-          </div>
         </div>
-      </div>
+        <div className="curve-down" />
+      </section>
 
       {/* Quick actions row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
