@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "EXPERIENCE track is open — apply through the Talent Application",
+    body: "The new EXPERIENCE section in the sidebar opens with the Talent Application — a structured intake for students and postdocs applying to BioHubNet's industry-placement track. It collects your bio, citizenship and locations, French proficiency, education timeline, supervisor letter (PDF), 650-character pitch, one-minute STAR video, resume (PDF), and a supporting transcript. Resume / video upload directly to BioHubNet's encrypted storage; admins review every submission and export to CSV.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Changelog now auto-publishes — no more manual seeding",
     body: "When we ship an entry, it's now live on the changelog page automatically. Previously the entries lived in a script that had to be re-run against the database; now the /changelog page reads from a registry and idempotently upserts anything new. The audience filter (trainee / staff / admin) still applies per entry.",
     kind: "improvement",
@@ -37,8 +44,8 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     daysAgo: 0,
   },
   {
-    title: "Sidebar reorganised into ENGAGE",
-    body: "Course Catalog, Learning Pathways (renamed from Pathways), My Courses, Gradebook, Certificates, and My Credits now sit under an ENGAGE section. EXPERIENCE — for industry-placement applications — is reserved for an upcoming release.",
+    title: "Sidebar reorganised into ENGAGE and EXPERIENCE",
+    body: "Course Catalog, Learning Pathways (renamed from Pathways), My Courses, Gradebook, Certificates, and My Credits now sit under an ENGAGE section. EXPERIENCE opens the industry-placement track via Talent Application.",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,

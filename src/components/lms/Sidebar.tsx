@@ -30,6 +30,7 @@ import {
   Coins as CoinsIcon,
   UserCog,
   HeartHandshake,
+  Briefcase,
 } from "lucide-react";
 
 interface NavItem {
@@ -56,8 +57,9 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 ];
 
 // EXPERIENCE — applications and connections to industry placements.
-// (Talent Application form held off auto-seed; section hides when empty.)
-const experienceItems: (NavItem & { labelKey: string })[] = [];
+const experienceItems: (NavItem & { labelKey: string })[] = [
+  { label: "Talent Application", labelKey: "nav.talent", href: "/forms/talent-application", icon: Briefcase },
+];
 
 // Other top-level items rendered after the groups.
 const miscItems: (NavItem & { labelKey: string })[] = [

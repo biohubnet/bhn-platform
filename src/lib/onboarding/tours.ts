@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07e";
+export const TOUR_VERSION = "2026.05.07f";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -224,6 +224,15 @@ export const TOUR_STEPS: TourStep[] = [
     since: "2026.05.07a",
     roles: ["instructor", "admin", "superadmin"],
     cta: { label: "Open the catalog", href: "/courses" },
+  },
+  {
+    id: "experience-track",
+    title: "Experience track is open",
+    body: "Looking for an internship or full-time placement? Open EXPERIENCE → Talent Application in the sidebar. It collects your bio, supervisor letter, transcript, resume, and a one-minute STAR video introduction. We share your application with vetted industry partners.",
+    path: "/forms/talent-application",
+    placement: "center",
+    since: "2026.05.07f",
+    cta: { label: "Open the application", href: "/forms/talent-application" },
   },
   {
     id: "refined-palette",

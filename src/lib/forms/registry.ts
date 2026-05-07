@@ -1,13 +1,11 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { OBIO_BOOTCAMP_DEFAULTS } from "./obio-bootcamp";
-// Note: TALENT_APPLICATION_DEFAULTS exists in ./talent-application.ts
-// but is NOT registered here on purpose — the form is held off the
-// auto-seed list. To enable it later, import it and append to SEEDS.
+import { TALENT_APPLICATION_DEFAULTS } from "./talent-application";
 
 // All known seed forms. To add a new form, add a default constant in
 // its own file and register it here. The first visit auto-provisions it.
-const SEEDS = [OBIO_BOOTCAMP_DEFAULTS];
+const SEEDS = [OBIO_BOOTCAMP_DEFAULTS, TALENT_APPLICATION_DEFAULTS];
 
 /** Look up a form by slug, auto-provisioning from a seed if missing. */
 export async function getOrSeedForm(slug: string) {
