@@ -98,7 +98,7 @@ async function chatGemini(messages: ChatMessage[], opts: ChatOpts) {
   const conversational = messages.filter((m) => m.role !== "system");
   const lastUser = conversational[conversational.length - 1]?.content ?? "";
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -115,7 +115,7 @@ async function chatGemini(messages: ChatMessage[], opts: ChatOpts) {
     text: (j.candidates?.[0]?.content?.parts?.[0]?.text ?? "") as string,
     promptTokens: j.usageMetadata?.promptTokenCount as number | undefined,
     completionTokens: j.usageMetadata?.candidatesTokenCount as number | undefined,
-    model: "gemini-1.5-flash-latest",
+    model: "gemini-2.0-flash",
   };
 }
 
