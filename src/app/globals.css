@@ -11,7 +11,7 @@
 
 /* ───── Daylight (default) ───── */
 :root, [data-theme="light"] {
-  --popover-bg: #eef2f9;       /* cool slate — distinct from --card-solid */
+  --popover-bg: #d2f0eb;       /* light teal — distinct from --card-solid */
   --bg:        #f6f9fd;
   --bg-mesh:
     radial-gradient(at 20% 20%, rgba(59,108,239,0.08) 0px, transparent 50%),
@@ -47,7 +47,7 @@
 
 /* ───── Nightfall (dark) ───── */
 [data-theme="dark"] {
-  --popover-bg: #1a2c5e;       /* lighter than --card-solid so menu reads as elevated */
+  --popover-bg: #0f3a3a;       /* deep teal — distinct from --card-solid navy */
   --bg:        #060a16;
   --bg-mesh:
     radial-gradient(at 20% 30%, rgba(59,108,239,0.18) 0px, transparent 60%),
@@ -127,7 +127,7 @@
 
 /* ───── Aurora (curves emphasis) ───── */
 [data-theme="aurora"] {
-  --popover-bg: #f5e8f6;       /* warm violet tint — distinct from --card-solid */
+  --popover-bg: #dcf1ee;       /* light teal — distinct from --card-solid */
   --bg:        #fbf6fb;
   --bg-mesh:
     radial-gradient(at 18% 25%, rgba(167,139,250,0.16) 0px, transparent 55%),
