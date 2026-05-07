@@ -182,6 +182,17 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
         <ThemePicker />
       </div>
 
+      {/* Build SHA — above the user block so it sits well clear of the
+          bottom edge where the browser draws link-hover tooltips. */}
+      {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
+        <div className="px-4 py-2 border-t border-line flex items-center justify-between text-[11px]">
+          <span className="text-subtle">Build</span>
+          <code className="font-mono text-muted bg-elevated px-1.5 py-0.5 rounded select-all">
+            {process.env.NEXT_PUBLIC_COMMIT_SHA}
+          </code>
+        </div>
+      )}
+
       {/* User */}
       <div className="px-3 py-4 border-t border-line">
         <Link href="/profile" className="flex items-center gap-3 px-3 py-2 mb-1 rounded-lg hover:bg-elevated transition-colors group">
@@ -202,14 +213,6 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
           <LogOut size={16} />
           {t("nav.signOut")}
         </button>
-        {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
-          <p
-            className="px-3 mt-2 text-[10px] font-mono text-subtle/60 select-all"
-            title="Build commit"
-          >
-            {process.env.NEXT_PUBLIC_COMMIT_SHA}
-          </p>
-        )}
       </div>
     </aside>
   );
