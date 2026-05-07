@@ -29,12 +29,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
       />
       <main className="flex-1 overflow-y-auto relative">
         {actingAs && <ImpersonationBanner actingAs={actingAs} />}
-        {/* Floating page-translator dock — top-right of the content area */}
-        <div className="absolute top-4 right-6 z-30" data-no-translate>
+        <div className="max-w-7xl mx-auto px-6 py-8 pt-16">{children}</div>
+      </main>
+      {/* Floating page-translator dock — fixed to viewport so it stays
+          clickable above all page content (modals at z-50 still win). */}
+      <div className="fixed top-3 right-4 z-40 pointer-events-auto" data-no-translate>
+        <div className="surface px-1 py-1">
           <PageTranslator />
         </div>
-        <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
-      </main>
+      </div>
       <Onboarding />
     </div>
   );

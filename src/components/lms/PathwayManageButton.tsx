@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, GripVertical, X, Trash2 } from "lucide-react";
+import { Plus, Pencil, GripVertical, X, Trash2, ArrowRight } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Textarea, Select } from "@/components/ui/Field";
+import { cn } from "@/lib/utils";
 
 interface CourseOption {
   id: string;
@@ -27,6 +28,8 @@ interface Props {
   courses: CourseOption[];
 }
 
+const MIME = "application/x-bhn-pathway-course";
+
 export function PathwayManageButton({ mode, pathway, courses }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -40,18 +43,89 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
   const [selectedIds, setSelectedIds] = useState<string[]>(pathway?.courseIds ?? []);
   const [filter, setFilter] = useState("");
 
-  function move(idx: number, delta: number) {
-    setSelectedIds((cur) => {
-      const next = [...cur];
-      const target = idx + delta;
-      if (target < 0 || target >= next.length) return cur;
-      [next[idx], next[target]] = [next[target], next[idx]];
-      return next;
-    });
-  }
+  // Drag tracking
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOriginIsList, setDragOriginIsList] = useState(false);
+  const [dropIdx, setDropIdx] = useState<number | null>(null);
+  const [dustbinHover, setDustbinHover] = useState(false);
+  const [pickerHover, setPickerHover] = useState(false);
+  const dragSourceRef = useRef<"list" | "picker" | null>(null);
 
   function toggle(id: string) {
     setSelectedIds((cur) => (cur.includes(id) ? cur.filter((c) => c !== id) : [...cur, id]));
+  }
+  function removeId(id: string) {
+    setSelectedIds((cur) => cur.filter((c) => c !== id));
+  }
+  function addId(id: string) {
+    setSelectedIds((cur) => (cur.includes(id) ? cur : [...cur, id]));
+  }
+  function moveTo(id: string, targetIdx: number) {
+    setSelectedIds((cur) => {
+      const without = cur.filter((c) => c !== id);
+      const idx = Math.min(targetIdx, without.length);
+      return [...without.slice(0, idx), id, ...without.slice(idx)];
+    });
+  }
+
+  // ── Drag handlers ──────────────────────────────────────────────
+  function onDragStart(e: React.DragEvent, id: string, source: "list" | "picker") {
+    e.dataTransfer.setData(MIME, id);
+    e.dataTransfer.effectAllowed = source === "list" ? "move" : "copy";
+    dragSourceRef.current = source;
+    setDragId(id);
+    setDragOriginIsList(source === "list");
+  }
+  function onDragEnd() {
+    setDragId(null);
+    setDropIdx(null);
+    setDustbinHover(false);
+    setPickerHover(false);
+    dragSourceRef.current = null;
+    setDragOriginIsList(false);
+  }
+  function onListDragOver(e: React.DragEvent, idx: number) {
+    if (!dragId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = dragOriginIsList ? "move" : "copy";
+    setDropIdx(idx);
+  }
+  function onListDrop(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    const id = e.dataTransfer.getData(MIME);
+    if (!id) return;
+    if (dragOriginIsList) {
+      // reorder
+      moveTo(id, idx);
+    } else {
+      // add from picker into specific position
+      setSelectedIds((cur) => {
+        if (cur.includes(id)) return cur;
+        return [...cur.slice(0, idx), id, ...cur.slice(idx)];
+      });
+    }
+    onDragEnd();
+  }
+  function onListEndDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const id = e.dataTransfer.getData(MIME);
+    if (!id) return;
+    if (dragOriginIsList) moveTo(id, selectedIds.length);
+    else addId(id);
+    onDragEnd();
+  }
+  function onDustbinDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const id = e.dataTransfer.getData(MIME);
+    if (id) removeId(id);
+    onDragEnd();
+  }
+  function onPickerDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const id = e.dataTransfer.getData(MIME);
+    // Dropping a list-item back on the picker = remove from selected
+    if (id && dragOriginIsList) removeId(id);
+    onDragEnd();
   }
 
   async function submit() {
@@ -81,11 +155,8 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
       }
       const data = await res.json();
       setOpen(false);
-      if (mode === "create") {
-        router.push(`/pathways/${data.id}`);
-      } else {
-        router.refresh();
-      }
+      if (mode === "create") router.push(`/pathways/${data.id}`);
+      else router.refresh();
     } finally {
       setLoading(false);
     }
@@ -131,7 +202,7 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
         onClose={() => setOpen(false)}
         size="xl"
         title={mode === "create" ? "Create training pathway" : "Edit training pathway"}
-        description="Pick the courses, set the order, and learners get one certificate when they complete every required course."
+        description="Drag courses from the right into the order list. Drag list items to reorder, or drop on the dustbin to remove."
         footer={
           <>
             {mode === "edit" && (
@@ -147,7 +218,7 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
         }
       >
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Left: metadata */}
+          {/* Left: metadata + ordered list */}
           <div className="space-y-4">
             <Field label="Title" required>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Aseptic Operator Certification" />
@@ -167,51 +238,94 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
               </Field>
             </div>
 
-            {/* Selected order list */}
+            {/* Ordered list — drop target */}
             <Field label={`Course order · ${ordered.length} selected`}>
-              {ordered.length === 0 ? (
-                <div className="text-xs text-subtle px-3 py-4 bg-elevated rounded-lg border border-line text-center">
-                  No courses selected yet — pick from the list →
-                </div>
-              ) : (
-                <ol className="space-y-1.5">
-                  {ordered.map((c, i) => (
-                    <li key={c.id} className="flex items-center gap-2 bg-elevated hover:bg-raised rounded-lg px-2 py-1.5 text-sm group">
-                      <GripVertical size={14} className="text-slate-300" />
-                      <span className="text-xs text-subtle font-mono w-5 text-center">{i + 1}</span>
-                      <span className="flex-1 truncate text-slate-800">{c.title}</span>
-                      <button
-                        type="button"
-                        onClick={() => move(i, -1)}
-                        disabled={i === 0}
-                        className="text-subtle hover:text-muted disabled:opacity-30 px-1 text-xs"
-                        aria-label="Move up"
-                      >↑</button>
-                      <button
-                        type="button"
-                        onClick={() => move(i, 1)}
-                        disabled={i === ordered.length - 1}
-                        className="text-subtle hover:text-muted disabled:opacity-30 px-1 text-xs"
-                        aria-label="Move down"
-                      >↓</button>
-                      <button
-                        type="button"
-                        onClick={() => toggle(c.id)}
-                        className="text-subtle hover:text-rose-600 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label="Remove"
+              <ol
+                className={cn(
+                  "min-h-[120px] rounded-xl border-2 border-dashed border-line p-2 space-y-1.5 transition-colors",
+                  dragId && !dragOriginIsList && "border-brand-300 bg-brand-50/40",
+                )}
+                onDragOver={(e) => { if (dragId && !dragOriginIsList) { e.preventDefault(); } }}
+                onDrop={onListEndDrop}
+              >
+                {ordered.length === 0 ? (
+                  <div className="text-xs text-subtle px-3 py-4 text-center">
+                    Drag courses here from the picker on the right.
+                  </div>
+                ) : (
+                  ordered.map((c, i) => {
+                    const isDragging = dragId === c.id && dragOriginIsList;
+                    const isDropTarget = dropIdx === i && dragId !== c.id;
+                    return (
+                      <li
+                        key={c.id}
+                        draggable
+                        onDragStart={(e) => onDragStart(e, c.id, "list")}
+                        onDragEnd={onDragEnd}
+                        onDragOver={(e) => onListDragOver(e, i)}
+                        onDrop={(e) => onListDrop(e, i)}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm group cursor-grab active:cursor-grabbing transition-all",
+                          isDragging
+                            ? "opacity-30 bg-elevated"
+                            : "bg-elevated hover:bg-raised",
+                          isDropTarget && "ring-2 ring-brand-400 -translate-y-0.5"
+                        )}
                       >
-                        <X size={12} />
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              )}
+                        <GripVertical size={14} className="text-subtle" />
+                        <span className="text-xs text-subtle font-mono w-5 text-center">{i + 1}</span>
+                        <span className="flex-1 truncate text-fg">{c.title}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeId(c.id)}
+                          className="text-subtle hover:text-rose-600 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label="Remove"
+                        >
+                          <X size={12} />
+                        </button>
+                      </li>
+                    );
+                  })
+                )}
+                {/* End-of-list drop indicator */}
+                {dragId && dragOriginIsList && dropIdx === null && ordered.length > 0 && (
+                  <div className="h-1 bg-brand-300 rounded-full" />
+                )}
+              </ol>
             </Field>
+
+            {/* Dustbin */}
+            <div
+              onDragOver={(e) => { if (dragId && dragOriginIsList) { e.preventDefault(); setDustbinHover(true); } }}
+              onDragLeave={() => setDustbinHover(false)}
+              onDrop={onDustbinDrop}
+              className={cn(
+                "rounded-xl border-2 border-dashed transition-all flex items-center justify-center gap-2 px-4 py-3 text-xs",
+                dragId && dragOriginIsList
+                  ? dustbinHover
+                    ? "border-rose-400 bg-rose-50 text-rose-700 scale-[1.02]"
+                    : "border-rose-200 bg-rose-50/50 text-rose-600"
+                  : "border-line text-subtle"
+              )}
+            >
+              <Trash2 size={14} />
+              {dragId && dragOriginIsList
+                ? "Drop here to remove from pathway"
+                : "Drag a list item here to remove"}
+            </div>
           </div>
 
-          {/* Right: course picker */}
-          <div className="space-y-2 md:border-l md:pl-6 md:border-line">
-            <Field label="Add courses" hint={`${courses.length} courses in catalog`}>
+          {/* Right: course picker — also a drop target for "remove" */}
+          <div
+            className={cn(
+              "space-y-2 md:border-l md:pl-6 md:border-line transition-colors",
+              dragId && dragOriginIsList && pickerHover && "bg-rose-50/50 -mx-2 px-2 rounded-xl",
+            )}
+            onDragOver={(e) => { if (dragId && dragOriginIsList) { e.preventDefault(); setPickerHover(true); } }}
+            onDragLeave={() => setPickerHover(false)}
+            onDrop={onPickerDrop}
+          >
+            <Field label="Add courses" hint={`${courses.length} courses in catalog · drag into the list`}>
               <Input
                 placeholder="Filter…"
                 value={filter}
@@ -225,24 +339,33 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
               {filtered.map((c) => {
                 const checked = selectedIds.includes(c.id);
                 return (
-                  <label
+                  <div
                     key={c.id}
-                    className={
-                      "flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-elevated " +
-                      (checked ? "bg-brand-50/50" : "")
-                    }
+                    draggable={!checked}
+                    onDragStart={(e) => onDragStart(e, c.id, "picker")}
+                    onDragEnd={onDragEnd}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 hover:bg-elevated transition-colors",
+                      checked ? "bg-brand-50/50 cursor-default" : "cursor-grab active:cursor-grabbing"
+                    )}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggle(c.id)}
-                      className="accent-brand-600"
+                      className="accent-brand-600 cursor-pointer"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-slate-800 truncate">{c.title}</p>
+                      <p className="text-sm text-fg truncate">{c.title}</p>
                       {c.category && <p className="text-xs text-subtle">{c.category}</p>}
                     </div>
-                  </label>
+                    {!checked && (
+                      <ArrowRight size={12} className="text-subtle opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                    {checked && (
+                      <span className="text-[10px] text-brand-700 font-semibold">In pathway</span>
+                    )}
+                  </div>
                 );
               })}
             </div>
