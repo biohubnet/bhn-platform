@@ -467,6 +467,23 @@ model AIInteraction {
   @@index([kind, createdAt])
 }
 
+/// Persistent cache of m2m100 (and any future translation model)
+/// outputs. Keyed by a sha256 of `model:sourceLang:targetLang:sourceText`
+/// so the same string is only translated once across the whole platform.
+/// The model field is part of the hash, so swapping engines invalidates.
+model Translation {
+  id             String   @id @default(cuid())
+  hash           String   @unique
+  sourceLang     String
+  targetLang     String
+  sourceText     String
+  translatedText String
+  model          String   // e.g. "m2m100-1.2b"
+  createdAt      DateTime @default(now())
+
+  @@index([targetLang])
+}
+
 /// GDPR / CCPA data-subject request log. Used to record exports and
 /// deletion requests with timestamps so we can prove compliance later.
 model DataSubjectRequest {

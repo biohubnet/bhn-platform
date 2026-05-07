@@ -5,10 +5,31 @@ import { LOCALES, type LocaleId } from "@/lib/i18n/dictionaries";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "bhn-page-translation";
+const CACHE_KEY_PREFIX = "bhn-tr-cache:";
 
 interface NodeRef {
   node: Text;
   original: string;
+}
+
+// In-tab translation cache. We mirror the server's persistent cache so
+// repeated navigations within a tab don't even hit the network. Keyed by
+// target language; values are { [originalText]: translatedText } maps.
+function loadCache(target: string): Record<string, string> {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY_PREFIX + target);
+    return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveCache(target: string, cache: Record<string, string>) {
+  try {
+    sessionStorage.setItem(CACHE_KEY_PREFIX + target, JSON.stringify(cache));
+  } catch {
+    // sessionStorage full or disabled — non-fatal, just lose the cache.
+  }
 }
 
 /**
@@ -103,9 +124,21 @@ export function PageTranslator() {
 
       const uniqueTexts = Array.from(seen.keys());
       const translated = new Map<string, string>();
-      // Send in chunks
-      for (let i = 0; i < uniqueTexts.length; i += 60) {
-        const chunk = uniqueTexts.slice(i, i + 60);
+
+      // First pass: serve from sessionStorage cache so re-mounts and
+      // repeat-visit pages don't re-fetch unchanged strings.
+      const cache = loadCache(target);
+      const toFetch: string[] = [];
+      for (const t of uniqueTexts) {
+        const hit = cache[t];
+        if (hit !== undefined) translated.set(t, hit);
+        else toFetch.push(t);
+      }
+
+      // Send misses in chunks. The server has its own persistent cache
+      // backing this, so even a fresh tab usually skips Cloudflare.
+      for (let i = 0; i < toFetch.length; i += 60) {
+        const chunk = toFetch.slice(i, i + 60);
         const res = await fetch("/api/translate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -125,8 +158,13 @@ export function PageTranslator() {
           throw new Error(detail);
         }
         const j = (await res.json()) as { translated: string[] };
-        chunk.forEach((src, k) => translated.set(src, j.translated[k] ?? src));
+        chunk.forEach((src, k) => {
+          const out = j.translated[k] ?? src;
+          translated.set(src, out);
+          cache[src] = out;
+        });
       }
+      if (toFetch.length > 0) saveCache(target, cache);
 
       for (const r of refs) {
         const t = translated.get(r.original);
