@@ -25,6 +25,15 @@ model User {
   allowPlatformContent Boolean @default(false)
   /// Employer-only: company they post on behalf of. Free text.
   employerCompany String?
+  /// Employer-only company-profile fields. AI auto-fill populates them
+  /// from the website on demand; user can edit.
+  companyWebsite     String?
+  companyLogo        String?
+  companyIndustry    String?
+  companySize        String?  // "1-10" | "11-50" | etc.
+  companyLocation    String?
+  companyDescription String?
+  companyFounded     String?  // year as string (free-form)
   lastLoginAt   DateTime?
   newsletterSubscribed   Boolean   @default(false)
   newsletterSubscribedAt DateTime?
@@ -121,6 +130,28 @@ model EventForm {
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
   submissions EventFormSubmission[]
+}
+
+/// One-time invite issued by an admin so an Employer HR partner can
+/// self-sign-up and land directly on the employer role. The token is a
+/// long random string; the recipient hits /signup/employer/[token] to
+/// claim. Used invites stay around for the audit trail.
+model EmployerInvite {
+  id          String    @id @default(cuid())
+  email       String
+  token       String    @unique
+  /// Optional: company name pre-filled at claim time.
+  companyName String?
+  /// Optional: company website pre-filled at claim time.
+  companyWebsite String?
+  invitedById String?
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  usedAt      DateTime?
+  usedById    String?
+
+  @@index([email])
+  @@index([invitedById, createdAt])
 }
 
 /// Admin-editable list of options that drives the Course catalog

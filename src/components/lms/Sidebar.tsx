@@ -76,6 +76,7 @@ const miscItems: (NavItem & { labelKey: string })[] = [
 // EMPLOYER PORTAL — visible only when role === "employer".
 const employerItems: (NavItem & { labelKey: string })[] = [
   { label: "Overview",          labelKey: "nav.employerHome",       href: "/employer",            icon: Building2, exact: true },
+  { label: "Company profile",   labelKey: "nav.employerProfile",    href: "/employer/profile",    icon: Building2 },
   { label: "My Postings",       labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: FilePlus },
   { label: "Applicants",        labelKey: "nav.employerApplicants", href: "/employer/applicants", icon: Users2 },
 ];
@@ -89,6 +90,7 @@ const adminItems: NavItem[] = [
   { label: "Role requests", href: "/admin/role-requests", icon: UserCog, minRole: "admin" },
   { label: "Pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers, minRole: "admin" },
   { label: "Course filters",      href: "/admin/course-filters",      icon: ListChecks, minRole: "admin" },
+  { label: "Employer invites",    href: "/admin/employer-invites",    icon: Building2,  minRole: "admin" },
   { label: "Certificates", href: "/admin/certificates", icon: Award, minRole: "admin" },
   { label: "Announcements", href: "/admin/announcements", icon: Megaphone, minRole: "admin" },
   { label: "Analytics", href: "/admin/analytics", icon: LineChart, minRole: "admin" },

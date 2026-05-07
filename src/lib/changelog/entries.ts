@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Employer self-signup via invite link + AI-filled company profile",
+    body: "Admins can now invite an industry partner from /admin/employer-invites — paste an email, optionally a company name and website, and we generate a one-time link with a configurable expiry. The recipient clicks through, sets a name + password, and lands on /employer with the Employer HR role auto-assigned. The new /employer/profile page lets them paste their website and one-click 'Auto-fill' — the AI fetches the homepage, extracts industry / HQ / size / founding year / a short description, and pulls the favicon as a starter logo. Existing values aren't overwritten, so re-running just fills in blanks.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Test data: dummy employer + trainee + posting + application",
     body: "Run scripts/seed-test-employer-flow.ts to drop in a ready-to-test pair: an Employer HR (test.employer@biohubnet.test / test1234) at Acme Biotherapeutics with one active internship posting, and a Trainee (test.trainee@biohubnet.test / test1234) who has already submitted the talent application. Idempotent — re-running won't duplicate. Pass --cleanup to delete the test rows when you're done. Three ways to verify the flow: sign in as the employer, view-as Employer HR from the superadmin avatar menu, or sign in as the trainee.",
     kind: "improvement",

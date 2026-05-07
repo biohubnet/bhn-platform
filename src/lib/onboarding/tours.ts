@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07i";
+export const TOUR_VERSION = "2026.05.07j";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -224,6 +224,15 @@ export const TOUR_STEPS: TourStep[] = [
     since: "2026.05.07a",
     roles: ["instructor", "admin", "superadmin"],
     cta: { label: "Open the catalog", href: "/courses" },
+  },
+  {
+    id: "employer-invites",
+    title: "Invite employer HR partners by link",
+    body: "Administration → Employer invites is where you onboard partner companies. Drop in an email, copy the generated link, and send it through your usual channel — when they click through they're guided to set a name + password and land on /employer with the Employer HR role assigned automatically.",
+    path: "/admin/employer-invites",
+    placement: "center",
+    since: "2026.05.07j",
+    roles: ["admin", "superadmin"],
   },
   {
     id: "catalog-admin",
