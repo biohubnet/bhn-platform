@@ -5,15 +5,15 @@ import { chat, AI_CONFIGURED } from "@/lib/ai";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
-const MAX_FILE = 20 * 1024 * 1024; // 20 MB — Gemini's inline-data ceiling
+const CF_ACCOUNT = process.env.CF_ACCOUNT_ID;
+const CF_TOKEN = process.env.CF_AI_TOKEN;
+
+const MAX_FILE = 20 * 1024 * 1024; // 20 MB
 const ACCEPTED_FILE_TYPES = new Set([
   "application/pdf",
   "image/png",
   "image/jpeg",
   "image/webp",
-  "image/heic",
-  "image/heif",
   "text/plain",
   "text/markdown",
   "text/html",
@@ -74,13 +74,6 @@ export async function POST(req: NextRequest) {
   let rawAi: string;
 
   if (contentType.startsWith("multipart/form-data")) {
-    // File-upload path: needs Gemini multimodal (Cloudflare Llama is text-only).
-    if (!GEMINI_KEY) {
-      return NextResponse.json(
-        { error: "File parsing needs GEMINI_API_KEY. Paste the text instead, or set the key." },
-        { status: 503 }
-      );
-    }
     let formData: FormData;
     try {
       formData = await req.formData();
@@ -103,9 +96,59 @@ export async function POST(req: NextRequest) {
         { status: 415 }
       );
     }
-    const bytes = Buffer.from(await file.arrayBuffer()).toString("base64");
+
     try {
-      rawAi = await callGeminiMultimodal(bytes, file.type);
+      if (file.type === "application/pdf") {
+        // PDFs: extract text server-side with unpdf, then feed through
+        // Cloudflare Llama via the existing chat() helper. Keeps us on
+        // the free Cloudflare Workers AI tier — no Gemini quota needed.
+        const buf = new Uint8Array(await file.arrayBuffer());
+        const { extractText, getDocumentProxy } = await import("unpdf");
+        const pdf = await getDocumentProxy(buf);
+        const { text } = await extractText(pdf, { mergePages: true });
+        const flat = Array.isArray(text) ? text.join("\n\n") : text;
+        if (!flat || flat.trim().length < 30) {
+          return NextResponse.json(
+            { error: "Couldn't pull readable text from this PDF (may be scanned-only). Try an image instead." },
+            { status: 422 }
+          );
+        }
+        const result = await chat(
+          [
+            { role: "system", content: SYSTEM },
+            { role: "user", content: flat.slice(0, 12000) },
+          ],
+          { feature: "internship_parse_pdf", maxTokens: 1500, temperature: 0.1 }
+        );
+        if (!result.ok) {
+          return NextResponse.json({ error: result.error || "AI parse failed." }, { status: 502 });
+        }
+        rawAi = result.text;
+      } else if (file.type.startsWith("image/")) {
+        // Images: Cloudflare Llama 3.2 Vision (free tier).
+        if (!CF_TOKEN || !CF_ACCOUNT) {
+          return NextResponse.json(
+            { error: "Image parsing needs CF_AI_TOKEN + CF_ACCOUNT_ID." },
+            { status: 503 }
+          );
+        }
+        const bytes = Array.from(new Uint8Array(await file.arrayBuffer()));
+        rawAi = await callCloudflareVision(bytes);
+      } else {
+        // text/plain, text/markdown, text/html — read directly.
+        const text = await file.text();
+        const result = await chat(
+          [
+            { role: "system", content: SYSTEM },
+            { role: "user", content: text.slice(0, 12000) },
+          ],
+          { feature: "internship_parse_text", maxTokens: 1500, temperature: 0.1 }
+        );
+        if (!result.ok) {
+          return NextResponse.json({ error: result.error || "AI parse failed." }, { status: 502 });
+        }
+        rawAi = result.text;
+      }
     } catch (e) {
       return NextResponse.json(
         { error: (e as Error).message || "AI parse failed." },
@@ -173,34 +216,38 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * Send the file to Gemini 1.5 Flash multimodal. Inline data is fine
- * for files up to 20 MB; the model returns the same JSON shape as the
- * text-only call above.
+ * Send an image to Cloudflare Workers AI's Llama 3.2 11B Vision model.
+ * Free tier — no Google billing required. Returns raw text that should
+ * be JSON (parsed and coerced by the caller).
  */
-async function callGeminiMultimodal(base64: string, mimeType: string): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
+async function callCloudflareVision(imageBytes: number[]): Promise<string> {
+  const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${CF_TOKEN}`,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM }] },
-      contents: [
+      image: imageBytes,
+      messages: [
+        { role: "system", content: SYSTEM },
         {
           role: "user",
-          parts: [
-            { text: "Extract the internship posting from the attached file into the JSON schema described in the system instruction." },
-            { inlineData: { mimeType, data: base64 } },
-          ],
+          content:
+            "Read the attached image and produce ONLY the JSON object described in the system instruction. No prose, no fences.",
         },
       ],
-      generationConfig: { maxOutputTokens: 1500, temperature: 0.1, responseMimeType: "application/json" },
+      max_tokens: 1500,
+      temperature: 0.1,
     }),
   });
   const j = await res.json();
-  if (j.error) throw new Error(j.error.message ?? "Gemini call failed");
-  const text = j.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof text !== "string" || !text.trim()) {
-    throw new Error("Gemini returned an empty response.");
+  if (!j.success) {
+    const msg = j.errors?.[0]?.message ?? j.messages?.[0]?.message ?? "Cloudflare Vision call failed";
+    throw new Error(msg);
   }
+  const text = (j.result?.response ?? j.result?.description ?? "") as string;
+  if (!text.trim()) throw new Error("Cloudflare Vision returned an empty response.");
   return text;
 }

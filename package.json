@@ -43,6 +43,7 @@
     "recharts": "^3.8.1",
     "scorm-again": "^3.0.4",
     "tailwind-merge": "^3.5.0",
+    "unpdf": "^1.6.2",
     "unzipper": "^0.12.3",
     "uuid": "^14.0.0",
     "xml2js": "^0.6.2"

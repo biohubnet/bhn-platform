@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["unzipper", "archiver", "@prisma/client", "bcryptjs"],
+  serverExternalPackages: ["unzipper", "archiver", "@prisma/client", "bcryptjs", "unpdf"],
   images: {
     remotePatterns: [
       // Cloudflare R2 public dev URL and any custom-domain bucket.
