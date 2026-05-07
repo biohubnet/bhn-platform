@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import type { FormField } from "@/lib/forms/types";
@@ -25,7 +26,7 @@ export async function PATCH(
     active?: boolean;
   };
 
-  const update: Parameters<typeof prisma.eventForm.update>[0]["data"] = {};
+  const update: Prisma.EventFormUpdateInput = {};
 
   if (body.fields !== undefined) {
     if (!Array.isArray(body.fields)) {
@@ -39,9 +40,7 @@ export async function PATCH(
         );
       }
     }
-    update.fields = body.fields as unknown as Parameters<
-      typeof prisma.eventForm.update
-    >[0]["data"]["fields"];
+    update.fields = body.fields as unknown as Prisma.InputJsonValue;
   }
   if (typeof body.title === "string") update.title = body.title.trim();
   if (body.description !== undefined) update.description = body.description;

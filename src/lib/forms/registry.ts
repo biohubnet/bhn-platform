@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { OBIO_BOOTCAMP_DEFAULTS } from "./obio-bootcamp";
 
@@ -39,7 +40,7 @@ export async function ensureRegisteredForms() {
         slug: seed.slug,
         title: seed.title,
         description: seed.description ?? null,
-        fields: seed.fields,
+        fields: seed.fields as unknown as Prisma.InputJsonValue,
       },
     });
   }
