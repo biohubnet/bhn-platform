@@ -8,9 +8,9 @@ const ADMINS = ["admin", "superadmin"];
 
 const entries = [
   {
-    title: "Sidebar reorganised into ENGAGE and EXPERIENCE",
-    body: "Course Catalog, Learning Pathways (renamed from Pathways), My Courses, Gradebook, Certificates, and My Credits now sit under an ENGAGE section. A new EXPERIENCE section opens with Talent Application — a structured form for students and postdocs applying to BioHubNet's industry-placement track. Resume, transcript, support letter, and a one-minute video upload directly to BioHubNet's storage; admins can review every submission and export to CSV.",
-    kind: "feature",
+    title: "Sidebar reorganised into ENGAGE",
+    body: "Course Catalog, Learning Pathways (renamed from Pathways), My Courses, Gradebook, Certificates, and My Credits now sit under an ENGAGE section. EXPERIENCE — for industry-placement applications — is reserved for an upcoming release.",
+    kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,
   },

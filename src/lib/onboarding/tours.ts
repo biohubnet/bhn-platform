@@ -226,15 +226,6 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open the catalog", href: "/courses" },
   },
   {
-    id: "experience-track",
-    title: "Experience track is open",
-    body: "Looking for an internship or full-time placement? Open EXPERIENCE → Talent Application in the sidebar. It collects your bio, supervisor letter, transcript, resume, and a one-minute STAR video introduction. We share your application with vetted industry partners.",
-    path: "/forms/talent-application",
-    placement: "center",
-    since: "2026.05.07e",
-    cta: { label: "Open the application", href: "/forms/talent-application" },
-  },
-  {
     id: "refined-palette",
     title: "A quieter, more refined palette",
     body: "Daylight, Nightfall, and Scientific now read more editorial than tech-startup — desaturated slate-navy brand, warm putty / charcoal backgrounds, warm graphite text. Less saturation, more sophistication. Hi-Tech keeps its neon edges as the maximalist option.",

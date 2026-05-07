@@ -30,7 +30,6 @@ import {
   Coins as CoinsIcon,
   UserCog,
   HeartHandshake,
-  Briefcase,
 } from "lucide-react";
 
 interface NavItem {
@@ -57,9 +56,8 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 ];
 
 // EXPERIENCE — applications and connections to industry placements.
-const experienceItems: (NavItem & { labelKey: string })[] = [
-  { label: "Talent Application", labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase },
-];
+// (Talent Application form held off auto-seed; section hides when empty.)
+const experienceItems: (NavItem & { labelKey: string })[] = [];
 
 // Other top-level items rendered after the groups.
 const miscItems: (NavItem & { labelKey: string })[] = [
@@ -168,11 +166,15 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
           return <NavLink key={item.href} item={labeled} pathname={pathname} />;
         })}
 
-        <SectionLabel>EXPERIENCE</SectionLabel>
-        {experienceItems.map((item) => {
-          const labeled = { ...item, label: t(item.labelKey) };
-          return <NavLink key={item.href} item={labeled} pathname={pathname} />;
-        })}
+        {experienceItems.length > 0 && (
+          <>
+            <SectionLabel>EXPERIENCE</SectionLabel>
+            {experienceItems.map((item) => {
+              const labeled = { ...item, label: t(item.labelKey) };
+              return <NavLink key={item.href} item={labeled} pathname={pathname} />;
+            })}
+          </>
+        )}
 
         <div className="pt-2" />
         {miscItems.map((item) => {
