@@ -102,6 +102,35 @@ model LoginCode {
   @@index([email, expiresAt])
 }
 
+/// Editable registration / signup forms. The `fields` JSON stores an
+/// array of FormField objects (see src/lib/forms/types.ts). Admins can
+/// edit labels / required-flags / options without a migration.
+model EventForm {
+  id          String                @id @default(cuid())
+  slug        String                @unique
+  title       String
+  description String?
+  fields      Json
+  active      Boolean               @default(true)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  submissions EventFormSubmission[]
+}
+
+/// Individual answer set for an EventForm. `data` is keyed by field id.
+model EventFormSubmission {
+  id        String    @id @default(cuid())
+  formId    String
+  form      EventForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  data      Json
+  email     String?
+  userId    String?
+  createdAt DateTime  @default(now())
+
+  @@index([formId, createdAt])
+  @@index([email])
+}
+
 model Course {
   id           String   @id @default(cuid())
   title        String
