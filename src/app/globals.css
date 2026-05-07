@@ -27,19 +27,19 @@
   --line-strong: rgba(28,28,32,0.16);
   --backdrop:  rgba(28,28,32,0.45);
 
-  /* Desaturated steel-navy brand — premium editorial feel.
-   * bg-brand-600 #3a4659 + text-white ≈ 9:1 contrast, AAA pass.
-   * bg-brand-50 #e9ecf2 + text-brand-700 #2c3445 ≈ 11:1, AAA pass. */
-  --brand-50:  #e9ecf2;
-  --brand-100: #d3d8e3;
-  --brand-200: #afb8ca;
-  --brand-300: #8492ac;
-  --brand-400: #5c6c8a;
-  --brand-500: #475670;
-  --brand-600: #3a4659;
-  --brand-700: #2c3445;
-  --brand-800: #1f2531;
-  --brand-900: #14181f;
+  /* Dark blue-teal brand — refined marine-editorial feel.
+   * bg-brand-600 #2c4f5a + text-white ≈ 9:1 contrast, AAA pass.
+   * bg-brand-50 #e3edf0 + text-brand-700 #213c46 ≈ 12:1, AAA pass. */
+  --brand-50:  #e3edf0;
+  --brand-100: #cadbe1;
+  --brand-200: #a3bdc6;
+  --brand-300: #7398a4;
+  --brand-400: #517986;
+  --brand-500: #3b6471;
+  --brand-600: #2c4f5a;
+  --brand-700: #213c46;
+  --brand-800: #182d35;
+  --brand-900: #101e24;
 
   --radius-sm: 10px;
   --radius:    14px;
@@ -66,19 +66,19 @@
   --line-strong: rgba(180,190,210,0.20);
   --backdrop:  rgba(0,0,0,0.72);
 
-  /* Dark-mode brand: same refined slate-navy as light mode, just shifted
-   * — 50 stays a deep tint for active button bgs, 600 is the saturated
-   * CTA where white text reads (≈ 6:1). 700 darkens further for hover. */
-  --brand-50:  #1a1f2c;
-  --brand-100: #232a3d;
-  --brand-200: #2e374e;
-  --brand-300: #3a4659;
-  --brand-400: #475670;
-  --brand-500: #5c6c8a;
-  --brand-600: #475670;
-  --brand-700: #3a4659;
-  --brand-800: #2c3445;
-  --brand-900: #1f2531;
+  /* Dark-mode brand — same teal-navy hue as Daylight, shifted darker.
+   * 50 is a deep tint for active button bgs; 600 is the CTA where
+   * white text reads (≈ 6:1); 700 darkens further for hover. */
+  --brand-50:  #182a31;
+  --brand-100: #213c46;
+  --brand-200: #2c4f5a;
+  --brand-300: #3b6471;
+  --brand-400: #517986;
+  --brand-500: #7398a4;
+  --brand-600: #3b6471;
+  --brand-700: #2c4f5a;
+  --brand-800: #213c46;
+  --brand-900: #182d35;
 
   /* Tame Tailwind's hard-coded state tints so cards / banners using
    * bg-rose-50, bg-amber-100, bg-emerald-50 etc. don't blast in dark
@@ -139,17 +139,17 @@
   --line-strong: rgba(15,23,42,0.16);
   --backdrop:  rgba(15,23,42,0.45);
 
-  /* Desaturated sky-slate brand — paper-academic, less consumer-tech. */
-  --brand-50:  #e8edf2;
-  --brand-100: #d3dbe5;
-  --brand-200: #aabac9;
-  --brand-300: #7d92a8;
-  --brand-400: #56708a;
-  --brand-500: #3d5670;
-  --brand-600: #2f4459;
-  --brand-700: #243446;
-  --brand-800: #1b2734;
-  --brand-900: #131c25;
+  /* Desaturated teal-slate brand — paper-academic, less consumer-tech. */
+  --brand-50:  #e3eef1;
+  --brand-100: #cadce2;
+  --brand-200: #a3bec7;
+  --brand-300: #7397a3;
+  --brand-400: #517786;
+  --brand-500: #3b5f6f;
+  --brand-600: #2c4a57;
+  --brand-700: #213842;
+  --brand-800: #182a32;
+  --brand-900: #111d23;
 
   /* Subtle, paper-like radii */
   --radius-sm: 6px;

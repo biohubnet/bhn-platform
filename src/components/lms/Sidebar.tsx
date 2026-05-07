@@ -30,6 +30,7 @@ import {
   Coins as CoinsIcon,
   UserCog,
   HeartHandshake,
+  Briefcase,
 } from "lucide-react";
 
 interface NavItem {
@@ -40,17 +41,31 @@ interface NavItem {
   exact?: boolean;
 }
 
-const navItems: (NavItem & { labelKey: string })[] = [
-  { label: "Dashboard",        labelKey: "nav.dashboard",   href: "/dashboard", icon: LayoutDashboard, exact: true },
-  { label: "Course Catalog",   labelKey: "nav.catalog",     href: "/courses", icon: BookOpen },
-  { label: "Pathways",         labelKey: "nav.pathways",    href: "/pathways", icon: Layers },
-  { label: "My Courses",       labelKey: "nav.myCourses",   href: "/my-courses", icon: GraduationCap },
-  { label: "Gradebook",        labelKey: "nav.gradebook",   href: "/gradebook", icon: BarChart3 },
-  { label: "Certificates",     labelKey: "nav.certificates",href: "/certificates", icon: Award },
-  { label: "My Credits",       labelKey: "nav.credits",     href: "/credits", icon: Coins },
-  { label: "Learning buddies", labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake },
+// Always-visible top item.
+const dashboardItem: NavItem & { labelKey: string } = {
+  label: "Dashboard", labelKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true,
+};
+
+// ENGAGE — the learning loop: catalog → pathway → progress → credits.
+const engageItems: (NavItem & { labelKey: string })[] = [
+  { label: "Course Catalog",     labelKey: "nav.catalog",     href: "/courses", icon: BookOpen },
+  { label: "Learning Pathways",  labelKey: "nav.pathways",    href: "/pathways", icon: Layers },
+  { label: "My Courses",         labelKey: "nav.myCourses",   href: "/my-courses", icon: GraduationCap },
+  { label: "Gradebook",          labelKey: "nav.gradebook",   href: "/gradebook", icon: BarChart3 },
+  { label: "Certificates",       labelKey: "nav.certificates",href: "/certificates", icon: Award },
+  { label: "My Credits",         labelKey: "nav.credits",     href: "/credits", icon: Coins },
+];
+
+// EXPERIENCE — applications and connections to industry placements.
+const experienceItems: (NavItem & { labelKey: string })[] = [
+  { label: "Talent Application", labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase },
+];
+
+// Other top-level items rendered after the groups.
+const miscItems: (NavItem & { labelKey: string })[] = [
+  { label: "Learning buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake },
   // labelKey is overridden per-role at render time ("What's new" for trainees).
-  { label: "Change log",       labelKey: "nav.changelog",   href: "/changelog", icon: Sparkles },
+  { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Sparkles },
 ];
 
 const adminItems: NavItem[] = [
@@ -85,6 +100,16 @@ interface SidebarProps {
   actingAs?: string | null;
   user: { name?: string | null; email?: string | null; image?: string | null };
   credits?: number;
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="pt-4 pb-1 px-3">
+      <p className="text-[10px] font-bold text-subtle uppercase tracking-[0.22em]">
+        {children}
+      </p>
+    </div>
+  );
 }
 
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
@@ -135,7 +160,22 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
       </Link>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+        <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} />
+
+        <SectionLabel>ENGAGE</SectionLabel>
+        {engageItems.map((item) => {
+          const labeled = { ...item, label: t(item.labelKey) };
+          return <NavLink key={item.href} item={labeled} pathname={pathname} />;
+        })}
+
+        <SectionLabel>EXPERIENCE</SectionLabel>
+        {experienceItems.map((item) => {
+          const labeled = { ...item, label: t(item.labelKey) };
+          return <NavLink key={item.href} item={labeled} pathname={pathname} />;
+        })}
+
+        <div className="pt-2" />
+        {miscItems.map((item) => {
           // Trainees see the changelog as "What's new"; staff as "Change log".
           const key = item.href === "/changelog" && !isStaff ? "nav.changelogTrainee" : item.labelKey;
           const labeled = { ...item, label: t(key) };
@@ -144,11 +184,7 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
 
         {isAdmin && (
           <>
-            <div className="pt-4 pb-1 px-3">
-              <p className="text-xs font-semibold text-subtle uppercase tracking-wider">
-                {t("nav.administration")}
-              </p>
-            </div>
+            <SectionLabel>{t("nav.administration").toUpperCase()}</SectionLabel>
             {visibleAdmin.map((item) => (
               <NavLink key={item.href} item={item} pathname={pathname} />
             ))}

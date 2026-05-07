@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import type { FormField } from "@/lib/forms/types";
-import { isSectionField, isChoiceField } from "@/lib/forms/types";
+import {
+  isSectionField, isChoiceField, isMultiCheckboxField, isFileField,
+} from "@/lib/forms/types";
 
 export const runtime = "nodejs";
 
@@ -21,15 +23,59 @@ export async function POST(
     return NextResponse.json({ error: "Form is not accepting submissions." }, { status: 410 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { data?: Record<string, string> };
+  const body = (await req.json().catch(() => ({}))) as {
+    data?: Record<string, string | string[]>;
+  };
   const incoming = body.data ?? {};
 
-  // Validate against schema: required fields, radio/select values must be in options.
+  // Validate against schema. Strings get trimmed, choice values must be
+  // in their option list, multicheckbox/file values must be string[].
   const fields = form.fields as unknown as FormField[];
-  const cleaned: Record<string, string> = {};
+  const cleaned: Record<string, string | string[]> = {};
   for (const f of fields) {
     if (isSectionField(f)) continue;
-    const v = (incoming[f.id] ?? "").trim();
+    const raw = incoming[f.id];
+
+    if (isMultiCheckboxField(f)) {
+      const arr = Array.isArray(raw) ? raw.map((s) => String(s).trim()).filter(Boolean) : [];
+      if (f.required && arr.length === 0) {
+        return NextResponse.json(
+          { error: `Missing required field: ${f.label}` },
+          { status: 400 }
+        );
+      }
+      const bad = arr.find((v) => !f.options.includes(v));
+      if (bad) {
+        return NextResponse.json(
+          { error: `Invalid option "${bad}" for "${f.label}".` },
+          { status: 400 }
+        );
+      }
+      if (arr.length) cleaned[f.id] = arr;
+      continue;
+    }
+
+    if (isFileField(f)) {
+      const v = typeof raw === "string" ? raw.trim() : "";
+      if (f.required && !v) {
+        return NextResponse.json(
+          { error: `Missing required file: ${f.label}` },
+          { status: 400 }
+        );
+      }
+      // Accept only our own R2 URLs to prevent storing arbitrary external
+      // links — clients that didn't go through /upload can't sneak in.
+      if (v && !v.startsWith(process.env.R2_PUBLIC_URL ?? "")) {
+        return NextResponse.json(
+          { error: `Invalid upload reference for "${f.label}".` },
+          { status: 400 }
+        );
+      }
+      if (v) cleaned[f.id] = v;
+      continue;
+    }
+
+    const v = typeof raw === "string" ? raw.trim() : "";
     if (f.required && !v) {
       return NextResponse.json(
         { error: `Missing required field: ${f.label}` },

@@ -7,7 +7,13 @@ export const runtime = "nodejs";
 
 function csvCell(s: unknown): string {
   if (s === null || s === undefined) return "";
-  const str = typeof s === "string" ? s : String(s);
+  // Arrays (multicheckbox) join with semicolons so they survive a comma-
+  // delimited CSV without confusing the parser.
+  const str = Array.isArray(s)
+    ? s.map((x) => String(x)).join("; ")
+    : typeof s === "string"
+      ? s
+      : String(s);
   // Always quote — handles commas, newlines, quotes, leading whitespace,
   // and the Excel-specific "leading +/=/@/-" formula injection footgun
   // (each escape just doubles inner quotes).
@@ -36,8 +42,8 @@ export async function GET(
   const header = ["Submitted at", "Email", ...ansFields.map((f) => f.label)];
   const lines = [header.map(csvCell).join(",")];
   for (const s of form.submissions) {
-    const data = s.data as Record<string, string>;
-    const row = [
+    const data = s.data as Record<string, string | string[]>;
+    const row: unknown[] = [
       new Date(s.createdAt).toISOString(),
       s.email ?? "",
       ...ansFields.map((f) => data[f.id] ?? ""),

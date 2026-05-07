@@ -87,8 +87,13 @@ export default async function AdminFormSubmissionsPage({
                 </thead>
                 <tbody className="divide-y divide-line">
                   {form.submissions.map((s) => {
-                    const data = s.data as Record<string, string>;
+                    const data = s.data as Record<string, string | string[]>;
                     const dt = new Date(s.createdAt);
+                    const cellText = (id: string) => {
+                      const v = data[id];
+                      if (Array.isArray(v)) return v.join(", ");
+                      return v ?? "";
+                    };
                     return (
                       <tr key={s.id} className="hover:bg-elevated/40 align-top">
                         <td className="px-2 py-1.5 text-[11px] text-muted whitespace-nowrap sticky left-0 bg-card group-hover:bg-elevated/40">
@@ -99,15 +104,32 @@ export default async function AdminFormSubmissionsPage({
                         <td className="px-2 py-1.5 text-[11px] text-fg whitespace-nowrap max-w-[160px] truncate" title={s.email ?? ""}>
                           {s.email ?? "—"}
                         </td>
-                        {ansFields.map((f) => (
-                          <td
-                            key={f.id}
-                            className="px-2 py-1.5 text-[11px] text-fg max-w-[160px] truncate"
-                            title={data[f.id] ?? ""}
-                          >
-                            {data[f.id] ?? "—"}
-                          </td>
-                        ))}
+                        {ansFields.map((f) => {
+                          const txt = cellText(f.id);
+                          const isUrl = typeof txt === "string" && /^https?:\/\//.test(txt);
+                          return (
+                            <td
+                              key={f.id}
+                              className="px-2 py-1.5 text-[11px] text-fg max-w-[160px] truncate"
+                              title={txt || ""}
+                            >
+                              {!txt ? (
+                                "—"
+                              ) : isUrl ? (
+                                <a
+                                  href={txt}
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                  className="text-brand-700 hover:underline"
+                                >
+                                  {txt.split("/").pop()?.replace(/^\d+_/, "") || txt}
+                                </a>
+                              ) : (
+                                txt
+                              )}
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })}

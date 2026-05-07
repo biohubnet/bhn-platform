@@ -1,17 +1,22 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Pencil, Save, X, Plus, Trash2, Check, AlertCircle, Loader2, ListChecks,
   ChevronUp, ChevronDown, Type, Mail, Link as LinkIcon, AlignLeft, ListChecks as RadioIcon, Heading,
+  Upload, Paperclip,
 } from "lucide-react";
 import {
   type FormField,
   type ChoiceField,
   type InputField,
+  type MultiCheckboxField,
+  type FileField,
   isChoiceField,
   isInputField,
   isSectionField,
+  isMultiCheckboxField,
+  isFileField,
 } from "@/lib/forms/types";
 
 interface Props {
@@ -49,13 +54,13 @@ export function EventFormView({
   const [savingSchema, setSavingSchema] = useState(false);
   const [schemaError, setSchemaError] = useState<string | null>(null);
 
-  // Submission state
-  const [values, setValues] = useState<Record<string, string>>(() => {
-    const v: Record<string, string> = {};
+  // Submission state. Value is string for simple fields, string[] for
+  // multicheckbox, and a URL string (after R2 upload) for file fields.
+  const [values, setValues] = useState<Record<string, string | string[]>>(() => {
+    const v: Record<string, string | string[]> = {};
     if (previousData) {
       for (const k in previousData) {
-        const x = previousData[k];
-        v[k] = Array.isArray(x) ? x.join(", ") : (x ?? "");
+        v[k] = previousData[k] ?? "";
       }
     }
     return v;
@@ -142,10 +147,16 @@ export function EventFormView({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitError(null);
-    // Client-side required check
+    // Client-side required check (covers strings + arrays)
     for (const f of schema) {
       if (isSectionField(f)) continue;
-      if (f.required && !values[f.id]?.trim()) {
+      if (!f.required) continue;
+      const v = values[f.id];
+      const empty =
+        v === undefined ||
+        (typeof v === "string" && !v.trim()) ||
+        (Array.isArray(v) && v.length === 0);
+      if (empty) {
         setSubmitError(`Please complete: ${f.label}`);
         return;
       }
@@ -294,8 +305,9 @@ export function EventFormView({
             {schema.map((f) => (
               <FieldRender
                 key={f.id}
+                slug={slug}
                 field={f}
-                value={values[f.id] ?? ""}
+                value={values[f.id]}
                 onChange={(v) => setValues((cur) => ({ ...cur, [f.id]: v }))}
               />
             ))}
@@ -323,11 +335,12 @@ export function EventFormView({
 // ── Field renderers ────────────────────────────────────────────────────
 
 function FieldRender({
-  field, value, onChange,
+  slug, field, value, onChange,
 }: {
+  slug: string;
   field: FormField;
-  value: string;
-  onChange: (v: string) => void;
+  value: string | string[] | undefined;
+  onChange: (v: string | string[]) => void;
 }) {
   if (isSectionField(field)) {
     return (
@@ -342,8 +355,27 @@ function FieldRender({
         {field.label}
         {field.required && <span className="text-rose-600 ml-0.5">*</span>}
       </label>
-      {field.hint && <p className="text-xs text-subtle mb-1.5">{field.hint}</p>}
-      <FieldInput field={field} value={value} onChange={onChange} />
+      {field.hint && <p className="text-xs text-subtle mb-2 leading-relaxed">{field.hint}</p>}
+      {isMultiCheckboxField(field) ? (
+        <MultiCheckboxInput
+          field={field}
+          value={Array.isArray(value) ? value : []}
+          onChange={onChange}
+        />
+      ) : isFileField(field) ? (
+        <FileInput
+          slug={slug}
+          field={field}
+          value={typeof value === "string" ? value : ""}
+          onChange={onChange}
+        />
+      ) : (
+        <FieldInput
+          field={field as InputField | ChoiceField}
+          value={typeof value === "string" ? value : ""}
+          onChange={onChange}
+        />
+      )}
     </div>
   );
 }
@@ -359,15 +391,25 @@ function FieldInput({
     "w-full bg-card-solid border border-line rounded-lg px-3 py-2 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all";
   if (isInputField(field)) {
     if (field.type === "textarea") {
+      const max = field.maxLength;
+      const len = value.length;
+      const over = max != null && len > max;
       return (
-        <textarea
-          required={field.required}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={4}
-          placeholder={field.placeholder}
-          className={cls}
-        />
+        <div>
+          <textarea
+            required={field.required}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            rows={6}
+            placeholder={field.placeholder}
+            className={cls}
+          />
+          {max != null && (
+            <p className={`mt-1 text-[11px] ${over ? "text-rose-600" : "text-subtle"}`}>
+              {len.toLocaleString()} / {max.toLocaleString()} characters
+            </p>
+          )}
+        </div>
       );
     }
     // Render "url" fields as plain text — most users paste urls without
@@ -421,6 +463,140 @@ function FieldInput({
           <span className="text-sm text-fg">{o}</span>
         </label>
       ))}
+    </div>
+  );
+}
+
+// ── Multi-checkbox input ──────────────────────────────────────────────
+
+function MultiCheckboxInput({
+  field, value, onChange,
+}: {
+  field: MultiCheckboxField;
+  value: string[];
+  onChange: (v: string[]) => void;
+}) {
+  function toggle(opt: string, on: boolean) {
+    if (on) onChange(value.includes(opt) ? value : [...value, opt]);
+    else onChange(value.filter((v) => v !== opt));
+  }
+  return (
+    <div className="space-y-1.5">
+      {field.options.map((o) => {
+        const checked = value.includes(o);
+        return (
+          <label
+            key={o}
+            className="flex items-start gap-2.5 px-3 py-2 rounded-lg border border-line hover:bg-elevated cursor-pointer transition-colors"
+          >
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => toggle(o, e.target.checked)}
+              className="mt-0.5 accent-brand-600"
+            />
+            <span className="text-sm text-fg">{o}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── File input ────────────────────────────────────────────────────────
+
+function FileInput({
+  slug, field, value, onChange,
+}: {
+  slug: string;
+  field: FileField;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(
+    value ? value.split("/").pop()?.replace(/^\d+_/, "") ?? "Uploaded file" : null
+  );
+
+  const maxMB = Math.round((field.maxBytes ?? 10 * 1024 * 1024) / 1_048_576);
+
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("fieldId", field.id);
+      fd.append("file", file);
+      const res = await fetch(`/api/forms/${slug}/upload`, { method: "POST", body: fd });
+      const j = (await res.json().catch(() => ({}))) as {
+        url?: string; error?: string; name?: string;
+      };
+      if (!res.ok || !j.url) {
+        setError(j.error ?? "Upload failed.");
+        return;
+      }
+      onChange(j.url);
+      setFileName(j.name ?? file.name);
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  function clear() {
+    onChange("");
+    setFileName(null);
+    setError(null);
+  }
+
+  return (
+    <div>
+      {value ? (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-line bg-card-solid text-sm">
+          <Paperclip size={14} className="text-brand-600 shrink-0" />
+          <a
+            href={value}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="flex-1 truncate text-fg hover:text-brand-700 underline-offset-2 hover:underline"
+          >
+            {fileName ?? "Uploaded file"}
+          </a>
+          <button
+            type="button"
+            onClick={clear}
+            className="text-xs text-subtle hover:text-rose-600 transition-colors"
+          >
+            Replace
+          </button>
+        </div>
+      ) : (
+        <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-line cursor-pointer hover:bg-elevated text-sm text-muted transition-colors">
+          {uploading ? (
+            <Loader2 size={14} className="animate-spin text-brand-600" />
+          ) : (
+            <Upload size={14} className="text-brand-600" />
+          )}
+          <span>{uploading ? "Uploading…" : `Choose file (max ${maxMB} MB${field.accept ? `, ${field.accept}` : ""})`}</span>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={field.accept}
+            onChange={onPick}
+            disabled={uploading}
+            className="hidden"
+          />
+        </label>
+      )}
+      {error && (
+        <p className="mt-1 text-[11px] text-rose-600 flex items-center gap-1">
+          <AlertCircle size={11} /> {error}
+        </p>
+      )}
     </div>
   );
 }

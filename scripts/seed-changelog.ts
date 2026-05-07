@@ -8,6 +8,20 @@ const ADMINS = ["admin", "superadmin"];
 
 const entries = [
   {
+    title: "Sidebar reorganised into ENGAGE and EXPERIENCE",
+    body: "Course Catalog, Learning Pathways (renamed from Pathways), My Courses, Gradebook, Certificates, and My Credits now sit under an ENGAGE section. A new EXPERIENCE section opens with Talent Application — a structured form for students and postdocs applying to BioHubNet's industry-placement track. Resume, transcript, support letter, and a one-minute video upload directly to BioHubNet's storage; admins can review every submission and export to CSV.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Palette shifted toward dark blue-teal",
+    body: "The brand scale now reads as a refined marine slate-navy — same desaturated weight as before, just hue-shifted toward teal so cards and CTAs feel more editorial than corporate. Hi-Tech keeps its neon character.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Quieter, more refined palette — desaturated slate replaces bright royal blue",
     body: "Daylight, Nightfall, and Scientific now read as editorial rather than consumer-tech. Background goes from cool bright blue to a warm putty / charcoal off-white; text shifts from cool navy to warm graphite; the brand scale is a desaturated steel-slate (about 60% of the previous saturation). Hi-Tech keeps its neon character. CTAs still pass AAA contrast with white text — they just don't shout anymore.",
     kind: "improvement",
