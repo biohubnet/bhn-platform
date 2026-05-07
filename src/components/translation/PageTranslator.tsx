@@ -26,6 +26,7 @@ export function PageTranslator() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [active, setActive] = useState<LocaleId | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const refsRef = useRef<NodeRef[]>([]);
 
@@ -85,6 +86,7 @@ export function PageTranslator() {
       return;
     }
     setBusy(true);
+    setError(null);
     try {
       // Restore originals first if we already translated to a different lang
       if (refsRef.current.length > 0) revertOnly();
@@ -110,8 +112,17 @@ export function PageTranslator() {
           body: JSON.stringify({ texts: chunk, source: "en", target }),
         });
         if (!res.ok) {
-          const j = await res.json().catch(() => ({}));
-          throw new Error(j.error ?? "Translation failed");
+          // Surface the real server response so we can diagnose. The
+          // body may not be JSON (e.g. Next's HTML error page on 500).
+          const raw = await res.text().catch(() => "");
+          let detail = `HTTP ${res.status}`;
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed?.error) detail = parsed.error;
+          } catch {
+            if (raw) detail += ` — ${raw.slice(0, 140).replace(/\s+/g, " ")}`;
+          }
+          throw new Error(detail);
         }
         const j = (await res.json()) as { translated: string[] };
         chunk.forEach((src, k) => translated.set(src, j.translated[k] ?? src));
@@ -127,12 +138,17 @@ export function PageTranslator() {
       }
       setActive(target);
       try { sessionStorage.setItem(STORAGE_KEY, target); } catch {}
+      setOpen(false);
     } catch (e) {
       console.error(e);
-      alert("Translation failed: " + (e as Error).message);
+      // Clear the saved language so we don't auto-retry on every page
+      // mount — that's what made the alert feel like it wouldn't close.
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
+      refsRef.current = [];
+      setError((e as Error).message || "Translation failed");
+      setOpen(true);
     } finally {
       setBusy(false);
-      setOpen(false);
     }
   }
 
@@ -177,6 +193,21 @@ export function PageTranslator() {
           <p className="px-2 py-1.5 text-[10px] font-semibold text-subtle uppercase tracking-[0.18em]">
             Translate this page
           </p>
+          {error && (
+            <div className="mx-1 mb-1 px-2 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-[11px] leading-snug">
+              <div className="flex items-start justify-between gap-2">
+                <span className="break-words">{error}</span>
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  className="text-rose-500 hover:text-rose-700 text-base leading-none"
+                  aria-label="Dismiss"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
           <div className="space-y-0.5">
             {LOCALES.filter((l) => l.id !== "en").map((l) => {
               const isActive = active === l.id;
