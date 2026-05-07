@@ -202,6 +202,14 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
           <LogOut size={16} />
           {t("nav.signOut")}
         </button>
+        {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
+          <p
+            className="px-3 mt-2 text-[10px] font-mono text-subtle/60 select-all"
+            title="Build commit"
+          >
+            {process.env.NEXT_PUBLIC_COMMIT_SHA}
+          </p>
+        )}
       </div>
     </aside>
   );
