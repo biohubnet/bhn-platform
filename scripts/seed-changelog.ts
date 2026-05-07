@@ -8,6 +8,13 @@ const ADMINS = ["admin", "superadmin"];
 
 const entries = [
   {
+    title: "Quieter, more refined palette — desaturated slate replaces bright royal blue",
+    body: "Daylight, Nightfall, and Scientific now read as editorial rather than consumer-tech. Background goes from cool bright blue to a warm putty / charcoal off-white; text shifts from cool navy to warm graphite; the brand scale is a desaturated steel-slate (about 60% of the previous saturation). Hi-Tech keeps its neon character. CTAs still pass AAA contrast with white text — they just don't shout anymore.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Theme list trimmed to the four that earn their keep",
     body: "Aurora, Modern, Pink, Lab, and Lab Mouse are gone. The picker now shows Daylight, Nightfall, Scientific, and Hi-Tech — each one a distinct design language (typography + surface + radii), not just a colour swap. If you were on a retired theme, you've been bumped back to your OS preference automatically.",
     kind: "improvement",

@@ -9,35 +9,37 @@
  *  3. Aurora    — softer surfaces, larger curves, flowing tone
  *  ============================================================ */
 
-/* ───── Daylight (default) ───── */
+/* ───── Daylight (default) — editorial, refined, less saturated ───── */
 :root, [data-theme="light"] {
-  --popover-bg: #d2f0eb;       /* light teal — distinct from --card-solid */
-  --bg:        #f6f9fd;
+  --popover-bg: #e7e9ee;       /* warm slate — distinct from --card-solid */
+  --bg:        #ecedea;        /* warm putty off-white (was cool bright #f6f9fd) */
   --bg-mesh:
-    radial-gradient(at 20% 20%, rgba(59,108,239,0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 0%,  rgba(59,108,239,0.05) 0px, transparent 45%),
-    radial-gradient(at 100% 100%, rgba(94,143,247,0.06) 0px, transparent 50%);
-  --card:      rgba(255,255,255,0.78);
-  --card-solid: #ffffff;
-  --elevated:  #f1f5fa;
-  --raised:    #e8eef7;
-  --fg:        #0b1b3b;
-  --fg-muted:  #4b5b78;
-  --fg-subtle: #8b9bb8;
-  --line:      rgba(15,31,61,0.07);
-  --line-strong: rgba(15,31,61,0.14);
-  --backdrop:  rgba(11,27,59,0.4);
+    radial-gradient(at 16% 18%, rgba(71,86,112,0.05) 0px, transparent 55%),
+    radial-gradient(at 88% 8%,  rgba(58,70,89,0.04) 0px, transparent 45%);
+  --card:      rgba(252,252,250,0.88);
+  --card-solid: #fafaf6;       /* warm off-white card */
+  --elevated:  #e3e3df;
+  --raised:    #d6d6d2;
+  --fg:        #1c1c20;        /* warm charcoal (was cool navy #0b1b3b) */
+  --fg-muted:  #565660;
+  --fg-subtle: #8d8d96;
+  --line:      rgba(28,28,32,0.08);
+  --line-strong: rgba(28,28,32,0.16);
+  --backdrop:  rgba(28,28,32,0.45);
 
-  --brand-50:  #eff5ff;
-  --brand-100: #dbe7fe;
-  --brand-200: #b9d1fd;
-  --brand-300: #8eb4fb;
-  --brand-400: #5e8ff7;
-  --brand-500: #3b6cef;
-  --brand-600: #2a4fdb;
-  --brand-700: #233ec0;
-  --brand-800: #1e3499;
-  --brand-900: #1c2f7a;
+  /* Desaturated steel-navy brand — premium editorial feel.
+   * bg-brand-600 #3a4659 + text-white ≈ 9:1 contrast, AAA pass.
+   * bg-brand-50 #e9ecf2 + text-brand-700 #2c3445 ≈ 11:1, AAA pass. */
+  --brand-50:  #e9ecf2;
+  --brand-100: #d3d8e3;
+  --brand-200: #afb8ca;
+  --brand-300: #8492ac;
+  --brand-400: #5c6c8a;
+  --brand-500: #475670;
+  --brand-600: #3a4659;
+  --brand-700: #2c3445;
+  --brand-800: #1f2531;
+  --brand-900: #14181f;
 
   --radius-sm: 10px;
   --radius:    14px;
@@ -45,44 +47,38 @@
   --radius-xl: 28px;
 }
 
-/* ───── Nightfall (dark) ───── */
+/* ───── Nightfall (dark) — refined, less saturated, warmer ───── */
 [data-theme="dark"] {
-  --popover-bg: #0f3a3a;       /* deep teal — distinct from --card-solid navy */
-  --bg:        #060a16;
+  --popover-bg: #1a1d28;
+  --bg:        #0c0d12;        /* warmer near-black (was harsher cool #060a16) */
   --bg-mesh:
-    radial-gradient(at 20% 30%, rgba(59,108,239,0.18) 0px, transparent 60%),
-    radial-gradient(at 80% 10%, rgba(94,143,247,0.10) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(35,62,192,0.18) 0px, transparent 55%);
-  /* Cards/elevated surfaces — bumped opacity so they actually separate
-   * from --bg. Old values (0.55) made cards nearly invisible. */
-  --card:      rgba(20,38,80,0.82);
-  --card-solid: #112149;
-  --elevated:  rgba(28,52,100,0.78);
-  --raised:    rgba(40,68,128,0.85);
-  --fg:        #eaf0fb;
-  /* Brighter muted/subtle so secondary + tertiary text clear AA on --bg. */
-  --fg-muted:  #c5d0e8;
-  --fg-subtle: #8e9fbe;
-  --line:      rgba(174,199,255,0.13);
-  --line-strong: rgba(174,199,255,0.22);
-  --backdrop:  rgba(0,0,0,0.7);
+    radial-gradient(at 18% 28%, rgba(71,86,112,0.18) 0px, transparent 60%),
+    radial-gradient(at 82% 8%,  rgba(92,108,138,0.10) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(58,70,89,0.16) 0px, transparent 55%);
+  --card:      rgba(28,30,40,0.82);
+  --card-solid: #181b25;        /* desaturated near-charcoal (was navy #112149) */
+  --elevated:  rgba(38,42,55,0.78);
+  --raised:    rgba(52,58,75,0.85);
+  --fg:        #e3e4e9;
+  --fg-muted:  #b1b3bd;
+  --fg-subtle: #7a7d88;
+  --line:      rgba(180,190,210,0.10);
+  --line-strong: rgba(180,190,210,0.20);
+  --backdrop:  rgba(0,0,0,0.72);
 
-  /* Dark-mode brand palette — designed so the two main usage patterns
-   * both have legible contrast:
-   *   bg-brand-600 text-white       → saturated CTA, ~5.6:1
-   *   bg-brand-50  text-brand-700   → deep tint w/ light blue text, ~5.6:1
-   * Light tints (50–200) intentionally stay dark so they read as
-   * "subtle bg fills"; the scale jumps back to saturated blue at 600. */
-  --brand-50:  #1a2856;
-  --brand-100: #233aa0;
-  --brand-200: #2a4fdb;
-  --brand-300: #3b6cef;
-  --brand-400: #5e8ff7;
-  --brand-500: #8eb4fb;
-  --brand-600: #3b6cef;
-  --brand-700: #5e8ff7;
-  --brand-800: #8eb4fb;
-  --brand-900: #b9d1fd;
+  /* Dark-mode brand: same refined slate-navy as light mode, just shifted
+   * — 50 stays a deep tint for active button bgs, 600 is the saturated
+   * CTA where white text reads (≈ 6:1). 700 darkens further for hover. */
+  --brand-50:  #1a1f2c;
+  --brand-100: #232a3d;
+  --brand-200: #2e374e;
+  --brand-300: #3a4659;
+  --brand-400: #475670;
+  --brand-500: #5c6c8a;
+  --brand-600: #475670;
+  --brand-700: #3a4659;
+  --brand-800: #2c3445;
+  --brand-900: #1f2531;
 
   /* Tame Tailwind's hard-coded state tints so cards / banners using
    * bg-rose-50, bg-amber-100, bg-emerald-50 etc. don't blast in dark
@@ -125,34 +121,35 @@
 [data-theme="dark"] .text-sky-800     { color: #7dd3fc; }
 [data-theme="dark"] .text-sky-900     { color: #bae6fd; }
 
-/* ───── Scientific (academic blue, structured) ───── */
+/* ───── Scientific (academic blue, structured, slightly desaturated) ───── */
 [data-theme="scientific"] {
-  --popover-bg: #eef4f9;
-  --bg:        #f5f7fa;
+  --popover-bg: #e2e7ec;
+  --bg:        #e8ebef;        /* slightly darker, less cool than #f5f7fa */
   --bg-mesh:
-    radial-gradient(at 0% 0%, rgba(14,165,233,0.06) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(99,102,241,0.05) 0px, transparent 45%);
-  --card:      rgba(255,255,255,0.92);
-  --card-solid: #ffffff;
-  --elevated:  #eef2f6;
-  --raised:    #e2e8f0;
-  --fg:        #1e293b;
+    radial-gradient(at 0% 0%, rgba(46,86,116,0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(70,82,108,0.04) 0px, transparent 45%);
+  --card:      rgba(252,253,254,0.94);
+  --card-solid: #fcfdfe;
+  --elevated:  #e3e7eb;
+  --raised:    #d6dbe1;
+  --fg:        #1e2733;
   --fg-muted:  #475569;
   --fg-subtle: #94a3b8;
   --line:      rgba(15,23,42,0.08);
   --line-strong: rgba(15,23,42,0.16);
   --backdrop:  rgba(15,23,42,0.45);
 
-  --brand-50:  #f0f9ff;
-  --brand-100: #e0f2fe;
-  --brand-200: #bae6fd;
-  --brand-300: #7dd3fc;
-  --brand-400: #38bdf8;
-  --brand-500: #0ea5e9;
-  --brand-600: #0284c7;
-  --brand-700: #0369a1;
-  --brand-800: #075985;
-  --brand-900: #0c4a6e;
+  /* Desaturated sky-slate brand — paper-academic, less consumer-tech. */
+  --brand-50:  #e8edf2;
+  --brand-100: #d3dbe5;
+  --brand-200: #aabac9;
+  --brand-300: #7d92a8;
+  --brand-400: #56708a;
+  --brand-500: #3d5670;
+  --brand-600: #2f4459;
+  --brand-700: #243446;
+  --brand-800: #1b2734;
+  --brand-900: #131c25;
 
   /* Subtle, paper-like radii */
   --radius-sm: 6px;

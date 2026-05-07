@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07c";
+export const TOUR_VERSION = "2026.05.07d";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -224,6 +224,13 @@ export const TOUR_STEPS: TourStep[] = [
     since: "2026.05.07a",
     roles: ["instructor", "admin", "superadmin"],
     cta: { label: "Open the catalog", href: "/courses" },
+  },
+  {
+    id: "refined-palette",
+    title: "A quieter, more refined palette",
+    body: "Daylight, Nightfall, and Scientific now read more editorial than tech-startup — desaturated slate-navy brand, warm putty / charcoal backgrounds, warm graphite text. Less saturation, more sophistication. Hi-Tech keeps its neon edges as the maximalist option.",
+    placement: "center",
+    since: "2026.05.07d",
   },
   {
     id: "trimmed-themes",
