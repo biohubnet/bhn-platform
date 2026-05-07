@@ -7,7 +7,7 @@ export const maxDuration = 30;
 
 const CF_ACCOUNT = process.env.CF_ACCOUNT_ID;
 const CF_TOKEN   = process.env.CF_AI_TOKEN;
-const ALLOWED = new Set(["en", "es", "fr", "zh", "hi", "ko"]);
+const ALLOWED = new Set(["en", "es", "fr", "zh", "hi", "ko", "pa", "ar"]);
 
 interface Body {
   texts: string[];

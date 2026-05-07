@@ -14,7 +14,12 @@ export const LOCALES = [
   { id: "zh", name: "Simplified Chinese", nativeName: "简体中文" },
   { id: "hi", name: "Hindi",       nativeName: "हिन्दी" },
   { id: "ko", name: "Korean",      nativeName: "한국어" },
+  { id: "pa", name: "Punjabi",     nativeName: "ਪੰਜਾਬੀ" },
+  { id: "ar", name: "Arabic",      nativeName: "العربية" },
 ] as const;
+
+/** ISO codes that should render right-to-left. */
+export const RTL_LOCALES: readonly string[] = ["ar"];
 
 export type LocaleId = (typeof LOCALES)[number]["id"];
 
@@ -318,7 +323,105 @@ const ko: Dict = {
   "consent.termsOfService": "이용약관",
 };
 
-export const DICTIONARIES: Record<LocaleId, Dict> = { en, es, fr, zh, hi, ko };
+const pa: Dict = {
+  "nav.dashboard": "ਡੈਸ਼ਬੋਰਡ",
+  "nav.catalog": "ਕੋਰਸ ਕੈਟਾਲਾਗ",
+  "nav.pathways": "ਮਾਰਗ",
+  "nav.myCourses": "ਮੇਰੇ ਕੋਰਸ",
+  "nav.gradebook": "ਗਰੇਡਬੁੱਕ",
+  "nav.certificates": "ਸਰਟੀਫਿਕੇਟ",
+  "nav.credits": "ਮੇਰੇ ਕ੍ਰੈਡਿਟ",
+  "nav.buddy": "ਸਿੱਖਣ ਦੇ ਸਾਥੀ",
+  "nav.changelog": "ਬਦਲਾਅ ਲੌਗ",
+  "nav.changelogTrainee": "ਨਵਾਂ ਕੀ ਹੈ",
+  "nav.administration": "ਪ੍ਰਸ਼ਾਸਨ",
+  "nav.signOut": "ਸਾਈਨ ਆਉਟ",
+
+  "common.save": "ਸੁਰੱਖਿਅਤ ਕਰੋ",
+  "common.cancel": "ਰੱਦ ਕਰੋ",
+  "common.delete": "ਮਿਟਾਓ",
+  "common.edit": "ਸੰਪਾਦਿਤ ਕਰੋ",
+  "common.next": "ਅਗਲਾ",
+  "common.back": "ਪਿੱਛੇ",
+  "common.close": "ਬੰਦ ਕਰੋ",
+  "common.search": "ਖੋਜੋ",
+  "common.loading": "ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ…",
+  "common.theme": "ਥੀਮ",
+  "common.language": "ਭਾਸ਼ਾ",
+
+  "profile.title": "ਮੇਰੀ ਪ੍ਰੋਫਾਈਲ",
+  "profile.personalInfo": "ਨਿੱਜੀ ਜਾਣਕਾਰੀ",
+  "profile.password": "ਪਾਸਵਰਡ",
+  "profile.privacy": "ਨਿੱਜਤਾ ਅਤੇ ਡਾਟਾ",
+  "profile.exportData": "ਮੇਰਾ ਡਾਟਾ ਡਾਊਨਲੋਡ ਕਰੋ",
+  "profile.deleteAccount": "ਮੇਰਾ ਖਾਤਾ ਮਿਟਾਓ",
+  "profile.languagePicker": "ਡਿਸਪਲੇ ਭਾਸ਼ਾ",
+
+  "consent.title": "ਅਸੀਂ ਤੁਹਾਡੀ ਨਿੱਜਤਾ ਦਾ ਸਨਮਾਨ ਕਰਦੇ ਹਾਂ",
+  "consent.body": "ਅਸੀਂ BHN ਟਰੇਨਿੰਗ ਨੂੰ ਚਾਲੂ ਰੱਖਣ, ਇਸਦੀ ਕਾਰਗੁਜ਼ਾਰੀ ਮਾਪਣ ਅਤੇ ਤੁਹਾਡੇ ਅਨੁਭਵ ਨੂੰ ਬਿਹਤਰ ਬਣਾਉਣ ਲਈ ਕੂਕੀਜ਼ ਅਤੇ ਸਮਾਨ ਤਕਨੀਕਾਂ ਦੀ ਵਰਤੋਂ ਕਰਦੇ ਹਾਂ। ਤੁਸੀਂ ਆਪਣੀ ਪ੍ਰੋਫਾਈਲ ਤੋਂ ਕਿਸੇ ਵੀ ਸਮੇਂ ਆਪਣੀਆਂ ਚੋਣਾਂ ਬਦਲ ਸਕਦੇ ਹੋ।",
+  "consent.necessary": "ਜ਼ਰੂਰੀ",
+  "consent.necessaryHelp": "ਤੁਹਾਨੂੰ ਸਾਈਨ ਇਨ ਰੱਖਣ ਅਤੇ ਪਲੇਟਫਾਰਮ ਨੂੰ ਸੁਰੱਖਿਅਤ ਰੱਖਣ ਲਈ ਲੋੜੀਂਦਾ।",
+  "consent.analytics": "ਵਿਸ਼ਲੇਸ਼ਣ",
+  "consent.analyticsHelp": "ਪਲੇਟਫਾਰਮ ਨੂੰ ਬਿਹਤਰ ਬਣਾਉਣ ਲਈ ਪੇਜ ਵਿਊਜ਼ ਅਤੇ ਵਿਸ਼ੇਸ਼ਤਾ ਵਰਤੋਂ। ਕਦੇ ਨਹੀਂ ਵੇਚਿਆ ਜਾਂਦਾ।",
+  "consent.marketing": "ਮਾਰਕੀਟਿੰਗ",
+  "consent.marketingHelp": "ਵਿਕਲਪਿਕ ਨਿਊਜ਼ਲੈਟਰ ਜਾਂ ਪ੍ਰਚਾਰ ਸੰਪਰਕ ਨਾਲ ਜੁੜੇ।",
+  "consent.acceptAll": "ਸਭ ਨੂੰ ਸਵੀਕਾਰ ਕਰੋ",
+  "consent.necessaryOnly": "ਸਿਰਫ਼ ਜ਼ਰੂਰੀ",
+  "consent.savePrefs": "ਤਰਜੀਹਾਂ ਸੁਰੱਖਿਅਤ ਕਰੋ",
+  "consent.privacyPolicy": "ਨਿੱਜਤਾ ਨੀਤੀ",
+  "consent.termsOfService": "ਸ਼ਰਤਾਂ",
+};
+
+const ar: Dict = {
+  "nav.dashboard": "لوحة التحكم",
+  "nav.catalog": "كتالوج الدورات",
+  "nav.pathways": "المسارات",
+  "nav.myCourses": "دوراتي",
+  "nav.gradebook": "سجل الدرجات",
+  "nav.certificates": "الشهادات",
+  "nav.credits": "أرصدتي",
+  "nav.buddy": "شركاء التعلم",
+  "nav.changelog": "سجل التغييرات",
+  "nav.changelogTrainee": "ما الجديد",
+  "nav.administration": "الإدارة",
+  "nav.signOut": "تسجيل الخروج",
+
+  "common.save": "حفظ",
+  "common.cancel": "إلغاء",
+  "common.delete": "حذف",
+  "common.edit": "تعديل",
+  "common.next": "التالي",
+  "common.back": "رجوع",
+  "common.close": "إغلاق",
+  "common.search": "بحث",
+  "common.loading": "جارٍ التحميل…",
+  "common.theme": "المظهر",
+  "common.language": "اللغة",
+
+  "profile.title": "ملفي الشخصي",
+  "profile.personalInfo": "المعلومات الشخصية",
+  "profile.password": "كلمة المرور",
+  "profile.privacy": "الخصوصية والبيانات",
+  "profile.exportData": "تنزيل بياناتي",
+  "profile.deleteAccount": "حذف حسابي",
+  "profile.languagePicker": "لغة العرض",
+
+  "consent.title": "نحن نحترم خصوصيتك",
+  "consent.body": "نستخدم ملفات تعريف الارتباط والتقنيات المماثلة لإبقاء BHN Training يعمل، وقياس أدائه، وتحسين تجربتك. يمكنك تغيير اختياراتك في أي وقت من ملفك الشخصي.",
+  "consent.necessary": "ضروري",
+  "consent.necessaryHelp": "ضروري لإبقائك مسجلاً للدخول وللحفاظ على أمن المنصة.",
+  "consent.analytics": "التحليلات",
+  "consent.analyticsHelp": "مشاهدات الصفحات واستخدام الميزات لتحسين المنصة. لا تُباع أبداً.",
+  "consent.marketing": "التسويق",
+  "consent.marketingHelp": "مرتبطة بالنشرة الإخبارية الاختيارية أو المتابعة الترويجية.",
+  "consent.acceptAll": "قبول الكل",
+  "consent.necessaryOnly": "الضروري فقط",
+  "consent.savePrefs": "حفظ التفضيلات",
+  "consent.privacyPolicy": "سياسة الخصوصية",
+  "consent.termsOfService": "الشروط",
+};
+
+export const DICTIONARIES: Record<LocaleId, Dict> = { en, es, fr, zh, hi, ko, pa, ar };
 
 /** Static lookup. Falls back to English then to the key itself. */
 export function translate(locale: LocaleId | string | undefined, key: string): string {

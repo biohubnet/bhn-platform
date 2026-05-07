@@ -15,7 +15,7 @@ export async function PATCH(req: NextRequest) {
   if (typeof body.organization === "string") allowed.organization = body.organization.trim() || null;
   if (typeof body.jobTitle === "string")     allowed.jobTitle = body.jobTitle.trim() || null;
   if (typeof body.country === "string")      allowed.country = body.country.trim() || null;
-  if (typeof body.locale === "string" && ["en","es","fr","zh","hi","ko"].includes(body.locale)) {
+  if (typeof body.locale === "string" && ["en","es","fr","zh","hi","ko","pa","ar"].includes(body.locale)) {
     allowed.locale = body.locale;
   }
   if (typeof body.email === "string") {
