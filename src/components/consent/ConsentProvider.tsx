@@ -24,18 +24,23 @@ const STORAGE_KEY = "bhn-consent";
 interface ConsentValue {
   consent: ConsentState;
   hasDecided: boolean;
+  // False until we've read localStorage on the client. The banner uses
+  // this to avoid a flash of "undecided" UI on first paint.
+  ready: boolean;
   setConsent: (c: Partial<ConsentState>) => void;
 }
 
 const ConsentContext = createContext<ConsentValue>({
   consent: DEFAULT,
   hasDecided: false,
+  ready: false,
   setConsent: () => {},
 });
 
 export function ConsentProvider({ children }: { children: ReactNode }) {
   const [consent, setConsentState] = useState<ConsentState>(DEFAULT);
   const [hasDecided, setHasDecided] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     try {
@@ -48,6 +53,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch {}
+    setReady(true);
   }, []);
 
   function setConsent(patch: Partial<ConsentState>) {
@@ -69,7 +75,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
     }).catch(() => {});
   }
 
-  return <ConsentContext.Provider value={{ consent, hasDecided, setConsent }}>{children}</ConsentContext.Provider>;
+  return <ConsentContext.Provider value={{ consent, hasDecided, ready, setConsent }}>{children}</ConsentContext.Provider>;
 }
 
 export function useConsent() { return useContext(ConsentContext); }

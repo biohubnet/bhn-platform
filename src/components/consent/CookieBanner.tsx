@@ -13,12 +13,15 @@ import { cn } from "@/lib/utils";
  */
 export function CookieBanner() {
   const t = useT();
-  const { consent, hasDecided, setConsent } = useConsent();
+  const { consent, hasDecided, ready, setConsent } = useConsent();
   const [expanded, setExpanded] = useState(false);
   const [analytics, setAnalytics] = useState(consent.analytics);
   const [marketing, setMarketing] = useState(consent.marketing);
 
-  if (hasDecided) return null;
+  // Wait until we've checked localStorage on the client. Otherwise the
+  // banner renders during SSR / first paint and flashes before the
+  // effect tells us a decision was already made.
+  if (!ready || hasDecided) return null;
 
   return (
     <div className="fixed inset-x-3 bottom-3 z-50 max-w-3xl mx-auto animate-slide-up-in">

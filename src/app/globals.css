@@ -51,27 +51,36 @@
     radial-gradient(at 20% 30%, rgba(59,108,239,0.18) 0px, transparent 60%),
     radial-gradient(at 80% 10%, rgba(94,143,247,0.10) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(35,62,192,0.18) 0px, transparent 55%);
-  --card:      rgba(15,29,61,0.55);
-  --card-solid: #0f1d3d;
-  --elevated:  rgba(20,42,85,0.55);
-  --raised:    rgba(28,54,114,0.6);
+  /* Cards/elevated surfaces — bumped opacity so they actually separate
+   * from --bg. Old values (0.55) made cards nearly invisible. */
+  --card:      rgba(20,38,80,0.82);
+  --card-solid: #112149;
+  --elevated:  rgba(28,52,100,0.78);
+  --raised:    rgba(40,68,128,0.85);
   --fg:        #eaf0fb;
-  --fg-muted:  #a8b6d4;
-  --fg-subtle: #6c7c9f;
-  --line:      rgba(174,199,255,0.09);
-  --line-strong: rgba(174,199,255,0.18);
+  /* Brighter muted/subtle so secondary + tertiary text clear AA on --bg. */
+  --fg-muted:  #c5d0e8;
+  --fg-subtle: #8e9fbe;
+  --line:      rgba(174,199,255,0.13);
+  --line-strong: rgba(174,199,255,0.22);
   --backdrop:  rgba(0,0,0,0.7);
 
-  --brand-50:  #1c2f7a;
-  --brand-100: #233ec0;
+  /* Dark-mode brand palette — designed so the two main usage patterns
+   * both have legible contrast:
+   *   bg-brand-600 text-white       → saturated CTA, ~5.6:1
+   *   bg-brand-50  text-brand-700   → deep tint w/ light blue text, ~5.6:1
+   * Light tints (50–200) intentionally stay dark so they read as
+   * "subtle bg fills"; the scale jumps back to saturated blue at 600. */
+  --brand-50:  #1a2856;
+  --brand-100: #233aa0;
   --brand-200: #2a4fdb;
   --brand-300: #3b6cef;
   --brand-400: #5e8ff7;
   --brand-500: #8eb4fb;
-  --brand-600: #b9d1fd;
-  --brand-700: #dbe7fe;
-  --brand-800: #eff5ff;
-  --brand-900: #ffffff;
+  --brand-600: #3b6cef;
+  --brand-700: #5e8ff7;
+  --brand-800: #8eb4fb;
+  --brand-900: #b9d1fd;
 
   --radius-sm: 10px;
   --radius:    14px;
