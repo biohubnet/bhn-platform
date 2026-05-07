@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07";
+export const TOUR_VERSION = "2026.05.07a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -206,6 +206,16 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05",
     cta: { label: "Open Pathways", href: "/pathways" },
+  },
+  {
+    id: "auto-thumbnails",
+    title: "Course catalog now has AI cover art",
+    body: "We've filled in the catalog with one-word AI thumbnails. Each card's cover image is generated from the strongest word in the course title (or its category if set), rendered as a clean editorial illustration. If a course is missing one, run scripts/auto-thumbnail-courses.ts.",
+    path: "/courses",
+    placement: "center",
+    since: "2026.05.07a",
+    roles: ["instructor", "admin", "superadmin"],
+    cta: { label: "Open the catalog", href: "/courses" },
   },
   {
     id: "more-themes",

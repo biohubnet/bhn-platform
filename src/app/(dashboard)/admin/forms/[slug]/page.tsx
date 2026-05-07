@@ -60,52 +60,60 @@ export default async function AdminFormSubmissionsPage({
           <p className="font-medium text-muted">No submissions yet.</p>
         </div>
       ) : (
-        <div className="bg-card border border-line rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-elevated/60 border-b border-line">
-                <tr>
-                  <th className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-4 py-3 sticky left-0 bg-elevated/60">
-                    Submitted
-                  </th>
-                  <th className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-4 py-3">
-                    Email
-                  </th>
-                  {ansFields.map((f) => (
-                    <th
-                      key={f.id}
-                      className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-4 py-3 whitespace-nowrap"
-                    >
-                      {f.label}
+        // Break out of the dashboard layout's max-w-7xl so the table
+        // gets viewport-edge width on big screens. Negative margin equal
+        // to the layout's px-6, plus a viewport-relative pull on lg+.
+        <div className="-mx-6 lg:-ml-[calc((100vw-min(100vw-22rem,76rem))/2)] lg:-mr-[calc((100vw-min(100vw-22rem,76rem))/2)]">
+          <div className="bg-card border-y lg:border lg:rounded-2xl border-line overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs table-auto">
+                <thead className="bg-elevated/60 border-b border-line">
+                  <tr>
+                    <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-2 py-2 sticky left-0 bg-elevated/95 backdrop-blur-sm">
+                      Submitted
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {form.submissions.map((s) => {
-                  const data = s.data as Record<string, string>;
-                  return (
-                    <tr key={s.id} className="hover:bg-elevated/40">
-                      <td className="px-4 py-3 text-xs text-muted whitespace-nowrap sticky left-0 bg-card">
-                        {new Date(s.createdAt).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-fg whitespace-nowrap">
-                        {s.email ?? "—"}
-                      </td>
-                      {ansFields.map((f) => (
-                        <td
-                          key={f.id}
-                          className="px-4 py-3 text-fg max-w-[280px] truncate"
-                          title={data[f.id] ?? ""}
-                        >
-                          {data[f.id] ?? "—"}
+                    <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-2 py-2 whitespace-nowrap">
+                      Email
+                    </th>
+                    {ansFields.map((f) => (
+                      <th
+                        key={f.id}
+                        className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-2 py-2 align-top"
+                      >
+                        <span className="block break-words leading-tight max-w-[140px]">{f.label}</span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {form.submissions.map((s) => {
+                    const data = s.data as Record<string, string>;
+                    const dt = new Date(s.createdAt);
+                    return (
+                      <tr key={s.id} className="hover:bg-elevated/40 align-top">
+                        <td className="px-2 py-1.5 text-[11px] text-muted whitespace-nowrap sticky left-0 bg-card group-hover:bg-elevated/40">
+                          {dt.toLocaleDateString(undefined, { month: "short", day: "2-digit" })}
+                          {" "}
+                          <span className="text-subtle">{dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
                         </td>
-                      ))}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        <td className="px-2 py-1.5 text-[11px] text-fg whitespace-nowrap max-w-[160px] truncate" title={s.email ?? ""}>
+                          {s.email ?? "—"}
+                        </td>
+                        {ansFields.map((f) => (
+                          <td
+                            key={f.id}
+                            className="px-2 py-1.5 text-[11px] text-fg max-w-[160px] truncate"
+                            title={data[f.id] ?? ""}
+                          >
+                            {data[f.id] ?? "—"}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

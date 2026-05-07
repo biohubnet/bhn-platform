@@ -370,9 +370,13 @@ function FieldInput({
         />
       );
     }
+    // Render "url" fields as plain text — most users paste urls without
+    // a scheme (e.g. linkedin.com/...) and the browser's url validator
+    // rejects those. We don't actually parse, so just accept anything.
+    const inputType = field.type === "url" ? "text" : field.type;
     return (
       <input
-        type={field.type}
+        type={inputType}
         required={field.required}
         value={value}
         onChange={(e) => onChange(e.target.value)}

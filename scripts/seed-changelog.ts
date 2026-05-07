@@ -8,6 +8,20 @@ const ADMINS = ["admin", "superadmin"];
 
 const entries = [
   {
+    title: "Course catalog: AI-generated thumbnails for every course",
+    body: "Run scripts/auto-thumbnail-courses.ts to fill in cover art for the entire catalog. Each course gets a one-word focal subject (the strongest word from its title or category) rendered as an editorial brand-blue illustration via Cloudflare SDXL, uploaded to R2, and saved on the Course row. Idempotent — re-running only fills in what's still missing, or pass --force to regenerate.",
+    kind: "feature",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
+    title: "Submissions table fits the screen + URL fields stop fighting you",
+    body: "The /admin/forms/[slug] table is now compact (text-xs, tight padding, truncated cells with hover tooltips for the full value) and breaks out of the dashboard's max-width on large screens so it has room. URL fields on registration forms now accept anything you paste — no more 'please match the format' error if you skip the http:// scheme.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Themes are now full design languages — typography, shadows, and silhouette",
     body: "Each theme now defines its own typography (Modern uses Inter, Scientific is set in Charter serif, Hi-Tech in JetBrains Mono with uppercase headings, Pink and Lab Mouse in rounded Quicksand) plus its own surface treatment — Modern is shadowless with hard 1px borders, Hi-Tech glows neon, Pink and Lab Mouse have soft pink halos, Scientific reads as etched paper. Switching themes now changes how the platform feels, not just what colour it is.",
     kind: "improvement",

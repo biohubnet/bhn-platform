@@ -281,3 +281,46 @@ export function buildThumbnailPrompt(input: {
     `flat vector aesthetic, no text, no logo, no people.`
   );
 }
+
+// Words that don't carry meaning on their own — strip them when picking
+// the single representative word from a course title.
+const STOPWORDS = new Set([
+  "a","an","the","of","in","for","and","or","to","with","on","at","by","from",
+  "is","are","be","this","that","into","onto","via","as","its","it",
+  "intro","introduction","basics","basic","advanced","essential","essentials",
+  "fundamentals","fundamental","overview","module","modules","series","training",
+  "course","courses","program","programme","section","part","level",
+  "i","ii","iii","iv","v","vi",
+]);
+
+/**
+ * Pick a single word from a course's title (or category, if set) that
+ * mostly represents what the course is about. Used as a thumbnail-prompt
+ * subject so SDXL can paint a focused, abstract take on it.
+ */
+export function chooseOneWord(input: { title: string; category?: string | null }): string {
+  // Prefer category — typically already a single domain word ("Cleanroom").
+  if (input.category) {
+    const cat = input.category.split(/\s+/).find((w) => !STOPWORDS.has(w.toLowerCase()));
+    if (cat) return cat.replace(/[^A-Za-z\-]/g, "").toLowerCase() || "biomanufacturing";
+  }
+  // Otherwise, first significant word of the title.
+  const tokens = input.title.split(/\s+/).map((w) => w.replace(/[^A-Za-z\-]/g, ""));
+  const pick = tokens.find((w) => w && !STOPWORDS.has(w.toLowerCase()));
+  return (pick ?? "biomanufacturing").toLowerCase();
+}
+
+/**
+ * Build a thumbnail prompt anchored on a single representative word.
+ * Same editorial brand language as buildThumbnailPrompt, but the SDXL
+ * model gets a tighter focal subject so output is more iconic.
+ */
+export function buildOneWordThumbnailPrompt(word: string): string {
+  return (
+    `Editorial illustration representing the concept of "${word}" for a biomanufacturing training catalog. ` +
+    `Style: minimal, abstract, geometric, soft gradients in deep blues with hints of violet and cyan, ` +
+    `subtle scientific motifs (waves, curves, particles, molecular shapes) suggestive of the subject, ` +
+    `clean composition with negative space, premium magazine-cover feel, ` +
+    `flat vector aesthetic, no text, no logo, no people.`
+  );
+}
