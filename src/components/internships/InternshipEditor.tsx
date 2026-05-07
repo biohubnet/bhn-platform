@@ -205,7 +205,7 @@ export function InternshipEditor({
             <div className="flex-1 min-w-0">
               <h2 className="font-semibold text-fg">Drop a file or paste the job description</h2>
               <p className="text-xs text-muted mt-0.5">
-                Drag in a PDF, image, or text file — or paste from any source. The AI extracts company, role, dates, skills, and details. You review and save.
+                Drag in a PDF, DOCX, image, or text file — or paste from any source. The AI extracts company, role, dates, skills, and details. You review and save.
               </p>
             </div>
           </div>
@@ -238,7 +238,7 @@ export function InternshipEditor({
                 <div className="text-center">
                   <Upload size={28} className="mx-auto text-brand-600 mb-1" />
                   <p className="text-sm font-semibold text-brand-700">Drop to parse with AI</p>
-                  <p className="text-xs text-brand-700/80 mt-0.5">PDF, image, or text · up to 20 MB</p>
+                  <p className="text-xs text-brand-700/80 mt-0.5">PDF, DOCX, image, or text · up to 20 MB</p>
                 </div>
               </div>
             )}
@@ -266,7 +266,7 @@ export function InternshipEditor({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf,image/png,image/jpeg,image/webp,text/plain,text/markdown"
+                accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx,image/png,image/jpeg,image/webp,text/plain,text/markdown"
                 onChange={onPickFile}
                 className="hidden"
               />

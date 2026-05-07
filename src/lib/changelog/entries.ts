@@ -23,8 +23,8 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
-    title: "Internship parser now accepts dropped PDFs and images — fully on Cloudflare's free AI",
-    body: "Drag a PDF, screenshot, or text file straight onto the paste panel and the AI parses it. PDFs are extracted server-side via unpdf and routed through Cloudflare Llama; images go through Cloudflare's Llama 3.2 Vision model. Both stay on the free Workers AI tier — no Gemini quota or Google billing involved. The browser-default behaviour of opening dropped files in a new tab is intercepted; the parser handles up to 20 MB.",
+    title: "Internship parser now accepts dropped PDFs, DOCX, images, and text — all on Cloudflare's free AI",
+    body: "Drag a PDF, Word document, screenshot, or text file straight onto the paste panel and the AI parses it. PDFs are extracted server-side via unpdf, DOCX via mammoth, and routed through Cloudflare Llama 3.3 70B; images go through Cloudflare's Llama 3.2 Vision model. Everything stays on the free Workers AI tier — no Gemini quota or Google billing involved. The browser-default behaviour of opening dropped files in a new tab is intercepted; the parser handles up to 20 MB.",
     kind: "improvement",
     visibleTo: STAFF,
     daysAgo: 0,

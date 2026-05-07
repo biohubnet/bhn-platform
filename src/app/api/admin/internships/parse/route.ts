@@ -15,8 +15,10 @@ const CF_TOKEN = process.env.CF_AI_TOKEN;
 const STRUCTURED_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 const MAX_FILE = 20 * 1024 * 1024; // 20 MB
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const ACCEPTED_FILE_TYPES = new Set([
   "application/pdf",
+  DOCX_MIME,
   "image/png",
   "image/jpeg",
   "image/webp",
@@ -96,15 +98,32 @@ export async function POST(req: NextRequest) {
         { status: 413 }
       );
     }
-    if (!ACCEPTED_FILE_TYPES.has(file.type)) {
+    // Some browsers report .docx with a generic mime — fall back to
+    // extension match so a clean .docx upload still goes through.
+    const isDocx =
+      file.type === DOCX_MIME || /\.docx$/i.test(file.name);
+    if (!ACCEPTED_FILE_TYPES.has(file.type) && !isDocx) {
       return NextResponse.json(
-        { error: `Unsupported file type "${file.type}". Try PDF, image, or plain text.` },
+        { error: `Unsupported file type "${file.type || file.name}". Try PDF, DOCX, image, or plain text.` },
         { status: 415 }
       );
     }
 
     try {
-      if (file.type === "application/pdf") {
+      if (isDocx) {
+        // .docx — extract text with mammoth (pure JS, no native deps),
+        // then route through Cloudflare Llama like the PDF path.
+        const buf = Buffer.from(await file.arrayBuffer());
+        const mammoth = (await import("mammoth")).default;
+        const { value: docxText } = await mammoth.extractRawText({ buffer: buf });
+        if (!docxText || docxText.trim().length < 30) {
+          return NextResponse.json(
+            { error: "Couldn't pull readable text from this DOCX." },
+            { status: 422 }
+          );
+        }
+        rawAi = await callCloudflareText(docxText.slice(0, 12000));
+      } else if (file.type === "application/pdf") {
         // PDFs: extract text server-side with unpdf, then feed through
         // Cloudflare Llama via the existing chat() helper. Keeps us on
         // the free Cloudflare Workers AI tier — no Gemini quota needed.
