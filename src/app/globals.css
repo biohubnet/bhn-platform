@@ -158,43 +158,55 @@
   --radius-xl: 16px;
 }
 
-/* ───── Hi-tech (neon cyan on near-black) ───── */
+/* ───── Hi-tech (TRON — pure cyan glow on inky black + grid floor) ───── */
 [data-theme="hitech"] {
-  --popover-bg: #0a1f24;
-  --bg:        #050608;
+  --popover-bg: #03101a;
+  --bg:        #02060d;        /* TRON inky black */
+  /* Layer 1-3: cyan radial bloom. Layer 4-5: thin grid lines tiling at
+   * 64px to evoke the lightcycle arena floor. body{} below sets the
+   * matching multi-value background-size so the radials fill the
+   * viewport while the grid repeats. */
   --bg-mesh:
-    radial-gradient(at 18% 22%, rgba(0,255,209,0.18) 0px, transparent 55%),
-    radial-gradient(at 82% 8%, rgba(190,75,255,0.12) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(0,200,255,0.16) 0px, transparent 55%);
-  --card:      rgba(15,30,42,0.82);
-  --card-solid: #0d1929;
-  --elevated:  rgba(20,42,55,0.78);
-  --raised:    rgba(28,58,76,0.85);
-  --fg:        #d6f5f5;
-  --fg-muted:  #99cccc;
-  --fg-subtle: #7090a0;
-  --line:      rgba(0,255,209,0.16);
-  --line-strong: rgba(0,255,209,0.32);
-  --backdrop:  rgba(0,0,0,0.72);
+    radial-gradient(at 18% 22%, rgba(0,212,255,0.22) 0px, transparent 55%),
+    radial-gradient(at 82% 8%,  rgba(0,170,255,0.14) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(0,212,255,0.18) 0px, transparent 55%),
+    linear-gradient(rgba(0,212,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.05) 1px, transparent 1px);
+  --card:      rgba(8,22,38,0.84);
+  --card-solid: #06121f;
+  --elevated:  rgba(12,32,52,0.82);
+  --raised:    rgba(20,52,84,0.90);
+  --fg:        #e3f7ff;
+  --fg-muted:  #8ecfe8;
+  --fg-subtle: #4f7e98;
+  --line:      rgba(0,212,255,0.28);
+  --line-strong: rgba(0,212,255,0.55);
+  --backdrop:  rgba(0,0,0,0.82);
 
-  /* Hybrid scale: 50–200 are deep tints (subtle bg), 600/700 saturated
-   * cyan so white text reads on CTAs, 800/900 are bright neon. */
-  --brand-50:  #022c34;
-  --brand-100: #064c54;
-  --brand-200: #0e7490;
-  --brand-300: #06b6d4;
-  --brand-400: #22d3ee;
-  --brand-500: #67e8f9;
-  --brand-600: #0891b2;
-  --brand-700: #06b6d4;
-  --brand-800: #22d3ee;
-  --brand-900: #67e8f9;
+  /* TRON cyan brand scale. 50–200 stay deep so they read as subtle
+   * tints; 500 is the signature electric cyan; 600 is the CTA
+   * (white text ~5:1); 700+ ramps to glow. */
+  --brand-50:  #002232;
+  --brand-100: #00405d;
+  --brand-200: #005f86;
+  --brand-300: #007fb3;
+  --brand-400: #00aae0;
+  --brand-500: #00d4ff;
+  --brand-600: #007fb3;
+  --brand-700: #00aae0;
+  --brand-800: #00d4ff;
+  --brand-900: #80edff;
 
-  /* Sharp tech edges */
-  --radius-sm: 4px;
-  --radius:    6px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
+  /* Sharp TRON edges — almost-square corners */
+  --radius-sm: 0px;
+  --radius:    2px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+}
+
+/* Body bg-size override: radials fill the screen, grid layers tile. */
+[data-theme="hitech"] body {
+  background-size: 100% 100%, 100% 100%, 100% 100%, 64px 64px, 64px 64px;
 }
 
 /* Hi-tech inherits the same Tailwind state-color tames + deep-text
@@ -512,17 +524,17 @@ body {
   --popover-shadow: 0 6px 20px rgba(14,165,233,0.18), 0 1px 0 rgba(15,23,42,0.05);
 }
 
-/* Hi-tech — JetBrains Mono, neon glow shadow, uppercase wide-tracked headings. */
+/* Hi-tech (TRON) — JetBrains Mono, electric-cyan glow on every edge. */
 [data-theme="hitech"] {
   --font-sans-theme: "JetBrains Mono", "Fira Code", "Menlo", "Consolas", ui-monospace, monospace;
   --font-display-theme: var(--font-sans-theme);
   --body-features: "calt", "zero";
-  --surface-shadow: 0 0 0 1px rgba(0,255,209,0.18), 0 0 22px rgba(0,255,209,0.12);
-  --surface-border: 1px solid rgba(0,255,209,0.20);
-  --heading-tracking: 0.06em;
+  --surface-shadow: 0 0 0 1px rgba(0,212,255,0.30), 0 0 26px rgba(0,212,255,0.20);
+  --surface-border: 1px solid rgba(0,212,255,0.40);
+  --heading-tracking: 0.10em;
   --heading-weight: 500;
   --heading-transform: uppercase;
-  --popover-shadow: 0 0 0 1px rgba(0,255,209,0.30), 0 0 36px rgba(0,255,209,0.18);
+  --popover-shadow: 0 0 0 1px rgba(0,212,255,0.50), 0 0 44px rgba(0,212,255,0.30);
 }
 
 /* Wire the body + headings to the active theme's tokens. */

@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Hi-Tech theme is now full TRON",
+    body: "Switched the Hi-Tech palette to TRON's signature electric-cyan on inky black. Surfaces glow at the edges, headings sit in uppercase JetBrains Mono with wider tracking, corners are nearly square (0–6px), and the page background now carries a 64px grid pattern — the lightcycle arena floor look. Open the Theme picker to try it.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Internship parser now accepts dropped PDFs, DOCX, images, and text — all on Cloudflare's free AI",
     body: "Drag a PDF, Word document, screenshot, or text file straight onto the paste panel and the AI parses it. PDFs are extracted server-side via unpdf, DOCX via mammoth, and routed through Cloudflare Llama 3.3 70B; images go through Cloudflare's Llama 3.2 Vision model. Everything stays on the free Workers AI tier — no Gemini quota or Google billing involved. The browser-default behaviour of opening dropped files in a new tab is intercepted; the parser handles up to 20 MB.",
     kind: "improvement",

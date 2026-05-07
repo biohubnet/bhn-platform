@@ -8,7 +8,7 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
   light:      ["#ffffff", "#3b6cef", "#0b1b3b"],
   dark:       ["#0f1d3d", "#5e8ff7", "#eaf0fb"],
   scientific: ["#ffffff", "#0ea5e9", "#1e293b"],
-  hitech:     ["#0d1929", "#06b6d4", "#d6f5f5"],
+  hitech:     ["#06121f", "#00d4ff", "#e3f7ff"],
 };
 
 // Each theme picks its own corner-roundness for the swatch, mirroring
