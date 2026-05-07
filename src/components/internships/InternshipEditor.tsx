@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Sparkles, Save, Loader2, AlertCircle, Trash2, X, Plus,
+  Sparkles, Save, Loader2, AlertCircle, Trash2, X, Plus, Upload, Paperclip,
 } from "lucide-react";
 
 export interface PostingValues {
@@ -39,36 +39,37 @@ export function InternshipEditor({
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
   const [parseSuccess, setParseSuccess] = useState(false);
+  const [dropOver, setDropOver] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   function set<K extends keyof PostingValues>(k: K, v: PostingValues[K]) {
     setValues((cur) => ({ ...cur, [k]: v }));
   }
 
-  async function parseFromPaste() {
-    if (pasteText.trim().length < 30) {
-      setParseError("Paste at least a few sentences from the job description.");
-      return;
-    }
+  async function runParse(payload: { text?: string; file?: File }) {
     setParsing(true);
     setParseError(null);
     setParseSuccess(false);
     try {
-      const res = await fetch("/api/admin/internships/parse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: pasteText }),
-      });
+      const init: RequestInit = payload.file
+        ? { method: "POST", body: (() => { const fd = new FormData(); fd.append("file", payload.file!); return fd; })() }
+        : {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: payload.text }),
+          };
+      const res = await fetch("/api/admin/internships/parse", init);
       const j = (await res.json().catch(() => ({}))) as {
         ok?: boolean; posting?: Partial<PostingValues>; error?: string;
       };
       if (!res.ok || !j.posting) {
-        setParseError(j.error ?? "Couldn't parse the description.");
+        setParseError(j.error ?? "Couldn't parse.");
         return;
       }
-      // Merge AI output over current values; keep status the user picked.
       setValues((cur) => ({
         ...cur,
         ...j.posting,
@@ -77,7 +78,53 @@ export function InternshipEditor({
       setParseSuccess(true);
     } finally {
       setParsing(false);
+      setPendingFile(null);
     }
+  }
+
+  async function parseFromPaste() {
+    if (pasteText.trim().length < 30) {
+      setParseError("Paste at least a few sentences, or drop a file.");
+      return;
+    }
+    await runParse({ text: pasteText });
+  }
+
+  async function handleFile(f: File) {
+    // Plain-text files: read in-browser and reuse the text path. Saves
+    // a round trip and the AI quota for trivial cases.
+    if (
+      f.type === "text/plain" ||
+      f.type === "text/markdown" ||
+      f.name.match(/\.(txt|md|markdown)$/i)
+    ) {
+      const text = await f.text();
+      setPasteText(text);
+      await runParse({ text });
+      return;
+    }
+    setPendingFile(f);
+    await runParse({ file: f });
+  }
+
+  function onDragOver(e: React.DragEvent) {
+    if (e.dataTransfer.types.includes("Files")) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      setDropOver(true);
+    }
+  }
+  function onDragLeave() { setDropOver(false); }
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDropOver(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) handleFile(f);
+  }
+  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) handleFile(f);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   async function save() {
@@ -155,22 +202,73 @@ export function InternshipEditor({
               <Sparkles size={16} />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-semibold text-fg">Paste the job description</h2>
+              <h2 className="font-semibold text-fg">Drop a file or paste the job description</h2>
               <p className="text-xs text-muted mt-0.5">
-                Drop in the raw text from a PDF, email, web page, or doc. The AI extracts company, role, dates, skills, and details — you review and save.
+                Drag in a PDF, image, or text file — or paste from any source. The AI extracts company, role, dates, skills, and details. You review and save.
               </p>
             </div>
           </div>
-          <textarea
-            value={pasteText}
-            onChange={(e) => setPasteText(e.target.value)}
-            rows={8}
-            placeholder="Paste anything — an emailed posting, a PDF copy, an internal description…"
-            className={ipt}
-          />
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <div className="text-[11px] text-subtle">
-              {pasteText.length.toLocaleString()} characters
+
+          {/* Drop zone wraps the textarea + browse pill. preventDefault on
+              dragover/drop is critical — without it, the browser opens the
+              file in a new tab. */}
+          <div
+            onDragOver={onDragOver}
+            onDragEnter={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+            className={`relative rounded-xl border-2 border-dashed transition-colors ${
+              dropOver
+                ? "border-brand-400 bg-brand-50/50"
+                : "border-line bg-elevated/30"
+            }`}
+          >
+            <textarea
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              rows={8}
+              placeholder="Paste anything — an emailed posting, copy from a PDF, an internal description… or drag a file in."
+              className={`w-full bg-transparent border-0 rounded-xl px-3 py-3 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all`}
+            />
+
+            {/* Drop overlay — visible while dragging a file */}
+            {dropOver && (
+              <div className="absolute inset-0 rounded-xl bg-brand-50/85 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+                <div className="text-center">
+                  <Upload size={28} className="mx-auto text-brand-600 mb-1" />
+                  <p className="text-sm font-semibold text-brand-700">Drop to parse with AI</p>
+                  <p className="text-xs text-brand-700/80 mt-0.5">PDF, image, or text · up to 20 MB</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {pendingFile && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-muted">
+              <Paperclip size={12} className="text-brand-600" />
+              <span className="truncate">{pendingFile.name}</span>
+              <span className="text-subtle">· {(pendingFile.size / 1024).toFixed(0)} KB</span>
+            </div>
+          )}
+
+          <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3 text-[11px] text-subtle">
+              <span>{pasteText.length.toLocaleString()} characters</span>
+              <span aria-hidden>·</span>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-brand-700 hover:underline inline-flex items-center gap-1"
+              >
+                <Upload size={11} /> Browse for a file
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,image/png,image/jpeg,image/webp,text/plain,text/markdown"
+                onChange={onPickFile}
+                className="hidden"
+              />
             </div>
             <button
               type="button"
@@ -182,6 +280,7 @@ export function InternshipEditor({
               {parsing ? "Parsing…" : "Parse with AI"}
             </button>
           </div>
+
           {parseError && (
             <div className="mt-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg px-3 py-2 flex items-start gap-2">
               <AlertCircle size={13} className="mt-0.5 shrink-0" /> {parseError}

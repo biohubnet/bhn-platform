@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Internship parser now accepts dropped PDFs and images",
+    body: "Drag a PDF, screenshot, or text file straight onto the paste panel and the AI parses it through Gemini multimodal. The browser-default behaviour of opening dropped files in a new tab is intercepted; the parser handles up to 20 MB. Pasting text still works for everything else.",
+    kind: "improvement",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
     title: "Internship Opportunities — a job board, AI-assisted",
     body: "EXPERIENCE → Internship Opportunities lists open internships and co-ops from BioHubNet's industry partners. Each posting shows the company, role, location, duration, hours, compensation, deadline, key skills, and full position details, with a one-click link to apply on the company site. Admins create new postings by pasting a job description from any source — email, PDF, web page, doc — and the AI parses it into structured fields they can review and save.",
     kind: "feature",
