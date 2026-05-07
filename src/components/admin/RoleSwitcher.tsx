@@ -81,7 +81,7 @@ export function RoleSwitcher({ actingAs }: Props) {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-line rounded-2xl shadow-2xl shadow-black/15 p-2 z-30 min-w-[240px] animate-fade-in">
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-card-solid border border-line rounded-2xl shadow-2xl shadow-black/15 p-2 z-30 min-w-[240px] animate-fade-in">
           <p className="px-2 py-1.5 text-[10px] font-semibold text-subtle uppercase tracking-[0.18em]">
             Preview as another role
           </p>
