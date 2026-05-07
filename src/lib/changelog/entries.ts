@@ -23,6 +23,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Newsletter sign-up: three options instead of one tick-box",
+    body: "Registration now asks 'Yes, sign me up' (default), 'I'm already subscribed', or 'No thanks' — three radio cards, not one checkbox. The middle option stops us from accidentally double-adding existing BioHubNet readers when they make a BHN Training account.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Newsletter exports — admins can copy new sign-ups in one click",
+    body: "New page at Administration → Newsletter exports. The 'New to export' tab lists everyone who opted in and hasn't been copied yet. Pick a format (one email per line, CSV with name, or comma-separated), Copy to clipboard, paste into Mailchimp / your ESP, then click 'Mark as exported' — the rows drop off the New tab so you don't double-export them next time. An All tab and per-row 'Re-arm' cover re-running, and the Export history panel shows every previous copy with who did it and how many. Audit-logged automatically.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "AI-written greeting tagline on the dashboard",
     body: "Below 'Hi, {your name}.' on the dashboard hero, a small italic tagline now appears, freshly written by AI for your role and the time of day — quietly warm, occasionally witty, never cringe. Hover the line and you'll see four chips: thumbs-up if you like it, thumbs-down to log feedback, retry to spin a new one, and Turn off to disable greetings entirely. Cached per browser session so re-navigating doesn't burn fresh AI calls; regenerates each new sign-in. Falls back to a friendly canned line if the AI isn't reachable.",
     kind: "feature",

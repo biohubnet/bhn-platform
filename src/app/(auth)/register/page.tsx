@@ -2,13 +2,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, Mail, Info } from "lucide-react";
+import { Mail, Info, CheckCircle2 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+
+type NewsletterChoice = "subscribe" | "no" | "already";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
-  const [newsletter, setNewsletter] = useState(true);
+  const [newsletter, setNewsletter] = useState<NewsletterChoice>("subscribe");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -82,32 +84,62 @@ export default function RegisterPage() {
                 placeholder="At least 8 characters"
               />
             </div>
-            {/* Newsletter opt-in */}
+            {/* Newsletter — three-state opt-in */}
             <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-3.5">
-              <label className="flex items-start gap-3 cursor-pointer select-none group">
-                <span className="relative pt-0.5">
-                  <input
-                    type="checkbox"
-                    checked={newsletter}
-                    onChange={(e) => setNewsletter(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <span className="w-4 h-4 rounded border border-line bg-card transition-all peer-checked:bg-brand-600 peer-checked:border-brand-600 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/30 flex items-center justify-center">
-                    {newsletter && <Check size={11} className="text-white" strokeWidth={3} />}
-                  </span>
-                </span>
-                <span className="flex-1 min-w-0">
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-fg">
-                    <Mail size={14} className="text-brand-600" />
-                    Subscribe to the BioHubNet newsletter
-                  </span>
-                  <span className="block text-xs text-muted mt-0.5 leading-relaxed">
-                    Industry insights, training updates, and event invites — about once a month.
-                  </span>
-                </span>
-              </label>
+              <p className="flex items-center gap-1.5 text-sm font-medium text-fg">
+                <Mail size={14} className="text-brand-600" />
+                BioHubNet newsletter
+              </p>
+              <p className="block text-xs text-muted mt-0.5 mb-3 leading-relaxed">
+                Industry insights, training updates, and event invites — about once a month.
+              </p>
+              <fieldset className="space-y-1.5">
+                <legend className="sr-only">Newsletter preference</legend>
+                {([
+                  { id: "subscribe", title: "Yes, sign me up", body: "Add me to the BioHubNet newsletter list." },
+                  { id: "already",   title: "I'm already subscribed", body: "I'm on the list — no need to add me again." },
+                  { id: "no",        title: "No thanks", body: "Don't add me to the newsletter." },
+                ] as const).map((opt) => {
+                  const checked = newsletter === opt.id;
+                  return (
+                    <label
+                      key={opt.id}
+                      className={
+                        "flex items-start gap-3 px-3 py-2 rounded-lg border cursor-pointer select-none transition-colors " +
+                        (checked
+                          ? "bg-card-solid border-brand-300 ring-1 ring-brand-200"
+                          : "bg-card-solid/60 border-line hover:border-brand-200")
+                      }
+                    >
+                      <input
+                        type="radio"
+                        name="newsletter"
+                        value={opt.id}
+                        checked={checked}
+                        onChange={() => setNewsletter(opt.id)}
+                        className="sr-only peer"
+                      />
+                      <span
+                        className={
+                          "mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors " +
+                          (checked ? "border-brand-600" : "border-line")
+                        }
+                      >
+                        {checked && <span className="w-2 h-2 rounded-full bg-brand-600" />}
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-sm font-medium text-fg leading-tight flex items-center gap-1.5">
+                          {opt.title}
+                          {checked && opt.id === "subscribe" && <CheckCircle2 size={12} className="text-brand-600" />}
+                        </span>
+                        <span className="block text-xs text-muted leading-snug mt-0.5">{opt.body}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </fieldset>
 
-              {newsletter && (
+              {newsletter === "subscribe" && (
                 <div className="mt-3 flex items-start gap-2 text-[11px] text-muted bg-card rounded-lg border border-line px-3 py-2">
                   <Info size={12} className="text-brand-600 mt-0.5 shrink-0" />
                   <span>

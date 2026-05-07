@@ -36,6 +36,7 @@ import {
   Building2,
   ListChecks,
   Activity,
+  Mail,
 } from "lucide-react";
 
 interface NavItem {
@@ -92,6 +93,7 @@ const adminItems: NavItem[] = [
   { label: "Pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers, minRole: "admin" },
   { label: "Course filters",      href: "/admin/course-filters",      icon: ListChecks, minRole: "admin" },
   { label: "Employer invites",    href: "/admin/employer-invites",    icon: Building2,  minRole: "admin" },
+  { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,       minRole: "admin" },
   { label: "Certificates", href: "/admin/certificates", icon: Award, minRole: "admin" },
   { label: "Announcements", href: "/admin/announcements", icon: Megaphone, minRole: "admin" },
   { label: "Analytics", href: "/admin/analytics", icon: LineChart, minRole: "admin" },

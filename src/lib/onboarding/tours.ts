@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07k";
+export const TOUR_VERSION = "2026.05.07l";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -309,6 +309,23 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["superadmin"],
     since: "2026.05.07k",
     cta: { label: "Open System status", href: "/admin/system-status" },
+  },
+  {
+    id: "newsletter-three-state",
+    title: "Newsletter opt-in, three options",
+    body: "Sign-up form now asks 'Yes, sign me up' (default), 'I'm already subscribed', or 'No thanks' — instead of a single tick-box. Stops accidentally double-adding existing BioHubNet subscribers.",
+    placement: "center",
+    since: "2026.05.07l",
+  },
+  {
+    id: "newsletter-export-admin",
+    title: "Newsletter exports — for admins",
+    body: "Administration → Newsletter exports lists every new opt-in waiting to be added to the BioHubNet ESP. Pick a format (one-per-line / CSV / comma), copy to clipboard, paste into Mailchimp, then click 'Mark as exported' so they don't appear next time. The All tab and a per-row 'Re-arm' button cover edge cases.",
+    path: "/admin/newsletter",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.07l",
+    cta: { label: "Open Newsletter exports", href: "/admin/newsletter" },
   },
   {
     id: "complete",

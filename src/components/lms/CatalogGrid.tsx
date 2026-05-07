@@ -105,10 +105,7 @@ export function CatalogGrid({
                 </button>
               </div>
             )}
-            <CourseCard course={{
-              ...c,
-              createdAt: new Date(c.createdAt) as unknown as Date,
-            }} role={role} />
+            <CourseCard course={c} role={role} />
             {isAdmin && (c.topic || c.delivery || c.provider || c.isSpecial) && (
               <div className="mt-1.5 flex flex-wrap gap-1 px-1">
                 {c.topic    && <Tag>{c.topic}</Tag>}

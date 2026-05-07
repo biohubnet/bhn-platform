@@ -37,6 +37,16 @@ model User {
   lastLoginAt   DateTime?
   newsletterSubscribed   Boolean   @default(false)
   newsletterSubscribedAt DateTime?
+  /// Three-state intent declared at signup:
+  ///   "subscribe" — wants to be added (default UI choice)
+  ///   "no"        — not interested
+  ///   "already"   — already on the BioHubNet list
+  /// Admins use this to filter the "new opt-ins to export" view.
+  newsletterStatus       String    @default("no")
+  /// When an admin last copied this user to the clipboard from
+  /// /admin/newsletter. Null = not yet exported. Filtered against this
+  /// to only show new sign-ups in the export view.
+  newsletterExportedAt   DateTime?
   /// Onboarding progress: { version, seenStepIds[], minimized, dismissed, completedAt }
   onboarding    Json?
   /// GDPR/CCPA consent: { necessary, analytics, marketing, version, acceptedAt }
@@ -69,6 +79,8 @@ model User {
   buddiesInitiated   BuddyPair[]           @relation("InitiatorBuddies")
   buddiesPartnered   BuddyPair[]           @relation("PartnerBuddies")
   buddyMessages      BuddyMessage[]        @relation("BuddyMessageSender")
+
+  @@index([newsletterStatus, newsletterExportedAt])
 }
 
 model Account {
