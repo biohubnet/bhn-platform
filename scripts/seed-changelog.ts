@@ -8,6 +8,13 @@ const ADMINS = ["admin", "superadmin"];
 
 const entries = [
   {
+    title: "Hero banner brightened up",
+    body: "The hero band on the dashboard, pathways, and catalog now paints a saturated marine mesh — deep cyan, mint-teal, deep blue — instead of inheriting the muted UI brand colours. The rest of the platform stays editorial-quiet; the hero gets to shout.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Sidebar reorganised into ENGAGE",
     body: "Course Catalog, Learning Pathways (renamed from Pathways), My Courses, Gradebook, Certificates, and My Credits now sit under an ENGAGE section. EXPERIENCE — for industry-placement applications — is reserved for an upcoming release.",
     kind: "improvement",

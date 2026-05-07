@@ -381,28 +381,30 @@ body {
   max-width: 100vw;
 }
 
-/* Hero mesh gradients — bold multi-stop fills tied to brand tokens.
- * Use on the wrapper of a full-bleed hero. */
+/* Hero mesh gradients — saturated multi-stop fills for full-bleed
+ * hero bands. Hardcoded (not tied to the muted brand tokens) so heroes
+ * stay vivid even when the rest of the UI reads as editorial-quiet. */
 .hero-mesh-brand {
-  background-color: var(--brand-700);
+  background-color: #0d3a51;
   background-image:
-    radial-gradient(at 12% 18%, var(--brand-400) 0%, transparent 50%),
-    radial-gradient(at 88% 22%, var(--brand-500) 0%, transparent 55%),
-    radial-gradient(at 50% 100%, var(--brand-800) 0%, transparent 60%);
+    radial-gradient(at 10% 16%, #0891b2 0%, transparent 55%),    /* deep cyan top-left */
+    radial-gradient(at 88% 18%, #2dd4bf 0%, transparent 55%),    /* mint-teal top-right */
+    radial-gradient(at 95% 95%, #1d4ed8 0%, transparent 55%),    /* deep blue bottom-right */
+    radial-gradient(at 25% 95%, #0e7490 0%, transparent 55%);    /* dark teal bottom-left */
 }
 .hero-mesh-teal {
-  background-color: #115e59;
+  background-color: #0f4c52;
   background-image:
-    radial-gradient(at 12% 18%, #2dd4bf 0%, transparent 50%),
-    radial-gradient(at 88% 22%, #14b8a6 0%, transparent 55%),
-    radial-gradient(at 50% 100%, #134e4a 0%, transparent 60%);
+    radial-gradient(at 12% 18%, #2dd4bf 0%, transparent 55%),
+    radial-gradient(at 88% 22%, #14b8a6 0%, transparent 60%),
+    radial-gradient(at 50% 100%, #134e4a 0%, transparent 65%);
 }
 .hero-mesh-aurora {
-  background-color: #6b21a8;
+  background-color: #581c87;
   background-image:
-    radial-gradient(at 12% 18%, #c084fc 0%, transparent 50%),
-    radial-gradient(at 88% 22%, #f472b6 0%, transparent 55%),
-    radial-gradient(at 50% 100%, #4c1d95 0%, transparent 60%);
+    radial-gradient(at 12% 18%, #c084fc 0%, transparent 55%),
+    radial-gradient(at 88% 22%, #f472b6 0%, transparent 60%),
+    radial-gradient(at 50% 100%, #4c1d95 0%, transparent 65%);
 }
 
 /* Soft organic blob — used as decorative drifting background shapes.
