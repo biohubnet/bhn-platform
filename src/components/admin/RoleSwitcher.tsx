@@ -5,10 +5,11 @@ import { Eye, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TARGETS: { id: string; label: string; description: string }[] = [
-  { id: "trainee",    label: "Trainee",    description: "Default learner experience" },
-  { id: "evaluating", label: "Evaluating", description: "Trial-tier learner" },
-  { id: "instructor", label: "Instructor", description: "Course author tools" },
-  { id: "admin",      label: "Admin",      description: "Full admin minus superadmin" },
+  { id: "trainee",    label: "Trainee",     description: "Default learner experience" },
+  { id: "evaluating", label: "Evaluating",  description: "Trial-tier learner" },
+  { id: "employer",   label: "Employer HR", description: "Industry partner posting jobs" },
+  { id: "instructor", label: "Instructor",  description: "Course author tools" },
+  { id: "admin",      label: "Admin",       description: "Full admin minus superadmin" },
 ];
 
 interface Props {

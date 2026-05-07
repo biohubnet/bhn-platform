@@ -33,7 +33,7 @@ interface Props {
   groups: GroupOption[];
 }
 
-const ROLES = ["trainee", "evaluating", "instructor", "admin", "superadmin"];
+const ROLES = ["trainee", "evaluating", "employer", "instructor", "admin", "superadmin"];
 
 export function UsersTableClient({ users, groups }: Props) {
   const router = useRouter();

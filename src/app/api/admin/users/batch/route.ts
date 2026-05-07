@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
     case "setRole": {
       const role = payload.role;
-      if (!role || !["trainee", "evaluating", "instructor", "admin", "superadmin"].includes(role)) {
+      if (!role || !["trainee", "evaluating", "employer", "instructor", "admin", "superadmin"].includes(role)) {
         return NextResponse.json({ error: "Invalid role" }, { status: 400 });
       }
       const r = await prisma.user.updateMany({

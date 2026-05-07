@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getRawSession, ACT_AS_COOKIE, ROLE_RANK } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const TARGET_ROLES = new Set(["trainee", "evaluating", "instructor", "admin"]);
+const TARGET_ROLES = new Set(["trainee", "evaluating", "employer", "instructor", "admin"]);
 
 export async function POST(req: NextRequest) {
   const session = await getRawSession();

@@ -9,7 +9,7 @@
 //   • Pick visibleTo carefully: ALL for everything user-visible, STAFF
 //     for instructor+, ADMINS for admin+.
 
-export const ALL = ["trainee", "evaluating", "instructor", "admin", "superadmin"];
+export const ALL = ["trainee", "evaluating", "employer", "instructor", "admin", "superadmin"];
 export const STAFF = ["instructor", "admin", "superadmin"];
 export const ADMINS = ["admin", "superadmin"];
 
@@ -22,6 +22,13 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  {
+    title: "Employer HR role exposed in admin role-pickers + view-as menu",
+    body: "Admins can now pick \"Employer HR\" in the Users page role dropdown (single-row select and the batch role action both list it), and the superadmin View-as menu can preview the platform as an employer. Set a user's role to Employer HR and they're routed to /employer on next login — full portal with Postings, Applicants, and the ATS scaffold.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   {
     title: "Course catalog filters — by topic, delivery, special programs, and provider",
     body: "A filter rail now sits next to the catalog. Pick from nine topics (Sector/Tech, Career Insights, Regulatory Affairs, Industry Fundamentals, Quality, Biomanufacturing USP/DSP, etc.), four delivery types (Asynchronous, Online Synchronous, In-Person, Blended), the Special Programs (Instructor-led, limited seats) flag, and any of nine providers (Talent Accelerator, BioTalent Canada, CASTL, Seneca, CRAFT, Agilis Health, U of T, INSPIRE, CANTRAIN). Filters are URL-driven so they survive a refresh and are shareable.",

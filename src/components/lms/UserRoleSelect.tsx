@@ -28,6 +28,7 @@ export function UserRoleSelect({ userId, currentRole }: { userId: string; curren
     >
       <option value="trainee">Trainee</option>
       <option value="evaluating">Evaluating</option>
+      <option value="employer">Employer HR</option>
       <option value="instructor">Instructor</option>
       <option value="admin">Admin</option>
       <option value="superadmin">Superadmin</option>

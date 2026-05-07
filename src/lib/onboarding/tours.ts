@@ -6,7 +6,7 @@
  * same `since` version as the changelog entry. Returning users will get
  * a "What's new" mini-tour for steps with `since > user.lastSeenVersion`.
  */
-export type StepRole = "trainee" | "evaluating" | "instructor" | "admin" | "superadmin";
+export type StepRole = "trainee" | "evaluating" | "employer" | "instructor" | "admin" | "superadmin";
 
 export interface TourStep {
   id: string;
