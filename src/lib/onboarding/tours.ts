@@ -209,8 +209,8 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "more-themes",
-    title: "Six new themes",
-    body: "Open the Theme picker at the bottom of the sidebar — there are now nine looks. Modern strips it down to mono with a red accent, Scientific goes paper-and-blue, Hi-Tech glows neon on black, Pink and Lab Mouse are playful, and Lab is sterile white-and-emerald. Try a few — corner radii change too.",
+    title: "Themes now reshape the whole design",
+    body: "Open the Theme picker at the bottom of the sidebar — there are now nine looks. Each one comes with its own typography (Charter serif for Scientific, JetBrains Mono for Hi-Tech, Quicksand for Pink and Lab Mouse), surface treatment (hard borders for Modern, neon glow for Hi-Tech, soft pink halos for the playful ones), and corner radii. Try a few — switching themes changes how the platform feels, not just what colour it is.",
     selector: "[aria-label=\"Change theme\"]",
     placement: "right",
     since: "2026.05.07",

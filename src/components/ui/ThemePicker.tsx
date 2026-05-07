@@ -101,7 +101,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 surface p-1.5 z-30 min-w-[240px] animate-fade-in">
+        <div className="absolute bottom-full left-0 right-0 mb-2 popover p-1.5 z-30 min-w-[240px] animate-fade-in">
           {THEMES.map((t) => {
             const active = theme === t.id;
             return (

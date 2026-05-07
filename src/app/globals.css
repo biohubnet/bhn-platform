@@ -504,20 +504,41 @@ body {
   transition-duration: 200ms;
 }
 
-/* Glass surface utility — semi-transparent card with backdrop blur */
+/* Glass surface utility — semi-transparent card with backdrop blur.
+ * Use for permanent floating UI like the translate dock that wants to
+ * read the page colour through it. NOT for popovers (use .popover). */
 .glass {
   background: var(--card);
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
 
-/* Standard "card" surface — replaces bordered boxes with soft shadow */
+/* Standard "card" surface — replaces bordered boxes with soft shadow.
+ * Translucent by design (var(--card)). Each theme overrides its own
+ * shadow + border treatment so the design language differs per theme,
+ * not just the colour. */
 .surface {
   background: var(--card);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--line);
-  box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 30px rgba(15,23,42,0.06);
+  border: var(--surface-border, 1px solid var(--line));
+  box-shadow: var(--surface-shadow, 0 1px 2px rgba(15,23,42,0.04), 0 8px 30px rgba(15,23,42,0.06));
+  border-radius: var(--radius-lg);
+}
+
+/*
+ * Floating-menu surface. ALWAYS use this for popovers / dropdowns —
+ * never `bg-card`, `surface`, or `glass`, all of which are translucent
+ * and bleed page content through. Backed by --popover-bg (per-theme
+ * solid colour) so the menu reads as a real opaque card.
+ *
+ * If you find yourself adding bg-card-solid + border-line to a
+ * floating menu, use this class instead.
+ */
+.popover {
+  background: var(--popover-bg);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--popover-shadow, 0 8px 28px rgba(15,23,42,0.18), 0 1px 3px rgba(15,23,42,0.08));
   border-radius: var(--radius-lg);
 }
 
@@ -536,4 +557,143 @@ body {
   background-image:
     radial-gradient(700px 500px at 90% 110%, rgba(168,85,247,0.10), transparent 60%),
     radial-gradient(600px 400px at -10% -10%, rgba(236,72,153,0.08), transparent 60%);
+}
+
+/* ============================================================
+ *  Per-theme design language tokens
+ *  ──────────────────────────────────────────────────────────
+ *  Every theme defines its own typography, surface shadow,
+ *  border treatment, and heading style — so themes differ in
+ *  feel, not just colour. The tokens flow into:
+ *    body         { font-family, font-feature-settings }
+ *    h1, h2, h3   { letter-spacing, font-weight, text-transform }
+ *    .surface     { box-shadow, border }
+ *  Components inherit automatically.
+ *  ============================================================ */
+
+/* Default (Daylight) — calm modern sans, soft tech shadow. */
+:root, [data-theme="light"] {
+  --font-sans-theme: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01", "cv11", "cv09";
+  --surface-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 30px rgba(15,23,42,0.06);
+  --surface-border: 1px solid var(--line);
+  --heading-tracking: -0.01em;
+  --heading-weight: 600;
+  --heading-transform: none;
+  --popover-shadow: 0 12px 32px rgba(15,23,42,0.14), 0 1px 3px rgba(15,23,42,0.06);
+}
+
+[data-theme="dark"] {
+  --font-sans-theme: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01", "cv11", "cv09";
+  --surface-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.45);
+  --surface-border: 1px solid var(--line);
+  --heading-tracking: -0.01em;
+  --heading-weight: 600;
+  --heading-transform: none;
+  --popover-shadow: 0 12px 36px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.35);
+}
+
+[data-theme="aurora"] {
+  --font-sans-theme: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01";
+  --surface-shadow: 0 4px 30px rgba(168,85,247,0.10), 0 1px 0 rgba(31,20,48,0.04);
+  --surface-border: 1px solid rgba(168,85,247,0.18);
+  --heading-tracking: 0;
+  --heading-weight: 600;
+  --heading-transform: none;
+  --popover-shadow: 0 12px 36px rgba(168,85,247,0.18);
+}
+
+/* Modern — minimalist Inter, hard 1px line, no shadow, heavy tight headings. */
+[data-theme="modern"] {
+  --font-sans-theme: "Inter", "Helvetica Neue", "Arial", system-ui, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "cv11", "ss03";
+  --surface-shadow: none;
+  --surface-border: 1px solid rgba(24,24,27,0.18);
+  --heading-tracking: -0.045em;
+  --heading-weight: 800;
+  --heading-transform: none;
+  --popover-shadow: 0 16px 32px rgba(24,24,27,0.12);
+}
+
+/* Scientific — serif body (Charter / Georgia), academic paper feel. */
+[data-theme="scientific"] {
+  --font-sans-theme: "Charter", "Iowan Old Style", "Georgia", "Cambria", "Times New Roman", serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: normal;
+  --surface-shadow: 0 1px 0 rgba(15,23,42,0.05), 0 0 0 1px rgba(15,23,42,0.04);
+  --surface-border: 1px solid var(--line);
+  --heading-tracking: 0.005em;
+  --heading-weight: 600;
+  --heading-transform: none;
+  --popover-shadow: 0 6px 20px rgba(14,165,233,0.18), 0 1px 0 rgba(15,23,42,0.05);
+}
+
+/* Hi-tech — JetBrains Mono, neon glow shadow, uppercase wide-tracked headings. */
+[data-theme="hitech"] {
+  --font-sans-theme: "JetBrains Mono", "Fira Code", "Menlo", "Consolas", ui-monospace, monospace;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "calt", "zero";
+  --surface-shadow: 0 0 0 1px rgba(0,255,209,0.18), 0 0 22px rgba(0,255,209,0.12);
+  --surface-border: 1px solid rgba(0,255,209,0.20);
+  --heading-tracking: 0.06em;
+  --heading-weight: 500;
+  --heading-transform: uppercase;
+  --popover-shadow: 0 0 0 1px rgba(0,255,209,0.30), 0 0 36px rgba(0,255,209,0.18);
+}
+
+/* Pink — rounded sans, soft glow, friendly bold. */
+[data-theme="pink"] {
+  --font-sans-theme: "Quicksand", "Nunito", system-ui, -apple-system, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01";
+  --surface-shadow: 0 6px 24px rgba(244,114,182,0.18), 0 1px 2px rgba(80,7,36,0.04);
+  --surface-border: 1px solid rgba(244,114,182,0.22);
+  --heading-tracking: -0.015em;
+  --heading-weight: 700;
+  --heading-transform: none;
+  --popover-shadow: 0 14px 36px rgba(244,114,182,0.28);
+}
+
+/* Lab — clean Inter, sterile borders, no shadow, slightly extended caps. */
+[data-theme="lab"] {
+  --font-sans-theme: "Inter", "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "cv11";
+  --surface-shadow: 0 1px 0 rgba(15,23,42,0.05);
+  --surface-border: 1px solid var(--line-strong);
+  --heading-tracking: 0.01em;
+  --heading-weight: 600;
+  --heading-transform: none;
+  --popover-shadow: 0 4px 14px rgba(15,23,42,0.08), 0 1px 0 rgba(15,23,42,0.04);
+}
+
+/* Lab mouse — rounded display, soft pink glow, doubled border, friendly. */
+[data-theme="labmouse"] {
+  --font-sans-theme: "Quicksand", "Nunito", "Comic Sans MS", system-ui, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01";
+  --surface-shadow: 0 8px 28px rgba(244,114,182,0.22), 0 2px 0 rgba(67,20,7,0.05);
+  --surface-border: 2px solid rgba(244,114,182,0.32);
+  --heading-tracking: -0.01em;
+  --heading-weight: 700;
+  --heading-transform: none;
+  --popover-shadow: 0 14px 38px rgba(244,114,182,0.30);
+}
+
+/* Wire the body + headings to the active theme's tokens. */
+body {
+  font-family: var(--font-sans-theme, var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif);
+  font-feature-settings: var(--body-features, "ss01", "cv11", "cv09");
+}
+h1, h2, h3 {
+  letter-spacing: var(--heading-tracking, -0.01em);
+  font-weight: var(--heading-weight, 600);
+  text-transform: var(--heading-transform, none);
+  font-family: var(--font-display-theme, inherit);
 }

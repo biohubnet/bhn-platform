@@ -68,7 +68,7 @@ export function CourseSearchBar() {
       </div>
 
       {open && q && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card-solid border border-line rounded-xl shadow-2xl shadow-black/15 z-30 max-h-[480px] overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-2 popover z-30 max-h-[480px] overflow-y-auto">
           <div className="px-4 py-2 border-b border-line text-xs text-subtle flex items-center justify-between">
             <span>
               {loading ? "Searching…" : `${results.length} ${results.length === 1 ? "match" : "matches"}`}

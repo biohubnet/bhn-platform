@@ -8,6 +8,13 @@ const ADMINS = ["admin", "superadmin"];
 
 const entries = [
   {
+    title: "Themes are now full design languages — typography, shadows, and silhouette",
+    body: "Each theme now defines its own typography (Modern uses Inter, Scientific is set in Charter serif, Hi-Tech in JetBrains Mono with uppercase headings, Pink and Lab Mouse in rounded Quicksand) plus its own surface treatment — Modern is shadowless with hard 1px borders, Hi-Tech glows neon, Pink and Lab Mouse have soft pink halos, Scientific reads as etched paper. Switching themes now changes how the platform feels, not just what colour it is.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Six new theme designs to choose from",
     body: "The Theme picker now ships nine looks: Modern (minimalist red), Scientific (cool sky-blue), Hi-Tech (neon cyan on near-black), Pink (rose), Lab (sterile white + emerald), and Lab Mouse (warm cream + mouse pink), in addition to Daylight, Nightfall, and Aurora. Each theme reshapes corner radii too, so the platform's silhouette changes with the palette.",
     kind: "feature",

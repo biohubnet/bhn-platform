@@ -227,7 +227,7 @@ export function PageTranslator() {
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-2 surface p-1.5 z-30 min-w-[220px] animate-fade-in">
+        <div className="absolute top-full right-0 mt-2 popover p-1.5 z-30 min-w-[220px] animate-fade-in">
           <p className="px-2 py-1.5 text-[10px] font-semibold text-subtle uppercase tracking-[0.18em]">
             Translate this page
           </p>
