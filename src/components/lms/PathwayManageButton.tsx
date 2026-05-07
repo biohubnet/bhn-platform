@@ -192,8 +192,12 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
           <Plus size={14} /> New pathway
         </Button>
       ) : (
-        <Button onClick={() => setOpen(true)} variant="secondary" className="bg-white/15 text-white border-white/20 hover:bg-white/25">
-          <Pencil size={14} /> Edit
+        <Button
+          onClick={() => setOpen(true)}
+          variant="secondary"
+          className="bg-white text-brand-700 border-transparent hover:bg-brand-50 shadow-sm font-semibold"
+        >
+          <Pencil size={14} /> Edit pathway
         </Button>
       )}
 
@@ -201,8 +205,9 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
         open={open}
         onClose={() => setOpen(false)}
         size="xl"
+        resizable
         title={mode === "create" ? "Create training pathway" : "Edit training pathway"}
-        description="Drag courses from the right into the order list. Drag list items to reorder, or drop on the dustbin to remove."
+        description="Drag the title bar to move · drag the corner to resize. Drag courses from the right into the ordered list."
         footer={
           <>
             {mode === "edit" && (
@@ -332,7 +337,7 @@ export function PathwayManageButton({ mode, pathway, courses }: Props) {
                 onChange={(e) => setFilter(e.target.value)}
               />
             </Field>
-            <div className="max-h-80 overflow-y-auto rounded-lg border border-line divide-y divide-line bg-card">
+            <div className="max-h-[60vh] min-h-[300px] overflow-y-auto rounded-lg border border-line divide-y divide-line bg-card">
               {filtered.length === 0 && (
                 <div className="text-xs text-subtle p-4 text-center">No courses match.</div>
               )}
