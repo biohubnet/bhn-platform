@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Test data: dummy employer + trainee + posting + application",
+    body: "Run scripts/seed-test-employer-flow.ts to drop in a ready-to-test pair: an Employer HR (test.employer@biohubnet.test / test1234) at Acme Biotherapeutics with one active internship posting, and a Trainee (test.trainee@biohubnet.test / test1234) who has already submitted the talent application. Idempotent — re-running won't duplicate. Pass --cleanup to delete the test rows when you're done. Three ways to verify the flow: sign in as the employer, view-as Employer HR from the superadmin avatar menu, or sign in as the trainee.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Catalog admin tools — quick-edit, bulk filter assignment, and DB-driven option lists",
     body: "Three connected admin upgrades on the course catalog. (1) Each card now has a pencil for admins — opens a small dialog to set topic / delivery / provider / Special-program in one place; saves via PATCH and stays on page. (2) Each card also has a checkbox; selecting one or more reveals a sticky toolbar at the bottom of the screen with 'Apply filters to N' — the dialog has a 'Don't change' option per field so you only touch what you mean to. (3) New /admin/course-filters page lets admins add, rename, hide, or delete the option lists themselves; the catalog filter rail reads from the DB now, so additions show up everywhere immediately. Existing courses keep their assigned values even when you hide an option from the picker.",
     kind: "feature",
