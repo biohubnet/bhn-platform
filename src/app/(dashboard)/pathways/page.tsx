@@ -40,10 +40,17 @@ export default async function PathwaysPage() {
   // each /forms/[slug] URL individually first.
   await ensureRegisteredForms();
 
+  // Forms with their own home elsewhere shouldn't repeat on Pathways.
+  // (Talent Application lives under EXPERIENCE in the sidebar.)
+  const FORMS_HIDDEN_FROM_PATHWAYS = ["talent-application"];
+
   // Registration forms — listed alongside pathways. Inactive forms are
   // staff-only so users don't try to submit something already closed.
   const formRows = await prisma.eventForm.findMany({
-    where: isStaff ? {} : { active: true },
+    where: {
+      ...(isStaff ? {} : { active: true }),
+      slug: { notIn: FORMS_HIDDEN_FROM_PATHWAYS },
+    },
     select: {
       id: true,
       slug: true,
