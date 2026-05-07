@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "System status page for superadmins — DB, AI, and security at a glance",
+    body: "New /admin/system-status (superadmin-only) gives a one-page read-out of the platform's health. Top card rolls up an overall traffic-light verdict — Database (live ping with millisecond latency), AI provider (failure rate over the last 7 days), Superadmin redundancy (warns if there's only one), and the action queue size. Below it: vitals row (active users, AI calls in 24h, DB ping, build commit), a database row-count grid for the major tables, an AI-usage breakdown by feature for the last 30 days with calls / failures / failure-% / avg latency, and six security signals — privileged accounts, pending role-change requests, idle 90+ days, employer invites, deactivated accounts, sessions. Footer streams the latest role-related audit entries, recent logins (24h), and the audit-log feed. Read-only — no actions, no caching.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Changelog page got a dashboard + timeline view",
     body: "Open /changelog and you'll see a stat panel up top — total entries, this-month / last-30-day counts, days since the last update, by-kind breakdown chips, and a 12-month sparkbar showing release cadence. Below it, entries now flow as a vertical timeline with month sub-headings and a rail of coloured dots, so it's easy to scan how busy a given period was at a glance.",
     kind: "improvement",

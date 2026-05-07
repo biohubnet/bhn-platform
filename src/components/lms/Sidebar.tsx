@@ -35,6 +35,7 @@ import {
   FilePlus,
   Building2,
   ListChecks,
+  Activity,
 } from "lucide-react";
 
 interface NavItem {
@@ -97,6 +98,7 @@ const adminItems: NavItem[] = [
   { label: "Reports", href: "/admin/reports", icon: FileText, minRole: "admin" },
   { label: "Audit Log", href: "/admin/audit", icon: ShieldCheck, minRole: "admin" },
   { label: "LTI Config", href: "/admin/lti", icon: Link2, minRole: "superadmin" },
+  { label: "System status", href: "/admin/system-status", icon: Activity, minRole: "superadmin" },
   { label: "Settings", href: "/admin/settings", icon: Settings, minRole: "superadmin" },
 ];
 
