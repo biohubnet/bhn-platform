@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07b";
+export const TOUR_VERSION = "2026.05.07c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -226,12 +226,12 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open the catalog", href: "/courses" },
   },
   {
-    id: "more-themes",
-    title: "Themes now reshape the whole design",
-    body: "Open the Theme picker at the bottom of the sidebar — there are now nine looks. Each one comes with its own typography (Charter serif for Scientific, JetBrains Mono for Hi-Tech, Quicksand for Pink and Lab Mouse), surface treatment (hard borders for Modern, neon glow for Hi-Tech, soft pink halos for the playful ones), and corner radii. Try a few — switching themes changes how the platform feels, not just what colour it is.",
+    id: "trimmed-themes",
+    title: "Four themes, all distinct",
+    body: "Open the Theme picker — Daylight, Nightfall, Scientific (Charter serif on cool slate), and Hi-Tech (JetBrains Mono on near-black with neon edges). Each one ships its own typography, surface treatment, and corner radii — switching themes changes the whole design language, not just colour.",
     selector: "[aria-label=\"Change theme\"]",
     placement: "right",
-    since: "2026.05.07",
+    since: "2026.05.07c",
   },
   {
     id: "complete",

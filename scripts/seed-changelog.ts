@@ -8,6 +8,13 @@ const ADMINS = ["admin", "superadmin"];
 
 const entries = [
   {
+    title: "Theme list trimmed to the four that earn their keep",
+    body: "Aurora, Modern, Pink, Lab, and Lab Mouse are gone. The picker now shows Daylight, Nightfall, Scientific, and Hi-Tech — each one a distinct design language (typography + surface + radii), not just a colour swap. If you were on a retired theme, you've been bumped back to your OS preference automatically.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Bolder, more organic interface — full-bleed heroes, drifting blobs",
     body: "The dashboard, pathways, and course catalog now open with a bold full-bleed hero band: mesh gradient backgrounds, decorative blobs that drift gently behind the headline, asymmetric organic-cornered cards, and a curved organic edge into the content below. The hero greets you by name in gradient type and shows your stats in tiles with hand-shaped corners. Less generic, more intentional.",
     kind: "improvement",

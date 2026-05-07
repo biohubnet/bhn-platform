@@ -4,13 +4,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 export const THEMES = [
   { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces" },
   { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents" },
-  { id: "aurora",     name: "Aurora",     description: "Soft curves, magenta-violet flow" },
-  { id: "modern",     name: "Modern",     description: "Minimalist mono with bold red" },
   { id: "scientific", name: "Scientific", description: "Cool sky-blue, paper-like surfaces" },
   { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black" },
-  { id: "pink",       name: "Pink",       description: "Soft rose, friendly and bright" },
-  { id: "lab",        name: "Lab",        description: "Sterile white with emerald accents" },
-  { id: "labmouse",   name: "Lab Mouse",  description: "Warm cream and mouse-pink whimsy" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
@@ -68,6 +63,12 @@ export function useTheme() {
 }
 
 export function ThemeScript() {
-  const code = `(function(){try{var s=localStorage.getItem('${STORAGE_KEY}');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var t=s||(d?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
+  // Whitelist mirrors THEMES above. If the user has a retired theme
+  // saved in localStorage (e.g. "aurora", "modern", "pink"), drop it
+  // and fall back to OS preference so we never set data-theme to a
+  // value that has no CSS variables defined.
+  const allowed = THEMES.map((t) => t.id);
+  const allowedJson = JSON.stringify(allowed);
+  const code = `(function(){try{var allow=${allowedJson};var s=localStorage.getItem('${STORAGE_KEY}');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var t=(s&&allow.indexOf(s)>=0)?s:(d?'dark':'light');if(s&&allow.indexOf(s)<0){try{localStorage.removeItem('${STORAGE_KEY}');}catch(_){}}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
   return <script dangerouslySetInnerHTML={{ __html: code }} />;
 }
