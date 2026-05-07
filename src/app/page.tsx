@@ -20,7 +20,7 @@ export default async function HomePage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-brand-50 via-white to-white">
+    <div className="min-h-screen bg-gradient-to-b from-brand-50 via-white to-white has-grain">
       <header className="border-b border-slate-100 bg-white/70 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center">
@@ -44,8 +44,8 @@ export default async function HomePage() {
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 bg-brand-50 border border-brand-100 px-2.5 py-1 rounded-full">
               <Sparkles size={12} /> SCORM-compliant LMS for biomanufacturing
             </span>
-            <h1 className="mt-5 text-5xl font-bold text-slate-900 tracking-tight leading-tight">
-              Train smarter.<br /><span className="text-brand-600">Stay compliant.</span>
+            <h1 className="mt-5 text-5xl md:text-6xl font-semibold text-slate-900 tracking-[-0.03em] leading-[1.02]" style={{ textWrap: "balance" }}>
+              Train smarter.<br /><span className="text-brand-600 italic font-light">Stay compliant.</span>
             </h1>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed max-w-xl">
               BHN Training Platform delivers role-based learning paths, automated certification,
@@ -65,8 +65,8 @@ export default async function HomePage() {
                 { value: certificatesCount, label: "Certified" },
               ].map((s) => (
                 <div key={s.label}>
-                  <p className="text-2xl font-bold text-slate-900">{s.value.toLocaleString()}</p>
-                  <p className="text-xs text-slate-500 mt-0.5 uppercase tracking-wide">{s.label}</p>
+                  <p className="text-3xl font-semibold text-slate-900 tabular-nums tracking-tight">{s.value.toLocaleString()}</p>
+                  <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-[0.18em]">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -98,30 +98,87 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="features" className="max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Everything your training program needs</h2>
-          <p className="mt-3 text-slate-600 max-w-2xl mx-auto">From SCORM uploads to compliance reporting, BHN replaces the patchwork of tools biomanufacturing teams cobble together today.</p>
+      <section id="features" className="max-w-7xl mx-auto px-6 py-24">
+        <div className="grid md:grid-cols-12 gap-x-8 gap-y-3 mb-14">
+          <div className="md:col-span-7">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-brand-700 font-medium mb-3">What you get</p>
+            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 tracking-[-0.02em] leading-[1.05]" style={{ textWrap: "balance" }}>
+              Every part of training, in one calm place.
+            </h2>
+          </div>
+          <div className="md:col-span-5 md:pt-3">
+            <p className="text-slate-600 leading-relaxed">
+              From SCORM uploads to compliance reporting, BHN replaces the patchwork of tools
+              biomanufacturing teams cobble together today.
+            </p>
+          </div>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[
-            { icon: BookOpen, title: "SCORM 1.2 / 2004", desc: "Drop in any SCORM zip. We extract, host, and play it back with full bookmarking." },
-            { icon: Layers, title: "Training Pathways", desc: "Bundle courses into role-based curricula. Auto-issue a pathway certificate when complete." },
-            { icon: Award, title: "Certification", desc: "Branded PDF certificates with expiry, revocation, and a public verification page." },
-            { icon: BarChart3, title: "Compliance Reports", desc: "Per-course completion, due dates, and at-a-glance overdue tracking. CSV export anytime." },
-            { icon: Coins, title: "BHN Credits", desc: "Manage paid courses with an internal credit economy. Grant, refund, audit." },
-            { icon: ShieldCheck, title: "Audit Trail", desc: "Every admin action logged. Tamper-evident, GMP-aligned, ready for your next inspection." },
-          ].map((f) => {
-            const Icon = f.icon;
-            return (
-              <div key={f.title} className="bg-white rounded-2xl border border-slate-200 p-6 hover:border-brand-200 hover:shadow-md transition-all">
-                <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center mb-4"><Icon size={18} /></div>
-                <h3 className="font-semibold text-slate-900">{f.title}</h3>
-                <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">{f.desc}</p>
+
+        {/* Asymmetric mosaic — one hero feature spans two columns, the rest fill in */}
+        {(() => {
+          const F = [
+            { icon: BookOpen,   title: "SCORM 1.2 / 2004",  desc: "Drop in any SCORM zip. We extract, host, and play it back with full bookmarking.", featured: true },
+            { icon: Layers,     title: "Training Pathways", desc: "Bundle courses into role-based curricula. Auto-issue a pathway certificate when complete." },
+            { icon: Award,      title: "Certification",     desc: "Branded PDF certificates with expiry, revocation, and a public verification page." },
+            { icon: BarChart3,  title: "Compliance Reports",desc: "Per-course completion, due dates, and at-a-glance overdue tracking. CSV export anytime." },
+            { icon: Coins,      title: "BHN Credits",       desc: "Manage paid courses with an internal credit economy. Grant, refund, audit." },
+            { icon: ShieldCheck,title: "Audit Trail",       desc: "Every admin action logged. Tamper-evident, GMP-aligned, ready for your next inspection." },
+          ];
+          const [hero, ...rest] = F;
+          const HeroIcon = hero.icon;
+          return (
+            <div className="grid md:grid-cols-6 gap-4">
+              {/* Hero feature — wide, image-anchored card */}
+              <div className="md:col-span-6 lg:col-span-3 lg:row-span-2 relative overflow-hidden rounded-3xl bg-slate-900 text-white p-10 min-h-[340px] group">
+                <div
+                  className="absolute inset-0 opacity-30 group-hover:opacity-40 transition-opacity"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(at 80% 0%, rgba(94,143,247,0.65), transparent 55%), radial-gradient(at 0% 100%, rgba(28,47,122,0.85), transparent 50%), url('https://picsum.photos/seed/bhn-feature-1/1200/900')",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    mixBlendMode: "luminosity",
+                  }}
+                />
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 text-white flex items-center justify-center mb-6">
+                    <HeroIcon size={20} />
+                  </div>
+                  <h3 className="text-2xl font-semibold tracking-tight">{hero.title}</h3>
+                  <p className="text-slate-300 mt-3 leading-relaxed max-w-md">{hero.desc}</p>
+                </div>
               </div>
-            );
-          })}
-        </div>
+              {/* Remaining cards: borderless on hover, varied accent placement */}
+              {rest.map((f, i) => {
+                const Icon = f.icon;
+                // Mix it up: card 0 + 3 get a colored top edge, others stay clean
+                const accent = i % 3 === 0;
+                return (
+                  <div
+                    key={f.title}
+                    className={
+                      "md:col-span-3 lg:col-span-3 relative bg-white rounded-3xl p-7 transition-all hover:-translate-y-0.5 " +
+                      "shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_rgba(15,23,42,0.04)] hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_18px_45px_rgba(15,23,42,0.08)]"
+                    }
+                  >
+                    {accent && (
+                      <span className="absolute top-0 left-7 right-7 h-px bg-gradient-to-r from-transparent via-brand-400 to-transparent" />
+                    )}
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+                        <Icon size={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-slate-900 tracking-tight">{f.title}</h3>
+                        <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">{f.desc}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </section>
 
       <section id="pathways" className="max-w-7xl mx-auto px-6 py-20">
@@ -155,22 +212,34 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="trust" className="max-w-7xl mx-auto px-6 py-20">
-        <div className="grid md:grid-cols-3 gap-8 text-center">
-          {[
-            { icon: ShieldCheck, title: "GMP-aligned", desc: "21 CFR Part 11 audit log, electronic signatures roadmap." },
-            { icon: GraduationCap, title: "Built for L&D", desc: "Designed with quality and training leads, not generic SaaS." },
-            { icon: BarChart3, title: "Always exportable", desc: "Your data stays yours — full CSV export and SCORM portability." },
-          ].map((t) => {
-            const Icon = t.icon;
-            return (
-              <div key={t.title}>
-                <div className="w-12 h-12 mx-auto rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3"><Icon size={22} /></div>
-                <h3 className="font-semibold text-slate-900">{t.title}</h3>
-                <p className="text-sm text-slate-500 mt-1.5">{t.desc}</p>
-              </div>
-            );
-          })}
+      <section id="trust" className="max-w-7xl mx-auto px-6 py-24">
+        <div className="grid md:grid-cols-12 gap-x-8 gap-y-10 items-start">
+          <div className="md:col-span-5">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-brand-700 font-medium mb-3">Why teams trust it</p>
+            <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 tracking-[-0.02em] leading-[1.1]" style={{ textWrap: "balance" }}>
+              Built with the seriousness regulated work demands.
+            </h2>
+          </div>
+          <ul className="md:col-span-7 divide-y divide-slate-200/70 border-y border-slate-200/70">
+            {[
+              { icon: ShieldCheck,   title: "GMP-aligned",        desc: "21 CFR Part 11 audit log, electronic-signatures roadmap, tamper-evident records." },
+              { icon: GraduationCap, title: "Built for L&D",      desc: "Designed with quality and training leads, not generic SaaS personas." },
+              { icon: BarChart3,     title: "Always exportable",  desc: "Your data stays yours — full CSV export, SCORM portability, no lock-in." },
+            ].map((t) => {
+              const Icon = t.icon;
+              return (
+                <li key={t.title} className="grid grid-cols-[auto_1fr_auto] items-baseline gap-6 py-6">
+                  <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center self-start translate-y-1">
+                    <Icon size={16} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 tracking-tight">{t.title}</h3>
+                    <p className="text-sm text-slate-500 mt-1 leading-relaxed">{t.desc}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </section>
 

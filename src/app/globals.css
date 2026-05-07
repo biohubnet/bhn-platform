@@ -154,12 +154,36 @@
 html, body { background: var(--bg); }
 body {
   color: var(--fg);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "ss01", "cv11", "cv09";
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   background-image: var(--bg-mesh);
   background-attachment: fixed;
   background-size: 100% 100%;
   transition: background-color 250ms ease, color 250ms ease;
+}
+
+/* Numeric data — KPIs, counters, currency. Wire by adding `.num` or
+ * the `tabular-nums` Tailwind utility. */
+.num, [data-num] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "ss01" 1;
+}
+
+/* Subtle noise overlay — fixed, behind content, points-events: none.
+ * Add `.has-grain` to any wrapper to opt in. The home and login pages
+ * use it; dashboard surfaces leave it off so cards stay crisp. */
+.has-grain { position: relative; }
+.has-grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
 /* Scrollbars */
