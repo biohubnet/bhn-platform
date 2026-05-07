@@ -81,7 +81,10 @@ export function RoleSwitcher({ actingAs }: Props) {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 bg-card-solid border border-line rounded-2xl shadow-2xl shadow-black/15 p-2 z-30 min-w-[240px] animate-fade-in">
+        <div
+          className="absolute bottom-full left-0 right-0 mb-2 border border-line-strong rounded-2xl shadow-2xl shadow-black/20 p-2 z-30 min-w-[240px] animate-fade-in"
+          style={{ background: "var(--popover-bg)" }}
+        >
           {actingAs && (
             <div className="mb-2 pb-2 border-b border-line px-1">
               <button
