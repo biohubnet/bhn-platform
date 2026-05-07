@@ -38,7 +38,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   },
   {
     title: "AI-written greeting tagline on the dashboard",
-    body: "Below 'Hi, {your name}.' on the dashboard hero, a small italic tagline now appears, freshly written by AI for your role and the time of day — quietly warm, occasionally witty, never cringe. Hover the line and you'll see four chips: thumbs-up if you like it, thumbs-down to log feedback, retry to spin a new one, and Turn off to disable greetings entirely. Cached per browser session so re-navigating doesn't burn fresh AI calls; regenerates each new sign-in. Falls back to a friendly canned line if the AI isn't reachable.",
+    body: "Below 'Hi, {your name}.' on the dashboard hero, a small italic tagline now appears, freshly written by AI for your role and the time of day — quietly warm, occasionally witty, never cringe. The line reads on its own; hover or focus it and a discreet strip fades in below with four chips: Nice (thumbs up), Meh (thumbs down), Retry (regenerate), and Turn off (disable greetings entirely). Cached per browser session so re-navigating doesn't burn fresh AI calls; regenerates each new sign-in. Falls back to a friendly canned line if the AI isn't reachable.",
     kind: "feature",
     visibleTo: ALL,
     daysAgo: 0,

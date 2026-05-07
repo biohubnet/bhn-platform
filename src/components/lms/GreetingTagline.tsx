@@ -155,12 +155,17 @@ export function GreetingTagline({ tone = "dark", className }: Props) {
           {text}
         </p>
 
-        {/* Reaction strip — fades in only on hover/focus, so the
-            tagline reads cleanly. Always tab-reachable. */}
+        {/* Reaction strip — completely hidden until the user hovers (or
+            tabs into) the tagline, so the line reads cleanly on its
+            own. pointer-events disabled while invisible so the empty
+            row below the line doesn't grab the cursor. */}
         <div
           className={cn(
             "mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-medium",
-            "opacity-50 group-hover/greet:opacity-100 focus-within:opacity-100 transition-opacity",
+            "opacity-0 pointer-events-none",
+            "group-hover/greet:opacity-100 group-hover/greet:pointer-events-auto",
+            "focus-within:opacity-100 focus-within:pointer-events-auto",
+            "transition-opacity duration-200",
           )}
         >
           <button
