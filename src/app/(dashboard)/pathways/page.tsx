@@ -1,7 +1,7 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Layers, Award, BookOpen, Users, ClipboardList, Check } from "lucide-react";
+import { Layers, Award, BookOpen, Users, ClipboardList, Check, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { PageHero } from "@/components/ui/PageHero";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
@@ -98,26 +98,32 @@ export default async function PathwaysPage() {
           </p>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-5">
           {formRows.map((f) => {
             const submitted = submittedFormIds.has(f.id);
             return (
               <Link
                 key={`form-${f.id}`}
                 href={`/forms/${f.slug}`}
-                className="group bg-card rounded-2xl border border-line hover:border-teal-300 hover:shadow-md transition-all overflow-hidden"
+                className="group bg-card rounded-2xl border border-line hover:border-teal-300 hover:shadow-md transition-all overflow-hidden flex min-h-[180px]"
               >
-                <div className="h-28 bg-gradient-to-br from-teal-500 via-teal-600 to-teal-800 relative overflow-hidden">
-                  <ClipboardList className="absolute top-4 right-4 text-white/40 z-10 drop-shadow" size={48} />
-                  <span className="absolute top-3 left-3 text-xs bg-white/15 backdrop-blur-sm text-white border border-white/20 px-2 py-0.5 rounded">
+                {/* Hero panel — full card height */}
+                <div className="w-72 shrink-0 bg-gradient-to-br from-teal-500 via-teal-600 to-teal-800 relative overflow-hidden hidden sm:block">
+                  <ClipboardList className="absolute top-5 right-5 text-white/40 z-10 drop-shadow" size={56} />
+                  <span className="absolute top-4 left-4 text-[10px] uppercase tracking-[0.18em] font-semibold bg-white/15 backdrop-blur-sm text-white border border-white/20 px-2 py-1 rounded">
                     Registration
                   </span>
                 </div>
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-fg leading-tight group-hover:text-teal-700 transition-colors">
-                      {f.title}
-                    </h3>
+                <div className="flex-1 p-6 flex flex-col">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle mb-1.5">
+                        Event registration
+                      </p>
+                      <h3 className="font-semibold text-fg text-lg leading-tight group-hover:text-teal-700 transition-colors">
+                        {f.title}
+                      </h3>
+                    </div>
                     {submitted ? (
                       <Badge tone="success">
                         <Check size={11} className="mr-0.5" /> Submitted
@@ -127,13 +133,16 @@ export default async function PathwaysPage() {
                     ) : null}
                   </div>
                   {f.description && (
-                    <p className="text-sm text-muted line-clamp-2 mb-4">{f.description}</p>
+                    <p className="text-sm text-muted line-clamp-3 mb-3 leading-relaxed">{f.description}</p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-muted">
+                  <div className="mt-auto flex items-center gap-4 text-xs text-muted">
                     <span className="inline-flex items-center gap-1"><ClipboardList size={12} /> Form</span>
                     {isStaff && (
                       <span className="inline-flex items-center gap-1"><Users size={12} /> {f._count.submissions} responses</span>
                     )}
+                    <span className="ml-auto inline-flex items-center gap-1 font-medium text-teal-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Open form <ArrowRight size={12} />
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -145,25 +154,31 @@ export default async function PathwaysPage() {
               <Link
                 key={p.id}
                 href={`/pathways/${p.id}`}
-                className="group bg-card rounded-2xl border border-line hover:border-brand-300 hover:shadow-md transition-all overflow-hidden"
+                className="group bg-card rounded-2xl border border-line hover:border-brand-300 hover:shadow-md transition-all overflow-hidden flex min-h-[180px]"
               >
-                <div className="h-28 bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 relative overflow-hidden">
+                {/* Hero panel — full card height */}
+                <div className="w-72 shrink-0 bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 relative overflow-hidden hidden sm:block">
                   {p.thumbnail && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
                   )}
-                  <Layers className="absolute top-4 right-4 text-white/40 z-10 drop-shadow" size={48} />
+                  <Layers className="absolute top-5 right-5 text-white/40 z-10 drop-shadow" size={56} />
                   {p.category && (
-                    <span className="absolute top-3 left-3 text-xs bg-white/15 backdrop-blur-sm text-white border border-white/20 px-2 py-0.5 rounded">
+                    <span className="absolute top-4 left-4 text-[10px] uppercase tracking-[0.18em] font-semibold bg-white/15 backdrop-blur-sm text-white border border-white/20 px-2 py-1 rounded">
                       {p.category}
                     </span>
                   )}
                 </div>
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-fg leading-tight group-hover:text-brand-700 transition-colors">
-                      {p.title}
-                    </h3>
+                <div className="flex-1 p-6 flex flex-col">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle mb-1.5">
+                        Training pathway
+                      </p>
+                      <h3 className="font-semibold text-fg text-lg leading-tight group-hover:text-brand-700 transition-colors">
+                        {p.title}
+                      </h3>
+                    </div>
                     {myStatus === "completed" ? (
                       <Badge tone="success">Completed</Badge>
                     ) : myStatus === "approved" ? (
@@ -177,12 +192,15 @@ export default async function PathwaysPage() {
                     ) : null}
                   </div>
                   {p.description && (
-                    <p className="text-sm text-muted line-clamp-2 mb-4">{p.description}</p>
+                    <p className="text-sm text-muted line-clamp-3 mb-3 leading-relaxed">{p.description}</p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-muted">
+                  <div className="mt-auto flex items-center gap-4 text-xs text-muted">
                     <span className="inline-flex items-center gap-1"><BookOpen size={12} /> {p._count.courses} courses</span>
                     <span className="inline-flex items-center gap-1"><Users size={12} /> {p._count.enrollments} learners</span>
-                    <span className="inline-flex items-center gap-1 ml-auto text-amber-600"><Award size={12} /> Certified</span>
+                    <span className="inline-flex items-center gap-1 text-amber-600"><Award size={12} /> Pathway certificate</span>
+                    <span className="ml-auto inline-flex items-center gap-1 font-medium text-brand-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                      View pathway <ArrowRight size={12} />
+                    </span>
                   </div>
                 </div>
               </Link>

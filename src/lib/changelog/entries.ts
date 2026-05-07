@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Pathway cards: full-width horizontal layout, more breathing room",
+    body: "Learning Pathways now lists each pathway and event registration in a single full-width column rather than a 3-up grid. Each card uses a horizontal layout — the gradient hero panel sits on the left, with title, eyebrow, three lines of description, course count, learner count, and a 'Pathway certificate' chip on the right. ~20% more vertical space per card so the description actually breathes.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Hi-Tech theme is now full TRON",
     body: "Switched the Hi-Tech palette to TRON's signature electric-cyan on inky black. Surfaces glow at the edges, headings sit in uppercase JetBrains Mono with wider tracking, corners are nearly square (0–6px), and the page background now carries a 64px grid pattern — the lightcycle arena floor look. Open the Theme picker to try it.",
     kind: "improvement",
