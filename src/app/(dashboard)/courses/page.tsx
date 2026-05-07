@@ -1,28 +1,15 @@
-import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff, isAdmin as checkIsAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { BookOpen } from "lucide-react";
-import { CourseCard } from "@/components/lms/CourseCard";
 import { NewCourseButton } from "@/components/lms/NewCourseButton";
 import { CourseSearchBar } from "@/components/lms/CourseSearchBar";
 import { CourseFilters } from "@/components/lms/CourseFilters";
+import { CatalogGrid, type CatalogCourse } from "@/components/lms/CatalogGrid";
 import { PageHero } from "@/components/ui/PageHero";
 import { parseFilters } from "@/lib/courses/filters";
-
-interface CourseListItem {
-  id: string;
-  title: string;
-  description: string | null;
-  category: string | null;
-  thumbnail: string | null;
-  status: string;
-  courseType: string;
-  duration: number | null;
-  creditCost: number;
-  createdAt: Date;
-  instructor: { name: string | null } | null;
-  _count: { enrollments: number; modules: number };
-  scormPackage: { version: string } | null;
-}
+import {
+  ensureCourseFilterOptions, getCourseFilterOptions,
+} from "@/lib/courses/filter-options";
 
 export default async function CoursesPage({
   searchParams,
@@ -39,8 +26,13 @@ export default async function CoursesPage({
   const sp = await searchParams;
   const role = (session!.user as { role?: string }).role ?? "learner";
   const isStaff = checkIsStaff(role);
+  const isAdmin = checkIsAdmin(role);
 
   const filters = parseFilters(sp);
+
+  // Idempotent first-deploy seed of the option lists.
+  await ensureCourseFilterOptions();
+  const options = await getCourseFilterOptions();
 
   const courses = await prisma.course.findMany({
     where: {
@@ -57,7 +49,27 @@ export default async function CoursesPage({
       scormPackage: { select: { version: true } },
     },
     orderBy: { createdAt: "desc" },
-  }) as CourseListItem[];
+  });
+
+  const catalogCourses: CatalogCourse[] = courses.map((c) => ({
+    id: c.id,
+    title: c.title,
+    description: c.description,
+    category: c.category,
+    thumbnail: c.thumbnail,
+    status: c.status,
+    courseType: c.courseType,
+    duration: c.duration,
+    creditCost: c.creditCost,
+    createdAt: c.createdAt.toISOString(),
+    topic: c.topic,
+    delivery: c.delivery,
+    provider: c.provider,
+    isSpecial: c.isSpecial,
+    instructor: c.instructor,
+    _count: c._count,
+    scormPackage: c.scormPackage,
+  }));
 
   return (
     <div>
@@ -70,8 +82,7 @@ export default async function CoursesPage({
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        {/* Filter rail */}
-        <CourseFilters />
+        <CourseFilters options={options} />
 
         <div className="space-y-5">
           <CourseSearchBar />
@@ -84,11 +95,12 @@ export default async function CoursesPage({
               )}
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-              {courses.map((course: CourseListItem) => (
-                <CourseCard key={course.id} course={course} role={role} />
-              ))}
-            </div>
+            <CatalogGrid
+              courses={catalogCourses}
+              role={role}
+              options={options}
+              isAdmin={isAdmin}
+            />
           )}
         </div>
       </div>

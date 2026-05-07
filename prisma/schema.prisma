@@ -123,6 +123,22 @@ model EventForm {
   submissions EventFormSubmission[]
 }
 
+/// Admin-editable list of options that drives the Course catalog
+/// filter rail. Seeded from src/lib/courses/filters.ts on first /courses
+/// hit (idempotent); admins can add / rename / hide afterwards.
+model CourseFilterOption {
+  id        String   @id @default(cuid())
+  /// "topic" | "delivery" | "provider"
+  type      String
+  value     String
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([type, value])
+  @@index([type, sortOrder])
+}
+
 /// Internship / job-board posting. Admins create either by filling
 /// fields manually or by pasting a job description and letting the
 /// AI parser pre-fill the form.

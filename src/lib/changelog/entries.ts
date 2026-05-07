@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Catalog admin tools — quick-edit, bulk filter assignment, and DB-driven option lists",
+    body: "Three connected admin upgrades on the course catalog. (1) Each card now has a pencil for admins — opens a small dialog to set topic / delivery / provider / Special-program in one place; saves via PATCH and stays on page. (2) Each card also has a checkbox; selecting one or more reveals a sticky toolbar at the bottom of the screen with 'Apply filters to N' — the dialog has a 'Don't change' option per field so you only touch what you mean to. (3) New /admin/course-filters page lets admins add, rename, hide, or delete the option lists themselves; the catalog filter rail reads from the DB now, so additions show up everywhere immediately. Existing courses keep their assigned values even when you hide an option from the picker.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Employer HR role exposed in admin role-pickers + view-as menu",
     body: "Admins can now pick \"Employer HR\" in the Users page role dropdown (single-row select and the batch role action both list it), and the superadmin View-as menu can preview the platform as an employer. Set a user's role to Employer HR and they're routed to /employer on next login — full portal with Postings, Applicants, and the ATS scaffold.",
     kind: "improvement",

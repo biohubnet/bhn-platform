@@ -2,12 +2,15 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ChevronDown, X } from "lucide-react";
-import {
-  COURSE_TOPICS, COURSE_DELIVERY, COURSE_PROVIDERS,
-} from "@/lib/courses/filters";
 import { cn } from "@/lib/utils";
 
-export function CourseFilters() {
+export interface CourseFilterOptions {
+  topic: string[];
+  delivery: string[];
+  provider: string[];
+}
+
+export function CourseFilters({ options }: { options: CourseFilterOptions }) {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -70,7 +73,7 @@ export function CourseFilters() {
       </div>
 
       <Group title="On-demand course topics" defaultOpen={selected.topic.length > 0}>
-        {COURSE_TOPICS.map((t) => (
+        {options.topic.map((t) => (
           <Check
             key={t}
             label={t}
@@ -81,7 +84,7 @@ export function CourseFilters() {
       </Group>
 
       <Group title="Delivery" defaultOpen={selected.delivery.length > 0}>
-        {COURSE_DELIVERY.map((d) => (
+        {options.delivery.map((d) => (
           <Check
             key={d}
             label={d}
@@ -100,7 +103,7 @@ export function CourseFilters() {
       </Group>
 
       <Group title="Provider" defaultOpen={selected.provider.length > 0}>
-        {COURSE_PROVIDERS.map((p) => (
+        {options.provider.map((p) => (
           <Check
             key={p}
             label={p}

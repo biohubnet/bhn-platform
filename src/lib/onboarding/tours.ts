@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07h";
+export const TOUR_VERSION = "2026.05.07i";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -224,6 +224,15 @@ export const TOUR_STEPS: TourStep[] = [
     since: "2026.05.07a",
     roles: ["instructor", "admin", "superadmin"],
     cta: { label: "Open the catalog", href: "/courses" },
+  },
+  {
+    id: "catalog-admin",
+    title: "Catalog admin tools",
+    body: "Hover any course card on the catalog — admins now see a pencil for quick-edit and a checkbox for bulk-select. Pick a few cards, then use the floating Apply filters button at the bottom to assign topic / delivery / provider in one go. The picker options themselves live at Administration → Course filters.",
+    path: "/courses",
+    placement: "center",
+    since: "2026.05.07i",
+    roles: ["admin", "superadmin"],
   },
   {
     id: "catalog-filters",
