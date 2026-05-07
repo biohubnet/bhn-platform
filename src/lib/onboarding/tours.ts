@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07j";
+export const TOUR_VERSION = "2026.05.07k";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -284,6 +284,31 @@ export const TOUR_STEPS: TourStep[] = [
     selector: "[aria-label=\"Change theme\"]",
     placement: "right",
     since: "2026.05.07c",
+  },
+  {
+    id: "ai-greeting",
+    title: "A fresh greeting for every visit",
+    body: "Below 'Hi, {your name}.' on your dashboard, a small AI-written tagline now appears — tailored to the time of day and your role. Hover the line and you'll see chips to thumbs-up, thumbs-down, regenerate, or turn the feature off entirely if it ever feels too much.",
+    placement: "center",
+    since: "2026.05.07k",
+  },
+  {
+    id: "rosalind-theme",
+    title: "Meet Rosalind",
+    body: "New theme inspired by Rosalind Franklin and herbarium-style notebooks: warm parchment background, sage-green CTAs, dusty-rose accent, italic serif headings. Open the Theme picker to try it.",
+    selector: "[aria-label=\"Change theme\"]",
+    placement: "right",
+    since: "2026.05.07k",
+  },
+  {
+    id: "system-status-superadmin",
+    title: "System status — for superadmins",
+    body: "If you're superadmin, Administration → System status now shows DB ping, AI usage, security signals, and a one-click panel to seed or remove the test employer + trainee + posting + submission set.",
+    path: "/admin/system-status",
+    placement: "center",
+    roles: ["superadmin"],
+    since: "2026.05.07k",
+    cta: { label: "Open System status", href: "/admin/system-status" },
   },
   {
     id: "complete",

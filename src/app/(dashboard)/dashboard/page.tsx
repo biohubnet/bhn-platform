@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
 import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
+import { GreetingTagline } from "@/components/lms/GreetingTagline";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -195,6 +196,7 @@ export default async function DashboardPage() {
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.05] mt-3">
                 Hi, <span className="gradient-text">{firstName}</span>.
               </h1>
+              <GreetingTagline tone="dark" />
               <p className="mt-5 text-white/90 leading-relaxed max-w-xl text-lg">
                 {inProgress > 0
                   ? `You have ${inProgress} course${inProgress === 1 ? "" : "s"} in progress. Pick up where you left off.`

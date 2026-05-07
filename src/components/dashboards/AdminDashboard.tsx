@@ -6,6 +6,7 @@ import {
   Activity,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { GreetingTagline } from "@/components/lms/GreetingTagline";
 
 /** Admin / superadmin dashboard. Platform overview + the queues
  *  needing action, with system-health extras shown only to superadmin. */
@@ -68,6 +69,7 @@ export async function AdminDashboard({
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mt-3">
                 Hi, <span className="gradient-text">{firstName}</span>.
               </h1>
+              <GreetingTagline tone="dark" />
               <p className="mt-4 text-white/85 leading-relaxed text-base md:text-lg max-w-2xl">
                 {totalPending > 0
                   ? `${totalPending} item${totalPending === 1 ? "" : "s"} waiting on you across credits, role requests, and pathway approvals.`

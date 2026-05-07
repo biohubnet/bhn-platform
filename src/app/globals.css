@@ -158,6 +158,81 @@
   --radius-xl: 16px;
 }
 
+/* ───── Rosalind — warm parchment, botanical sage, dusty-rose accent.
+ *  Named after Rosalind Franklin (X-ray crystallographer who imaged DNA).
+ *  Designed for the academic / life-sciences aesthetic: oat-cream paper,
+ *  deep evergreen for buttons, a hint of rose for active states, espresso
+ *  text. Italic serif headings on the body for an editorial/herbarium
+ *  feel. Soft organic shadows; generous radii. ───── */
+[data-theme="rosalind"] {
+  --popover-bg: #ebe2cf;
+  --bg:        #f4ede0;        /* warm oat parchment */
+  --bg-mesh:
+    radial-gradient(at 12% 16%, rgba(72, 89, 64, 0.08) 0px, transparent 55%),
+    radial-gradient(at 86% 22%, rgba(168, 98, 90, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(72, 89, 64, 0.06) 0px, transparent 60%);
+  --card:      rgba(251, 246, 236, 0.92);
+  --card-solid: #fbf6ec;        /* cream / ivory */
+  --elevated:  #ebe2cf;
+  --raised:    #ddd2bb;
+  --fg:        #2e261f;        /* espresso */
+  --fg-muted:  #5e5145;
+  --fg-subtle: #948a7c;
+  --line:      rgba(46, 38, 31, 0.10);
+  --line-strong: rgba(46, 38, 31, 0.20);
+  --backdrop:  rgba(46, 38, 31, 0.40);
+
+  /* Botanical sage brand. 600 = deep evergreen used as the CTA — paired
+   * with cream text reads ~9:1 (AAA). 50 stays oatmeal-tinted so light
+   * brand-50 cards read as natural extensions of the page. */
+  --brand-50:  #e7ede4;
+  --brand-100: #d2dccd;
+  --brand-200: #b4c3a9;
+  --brand-300: #92a684;
+  --brand-400: #738968;
+  --brand-500: #5b7152;
+  --brand-600: #485940;
+  --brand-700: #364432;
+  --brand-800: #283226;
+  --brand-900: #1a201a;
+
+  /* Generous, hand-shaped radii — feels less mechanical, more curated. */
+  --radius-sm: 12px;
+  --radius:    18px;
+  --radius-lg: 26px;
+  --radius-xl: 36px;
+}
+
+/* Tame Tailwind's saturated tint stack so cards using bg-rose-50 etc.
+ * harmonise with the warm parchment instead of fighting it. The
+ * mid-tones (500–700) stay untouched for CTAs. */
+[data-theme="rosalind"] {
+  --color-rose-50:    rgba(168, 98, 90, 0.12);
+  --color-rose-100:   rgba(168, 98, 90, 0.18);
+  --color-rose-200:   rgba(168, 98, 90, 0.28);
+  --color-amber-50:   rgba(180, 130, 40, 0.10);
+  --color-amber-100:  rgba(180, 130, 40, 0.16);
+  --color-amber-200:  rgba(180, 130, 40, 0.24);
+  --color-emerald-50: rgba(72, 89, 64, 0.10);
+  --color-emerald-100:rgba(72, 89, 64, 0.16);
+  --color-emerald-200:rgba(72, 89, 64, 0.24);
+  --color-sky-50:     rgba(78, 110, 132, 0.10);
+  --color-sky-100:    rgba(78, 110, 132, 0.16);
+}
+
+/* Lift deep-state text so it reads on the muted tint surfaces above. */
+[data-theme="rosalind"] .text-rose-700    { color: #8a4f48; }
+[data-theme="rosalind"] .text-rose-800    { color: #703f3a; }
+[data-theme="rosalind"] .text-rose-900    { color: #5a322e; }
+[data-theme="rosalind"] .text-amber-700   { color: #8a6824; }
+[data-theme="rosalind"] .text-amber-800   { color: #6f521c; }
+[data-theme="rosalind"] .text-amber-900   { color: #5a4317; }
+[data-theme="rosalind"] .text-emerald-700 { color: #485940; }
+[data-theme="rosalind"] .text-emerald-800 { color: #364432; }
+[data-theme="rosalind"] .text-emerald-900 { color: #283226; }
+[data-theme="rosalind"] .text-sky-700     { color: #4e6e84; }
+[data-theme="rosalind"] .text-sky-800     { color: #3e586a; }
+
 /* ───── Hi-tech (TRON — pure cyan glow on inky black + grid floor) ───── */
 [data-theme="hitech"] {
   --popover-bg: #03101a;
@@ -377,6 +452,18 @@ body {
 .animate-fade-in { animation: fade-in 200ms ease-out; }
 .animate-slide-up-in { animation: slide-up-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 
+/* Greeting tagline — gentle entrance, soft float of the sparkle.
+ * Used by GreetingTagline.tsx when a fresh AI greeting renders. */
+@keyframes greeting-in {
+  0%   { opacity: 0; transform: translateY(6px) scale(0.985); filter: blur(2px); }
+  60%  { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+.animate-greeting-in { animation: greeting-in 520ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .animate-greeting-in { animation: none; }
+}
+
 /* ============================================================
  *  Bold layout primitives — full-bleed heroes, organic shapes,
  *  drifting blobs, gradient mesh, curve dividers.
@@ -522,6 +609,29 @@ body {
   --heading-weight: 600;
   --heading-transform: none;
   --popover-shadow: 0 6px 20px rgba(14,165,233,0.18), 0 1px 0 rgba(15,23,42,0.05);
+}
+
+/* Rosalind — humanist sans body, italic serif display headings.
+ * Soft warm shadow tinted with the brand sage so cards feel like
+ * pressed botanical specimens on cream paper. */
+[data-theme="rosalind"] {
+  --font-sans-theme: ui-rounded, "Avenir Next", "Avenir", "Inter", "Söhne", system-ui, -apple-system, sans-serif;
+  --font-display-theme: "Iowan Old Style", "Charter", "Source Serif Pro", "Cambria", "Times New Roman", serif;
+  --body-features: "ss01", "cv11";
+  --surface-shadow: 0 1px 0 rgba(72, 89, 64, 0.08), 0 10px 30px rgba(72, 89, 64, 0.10);
+  --surface-border: 1px solid var(--line);
+  --heading-tracking: 0;
+  --heading-weight: 500;
+  --heading-transform: none;
+  --heading-style: italic;
+  --popover-shadow: 0 12px 40px rgba(72, 89, 64, 0.18), 0 1px 3px rgba(46, 38, 31, 0.10);
+}
+[data-theme="rosalind"] h1,
+[data-theme="rosalind"] h2,
+[data-theme="rosalind"] h3 {
+  font-family: var(--font-display-theme);
+  font-style: italic;
+  letter-spacing: 0;
 }
 
 /* Hi-tech (TRON) — JetBrains Mono, electric-cyan glow on every edge. */

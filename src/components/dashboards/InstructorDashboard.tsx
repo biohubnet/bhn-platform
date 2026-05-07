@@ -4,6 +4,7 @@ import {
   Sparkles, ChevronRight, FileText, TrendingUp, Calendar,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { GreetingTagline } from "@/components/lms/GreetingTagline";
 
 /**
  * Instructor dashboard — what someone authoring courses actually wants
@@ -51,7 +52,7 @@ export async function InstructorDashboard({
           user: { select: { name: true, email: true } },
           assessment: { select: { title: true, courseId: true } },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { startedAt: "desc" },
         take: 5,
       }).catch(() => []),
     ]);
@@ -76,6 +77,7 @@ export async function InstructorDashboard({
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mt-3">
                 Hi, <span className="gradient-text">{firstName}</span>.
               </h1>
+              <GreetingTagline tone="dark" />
               <p className="mt-4 text-white/85 leading-relaxed text-base md:text-lg max-w-2xl">
                 {myCoursesCount > 0
                   ? `You're authoring ${myCoursesCount} course${myCoursesCount === 1 ? "" : "s"} (${publishedCount} published) with ${enrollmentsCount} enrolment${enrollmentsCount === 1 ? "" : "s"} between them.`
@@ -256,7 +258,7 @@ export async function InstructorDashboard({
                     ) : (
                       <p className="text-xs text-subtle">In progress</p>
                     )}
-                    <p className="text-[10px] text-subtle mt-0.5">{new Date(a.createdAt).toLocaleDateString()}</p>
+                    <p className="text-[10px] text-subtle mt-0.5">{new Date(a.startedAt).toLocaleDateString()}</p>
                   </div>
                 </li>
               ))}

@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
+import { GreetingTagline } from "@/components/lms/GreetingTagline";
 
 interface UserShape {
   id: string;
@@ -85,6 +86,7 @@ export async function EmployerDashboard({ user }: { user: UserShape }) {
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mt-3">
                 Hi, <span className="gradient-text">{firstName}</span> at {companyName}.
               </h1>
+              <GreetingTagline tone="dark" />
               <p className="mt-4 text-white/85 leading-relaxed text-base md:text-lg max-w-2xl">
                 {applicantsCount > 0
                   ? `${applicantsCount} talent applications on file${newRecently > 0 ? ` — ${newRecently} new this week.` : "."} Pick up where you left off.`

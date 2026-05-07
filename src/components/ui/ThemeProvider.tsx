@@ -5,6 +5,7 @@ export const THEMES = [
   { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces" },
   { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents" },
   { id: "scientific", name: "Scientific", description: "Cool sky-blue, paper-like surfaces" },
+  { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic" },
   { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black" },
 ] as const;
 

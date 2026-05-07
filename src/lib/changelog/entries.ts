@@ -23,6 +23,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "AI-written greeting tagline on the dashboard",
+    body: "Below 'Hi, {your name}.' on the dashboard hero, a small italic tagline now appears, freshly written by AI for your role and the time of day — quietly warm, occasionally witty, never cringe. Hover the line and you'll see four chips: thumbs-up if you like it, thumbs-down to log feedback, retry to spin a new one, and Turn off to disable greetings entirely. Cached per browser session so re-navigating doesn't burn fresh AI calls; regenerates each new sign-in. Falls back to a friendly canned line if the AI isn't reachable.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Rosalind theme — parchment, sage, italic serif",
+    body: "New theme in the picker, named after Rosalind Franklin (X-ray crystallographer who imaged DNA). Warm oat-parchment background, deep botanical sage as the CTA colour, dusty-rose accent, espresso text. Italic serif headings on a humanist sans body, generous radii, soft warm shadows — herbarium-academic feel without the kitsch. Designed for life-sciences readers who want sophisticated and refined, not pink. Try it from the Theme picker at the bottom of the sidebar.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Stop-viewing-as banner is now impossible to miss",
+    body: "When a superadmin is impersonating another role, the top banner now wears a hard amber stripe pattern, a pulsing eye icon, and a high-contrast white-on-espresso 'Stop viewing as · Restore superadmin' button with a 3D shadow that lifts on hover. The old translucent pill was easy to skim past — this one isn't.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
+    title: "Test employer + trainee seed, surfaced in the admin UI",
+    body: "Superadmins: open Administration → System status and you'll find a Test data panel. One click stands up the dummy Employer (test.employer@biohubnet.test / test1234), Trainee (test.trainee@biohubnet.test / test1234), an internship posting, and a talent-application submission tying them together. Another click cleans them up. No CLI needed. The panel shows a live status grid (employer / trainee / posting / submission — present or missing) so you can confirm at a glance.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "System status page for superadmins — DB, AI, and security at a glance",
     body: "New /admin/system-status (superadmin-only) gives a one-page read-out of the platform's health. Top card rolls up an overall traffic-light verdict — Database (live ping with millisecond latency), AI provider (failure rate over the last 7 days), Superadmin redundancy (warns if there's only one), and the action queue size. Below it: vitals row (active users, AI calls in 24h, DB ping, build commit), a database row-count grid for the major tables, an AI-usage breakdown by feature for the last 30 days with calls / failures / failure-% / avg latency, and six security signals — privileged accounts, pending role-change requests, idle 90+ days, employer invites, deactivated accounts, sessions. Footer streams the latest role-related audit entries, recent logins (24h), and the audit-log feed. Read-only — no actions, no caching.",
     kind: "feature",

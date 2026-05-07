@@ -1,10 +1,11 @@
 import {
   ShieldCheck, Database, Activity, AlertTriangle, CheckCircle2, KeyRound,
   Users, Sparkles, Clock, GitCommit, Cpu, ServerCrash, UserCog, Building2,
-  ScrollText, Zap, Eye,
+  ScrollText, Zap, Eye, Beaker,
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { TestDataPanel } from "@/components/admin/TestDataPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -221,6 +222,11 @@ export default async function SystemStatusPage() {
         <Vital icon={Database}  label="DB ping"        value={`${dbLatencyMs}ms`} sub={dbOk ? "Healthy" : "Failed"} />
         <Vital icon={GitCommit} label="Build commit"   value={sha}             sub="Inlined at build time" mono />
       </div>
+
+      {/* Test data — superadmin convenience */}
+      <Section icon={Beaker} title="Test data">
+        <TestDataPanel />
+      </Section>
 
       {/* Database section */}
       <Section icon={Database} title="Database">
