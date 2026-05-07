@@ -184,9 +184,13 @@ export default async function HomePage() {
       </section>
 
       <footer className="border-t border-slate-100 mt-10">
-        <div className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-4">
           <p>© {new Date().getFullYear()} BHN Training Platform</p>
-          <p>Built with care for the bioprocess community.</p>
+          <div className="flex items-center gap-5">
+            <Link href="/privacy" className="hover:text-slate-700">Privacy</Link>
+            <Link href="/terms" className="hover:text-slate-700">Terms</Link>
+            <p>Built with care for the bioprocess community.</p>
+          </div>
         </div>
       </footer>
     </div>

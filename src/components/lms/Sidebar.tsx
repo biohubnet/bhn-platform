@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/ui/Logo";
 import { ThemePicker } from "@/components/ui/ThemePicker";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
+import { useT } from "@/lib/i18n/I18nProvider";
 import {
   LayoutDashboard,
   BookOpen,
@@ -39,17 +40,17 @@ interface NavItem {
   exact?: boolean;
 }
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
-  { label: "Course Catalog", href: "/courses", icon: BookOpen },
-  { label: "Pathways", href: "/pathways", icon: Layers },
-  { label: "My Courses", href: "/my-courses", icon: GraduationCap },
-  { label: "Gradebook", href: "/gradebook", icon: BarChart3 },
-  { label: "Certificates", href: "/certificates", icon: Award },
-  { label: "My Credits", href: "/credits", icon: Coins },
-  { label: "Learning buddies", href: "/buddy", icon: HeartHandshake },
-  // Label is overridden per-role below ("What's new" for trainees, "Change log" for staff).
-  { label: "Change log", href: "/changelog", icon: Sparkles },
+const navItems: (NavItem & { labelKey: string })[] = [
+  { label: "Dashboard",        labelKey: "nav.dashboard",   href: "/dashboard", icon: LayoutDashboard, exact: true },
+  { label: "Course Catalog",   labelKey: "nav.catalog",     href: "/courses", icon: BookOpen },
+  { label: "Pathways",         labelKey: "nav.pathways",    href: "/pathways", icon: Layers },
+  { label: "My Courses",       labelKey: "nav.myCourses",   href: "/my-courses", icon: GraduationCap },
+  { label: "Gradebook",        labelKey: "nav.gradebook",   href: "/gradebook", icon: BarChart3 },
+  { label: "Certificates",     labelKey: "nav.certificates",href: "/certificates", icon: Award },
+  { label: "My Credits",       labelKey: "nav.credits",     href: "/credits", icon: Coins },
+  { label: "Learning buddies", labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake },
+  // labelKey is overridden per-role at render time ("What's new" for trainees).
+  { label: "Change log",       labelKey: "nav.changelog",   href: "/changelog", icon: Sparkles },
 ];
 
 const adminItems: NavItem[] = [
@@ -110,6 +111,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
 
 export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProps) {
   const pathname = usePathname();
+  const t = useT();
   const userRank = ROLE_RANK[role] ?? 0;
   const isAdmin = userRank >= ROLE_RANK["admin"];
   const isStaff = userRank >= ROLE_RANK["instructor"];
@@ -135,10 +137,8 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           // Trainees see the changelog as "What's new"; staff as "Change log".
-          const labeled =
-            item.href === "/changelog" && !isStaff
-              ? { ...item, label: "What's new" }
-              : item;
+          const key = item.href === "/changelog" && !isStaff ? "nav.changelogTrainee" : item.labelKey;
+          const labeled = { ...item, label: t(key) };
           return <NavLink key={item.href} item={labeled} pathname={pathname} />;
         })}
 
@@ -146,7 +146,7 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
           <>
             <div className="pt-4 pb-1 px-3">
               <p className="text-xs font-semibold text-subtle uppercase tracking-wider">
-                Administration
+                {t("nav.administration")}
               </p>
             </div>
             {visibleAdmin.map((item) => (
@@ -200,7 +200,7 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
           className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-muted hover:bg-elevated hover:text-fg transition-colors"
         >
           <LogOut size={16} />
-          Sign out
+          {t("nav.signOut")}
         </button>
       </div>
     </aside>

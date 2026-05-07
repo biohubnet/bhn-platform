@@ -42,9 +42,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.dataset.theme = t;
     try { localStorage.setItem(STORAGE_KEY, t); } catch {}
     try {
-      const body = JSON.stringify({ name: "theme_change", path: location.pathname, props: { theme: t } });
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon("/api/analytics/track", new Blob([body], { type: "application/json" }));
+      // Only fire analytics if the user has opted in.
+      const consentRaw = localStorage.getItem("bhn-consent");
+      const okay = consentRaw && JSON.parse(consentRaw)?.analytics === true;
+      if (okay) {
+        const body = JSON.stringify({ name: "theme_change", path: location.pathname, props: { theme: t } });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon("/api/analytics/track", new Blob([body], { type: "application/json" }));
+        }
       }
     } catch {}
   }

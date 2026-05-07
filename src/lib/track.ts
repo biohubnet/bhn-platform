@@ -1,5 +1,7 @@
 "use client";
 
+import { isAnalyticsAllowed } from "@/components/consent/ConsentProvider";
+
 const SESSION_KEY = "bhn-anon-session";
 
 function getSessionId(): string {
@@ -30,6 +32,8 @@ interface EventPayload {
  */
 export function track(name: string, props?: Record<string, unknown>) {
   if (typeof window === "undefined") return;
+  // GDPR/CCPA: only fire client analytics if the user has opted in.
+  if (!isAnalyticsAllowed()) return;
   const payload: EventPayload = {
     name,
     path: window.location.pathname + window.location.search,

@@ -24,6 +24,10 @@ model User {
   newsletterSubscribedAt DateTime?
   /// Onboarding progress: { version, seenStepIds[], minimized, dismissed, completedAt }
   onboarding    Json?
+  /// GDPR/CCPA consent: { necessary, analytics, marketing, version, acceptedAt }
+  consent       Json?
+  /// Preferred UI language ISO code: en | es | fr | zh
+  locale        String    @default("en")
   phone         String?
   bio           String?
   organization  String?
@@ -461,6 +465,20 @@ model AIInteraction {
 
   @@index([createdAt])
   @@index([kind, createdAt])
+}
+
+/// GDPR / CCPA data-subject request log. Used to record exports and
+/// deletion requests with timestamps so we can prove compliance later.
+model DataSubjectRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  kind        String   // export | delete | rectify
+  status      String   @default("completed")  // completed | pending | rejected
+  detail      String?  // free text — what was requested or done
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model PlatformSetting {

@@ -1,11 +1,15 @@
 "use client";
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { User as UserIcon, Lock, ShieldQuestion, Save, Check, AlertCircle, Clock, X } from "lucide-react";
+import { User as UserIcon, Lock, ShieldQuestion, Save, Check, AlertCircle, Clock, X, Shield, Download, Languages, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Textarea, Select } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { LOCALES, type LocaleId } from "@/lib/i18n/dictionaries";
+import { useConsent } from "@/components/consent/ConsentProvider";
 
 interface UserShape {
   id: string;
@@ -241,6 +245,12 @@ export function ProfileClient({ user, latestRoleRequest }: {
         </form>
       </Card>
 
+      {/* Language */}
+      <LanguageSection />
+
+      {/* Privacy & data — GDPR/CCPA controls */}
+      <PrivacySection />
+
       {/* Role change */}
       {user.role !== "superadmin" && (
         <Card className="p-6">
@@ -340,5 +350,140 @@ function Alert({ children, tone }: { children: React.ReactNode; tone: "success" 
       {tone === "success" ? <Check size={14} className="mt-0.5" /> : <AlertCircle size={14} className="mt-0.5" />}
       <span>{children}</span>
     </div>
+  );
+}
+
+function LanguageSection() {
+  const { locale, setLocale, t } = useI18n();
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Languages size={18} className="text-brand-600" />
+        <h3 className="font-semibold text-fg">{t("profile.languagePicker")}</h3>
+      </div>
+      <Field label={t("common.language")}>
+        <Select value={locale} onChange={(e) => setLocale(e.target.value as LocaleId)}>
+          {LOCALES.map((l) => (
+            <option key={l.id} value={l.id}>{l.nativeName} ({l.name})</option>
+          ))}
+        </Select>
+      </Field>
+    </Card>
+  );
+}
+
+function PrivacySection() {
+  const { t } = useI18n();
+  const { consent, setConsent } = useConsent();
+  const [analytics, setAnalytics] = useState(consent.analytics);
+  const [marketing, setMarketing] = useState(consent.marketing);
+  const [confirmText, setConfirmText] = useState("");
+  const [busyDelete, setBusyDelete] = useState(false);
+
+  function saveConsent() {
+    setConsent({ analytics, marketing });
+  }
+
+  async function deleteAccount() {
+    if (confirmText !== "DELETE") return;
+    setBusyDelete(true);
+    try {
+      const res = await fetch("/api/profile/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "DELETE" }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(j.error ?? "Couldn't delete");
+        return;
+      }
+      // Sign out and bounce home
+      await signOut({ callbackUrl: "/" });
+    } finally {
+      setBusyDelete(false);
+    }
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Shield size={18} className="text-brand-600" />
+        <h3 className="font-semibold text-fg">{t("profile.privacy")}</h3>
+      </div>
+      <p className="text-xs text-muted leading-relaxed">
+        We respect your data rights under GDPR and CCPA. Manage your consent below, download a full
+        export, or request account deletion.
+      </p>
+
+      <div className="mt-5 space-y-3">
+        <ConsentToggle label={t("consent.necessary")} hint={t("consent.necessaryHelp")} checked disabled />
+        <ConsentToggle label={t("consent.analytics")} hint={t("consent.analyticsHelp")} checked={analytics} onChange={setAnalytics} />
+        <ConsentToggle label={t("consent.marketing")} hint={t("consent.marketingHelp")} checked={marketing} onChange={setMarketing} />
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2 justify-end">
+        <Button variant="ghost" onClick={saveConsent}>{t("consent.savePrefs")}</Button>
+      </div>
+
+      <div className="mt-6 pt-6 border-t border-line space-y-3">
+        <a
+          href="/api/profile/export"
+          download
+          className="inline-flex items-center gap-2 text-sm font-medium text-brand-700 hover:text-brand-800"
+        >
+          <Download size={14} /> {t("profile.exportData")}
+        </a>
+      </div>
+
+      <div className="mt-6 pt-6 border-t border-line">
+        <p className="text-sm font-semibold text-fg flex items-center gap-2 text-rose-700">
+          <Trash2 size={14} /> {t("profile.deleteAccount")}
+        </p>
+        <p className="text-xs text-muted mt-1 leading-relaxed">
+          Anonymizes your account immediately and permanently removes personal data within 30 days.
+          Audit log entries are retained in compliance with regulatory record-keeping. Type
+          <strong> DELETE </strong> to confirm.
+        </p>
+        <div className="mt-3 flex items-center gap-2 max-w-sm">
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="Type DELETE"
+          />
+          <Button
+            variant="danger"
+            onClick={deleteAccount}
+            loading={busyDelete}
+            disabled={confirmText !== "DELETE"}
+          >
+            Delete account
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function ConsentToggle({ label, hint, checked, disabled, onChange }: {
+  label: string; hint: string; checked: boolean; disabled?: boolean; onChange?: (v: boolean) => void;
+}) {
+  return (
+    <label className={
+      "flex items-start gap-3 p-3 rounded-xl border border-line " +
+      (disabled ? "bg-elevated/40 cursor-not-allowed" : "hover:border-line-strong cursor-pointer")
+    }>
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange?.(e.target.checked)}
+        className="mt-0.5 accent-brand-600"
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-fg">{label}</p>
+        <p className="text-xs text-muted mt-0.5">{hint}</p>
+      </div>
+    </label>
   );
 }
