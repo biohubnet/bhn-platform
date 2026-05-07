@@ -5,6 +5,7 @@ import { Layers, Award, BookOpen, Users, ClipboardList, Check } from "lucide-rea
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
+import { ensureRegisteredForms } from "@/lib/forms/registry";
 
 interface PathwayRow {
   id: string;
@@ -33,6 +34,11 @@ export default async function PathwaysPage() {
     select: { pathwayId: true, status: true },
   });
   const enrollmentMap = new Map(myEnrollments.map((e) => [e.pathwayId, e.status]));
+
+  // First-time deploys won't have any EventForm rows; auto-provision
+  // the registered seeds so the cards show up without needing to visit
+  // each /forms/[slug] URL individually first.
+  await ensureRegisteredForms();
 
   // Registration forms — listed alongside pathways. Inactive forms are
   // staff-only so users don't try to submit something already closed.

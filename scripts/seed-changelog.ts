@@ -8,6 +8,13 @@ const ADMINS = ["admin", "superadmin"];
 
 const entries = [
   {
+    title: "Event registration forms now live on Pathways",
+    body: "The OBIO Entrepreneurship Bootcamp registration is the first one — you'll see it as a teal card on the Pathways page. Submit once and we keep your last response on file. Admins can edit the form fields in place (add, remove, reorder) and export every submission as a CSV.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Change log is here",
     body: "Track what's new in the platform from one place. Trainees see it as What's new; staff see full release notes. Every entry's audience is configurable per-role.",
     kind: "feature",
@@ -115,7 +122,18 @@ const entries = [
 ];
 
 async function main() {
-  for (const e of entries.reverse()) { // create oldest first so most recent ends up most recent
+  // Idempotent: skip-by-title so re-running after appending new entries
+  // only inserts the new ones. Existing entries can be edited via the
+  // admin UI without conflict.
+  for (const e of [...entries].reverse()) { // create oldest first so most recent ends up most recent
+    const exists = await prisma.changeLog.findFirst({
+      where: { title: e.title },
+      select: { id: true },
+    });
+    if (exists) {
+      console.log(`= ${e.title} (exists, skipped)`);
+      continue;
+    }
     const publishedAt = new Date(Date.now() - e.daysAgo * 24 * 60 * 60 * 1000);
     await prisma.changeLog.create({
       data: {

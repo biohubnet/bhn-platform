@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2025.05";
+export const TOUR_VERSION = "2026.05";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -197,6 +197,15 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Every release lands in the change log on the sidebar — trainees see 'What's new', staff see the full Change log with per-entry visibility.",
     placement: "center",
     since: "2025.05",
+  },
+  {
+    id: "event-forms",
+    title: "Event registrations live on Pathways",
+    body: "Programmes and bootcamps that need a sign-up form now appear as teal cards on the Pathways page. Click one to fill it out — your last response is kept on file. Admins can edit fields in place and export every submission as a CSV.",
+    path: "/pathways",
+    placement: "center",
+    since: "2026.05",
+    cta: { label: "Open Pathways", href: "/pathways" },
   },
   {
     id: "complete",

@@ -20,3 +20,27 @@ export async function getOrSeedForm(slug: string) {
     },
   });
 }
+
+/**
+ * Idempotent: ensure every registered seed form exists in the DB.
+ * Cheap (one findUnique per seed); call from any page that lists forms
+ * so a fresh deployment doesn't show empty until someone visits the
+ * specific /forms/[slug] URL first.
+ */
+export async function ensureRegisteredForms() {
+  for (const seed of SEEDS) {
+    const existing = await prisma.eventForm.findUnique({
+      where: { slug: seed.slug },
+      select: { id: true },
+    });
+    if (existing) continue;
+    await prisma.eventForm.create({
+      data: {
+        slug: seed.slug,
+        title: seed.title,
+        description: seed.description ?? null,
+        fields: seed.fields,
+      },
+    });
+  }
+}
