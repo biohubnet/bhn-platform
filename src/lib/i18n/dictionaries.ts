@@ -12,6 +12,8 @@ export const LOCALES = [
   { id: "es", name: "Spanish",     nativeName: "Español" },
   { id: "fr", name: "French",      nativeName: "Français" },
   { id: "zh", name: "Simplified Chinese", nativeName: "简体中文" },
+  { id: "hi", name: "Hindi",       nativeName: "हिन्दी" },
+  { id: "ko", name: "Korean",      nativeName: "한국어" },
 ] as const;
 
 export type LocaleId = (typeof LOCALES)[number]["id"];
@@ -218,7 +220,105 @@ const zh: Dict = {
   "consent.termsOfService": "服务条款",
 };
 
-export const DICTIONARIES: Record<LocaleId, Dict> = { en, es, fr, zh };
+const hi: Dict = {
+  "nav.dashboard": "डैशबोर्ड",
+  "nav.catalog": "पाठ्यक्रम सूची",
+  "nav.pathways": "पाथवे",
+  "nav.myCourses": "मेरे पाठ्यक्रम",
+  "nav.gradebook": "ग्रेडबुक",
+  "nav.certificates": "प्रमाणपत्र",
+  "nav.credits": "मेरे क्रेडिट",
+  "nav.buddy": "अध्ययन साथी",
+  "nav.changelog": "परिवर्तन लॉग",
+  "nav.changelogTrainee": "नया क्या है",
+  "nav.administration": "प्रशासन",
+  "nav.signOut": "लॉग आउट",
+
+  "common.save": "सहेजें",
+  "common.cancel": "रद्द करें",
+  "common.delete": "हटाएँ",
+  "common.edit": "संपादित करें",
+  "common.next": "अगला",
+  "common.back": "पीछे",
+  "common.close": "बंद करें",
+  "common.search": "खोजें",
+  "common.loading": "लोड हो रहा है…",
+  "common.theme": "थीम",
+  "common.language": "भाषा",
+
+  "profile.title": "मेरी प्रोफ़ाइल",
+  "profile.personalInfo": "व्यक्तिगत जानकारी",
+  "profile.password": "पासवर्ड",
+  "profile.privacy": "गोपनीयता और डेटा",
+  "profile.exportData": "मेरा डेटा डाउनलोड करें",
+  "profile.deleteAccount": "मेरा खाता हटाएँ",
+  "profile.languagePicker": "प्रदर्शन भाषा",
+
+  "consent.title": "हम आपकी गोपनीयता का सम्मान करते हैं",
+  "consent.body": "हम BHN ट्रेनिंग को संचालित रखने, उसकी कार्यप्रदर्शन मापने और आपके अनुभव को सुधारने के लिए कुकीज़ और इसी तरह की तकनीकों का उपयोग करते हैं। आप किसी भी समय अपनी प्रोफ़ाइल से अपनी पसंद बदल सकते हैं।",
+  "consent.necessary": "आवश्यक",
+  "consent.necessaryHelp": "आपको साइन इन रखने और प्लेटफ़ॉर्म को सुरक्षित रखने के लिए ज़रूरी।",
+  "consent.analytics": "विश्लेषण",
+  "consent.analyticsHelp": "प्लेटफ़ॉर्म को बेहतर बनाने के लिए पेज व्यू और सुविधा उपयोग। कभी नहीं बेचा जाता।",
+  "consent.marketing": "मार्केटिंग",
+  "consent.marketingHelp": "वैकल्पिक न्यूज़लेटर या प्रचारात्मक संपर्क से जुड़ा।",
+  "consent.acceptAll": "सभी स्वीकार करें",
+  "consent.necessaryOnly": "केवल आवश्यक",
+  "consent.savePrefs": "प्राथमिकताएँ सहेजें",
+  "consent.privacyPolicy": "गोपनीयता नीति",
+  "consent.termsOfService": "नियम",
+};
+
+const ko: Dict = {
+  "nav.dashboard": "대시보드",
+  "nav.catalog": "코스 카탈로그",
+  "nav.pathways": "학습 경로",
+  "nav.myCourses": "내 코스",
+  "nav.gradebook": "성적부",
+  "nav.certificates": "수료증",
+  "nav.credits": "내 크레딧",
+  "nav.buddy": "스터디 메이트",
+  "nav.changelog": "변경 로그",
+  "nav.changelogTrainee": "새로운 기능",
+  "nav.administration": "관리",
+  "nav.signOut": "로그아웃",
+
+  "common.save": "저장",
+  "common.cancel": "취소",
+  "common.delete": "삭제",
+  "common.edit": "편집",
+  "common.next": "다음",
+  "common.back": "뒤로",
+  "common.close": "닫기",
+  "common.search": "검색",
+  "common.loading": "로드 중…",
+  "common.theme": "테마",
+  "common.language": "언어",
+
+  "profile.title": "내 프로필",
+  "profile.personalInfo": "개인 정보",
+  "profile.password": "비밀번호",
+  "profile.privacy": "개인정보 및 데이터",
+  "profile.exportData": "내 데이터 다운로드",
+  "profile.deleteAccount": "내 계정 삭제",
+  "profile.languagePicker": "표시 언어",
+
+  "consent.title": "귀하의 개인정보를 존중합니다",
+  "consent.body": "BHN Training의 정상 작동, 성능 측정, 사용자 경험 향상을 위해 쿠키 및 유사 기술을 사용합니다. 프로필에서 언제든지 선택을 변경할 수 있습니다.",
+  "consent.necessary": "필수",
+  "consent.necessaryHelp": "로그인 상태 유지 및 플랫폼 보안을 위해 필요합니다.",
+  "consent.analytics": "분석",
+  "consent.analyticsHelp": "플랫폼 개선을 위한 페이지 뷰 및 기능 사용 정보. 절대 판매하지 않습니다.",
+  "consent.marketing": "마케팅",
+  "consent.marketingHelp": "선택형 뉴스레터 또는 홍보 후속 활동과 연결됩니다.",
+  "consent.acceptAll": "모두 동의",
+  "consent.necessaryOnly": "필수만",
+  "consent.savePrefs": "환경설정 저장",
+  "consent.privacyPolicy": "개인정보 정책",
+  "consent.termsOfService": "이용약관",
+};
+
+export const DICTIONARIES: Record<LocaleId, Dict> = { en, es, fr, zh, hi, ko };
 
 /** Static lookup. Falls back to English then to the key itself. */
 export function translate(locale: LocaleId | string | undefined, key: string): string {

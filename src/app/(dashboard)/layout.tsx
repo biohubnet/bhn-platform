@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { Sidebar } from "@/components/lms/Sidebar";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 import { Onboarding } from "@/components/onboarding/Onboarding";
+import { PageTranslator } from "@/components/translation/PageTranslator";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -26,8 +27,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
         user={session.user ?? {}}
         credits={credits ?? undefined}
       />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto relative">
         {actingAs && <ImpersonationBanner actingAs={actingAs} />}
+        {/* Floating page-translator dock — top-right of the content area */}
+        <div className="absolute top-4 right-6 z-30" data-no-translate>
+          <PageTranslator />
+        </div>
         <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
       </main>
       <Onboarding />
