@@ -14,9 +14,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const realRole = (session.user as { realRole?: string }).realRole;
   const actingAs = (session.user as { actingAs?: string }).actingAs;
   const userId = (session.user as { id?: string }).id;
-  const credits = userId
-    ? (await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } }))?.credits
-    : undefined;
+  const userRow = userId
+    ? await prisma.user.findUnique({
+        where: { id: userId },
+        select: { credits: true, allowPlatformContent: true },
+      })
+    : null;
 
   return (
     <div className="flex h-screen bg-page">
@@ -25,7 +28,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         realRole={realRole}
         actingAs={actingAs ?? null}
         user={session.user ?? {}}
-        credits={credits ?? undefined}
+        credits={userRow?.credits ?? undefined}
+        allowPlatformContent={userRow?.allowPlatformContent ?? false}
       />
       <main className="flex-1 overflow-y-auto relative">
         {actingAs && <ImpersonationBanner actingAs={actingAs} />}

@@ -45,6 +45,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(data.tags !== undefined ? { tags: typeof data.tags === "string" ? data.tags : JSON.stringify(data.tags) } : {}),
       ...(data.thumbnail !== undefined ? { thumbnail: data.thumbnail } : {}),
       ...(data.creditCost !== undefined ? { creditCost: data.creditCost } : {}),
+      ...(data.topic !== undefined ? { topic: data.topic || null } : {}),
+      ...(data.delivery !== undefined ? { delivery: data.delivery || null } : {}),
+      ...(data.provider !== undefined ? { provider: data.provider || null } : {}),
+      ...(data.isSpecial !== undefined ? { isSpecial: !!data.isSpecial } : {}),
     },
   });
 

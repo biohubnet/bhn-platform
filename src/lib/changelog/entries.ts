@@ -23,6 +23,27 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Course catalog filters — by topic, delivery, special programs, and provider",
+    body: "A filter rail now sits next to the catalog. Pick from nine topics (Sector/Tech, Career Insights, Regulatory Affairs, Industry Fundamentals, Quality, Biomanufacturing USP/DSP, etc.), four delivery types (Asynchronous, Online Synchronous, In-Person, Blended), the Special Programs (Instructor-led, limited seats) flag, and any of nine providers (Talent Accelerator, BioTalent Canada, CASTL, Seneca, CRAFT, Agilis Health, U of T, INSPIRE, CANTRAIN). Filters are URL-driven so they survive a refresh and are shareable.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Sidebar groups now sit in lettered boxes",
+    body: "ENGAGE and EXPERIENCE (and Administration for admins) are wrapped in bordered boxes with the group title sitting at the top opening — the fieldset / legend pattern. Visually clearer at a glance which feature lives in which track.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "New 'Employer HR' user type — portal scaffold for industry partners",
+    body: "Added an Employer HR role for industry partners who post internships and review applicants. They land in a dedicated /employer portal with overview tiles, their own postings list, and a read-only roster of talent applications (with one-click links to resume, 1-min video, and email). A per-account toggle (allowPlatformContent, default off) decides whether they can also browse Engage / Experience content. The full ATS workflow — Save / Shortlist / Interview status, candidate notes, side-by-side comparison, Calendly-style interview booking — is the next iteration.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Pathway cards: full-width horizontal layout, more breathing room",
     body: "Learning Pathways now lists each pathway and event registration in a single full-width column rather than a 3-up grid. Each card uses a horizontal layout — the gradient hero panel sits on the left, with title, eyebrow, three lines of description, course count, learner count, and a 'Pathway certificate' chip on the right. ~20% more vertical space per card so the description actually breathes.",
     kind: "improvement",

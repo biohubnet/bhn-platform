@@ -1,11 +1,12 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { CourseCard } from "@/components/lms/CourseCard";
 import { NewCourseButton } from "@/components/lms/NewCourseButton";
 import { CourseSearchBar } from "@/components/lms/CourseSearchBar";
+import { CourseFilters } from "@/components/lms/CourseFilters";
 import { PageHero } from "@/components/ui/PageHero";
+import { parseFilters } from "@/lib/courses/filters";
 
 interface CourseListItem {
   id: string;
@@ -26,18 +27,29 @@ interface CourseListItem {
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    topic?: string;
+    delivery?: string;
+    provider?: string;
+    special?: string;
+  }>;
 }) {
   const session = await getSession();
   const sp = await searchParams;
   const role = (session!.user as { role?: string }).role ?? "learner";
   const isStaff = checkIsStaff(role);
 
+  const filters = parseFilters(sp);
+
   const courses = await prisma.course.findMany({
     where: {
       ...(isStaff ? {} : { status: "published" }),
-      ...(sp.category ? { category: sp.category } : {}),
-      ...(sp.q ? { title: { contains: sp.q } } : {}),
+      ...(filters.topic.length    && { topic:    { in: filters.topic } }),
+      ...(filters.delivery.length && { delivery: { in: filters.delivery } }),
+      ...(filters.provider.length && { provider: { in: filters.provider } }),
+      ...(filters.special         && { isSpecial: true }),
+      ...(sp.q ? { title: { contains: sp.q, mode: "insensitive" as const } } : {}),
     },
     include: {
       instructor: { select: { name: true } },
@@ -47,65 +59,38 @@ export default async function CoursesPage({
     orderBy: { createdAt: "desc" },
   }) as CourseListItem[];
 
-  const categories = await prisma.course.findMany({
-    where: { ...(isStaff ? {} : { status: "published" }), category: { not: null } },
-    select: { category: true },
-    distinct: ["category"],
-  });
-
   return (
     <div>
       <PageHero
         eyebrow={<><BookOpen size={11} /> Course catalog</>}
         title={`${courses.length} courses to explore`}
-        description="Self-paced modules, SCORM-backed simulations, and instructor-led series — all in one library. Filter by category or use the search."
+        description="Self-paced modules, SCORM-backed simulations, and instructor-led series — all in one library. Filter by topic, delivery, provider, or run a search."
         tone="brand"
         actions={isStaff ? <NewCourseButton /> : null}
       />
 
-      <div className="space-y-6">
-      {/* AI-powered semantic search */}
-      <CourseSearchBar />
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+        {/* Filter rail */}
+        <CourseFilters />
 
-      {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <Link
-          href="/courses"
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-            !sp.category ? "bg-brand-600 text-white border-brand-600" : "bg-card text-muted border-line hover:border-line-strong"
-          }`}
-        >
-          All
-        </Link>
-        {categories.map((c: { category: string | null }) => (
-          <Link
-            key={c.category}
-            href={`/courses?category=${c.category}`}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-              sp.category === c.category
-                ? "bg-brand-600 text-white border-brand-600"
-                : "bg-card text-muted border-line hover:border-line-strong"
-            }`}
-          >
-            {c.category}
-          </Link>
-        ))}
-      </div>
+        <div className="space-y-5">
+          <CourseSearchBar />
 
-      {courses.length === 0 ? (
-        <div className="text-center py-16 bg-card rounded-xl border border-line">
-          <p className="text-muted">No courses found</p>
-          {isStaff && (
-            <p className="text-sm text-subtle mt-1">Create your first course to get started</p>
+          {courses.length === 0 ? (
+            <div className="text-center py-16 bg-card rounded-xl border border-line">
+              <p className="text-muted">No courses match these filters</p>
+              {isStaff && (
+                <p className="text-sm text-subtle mt-1">Try clearing some filters, or create a new course.</p>
+              )}
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              {courses.map((course: CourseListItem) => (
+                <CourseCard key={course.id} course={course} role={role} />
+              ))}
+            </div>
           )}
         </div>
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {courses.map((course: CourseListItem) => (
-            <CourseCard key={course.id} course={course} role={role} />
-          ))}
-        </div>
-      )}
       </div>
     </div>
   );

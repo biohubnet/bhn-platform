@@ -31,6 +31,9 @@ import {
   UserCog,
   HeartHandshake,
   Briefcase,
+  Users2,
+  FilePlus,
+  Building2,
 } from "lucide-react";
 
 interface NavItem {
@@ -69,6 +72,13 @@ const miscItems: (NavItem & { labelKey: string })[] = [
   { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Sparkles },
 ];
 
+// EMPLOYER PORTAL — visible only when role === "employer".
+const employerItems: (NavItem & { labelKey: string })[] = [
+  { label: "Overview",          labelKey: "nav.employerHome",       href: "/employer",            icon: Building2, exact: true },
+  { label: "My Postings",       labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: FilePlus },
+  { label: "Applicants",        labelKey: "nav.employerApplicants", href: "/employer/applicants", icon: Users2 },
+];
+
 const adminItems: NavItem[] = [
   { label: "Overview", href: "/admin", icon: LayoutDashboard, exact: true, minRole: "admin" },
   { label: "Users", href: "/admin/users", icon: Users, minRole: "admin" },
@@ -101,14 +111,30 @@ interface SidebarProps {
   actingAs?: string | null;
   user: { name?: string | null; email?: string | null; image?: string | null };
   credits?: number;
+  /** Employer-only flag — when false (default), employers see only their portal. */
+  allowPlatformContent?: boolean;
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+/**
+ * Bordered nav group with the title sitting at the top opening — the
+ * fieldset/legend pattern. The title's background-color matches the
+ * solid card so it visually "cuts" the border on whatever theme is
+ * active.
+ */
+function SectionGroup({
+  title, children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="pt-4 pb-1 px-3">
-      <p className="text-[10px] font-bold text-subtle uppercase tracking-[0.22em]">
-        {children}
-      </p>
+    <div className="relative mt-5 mb-2 rounded-xl border border-line p-1.5 pt-2.5 space-y-0.5">
+      <span
+        className="absolute -top-[9px] left-3 px-2 py-0 text-[10px] font-bold uppercase tracking-[0.22em] text-subtle bg-card-solid rounded"
+      >
+        {title}
+      </span>
+      {children}
     </div>
   );
 }
@@ -135,12 +161,18 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProps) {
+export function Sidebar({
+  role, realRole, actingAs, user, credits, allowPlatformContent = false,
+}: SidebarProps) {
   const pathname = usePathname();
   const t = useT();
   const userRank = ROLE_RANK[role] ?? 0;
   const isAdmin = userRank >= ROLE_RANK["admin"];
   const isStaff = userRank >= ROLE_RANK["instructor"];
+  const isEmployer = role === "employer";
+  // Employer accounts only see ENGAGE / EXPERIENCE / Buddies if an
+  // admin has flipped allowPlatformContent on for them.
+  const showLearnerNav = !isEmployer || allowPlatformContent;
 
   const visibleAdmin = adminItems.filter((item) => {
     const required = ROLE_RANK[item.minRole ?? "admin"] ?? ROLE_RANK.admin;
@@ -163,37 +195,50 @@ export function Sidebar({ role, realRole, actingAs, user, credits }: SidebarProp
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} />
 
-        <SectionLabel>ENGAGE</SectionLabel>
-        {engageItems.map((item) => {
-          const labeled = { ...item, label: t(item.labelKey) };
-          return <NavLink key={item.href} item={labeled} pathname={pathname} />;
-        })}
+        {isEmployer && (
+          <SectionGroup title="EMPLOYER PORTAL">
+            {employerItems.map((item) => (
+              <NavLink key={item.href} item={item} pathname={pathname} />
+            ))}
+          </SectionGroup>
+        )}
 
-        {experienceItems.length > 0 && (
-          <>
-            <SectionLabel>EXPERIENCE</SectionLabel>
+        {showLearnerNav && (
+          <SectionGroup title="ENGAGE">
+            {engageItems.map((item) => {
+              const labeled = { ...item, label: t(item.labelKey) };
+              return <NavLink key={item.href} item={labeled} pathname={pathname} />;
+            })}
+          </SectionGroup>
+        )}
+
+        {showLearnerNav && experienceItems.length > 0 && (
+          <SectionGroup title="EXPERIENCE">
             {experienceItems.map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
+              return <NavLink key={item.href} item={labeled} pathname={pathname} />;
+            })}
+          </SectionGroup>
+        )}
+
+        {showLearnerNav && (
+          <>
+            <div className="pt-2" />
+            {miscItems.map((item) => {
+              // Trainees see the changelog as "What's new"; staff as "Change log".
+              const key = item.href === "/changelog" && !isStaff ? "nav.changelogTrainee" : item.labelKey;
+              const labeled = { ...item, label: t(key) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} />;
             })}
           </>
         )}
 
-        <div className="pt-2" />
-        {miscItems.map((item) => {
-          // Trainees see the changelog as "What's new"; staff as "Change log".
-          const key = item.href === "/changelog" && !isStaff ? "nav.changelogTrainee" : item.labelKey;
-          const labeled = { ...item, label: t(key) };
-          return <NavLink key={item.href} item={labeled} pathname={pathname} />;
-        })}
-
         {isAdmin && (
-          <>
-            <SectionLabel>{t("nav.administration").toUpperCase()}</SectionLabel>
+          <SectionGroup title={t("nav.administration").toUpperCase()}>
             {visibleAdmin.map((item) => (
               <NavLink key={item.href} item={item} pathname={pathname} />
             ))}
-          </>
+          </SectionGroup>
         )}
       </nav>
 

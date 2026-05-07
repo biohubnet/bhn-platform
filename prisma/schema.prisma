@@ -16,9 +16,15 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          String    @default("trainee") // trainee | evaluating | instructor | admin | superadmin
+  role          String    @default("trainee") // trainee | evaluating | employer | instructor | admin | superadmin
   isActive      Boolean   @default(true)
   credits       Float     @default(200)
+  /// Employer-only: whether they can browse the rest of the platform
+  /// (Engage / Experience nav). Off by default — employers see their
+  /// portal; admins flip on if a partner needs broader access.
+  allowPlatformContent Boolean @default(false)
+  /// Employer-only: company they post on behalf of. Free text.
+  employerCompany String?
   lastLoginAt   DateTime?
   newsletterSubscribed   Boolean   @default(false)
   newsletterSubscribedAt DateTime?
@@ -169,6 +175,12 @@ model Course {
   maxAttempts  Int      @default(0)
   duration     Int?
   creditCost   Float    @default(0)
+  // Catalog filter facets — see src/lib/courses/filters.ts for the
+  // canonical option lists. Free-text so admins can extend later.
+  topic        String?  // e.g. "Regulatory Affairs"
+  delivery     String?  // "Asynchronous" | "Online" | "In-Person" | "Blended"
+  provider     String?  // e.g. "CASTL", "BioTalent Canada"
+  isSpecial    Boolean  @default(false)  // Special Programs / Workshops flag
   instructorId String?
   instructor   User?    @relation("Instructor", fields: [instructorId], references: [id])
   createdAt    DateTime @default(now())

@@ -169,12 +169,18 @@ export const ROLE_RANK: Record<string, number> = {
   user: 0,        // legacy
   trainee: 0,
   evaluating: 0,
+  employer: 0,    // outside the learner-staff progression — gated separately
   instructor: 1,
   admin: 2,
   superadmin: 3,
 };
 
-export type Role = "trainee" | "evaluating" | "instructor" | "admin" | "superadmin";
+export type Role = "trainee" | "evaluating" | "employer" | "instructor" | "admin" | "superadmin";
+
+/** Is this account an employer (HR partner who posts jobs / reviews applicants)? */
+export function isEmployer(role: string) {
+  return role === "employer";
+}
 
 export async function requireRole(minRole: "instructor" | "admin" | "superadmin") {
   const session = await requireSession();

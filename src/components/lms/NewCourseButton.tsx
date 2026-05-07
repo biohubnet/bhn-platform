@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
+import { COURSE_TOPICS, COURSE_DELIVERY, COURSE_PROVIDERS } from "@/lib/courses/filters";
 
 export function NewCourseButton() {
   const router = useRouter();
@@ -12,6 +13,10 @@ export function NewCourseButton() {
     category: "",
     courseType: "scorm",
     passingScore: 80,
+    topic: "",
+    delivery: "",
+    provider: "",
+    isSpecial: false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -107,6 +112,59 @@ export function NewCourseButton() {
                   value={form.passingScore}
                   onChange={(e) => setForm({ ...form, passingScore: parseInt(e.target.value) })}
                 />
+              </div>
+
+              {/* Catalog filter facets — used by the Courses page filter rail */}
+              <div className="border-t border-line pt-3 mt-1">
+                <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-subtle mb-2">
+                  Catalog filters
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-muted mb-1">Topic</label>
+                    <select
+                      className="w-full border border-line bg-card-solid rounded-lg px-3 py-2 text-sm"
+                      value={form.topic}
+                      onChange={(e) => setForm({ ...form, topic: e.target.value })}
+                    >
+                      <option value="">—</option>
+                      {COURSE_TOPICS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-muted mb-1">Delivery</label>
+                      <select
+                        className="w-full border border-line bg-card-solid rounded-lg px-3 py-2 text-sm"
+                        value={form.delivery}
+                        onChange={(e) => setForm({ ...form, delivery: e.target.value })}
+                      >
+                        <option value="">—</option>
+                        {COURSE_DELIVERY.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-muted mb-1">Provider</label>
+                      <select
+                        className="w-full border border-line bg-card-solid rounded-lg px-3 py-2 text-sm"
+                        value={form.provider}
+                        onChange={(e) => setForm({ ...form, provider: e.target.value })}
+                      >
+                        <option value="">—</option>
+                        {COURSE_PROVIDERS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs text-muted cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.isSpecial}
+                      onChange={(e) => setForm({ ...form, isSpecial: e.target.checked })}
+                      className="accent-brand-600"
+                    />
+                    Special program / workshop (instructor-led, limited seats)
+                  </label>
+                </div>
               </div>
             </div>
 

@@ -47,6 +47,11 @@ export async function POST(req: NextRequest) {
       passingScore: data.passingScore ?? 80,
       maxAttempts: data.maxAttempts ?? 0,
       duration: data.duration,
+      // Catalog filter facets — null if the form leaves them blank.
+      topic:     data.topic ?? null,
+      delivery:  data.delivery ?? null,
+      provider:  data.provider ?? null,
+      isSpecial: !!data.isSpecial,
       instructorId: userId,
     },
   });

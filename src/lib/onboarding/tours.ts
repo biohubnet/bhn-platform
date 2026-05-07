@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07g";
+export const TOUR_VERSION = "2026.05.07h";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -223,6 +223,15 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05.07a",
     roles: ["instructor", "admin", "superadmin"],
+    cta: { label: "Open the catalog", href: "/courses" },
+  },
+  {
+    id: "catalog-filters",
+    title: "Filter the catalog",
+    body: "The course catalog now has a filter rail on the left — pick topics, delivery types, providers, or filter to special instructor-led programs. Selections live in the URL so you can share or bookmark a filtered view.",
+    path: "/courses",
+    placement: "center",
+    since: "2026.05.07h",
     cta: { label: "Open the catalog", href: "/courses" },
   },
   {
