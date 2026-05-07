@@ -131,14 +131,18 @@ export function EventFormView({
       : `f_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
   }
 
-  function addField(type: FormField["type"]) {
+  // Subset of FormField["type"] the inline add-field UI exposes.
+  // multicheckbox / file / date / select / tel only seedable through
+  // the registry today, not via the click-to-add UI.
+  function addField(type: AddableType) {
     const id = newId();
     let f: FormField;
     if (type === "section") {
       f = { id, type, label: "Section heading" };
-    } else if (type === "radio" || type === "select" || type === "checkbox") {
+    } else if (type === "radio") {
       f = { id, type, label: "New choice", required: false, options: ["Option 1"] };
     } else {
+      // Narrowed to InputField subset (text / textarea / email / url).
       f = { id, type, label: "New field", required: false };
     }
     setDraft((cur) => [...cur, f]);
@@ -771,7 +775,12 @@ function FieldOrderRemove({
   );
 }
 
-const ADD_TYPES: { type: FormField["type"]; label: string; Icon: typeof Type }[] = [
+// Subset of FormField["type"] that the inline add-field UI exposes.
+// multicheckbox / file / date / select / tel are only seedable via the
+// registry today (more involved schemas — accept, maxBytes, options).
+type AddableType = "text" | "textarea" | "email" | "url" | "radio" | "section";
+
+const ADD_TYPES: { type: AddableType; label: string; Icon: typeof Type }[] = [
   { type: "text",     label: "Text",       Icon: Type },
   { type: "textarea", label: "Long text",  Icon: AlignLeft },
   { type: "email",    label: "Email",      Icon: Mail },
@@ -780,7 +789,7 @@ const ADD_TYPES: { type: FormField["type"]; label: string; Icon: typeof Type }[]
   { type: "section",  label: "Section",    Icon: Heading },
 ];
 
-function AddFieldPanel({ onAdd }: { onAdd: (t: FormField["type"]) => void }) {
+function AddFieldPanel({ onAdd }: { onAdd: (t: AddableType) => void }) {
   return (
     <div className="rounded-xl border border-dashed border-line p-3">
       <p className="text-[10px] uppercase tracking-[0.18em] text-subtle mb-2">
