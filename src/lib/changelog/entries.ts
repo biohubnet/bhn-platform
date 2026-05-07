@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Per-role dashboards — instructors and admins now land on a tailored view",
+    body: "/dashboard now branches four ways: trainees keep the existing learner view; instructors see their own courses, recent enrolments, and assessment attempts; admins / superadmins land on a platform-overview with action queues (credit apps, role-change requests, pending pathway enrolments) plus live counters and the latest audit-log entries; employers continue to get the HR portal view shipped earlier. Superadmins also get an extra system-health row (AI calls in the last 7 days) and a quick-links panel for settings, LTI, and course filters.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Employer dashboard tailored to HR — postings, applicants, profile",
     body: "When an Employer HR signs in, /dashboard now lands on a portal-shaped overview instead of the learner view. Hero greets them by name + company with stats for active postings, applicants, new this week, and a profile-completeness percentage. A nudge card prompts them to finish the profile if it's sparse, four quick-action tiles cover post / browse / edit / apply, and the lower half lists the latest five applicants and the latest five of their own postings inline. The learner dashboard is unchanged for trainees / instructors / admins.",
     kind: "improvement",

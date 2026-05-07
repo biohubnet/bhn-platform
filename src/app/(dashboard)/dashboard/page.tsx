@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
+import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
+import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -52,8 +54,8 @@ export default async function DashboardPage() {
   const role = (session!.user as { role?: string }).role ?? "trainee";
   const firstName = session!.user?.name?.split(" ")[0] ?? "Learner";
 
-  // Employer HR accounts get a tailored dashboard — postings, applicants,
-  // profile-completeness — instead of the learner courses/pathway view.
+  // Per-role dashboards. Each fetches its own data; we do a tiny User
+  // lookup here just to grab name + role-specific fields.
   if (role === "employer") {
     const employer = await prisma.user.findUnique({
       where: { id: userId },
@@ -65,6 +67,12 @@ export default async function DashboardPage() {
       },
     });
     if (employer) return <EmployerDashboard user={employer} />;
+  }
+  if (role === "admin" || role === "superadmin") {
+    return <AdminDashboard user={{ id: userId, name: session!.user?.name ?? null }} role={role} />;
+  }
+  if (role === "instructor") {
+    return <InstructorDashboard user={{ id: userId, name: session!.user?.name ?? null }} />;
   }
 
   const [enrollments, certificates, recentActivity, user, myPathways, featuredPathways, suggestedCourses] =
