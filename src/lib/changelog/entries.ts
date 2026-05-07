@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Sidebar group titles now describe the programmes underneath",
+    body: "Hover (or focus) the ENGAGE / EXPERIENCE labels in the sidebar — a small popover slides out to the right with BioHubNet's official one-line description and the named programmes inside each track. ENGAGE: industry-led training, workshops, and mentorship — Medical Affairs Learning Pathway (MSL Accelerator with Agilis Health) and Entrepreneurship Learning Pathway. EXPERIENCE: bridging theory and practice — Knowledge Exchange Round 4 (1/4/6-month placements), Talent Application, and Internship Opportunities.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Per-role dashboards — instructors and admins now land on a tailored view",
     body: "/dashboard now branches four ways: trainees keep the existing learner view; instructors see their own courses, recent enrolments, and assessment attempts; admins / superadmins land on a platform-overview with action queues (credit apps, role-change requests, pending pathway enrolments) plus live counters and the latest audit-log entries; employers continue to get the HR portal view shipped earlier. Superadmins also get an extra system-health row (AI calls in the last 7 days) and a quick-links panel for settings, LTI, and course filters.",
     kind: "improvement",

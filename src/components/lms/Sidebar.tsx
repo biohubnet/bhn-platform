@@ -125,19 +125,62 @@ interface SidebarProps {
  * solid card so it visually "cuts" the border on whatever theme is
  * active.
  */
+interface ProgramHint {
+  title: string;
+  body?: string;
+}
+
 function SectionGroup({
-  title, children,
+  title, description, programs, children,
 }: {
   title: string;
+  description?: string;
+  programs?: ProgramHint[];
   children: React.ReactNode;
 }) {
+  const hasTooltip = !!description || (programs && programs.length > 0);
   return (
     <div className="relative mt-5 mb-2 rounded-xl border border-line p-1.5 pt-2.5 space-y-0.5">
-      <span
-        className="absolute -top-[9px] left-3 px-2 py-0 text-[10px] font-bold uppercase tracking-[0.22em] text-subtle bg-card-solid rounded"
-      >
-        {title}
-      </span>
+      {/* Title chip — wrapped in a tiny hover-group that opens a tooltip
+          to the right when there's content to show. The transparent pl-2
+          padding bridges the gap so the cursor can travel into the
+          tooltip without losing hover. */}
+      <div className="group/section absolute -top-[9px] left-3 z-20">
+        <span
+          tabIndex={hasTooltip ? 0 : -1}
+          className={cn(
+            "px-2 py-0 text-[10px] font-bold uppercase tracking-[0.22em] text-subtle bg-card-solid rounded inline-block",
+            hasTooltip && "cursor-help focus:outline-none focus:text-fg group-hover/section:text-fg transition-colors"
+          )}
+          aria-describedby={hasTooltip ? `${title}-tooltip` : undefined}
+        >
+          {title}
+        </span>
+        {hasTooltip && (
+          <div
+            id={`${title}-tooltip`}
+            role="tooltip"
+            className="absolute left-full top-0 pl-3 w-72 invisible opacity-0 group-hover/section:visible group-hover/section:opacity-100 focus-within:visible focus-within:opacity-100 transition-opacity pointer-events-none group-hover/section:pointer-events-auto"
+          >
+            <div className="popover p-3 normal-case tracking-normal text-left">
+              <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">{title}</p>
+              {description && (
+                <p className="text-sm text-fg leading-snug mt-1.5">{description}</p>
+              )}
+              {programs && programs.length > 0 && (
+                <ul className="mt-3 space-y-2 border-t border-line pt-2.5">
+                  {programs.map((p) => (
+                    <li key={p.title}>
+                      <p className="text-xs font-semibold text-fg leading-tight">{p.title}</p>
+                      {p.body && <p className="text-xs text-muted leading-snug mt-0.5">{p.body}</p>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -208,7 +251,20 @@ export function Sidebar({
         )}
 
         {showLearnerNav && (
-          <SectionGroup title="ENGAGE">
+          <SectionGroup
+            title="ENGAGE"
+            description="Industry-led training, workshops, and mentorship."
+            programs={[
+              {
+                title: "Medical Affairs Learning Pathway",
+                body: "MSL Accelerator with Agilis Health — 2-day intensive in Toronto. Cohort runs in spring; next group in Fall.",
+              },
+              {
+                title: "Entrepreneurship Learning Pathway",
+                body: "Programme for life-sciences founders and aspiring founders.",
+              },
+            ]}
+          >
             {engageItems.map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} />;
@@ -217,7 +273,24 @@ export function Sidebar({
         )}
 
         {showLearnerNav && experienceItems.length > 0 && (
-          <SectionGroup title="EXPERIENCE">
+          <SectionGroup
+            title="EXPERIENCE"
+            description="Bridging theory and practice through experiential learning."
+            programs={[
+              {
+                title: "Knowledge Exchange — Round 4",
+                body: "Industry placements running 1, 4, or 6 months. Application deadline 29 May 2026.",
+              },
+              {
+                title: "Talent Application",
+                body: "Submit your bio, supervisor letter, transcript, resume, and STAR video — we share with vetted partners.",
+              },
+              {
+                title: "Internship Opportunities",
+                body: "Live job board of internship and co-op postings from BHN industry partners.",
+              },
+            ]}
+          >
             {experienceItems.map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} />;
