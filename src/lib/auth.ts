@@ -44,6 +44,52 @@ export const authOptions: NextAuthOptions = {
         } as unknown as { id: string; email: string; name: string | null; role: string };
       },
     }),
+    // Passwordless sign-in. The /api/auth/send-code route emails a
+    // 6-digit code; this provider verifies it. Single-use — the row is
+    // deleted on success. attempts caps brute force at 5.
+    CredentialsProvider({
+      id: "email-code",
+      name: "email-code",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        code: { label: "Code", type: "text" },
+      },
+      async authorize(credentials) {
+        const email = credentials?.email?.trim().toLowerCase();
+        const code = credentials?.code?.trim();
+        if (!email || !code || !/^\d{6}$/.test(code)) return null;
+        const row = await prisma.loginCode.findFirst({
+          where: { email, expiresAt: { gt: new Date() } },
+          orderBy: { createdAt: "desc" },
+        });
+        if (!row) return null;
+        if (row.attempts >= 5) {
+          await prisma.loginCode.delete({ where: { id: row.id } }).catch(() => {});
+          return null;
+        }
+        const ok = await bcrypt.compare(code, row.codeHash);
+        if (!ok) {
+          await prisma.loginCode.update({
+            where: { id: row.id },
+            data: { attempts: { increment: 1 } },
+          });
+          return null;
+        }
+        // Success — burn the code so it can't be reused.
+        await prisma.loginCode.delete({ where: { id: row.id } }).catch(() => {});
+        // Also clear any other live codes for this email.
+        await prisma.loginCode.deleteMany({ where: { email } }).catch(() => {});
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) return null;
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          remember: true,
+        } as unknown as { id: string; email: string; name: string | null; role: string };
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user, trigger }) {

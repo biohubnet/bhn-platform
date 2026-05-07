@@ -3,21 +3,26 @@ import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Check } from "lucide-react";
+import { ArrowRight, Sparkles, Check, Mail, KeyRound, Loader2 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ThemeCycler } from "@/components/ui/ThemePicker";
+import { cn } from "@/lib/utils";
 
 const REMEMBER_KEY = "bhn-remember-email";
+type Method = "password" | "code";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [method, setMethod] = useState<Method>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Pre-fill from localStorage if user previously chose Remember Me
   useEffect(() => {
     try {
       const saved = localStorage.getItem(REMEMBER_KEY);
@@ -28,19 +33,20 @@ export default function LoginPage() {
     } catch {}
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function clearMessages() {
+    setError("");
+    setInfo("");
+  }
+
+  async function submitPassword(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError("");
-
-    // Persist or clear the remembered email
+    clearMessages();
     try {
       if (remember) localStorage.setItem(REMEMBER_KEY, email);
       else localStorage.removeItem(REMEMBER_KEY);
-      // Mark this tab so we know whether to keep the session beyond the tab.
       sessionStorage.setItem("bhn-session-only", remember ? "0" : "1");
     } catch {}
-
     const res = await signIn("credentials", {
       email,
       password,
@@ -50,6 +56,58 @@ export default function LoginPage() {
     setLoading(false);
     if (res?.error) setError("Invalid email or password");
     else router.push("/dashboard");
+  }
+
+  async function sendCode(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    clearMessages();
+    try {
+      const res = await fetch("/api/auth/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { error?: string; ok?: boolean };
+      if (!res.ok) {
+        setError(j.error ?? "Couldn't send the code.");
+        return;
+      }
+      setCodeSent(true);
+      setInfo(`Code sent to ${email}. It expires in 10 minutes.`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    clearMessages();
+    try {
+      try {
+        if (remember) localStorage.setItem(REMEMBER_KEY, email);
+      } catch {}
+      const res = await signIn("email-code", {
+        email,
+        code,
+        redirect: false,
+      });
+      if (res?.error) {
+        setError("Invalid or expired code. Try again or request a new one.");
+        return;
+      }
+      router.push("/dashboard");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function switchMethod(next: Method) {
+    setMethod(next);
+    setCodeSent(false);
+    setCode("");
+    clearMessages();
   }
 
   return (
@@ -68,70 +126,174 @@ export default function LoginPage() {
             <p className="text-muted text-sm mt-1">Sign in to continue your training.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-lg px-4 py-3">
-                {error}
-              </div>
-            )}
-            <div>
-              <label className="block text-xs font-medium text-muted mb-1.5">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
-                placeholder="you@example.com"
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-muted">Password</label>
-                <Link href="/login" className="text-xs text-brand-600 hover:underline">
-                  Forgot?
-                </Link>
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
-                placeholder="••••••••"
-              />
-            </div>
-
-            {/* Remember me */}
-            <label className="flex items-center gap-2.5 cursor-pointer select-none group">
-              <span className="relative">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <span
-                  className="w-4 h-4 rounded border border-line bg-card transition-all peer-checked:bg-brand-600 peer-checked:border-brand-600 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/30 flex items-center justify-center"
-                >
-                  {remember && <Check size={11} className="text-white" strokeWidth={3} />}
-                </span>
-              </span>
-              <span className="text-xs text-muted group-hover:text-fg transition-colors">
-                Remember me on this device
-              </span>
-            </label>
-
+          {/* Method toggle */}
+          <div role="tablist" className="flex bg-elevated rounded-lg p-1 mb-5 text-sm">
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 disabled:opacity-60 text-white font-medium py-2.5 px-4 rounded-lg transition-all shadow-md shadow-brand-600/25 text-sm"
+              type="button"
+              role="tab"
+              aria-selected={method === "password"}
+              onClick={() => switchMethod("password")}
+              className={cn(
+                "flex-1 py-2 rounded-md font-medium transition-all flex items-center justify-center gap-1.5",
+                method === "password"
+                  ? "bg-card-solid text-fg shadow-sm"
+                  : "text-muted hover:text-fg"
+              )}
             >
-              {loading ? "Signing in…" : "Sign in"}
+              <KeyRound size={14} /> Password
             </button>
-          </form>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={method === "code"}
+              onClick={() => switchMethod("code")}
+              className={cn(
+                "flex-1 py-2 rounded-md font-medium transition-all flex items-center justify-center gap-1.5",
+                method === "code"
+                  ? "bg-card-solid text-fg shadow-sm"
+                  : "text-muted hover:text-fg"
+              )}
+            >
+              <Mail size={14} /> Email code
+            </button>
+          </div>
+
+          {error && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-lg px-4 py-3 mb-4">
+              {error}
+            </div>
+          )}
+          {info && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-4 py-3 mb-4">
+              {info}
+            </div>
+          )}
+
+          {method === "password" ? (
+            <form onSubmit={submitPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1.5">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-medium text-muted">Password</label>
+                  <button
+                    type="button"
+                    onClick={() => switchMethod("code")}
+                    className="text-xs text-brand-600 hover:underline"
+                  >
+                    Forgot? Use email code
+                  </button>
+                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+              <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+                <span className="relative">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <span className="w-4 h-4 rounded border border-line bg-card transition-all peer-checked:bg-brand-600 peer-checked:border-brand-600 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/30 flex items-center justify-center">
+                    {remember && <Check size={11} className="text-white" strokeWidth={3} />}
+                  </span>
+                </span>
+                <span className="text-xs text-muted group-hover:text-fg transition-colors">
+                  Remember me on this device
+                </span>
+              </label>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 disabled:opacity-60 text-white font-medium py-2.5 px-4 rounded-lg transition-all shadow-md shadow-brand-600/25 text-sm"
+              >
+                {loading ? "Signing in…" : "Sign in"}
+              </button>
+            </form>
+          ) : !codeSent ? (
+            <form onSubmit={sendCode} className="space-y-4">
+              <p className="text-xs text-muted -mt-1">
+                We&apos;ll email a 6-digit code. It expires in 10 minutes.
+              </p>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1.5">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading || !email}
+                className="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 disabled:opacity-60 text-white font-medium py-2.5 px-4 rounded-lg transition-all shadow-md shadow-brand-600/25 text-sm flex items-center justify-center gap-2"
+              >
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                {loading ? "Sending…" : "Send code"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={verifyCode} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1.5">
+                  6-digit code
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  required
+                  autoFocus
+                  autoComplete="one-time-code"
+                  className="w-full bg-card border border-line rounded-lg px-3 py-3 text-center font-mono tracking-[0.5em] text-xl text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                  placeholder="······"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading || code.length !== 6}
+                className="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 disabled:opacity-60 text-white font-medium py-2.5 px-4 rounded-lg transition-all shadow-md shadow-brand-600/25 text-sm"
+              >
+                {loading ? "Signing in…" : "Verify & sign in"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCodeSent(false);
+                  setCode("");
+                  clearMessages();
+                }}
+                className="w-full text-xs text-muted hover:text-fg transition-colors"
+              >
+                Use a different email or resend
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Big register CTA */}

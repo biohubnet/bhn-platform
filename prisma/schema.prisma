@@ -88,6 +88,20 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+/// Short-lived 6-digit codes emailed to users for passwordless login.
+/// codeHash is bcrypt; we never store the plaintext. Single-use — the
+/// row is deleted on successful verification. attempts caps brute force.
+model LoginCode {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([email, expiresAt])
+}
+
 model Course {
   id           String   @id @default(cuid())
   title        String
