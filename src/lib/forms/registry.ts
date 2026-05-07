@@ -17,7 +17,7 @@ export async function getOrSeedForm(slug: string) {
       slug: seed.slug,
       title: seed.title,
       description: seed.description ?? null,
-      fields: seed.fields,
+      fields: seed.fields as unknown as Prisma.InputJsonValue,
     },
   });
 }
