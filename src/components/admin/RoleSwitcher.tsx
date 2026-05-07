@@ -65,7 +65,7 @@ export function RoleSwitcher({ actingAs }: Props) {
         className={cn(
           "flex items-center gap-2.5 px-3 py-2 w-full rounded-lg text-sm transition-colors",
           actingAs
-            ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
+            ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
             : "hover:bg-elevated text-muted hover:text-fg"
         )}
         aria-label="Switch viewing role"
@@ -82,6 +82,18 @@ export function RoleSwitcher({ actingAs }: Props) {
 
       {open && (
         <div className="absolute bottom-full left-0 right-0 mb-2 bg-card-solid border border-line rounded-2xl shadow-2xl shadow-black/15 p-2 z-30 min-w-[240px] animate-fade-in">
+          {actingAs && (
+            <div className="mb-2 pb-2 border-b border-line px-1">
+              <button
+                type="button"
+                onClick={stop}
+                disabled={busy}
+                className="w-full text-xs font-medium px-2.5 py-2 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 disabled:opacity-40 transition-colors"
+              >
+                Stop viewing-as · Restore superadmin
+              </button>
+            </div>
+          )}
           <p className="px-2 py-1.5 text-[10px] font-semibold text-subtle uppercase tracking-[0.18em]">
             Preview as another role
           </p>
@@ -96,13 +108,13 @@ export function RoleSwitcher({ actingAs }: Props) {
                   disabled={busy}
                   className={cn(
                     "w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all",
-                    active ? "bg-amber-50 ring-1 ring-amber-200" : "hover:bg-elevated"
+                    active ? "bg-brand-50 ring-1 ring-brand-200" : "hover:bg-elevated"
                   )}
                 >
                   <span className="flex-1 min-w-0">
                     <span className={cn(
                       "block text-[13px] font-medium leading-tight",
-                      active ? "text-amber-700" : "text-fg"
+                      active ? "text-brand-700" : "text-fg"
                     )}>
                       {t.label}
                     </span>
@@ -110,22 +122,12 @@ export function RoleSwitcher({ actingAs }: Props) {
                       {t.description}
                     </span>
                   </span>
-                  {active && <Check size={12} className="text-amber-600" />}
+                  {active && <Check size={12} className="text-brand-600" />}
                 </button>
               );
             })}
           </div>
 
-          <div className="mt-2 pt-2 border-t border-line px-1">
-            <button
-              type="button"
-              onClick={stop}
-              disabled={busy || !actingAs}
-              className="w-full text-xs px-2 py-1.5 rounded-lg text-muted hover:text-fg hover:bg-elevated disabled:opacity-40 disabled:hover:bg-transparent"
-            >
-              Stop viewing-as · Restore superadmin
-            </button>
-          </div>
           <p className="px-2 pt-2 text-[10px] text-subtle leading-snug">
             Sessions auto-revert after 1 hour. Every switch is logged.
           </p>
