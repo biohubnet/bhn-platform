@@ -2,6 +2,7 @@ import { getSession, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ChangeLogClient } from "@/components/lms/ChangeLogClient";
+import { ensureChangelogEntries } from "@/lib/changelog/registry";
 
 export default async function ChangeLogPage() {
   const session = await getSession();
@@ -9,6 +10,10 @@ export default async function ChangeLogPage() {
   const lookupRole = role === "user" ? "trainee" : role;
   const trainee = role === "trainee" || role === "user" || role === "evaluating";
   const canManage = isAdmin(role);
+
+  // Auto-publish any changelog entries shipped in code but not yet in
+  // the DB. Idempotent and cheap when there's nothing to do.
+  await ensureChangelogEntries();
 
   const entries = await prisma.changeLog.findMany({
     where: { visibleTo: { has: lookupRole } },
