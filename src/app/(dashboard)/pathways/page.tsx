@@ -1,7 +1,7 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Layers, Award, BookOpen, Users } from "lucide-react";
+import { Layers, Award, BookOpen, Users, ClipboardList, Check } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
@@ -34,6 +34,29 @@ export default async function PathwaysPage() {
   });
   const enrollmentMap = new Map(myEnrollments.map((e) => [e.pathwayId, e.status]));
 
+  // Registration forms — listed alongside pathways. Inactive forms are
+  // staff-only so users don't try to submit something already closed.
+  const formRows = await prisma.eventForm.findMany({
+    where: isStaff ? {} : { active: true },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      active: true,
+      _count: { select: { submissions: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  const formIds = formRows.map((f) => f.id);
+  const mySubmissions = formIds.length
+    ? await prisma.eventFormSubmission.findMany({
+        where: { userId, formId: { in: formIds } },
+        select: { formId: true },
+      })
+    : [];
+  const submittedFormIds = new Set(mySubmissions.map((s) => s.formId));
+
   // For staff: list of all published courses to attach to pathways
   const courses = isStaff
     ? await prisma.course.findMany({
@@ -50,7 +73,7 @@ export default async function PathwaysPage() {
         actions={isStaff ? <PathwayManageButton mode="create" courses={courses} /> : null}
       />
 
-      {pathways.length === 0 ? (
+      {pathways.length === 0 && formRows.length === 0 ? (
         <div className="bg-card rounded-2xl border border-line p-16 text-center">
           <div className="w-12 h-12 mx-auto rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
             <Layers size={20} />
@@ -62,6 +85,46 @@ export default async function PathwaysPage() {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {formRows.map((f) => {
+            const submitted = submittedFormIds.has(f.id);
+            return (
+              <Link
+                key={`form-${f.id}`}
+                href={`/forms/${f.slug}`}
+                className="group bg-card rounded-2xl border border-line hover:border-teal-300 hover:shadow-md transition-all overflow-hidden"
+              >
+                <div className="h-28 bg-gradient-to-br from-teal-500 via-teal-600 to-teal-800 relative overflow-hidden">
+                  <ClipboardList className="absolute top-4 right-4 text-white/40 z-10 drop-shadow" size={48} />
+                  <span className="absolute top-3 left-3 text-xs bg-white/15 backdrop-blur-sm text-white border border-white/20 px-2 py-0.5 rounded">
+                    Registration
+                  </span>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="font-semibold text-fg leading-tight group-hover:text-teal-700 transition-colors">
+                      {f.title}
+                    </h3>
+                    {submitted ? (
+                      <Badge tone="success">
+                        <Check size={11} className="mr-0.5" /> Submitted
+                      </Badge>
+                    ) : isStaff && !f.active ? (
+                      <Badge tone="warning">Inactive</Badge>
+                    ) : null}
+                  </div>
+                  {f.description && (
+                    <p className="text-sm text-muted line-clamp-2 mb-4">{f.description}</p>
+                  )}
+                  <div className="flex items-center gap-4 text-xs text-muted">
+                    <span className="inline-flex items-center gap-1"><ClipboardList size={12} /> Form</span>
+                    {isStaff && (
+                      <span className="inline-flex items-center gap-1"><Users size={12} /> {f._count.submissions} responses</span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
           {pathways.map((p) => {
             const myStatus = enrollmentMap.get(p.id);
             return (

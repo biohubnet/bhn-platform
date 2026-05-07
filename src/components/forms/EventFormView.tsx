@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Pencil, Save, X, Plus, Trash2, Check, AlertCircle, Loader2, ListChecks,
+  ChevronUp, ChevronDown, Type, Mail, Link as LinkIcon, AlignLeft, ListChecks as RadioIcon, Heading,
 } from "lucide-react";
 import {
   type FormField,
@@ -101,6 +102,41 @@ export function EventFormView({
     setDraft((cur) =>
       cur.map((f) => (f.id === id ? ({ ...f, ...patch } as FormField) : f))
     );
+  }
+
+  function removeField(id: string) {
+    setDraft((cur) => cur.filter((f) => f.id !== id));
+  }
+
+  function moveField(id: string, dir: -1 | 1) {
+    setDraft((cur) => {
+      const i = cur.findIndex((f) => f.id === id);
+      if (i < 0) return cur;
+      const j = i + dir;
+      if (j < 0 || j >= cur.length) return cur;
+      const next = [...cur];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  }
+
+  function newId() {
+    return typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? `f_${crypto.randomUUID().slice(0, 8)}`
+      : `f_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  function addField(type: FormField["type"]) {
+    const id = newId();
+    let f: FormField;
+    if (type === "section") {
+      f = { id, type, label: "Section heading" };
+    } else if (type === "radio" || type === "select" || type === "checkbox") {
+      f = { id, type, label: "New choice", required: false, options: ["Option 1"] };
+    } else {
+      f = { id, type, label: "New field", required: false };
+    }
+    setDraft((cur) => [...cur, f]);
   }
 
   async function submit(e: React.FormEvent) {
@@ -238,11 +274,20 @@ export function EventFormView({
         {mode === "edit" ? (
           <>
             <p className="text-xs text-muted -mt-1 mb-2">
-              Edit field labels, hints, required-state, and radio/select options. Click Save when done.
+              Edit, reorder, add, or remove fields. Click Save when done.
             </p>
-            {draft.map((f) => (
-              <FieldEditor key={f.id} field={f} onPatch={patchField} />
+            {draft.map((f, i) => (
+              <FieldEditor
+                key={f.id}
+                field={f}
+                index={i}
+                total={draft.length}
+                onPatch={patchField}
+                onRemove={removeField}
+                onMove={moveField}
+              />
             ))}
+            <AddFieldPanel onAdd={addField} />
           </>
         ) : (
           <form onSubmit={submit} className="space-y-5">
@@ -379,17 +424,29 @@ function FieldInput({
 // ── Edit-mode controls ────────────────────────────────────────────────
 
 function FieldEditor({
-  field, onPatch,
+  field, index, total, onPatch, onRemove, onMove,
 }: {
   field: FormField;
+  index: number;
+  total: number;
   onPatch: (id: string, patch: Partial<FormField>) => void;
+  onRemove: (id: string) => void;
+  onMove: (id: string, dir: -1 | 1) => void;
 }) {
   if (isSectionField(field)) {
     return (
       <div className="border-b border-line pb-2 pt-2 first:pt-0">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-subtle mb-1">
-          Section heading
-        </p>
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-subtle">
+            Section heading
+          </p>
+          <FieldOrderRemove
+            index={index}
+            total={total}
+            onMove={(d) => onMove(field.id, d)}
+            onRemove={() => onRemove(field.id)}
+          />
+        </div>
         <input
           value={field.label}
           onChange={(e) => onPatch(field.id, { label: e.target.value })}
@@ -415,6 +472,12 @@ function FieldEditor({
           />
           Required
         </label>
+        <FieldOrderRemove
+          index={index}
+          total={total}
+          onMove={(d) => onMove(field.id, d)}
+          onRemove={() => onRemove(field.id)}
+        />
       </div>
       <input
         value={field.label}
@@ -488,3 +551,76 @@ function ChoiceOptionsEditor({
   );
 }
 
+function FieldOrderRemove({
+  index, total, onMove, onRemove,
+}: {
+  index: number;
+  total: number;
+  onMove: (dir: -1 | 1) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-0.5 text-subtle">
+      <button
+        type="button"
+        onClick={() => onMove(-1)}
+        disabled={index === 0}
+        aria-label="Move up"
+        className="p-1 rounded hover:bg-elevated hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-subtle"
+      >
+        <ChevronUp size={13} />
+      </button>
+      <button
+        type="button"
+        onClick={() => onMove(1)}
+        disabled={index === total - 1}
+        aria-label="Move down"
+        className="p-1 rounded hover:bg-elevated hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-subtle"
+      >
+        <ChevronDown size={13} />
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Remove field"
+        className="p-1 rounded hover:bg-rose-50 hover:text-rose-600"
+      >
+        <Trash2 size={13} />
+      </button>
+    </div>
+  );
+}
+
+const ADD_TYPES: { type: FormField["type"]; label: string; Icon: typeof Type }[] = [
+  { type: "text",     label: "Text",       Icon: Type },
+  { type: "textarea", label: "Long text",  Icon: AlignLeft },
+  { type: "email",    label: "Email",      Icon: Mail },
+  { type: "url",      label: "URL",        Icon: LinkIcon },
+  { type: "radio",    label: "Choice",     Icon: RadioIcon },
+  { type: "section",  label: "Section",    Icon: Heading },
+];
+
+function AddFieldPanel({ onAdd }: { onAdd: (t: FormField["type"]) => void }) {
+  return (
+    <div className="rounded-xl border border-dashed border-line p-3">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-subtle mb-2">
+        Add a field
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {ADD_TYPES.map((a) => {
+          const Icon = a.Icon;
+          return (
+            <button
+              key={a.type}
+              type="button"
+              onClick={() => onAdd(a.type)}
+              className="text-xs px-3 py-1.5 rounded-lg border border-line bg-card-solid hover:border-brand-300 hover:text-brand-700 text-muted transition-colors inline-flex items-center gap-1.5"
+            >
+              <Icon size={12} /> {a.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
