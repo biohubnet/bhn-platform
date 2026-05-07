@@ -6,6 +6,7 @@ import {
   GraduationCap, Sparkles, Calendar,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -48,7 +49,23 @@ interface FeaturedPathwayRow {
 export default async function DashboardPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
+  const role = (session!.user as { role?: string }).role ?? "trainee";
   const firstName = session!.user?.name?.split(" ")[0] ?? "Learner";
+
+  // Employer HR accounts get a tailored dashboard — postings, applicants,
+  // profile-completeness — instead of the learner courses/pathway view.
+  if (role === "employer") {
+    const employer = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, name: true,
+        employerCompany: true, companyWebsite: true, companyLogo: true,
+        companyIndustry: true, companySize: true, companyLocation: true,
+        companyDescription: true, companyFounded: true,
+      },
+    });
+    if (employer) return <EmployerDashboard user={employer} />;
+  }
 
   const [enrollments, certificates, recentActivity, user, myPathways, featuredPathways, suggestedCourses] =
     await Promise.all([

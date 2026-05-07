@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Employer dashboard tailored to HR — postings, applicants, profile",
+    body: "When an Employer HR signs in, /dashboard now lands on a portal-shaped overview instead of the learner view. Hero greets them by name + company with stats for active postings, applicants, new this week, and a profile-completeness percentage. A nudge card prompts them to finish the profile if it's sparse, four quick-action tiles cover post / browse / edit / apply, and the lower half lists the latest five applicants and the latest five of their own postings inline. The learner dashboard is unchanged for trainees / instructors / admins.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Employer self-signup via invite link + AI-filled company profile",
     body: "Admins can now invite an industry partner from /admin/employer-invites — paste an email, optionally a company name and website, and we generate a one-time link with a configurable expiry. The recipient clicks through, sets a name + password, and lands on /employer with the Employer HR role auto-assigned. The new /employer/profile page lets them paste their website and one-click 'Auto-fill' — the AI fetches the homepage, extracts industry / HQ / size / founding year / a short description, and pulls the favicon as a starter logo. Existing values aren't overwritten, so re-running just fills in blanks.",
     kind: "feature",
