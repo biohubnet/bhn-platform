@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "AI course summary: edit manually, refine with a prompt, publish with confirmation",
+    body: "Three improvements to the course publish-and-summarise loop.\n\n(1) The AI summary card now has three modes for staff. Edit lets you type the summary directly — verbatim save, no AI call. Refine takes the existing summary and a short instruction (e.g. 'make it shorter', 'more technical', 'lead with what learners can do after') and rewrites it. Regenerate still rebuilds from the course's modules and assessments. Three quick-pick example prompts on the Refine view, plus ⌘/Ctrl + Enter to send.\n\n(2) The Publish button now confirms the action with a green toast bottom-centred on the page: 'Course published' + a primary 'Inspect course →' button that opens the trainee view, plus a secondary 'View in catalog' link. Unpublishing shows an amber confirmation. Errors get a rose toast with the server message. Toast auto-dismisses after 8 seconds; or click Dismiss.\n\n(3) The publish API path now returns errors as JSON for the toast to surface — small reliability win.",
+    kind: "improvement",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
     title: "New Course dialog: add and remove Topic / Delivery / Provider options inline",
     body: "When an admin opens the New Course dialog, the Topic / Delivery / Provider fields now load the canonical option list from /admin/course-filters. Each option appears as a small chip beneath the input — click the × to remove it. Type a custom value and a 'Save' chip appears inline; click it (or hit Enter) to promote it to the canonical list so it shows up as a suggestion everywhere. No more side trip to /admin/course-filters just to add one option for the course you're about to create. Fallback: if the user can't read the admin endpoint, the dialog still works against the static seed lists.",
     kind: "improvement",
