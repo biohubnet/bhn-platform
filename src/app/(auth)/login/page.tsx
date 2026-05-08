@@ -1,24 +1,39 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Check } from "lucide-react";
+import { ArrowRight, Sparkles, Check, CheckCircle2 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ThemeCycler } from "@/components/ui/ThemePicker";
 
 const REMEMBER_KEY = "bhn-remember-email";
 
+// Top-level page wraps the form in Suspense — useSearchParams in
+// Next.js 16 forces a Suspense boundary or static prerender errors.
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-brand-50 via-card to-brand-100" />}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const params = useSearchParams();
+  const justRegistered = params.get("registered") === "1";
+  const prefillEmail = params.get("email") ?? "";
+  const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Pre-fill from localStorage if user previously chose Remember Me
+  // Pre-fill: ?email=… from registration / employer-invite fallback
+  // takes priority; otherwise fall back to localStorage Remember-Me.
   useEffect(() => {
+    if (prefillEmail) return;
     try {
       const saved = localStorage.getItem(REMEMBER_KEY);
       if (saved) {
@@ -26,7 +41,7 @@ export default function LoginPage() {
         setRemember(true);
       }
     } catch {}
-  }, []);
+  }, [prefillEmail]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,9 +79,24 @@ export default function LoginPage() {
 
         <div className="bg-card rounded-2xl shadow-xl shadow-brand-900/5 border border-line p-8">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-fg">Welcome back</h1>
-            <p className="text-muted text-sm mt-1">Sign in to continue your training.</p>
+            <h1 className="text-2xl font-bold text-fg">
+              {justRegistered ? "Account created — sign in" : "Welcome back"}
+            </h1>
+            <p className="text-muted text-sm mt-1">
+              {justRegistered
+                ? "Your password is what you just set. Welcome to BHN."
+                : "Sign in to continue your training."}
+            </p>
           </div>
+
+          {justRegistered && (
+            <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-lg px-4 py-3 inline-flex items-start gap-2 w-full">
+              <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-600" />
+              <span>
+                Your account is ready. We pre-filled your email — just enter the password you chose.
+              </span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (

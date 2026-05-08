@@ -1,89 +1,268 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { Mail, Info, CheckCircle2 } from "lucide-react";
+import {
+  Mail, Info, CheckCircle2, Eye, EyeOff, Sparkles, Coins, Loader2, AlertCircle,
+} from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { LOCALES } from "@/lib/i18n/dictionaries";
 
 type NewsletterChoice = "subscribe" | "no" | "already";
+type Stage = "idle" | "creating" | "signing-in" | "redirecting";
+
+const JOB_TITLES = [
+  "Master's student",
+  "PhD candidate",
+  "Postdoctoral Fellow",
+  "Research Associate",
+  "Lab Technician",
+  "Industry Professional",
+  "Other",
+];
+
+function defaultLocale(): string {
+  if (typeof navigator === "undefined") return "en";
+  const guess = navigator.language?.slice(0, 2) ?? "en";
+  return LOCALES.find((l) => l.id === guess) ? guess : "en";
+}
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState(() => ({
+    name: "",
+    email: "",
+    password: "",
+    passwordConfirm: "",
+    jobTitle: "",
+    locale: defaultLocale(),
+  }));
   const [newsletter, setNewsletter] = useState<NewsletterChoice>("subscribe");
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [stage, setStage] = useState<Stage>("idle");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    // Client-side guards (server will re-validate)
+    if (form.name.trim().length < 2) {
+      setError("Please enter your full name."); return;
+    }
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters."); return;
+    }
+    if (form.password !== form.passwordConfirm) {
+      setError("Passwords don't match."); return;
+    }
+
+    setStage("creating");
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, newsletter }),
+      body: JSON.stringify({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        newsletter,
+        jobTitle: form.jobTitle || undefined,
+        locale: form.locale,
+      }),
     });
-    setLoading(false);
+
     if (!res.ok) {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Registration failed");
-    } else {
-      router.push("/login?registered=1");
+      setStage("idle");
+      return;
     }
+
+    // Auto sign-in — no /login round-trip.
+    setStage("signing-in");
+    const r = await signIn("credentials", {
+      email: form.email,
+      password: form.password,
+      remember: "true",
+      redirect: false,
+    });
+    if (!r?.ok) {
+      // Fall back to the explicit login page if auto sign-in fails for any reason.
+      router.push(`/login?registered=1&email=${encodeURIComponent(form.email)}`);
+      return;
+    }
+
+    setStage("redirecting");
+    router.push("/dashboard");
+    router.refresh();
+  }
+
+  const inputCls =
+    "w-full bg-card-solid text-fg border border-line rounded-lg px-3 py-2.5 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all";
+
+  // Active progress card — shown while we're creating + signing in
+  if (stage !== "idle") {
+    const lines = [
+      { label: "Creating your account",      done: stage !== "creating" },
+      { label: "Signing you in",              done: stage === "redirecting" },
+      { label: "Loading your dashboard",      done: false },
+    ];
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-card to-brand-100 px-4 py-8">
+        <div className="w-full max-w-md">
+          <div className="bg-card rounded-2xl shadow-xl shadow-brand-900/5 border border-line p-8 text-center">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
+              <Sparkles size={22} className="animate-pulse" />
+            </div>
+            <h1 className="text-xl font-bold text-fg">Setting up your account…</h1>
+            <p className="text-sm text-muted mt-1">A couple of seconds — sit tight.</p>
+            <ul className="mt-5 text-left text-sm text-fg space-y-2 max-w-xs mx-auto">
+              {lines.map((l, i) => (
+                <li key={i} className="flex items-center gap-2.5">
+                  {l.done ? (
+                    <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                  ) : (
+                    <Loader2 size={14} className="text-brand-600 animate-spin shrink-0" />
+                  )}
+                  <span className={l.done ? "text-muted line-through" : "text-fg"}>{l.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-card to-brand-100 px-4 py-8">
       <div className="w-full max-w-md">
-        <Link href="/" className="flex justify-center mb-8">
+        <Link href="/login" className="flex justify-center mb-8">
           <Logo size="lg" />
         </Link>
 
         <div className="bg-card rounded-2xl shadow-xl shadow-brand-900/5 border border-line p-8">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-fg">Create your account</h1>
-            <p className="text-muted text-sm mt-1">Free to get started — 200 BHN credits to begin, with 4,800 more available after admin review.</p>
+            <h1 className="text-2xl font-bold text-fg">Welcome to BHN — let&apos;s get you set up.</h1>
+            <p className="text-muted text-sm mt-1.5 leading-relaxed">
+              Free to start. <span className="inline-flex items-center gap-1 text-fg font-medium"><Coins size={11} className="text-amber-500" /> 200 BHN credits</span> on the house — most courses cost 50–200 — with another 4,800 available after admin review.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-lg px-4 py-3">
-                {error}
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-lg px-3 py-2 inline-flex items-start gap-2">
+                <AlertCircle size={14} className="mt-0.5 shrink-0" /> {error}
               </div>
             )}
+
             <div>
-              <label className="block text-xs font-medium text-muted mb-1.5">Full name</label>
+              <label className="block text-xs font-medium text-muted mb-1.5">
+                Full name <span className="text-rose-600">*</span>
+              </label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                required
+                minLength={2}
+                maxLength={80}
+                autoComplete="name"
+                autoFocus
+                className={inputCls}
                 placeholder="Jane Smith"
               />
             </div>
+
             <div>
-              <label className="block text-xs font-medium text-muted mb-1.5">Email</label>
+              <label className="block text-xs font-medium text-muted mb-1.5">
+                Email <span className="text-rose-600">*</span>
+              </label>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
-                className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                autoComplete="email"
+                className={inputCls}
                 placeholder="you@example.com"
               />
             </div>
+
             <div>
-              <label className="block text-xs font-medium text-muted mb-1.5">Password</label>
+              <label className="block text-xs font-medium text-muted mb-1.5">
+                Password <span className="text-rose-600">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  className={inputCls + " pr-10"}
+                  placeholder="At least 8 characters"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-subtle hover:text-fg rounded"
+                  tabIndex={-1}
+                  aria-label={showPw ? "Hide password" : "Show password"}
+                >
+                  {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1.5">
+                Confirm password <span className="text-rose-600">*</span>
+              </label>
               <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                type={showPw ? "text" : "password"}
+                value={form.passwordConfirm}
+                onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })}
                 required
                 minLength={8}
-                className="w-full bg-card border border-line rounded-lg px-3 py-2.5 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
-                placeholder="At least 8 characters"
+                autoComplete="new-password"
+                className={inputCls}
+                placeholder="Type it again"
               />
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1.5">
+                  I am a… <span className="text-subtle">(optional)</span>
+                </label>
+                <select
+                  value={form.jobTitle}
+                  onChange={(e) => setForm({ ...form, jobTitle: e.target.value })}
+                  className={inputCls}
+                >
+                  <option value="">Pick later in profile</option>
+                  {JOB_TITLES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1.5">Language</label>
+                <select
+                  value={form.locale}
+                  onChange={(e) => setForm({ ...form, locale: e.target.value })}
+                  className={inputCls}
+                >
+                  {LOCALES.map((l) => (
+                    <option key={l.id} value={l.id}>{l.nativeName} ({l.name})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             {/* Newsletter — three-state opt-in */}
             <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-3.5">
               <p className="flex items-center gap-1.5 text-sm font-medium text-fg">
@@ -152,10 +331,9 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 disabled:opacity-60 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md shadow-brand-600/25 text-sm"
+              className="w-full bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md shadow-brand-600/25 text-sm"
             >
-              {loading ? "Creating account…" : "Create account"}
+              Create account
             </button>
           </form>
 
