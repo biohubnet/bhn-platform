@@ -19,7 +19,15 @@ export const TALENT_APPLICATION_DEFAULTS = {
       type: "radio",
       label: "What best describes your current position / status?",
       required: true,
-      options: ["Graduate Program", "Postdoctoral Fellow", "Other"],
+      options: [
+        "Master's student",
+        "PhD candidate",
+        "Postdoctoral Fellow",
+        "Research Associate",
+        "Lab Technician",
+        "Industry Professional",
+        "Other",
+      ],
     },
     {
       id: "support_letter",
@@ -51,6 +59,7 @@ export const TALENT_APPLICATION_DEFAULTS = {
       options: [
         "Current student searching for internship opportunities",
         "New or soon-to-be graduate searching for full-time opportunities",
+        "Working professional exploring new opportunities",
       ],
     },
     {

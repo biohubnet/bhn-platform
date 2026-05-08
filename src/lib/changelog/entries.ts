@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Talent Application — broader audience options + 12 sample personas",
+    body: "Three changes. (1) The 'What best describes your current position' radio is now Master's student / PhD candidate / Postdoctoral Fellow / Research Associate / Lab Technician / Industry Professional / Other — covering the full BioHubNet life-sciences audience instead of collapsing everything into 'Graduate Program'. The 'status and goal' radio gains a third option for working professionals exploring new opportunities. (2) /admin/forms/talent-application has a new 'Reset schema' button that overwrites the live form with the latest source seed — click it once after a deploy that changes options in code. (3) 'Fill with sample' now offers 12 personas instead of 5, spanning masters / PhD / postdoc / research associate / lab technician / industry professional. Every preset fills every non-file field with valid option strings. Personas span U of T, McGill, UBC, Calgary, Western, Université Laval, Manitoba, and Dalhousie, with realistic mixes of citizenship status and French proficiency.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Course form: contrast fix + custom topic / delivery / provider",
     body: "Two issues on the New Course modal: (1) inputs had no background or text colour set, so on dark themes (Nightfall / Hi-Tech / Rosalind) text rendered light on the user-agent's white default — invisible. Switched all inputs / textarea / selects to the standard theme-aware classes (bg-card-solid, text-fg, border-line). (2) Topic / Delivery / Provider were locked-down dropdowns. Now they're input+datalist combos: pick from the curated list (sourced from /admin/course-filters) OR type a custom value. Same change applied to the per-course quick-edit pencil dialog. The bulk-apply dialog keeps its select-only paradigm (it needs a tri-state 'don't change / clear / set').",
     kind: "fix",

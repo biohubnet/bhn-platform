@@ -4,6 +4,7 @@ import { Download, ArrowLeft, FileText } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { answerFields, type FormField } from "@/lib/forms/types";
+import { FormReseedButton } from "@/components/admin/FormReseedButton";
 
 export default async function AdminFormSubmissionsPage({
   params,
@@ -44,12 +45,15 @@ export default async function AdminFormSubmissionsPage({
             {form._count.submissions > 200 && " — showing latest 200"}
           </p>
         </div>
-        <a
-          href={`/api/forms/${slug}/export.csv`}
-          className="text-sm px-4 py-2 rounded-lg bg-brand-600 text-white hover:bg-brand-700 inline-flex items-center gap-2 font-medium shadow-sm shadow-brand-600/25"
-        >
-          <Download size={14} /> Export CSV
-        </a>
+        <div className="flex items-center gap-2">
+          <FormReseedButton slug={slug} />
+          <a
+            href={`/api/forms/${slug}/export.csv`}
+            className="text-sm px-4 py-2 rounded-lg bg-brand-600 text-white hover:bg-brand-700 inline-flex items-center gap-2 font-medium shadow-sm shadow-brand-600/25"
+          >
+            <Download size={14} /> Export CSV
+          </a>
+        </div>
       </div>
 
       {form.submissions.length === 0 ? (
