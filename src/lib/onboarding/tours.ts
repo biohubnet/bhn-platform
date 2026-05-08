@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07n";
+export const TOUR_VERSION = "2026.05.08a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -396,6 +396,16 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
+  },
+  {
+    id: "my-application",
+    title: "Build your application once, reuse it everywhere",
+    body: "Open EXPERIENCE → My Application (or visit /profile/application). Three slots: a resume (PDF / DOCX), a 1-minute video introduction, and a short elevator pitch. Each saves independently — upload the resume now, write the pitch later. Talent applications and partner introductions pull from these so you don't re-upload the same files for every employer.",
+    path: "/profile/application",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    since: "2026.05.08a",
+    cta: { label: "Open My Application", href: "/profile/application" },
   },
   {
     id: "demo-workspaces",

@@ -68,6 +68,7 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 
 // EXPERIENCE — applications and connections to industry placements.
 const experienceItems: (NavItem & { labelKey: string })[] = [
+  { label: "My Application",            labelKey: "nav.application", href: "/profile/application",      icon: FileText },
   { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase },
   { label: "Internship Opportunities",  labelKey: "nav.internships", href: "/internships",              icon: Briefcase },
   { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Sparkles },
@@ -329,6 +330,10 @@ export function Sidebar({
             title="EXPERIENCE"
             description="Bridging theory and practice through experiential learning."
             programs={[
+              {
+                title: "My Application",
+                body: "Resume, 1-minute video, and elevator pitch — built once, reused by every form you submit.",
+              },
               {
                 title: "Knowledge Exchange — Round 4",
                 body: "Industry placements running 1, 4, or 6 months. Application deadline 29 May 2026.",

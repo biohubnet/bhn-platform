@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "New: My Application — build your resume, video intro, and pitch once",
+    body: "Trainees now have a dedicated 'My Application' page under the Experience menu (Sidebar → Experience → My Application, or /profile/application). Three sections: a resume slot (PDF / DOCX, ≤10 MB), a 1-minute video introduction slot (MP4 / MOV / WebM, ≤60 MB) with inline preview, and an elevator pitch (≤650 chars). Each section saves independently — upload your resume now and write the pitch later. Files land in R2 at a deterministic per-user path so re-uploads replace the old artifact instead of leaking storage. The intent: build these once and any later employer-facing form pulls from here, instead of re-uploading the same file across every submission.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Fix: SCORM player kept escaping back to the previous page (real fix)",
     body: "Previous fix narrowed when LMSFinish redirects, but the actual culprit was a different escape path. The iframe sandbox included `allow-top-navigation`, which lets scripts inside the SCORM package navigate the LMS page itself — and many authoring tools wire 'exit' or 'prev module' buttons as `window.top.history.back()` (assuming the package launches in a popup, not an iframed LMS). That pulled the LMS back to whatever you came from. Dropped that sandbox flag; module navigation now stays inside the iframe where it belongs. Use the LMS top-bar 'Back to course' link to exit.",
     kind: "fix",

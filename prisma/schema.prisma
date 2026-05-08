@@ -68,6 +68,13 @@ model User {
   /// for accountKind="real" even if a token were somehow set, so a leak
   /// can never escalate to a real-user takeover.
   magicToken             String?   @unique
+  /// Trainee-facing "My Application" artifacts. Stored on the user
+  /// so they survive across talent-application submissions; the
+  /// trainee manages them from /profile/application.
+  resumeUrl              String?
+  videoIntroUrl          String?
+  elevatorPitch          String?
+  applicationUpdatedAt   DateTime?
   /// Onboarding progress: { version, seenStepIds[], minimized, dismissed, completedAt }
   onboarding    Json?
   /// GDPR/CCPA consent: { necessary, analytics, marketing, version, acceptedAt }

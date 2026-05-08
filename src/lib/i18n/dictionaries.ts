@@ -34,6 +34,7 @@ const en: Dict = {
   "nav.gradebook": "Gradebook",
   "nav.certificates": "Certificates",
   "nav.credits": "My Credits",
+  "nav.application": "My Application",
   "nav.talent": "Talent Application",
   "nav.internships": "Internship Opportunities",
   "nav.skills": "My Skills",
