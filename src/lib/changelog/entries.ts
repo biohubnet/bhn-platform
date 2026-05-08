@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Login page: side-by-side new-user signup and returning-user login",
+    body: "The /login page is now a two-box layout. Left card is the new-user signup pitch — value prop, three short bullets (training tracks, pathways, employer matching), and a primary 'Create your free account' button leading to /register. Right card is the existing returning-user login form. On mobile they stack vertically with signup first, since the page is everyone's first stop. The Theme cycler stays in the top-right; the build-info text below stays.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Changelog entries now show the build SHA they shipped on (staff only)",
     body: "Every new changelog entry is automatically stamped with the deploy's commit SHA at create time. On the changelog page, admins and superadmins see a small monospace chip next to the date — click to copy, hover to see the full 12-char SHA. Trainees and instructors don't see the chip; the entries themselves are still the same. Lets staff correlate 'what shipped' with 'in which build' without keeping a separate release log. Existing pre-stamp entries simply omit the chip.",
     kind: "improvement",
