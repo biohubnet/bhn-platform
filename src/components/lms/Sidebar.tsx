@@ -89,29 +89,44 @@ const employerItems: (NavItem & { labelKey: string })[] = [
   { label: "Applicants",        labelKey: "nav.employerApplicants", href: "/employer/applicants", icon: Users2 },
 ];
 
-const adminItems: NavItem[] = [
-  { label: "Overview", href: "/admin", icon: LayoutDashboard, exact: true, minRole: "admin" },
-  { label: "Users", href: "/admin/users", icon: Users, minRole: "admin" },
-  { label: "Enrollments", href: "/admin/enrollments", icon: ClipboardList, minRole: "admin" },
-  { label: "Groups", href: "/admin/groups", icon: UsersRound, minRole: "admin" },
-  { label: "Credit applications", href: "/admin/credit-applications", icon: CoinsIcon, minRole: "admin" },
-  { label: "Role requests", href: "/admin/role-requests", icon: UserCog, minRole: "admin" },
-  { label: "Pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers, minRole: "admin" },
-  { label: "Course filters",      href: "/admin/course-filters",      icon: ListChecks, minRole: "admin" },
-  { label: "Employer invites",    href: "/admin/employer-invites",    icon: Building2,  minRole: "admin" },
-  { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,       minRole: "admin" },
-  { label: "Certificates", href: "/admin/certificates", icon: Award, minRole: "admin" },
-  { label: "Announcements", href: "/admin/announcements", icon: Megaphone, minRole: "admin" },
-  { label: "Analytics", href: "/admin/analytics", icon: LineChart, minRole: "admin" },
-  { label: "Reports", href: "/admin/reports", icon: FileText, minRole: "admin" },
-  { label: "Audit Log", href: "/admin/audit", icon: ShieldCheck, minRole: "admin" },
-  { label: "Skill ontology",      href: "/admin/skills",          icon: GitBranch,  minRole: "admin" },
-  { label: "Access requests",     href: "/admin/access-requests", icon: Inbox,      minRole: "admin" },
-  { label: "Sandbox accounts",    href: "/admin/sandboxes",       icon: Beaker,     minRole: "admin" },
-  { label: "Demo workspaces",     href: "/admin/demo-workspaces", icon: Sparkles,   minRole: "admin" },
-  { label: "LTI Config", href: "/admin/lti", icon: Link2, minRole: "superadmin" },
-  { label: "System status", href: "/admin/system-status", icon: Activity, minRole: "superadmin" },
-  { label: "Settings", href: "/admin/settings", icon: Settings, minRole: "superadmin" },
+// Admin menu, mirrored after the user-facing ENGAGE / EXPERIENCE
+// vocabulary so the mental model stays consistent across roles.
+//   Overview     — single link at the top of the section.
+//   Engage       — learning-content + people management.
+//   Experience   — employer side: invites, applicant flows, demos.
+//   Platform     — analytics, audit, system, superadmin settings.
+const adminOverview: NavItem = {
+  label: "Overview", href: "/admin", icon: LayoutDashboard, exact: true, minRole: "admin",
+};
+
+const adminEngageItems: NavItem[] = [
+  { label: "Users",               href: "/admin/users",               icon: Users,        minRole: "admin" },
+  { label: "Enrollments",         href: "/admin/enrollments",         icon: ClipboardList, minRole: "admin" },
+  { label: "Groups",              href: "/admin/groups",              icon: UsersRound,   minRole: "admin" },
+  { label: "Credit applications", href: "/admin/credit-applications", icon: CoinsIcon,    minRole: "admin" },
+  { label: "Role requests",       href: "/admin/role-requests",       icon: UserCog,      minRole: "admin" },
+  { label: "Pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers,       minRole: "admin" },
+  { label: "Course filters",      href: "/admin/course-filters",      icon: ListChecks,   minRole: "admin" },
+  { label: "Skill ontology",      href: "/admin/skills",              icon: GitBranch,    minRole: "admin" },
+  { label: "Certificates",        href: "/admin/certificates",        icon: Award,        minRole: "admin" },
+  { label: "Announcements",       href: "/admin/announcements",       icon: Megaphone,    minRole: "admin" },
+  { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,         minRole: "admin" },
+];
+
+const adminExperienceItems: NavItem[] = [
+  { label: "Employer invites",    href: "/admin/employer-invites",    icon: Building2,    minRole: "admin" },
+  { label: "Access requests",     href: "/admin/access-requests",     icon: Inbox,        minRole: "admin" },
+  { label: "Sandbox accounts",    href: "/admin/sandboxes",           icon: Beaker,       minRole: "admin" },
+  { label: "Demo workspaces",     href: "/admin/demo-workspaces",     icon: Sparkles,     minRole: "admin" },
+];
+
+const adminPlatformItems: NavItem[] = [
+  { label: "Analytics",     href: "/admin/analytics",     icon: LineChart,  minRole: "admin" },
+  { label: "Reports",       href: "/admin/reports",       icon: FileText,   minRole: "admin" },
+  { label: "Audit Log",     href: "/admin/audit",         icon: ShieldCheck, minRole: "admin" },
+  { label: "LTI Config",    href: "/admin/lti",           icon: Link2,      minRole: "superadmin" },
+  { label: "System status", href: "/admin/system-status", icon: Activity,   minRole: "superadmin" },
+  { label: "Settings",      href: "/admin/settings",      icon: Settings,   minRole: "superadmin" },
 ];
 
 const ROLE_RANK: Record<string, number> = {
@@ -200,6 +215,19 @@ function SectionGroup({
   );
 }
 
+/**
+ * Tiny subheading inside the Administration group. Same vocabulary
+ * as the user-facing ENGAGE / EXPERIENCE pattern so admins map their
+ * mental model to what learners see.
+ */
+function AdminSubheading({ label }: { label: string }) {
+  return (
+    <p className="px-3 pt-3 pb-1 text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle select-none">
+      {label}
+    </p>
+  );
+}
+
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   const active = item.exact
     ? pathname === item.href
@@ -235,10 +263,13 @@ export function Sidebar({
   // admin has flipped allowPlatformContent on for them.
   const showLearnerNav = !isEmployer || allowPlatformContent;
 
-  const visibleAdmin = adminItems.filter((item) => {
+  const filterByRole = (item: NavItem) => {
     const required = ROLE_RANK[item.minRole ?? "admin"] ?? ROLE_RANK.admin;
     return userRank >= required;
-  });
+  };
+  const visibleEngageAdmin     = adminEngageItems.filter(filterByRole);
+  const visibleExperienceAdmin = adminExperienceItems.filter(filterByRole);
+  const visiblePlatformAdmin   = adminPlatformItems.filter(filterByRole);
 
   return (
     <aside className="w-64 glass border-r border-line flex flex-col relative z-10">
@@ -326,9 +357,35 @@ export function Sidebar({
 
         {isAdmin && (
           <SectionGroup title={t("nav.administration").toUpperCase()}>
-            {visibleAdmin.map((item) => (
-              <NavLink key={item.href} item={item} pathname={pathname} />
-            ))}
+            {/* Overview sits at the top, ungrouped — single canonical link. */}
+            <NavLink item={adminOverview} pathname={pathname} />
+
+            {visibleEngageAdmin.length > 0 && (
+              <>
+                <AdminSubheading label="Engage" />
+                {visibleEngageAdmin.map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} />
+                ))}
+              </>
+            )}
+
+            {visibleExperienceAdmin.length > 0 && (
+              <>
+                <AdminSubheading label="Experience" />
+                {visibleExperienceAdmin.map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} />
+                ))}
+              </>
+            )}
+
+            {visiblePlatformAdmin.length > 0 && (
+              <>
+                <AdminSubheading label="Platform" />
+                {visiblePlatformAdmin.map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} />
+                ))}
+              </>
+            )}
           </SectionGroup>
         )}
       </nav>

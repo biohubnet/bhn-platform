@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Administration menu now grouped: Engage · Experience · Platform",
+    body: "The Administration sidebar group used to be a long flat list of 20+ links. It's now sub-grouped to mirror the user-facing ENGAGE / EXPERIENCE vocabulary you already see at the top of the sidebar. Engage covers learning content + people management (Users, Enrollments, Groups, Skills, Course filters, Certificates, Announcements, Newsletter exports, Pathway / Credit / Role applications). Experience covers the employer side (Employer invites, Access requests, Sandbox accounts, Demo workspaces). Platform covers operations (Analytics, Reports, Audit Log, plus superadmin-only LTI / System status / Settings). Overview stays as a single link at the top of the section.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Per-admin sandbox accounts — multiple admins can test in parallel",
     body: "Administration → Sandbox accounts (its own page now, not buried in System status) lets each admin spawn their own Employer HR + Trainee pair (idempotent, deterministic emails). The pair comes pre-loaded with a posting and a talent-application submission so the kanban, scoring, and interview flows all light up. Reset wipes and re-seeds; Delete cleans up. You can also see other admins' sandboxes — handy for spotting who's testing what.",
     kind: "feature",
