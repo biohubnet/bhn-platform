@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Employer HR invites are now magic links — one click, no claim form",
+    body: "The signup-link flow is rewritten end-to-end. Recipient clicks the URL, lands in /employer signed in. No name to type, no password to set up front, no claim screen. Magic links are reusable bookmarks until expiry, so partners can come back later from any device. Admins get two new buttons on /admin/employer-invites: Quick invite (zero inputs, mints + auto-copies the URL in one click) and a per-invite Test button that opens the link in a new tab so admins can experience exactly what the recipient experiences. All form fields are now optional. Cross-device password sign-in still works for partners who later set a password from /profile.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Admin Inbox — one place for everything waiting on review",
     body: "New /admin/inbox (Administration → Platform → Inbox) gathers the four streams admins triage: role-change requests, credit applications, pathway-enrolment approvals, and access requests from the public marketing pages. Top of the page shows four lanes with live counts colour-coded by urgency; below, a unified time-ordered feed of the most recent pending items across all four streams, each with a Review link to the existing dedicated page. The individual pages still work — this is the hub, not a replacement.",
     kind: "feature",

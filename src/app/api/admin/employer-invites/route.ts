@@ -37,19 +37,29 @@ export async function POST(req: NextRequest) {
     companyWebsite?: string;
     expiresInDays?: number;
   };
-  const email = (body.email ?? "").trim().toLowerCase();
-  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    return NextResponse.json({ error: "Valid email required." }, { status: 400 });
-  }
+
   const days = Math.max(1, Math.min(60, body.expiresInDays ?? 14));
   const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  const token = newToken();
+
+  // Both fields are optional — the magic-link flow doesn't need a
+  // real email or company to work. Defaults make "Quick invite"
+  // (no inputs) viable for admins testing the flow.
+  const trimmedEmail = (body.email ?? "").trim().toLowerCase();
+  const emailValid = !!trimmedEmail && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmedEmail);
+  if (trimmedEmail && !emailValid) {
+    return NextResponse.json({ error: "Email looks malformed." }, { status: 400 });
+  }
+  const tokenShort = token.slice(0, 8);
+  const email = emailValid ? trimmedEmail : `partner-${tokenShort}@biohubnet.test`;
+  const companyName = body.companyName?.trim() || `Demo Partner ${tokenShort}`;
 
   const userId = (session.user as { id?: string }).id ?? null;
   const invite = await prisma.employerInvite.create({
     data: {
       email,
-      token: newToken(),
-      companyName: body.companyName?.trim() || null,
+      token,
+      companyName,
       companyWebsite: body.companyWebsite?.trim() || null,
       invitedById: userId,
       expiresAt,
