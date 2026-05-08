@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.08c";
+export const TOUR_VERSION = "2026.05.08d";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -440,7 +440,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "complete",
     title: "You're all set",
-    body: "Reopen this tour anytime from the (?) icon at the bottom of the sidebar. New features will surface here as they ship.",
+    body: "Reopen this tour anytime from 'Take the tour' in the sidebar (or the small ? button at the bottom-left). New features will surface here as they ship.",
     placement: "center",
     since: "2025.04",
   },

@@ -41,6 +41,7 @@ import {
   Calendar,
   GitBranch,
   Beaker,
+  HelpCircle,
 } from "lucide-react";
 
 interface NavItem {
@@ -366,6 +367,27 @@ export function Sidebar({
             })}
           </>
         )}
+
+        {/* Take the tour — visible to every signed-in role (trainees,
+            evaluators, instructors, employers, admins, superadmins).
+            Dispatches a custom DOM event the Onboarding component
+            listens for; that keeps the tour's own state machine the
+            single owner of "is the tour running" and avoids prop-
+            drilling through the dashboard layout.
+            Sits OUTSIDE the showLearnerNav gate so employers (who
+            have their own tour steps) can find it too. */}
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("bhn:start-tour"));
+            }
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted hover:bg-raised hover:text-fg transition-colors"
+        >
+          <HelpCircle size={16} />
+          <span className="flex-1 text-left">{t("nav.tour")}</span>
+        </button>
 
         {isAdmin && (
           <SectionGroup title={t("nav.administration").toUpperCase()}>

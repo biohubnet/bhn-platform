@@ -39,6 +39,7 @@ const en: Dict = {
   "nav.internships": "Internship Opportunities",
   "nav.skills": "My Skills",
   "nav.interviews": "Interviews",
+  "nav.tour": "Take the tour",
   "nav.employerHome": "Overview",
   "nav.employerProfile": "Company profile",
   "nav.employerPostings": "My Postings",

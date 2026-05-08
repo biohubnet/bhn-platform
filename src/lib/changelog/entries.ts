@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "'Take the tour' is now a sidebar menu entry for every role",
+    body: "There's been a small ? button at the bottom-left to restart the onboarding tour, but it was easy to miss. The sidebar now has an explicit 'Take the tour' item just below the misc menu (Buddies / What's new). Visible to every signed-in role — trainees, evaluators, instructors, employers, admins, superadmins — so anyone who dismissed the auto-tour or wants a refresher can find their way back. The button dispatches a DOM event the existing Onboarding component listens for, so the tour's own state machine stays the single source of truth.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Talent Application now pre-fills resume, video, and pitch from My Application",
     body: "If you've built a resume, 1-minute video, and elevator pitch on /profile/application, the Talent Application form now imports them automatically when you open it. A blue banner at the top of the form tells you the values came from My Application and offers a link to edit them there. Edits you make on the form itself still win — we don't overwrite an explicit submission with a later My-Application change. Empty submission fields don't clobber non-empty My-Application defaults either, so re-opening a half-finished draft no longer wipes the resume slot.",
     kind: "feature",

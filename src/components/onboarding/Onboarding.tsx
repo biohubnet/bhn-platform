@@ -179,6 +179,20 @@ export function Onboarding() {
     setActiveIdx(0);
   }
 
+  // External relaunch trigger. Any client component can fire
+  //   window.dispatchEvent(new CustomEvent("bhn:start-tour"))
+  // to restart the onboarding tour — used by the sidebar's
+  // "Take the tour" menu entry so users have a discoverable
+  // entry point besides the floating ? button.
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    const handler = () => relaunch();
+    window.addEventListener("bhn:start-tour", handler);
+    return () => window.removeEventListener("bhn:start-tour", handler);
+    // relaunch is stable enough — using state-effect deps would over-fire.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
   // ── Renders ──────────────────────────────────────────────────────
   if (status !== "authenticated" || !state) return null;
 
