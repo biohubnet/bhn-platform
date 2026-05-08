@@ -102,9 +102,29 @@ export function ScormPlayer({
           break;
         case "Finish":
         case "LMSFinish":
+          // Many SCORM packages (Articulate Storyline, iSpring,
+          // Adapt, etc.) call LMSFinish between modules — not just
+          // at the end of the course. Auto-redirecting on every
+          // Finish was kicking learners back to /courses/[id] when
+          // they clicked a module mid-course.
+          //
+          // Only redirect when the SCORM content reports the course
+          // is genuinely done: completed / passed / failed. For
+          // anything else (incomplete / not attempted / browsed)
+          // just save and stay put — the iframe handles its own
+          // internal navigation.
           saveData({ ...data });
           result = "true";
-          setTimeout(() => router.push(`/courses/${courseId}`), 500);
+          {
+            const status = data[isScorm12 ? "cmi.core.lesson_status" : "cmi.completion_status"];
+            if (
+              status === "completed" ||
+              status === "passed" ||
+              status === "failed"
+            ) {
+              setTimeout(() => router.push(`/courses/${courseId}`), 500);
+            }
+          }
           break;
         case "GetLastError":
         case "LMSGetLastError":

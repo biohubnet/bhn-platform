@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Fix: SCORM player no longer kicks learners out when clicking a module",
+    body: "Many SCORM authoring tools (Articulate Storyline, iSpring, Adapt) call LMSFinish whenever the learner moves between modules — not only at the end of the course. The player was treating every Finish as 'course over' and pushing learners back to the course detail page. The fix: only redirect when the SCORM content reports the course is genuinely done (lesson_status / completion_status = completed / passed / failed). For incomplete / not attempted / browsed it just saves progress and stays in the player so internal module navigation works.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Login page: side-by-side new-user signup and returning-user login",
     body: "The /login page is now a two-box layout. Left card is the new-user signup pitch — value prop, three short bullets (training tracks, pathways, employer matching), and a primary 'Create your free account' button leading to /register. Right card is the existing returning-user login form. On mobile they stack vertically with signup first, since the page is everyone's first stop. The Theme cycler stays in the top-right; the build-info text below stays.",
     kind: "improvement",
