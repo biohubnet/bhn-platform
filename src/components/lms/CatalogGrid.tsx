@@ -428,41 +428,88 @@ function FilterFields({
   isSpecial: boolean; setIsSpecial: (v: boolean) => void;
   bulk?: boolean;
 }) {
-  const cls = "w-full bg-card-solid border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30";
-  const dontChange = bulk ? <option value="__nochange__">Don&apos;t change</option> : null;
-  const clear = bulk ? <option value="">— Clear value</option> : <option value="">—</option>;
+  const cls = "w-full bg-card-solid text-fg placeholder:text-subtle border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30";
+
+  // Bulk apply needs a tri-state (set / clear / don't change), which
+  // only works as a <select>. Per-course edit allows custom values via
+  // <input list=…>+<datalist>.
+  if (bulk) {
+    const dontChange = <option value="__nochange__">Don&apos;t change</option>;
+    const clear = <option value="">— Clear value</option>;
+    return (
+      <div className="space-y-3">
+        <Field label="Topic">
+          <select className={cls} value={topic} onChange={(e) => setTopic(e.target.value)}>
+            {dontChange}{clear}
+            {options.topic.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Delivery">
+            <select className={cls} value={delivery} onChange={(e) => setDelivery(e.target.value)}>
+              {dontChange}{clear}
+              {options.delivery.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </Field>
+          <Field label="Provider">
+            <select className={cls} value={provider} onChange={(e) => setProvider(e.target.value)}>
+              {dontChange}{clear}
+              {options.provider.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </Field>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted cursor-pointer">
+          <input type="checkbox" checked={isSpecial} onChange={(e) => setIsSpecial(e.target.checked)} className="accent-brand-600" />
+          Special program / workshop (instructor-led, limited seats)
+        </label>
+      </div>
+    );
+  }
+
+  // Per-course: input + datalist so admins can type a custom topic /
+  // delivery / provider.
   return (
     <div className="space-y-3">
       <Field label="Topic">
-        <select className={cls} value={topic} onChange={(e) => setTopic(e.target.value)}>
-          {dontChange}
-          {clear}
-          {options.topic.map((o) => <option key={o} value={o}>{o}</option>)}
-        </select>
+        <input
+          list="catalog-topic-options"
+          className={cls}
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="Pick or type custom"
+        />
+        <datalist id="catalog-topic-options">
+          {options.topic.map((o) => <option key={o} value={o} />)}
+        </datalist>
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Delivery">
-          <select className={cls} value={delivery} onChange={(e) => setDelivery(e.target.value)}>
-            {dontChange}
-            {clear}
-            {options.delivery.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
+          <input
+            list="catalog-delivery-options"
+            className={cls}
+            value={delivery}
+            onChange={(e) => setDelivery(e.target.value)}
+            placeholder="Pick or type custom"
+          />
+          <datalist id="catalog-delivery-options">
+            {options.delivery.map((o) => <option key={o} value={o} />)}
+          </datalist>
         </Field>
         <Field label="Provider">
-          <select className={cls} value={provider} onChange={(e) => setProvider(e.target.value)}>
-            {dontChange}
-            {clear}
-            {options.provider.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
+          <input
+            list="catalog-provider-options"
+            className={cls}
+            value={provider}
+            onChange={(e) => setProvider(e.target.value)}
+            placeholder="Pick or type custom"
+          />
+          <datalist id="catalog-provider-options">
+            {options.provider.map((o) => <option key={o} value={o} />)}
+          </datalist>
         </Field>
       </div>
       <label className="flex items-center gap-2 text-sm text-muted cursor-pointer">
-        <input
-          type="checkbox"
-          checked={isSpecial}
-          onChange={(e) => setIsSpecial(e.target.checked)}
-          className="accent-brand-600"
-        />
+        <input type="checkbox" checked={isSpecial} onChange={(e) => setIsSpecial(e.target.checked)} className="accent-brand-600" />
         Special program / workshop (instructor-led, limited seats)
       </label>
     </div>

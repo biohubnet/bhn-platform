@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Course form: contrast fix + custom topic / delivery / provider",
+    body: "Two issues on the New Course modal: (1) inputs had no background or text colour set, so on dark themes (Nightfall / Hi-Tech / Rosalind) text rendered light on the user-agent's white default — invisible. Switched all inputs / textarea / selects to the standard theme-aware classes (bg-card-solid, text-fg, border-line). (2) Topic / Delivery / Provider were locked-down dropdowns. Now they're input+datalist combos: pick from the curated list (sourced from /admin/course-filters) OR type a custom value. Same change applied to the per-course quick-edit pencil dialog. The bulk-apply dialog keeps its select-only paradigm (it needs a tri-state 'don't change / clear / set').",
+    kind: "fix",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
     title: "Employer invites: bulk-mint, search/filter, undo revoke, open-tracking, first-run guide",
     body: "A round of UX polish on the magic-link invite system based on the review.\n\nAdmin side (Administration → Experience → Employer invites):\n• Bulk invite — paste up to 100 emails, mint one magic-link per address.\n• Filter chips (All / Pending / Claimed / Expired) and a search box that matches email or company name.\n• Undo revoke — clicking the trash icon kicks off a 5-second client-side window with an Undo toast before the DELETE actually fires.\n• Open count + last-opened display per invite — shows how many times the recipient (or you) has clicked the link.\n• 'Testing' badge auto-applied to invites with @biohubnet.test placeholder emails so you can tell quick-test invites apart from real-prospect ones at a glance.\n\nEmployer side:\n• First-run welcome card on /employer for fresh accounts (no postings, empty profile) with three click-through steps: fill profile → post first internship → review applicants.\n• 'Set a password' banner for users who signed in via magic link and have no password set — prevents the 'locked out when invite expires' trap. Dismissible per session.\n\nExpired / conflict / unknown-link error page now offers two relevant action links per case (e.g. for email conflict: 'Sign in to existing account' OR 'Request a new invite with a different email').",
     kind: "improvement",
