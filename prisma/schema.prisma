@@ -87,6 +87,7 @@ model User {
   interviews          Interview[]           @relation("Interviewee")
   scheduledInterviews Interview[]           @relation("Interviewer")
   accessRequestsHandled AccessRequest[]     @relation("AccessRequestHandler")
+  formSubmissions     EventFormSubmission[] @relation("FormSubmitter")
 
   @@index([newsletterStatus, newsletterExportedAt])
 }
@@ -388,10 +389,14 @@ model EventFormSubmission {
   data      Json
   email     String?
   userId    String?
+  /// Optional FK to User — set null if the user is deleted; submissions
+  /// outlive accounts so we keep the row but lose the link.
+  user      User?     @relation("FormSubmitter", fields: [userId], references: [id], onDelete: SetNull)
   createdAt DateTime  @default(now())
 
   @@index([formId, createdAt])
   @@index([email])
+  @@index([userId])
 }
 
 model Course {
