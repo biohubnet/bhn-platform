@@ -18,7 +18,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   FileText, Video, MessageSquareQuote, Upload, Trash2, ExternalLink,
-  Check, AlertCircle, Loader2,
+  Check, AlertCircle, Loader2, Sparkles,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -44,14 +44,21 @@ function bust(url: string | null) {
   return `${url}?v=${Date.now()}`;
 }
 
-export function ApplicationClient({ initial }: { initial: Initial }) {
+export function ApplicationClient({
+  initial, canSeedSample, userName,
+}: {
+  initial: Initial;
+  canSeedSample?: boolean;
+  userName?: string | null;
+}) {
   const router = useRouter();
   const [resumeUrl, setResumeUrl] = useState<string | null>(initial.resumeUrl);
   const [videoUrl, setVideoUrl] = useState<string | null>(initial.videoIntroUrl);
   const [pitch, setPitch] = useState(initial.elevatorPitch ?? "");
   const [updatedAt, setUpdatedAt] = useState<string | null>(initial.applicationUpdatedAt);
 
-  const [busyKind, setBusyKind] = useState<"resume" | "video" | "pitch" | null>(null);
+  const [busyKind, setBusyKind] = useState<"resume" | "video" | "pitch" | "seed" | null>(null);
+  const [seedStep, setSeedStep] = useState<string>("");
   const [toast, setToast] = useState<Toast | null>(null);
 
   const resumeInput = useRef<HTMLInputElement>(null);
@@ -136,8 +143,105 @@ export function ApplicationClient({ initial }: { initial: Initial }) {
   const pitchDirty = (initial.elevatorPitch ?? "") !== pitch;
   const pitchOver = pitch.length > PITCH_MAX;
 
+  /**
+   * Admin-only "Fill with sample" — populates all three sections in
+   * one click so demos and screenshot runs don't require manually
+   * recording a video. Resume PDF is generated client-side via jsPDF;
+   * the 1-minute video is recorded from a <canvas> animation via
+   * MediaRecorder (real WebM, not a hand-crafted MP4 byte-pile).
+   * Both upload through the same endpoint trainees use, so the demo
+   * data exercises the real pipeline.
+   */
+  async function fillWithSample() {
+    if (!canSeedSample) return;
+    setBusyKind("seed");
+    try {
+      // Dynamic import keeps jsPDF + canvas code out of the bundle for
+      // every non-admin trainee.
+      const { generateSampleResumePdf, recordSampleIntroVideo, SAMPLE_PITCH } =
+        await import("@/lib/demo/applicationSamples");
+
+      // 1) Resume PDF.
+      setSeedStep("Generating resume…");
+      const pdfBlob = await generateSampleResumePdf({ name: userName ?? "Sample Trainee" });
+      setSeedStep("Uploading resume…");
+      {
+        const fd = new FormData();
+        fd.set("kind", "resume");
+        fd.set("file", new File([pdfBlob], "sample-resume.pdf", { type: "application/pdf" }));
+        const res = await fetch("/api/profile/application/upload", { method: "POST", body: fd });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(j.error ?? "Resume upload failed.");
+        setResumeUrl(j.url);
+      }
+
+      // 2) 1-minute video — recorded live from a canvas animation.
+      setSeedStep("Recording video (≈8 s)…");
+      const videoBlob = await recordSampleIntroVideo({ name: userName ?? "Sample Trainee", durationMs: 8000 });
+      setSeedStep("Uploading video…");
+      {
+        const ext = videoBlob.type.includes("mp4") ? "mp4" : "webm";
+        const fd = new FormData();
+        fd.set("kind", "video");
+        fd.set("file", new File([videoBlob], `sample-intro.${ext}`, { type: videoBlob.type }));
+        const res = await fetch("/api/profile/application/upload", { method: "POST", body: fd });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(j.error ?? "Video upload failed.");
+        setVideoUrl(j.url);
+      }
+
+      // 3) Elevator pitch.
+      setSeedStep("Saving pitch…");
+      {
+        const res = await fetch("/api/profile/application", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ elevatorPitch: SAMPLE_PITCH }),
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(j.error ?? "Pitch save failed.");
+        setPitch(SAMPLE_PITCH);
+        setUpdatedAt(j.applicationUpdatedAt ?? new Date().toISOString());
+      }
+
+      flash({ tone: "ok", msg: "Sample application filled." });
+      router.refresh();
+    } catch (e) {
+      flash({ tone: "err", msg: (e as Error).message ?? "Sample fill failed." });
+    } finally {
+      setBusyKind(null);
+      setSeedStep("");
+    }
+  }
+
   return (
     <div className="space-y-5">
+      {canSeedSample && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50/60">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-amber-900 inline-flex items-center gap-1.5">
+              <Sparkles size={14} /> Admin tools
+            </p>
+            <p className="text-xs text-amber-800/80 mt-0.5">
+              Generate a sample resume PDF, record an ~8 s video introduction from a canvas animation, and set a sample elevator pitch — all in one click. Real upload pipeline.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={fillWithSample}
+            disabled={busyKind !== null}
+            loading={busyKind === "seed"}
+            className="shrink-0"
+          >
+            <Sparkles size={14} /> Fill with sample
+          </Button>
+        </div>
+      )}
+      {busyKind === "seed" && seedStep && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-brand-200 bg-brand-50 text-sm text-brand-800">
+          <Loader2 size={14} className="animate-spin" /> {seedStep}
+        </div>
+      )}
       {toast && (
         <div
           className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${

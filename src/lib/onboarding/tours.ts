@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.08a";
+export const TOUR_VERSION = "2026.05.08b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -405,6 +405,16 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     roles: ["trainee", "evaluating"],
     since: "2026.05.08a",
+    cta: { label: "Open My Application", href: "/profile/application" },
+  },
+  {
+    id: "my-application-sample-admin",
+    title: "Fill My Application with a sample (including the video)",
+    body: "On /profile/application, admins now see a 'Fill with sample' panel at the top. One click generates a multi-section resume PDF, records an ~8 s WebM video introduction from a canvas animation, and sets a sample elevator pitch — all through the real upload pipeline. Useful for screenshot runs and demoing the candidate snapshot without recording yourself.",
+    path: "/profile/application",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.08b",
     cta: { label: "Open My Application", href: "/profile/application" },
   },
   {

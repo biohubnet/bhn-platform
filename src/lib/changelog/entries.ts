@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Admin: 'Fill with sample' on My Application — including the video",
+    body: "Admins and superadmins now see a 'Fill with sample' panel at the top of /profile/application. One click populates all three slots through the real upload pipeline: a multi-section sample resume PDF generated client-side via jsPDF, an ~8-second WebM video introduction recorded live from a <canvas> animation through MediaRecorder (no hand-crafted MP4 byte-piles, no ffmpeg dependency), and a sample elevator pitch. The video shows four animated slides with the admin's name, an animated brand mark, and a pulsing REC dot — under 3 MB. Useful for screenshot runs and sandbox demos so prospective employers see a populated candidate profile without an admin having to actually record themselves.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "New: My Application — build your resume, video intro, and pitch once",
     body: "Trainees now have a dedicated 'My Application' page under the Experience menu (Sidebar → Experience → My Application, or /profile/application). Three sections: a resume slot (PDF / DOCX, ≤10 MB), a 1-minute video introduction slot (MP4 / MOV / WebM, ≤60 MB) with inline preview, and an elevator pitch (≤650 chars). Each section saves independently — upload your resume now and write the pitch later. Files land in R2 at a deterministic per-user path so re-uploads replace the old artifact instead of leaking storage. The intent: build these once and any later employer-facing form pulls from here, instead of re-uploading the same file across every submission.",
     kind: "feature",

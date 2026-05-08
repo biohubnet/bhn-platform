@@ -8,7 +8,7 @@
  * reference them. Employers see whatever is current at the moment a
  * submission is made; subsequent edits don't rewrite history.
  */
-import { requireSession } from "@/lib/auth";
+import { requireSession, isAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -20,6 +20,8 @@ export default async function MyApplicationPage() {
   const session = await requireSession().catch(() => null);
   if (!session) redirect("/login");
   const userId = (session.user as { id?: string }).id!;
+  const role = (session.user as { role?: string }).role ?? "trainee";
+  const userName = session.user?.name ?? null;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -38,14 +40,18 @@ export default async function MyApplicationPage() {
         title="My application"
         description="Build your resume, 1-minute video, and elevator pitch once — every form you submit pulls from here."
       />
-      <ApplicationClient initial={{
-        resumeUrl: user.resumeUrl,
-        videoIntroUrl: user.videoIntroUrl,
-        elevatorPitch: user.elevatorPitch,
-        applicationUpdatedAt: user.applicationUpdatedAt
-          ? user.applicationUpdatedAt.toISOString()
-          : null,
-      }} />
+      <ApplicationClient
+        initial={{
+          resumeUrl: user.resumeUrl,
+          videoIntroUrl: user.videoIntroUrl,
+          elevatorPitch: user.elevatorPitch,
+          applicationUpdatedAt: user.applicationUpdatedAt
+            ? user.applicationUpdatedAt.toISOString()
+            : null,
+        }}
+        canSeedSample={isAdmin(role)}
+        userName={userName}
+      />
     </div>
   );
 }
