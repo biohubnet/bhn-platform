@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/Badge";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { LOCALES, type LocaleId } from "@/lib/i18n/dictionaries";
 import { useConsent } from "@/components/consent/ConsentProvider";
+import { DemoFiller } from "@/components/demo/DemoFiller";
+import { TRAINEE_PROFILE_PRESETS } from "@/lib/demo/presets";
 
 interface UserShape {
   id: string;
@@ -175,9 +177,26 @@ export function ProfileClient({ user, latestRoleRequest }: {
 
       {/* Info */}
       <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <UserIcon size={18} className="text-brand-600" />
-          <h3 className="font-semibold text-fg">Personal info</h3>
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <UserIcon size={18} className="text-brand-600" />
+            <h3 className="font-semibold text-fg">Personal info</h3>
+          </div>
+          <DemoFiller
+            visible={true}
+            presets={TRAINEE_PROFILE_PRESETS}
+            onFill={(preset) => {
+              setInfo((cur) => ({
+                ...cur,
+                ...(preset.name !== undefined         ? { name: preset.name } : {}),
+                ...(preset.bio !== undefined          ? { bio: preset.bio } : {}),
+                ...(preset.organization !== undefined ? { organization: preset.organization } : {}),
+                ...(preset.jobTitle !== undefined     ? { jobTitle: preset.jobTitle } : {}),
+                ...(preset.country !== undefined      ? { country: preset.country } : {}),
+              }));
+            }}
+            hint="trainee profile sample"
+          />
         </div>
         <form onSubmit={saveInfo} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">

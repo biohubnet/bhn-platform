@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07m";
+export const TOUR_VERSION = "2026.05.07n";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -378,6 +378,34 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Public marketing pages live at /for-employers and /for-trainees, pitching the platform without requiring sign-in. Visitors leave their email and an admin approves from /admin/access-requests.",
     placement: "center",
     since: "2026.05.07m",
+  },
+  {
+    id: "per-admin-sandbox",
+    title: "Per-admin sandbox accounts",
+    body: "System status now has a Sandboxes section: each admin spawns one Employer HR + one Trainee pair (idempotent, deterministic emails). Test in parallel with other admins without stomping on shared data. Pair includes a starter posting and a talent-application submission so the kanban / scoring / interview flows all light up immediately.",
+    path: "/admin/system-status",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.07n",
+    cta: { label: "Open System status", href: "/admin/system-status" },
+  },
+  {
+    id: "demo-filler",
+    title: "Fill with sample data",
+    body: "Long forms (talent application, posting form, employer profile, trainee profile) now have a 'Fill with sample' chip — admin-only. Click and pick from 5 curated presets so consecutive demos don't all look identical.",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.07n",
+  },
+  {
+    id: "demo-workspaces",
+    title: "Demo workspaces for prospective employers",
+    body: "Administration → Demo workspaces lets you mint a one-shot link for a partner. They click, enter their name, and land in a populated workspace — 3 sample postings, 10 applicants spread across the funnel, scheduled interviews. Time-limited (default 7 days); the sweeper auto-deletes when the timer runs out.",
+    path: "/admin/demo-workspaces",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.07n",
+    cta: { label: "Open Demo workspaces", href: "/admin/demo-workspaces" },
   },
   {
     id: "complete",

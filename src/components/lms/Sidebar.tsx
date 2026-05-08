@@ -106,6 +106,7 @@ const adminItems: NavItem[] = [
   { label: "Audit Log", href: "/admin/audit", icon: ShieldCheck, minRole: "admin" },
   { label: "Skill ontology",      href: "/admin/skills",          icon: GitBranch,  minRole: "admin" },
   { label: "Access requests",     href: "/admin/access-requests", icon: Inbox,      minRole: "admin" },
+  { label: "Demo workspaces",     href: "/admin/demo-workspaces", icon: Sparkles,   minRole: "admin" },
   { label: "LTI Config", href: "/admin/lti", icon: Link2, minRole: "superadmin" },
   { label: "System status", href: "/admin/system-status", icon: Activity, minRole: "superadmin" },
   { label: "Settings", href: "/admin/settings", icon: Settings, minRole: "superadmin" },

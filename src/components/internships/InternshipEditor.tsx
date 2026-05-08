@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import {
   Sparkles, Save, Loader2, AlertCircle, Trash2, X, Plus, Upload, Paperclip,
 } from "lucide-react";
+import { DemoFiller } from "@/components/demo/DemoFiller";
+import { POSTING_PRESETS } from "@/lib/demo/presets";
 
 export interface PostingValues {
   companyName: string;
@@ -195,6 +197,30 @@ export function InternshipEditor({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* DemoFiller — admin-only sample preset filler */}
+      <DemoFiller
+        visible={true}
+        presets={POSTING_PRESETS}
+        onFill={(preset) => {
+          setValues((cur) => ({
+            ...cur,
+            ...(preset.companyName !== undefined ? { companyName: preset.companyName } : {}),
+            ...(preset.website !== undefined     ? { website: preset.website } : {}),
+            ...(preset.title !== undefined       ? { title: preset.title } : {}),
+            ...(preset.duration !== undefined    ? { duration: preset.duration } : {}),
+            ...(preset.hours !== undefined       ? { hours: preset.hours } : {}),
+            ...(preset.location !== undefined    ? { location: preset.location } : {}),
+            ...(preset.type !== undefined        ? { type: preset.type } : {}),
+            ...(preset.compensation !== undefined? { compensation: preset.compensation } : {}),
+            ...(preset.deadline !== undefined    ? { deadline: preset.deadline } : {}),
+            ...(preset.keySkills !== undefined   ? { keySkills: preset.keySkills } : {}),
+            ...(preset.positionDetails !== undefined ? { positionDetails: preset.positionDetails } : {}),
+            ...(preset.status !== undefined ? { status: preset.status as PostingValues["status"] } : {}),
+          }));
+        }}
+        hint="admin-only — sample posting"
+      />
+
       {/* AI paste-and-parse — only on new */}
       {mode === "new" && (
         <section className="bg-card border border-line rounded-2xl p-6">

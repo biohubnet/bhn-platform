@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import {
   Sparkles, Loader2, AlertCircle, Save, Image as ImageIcon, Building2,
 } from "lucide-react";
+import { DemoFiller } from "@/components/demo/DemoFiller";
+import { EMPLOYER_PROFILE_PRESETS } from "@/lib/demo/presets";
 
 interface Profile {
   employerCompany: string | null;
@@ -114,7 +116,26 @@ export function CompanyProfileEditor({
     "w-full bg-card-solid border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 max-w-5xl">
+    <div className="space-y-4 max-w-5xl">
+      <DemoFiller
+        visible={true}
+        presets={EMPLOYER_PROFILE_PRESETS}
+        onFill={(preset) => {
+          setValues((cur) => ({
+            ...cur,
+            ...(preset.employerCompany    !== undefined ? { employerCompany: preset.employerCompany } : {}),
+            ...(preset.companyWebsite     !== undefined ? { companyWebsite: preset.companyWebsite } : {}),
+            ...(preset.companyIndustry    !== undefined ? { companyIndustry: preset.companyIndustry } : {}),
+            ...(preset.companySize        !== undefined ? { companySize: preset.companySize } : {}),
+            ...(preset.companyLocation    !== undefined ? { companyLocation: preset.companyLocation } : {}),
+            ...(preset.companyDescription !== undefined ? { companyDescription: preset.companyDescription } : {}),
+            ...(preset.companyFounded     !== undefined ? { companyFounded: preset.companyFounded } : {}),
+          }));
+          setSaved(false);
+        }}
+        hint="employer profile sample"
+      />
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
       {/* Logo + AI-fill panel */}
       <aside className="space-y-4">
         <div className="bg-card border border-line rounded-2xl p-5 text-center">
@@ -243,6 +264,7 @@ export function CompanyProfileEditor({
             {saving ? "Saving…" : "Save changes"}
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

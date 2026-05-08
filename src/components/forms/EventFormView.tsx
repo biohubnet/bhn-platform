@@ -1,6 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { DemoFiller } from "@/components/demo/DemoFiller";
+import { TALENT_APPLICATION_PRESETS } from "@/lib/demo/presets";
 import {
   Pencil, Save, X, Plus, Trash2, Check, AlertCircle, Loader2, ListChecks,
   ChevronUp, ChevronDown, Type, Mail, Link as LinkIcon, AlignLeft, ListChecks as RadioIcon, Heading,
@@ -220,6 +222,23 @@ export function EventFormView({
           <h1 className="text-2xl font-bold text-fg">{title}</h1>
           {description && (
             <p className="text-sm text-muted mt-1.5 leading-relaxed">{description}</p>
+          )}
+          {slug === "talent-application" && (
+            <DemoFiller
+              visible={isStaff}
+              presets={TALENT_APPLICATION_PRESETS}
+              onFill={(preset) => {
+                setValues((cur) => {
+                  const next = { ...cur };
+                  for (const [k, v] of Object.entries(preset)) {
+                    if (v !== undefined) next[k] = v as string | string[];
+                  }
+                  return next;
+                });
+              }}
+              className="mt-2"
+              hint="staff-only · won't ship to real users"
+            />
           )}
         </div>
         {isStaff && mode === "view" && (

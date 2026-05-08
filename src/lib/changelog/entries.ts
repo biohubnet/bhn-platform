@@ -23,6 +23,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Per-admin sandbox accounts — multiple admins can test in parallel",
+    body: "System status → Sandboxes lets each admin spawn their own Employer HR + Trainee pair (idempotent, deterministic emails). The pair comes pre-loaded with a posting and a talent-application submission so the kanban, scoring, and interview flows all light up. Reset wipes and re-seeds; Delete cleans up. You can also see other admins' sandboxes — handy for spotting who's testing what.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
+    title: "'Fill with sample' chip on long forms (admin-only)",
+    body: "Talent Application, internship posting form, employer company profile, and trainee personal info now show a discreet amber 'Fill with sample' chip next to the title — visible only to admin and superadmin. Click for 5 curated presets; pick one and the form populates with realistic biomanufacturing dummy data. Tweak, submit, see the real downstream flow. Ideal for hands-on demos and onboarding new admins.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
+    title: "Demo workspaces — mint a populated trial for prospective partners",
+    body: "Administration → Demo workspaces lets you mint a one-shot URL for a prospect. They click, type their name, and land in a workspace pre-loaded with 3 sample postings, 10 applicants spread across the kanban funnel, scheduled interviews, ratings, and notes. No empty-shell first impression. Time-limited (default 7 days); a sweeper deletes everything when the timer runs out. Built on the existing EmployerInvite + demoMode flag.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
+    title: "Sandbox / demo banner — clear visual cue when you're not in real data",
+    body: "When you're signed in as a sandbox or demo account, a slim cyan (sandbox) or violet (demo) banner sits at the top of every page so you never confuse 'this is real' with 'this is my dummy.' Demo banner shows a live countdown to expiry.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Skill ontology — the platform now knows what it's teaching, hiring, and learning",
     body: "Every course, internship posting, and trainee profile is now wired to a shared, curated Skill vocabulary. AI extracts skills from course descriptions, posting bodies, talent-application pitches, and (optionally) uploaded resumes. Course completions automatically infer skills onto the trainee's profile with evidence. Aliases and embeddings let synonyms (USP / Upstream Processing / upstream bioprocessing) resolve to the same canonical Skill. Admins curate the vocabulary at Administration → Skill ontology.",
     kind: "feature",

@@ -47,6 +47,21 @@ model User {
   /// /admin/newsletter. Null = not yet exported. Filtered against this
   /// to only show new sign-ups in the export view.
   newsletterExportedAt   DateTime?
+  /// Account category: "real" | "sandbox" | "demo".
+  ///   sandbox — admin's personal play pair (one employer + one trainee
+  ///             per admin). Never auto-deletes.
+  ///   demo    — time-limited demo workspace claimed by a prospective
+  ///             partner. Cleaned up when demoExpiresAt < NOW().
+  /// All admin counts and stats default to filtering for "real" only.
+  accountKind            String    @default("real")
+  /// Set on demo accounts; the cleanup sweeper deletes the user + all
+  /// owned rows once this passes. Null on real and sandbox accounts.
+  demoExpiresAt          DateTime?
+  /// Set on sandbox + demo accounts; tracks the admin who minted them
+  /// so the admin sees their own sandboxes first in the panel.
+  createdByAdminId       String?
+  createdByAdmin         User?     @relation("CreatedSandboxes", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  createdSandboxes       User[]    @relation("CreatedSandboxes")
   /// Onboarding progress: { version, seenStepIds[], minimized, dismissed, completedAt }
   onboarding    Json?
   /// GDPR/CCPA consent: { necessary, analytics, marketing, version, acceptedAt }
