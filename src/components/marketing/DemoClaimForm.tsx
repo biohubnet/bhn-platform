@@ -1,7 +1,10 @@
 "use client";
 import { useState } from "react";
-import { CheckCircle2, AlertCircle, Sparkles, Copy, ArrowRight, Building2, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import {
+  AlertCircle, Sparkles, Building2, Loader2, ArrowRight, CheckCircle2,
+} from "lucide-react";
 
 interface Props {
   token: string;
@@ -11,30 +14,20 @@ interface Props {
   expiresAt: string;
 }
 
-interface Credentials {
-  email: string;
-  password: string;
-}
+type Stage = "idle" | "spawning" | "signing-in" | "redirecting" | "error";
 
-export function DemoClaimForm({ token, email, companyName, expiresAt }: Props) {
+export function DemoClaimForm({ token, email, companyName }: Props) {
+  const router = useRouter();
   const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [creds, setCreds] = useState<Credentials | null>(null);
-  const [counts, setCounts] = useState<{ postings: number; applicants: number; interviews: number } | null>(null);
+  const [stage, setStage] = useState<Stage>("idle");
   const [err, setErr] = useState<string | null>(null);
-  const [copied, setCopied] = useState<"email" | "pw" | null>(null);
 
-  function copy(field: "email" | "pw", value: string) {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(field);
-      setTimeout(() => setCopied(null), 1500);
-    }).catch(() => {/* ignore */});
-  }
-
-  async function claim() {
+  async function claimAndSignIn() {
     if (!name.trim()) { setErr("Please enter your name."); return; }
-    setBusy(true); setErr(null);
+    setErr(null);
+    setStage("spawning");
     try {
+      // 1. Spawn the populated demo workspace
       const r = await fetch(`/api/auth/claim-demo/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -43,53 +36,60 @@ export function DemoClaimForm({ token, email, companyName, expiresAt }: Props) {
       const j = await r.json();
       if (!r.ok) {
         setErr(j.error ?? "Couldn't start the demo");
+        setStage("error");
         return;
       }
-      setCreds(j.credentials);
-      setCounts(j.counts);
-    } finally { setBusy(false); }
+
+      // 2. Auto sign-in with the just-minted credentials
+      setStage("signing-in");
+      const result = await signIn("credentials", {
+        email: j.credentials.email,
+        password: j.credentials.password,
+        redirect: false,
+        remember: "false",
+      });
+      if (!result?.ok) {
+        setErr(result?.error ?? "Sign-in failed — try opening the login page directly.");
+        setStage("error");
+        return;
+      }
+
+      // 3. Drop them straight into the populated employer dashboard
+      setStage("redirecting");
+      router.push("/employer");
+      router.refresh();
+    } catch (e) {
+      setErr((e as Error).message ?? "Something went wrong");
+      setStage("error");
+    }
   }
 
-  if (creds && counts) {
+  // Active progress card while we're spinning up + signing in
+  if (stage === "spawning" || stage === "signing-in" || stage === "redirecting") {
+    const lines: { label: string; done: boolean }[] = [
+      { label: "Provisioning your workspace",  done: stage !== "spawning" },
+      { label: "Signing you in",                done: stage === "redirecting" },
+      { label: "Loading your dashboard",        done: false },
+    ];
     return (
-      <div className="bg-card border border-line rounded-2xl p-6 shadow-lg">
-        <div className="text-center mb-4">
-          <div className="w-12 h-12 mx-auto rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
-            <CheckCircle2 size={22} />
-          </div>
-          <h2 className="text-xl font-bold text-fg">Your demo is ready</h2>
-          <p className="text-sm text-muted mt-1">
-            We provisioned <strong className="text-fg">{counts.postings} postings</strong>, <strong className="text-fg">{counts.applicants} applicants</strong>, and <strong className="text-fg">{counts.interviews} scheduled interviews</strong> for you to click around in.
-          </p>
+      <div className="bg-card border border-line rounded-2xl p-6 shadow-lg text-center">
+        <div className="w-12 h-12 mx-auto rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
+          <Sparkles size={22} className="animate-pulse" />
         </div>
-
-        <div className="bg-elevated/50 border border-line rounded-lg p-4 mb-3 space-y-2.5 text-sm">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-muted text-xs">Email</span>
-            <span className="font-mono text-fg flex-1 truncate text-right">{creds.email}</span>
-            <button onClick={() => copy("email", creds.email)} className="text-muted hover:text-brand-700">
-              {copied === "email" ? <CheckCircle2 size={13} className="text-emerald-600" /> : <Copy size={13} />}
-            </button>
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-muted text-xs">Password</span>
-            <span className="font-mono text-fg flex-1 truncate text-right">{creds.password}</span>
-            <button onClick={() => copy("pw", creds.password)} className="text-muted hover:text-brand-700">
-              {copied === "pw" ? <CheckCircle2 size={13} className="text-emerald-600" /> : <Copy size={13} />}
-            </button>
-          </div>
-        </div>
-
-        <p className="text-[11px] text-subtle mb-4">
-          Save these somewhere — they expire on {new Date(expiresAt).toLocaleDateString()}. The data resets when the trial ends.
-        </p>
-
-        <Link
-          href="/login"
-          className="w-full inline-flex items-center justify-center gap-2 bg-brand-600 text-white hover:bg-brand-700 font-semibold py-3 px-4 rounded-lg transition-colors"
-        >
-          Sign in to the demo <ArrowRight size={14} />
-        </Link>
+        <h2 className="text-xl font-bold text-fg">Spinning up your demo…</h2>
+        <p className="text-sm text-muted mt-1">This takes about 5 seconds — sit tight.</p>
+        <ul className="mt-5 text-left text-sm text-fg space-y-2 max-w-xs mx-auto">
+          {lines.map((l, i) => (
+            <li key={i} className="flex items-center gap-2.5">
+              {l.done ? (
+                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+              ) : (
+                <Loader2 size={14} className="text-brand-600 animate-spin shrink-0" />
+              )}
+              <span className={l.done ? "text-muted line-through" : "text-fg"}>{l.label}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }
@@ -102,7 +102,7 @@ export function DemoClaimForm({ token, email, companyName, expiresAt }: Props) {
       </div>
       <h2 className="text-xl font-bold text-fg mb-1">Start your demo</h2>
       <p className="text-sm text-muted mb-5">
-        Tell us your name and we&apos;ll spin up the workspace. Takes about 5 seconds.
+        Tell us your name and we&apos;ll spin up the workspace and sign you straight in. Takes about 5 seconds.
       </p>
 
       <label className="block mb-4">
@@ -110,7 +110,9 @@ export function DemoClaimForm({ token, email, companyName, expiresAt }: Props) {
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") claimAndSignIn(); }}
           required
+          autoFocus
           className="w-full bg-card-solid border border-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
           placeholder="Jane Smith"
         />
@@ -123,13 +125,15 @@ export function DemoClaimForm({ token, email, companyName, expiresAt }: Props) {
       )}
 
       <button
-        onClick={claim}
-        disabled={busy}
-        className="w-full inline-flex items-center justify-center gap-2 bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-60 font-semibold py-3 px-4 rounded-lg transition-colors"
+        onClick={claimAndSignIn}
+        className="w-full inline-flex items-center justify-center gap-2 bg-brand-600 text-white hover:bg-brand-700 font-semibold py-3 px-4 rounded-lg transition-colors"
       >
-        {busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-        {busy ? "Spinning up your workspace…" : "Start the demo"}
+        <Sparkles size={14} /> Start the demo <ArrowRight size={14} />
       </button>
+
+      <p className="text-[11px] text-subtle mt-3 text-center">
+        We&apos;ll create a temporary workspace just for you. No email confirmation needed.
+      </p>
     </div>
   );
 }

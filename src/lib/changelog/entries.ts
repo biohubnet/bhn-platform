@@ -38,7 +38,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   },
   {
     title: "Demo workspaces — mint a populated trial for prospective partners",
-    body: "Administration → Demo workspaces lets you mint a one-shot URL for a prospect. They click, type their name, and land in a workspace pre-loaded with 3 sample postings, 10 applicants spread across the kanban funnel, scheduled interviews, ratings, and notes. No empty-shell first impression. Time-limited (default 7 days); a sweeper deletes everything when the timer runs out. Built on the existing EmployerInvite + demoMode flag.",
+    body: "Administration → Demo workspaces lets you mint a one-shot URL for a prospect. They click, type their name, and we sign them in automatically — no copy-paste credentials — landing them straight in a workspace pre-loaded with 3 sample postings, 10 applicants spread across the kanban funnel, scheduled interviews, ratings, and notes. No empty-shell first impression. Time-limited (default 7 days); a sweeper deletes everything when the timer runs out. Built on the existing EmployerInvite + demoMode flag.",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,
