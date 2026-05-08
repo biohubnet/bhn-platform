@@ -233,62 +233,98 @@
 [data-theme="rosalind"] .text-sky-700     { color: #4e6e84; }
 [data-theme="rosalind"] .text-sky-800     { color: #3e586a; }
 
-/* ───── Mist (frosted glass / 毛玻璃) — soft pastel gradient
- *   blooms behind genuinely translucent cards. The standard .surface
- *   and .glass utilities pick up a heavier backdrop-blur under this
- *   theme (overridden below) so cards read as crystalline frosted
- *   glass. White inner-glow edges via inset shadows give every card
- *   a thin highlight on top, the way real frosted glass catches
- *   light. Brand: soft indigo, picked to harmonise with the gradient
- *   bloom rather than fight it.
+/* ───── Mist — Apple-inspired translucent glass surfaces. Targets
+ *   the visionOS / iOS Control Center / macOS panel aesthetic:
+ *   premium, minimal, spatial. Off-white and pale blue-gray tones,
+ *   generous whitespace, large rounded corners, layered inner/outer
+ *   shadows for material realism. The atmospheric background is
+ *   deliberately desaturated — depth comes from transparency, not
+ *   gradients or contrast.
  *   ───── */
 [data-theme="mist"] {
-  --popover-bg: rgba(255, 255, 255, 0.92);
-  --bg:        #eef0f8;
+  --popover-bg: rgba(255, 255, 255, 0.94);
+  --bg:        #f4f6fa;        /* off-white with the faintest cool tint */
+  /* Atmospheric gradient — desaturated blue-grays only, no chromatic
+   * blooms. Designed to read as soft sky / diffused window light, not
+   * a colourful aurora. */
   --bg-mesh:
-    radial-gradient(at 18% 22%, rgba(186, 156, 255, 0.55) 0px, transparent 55%),
-    radial-gradient(at 82% 12%, rgba(135, 206, 250, 0.50) 0px, transparent 50%),
-    radial-gradient(at 70% 82%, rgba(255, 182, 193, 0.45) 0px, transparent 55%),
-    radial-gradient(at 22% 78%, rgba(150, 220, 200, 0.40) 0px, transparent 50%);
-  --card:      rgba(255, 255, 255, 0.55);
-  --card-solid: rgba(255, 255, 255, 0.92);
-  --elevated:  rgba(255, 255, 255, 0.42);
-  --raised:    rgba(255, 255, 255, 0.65);
-  --fg:        #2d3242;
-  --fg-muted:  #5e6478;
-  --fg-subtle: #8a91a4;
-  --line:      rgba(255, 255, 255, 0.65);
-  --line-strong: rgba(255, 255, 255, 0.85);
-  --backdrop:  rgba(45, 50, 66, 0.40);
+    radial-gradient(at 28% 18%, rgba(180, 195, 220, 0.32) 0px, transparent 60%),
+    radial-gradient(at 78% 82%, rgba(200, 210, 225, 0.26) 0px, transparent 55%),
+    radial-gradient(at 88% 12%, rgba(220, 215, 225, 0.18) 0px, transparent 50%);
+  --card:      rgba(255, 255, 255, 0.62);
+  --card-solid: rgba(255, 255, 255, 0.95);
+  --elevated:  rgba(255, 255, 255, 0.50);
+  --raised:    rgba(255, 255, 255, 0.72);
+  --fg:        #1c2230;        /* deep slate, premium feel */
+  --fg-muted:  #515b6e;
+  --fg-subtle: #8993a4;
+  --line:      rgba(255, 255, 255, 0.55);
+  --line-strong: rgba(255, 255, 255, 0.75);
+  --backdrop:  rgba(28, 34, 48, 0.35);
 
-  /* Soft indigo brand. 600 against white = ~9:1 contrast, AAA pass.
-   * Tones picked to harmonise with the lavender / sky-blue gradient
-   * bloom in --bg-mesh. */
-  --brand-50:  #f0f0fb;
-  --brand-100: #e3e3f7;
-  --brand-200: #c4c4ec;
-  --brand-300: #9a9add;
-  --brand-400: #7373cf;
-  --brand-500: #5454c1;
-  --brand-600: #4242a8;
-  --brand-700: #353587;
-  --brand-800: #2a2a6b;
-  --brand-900: #1f1f50;
+  /* Cool slate-blue brand, deliberately desaturated. 600 against
+   * white reads ~8:1 (AAA). No saturated/neon tones; the brand is
+   * meant to recede into the calm, not draw attention. */
+  --brand-50:  #eef2f8;
+  --brand-100: #dde4ee;
+  --brand-200: #b8c6d8;
+  --brand-300: #8da4bf;
+  --brand-400: #6783a3;
+  --brand-500: #4f6c8e;
+  --brand-600: #3e5775;
+  --brand-700: #324558;
+  --brand-800: #263643;
+  --brand-900: #1a242f;
 
-  /* Generous, soft radii — like rounded glass tiles. */
-  --radius-sm: 12px;
-  --radius:    18px;
-  --radius-lg: 26px;
-  --radius-xl: 36px;
+  /* Large rounded corners — visionOS-scale glass tiles. */
+  --radius-sm: 16px;
+  --radius:    24px;
+  --radius-lg: 32px;
+  --radius-xl: 40px;
 }
 
-/* Crank up backdrop-blur on .surface / .glass utilities for the
- * crystalline frosted-glass effect. */
+/* Glass material spec for .surface / .glass / .popover under Mist.
+ *
+ * Layered shadows do the heavy lifting:
+ *   - Diffused outer shadow lifts the panel off the background
+ *   - Top inset highlight is the specular edge (brighter)
+ *   - Bottom inset is barely-there for the lower lip
+ *   - Hairline white border defines the outline without harsh contrast
+ *
+ * Backdrop-filter at 30px + 180% saturation gives the optical
+ * diffusion that lets the gradient bleed through without becoming
+ * a colourful blob. */
 [data-theme="mist"] .surface,
-[data-theme="mist"] .glass,
+[data-theme="mist"] .glass {
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 8px 32px rgba(15, 23, 42, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -0.5px 0 rgba(255, 255, 255, 0.10);
+}
 [data-theme="mist"] .popover {
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+/* Subtle noise texture so the panels read as physical material, not
+ * Photoshop-flat gradients. Fixed-position, mix-blend-mode overlay,
+ * 30% opacity. Pointer-events off so it never intercepts clicks. */
+[data-theme="mist"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
 /* ───── Hi-tech (TRON — pure cyan glow on inky black + grid floor) ───── */
@@ -692,21 +728,30 @@ body {
   letter-spacing: 0;
 }
 
-/* Mist (frosted glass) — clean rounded sans, airy weight, soft inner
- * glow + diffused outer shadow on every surface. The shadow is
- * key: the inner highlight gives cards a "lit edge" while the
- * diffused outer shadow makes them appear to float above the
- * gradient. */
+/* Mist — Apple SF Pro stack, thin to medium weights, hierarchy by
+ * tracking and size rather than boldness. Surface tokens here drive
+ * the base .surface utility; the [data-theme="mist"] override above
+ * adds the layered backdrop-blur + inset highlights that turn that
+ * base into actual frosted glass. */
 [data-theme="mist"] {
-  --font-sans-theme: ui-rounded, "SF Pro Rounded", "Avenir Next", "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans-theme: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Inter", system-ui, sans-serif;
   --font-display-theme: var(--font-sans-theme);
   --body-features: "ss01", "cv11";
-  --surface-shadow: 0 8px 32px rgba(31, 38, 135, 0.10), inset 0 1px 0 0 rgba(255, 255, 255, 0.55);
-  --surface-border: 1px solid rgba(255, 255, 255, 0.7);
-  --heading-tracking: -0.005em;
+  --surface-shadow: 0 8px 32px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --surface-border: 1px solid rgba(255, 255, 255, 0.55);
+  --heading-tracking: -0.012em;
   --heading-weight: 500;
   --heading-transform: none;
-  --popover-shadow: 0 18px 60px rgba(31, 38, 135, 0.20), inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
+  --popover-shadow: 0 24px 60px rgba(15, 23, 42, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+[data-theme="mist"] h1 {
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+[data-theme="mist"] h2,
+[data-theme="mist"] h3 {
+  font-weight: 500;
+  letter-spacing: -0.012em;
 }
 
 /* Hi-tech (TRON) — JetBrains Mono, electric-cyan glow on every edge. */

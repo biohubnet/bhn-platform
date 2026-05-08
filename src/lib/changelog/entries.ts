@@ -23,8 +23,8 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
-    title: "New theme: Mist — frosted glass / 毛玻璃",
-    body: "A glassmorphism theme. Soft pastel gradient blooms (lavender, sky-blue, blush, sage) bleed across the page; cards are genuinely translucent with heavy backdrop-blur (20px + 180% saturation) so the gradient shows through. White inner-glow edges via inset shadows give every card a thin highlight on top — the way real frosted glass catches light. Soft indigo brand colour, ui-rounded sans, generous radii (12 / 18 / 26 / 36 px), diffused outer shadows so cards appear to float. Pick it from the Theme picker at the bottom of the sidebar.",
+    title: "New theme: Mist — Apple visionOS-inspired translucent panels",
+    body: "A premium glass theme tuned to feel like visionOS, iOS Control Center, and macOS translucent panels — calm, airy, physical. Off-white background with a desaturated blue-gray atmospheric mesh (no chromatic blooms, no neon, no aurora). Cards are translucent with 30px backdrop-blur + 180% saturation; popovers go to 40px. Each panel renders layered shadows: a diffused outer drop (`0 8px 32px rgba(15,23,42,0.10)`), a bright top inset highlight (specular edge), and a barely-there bottom inset for the lower lip. Hairline white borders, large rounded corners (16 / 24 / 32 / 40 px), Apple SF Pro typography with light-to-medium weights, and a subtle SVG noise overlay so panels read as physical material rather than flat gradients. Brand is a desaturated slate-blue picked to recede rather than draw attention. Pick it from the Theme picker at the bottom of the sidebar.",
     kind: "feature",
     visibleTo: ALL,
     daysAgo: 0,

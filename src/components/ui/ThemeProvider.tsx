@@ -6,7 +6,7 @@ export const THEMES = [
   { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents" },
   { id: "scientific", name: "Scientific", description: "Cool sky-blue, paper-like surfaces" },
   { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic" },
-  { id: "mist",       name: "Mist",       description: "Frosted glass on a soft pastel gradient — 毛玻璃" },
+  { id: "mist",       name: "Mist",       description: "Translucent glass panels in a calm atmosphere — visionOS-inspired" },
   { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black" },
 ] as const;
 
