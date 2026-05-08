@@ -3,9 +3,8 @@ import {
   Users, Sparkles, Clock, GitCommit, Cpu, ServerCrash, UserCog, Building2,
   ScrollText, Zap, Eye, Beaker,
 } from "lucide-react";
-import { requireRole, getSession } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { SandboxPanel } from "@/components/admin/SandboxPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +13,6 @@ interface KindStat { kind: string; total: number; failed: number; avgMs: number;
 
 export default async function SystemStatusPage() {
   await requireRole("superadmin");
-  const session = await getSession();
-  const meId = (session?.user as { id?: string } | undefined)?.id ?? "";
 
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const since7d  = new Date(Date.now() - 7  * 24 * 60 * 60 * 1000);
@@ -225,9 +222,19 @@ export default async function SystemStatusPage() {
         <Vital icon={GitCommit} label="Build commit"   value={sha}             sub="Inlined at build time" mono />
       </div>
 
-      {/* Per-admin sandbox accounts */}
-      <Section icon={Beaker} title="Sandboxes">
-        <SandboxPanel meId={meId} />
+      {/* Sandboxes moved to their own page — link out so admins can find it. */}
+      <Section icon={Beaker} title="Sandbox accounts" aside="Moved to its own page">
+        <a
+          href="/admin/sandboxes"
+          className="block bg-elevated/40 border border-line rounded-lg p-3 hover:border-brand-300 transition-colors group"
+        >
+          <p className="text-sm font-medium text-fg group-hover:text-brand-700 transition-colors">
+            Open sandbox accounts →
+          </p>
+          <p className="text-xs text-muted mt-0.5">
+            Spawn / reset / delete your dummy Employer HR + Trainee pair. See other admins&apos; sandboxes too.
+          </p>
+        </a>
       </Section>
 
       {/* Database section */}

@@ -382,12 +382,12 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "per-admin-sandbox",
     title: "Per-admin sandbox accounts",
-    body: "System status now has a Sandboxes section: each admin spawns one Employer HR + one Trainee pair (idempotent, deterministic emails). Test in parallel with other admins without stomping on shared data. Pair includes a starter posting and a talent-application submission so the kanban / scoring / interview flows all light up immediately.",
-    path: "/admin/system-status",
+    body: "Administration → Sandbox accounts. Each admin spawns one Employer HR + one Trainee pair (idempotent, deterministic emails). Test in parallel with other admins without stomping on shared data. Pair includes a starter posting and a talent-application submission so the kanban / scoring / interview flows all light up immediately.",
+    path: "/admin/sandboxes",
     placement: "center",
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
-    cta: { label: "Open System status", href: "/admin/system-status" },
+    cta: { label: "Open Sandbox accounts", href: "/admin/sandboxes" },
   },
   {
     id: "demo-filler",

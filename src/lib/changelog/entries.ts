@@ -24,7 +24,7 @@ export interface ChangelogEntry {
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
     title: "Per-admin sandbox accounts — multiple admins can test in parallel",
-    body: "System status → Sandboxes lets each admin spawn their own Employer HR + Trainee pair (idempotent, deterministic emails). The pair comes pre-loaded with a posting and a talent-application submission so the kanban, scoring, and interview flows all light up. Reset wipes and re-seeds; Delete cleans up. You can also see other admins' sandboxes — handy for spotting who's testing what.",
+    body: "Administration → Sandbox accounts (its own page now, not buried in System status) lets each admin spawn their own Employer HR + Trainee pair (idempotent, deterministic emails). The pair comes pre-loaded with a posting and a talent-application submission so the kanban, scoring, and interview flows all light up. Reset wipes and re-seeds; Delete cleans up. You can also see other admins' sandboxes — handy for spotting who's testing what.",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,
