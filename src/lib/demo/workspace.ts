@@ -134,7 +134,7 @@ export async function spawnDemoWorkspace(input: DemoSeedInput): Promise<DemoSeed
     "offer",
   ];
 
-  const applicantsCreated: { id: string; name: string }[] = [];
+  const applicantsCreated: { id: string; name: string | null }[] = [];
   for (let i = 0; i < STATUSES_DISTRIBUTION.length; i++) {
     const first = pick(SAMPLE_FIRST_NAMES);
     const last  = pick(SAMPLE_LAST_NAMES);
