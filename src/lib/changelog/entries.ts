@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "New theme: Mist — frosted glass / 毛玻璃",
+    body: "A glassmorphism theme. Soft pastel gradient blooms (lavender, sky-blue, blush, sage) bleed across the page; cards are genuinely translucent with heavy backdrop-blur (20px + 180% saturation) so the gradient shows through. White inner-glow edges via inset shadows give every card a thin highlight on top — the way real frosted glass catches light. Soft indigo brand colour, ui-rounded sans, generous radii (12 / 18 / 26 / 36 px), diffused outer shadows so cards appear to float. Pick it from the Theme picker at the bottom of the sidebar.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Sandbox accounts: one-click magic-link sign-in (no more copy email + copy password)",
     body: "Spawn a sandbox and you now get a magic-link URL per account: click it (or open in incognito to keep your admin session) and you're signed in instantly as the sandbox employer or trainee. No email to copy, no password to copy, no /login screen. Same pattern as demo workspaces and employer invites. Token is stored on User.magicToken (sandbox + demo accounts only — real accounts can never have one, so a leaked sandbox token can't escalate). Existing sandboxes from before this change show a 'Reset to generate magic link' nudge — one click and they're upgraded.",
     kind: "improvement",

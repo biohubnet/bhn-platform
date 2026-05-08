@@ -233,6 +233,64 @@
 [data-theme="rosalind"] .text-sky-700     { color: #4e6e84; }
 [data-theme="rosalind"] .text-sky-800     { color: #3e586a; }
 
+/* ───── Mist (frosted glass / 毛玻璃) — soft pastel gradient
+ *   blooms behind genuinely translucent cards. The standard .surface
+ *   and .glass utilities pick up a heavier backdrop-blur under this
+ *   theme (overridden below) so cards read as crystalline frosted
+ *   glass. White inner-glow edges via inset shadows give every card
+ *   a thin highlight on top, the way real frosted glass catches
+ *   light. Brand: soft indigo, picked to harmonise with the gradient
+ *   bloom rather than fight it.
+ *   ───── */
+[data-theme="mist"] {
+  --popover-bg: rgba(255, 255, 255, 0.92);
+  --bg:        #eef0f8;
+  --bg-mesh:
+    radial-gradient(at 18% 22%, rgba(186, 156, 255, 0.55) 0px, transparent 55%),
+    radial-gradient(at 82% 12%, rgba(135, 206, 250, 0.50) 0px, transparent 50%),
+    radial-gradient(at 70% 82%, rgba(255, 182, 193, 0.45) 0px, transparent 55%),
+    radial-gradient(at 22% 78%, rgba(150, 220, 200, 0.40) 0px, transparent 50%);
+  --card:      rgba(255, 255, 255, 0.55);
+  --card-solid: rgba(255, 255, 255, 0.92);
+  --elevated:  rgba(255, 255, 255, 0.42);
+  --raised:    rgba(255, 255, 255, 0.65);
+  --fg:        #2d3242;
+  --fg-muted:  #5e6478;
+  --fg-subtle: #8a91a4;
+  --line:      rgba(255, 255, 255, 0.65);
+  --line-strong: rgba(255, 255, 255, 0.85);
+  --backdrop:  rgba(45, 50, 66, 0.40);
+
+  /* Soft indigo brand. 600 against white = ~9:1 contrast, AAA pass.
+   * Tones picked to harmonise with the lavender / sky-blue gradient
+   * bloom in --bg-mesh. */
+  --brand-50:  #f0f0fb;
+  --brand-100: #e3e3f7;
+  --brand-200: #c4c4ec;
+  --brand-300: #9a9add;
+  --brand-400: #7373cf;
+  --brand-500: #5454c1;
+  --brand-600: #4242a8;
+  --brand-700: #353587;
+  --brand-800: #2a2a6b;
+  --brand-900: #1f1f50;
+
+  /* Generous, soft radii — like rounded glass tiles. */
+  --radius-sm: 12px;
+  --radius:    18px;
+  --radius-lg: 26px;
+  --radius-xl: 36px;
+}
+
+/* Crank up backdrop-blur on .surface / .glass utilities for the
+ * crystalline frosted-glass effect. */
+[data-theme="mist"] .surface,
+[data-theme="mist"] .glass,
+[data-theme="mist"] .popover {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
 /* ───── Hi-tech (TRON — pure cyan glow on inky black + grid floor) ───── */
 [data-theme="hitech"] {
   --popover-bg: #03101a;
@@ -632,6 +690,23 @@ body {
   font-family: var(--font-display-theme);
   font-style: italic;
   letter-spacing: 0;
+}
+
+/* Mist (frosted glass) — clean rounded sans, airy weight, soft inner
+ * glow + diffused outer shadow on every surface. The shadow is
+ * key: the inner highlight gives cards a "lit edge" while the
+ * diffused outer shadow makes them appear to float above the
+ * gradient. */
+[data-theme="mist"] {
+  --font-sans-theme: ui-rounded, "SF Pro Rounded", "Avenir Next", "Inter", system-ui, -apple-system, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01", "cv11";
+  --surface-shadow: 0 8px 32px rgba(31, 38, 135, 0.10), inset 0 1px 0 0 rgba(255, 255, 255, 0.55);
+  --surface-border: 1px solid rgba(255, 255, 255, 0.7);
+  --heading-tracking: -0.005em;
+  --heading-weight: 500;
+  --heading-transform: none;
+  --popover-shadow: 0 18px 60px rgba(31, 38, 135, 0.20), inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
 }
 
 /* Hi-tech (TRON) — JetBrains Mono, electric-cyan glow on every edge. */
