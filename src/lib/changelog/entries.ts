@@ -37,8 +37,8 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     daysAgo: 0,
   },
   {
-    title: "Demo workspaces — mint a populated trial for prospective partners",
-    body: "Administration → Demo workspaces lets you mint a one-shot URL for a prospect. They click, type their name, and we sign them in automatically — no copy-paste credentials — landing them straight in a workspace pre-loaded with 3 sample postings, 10 applicants spread across the kanban funnel, scheduled interviews, ratings, and notes. No empty-shell first impression. Time-limited (default 7 days); a sweeper deletes everything when the timer runs out. Built on the existing EmployerInvite + demoMode flag.",
+    title: "Demo workspaces — true one-click magic-link sign-in",
+    body: "Administration → Demo workspaces lets you mint a magic-link URL for a prospective partner. They click — that's it. The server validates the token, spawns a populated workspace (or looks up their existing one for return visits), mints a NextAuth session scoped to the invite expiry, sets the cookie, and redirects straight to the employer dashboard. No claim form, no name typing, no copy-paste credentials. The link is reusable until expiry, so the prospect can bookmark it and come back. Workspace ships pre-loaded with 3 sample postings, 10 applicants spread across the kanban funnel, scheduled interviews, ratings, and notes. Time-limited (default 7 days); a sweeper deletes everything when the timer runs out.",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,
