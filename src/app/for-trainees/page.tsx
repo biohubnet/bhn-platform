@@ -13,7 +13,7 @@ export default async function ForTraineesPage() {
   const [courseCount, postingCount, employerCount, certCount] = await Promise.all([
     prisma.course.count({ where: { status: "published" } }).catch(() => 0),
     prisma.internshipPosting.count({ where: { status: "active" } }).catch(() => 0),
-    prisma.user.count({ where: { role: "employer", isActive: true } }).catch(() => 0),
+    prisma.user.count({ where: { role: "employer", isActive: true, accountKind: "real" } }).catch(() => 0),
     prisma.certificate.count({ where: { revokedAt: null } }).catch(() => 0),
   ]);
 

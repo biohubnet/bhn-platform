@@ -50,8 +50,8 @@ export async function GET(req: NextRequest) {
     userGrowthDaily,
     activityDaily,
   ] = await Promise.all([
-    prisma.user.count(),
-    prisma.user.count({ where: { createdAt: { gte: since } } }),
+    prisma.user.count({ where: { accountKind: "real" } }),
+    prisma.user.count({ where: { createdAt: { gte: since }, accountKind: "real" } }),
     prisma.event.count(),
     prisma.event.count({ where: { createdAt: { gte: since } } }),
     // distinct active users via raw SQL for speed

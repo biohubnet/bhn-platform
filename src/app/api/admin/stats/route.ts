@@ -13,7 +13,7 @@ export async function GET() {
     totalCertificates,
     recentEnrollments,
   ] = await Promise.all([
-    prisma.user.count(),
+    prisma.user.count({ where: { accountKind: "real" } }),
     prisma.course.count({ where: { status: "published" } }),
     prisma.enrollment.count(),
     prisma.enrollment.count({ where: { status: "completed" } }),

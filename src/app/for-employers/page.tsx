@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function ForEmployersPage() {
   // Tasteful, anonymised pulse stats — no PII.
   const [traineeCount, courseCount, postingCount, skillCount] = await Promise.all([
-    prisma.user.count({ where: { isActive: true, role: { in: ["trainee", "evaluating"] } } }).catch(() => 0),
+    prisma.user.count({ where: { isActive: true, role: { in: ["trainee", "evaluating"] }, accountKind: "real" } }).catch(() => 0),
     prisma.course.count({ where: { status: "published" } }).catch(() => 0),
     prisma.internshipPosting.count({ where: { status: "active" } }).catch(() => 0),
     prisma.skill.count({ where: { status: "active" } }).catch(() => 0),

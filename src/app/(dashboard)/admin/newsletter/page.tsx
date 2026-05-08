@@ -28,15 +28,16 @@ export default async function NewsletterAdminPage() {
     new30d,
     recentExports,
   ] = await Promise.all([
-    prisma.user.count({ where: { newsletterStatus: "subscribe" } }),
-    prisma.user.count({ where: { newsletterStatus: "subscribe", newsletterExportedAt: null } }),
-    prisma.user.count({ where: { newsletterStatus: "subscribe", newsletterExportedAt: { not: null } } }),
-    prisma.user.count({ where: { newsletterStatus: "no" } }),
-    prisma.user.count({ where: { newsletterStatus: "already" } }),
+    prisma.user.count({ where: { newsletterStatus: "subscribe", accountKind: "real" } }),
+    prisma.user.count({ where: { newsletterStatus: "subscribe", newsletterExportedAt: null, accountKind: "real" } }),
+    prisma.user.count({ where: { newsletterStatus: "subscribe", newsletterExportedAt: { not: null }, accountKind: "real" } }),
+    prisma.user.count({ where: { newsletterStatus: "no", accountKind: "real" } }),
+    prisma.user.count({ where: { newsletterStatus: "already", accountKind: "real" } }),
     prisma.user.count({
       where: {
         newsletterStatus: "subscribe",
         newsletterSubscribedAt: { gt: since30d },
+        accountKind: "real",
       },
     }),
     // Recent newsletter.export audit rows

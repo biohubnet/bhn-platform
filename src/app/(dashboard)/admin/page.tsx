@@ -30,8 +30,8 @@ export default async function AdminPage() {
     recentEnrollments,
     recentUsers,
   ] = await Promise.all([
-    prisma.user.count(),
-    prisma.user.count({ where: { isActive: true } }),
+    prisma.user.count({ where: { accountKind: "real" } }),
+    prisma.user.count({ where: { isActive: true, accountKind: "real" } }),
     prisma.course.count({ where: { status: "published" } }),
     prisma.enrollment.count(),
     prisma.enrollment.count({ where: { status: "completed" } }),
@@ -46,6 +46,7 @@ export default async function AdminPage() {
       },
     }),
     prisma.user.findMany({
+      where: { accountKind: "real" },
       take: 5,
       orderBy: { createdAt: "desc" },
       select: { id: true, name: true, email: true, role: true, createdAt: true, credits: true },

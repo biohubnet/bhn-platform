@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Beaker, Sparkles, Users } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -16,12 +18,25 @@ interface UserRow {
   _count: { enrollments: number; certificates: number };
 }
 
-export default async function AdminUsersPage() {
+const VALID_KINDS = ["real", "sandbox", "demo"] as const;
+type Kind = (typeof VALID_KINDS)[number];
+
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ kind?: string }>;
+}) {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
 
-  const [users, groups] = await Promise.all([
+  const sp = await searchParams;
+  const kind: Kind = (VALID_KINDS as readonly string[]).includes(sp.kind ?? "")
+    ? (sp.kind as Kind)
+    : "real";
+
+  const [users, groups, kindCounts] = await Promise.all([
     prisma.user.findMany({
+      where: { accountKind: kind },
       select: {
         id: true,
         name: true,
@@ -39,19 +54,74 @@ export default async function AdminUsersPage() {
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    Promise.all([
+      prisma.user.count({ where: { accountKind: "real" } }),
+      prisma.user.count({ where: { accountKind: "sandbox" } }),
+      prisma.user.count({ where: { accountKind: "demo" } }),
+    ]),
   ]);
+  const [realCount, sandboxCount, demoCount] = kindCounts;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-fg">Users</h1>
-          <p className="text-muted text-sm mt-1">{users.length} total · select rows for batch actions</p>
+          <p className="text-muted text-sm mt-1">
+            {users.length} {kind} · select rows for batch actions
+          </p>
         </div>
         <UserActionsBar />
       </div>
 
+      {/* Account-kind tabs */}
+      <div className="flex items-center gap-1 border-b border-line">
+        <Tab href="/admin/users?kind=real"     active={kind === "real"}     icon={Users}    label="Real"     count={realCount} />
+        <Tab href="/admin/users?kind=sandbox"  active={kind === "sandbox"}  icon={Beaker}   label="Sandbox"  count={sandboxCount} tone="cyan" />
+        <Tab href="/admin/users?kind=demo"     active={kind === "demo"}     icon={Sparkles} label="Demo"     count={demoCount}    tone="violet" />
+      </div>
+
+      {kind === "sandbox" && (
+        <div className="bg-cyan-50 border border-cyan-200 text-cyan-900 rounded-lg px-3 py-2 text-xs">
+          These are admin sandbox accounts. Manage your own pair from <Link href="/admin/sandboxes" className="font-semibold underline">/admin/sandboxes</Link>.
+        </div>
+      )}
+      {kind === "demo" && (
+        <div className="bg-violet-50 border border-violet-200 text-violet-900 rounded-lg px-3 py-2 text-xs">
+          These are time-limited demo workspace accounts. Manage them from <Link href="/admin/demo-workspaces" className="font-semibold underline">/admin/demo-workspaces</Link>.
+        </div>
+      )}
+
       <UsersTableClient users={users} groups={groups} />
     </div>
+  );
+}
+
+function Tab({
+  href, active, icon: Icon, label, count, tone,
+}: {
+  href: string;
+  active: boolean;
+  icon: React.ElementType;
+  label: string;
+  count: number;
+  tone?: "cyan" | "violet";
+}) {
+  const activeBorder =
+    tone === "cyan"   ? "border-cyan-600 text-cyan-700"
+  : tone === "violet" ? "border-violet-600 text-violet-700"
+                      : "border-brand-600 text-brand-700";
+  return (
+    <Link
+      href={href}
+      className={
+        "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors " +
+        (active ? activeBorder : "text-muted border-transparent hover:text-fg")
+      }
+    >
+      <Icon size={13} />
+      {label}
+      <span className="text-xs tabular-nums opacity-80">{count}</span>
+    </Link>
   );
 }

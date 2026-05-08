@@ -34,6 +34,7 @@ export default async function SystemStatusPage() {
   const [
     userCount, activeUserCount, deactivatedCount, inactive90dCount,
     superadminCount, adminCount, instructorCount, employerCount,
+    sandboxUserCount, demoUserCount,
     sessionCount,
     courseCount, publishedCount,
     enrollCount, enroll24h,
@@ -48,21 +49,26 @@ export default async function SystemStatusPage() {
     recentRoleAudits,
     recentLogins,
   ] = await Promise.all([
-    prisma.user.count(),
-    prisma.user.count({ where: { isActive: true } }),
-    prisma.user.count({ where: { isActive: false } }),
+    // System-status focuses on REAL users — sandbox + demo are
+    // filtered out and shown separately below the vitals row.
+    prisma.user.count({ where: { accountKind: "real" } }),
+    prisma.user.count({ where: { isActive: true, accountKind: "real" } }),
+    prisma.user.count({ where: { isActive: false, accountKind: "real" } }),
     prisma.user.count({
       where: {
+        accountKind: "real",
         OR: [
           { lastLoginAt: { lt: since90d } },
           { lastLoginAt: null, createdAt: { lt: since90d } },
         ],
       },
     }),
-    prisma.user.count({ where: { role: "superadmin" } }),
-    prisma.user.count({ where: { role: "admin" } }),
-    prisma.user.count({ where: { role: "instructor" } }),
-    prisma.user.count({ where: { role: "employer" } }),
+    prisma.user.count({ where: { role: "superadmin", accountKind: "real" } }),
+    prisma.user.count({ where: { role: "admin",      accountKind: "real" } }),
+    prisma.user.count({ where: { role: "instructor", accountKind: "real" } }),
+    prisma.user.count({ where: { role: "employer",   accountKind: "real" } }),
+    prisma.user.count({ where: { accountKind: "sandbox" } }),
+    prisma.user.count({ where: { accountKind: "demo" } }),
     prisma.session.count().catch(() => 0),
     prisma.course.count(),
     prisma.course.count({ where: { status: "published" } }),
@@ -105,7 +111,7 @@ export default async function SystemStatusPage() {
       take: 5,
     }).catch(() => []),
     prisma.user.findMany({
-      where: { lastLoginAt: { gt: since24h } },
+      where: { lastLoginAt: { gt: since24h }, accountKind: "real" },
       select: { id: true, name: true, email: true, role: true, lastLoginAt: true },
       orderBy: { lastLoginAt: "desc" },
       take: 8,
@@ -214,13 +220,19 @@ export default async function SystemStatusPage() {
         </div>
       </section>
 
-      {/* Vitals — 4 hero stats */}
+      {/* Vitals — 4 hero stats. User counts here are REAL only. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Vital icon={Users}     label="Active users"   value={activeUserCount} sub={`${userCount} total · ${deactivatedCount} disabled`} />
+        <Vital icon={Users}     label="Active users"   value={activeUserCount} sub={`${userCount} real · ${deactivatedCount} disabled`} />
         <Vital icon={Sparkles}  label="AI calls (24h)" value={ai24h}           sub={`${aiFailureRate7d}% failure 7d`} />
         <Vital icon={Database}  label="DB ping"        value={`${dbLatencyMs}ms`} sub={dbOk ? "Healthy" : "Failed"} />
         <Vital icon={GitCommit} label="Build commit"   value={sha}             sub="Inlined at build time" mono />
       </div>
+      {(sandboxUserCount > 0 || demoUserCount > 0) && (
+        <p className="-mt-3 text-[11px] text-subtle">
+          Plus {sandboxUserCount} sandbox · {demoUserCount} demo accounts
+          (excluded from real-user counts above; manage at <a className="text-brand-600 hover:underline" href="/admin/sandboxes">/admin/sandboxes</a> and <a className="text-brand-600 hover:underline" href="/admin/demo-workspaces">/admin/demo-workspaces</a>).
+        </p>
+      )}
 
       {/* Sandboxes moved to their own page — link out so admins can find it. */}
       <Section icon={Beaker} title="Sandbox accounts" aside="Moved to its own page">

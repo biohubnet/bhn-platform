@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Sandbox + demo accounts are now hidden from platform stats by default",
+    body: "/admin/users now opens on a Real tab (real accounts only) with separate Sandbox and Demo tabs you can flip to. The admin dashboard, system-status page, /admin/analytics, /admin/stats, /admin/newsletter, the public /for-employers and /for-trainees pulse stats, and the recent-logins feed all filter to accountKind='real' so dummy accounts don't pollute the numbers prospects and admins see. System status keeps a small footer line below the vitals (`Plus N sandbox · M demo`) for transparency, with deep links to the dedicated management pages.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Employer HR invites are now magic links — one click, no claim form",
     body: "The signup-link flow is rewritten end-to-end. Recipient clicks the URL, lands in /employer signed in. No name to type, no password to set up front, no claim screen. Magic links are reusable bookmarks until expiry, so partners can come back later from any device. Admins get two new buttons on /admin/employer-invites: Quick invite (zero inputs, mints + auto-copies the URL in one click) and a per-invite Test button that opens the link in a new tab so admins can experience exactly what the recipient experiences. All form fields are now optional. Cross-device password sign-in still works for partners who later set a password from /profile.",
     kind: "improvement",

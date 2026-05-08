@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const scope = url.searchParams.get("scope") ?? "new";
 
-  const baseWhere = { newsletterStatus: "subscribe" as const };
+  const baseWhere = { newsletterStatus: "subscribe" as const, accountKind: "real" as const };
   const where =
     scope === "all"
       ? baseWhere
@@ -41,8 +41,8 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       take: 500,
     }),
-    prisma.user.count({ where: { newsletterStatus: "subscribe", newsletterExportedAt: null } }),
-    prisma.user.count({ where: { newsletterStatus: "subscribe" } }),
+    prisma.user.count({ where: { newsletterStatus: "subscribe", newsletterExportedAt: null, accountKind: "real" } }),
+    prisma.user.count({ where: { newsletterStatus: "subscribe", accountKind: "real" } }),
     prisma.user.findFirst({
       where: { newsletterStatus: "subscribe", newsletterExportedAt: { not: null } },
       orderBy: { newsletterExportedAt: "desc" },
