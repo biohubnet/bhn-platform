@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "New Course dialog: add and remove Topic / Delivery / Provider options inline",
+    body: "When an admin opens the New Course dialog, the Topic / Delivery / Provider fields now load the canonical option list from /admin/course-filters. Each option appears as a small chip beneath the input — click the × to remove it. Type a custom value and a 'Save' chip appears inline; click it (or hit Enter) to promote it to the canonical list so it shows up as a suggestion everywhere. No more side trip to /admin/course-filters just to add one option for the course you're about to create. Fallback: if the user can't read the admin endpoint, the dialog still works against the static seed lists.",
+    kind: "improvement",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
     title: "Trainee registration — auto sign-in, password confirm, role + language at signup",
     body: "Eight UX fixes on /register based on the audit:\n\n• Auto sign-in after creating the account — the /login round-trip is gone. New users land directly in /dashboard with their JWT cookie set. A three-step progress card replaces the silent spinner so something visibly happens between click and dashboard.\n• Name is now required (2–80 chars) with an explicit asterisk. Server re-validates so back-channel POSTs can't slip a null name through.\n• Confirm-password field — typing your password twice prevents the lock-out scenario where a typo at signup forces a password reset.\n• Show-password toggle (eye icon) on both password fields. Mobile signup no longer requires typing 8+ chars blind.\n• autoComplete + autoFocus on every field so password managers prompt to save and the cursor lands in the name field on page-load.\n• 'I am a…' dropdown matching the talent-application's seven positions (Master's / PhD / Postdoc / Research Associate / Lab Technician / Industry Professional / Other), persisted to User.jobTitle so the dashboard greeting and AI tagline can use it from minute one.\n• Language picker (8 supported locales) defaulting from navigator.language and persisted to User.locale, so non-English users aren't stuck on the English UI until they discover the switcher.\n• Inline credits explainer ('most courses cost 50–200') so '200 credits to begin' lands with context.\n• Warmer h1 and a slate-blue CTA gradient.\n\nLogin page now honours ?registered=1 + ?email=… from the fallback path: title flips to 'Account created — sign in', a green confirmation banner appears, and the email field pre-fills. The fallback only triggers if auto sign-in fails for some reason (which it shouldn't).",
     kind: "improvement",
