@@ -2,7 +2,7 @@
 /**
  * Admin UI for demo-workspace mint + active-demos panel.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Sparkles, Plus, Copy, CheckCircle2, AlertCircle, Trash2, Clock,
   ExternalLink, Building2, User,
@@ -17,6 +17,7 @@ interface Invite {
   companyWebsite: string | null;
   expiresAt: string;
   createdAt: string;
+  usedAt: string | null;
 }
 
 interface Active {
@@ -51,17 +52,14 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
     }).catch(() => {/* ignore */});
   }
 
-  async function mint() {
+  async function mint(payload?: typeof form) {
     setErr(null);
-    if (!form.email.trim() || !form.companyName.trim()) {
-      setErr("Email and company name required."); return;
-    }
     setBusy(true);
     try {
       const r = await fetch("/api/admin/demo-workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload ?? form),
       });
       const j = await r.json();
       if (!r.ok) { setErr(j.error ?? "Mint failed"); return; }
@@ -70,15 +68,21 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
         token: j.invite.token,
         email: j.invite.email,
         companyName: j.invite.companyName,
-        companyWebsite: form.companyWebsite || null,
+        companyWebsite: (payload ?? form).companyWebsite || null,
         expiresAt: j.invite.expiresAt,
         createdAt: new Date().toISOString(),
+        usedAt: null,
       }, ...cur]);
       setForm({ email: "", companyName: "", companyWebsite: "", days: 7 });
       setCreating(false);
-      // Auto-copy the new link
+      // Auto-copy the new link to clipboard for instant sharing
       copyLink(j.invite.token);
     } finally { setBusy(false); }
+  }
+
+  async function quickMint() {
+    // Mint with no inputs — server fills sensible defaults.
+    await mint({ email: "", companyName: "", companyWebsite: "", days: 7 });
   }
 
   async function endDemo(employerId: string) {
@@ -107,39 +111,50 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
     <div className="space-y-6">
       {/* Mint CTA */}
       <section className="bg-card border border-line rounded-2xl p-5">
-        <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
           <div>
             <h2 className="font-semibold text-fg">Mint a demo link</h2>
-            <p className="text-xs text-muted mt-0.5">Generates a one-shot URL the prospect clicks to spin up their populated workspace.</p>
+            <p className="text-xs text-muted mt-0.5">Click-to-sign-in URL — no claim form, no credentials, no setup. Reusable until expiry.</p>
           </div>
-          {!creating && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setCreating(true)}
-              className="text-xs font-semibold px-3 py-2 rounded-lg bg-brand-600 text-white border border-brand-700 hover:bg-brand-700 inline-flex items-center gap-1.5"
+              onClick={quickMint}
+              disabled={busy}
+              className="text-xs font-semibold px-3 py-2 rounded-lg bg-emerald-600 text-white border border-emerald-700 hover:bg-emerald-700 disabled:opacity-60 inline-flex items-center gap-1.5"
+              title="Mint a generic link — no inputs needed. Auto-copies to clipboard."
             >
-              <Plus size={12} /> New demo link
+              <Sparkles size={12} /> Quick demo (auto-copy)
             </button>
-          )}
+            {!creating && (
+              <button
+                onClick={() => setCreating(true)}
+                className="text-xs font-semibold px-3 py-2 rounded-lg bg-brand-600 text-white border border-brand-700 hover:bg-brand-700 inline-flex items-center gap-1.5"
+              >
+                <Plus size={12} /> Customise
+              </button>
+            )}
+          </div>
         </div>
 
         {creating && (
           <div className="bg-elevated/40 border border-line rounded-xl p-4 space-y-3 animate-fade-in">
+            <p className="text-xs text-muted">All fields optional — leave blank for sensible defaults.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Field label="Visitor email *">
+              <Field label="Visitor email">
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className={inputCls}
-                  placeholder="jane@partner-company.com"
+                  placeholder="jane@partner-company.com (optional)"
                 />
               </Field>
-              <Field label="Company name *">
+              <Field label="Company name">
                 <input
                   value={form.companyName}
                   onChange={(e) => setForm({ ...form, companyName: e.target.value })}
                   className={inputCls}
-                  placeholder="Partner Biotech Inc"
+                  placeholder="Partner Biotech Inc (optional)"
                 />
               </Field>
               <Field label="Company website">
@@ -147,7 +162,7 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
                   value={form.companyWebsite}
                   onChange={(e) => setForm({ ...form, companyWebsite: e.target.value })}
                   className={inputCls}
-                  placeholder="https://partner-co.com"
+                  placeholder="https://partner-co.com (optional)"
                 />
               </Field>
               <Field label="Demo lifetime (days)">
@@ -168,7 +183,7 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
             )}
             <div className="flex justify-end gap-2">
               <button onClick={() => setCreating(false)} className="text-xs px-3 py-2 rounded-lg text-muted hover:bg-elevated">Cancel</button>
-              <button onClick={mint} disabled={busy} className="text-xs font-semibold px-4 py-2 rounded-lg bg-brand-600 text-white border border-brand-700 hover:bg-brand-700 disabled:opacity-60 inline-flex items-center gap-1.5">
+              <button onClick={() => mint()} disabled={busy} className="text-xs font-semibold px-4 py-2 rounded-lg bg-brand-600 text-white border border-brand-700 hover:bg-brand-700 disabled:opacity-60 inline-flex items-center gap-1.5">
                 <Sparkles size={12} /> Mint
               </button>
             </div>
@@ -176,33 +191,21 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
         )}
       </section>
 
-      {/* Pending invites — minted but not yet claimed */}
+      {/* Demo links (claimed and not) — magic links are reusable, so
+          everything stays here until expiry. */}
       {invites.length > 0 && (
         <section>
           <p className="text-[10px] uppercase tracking-[0.22em] text-subtle font-semibold mb-2">
-            Unclaimed demo links · {invites.length}
+            Demo links · {invites.length}
           </p>
           <div className="space-y-2">
             {invites.map((i) => (
-              <div key={i.id} className="bg-card border border-line rounded-xl p-4 flex items-center gap-3 flex-wrap">
-                <div className="w-9 h-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center shrink-0">
-                  <Building2 size={15} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-fg truncate">{i.companyName ?? i.email}</p>
-                  <p className="text-xs text-muted truncate">{i.email}</p>
-                </div>
-                <p className="text-[11px] text-subtle inline-flex items-center gap-1 shrink-0">
-                  <Clock size={11} /> expires {new Date(i.expiresAt).toLocaleDateString()}
-                </p>
-                <button
-                  onClick={() => copyLink(i.token)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100 inline-flex items-center gap-1.5 shrink-0"
-                >
-                  {copied === i.token ? <CheckCircle2 size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                  {copied === i.token ? "Copied" : "Copy link"}
-                </button>
-              </div>
+              <DemoLinkCard
+                key={i.id}
+                invite={i}
+                copied={copied === i.token}
+                onCopy={() => copyLink(i.token)}
+              />
             ))}
           </div>
         </section>
@@ -254,6 +257,78 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function DemoLinkCard({
+  invite, copied, onCopy,
+}: {
+  invite: Invite;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  // The full URL the admin would paste somewhere. Built on the client
+  // (window.location.origin isn't available during SSR) so it picks
+  // up the right origin (localhost, preview, production) automatically.
+  const [url, setUrl] = useState<string>("");
+  useEffect(() => {
+    setUrl(`${window.location.origin}/employer/demo/${invite.token}`);
+  }, [invite.token]);
+  const expiresIn = Math.max(0, Math.floor((new Date(invite.expiresAt).getTime() - Date.now()) / (24 * 3600 * 1000)));
+  return (
+    <div className="bg-card border border-line rounded-xl p-4 space-y-3">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="w-9 h-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center shrink-0">
+          <Building2 size={15} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-fg truncate">{invite.companyName ?? invite.email}</p>
+            {invite.usedAt ? (
+              <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                claimed
+              </span>
+            ) : (
+              <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                unclaimed
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted truncate">{invite.email}</p>
+        </div>
+        <p className="text-[11px] text-subtle inline-flex items-center gap-1 shrink-0">
+          <Clock size={11} /> {expiresIn > 0 ? `${expiresIn}d left` : "expires today"}
+        </p>
+      </div>
+
+      {/* The actual URL — visible, selectable, and copyable as many
+          times as the admin wants. The button is a convenience; the
+          input is the source of truth. */}
+      <div className="flex items-center gap-2">
+        <input
+          readOnly
+          value={url}
+          onClick={(e) => (e.target as HTMLInputElement).select()}
+          className="flex-1 font-mono text-xs bg-elevated/40 border border-line rounded-md px-2.5 py-1.5 text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/30 select-all min-w-0"
+        />
+        <button
+          onClick={onCopy}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100 inline-flex items-center gap-1.5 shrink-0"
+        >
+          {copied ? <CheckCircle2 size={12} className="text-emerald-600" /> : <Copy size={12} />}
+          {copied ? "Copied" : "Copy"}
+        </button>
+        <a
+          href={url || "#"}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-line text-muted hover:bg-elevated hover:text-fg inline-flex items-center gap-1.5 shrink-0"
+          title="Open the demo in a new tab to test"
+        >
+          <ExternalLink size={12} /> Test
+        </a>
+      </div>
     </div>
   );
 }

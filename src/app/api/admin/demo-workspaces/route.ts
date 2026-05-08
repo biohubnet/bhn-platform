@@ -18,8 +18,10 @@ import { deleteDemoWorkspace, sweepExpiredDemos } from "@/lib/demo/workspace";
 export async function GET() {
   await requireRole("admin");
   const [invites, active] = await Promise.all([
+    // Show every non-expired demo invite, claimed or not. Magic links
+    // are reusable bookmarks — admins should be able to copy them again.
     prisma.employerInvite.findMany({
-      where: { demoMode: true, usedAt: null, expiresAt: { gt: new Date() } },
+      where: { demoMode: true, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: "desc" },
       take: 50,
     }),
@@ -48,19 +50,22 @@ export async function POST(req: NextRequest) {
     companyWebsite?: string;
     days?: number;
   };
-  if (!body.email?.trim() || !body.companyName?.trim()) {
-    return NextResponse.json({ error: "email and companyName required" }, { status: 400 });
-  }
 
   const days = Math.max(1, Math.min(30, body.days ?? 7));
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
+  // Optional fields — generate friendly defaults so admins can mint a
+  // throwaway link with one click for spontaneous demos.
+  const tokenShort = token.slice(0, 8);
+  const email = body.email?.trim().toLowerCase() || `demo-${tokenShort}@biohubnet.test`;
+  const companyName = body.companyName?.trim() || `Demo Workspace ${tokenShort}`;
+
   const invite = await prisma.employerInvite.create({
     data: {
-      email: body.email.trim().toLowerCase(),
+      email,
       token,
-      companyName: body.companyName.trim(),
+      companyName,
       companyWebsite: body.companyWebsite?.trim() ?? null,
       invitedById: meId ?? undefined,
       expiresAt,

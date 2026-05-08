@@ -14,8 +14,10 @@ export default async function DemoWorkspacesPage() {
   sweepExpiredDemos().catch(() => undefined);
 
   const [invites, active] = await Promise.all([
+    // All non-expired demo links, claimed or not — magic links are
+    // reusable so admins should be able to recopy at any time.
     prisma.employerInvite.findMany({
-      where: { demoMode: true, usedAt: null, expiresAt: { gt: new Date() } },
+      where: { demoMode: true, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: "desc" },
       take: 50,
     }),
@@ -52,6 +54,7 @@ export default async function DemoWorkspacesPage() {
           companyWebsite: i.companyWebsite,
           expiresAt: i.expiresAt.toISOString(),
           createdAt: i.createdAt.toISOString(),
+          usedAt: i.usedAt?.toISOString() ?? null,
         }))}
         initialActive={active.map((a) => ({
           id: a.id,
