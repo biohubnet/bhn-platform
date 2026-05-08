@@ -23,6 +23,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Admin Inbox — one place for everything waiting on review",
+    body: "New /admin/inbox (Administration → Platform → Inbox) gathers the four streams admins triage: role-change requests, credit applications, pathway-enrolment approvals, and access requests from the public marketing pages. Top of the page shows four lanes with live counts colour-coded by urgency; below, a unified time-ordered feed of the most recent pending items across all four streams, each with a Review link to the existing dedicated page. The individual pages still work — this is the hub, not a replacement.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
+    title: "Admin menu re-balanced: skills moved to Experience, requests live under Platform",
+    body: "The Engage / Experience / Platform sub-grouping is tighter now. Engage stays focused on running courses (enrolments, groups, credit apps, pathway enrolments, course filters, certificates). Skill ontology moved to Experience — it's the matching marketplace vocabulary, not a course property. Users / Role requests / Announcements / Newsletter exports moved to Platform alongside the other operations links. The new Inbox sits at the top of Platform.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Administration menu now grouped: Engage · Experience · Platform",
     body: "The Administration sidebar group used to be a long flat list of 20+ links. It's now sub-grouped to mirror the user-facing ENGAGE / EXPERIENCE vocabulary you already see at the top of the sidebar. Engage covers learning content + people management (Users, Enrollments, Groups, Skills, Course filters, Certificates, Announcements, Newsletter exports, Pathway / Credit / Role applications). Experience covers the employer side (Employer invites, Access requests, Sandbox accounts, Demo workspaces). Platform covers operations (Analytics, Reports, Audit Log, plus superadmin-only LTI / System status / Settings). Overview stays as a single link at the top of the section.",
     kind: "improvement",

@@ -99,34 +99,41 @@ const adminOverview: NavItem = {
   label: "Overview", href: "/admin", icon: LayoutDashboard, exact: true, minRole: "admin",
 };
 
+// ENGAGE — running the learning loop: enrolments, groups, course
+// content, certificates, credits.
 const adminEngageItems: NavItem[] = [
-  { label: "Users",               href: "/admin/users",               icon: Users,        minRole: "admin" },
   { label: "Enrollments",         href: "/admin/enrollments",         icon: ClipboardList, minRole: "admin" },
   { label: "Groups",              href: "/admin/groups",              icon: UsersRound,   minRole: "admin" },
   { label: "Credit applications", href: "/admin/credit-applications", icon: CoinsIcon,    minRole: "admin" },
-  { label: "Role requests",       href: "/admin/role-requests",       icon: UserCog,      minRole: "admin" },
   { label: "Pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers,       minRole: "admin" },
   { label: "Course filters",      href: "/admin/course-filters",      icon: ListChecks,   minRole: "admin" },
-  { label: "Skill ontology",      href: "/admin/skills",              icon: GitBranch,    minRole: "admin" },
   { label: "Certificates",        href: "/admin/certificates",        icon: Award,        minRole: "admin" },
-  { label: "Announcements",       href: "/admin/announcements",       icon: Megaphone,    minRole: "admin" },
-  { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,         minRole: "admin" },
 ];
 
+// EXPERIENCE — the matching marketplace: skill ontology that wires
+// trainees to employers, plus everything employer-facing.
 const adminExperienceItems: NavItem[] = [
+  { label: "Skill ontology",      href: "/admin/skills",              icon: GitBranch,    minRole: "admin" },
   { label: "Employer invites",    href: "/admin/employer-invites",    icon: Building2,    minRole: "admin" },
-  { label: "Access requests",     href: "/admin/access-requests",     icon: Inbox,        minRole: "admin" },
   { label: "Sandbox accounts",    href: "/admin/sandboxes",           icon: Beaker,       minRole: "admin" },
   { label: "Demo workspaces",     href: "/admin/demo-workspaces",     icon: Sparkles,     minRole: "admin" },
 ];
 
+// PLATFORM — operating the platform itself: who has access, what
+// they're told, what reports admins read, the Inbox/letter-box that
+// gathers every pending request, plus superadmin-only ops.
 const adminPlatformItems: NavItem[] = [
-  { label: "Analytics",     href: "/admin/analytics",     icon: LineChart,  minRole: "admin" },
-  { label: "Reports",       href: "/admin/reports",       icon: FileText,   minRole: "admin" },
-  { label: "Audit Log",     href: "/admin/audit",         icon: ShieldCheck, minRole: "admin" },
-  { label: "LTI Config",    href: "/admin/lti",           icon: Link2,      minRole: "superadmin" },
-  { label: "System status", href: "/admin/system-status", icon: Activity,   minRole: "superadmin" },
-  { label: "Settings",      href: "/admin/settings",      icon: Settings,   minRole: "superadmin" },
+  { label: "Inbox",               href: "/admin/inbox",               icon: Inbox,       minRole: "admin" },
+  { label: "Users",               href: "/admin/users",               icon: Users,       minRole: "admin" },
+  { label: "Role requests",       href: "/admin/role-requests",       icon: UserCog,     minRole: "admin" },
+  { label: "Announcements",       href: "/admin/announcements",       icon: Megaphone,   minRole: "admin" },
+  { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,        minRole: "admin" },
+  { label: "Analytics",           href: "/admin/analytics",           icon: LineChart,   minRole: "admin" },
+  { label: "Reports",             href: "/admin/reports",             icon: FileText,    minRole: "admin" },
+  { label: "Audit Log",           href: "/admin/audit",               icon: ShieldCheck, minRole: "admin" },
+  { label: "LTI Config",          href: "/admin/lti",                 icon: Link2,       minRole: "superadmin" },
+  { label: "System status",       href: "/admin/system-status",       icon: Activity,    minRole: "superadmin" },
+  { label: "Settings",            href: "/admin/settings",            icon: Settings,    minRole: "superadmin" },
 ];
 
 const ROLE_RANK: Record<string, number> = {
