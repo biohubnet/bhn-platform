@@ -167,7 +167,7 @@ export default async function ForTraineesPage() {
       </section>
 
       <footer className="max-w-7xl mx-auto px-6 py-10 border-t border-line text-center text-xs text-subtle">
-        © {new Date().getFullYear()} BioHubNet · <Link href="/privacy" className="hover:text-fg">Privacy</Link> · <Link href="/terms" className="hover:text-fg">Terms</Link>
+        © {new Date().getFullYear()} BioHubNet · <Link href="/privacy" className="hover:text-fg">Privacy</Link> · <Link href="/terms" className="hover:text-fg">Terms</Link> · <Link href="/security" className="hover:text-fg">Security</Link>
       </footer>
     </div>
   );

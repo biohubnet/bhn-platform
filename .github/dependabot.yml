@@ -1,0 +1,39 @@
+# Dependabot — security advisories + version updates.
+# Lives in .github/dependabot.yml so GitHub picks it up automatically;
+# no enabling step in repo settings.
+#
+# Strategy:
+#   • npm: weekly version-update PRs grouped to keep PR volume sane,
+#     plus immediate security-update PRs (default behaviour).
+#   • github-actions: weekly version pins for any actions we use.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      # Group everyday minor / patch bumps so we don't get 30 PRs.
+      # Security updates always come as separate PRs regardless of grouping.
+      runtime-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+      types:
+        applies-to: version-updates
+        patterns:
+          - "@types/*"
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "ci"

@@ -1,0 +1,60 @@
+# Lightweight per-PR security checks that complement CodeQL:
+#
+#   • npm audit  — flags packages with known CVEs (CodeQL doesn't do
+#     dependency CVEs; Dependabot does, but on its own schedule, so
+#     this surfaces them in the PR review itself).
+#   • TruffleHog — scans the diff for committed secrets (API keys,
+#     R2 credentials, NextAuth secrets). GitHub Secret Scanning
+#     covers known patterns post-merge; TruffleHog catches them in
+#     the PR before they're public.
+#
+# Both run as advisories — they don't block the merge unless the
+# severity threshold is exceeded — to avoid a "broken main" spiral
+# whenever an upstream advisory drops a Friday afternoon.
+
+name: "Security audit"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  npm-audit:
+    name: "npm audit (high+)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - name: Install
+        # --ignore-scripts: prisma's postinstall hook tries to talk to
+        # the live database and fails in CI; we don't need a working
+        # client to audit the lockfile.
+        run: npm ci --ignore-scripts
+      - name: Audit (high or critical, runtime deps only)
+        # --omit=dev so we don't fail on a CI-only or build-only dep
+        # whose CVE doesn't reach production.
+        run: npm audit --audit-level=high --omit=dev
+
+  secret-scan:
+    name: "TruffleHog secret scan"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history needed so TruffleHog can scan diffs for any
+          # commit pushed in this PR, not just the tip.
+          fetch-depth: 0
+      - name: TruffleHog scan
+        uses: trufflesecurity/trufflehog@v3.83.7
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified

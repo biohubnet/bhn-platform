@@ -1,0 +1,70 @@
+# CodeQL static-analysis scanning. Runs on every push to main and on
+# every pull request, plus a weekly cron in case GitHub publishes new
+# query packs that flag previously-clean code.
+#
+# Why CodeQL: it's GitHub's own SAST and is free for public repos and
+# free for private repos at a generous monthly free tier. Catches the
+# IDOR / SQL-injection / SSRF / XSS / hardcoded-secret patterns we
+# care about most for an LMS holding student PII.
+#
+# What it does NOT do:
+#   • Catch logical authorisation bugs that depend on application
+#     semantics (e.g. "this endpoint should require course
+#     ownership") — those need code review or property-based tests.
+#   • Catch dependency vulnerabilities — Dependabot handles that
+#     (see .github/dependabot.yml).
+#   • Catch secrets committed to the repo — GitHub Secret Scanning
+#     does that automatically once enabled in Settings → Security.
+#
+# Failures here BLOCK merges via branch protection (configure in
+# Settings → Branches → Branch protection rules).
+
+name: "CodeQL"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    # Mondays 06:13 UTC — off-peak so it doesn't block the morning push.
+    - cron: "13 6 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      # CodeQL needs write access to push results to the Security tab.
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # 'javascript-typescript' covers both .ts and .tsx in this repo.
+        language: ["javascript-typescript"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # security-extended turns on extra queries beyond the default
+          # set — IDOR, SSRF-via-fetch, broken auth, etc. Slightly
+          # noisier; worth it for an LMS.
+          queries: security-extended
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

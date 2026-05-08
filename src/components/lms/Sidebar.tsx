@@ -176,20 +176,21 @@ function SectionGroup({
   description?: string;
   programs?: ProgramHint[];
   children: React.ReactNode;
-  /** Visual emphasis. "neutral" for ENGAGE / EXPERIENCE; "brand" for
-   * ADMINISTRATION so privileged territory reads at a glance. Uses
-   * theme-driven brand-* CSS vars so it inherits the active theme
-   * (Daylight slate-navy, Mist slate-blue, Hi-Tech neon, …). */
-  tone?: "neutral" | "brand";
+  /** Visual emphasis. "neutral" for ENGAGE / EXPERIENCE; "electric"
+   * for ADMINISTRATION so privileged territory reads at a glance.
+   * "electric" intentionally uses Tailwind's sky-* palette directly
+   * (not theme-driven brand vars) — admin should look the SAME bright
+   * blue across every theme so it stays unmistakable. */
+  tone?: "neutral" | "electric";
 }) {
   const hasTooltip = !!description || (programs && programs.length > 0);
-  const isBrand = tone === "brand";
+  const isElectric = tone === "electric";
   return (
     <div
       className={cn(
         "relative mt-5 mb-2 rounded-xl border p-1.5 pt-2.5 space-y-0.5",
-        isBrand
-          ? "border-brand-200 bg-brand-50/30"
+        isElectric
+          ? "border-sky-300 bg-sky-50/40 shadow-[0_0_0_1px_rgba(14,165,233,0.06)]"
           : "border-line"
       )}
     >
@@ -202,11 +203,11 @@ function SectionGroup({
           tabIndex={hasTooltip ? 0 : -1}
           className={cn(
             "px-2 py-0 text-[10px] font-bold uppercase tracking-[0.22em] rounded inline-block",
-            isBrand
-              ? "text-brand-700 bg-brand-100 border border-brand-200"
+            isElectric
+              ? "text-sky-700 bg-sky-100 border border-sky-300 shadow-[0_0_8px_rgba(14,165,233,0.18)]"
               : "text-subtle bg-card-solid",
-            hasTooltip && (isBrand
-              ? "cursor-help focus:outline-none focus:text-brand-800 group-hover/section:text-brand-800 transition-colors"
+            hasTooltip && (isElectric
+              ? "cursor-help focus:outline-none focus:text-sky-800 group-hover/section:text-sky-800 transition-colors"
               : "cursor-help focus:outline-none focus:text-fg group-hover/section:text-fg transition-colors")
           )}
           aria-describedby={hasTooltip ? `${title}-tooltip` : undefined}
@@ -409,7 +410,7 @@ export function Sidebar({
         </button>
 
         {isAdmin && (
-          <SectionGroup title={t("nav.administration").toUpperCase()} tone="brand">
+          <SectionGroup title={t("nav.administration").toUpperCase()} tone="electric">
             {/* Overview sits at the top, ungrouped — single canonical link. */}
             <NavLink item={adminOverview} pathname={pathname} />
 
