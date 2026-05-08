@@ -156,9 +156,9 @@ export async function spawnDemoWorkspace(input: DemoSeedInput): Promise<DemoSeed
         demoExpiresAt: input.expiresAt,
         createdByAdminId: input.mintedByAdminId,
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, email: true },
     });
-    applicantsCreated.push(a);
+    applicantsCreated.push({ id: a.id, name: a.name });
 
     // Attach 4-7 random skills to give them a realistic profile.
     const pickCount = 4 + (i % 4);
