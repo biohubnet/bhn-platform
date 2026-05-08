@@ -12,16 +12,21 @@
  * Password is the same for both: "sandbox-{first6ofAdminId}".
  */
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 
 export interface SandboxSeedResult {
   ownerAdminId: string;
-  employer: { id: string; email: string };
-  trainee: { id: string; email: string };
+  employer: { id: string; email: string; magicToken: string };
+  trainee: { id: string; email: string; magicToken: string };
   posting: { id: string };
   submissionCreated: boolean;
-  password: string;
+  password: string; // kept for back-compat / direct /login access
+}
+
+function newMagicToken() {
+  return randomBytes(24).toString("hex");
 }
 
 export function sandboxIdentifiers(admin: { id: string; email: string; name: string | null }) {
@@ -48,6 +53,7 @@ export async function spawnSandbox(adminId: string): Promise<SandboxSeedResult> 
   const passwordHash = await bcrypt.hash(ids.password, 10);
 
   // 1. Employer HR ────────────────────────────────────────────────
+  const employerToken = newMagicToken();
   const employer = await prisma.user.upsert({
     where: { email: ids.employerEmail },
     create: {
@@ -66,16 +72,31 @@ export async function spawnSandbox(adminId: string): Promise<SandboxSeedResult> 
       isActive: true,
       accountKind: "sandbox",
       createdByAdminId: adminId,
+      magicToken: employerToken,
     },
     update: {
       role: "employer",
       accountKind: "sandbox",
       createdByAdminId: adminId,
       isActive: true,
+      // Re-seed: only set if missing. On `Reset` we delete + recreate
+      // (which generates a fresh token via the create path), so the
+      // OR keeps existing tokens stable on an idempotent re-spawn.
     },
   });
+  // Backfill the token if the existing row didn't have one (handles
+  // the case where the sandbox was spawned BEFORE the magicToken
+  // column existed). Cheap — single update.
+  if (!employer.magicToken) {
+    await prisma.user.update({
+      where: { id: employer.id },
+      data: { magicToken: employerToken },
+    });
+    employer.magicToken = employerToken;
+  }
 
   // 2. Trainee ────────────────────────────────────────────────────
+  const traineeToken = newMagicToken();
   const trainee = await prisma.user.upsert({
     where: { email: ids.traineeEmail },
     create: {
@@ -91,6 +112,7 @@ export async function spawnSandbox(adminId: string): Promise<SandboxSeedResult> 
       isActive: true,
       accountKind: "sandbox",
       createdByAdminId: adminId,
+      magicToken: traineeToken,
     },
     update: {
       role: "trainee",
@@ -99,6 +121,13 @@ export async function spawnSandbox(adminId: string): Promise<SandboxSeedResult> 
       isActive: true,
     },
   });
+  if (!trainee.magicToken) {
+    await prisma.user.update({
+      where: { id: trainee.id },
+      data: { magicToken: traineeToken },
+    });
+    trainee.magicToken = traineeToken;
+  }
 
   // 3. Posting ────────────────────────────────────────────────────
   const postingTitle = `Sandbox Bioprocess Intern (${admin.name?.split(" ")[0] ?? "test"})`;
@@ -164,8 +193,8 @@ export async function spawnSandbox(adminId: string): Promise<SandboxSeedResult> 
 
   return {
     ownerAdminId: adminId,
-    employer: { id: employer.id, email: employer.email },
-    trainee: { id: trainee.id, email: trainee.email },
+    employer: { id: employer.id, email: employer.email, magicToken: employer.magicToken ?? employerToken },
+    trainee:  { id: trainee.id,  email: trainee.email,  magicToken: trainee.magicToken  ?? traineeToken  },
     posting: { id: posting.id },
     submissionCreated,
     password: ids.password,
@@ -202,6 +231,7 @@ export async function listSandboxes() {
     where: { accountKind: "sandbox" },
     select: {
       id: true, email: true, name: true, role: true, lastLoginAt: true,
+      magicToken: true,
       createdByAdminId: true,
       createdByAdmin: { select: { id: true, name: true, email: true } },
     },

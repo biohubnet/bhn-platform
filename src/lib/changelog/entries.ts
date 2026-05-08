@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Sandbox accounts: one-click magic-link sign-in (no more copy email + copy password)",
+    body: "Spawn a sandbox and you now get a magic-link URL per account: click it (or open in incognito to keep your admin session) and you're signed in instantly as the sandbox employer or trainee. No email to copy, no password to copy, no /login screen. Same pattern as demo workspaces and employer invites. Token is stored on User.magicToken (sandbox + demo accounts only — real accounts can never have one, so a leaked sandbox token can't escalate). Existing sandboxes from before this change show a 'Reset to generate magic link' nudge — one click and they're upgraded.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Talent Application — broader audience options + 12 sample personas",
     body: "Three changes. (1) The 'What best describes your current position' radio is now Master's student / PhD candidate / Postdoctoral Fellow / Research Associate / Lab Technician / Industry Professional / Other — covering the full BioHubNet life-sciences audience instead of collapsing everything into 'Graduate Program'. The 'status and goal' radio gains a third option for working professionals exploring new opportunities. (2) /admin/forms/talent-application has a new 'Reset schema' button that overwrites the live form with the latest source seed — click it once after a deploy that changes options in code. (3) 'Fill with sample' now offers 12 personas instead of 5, spanning masters / PhD / postdoc / research associate / lab technician / industry professional. Every preset fills every non-file field with valid option strings. Personas span U of T, McGill, UBC, Calgary, Western, Université Laval, Manitoba, and Dalhousie, with realistic mixes of citizenship status and French proficiency.",
     kind: "improvement",

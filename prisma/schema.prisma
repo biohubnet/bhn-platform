@@ -62,6 +62,12 @@ model User {
   createdByAdminId       String?
   createdByAdmin         User?     @relation("CreatedSandboxes", fields: [createdByAdminId], references: [id], onDelete: SetNull)
   createdSandboxes       User[]    @relation("CreatedSandboxes")
+  /// Bearer-token magic link for sandbox + demo accounts only. Anyone
+  /// holding this token can sign in as the user via /sandbox/[token].
+  /// Real accounts have null here — the route refuses to issue a JWT
+  /// for accountKind="real" even if a token were somehow set, so a leak
+  /// can never escalate to a real-user takeover.
+  magicToken             String?   @unique
   /// Onboarding progress: { version, seenStepIds[], minimized, dismissed, completedAt }
   onboarding    Json?
   /// GDPR/CCPA consent: { necessary, analytics, marketing, version, acceptedAt }

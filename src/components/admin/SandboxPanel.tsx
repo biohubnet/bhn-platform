@@ -2,19 +2,18 @@
 /**
  * Per-admin sandbox management.
  *
- *   - Each admin spawns ONE pair: a sandbox employer + a sandbox trainee
- *     (deterministic emails, idempotent on re-spawn).
- *   - Lists the current admin's pair plus *other* admins' sandboxes so
- *     they can see who's testing what.
+ *   - Each admin spawns ONE pair: a sandbox employer + a sandbox
+ *     trainee (deterministic emails, idempotent on re-spawn).
+ *   - Each account ships with a magic-link URL — one click signs you
+ *     in as that account, no email/password copy-paste.
  *   - Reset wipes the pair and re-seeds; Delete removes them entirely.
- *   - Per-account "Copy credentials" + "Sign in (incognito)" hint —
- *     opening a new window with the sandbox account is the simplest path
- *     to a parallel session.
+ *   - Other admins' sandboxes are listed too so you can see who's
+ *     testing what.
  */
 import { useEffect, useState } from "react";
 import {
   Beaker, RotateCw, Trash2, Plus, Copy, CheckCircle2, AlertCircle,
-  User, Building2, ExternalLink, Users2,
+  User, Building2, ExternalLink, Users2, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,14 +23,15 @@ interface SandboxAcct {
   name: string | null;
   role: string;
   lastLoginAt: string | null;
+  magicToken: string | null;
   createdByAdminId: string | null;
   createdByAdmin: { id: string; name: string | null; email: string } | null;
 }
 
 interface SeedResult {
   ownerAdminId: string;
-  employer: { id: string; email: string };
-  trainee:  { id: string; email: string };
+  employer: { id: string; email: string; magicToken: string };
+  trainee:  { id: string; email: string; magicToken: string };
   posting:  { id: string };
   submissionCreated: boolean;
   password: string;
@@ -44,7 +44,6 @@ interface Props {
 export function SandboxPanel({ meId }: Props) {
   const [buckets, setBuckets] = useState<SandboxAcct[][]>([]);
   const [busy, setBusy] = useState(false);
-  const [credentials, setCredentials] = useState<SeedResult | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
   async function load() {
@@ -67,13 +66,9 @@ export function SandboxPanel({ meId }: Props) {
         setMessage({ tone: "err", text: j.error ?? "Failed" });
         return;
       }
-      if (method === "POST") setMessage({ tone: "ok", text: "Sandbox spawned. Credentials below." });
-      if (method === "PATCH") setMessage({ tone: "ok", text: "Sandbox reset — fresh data ready." });
-      if (method === "DELETE") {
-        setMessage({ tone: "ok", text: `Sandbox removed (${j.removed} accounts).` });
-        setCredentials(null);
-      }
-      if (j.sandbox) setCredentials(j.sandbox);
+      if (method === "POST")  setMessage({ tone: "ok", text: "Sandbox spawned. Click a magic link below — it'll sign you in." });
+      if (method === "PATCH") setMessage({ tone: "ok", text: "Sandbox reset — fresh data and fresh magic links." });
+      if (method === "DELETE") setMessage({ tone: "ok", text: `Sandbox removed (${j.removed} accounts).` });
       await load();
     } finally { setBusy(false); }
   }
@@ -90,7 +85,7 @@ export function SandboxPanel({ meId }: Props) {
         </div>
         <div className="flex-1">
           <p className="text-sm text-fg leading-snug">
-            Each admin gets their own pair of sandbox accounts — one Employer HR + one Trainee — so multiple admins can test in parallel without stomping on each other. Spawn yours below; re-spawning is safe.
+            Each admin gets their own pair of sandbox accounts — one Employer HR + one Trainee — for testing flows in parallel without stomping on each other. Sign in with one click via the magic links below.
           </p>
         </div>
       </div>
@@ -134,14 +129,14 @@ export function SandboxPanel({ meId }: Props) {
 
         {!myBucket && (
           <p className="text-xs text-muted">
-            You don&apos;t have a sandbox yet. Spawning takes a second; it creates an Employer HR + Trainee pair, a starter posting, and a talent-application submission tying them together.
+            You don&apos;t have a sandbox yet. Spawning takes a second; it creates an Employer HR + Trainee pair (with a starter posting and a talent-application submission tying them together) and gives you one-click magic-link sign-in.
           </p>
         )}
 
         {myBucket && (
           <div className="space-y-2">
             {myBucket.map((acct) => (
-              <SandboxAccount key={acct.id} acct={acct} password={credentials?.password ?? null} />
+              <SandboxAccount key={acct.id} acct={acct} />
             ))}
           </div>
         )}
@@ -190,71 +185,88 @@ export function SandboxPanel({ meId }: Props) {
       )}
 
       <div className="bg-card-solid border border-line rounded-lg p-3 text-xs text-muted">
-        <p className="font-semibold text-fg mb-1">Tip — fastest way to test</p>
-        <ol className="list-decimal pl-4 space-y-0.5">
-          <li>Spawn your sandbox above.</li>
-          <li>Open an incognito / private window.</li>
-          <li>Sign in with the sandbox employer or trainee email + password (shown after spawning).</li>
-          <li>Click around — you&apos;re fully isolated from other admins.</li>
-        </ol>
+        <p className="font-semibold text-fg mb-1 inline-flex items-center gap-1.5">
+          <Sparkles size={12} className="text-brand-600" /> Tip
+        </p>
+        <p className="leading-relaxed">
+          Open each magic link in an <strong className="text-fg">incognito / private window</strong> so it doesn&apos;t replace your admin session in this browser. The link signs you in as the sandbox account in one click — no credentials to copy.
+        </p>
       </div>
     </div>
   );
 }
 
-function SandboxAccount({ acct, password }: { acct: SandboxAcct; password: string | null }) {
-  const [copied, setCopied] = useState<"email" | "pw" | null>(null);
+function SandboxAccount({ acct }: { acct: SandboxAcct }) {
+  const [url, setUrl] = useState<string>("");
+  const [copied, setCopied] = useState(false);
 
-  function copy(field: "email" | "pw", value: string) {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(field);
-      setTimeout(() => setCopied(null), 1500);
-    }).catch(() => {/* ignore */});
+  useEffect(() => {
+    if (acct.magicToken) {
+      setUrl(`${window.location.origin}/sandbox/${acct.magicToken}`);
+    }
+  }, [acct.magicToken]);
+
+  async function copy() {
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      window.prompt("Copy link:", url);
+    }
   }
 
+  const noToken = !acct.magicToken;
+
   return (
-    <div className="bg-card-solid border border-line rounded-lg px-3 py-2.5 flex items-center gap-3">
-      <div className={cn(
-        "w-9 h-9 rounded-md flex items-center justify-center shrink-0",
-        acct.role === "employer" ? "bg-brand-50 text-brand-600" : "bg-emerald-50 text-emerald-600",
-      )}>
-        {acct.role === "employer" ? <Building2 size={14} /> : <User size={14} />}
+    <div className="bg-card-solid border border-line rounded-lg p-3 space-y-2.5">
+      <div className="flex items-center gap-3">
+        <div className={cn(
+          "w-9 h-9 rounded-md flex items-center justify-center shrink-0",
+          acct.role === "employer" ? "bg-brand-50 text-brand-600" : "bg-emerald-50 text-emerald-600",
+        )}>
+          {acct.role === "employer" ? <Building2 size={14} /> : <User size={14} />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-fg text-sm leading-tight">
+            {acct.role === "employer" ? "Sandbox Employer HR" : "Sandbox Trainee"}
+          </p>
+          <p className="text-xs text-muted font-mono truncate">{acct.email}</p>
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-fg text-sm leading-tight">
-          {acct.role === "employer" ? "Sandbox Employer HR" : "Sandbox Trainee"}
+
+      {noToken ? (
+        <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+          This sandbox was created before magic links existed. <strong>Reset</strong> the sandbox above to generate one.
         </p>
-        <p className="text-xs text-muted font-mono truncate">{acct.email}</p>
-      </div>
-      <div className="flex items-center gap-1.5 shrink-0">
-        <button
-          onClick={() => copy("email", acct.email)}
-          className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded-md text-muted hover:bg-elevated hover:text-fg"
-          title="Copy email"
-        >
-          {copied === "email" ? <CheckCircle2 size={11} className="text-emerald-600" /> : <Copy size={11} />}
-          email
-        </button>
-        {password && (
+      ) : (
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={url}
+            onClick={(e) => (e.target as HTMLInputElement).select()}
+            className="flex-1 font-mono text-[11px] bg-elevated/40 border border-line rounded-md px-2 py-1.5 text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/30 select-all min-w-0"
+          />
           <button
-            onClick={() => copy("pw", password)}
-            className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded-md text-muted hover:bg-elevated hover:text-fg"
-            title="Copy password"
+            onClick={copy}
+            className="text-[11px] font-semibold px-2.5 py-1.5 rounded-md bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100 inline-flex items-center gap-1 shrink-0"
+            title="Copy magic-link URL"
           >
-            {copied === "pw" ? <CheckCircle2 size={11} className="text-emerald-600" /> : <Copy size={11} />}
-            password
+            {copied ? <CheckCircle2 size={11} className="text-emerald-600" /> : <Copy size={11} />}
+            {copied ? "Copied" : "Copy"}
           </button>
-        )}
-        <a
-          href="/login"
-          target="_blank"
-          rel="noreferrer"
-          className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100 font-medium"
-          title="Open sign-in in a new tab — paste the credentials"
-        >
-          <ExternalLink size={11} /> open login
-        </a>
-      </div>
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] font-medium px-2.5 py-1.5 rounded-md border border-line text-muted hover:bg-elevated hover:text-fg inline-flex items-center gap-1 shrink-0"
+            title="Open in a new tab. Use incognito to keep your admin session intact in this browser."
+          >
+            <ExternalLink size={11} /> Sign in
+          </a>
+        </div>
+      )}
     </div>
   );
 }
