@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DemoFiller } from "@/components/demo/DemoFiller";
 import { TALENT_APPLICATION_PRESETS } from "@/lib/demo/presets";
@@ -227,7 +227,9 @@ export function EventFormView({
             <DemoFiller
               visible={isStaff}
               presets={TALENT_APPLICATION_PRESETS}
-              onFill={(preset) => {
+              onFill={async (preset) => {
+                // Apply text + radio + multicheckbox values immediately
+                // so the form looks responsive.
                 setValues((cur) => {
                   const next = { ...cur };
                   for (const [k, v] of Object.entries(preset)) {
@@ -235,9 +237,39 @@ export function EventFormView({
                   }
                   return next;
                 });
+
+                // For file fields the form expects R2-backed URLs that
+                // start with R2_PUBLIC_URL (the submissions API
+                // validates this). Seed minimal placeholder PDFs to
+                // R2 once per session via the admin endpoint, then
+                // patch their URLs onto resume / support_letter /
+                // supporting_document. Cache URLs in sessionStorage
+                // to avoid hitting the endpoint on every fill.
+                try {
+                  const cached = sessionStorage.getItem("bhn-talent-sample-files");
+                  let urls: Record<string, string> | null = cached ? JSON.parse(cached) : null;
+                  if (!urls) {
+                    const r = await fetch("/api/admin/forms/talent-application/seed-samples", {
+                      method: "POST",
+                    });
+                    if (r.ok) {
+                      const j = await r.json();
+                      urls = j.urls as Record<string, string>;
+                      try { sessionStorage.setItem("bhn-talent-sample-files", JSON.stringify(urls)); } catch {/* ignore */}
+                    }
+                  }
+                  if (urls) {
+                    setValues((cur) => ({
+                      ...cur,
+                      ...(urls!.resume              ? { resume:              urls!.resume } : {}),
+                      ...(urls!.support_letter      ? { support_letter:      urls!.support_letter } : {}),
+                      ...(urls!.supporting_document ? { supporting_document: urls!.supporting_document } : {}),
+                    }));
+                  }
+                } catch {/* ignore — text fields are still filled */}
               }}
               className="mt-2"
-              hint="staff-only · won't ship to real users"
+              hint="staff-only · seeds placeholder PDFs to R2"
             />
           )}
         </div>
@@ -542,6 +574,17 @@ function FileInput({
   const [fileName, setFileName] = useState<string | null>(
     value ? value.split("/").pop()?.replace(/^\d+_/, "") ?? "Uploaded file" : null
   );
+
+  // Re-sync fileName when value changes from outside the component —
+  // e.g. DemoFiller injecting placeholder R2 URLs into resume /
+  // support_letter / supporting_document fields. Without this the
+  // input still says "no file selected" even though the form has
+  // a valid URL bound.
+  useEffect(() => {
+    if (!value) { setFileName(null); return; }
+    const display = value.split("/").pop()?.replace(/^\d+_/, "") ?? "Uploaded file";
+    setFileName(display);
+  }, [value]);
 
   const maxMB = Math.round((field.maxBytes ?? 10 * 1024 * 1024) / 1_048_576);
 

@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Talent Application 'Fill with sample' now also fills the file attachments",
+    body: "Clicking 'Fill with sample' on the talent application now sets resume, supervisor letter, and supporting document fields too. First click hits a new admin endpoint (/api/admin/forms/talent-application/seed-samples) that generates three minimal valid PDFs server-side and uploads them to R2 at fixed paths. Subsequent fills reuse the same URLs from sessionStorage — no repeated uploads. The submissions API still validates that file values come from R2_PUBLIC_URL, so the seeded URLs round-trip cleanly through real submission. The video field stays empty because MP4 placeholder generation is fiddly and the field is optional.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Fix: SCORM player no longer kicks learners out when clicking a module",
     body: "Many SCORM authoring tools (Articulate Storyline, iSpring, Adapt) call LMSFinish whenever the learner moves between modules — not only at the end of the course. The player was treating every Finish as 'course over' and pushing learners back to the course detail page. The fix: only redirect when the SCORM content reports the course is genuinely done (lesson_status / completion_status = completed / passed / failed). For incomplete / not attempted / browsed it just saves progress and stays in the player so internal module navigation works.",
     kind: "fix",
