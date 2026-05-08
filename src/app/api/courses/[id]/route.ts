@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, requireRole } from "@/lib/auth";
+import { getSession, requireRole, requireCourseOwner } from "@/lib/auth";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,8 +28,16 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await requireRole("instructor").catch(() => null);
-  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // requireCourseOwner: instructor must own this specific course; admins
+  // and superadmins always pass (so platform staff can still moderate /
+  // ghost-edit). Without this, any self-registered instructor could
+  // PATCH every course on the platform — the IDOR class behind the
+  // May-2026 Canvas / Instructure breach.
+  try {
+    await requireCourseOwner(id);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const data = await req.json();
   const course = await prisma.course.update({

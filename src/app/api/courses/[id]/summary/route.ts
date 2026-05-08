@@ -15,7 +15,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireCourseOwner } from "@/lib/auth";
 import { chat, AI_CONFIGURED } from "@/lib/ai";
 
 const BASE_SYSTEM =
@@ -32,12 +32,18 @@ const REFINE_SYSTEM =
   "total unless instructed to lengthen or shorten. Reply with ONLY the rewritten summary, no preamble.";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole("instructor").catch(() => null);
-  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const userId = (session.user as { id?: string }).id;
-  if (!AI_CONFIGURED.chat) return NextResponse.json({ error: "AI not configured." }, { status: 500 });
-
   const { id } = await params;
+  // Lock to course owner (or admin moderator). Without this, any
+  // instructor could regenerate / refine any course's summary —
+  // burning AI budget and overwriting other authors' work.
+  let owner;
+  try {
+    owner = await requireCourseOwner(id);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const userId = owner.userId;
+  if (!AI_CONFIGURED.chat) return NextResponse.json({ error: "AI not configured." }, { status: 500 });
   const body = (await req.json().catch(() => ({}))) as { refinePrompt?: string };
   const refinePrompt = body.refinePrompt?.trim();
 
@@ -112,10 +118,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
 /** Manual save — admin types or hand-edits the summary directly. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole("instructor").catch(() => null);
-  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
   const { id } = await params;
+  try {
+    await requireCourseOwner(id);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const body = (await req.json().catch(() => ({}))) as { aiSummary?: string };
   const next = typeof body.aiSummary === "string" ? body.aiSummary.trim() : "";
   if (!next) {

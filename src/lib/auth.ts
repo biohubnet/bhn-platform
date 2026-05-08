@@ -200,3 +200,36 @@ export function isAdmin(role: string) {
 export function isStaff(role: string) {
   return (ROLE_RANK[role] ?? 0) >= ROLE_RANK["instructor"];
 }
+
+/**
+ * Confirm the calling user has authoring rights over this specific
+ * course. Used by mutation endpoints under /api/courses/[id]/* to
+ * prevent one instructor from defacing another's course (the kind of
+ * IDOR that surfaced in the May-2026 Canvas incident: low-privilege
+ * authenticated account reaching resources it doesn't own).
+ *
+ * Returns the session on success. Throws on unauthorized / forbidden.
+ *
+ * Authorisation matrix:
+ *   • The course's `instructorId` matches the caller       → allow
+ *   • The caller is admin or superadmin                    → allow
+ *     (so platform staff can still moderate / ghost-edit)
+ *   • Otherwise                                            → deny (403)
+ */
+export async function requireCourseOwner(courseId: string) {
+  const session = await requireSession();
+  const userId = (session.user as { id?: string }).id ?? null;
+  const role = (session.user as { role?: string }).role ?? "user";
+  if (!userId) throw new Error("Unauthorized");
+
+  // Admins / superadmins skip the ownership check.
+  if (isAdmin(role)) return { session, userId, role, isOwner: false, isAdminOverride: true };
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { instructorId: true },
+  });
+  if (!course) throw new Error("Forbidden"); // Don't leak existence to non-owners.
+  if (course.instructorId !== userId) throw new Error("Forbidden");
+  return { session, userId, role, isOwner: true, isAdminOverride: false };
+}

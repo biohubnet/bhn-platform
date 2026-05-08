@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireCourseOwner } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseManifest } from "@/lib/scorm-parser";
 import { putR2Object, deleteR2Prefix, R2_PUBLIC_URL } from "@/lib/r2";
@@ -13,7 +13,15 @@ export const maxDuration = 300; // seconds — Pro plan only; safe to leave for 
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: courseId } = await params;
-  await requireRole("instructor");
+  // requireCourseOwner: SCORM upload wipes the previous R2 prefix and
+  // rewrites the course's runtime entry point — must be locked to the
+  // owning instructor (or admins moderating). Without this, any
+  // instructor could replace any course's content.
+  try {
+    await requireCourseOwner(courseId);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   if (!R2_PUBLIC_URL) {
     return NextResponse.json(

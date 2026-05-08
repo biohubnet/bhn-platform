@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { putR2Object, r2PublicUrl, R2_PUBLIC_URL } from "@/lib/r2";
@@ -16,6 +17,19 @@ const HARD_MAX = 50 * 1024 * 1024;    // 50 MB ceiling
  * `fieldId` and `file`. Validates against the form's schema (field
  * exists, type=file, accept matches, size under maxBytes), uploads to
  * R2, returns the public URL the client should put in submission data.
+ *
+ * SECURITY — keys include a random token so the URL is unguessable
+ * --------------------------------------------------------------
+ * The R2 bucket is publicly readable (no signed URLs). Earlier this
+ * route used a key like `form-uploads/{slug}/{userId}/{ts}_{file}`,
+ * which is enumerable: form slugs are public, userIds leak in
+ * authenticated lists (employer applicant view, buddy search), and
+ * the millisecond timestamp is a small brute-force window. An
+ * attacker with a userId could probe a few thousand timestamps and
+ * fetch arbitrary form-submission files — same authorization-
+ * boundary failure that drove the May-2026 Canvas / Instructure
+ * incident. The new key includes a 128-bit random token, so the URL
+ * is computationally infeasible to construct without our DB.
  */
 export async function POST(
   req: NextRequest,
@@ -80,7 +94,10 @@ export async function POST(
 
   const userId = (session.user as { id?: string }).id ?? "anon";
   const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 80);
-  const key = `form-uploads/${form.slug}/${userId}/${Date.now()}_${safeName}`;
+  // 128-bit random token makes the path unguessable even when the
+  // attacker knows the form slug and userId.
+  const token = randomBytes(16).toString("hex");
+  const key = `form-uploads/${form.slug}/${userId}/${token}/${safeName}`;
   const buf = Buffer.from(await file.arrayBuffer());
   await putR2Object(key, buf, file.type || "application/octet-stream");
   const url = r2PublicUrl(key);

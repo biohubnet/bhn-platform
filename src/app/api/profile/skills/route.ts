@@ -63,6 +63,18 @@ export async function PATCH(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as { id?: string; level?: number };
   if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
   const level = body.level !== undefined ? clamp01(body.level) : undefined;
+  // IDOR fix: confirm the row belongs to the calling user before
+  // mutating. Without this, knowing another trainee's UserSkill row
+  // ID was enough to overwrite their level (e.g. push a competitor's
+  // claimed Java level from 0.2 to 1.0). DELETE below already does
+  // this check; PATCH was the asymmetric outlier.
+  const row = await prisma.userSkill.findUnique({
+    where: { id: body.id },
+    select: { userId: true },
+  });
+  if (!row || row.userId !== userId) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
   const skill = await prisma.userSkill.update({
     where: { id: body.id },
     data: {

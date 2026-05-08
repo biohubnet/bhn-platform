@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Security: hardening pass mapped to the May-2026 Canvas/Instructure breach",
+    body: "The Canvas attack class — an authenticated low-privilege account reaching resources it doesn't own (IDOR / authorization-boundary failure) — applied to BHN in two places. (1) My Application files (resume + 1-min video) and form-upload files were stored in our public R2 bucket at deterministic paths like applications/{userId}/resume.pdf — anyone who learned a userId from an authenticated list could fetch the file directly. The path now includes a 128-bit random token (applications/{userId}/{token}/resume.pdf) so URLs are unguessable; replacing or clearing an artifact best-effort deletes the previous R2 object. (2) Six course-mutation endpoints (PATCH course, POST modules / assessments / SCORM / thumbnail / summary, PATCH summary) checked role=instructor but not course ownership — any self-registered instructor could deface every course on the platform. They now use a new requireCourseOwner() helper that checks the calling user owns the course OR is admin/superadmin (so platform staff can still moderate). One more IDOR fix: the UserSkill PATCH handler now confirms ownership before mutating, matching what the DELETE handler already did. A re-audit confirmed all fixes landed and no sibling endpoints share the same flaw. No user PII was exposed at any point — these are pre-emptive fixes.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "'Take the tour' is now a sidebar menu entry for every role",
     body: "There's been a small ? button at the bottom-left to restart the onboarding tour, but it was easy to miss. The sidebar now has an explicit 'Take the tour' item just below the misc menu (Buddies / What's new). Visible to every signed-in role — trainees, evaluators, instructors, employers, admins, superadmins — so anyone who dismissed the auto-tour or wants a refresher can find their way back. The button dispatches a DOM event the existing Onboarding component listens for, so the tour's own state machine stays the single source of truth.",
     kind: "improvement",

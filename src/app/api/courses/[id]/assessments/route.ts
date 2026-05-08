@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireCourseOwner } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: courseId } = await params;
-  await requireRole("instructor");
+  // Lock to course owner (or admin moderator). Without this, any
+  // instructor could create/inject assessments on any course.
+  try {
+    await requireCourseOwner(courseId);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const data = await req.json();
 

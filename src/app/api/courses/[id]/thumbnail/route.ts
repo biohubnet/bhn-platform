@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireCourseOwner } from "@/lib/auth";
 import { generateImage, buildThumbnailPrompt, AI_CONFIGURED } from "@/lib/ai";
 import { putR2Object, r2PublicUrl, R2_PUBLIC_URL } from "@/lib/r2";
 import { trackServer } from "@/lib/analytics";
@@ -9,9 +9,20 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole("instructor").catch(() => null);
-  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const userId = (session.user as { id?: string }).id;
+  const { id } = await params;
+  // requireCourseOwner: thumbnail generation calls a paid AI image
+  // model and overwrites the course's public hero image. Must be
+  // locked to the owning instructor (or an admin moderating). Without
+  // this, any instructor could swap any course's thumbnail with
+  // arbitrary AI-generated content and drain the AI budget.
+  let owner;
+  try {
+    owner = await requireCourseOwner(id);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const userId = owner.userId;
+
   if (!AI_CONFIGURED.image) {
     return NextResponse.json({ error: "Image generation not configured." }, { status: 500 });
   }
@@ -19,7 +30,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "R2 storage not configured." }, { status: 500 });
   }
 
-  const { id } = await params;
   const course = await prisma.course.findUnique({
     where: { id },
     select: { id: true, title: true, description: true, category: true },

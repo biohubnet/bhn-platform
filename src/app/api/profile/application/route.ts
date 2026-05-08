@@ -12,12 +12,16 @@
  * route) which writes to R2 and then PATCHes the URL onto the user
  * row internally. PATCH here covers manual URL set/clear (e.g.
  * remove a stale resume) plus pitch text edits.
+ *
+ * Setting resumeUrl / videoIntroUrl to null also best-effort deletes
+ * the underlying R2 object so removed artifacts don't linger and
+ * silently leak to anyone with the URL.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { R2_PUBLIC_URL } from "@/lib/r2";
+import { R2_PUBLIC_URL, deleteR2ObjectByUrl } from "@/lib/r2";
 
 const PITCH_MAX = 650;
 
@@ -84,6 +88,16 @@ export async function PATCH(req: NextRequest) {
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
+
+  // Capture the previous URLs before the update so we can clean up R2
+  // objects that are about to be orphaned.
+  const before = (data.resumeUrl !== undefined || data.videoIntroUrl !== undefined)
+    ? await prisma.user.findUnique({
+        where: { id },
+        select: { resumeUrl: true, videoIntroUrl: true },
+      })
+    : null;
+
   data.applicationUpdatedAt = new Date();
   const updated = await prisma.user.update({
     where: { id },
@@ -95,5 +109,27 @@ export async function PATCH(req: NextRequest) {
       applicationUpdatedAt: true,
     },
   });
+
+  // Best-effort cleanup of orphaned R2 objects. We delete only when
+  // the URL has actually changed AND was set to something different
+  // (or null). This way a no-op PATCH doesn't accidentally remove a
+  // shared object.
+  if (before) {
+    if (
+      data.resumeUrl !== undefined &&
+      before.resumeUrl &&
+      before.resumeUrl !== updated.resumeUrl
+    ) {
+      void deleteR2ObjectByUrl(before.resumeUrl);
+    }
+    if (
+      data.videoIntroUrl !== undefined &&
+      before.videoIntroUrl &&
+      before.videoIntroUrl !== updated.videoIntroUrl
+    ) {
+      void deleteR2ObjectByUrl(before.videoIntroUrl);
+    }
+  }
+
   return NextResponse.json(updated);
 }

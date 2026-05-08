@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 const accountId = process.env.R2_ACCOUNT_ID;
 const accessKeyId = process.env.R2_ACCESS_KEY_ID;
@@ -63,6 +63,37 @@ export async function putR2Object(key: string, body: Buffer | Uint8Array, conten
     })
   );
   return cleanKey;
+}
+
+/**
+ * Delete a single R2 object by full URL or key.
+ *
+ * Accepts either:
+ *   • a full R2_PUBLIC_URL/<key> (with or without `?v=` cache-bust suffix)
+ *   • a bare key like "applications/USERID/abc/resume.pdf"
+ *
+ * No-ops silently when the URL doesn't start with R2_PUBLIC_URL — that
+ * way callers can pass `user.resumeUrl` directly without first
+ * stripping a hand-typed external URL (the upload + PATCH routes
+ * already validate that resumeUrl belongs to our R2, but defending in
+ * depth here keeps a stale legacy URL from causing a 500).
+ */
+export async function deleteR2ObjectByUrl(urlOrKey: string | null | undefined) {
+  if (!urlOrKey || !r2) return;
+  let key: string;
+  if (urlOrKey.startsWith("http://") || urlOrKey.startsWith("https://")) {
+    if (!R2_PUBLIC_URL || !urlOrKey.startsWith(R2_PUBLIC_URL)) return;
+    key = urlOrKey.slice(R2_PUBLIC_URL.length).replace(/^\//, "").split("?")[0];
+  } else {
+    key = urlOrKey.replace(/^\//, "");
+  }
+  if (!key) return;
+  try {
+    await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+  } catch {
+    // Best-effort cleanup. A failed delete shouldn't block the user's
+    // primary action (e.g. uploading a replacement).
+  }
 }
 
 export async function deleteR2Prefix(prefix: string) {
