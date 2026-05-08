@@ -64,13 +64,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     });
   }
 
-  // Stamp the invite as used on first claim, but don't block re-use.
-  if (!invite.usedAt) {
-    await prisma.employerInvite.update({
-      where: { id: invite.id },
-      data: { usedAt: new Date(), usedById: user.id },
-    });
-  }
+  // Bump open-count + last-opened on every visit. Stamp usedAt /
+  // usedById on first claim only. The two are deliberately split:
+  // openCount tracks every click (good signal for "is the recipient
+  // actually using the link?"), usedAt is a one-shot audit marker.
+  await prisma.employerInvite.update({
+    where: { id: invite.id },
+    data: {
+      openCount:    { increment: 1 },
+      lastOpenedAt: new Date(),
+      ...(invite.usedAt ? {} : { usedAt: new Date(), usedById: user.id }),
+    },
+  });
 
   const secret = process.env.NEXTAUTH_SECRET;
   if (!secret) {

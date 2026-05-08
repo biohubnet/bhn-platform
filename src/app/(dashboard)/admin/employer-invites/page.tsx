@@ -25,6 +25,8 @@ export default async function EmployerInvitesPage() {
           createdAt: i.createdAt.toISOString(),
           expiresAt: i.expiresAt.toISOString(),
           usedAt: i.usedAt ? i.usedAt.toISOString() : null,
+          openCount: i.openCount,
+          lastOpenedAt: i.lastOpenedAt ? i.lastOpenedAt.toISOString() : null,
         }))}
       />
     </div>

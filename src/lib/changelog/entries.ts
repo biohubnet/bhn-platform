@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Employer invites: bulk-mint, search/filter, undo revoke, open-tracking, first-run guide",
+    body: "A round of UX polish on the magic-link invite system based on the review.\n\nAdmin side (Administration → Experience → Employer invites):\n• Bulk invite — paste up to 100 emails, mint one magic-link per address.\n• Filter chips (All / Pending / Claimed / Expired) and a search box that matches email or company name.\n• Undo revoke — clicking the trash icon kicks off a 5-second client-side window with an Undo toast before the DELETE actually fires.\n• Open count + last-opened display per invite — shows how many times the recipient (or you) has clicked the link.\n• 'Testing' badge auto-applied to invites with @biohubnet.test placeholder emails so you can tell quick-test invites apart from real-prospect ones at a glance.\n\nEmployer side:\n• First-run welcome card on /employer for fresh accounts (no postings, empty profile) with three click-through steps: fill profile → post first internship → review applicants.\n• 'Set a password' banner for users who signed in via magic link and have no password set — prevents the 'locked out when invite expires' trap. Dismissible per session.\n\nExpired / conflict / unknown-link error page now offers two relevant action links per case (e.g. for email conflict: 'Sign in to existing account' OR 'Request a new invite with a different email').",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Sandbox + demo accounts are now hidden from platform stats by default",
     body: "/admin/users now opens on a Real tab (real accounts only) with separate Sandbox and Demo tabs you can flip to. The admin dashboard, system-status page, /admin/analytics, /admin/stats, /admin/newsletter, the public /for-employers and /for-trainees pulse stats, and the recent-logins feed all filter to accountKind='real' so dummy accounts don't pollute the numbers prospects and admins see. System status keeps a small footer line below the vitals (`Plus N sandbox · M demo`) for transparency, with deep links to the dedicated management pages.",
     kind: "improvement",

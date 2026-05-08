@@ -4,6 +4,12 @@ import { LogoMark } from "@/components/ui/Logo";
 
 export const dynamic = "force-dynamic";
 
+interface ActionLink {
+  href: string;
+  label: string;
+  primary?: boolean;
+}
+
 export default async function EmployerInviteErrorPage({
   searchParams,
 }: {
@@ -15,14 +21,26 @@ export default async function EmployerInviteErrorPage({
     Icon: Clock,
     title: "Invite expired",
     body: "This employer invite has reached its expiry date. Reach out to your BHN contact for a fresh link — they can mint a new one in a couple of seconds.",
+    actions: [
+      { href: "/login", label: "Sign in", primary: true },
+      { href: "/for-employers#request", label: "Request a fresh invite" },
+    ] as ActionLink[],
   } : reason === "conflict" ? {
     Icon: ShieldAlert,
-    title: "Email already in use",
-    body: "An account with this email already exists on BHN under a different role. We won't auto-elevate it via an invite link. Sign in with your existing credentials, or ask your BHN contact to invite a different email.",
+    title: "This email already has a BHN account",
+    body: "It's registered under a different role (admin / trainee / instructor). For safety we don't elevate accounts through an invite link. Two options below should cover it.",
+    actions: [
+      { href: "/login", label: "Sign in to your existing account", primary: true },
+      { href: "/for-employers#request", label: "Use a different email — request a new invite" },
+    ] as ActionLink[],
   } : {
     Icon: AlertTriangle,
     title: "Invite not recognised",
-    body: "We couldn't find an active invite for this URL. The link may have been retracted or you may be on the wrong subdomain.",
+    body: "We couldn't find an active invite for this URL. The link may have been retracted, you may be on the wrong subdomain, or the URL is mistyped.",
+    actions: [
+      { href: "/for-employers", label: "Visit /for-employers", primary: true },
+      { href: "/login", label: "I already have an account" },
+    ] as ActionLink[],
   };
 
   return (
@@ -36,20 +54,25 @@ export default async function EmployerInviteErrorPage({
         </div>
         <h1 className="text-xl font-bold text-fg">{meta.title}</h1>
         <p className="text-sm text-muted mt-2 max-w-sm mx-auto leading-relaxed">{meta.body}</p>
-        <div className="mt-5 flex justify-center gap-2 flex-wrap">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 bg-brand-600 text-white hover:bg-brand-700 font-semibold text-sm px-5 py-2.5 rounded-lg"
-          >
-            Sign in <ArrowRight size={14} />
-          </Link>
-          <Link
-            href="/for-employers"
-            className="inline-flex items-center gap-2 bg-card-solid border border-line text-muted hover:text-fg font-medium text-sm px-5 py-2.5 rounded-lg"
-          >
-            Visit /for-employers
-          </Link>
+        <div className="mt-5 flex flex-col items-center gap-2">
+          {meta.actions.map((a) => (
+            <Link
+              key={a.href}
+              href={a.href}
+              className={
+                a.primary
+                  ? "inline-flex items-center gap-2 bg-brand-600 text-white hover:bg-brand-700 font-semibold text-sm px-5 py-2.5 rounded-lg w-full justify-center"
+                  : "inline-flex items-center gap-2 bg-card-solid border border-line text-muted hover:text-fg font-medium text-sm px-5 py-2 rounded-lg w-full justify-center"
+              }
+            >
+              {a.label}
+              {a.primary && <ArrowRight size={13} />}
+            </Link>
+          ))}
         </div>
+        <p className="text-[11px] text-subtle mt-5">
+          Stuck? Reply to whoever sent you this link and ask for help — or write to <a className="text-brand-600 hover:underline" href="mailto:hello@biohubnet.ca">hello@biohubnet.ca</a>.
+        </p>
       </div>
     </div>
   );

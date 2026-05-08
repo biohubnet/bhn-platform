@@ -3,6 +3,8 @@ import { Building2, FilePlus, Users2, Video, Bookmark, CalendarClock, ArrowRight
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
+import { EmployerWelcome } from "@/components/employer/EmployerWelcome";
+import { SetPasswordBanner } from "@/components/employer/SetPasswordBanner";
 
 /** Employer portal landing page — overview tiles + recent activity. */
 export default async function EmployerHome() {
@@ -20,7 +22,15 @@ export default async function EmployerHome() {
   const myUser = userId
     ? await prisma.user.findUnique({
         where: { id: userId },
-        select: { employerCompany: true },
+        select: {
+          employerCompany: true,
+          companyDescription: true,
+          companyIndustry: true,
+          companyLocation: true,
+          companyLogo: true,
+          name: true,
+          password: true,
+        },
       })
     : null;
 
@@ -33,14 +43,32 @@ export default async function EmployerHome() {
     }),
   ]);
 
+  // First-run detection: fresh employer if they've never posted AND
+  // their profile is mostly empty.
+  const profileEmpty = !myUser?.companyDescription
+    && !myUser?.companyIndustry
+    && !myUser?.companyLocation
+    && !myUser?.companyLogo;
+  const isFreshEmployer = postingsCount === 0 && profileEmpty;
+  const noPassword = !myUser?.password;
+
   return (
     <div>
+      {noPassword && <SetPasswordBanner className="mb-4" />}
+
       <PageHero
         eyebrow={<><Building2 size={11} /> Employer portal</>}
         title={myUser?.employerCompany ?? "Employer overview"}
         description="Post internship opportunities, review talent applications, watch one-minute video introductions, save promising candidates, and book interviews — all from this portal."
         tone="brand"
       />
+
+      {isFreshEmployer && (
+        <EmployerWelcome
+          firstName={myUser?.name?.split(" ")[0] ?? null}
+          companyName={myUser?.employerCompany ?? null}
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <Tile

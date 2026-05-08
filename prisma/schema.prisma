@@ -188,6 +188,10 @@ model EmployerInvite {
   /// Phase 6 demo-mode: read-only preview link admins can hand to a
   /// prospective partner so they can browse the portal before committing.
   demoMode    Boolean   @default(false)
+  /// Each magic-link click bumps these. Useful for the admin's
+  /// "did they open the link" signal.
+  openCount    Int      @default(0)
+  lastOpenedAt DateTime?
 
   @@index([email])
   @@index([invitedById, createdAt])
