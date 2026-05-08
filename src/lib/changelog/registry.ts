@@ -18,6 +18,13 @@ export async function ensureChangelogEntries() {
     const missing = CHANGELOG_ENTRIES.filter((e) => !haveTitles.has(e.title));
     if (missing.length === 0) return;
 
+    // Stamp every newly-created entry with the current deploy's
+    // commit SHA. Lets admins correlate "what shipped" with "in
+    // which build" without keeping a separate release log. The same
+    // env var powers the build chip in the sidebar; falls back to
+    // null on local dev where it isn't set.
+    const buildSha = process.env.NEXT_PUBLIC_COMMIT_SHA?.slice(0, 12) || null;
+
     // Insert oldest first so chronological order matches the array.
     for (const e of missing.slice().reverse()) {
       const publishedAt = new Date(Date.now() - e.daysAgo * 24 * 60 * 60 * 1000);
@@ -29,6 +36,7 @@ export async function ensureChangelogEntries() {
             kind: e.kind,
             visibleTo: e.visibleTo,
             publishedAt,
+            buildSha,
           },
         })
         .catch(() => {

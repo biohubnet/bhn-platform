@@ -18,6 +18,9 @@ interface ChangeLogEntry {
   version: string | null;
   visibleTo: string[];
   publishedAt: string | Date;
+  /// Build commit SHA the entry first shipped on. Surfaced only when
+  /// canManage is true on the timeline (admin / superadmin).
+  buildSha?: string | null;
 }
 
 const KIND_META: Record<string, { label: string; tone: "brand" | "amber" | "success" | "neutral"; icon: React.ElementType }> = {
@@ -265,6 +268,18 @@ function Timeline({
                         <span className="text-xs text-subtle">
                           {new Date(e.publishedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                         </span>
+                        {/* Build SHA chip — admins/superadmins only.
+                            Lets staff correlate "what shipped" with
+                            "in which build" without a separate
+                            release log. */}
+                        {canManage && e.buildSha && (
+                          <code
+                            title={`Build ${e.buildSha} — when this entry first shipped`}
+                            className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-elevated border border-line text-subtle select-all"
+                          >
+                            {e.buildSha.slice(0, 7)}
+                          </code>
+                        )}
                         {canManage && (
                           <span className="ml-auto flex items-center gap-1 text-[11px] text-subtle">
                             {isEveryone ? (

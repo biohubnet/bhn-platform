@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
       visibleTo,
       createdById: actorId,
       publishedAt: body.publishedAt ? new Date(body.publishedAt) : new Date(),
+      buildSha: process.env.NEXT_PUBLIC_COMMIT_SHA?.slice(0, 12) || null,
     },
   });
   return NextResponse.json(entry, { status: 201 });

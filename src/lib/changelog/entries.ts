@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Changelog entries now show the build SHA they shipped on (staff only)",
+    body: "Every new changelog entry is automatically stamped with the deploy's commit SHA at create time. On the changelog page, admins and superadmins see a small monospace chip next to the date — click to copy, hover to see the full 12-char SHA. Trainees and instructors don't see the chip; the entries themselves are still the same. Lets staff correlate 'what shipped' with 'in which build' without keeping a separate release log. Existing pre-stamp entries simply omit the chip.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "AI course summary: edit manually, refine with a prompt, publish with confirmation",
     body: "Three improvements to the course publish-and-summarise loop.\n\n(1) The AI summary card now has three modes for staff. Edit lets you type the summary directly — verbatim save, no AI call. Refine takes the existing summary and a short instruction (e.g. 'make it shorter', 'more technical', 'lead with what learners can do after') and rewrites it. Regenerate still rebuilds from the course's modules and assessments. Three quick-pick example prompts on the Refine view, plus ⌘/Ctrl + Enter to send.\n\n(2) The Publish button now confirms the action with a green toast bottom-centred on the page: 'Course published' + a primary 'Inspect course →' button that opens the trainee view, plus a secondary 'View in catalog' link. Unpublishing shows an amber confirmation. Errors get a rose toast with the server message. Toast auto-dismisses after 8 seconds; or click Dismiss.\n\n(3) The publish API path now returns errors as JSON for the toast to surface — small reliability win.",
     kind: "improvement",

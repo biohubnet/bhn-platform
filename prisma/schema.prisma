@@ -946,6 +946,10 @@ model ChangeLog {
   body        String
   kind        String   @default("feature")  // feature | fix | improvement | note
   version     String?
+  /// Build commit SHA the entry first shipped on. Populated from
+  /// NEXT_PUBLIC_COMMIT_SHA at create time. Surfaced only to
+  /// admin / superadmin on the changelog page.
+  buildSha    String?
   visibleTo   String[] @default(["trainee", "evaluating", "instructor", "admin", "superadmin"])
   publishedAt DateTime @default(now())
   createdById String?
