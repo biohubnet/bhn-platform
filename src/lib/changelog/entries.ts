@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Fix: SCORM player kept escaping back to the previous page (real fix)",
+    body: "Previous fix narrowed when LMSFinish redirects, but the actual culprit was a different escape path. The iframe sandbox included `allow-top-navigation`, which lets scripts inside the SCORM package navigate the LMS page itself — and many authoring tools wire 'exit' or 'prev module' buttons as `window.top.history.back()` (assuming the package launches in a popup, not an iframed LMS). That pulled the LMS back to whatever you came from. Dropped that sandbox flag; module navigation now stays inside the iframe where it belongs. Use the LMS top-bar 'Back to course' link to exit.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Talent Application 'Fill with sample' now also fills the file attachments",
     body: "Clicking 'Fill with sample' on the talent application now sets resume, supervisor letter, and supporting document fields too. First click hits a new admin endpoint (/api/admin/forms/talent-application/seed-samples) that generates three minimal valid PDFs server-side and uploads them to R2 at fixed paths. Subsequent fills reuse the same URLs from sessionStorage — no repeated uploads. The submissions API still validates that file values come from R2_PUBLIC_URL, so the seeded URLs round-trip cleanly through real submission. The video field stays empty because MP4 placeholder generation is fiddly and the field is optional.",
     kind: "improvement",

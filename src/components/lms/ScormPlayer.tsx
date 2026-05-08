@@ -173,14 +173,27 @@ export function ScormPlayer({
         </a>
       </div>
 
-      {/* SCORM iframe */}
+      {/* SCORM iframe.
+       *
+       * `allow-top-navigation` is deliberately OMITTED. Many SCORM
+       * packages have "exit" / "prev module" buttons that fire
+       * window.top.history.back() or parent.location = ... — wired
+       * by authors who assume the package launches in a popup,
+       * not iframed inside an LMS. With top-navigation allowed,
+       * those calls yank the LMS page back, which looks like
+       * "clicking a module returns me to the previous page".
+       *
+       * Without it, the iframe can't navigate the parent. Module
+       * navigation is handled by the SCORM content internally
+       * (it's a self-contained subapp) and the LMS Back button
+       * in the top bar covers exit. */}
       <iframe
         ref={iframeRef}
         src={`/scorm-loader.html?src=${encodeURIComponent(entryPoint)}&version=${scormVersion}`}
         className="flex-1 w-full border-0"
         title={courseTitle}
         allow="fullscreen"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-top-navigation"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
       />
     </div>
   );
