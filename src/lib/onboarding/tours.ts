@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.08d";
+export const TOUR_VERSION = "2026.05.08e";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -426,6 +426,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["trainee", "evaluating"],
     since: "2026.05.08c",
     cta: { label: "Open the application", href: "/forms/talent-application" },
+  },
+  {
+    id: "admin-security-reports",
+    title: "Security reports — for admins",
+    body: "Administration → Platform → Security now hosts our internal security reviews. The 8-May-2026 report covers our pre-emptive response to the Canvas / Instructure breach (what we found in BHN that matched the same attack class, what we shipped, what's recommended next). Show this to leadership when they ask 'is BHN safe from what's in the news?'.",
+    path: "/admin/security",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.08e",
+    cta: { label: "Open Security reports", href: "/admin/security" },
   },
   {
     id: "demo-workspaces",

@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Admin: Security reports page (Administration → Platform → Security)",
+    body: "Leadership-facing security reviews now live in-platform at /admin/security. The page reads every Markdown file under the repo's docs/security/ directory and renders it inline — newest first — so an admin can show a board / leadership member without cloning the repo. The first report covers our 8-May-2026 pre-emptive review against the Canvas / Instructure breach (what happened to them, what we found in BHN, what we shipped, what's recommended next). Future reports drop into the same directory and appear automatically. Each report links back to its GitHub source for citation. A 'security@biohubnetwork.ca' contact line at the bottom makes vulnerability disclosure easier to find. Admin / superadmin only.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Security: hardening pass mapped to the May-2026 Canvas/Instructure breach",
     body: "The Canvas attack class — an authenticated low-privilege account reaching resources it doesn't own (IDOR / authorization-boundary failure) — applied to BHN in two places. (1) My Application files (resume + 1-min video) and form-upload files were stored in our public R2 bucket at deterministic paths like applications/{userId}/resume.pdf — anyone who learned a userId from an authenticated list could fetch the file directly. The path now includes a 128-bit random token (applications/{userId}/{token}/resume.pdf) so URLs are unguessable; replacing or clearing an artifact best-effort deletes the previous R2 object. (2) Six course-mutation endpoints (PATCH course, POST modules / assessments / SCORM / thumbnail / summary, PATCH summary) checked role=instructor but not course ownership — any self-registered instructor could deface every course on the platform. They now use a new requireCourseOwner() helper that checks the calling user owns the course OR is admin/superadmin (so platform staff can still moderate). One more IDOR fix: the UserSkill PATCH handler now confirms ownership before mutating, matching what the DELETE handler already did. A re-audit confirmed all fixes landed and no sibling endpoints share the same flaw. No user PII was exposed at any point — these are pre-emptive fixes.",
     kind: "fix",

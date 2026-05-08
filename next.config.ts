@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["unzipper", "archiver", "@prisma/client", "bcryptjs", "unpdf", "mammoth"],
+  // /admin/security reads markdown files at runtime from docs/security/.
+  // Without an explicit trace include, Vercel's file-tracing layer can
+  // exclude content outside `app/` from the serverless function bundle,
+  // making fs.readFileSync 404 in production. Pin the directory.
+  outputFileTracingIncludes: {
+    "/admin/security": ["./docs/security/**/*"],
+  },
   images: {
     remotePatterns: [
       // Cloudflare R2 public dev URL and any custom-domain bucket.

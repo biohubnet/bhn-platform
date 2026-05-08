@@ -133,6 +133,7 @@ const adminPlatformItems: NavItem[] = [
   { label: "Analytics",           href: "/admin/analytics",           icon: LineChart,   minRole: "admin" },
   { label: "Reports",             href: "/admin/reports",             icon: FileText,    minRole: "admin" },
   { label: "Audit Log",           href: "/admin/audit",               icon: ShieldCheck, minRole: "admin" },
+  { label: "Security",            href: "/admin/security",            icon: ShieldCheck, minRole: "admin" },
   { label: "LTI Config",          href: "/admin/lti",                 icon: Link2,       minRole: "superadmin" },
   { label: "System status",       href: "/admin/system-status",       icon: Activity,    minRole: "superadmin" },
   { label: "Settings",            href: "/admin/settings",            icon: Settings,    minRole: "superadmin" },
