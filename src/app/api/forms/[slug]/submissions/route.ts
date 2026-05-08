@@ -94,7 +94,7 @@ export async function POST(
   const userId = (session.user as { id?: string }).id ?? null;
   const userEmail = (session.user as { email?: string }).email ?? null;
 
-  await prisma.eventFormSubmission.create({
+  const sub = await prisma.eventFormSubmission.create({
     data: {
       formId: form.id,
       data: cleaned,
@@ -102,6 +102,19 @@ export async function POST(
       email: userEmail,
     },
   });
+
+  // For the talent-application form, extract skills from the long-form
+  // pitch + status into the trainee's UserSkill profile (Phase 3).
+  if (userId && form.slug === "talent-application") {
+    const pitch = String(cleaned.pitch ?? "");
+    const status = String(cleaned.status_goal ?? "");
+    const text = [pitch, status].filter(Boolean).join("\n\n");
+    if (text.length > 40) {
+      import("@/lib/skills/ontology")
+        .then(({ tagUser }) => tagUser(userId, text, "ai", { submissionId: sub.id, source: "talent_application" }))
+        .catch(() => undefined);
+    }
+  }
 
   return NextResponse.json({ ok: true });
 }

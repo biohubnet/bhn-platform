@@ -52,6 +52,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
   });
 
+  // Re-tag skills if title/description changed (fire-and-forget).
+  if (data.title !== undefined || data.description !== undefined) {
+    const text = [course.title, course.description, course.category].filter(Boolean).join("\n\n");
+    if (text.length > 30) {
+      import("@/lib/skills/ontology").then(({ tagCourse }) => tagCourse(course.id, text)).catch(() => undefined);
+    }
+  }
+
   return NextResponse.json(course);
 }
 

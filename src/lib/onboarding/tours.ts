@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.07l";
+export const TOUR_VERSION = "2026.05.07m";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -326,6 +326,58 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07l",
     cta: { label: "Open Newsletter exports", href: "/admin/newsletter" },
+  },
+  {
+    id: "skill-profile",
+    title: "Your skill profile is live",
+    body: "Open EXPERIENCE → My Skills to see what we know about you. Skills come from completed courses, your talent application, or you can self-claim. Employers use this to score you against their roles.",
+    path: "/profile/skills",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    since: "2026.05.07m",
+    cta: { label: "View my skills", href: "/profile/skills" },
+  },
+  {
+    id: "skill-gap-widget",
+    title: "See how you match against open roles",
+    body: "On the dashboard, the new 'How you match' widget lets you pick any active internship and shows your match score, the skills you bring, what you're missing, and which BHN courses would close the gap.",
+    path: "/dashboard",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    since: "2026.05.07m",
+  },
+  {
+    id: "applicant-kanban",
+    title: "Applicant kanban with skill scoring",
+    body: "Open any of your postings → Applicants. Each applicant gets a 0–100 skill match, a breakdown of which skills they bring vs miss, and links to the BHN courses that taught them. Drag through New / Reviewing / Shortlisted / Phone screen / Onsite / Offer.",
+    placement: "center",
+    roles: ["employer", "admin", "superadmin"],
+    since: "2026.05.07m",
+  },
+  {
+    id: "interview-scheduler",
+    title: "One-click interview scheduling",
+    body: "From an applicant's drawer, click Schedule interview, propose 1–5 time slots and a format. The applicant accepts from /interviews on their dashboard. No external calendar OAuth — minimal friction.",
+    placement: "center",
+    roles: ["employer", "admin", "superadmin"],
+    since: "2026.05.07m",
+  },
+  {
+    id: "skill-ontology-admin",
+    title: "Skill ontology curation — admins",
+    body: "/admin/skills lists every Skill, alias, and which courses / postings / users use it. Merge duplicates, add aliases, deprecate stale entries. AI proposes new skills when content flows in; you approve or merge them here.",
+    path: "/admin/skills",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.07m",
+    cta: { label: "Open skill ontology", href: "/admin/skills" },
+  },
+  {
+    id: "public-marketing-pages",
+    title: "/for-employers and /for-trainees",
+    body: "Public marketing pages live at /for-employers and /for-trainees, pitching the platform without requiring sign-in. Visitors leave their email and an admin approves from /admin/access-requests.",
+    placement: "center",
+    since: "2026.05.07m",
   },
   {
     id: "complete",

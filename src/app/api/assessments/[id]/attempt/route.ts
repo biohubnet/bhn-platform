@@ -51,6 +51,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     },
   });
 
+  // On pass, infer UserSkills from the course's CourseSkills (Phase 3).
+  if (passed) {
+    import("@/lib/skills/ontology")
+      .then(({ inferSkillsFromCompletion }) => inferSkillsFromCompletion(userId, assessment.courseId))
+      .catch(() => undefined);
+  }
+
   // Issue certificate on pass
   if (passed) {
     await prisma.certificate.upsert({

@@ -56,5 +56,11 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // Fire-and-forget skill tagging — don't block the response.
+  const text = [data.title, data.description, data.category].filter(Boolean).join("\n\n");
+  if (text.length > 30) {
+    import("@/lib/skills/ontology").then(({ tagCourse }) => tagCourse(course.id, text)).catch(() => undefined);
+  }
+
   return NextResponse.json(course, { status: 201 });
 }

@@ -55,5 +55,16 @@ export async function POST(req: NextRequest) {
       createdById: userId,
     },
   });
+
+  // Fire-and-forget skill tagging.
+  const tagText = [
+    posting.title,
+    posting.positionDetails,
+    (posting.keySkills ?? []).join(", "),
+  ].filter(Boolean).join("\n\n");
+  if (tagText.length > 30) {
+    import("@/lib/skills/ontology").then(({ tagPosting }) => tagPosting(posting.id, tagText)).catch(() => undefined);
+  }
+
   return NextResponse.json({ ok: true, posting });
 }

@@ -10,6 +10,7 @@ import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
 import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { GreetingTagline } from "@/components/lms/GreetingTagline";
+import { SkillGapWidget } from "@/components/lms/SkillGapWidget";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -129,6 +130,14 @@ export default async function DashboardPage() {
         take: 4,
       }),
     ]);
+
+  // Active postings for the skill-gap widget
+  const openPostings = await prisma.internshipPosting.findMany({
+    where: { status: "active" },
+    select: { id: true, title: true, companyName: true },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
 
   const completed = enrollments.filter((e) => e.status === "completed").length;
   const inProgress = enrollments.filter((e) => e.status === "active").length;
@@ -279,6 +288,11 @@ export default async function DashboardPage() {
           );
         })}
       </div>
+
+      {/* Skill-gap widget — only renders if there are open postings */}
+      {openPostings.length > 0 && (
+        <SkillGapWidget postings={openPostings} />
+      )}
 
       {/* Continue learning */}
       {activeContinue.length > 0 && (

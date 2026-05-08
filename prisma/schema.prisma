@@ -80,6 +80,14 @@ model User {
   buddiesPartnered   BuddyPair[]           @relation("PartnerBuddies")
   buddyMessages      BuddyMessage[]        @relation("BuddyMessageSender")
 
+  // Phase 1–5 additions
+  skills              UserSkill[]
+  applicationStatuses ApplicationStatus[]   @relation("Applicant")
+  statusEdits         ApplicationStatus[]   @relation("StatusEditor")
+  interviews          Interview[]           @relation("Interviewee")
+  scheduledInterviews Interview[]           @relation("Interviewer")
+  accessRequestsHandled AccessRequest[]     @relation("AccessRequestHandler")
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -161,9 +169,169 @@ model EmployerInvite {
   expiresAt   DateTime
   usedAt      DateTime?
   usedById    String?
+  /// Phase 6 demo-mode: read-only preview link admins can hand to a
+  /// prospective partner so they can browse the portal before committing.
+  demoMode    Boolean   @default(false)
 
   @@index([email])
   @@index([invitedById, createdAt])
+}
+
+/// Public access-request inbox. The /for-employers and /for-trainees
+/// marketing pages let visitors leave their email; admins triage from
+/// /admin/access-requests and approve into an EmployerInvite or a
+/// trainee welcome.
+model AccessRequest {
+  id          String   @id @default(cuid())
+  kind        String   // "employer" | "trainee"
+  email       String
+  name        String?
+  company     String?
+  website     String?
+  message     String?
+  source      String   @default("for-employers")
+  status      String   @default("pending") // pending | approved | rejected
+  handledAt   DateTime?
+  handledById String?
+  handledBy   User?    @relation("AccessRequestHandler", fields: [handledById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([kind])
+}
+
+/// Skill ontology — every Course, InternshipPosting, and User attaches
+/// to canonical Skill rows so the matching engine can reason about a
+/// shared vocabulary instead of free strings.
+model Skill {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  category    String?
+  description String?
+  /// 384-d BGE-small embedding; managed via raw SQL (pgvector).
+  embedding   Unsupported("vector(384)")?
+  status      String   @default("active") // active | deprecated | merged
+  mergedIntoId String?
+  mergedInto   Skill?  @relation("SkillMerge", fields: [mergedIntoId], references: [id])
+  mergedFrom   Skill[] @relation("SkillMerge")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  aliases       SkillAlias[]
+  courses       CourseSkill[]
+  users         UserSkill[]
+  postings      PostingSkill[]
+
+  @@index([status])
+  @@index([category])
+}
+
+model SkillAlias {
+  id        String   @id @default(cuid())
+  skillId   String
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  alias     String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([skillId])
+}
+
+model CourseSkill {
+  id         String   @id @default(cuid())
+  courseId   String
+  skillId    String
+  weight     Float    @default(0.5)
+  source     String   @default("ai")  // ai | admin | seed
+  confidence Float?
+  createdAt  DateTime @default(now())
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, skillId])
+  @@index([skillId])
+}
+
+model UserSkill {
+  id        String   @id @default(cuid())
+  userId    String
+  skillId   String
+  level     Float    @default(0.5)
+  source    String   @default("inferred") // self | resume | ai | inferred | admin
+  /// JSON: { courseIds?: string[], resumeLine?: string, note?: string }
+  evidence  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+  @@index([userId])
+  @@index([skillId])
+}
+
+model PostingSkill {
+  id         String   @id @default(cuid())
+  postingId  String
+  skillId    String
+  weight     Float    @default(0.5)
+  required   Boolean  @default(true)
+  source     String   @default("ai") // ai | admin | employer
+  confidence Float?
+  createdAt  DateTime @default(now())
+  posting    InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([postingId, skillId])
+  @@index([skillId])
+}
+
+/// Phase 4 kanban: tracks an applicant's status per posting. One row
+/// per (postingId, applicantId) — created lazily when the employer
+/// first interacts with the application.
+model ApplicationStatus {
+  id          String   @id @default(cuid())
+  postingId   String
+  applicantId String
+  status      String   @default("new") // new | reviewing | shortlisted | phone_screen | onsite | offer | hired | rejected | closed
+  notes       String?
+  rating      Int?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posting   InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  applicant User              @relation("Applicant", fields: [applicantId], references: [id], onDelete: Cascade)
+  updatedBy User?             @relation("StatusEditor", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([postingId, applicantId])
+  @@index([status])
+}
+
+/// Phase 5 interview scheduling. Lightweight: employer proposes time
+/// slots, applicant accepts one. No external calendar integration in v1.
+model Interview {
+  id            String   @id @default(cuid())
+  postingId     String
+  applicantId   String
+  scheduledById String
+  proposedSlots Json     // ISO[] strings
+  acceptedSlot  DateTime?
+  status        String   @default("proposed") // proposed | accepted | declined | completed | cancelled
+  format        String?  // phone | video | onsite
+  location      String?
+  notes         String?
+  respondedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  posting     InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  applicant   User              @relation("Interviewee", fields: [applicantId], references: [id], onDelete: Cascade)
+  scheduledBy User              @relation("Interviewer", fields: [scheduledById], references: [id], onDelete: Cascade)
+
+  @@index([postingId])
+  @@index([applicantId])
+  @@index([status])
 }
 
 /// Admin-editable list of options that drives the Course catalog
@@ -203,6 +371,11 @@ model InternshipPosting {
   createdById     String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  // Phase 1–5 additions
+  skills              PostingSkill[]
+  applicationStatuses ApplicationStatus[]
+  interviews          Interview[]
 
   @@index([status, createdAt])
 }
@@ -258,6 +431,7 @@ model Course {
   certificates Certificate[]
   groupCourses GroupCourse[]
   pathways     PathwayCourse[]
+  skills       CourseSkill[]
 }
 
 model ScormPackage {

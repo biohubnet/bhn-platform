@@ -37,6 +37,9 @@ import {
   ListChecks,
   Activity,
   Mail,
+  Inbox,
+  Calendar,
+  GitBranch,
 } from "lucide-react";
 
 interface NavItem {
@@ -66,6 +69,8 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase },
   { label: "Internship Opportunities",  labelKey: "nav.internships", href: "/internships",              icon: Briefcase },
+  { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Sparkles },
+  { label: "Interviews",                labelKey: "nav.interviews",  href: "/interviews",               icon: Calendar },
 ];
 
 // Other top-level items rendered after the groups.
@@ -99,6 +104,8 @@ const adminItems: NavItem[] = [
   { label: "Analytics", href: "/admin/analytics", icon: LineChart, minRole: "admin" },
   { label: "Reports", href: "/admin/reports", icon: FileText, minRole: "admin" },
   { label: "Audit Log", href: "/admin/audit", icon: ShieldCheck, minRole: "admin" },
+  { label: "Skill ontology",      href: "/admin/skills",          icon: GitBranch,  minRole: "admin" },
+  { label: "Access requests",     href: "/admin/access-requests", icon: Inbox,      minRole: "admin" },
   { label: "LTI Config", href: "/admin/lti", icon: Link2, minRole: "superadmin" },
   { label: "System status", href: "/admin/system-status", icon: Activity, minRole: "superadmin" },
   { label: "Settings", href: "/admin/settings", icon: Settings, minRole: "superadmin" },

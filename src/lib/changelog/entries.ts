@@ -23,6 +23,48 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Skill ontology — the platform now knows what it's teaching, hiring, and learning",
+    body: "Every course, internship posting, and trainee profile is now wired to a shared, curated Skill vocabulary. AI extracts skills from course descriptions, posting bodies, talent-application pitches, and (optionally) uploaded resumes. Course completions automatically infer skills onto the trainee's profile with evidence. Aliases and embeddings let synonyms (USP / Upstream Processing / upstream bioprocessing) resolve to the same canonical Skill. Admins curate the vocabulary at Administration → Skill ontology.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "My Skills — your verified skill profile, on every dashboard",
+    body: "EXPERIENCE → My Skills lists what BHN knows you can do, with evidence: which course, which line of your resume, or what you self-claimed. Adjust levels, remove a skill, or claim from a curated suggestion list of common biomanufacturing skills employers ask for.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "How you match — skill gap widget on the trainee dashboard",
+    body: "Pick any active internship from the new 'How you match' widget on /dashboard and we show your 0–100 match score, the skills you bring (green), the skills you're missing (rose for required, amber for nice-to-have), plus a list of BHN courses that would close the gap. No mystery scoring — every weight is shown.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Applicant kanban with live skill scoring (employer + admin)",
+    body: "Open any of your postings → Applicants and you'll find a six-column kanban: New / Reviewing / Shortlisted / Phone screen / Onsite / Offer (with Hired / Rejected / Closed collapsed at the bottom). Each card shows the candidate's match score, top matched skills, completed-BHN-course count, plus a side drawer for notes, 1–5 star rating, and the full skill breakdown.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
+    title: "Interview scheduling — propose time slots in one click",
+    body: "From an applicant's drawer in the kanban, click Schedule interview. Propose 1–5 datetime slots, pick a format (video / phone / onsite), drop the meeting link, send. The applicant sees the choice on their /interviews page (also linked from the sidebar) and accepts one or declines. Acceptance auto-stamps Phone screen on the kanban. No external calendar OAuth in v1 — keep an eye on /interviews to see what's confirmed.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Public marketing — /for-employers and /for-trainees",
+    body: "BHN Training now has two public, no-auth marketing pages: /for-employers pitches the platform to industry partners with live pulse stats and a sample candidate match; /for-trainees pitches it to learners with a sample skill-gap card. Both have an access-request form that lands in a new admin inbox at Administration → Access requests, where admins approve into a regular employer invite or trainee welcome.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Newsletter sign-up: three options instead of one tick-box",
     body: "Registration now asks 'Yes, sign me up' (default), 'I'm already subscribed', or 'No thanks' — three radio cards, not one checkbox. The middle option stops us from accidentally double-adding existing BioHubNet readers when they make a BHN Training account.",
     kind: "improvement",
