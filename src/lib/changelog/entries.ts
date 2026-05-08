@@ -23,6 +23,41 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Talent Application now pre-fills resume, video, and pitch from My Application",
+    body: "If you've built a resume, 1-minute video, and elevator pitch on /profile/application, the Talent Application form now imports them automatically when you open it. A blue banner at the top of the form tells you the values came from My Application and offers a link to edit them there. Edits you make on the form itself still win — we don't overwrite an explicit submission with a later My-Application change. Empty submission fields don't clobber non-empty My-Application defaults either, so re-opening a half-finished draft no longer wipes the resume slot.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Fix: enrolling in a course with no modules used to show a broken player",
+    body: "Trainees who enrolled in a course before its instructor finished adding modules / assessments hit an unrenderable shell — the module reader was running `course.modules[0]` against an empty array. The /courses/[id]/learn route now detects an empty course and shows an explicit empty state with two paths back (Back to course / My courses), plus a different message for staff who land here while authoring.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Fix: SCORM player races between final save and exit redirect",
+    body: "Two related fixes. (1) When a SCORM package fired LMSFinish on completion, we used to setTimeout(redirect, 500) regardless of whether the last save round-trip had returned — on a slow network the navigation could race the PATCH and lose the final score / suspend_data. Now we await the final save before pushing back to the course page. (2) The data model was being seeded from server values only on the first mount, so re-entering a course (or a router.refresh after an external save) left the iframe API serving stale local values. The init effect now re-syncs whenever suspend_data / location / completion_status change.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "My Application: 'Saved' indicator on the elevator pitch",
+    body: "After saving the pitch (manually or via the admin Fill-with-sample flow), the Save button is correctly disabled because the value matches what's on the server. But a greyed-out button gives no positive signal — multiple admins reported typing a stray character just to re-enable it as a confirmation. There's now an explicit ✓ Saved pill next to the button when the pitch matches the server, so 'I'm done here' is unambiguous.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Internships: nudge to complete your skill profile",
+    body: "Trainees with zero skills on /profile/skills now see a banner at the top of /internships explaining why match scores don't appear and offering a one-click route to add skills (or upload a resume to extract them). Once at least one skill is on file, the banner goes away. Doesn't block browsing — postings still render below.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Admin: 'Fill with sample' on My Application — including the video",
     body: "Admins and superadmins now see a 'Fill with sample' panel at the top of /profile/application. One click populates all three slots through the real upload pipeline: a multi-section sample resume PDF generated client-side via jsPDF, an ~8-second WebM video introduction recorded live from a <canvas> animation through MediaRecorder (no hand-crafted MP4 byte-piles, no ffmpeg dependency), and a sample elevator pitch. The video shows four animated slides with the admin's name, an animated brand mark, and a pulsing REC dot — under 3 MB. Useful for screenshot runs and sandbox demos so prospective employers see a populated candidate profile without an admin having to actually record themselves.",
     kind: "feature",

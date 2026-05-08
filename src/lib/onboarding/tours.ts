@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.08b";
+export const TOUR_VERSION = "2026.05.08c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -416,6 +416,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.08b",
     cta: { label: "Open My Application", href: "/profile/application" },
+  },
+  {
+    id: "talent-app-prefill",
+    title: "Talent Application now pre-fills from My Application",
+    body: "Open /forms/talent-application — if you've built a resume, video, and pitch on My Application, they're already imported. A blue banner explains where the values came from and how to edit. Empty submission fields no longer clobber non-empty My-Application defaults, so re-opening a half-finished draft is safe.",
+    path: "/forms/talent-application",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    since: "2026.05.08c",
+    cta: { label: "Open the application", href: "/forms/talent-application" },
   },
   {
     id: "demo-workspaces",

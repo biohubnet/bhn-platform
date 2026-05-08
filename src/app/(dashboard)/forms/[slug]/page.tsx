@@ -5,6 +5,44 @@ import { getOrSeedForm } from "@/lib/forms/registry";
 import type { FormField } from "@/lib/forms/types";
 import { EventFormView } from "@/components/forms/EventFormView";
 
+/**
+ * Talent application + other event forms.
+ *
+ * Pre-fill order (precedence: a real prior submission wins, so an
+ * explicit edit a trainee made on the form survives a later My-
+ * Application change):
+ *   1. The trainee's "My Application" artifacts on the User row
+ *      (resumeUrl → field "resume", videoIntroUrl → "video",
+ *      elevatorPitch → "pitch"). Only seeded for the talent-application
+ *      slug today; the field-id mapping lives below.
+ *   2. The trainee's most-recent submission of THIS form, which
+ *      overrides any My-Application defaults for the same fields.
+ *
+ * Empty strings / empty arrays in the previous submission don't
+ * clobber a non-empty My-Application default — the goal is "carry
+ * forward what you typed", not "wipe with blanks".
+ *
+ * The merged result is passed as `previousData` so EventFormView keeps
+ * its single source-of-truth for initial values. We also pass an
+ * `applicationDefaultsApplied` flag so the form can show a banner
+ * when fields came from My Application rather than a real prior
+ * submission (different mental model — "we filled this for you" vs
+ * "you submitted this before").
+ */
+
+// Field-id mapping for forms that should pre-fill from My Application.
+// Key: form slug. Value: { userField → formFieldId }.
+const APPLICATION_PREFILL_MAP: Record<
+  string,
+  Record<"resumeUrl" | "videoIntroUrl" | "elevatorPitch", string>
+> = {
+  "talent-application": {
+    resumeUrl:     "resume",
+    videoIntroUrl: "video",
+    elevatorPitch: "pitch",
+  },
+};
+
 export default async function FormPage({
   params,
 }: {
@@ -20,12 +58,58 @@ export default async function FormPage({
   const form = await getOrSeedForm(slug);
   if (!form) notFound();
 
-  const mySubmission = userId
-    ? await prisma.eventFormSubmission.findFirst({
-        where: { formId: form.id, userId },
-        orderBy: { createdAt: "desc" },
-      })
-    : null;
+  const prefillMap = APPLICATION_PREFILL_MAP[slug];
+
+  const [mySubmission, userArtifacts] = await Promise.all([
+    userId
+      ? prisma.eventFormSubmission.findFirst({
+          where: { formId: form.id, userId },
+          orderBy: { createdAt: "desc" },
+        })
+      : null,
+    userId && prefillMap
+      ? prisma.user.findUnique({
+          where: { id: userId },
+          select: { resumeUrl: true, videoIntroUrl: true, elevatorPitch: true },
+        })
+      : null,
+  ]);
+
+  // Build the merged defaults. My-Application first, prior submission
+  // overrides for fields it actually filled.
+  const merged: Record<string, string | string[]> = {};
+  const fromApplication: Record<string, string> = {};
+  if (userArtifacts && prefillMap) {
+    if (userArtifacts.resumeUrl) fromApplication[prefillMap.resumeUrl] = userArtifacts.resumeUrl;
+    if (userArtifacts.videoIntroUrl) fromApplication[prefillMap.videoIntroUrl] = userArtifacts.videoIntroUrl;
+    if (userArtifacts.elevatorPitch) fromApplication[prefillMap.elevatorPitch] = userArtifacts.elevatorPitch;
+  }
+  for (const k in fromApplication) merged[k] = fromApplication[k];
+
+  if (mySubmission?.data) {
+    const prev = mySubmission.data as Record<string, string | string[]>;
+    for (const k in prev) {
+      const v = prev[k];
+      if (v == null) continue;
+      if (typeof v === "string" && v.trim() === "") continue;
+      if (Array.isArray(v) && v.length === 0) continue;
+      merged[k] = v;
+    }
+  }
+
+  // Only flag "applied" if at least one of our application fields would
+  // appear in the form *because of us* — i.e. the prior submission
+  // didn't already supply that field. Otherwise the banner is noise.
+  let applicationDefaultsApplied = false;
+  if (Object.keys(fromApplication).length > 0) {
+    const prev = (mySubmission?.data ?? {}) as Record<string, string | string[]>;
+    applicationDefaultsApplied = Object.keys(fromApplication).some((id) => {
+      const v = prev[id];
+      return v == null
+        || (typeof v === "string" && v.trim() === "")
+        || (Array.isArray(v) && v.length === 0);
+    });
+  }
 
   return (
     <EventFormView
@@ -36,10 +120,9 @@ export default async function FormPage({
       active={form.active}
       isStaff={isStaff}
       userEmail={userEmail}
-      previousData={
-        (mySubmission?.data as Record<string, string | string[]> | null) ?? null
-      }
+      previousData={Object.keys(merged).length > 0 ? merged : null}
       previousAt={mySubmission?.createdAt.toISOString() ?? null}
+      applicationDefaultsApplied={applicationDefaultsApplied}
     />
   );
 }

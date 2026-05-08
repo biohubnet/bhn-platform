@@ -64,9 +64,18 @@ export function ScormPlayer({
     const isScorm12 = scormVersion === "SCORM_12";
     const data = dataRef.current;
 
-    // Initialize data model
-    if (suspendData) data["cmi.suspend_data"] = suspendData;
-    if (location) {
+    // (Re-)initialize the data model from server-side values. This
+    // runs every time the parent re-renders with new
+    // suspendData / location / completionStatus, not just on mount —
+    // otherwise re-entering a course (or a router.refresh after a
+    // background save) would leave the iframe API serving stale local
+    // values until the SCORM package issued its first SetValue.
+    //
+    // We keep any keys the iframe has set since last sync (so a typed
+    // bookmark or a partially-answered question isn't wiped) and only
+    // overwrite the canonical server-tracked keys.
+    if (suspendData != null) data["cmi.suspend_data"] = suspendData;
+    if (location != null) {
       data[isScorm12 ? "cmi.core.lesson_location" : "cmi.location"] = location;
     }
     if (completionStatus !== "not attempted") {
@@ -113,17 +122,29 @@ export function ScormPlayer({
           // anything else (incomplete / not attempted / browsed)
           // just save and stay put — the iframe handles its own
           // internal navigation.
-          saveData({ ...data });
-          result = "true";
+          //
+          // Crucially: AWAIT the final save before redirecting. The
+          // earlier `setTimeout(..., 500)` was racing the PATCH and
+          // could navigate away while the last writes were still in
+          // flight — losing the trainee's last few seconds of
+          // progress on slow networks.
           {
-            const status = data[isScorm12 ? "cmi.core.lesson_status" : "cmi.completion_status"];
-            if (
+            const finalSnapshot = { ...data };
+            const status = finalSnapshot[isScorm12 ? "cmi.core.lesson_status" : "cmi.completion_status"];
+            const shouldExit =
               status === "completed" ||
               status === "passed" ||
-              status === "failed"
-            ) {
-              setTimeout(() => router.push(`/courses/${courseId}`), 500);
+              status === "failed";
+            // Fire-and-forget for the non-exit case (matches Commit);
+            // await for the exit case so the navigation doesn't race.
+            if (shouldExit) {
+              void saveData(finalSnapshot).then(() => {
+                router.push(`/courses/${courseId}`);
+              });
+            } else {
+              saveData(finalSnapshot);
             }
+            result = "true";
           }
           break;
         case "GetLastError":

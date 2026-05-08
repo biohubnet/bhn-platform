@@ -403,7 +403,20 @@ export function ApplicationClient({
               placeholder="I'm a Master's-level cell-culture engineer with 3 years on bioreactor scale-up, and I'm looking for a downstream role at a CDMO where I can pair my analytical chemistry background with hands-on process work…"
             />
           </Field>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-3">
+            {/* "Saved" indicator. Without this, when the pitch matches
+                what's already on the server (after a manual save OR
+                after the admin Fill-with-sample flow that calls PATCH
+                + router.refresh), the Save button is correctly
+                disabled — but the disabled grey button gives no signal
+                of "you're done", leaving the trainee to type a stray
+                character just to re-enable the button. Show an
+                explicit ✓ Saved pill instead. */}
+            {!pitchDirty && pitch.length > 0 && !pitchOver && busyKind !== "pitch" && (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+                <Check size={12} /> Saved
+              </span>
+            )}
             <Button
               onClick={savePitch}
               disabled={!pitchDirty || pitchOver || busyKind === "pitch"}

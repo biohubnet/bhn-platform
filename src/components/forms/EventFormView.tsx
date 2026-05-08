@@ -31,6 +31,14 @@ interface Props {
   userEmail: string | null;
   previousData: Record<string, string | string[]> | null;
   previousAt: string | null;
+  /**
+   * True when at least one default in `previousData` came from the
+   * trainee's "My Application" artifacts (resume / video / pitch on
+   * User), as opposed to a prior submission of THIS form. Used to
+   * render a banner that explains where the pre-filled values came
+   * from — different mental model than "you submitted this before".
+   */
+  applicationDefaultsApplied?: boolean;
 }
 
 type Mode = "view" | "edit";
@@ -45,6 +53,7 @@ export function EventFormView({
   userEmail,
   previousData,
   previousAt,
+  applicationDefaultsApplied,
 }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("view");
@@ -326,6 +335,17 @@ export function EventFormView({
             {new Date(previousAt).toLocaleString()}
           </strong>
           . Submitting again will create a new entry.
+        </div>
+      )}
+
+      {applicationDefaultsApplied && mode === "view" && (
+        <div className="bg-brand-50 border border-brand-200 rounded-xl px-4 py-3 mb-4 text-sm text-brand-800 flex items-start gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+          <div>
+            <strong className="text-brand-900">Pre-filled from My Application.</strong>{" "}
+            Your saved resume, video introduction, and elevator pitch have been imported. You can replace any of them by editing the field below.{" "}
+            <a href="/profile/application" className="underline hover:no-underline">Open My Application</a>
+          </div>
         </div>
       )}
 
