@@ -45,6 +45,13 @@
   --radius:    14px;
   --radius-lg: 22px;
   --radius-xl: 28px;
+
+  /* Dashboard hero gradient — Daylight: cyan + teal + deep blue. */
+  --hero-bg:     #0d3a51;
+  --hero-mesh-1: #0891b2;
+  --hero-mesh-2: #2dd4bf;
+  --hero-mesh-3: #1d4ed8;
+  --hero-mesh-4: #0e7490;
 }
 
 /* ───── Nightfall (dark) — refined, less saturated, warmer ───── */
@@ -79,6 +86,13 @@
   --brand-700: #2c4f5a;
   --brand-800: #213c46;
   --brand-900: #182d35;
+
+  /* Dashboard hero gradient — Nightfall: deep navy + indigo + electric blue. */
+  --hero-bg:     #0a1628;
+  --hero-mesh-1: #3b82f6;
+  --hero-mesh-2: #6366f1;
+  --hero-mesh-3: #1e3a8a;
+  --hero-mesh-4: #1e1b4b;
 
   /* Tame Tailwind's hard-coded state tints so cards / banners using
    * bg-rose-50, bg-amber-100, bg-emerald-50 etc. don't blast in dark
@@ -156,6 +170,13 @@
   --radius:    8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+
+  /* Dashboard hero gradient — Scientific: cool sky-blues + slate. */
+  --hero-bg:     #0f3a5c;
+  --hero-mesh-1: #0ea5e9;
+  --hero-mesh-2: #38bdf8;
+  --hero-mesh-3: #0369a1;
+  --hero-mesh-4: #082f49;
 }
 
 /* ───── Rosalind — warm parchment, botanical sage, dusty-rose accent.
@@ -201,6 +222,13 @@
   --radius:    18px;
   --radius-lg: 26px;
   --radius-xl: 36px;
+
+  /* Dashboard hero gradient — Rosalind: deep sage + dusty rose accent. */
+  --hero-bg:     #2e3d2c;
+  --hero-mesh-1: #4f6b48;
+  --hero-mesh-2: #a8625a;
+  --hero-mesh-3: #1f2a1f;
+  --hero-mesh-4: #6b8458;
 }
 
 /* ───── Sakura — limited-time cherry-blossom theme. Soft blush pinks,
@@ -245,6 +273,13 @@
   --radius:    14px;
   --radius-lg: 20px;
   --radius-xl: 28px;
+
+  /* Dashboard hero gradient — Sakura: blossom pink + wine. */
+  --hero-bg:     #5a1e2c;
+  --hero-mesh-1: #d04c61;
+  --hero-mesh-2: #f9d2d8;
+  --hero-mesh-3: #b03b50;
+  --hero-mesh-4: #66222e;
 }
 
 /* Tone Tailwind's saturated tints so rose-* / amber-* surfaces
@@ -336,6 +371,15 @@
   --radius:    24px;
   --radius-lg: 32px;
   --radius-xl: 40px;
+
+  /* Dashboard hero gradient — Mist: layered slate-blue with the
+   * faintest atmospheric warmth. Lower saturation than the other
+   * themes to stay coherent with the desaturated brand identity. */
+  --hero-bg:     #2d3a52;
+  --hero-mesh-1: #5b6f8c;
+  --hero-mesh-2: #94a3c4;
+  --hero-mesh-3: #1f2a40;
+  --hero-mesh-4: #3e5775;
 }
 
 /* Glass material spec for .surface / .glass / .popover under Mist.
@@ -426,6 +470,13 @@
   --radius:    2px;
   --radius-lg: 4px;
   --radius-xl: 6px;
+
+  /* Dashboard hero gradient — Hi-Tech: TRON cyan glow over near-black. */
+  --hero-bg:     #001017;
+  --hero-mesh-1: #00d4ff;
+  --hero-mesh-2: #06b6d4;
+  --hero-mesh-3: #0e7490;
+  --hero-mesh-4: #042f38;
 }
 
 /* Body bg-size override: radials fill the screen, grid layers tile. */
@@ -630,15 +681,17 @@ body {
 }
 
 /* Hero mesh gradients — saturated multi-stop fills for full-bleed
- * hero bands. Hardcoded (not tied to the muted brand tokens) so heroes
- * stay vivid even when the rest of the UI reads as editorial-quiet. */
+ * hero bands. Driven by per-theme CSS variables (--hero-bg + four
+ * --hero-mesh-{1..4} stops) so the dashboard hero matches the
+ * active theme. Defaults below match the Daylight theme; each
+ * other theme overrides these vars in its own selector block. */
 .hero-mesh-brand {
-  background-color: #0d3a51;
+  background-color: var(--hero-bg, #0d3a51);
   background-image:
-    radial-gradient(at 10% 16%, #0891b2 0%, transparent 55%),    /* deep cyan top-left */
-    radial-gradient(at 88% 18%, #2dd4bf 0%, transparent 55%),    /* mint-teal top-right */
-    radial-gradient(at 95% 95%, #1d4ed8 0%, transparent 55%),    /* deep blue bottom-right */
-    radial-gradient(at 25% 95%, #0e7490 0%, transparent 55%);    /* dark teal bottom-left */
+    radial-gradient(at 10% 16%, var(--hero-mesh-1, #0891b2) 0%, transparent 55%),
+    radial-gradient(at 88% 18%, var(--hero-mesh-2, #2dd4bf) 0%, transparent 55%),
+    radial-gradient(at 95% 95%, var(--hero-mesh-3, #1d4ed8) 0%, transparent 55%),
+    radial-gradient(at 25% 95%, var(--hero-mesh-4, #0e7490) 0%, transparent 55%);
 }
 .hero-mesh-teal {
   background-color: #0f4c52;
