@@ -688,34 +688,44 @@ export function Sidebar({
         )}
       </nav>
 
-      {/* Credits badge for non-staff */}
+      {/*
+       * Compact footer stack. Each block is a thin row instead of the
+       * earlier card-with-padding layout — saves ~140 px of vertical
+       * space on a typical sidebar without losing any control.
+       *
+       *   • Credits chip — single inline pill, no surrounding card.
+       *   • Role switcher — same height as a nav link.
+       *   • Take the tour + Theme picker share one row to halve the
+       *     vertical footprint of "help / personalisation".
+       *   • Build SHA folds into the user pill's right edge for staff,
+       *     so it doesn't take its own row.
+       *   • User block: avatar-sized pill (32 px) + sign-out icon
+       *     button on the same row, no double-stacked layout.
+       */}
+
+      {/* Credits chip */}
       {!isStaff && credits !== undefined && (
-        <div className="px-4 py-3 border-t border-line">
-          <div className="flex items-center gap-2 bg-amber-50 rounded-lg px-3 py-2">
-            <Coins size={14} className="text-amber-500 shrink-0" />
-            <div>
-              <p className="text-xs text-amber-700 font-semibold">
-                {credits.toLocaleString()} BHN Credits
-              </p>
-            </div>
+        <div className="px-3 py-1.5 border-t border-line">
+          <div className="flex items-center gap-1.5 bg-amber-50 rounded-md px-2 py-1">
+            <Coins size={11} className="text-amber-500 shrink-0" />
+            <p className="text-[11px] text-amber-700 font-semibold leading-none">
+              {credits.toLocaleString()} BHN Credits
+            </p>
           </div>
         </div>
       )}
 
-      {/* Superadmin-only role switcher */}
+      {/* Superadmin-only role switcher — single thin row */}
       {realRole === "superadmin" && (
-        <div className="px-3 py-2 border-t border-line">
+        <div className="px-3 py-1.5 border-t border-line">
           <RoleSwitcher actingAs={actingAs ?? null} />
         </div>
       )}
 
-      {/* Help — take the tour. Was previously a stray button between
-          EXPERIENCE and ADMINISTRATION; relocated here so the footer
-          can hold help-flavoured controls together. Visible to every
-          signed-in role. Dispatches a custom DOM event the Onboarding
-          component listens for (keeps the tour's state machine the
-          single owner of "is the tour running"). */}
-      <div className="px-3 py-2 border-t border-line">
+      {/* Take-the-tour + Theme picker on one row to compact the help
+          stack. Both control surfaces sit side-by-side; ThemePicker
+          collapses to its compact icon-only mode here. */}
+      <div className="px-2 py-1.5 border-t border-line flex items-center gap-1">
         <button
           type="button"
           onClick={() => {
@@ -723,48 +733,48 @@ export function Sidebar({
               window.dispatchEvent(new CustomEvent("bhn:start-tour"));
             }
           }}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted hover:bg-raised hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-card"
+          className="flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted hover:bg-raised hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
+          title={t("nav.tour")}
         >
-          <HelpCircle size={16} />
-          <span className="flex-1 text-left">{t("nav.tour")}</span>
+          <HelpCircle size={13} />
+          <span className="truncate">{t("nav.tour")}</span>
         </button>
+        <ThemePicker compact />
       </div>
 
-      {/* Theme picker */}
-      <div className="px-3 py-2 border-t border-line">
-        <ThemePicker />
-      </div>
-
-      {/* Build SHA — above the user block so it sits well clear of the
-          bottom edge where the browser draws link-hover tooltips. */}
-      {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
-        <div className="px-4 py-2 border-t border-line flex items-center justify-between text-[11px]">
-          <span className="text-subtle">Build</span>
-          <code className="font-mono text-muted bg-elevated px-1.5 py-0.5 rounded select-all">
-            {process.env.NEXT_PUBLIC_COMMIT_SHA}
-          </code>
-        </div>
-      )}
-
-      {/* User */}
-      <div className="px-3 py-4 border-t border-line">
-        <Link href="/profile" className="flex items-center gap-3 px-3 py-2 mb-1 rounded-lg hover:bg-elevated transition-colors group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center text-sm font-bold shadow-sm">
+      {/* User pill — single 36 px row with sign-out as an icon button. */}
+      <div className="px-2 py-2 border-t border-line flex items-center gap-1">
+        <Link
+          href="/profile"
+          className="flex-1 min-w-0 flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-elevated transition-colors group"
+        >
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center text-xs font-bold shadow-sm shrink-0">
             {user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "?"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-fg truncate">
+            <p className="text-xs font-medium text-fg truncate leading-tight">
               {user.name ?? "User"}
             </p>
-            <p className="text-xs text-subtle truncate group-hover:text-muted">{user.email}</p>
+            <p className="text-[10px] text-subtle truncate group-hover:text-muted leading-tight">
+              {user.email}
+            </p>
           </div>
         </Link>
+        {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
+          <code
+            className="font-mono text-[9px] text-subtle bg-elevated px-1 py-0.5 rounded select-all leading-none"
+            title={`Build ${process.env.NEXT_PUBLIC_COMMIT_SHA}`}
+          >
+            {process.env.NEXT_PUBLIC_COMMIT_SHA}
+          </code>
+        )}
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-muted hover:bg-elevated hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-card"
+          className="p-1.5 rounded-lg text-muted hover:bg-elevated hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
+          title={t("nav.signOut")}
+          aria-label={t("nav.signOut")}
         >
-          <LogOut size={16} />
-          {t("nav.signOut")}
+          <LogOut size={14} />
         </button>
       </div>
     </aside>
