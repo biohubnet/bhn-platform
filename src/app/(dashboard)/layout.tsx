@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { Sidebar } from "@/components/lms/Sidebar";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 import { SandboxBanner } from "@/components/admin/SandboxBanner";
+import { UnverifiedEmailBanner } from "@/components/auth/UnverifiedEmailBanner";
 import { Onboarding } from "@/components/onboarding/Onboarding";
 import { PageTranslator } from "@/components/translation/PageTranslator";
 import { prisma } from "@/lib/prisma";
@@ -18,9 +19,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const userRow = userId
     ? await prisma.user.findUnique({
         where: { id: userId },
-        select: { credits: true, allowPlatformContent: true, accountKind: true, demoExpiresAt: true },
+        select: {
+          credits: true,
+          allowPlatformContent: true,
+          accountKind: true,
+          demoExpiresAt: true,
+          email: true,
+          emailVerified: true,
+        },
       })
     : null;
+
+  // Show the "verify your email" banner only for real accounts —
+  // demo / sandbox accounts deliberately bypass email verification
+  // and the first superadmin (set during install) is auto-verified.
+  const showUnverifiedBanner =
+    !!userRow &&
+    !userRow.emailVerified &&
+    (userRow.accountKind === "real" || userRow.accountKind == null);
 
   return (
     <div className="flex h-screen bg-page">
@@ -36,6 +52,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {actingAs && <ImpersonationBanner actingAs={actingAs} />}
         {(userRow?.accountKind === "sandbox" || userRow?.accountKind === "demo") && (
           <SandboxBanner kind={userRow.accountKind} expiresAt={userRow.demoExpiresAt?.toISOString() ?? null} />
+        )}
+        {showUnverifiedBanner && userRow?.email && (
+          <UnverifiedEmailBanner email={userRow.email} />
         )}
         <div className="max-w-7xl mx-auto px-6 py-8 pt-16">{children}</div>
       </main>

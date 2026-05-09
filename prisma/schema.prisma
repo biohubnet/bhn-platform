@@ -68,6 +68,12 @@ model User {
   /// for accountKind="real" even if a token were somehow set, so a leak
   /// can never escalate to a real-user takeover.
   magicToken             String?   @unique
+  /// Email-verification token (distinct from magicToken so revoking
+  /// one doesn't disturb the other). Set on register, cleared when
+  /// the user clicks the verification link. emailVerifyExpires gates
+  /// reuse — typically 7 days from issue.
+  emailVerifyToken       String?   @unique
+  emailVerifyExpires     DateTime?
   /// Trainee-facing "My Application" artifacts. Stored on the user
   /// so they survive across talent-application submissions; the
   /// trainee manages them from /profile/application.

@@ -34,6 +34,24 @@ export const authOptions: NextAuthOptions = {
         if (!user?.password) return null;
         const valid = await bcrypt.compare(credentials.password, user.password);
         if (!valid) return null;
+        // Optional email-verification gate. When BHN_REQUIRE_EMAIL_VERIFY
+        // is true, sign-in fails for unverified accounts. We let
+        // demo / sandbox accounts through unconditionally — they
+        // bypass the verification flow on purpose. Returning null
+        // here surfaces as "Invalid email or password" which is
+        // intentionally vague (don't leak whether an account is
+        // verified vs whether the password is wrong); the dashboard
+        // banner + /verify-email pages exist for the friendly UX.
+        const requireVerify =
+          (process.env.BHN_REQUIRE_EMAIL_VERIFY ?? "").toLowerCase() === "true";
+        const accountKind = (user as { accountKind?: string | null }).accountKind ?? "real";
+        if (
+          requireVerify &&
+          accountKind === "real" &&
+          !user.emailVerified
+        ) {
+          return null;
+        }
         // Pass the remember flag through to the JWT callback
         return {
           id: user.id,

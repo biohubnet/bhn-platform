@@ -1,13 +1,33 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import Script from "next/script";
 import Link from "next/link";
 import {
   Mail, Info, CheckCircle2, Eye, EyeOff, Sparkles, Coins, Loader2, AlertCircle,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { LOCALES } from "@/lib/i18n/dictionaries";
+
+// Cloudflare Turnstile site key (public). When unset, no CAPTCHA is
+// rendered and the server skips verification — this keeps preview /
+// local dev frictionless. Ops sets it for production.
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+
+// Make Cloudflare's global available to TS without dragging in their typings.
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        container: string | HTMLElement,
+        opts: { sitekey: string; callback?: (token: string) => void; "error-callback"?: () => void; theme?: "light" | "dark" | "auto" },
+      ) => string;
+      reset: (widgetId?: string) => void;
+      remove: (widgetId?: string) => void;
+    };
+  }
+}
 
 type NewsletterChoice = "subscribe" | "no" | "already";
 type Stage = "idle" | "creating" | "signing-in" | "redirecting";
@@ -43,6 +63,43 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
 
+  // Turnstile state. Only meaningful when TURNSTILE_SITE_KEY is set;
+  // otherwise turnstileToken stays null and the server skips
+  // verification for that request.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
+  const turnstileContainerId = "bhn-turnstile-widget";
+
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return;
+    function tryRender() {
+      if (turnstileWidgetId.current) return;
+      if (!window.turnstile) return;
+      const container = document.getElementById(turnstileContainerId);
+      if (!container) return;
+      turnstileWidgetId.current = window.turnstile.render(container, {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: "auto",
+        callback: (token: string) => setTurnstileToken(token),
+        "error-callback": () => setTurnstileToken(null),
+      });
+    }
+    // The Turnstile script may load before this effect runs, or after.
+    // Try once now, and again on a window event when the script signals
+    // ready. Polling once a tick covers either order.
+    tryRender();
+    const id = setInterval(() => {
+      if (window.turnstile) { tryRender(); clearInterval(id); }
+    }, 200);
+    return () => {
+      clearInterval(id);
+      if (turnstileWidgetId.current && window.turnstile) {
+        window.turnstile.remove(turnstileWidgetId.current);
+        turnstileWidgetId.current = null;
+      }
+    };
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -57,6 +114,10 @@ export default function RegisterPage() {
     if (form.password !== form.passwordConfirm) {
       setError("Passwords don't match."); return;
     }
+    // Turnstile gate (only when configured).
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError("Please complete the bot check."); return;
+    }
 
     setStage("creating");
     const res = await fetch("/api/auth/register", {
@@ -69,6 +130,7 @@ export default function RegisterPage() {
         newsletter,
         jobTitle: form.jobTitle || undefined,
         locale: form.locale,
+        turnstileToken,
       }),
     });
 
@@ -76,6 +138,12 @@ export default function RegisterPage() {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Registration failed");
       setStage("idle");
+      // Reset Turnstile so the next submit gets a fresh token —
+      // tokens are single-use and a stale one will fail server-side.
+      if (turnstileWidgetId.current && window.turnstile) {
+        window.turnstile.reset(turnstileWidgetId.current);
+        setTurnstileToken(null);
+      }
       return;
     }
 
@@ -329,13 +397,33 @@ export default function RegisterPage() {
               )}
             </div>
 
+            {/* Turnstile widget — only renders when site key is set.
+                The container is always in the DOM so the useEffect
+                can find it without race conditions. The script tag
+                further down is conditional on the same key. */}
+            {TURNSTILE_SITE_KEY && (
+              <div className="flex justify-center">
+                <div id={turnstileContainerId} />
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md shadow-brand-600/25 text-sm"
+              disabled={Boolean(TURNSTILE_SITE_KEY) && !turnstileToken}
+              className="w-full bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md shadow-brand-600/25 text-sm"
             >
               Create account
             </button>
           </form>
+
+          {TURNSTILE_SITE_KEY && (
+            <Script
+              src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+              async
+              defer
+              strategy="afterInteractive"
+            />
+          )}
 
           <p className="text-center text-sm text-muted mt-6">
             Already have an account?{" "}

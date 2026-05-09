@@ -21,9 +21,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { R2_PUBLIC_URL, deleteR2ObjectByUrl } from "@/lib/r2";
+import {
+  R2_PUBLIC_URL,
+  R2_USE_SIGNED_URLS,
+  deleteR2ObjectByUrl,
+  getSignedR2UrlForUrlOrKey,
+} from "@/lib/r2";
 
 const PITCH_MAX = 650;
+// How long a signed resume / video URL stays valid. Short enough that
+// a leaked URL stops working before someone can do much with it; long
+// enough to click through the page, hover the file, and download.
+const SIGNED_URL_TTL_S = 300;
 
 async function meId() {
   const session = await getServerSession(authOptions);
@@ -46,6 +55,20 @@ export async function GET() {
       applicationUpdatedAt: true,
     },
   });
+  if (!u) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  // When R2_USE_SIGNED_URLS is on, the bucket is (or should be)
+  // private — the public URLs we have stored won't work. Re-mint as
+  // signed URLs the trainee's browser can use for the next few
+  // minutes. While the flag is off, return the stored URL unchanged
+  // so the existing token-in-path mitigation continues to work.
+  if (R2_USE_SIGNED_URLS) {
+    const [resumeUrl, videoIntroUrl] = await Promise.all([
+      getSignedR2UrlForUrlOrKey(u.resumeUrl, SIGNED_URL_TTL_S),
+      getSignedR2UrlForUrlOrKey(u.videoIntroUrl, SIGNED_URL_TTL_S),
+    ]);
+    return NextResponse.json({ ...u, resumeUrl, videoIntroUrl });
+  }
   return NextResponse.json(u);
 }
 

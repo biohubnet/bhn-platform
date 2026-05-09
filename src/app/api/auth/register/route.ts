@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { trackServer } from "@/lib/analytics";
+import { verifyTurnstile, clientIpFromHeaders, TURNSTILE_ENABLED } from "@/lib/security/captcha";
+import { issueAndSendEmailVerification } from "@/lib/security/email-verify";
 
 /**
  * Newsletter intent at signup. Tri-state:
@@ -32,7 +34,7 @@ const VALID_JOB_TITLES = [
 ] as const;
 
 export async function POST(req: NextRequest) {
-  const { name, email, password, newsletter, jobTitle, locale } = await req.json();
+  const { name, email, password, newsletter, jobTitle, locale, turnstileToken } = await req.json();
 
   // ── Validation ──────────────────────────────────────────────────
   const cleanName = typeof name === "string" ? name.trim() : "";
@@ -45,6 +47,20 @@ export async function POST(req: NextRequest) {
   }
   if (typeof password !== "string" || password.length < 8) {
     return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
+  }
+
+  // Turnstile (CAPTCHA) verification — gated by env. The helper
+  // returns ok:true when the secret isn't configured, so this is a
+  // no-op in preview / local until ops sets TURNSTILE_SECRET_KEY.
+  if (TURNSTILE_ENABLED) {
+    const ip = clientIpFromHeaders(req.headers);
+    const turn = await verifyTurnstile(turnstileToken, ip);
+    if (!turn.ok) {
+      return NextResponse.json(
+        { error: "Bot check failed. Please try again." },
+        { status: 400 }
+      );
+    }
   }
 
   const existing = await prisma.user.findUnique({ where: { email: cleanEmail } });
@@ -86,12 +102,44 @@ export async function POST(req: NextRequest) {
   // "subscribe". For now we record intent and the admin exports the
   // list manually from /admin/newsletter.
 
+  // Email verification: issue a token + send the link. Best-effort —
+  // if SMTP isn't configured we still create the account but tell the
+  // client we couldn't send the email so it can show a "request
+  // resend" affordance. Account is usable in advisory mode either way.
+  // The first user (superadmin) is auto-verified — they own the
+  // platform; making them click an email loop on first install is
+  // hostile. Everyone else has to verify.
+  let emailVerificationSent = false;
+  if (userCount === 0) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: new Date() },
+    });
+  } else {
+    const issue = await issueAndSendEmailVerification({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+    });
+    emailVerificationSent = issue.sent;
+  }
+
   await trackServer({
     userId: user.id,
     role: user.role,
     name: "register",
-    props: { newsletterStatus, isFirstUser: userCount === 0, hasJobTitle: !!cleanJobTitle, locale: cleanLocale },
+    props: {
+      newsletterStatus,
+      isFirstUser: userCount === 0,
+      hasJobTitle: !!cleanJobTitle,
+      locale: cleanLocale,
+      emailVerificationSent,
+      captchaEnabled: TURNSTILE_ENABLED,
+    },
   });
 
-  return NextResponse.json({ id: user.id, email: user.email, role: user.role }, { status: 201 });
+  return NextResponse.json(
+    { id: user.id, email: user.email, role: user.role, emailVerificationSent },
+    { status: 201 }
+  );
 }
