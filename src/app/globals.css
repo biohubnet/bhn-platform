@@ -682,16 +682,101 @@ body {
 
 /* Hero mesh gradients — saturated multi-stop fills for full-bleed
  * hero bands. Driven by per-theme CSS variables (--hero-bg + four
- * --hero-mesh-{1..4} stops) so the dashboard hero matches the
- * active theme. Defaults below match the Daylight theme; each
- * other theme overrides these vars in its own selector block. */
+ * --hero-mesh-{1..4} stops + --hero-fg for the text colour) so the
+ * dashboard hero matches the active theme. Defaults below match the
+ * Daylight theme; each other theme overrides these vars in its own
+ * selector block.
+ *
+ * CONTRAST MECHANISM. Two layers:
+ *
+ *   (1) Per-theme --hero-fg variable. Every theme MUST declare a
+ *       hero text colour that has ≥4.5:1 contrast against its
+ *       --hero-bg. Default is white. Light-bg hero themes (e.g.
+ *       Summer Ice Cream's strawberry pink) override this to a
+ *       deep accent text colour from the same family.
+ *
+ *   (2) A bottom-anchored scrim gradient layer (::before) inside the
+ *       hero. 0% transparent at the top, ~22% darken at the bottom
+ *       where the headline + CTA buttons sit. Subtle on dark heroes
+ *       (already dark, scrim is barely visible), lifesaver on light
+ *       heroes (forces a contrast cushion under text even if
+ *       --hero-fg is wrong). Universal fail-safe.
+ *
+ *   (3) [Build-time] hero-contrast.spec.ts (TODO) computes WCAG
+ *       contrast for every theme's --hero-bg vs --hero-fg and fails
+ *       CI if any drops below 4.5:1. Documented; not yet wired.
+ */
 .hero-mesh-brand {
+  position: relative;
+  color: var(--hero-fg, #ffffff);
   background-color: var(--hero-bg, #0d3a51);
   background-image:
     radial-gradient(at 10% 16%, var(--hero-mesh-1, #0891b2) 0%, transparent 55%),
     radial-gradient(at 88% 18%, var(--hero-mesh-2, #2dd4bf) 0%, transparent 55%),
     radial-gradient(at 95% 95%, var(--hero-mesh-3, #1d4ed8) 0%, transparent 55%),
     radial-gradient(at 25% 95%, var(--hero-mesh-4, #0e7490) 0%, transparent 55%);
+}
+/* Bottom contrast scrim — universal fail-safe. Dark themes hide it
+ * (the darken is invisible against an already-dark base); light
+ * themes get a contrast cushion behind text. The scrim mix-blend-mode
+ * is multiply so it darkens the colour beneath rather than adding a
+ * grey haze. */
+.hero-mesh-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 40%,
+    rgba(0, 0, 0, var(--hero-scrim, 0.18)) 100%
+  );
+  z-index: 0;
+}
+/* Hero content sits above the scrim. */
+.hero-mesh-brand > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Light-hero contrast overrides — for any theme whose hero base is
+ * light enough that white text fails WCAG. We override Tailwind's
+ * literal text-white / bg-white / border-white classes inside the
+ * hero scope only, swapping them to a dark accent + soft dark glass
+ * for the "frosted tile" stat panels.
+ *
+ * Today only Summer Ice Cream's hero needs this. Adding a new light-
+ * hero theme later means duplicating this block with the new theme
+ * id. Documented above the .hero-mesh-brand rule. */
+[data-theme="icecream"] .hero-mesh-brand,
+[data-theme="icecream"] .hero-mesh-brand .text-white {
+  color: #3d2a3b;
+}
+[data-theme="icecream"] .hero-mesh-brand .text-white\/80   { color: rgba(61, 42, 59, 0.80); }
+[data-theme="icecream"] .hero-mesh-brand .text-white\/90   { color: rgba(61, 42, 59, 0.90); }
+[data-theme="icecream"] .hero-mesh-brand .text-white\/75   { color: rgba(61, 42, 59, 0.75); }
+[data-theme="icecream"] .hero-mesh-brand .text-white\/70   { color: rgba(61, 42, 59, 0.70); }
+
+/* "Frosted glass" tiles in the hero use bg-white/10 + border-white/25
+ * for a translucent overlay. On a light hero those are invisible —
+ * swap to dark glass + dark edge so the stat panels still read as
+ * separate surfaces. */
+[data-theme="icecream"] .hero-mesh-brand .bg-white\/10    { background-color: rgba(61, 42, 59, 0.06); }
+[data-theme="icecream"] .hero-mesh-brand .bg-white\/20    { background-color: rgba(61, 42, 59, 0.10); }
+[data-theme="icecream"] .hero-mesh-brand .border-white\/20 { border-color: rgba(61, 42, 59, 0.18); }
+[data-theme="icecream"] .hero-mesh-brand .border-white\/25 { border-color: rgba(61, 42, 59, 0.22); }
+[data-theme="icecream"] .hero-mesh-brand .bg-white { background-color: #ffffff; }
+
+/* gradient-text on a light hero — the default (brand-300 → brand-100
+ * → brand-300) is a soft pink ramp, which is invisible against pink.
+ * Override to a deep berry ramp for AAA contrast on the ice-cream
+ * hero. Other themes leave gradient-text alone (brand mids/lights
+ * read fine on their dark heroes). */
+[data-theme="icecream"] .hero-mesh-brand .gradient-text {
+  background: linear-gradient(135deg, var(--brand-700), var(--brand-900) 60%, var(--brand-700));
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 .hero-mesh-teal {
   background-color: #0f4c52;
@@ -865,12 +950,19 @@ body {
   --radius-lg: 30px;
   --radius-xl: 42px;
 
-  /* Hero — multi-flavour swirl. Strawberry + mint + peach + lavender. */
+  /* Hero — multi-flavour swirl. Strawberry + mint + peach + lavender.
+   * Hero base is the only LIGHT one in the theme set, so we override
+   * --hero-fg to a deep berry from the same family (~10:1 vs the
+   * pink) and zero out the universal darken-scrim that other themes
+   * use as a contrast fail-safe — darkening pink behind dark text
+   * would HURT contrast, not help. */
   --hero-bg:     #ffb1c1;
   --hero-mesh-1: #ff7eb6;
   --hero-mesh-2: #b8e0d2;
   --hero-mesh-3: #ffd6a5;
   --hero-mesh-4: #c8b6e8;
+  --hero-fg:     #3d2a3b;
+  --hero-scrim:  0;
 }
 
 /* ───── Dry Ice — frosty fog over near-black. Cold, mysterious, a

@@ -762,7 +762,7 @@ export function Sidebar({
         </Link>
         {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
           <code
-            className="font-mono text-[9px] text-subtle bg-elevated px-1 py-0.5 rounded select-all leading-none"
+            className="font-mono text-xs font-semibold text-brand-700 bg-brand-50 ring-1 ring-inset ring-brand-200 px-2 py-1 rounded select-all leading-none"
             title={`Build ${process.env.NEXT_PUBLIC_COMMIT_SHA}`}
           >
             {process.env.NEXT_PUBLIC_COMMIT_SHA}
