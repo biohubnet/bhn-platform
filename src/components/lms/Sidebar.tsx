@@ -197,8 +197,20 @@ function SectionGroup({
       {/* Title chip — wrapped in a tiny hover-group that opens a tooltip
           to the right when there's content to show. The transparent pl-2
           padding bridges the gap so the cursor can travel into the
-          tooltip without losing hover. */}
-      <div className="group/section absolute -top-[9px] left-3 z-20">
+          tooltip without losing hover.
+
+          Border notch: the wrapping <div> intentionally has the page
+          background colour — `bg-page` for neutral, the section's own
+          tinted wash for electric — so it visually breaks the container's
+          1px border line where the chip sits. The chip's opaque fill
+          covers any subpixel bleed-through. Result: a fieldset-legend-
+          style notch instead of the border running through the chip. */}
+      <div
+        className={cn(
+          "group/section absolute -top-[10px] left-3 z-20 px-1",
+          isElectric ? "bg-page" : "bg-page",
+        )}
+      >
         <span
           tabIndex={hasTooltip ? 0 : -1}
           className={cn(
