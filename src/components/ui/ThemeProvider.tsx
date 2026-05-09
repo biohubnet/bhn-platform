@@ -22,7 +22,7 @@ export const THEMES = [
   { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black", category: "classic" },
 
   // Flavours — sensory / atmospheric themes.
-  { id: "coldbrew",   name: "Cold Brew",  description: "Oat-milk cream + dark roast espresso — coffee-shop warmth", category: "flavour" },
+  { id: "coldbrew",   name: "Cold Brew",  description: "Looking into the cup — dark roast canvas, crema accents, polished-ceramic cards", category: "flavour" },
   { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright", category: "flavour" },
   { id: "dryice",     name: "Dry Ice",    description: "Frosty fog over deep teal-black — cold, mysterious, dramatic", category: "flavour" },
   { id: "retro8bit",  name: "Retro 8-bit", description: "NES boss screen — magenta + cyan on CRT-purple, scanlines, pixel font", category: "flavour" },

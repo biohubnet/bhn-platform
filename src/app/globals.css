@@ -848,66 +848,82 @@ body {
   display: inline-block;
 }
 
-/* ───── Cold Brew — coffee-shop warmth. Oat-milk cream surfaces,
- *  espresso-dark text, crema accents. CTA brand-600 is dark roast
- *  against cream cards: ~9:1 contrast (AAA). The hero pours espresso
- *  + crema across the band so the dashboard feels like the moment
- *  the cream first hits the cup. ───── */
+/* ───── Cold Brew — looking INTO the cup, not at the room. Dark
+ *  mode. Deep dark-roast canvas; cream-coloured text the colour of
+ *  steamed milk top; crema-warm CTAs; cards rendered as polished-
+ *  ceramic surfaces with a top-edge specular highlight (the gloss
+ *  on a glazed mug catching low warm light). Restrained accents —
+ *  the warmth simmers, doesn't shout. ───── */
 [data-theme="coldbrew"] {
-  --popover-bg: #ece2d2;
-  --bg:        #f4ece0;
+  --popover-bg: rgba(40, 26, 18, 0.96);
+  --bg:        #0c0604;
+  /* Mesh: a single warm bloom in the upper-left like a low pendant
+   * lamp catching the rim of the cup. Quieter blooms elsewhere. */
   --bg-mesh:
-    radial-gradient(at 12% 18%, rgba(125, 79, 48, 0.10) 0px, transparent 55%),
-    radial-gradient(at 88% 12%, rgba(192, 141, 99, 0.10) 0px, transparent 50%),
-    radial-gradient(at 70% 100%, rgba(93, 57, 32, 0.06) 0px, transparent 60%);
-  --card:      rgba(253, 250, 243, 0.92);
-  --card-solid: #fdfaf3;
-  --elevated:  #ece2d2;
-  --raised:    #e0d4c0;
-  --fg:        #2a1810;
-  --fg-muted:  #5a4538;
-  --fg-subtle: #9a8675;
-  --line:      rgba(42, 24, 16, 0.10);
-  --line-strong: rgba(42, 24, 16, 0.20);
-  --backdrop:  rgba(42, 24, 16, 0.40);
+    radial-gradient(at 12% 14%, rgba(192, 141, 99, 0.12) 0px, transparent 50%),
+    radial-gradient(at 88% 8%, rgba(160, 108, 68, 0.05) 0px, transparent 45%),
+    radial-gradient(at 70% 100%, rgba(93, 57, 32, 0.06) 0px, transparent 55%);
+  --card:      rgba(28, 18, 12, 0.92);
+  --card-solid: #18100a;
+  --elevated:  rgba(40, 26, 18, 0.92);
+  --raised:    rgba(58, 38, 26, 0.92);
+  --fg:        #f5e8d0;             /* steamed-milk cream, not pure white */
+  --fg-muted:  #c4a98c;
+  --fg-subtle: #8a6e54;
+  --line:      rgba(192, 141, 99, 0.16);
+  --line-strong: rgba(192, 141, 99, 0.34);
+  --backdrop:  rgba(8, 4, 2, 0.85);
 
-  /* Brand: oat-milk → crema → espresso. 50 stays cream-tinted so
-   * brand-50 cards blend into the page background as natural surfaces. */
-  --brand-50:  #f5e8da;
-  --brand-100: #ead2b8;
-  --brand-200: #d9b08c;
-  --brand-300: #c08d63;
-  --brand-400: #a06c44;
-  --brand-500: #7d4f30;
-  --brand-600: #5d3920;
-  --brand-700: #432718;
-  --brand-800: #2e1a10;
-  --brand-900: #1c0e08;
+  /* Brand: caramel/crema ramp. Inverted for dark — brand-50 is the
+   * darkest tinted surface; brand-600 is the bright crema CTA, which
+   * is glow-warm against deep text (#1a0e08-on-#d49a6e ~7:1, AAA).
+   * 700+ ramps to bright cream highlights for hover states. */
+  --brand-50:  #1a0e08;
+  --brand-100: #2a1810;
+  --brand-200: #432718;
+  --brand-300: #5d3920;
+  --brand-400: #7d4f30;
+  --brand-500: #a06c44;
+  --brand-600: #d49a6e;
+  --brand-700: #e6b88a;
+  --brand-800: #f0d2af;
+  --brand-900: #f9ead0;
 
-  /* Soft, settled radii — like crema rounding the rim of a cup. */
+  /* Soft settled radii — like crema rounding the rim. */
   --radius-sm: 8px;
   --radius:    12px;
   --radius-lg: 18px;
   --radius-xl: 24px;
 
-  /* Hero — espresso pour with crema bloom. */
-  --hero-bg:     #2a1810;
-  --hero-mesh-1: #5d3920;
-  --hero-mesh-2: #c08d63;
-  --hero-mesh-3: #1c0e08;
-  --hero-mesh-4: #7d4f30;
+  /* Hero — espresso pour with a single warm crema highlight. */
+  --hero-bg:     #0a0503;
+  --hero-mesh-1: #d49a6e;
+  --hero-mesh-2: #5d3920;
+  --hero-mesh-3: #18100a;
+  --hero-mesh-4: #c08d63;
 }
 
-/* Tame Tailwind's saturated tints toward warm. Rose-* drifts amber-ish
- * so brand-rose-50 cards harmonise with the cream palette. */
+/* Tame Tailwind tints + lift text variants for the dark canvas.
+ * Rose / amber stay warm-tinted so they read as part of the palette;
+ * emerald / sky desaturate slightly so they don't fight the warmth. */
 [data-theme="coldbrew"] {
-  --color-rose-50:    rgba(168, 98, 90, 0.10);
-  --color-rose-100:   rgba(168, 98, 90, 0.18);
-  --color-rose-200:   rgba(168, 98, 90, 0.28);
-  --color-amber-50:   rgba(192, 141, 99, 0.14);
-  --color-amber-100:  rgba(192, 141, 99, 0.22);
-  --color-emerald-50: rgba(110, 130, 95, 0.10);
+  --color-rose-50:    rgba(212, 154, 110, 0.10);
+  --color-rose-100:   rgba(212, 154, 110, 0.18);
+  --color-rose-200:   rgba(212, 154, 110, 0.26);
+  --color-amber-50:   rgba(212, 154, 110, 0.14);
+  --color-amber-100:  rgba(212, 154, 110, 0.22);
+  --color-emerald-50: rgba(140, 168, 130, 0.10);
+  --color-emerald-100:rgba(140, 168, 130, 0.16);
+  --color-sky-50:     rgba(140, 165, 185, 0.10);
 }
+[data-theme="coldbrew"] .text-rose-700    { color: #e6a890; }
+[data-theme="coldbrew"] .text-rose-800    { color: #f0c4b0; }
+[data-theme="coldbrew"] .text-amber-700   { color: #e6b88a; }
+[data-theme="coldbrew"] .text-amber-800   { color: #f0d2af; }
+[data-theme="coldbrew"] .text-emerald-700 { color: #a8c094; }
+[data-theme="coldbrew"] .text-emerald-800 { color: #c8d8b8; }
+[data-theme="coldbrew"] .text-sky-700     { color: #a8c0d4; }
+[data-theme="coldbrew"] .text-sky-800     { color: #c8d8e6; }
 
 /* ───── Summer Ice Cream — soft-serve pastel, vanilla cream base,
  *  raspberry-coral CTA, multi-flavour hero. Light, playful, summery.
@@ -1392,19 +1408,32 @@ body {
   --popover-shadow: 0 0 0 1px rgba(0,212,255,0.50), 0 0 44px rgba(0,212,255,0.30);
 }
 
-/* Cold Brew — friendly humanist sans, gentle warm shadows that feel
- * like sunlight on a cafe table. Slight tracking-loose on headings
- * so they read like a hand-lettered shop sign. */
+/* Cold Brew — restrained, dramatic. Tracking-tight so the type holds
+ * its discipline against the warmth. Cards get a polished-ceramic
+ * surface shadow: a top-edge specular highlight (a bright cream
+ * inset glow on the top 1 px) plus a deep outer shadow that lifts
+ * the card off the deep canvas. Reads as light catching the rim of
+ * a glazed mug. */
 [data-theme="coldbrew"] {
   --font-sans-theme: "Inter", system-ui, sans-serif;
   --font-display-theme: var(--font-sans-theme);
-  --body-features: "ss01", "cv11";
-  --surface-shadow: 0 4px 16px rgba(58, 36, 24, 0.08), 0 1px 3px rgba(58, 36, 24, 0.06);
-  --surface-border: 1px solid rgba(42, 24, 16, 0.10);
-  --heading-tracking: -0.005em;
+  --body-features: "ss01", "cv11", "cv02";
+  /* Specular highlight is the inset 0 1px 0 with cream alpha; the
+   * subsequent outer shadows give depth + a soft warm bloom under
+   * the card. */
+  --surface-shadow:
+    inset 0 1px 0 rgba(255, 232, 200, 0.10),
+    0 1px 0 rgba(255, 232, 200, 0.04),
+    0 12px 32px rgba(0, 0, 0, 0.55),
+    0 2px 8px rgba(0, 0, 0, 0.30);
+  --surface-border: 1px solid rgba(192, 141, 99, 0.18);
+  --heading-tracking: -0.018em;
   --heading-weight: 600;
   --heading-transform: none;
-  --popover-shadow: 0 16px 40px rgba(58, 36, 24, 0.18);
+  --popover-shadow:
+    inset 0 1px 0 rgba(255, 232, 200, 0.12),
+    0 24px 60px rgba(0, 0, 0, 0.65),
+    0 4px 12px rgba(0, 0, 0, 0.40);
 }
 
 /* Summer Ice Cream — playful display heading, generous tracking,

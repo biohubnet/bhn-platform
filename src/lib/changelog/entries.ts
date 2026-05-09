@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Cold Brew, redesigned — looking into the cup, not at the room",
+    body: "The original Cold Brew was a daylit cafe table — cream surfaces, espresso text. The new Cold Brew is the cup itself. Deep dark-roast canvas (#0c0604), steamed-milk cream type (#f5e8d0) instead of pure white so the page never glares, and crema-warm CTAs (#d49a6e) that read as glow rather than colour. Cards are rendered as polished ceramic: a top-edge specular highlight (a 1 px cream-alpha inset on the rim) plus a deep outer shadow lifts each surface off the canvas — light catching the glaze of a mug. Tracking tightens to -0.018em so the typography stays disciplined under all that warmth. Tailwind state colours (rose / amber / emerald / sky) get saturated lifts so badges and warnings stay legible on the dark ground. Pick it from the Theme menu in the sidebar.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Two more flavours + grouped theme picker — Salty and Chilli",
     body: "The picker now organises every theme under three sections so the menu doesn't read as a 12-item flat list. Classic (the foundation library: Daylight, Nightfall, Scientific, Mist, Rosalind, Hi-Tech) sits on top, Flavours next (Cold Brew, Summer Ice Cream, Dry Ice, Retro 8-bit, plus the two new arrivals — Salty: sea-fog and weathered driftwood, light coastal calm; Chilli: charred-earth dark canvas with paprika-flame brand and cream rice-beside-the-dish text), and Limited time at the bottom (Sakura, until 31 May 2026). The dropdown auto-scrolls when content overflows the viewport.",
     kind: "feature",
