@@ -40,6 +40,9 @@ export default async function EditInternshipPage({
           keySkills: p.keySkills,
           positionDetails: p.positionDetails,
           status: (p.status as "active" | "closed" | "draft") ?? "active",
+          contactEmail: p.contactEmail ?? "",
+          contactName: p.contactName ?? "",
+          contactPhone: p.contactPhone ?? "",
         }}
       />
     </div>

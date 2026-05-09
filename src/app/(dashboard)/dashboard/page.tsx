@@ -162,11 +162,59 @@ export default async function DashboardPage() {
     take: 3,
   });
 
+  // Saved-internship deadline nudge — shown when the trainee has any
+  // saved postings whose deadline lands in the next 7 days. Cheaper
+  // than a full reminder system and accurate enough to nudge action.
+  const SOON_MS = 7 * 24 * 60 * 60 * 1000;
+  const expiringSavedPostings = await prisma.userSavedPosting.findMany({
+    where: {
+      userId,
+      posting: {
+        status: "active",
+        deadline: { gte: new Date(), lte: new Date(Date.now() + SOON_MS) },
+      },
+    },
+    include: {
+      posting: { select: { id: true, title: true, companyName: true, deadline: true } },
+    },
+    orderBy: { posting: { deadline: "asc" } },
+    take: 3,
+  });
+
   return (
     <div className="space-y-8">
       {/* Theme of the day — once-per-calendar-day suggestion the
           trainee can try without committing, then keep if they like it. */}
       <DailyThemeCard />
+
+      {/* Saved-internship deadline nudge */}
+      {expiringSavedPostings.length > 0 && (
+        <Link
+          href="/profile/applications"
+          className="block bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-2xl px-5 py-3.5 hover:border-amber-300 transition-colors"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 text-lg">
+              ⏰
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-amber-900">
+                {expiringSavedPostings.length} saved posting{expiringSavedPostings.length === 1 ? "" : "s"} expire{expiringSavedPostings.length === 1 ? "s" : ""} this week
+              </p>
+              <ul className="text-xs text-amber-800/90 mt-0.5 space-y-0.5">
+                {expiringSavedPostings.map((s) => (
+                  <li key={s.id}>
+                    <span className="font-medium">{s.posting.title}</span> — {s.posting.companyName}
+                    {s.posting.deadline && (
+                      <span className="text-amber-700/80"> · {s.posting.deadline.toLocaleDateString()}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* Pending buddy invites banner */}
       {pendingBuddyInvites.length > 0 && (

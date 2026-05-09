@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Internships: a real apply flow, match scores, save, and 'My applications'",
+    body: "Big trainee-flow batch on the internship-finder journey. (1) Postings now have a contact section: every posting carries contactEmail (required), contactName, contactPhone. The detail page surfaces them with copy-to-clipboard + 'Send my application' — one click opens a mailto: pre-filled with your elevator pitch + resume URL + video URL from /profile/application, and writes an ApplicationStatus row server-side so BHN keeps a record. (2) New /profile/applications page (under EXPERIENCE → My Applications) shows two lists: postings you've applied to with their current employer-side stage (submitted / reviewing / shortlisted / phone screen / onsite / offer / hired / not advancing), and postings you've saved for later. (3) Save / heart icon on every card and detail header lets you bookmark postings; saved-postings with deadlines in the next 7 days surface as a dashboard nudge. (4) Match scores on every card (when you have ≥1 skill on file and the posting has been ontology-tagged) — green-pill % showing how well you fit. The detail page expands the score with a per-skill breakdown of what you have vs. the gaps, plus a link to courses that close those gaps. (5) Filter bar on the listing: free-text search across title + company + skill + details, location dropdown, type dropdown — all stored in URL params so a saved tab preserves the filter. (6) Posting body now renders Markdown (headings, lists, bold, links) instead of flat whitespace-pre-line. (7) Status guard — non-staff trainees can't render closed/draft postings via stale URLs; the detail page 404s. (8) Skill-profile nudge extended: was 'show only when 0 skills', now 'show until 5+ skills'.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Sakura — limited-time cherry-blossom theme (until 31 May 2026)",
     body: "A new theme has joined the picker for the rest of May: Sakura, a soft cherry-blossom palette with petal-pink CTAs, cream-white surfaces, and a wine-stained text colour for AAA contrast. Pick it from the Theme menu in the bottom-left of the sidebar — or wait for the daily-fresh card on your dashboard, which features Sakura as the suggested theme of the day while it's available. After 31 May, Sakura disappears from the picker (and from any saved theme cache, automatically falling back to your prior choice). A 'Limited' pill in the picker tells you which themes are seasonal.",
     kind: "feature",

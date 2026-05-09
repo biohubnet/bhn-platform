@@ -73,6 +73,7 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "My Application",            labelKey: "nav.application", href: "/profile/application",      icon: FileText },
   { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase },
   { label: "Internship Opportunities",  labelKey: "nav.internships", href: "/internships",              icon: Briefcase },
+  { label: "My Applications",           labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList },
   { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Sparkles },
   { label: "Interviews",                labelKey: "nav.interviews",  href: "/interviews",               icon: Calendar },
 ];

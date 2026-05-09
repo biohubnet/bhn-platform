@@ -17,6 +17,9 @@ interface Body {
   keySkills?: string[];
   positionDetails?: string;
   status?: "active" | "closed" | "draft";
+  contactEmail?: string | null;
+  contactName?: string | null;
+  contactPhone?: string | null;
 }
 
 export async function PATCH(
@@ -50,6 +53,9 @@ export async function PATCH(
   }
   if (body.positionDetails !== undefined) data.positionDetails = body.positionDetails.trim();
   if (body.status !== undefined) data.status = body.status;
+  if (body.contactEmail !== undefined) data.contactEmail = body.contactEmail?.trim() || null;
+  if (body.contactName !== undefined) data.contactName = body.contactName?.trim() || null;
+  if (body.contactPhone !== undefined) data.contactPhone = body.contactPhone?.trim() || null;
 
   const posting = await prisma.internshipPosting.update({ where: { id }, data });
   return NextResponse.json({ ok: true, posting });

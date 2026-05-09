@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.08g";
+export const TOUR_VERSION = "2026.05.08h";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -436,6 +436,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.08e",
     cta: { label: "Open Security reports", href: "/admin/security" },
+  },
+  {
+    id: "internship-finder-flow",
+    title: "Internships: apply, match, save, track",
+    body: "The internship finder grew up. Open EXPERIENCE → Internship Opportunities to browse, then click any posting: you'll see a match score against your skills, the contact email, and a 'Send my application' button that opens your mail client with your pitch + resume URL pre-filled. The same click marks the posting as applied so it appears under EXPERIENCE → My Applications with the employer's current stage. Save a heart on any posting to come back later — saved postings with deadlines in the next 7 days surface on your dashboard.",
+    path: "/internships",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    since: "2026.05.08h",
+    cta: { label: "Browse internships", href: "/internships" },
   },
   {
     id: "daily-fresh-theme",

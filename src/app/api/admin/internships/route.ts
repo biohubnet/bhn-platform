@@ -17,6 +17,9 @@ interface Body {
   keySkills?: string[];
   positionDetails?: string;
   status?: "active" | "closed" | "draft";
+  contactEmail?: string | null;
+  contactName?: string | null;
+  contactPhone?: string | null;
 }
 
 export async function POST(req: NextRequest) {
@@ -52,6 +55,9 @@ export async function POST(req: NextRequest) {
         : [],
       positionDetails: body.positionDetails.trim(),
       status: body.status ?? "active",
+      contactEmail: body.contactEmail?.trim() || null,
+      contactName: body.contactName?.trim() || null,
+      contactPhone: body.contactPhone?.trim() || null,
       createdById: userId,
     },
   });

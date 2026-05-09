@@ -20,12 +20,20 @@ export interface PostingValues {
   keySkills: string[];
   positionDetails: string;
   status: "active" | "closed" | "draft";
+  /** Apply-direct contact. Required end-state: contactEmail must be
+   *  set before the trainee detail page can render the apply CTA;
+   *  the form warns rather than blocks so existing draft postings
+   *  without contact info don't suddenly become uneditable. */
+  contactEmail: string;
+  contactName: string;
+  contactPhone: string;
 }
 
 const EMPTY: PostingValues = {
   companyName: "", website: "", title: "", duration: "", hours: "",
   location: "", type: "", compensation: "", deadline: "",
   keySkills: [], positionDetails: "", status: "active",
+  contactEmail: "", contactName: "", contactPhone: "",
 };
 
 export function InternshipEditor({
@@ -334,6 +342,34 @@ export function InternshipEditor({
           </Field>
         </Group>
 
+        <Group title="Apply-direct contact">
+          <Field label="Contact email" full required hint="Trainees email this address with their pitch + resume URL.">
+            <input
+              type="email"
+              className={ipt}
+              value={values.contactEmail}
+              onChange={(e) => set("contactEmail", e.target.value)}
+              placeholder="careers@example.com"
+            />
+          </Field>
+          <Field label="Contact name">
+            <input
+              className={ipt}
+              value={values.contactName}
+              onChange={(e) => set("contactName", e.target.value)}
+              placeholder="Anita Patel, HR"
+            />
+          </Field>
+          <Field label="Contact phone">
+            <input
+              className={ipt}
+              value={values.contactPhone}
+              onChange={(e) => set("contactPhone", e.target.value)}
+              placeholder="+1 (905) 555-0142"
+            />
+          </Field>
+        </Group>
+
         <Group title="Position">
           <Field label="Title" full required>
             <input className={ipt} value={values.title} onChange={(e) => set("title", e.target.value)} />
@@ -470,11 +506,12 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 
 function Field({
-  label, required, full, children,
+  label, required, full, hint, children,
 }: {
   label: string;
   required?: boolean;
   full?: boolean;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -484,6 +521,7 @@ function Field({
         {required && <span className="text-rose-600 ml-0.5">*</span>}
       </span>
       {children}
+      {hint && <span className="block text-[11px] text-subtle mt-1">{hint}</span>}
     </label>
   );
 }

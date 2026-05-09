@@ -122,6 +122,7 @@ model User {
   scheduledInterviews Interview[]           @relation("Interviewer")
   accessRequestsHandled AccessRequest[]     @relation("AccessRequestHandler")
   formSubmissions     EventFormSubmission[] @relation("FormSubmitter")
+  savedPostings       UserSavedPosting[]    @relation("SavedPostingUser")
 
   @@index([newsletterStatus, newsletterExportedAt])
 }
@@ -407,6 +408,12 @@ model InternshipPosting {
   positionDetails String
   /// "active" | "closed" | "draft"
   status          String    @default("active")
+  /// Apply-direct contact. Email is the primary target; name + phone
+  /// are optional. Trainees see these on the posting detail page so
+  /// they can email a tailored pitch directly to the hiring contact.
+  contactEmail    String?
+  contactName     String?
+  contactPhone    String?
   createdById     String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -415,8 +422,26 @@ model InternshipPosting {
   skills              PostingSkill[]
   applicationStatuses ApplicationStatus[]
   interviews          Interview[]
+  saves               UserSavedPosting[]
 
   @@index([status, createdAt])
+}
+
+/// Trainee bookmarks. Lets a trainee mark postings they want to come
+/// back to — deadline tracking, comparison, "apply later" reminder.
+/// Surfaced at /profile/applications under the "Saved" tab and via
+/// a heart icon on each posting card.
+model UserSavedPosting {
+  id        String   @id @default(cuid())
+  userId    String
+  postingId String
+  createdAt DateTime @default(now())
+
+  user    User              @relation("SavedPostingUser", fields: [userId], references: [id], onDelete: Cascade)
+  posting InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postingId])
+  @@index([userId, createdAt])
 }
 
 /// Individual answer set for an EventForm. `data` is keyed by field id.
