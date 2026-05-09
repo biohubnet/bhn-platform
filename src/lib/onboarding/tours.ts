@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.08f";
+export const TOUR_VERSION = "2026.05.08g";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -436,6 +436,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.08e",
     cta: { label: "Open Security reports", href: "/admin/security" },
+  },
+  {
+    id: "daily-fresh-theme",
+    title: "A fresh theme each day — try without committing",
+    body: "Look for a small card at the top of your dashboard suggesting a new theme. 'Try it' applies the theme for this session only — no commitment. Once you're trying, the card lets you 'Keep it' (save to your profile) or 'Maybe later' (revert). The rotation skips your current theme so it's always something new. Right now Sakura — a limited-time cherry-blossom theme — is featured as the daily pick until 31 May.",
+    path: "/dashboard",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin", "employer"],
+    since: "2026.05.08g",
+    cta: { label: "Open dashboard", href: "/dashboard" },
   },
   {
     id: "security-program-rollout",

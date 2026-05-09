@@ -1,6 +1,15 @@
 "use client";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
+/**
+ * Theme registry. Each entry has:
+ *   • id          — DOM data-theme attribute, also localStorage value
+ *   • name        — user-facing label
+ *   • description — picker tooltip
+ *   • endsOn      — optional ISO date; theme is hidden after that day
+ *                   (used for limited-time / seasonal themes like Sakura)
+ *   • limited     — optional flag rendered as a pill in the picker
+ */
 export const THEMES = [
   { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces" },
   { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents" },
@@ -8,48 +17,94 @@ export const THEMES = [
   { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic" },
   { id: "mist",       name: "Mist",       description: "Translucent glass panels in a calm atmosphere — visionOS-inspired" },
   { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black" },
+  {
+    id: "sakura",
+    name: "Sakura",
+    description: "Cherry-blossom blush + cream — limited time, expires end of May 2026",
+    endsOn: "2026-05-31",
+    limited: true,
+  },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
 
+/** Themes still inside their availability window. Expired limited-time
+ *  themes drop out (so the picker doesn't show a theme nobody can keep
+ *  using past the expiry). */
+export function activeThemes(now: Date = new Date()) {
+  return THEMES.filter((t) => {
+    if (!("endsOn" in t) || !t.endsOn) return true;
+    return new Date(t.endsOn + "T23:59:59").getTime() >= now.getTime();
+  });
+}
+
 interface ThemeContextValue {
   theme: ThemeId;
-  setTheme: (t: ThemeId) => void;
+  /** Switch theme. `persist=false` applies the theme for this session
+   *  only — no localStorage write — used by the daily-fresh "try" flow
+   *  so users can preview without committing. */
+  setTheme: (t: ThemeId, opts?: { persist?: boolean }) => void;
+  /** True when the active theme isn't the one persisted to storage —
+   *  i.e. the user is in a "previewing" state. The daily-fresh card
+   *  uses this to decide whether to show "Keep" / "Revert" actions. */
+  isPreviewing: boolean;
+  /** Whatever's persisted in localStorage (or null if none) — used so
+   *  callers can revert from a preview to the user's saved choice. */
+  savedTheme: ThemeId | null;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: "light",
   setTheme: () => {},
+  isPreviewing: false,
+  savedTheme: null,
 });
 
 const STORAGE_KEY = "bhn-theme";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeId>("light");
+  const [savedTheme, setSavedTheme] = useState<ThemeId | null>(null);
 
   useEffect(() => {
     const saved = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY)) as ThemeId | null;
-    if (saved && THEMES.some((t) => t.id === saved)) {
+    const allowedNow = activeThemes().map((t) => t.id);
+    if (saved && (allowedNow as string[]).includes(saved)) {
       setThemeState(saved);
+      setSavedTheme(saved);
       document.documentElement.dataset.theme = saved;
     } else {
+      // Saved theme is missing OR has expired (e.g. Sakura past May 31) —
+      // drop it and fall back to OS preference.
+      if (saved) {
+        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      }
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const initial: ThemeId = prefersDark ? "dark" : "light";
       setThemeState(initial);
+      setSavedTheme(null);
       document.documentElement.dataset.theme = initial;
     }
   }, []);
 
-  function setTheme(t: ThemeId) {
+  function setTheme(t: ThemeId, opts?: { persist?: boolean }) {
+    const persist = opts?.persist ?? true;
     setThemeState(t);
     document.documentElement.dataset.theme = t;
-    try { localStorage.setItem(STORAGE_KEY, t); } catch {}
+    if (persist) {
+      try { localStorage.setItem(STORAGE_KEY, t); } catch {}
+      setSavedTheme(t);
+    }
     try {
       // Only fire analytics if the user has opted in.
       const consentRaw = localStorage.getItem("bhn-consent");
       const okay = consentRaw && JSON.parse(consentRaw)?.analytics === true;
       if (okay) {
-        const body = JSON.stringify({ name: "theme_change", path: location.pathname, props: { theme: t } });
+        const body = JSON.stringify({
+          name: "theme_change",
+          path: location.pathname,
+          props: { theme: t, persist },
+        });
         if (navigator.sendBeacon) {
           navigator.sendBeacon("/api/analytics/track", new Blob([body], { type: "application/json" }));
         }
@@ -57,7 +112,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } catch {}
   }
 
-  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
+  const isPreviewing = savedTheme !== null && theme !== savedTheme;
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme, isPreviewing, savedTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {
@@ -69,8 +130,33 @@ export function ThemeScript() {
   // saved in localStorage (e.g. "aurora", "modern", "pink"), drop it
   // and fall back to OS preference so we never set data-theme to a
   // value that has no CSS variables defined.
-  const allowed = THEMES.map((t) => t.id);
-  const allowedJson = JSON.stringify(allowed);
+  //
+  // We can't import activeThemes() in this server-rendered script, so
+  // we compute the active set inline with the same rule (drop themes
+  // whose endsOn ISO date has passed).
+  const activeIds = activeThemes().map((t) => t.id);
+  const allowedJson = JSON.stringify(activeIds);
   const code = `(function(){try{var allow=${allowedJson};var s=localStorage.getItem('${STORAGE_KEY}');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var t=(s&&allow.indexOf(s)>=0)?s:(d?'dark':'light');if(s&&allow.indexOf(s)<0){try{localStorage.removeItem('${STORAGE_KEY}');}catch(_){}}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
   return <script dangerouslySetInnerHTML={{ __html: code }} />;
+}
+
+/**
+ * Pick a "theme of the day" suggestion. Sakura preempts as long as
+ * it's in its availability window (lets us highlight the limited-time
+ * theme); after Sakura expires we rotate through the rest of the
+ * registry by day-of-year. We skip the user's currently-saved theme
+ * so the suggestion is always something different.
+ */
+export function suggestTodaysTheme(currentlySaved: ThemeId | null, now: Date = new Date()): ThemeId | null {
+  const active = activeThemes(now);
+  // Sakura preempt while available — promotes the limited-time theme.
+  const sakura = active.find((t) => t.id === "sakura");
+  if (sakura && currentlySaved !== "sakura") return "sakura";
+
+  const pool = active.map((t) => t.id).filter((id) => id !== currentlySaved);
+  if (pool.length === 0) return null;
+  const dayOfYear = Math.floor(
+    (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86_400_000
+  );
+  return pool[dayOfYear % pool.length];
 }

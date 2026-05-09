@@ -11,6 +11,7 @@ import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { GreetingTagline } from "@/components/lms/GreetingTagline";
 import { SkillGapWidget } from "@/components/lms/SkillGapWidget";
+import { DailyThemeCard } from "@/components/ui/DailyThemeCard";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -163,6 +164,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Theme of the day — once-per-calendar-day suggestion the
+          trainee can try without committing, then keep if they like it. */}
+      <DailyThemeCard />
+
       {/* Pending buddy invites banner */}
       {pendingBuddyInvites.length > 0 && (
         <Link

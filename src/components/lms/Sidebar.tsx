@@ -170,6 +170,47 @@ interface ProgramHint {
   body?: string;
 }
 
+/** Section colour tokens — see SectionGroup's `tone` prop. Each tone
+ *  uses a fixed Tailwind palette (NOT theme-driven brand vars) so the
+ *  ENGAGE / EXPERIENCE / ADMINISTRATION blocks read with the same
+ *  identity colour on every theme. */
+type SectionTone = "neutral" | "engage" | "experience" | "electric";
+
+interface ToneStyles {
+  /** Outer container: border colour + faint wash + soft outer ring. */
+  container: string;
+  /** Title chip: bg + text + border + glow. */
+  chip: string;
+  /** Hover/focus colour bump for the chip. */
+  hover: string;
+}
+
+const TONE_STYLES: Record<SectionTone, ToneStyles> = {
+  neutral: {
+    container: "border-line",
+    chip:      "text-subtle bg-card-solid",
+    hover:     "focus:text-fg group-hover/section:text-fg",
+  },
+  engage: {
+    // Emerald — Engage = learn / practise / earn credits.
+    container: "border-emerald-300 bg-emerald-50/40 shadow-[0_0_0_1px_rgba(16,185,129,0.06)]",
+    chip:      "text-white bg-emerald-600 border border-emerald-700 shadow-[0_0_10px_rgba(16,185,129,0.30)]",
+    hover:     "focus:bg-emerald-700 group-hover/section:bg-emerald-700",
+  },
+  experience: {
+    // Amber — Experience = real-world / employer-facing surfaces.
+    container: "border-amber-300 bg-amber-50/40 shadow-[0_0_0_1px_rgba(245,158,11,0.06)]",
+    chip:      "text-white bg-amber-600 border border-amber-700 shadow-[0_0_10px_rgba(245,158,11,0.30)]",
+    hover:     "focus:bg-amber-700 group-hover/section:bg-amber-700",
+  },
+  electric: {
+    // Sky — Administration = privileged territory.
+    container: "border-sky-300 bg-sky-50/40 shadow-[0_0_0_1px_rgba(14,165,233,0.06)]",
+    chip:      "text-white bg-sky-600 border border-sky-700 shadow-[0_0_10px_rgba(14,165,233,0.35)]",
+    hover:     "focus:bg-sky-700 group-hover/section:bg-sky-700",
+  },
+};
+
 function SectionGroup({
   title, description, programs, children, tone = "neutral",
 }: {
@@ -177,15 +218,20 @@ function SectionGroup({
   description?: string;
   programs?: ProgramHint[];
   children: React.ReactNode;
-  /** Visual emphasis. "neutral" for ENGAGE / EXPERIENCE; "electric"
-   * for ADMINISTRATION so privileged territory reads at a glance.
-   * "electric" intentionally uses Tailwind's sky-* palette directly
-   * (not theme-driven brand vars) — admin should look the SAME bright
-   * blue across every theme so it stays unmistakable. */
-  tone?: "neutral" | "electric";
+  /** Visual emphasis for the section. Each tone uses a fixed Tailwind
+   * palette (NOT theme-driven brand vars) so the three sections stay
+   * visually distinct across every theme — trainees navigating between
+   * themes shouldn't lose their muscle memory of which color block
+   * means which group of features.
+   *   • engage     — emerald (learn / practise / earn)
+   *   • experience — amber  (real-world / employer-facing)
+   *   • electric   — sky    (administration / privileged territory)
+   *   • neutral    — line color, no tint (default fallback)
+   */
+  tone?: "neutral" | "engage" | "experience" | "electric";
 }) {
   const hasTooltip = !!description || (programs && programs.length > 0);
-  const isElectric = tone === "electric";
+  const toneStyles = TONE_STYLES[tone];
 
   // Tooltip is positioned `fixed` (not `absolute`) so it escapes the
   // sidebar <nav>'s overflow-y-auto box, which would otherwise clip
@@ -220,10 +266,8 @@ function SectionGroup({
   return (
     <div
       className={cn(
-        "relative mt-5 mb-2 rounded-xl border p-1.5 pt-2.5 space-y-0.5",
-        isElectric
-          ? "border-sky-300 bg-sky-50/40 shadow-[0_0_0_1px_rgba(14,165,233,0.06)]"
-          : "border-line"
+        "relative mt-5 mb-2 rounded-xl border p-1.5 pt-3 space-y-0.5",
+        toneStyles.container,
       )}
     >
       {/* Title chip — wrapped in a tiny hover-group that opens a tooltip
@@ -232,16 +276,12 @@ function SectionGroup({
           tooltip without losing hover.
 
           Border notch: the wrapping <div> intentionally has the page
-          background colour — `bg-page` for neutral, the section's own
-          tinted wash for electric — so it visually breaks the container's
-          1px border line where the chip sits. The chip's opaque fill
-          covers any subpixel bleed-through. Result: a fieldset-legend-
-          style notch instead of the border running through the chip. */}
+          background colour so it visually breaks the container's 1px
+          border line where the chip sits. The chip's opaque fill covers
+          any subpixel bleed-through. Result: a fieldset-legend-style
+          notch instead of the border running through the chip. */}
       <div
-        className={cn(
-          "group/section absolute -top-[10px] left-3 z-20 px-1",
-          isElectric ? "bg-page" : "bg-page",
-        )}
+        className="group/section absolute -top-[11px] left-3 z-20 px-1.5 bg-page"
         onMouseEnter={hasTooltip ? placeTooltip : undefined}
         onFocus={hasTooltip ? placeTooltip : undefined}
       >
@@ -249,20 +289,15 @@ function SectionGroup({
           ref={chipRef}
           tabIndex={hasTooltip ? 0 : -1}
           className={cn(
-            "px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] rounded inline-block",
-            isElectric
-              // Inverted chip — saturated electric blue fill + white
-              // text. Sitting on top of a sky-50/40 container, the
-              // earlier light-on-light variant lacked the contrast the
-              // chip needs to read as "this is privileged territory."
-              // sky-600 white-on-blue is roughly 7:1 contrast, well
-              // above WCAG AA, and reads at a glance from across the
-              // viewport.
-              ? "text-white bg-sky-600 border border-sky-700 shadow-[0_0_10px_rgba(14,165,233,0.35)]"
-              : "text-subtle bg-card-solid",
-            hasTooltip && (isElectric
-              ? "cursor-help focus:outline-none focus:bg-sky-700 group-hover/section:bg-sky-700 transition-colors"
-              : "cursor-help focus:outline-none focus:text-fg group-hover/section:text-fg transition-colors")
+            // text-xs (12px) reads more confidently than the prior
+            // text-[10px] without dominating the sidebar — admins
+            // asked for slightly bigger title font in feedback.
+            "px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.20em] rounded inline-block",
+            toneStyles.chip,
+            hasTooltip && cn(
+              "cursor-help focus:outline-none transition-colors",
+              toneStyles.hover,
+            ),
           )}
           aria-describedby={hasTooltip ? `${title}-tooltip` : undefined}
         >
@@ -390,6 +425,7 @@ export function Sidebar({
         {showLearnerNav && (
           <SectionGroup
             title="ENGAGE"
+            tone="engage"
             description="Industry-led training, workshops, and mentorship."
             programs={[
               {
@@ -412,6 +448,7 @@ export function Sidebar({
         {showLearnerNav && experienceItems.length > 0 && (
           <SectionGroup
             title="EXPERIENCE"
+            tone="experience"
             description="Bridging theory and practice through experiential learning."
             programs={[
               {

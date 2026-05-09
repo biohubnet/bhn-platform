@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Palette, Check } from "lucide-react";
-import { useTheme, THEMES, type ThemeId } from "@/components/ui/ThemeProvider";
+import { Palette, Check, Sparkles } from "lucide-react";
+import { useTheme, THEMES, activeThemes, type ThemeId } from "@/components/ui/ThemeProvider";
 import { cn } from "@/lib/utils";
 
 const SWATCH: Record<ThemeId, [string, string, string]> = {
@@ -11,6 +11,7 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
   rosalind:   ["#fbf6ec", "#485940", "#a8625a"],
   mist:       ["#e8edf3", "#3e5775", "#c8d2dd"],
   hitech:     ["#06121f", "#00d4ff", "#e3f7ff"],
+  sakura:     ["#fffaf9", "#d04c61", "#3a1f24"],
 };
 
 // Each theme picks its own corner-roundness for the swatch, mirroring
@@ -22,6 +23,7 @@ const SWATCH_RADIUS: Record<ThemeId, string> = {
   rosalind:   "14px",
   mist:       "18px",
   hitech:     "4px",
+  sakura:     "14px",
 };
 
 function Swatch({ id, size = 24 }: { id: ThemeId; size?: number }) {
@@ -96,8 +98,9 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
 
       {open && (
         <div className="absolute bottom-full left-0 right-0 mb-2 popover p-1.5 z-30 min-w-[240px] animate-fade-in">
-          {THEMES.map((t) => {
+          {activeThemes().map((t) => {
             const active = theme === t.id;
+            const isLimited = "limited" in t && t.limited;
             return (
               <button
                 key={t.id}
@@ -111,10 +114,20 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                 <Swatch id={t.id} size={28} />
                 <span className="flex-1 min-w-0">
                   <span className={cn(
-                    "block text-[13px] font-medium leading-tight",
+                    "flex items-center gap-1.5 text-[13px] font-medium leading-tight",
                     active ? "text-brand-700" : "text-fg"
-                  )}>{t.name}</span>
-                  <span className="block text-[10px] text-subtle leading-tight">{t.description}</span>
+                  )}>
+                    {t.name}
+                    {isLimited && (
+                      <span
+                        className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200"
+                        title="Limited-time theme"
+                      >
+                        <Sparkles size={9} /> Limited
+                      </span>
+                    )}
+                  </span>
+                  <span className="block text-[10px] text-subtle leading-tight mt-0.5">{t.description}</span>
                 </span>
                 {active && <Check size={13} className="text-brand-600" />}
               </button>

@@ -203,6 +203,61 @@
   --radius-xl: 36px;
 }
 
+/* ───── Sakura — limited-time cherry-blossom theme. Soft blush pinks,
+ *  cream, deep wine for text, blossom-pink CTAs. Bg mesh suggests a
+ *  drift of falling petals. Active until end of May 2026; the theme
+ *  registry hides it after the expiry. ───── */
+[data-theme="sakura"] {
+  --popover-bg: #fceaee;
+  --bg:        #fdf2f4;        /* palest blush */
+  --bg-mesh:
+    radial-gradient(at 8% 12%, rgba(208, 76, 97, 0.08) 0px, transparent 55%),
+    radial-gradient(at 88% 18%, rgba(248, 180, 196, 0.18) 0px, transparent 50%),
+    radial-gradient(at 22% 88%, rgba(248, 180, 196, 0.14) 0px, transparent 45%),
+    radial-gradient(at 78% 92%, rgba(208, 76, 97, 0.06) 0px, transparent 55%);
+  --card:      rgba(255, 250, 249, 0.92);
+  --card-solid: #fffaf9;        /* warm cream-white */
+  --elevated:  #faeae9;
+  --raised:    #f3d3d4;
+  --fg:        #3a1f24;        /* wine */
+  --fg-muted:  #6e4849;
+  --fg-subtle: #a87e80;
+  --line:      rgba(58, 31, 36, 0.10);
+  --line-strong: rgba(58, 31, 36, 0.20);
+  --backdrop:  rgba(58, 31, 36, 0.40);
+
+  /* Blossom-pink brand. 600 deep rose against cream reads ~7:1 (AAA).
+   * 50 stays petal-tinted so brand-50 cards blend naturally with the
+   * blush page background. */
+  --brand-50:  #fce8eb;
+  --brand-100: #f9d2d8;
+  --brand-200: #f5b1bb;
+  --brand-300: #ec8c9a;
+  --brand-400: #df6a7c;
+  --brand-500: #d04c61;
+  --brand-600: #b03b50;
+  --brand-700: #8a2d3f;
+  --brand-800: #66222e;
+  --brand-900: #461820;
+
+  /* Soft, hand-rounded radii — matches the organic feel. */
+  --radius-sm: 10px;
+  --radius:    14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+}
+
+/* Tone Tailwind's saturated tints so rose-* / amber-* surfaces
+ * harmonise with the blush palette instead of fighting it. */
+[data-theme="sakura"] {
+  --color-rose-50:    rgba(208, 76, 97, 0.10);
+  --color-rose-100:   rgba(208, 76, 97, 0.16);
+  --color-rose-200:   rgba(208, 76, 97, 0.28);
+  --color-amber-50:   rgba(190, 130, 60, 0.10);
+  --color-amber-100:  rgba(190, 130, 60, 0.16);
+  --color-emerald-50: rgba(110, 130, 110, 0.10);
+}
+
 /* Tame Tailwind's saturated tint stack so cards using bg-rose-50 etc.
  * harmonise with the warm parchment instead of fighting it. The
  * mid-tones (500–700) stay untouched for CTAs. */

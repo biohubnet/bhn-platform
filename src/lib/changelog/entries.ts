@@ -23,6 +23,27 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Sakura — limited-time cherry-blossom theme (until 31 May 2026)",
+    body: "A new theme has joined the picker for the rest of May: Sakura, a soft cherry-blossom palette with petal-pink CTAs, cream-white surfaces, and a wine-stained text colour for AAA contrast. Pick it from the Theme menu in the bottom-left of the sidebar — or wait for the daily-fresh card on your dashboard, which features Sakura as the suggested theme of the day while it's available. After 31 May, Sakura disappears from the picker (and from any saved theme cache, automatically falling back to your prior choice). A 'Limited' pill in the picker tells you which themes are seasonal.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Daily-fresh theme card on the dashboard",
+    body: "Once a day, the dashboard surfaces a different theme suggestion in a small card at the top. Click 'Try it' to apply the theme for the rest of the session without committing — once you've tried it, the same card morphs into 'Keep it' (saves to your profile) or 'Maybe later' (reverts to your usual theme). Dismiss makes the card go away until tomorrow. The rotation skips your currently-saved theme so the suggestion is always something new. While Sakura is available, it preempts the rotation as the featured limited-time theme.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Sidebar sections now read as three colour-coded blocks",
+    body: "ENGAGE / EXPERIENCE / ADMINISTRATION each have their own identity colour: emerald for ENGAGE (learn / practise / earn), amber for EXPERIENCE (real-world / employer-facing), and electric blue for ADMINISTRATION (privileged territory). Borders, soft washes, and the title chip all share the section's tone, so navigating between groups reads at a glance. Title chips are also slightly larger now (text-xs from text-[10px]) — admins reported the prior size was hard to read. Colours are theme-independent so muscle memory carries between Daylight, Mist, Sakura, etc.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "ADMINISTRATION sidebar group now stands out in electric blue",
     body: "Privileged territory should look unmistakable — admins / superadmins always know when they're operating with elevated permissions. The ADMINISTRATION group's title chip now uses a fixed sky-* (electric blue) palette with a soft outer glow and a faint chip glow, regardless of the active theme. ENGAGE / EXPERIENCE keep their neutral look; the contrast is the point.",
     kind: "improvement",
