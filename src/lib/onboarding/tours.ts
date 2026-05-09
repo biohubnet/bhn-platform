@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.08e";
+export const TOUR_VERSION = "2026.05.08f";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -435,6 +435,16 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     roles: ["admin", "superadmin"],
     since: "2026.05.08e",
+    cta: { label: "Open Security reports", href: "/admin/security" },
+  },
+  {
+    id: "security-program-rollout",
+    title: "Security program: ready to flip on when you are",
+    body: "All five recommendations from the leadership report have been developed. Three are live (CodeQL + Dependabot + secret scanning, pentest playbook, public /security page + security.txt). Two more are wired in but env-gated: signed-URL R2 access (R2_USE_SIGNED_URLS) and registration hardening with Cloudflare Turnstile + email verification (NEXT_PUBLIC_TURNSTILE_SITE_KEY, BHN_REQUIRE_EMAIL_VERIFY, SMTP_*). Flip the env vars in Vercel when ops is ready.",
+    path: "/admin/security",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.08f",
     cta: { label: "Open Security reports", href: "/admin/security" },
   },
   {

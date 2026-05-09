@@ -102,11 +102,22 @@ A second analysis pass — independent of the one that authored the fixes — re
 
 ## Recommended next steps
 
+> **Update — same-day implementation pass.** All five items listed below were developed and shipped on 8 May 2026. Items 1, 2, 5 are live; items 3 and 4 are env-gated so leadership can flip them on operationally. See _Status as of 8 May 2026_ at the end of each item.
+
 1. **Set up automated security scanning** — Dependabot is already on for dependency CVEs; consider adding Snyk or GitHub Advanced Security for static analysis of every PR, so the next IDOR is caught before it lands. *(Effort: ~2 hours of admin setup; negligible ongoing cost.)*
+   **Status:** ✅ live. `.github/workflows/codeql.yml` runs CodeQL with `security-extended` queries on every push + PR + weekly cron. `.github/workflows/security-audit.yml` runs `npm audit` (high+) and TruffleHog secret-scanning on every PR. `.github/dependabot.yml` adds weekly grouped version-update PRs plus immediate security-update PRs.
+
 2. **Periodic third-party penetration test** before any major launch (e.g. when we open public registration). One-day engagement with a Canadian shop in the $3–5 K range. *(Currently we self-audit; an outside set of eyes would be cheap insurance for an LMS holding student PII.)*
+   **Status:** ✅ playbook ready. Procurement guide at `docs/security/pentest-procurement.md` (also surfaced at `/admin/security`) — trigger conditions, scope templates, Canadian vendor shortlist with day-rate ranges, pre/during/post-engagement checklists, rejection criteria. Engagement itself awaits a leadership trigger (recommended before public registration opens).
+
 3. **Stop relying on the public R2 bucket** for any artifact more sensitive than placeholder samples. Move resume + video to **signed URL access** (private bucket; URLs are short-lived, signed at request time by an authenticated endpoint). The token-based mitigation we shipped today is solid, but signed URLs are the industry-standard primitive and remove an entire category of "URL leaks → file leaks" scenarios. *(Effort: ~1 day of engineering; can be done at any time without further data migration since R2 keys themselves don't change.)*
+   **Status:** ⚙️ env-gated. The signed-URL primitive (`getSignedR2GetUrl` in `src/lib/r2.ts` + `R2_USE_SIGNED_URLS` env flag) is in. `GET /api/profile/application` re-mints 5-minute signed URLs at request time when the flag is on. Operational work to flip: (a) set `R2_USE_SIGNED_URLS=true` in Vercel env, (b) flip the R2 bucket public-access flag off in the Cloudflare dashboard. Form-upload signed serving is the remaining follow-up before public launch.
+
 4. **Tighten the registration flow** before public launch — add CAPTCHA / email-verification gating to slow down the "register a free account, then attack the API" pattern that started Canvas. We deferred email/security work earlier per leadership decision; revisit before opening registration to non-invited users.
+   **Status:** ⚙️ env-gated. Cloudflare Turnstile CAPTCHA renders when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set; server re-verifies via `TURNSTILE_SECRET_KEY`. Email verification is wired end-to-end (token issuance, signed link in email, friendly `/verify-email/[token]` landing, dashboard banner with one-click resend, sign-in gate via `BHN_REQUIRE_EMAIL_VERIFY=true`). Operational work to flip: (a) provision a Turnstile site key + secret in Cloudflare, (b) confirm SMTP env (`SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM`) is live, (c) set the env vars in Vercel.
+
 5. **Document a public security contact** (`security@biohubnetwork.ca`) so if a researcher does find something, they have a non-public channel to disclose to us.
+   **Status:** ✅ live. Public `/security` page with disclosure policy (72-hour acknowledgement SLA), scope, safe-harbour commitment, defence-in-depth summary, planned hall-of-fame. `/.well-known/security.txt` published per RFC 9116. Footer links added on `/for-trainees` and `/for-employers`.
 
 ---
 

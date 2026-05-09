@@ -23,6 +23,27 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "ADMINISTRATION sidebar group now stands out in electric blue",
+    body: "Privileged territory should look unmistakable — admins / superadmins always know when they're operating with elevated permissions. The ADMINISTRATION group's title chip now uses a fixed sky-* (electric blue) palette with a soft outer glow and a faint chip glow, regardless of the active theme. ENGAGE / EXPERIENCE keep their neutral look; the contrast is the point.",
+    kind: "improvement",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
+    title: "Security program: pentest playbook, public disclosure policy, automated SAST scanning",
+    body: "Three of the five recommended next steps from the 8-May-2026 leadership report have shipped. (1) Public security page at /security with our disclosure policy, scope, safe-harbour commitment, and a defence-in-depth summary, plus /.well-known/security.txt per RFC 9116. Footer links added to the marketing pages. (2) GitHub Actions: CodeQL with security-extended queries on every push + PR + weekly schedule, npm audit (high+) + TruffleHog secret scanning on every PR, Dependabot for weekly version + immediate security updates. (3) Pentest procurement playbook at docs/security/pentest-procurement.md — trigger conditions, Canadian vendor shortlist with day-rate ranges, pre / during / post-engagement checklists, budget bands. Surfaces in-platform via /admin/security alongside the Canvas-breach response report.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
+    title: "Security program: signed-URL primitive, email verification, Turnstile CAPTCHA — env-gated",
+    body: "Two more measures from the leadership report are wired in but turned off by default; ops flips the env vars when ready. (1) Signed-URL R2 primitive (getSignedR2GetUrl, helpers in src/lib/r2.ts). When R2_USE_SIGNED_URLS=true and the bucket is flipped private, GET /api/profile/application re-mints 5-minute signed URLs at request time — removes an entire class of 'URL leaks → file leaks' scenarios beyond the token-in-path mitigation we already shipped. (2) Email verification — schema adds emailVerifyToken + emailVerifyExpires (256-bit token, 7-day expiry); register route issues + sends the link via existing nodemailer transport; new /verify-email/[token] friendly landing; resend endpoint can't be used to enumerate emails; UnverifiedEmailBanner with one-click resend on the dashboard for unverified real accounts. Sign-in gated by BHN_REQUIRE_EMAIL_VERIFY=true. (3) Cloudflare Turnstile CAPTCHA on /register, server-verified, no-ops when NEXT_PUBLIC_TURNSTILE_SITE_KEY is unset. Free, GDPR-friendly, no third-party tracking.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Admin: Security reports page (Administration → Platform → Security)",
     body: "Leadership-facing security reviews now live in-platform at /admin/security. The page reads every Markdown file under the repo's docs/security/ directory and renders it inline — newest first — so an admin can show a board / leadership member without cloning the repo. The first report covers our 8-May-2026 pre-emptive review against the Canvas / Instructure breach (what happened to them, what we found in BHN, what we shipped, what's recommended next). Future reports drop into the same directory and appear automatically. Each report links back to its GitHub source for citation. A 'security@biohubnetwork.ca' contact line at the bottom makes vulnerability disclosure easier to find. Admin / superadmin only.",
     kind: "feature",
