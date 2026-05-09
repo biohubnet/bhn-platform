@@ -1,4 +1,5 @@
 "use client";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -185,6 +186,37 @@ function SectionGroup({
 }) {
   const hasTooltip = !!description || (programs && programs.length > 0);
   const isElectric = tone === "electric";
+
+  // Tooltip is positioned `fixed` (not `absolute`) so it escapes the
+  // sidebar <nav>'s overflow-y-auto box, which would otherwise clip
+  // anything that extends past the sidebar's right edge. We compute
+  // the chip's screen-space coordinates on hover/focus and apply
+  // `top` / `left` inline. Default position is off-screen so the
+  // tooltip is never visible until a real position is computed.
+  const chipRef = useRef<HTMLSpanElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  function placeTooltip() {
+    if (!hasTooltip || !chipRef.current) return;
+    const r = chipRef.current.getBoundingClientRect();
+    setPos({ top: r.top, left: r.right });
+  }
+
+  // Keep the tooltip aligned if the user scrolls the sidebar (or page)
+  // while it's visible. Listen on window with `capture` so we catch the
+  // <nav>'s own scroll, then recompute against the chip's new rect.
+  useEffect(() => {
+    if (!pos) return;
+    const onMove = () => placeTooltip();
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pos !== null]);
+
   return (
     <div
       className={cn(
@@ -210,8 +242,11 @@ function SectionGroup({
           "group/section absolute -top-[10px] left-3 z-20 px-1",
           isElectric ? "bg-page" : "bg-page",
         )}
+        onMouseEnter={hasTooltip ? placeTooltip : undefined}
+        onFocus={hasTooltip ? placeTooltip : undefined}
       >
         <span
+          ref={chipRef}
           tabIndex={hasTooltip ? 0 : -1}
           className={cn(
             "px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] rounded inline-block",
@@ -237,7 +272,16 @@ function SectionGroup({
           <div
             id={`${title}-tooltip`}
             role="tooltip"
-            className="absolute left-full top-0 pl-3 w-72 invisible opacity-0 group-hover/section:visible group-hover/section:opacity-100 focus-within:visible focus-within:opacity-100 transition-opacity pointer-events-none group-hover/section:pointer-events-auto"
+            // position: fixed escapes the sidebar <nav>'s overflow box,
+            // which previously clipped the tooltip past the sidebar's
+            // right edge. Coordinates set inline via the chip's
+            // getBoundingClientRect; default off-screen pre-hover.
+            style={{
+              position: "fixed",
+              top: pos?.top ?? -9999,
+              left: pos?.left ?? -9999,
+            }}
+            className="pl-3 w-72 z-50 invisible opacity-0 group-hover/section:visible group-hover/section:opacity-100 focus-within:visible focus-within:opacity-100 transition-opacity pointer-events-none group-hover/section:pointer-events-auto"
           >
             <div className="popover p-3 normal-case tracking-normal text-left">
               <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">{title}</p>
