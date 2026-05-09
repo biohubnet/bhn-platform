@@ -81,6 +81,18 @@ export default async function LearnPage({
   });
   const progressMap = Object.fromEntries(progress.map((p) => [p.moduleId, p]));
 
+  // Fetch the trainee's bookmarked question IDs once, server-side, so
+  // every question header can render its star icon in the right
+  // initial state without N+1 client calls.
+  const courseQuestionIds = course.assessments.flatMap((a) => a.questions.map((q) => q.id));
+  const bookmarks = courseQuestionIds.length > 0
+    ? await prisma.reviewBookmark.findMany({
+        where: { userId, questionId: { in: courseQuestionIds } },
+        select: { questionId: true },
+      })
+    : [];
+  const bookmarkedQuestionIds = bookmarks.map((b) => b.questionId);
+
   const activeModuleId = sp.module ?? course.modules[0]?.id;
 
   return (
@@ -89,6 +101,7 @@ export default async function LearnPage({
       userId={userId}
       activeModuleId={activeModuleId}
       progressMap={progressMap}
+      bookmarkedQuestionIds={bookmarkedQuestionIds}
     />
   );
 }

@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.09a";
+export const TOUR_VERSION = "2026.05.09b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -436,6 +436,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.08e",
     cta: { label: "Open Security reports", href: "/admin/security" },
+  },
+  {
+    id: "adaptive-mvp",
+    title: "Topic mastery, review bookmarks, video checkpoints",
+    body: "Three new primitives have shipped on the learner side. The course detail page now shows a topic-by-topic mastery heatmap based on your assessment attempts. Star any assessment question to save it for review — due bookmarks surface as a 'Today's reviews' card on your dashboard. And video modules with author-placed checkpoints will pause at each one for a quick comprehension check. Cheap MVPs; the deeper Bayesian-knowledge-tracing / SM-2 / auto-chunking versions can come later if these earn their keep.",
+    path: "/dashboard",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    since: "2026.05.09b",
+    cta: { label: "Open dashboard", href: "/dashboard" },
   },
   {
     id: "internship-finder-flow",

@@ -12,6 +12,7 @@ import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { GreetingTagline } from "@/components/lms/GreetingTagline";
 import { SkillGapWidget } from "@/components/lms/SkillGapWidget";
 import { DailyThemeCard } from "@/components/ui/DailyThemeCard";
+import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -162,6 +163,28 @@ export default async function DashboardPage() {
     take: 3,
   });
 
+  // Today's review bookmarks — questions the trainee starred for
+  // self-test, due now per the expanding-interval schedule. Pulled
+  // raw and shaped into the ReviewQuestion props the card expects.
+  const dueBookmarks = await prisma.reviewBookmark.findMany({
+    where: { userId, nextReviewAt: { lte: new Date() } },
+    include: {
+      question: {
+        select: {
+          id: true, text: true, type: true, options: true,
+          correctAnswer: true, explanation: true, topic: true,
+          assessment: { select: { id: true, title: true, courseId: true } },
+        },
+      },
+    },
+    orderBy: { nextReviewAt: "asc" },
+    take: 12,
+  });
+  const reviewQueue: ReviewQuestion[] = dueBookmarks.map((b) => ({
+    bookmarkId: b.id,
+    question: b.question,
+  }));
+
   // Saved-internship deadline nudge — shown when the trainee has any
   // saved postings whose deadline lands in the next 7 days. Cheaper
   // than a full reminder system and accurate enough to nudge action.
@@ -186,6 +209,9 @@ export default async function DashboardPage() {
       {/* Theme of the day — once-per-calendar-day suggestion the
           trainee can try without committing, then keep if they like it. */}
       <DailyThemeCard />
+
+      {/* Today's review bookmarks — auto-hidden when nothing's due. */}
+      <TodaysReviewsCard initial={reviewQueue} />
 
       {/* Saved-internship deadline nudge */}
       {expiringSavedPostings.length > 0 && (

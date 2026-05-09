@@ -8,6 +8,7 @@ import { CourseEditButton } from "@/components/lms/CourseEditButton";
 import { ThumbnailGenerator } from "@/components/lms/ThumbnailGenerator";
 import { CourseAISummary } from "@/components/lms/CourseAISummary";
 import { CourseTutorWidget } from "@/components/lms/CourseTutorWidget";
+import { MasteryHeatmap } from "@/components/adaptive/MasteryHeatmap";
 import { formatDuration, statusColor, cn } from "@/lib/utils";
 import { BookOpen, Clock, Users, Award, Play, Upload, Coins } from "lucide-react";
 import Link from "next/link";
@@ -285,6 +286,15 @@ export default async function CourseDetailPage({
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Topic-mastery heatmap — only renders meaningful content
+          once the trainee has at least one graded attempt. Enrolled
+          learners + staff (so course authors can see the same view). */}
+      {(enrollment || isStaff) && (
+        <div className="mt-6">
+          <MasteryHeatmap userId={userId} courseId={id} courseTitle={course.title} />
         </div>
       )}
 

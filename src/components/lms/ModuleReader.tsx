@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, Circle, ChevronRight, ChevronLeft, BookOpen, ClipboardList, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BookmarkButton } from "@/components/adaptive/BookmarkButton";
 
 interface Question {
   id: string;
@@ -50,9 +51,13 @@ interface ModuleReaderProps {
   userId: string;
   activeModuleId: string | undefined;
   progressMap: Record<string, ProgressEntry>;
+  /** Question IDs the trainee has bookmarked for review. Drives the
+   *  initial state of the star icon next to each question. */
+  bookmarkedQuestionIds?: string[];
 }
 
-export function ModuleReader({ course, userId, activeModuleId, progressMap }: ModuleReaderProps) {
+export function ModuleReader({ course, userId, activeModuleId, progressMap, bookmarkedQuestionIds = [] }: ModuleReaderProps) {
+  const bookmarkedSet = new Set(bookmarkedQuestionIds);
   const router = useRouter();
   const [currentId, setCurrentId] = useState(activeModuleId ?? course.modules[0]?.id);
   const [localProgress, setLocalProgress] = useState<Record<string, string>>(
@@ -209,9 +214,15 @@ export function ModuleReader({ course, userId, activeModuleId, progressMap }: Mo
                   const opts: string[] = q.options ? JSON.parse(q.options) : [];
                   return (
                     <div key={q.id} className="bg-card rounded-xl border border-line p-5">
-                      <p className="font-medium text-fg mb-3">
-                        <span className="text-subtle mr-2">{i + 1}.</span>{q.text}
-                      </p>
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <p className="font-medium text-fg flex-1 min-w-0">
+                          <span className="text-subtle mr-2">{i + 1}.</span>{q.text}
+                        </p>
+                        <BookmarkButton
+                          questionId={q.id}
+                          initialBookmarked={bookmarkedSet.has(q.id)}
+                        />
+                      </div>
                       {q.type === "multiple_choice" && (
                         <div className="space-y-2">
                           {opts.map((opt) => (
