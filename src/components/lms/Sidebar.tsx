@@ -277,11 +277,14 @@ function SectionGroup({
 
           Border notch: the wrapping <div> intentionally has the page
           background colour so it visually breaks the container's 1px
-          border line where the chip sits. The chip's opaque fill covers
-          any subpixel bleed-through. Result: a fieldset-legend-style
-          notch instead of the border running through the chip. */}
+          border line where the chip sits. `rounded-md` matches the
+          chip's own corner radius so the page-colour halo around the
+          chip doesn't show square corners (which used to read as a
+          flat box behind the chip on themes with a gradient mesh
+          background). The chip's opaque fill covers any subpixel
+          bleed-through. */}
       <div
-        className="group/section absolute -top-[11px] left-3 z-20 px-1.5 bg-page"
+        className="group/section absolute -top-[11px] left-3 z-20 px-1.5 bg-page rounded-md"
         onMouseEnter={hasTooltip ? placeTooltip : undefined}
         onFocus={hasTooltip ? placeTooltip : undefined}
       >
