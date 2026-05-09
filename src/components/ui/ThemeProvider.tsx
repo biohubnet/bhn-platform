@@ -17,6 +17,9 @@ export const THEMES = [
   { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic" },
   { id: "mist",       name: "Mist",       description: "Translucent glass panels in a calm atmosphere — visionOS-inspired" },
   { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black" },
+  { id: "coldbrew",   name: "Cold Brew",  description: "Oat-milk cream + dark roast espresso — coffee-shop warmth" },
+  { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright" },
+  { id: "dryice",     name: "Dry Ice",    description: "Frosty fog over deep teal-black — cold, mysterious, dramatic" },
   {
     id: "sakura",
     name: "Sakura",

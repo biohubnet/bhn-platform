@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Three new themes — Cold Brew, Summer Ice Cream, Dry Ice",
+    body: "The theme picker grew by three. Cold Brew is a coffee-shop warm light theme with oat-milk cream surfaces, espresso-dark text, and a crema-pour hero gradient. Summer Ice Cream is pastel and playful — vanilla cream base, raspberry-coral CTAs, and a multi-flavour swirl hero (pink + mint + peach + lavender) with very rounded scoop-shaped radii. Dry Ice is dark and theatrical — frosty fog over deep teal-black with icy-cyan brand glow, sharp ice-crystal radii, and a hero that reads like smoke curling off a block of dry ice. Each carries its own typography weight + tracking + shadow language so the difference is felt, not just seen. The dashboard hero, sidebar admin chip, and brand surfaces all retint to match — pick from the Theme menu in the sidebar or wait for the daily-fresh card to suggest one.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Compliance + security hardening — MFA, e-signatures, lockout, password policy, full policy library",
     body: "Big batch aligning BHN with SOC 2 Type II / GDPR / PIPEDA / 21 CFR Part 11. Engineering: opt-in TOTP MFA at /profile/security with QR + 6-digit verify, login flow expands to ask for the code when MFA is on; brute-force lockout (5 fails → 30-min lock) with audit-logged lock events; password policy (≥10 chars, top-200 breached-list rejection, identity-substring rejection); password rotation timestamp tracked; 21 CFR Part 11 §11.50 / §11.70 e-signatures via new ElectronicSignature model + /api/signatures (optional re-auth-on-sign for regulated deployments via BHN_PART11_REQUIRE_PASSWORD); audit log extended to MFA enable/disable, password change, login lockouts, e-signature creation. Documentation: 8 new files under docs/security/ — Compliance roadmap (with leadership decision items + dollar costs), Sub-processor list with each vendor's compliance posture, Data retention & deletion policy with category-by-category schedule, ROPA (GDPR Art. 30 records of processing activities), Incident response runbook + breach-notification templates for GDPR / PIPEDA / Quebec Law 25 / US states / customer DPAs, Encryption posture document, 21 CFR Part 11 alignment plan covering every clause, Acceptable use policy. Public /security page extended with a Compliance posture section showing the standards roadmap + procurement-team checklist + DPA request line. Internal full report (with $$$ figures and decision points) at /admin/security under 2026-05-09-compliance-roadmap.md. No third-party spend yet — that's the next decision for leadership.",
     kind: "feature",

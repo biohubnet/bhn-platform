@@ -763,6 +763,189 @@ body {
   display: inline-block;
 }
 
+/* ───── Cold Brew — coffee-shop warmth. Oat-milk cream surfaces,
+ *  espresso-dark text, crema accents. CTA brand-600 is dark roast
+ *  against cream cards: ~9:1 contrast (AAA). The hero pours espresso
+ *  + crema across the band so the dashboard feels like the moment
+ *  the cream first hits the cup. ───── */
+[data-theme="coldbrew"] {
+  --popover-bg: #ece2d2;
+  --bg:        #f4ece0;
+  --bg-mesh:
+    radial-gradient(at 12% 18%, rgba(125, 79, 48, 0.10) 0px, transparent 55%),
+    radial-gradient(at 88% 12%, rgba(192, 141, 99, 0.10) 0px, transparent 50%),
+    radial-gradient(at 70% 100%, rgba(93, 57, 32, 0.06) 0px, transparent 60%);
+  --card:      rgba(253, 250, 243, 0.92);
+  --card-solid: #fdfaf3;
+  --elevated:  #ece2d2;
+  --raised:    #e0d4c0;
+  --fg:        #2a1810;
+  --fg-muted:  #5a4538;
+  --fg-subtle: #9a8675;
+  --line:      rgba(42, 24, 16, 0.10);
+  --line-strong: rgba(42, 24, 16, 0.20);
+  --backdrop:  rgba(42, 24, 16, 0.40);
+
+  /* Brand: oat-milk → crema → espresso. 50 stays cream-tinted so
+   * brand-50 cards blend into the page background as natural surfaces. */
+  --brand-50:  #f5e8da;
+  --brand-100: #ead2b8;
+  --brand-200: #d9b08c;
+  --brand-300: #c08d63;
+  --brand-400: #a06c44;
+  --brand-500: #7d4f30;
+  --brand-600: #5d3920;
+  --brand-700: #432718;
+  --brand-800: #2e1a10;
+  --brand-900: #1c0e08;
+
+  /* Soft, settled radii — like crema rounding the rim of a cup. */
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  /* Hero — espresso pour with crema bloom. */
+  --hero-bg:     #2a1810;
+  --hero-mesh-1: #5d3920;
+  --hero-mesh-2: #c08d63;
+  --hero-mesh-3: #1c0e08;
+  --hero-mesh-4: #7d4f30;
+}
+
+/* Tame Tailwind's saturated tints toward warm. Rose-* drifts amber-ish
+ * so brand-rose-50 cards harmonise with the cream palette. */
+[data-theme="coldbrew"] {
+  --color-rose-50:    rgba(168, 98, 90, 0.10);
+  --color-rose-100:   rgba(168, 98, 90, 0.18);
+  --color-rose-200:   rgba(168, 98, 90, 0.28);
+  --color-amber-50:   rgba(192, 141, 99, 0.14);
+  --color-amber-100:  rgba(192, 141, 99, 0.22);
+  --color-emerald-50: rgba(110, 130, 95, 0.10);
+}
+
+/* ───── Summer Ice Cream — soft-serve pastel, vanilla cream base,
+ *  raspberry-coral CTA, multi-flavour hero. Light, playful, summery.
+ *  Generous radii (scoop-shaped) and a vanilla off-white background
+ *  make every card feel like a fresh waffle cone. ───── */
+[data-theme="icecream"] {
+  --popover-bg: #fff0e6;
+  --bg:        #fff8f3;
+  --bg-mesh:
+    radial-gradient(at 8% 12%, rgba(237, 58, 90, 0.06) 0px, transparent 55%),
+    radial-gradient(at 88% 8%, rgba(184, 224, 210, 0.18) 0px, transparent 50%),
+    radial-gradient(at 22% 92%, rgba(255, 214, 165, 0.18) 0px, transparent 50%),
+    radial-gradient(at 82% 78%, rgba(200, 182, 232, 0.18) 0px, transparent 55%);
+  --card:      rgba(255, 255, 255, 0.92);
+  --card-solid: #fffaf5;
+  --elevated:  #ffefe6;
+  --raised:    #ffdfd0;
+  --fg:        #3d2a3b;
+  --fg-muted:  #6b4d6a;
+  --fg-subtle: #a78fa6;
+  --line:      rgba(61, 42, 59, 0.10);
+  --line-strong: rgba(61, 42, 59, 0.18);
+  --backdrop:  rgba(61, 42, 59, 0.40);
+
+  /* Raspberry-coral brand. CTA brand-600 white-on-pink reads ~5:1 (AA). */
+  --brand-50:  #ffeaee;
+  --brand-100: #ffd0d8;
+  --brand-200: #ffa9b9;
+  --brand-300: #ff7e94;
+  --brand-400: #ff5773;
+  --brand-500: #ed3a5a;
+  --brand-600: #c5234a;
+  --brand-700: #9a1a3c;
+  --brand-800: #6e132d;
+  --brand-900: #4a0c1f;
+
+  /* Scoop-shaped — soft, very rounded. */
+  --radius-sm: 14px;
+  --radius:    20px;
+  --radius-lg: 30px;
+  --radius-xl: 42px;
+
+  /* Hero — multi-flavour swirl. Strawberry + mint + peach + lavender. */
+  --hero-bg:     #ffb1c1;
+  --hero-mesh-1: #ff7eb6;
+  --hero-mesh-2: #b8e0d2;
+  --hero-mesh-3: #ffd6a5;
+  --hero-mesh-4: #c8b6e8;
+}
+
+/* ───── Dry Ice — frosty fog over near-black. Cold, mysterious, a
+ *  bit theatrical. Dark theme: deep teal-black canvas, ice-glow
+ *  brand for CTAs (light-on-dark), sharp ice-crystal radii. The
+ *  hero reads as smoke curling off a cube of dry ice. ───── */
+[data-theme="dryice"] {
+  --popover-bg: rgba(20, 35, 48, 0.96);
+  --bg:        #0a1318;
+  --bg-mesh:
+    radial-gradient(at 18% 22%, rgba(143, 200, 220, 0.12) 0px, transparent 55%),
+    radial-gradient(at 82% 8%,  rgba(109, 169, 194, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(143, 200, 220, 0.10) 0px, transparent 55%);
+  --card:      rgba(15, 26, 35, 0.85);
+  --card-solid: #0d1a23;
+  --elevated:  rgba(20, 35, 48, 0.82);
+  --raised:    rgba(29, 49, 66, 0.90);
+  --fg:        #e0eef5;
+  --fg-muted:  #8aa6b8;
+  --fg-subtle: #5a7589;
+  --line:      rgba(160, 200, 220, 0.16);
+  --line-strong: rgba(160, 200, 220, 0.32);
+  --backdrop:  rgba(0, 5, 10, 0.85);
+
+  /* Ice-glow brand. Inverted ramp like Nightfall — 50 is the
+   * darkest "tinted" surface for dark-mode brand-50 cards;
+   * 600 / 700 are the bright CTAs (dark text on icy bg, ~9:1). */
+  --brand-50:  #0f1f29;
+  --brand-100: #16303f;
+  --brand-200: #224354;
+  --brand-300: #305b71;
+  --brand-400: #4480a0;
+  --brand-500: #6da5c2;
+  --brand-600: #8fc8dc;
+  --brand-700: #a8d6e4;
+  --brand-800: #c1e1eb;
+  --brand-900: #d8eef4;
+
+  /* Sharp — ice crystals. */
+  --radius-sm: 3px;
+  --radius:    5px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Hero — fog rolling off a block of dry ice. */
+  --hero-bg:     #050b0f;
+  --hero-mesh-1: #1a3b4f;
+  --hero-mesh-2: #6da5c2;
+  --hero-mesh-3: #0f1f29;
+  --hero-mesh-4: #88b8cf;
+}
+
+/* Tame Tailwind tints for the dark Dry Ice. Same approach as the
+ * Nightfall theme — desaturate rose / amber / emerald base tints so
+ * cards using bg-rose-50 etc. don't blast the cool palette. */
+[data-theme="dryice"] {
+  --color-rose-50:    rgba(244, 63, 94, 0.10);
+  --color-rose-100:   rgba(244, 63, 94, 0.16);
+  --color-rose-200:   rgba(244, 63, 94, 0.24);
+  --color-amber-50:   rgba(245, 158, 11, 0.08);
+  --color-amber-100:  rgba(245, 158, 11, 0.14);
+  --color-emerald-50: rgba(16, 185, 129, 0.10);
+  --color-emerald-100:rgba(16, 185, 129, 0.16);
+  --color-sky-50:     rgba(14, 165, 233, 0.12);
+  --color-sky-100:    rgba(14, 165, 233, 0.18);
+}
+[data-theme="dryice"] .text-rose-700    { color: #fb7185; }
+[data-theme="dryice"] .text-rose-800    { color: #f87171; }
+[data-theme="dryice"] .text-amber-700   { color: #fbbf24; }
+[data-theme="dryice"] .text-amber-800   { color: #fcd34d; }
+[data-theme="dryice"] .text-emerald-700 { color: #34d399; }
+[data-theme="dryice"] .text-emerald-800 { color: #6ee7b7; }
+[data-theme="dryice"] .text-sky-700     { color: #38bdf8; }
+[data-theme="dryice"] .text-sky-800     { color: #7dd3fc; }
+
 /* ============================================================
  *  Per-theme design language tokens
  *  ──────────────────────────────────────────────────────────
@@ -873,6 +1056,50 @@ body {
   --heading-weight: 500;
   --heading-transform: uppercase;
   --popover-shadow: 0 0 0 1px rgba(0,212,255,0.50), 0 0 44px rgba(0,212,255,0.30);
+}
+
+/* Cold Brew — friendly humanist sans, gentle warm shadows that feel
+ * like sunlight on a cafe table. Slight tracking-loose on headings
+ * so they read like a hand-lettered shop sign. */
+[data-theme="coldbrew"] {
+  --font-sans-theme: "Inter", system-ui, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01", "cv11";
+  --surface-shadow: 0 4px 16px rgba(58, 36, 24, 0.08), 0 1px 3px rgba(58, 36, 24, 0.06);
+  --surface-border: 1px solid rgba(42, 24, 16, 0.10);
+  --heading-tracking: -0.005em;
+  --heading-weight: 600;
+  --heading-transform: none;
+  --popover-shadow: 0 16px 40px rgba(58, 36, 24, 0.18);
+}
+
+/* Summer Ice Cream — playful display heading, generous tracking,
+ * very-soft shadows that read as sunny bounce-light. */
+[data-theme="icecream"] {
+  --font-sans-theme: "Inter", system-ui, sans-serif;
+  --font-display-theme: "Inter", system-ui, sans-serif;
+  --body-features: "ss01", "cv11";
+  --surface-shadow: 0 6px 20px rgba(237, 58, 90, 0.08), 0 1px 4px rgba(61, 42, 59, 0.06);
+  --surface-border: 1px solid rgba(61, 42, 59, 0.08);
+  --heading-tracking: -0.018em;
+  --heading-weight: 700;
+  --heading-transform: none;
+  --popover-shadow: 0 20px 50px rgba(237, 58, 90, 0.18);
+}
+
+/* Dry Ice — tight, modern sans with cold cyan-glow shadows that
+ * read like fog catching a low light. Mid-weight headings so the
+ * type doesn't go too heavy against the dark canvas. */
+[data-theme="dryice"] {
+  --font-sans-theme: "Inter", system-ui, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01", "cv11";
+  --surface-shadow: 0 0 0 1px rgba(143, 200, 220, 0.16), 0 12px 32px rgba(0, 8, 14, 0.55);
+  --surface-border: 1px solid rgba(160, 200, 220, 0.20);
+  --heading-tracking: -0.015em;
+  --heading-weight: 500;
+  --heading-transform: none;
+  --popover-shadow: 0 0 0 1px rgba(143, 200, 220, 0.24), 0 24px 60px rgba(0, 8, 14, 0.70);
 }
 
 /* Wire the body + headings to the active theme's tokens. */
