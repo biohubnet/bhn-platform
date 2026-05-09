@@ -185,29 +185,37 @@ interface ToneStyles {
   hover: string;
 }
 
+// Section tone palettes — soft, same-family fills with darker text in
+// the same family instead of saturated white-on-colour. Reads more
+// like Notion / Linear / Stripe than a neon badge: less shouty, more
+// refined ("柔和 + 高级感"), while still keeping ≥7:1 text contrast on
+// the chip (AAA). Container border is the muted -200 of the same
+// family so the section reads as one tonal block rather than three
+// separate accents fighting each other.
 const TONE_STYLES: Record<SectionTone, ToneStyles> = {
   neutral: {
     container: "border-line",
-    chip:      "text-subtle bg-card-solid",
+    chip:      "text-subtle bg-card-solid ring-1 ring-inset ring-line",
     hover:     "focus:text-fg group-hover/section:text-fg",
   },
   engage: {
-    // Emerald — Engage = learn / practise / earn credits.
-    container: "border-emerald-300 bg-emerald-50/40 shadow-[0_0_0_1px_rgba(16,185,129,0.06)]",
-    chip:      "text-white bg-emerald-600 border border-emerald-700 shadow-[0_0_10px_rgba(16,185,129,0.30)]",
-    hover:     "focus:bg-emerald-700 group-hover/section:bg-emerald-700",
+    // Sage / jade — Engage = learn / practise / earn credits.
+    container: "border-emerald-200/70 bg-emerald-50/25",
+    chip:      "text-emerald-800 bg-emerald-100 ring-1 ring-inset ring-emerald-200/70 shadow-sm",
+    hover:     "focus:bg-emerald-200 group-hover/section:bg-emerald-200 transition-colors",
   },
   experience: {
-    // Amber — Experience = real-world / employer-facing surfaces.
-    container: "border-amber-300 bg-amber-50/40 shadow-[0_0_0_1px_rgba(245,158,11,0.06)]",
-    chip:      "text-white bg-amber-600 border border-amber-700 shadow-[0_0_10px_rgba(245,158,11,0.30)]",
-    hover:     "focus:bg-amber-700 group-hover/section:bg-amber-700",
+    // Muted gold — Experience = real-world / employer-facing surfaces.
+    container: "border-amber-200/70 bg-amber-50/25",
+    chip:      "text-amber-800 bg-amber-100 ring-1 ring-inset ring-amber-200/70 shadow-sm",
+    hover:     "focus:bg-amber-200 group-hover/section:bg-amber-200 transition-colors",
   },
   electric: {
-    // Sky — Administration = privileged territory.
-    container: "border-sky-300 bg-sky-50/40 shadow-[0_0_0_1px_rgba(14,165,233,0.06)]",
-    chip:      "text-white bg-sky-600 border border-sky-700 shadow-[0_0_10px_rgba(14,165,233,0.35)]",
-    hover:     "focus:bg-sky-700 group-hover/section:bg-sky-700",
+    // Soft sky — Administration. Still its own colour family so admin
+    // reads as different from learner sections, but no longer shouts.
+    container: "border-sky-200/70 bg-sky-50/25",
+    chip:      "text-sky-800 bg-sky-100 ring-1 ring-inset ring-sky-200/70 shadow-sm",
+    hover:     "focus:bg-sky-200 group-hover/section:bg-sky-200 transition-colors",
   },
 };
 
@@ -294,11 +302,14 @@ function SectionGroup({
           className={cn(
             // text-xs (12px) reads more confidently than the prior
             // text-[10px] without dominating the sidebar — admins
-            // asked for slightly bigger title font in feedback.
-            "px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.20em] rounded inline-block",
+            // asked for slightly bigger title font. font-semibold
+            // (not bold) + tracking-[0.18em] dial down the assertive
+            // shoutiness, which paired with the soft-fill palettes
+            // gives a more "高级感" / Notion-Linear feel.
+            "px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] rounded-md inline-block",
             toneStyles.chip,
             hasTooltip && cn(
-              "cursor-help focus:outline-none transition-colors",
+              "cursor-help focus:outline-none",
               toneStyles.hover,
             ),
           )}
