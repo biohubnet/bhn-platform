@@ -923,6 +923,136 @@ body {
   --hero-mesh-4: #88b8cf;
 }
 
+/* ───── Salty — sun-bleached driftwood + sea spray. Light theme.
+ *  Sea-fog surfaces, salt-white cards, deep-ocean text, weathered
+ *  slate-blue brand. The kind of palette you'd associate with a
+ *  fishing pier on a clear morning — cool, calm, slightly briny. */
+[data-theme="salty"] {
+  --popover-bg: #e6ecee;
+  --bg:        #f0f4f5;
+  --bg-mesh:
+    radial-gradient(at 14% 20%, rgba(70, 100, 110, 0.06) 0px, transparent 55%),
+    radial-gradient(at 86% 14%, rgba(150, 175, 185, 0.10) 0px, transparent 55%),
+    radial-gradient(at 60% 100%, rgba(40, 60, 70, 0.06) 0px, transparent 60%);
+  --card:      rgba(255, 255, 255, 0.92);
+  --card-solid: #fbfdfd;
+  --elevated:  #e6ecee;
+  --raised:    #d3dde1;
+  --fg:        #1f3a44;
+  --fg-muted:  #4a6975;
+  --fg-subtle: #8aa3ad;
+  --line:      rgba(31, 58, 68, 0.10);
+  --line-strong: rgba(31, 58, 68, 0.20);
+  --backdrop:  rgba(31, 58, 68, 0.40);
+
+  /* Brand: weathered slate-blue. CTA brand-600 is deep ocean —
+   * white-on-#2e4750 reads ~9:1 (AAA). 50 stays cool-grey-tinted so
+   * brand-50 surfaces blend with the page rather than pop. */
+  --brand-50:  #e8eef0;
+  --brand-100: #cdd9dd;
+  --brand-200: #a4bac1;
+  --brand-300: #7d99a3;
+  --brand-400: #5b7a85;
+  --brand-500: #436069;
+  --brand-600: #2e4750;
+  --brand-700: #233640;
+  --brand-800: #19262e;
+  --brand-900: #0e1a1f;
+
+  /* Pebble-worn radii — soft but not playful. */
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+
+  /* Hero — dawn over a calm sea. Deep teal canvas with slate fog
+   * and a salt-crest highlight. */
+  --hero-bg:     #1a2e35;
+  --hero-mesh-1: #44737d;
+  --hero-mesh-2: #8aa3ad;
+  --hero-mesh-3: #0e1a1f;
+  --hero-mesh-4: #d3dde1;
+}
+
+/* Tame Tailwind tints toward cool — rose drifts taupe, amber
+ * desaturates so warm states don't break the briny palette. */
+[data-theme="salty"] {
+  --color-rose-50:    rgba(120, 80, 90, 0.10);
+  --color-rose-100:   rgba(120, 80, 90, 0.18);
+  --color-amber-50:   rgba(150, 120, 70, 0.10);
+  --color-amber-100:  rgba(150, 120, 70, 0.18);
+  --color-emerald-50: rgba(80, 130, 110, 0.10);
+}
+
+/* ───── Chilli — fire-pit dark. Charred-earth canvas, bright
+ *  paprika brand, cream text like rice beside a hot dish. The
+ *  hero reads as chilli pods drying in evening sun. ───── */
+[data-theme="chilli"] {
+  --popover-bg: rgba(54, 24, 18, 0.96);
+  --bg:        #1a0a08;
+  --bg-mesh:
+    radial-gradient(at 16% 20%, rgba(255, 91, 60, 0.10) 0px, transparent 55%),
+    radial-gradient(at 84% 12%, rgba(255, 179, 60, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(194, 68, 15, 0.08) 0px, transparent 55%);
+  --card:      rgba(36, 18, 14, 0.92);
+  --card-solid: #240e0a;
+  --elevated:  rgba(54, 24, 18, 0.92);
+  --raised:    rgba(72, 32, 24, 0.92);
+  --fg:        #ffeacf;
+  --fg-muted:  #d4a98a;
+  --fg-subtle: #8a6855;
+  --line:      rgba(255, 91, 60, 0.28);
+  --line-strong: rgba(255, 91, 60, 0.50);
+  --backdrop:  rgba(20, 5, 0, 0.85);
+
+  /* Brand: chilli red ramp. Inverted like the other dark themes —
+   * brand-50 darkest, brand-600 the bright accent CTA. White-on-
+   * #ff6b3d ~5:1 with bold text; we keep CTA copy bold to land it. */
+  --brand-50:  #2a0a06;
+  --brand-100: #4a1408;
+  --brand-200: #7a1f0a;
+  --brand-300: #a82c10;
+  --brand-400: #d83c14;
+  --brand-500: #ed5024;
+  --brand-600: #ff6b3d;
+  --brand-700: #ff8a64;
+  --brand-800: #ffae8d;
+  --brand-900: #ffd4bb;
+
+  /* Medium radii — chilli pods are organic, not sharp. */
+  --radius-sm: 6px;
+  --radius:    10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  /* Hero — chilli pods in evening sun. Flame red + golden ember +
+   * deep chipotle corner. */
+  --hero-bg:     #2a0c08;
+  --hero-mesh-1: #ff5b3c;
+  --hero-mesh-2: #ffb33c;
+  --hero-mesh-3: #2a0c08;
+  --hero-mesh-4: #c2440f;
+}
+
+[data-theme="chilli"] {
+  --color-rose-50:    rgba(255, 91, 60, 0.14);
+  --color-rose-100:   rgba(255, 91, 60, 0.22);
+  --color-rose-200:   rgba(255, 91, 60, 0.32);
+  --color-amber-50:   rgba(255, 179, 60, 0.14);
+  --color-amber-100:  rgba(255, 179, 60, 0.22);
+  --color-emerald-50: rgba(110, 180, 100, 0.10);
+  --color-emerald-100:rgba(110, 180, 100, 0.16);
+  --color-sky-50:     rgba(110, 165, 194, 0.10);
+}
+[data-theme="chilli"] .text-rose-700    { color: #ff8a64; }
+[data-theme="chilli"] .text-rose-800    { color: #ffae8d; }
+[data-theme="chilli"] .text-amber-700   { color: #ffb33c; }
+[data-theme="chilli"] .text-amber-800   { color: #ffd680; }
+[data-theme="chilli"] .text-emerald-700 { color: #80d49a; }
+[data-theme="chilli"] .text-emerald-800 { color: #b3e5c2; }
+[data-theme="chilli"] .text-sky-700     { color: #88c5d4; }
+[data-theme="chilli"] .text-sky-800     { color: #b8dfe9; }
+
 /* ───── Retro 8-bit — NES boss screen meets CRT phosphor. Dark
  *  CRT-purple canvas, pure 8-bit magenta brand, sharp pixel edges
  *  (radii 0-3 px), monospace pixel font, scanline overlay across
@@ -1197,6 +1327,35 @@ body {
   --heading-weight: 700;
   --heading-transform: none;
   --popover-shadow: 0 20px 50px rgba(237, 58, 90, 0.18);
+}
+
+/* Salty — humanist sans, cool slate shadows. Slight tracking-tight
+ * on headings for crisp coastal feel. */
+[data-theme="salty"] {
+  --font-sans-theme: "Inter", system-ui, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01", "cv11";
+  --surface-shadow: 0 4px 14px rgba(31, 58, 68, 0.08), 0 1px 3px rgba(31, 58, 68, 0.05);
+  --surface-border: 1px solid rgba(31, 58, 68, 0.10);
+  --heading-tracking: -0.012em;
+  --heading-weight: 600;
+  --heading-transform: none;
+  --popover-shadow: 0 16px 40px rgba(31, 58, 68, 0.18);
+}
+
+/* Chilli — confident sans, warm flame-red shadow language for the
+ * dark canvas. Slight tracking-tight + medium-bold weight so type
+ * holds against a saturated background. */
+[data-theme="chilli"] {
+  --font-sans-theme: "Inter", system-ui, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01", "cv11";
+  --surface-shadow: 0 0 0 1px rgba(255, 91, 60, 0.18), 0 12px 28px rgba(20, 5, 0, 0.45);
+  --surface-border: 1px solid rgba(255, 91, 60, 0.24);
+  --heading-tracking: -0.012em;
+  --heading-weight: 600;
+  --heading-transform: none;
+  --popover-shadow: 0 0 0 1px rgba(255, 91, 60, 0.25), 0 24px 56px rgba(20, 5, 0, 0.65);
 }
 
 /* Retro 8-bit — pixel monospace font, all-caps headings, hard-edge

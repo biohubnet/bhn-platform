@@ -6,29 +6,48 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
  *   • id          — DOM data-theme attribute, also localStorage value
  *   • name        — user-facing label
  *   • description — picker tooltip
+ *   • category    — "classic" / "flavour" / "limited" — drives the
+ *                   picker's section grouping
  *   • endsOn      — optional ISO date; theme is hidden after that day
  *                   (used for limited-time / seasonal themes like Sakura)
  *   • limited     — optional flag rendered as a pill in the picker
  */
 export const THEMES = [
-  { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces" },
-  { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents" },
-  { id: "scientific", name: "Scientific", description: "Cool sky-blue, paper-like surfaces" },
-  { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic" },
-  { id: "mist",       name: "Mist",       description: "Translucent glass panels in a calm atmosphere — visionOS-inspired" },
-  { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black" },
-  { id: "coldbrew",   name: "Cold Brew",  description: "Oat-milk cream + dark roast espresso — coffee-shop warmth" },
-  { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright" },
-  { id: "dryice",     name: "Dry Ice",    description: "Frosty fog over deep teal-black — cold, mysterious, dramatic" },
-  { id: "retro8bit",  name: "Retro 8-bit", description: "NES boss screen — magenta + cyan on CRT-purple, scanlines, pixel font" },
+  // Classic — foundational themes, always present.
+  { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces", category: "classic" },
+  { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents", category: "classic" },
+  { id: "scientific", name: "Scientific", description: "Cool sky-blue, paper-like surfaces", category: "classic" },
+  { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic", category: "classic" },
+  { id: "mist",       name: "Mist",       description: "Translucent glass panels in a calm atmosphere — visionOS-inspired", category: "classic" },
+  { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black", category: "classic" },
+
+  // Flavours — sensory / atmospheric themes.
+  { id: "coldbrew",   name: "Cold Brew",  description: "Oat-milk cream + dark roast espresso — coffee-shop warmth", category: "flavour" },
+  { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright", category: "flavour" },
+  { id: "dryice",     name: "Dry Ice",    description: "Frosty fog over deep teal-black — cold, mysterious, dramatic", category: "flavour" },
+  { id: "retro8bit",  name: "Retro 8-bit", description: "NES boss screen — magenta + cyan on CRT-purple, scanlines, pixel font", category: "flavour" },
+  { id: "salty",      name: "Salty",      description: "Sea-fog and weathered driftwood — coastal calm", category: "flavour" },
+  { id: "chilli",     name: "Chilli",     description: "Charred earth + paprika flame — warm, bold, spicy dark mode", category: "flavour" },
+
+  // Limited-time / seasonal.
   {
     id: "sakura",
     name: "Sakura",
     description: "Cherry-blossom blush + cream — limited time, expires end of May 2026",
+    category: "limited",
     endsOn: "2026-05-31",
     limited: true,
   },
 ] as const;
+
+/** Display labels for each category — surfaced as section headers
+ *  in the theme picker. */
+export const THEME_CATEGORIES = {
+  classic:  { label: "Classic",   subtitle: "The foundation library" },
+  flavour:  { label: "Flavours",  subtitle: "Sensory and atmospheric" },
+  limited:  { label: "Limited time", subtitle: "Available for a while" },
+} as const;
+export type ThemeCategory = keyof typeof THEME_CATEGORIES;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
 

@@ -42,6 +42,8 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
   icecream:   ["#fff8f3", "#c5234a", "#b8e0d2"],
   dryice:     ["#0d1a23", "#8fc8dc", "#e0eef5"],
   retro8bit:  ["#1a0d2e", "#ff4dff", "#00ffff"],
+  salty:      ["#fbfdfd", "#2e4750", "#8aa3ad"],
+  chilli:     ["#240e0a", "#ff6b3d", "#ffeacf"],
 };
 
 function todayKey(): string {

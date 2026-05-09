@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Two more flavours + grouped theme picker — Salty and Chilli",
+    body: "The picker now organises every theme under three sections so the menu doesn't read as a 12-item flat list. Classic (the foundation library: Daylight, Nightfall, Scientific, Mist, Rosalind, Hi-Tech) sits on top, Flavours next (Cold Brew, Summer Ice Cream, Dry Ice, Retro 8-bit, plus the two new arrivals — Salty: sea-fog and weathered driftwood, light coastal calm; Chilli: charred-earth dark canvas with paprika-flame brand and cream rice-beside-the-dish text), and Limited time at the bottom (Sakura, until 31 May 2026). The dropdown auto-scrolls when content overflows the viewport.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Retro 8-bit theme — NES boss screen with scanlines and pixel font",
     body: "Bright magenta on CRT-purple, monospace pixel font (Press Start 2P / VT323 if installed, otherwise system mono — still pixel-flavoured), sharp 0–4 px radii, and a fine repeating-line scanline overlay across the entire viewport so the platform reads like it's running on a 1985 cathode-ray-tube. Surface shadows are hard 4 px offsets in magenta — no blur — like a sprite cast on phosphor. Hero band is a classic NES boss-screen palette (magenta + cyan + yellow + deep purple). Tailwind tints kept saturated in this theme — 8-bit colours are supposed to pop. Pick it from the Theme menu in the sidebar.",
     kind: "feature",

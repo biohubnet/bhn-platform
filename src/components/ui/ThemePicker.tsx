@@ -1,7 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Palette, Check, Sparkles } from "lucide-react";
-import { useTheme, THEMES, activeThemes, type ThemeId } from "@/components/ui/ThemeProvider";
+import {
+  useTheme, THEMES, activeThemes, THEME_CATEGORIES,
+  type ThemeId, type ThemeCategory,
+} from "@/components/ui/ThemeProvider";
 import { cn } from "@/lib/utils";
 
 const SWATCH: Record<ThemeId, [string, string, string]> = {
@@ -16,6 +19,8 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
   icecream:   ["#fff8f3", "#c5234a", "#b8e0d2"],
   dryice:     ["#0d1a23", "#8fc8dc", "#e0eef5"],
   retro8bit:  ["#1a0d2e", "#ff4dff", "#00ffff"],
+  salty:      ["#fbfdfd", "#2e4750", "#8aa3ad"],
+  chilli:     ["#240e0a", "#ff6b3d", "#ffeacf"],
 };
 
 // Each theme picks its own corner-roundness for the swatch, mirroring
@@ -32,6 +37,8 @@ const SWATCH_RADIUS: Record<ThemeId, string> = {
   icecream:   "20px",
   dryice:     "5px",
   retro8bit:  "0px",
+  salty:      "12px",
+  chilli:     "10px",
 };
 
 function Swatch({ id, size = 24 }: { id: ThemeId; size?: number }) {
@@ -105,44 +112,100 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 popover p-1.5 z-30 min-w-[240px] animate-fade-in">
-          {activeThemes().map((t) => {
-            const active = theme === t.id;
-            const isLimited = "limited" in t && t.limited;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => { setTheme(t.id); setOpen(false); }}
-                className={cn(
-                  "w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-left transition-all",
-                  active ? "bg-brand-50 ring-1 ring-brand-200" : "hover:bg-elevated"
-                )}
-              >
-                <Swatch id={t.id} size={28} />
-                <span className="flex-1 min-w-0">
-                  <span className={cn(
-                    "flex items-center gap-1.5 text-[13px] font-medium leading-tight",
-                    active ? "text-brand-700" : "text-fg"
-                  )}>
-                    {t.name}
-                    {isLimited && (
-                      <span
-                        className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200"
-                        title="Limited-time theme"
-                      >
-                        <Sparkles size={9} /> Limited
-                      </span>
-                    )}
-                  </span>
-                  <span className="block text-[10px] text-subtle leading-tight mt-0.5">{t.description}</span>
-                </span>
-                {active && <Check size={13} className="text-brand-600" />}
-              </button>
-            );
-          })}
-        </div>
+        <ThemeMenu
+          theme={theme}
+          onPick={(id) => { setTheme(id); setOpen(false); }}
+        />
       )}
+    </div>
+  );
+}
+
+/**
+ * Grouped theme menu — renders the three category sections (Classic /
+ * Flavours / Limited time) with a small header per group. Items
+ * inside a section are shown in registry order.
+ *
+ * Pulled out as its own component so the menu logic (sections,
+ * active state, limited pill) doesn't crowd the trigger button code.
+ */
+function ThemeMenu({
+  theme, onPick,
+}: {
+  theme: ThemeId;
+  onPick: (id: ThemeId) => void;
+}) {
+  const grouped = useMemo(() => {
+    const out: Record<ThemeCategory, typeof THEMES[number][]> = {
+      classic: [],
+      flavour: [],
+      limited: [],
+    };
+    for (const t of activeThemes()) {
+      out[t.category as ThemeCategory].push(t);
+    }
+    return out;
+  }, []);
+
+  // Categories rendered in this fixed order.
+  const order: ThemeCategory[] = ["classic", "flavour", "limited"];
+
+  return (
+    <div className="absolute bottom-full left-0 right-0 mb-2 popover p-1.5 z-30 min-w-[260px] max-h-[70vh] overflow-y-auto animate-fade-in">
+      {order.map((cat) => {
+        const items = grouped[cat];
+        if (items.length === 0) return null;
+        const meta = THEME_CATEGORIES[cat];
+        return (
+          <div key={cat} className="mb-2 last:mb-0">
+            <div className="px-2 pt-1.5 pb-1">
+              <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                {meta.label}
+              </p>
+              <p className="text-[10px] text-subtle/80 leading-tight">
+                {meta.subtitle}
+              </p>
+            </div>
+            {items.map((t) => {
+              const active = theme === t.id;
+              const isLimited = "limited" in t && t.limited;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => onPick(t.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all",
+                    active ? "bg-brand-50 ring-1 ring-brand-200" : "hover:bg-elevated"
+                  )}
+                >
+                  <Swatch id={t.id} size={26} />
+                  <span className="flex-1 min-w-0">
+                    <span className={cn(
+                      "flex items-center gap-1.5 text-[13px] font-medium leading-tight",
+                      active ? "text-brand-700" : "text-fg"
+                    )}>
+                      {t.name}
+                      {isLimited && (
+                        <span
+                          className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200"
+                          title="Limited-time theme"
+                        >
+                          <Sparkles size={9} /> Limited
+                        </span>
+                      )}
+                    </span>
+                    <span className="block text-[10px] text-subtle leading-tight mt-0.5 truncate">
+                      {t.description}
+                    </span>
+                  </span>
+                  {active && <Check size={13} className="text-brand-600 shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }
