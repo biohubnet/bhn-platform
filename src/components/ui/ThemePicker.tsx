@@ -15,6 +15,7 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
   coldbrew:   ["#fdfaf3", "#5d3920", "#c08d63"],
   icecream:   ["#fff8f3", "#c5234a", "#b8e0d2"],
   dryice:     ["#0d1a23", "#8fc8dc", "#e0eef5"],
+  retro8bit:  ["#1a0d2e", "#ff4dff", "#00ffff"],
 };
 
 // Each theme picks its own corner-roundness for the swatch, mirroring
@@ -30,6 +31,7 @@ const SWATCH_RADIUS: Record<ThemeId, string> = {
   coldbrew:   "12px",
   icecream:   "20px",
   dryice:     "5px",
+  retro8bit:  "0px",
 };
 
 function Swatch({ id, size = 24 }: { id: ThemeId; size?: number }) {

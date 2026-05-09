@@ -20,6 +20,7 @@ export const THEMES = [
   { id: "coldbrew",   name: "Cold Brew",  description: "Oat-milk cream + dark roast espresso — coffee-shop warmth" },
   { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright" },
   { id: "dryice",     name: "Dry Ice",    description: "Frosty fog over deep teal-black — cold, mysterious, dramatic" },
+  { id: "retro8bit",  name: "Retro 8-bit", description: "NES boss screen — magenta + cyan on CRT-purple, scanlines, pixel font" },
   {
     id: "sakura",
     name: "Sakura",

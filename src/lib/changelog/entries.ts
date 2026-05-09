@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Retro 8-bit theme — NES boss screen with scanlines and pixel font",
+    body: "Bright magenta on CRT-purple, monospace pixel font (Press Start 2P / VT323 if installed, otherwise system mono — still pixel-flavoured), sharp 0–4 px radii, and a fine repeating-line scanline overlay across the entire viewport so the platform reads like it's running on a 1985 cathode-ray-tube. Surface shadows are hard 4 px offsets in magenta — no blur — like a sprite cast on phosphor. Hero band is a classic NES boss-screen palette (magenta + cyan + yellow + deep purple). Tailwind tints kept saturated in this theme — 8-bit colours are supposed to pop. Pick it from the Theme menu in the sidebar.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Three new themes — Cold Brew, Summer Ice Cream, Dry Ice",
     body: "The theme picker grew by three. Cold Brew is a coffee-shop warm light theme with oat-milk cream surfaces, espresso-dark text, and a crema-pour hero gradient. Summer Ice Cream is pastel and playful — vanilla cream base, raspberry-coral CTAs, and a multi-flavour swirl hero (pink + mint + peach + lavender) with very rounded scoop-shaped radii. Dry Ice is dark and theatrical — frosty fog over deep teal-black with icy-cyan brand glow, sharp ice-crystal radii, and a hero that reads like smoke curling off a block of dry ice. Each carries its own typography weight + tracking + shadow language so the difference is felt, not just seen. The dashboard hero, sidebar admin chip, and brand surfaces all retint to match — pick from the Theme menu in the sidebar or wait for the daily-fresh card to suggest one.",
     kind: "feature",
