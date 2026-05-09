@@ -1,7 +1,25 @@
 "use client";
+/**
+ * Top-of-page filter panel for the course catalog.
+ *
+ * Design choices:
+ *   • Single prominent card spanning full width — the panel is the
+ *     visual centre of gravity above the grid, not a sidebar
+ *     afterthought.
+ *   • All four filter groups (Topic / Delivery / Specials / Provider)
+ *     visible at once. No accordion collapse — the "expanded by
+ *     default" behaviour is permanent.
+ *   • Chip toggles instead of stacked checkbox lists — a chip cloud
+ *     reads the active set at a glance; checkboxes hide the active
+ *     ones inside long scrolling lists.
+ *   • Subtle brand-tinted gradient + brand-border ring make the
+ *     panel "pop" without being loud.
+ *   • Active-filter pill row at the top doubles as the live "what
+ *     you've picked" summary + clear-all action.
+ */
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { useMemo } from "react";
+import { Filter, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface CourseFilterOptions {
@@ -58,111 +76,135 @@ export function CourseFilters({ options }: { options: CourseFilterOptions }) {
     selected.topic.length + selected.delivery.length + selected.provider.length + (selected.special ? 1 : 0);
 
   return (
-    <aside className="bg-card border border-line rounded-2xl p-4 space-y-1 sticky top-4">
-      <div className="flex items-center justify-between mb-2 px-1">
-        <h2 className="text-sm font-semibold text-fg">Filter courses</h2>
+    <section
+      aria-label="Course filters"
+      className={cn(
+        "rounded-2xl border-2 p-5 sm:p-6 mb-6",
+        "border-brand-200 bg-gradient-to-br from-brand-50/60 via-card to-card",
+        "shadow-[0_0_0_1px_rgba(255,255,255,0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.08)]",
+      )}
+    >
+      {/* Header row */}
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex w-9 h-9 rounded-xl bg-brand-600 text-white items-center justify-center shadow-sm">
+            <Filter size={16} />
+          </span>
+          <div>
+            <h2 className="text-base font-semibold text-fg leading-tight">
+              Filter the catalog
+            </h2>
+            <p className="text-xs text-muted leading-tight mt-0.5">
+              Pick any combination — chips toggle on / off.
+              {totalActive > 0 && (
+                <>
+                  {" "}
+                  <strong className="text-brand-700">{totalActive} active.</strong>
+                </>
+              )}
+            </p>
+          </div>
+        </div>
         {totalActive > 0 && (
           <button
             type="button"
             onClick={clearAll}
-            className="text-xs text-brand-700 hover:underline inline-flex items-center gap-1"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:text-brand-800 px-3 py-1.5 rounded-full border border-brand-200 bg-white hover:bg-brand-50 transition-colors"
           >
-            <X size={11} /> Clear ({totalActive})
+            <X size={11} /> Clear all
           </button>
         )}
       </div>
 
-      <Group title="On-demand course topics" defaultOpen={selected.topic.length > 0}>
-        {options.topic.map((t) => (
-          <Check
-            key={t}
-            label={t}
-            checked={selected.topic.includes(t)}
-            onChange={() => toggle("topic", t)}
-          />
-        ))}
-      </Group>
-
-      <Group title="Delivery" defaultOpen={selected.delivery.length > 0}>
-        {options.delivery.map((d) => (
-          <Check
-            key={d}
-            label={d}
-            checked={selected.delivery.includes(d)}
-            onChange={() => toggle("delivery", d)}
-          />
-        ))}
-      </Group>
-
-      <Group title="Special programs & workshops" defaultOpen={selected.special}>
-        <Check
-          label="Special Programs (Instructor-led)"
-          checked={selected.special}
-          onChange={toggleSpecial}
-        />
-      </Group>
-
-      <Group title="Provider" defaultOpen={selected.provider.length > 0}>
-        {options.provider.map((p) => (
-          <Check
-            key={p}
-            label={p}
-            checked={selected.provider.includes(p)}
-            onChange={() => toggle("provider", p)}
-          />
-        ))}
-      </Group>
-    </aside>
-  );
-}
-
-function Group({
-  title, defaultOpen = false, children,
-}: {
-  title: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="border-t border-line first:border-t-0 py-1">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-2 px-1.5 py-2 text-left rounded-md hover:bg-elevated transition-colors"
-      >
-        <span className="text-[11px] uppercase tracking-[0.18em] font-semibold text-subtle">
-          {title}
-        </span>
-        <ChevronDown
-          size={13}
+      {/* Specials — visually first because it's the loudest call */}
+      <div className="mb-4">
+        <button
+          type="button"
+          onClick={toggleSpecial}
+          aria-pressed={selected.special}
           className={cn(
-            "text-subtle transition-transform",
-            open && "rotate-180"
+            "inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-full transition-colors",
+            "ring-1 ring-inset",
+            selected.special
+              ? "bg-amber-100 text-amber-800 ring-amber-300 shadow-sm"
+              : "bg-card text-muted ring-line hover:bg-amber-50 hover:text-amber-800 hover:ring-amber-200",
           )}
+        >
+          <Sparkles size={11} />
+          Special programs &amp; workshops (instructor-led)
+        </button>
+      </div>
+
+      {/* Three-column grid of filter groups. md+ shows three columns;
+          mobile stacks. Each group is a labelled chip cloud. */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <ChipGroup
+          label="Topic"
+          values={options.topic}
+          selected={selected.topic}
+          onToggle={(v) => toggle("topic", v)}
         />
-      </button>
-      {open && <div className="space-y-0.5 pl-1 pb-1">{children}</div>}
-    </div>
+        <ChipGroup
+          label="Delivery"
+          values={options.delivery}
+          selected={selected.delivery}
+          onToggle={(v) => toggle("delivery", v)}
+        />
+        <ChipGroup
+          label="Provider"
+          values={options.provider}
+          selected={selected.provider}
+          onToggle={(v) => toggle("provider", v)}
+        />
+      </div>
+    </section>
   );
 }
 
-function Check({
-  label, checked, onChange,
+function ChipGroup({
+  label, values, selected, onToggle,
 }: {
   label: string;
-  checked: boolean;
-  onChange: () => void;
+  values: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
 }) {
+  const sel = new Set(selected);
   return (
-    <label className="flex items-start gap-2 px-2 py-1.5 rounded-md hover:bg-elevated cursor-pointer text-sm leading-tight">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="mt-0.5 accent-brand-600"
-      />
-      <span className={cn("text-fg", checked && "font-medium text-brand-700")}>{label}</span>
-    </label>
+    <div>
+      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
+        {label}
+        {selected.length > 0 && (
+          <span className="ml-2 text-brand-700 normal-case tracking-normal font-semibold">
+            · {selected.length}
+          </span>
+        )}
+      </p>
+      {values.length === 0 ? (
+        <p className="text-xs text-subtle">No options yet.</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {values.map((v) => {
+            const on = sel.has(v);
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => onToggle(v)}
+                aria-pressed={on}
+                className={cn(
+                  "text-xs px-3 py-1 rounded-full transition-colors ring-1 ring-inset",
+                  on
+                    ? "bg-brand-600 text-white ring-brand-700 font-medium shadow-sm"
+                    : "bg-card text-fg ring-line hover:bg-brand-50 hover:ring-brand-200 hover:text-brand-800",
+                )}
+              >
+                {v}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

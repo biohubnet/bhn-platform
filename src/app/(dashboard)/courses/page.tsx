@@ -81,29 +81,31 @@ export default async function CoursesPage({
         actions={isStaff ? <NewCourseButton /> : null}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        <CourseFilters options={options} />
+      {/* Search sits ABOVE the filter panel — short text query is
+          the most natural first interaction; clicking chips is a
+          refinement of whatever the search returned. */}
+      <div className="mb-4">
+        <CourseSearchBar />
+      </div>
 
-        <div className="space-y-5">
-          <CourseSearchBar />
+      {/* Filter panel — full-width, prominent, expanded by default. */}
+      <CourseFilters options={options} />
 
-          {courses.length === 0 ? (
-            <div className="text-center py-16 bg-card rounded-xl border border-line">
-              <p className="text-muted">No courses match these filters</p>
-              {isStaff && (
-                <p className="text-sm text-subtle mt-1">Try clearing some filters, or create a new course.</p>
-              )}
-            </div>
-          ) : (
-            <CatalogGrid
-              courses={catalogCourses}
-              role={role}
-              options={options}
-              isAdmin={isAdmin}
-            />
+      {courses.length === 0 ? (
+        <div className="text-center py-16 bg-card rounded-xl border border-line">
+          <p className="text-muted">No courses match these filters</p>
+          {isStaff && (
+            <p className="text-sm text-subtle mt-1">Try clearing some filters, or create a new course.</p>
           )}
         </div>
-      </div>
+      ) : (
+        <CatalogGrid
+          courses={catalogCourses}
+          role={role}
+          options={options}
+          isAdmin={isAdmin}
+        />
+      )}
     </div>
   );
 }
