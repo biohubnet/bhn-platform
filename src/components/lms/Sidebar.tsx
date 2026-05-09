@@ -202,12 +202,19 @@ function SectionGroup({
         <span
           tabIndex={hasTooltip ? 0 : -1}
           className={cn(
-            "px-2 py-0 text-[10px] font-bold uppercase tracking-[0.22em] rounded inline-block",
+            "px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] rounded inline-block",
             isElectric
-              ? "text-sky-700 bg-sky-100 border border-sky-300 shadow-[0_0_8px_rgba(14,165,233,0.18)]"
+              // Inverted chip — saturated electric blue fill + white
+              // text. Sitting on top of a sky-50/40 container, the
+              // earlier light-on-light variant lacked the contrast the
+              // chip needs to read as "this is privileged territory."
+              // sky-600 white-on-blue is roughly 7:1 contrast, well
+              // above WCAG AA, and reads at a glance from across the
+              // viewport.
+              ? "text-white bg-sky-600 border border-sky-700 shadow-[0_0_10px_rgba(14,165,233,0.35)]"
               : "text-subtle bg-card-solid",
             hasTooltip && (isElectric
-              ? "cursor-help focus:outline-none focus:text-sky-800 group-hover/section:text-sky-800 transition-colors"
+              ? "cursor-help focus:outline-none focus:bg-sky-700 group-hover/section:bg-sky-700 transition-colors"
               : "cursor-help focus:outline-none focus:text-fg group-hover/section:text-fg transition-colors")
           )}
           aria-describedby={hasTooltip ? `${title}-tooltip` : undefined}
