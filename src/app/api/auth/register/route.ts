@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { trackServer } from "@/lib/analytics";
 import { verifyTurnstile, clientIpFromHeaders, TURNSTILE_ENABLED } from "@/lib/security/captcha";
 import { issueAndSendEmailVerification } from "@/lib/security/email-verify";
+import { checkPassword } from "@/lib/security/password-policy";
 
 /**
  * Newsletter intent at signup. Tri-state:
@@ -45,8 +46,12 @@ export async function POST(req: NextRequest) {
   if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
     return NextResponse.json({ error: "Valid email required." }, { status: 400 });
   }
-  if (typeof password !== "string" || password.length < 8) {
-    return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
+  if (typeof password !== "string") {
+    return NextResponse.json({ error: "Password is required." }, { status: 400 });
+  }
+  const policy = checkPassword({ password, email: cleanEmail, name: cleanName });
+  if (!policy.ok) {
+    return NextResponse.json({ error: policy.reason }, { status: 400 });
   }
 
   // Turnstile (CAPTCHA) verification — gated by env. The helper

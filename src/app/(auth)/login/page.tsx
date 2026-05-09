@@ -31,6 +31,11 @@ function LoginPageInner() {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // Two-step disclosure for MFA. After password is filled, we probe
+  // /api/auth/mfa/check to see if the account has TOTP enabled — if
+  // it does, the form expands a second field for the 6-digit code.
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [totp, setTotp] = useState("");
 
   // Pre-fill: ?email=… from registration / employer-invite fallback
   // takes priority; otherwise fall back to localStorage Remember-Me.
@@ -58,15 +63,37 @@ function LoginPageInner() {
       sessionStorage.setItem("bhn-session-only", remember ? "0" : "1");
     } catch {}
 
+    // First sign-in attempt without TOTP. Probe MFA status BEFORE
+    // submitting so the UX expands cleanly when MFA is on.
+    if (!mfaRequired) {
+      try {
+        const probe = await fetch("/api/auth/mfa/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const probeJson = await probe.json().catch(() => ({}));
+        if (probeJson?.mfaRequired) {
+          setMfaRequired(true);
+          setLoading(false);
+          return;
+        }
+      } catch { /* network blip — fall through and try the sign-in */ }
+    }
+
     const res = await signIn("credentials", {
       email,
       password,
+      totp: mfaRequired ? totp : "",
       remember: remember ? "true" : "false",
       redirect: false,
     });
     setLoading(false);
-    if (res?.error) setError("Invalid email or password");
-    else router.push("/dashboard");
+    if (res?.error) {
+      setError(mfaRequired ? "Code didn't match — check your authenticator." : "Invalid email or password");
+    } else {
+      router.push("/dashboard");
+    }
   }
 
   return (
@@ -179,6 +206,32 @@ function LoginPageInner() {
                   placeholder="••••••••"
                 />
               </div>
+
+              {/* MFA — second-factor field. Only revealed after the
+                  /api/auth/mfa/check probe says this account has TOTP
+                  enabled. Until then the form behaves like before. */}
+              {mfaRequired && (
+                <div>
+                  <label className="block text-xs font-medium text-muted mb-1.5">
+                    Authenticator code
+                  </label>
+                  <input
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    value={totp}
+                    onChange={(e) => setTotp(e.target.value)}
+                    required
+                    autoComplete="one-time-code"
+                    autoFocus
+                    className="w-32 text-center text-lg font-mono tracking-[0.3em] bg-card-solid border border-line rounded-lg px-3 py-2.5 text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                    placeholder="123 456"
+                  />
+                  <p className="text-[11px] text-subtle mt-1">
+                    From your authenticator app (Google Authenticator, 1Password, Authy …).
+                  </p>
+                </div>
+              )}
 
               {/* Remember me */}
               <label className="flex items-center gap-2.5 cursor-pointer select-none group">

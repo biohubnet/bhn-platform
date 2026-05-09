@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.09b";
+export const TOUR_VERSION = "2026.05.09c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -436,6 +436,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.08e",
     cta: { label: "Open Security reports", href: "/admin/security" },
+  },
+  {
+    id: "security-mfa",
+    title: "Multi-factor authentication is now available",
+    body: "Open /profile/security to enable MFA on your account. We support any authenticator app — Google Authenticator, 1Password, Authy. After you enable it, every sign-in asks for a 6-digit code in addition to your password. Highly recommended for admins and anyone with access to learner data. Five failed sign-ins now also lock the account for 30 minutes; password choices are checked against the top 200 leaked-password list.",
+    path: "/profile/security",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin", "employer"],
+    since: "2026.05.09c",
+    cta: { label: "Open security settings", href: "/profile/security" },
   },
   {
     id: "adaptive-mvp",

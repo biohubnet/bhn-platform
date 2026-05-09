@@ -4,6 +4,17 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
+import { verifyTotp } from "./security/mfa";
+
+/** Brute-force lockout policy.
+ *  • Threshold 5 failed attempts → lock account for LOCKOUT_MINUTES.
+ *  • Window resets on a successful sign-in.
+ *  Tuned conservatively — biotech buyers sometimes paste credentials
+ *  from a manager and fat-finger 2-3 times before getting it right;
+ *  5 keeps that legitimate flow alive without making the brute-
+ *  force window meaningful. */
+const LOGIN_FAIL_THRESHOLD = 5;
+const LOCKOUT_MINUTES = 30;
 
 export const ACT_AS_COOKIE = "bhn-act-as";
 
@@ -24,6 +35,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        totp: { label: "Authenticator code", type: "text" },
         remember: { label: "Remember me", type: "text" },
       },
       async authorize(credentials) {
@@ -32,8 +44,76 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email },
         });
         if (!user?.password) return null;
+
+        // Brute-force gate: locked accounts get a hard no until the
+        // window expires. We don't reveal "you're locked" via NextAuth
+        // (return value is just null = "Invalid email or password"),
+        // but a locked-account login attempt is still audit-logged
+        // below so admins can see the pattern.
+        if (user.lockedUntil && user.lockedUntil > new Date()) {
+          return null;
+        }
+
         const valid = await bcrypt.compare(credentials.password, user.password);
-        if (!valid) return null;
+        if (!valid) {
+          // Increment failure counter, lock if past threshold.
+          const nextCount = user.failedLoginCount + 1;
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              failedLoginCount: nextCount,
+              lastFailedLoginAt: new Date(),
+              ...(nextCount >= LOGIN_FAIL_THRESHOLD
+                ? { lockedUntil: new Date(Date.now() + LOCKOUT_MINUTES * 60_000) }
+                : {}),
+            },
+          }).catch(() => undefined);
+          if (nextCount >= LOGIN_FAIL_THRESHOLD) {
+            await prisma.auditLog.create({
+              data: {
+                actorId: user.id,
+                action: "auth.login_locked",
+                targetType: "user",
+                targetId: user.id,
+                detail: JSON.stringify({ failedLoginCount: nextCount, lockoutMinutes: LOCKOUT_MINUTES }),
+              },
+            }).catch(() => undefined);
+          }
+          return null;
+        }
+
+        // MFA gate. If the user has TOTP enabled, the credentials
+        // payload must include a fresh 6-digit code. Sandbox / demo
+        // accounts skip — they're sandboxed by design.
+        if (user.totpEnabledAt && user.totpSecret) {
+          const code = credentials.totp ?? "";
+          if (!verifyTotp(user.totpSecret, code)) {
+            // Treat MFA failure as a login fail for lockout purposes.
+            const nextCount = user.failedLoginCount + 1;
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                failedLoginCount: nextCount,
+                lastFailedLoginAt: new Date(),
+                ...(nextCount >= LOGIN_FAIL_THRESHOLD
+                  ? { lockedUntil: new Date(Date.now() + LOCKOUT_MINUTES * 60_000) }
+                  : {}),
+              },
+            }).catch(() => undefined);
+            return null;
+          }
+        }
+
+        // All gates passed — clear the failure counter.
+        if (user.failedLoginCount > 0 || user.lockedUntil) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              failedLoginCount: 0,
+              lockedUntil: null,
+            },
+          }).catch(() => undefined);
+        }
         // Optional email-verification gate. When BHN_REQUIRE_EMAIL_VERIFY
         // is true, sign-in fails for unverified accounts. We let
         // demo / sandbox accounts through unconditionally — they

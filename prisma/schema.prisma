@@ -74,6 +74,20 @@ model User {
   /// reuse — typically 7 days from issue.
   emailVerifyToken       String?   @unique
   emailVerifyExpires     DateTime?
+  /// MFA / TOTP. Opt-in per user; admins can require for their role
+  /// in a follow-up. Secret is base32 + works with any RFC 6238
+  /// authenticator (Google Authenticator, 1Password, Authy, …).
+  totpSecret             String?
+  totpEnabledAt          DateTime?
+  /// Brute-force lockout. Threshold 5 → 30-min lock; resets on a
+  /// successful sign-in. lastFailedLoginAt drives an audit trail
+  /// surface; the count itself controls the gate.
+  failedLoginCount       Int       @default(0)
+  lockedUntil            DateTime?
+  lastFailedLoginAt      DateTime?
+  /// 21 CFR Part 11 §11.300(b) — periodic password revisions.
+  /// Backfilled from createdAt for existing accounts.
+  passwordUpdatedAt      DateTime?
   /// Trainee-facing "My Application" artifacts. Stored on the user
   /// so they survive across talent-application submissions; the
   /// trainee manages them from /profile/application.
@@ -124,6 +138,7 @@ model User {
   formSubmissions     EventFormSubmission[] @relation("FormSubmitter")
   savedPostings       UserSavedPosting[]    @relation("SavedPostingUser")
   reviewBookmarks     ReviewBookmark[]
+  signatures          ElectronicSignature[]
 
   @@index([newsletterStatus, newsletterExportedAt])
 }
@@ -872,6 +887,31 @@ model AuditLog {
   ip         String?
   createdAt  DateTime @default(now())
   actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+}
+
+/// 21 CFR Part 11 §11.50 + §11.70 — electronic signatures captured
+/// when a learner completes a regulated training event. Bound to
+/// the underlying record via subjectType + subjectId (kept as
+/// strings rather than FKs so a deleted course doesn't cascade away
+/// the signature record — the value of an e-sig is its persistence).
+model ElectronicSignature {
+  id          String   @id @default(cuid())
+  signerId    String
+  action      String   // e.g. "training.complete"
+  subjectType String   // "AssessmentAttempt" | "ModuleProgress" | "Course"
+  subjectId   String
+  meaning     String
+  performedAt DateTime @default(now())
+  /// "password" when re-auth was required at signing; "session"
+  /// when the signature relied on the existing authenticated session
+  /// (still bound by the audit trail, just less defensible at
+  /// audit). Production GMP deployments should require "password".
+  method      String   @default("session")
+  ipAddress   String?
+  userAgent   String?
+  signer      User     @relation(fields: [signerId], references: [id], onDelete: Restrict)
+  @@index([signerId, performedAt])
+  @@index([subjectType, subjectId])
 }
 
 /// Audit + cost log for every AI call (chat, embed, summarize, search,

@@ -178,6 +178,108 @@ export default function SecurityPage() {
             breach. Happy to share the report under NDA on request.
           </p>
 
+          <h2>Compliance posture</h2>
+          <p>
+            We deliberately separate <em>security controls we&apos;ve
+            implemented</em> (above) from <em>independently audited
+            certifications</em>. Today we have the former; the latter are on
+            an explicit roadmap published below.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Standard</th>
+                <th>Status</th>
+                <th>Target</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>SOC 2 Type II</strong></td>
+                <td>Engineering controls in place; readiness phase planned for Q3 2026</td>
+                <td>Audited report by Q1 2027</td>
+              </tr>
+              <tr>
+                <td><strong>GDPR + PIPEDA + Quebec Law 25</strong></td>
+                <td>Aligned. Privacy policy + DPA template + ROPA + sub-processor list maintained.</td>
+                <td>Continuous; pending privacy-counsel sign-off</td>
+              </tr>
+              <tr>
+                <td><strong>21 CFR Part 11</strong> (FDA electronic records)</td>
+                <td>Engineering primitives shipped (e-signatures, audit log, MFA, password policy). Per-customer V&amp;V on contract.</td>
+                <td>On demand for biotech / pharma customers</td>
+              </tr>
+              <tr>
+                <td><strong>ISO 27001</strong></td>
+                <td>Deferred — pursued only after first European enterprise demand</td>
+                <td>2027+</td>
+              </tr>
+              <tr>
+                <td><strong>HIPAA / FedRAMP / FERPA</strong></td>
+                <td>Out of scope today; not in product positioning</td>
+                <td>Not planned</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>For your security / procurement team</h3>
+          <ul>
+            <li>
+              <strong>Sub-processor list:</strong> Vercel, Neon (Postgres),
+              Cloudflare R2 + Workers AI, optional SMTP. Each holds SOC 2
+              Type II at minimum. Full list with DPAs and data residency
+              available on request.
+            </li>
+            <li>
+              <strong>Data residency:</strong> Postgres in
+              <code>ca-central-1</code> by default; EU residency configurable
+              per deployment.
+            </li>
+            <li>
+              <strong>Encryption:</strong> AES-256 at rest, TLS 1.2+ in
+              transit. bcrypt-12 for passwords. Encryption posture document
+              available on request.
+            </li>
+            <li>
+              <strong>Backups:</strong> Postgres point-in-time recovery
+              with a 7-day window; backups encrypted at rest.
+            </li>
+            <li>
+              <strong>Penetration testing:</strong> annual third-party
+              targeted test; procurement playbook ready, first engagement
+              planned Q3 2026.
+            </li>
+            <li>
+              <strong>Vulnerability scanning:</strong> CodeQL with the
+              <code>security-extended</code> query pack on every push and
+              pull request, plus a weekly cron. <code>npm audit</code> +
+              TruffleHog secret scanning per pull request. Dependabot
+              weekly version updates and immediate security updates.
+            </li>
+            <li>
+              <strong>Audit log:</strong> all privileged actions written to
+              an immutable audit table; 7-year retention; reviewable from
+              the admin dashboard.
+            </li>
+            <li>
+              <strong>Multi-factor authentication:</strong> opt-in TOTP
+              available now. Per-account; second factor required at every
+              sign-in once enabled.
+            </li>
+            <li>
+              <strong>DPA &amp; security questionnaire:</strong> request
+              from <a href="mailto:compliance@biohubnetwork.ca">compliance@biohubnetwork.ca</a>
+              {" "}— typical turnaround 2 business days.
+            </li>
+          </ul>
+
+          <p>
+            For the full compliance roadmap (including spend / decision items
+            and timeline), please email{" "}
+            <a href="mailto:compliance@biohubnetwork.ca">compliance@biohubnetwork.ca</a>.
+            We share it under NDA with active prospects and customers.
+          </p>
+
           <h2>Hall of fame</h2>
           <p>
             None yet. If you&apos;re the first researcher to disclose a valid

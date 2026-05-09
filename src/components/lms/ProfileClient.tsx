@@ -240,9 +240,17 @@ export function ProfileClient({ user, latestRoleRequest }: {
 
       {/* Password */}
       <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Lock size={18} className="text-brand-600" />
-          <h3 className="font-semibold text-fg">Password</h3>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Lock size={18} className="text-brand-600" />
+            <h3 className="font-semibold text-fg">Password</h3>
+          </div>
+          <a
+            href="/profile/security"
+            className="text-xs text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1"
+          >
+            Multi-factor authentication →
+          </a>
         </div>
         <form onSubmit={savePassword} className="space-y-4">
           <Field label="Current password" required>
