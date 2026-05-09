@@ -42,6 +42,11 @@ import {
   Calendar,
   GitBranch,
   Beaker,
+  Bell,
+  Lightbulb,
+  FlaskConical,
+  Menu,
+  X,
   HelpCircle,
 } from "lucide-react";
 
@@ -69,12 +74,16 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 ];
 
 // EXPERIENCE — applications and connections to industry placements.
+// Renamed (8 May 2026) from "My Application" / "My Applications" to
+// "Application Builder" / "Application Tracker" — the s/no-s
+// distinction next to each other was demonstrably confusing. Routes
+// kept the same so deep links stay alive.
 const experienceItems: (NavItem & { labelKey: string })[] = [
-  { label: "My Application",            labelKey: "nav.application", href: "/profile/application",      icon: FileText },
+  { label: "Application Builder",       labelKey: "nav.application", href: "/profile/application",      icon: FileText },
   { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase },
   { label: "Internship Opportunities",  labelKey: "nav.internships", href: "/internships",              icon: Briefcase },
-  { label: "My Applications",           labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList },
-  { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Sparkles },
+  { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList },
+  { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Lightbulb },
   { label: "Interviews",                labelKey: "nav.interviews",  href: "/interviews",               icon: Calendar },
 ];
 
@@ -82,7 +91,7 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
 const miscItems: (NavItem & { labelKey: string })[] = [
   { label: "Learning buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake },
   // labelKey is overridden per-role at render time ("What's new" for trainees).
-  { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Sparkles },
+  { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Bell },
 ];
 
 // EMPLOYER PORTAL — visible only when role === "employer".
@@ -104,14 +113,16 @@ const adminOverview: NavItem = {
 };
 
 // ENGAGE — running the learning loop: enrolments, groups, course
-// content, certificates, credits.
+// content, certificates, credits. Labels prefixed with "Manage" so
+// admins can tell them apart from the equivalent trainee-facing
+// items at a glance — both in the sidebar and in nav-history.
 const adminEngageItems: NavItem[] = [
-  { label: "Enrollments",         href: "/admin/enrollments",         icon: ClipboardList, minRole: "admin" },
-  { label: "Groups",              href: "/admin/groups",              icon: UsersRound,   minRole: "admin" },
-  { label: "Credit applications", href: "/admin/credit-applications", icon: CoinsIcon,    minRole: "admin" },
-  { label: "Pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers,       minRole: "admin" },
-  { label: "Course filters",      href: "/admin/course-filters",      icon: ListChecks,   minRole: "admin" },
-  { label: "Certificates",        href: "/admin/certificates",        icon: Award,        minRole: "admin" },
+  { label: "Manage enrollments",        href: "/admin/enrollments",         icon: ClipboardList, minRole: "admin" },
+  { label: "Groups",                    href: "/admin/groups",              icon: UsersRound,   minRole: "admin" },
+  { label: "Credit applications",       href: "/admin/credit-applications", icon: CoinsIcon,    minRole: "admin" },
+  { label: "Manage pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers,       minRole: "admin" },
+  { label: "Course filters",            href: "/admin/course-filters",      icon: ListChecks,   minRole: "admin" },
+  { label: "Manage certificates",       href: "/admin/certificates",        icon: Award,        minRole: "admin" },
 ];
 
 // EXPERIENCE — the matching marketplace: skill ontology that wires
@@ -120,7 +131,7 @@ const adminExperienceItems: NavItem[] = [
   { label: "Skill ontology",      href: "/admin/skills",              icon: GitBranch,    minRole: "admin" },
   { label: "Employer invites",    href: "/admin/employer-invites",    icon: Building2,    minRole: "admin" },
   { label: "Sandbox accounts",    href: "/admin/sandboxes",           icon: Beaker,       minRole: "admin" },
-  { label: "Demo workspaces",     href: "/admin/demo-workspaces",     icon: Sparkles,     minRole: "admin" },
+  { label: "Demo workspaces",     href: "/admin/demo-workspaces",     icon: FlaskConical, minRole: "admin" },
 ];
 
 // PLATFORM — operating the platform itself: who has access, what
@@ -370,7 +381,13 @@ function AdminSubheading({ label }: { label: string }) {
   );
 }
 
-function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavLink({ item, pathname, onNavigate }: {
+  item: NavItem;
+  pathname: string;
+  /** Optional callback fired on click — used by the mobile off-canvas
+   *  variant to close the sheet after the user navigates. */
+  onNavigate?: () => void;
+}) {
   const active = item.exact
     ? pathname === item.href
     : pathname === item.href || pathname.startsWith(item.href + "/");
@@ -378,16 +395,32 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   return (
     <Link
       href={item.href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+        "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+        // focus-visible adds an explicit ring for keyboard users; the
+        // ring is brand-tinted and offset so it floats just outside
+        // the rounded link box, looking deliberate rather than tacked-on.
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-card",
         active
           ? "bg-brand-50 text-brand-700"
-          : "text-muted hover:bg-raised hover:text-fg"
+          : "text-muted hover:bg-raised hover:text-fg",
       )}
     >
-      <Icon size={16} />
+      {/* Theme-independent active accent — a 2px left edge in brand-600.
+          Gives the active state a strong visual anchor even when the
+          theme's brand-50 fill blends with the page background (Mist,
+          Sakura) or shouts louder than expected (Hi-Tech). */}
+      {active && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-brand-600"
+        />
+      )}
+      <Icon size={16} className="shrink-0" />
       <span className="flex-1">{item.label}</span>
-      {active && <ChevronRight size={14} className="text-brand-400" />}
+      {active && <ChevronRight size={14} className="text-brand-400 shrink-0" />}
     </Link>
   );
 }
@@ -397,13 +430,58 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const t = useT();
-  const userRank = ROLE_RANK[role] ?? 0;
+  // Effective role for visibility gating. When a superadmin is acting
+  // as another role via RoleSwitcher (`actingAs`), the sidebar should
+  // only show what the acted-as role can see — otherwise "act as
+  // trainee" still surfaces all the admin links and the simulation is
+  // meaningless. ImpersonationBanner stays visible so the user knows
+  // they can switch back.
+  const effectiveRole = actingAs ?? role;
+  const userRank = ROLE_RANK[effectiveRole] ?? 0;
   const isAdmin = userRank >= ROLE_RANK["admin"];
   const isStaff = userRank >= ROLE_RANK["instructor"];
-  const isEmployer = role === "employer";
+  const isEmployer = effectiveRole === "employer";
   // Employer accounts only see ENGAGE / EXPERIENCE / Buddies if an
   // admin has flipped allowPlatformContent on for them.
   const showLearnerNav = !isEmployer || allowPlatformContent;
+
+  // Mobile off-canvas drawer. The shell renders on every viewport;
+  // <md the desktop shell collapses behind a hamburger. State lives
+  // here rather than in the parent layout so the rest of the page
+  // doesn't need to know about the toggle.
+  const [mobileOpen, setMobileOpen] = useState(false);
+  // Close drawer on route change so the next page isn't covered.
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  // Body scroll-lock while the drawer is open.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+  // Esc to close.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMobileOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
+  // Persisted collapse state for the admin Platform sub-group. Long
+  // (12 items), low-frequency: collapsed by default to take pressure
+  // off the admin's vertical scroll.
+  const [platformOpen, setPlatformOpen] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const v = localStorage.getItem("bhn-sidebar-platform-open");
+    if (v != null) setPlatformOpen(v === "1");
+  }, []);
+  function togglePlatform() {
+    setPlatformOpen((cur) => {
+      const next = !cur;
+      try { localStorage.setItem("bhn-sidebar-platform-open", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  }
 
   const filterByRole = (item: NavItem) => {
     const required = ROLE_RANK[item.minRole ?? "admin"] ?? ROLE_RANK.admin;
@@ -414,25 +492,76 @@ export function Sidebar({
   const visiblePlatformAdmin   = adminPlatformItems.filter(filterByRole);
 
   return (
-    <aside className="w-64 glass border-r border-line flex flex-col relative z-10">
-      {/* Logo */}
-      <Link href="/dashboard" className="px-6 py-5 border-b border-line block hover:bg-elevated/50 transition-colors">
-        <div className="flex items-center gap-3">
-          <LogoMark size={36} className="drop-shadow-sm" />
-          <div className="leading-tight">
-            <p className="font-bold text-fg text-sm">BHN <span className="text-brand-600 font-semibold">Training</span></p>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-subtle mt-0.5">{role}</p>
+    <>
+      {/* Mobile hamburger — fixed to the top-left of the viewport when
+          the off-canvas drawer is closed. <md only; desktop shell
+          (<aside> below) is hidden under md. The button itself sits at
+          z-50 so it floats above page content. */}
+      <button
+        type="button"
+        onClick={() => setMobileOpen(true)}
+        aria-label="Open menu"
+        aria-expanded={mobileOpen}
+        className="md:hidden fixed top-3 left-3 z-50 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-card border border-line shadow-md text-fg hover:bg-elevated"
+      >
+        <Menu size={18} />
+      </button>
+
+      {/* Backdrop for mobile drawer. Pointer-events disabled when
+          closed so it doesn't intercept clicks. */}
+      <div
+        onClick={() => setMobileOpen(false)}
+        aria-hidden
+        className={cn(
+          "md:hidden fixed inset-0 z-40 bg-backdrop transition-opacity",
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+        )}
+      />
+
+      <aside
+        role="navigation"
+        aria-label="Main navigation"
+        className={cn(
+          // Desktop: static, w-64. Mobile: fixed-position drawer that
+          // slides in from the left. The same DOM serves both — no
+          // duplicated nav lists to keep in sync.
+          "glass border-r border-line flex flex-col z-50",
+          "md:relative md:w-64 md:translate-x-0",
+          "fixed top-0 bottom-0 left-0 w-72 max-w-[85vw] transition-transform duration-200 ease-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        )}
+      >
+        {/* Mobile-only close button inside the drawer header. */}
+        <button
+          type="button"
+          onClick={() => setMobileOpen(false)}
+          aria-label="Close menu"
+          className="md:hidden absolute top-3 right-3 z-10 inline-flex items-center justify-center w-9 h-9 rounded-xl text-muted hover:bg-elevated hover:text-fg"
+        >
+          <X size={16} />
+        </button>
+
+        {/* Logo */}
+        <Link href="/dashboard" className="px-6 py-5 border-b border-line block hover:bg-elevated/50 transition-colors">
+          <div className="flex items-center gap-3">
+            <LogoMark size={36} className="drop-shadow-sm" />
+            <div className="leading-tight">
+              <p className="font-bold text-fg text-sm">BHN <span className="text-brand-600 font-semibold">Training</span></p>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-subtle mt-0.5">{effectiveRole}</p>
+            </div>
           </div>
-        </div>
-      </Link>
+        </Link>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} />
+        <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
 
         {isEmployer && (
-          <SectionGroup title="EMPLOYER PORTAL">
+          <SectionGroup
+            title="EMPLOYER PORTAL"
+            description="Hiring side: company profile, postings you've published, and the candidates who applied."
+          >
             {employerItems.map((item) => (
-              <NavLink key={item.href} item={item} pathname={pathname} />
+              <NavLink key={item.href} item={{ ...item, label: t(item.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
             ))}
           </SectionGroup>
         )}
@@ -455,7 +584,7 @@ export function Sidebar({
           >
             {engageItems.map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
-              return <NavLink key={item.href} item={labeled} pathname={pathname} />;
+              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} />;
             })}
           </SectionGroup>
         )}
@@ -486,7 +615,7 @@ export function Sidebar({
           >
             {experienceItems.map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
-              return <NavLink key={item.href} item={labeled} pathname={pathname} />;
+              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} />;
             })}
           </SectionGroup>
         )}
@@ -498,42 +627,25 @@ export function Sidebar({
               // Trainees see the changelog as "What's new"; staff as "Change log".
               const key = item.href === "/changelog" && !isStaff ? "nav.changelogTrainee" : item.labelKey;
               const labeled = { ...item, label: t(key) };
-              return <NavLink key={item.href} item={labeled} pathname={pathname} />;
+              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} />;
             })}
           </>
         )}
 
-        {/* Take the tour — visible to every signed-in role (trainees,
-            evaluators, instructors, employers, admins, superadmins).
-            Dispatches a custom DOM event the Onboarding component
-            listens for; that keeps the tour's own state machine the
-            single owner of "is the tour running" and avoids prop-
-            drilling through the dashboard layout.
-            Sits OUTSIDE the showLearnerNav gate so employers (who
-            have their own tour steps) can find it too. */}
-        <button
-          type="button"
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new CustomEvent("bhn:start-tour"));
-            }
-          }}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted hover:bg-raised hover:text-fg transition-colors"
-        >
-          <HelpCircle size={16} />
-          <span className="flex-1 text-left">{t("nav.tour")}</span>
-        </button>
-
         {isAdmin && (
-          <SectionGroup title={t("nav.administration").toUpperCase()} tone="electric">
+          <SectionGroup
+            title={t("nav.administration").toUpperCase()}
+            tone="electric"
+            description="Privileged territory — manage learners, employers, and the platform itself. Sub-grouped into Engage / Experience / Platform so the long list stays scannable."
+          >
             {/* Overview sits at the top, ungrouped — single canonical link. */}
-            <NavLink item={adminOverview} pathname={pathname} />
+            <NavLink item={adminOverview} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
 
             {visibleEngageAdmin.length > 0 && (
               <>
                 <AdminSubheading label="Engage" />
                 {visibleEngageAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} />
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
                 ))}
               </>
             )}
@@ -542,16 +654,33 @@ export function Sidebar({
               <>
                 <AdminSubheading label="Experience" />
                 {visibleExperienceAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} />
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
                 ))}
               </>
             )}
 
             {visiblePlatformAdmin.length > 0 && (
               <>
-                <AdminSubheading label="Platform" />
-                {visiblePlatformAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} />
+                {/* Platform sub-group is collapsible — it's 12 items
+                    deep and dominated by occasional-use admin tools
+                    (LTI, Newsletter, etc.). Default closed; open
+                    state persisted to localStorage so an admin who
+                    expands it once doesn't have to expand every
+                    time they reload. */}
+                <button
+                  type="button"
+                  onClick={togglePlatform}
+                  aria-expanded={platformOpen}
+                  className="w-full flex items-center justify-between px-3 pt-3 pb-1 text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle hover:text-fg transition-colors"
+                >
+                  <span>Platform</span>
+                  <ChevronRight
+                    size={11}
+                    className={cn("transition-transform", platformOpen && "rotate-90")}
+                  />
+                </button>
+                {platformOpen && visiblePlatformAdmin.map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
                 ))}
               </>
             )}
@@ -579,6 +708,27 @@ export function Sidebar({
           <RoleSwitcher actingAs={actingAs ?? null} />
         </div>
       )}
+
+      {/* Help — take the tour. Was previously a stray button between
+          EXPERIENCE and ADMINISTRATION; relocated here so the footer
+          can hold help-flavoured controls together. Visible to every
+          signed-in role. Dispatches a custom DOM event the Onboarding
+          component listens for (keeps the tour's state machine the
+          single owner of "is the tour running"). */}
+      <div className="px-3 py-2 border-t border-line">
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("bhn:start-tour"));
+            }
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted hover:bg-raised hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-card"
+        >
+          <HelpCircle size={16} />
+          <span className="flex-1 text-left">{t("nav.tour")}</span>
+        </button>
+      </div>
 
       {/* Theme picker */}
       <div className="px-3 py-2 border-t border-line">
@@ -611,12 +761,13 @@ export function Sidebar({
         </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-muted hover:bg-elevated hover:text-fg transition-colors"
+          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-muted hover:bg-elevated hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-card"
         >
           <LogOut size={16} />
           {t("nav.signOut")}
         </button>
       </div>
     </aside>
+    </>
   );
 }

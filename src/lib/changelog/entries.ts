@@ -23,6 +23,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Sidebar: mobile-responsive drawer, role-switcher truth, and a clearer IA",
+    body: "Big sidebar overhaul addressing the audit findings. (1) Mobile: a hamburger button at top-left under md, an off-canvas drawer that slides in from the left, body-scroll-lock + Esc-to-close + auto-close on route change. The desktop shell is unchanged. (2) Role switcher now actually works — superadmins acting as another role see only what that role sees in the sidebar. The ImpersonationBanner stays so they can switch back. (3) Renamed 'My Application' / 'My Applications' to 'Application Builder' / 'Application Tracker'; routes unchanged. (4) Added section tooltips on EMPLOYER PORTAL and ADMINISTRATION (the two that were silent). (5) ADMINISTRATION → Platform sub-group is collapsible with persisted state — that 12-item list defaults closed so the admin's vertical scroll isn't dominated by occasional-use links. (6) Active-state has a 2 px brand-coloured left edge so it reads at a glance on every theme (the brand-50 bg alone was nearly invisible on Mist + Sakura). (7) Distinct icons — Lightbulb for My Skills, FlaskConical for Demo workspaces, Bell for Change log (was three Sparkles in a row). (8) Admin Engage labels now prefixed with 'Manage' to disambiguate from trainee-facing Certificates / Enrollments / Pathway enrollments. (9) Take-the-tour relocated to a Help slot in the footer next to the theme picker. (10) a11y: nav has role='navigation' + aria-label, links have aria-current and a brand-tinted focus-visible ring.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "i18n: 7 nav keys translated into Spanish, French, Chinese, Hindi, Korean, Punjabi, Arabic",
+    body: "Application Builder, Talent Application, Internship Opportunities, Application Tracker, the three employer-portal items, and Take the tour now render in the user's locale instead of falling back to English. Brings every key in the nav up to full localisation parity across the 8 supported languages.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Internships: a real apply flow, match scores, save, and 'My applications'",
     body: "Big trainee-flow batch on the internship-finder journey. (1) Postings now have a contact section: every posting carries contactEmail (required), contactName, contactPhone. The detail page surfaces them with copy-to-clipboard + 'Send my application' — one click opens a mailto: pre-filled with your elevator pitch + resume URL + video URL from /profile/application, and writes an ApplicationStatus row server-side so BHN keeps a record. (2) New /profile/applications page (under EXPERIENCE → My Applications) shows two lists: postings you've applied to with their current employer-side stage (submitted / reviewing / shortlisted / phone screen / onsite / offer / hired / not advancing), and postings you've saved for later. (3) Save / heart icon on every card and detail header lets you bookmark postings; saved-postings with deadlines in the next 7 days surface as a dashboard nudge. (4) Match scores on every card (when you have ≥1 skill on file and the posting has been ontology-tagged) — green-pill % showing how well you fit. The detail page expands the score with a per-skill breakdown of what you have vs. the gaps, plus a link to courses that close those gaps. (5) Filter bar on the listing: free-text search across title + company + skill + details, location dropdown, type dropdown — all stored in URL params so a saved tab preserves the filter. (6) Posting body now renders Markdown (headings, lists, bold, links) instead of flat whitespace-pre-line. (7) Status guard — non-staff trainees can't render closed/draft postings via stale URLs; the detail page 404s. (8) Skill-profile nudge extended: was 'show only when 0 skills', now 'show until 5+ skills'.",
     kind: "feature",
