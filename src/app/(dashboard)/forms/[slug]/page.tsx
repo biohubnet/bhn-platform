@@ -4,6 +4,18 @@ import { prisma } from "@/lib/prisma";
 import { getOrSeedForm } from "@/lib/forms/registry";
 import type { FormField } from "@/lib/forms/types";
 import { EventFormView } from "@/components/forms/EventFormView";
+import { ObioBootcampInfo } from "@/components/forms/content/ObioBootcampInfo";
+
+/**
+ * Per-slug marketing/info content rendered ABOVE the registration form.
+ * Mirrors the structure of the public marketing pages on biohubnet.ca
+ * (the BHN team's other property) but rebuilt in the platform's design
+ * language so it picks up theme tokens automatically. Add new entries
+ * here as we build more event-specific landing pages.
+ */
+const SLUG_CONTENT: Record<string, React.ComponentType> = {
+  "obio-bootcamp": ObioBootcampInfo,
+};
 
 /**
  * Talent application + other event forms.
@@ -111,18 +123,23 @@ export default async function FormPage({
     });
   }
 
+  const ExtraContent = SLUG_CONTENT[slug];
+
   return (
-    <EventFormView
-      slug={form.slug}
-      title={form.title}
-      description={form.description}
-      fields={form.fields as unknown as FormField[]}
-      active={form.active}
-      isStaff={isStaff}
-      userEmail={userEmail}
-      previousData={Object.keys(merged).length > 0 ? merged : null}
-      previousAt={mySubmission?.createdAt.toISOString() ?? null}
-      applicationDefaultsApplied={applicationDefaultsApplied}
-    />
+    <>
+      {ExtraContent && <ExtraContent />}
+      <EventFormView
+        slug={form.slug}
+        title={form.title}
+        description={form.description}
+        fields={form.fields as unknown as FormField[]}
+        active={form.active}
+        isStaff={isStaff}
+        userEmail={userEmail}
+        previousData={Object.keys(merged).length > 0 ? merged : null}
+        previousAt={mySubmission?.createdAt.toISOString() ?? null}
+        applicationDefaultsApplied={applicationDefaultsApplied}
+      />
+    </>
   );
 }

@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "OBIO Entrepreneurship Bootcamp now has a full landing page on /forms/obio-bootcamp",
+    body: "The /forms/obio-bootcamp page used to render only the registration form. It now leads with a full marketing-style landing built in the platform's own design language: hero with intro copy and format tags (3½-day intensive · trainee entrepreneurs · pitch to investors); 'Bootcamp at a glance' card with dates / location / format / cost; 4-phase timeline (Pre-training → Bootcamp → Post-training → Follow-up) with virtual / in-person tags and the ~40-hour total commitment; numbered Section 01 Curriculum (4 topic blocks: Market & Industry · Product Development & IP · Regulatory & Legal · Business Planning & Finance); Section 02 Experience (workshops + panels); Section 03 Impact (3 stat cards from past-participant surveys); and a travel & accommodation support callout. The in-platform registration form sits below — better than the external Google Form on biohubnet.ca because trainees are already authenticated and submissions land in the admin inbox. Per-slug content is now wired through a SLUG_CONTENT map in the [slug] route, so we can add similar landings for other forms (talent-application, etc.) without forking the page.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Rewards no longer silently redirects admins — informed empty state",
     body: "Before, an admin or superadmin who clicked Rewards in the sidebar got teleported to /dashboard with no explanation. Now the page renders under its own identity and explains the situation: 'You're viewing the trainee Rewards page as Admin. Rewards are earned by trainees as they spend credits on coursework. Your account doesn't earn merch directly.' Two action cards follow: admins get a card linking to /admin/merch (the queue where they actually do work); superadmins get a card describing how to use the existing 'View as trainee' role switcher; plain admins get a card explaining sandbox trainee accounts as their alternative. The MERCH_TIERS registry renders read-only at the bottom so non-trainees can see what bundles trainees are working toward, without the page faking per-user data. This 'informed empty state' pattern replaces the silent-redirect anti-pattern across role-gated pages.",
     kind: "improvement",
