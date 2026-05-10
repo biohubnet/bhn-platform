@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Rewards no longer silently redirects admins — informed empty state",
+    body: "Before, an admin or superadmin who clicked Rewards in the sidebar got teleported to /dashboard with no explanation. Now the page renders under its own identity and explains the situation: 'You're viewing the trainee Rewards page as Admin. Rewards are earned by trainees as they spend credits on coursework. Your account doesn't earn merch directly.' Two action cards follow: admins get a card linking to /admin/merch (the queue where they actually do work); superadmins get a card describing how to use the existing 'View as trainee' role switcher; plain admins get a card explaining sandbox trainee accounts as their alternative. The MERCH_TIERS registry renders read-only at the bottom so non-trainees can see what bundles trainees are working toward, without the page faking per-user data. This 'informed empty state' pattern replaces the silent-redirect anti-pattern across role-gated pages.",
+    kind: "improvement",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
     title: "Hover any sidebar item for a one-line explanation",
     body: "Every menu item in the sidebar now has a concise hover-popup explanation — what the page is for, in one or two sentences. Hover to reveal (350 ms warm-up so it doesn't flicker as you scan the list); keyboard focus reveals instantly for accessibility. The popovers are positioned to escape the sidebar's overflow box so they sit cleanly over page content. Mobile drawer keeps tap-to-navigate without popovers. Section-group tooltips (ENGAGE, EXPERIENCE, ADMINISTRATION) still describe the section as a whole; the new per-item tooltips drill in one level deeper.",
     kind: "improvement",

@@ -1,7 +1,8 @@
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Gift, Lock, CheckCircle2, Truck, Package, Sparkles, MapPin } from "lucide-react";
+import Link from "next/link";
+import { Gift, Lock, CheckCircle2, Truck, Package, Sparkles, MapPin, Info, Eye, ArrowRight } from "lucide-react";
 import {
   MERCH_TIERS,
   PICKUP_LOCATION,
@@ -14,16 +15,21 @@ import { MerchClaimDialog } from "@/components/rewards/MerchClaimDialog";
 /**
  * /rewards — trainee-facing loyalty page.
  *
- * Three things on this page:
- *   1. A lifetime-spend counter + progress bar to the next tier.
- *   2. One card per tier — Apprentice (2500), Champion (5000) — each
- *      in one of four states: locked, unlocked-needs-claim, claimed-
- *      shipping-pending, shipped (terminal happy state).
- *   3. The claim modal, mounted globally and triggered per card.
+ * Trainee path: progress counter + tier cards + claim form.
  *
- * The page calls `ensureMerchUnlocks` on every load so a trainee who
- * crosses a threshold via legacy data (or whose enroll-time hook
- * missed) still sees the unlock the next time they visit.
+ * Non-trainee path (admins, superadmins, instructors, employers,
+ * sandbox/demo accounts): rather than redirect — which is the
+ * textbook role-gating UX anti-pattern (user clicked a link, ended
+ * up somewhere else, no explanation) — we render an "informed empty
+ * state". It confirms identity ("yes, this is Rewards"), explains
+ * the mismatch (you don't earn merch yourself), and gives concrete
+ * next-steps: the admin queue at /admin/merch, plus for superadmins
+ * the existing "View as trainee" role switcher.
+ *
+ * Lazy backfill: ensureMerchUnlocks runs on the trainee path on
+ * every load so a trainee who crosses a threshold via legacy data
+ * (or whose enroll-time hook missed) still sees the unlock the next
+ * time they visit.
  */
 export default async function RewardsPage() {
   const session = await requireSession().catch(() => null);
@@ -31,10 +37,13 @@ export default async function RewardsPage() {
 
   const userId = (session.user as { id?: string }).id!;
   const role = (session.user as { role?: string }).role ?? "trainee";
+  const realRole = (session.user as { realRole?: string }).realRole ?? role;
+  const isTrainee = role === "trainee" || role === "evaluating";
+  const isAdmin = role === "admin" || role === "superadmin";
 
-  // Page is for trainees. Staff and employers don't earn merch — bounce.
-  if (role !== "trainee" && role !== "evaluating") {
-    redirect("/dashboard");
+  // Non-trainee path renders an explanatory landing instead of redirecting.
+  if (!isTrainee) {
+    return <NonTraineeLanding role={role} realRole={realRole} isAdmin={isAdmin} />;
   }
 
   // Lazy backfill — covers any debit that happened before the hook
@@ -266,6 +275,204 @@ export default async function RewardsPage() {
             Default for all rewards. Trainees outside the GTA can request
             mailing inside the claim form — admin reviews each request and
             confirms postage (Canada at-cost; international quoted first).
+          </p>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/**
+ * Informed empty state for non-trainee viewers (admins, instructors,
+ * employers, anyone whose role can't claim merch). The page still
+ * renders under the "Rewards" identity so the user knows they
+ * landed where they clicked, but the body explains why their account
+ * has nothing to claim and offers two concrete next-steps:
+ *
+ *   • Open the admin queue at /admin/merch (only for admin/superadmin)
+ *   • Use "View as trainee" via the role switcher (superadmin only —
+ *     plain admins don't have act-as).
+ *
+ * The tier registry renders read-only at the bottom so non-trainees
+ * can see what trainees see, without us faking per-user data.
+ */
+function NonTraineeLanding({
+  role, realRole, isAdmin,
+}: {
+  role: string;
+  realRole: string;
+  isAdmin: boolean;
+}) {
+  const isSuperadmin = realRole === "superadmin";
+  const friendlyRole = role.charAt(0).toUpperCase() + role.slice(1);
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* Same hero header as the trainee page so the user knows they
+          landed on the right page. The body just changes underneath. */}
+      <section className="rounded-2xl border border-line bg-card p-6 sm:p-8 surface-shadow">
+        <div className="flex items-start justify-between gap-4 mb-2">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Loyalty rewards</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight">
+              BHN merch — earned, not bought
+            </h1>
+          </div>
+          <Gift size={40} className="text-brand-600 shrink-0 hidden sm:block" />
+        </div>
+
+        {/* Informed empty state. Tone: factual, no scolding. The
+            admin landed here on purpose; explain why their account
+            has nothing to claim and what to do next. */}
+        <div className="mt-5 rounded-xl bg-amber-50 ring-1 ring-inset ring-amber-200 p-4 sm:p-5 flex items-start gap-3">
+          <Info size={18} className="text-amber-700 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-900">
+              You're viewing the trainee Rewards page as <span className="font-mono text-xs uppercase tracking-[0.14em]">{friendlyRole}</span>.
+            </p>
+            <p className="text-sm text-amber-800 mt-1 leading-snug">
+              Rewards are earned by trainees as they spend credits on
+              coursework. Your account doesn't earn merch directly — but
+              you have two ways to see what trainees see, depending on
+              what you need.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Concrete next-steps as side-by-side action cards. */}
+      <section className="grid sm:grid-cols-2 gap-4">
+        {isAdmin && (
+          <Link
+            href="/admin/merch"
+            className="group rounded-2xl border border-line bg-card p-5 surface-shadow hover:border-brand-300 transition-colors flex flex-col"
+          >
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+                <Package size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">For admins</p>
+                <h2 className="text-base font-semibold text-fg mt-0.5 tracking-tight">
+                  Open Merch fulfillment
+                </h2>
+              </div>
+            </div>
+            <p className="text-sm text-muted leading-snug flex-1">
+              The admin-side queue. Pack pickup bundles, attach tracking to
+              mailing requests, mark delivered. Where you actually do work on
+              rewards.
+            </p>
+            <p className="text-xs font-semibold text-brand-700 mt-3 inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+              Go to /admin/merch <ArrowRight size={12} />
+            </p>
+          </Link>
+        )}
+
+        {isSuperadmin ? (
+          <div className="rounded-2xl border border-line bg-card p-5 surface-shadow flex flex-col">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                <Eye size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">For superadmins</p>
+                <h2 className="text-base font-semibold text-fg mt-0.5 tracking-tight">
+                  View as a trainee
+                </h2>
+              </div>
+            </div>
+            <p className="text-sm text-muted leading-snug flex-1">
+              Use the <span className="font-semibold text-fg">View as</span>{" "}
+              switcher in the sidebar (under your profile) to act as Trainee
+              or Evaluating. The whole platform — including this page — will
+              render as that role would see it. Switch back anytime; sessions
+              auto-revert after 1 hour.
+            </p>
+            <p className="text-xs text-subtle mt-3 leading-snug">
+              Note: a superadmin acting as Trainee sees the actual data of
+              that view (which is your superadmin account's transaction
+              history). Use a sandbox trainee account if you want a clean
+              demo state.
+            </p>
+          </div>
+        ) : isAdmin ? (
+          // Plain admins (not superadmin) don't have act-as. Tell them why
+          // they're missing the second card so it doesn't feel like the
+          // page is broken.
+          <div className="rounded-2xl border border-line bg-card p-5 surface-shadow flex flex-col">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-elevated text-subtle flex items-center justify-center shrink-0">
+                <Eye size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Want to see the trainee view?</p>
+                <h2 className="text-base font-semibold text-fg mt-0.5 tracking-tight">
+                  Use a sandbox trainee account
+                </h2>
+              </div>
+            </div>
+            <p className="text-sm text-muted leading-snug flex-1">
+              "Act as another role" is a superadmin-only tool. To see the
+              trainee experience yourself, sign in to a sandbox trainee
+              account from <span className="font-semibold text-fg">Sandbox accounts</span> in
+              the admin nav, or ask a superadmin to grant you act-as access.
+            </p>
+          </div>
+        ) : (
+          // Instructors / employers / others — just point at the trainee-
+          // facing nature of the page; no action card to offer.
+          <div className="rounded-2xl border border-line bg-card p-5 surface-shadow flex items-center text-sm text-muted leading-snug">
+            <p>
+              Rewards is a trainee-facing surface. If you're working with a
+              specific trainee on credit applications or fulfillment, ask an
+              admin to walk through their Rewards page with you.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* Read-only tier reference. Lets non-trainees see what the
+          rewards actually are, without us inventing fake data on
+          their behalf. */}
+      <section>
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-3">
+          What trainees see
+        </p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          {MERCH_TIERS.map((t) => (
+            <article
+              key={t.tier}
+              className="rounded-2xl border border-line bg-card p-5 surface-shadow"
+              style={{ borderLeft: `4px solid ${t.accent}` }}
+            >
+              <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                Tier {t.tier} · {t.threshold.toLocaleString()} credits trained
+              </p>
+              <h3 className="text-lg font-bold text-fg mt-1 tracking-tight">{t.title}</h3>
+              <p className="text-sm text-muted leading-snug mt-2 mb-3">{t.blurb}</p>
+              <ul className="space-y-1">
+                {t.items.map((item) => (
+                  <li key={item} className="text-xs text-fg flex items-start gap-2 leading-snug">
+                    <Package size={11} className="text-subtle shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* Pickup location — same card as the trainee page, repeated
+          here so admins can copy the address into emails. */}
+      <section className="rounded-2xl border border-line bg-card p-5 surface-shadow flex items-start gap-3">
+        <MapPin size={18} className="text-brand-600 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Pickup location</p>
+          <p className="text-sm font-semibold text-fg mt-1">{PICKUP_LOCATION.org}</p>
+          <p className="text-sm text-fg">
+            {PICKUP_LOCATION.building}, {PICKUP_LOCATION.university}
           </p>
         </div>
       </section>
