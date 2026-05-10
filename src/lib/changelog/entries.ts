@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Hover any sidebar item for a one-line explanation",
+    body: "Every menu item in the sidebar now has a concise hover-popup explanation — what the page is for, in one or two sentences. Hover to reveal (350 ms warm-up so it doesn't flicker as you scan the list); keyboard focus reveals instantly for accessibility. The popovers are positioned to escape the sidebar's overflow box so they sit cleanly over page content. Mobile drawer keeps tap-to-navigate without popovers. Section-group tooltips (ENGAGE, EXPERIENCE, ADMINISTRATION) still describe the section as a whole; the new per-item tooltips drill in one level deeper.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Merch rewards now picked up at the BHN office at U of T",
     body: "Reward fulfillment is now pickup-first. When you claim a reward, the default option is to swing by the BioHubNet office at Leslie Dan Faculty of Pharmacy, University of Toronto — we'll have your bundle ready and email you when it lands. If you're far from Toronto, the same claim form has a 'Mail it to me' option; an admin reviews each mailing request and confirms postage (Canada at-cost; international we'll quote first). The bundles also got a refresh: 2,500 credits now unlocks the BHN Swag Bag (notepad + stress ball + a rotating mystery item — past trainees got pins, sticker packs, and micro-tools), and 5,000 credits unlocks the BHN insulated stainless bottle (the same one our staff carry — 16 oz, double-wall vacuum). Existing claims aren't affected; new claims pick up the new options.",
     kind: "improvement",

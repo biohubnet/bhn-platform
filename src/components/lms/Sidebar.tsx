@@ -57,22 +57,34 @@ interface NavItem {
   icon: React.ElementType;
   minRole?: "instructor" | "admin" | "superadmin";
   exact?: boolean;
+  /** One-or-two-sentence "what does this do" surfaced as a hover/focus
+   *  popover next to the link. Kept English-only for now; if we localize
+   *  later, swap for descriptionKey + dictionary entry. */
+  description?: string;
 }
 
 // Always-visible top item.
 const dashboardItem: NavItem & { labelKey: string } = {
   label: "Dashboard", labelKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true,
+  description: "Home base. What's in progress, your credit balance, and quick links into the catalog and pathways.",
 };
 
 // ENGAGE — the learning loop: catalog → pathway → progress → credits → rewards.
 const engageItems: (NavItem & { labelKey: string })[] = [
-  { label: "Course Catalog",     labelKey: "nav.catalog",     href: "/courses", icon: BookOpen },
-  { label: "Learning Pathways",  labelKey: "nav.pathways",    href: "/pathways", icon: Layers },
-  { label: "My Courses",         labelKey: "nav.myCourses",   href: "/my-courses", icon: GraduationCap },
-  { label: "Gradebook",          labelKey: "nav.gradebook",   href: "/gradebook", icon: BarChart3 },
-  { label: "Certificates",       labelKey: "nav.certificates",href: "/certificates", icon: Award },
-  { label: "My Credits",         labelKey: "nav.credits",     href: "/credits", icon: Coins },
-  { label: "Rewards",            labelKey: "nav.rewards",     href: "/rewards", icon: Gift },
+  { label: "Course Catalog",     labelKey: "nav.catalog",     href: "/courses", icon: BookOpen,
+    description: "Every published course. Natural-language search ranks results by what each course actually covers, not just keyword matches." },
+  { label: "Learning Pathways",  labelKey: "nav.pathways",    href: "/pathways", icon: Layers,
+    description: "Multi-course learning journeys with a single certificate at the end. Some are open; gated ones need admin approval." },
+  { label: "My Courses",         labelKey: "nav.myCourses",   href: "/my-courses", icon: GraduationCap,
+    description: "Active enrollments and completed courses. Pick up where you left off." },
+  { label: "Gradebook",          labelKey: "nav.gradebook",   href: "/gradebook", icon: BarChart3,
+    description: "Your grades across every course — assessment scores, completion status, time spent." },
+  { label: "Certificates",       labelKey: "nav.certificates",href: "/certificates", icon: Award,
+    description: "Every credential you've earned. Each has a public verify link to share with employers." },
+  { label: "My Credits",         labelKey: "nav.credits",     href: "/credits", icon: Coins,
+    description: "Balance plus a log of every grant and spend. Apply for additional credits here." },
+  { label: "Rewards",            labelKey: "nav.rewards",     href: "/rewards", icon: Gift,
+    description: "BHN merch rewards at 2,500 and 5,000 credits trained. Pickup at U of T or request mailing." },
 ];
 
 // EXPERIENCE — applications and connections to industry placements.
@@ -81,27 +93,39 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 // distinction next to each other was demonstrably confusing. Routes
 // kept the same so deep links stay alive.
 const experienceItems: (NavItem & { labelKey: string })[] = [
-  { label: "Application Builder",       labelKey: "nav.application", href: "/profile/application",      icon: FileText },
-  { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase },
-  { label: "Internship Opportunities",  labelKey: "nav.internships", href: "/internships",              icon: Briefcase },
-  { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList },
-  { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Lightbulb },
-  { label: "Interviews",                labelKey: "nav.interviews",  href: "/interviews",               icon: Calendar },
+  { label: "Application Builder",       labelKey: "nav.application", href: "/profile/application",      icon: FileText,
+    description: "Build a reusable resume + 1-min video intro + elevator pitch. Made once; auto-attached to every application form." },
+  { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase,
+    description: "Submit bio, supervisor letter, transcript, resume, and STAR video — we share with vetted industry partners." },
+  { label: "Internship Opportunities",  labelKey: "nav.internships", href: "/internships",              icon: Briefcase,
+    description: "Live job board of internship and co-op postings from BHN industry partners. Apply directly from here." },
+  { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList,
+    description: "Status of every application you've submitted across the platform — submitted, reviewed, interview, offer." },
+  { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Lightbulb,
+    description: "Skills you've earned through training. Mapped against postings to surface ones you'd be strong for." },
+  { label: "Interviews",                labelKey: "nav.interviews",  href: "/interviews",               icon: Calendar,
+    description: "Interviews scheduled with employers — date, format, link, and prep notes in one place." },
 ];
 
 // Other top-level items rendered after the groups.
 const miscItems: (NavItem & { labelKey: string })[] = [
-  { label: "Learning buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake },
+  { label: "Learning buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake,
+    description: "Pair up with someone for accountability — share a course or pathway, see each other's progress, leave async notes." },
   // labelKey is overridden per-role at render time ("What's new" for trainees).
-  { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Bell },
+  { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Bell,
+    description: "What's shipped recently — features, fixes, and improvements." },
 ];
 
 // EMPLOYER PORTAL — visible only when role === "employer".
 const employerItems: (NavItem & { labelKey: string })[] = [
-  { label: "Overview",          labelKey: "nav.employerHome",       href: "/employer",            icon: Building2, exact: true },
-  { label: "Company profile",   labelKey: "nav.employerProfile",    href: "/employer/profile",    icon: Building2 },
-  { label: "My Postings",       labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: FilePlus },
-  { label: "Applicants",        labelKey: "nav.employerApplicants", href: "/employer/applicants", icon: Users2 },
+  { label: "Overview",          labelKey: "nav.employerHome",       href: "/employer",            icon: Building2, exact: true,
+    description: "Hiring-side home — your postings, applicants, and pipeline at a glance." },
+  { label: "Company profile",   labelKey: "nav.employerProfile",    href: "/employer/profile",    icon: Building2,
+    description: "The profile shown on every posting and to applicants. AI auto-fill drafts it from your website." },
+  { label: "My Postings",       labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: FilePlus,
+    description: "Postings you've published. Edit, pause, or close them; track applicant counts inline." },
+  { label: "Applicants",        labelKey: "nav.employerApplicants", href: "/employer/applicants", icon: Users2,
+    description: "Candidates who've applied to your postings. Filter by skill, shortlist, schedule interviews." },
 ];
 
 // Admin menu, mirrored after the user-facing ENGAGE / EXPERIENCE
@@ -112,6 +136,7 @@ const employerItems: (NavItem & { labelKey: string })[] = [
 //   Platform     — analytics, audit, system, superadmin settings.
 const adminOverview: NavItem = {
   label: "Overview", href: "/admin", icon: LayoutDashboard, exact: true, minRole: "admin",
+  description: "Administration home — quick stats and shortcuts into every admin queue.",
 };
 
 // ENGAGE — running the learning loop: enrolments, groups, course
@@ -119,40 +144,63 @@ const adminOverview: NavItem = {
 // admins can tell them apart from the equivalent trainee-facing
 // items at a glance — both in the sidebar and in nav-history.
 const adminEngageItems: NavItem[] = [
-  { label: "Manage enrollments",        href: "/admin/enrollments",         icon: ClipboardList, minRole: "admin" },
-  { label: "Groups",                    href: "/admin/groups",              icon: UsersRound,   minRole: "admin" },
-  { label: "Credit applications",       href: "/admin/credit-applications", icon: CoinsIcon,    minRole: "admin" },
-  { label: "Manage pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers,       minRole: "admin" },
-  { label: "Course filters",            href: "/admin/course-filters",      icon: ListChecks,   minRole: "admin" },
-  { label: "Manage certificates",       href: "/admin/certificates",        icon: Award,        minRole: "admin" },
-  { label: "Merch fulfillment",         href: "/admin/merch",               icon: Gift,         minRole: "admin" },
+  { label: "Manage enrollments",        href: "/admin/enrollments",         icon: ClipboardList, minRole: "admin",
+    description: "Enrollments across all courses. Filter by status / course / trainee; manually enroll or withdraw." },
+  { label: "Groups",                    href: "/admin/groups",              icon: UsersRound,   minRole: "admin",
+    description: "User groups for batch-assigning courses or pathways. Useful for cohorts and corporate clients." },
+  { label: "Credit applications",       href: "/admin/credit-applications", icon: CoinsIcon,    minRole: "admin",
+    description: "Trainees applying for additional starter credits beyond the 200 default. Review and approve." },
+  { label: "Manage pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers,       minRole: "admin",
+    description: "Enrollments into multi-course pathways. Approve gated pathways here." },
+  { label: "Course filters",            href: "/admin/course-filters",      icon: ListChecks,   minRole: "admin",
+    description: "Topic and skill taxonomy that powers the catalog filter panel. Add, rename, retire." },
+  { label: "Manage certificates",       href: "/admin/certificates",        icon: Award,        minRole: "admin",
+    description: "Every issued certificate. Revoke a credential or look it up by SHA hash." },
+  { label: "Merch fulfillment",         href: "/admin/merch",               icon: Gift,         minRole: "admin",
+    description: "Reward bundles claimed by trainees. Pack pickups for the office; review mailing requests." },
 ];
 
 // EXPERIENCE — the matching marketplace: skill ontology that wires
 // trainees to employers, plus everything employer-facing.
 const adminExperienceItems: NavItem[] = [
-  { label: "Skill ontology",      href: "/admin/skills",              icon: GitBranch,    minRole: "admin" },
-  { label: "Employer invites",    href: "/admin/employer-invites",    icon: Building2,    minRole: "admin" },
-  { label: "Sandbox accounts",    href: "/admin/sandboxes",           icon: Beaker,       minRole: "admin" },
-  { label: "Demo workspaces",     href: "/admin/demo-workspaces",     icon: FlaskConical, minRole: "admin" },
+  { label: "Skill ontology",      href: "/admin/skills",              icon: GitBranch,    minRole: "admin",
+    description: "The skill graph wiring postings to candidates. Add aliases, merge duplicates, edit hierarchy." },
+  { label: "Employer invites",    href: "/admin/employer-invites",    icon: Building2,    minRole: "admin",
+    description: "Invite codes for new employer accounts. Generate, track open rate, revoke." },
+  { label: "Sandbox accounts",    href: "/admin/sandboxes",           icon: Beaker,       minRole: "admin",
+    description: "Personal play pairs (one employer + one trainee per admin) for testing the platform end-to-end." },
+  { label: "Demo workspaces",     href: "/admin/demo-workspaces",     icon: FlaskConical, minRole: "admin",
+    description: "Time-limited demo workspaces for prospective partners. Auto-cleanup after expiry." },
 ];
 
 // PLATFORM — operating the platform itself: who has access, what
 // they're told, what reports admins read, the Inbox/letter-box that
 // gathers every pending request, plus superadmin-only ops.
 const adminPlatformItems: NavItem[] = [
-  { label: "Inbox",               href: "/admin/inbox",               icon: Inbox,       minRole: "admin" },
-  { label: "Users",               href: "/admin/users",               icon: Users,       minRole: "admin" },
-  { label: "Role requests",       href: "/admin/role-requests",       icon: UserCog,     minRole: "admin" },
-  { label: "Announcements",       href: "/admin/announcements",       icon: Megaphone,   minRole: "admin" },
-  { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,        minRole: "admin" },
-  { label: "Analytics",           href: "/admin/analytics",           icon: LineChart,   minRole: "admin" },
-  { label: "Reports",             href: "/admin/reports",             icon: FileText,    minRole: "admin" },
-  { label: "Audit Log",           href: "/admin/audit",               icon: ShieldCheck, minRole: "admin" },
-  { label: "Security",            href: "/admin/security",            icon: ShieldCheck, minRole: "admin" },
-  { label: "LTI Config",          href: "/admin/lti",                 icon: Link2,       minRole: "superadmin" },
-  { label: "System status",       href: "/admin/system-status",       icon: Activity,    minRole: "superadmin" },
-  { label: "Settings",            href: "/admin/settings",            icon: Settings,    minRole: "superadmin" },
+  { label: "Inbox",               href: "/admin/inbox",               icon: Inbox,       minRole: "admin",
+    description: "Every pending admin request in one queue — credit apps, role changes, employer invites, mailing requests." },
+  { label: "Users",               href: "/admin/users",               icon: Users,       minRole: "admin",
+    description: "Every user on the platform. Search, filter, edit role / credits, deactivate." },
+  { label: "Role requests",       href: "/admin/role-requests",       icon: UserCog,     minRole: "admin",
+    description: "Trainees asking to upgrade their role (e.g. evaluating → trainee). Review and approve." },
+  { label: "Announcements",       href: "/admin/announcements",       icon: Megaphone,   minRole: "admin",
+    description: "Banner announcements shown across the platform. Schedule, target by role, set expiry." },
+  { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,        minRole: "admin",
+    description: "New newsletter opt-ins ready to export to BioHubNet's mailing list." },
+  { label: "Analytics",           href: "/admin/analytics",           icon: LineChart,   minRole: "admin",
+    description: "Engagement, learning, and conversion metrics across the platform." },
+  { label: "Reports",             href: "/admin/reports",             icon: FileText,    minRole: "admin",
+    description: "Generated reports for compliance, billing, and exec views." },
+  { label: "Audit Log",           href: "/admin/audit",               icon: ShieldCheck, minRole: "admin",
+    description: "Append-only log of admin actions. Required for SOC 2 and 21 CFR Part 11 attestation." },
+  { label: "Security",            href: "/admin/security",            icon: ShieldCheck, minRole: "admin",
+    description: "MFA enrollment, password policy, lockouts, e-signature configuration." },
+  { label: "LTI Config",          href: "/admin/lti",                 icon: Link2,       minRole: "superadmin",
+    description: "LTI 1.3 launch configuration for external LMS integrations." },
+  { label: "System status",       href: "/admin/system-status",       icon: Activity,    minRole: "superadmin",
+    description: "Live system health — DB latency, queue depth, third-party API status." },
+  { label: "Settings",            href: "/admin/settings",            icon: Settings,    minRole: "superadmin",
+    description: "Platform-wide settings only superadmins can change." },
 ];
 
 const ROLE_RANK: Record<string, number> = {
@@ -395,36 +443,111 @@ function NavLink({ item, pathname, onNavigate }: {
     ? pathname === item.href
     : pathname === item.href || pathname.startsWith(item.href + "/");
   const Icon = item.icon;
+  const hasTooltip = !!item.description;
+
+  // Hover/focus tooltip plumbing. We use position: fixed so the
+  // popover escapes the sidebar <nav>'s overflow-y-auto box (which
+  // would otherwise clip anything past the right edge), and we
+  // recompute the link's screen-space rect on scroll/resize while
+  // the tooltip is visible. Hover has a 350ms warm-up to avoid
+  // flickering as the cursor scans the list; keyboard focus is
+  // instant (assistive-tech users actively chose to land here).
+  const linkRef = useRef<HTMLAnchorElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function place() {
+    if (!linkRef.current) return;
+    const r = linkRef.current.getBoundingClientRect();
+    setPos({ top: r.top, left: r.right });
+  }
+  function showSoon() {
+    if (!hasTooltip) return;
+    if (showTimer.current) clearTimeout(showTimer.current);
+    showTimer.current = setTimeout(place, 350);
+  }
+  function showNow() {
+    if (!hasTooltip) return;
+    if (showTimer.current) clearTimeout(showTimer.current);
+    place();
+  }
+  function hide() {
+    if (showTimer.current) clearTimeout(showTimer.current);
+    showTimer.current = null;
+    setPos(null);
+  }
+  // Cleanup pending timer on unmount.
+  useEffect(() => () => { if (showTimer.current) clearTimeout(showTimer.current); }, []);
+  // Reposition while visible — sidebar may scroll independently of the page.
+  useEffect(() => {
+    if (!pos) return;
+    const onMove = () => place();
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+    };
+  }, [pos !== null]);
+
+  const tooltipId = `navtip-${item.href.replace(/[^a-z0-9]/gi, "_")}`;
+
   return (
-    <Link
-      href={item.href}
-      onClick={onNavigate}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-        // focus-visible adds an explicit ring for keyboard users; the
-        // ring is brand-tinted and offset so it floats just outside
-        // the rounded link box, looking deliberate rather than tacked-on.
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-card",
-        active
-          ? "bg-brand-50 text-brand-700"
-          : "text-muted hover:bg-raised hover:text-fg",
+    <>
+      <Link
+        ref={linkRef}
+        href={item.href}
+        onClick={() => { hide(); onNavigate?.(); }}
+        onMouseEnter={showSoon}
+        onMouseLeave={hide}
+        onFocus={showNow}
+        onBlur={hide}
+        aria-current={active ? "page" : undefined}
+        aria-describedby={hasTooltip ? tooltipId : undefined}
+        className={cn(
+          "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+          // focus-visible adds an explicit ring for keyboard users; the
+          // ring is brand-tinted and offset so it floats just outside
+          // the rounded link box, looking deliberate rather than tacked-on.
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-card",
+          active
+            ? "bg-brand-50 text-brand-700"
+            : "text-muted hover:bg-raised hover:text-fg",
+        )}
+      >
+        {/* Theme-independent active accent — a 2px left edge in brand-600.
+            Gives the active state a strong visual anchor even when the
+            theme's brand-50 fill blends with the page background (Mist,
+            Sakura) or shouts louder than expected (Hi-Tech). */}
+        {active && (
+          <span
+            aria-hidden
+            className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-brand-600"
+          />
+        )}
+        <Icon size={16} className="shrink-0" />
+        <span className="flex-1 truncate">{item.label}</span>
+        {active && <ChevronRight size={14} className="text-brand-400 shrink-0" />}
+      </Link>
+
+      {/* Hover/focus tooltip. Hidden under md — on mobile the drawer
+          is too narrow for a sidebar-anchored popover and users tap to
+          navigate anyway. `pointer-events-none` ensures the tooltip
+          doesn't itself swallow hover state when it overlaps the link. */}
+      {hasTooltip && pos && (
+        <div
+          id={tooltipId}
+          role="tooltip"
+          className="hidden md:block fixed z-[60] w-72 popover p-3 pointer-events-none animate-fade-in"
+          style={{ top: pos.top, left: pos.left, marginLeft: 8 }}
+        >
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+            {item.label}
+          </p>
+          <p className="text-xs text-fg leading-snug mt-1">{item.description}</p>
+        </div>
       )}
-    >
-      {/* Theme-independent active accent — a 2px left edge in brand-600.
-          Gives the active state a strong visual anchor even when the
-          theme's brand-50 fill blends with the page background (Mist,
-          Sakura) or shouts louder than expected (Hi-Tech). */}
-      {active && (
-        <span
-          aria-hidden
-          className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-brand-600"
-        />
-      )}
-      <Icon size={16} className="shrink-0" />
-      <span className="flex-1">{item.label}</span>
-      {active && <ChevronRight size={14} className="text-brand-400 shrink-0" />}
-    </Link>
+    </>
   );
 }
 
