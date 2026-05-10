@@ -64,21 +64,23 @@ export function RoleSwitcher({ actingAs }: Props) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex items-center gap-2.5 px-3 py-2 w-full rounded-lg text-sm transition-colors",
+          // Single-line layout: "View as" sits in the foreground, the
+          // current actingAs role rides on the right as an inline tag.
+          // Halves the row height vs. the old two-line stack while
+          // still surfacing both pieces of information.
+          "flex items-center gap-2 px-2.5 py-1 w-full rounded-lg text-xs transition-colors",
           actingAs
             ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
             : "hover:bg-elevated text-muted hover:text-fg"
         )}
         aria-label="Switch viewing role"
       >
-        <Eye size={16} />
-        <span className="flex-1 text-left">
-          <span className="block leading-tight">View as</span>
-          <span className="block text-[10px] uppercase tracking-[0.16em] text-subtle">
-            {actingAs ? actingAs : "superadmin"}
-          </span>
+        <Eye size={14} className="shrink-0" />
+        <span className="flex-1 text-left font-medium leading-none">View as</span>
+        <span className="text-[10px] uppercase tracking-[0.14em] text-subtle leading-none">
+          {actingAs ?? "superadmin"}
         </span>
-        <ChevronDown size={12} className={cn("transition-transform", open && "rotate-180")} />
+        <ChevronDown size={11} className={cn("shrink-0 transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (

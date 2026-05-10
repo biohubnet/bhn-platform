@@ -500,7 +500,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "complete",
     title: "You're all set",
-    body: "Reopen this tour anytime from 'Take the tour' in the sidebar (or the small ? button at the bottom-left). New features will surface here as they ship.",
+    body: "Reopen this tour anytime from 'Take the tour' in the sidebar — the compass icon at the bottom-left, sitting next to the theme picker. New features will surface here as they ship.",
     placement: "center",
     since: "2025.04",
   },

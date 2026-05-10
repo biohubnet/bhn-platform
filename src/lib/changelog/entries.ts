@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Tighter sidebar footer — tour, theme, build SHA share one row",
+    body: "The 'Take the tour' button now uses a compass icon (orientation, guided exploration) rather than the generic question-mark help glyph it shared with FAQ pages. Take the tour, the theme picker, and — for staff — the build SHA chip all live on the same compact row at the bottom of the sidebar, replacing the earlier two-row split. The 'View as…' role switcher (superadmin only) collapses from a stacked label to a single line with the active role tag riding inline on the right. Net: roughly 32 px shorter sidebar footer, more breathing room for the nav.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Cold Brew, redesigned — looking into the cup, not at the room",
     body: "The original Cold Brew was a daylit cafe table — cream surfaces, espresso text. The new Cold Brew is the cup itself. Deep dark-roast canvas (#0c0604), steamed-milk cream type (#f5e8d0) instead of pure white so the page never glares, and crema-warm CTAs (#d49a6e) that read as glow rather than colour. Cards are rendered as polished ceramic: a top-edge specular highlight (a 1 px cream-alpha inset on the rim) plus a deep outer shadow lifts each surface off the canvas — light catching the glaze of a mug. Tracking tightens to -0.018em so the typography stays disciplined under all that warmth. Tailwind state colours (rose / amber / emerald / sky) get saturated lifts so badges and warnings stay legible on the dark ground. Pick it from the Theme menu in the sidebar.",
     kind: "improvement",

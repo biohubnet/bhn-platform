@@ -47,7 +47,7 @@ import {
   FlaskConical,
   Menu,
   X,
-  HelpCircle,
+  Compass,
 } from "lucide-react";
 
 interface NavItem {
@@ -722,10 +722,12 @@ export function Sidebar({
         </div>
       )}
 
-      {/* Take-the-tour + Theme picker on one row to compact the help
-          stack. Both control surfaces sit side-by-side; ThemePicker
-          collapses to its compact icon-only mode here. */}
-      <div className="px-2 py-1.5 border-t border-line flex items-center gap-1">
+      {/* Take-the-tour + Theme picker + Build SHA share one compact row.
+          Tour icon is Compass (orientation / guided exploration) rather
+          than the generic ?-help glyph it used to be. Build SHA folds
+          in here — staff-only — so the user pill row below stays a
+          clean two-line identity card without the chip eating space. */}
+      <div className="px-2 py-1 border-t border-line flex items-center gap-1">
         <button
           type="button"
           onClick={() => {
@@ -733,13 +735,21 @@ export function Sidebar({
               window.dispatchEvent(new CustomEvent("bhn:start-tour"));
             }
           }}
-          className="flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted hover:bg-raised hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
+          className="flex-1 min-w-0 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-muted hover:bg-raised hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
           title={t("nav.tour")}
         >
-          <HelpCircle size={13} />
+          <Compass size={13} className="shrink-0" />
           <span className="truncate">{t("nav.tour")}</span>
         </button>
         <ThemePicker compact />
+        {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
+          <code
+            className="font-mono text-[11px] font-semibold text-brand-700 bg-brand-50 ring-1 ring-inset ring-brand-200 px-1.5 py-1 rounded select-all leading-none shrink-0"
+            title={`Build ${process.env.NEXT_PUBLIC_COMMIT_SHA}`}
+          >
+            {process.env.NEXT_PUBLIC_COMMIT_SHA}
+          </code>
+        )}
       </div>
 
       {/* User pill — single 36 px row with sign-out as an icon button. */}
@@ -760,14 +770,6 @@ export function Sidebar({
             </p>
           </div>
         </Link>
-        {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
-          <code
-            className="font-mono text-xs font-semibold text-brand-700 bg-brand-50 ring-1 ring-inset ring-brand-200 px-2 py-1 rounded select-all leading-none"
-            title={`Build ${process.env.NEXT_PUBLIC_COMMIT_SHA}`}
-          >
-            {process.env.NEXT_PUBLIC_COMMIT_SHA}
-          </code>
-        )}
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="p-1.5 rounded-lg text-muted hover:bg-elevated hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
