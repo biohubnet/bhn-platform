@@ -1,8 +1,8 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Package, Truck, CheckCircle2, XCircle, Inbox } from "lucide-react";
-import { getTier } from "@/lib/rewards/merch";
+import { Package, Truck, CheckCircle2, XCircle, Inbox, MapPin } from "lucide-react";
+import { getTier, PICKUP_LOCATION } from "@/lib/rewards/merch";
 import { MerchActionBar } from "@/components/rewards/MerchActionBar";
 
 /**
@@ -50,37 +50,48 @@ export default async function AdminMerchPage() {
           Merch fulfillment
         </h1>
         <p className="text-sm text-muted mt-2 max-w-3xl">
-          Bundles claimed by trainees who've crossed a credit milestone. Pack,
-          ship, and attach tracking. Two tiers exist — Apprentice (2,500 cr) and
-          Champion (5,000 cr). Cancel only if the address is unrecoverable.
+          Rewards claimed by trainees who've crossed a credit milestone. Two
+          paths land here: <span className="font-semibold text-fg">Pickup</span> (default — pack
+          the bundle, mark ready, hand it off when they swing by {PICKUP_LOCATION.short})
+          and <span className="font-semibold text-fg">Mail request</span> (out-of-GTA trainees;
+          confirm postage before committing). Cancel only if a request can't be
+          honoured.
         </p>
       </header>
 
       <div className="grid grid-cols-3 gap-3">
-        <Stat label="Awaiting ship" value={open.length} accent="amber" icon={Package} />
-        <Stat label="In transit"     value={shipped.length} accent="sky" icon={Truck} />
-        <Stat label="Closed (90d)"   value={closed.length} accent="emerald" icon={CheckCircle2} />
+        <Stat label="Awaiting fulfillment" value={open.length} accent="amber" icon={Package} />
+        <Stat label="Out / ready"          value={shipped.length} accent="sky" icon={Truck} />
+        <Stat label="Closed (90d)"         value={closed.length} accent="emerald" icon={CheckCircle2} />
       </div>
 
       <Section
         title="Open queue"
-        subtitle="Ready to pack"
+        subtitle="Pack pickups · ship mail-requests"
         icon={Inbox}
         empty="No open claims. Inbox is clear."
         items={open}
         renderActions={(r) => (
-          <MerchActionBar id={r.id} state="CLAIMED" />
+          <MerchActionBar
+            id={r.id}
+            state="CLAIMED"
+            method={r.fulfillmentMethod === "SHIP_REQUEST" ? "SHIP_REQUEST" : "PICKUP"}
+          />
         )}
       />
 
       <Section
-        title="In transit"
-        subtitle="Shipped but not yet marked delivered"
+        title="Out the door"
+        subtitle="Ready for pickup or in transit — not yet collected/delivered"
         icon={Truck}
-        empty="Nothing in flight."
+        empty="Nothing pending pickup or delivery."
         items={shipped}
         renderActions={(r) => (
-          <MerchActionBar id={r.id} state="SHIPPED" />
+          <MerchActionBar
+            id={r.id}
+            state="SHIPPED"
+            method={r.fulfillmentMethod === "SHIP_REQUEST" ? "SHIP_REQUEST" : "PICKUP"}
+          />
         )}
       />
 
@@ -142,6 +153,18 @@ function Section({
                     >
                       {tier?.title ?? `Tier ${r.tier}`}
                     </span>
+                    {/* Fulfillment-method tag — biggest signal in the row.
+                        Pickup uses neutral surface; ship-request uses sky
+                        so the rarer "needs postage review" path stands out. */}
+                    {r.fulfillmentMethod === "PICKUP" ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full bg-elevated text-fg ring-1 ring-inset ring-line">
+                        <MapPin size={10} /> Pickup
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 ring-1 ring-inset ring-sky-200">
+                        <Truck size={10} /> Mail request
+                      </span>
+                    )}
                     {r.shirtSize && (
                       <span className="text-[11px] font-mono uppercase text-fg bg-elevated px-1.5 py-0.5 rounded">
                         Size {r.shirtSize}
@@ -149,8 +172,10 @@ function Section({
                     )}
                   </div>
 
-                  {/* Address */}
-                  {r.recipientName && (
+                  {/* Address — only meaningful for ship-requests. Pickup
+                      claims show a tiny "for {recipient}" line so admin
+                      knows whose name to call out at the door. */}
+                  {r.fulfillmentMethod === "SHIP_REQUEST" && r.recipientName ? (
                     <div className="text-xs text-fg leading-snug font-mono bg-elevated rounded-lg px-3 py-2 mt-1.5">
                       <p className="font-semibold">{r.recipientName}</p>
                       <p>{r.addressLine1}</p>
@@ -161,7 +186,11 @@ function Section({
                       <p>{r.country}</p>
                       {r.phone && <p className="text-subtle mt-0.5">📞 {r.phone}</p>}
                     </div>
-                  )}
+                  ) : r.fulfillmentMethod === "PICKUP" && r.recipientName ? (
+                    <p className="text-xs text-fg mt-1.5">
+                      Hand to: <span className="font-semibold">{r.recipientName}</span>
+                    </p>
+                  ) : null}
 
                   {r.notes && (
                     <p className="text-xs text-muted leading-snug mt-2">
@@ -169,23 +198,35 @@ function Section({
                     </p>
                   )}
 
-                  {/* Tracking + fulfillment metadata, when present */}
-                  {(r.status === "SHIPPED" || r.status === "DELIVERED") && r.trackingNumber && (
+                  {/* Fulfillment metadata, when present. Pickup rows in
+                      SHIPPED state read as "Ready for pickup"; ship rows
+                      surface tracking. */}
+                  {(r.status === "SHIPPED" || r.status === "DELIVERED") && (
                     <p className="text-xs text-emerald-800 mt-2">
-                      <Truck size={11} className="inline -mt-0.5 mr-1" />
-                      {r.carrier} ·{" "}
-                      {r.trackingUrl ? (
-                        <a
-                          href={r.trackingUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline font-mono"
-                        >
-                          {r.trackingNumber}
-                        </a>
-                      ) : (
-                        <span className="font-mono">{r.trackingNumber}</span>
-                      )}
+                      {r.fulfillmentMethod === "PICKUP" ? (
+                        <>
+                          <MapPin size={11} className="inline -mt-0.5 mr-1" />
+                          {r.status === "SHIPPED" ? "Ready for pickup" : "Picked up"}
+                          {r.shippedAt && <> · marked {new Date(r.shippedAt).toLocaleDateString()}</>}
+                        </>
+                      ) : r.trackingNumber ? (
+                        <>
+                          <Truck size={11} className="inline -mt-0.5 mr-1" />
+                          {r.carrier} ·{" "}
+                          {r.trackingUrl ? (
+                            <a
+                              href={r.trackingUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline font-mono"
+                            >
+                              {r.trackingNumber}
+                            </a>
+                          ) : (
+                            <span className="font-mono">{r.trackingNumber}</span>
+                          )}
+                        </>
+                      ) : null}
                       {r.fulfilledBy && <span className="text-subtle"> · by {r.fulfilledBy.name ?? r.fulfilledBy.email}</span>}
                     </p>
                   )}

@@ -1,9 +1,10 @@
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Gift, Lock, CheckCircle2, Truck, Package, Sparkles } from "lucide-react";
+import { Gift, Lock, CheckCircle2, Truck, Package, Sparkles, MapPin } from "lucide-react";
 import {
   MERCH_TIERS,
+  PICKUP_LOCATION,
   ensureMerchUnlocks,
   lifetimeSpent,
   nextTierFor,
@@ -73,8 +74,9 @@ export default async function RewardsPage() {
             </h1>
             <p className="text-sm text-muted mt-2 max-w-2xl">
               Train hard, get the gear. Every credit you spend on coursework
-              counts toward two milestone bundles. Once a tier unlocks, send
-              us your address and we ship.
+              counts toward two milestone rewards. When a tier unlocks, swing
+              by the BHN office at <span className="font-medium text-fg">Leslie Dan Faculty of Pharmacy, U of T</span> to
+              pick it up — or request mailing if you're far from Toronto.
             </p>
           </div>
           <Gift size={40} className="text-brand-600 shrink-0 hidden sm:block" />
@@ -183,28 +185,57 @@ export default async function RewardsPage() {
                   />
                 ) : reward!.status === "CLAIMED" ? (
                   <div className="text-xs bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200 rounded-lg px-3 py-2 leading-snug">
-                    <Truck size={11} className="inline -mt-0.5 mr-1" />
-                    In our packing queue. We'll email tracking the moment it ships.
+                    {reward!.fulfillmentMethod === "PICKUP" ? (
+                      <>
+                        <MapPin size={11} className="inline -mt-0.5 mr-1" />
+                        We're prepping your bundle. You'll get an email when it's
+                        ready to pick up at {PICKUP_LOCATION.short}.
+                      </>
+                    ) : (
+                      <>
+                        <Truck size={11} className="inline -mt-0.5 mr-1" />
+                        Mailing request received — an admin is reviewing postage.
+                        We'll email a confirmation (or quote) before sending.
+                      </>
+                    )}
                   </div>
-                ) : reward!.status === "SHIPPED" || reward!.status === "DELIVERED" ? (
+                ) : reward!.status === "SHIPPED" ? (
                   <div className="text-xs bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200 rounded-lg px-3 py-2 leading-snug space-y-1">
-                    <p>
-                      <CheckCircle2 size={11} className="inline -mt-0.5 mr-1" />
-                      Shipped {reward!.shippedAt ? new Date(reward!.shippedAt).toLocaleDateString() : ""}
-                      {reward!.carrier && <> via {reward!.carrier}</>}.
-                    </p>
-                    {reward!.trackingUrl ? (
-                      <a
-                        href={reward!.trackingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-emerald-900 underline font-medium break-all"
-                      >
-                        Track: {reward!.trackingNumber}
-                      </a>
-                    ) : reward!.trackingNumber ? (
-                      <p className="font-mono">Tracking: {reward!.trackingNumber}</p>
-                    ) : null}
+                    {reward!.fulfillmentMethod === "PICKUP" ? (
+                      <>
+                        <p>
+                          <MapPin size={11} className="inline -mt-0.5 mr-1" />
+                          <span className="font-semibold">Ready to pick up.</span>{" "}
+                          Drop by the BHN office at Leslie Dan Faculty of
+                          Pharmacy, U of T — bring this page or your name.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          <CheckCircle2 size={11} className="inline -mt-0.5 mr-1" />
+                          Shipped {reward!.shippedAt ? new Date(reward!.shippedAt).toLocaleDateString() : ""}
+                          {reward!.carrier && <> via {reward!.carrier}</>}.
+                        </p>
+                        {reward!.trackingUrl ? (
+                          <a
+                            href={reward!.trackingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-900 underline font-medium break-all"
+                          >
+                            Track: {reward!.trackingNumber}
+                          </a>
+                        ) : reward!.trackingNumber ? (
+                          <p className="font-mono">Tracking: {reward!.trackingNumber}</p>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                ) : reward!.status === "DELIVERED" ? (
+                  <div className="text-xs bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200 rounded-lg px-3 py-2 leading-snug">
+                    <CheckCircle2 size={11} className="inline -mt-0.5 mr-1" />
+                    {reward!.fulfillmentMethod === "PICKUP" ? "Picked up. Wear it well." : "Delivered. Enjoy."}
                   </div>
                 ) : reward!.status === "CANCELLED" ? (
                   <div className="text-xs bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200 rounded-lg px-3 py-2 leading-snug">
@@ -220,11 +251,24 @@ export default async function RewardsPage() {
         })}
       </section>
 
-      <p className="text-xs text-subtle text-center pt-2">
-        BHN merch ships free within Canada and the US for the first 60 days
-        after unlocking. International addresses ship at-cost — we'll email a
-        quote before shipping.
-      </p>
+      {/* Pickup-location card — surfaces the address as a separate
+          static block so it's findable even when no reward is in the
+          claimed state, and so trainees can copy-paste it. */}
+      <section className="rounded-2xl border border-line bg-card p-5 surface-shadow flex items-start gap-3">
+        <MapPin size={18} className="text-brand-600 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Pickup location</p>
+          <p className="text-sm font-semibold text-fg mt-1">{PICKUP_LOCATION.org}</p>
+          <p className="text-sm text-fg">
+            {PICKUP_LOCATION.building}, {PICKUP_LOCATION.university}
+          </p>
+          <p className="text-xs text-muted mt-2 leading-snug">
+            Default for all rewards. Trainees outside the GTA can request
+            mailing inside the claim form — admin reviews each request and
+            confirms postage (Canada at-cost; international quoted first).
+          </p>
+        </div>
+      </section>
     </div>
   );
 }

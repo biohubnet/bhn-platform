@@ -5,12 +5,14 @@ import { prisma } from "@/lib/prisma";
 /**
  * POST /api/rewards/merch/[id]/claim
  *
- * Trainee submits the shipping snapshot for an UNCLAIMED reward.
- * Once accepted, the row flips to CLAIMED and lands in the admin
- * fulfillment queue at /admin/merch.
+ * Trainee submits fulfillment details for an UNCLAIMED reward. Two paths:
+ *   • PICKUP        — only recipientName + (optional) shirtSize and notes.
+ *                     The bundle waits at the BHN office at U of T.
+ *   • SHIP_REQUEST  — full address required; admin reviews postage
+ *                     before committing.
  *
- * The address is frozen at this moment by design — see the model
- * comment. Edits go through admin support after the fact.
+ * Once accepted, the row flips to CLAIMED. Address (if any) is frozen
+ * here by design — see the model comment.
  */
 export async function POST(
   req: Request,
@@ -40,45 +42,41 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Required fields. Light validation — server-side mirror of the
-  // form's `required` markers, defended with one consolidated message.
-  const required = [
-    "recipientName",
-    "addressLine1",
-    "city",
-    "region",
-    "postalCode",
-    "country",
-    "shirtSize",
-  ] as const;
-  for (const k of required) {
+  const method = body.fulfillmentMethod === "SHIP_REQUEST" ? "SHIP_REQUEST" : "PICKUP";
+
+  // Required fields differ by method. Pickup just needs a name we can
+  // match at the door; ship_request needs the full mailing address.
+  const requiredKeys =
+    method === "PICKUP"
+      ? (["recipientName"] as const)
+      : (["recipientName", "addressLine1", "city", "region", "postalCode", "country"] as const);
+  for (const k of requiredKeys) {
     const v = body[k];
     if (typeof v !== "string" || v.trim().length === 0) {
-      return NextResponse.json(
-        { error: `Missing required field: ${k}` },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: `Missing required field: ${k}` }, { status: 400 });
     }
   }
 
-  // Trim + cap to keep a single bad paste from blowing the column
-  // limits. 200 chars is generous for any address line.
   const clean = (v: unknown, max = 200) =>
-    typeof v === "string" ? v.trim().slice(0, max) : null;
+    typeof v === "string" && v.trim().length > 0 ? v.trim().slice(0, max) : null;
 
   await prisma.merchReward.update({
     where: { id },
     data: {
       status: "CLAIMED",
+      fulfillmentMethod: method,
       claimedAt: new Date(),
       recipientName:  clean(body.recipientName, 120),
-      addressLine1:   clean(body.addressLine1, 200),
-      addressLine2:   clean(body.addressLine2, 200),
-      city:           clean(body.city, 80),
-      region:         clean(body.region, 80),
-      postalCode:     clean(body.postalCode, 20),
-      country:        clean(body.country, 80),
-      phone:          clean(body.phone, 40),
+      // Address fields only persisted when mailing was requested. Pickup
+      // claims leave them null — the admin queue then knows there's
+      // nothing to print on a label.
+      addressLine1:   method === "SHIP_REQUEST" ? clean(body.addressLine1, 200) : null,
+      addressLine2:   method === "SHIP_REQUEST" ? clean(body.addressLine2, 200) : null,
+      city:           method === "SHIP_REQUEST" ? clean(body.city, 80) : null,
+      region:         method === "SHIP_REQUEST" ? clean(body.region, 80) : null,
+      postalCode:     method === "SHIP_REQUEST" ? clean(body.postalCode, 20) : null,
+      country:        method === "SHIP_REQUEST" ? clean(body.country, 80) : null,
+      phone:          method === "SHIP_REQUEST" ? clean(body.phone, 40) : null,
       shirtSize:      clean(body.shirtSize, 12),
       notes:          clean(body.notes, 400),
     },

@@ -1,22 +1,31 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Truck, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, Truck, CheckCircle2, XCircle, MapPin } from "lucide-react";
 
 /**
  * Admin-side action bar on each MerchReward row.
  *
- * State machine:
- *   • CLAIMED  → expose Mark Shipped (carrier + tracking) and Cancel
- *   • SHIPPED  → expose Mark Delivered (one-click) and Cancel
- *   • else     → nothing renders (handled by the parent)
+ * State machine, branched by fulfillmentMethod:
+ *
+ *   PICKUP:
+ *     CLAIMED  → "Mark ready for pickup" (no fields needed)
+ *     SHIPPED  → "Mark picked up"        (terminal happy state)
+ *
+ *   SHIP_REQUEST:
+ *     CLAIMED  → ShipForm: carrier + tracking number + URL
+ *     SHIPPED  → "Mark delivered"
+ *
+ * Both methods can be Cancelled from CLAIMED or SHIPPED.
  */
 export function MerchActionBar({
   id,
   state,
+  method,
 }: {
   id: string;
   state: "CLAIMED" | "SHIPPED";
+  method: "PICKUP" | "SHIP_REQUEST";
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -56,9 +65,22 @@ export function MerchActionBar({
 
   return (
     <div className="space-y-2">
-      {state === "CLAIMED" && (
+      {state === "CLAIMED" && method === "PICKUP" && (
+        <button
+          type="button"
+          onClick={() => action({ action: "ship" })}
+          disabled={busy}
+          className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors"
+        >
+          {busy ? <Loader2 size={12} className="animate-spin" /> : <MapPin size={12} />}
+          Mark ready for pickup
+        </button>
+      )}
+
+      {state === "CLAIMED" && method === "SHIP_REQUEST" && (
         <ShipForm busy={busy} onSubmit={(payload) => action({ action: "ship", ...payload })} />
       )}
+
       {state === "SHIPPED" && (
         <button
           type="button"
@@ -67,9 +89,10 @@ export function MerchActionBar({
           className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors"
         >
           {busy ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
-          Mark delivered
+          {method === "PICKUP" ? "Mark picked up" : "Mark delivered"}
         </button>
       )}
+
       <button
         type="button"
         onClick={() => setShowCancel(true)}
@@ -173,7 +196,7 @@ function CancelForm({
         required
         rows={2}
         maxLength={400}
-        placeholder="Why? (e.g. address invalid, returned to sender, trainee requested cancel)"
+        placeholder="Why? (e.g. trainee no-show after 60 days, postage out of budget, ineligible)"
         className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-rose-200 text-xs resize-none"
       />
       <div className="flex gap-1.5">

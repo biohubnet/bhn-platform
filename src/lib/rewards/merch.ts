@@ -54,28 +54,39 @@ export const MERCH_TIERS: readonly MerchTier[] = [
   {
     tier: 1,
     threshold: 2500,
-    title: "Apprentice Bundle",
-    blurb: "First milestone — you've done real training. Earn it, wear it.",
+    title: "BHN Swag Bag",
+    blurb: "First milestone — a few essentials and a surprise. Picked up at the office or mailed if you're far.",
     items: [
-      "BHN heavyweight cotton tee",
-      "Enamel BHN pin",
-      "Sticker pack (3 designs)",
+      "BHN-branded notepad",
+      "BHN stress ball",
+      "Mystery item (rotates — past trainees got pins, sticker packs, micro-tools)",
     ],
     accent: "#10b981", // emerald — engage / learn
   },
   {
     tier: 2,
     threshold: 5000,
-    title: "Champion Bundle",
-    blurb: "Top of the cohort. The bundle reads as field-ready, not swag.",
+    title: "Insulated Bottle",
+    blurb: "5,000 credits trained. The same insulated bottle our staff carry — built for long days, lab-friendly.",
     items: [
-      "BHN technical hoodie (heavyweight fleece)",
-      "Canvas tote (compliant for lab visits)",
-      "Insulated 16 oz bottle",
+      "BHN insulated stainless bottle (16 oz, double-wall vacuum)",
     ],
     accent: "#0ea5e9", // sky — championship / signal
   },
 ] as const;
+
+/** Pickup point for default-fulfillment rewards. Single source of
+ *  truth — surfaced on the trainee /rewards page, in the claim
+ *  dialog, in the admin queue, and in tour copy. */
+export const PICKUP_LOCATION = {
+  org: "BioHubNet office",
+  building: "Leslie Dan Faculty of Pharmacy",
+  university: "University of Toronto",
+  /** Compact one-liner for tight spaces. */
+  short: "BHN office · Leslie Dan Faculty of Pharmacy · U of T",
+  /** Two-line address for cards. */
+  lines: ["BioHubNet office", "Leslie Dan Faculty of Pharmacy, U of T"],
+} as const;
 
 /** Convenience lookup. Returns undefined for an unknown tier number. */
 export function getTier(tier: number): MerchTier | undefined {

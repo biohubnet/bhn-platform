@@ -85,7 +85,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "trainee.rewards",
     title: "Earn the gear — BHN merch rewards",
-    body: "Spend 2,500 credits on coursework and the Apprentice Bundle (heavyweight tee + enamel pin + sticker pack) unlocks. Cross 5,000 and the Champion Bundle (technical hoodie + canvas tote + insulated bottle) unlocks too. Each tier is one-time and ships free to Canada / US in the first 60 days.",
+    body: "Train 2,500 credits and the BHN Swag Bag (notepad + stress ball + a rotating mystery item) unlocks. Hit 5,000 and the BHN insulated stainless bottle unlocks too. Default pickup is at the BHN office at Leslie Dan Faculty of Pharmacy, U of T — far from Toronto? The claim form has a 'mail it to me' option (admin confirms postage first).",
     path: "/rewards",
     placement: "center",
     cta: { label: "Open Rewards", href: "/rewards" },

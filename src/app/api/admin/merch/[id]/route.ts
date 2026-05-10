@@ -40,12 +40,16 @@ export async function PATCH(
     if (reward.status !== "CLAIMED") {
       return NextResponse.json({ error: `Cannot ship from ${reward.status}` }, { status: 409 });
     }
+    // Tracking is required when we're actually mailing it. For PICKUP
+    // claims, "ship" semantically means "marked ready for pickup at the
+    // office" — no carrier needed.
+    const isShip = reward.fulfillmentMethod === "SHIP_REQUEST";
     const carrier = String(body.carrier ?? "").trim();
     const trackingNumber = String(body.trackingNumber ?? "").trim();
     const trackingUrl = body.trackingUrl ? String(body.trackingUrl).trim() : null;
-    if (!carrier || !trackingNumber) {
+    if (isShip && (!carrier || !trackingNumber)) {
       return NextResponse.json(
-        { error: "carrier and trackingNumber are required to mark shipped" },
+        { error: "carrier and trackingNumber are required when marking a SHIP_REQUEST shipped" },
         { status: 400 },
       );
     }
@@ -54,9 +58,9 @@ export async function PATCH(
       data: {
         status: "SHIPPED",
         shippedAt: new Date(),
-        carrier: carrier.slice(0, 80),
-        trackingNumber: trackingNumber.slice(0, 80),
-        trackingUrl: trackingUrl ? trackingUrl.slice(0, 400) : null,
+        carrier: isShip ? carrier.slice(0, 80) : null,
+        trackingNumber: isShip ? trackingNumber.slice(0, 80) : null,
+        trackingUrl: isShip && trackingUrl ? trackingUrl.slice(0, 400) : null,
         fulfilledById: adminId,
       },
     });

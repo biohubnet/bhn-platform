@@ -23,8 +23,22 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Merch rewards now picked up at the BHN office at U of T",
+    body: "Reward fulfillment is now pickup-first. When you claim a reward, the default option is to swing by the BioHubNet office at Leslie Dan Faculty of Pharmacy, University of Toronto — we'll have your bundle ready and email you when it lands. If you're far from Toronto, the same claim form has a 'Mail it to me' option; an admin reviews each mailing request and confirms postage (Canada at-cost; international we'll quote first). The bundles also got a refresh: 2,500 credits now unlocks the BHN Swag Bag (notepad + stress ball + a rotating mystery item — past trainees got pins, sticker packs, and micro-tools), and 5,000 credits unlocks the BHN insulated stainless bottle (the same one our staff carry — 16 oz, double-wall vacuum). Existing claims aren't affected; new claims pick up the new options.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Company logo URL is now a clear field, not a hidden input",
+    body: "The 'logo URL' input on the company profile page used to be a tiny placeholder-only box tucked under the logo preview — employers regularly missed that pasting a URL there was how the logo updated. The field now has an explicit 'Update company logo URL' label, a longer helper line that mentions the auto-fill alternative, a 'Remove logo' link when one is set, and proper URL input type so password managers / autofill don't try to fill it.",
+    kind: "improvement",
+    visibleTo: ["employer", "admin", "superadmin"],
+    daysAgo: 0,
+  },
+  {
     title: "Earn the gear — BHN merch rewards at 2,500 and 5,000 credits",
-    body: "Two milestone bundles now unlock as you train. The Apprentice Bundle (heavyweight tee + enamel pin + sticker pack) unlocks the moment you've spent 2,500 credits on coursework. Cross 5,000 and the Champion Bundle (technical hoodie + canvas tote + insulated 16 oz bottle) unlocks too. Each tier is one-time and ships free to Canada/US within 60 days of unlocking; international addresses ship at-cost with a quote sent first. New 'Rewards' page in the sidebar (under ENGAGE) shows your lifetime credits trained, a progress bar to the next tier, and the claim form when you're eligible — pick a size, confirm address, hit submit. Once admin packs and ships, you get tracking on the same card. Sandbox and demo accounts don't earn merch; rewards are a real-trainee perk only. Admins manage the queue at /admin/merch (Engage section).",
+    body: "Two milestone rewards now unlock as you train. 2,500 credits trained → BHN Swag Bag (notepad + stress ball + rotating mystery item). 5,000 credits trained → BHN insulated stainless bottle (16 oz, double-wall, lab-friendly). Default fulfillment is pickup at the BioHubNet office at Leslie Dan Faculty of Pharmacy, U of T; trainees outside the GTA can request mailing inside the claim form (admin reviews postage case-by-case). New 'Rewards' page in the sidebar (under ENGAGE) shows your lifetime credits trained, progress to the next tier, and the claim flow when you're eligible. Sandbox and demo accounts don't earn merch — rewards are a real-trainee perk only. Admins manage the queue at /admin/merch.",
     kind: "feature",
     visibleTo: ALL,
     daysAgo: 0,

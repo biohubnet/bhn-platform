@@ -1,12 +1,17 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Gift, Loader2, Package, X } from "lucide-react";
+import { Gift, Loader2, Package, X, MapPin, Plane } from "lucide-react";
 
 interface Props {
   rewardId: string;
   tierTitle: string;
   items: string[];
+  /** Whether this tier includes a sized item (apparel etc). For the
+   *  current registry only the swag bag's mystery item could
+   *  conceivably be apparel, but the bottle isn't sized — we expose
+   *  this so the form adapts. */
+  needsSize?: boolean;
   /** Pre-fill from the user's profile so the form isn't a cold blank slate. */
   defaults: {
     recipientName: string;
@@ -18,19 +23,22 @@ interface Props {
 const SHIRT_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL"] as const;
 
 /**
- * The trigger button + the modal that captures shipping details.
+ * Trigger button + the modal that captures fulfillment details.
  *
- * Modal pattern is consistent with the rest of the app (popover-style
- * inert background on `<dialog>`-equivalent positioning, ring + shadow
- * on the inner card). We don't use the native <dialog> element because
- * its backdrop pseudo can't pick up theme variables — so a fixed
- * overlay div + the popover utility class.
+ * Two paths:
+ *   • Pickup (default) — trainee swings by the BHN office at Leslie
+ *     Dan Faculty of Pharmacy, U of T. Captures pickup-time notes
+ *     only (preferred days, etc.). Cheap path.
+ *   • Mail it to me — for trainees far from Toronto. Captures the
+ *     full address. Marked SHIP_REQUEST so admin reviews postage
+ *     before committing.
  */
-export function MerchClaimDialog({ rewardId, tierTitle, items, defaults }: Props) {
+export function MerchClaimDialog({ rewardId, tierTitle, items, needsSize = false, defaults }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [method, setMethod] = useState<"PICKUP" | "SHIP_REQUEST">("PICKUP");
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Esc to close + focus trap to the modal heading on open.
@@ -39,8 +47,6 @@ export function MerchClaimDialog({ rewardId, tierTitle, items, defaults }: Props
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
-    // Focus the first interactive element in the modal so keyboard users
-    // land where they expect.
     const t = setTimeout(() => {
       dialogRef.current?.querySelector<HTMLElement>("input, button, select, textarea")?.focus();
     }, 0);
@@ -56,7 +62,7 @@ export function MerchClaimDialog({ rewardId, tierTitle, items, defaults }: Props
     setBusy(true);
     setError(null);
     const data = new FormData(e.currentTarget);
-    const body = Object.fromEntries(data.entries());
+    const body = { ...Object.fromEntries(data.entries()), fulfillmentMethod: method };
     try {
       const res = await fetch(`/api/rewards/merch/${rewardId}/claim`, {
         method: "POST",
@@ -68,7 +74,6 @@ export function MerchClaimDialog({ rewardId, tierTitle, items, defaults }: Props
         throw new Error(j.error ?? "Could not submit claim. Please try again.");
       }
       setOpen(false);
-      // Hard-refresh so the page rerenders the card in CLAIMED state.
       router.refresh();
     } catch (err) {
       setError((err as Error).message);
@@ -93,13 +98,10 @@ export function MerchClaimDialog({ rewardId, tierTitle, items, defaults }: Props
           aria-hidden={!open}
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
         >
-          {/* Backdrop */}
           <div
             onClick={() => !busy && setOpen(false)}
             className="absolute inset-0 bg-backdrop animate-fade-in"
           />
-
-          {/* Card */}
           <div
             ref={dialogRef}
             role="dialog"
@@ -118,13 +120,12 @@ export function MerchClaimDialog({ rewardId, tierTitle, items, defaults }: Props
             </button>
 
             <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-              Claim your bundle
+              Claim your reward
             </p>
             <h2 id={`claim-title-${rewardId}`} className="text-xl font-bold text-fg mt-1 tracking-tight">
               {tierTitle}
             </h2>
 
-            {/* Bundle preview — so they can size correctly. */}
             <ul className="mt-3 space-y-1 mb-5">
               {items.map((item) => (
                 <li key={item} className="text-xs text-muted flex items-start gap-2">
@@ -134,66 +135,96 @@ export function MerchClaimDialog({ rewardId, tierTitle, items, defaults }: Props
               ))}
             </ul>
 
+            {/* Fulfillment method toggle. Pickup is the default and the
+                visually-encouraged choice; mailing reads as a fallback
+                for trainees who can't make it to U of T. */}
+            <div className="mb-4">
+              <p className="block text-xs font-semibold text-fg mb-2">How would you like to receive it?</p>
+              <div className="grid grid-cols-2 gap-2">
+                <MethodCard
+                  active={method === "PICKUP"}
+                  onClick={() => setMethod("PICKUP")}
+                  icon={MapPin}
+                  title="Pick up"
+                  body="Stop by the BHN office at Leslie Dan Faculty of Pharmacy, U of T."
+                />
+                <MethodCard
+                  active={method === "SHIP_REQUEST"}
+                  onClick={() => setMethod("SHIP_REQUEST")}
+                  icon={Plane}
+                  title="Mail it to me"
+                  body="For trainees far from Toronto. We'll confirm before shipping."
+                />
+              </div>
+            </div>
+
             <form onSubmit={submit} className="space-y-3">
               <Field
-                label="Recipient name"
+                label="Your full name"
                 name="recipientName"
                 defaultValue={defaults.recipientName}
                 required
                 autoComplete="name"
-                placeholder="Full name on the package"
-              />
-              <Field
-                label="Address line 1"
-                name="addressLine1"
-                required
-                autoComplete="address-line1"
-              />
-              <Field
-                label="Address line 2"
-                name="addressLine2"
-                autoComplete="address-line2"
-                placeholder="Apt, suite, building (optional)"
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="City" name="city" required autoComplete="address-level2" />
-                <Field label="State / Province" name="region" required autoComplete="address-level1" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Postal code" name="postalCode" required autoComplete="postal-code" />
-                <Field
-                  label="Country"
-                  name="country"
-                  defaultValue={defaults.country}
-                  required
-                  autoComplete="country-name"
-                />
-              </div>
-              <Field
-                label="Phone (for courier only)"
-                name="phone"
-                defaultValue={defaults.phone}
-                autoComplete="tel"
-                type="tel"
+                placeholder={method === "PICKUP" ? "Name we'll have on the bag at pickup" : "Full name on the package"}
               />
 
-              <div>
-                <label htmlFor={`shirtSize-${rewardId}`} className="block text-xs font-semibold text-fg mb-1">
-                  Apparel size
-                </label>
-                <select
-                  id={`shirtSize-${rewardId}`}
-                  name="shirtSize"
-                  required
-                  defaultValue=""
-                  className="w-full px-3 py-2 rounded-lg bg-card border border-line text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/60"
-                >
-                  <option value="" disabled>Pick a size</option>
-                  {SHIRT_SIZES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
+              {method === "SHIP_REQUEST" && (
+                <>
+                  <div className="text-[11px] bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200 rounded-lg px-3 py-2 leading-snug">
+                    Mailing isn't automatic — an admin reviews each request.
+                    Bottles + paper goods ship within Canada at-cost; international
+                    requests we'll quote first. You'll get an email either way.
+                  </div>
+                  <Field label="Address line 1" name="addressLine1" required autoComplete="address-line1" />
+                  <Field
+                    label="Address line 2"
+                    name="addressLine2"
+                    autoComplete="address-line2"
+                    placeholder="Apt, suite, building (optional)"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="City" name="city" required autoComplete="address-level2" />
+                    <Field label="State / Province" name="region" required autoComplete="address-level1" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Postal code" name="postalCode" required autoComplete="postal-code" />
+                    <Field
+                      label="Country"
+                      name="country"
+                      defaultValue={defaults.country}
+                      required
+                      autoComplete="country-name"
+                    />
+                  </div>
+                  <Field
+                    label="Phone (for courier only)"
+                    name="phone"
+                    defaultValue={defaults.phone}
+                    autoComplete="tel"
+                    type="tel"
+                  />
+                </>
+              )}
+
+              {needsSize && (
+                <div>
+                  <label htmlFor={`shirtSize-${rewardId}`} className="block text-xs font-semibold text-fg mb-1">
+                    Apparel size
+                  </label>
+                  <select
+                    id={`shirtSize-${rewardId}`}
+                    name="shirtSize"
+                    required
+                    defaultValue=""
+                    className="w-full px-3 py-2 rounded-lg bg-card border border-line text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/60"
+                  >
+                    <option value="" disabled>Pick a size</option>
+                    {SHIRT_SIZES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label htmlFor={`notes-${rewardId}`} className="block text-xs font-semibold text-fg mb-1">
@@ -204,7 +235,11 @@ export function MerchClaimDialog({ rewardId, tierTitle, items, defaults }: Props
                   name="notes"
                   rows={2}
                   maxLength={400}
-                  placeholder="Anything our packing team should know — gate code, fitted vs relaxed cut, hold for vacation, etc."
+                  placeholder={
+                    method === "PICKUP"
+                      ? "Days you can pick up, allergies for the mystery item, etc."
+                      : "Anything our packing team should know — gate code, holiday hold, etc."
+                  }
                   className="w-full px-3 py-2 rounded-lg bg-card border border-line text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/60 resize-none"
                 />
               </div>
@@ -230,13 +265,17 @@ export function MerchClaimDialog({ rewardId, tierTitle, items, defaults }: Props
                   className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-2"
                 >
                   {busy && <Loader2 size={14} className="animate-spin" />}
-                  {busy ? "Submitting…" : "Submit claim"}
+                  {busy
+                    ? "Submitting…"
+                    : method === "PICKUP"
+                    ? "Reserve for pickup"
+                    : "Request mailing"}
                 </button>
               </div>
 
               <p className="text-[11px] text-subtle leading-snug pt-1">
-                Once submitted, your address is locked for this claim. Need to
-                change it later? Email <span className="font-semibold">support@biohubnet.com</span>{" "}
+                Once submitted, your selection is locked for this claim. To
+                change anything, email <span className="font-semibold">support@biohubnet.com</span>{" "}
                 with your name + tier.
               </p>
             </form>
@@ -244,6 +283,37 @@ export function MerchClaimDialog({ rewardId, tierTitle, items, defaults }: Props
         </div>
       )}
     </>
+  );
+}
+
+/** Toggle card for the fulfillment-method selector. Two side-by-side
+ *  cards trade a radio's invisibility for tappable surfaces — better
+ *  on touch and clearer on desktop. */
+function MethodCard({
+  active, onClick, icon: Icon, title, body,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ElementType;
+  title: string;
+  body: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-left rounded-xl border p-3 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 ${
+        active
+          ? "border-brand-400 bg-brand-50 ring-1 ring-brand-300"
+          : "border-line bg-card hover:bg-elevated"
+      }`}
+    >
+      <div className={`flex items-center gap-1.5 text-xs font-semibold mb-1 ${active ? "text-brand-700" : "text-fg"}`}>
+        <Icon size={12} />
+        {title}
+      </div>
+      <p className={`text-[11px] leading-snug ${active ? "text-brand-700/90" : "text-muted"}`}>{body}</p>
+    </button>
   );
 }
 

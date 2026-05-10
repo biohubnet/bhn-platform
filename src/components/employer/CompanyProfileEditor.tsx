@@ -138,8 +138,8 @@ export function CompanyProfileEditor({
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
       {/* Logo + AI-fill panel */}
       <aside className="space-y-4">
-        <div className="bg-card border border-line rounded-2xl p-5 text-center">
-          <div className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle mb-3">Company logo</div>
+        <div className="bg-card border border-line rounded-2xl p-5">
+          <div className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle mb-3 text-center">Company logo</div>
           {values.companyLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -153,13 +153,37 @@ export function CompanyProfileEditor({
               <ImageIcon size={28} />
             </div>
           )}
+
+          {/* Properly labeled URL field — was a tiny placeholder-only
+              input before, which left employers unsure that pasting a
+              URL was how the logo updates. The label + helper line
+              now make the action explicit. */}
+          <label htmlFor="companyLogoUrl" className="block text-xs font-semibold text-fg mt-4 mb-1">
+            Update company logo URL
+          </label>
           <input
+            id="companyLogoUrl"
+            type="url"
+            inputMode="url"
+            autoComplete="off"
             value={values.companyLogo ?? ""}
             onChange={(e) => set("companyLogo", e.target.value)}
-            placeholder="Logo URL"
-            className={`${cls} mt-3 text-xs`}
+            placeholder="https://your-site.com/logo.png"
+            className={`${cls} text-xs`}
           />
-          <p className="text-[10px] text-subtle mt-1.5">Auto-fill grabs your favicon. Paste a wordmark URL to override.</p>
+          <p className="text-[10px] text-subtle mt-1.5 leading-snug">
+            Paste any public image URL — PNG, SVG, or JPG. Auto-fill (right) grabs
+            your favicon automatically; pasting a URL here overrides it.
+          </p>
+          {values.companyLogo && (
+            <button
+              type="button"
+              onClick={() => set("companyLogo", "")}
+              className="mt-2 text-[11px] text-muted hover:text-rose-700 underline underline-offset-2"
+            >
+              Remove logo
+            </button>
+          )}
         </div>
       </aside>
 

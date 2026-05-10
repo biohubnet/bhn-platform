@@ -1101,12 +1101,23 @@ model MerchReward {
   unlockedAt DateTime @default(now())
 
   /// Lifecycle:
-  ///   UNCLAIMED → trainee hasn't filled out shipping yet
-  ///   CLAIMED   → shipping captured; in admin fulfillment queue
-  ///   SHIPPED   → admin sent it; tracking attached
-  ///   DELIVERED → optional terminal state (admin or trainee marks)
-  ///   CANCELLED → admin cancelled (returned, address bad, etc.)
+  ///   UNCLAIMED → trainee hasn't filled out shipping/pickup yet
+  ///   CLAIMED   → details captured; in admin fulfillment queue
+  ///   SHIPPED   → for SHIP_REQUEST: package out + tracking attached;
+  ///               for PICKUP: bundle ready at the BHN office
+  ///   DELIVERED → terminal happy state (delivered or picked up)
+  ///   CANCELLED → admin cancelled (returned, ineligible, etc.)
   status String @default("UNCLAIMED")
+
+  /// How the trainee gets the bundle:
+  ///   PICKUP        — collect in person at the BHN office at Leslie
+  ///                   Dan Faculty of Pharmacy, University of Toronto.
+  ///                   Default and the cheap path.
+  ///   SHIP_REQUEST  — trainee is far from Toronto and asked us to
+  ///                   mail it. Admin reviews case-by-case before
+  ///                   committing postage; they can convert to PICKUP
+  ///                   or CANCELLED if it doesn't fly.
+  fulfillmentMethod String @default("PICKUP")
 
   // Shipping snapshot — frozen at claim time so later edits to the
   // user's profile don't quietly redirect already-queued packages.
