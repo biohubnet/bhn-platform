@@ -158,6 +158,8 @@ const adminEngageItems: NavItem[] = [
     description: "Every issued certificate. Revoke a credential or look it up by SHA hash." },
   { label: "Merch fulfillment",         href: "/admin/merch",               icon: Gift,         minRole: "admin",
     description: "Reward bundles claimed by trainees. Pack pickups for the office; review mailing requests." },
+  { label: "Course thumbnails",         href: "/admin/course-thumbnails",   icon: Sparkles,     minRole: "admin",
+    description: "AI cover art for the catalog. Bulk regenerate topic-specific thumbnails — LLM extracts visual motifs per course, SDXL renders them." },
 ];
 
 // EXPERIENCE — the matching marketplace: skill ontology that wires

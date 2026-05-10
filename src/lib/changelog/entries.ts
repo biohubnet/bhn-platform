@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Topic-specific AI thumbnails for the entire course catalog",
+    body: "The thumbnail generator used to pick one representative word per course (chooseOneWord) and ask SDXL to paint that — which produced pretty but generic gradient covers that didn't reflect each course's actual topic. Two changes: (1) a new LLM step extracts 3–5 concrete visual elements per course (bioreactor, GMP binder, cleanroom curtain, gel bands, pipette, etc.) from the title + category + tags + description, and (2) the SDXL prompt now anchors on those motifs explicitly so the model has specific objects to draw rather than abstract concepts. New admin page at /admin/course-thumbnails (Admin · Engage) lists every course with its current thumbnail, lets you regenerate one at a time or bulk-regen the whole catalog, and surfaces the LLM motifs alongside each row so editors can see what's driving the imagery. The CLI script at scripts/auto-thumbnail-courses.ts uses the same pipeline and now defaults to regenerating ALL courses (pass --missing-only to keep existing thumbnails and only fill gaps).",
+    kind: "feature",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
     title: "Showcase Trainee — single global advanced-trainee demo account",
     body: "New admin tool at /admin/showcases (Admin · Experience). Spawns a single global trainee account at showcase.trainee@biohubnet.test ('Maya Okafor') pre-populated with the full advanced-trainee state: 200+6,000 credit history with three enrollment debits totalling 5,200 spent (so both merch tiers unlock cleanly), both reward bundles claimed for office pickup, completed coursework + pathway + certificates when the DB has those rows seeded, full job profile (resume URL + 1-min video URL + elevator pitch + bio + jobTitle + organization), two scheduled interviews. accountKind='showcase' — fourth value alongside real / sandbox / demo, filtered out of 'real' admin stats by default. The /sandbox/[token] magic-link route was extended to honour showcase tokens, so admins get a one-click 'Sign in as Maya' from the panel (or use 'View as trainee' as superadmin to peek without leaving their session). Reset wipes related rows + re-seeds for known-good demo state; Delete removes the account entirely. Different concept from sandbox accounts (one per admin) and demo workspaces (time-limited prospect trials) — showcase is the lived-in advanced-state demo for sales calls and training-team walkthroughs.",
     kind: "feature",

@@ -324,3 +324,100 @@ export function buildOneWordThumbnailPrompt(word: string): string {
     `flat vector aesthetic, no text, no logo, no people.`
   );
 }
+
+/**
+ * Use the LLM to extract 3–5 concrete visual objects an editorial
+ * illustrator would draw to represent a course's topic. Returns a
+ * curated array (deduped, lowercase, profanity-stripped — though
+ * Cloudflare Llama is well-behaved here).
+ *
+ * Falls back to a sensible single-item list keyed off chooseOneWord()
+ * if the LLM call fails or returns junk — the SDXL prompt builder
+ * then still has *something* concrete to draw rather than the very
+ * abstract "concept of foo" framing.
+ */
+export async function extractThumbnailMotifs(input: {
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  tags?: string | null;
+}, opts: BaseOpts = {}): Promise<string[]> {
+  const fallback = [chooseOneWord(input)];
+  if (!AI_CONFIGURED.chat) return fallback;
+
+  const desc = input.description ? `\nDescription: ${input.description.slice(0, 400)}` : "";
+  const cat  = input.category    ? `\nCategory: ${input.category}`                       : "";
+  const tags = input.tags        ? `\nTags: ${input.tags.slice(0, 200)}`                 : "";
+
+  const messages: ChatMessage[] = [
+    {
+      role: "system",
+      content:
+        "You're helping pick visual elements for an editorial thumbnail. " +
+        "Reply with 3–5 concrete visual objects an illustrator would draw to evoke a life-sciences / biomanufacturing training course. " +
+        "Comma-separated; no numbering, no quotes, no commentary, no people, no text. " +
+        "Prefer iconic scientific objects (bioreactor, pipette, cleanroom curtain, DNA helix, GMP binder, audit clipboard, gel bands, regulatory diagram, chromatography column, fill-finish needle, microscope, etc.) over abstract shapes. " +
+        "If the topic is administrative or regulatory rather than wet-lab, pick objects that reflect that (binders, scales of justice, signature pen, audit trail diagram).",
+    },
+    {
+      role: "user",
+      content: `Course title: ${input.title}${cat}${tags}${desc}\n\nVisual elements:`,
+    },
+  ];
+
+  const r = await chat(messages, {
+    ...opts,
+    feature: opts.feature ?? "thumbnail_motif",
+    maxTokens: 80,
+    temperature: 0.4,
+  });
+  if (!r.ok || !r.text) return fallback;
+
+  // Parse: split on commas / newlines, trim, drop punctuation, dedupe,
+  // strip anything that obviously isn't a noun phrase. Cap at 5.
+  const tokens = r.text
+    .split(/[,\n;]/)
+    .map((s) => s.trim().replace(/^[\s\-•*\d.]+/, "").replace(/[".]+$/, "").toLowerCase())
+    .filter((s) => s.length > 1 && s.length < 60)
+    .filter((s) => !/[A-Z_<>]/.test(s)); // catch model-tag echoes
+  const seen = new Set<string>();
+  const cleaned: string[] = [];
+  for (const t of tokens) {
+    if (seen.has(t)) continue;
+    seen.add(t);
+    cleaned.push(t);
+    if (cleaned.length >= 5) break;
+  }
+  return cleaned.length >= 2 ? cleaned : fallback;
+}
+
+/**
+ * Build a topic-anchored thumbnail prompt that gives SDXL specific
+ * visual hooks — the title + category provide *what* the course is
+ * about, the motifs provide concrete objects to draw, and the style
+ * block keeps the catalog visually consistent.
+ *
+ * This is the recommended builder for new course thumbnails. The
+ * older buildThumbnailPrompt / buildOneWordThumbnailPrompt are kept
+ * for backward compatibility with the seed scripts that already use
+ * them.
+ */
+export function buildTopicThumbnailPrompt(input: {
+  title: string;
+  category?: string | null;
+  motifs: string[];
+}): string {
+  const subject = [input.category, input.title].filter(Boolean).join(" — ");
+  const motifLine = input.motifs.length > 0
+    ? `Visual elements (draw these, not abstract shapes): ${input.motifs.join(", ")}.`
+    : "";
+  return (
+    `Editorial cover illustration for a biomanufacturing training course. ` +
+    `Subject: ${subject}. ` +
+    `${motifLine} ` +
+    `Style: clean modern flat-vector composition; deep navy and brand-blue palette with violet/cyan accents; ` +
+    `confident magazine-cover composition with strong negative space; soft gradients; subtle film grain. ` +
+    `Hard requirements: NO text, NO words, NO letters, NO numbers, NO logos, NO people, NO faces, ` +
+    `no photoreal humans, no signatures, no watermarks. Imagery must literally evoke the subject.`
+  );
+}

@@ -1,35 +1,54 @@
-/* Auto-generate AI thumbnails for every course that doesn't already
- * have one. Picks a single representative word per course (chooseOneWord)
- * and renders an editorial brand-blue thumbnail via Cloudflare SDXL,
- * uploads to R2, then writes the URL back to Course.thumbnail.
+/* Auto-generate AI thumbnails for every course in the catalog.
  *
- * Idempotent: skips courses with an existing thumbnail unless --force.
+ * Pipeline per course:
+ *   1. Ask the LLM for 3–5 concrete visual elements an illustrator
+ *      would draw to evoke this course (title + category + tags +
+ *      description as signal).
+ *   2. Build an SDXL prompt anchored on those motifs — gives the
+ *      model specific things to draw rather than an abstract single
+ *      word, so output is topic-accurate instead of generic.
+ *   3. Generate via Cloudflare SDXL Lightning, upload to R2 at a
+ *      timestamped key, write the URL back to Course.thumbnail.
+ *   4. Best-effort delete the previous R2 object so the bucket
+ *      doesn't accumulate dead files.
+ *
+ * Default: regenerates EVERY course (overrides any existing
+ * thumbnail). Pass --missing-only to keep existing thumbnails and
+ * only fill in gaps.
  *
  * Run:
- *   npx tsx scripts/auto-thumbnail-courses.ts             # only missing
- *   npx tsx scripts/auto-thumbnail-courses.ts --force     # regenerate all
- *   npx tsx scripts/auto-thumbnail-courses.ts --limit 20  # cap batch
+ *   npx tsx scripts/auto-thumbnail-courses.ts                  # regen all
+ *   npx tsx scripts/auto-thumbnail-courses.ts --missing-only   # gaps only
+ *   npx tsx scripts/auto-thumbnail-courses.ts --limit 20       # cap batch
  *
  * Reads env: CF_ACCOUNT_ID, CF_AI_TOKEN, R2_*, DATABASE_URL.
  */
 import { PrismaClient } from "@prisma/client";
 import {
   generateImage,
-  buildOneWordThumbnailPrompt,
-  chooseOneWord,
+  extractThumbnailMotifs,
+  buildTopicThumbnailPrompt,
   AI_CONFIGURED,
 } from "../src/lib/ai";
-import { putR2Object, r2PublicUrl, R2_PUBLIC_URL } from "../src/lib/r2";
+import {
+  putR2Object,
+  r2PublicUrl,
+  R2_PUBLIC_URL,
+  deleteR2ObjectByUrl,
+} from "../src/lib/r2";
 
 const prisma = new PrismaClient();
 
 const args = new Set(process.argv.slice(2));
-const force = args.has("--force");
+const missingOnly = args.has("--missing-only");
 const limitArg = process.argv.find((a) => a.startsWith("--limit"));
 const limit = limitArg
   ? Number(limitArg.split("=")[1] ?? process.argv[process.argv.indexOf(limitArg) + 1])
   : Infinity;
 
+// Concurrency cap: SDXL Lightning is fast (4–8s per image) but the
+// account-level rate limit on Cloudflare AI is finite; 3 in flight
+// keeps us well under the limit and keeps logs readable.
 const CONCURRENCY = 3;
 
 async function main() {
@@ -42,16 +61,24 @@ async function main() {
     process.exit(1);
   }
 
-  const where = force ? {} : { thumbnail: null };
+  const where = missingOnly ? { thumbnail: null } : {};
   const courses = await prisma.course.findMany({
     where,
-    select: { id: true, title: true, category: true, thumbnail: true },
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      tags: true,
+      description: true,
+      thumbnail: true,
+    },
     orderBy: { createdAt: "asc" },
   });
 
   const queue = courses.slice(0, isFinite(limit) ? limit : courses.length);
   console.log(
-    `Found ${courses.length} candidates; processing ${queue.length} ${force ? "(forced)" : "(missing only)"}.`
+    `Found ${courses.length} candidates; processing ${queue.length} ` +
+    `${missingOnly ? "(filling gaps)" : "(regenerating all)"}.`,
   );
   if (queue.length === 0) {
     console.log("Nothing to do.");
@@ -67,22 +94,55 @@ async function main() {
       const i = cursor++;
       if (i >= queue.length) return;
       const c = queue[i];
-      const word = chooseOneWord(c);
-      const prompt = buildOneWordThumbnailPrompt(word);
       const tag = `[${workerId}] ${i + 1}/${queue.length}  ${c.title}`;
       try {
-        const png = await generateImage(prompt, { feature: "thumbnail_course_batch" });
+        // 1. Motif extraction — what objects should the illustrator draw?
+        const motifs = await extractThumbnailMotifs(
+          {
+            title: c.title,
+            category: c.category,
+            tags: c.tags,
+            description: c.description,
+          },
+          { feature: "thumbnail_motif_batch" },
+        );
+
+        // 2. Build a topic-anchored SDXL prompt around those motifs.
+        const prompt = buildTopicThumbnailPrompt({
+          title: c.title,
+          category: c.category,
+          motifs,
+        });
+
+        // 3. Render.
+        const png = await generateImage(prompt, { feature: "thumbnail_course_batch", steps: 8 });
         if (!png) {
           console.error(`${tag} — generation returned null`);
           failed++;
           continue;
         }
+
+        // 4. Upload to R2 at a timestamped key. Old URLs keep working
+        //    until the best-effort cleanup below; in-flight page
+        //    views never 404 mid-regen.
         const key = `thumbnails/courses/${c.id}/${Date.now()}.png`;
         await putR2Object(key, Buffer.from(png), "image/png");
         const url = r2PublicUrl(key);
+        const previousUrl = c.thumbnail;
         await prisma.course.update({ where: { id: c.id }, data: { thumbnail: url } });
+
+        // 5. Best-effort delete of the prior R2 object (only when we
+        //    actually regenerated over an existing one).
+        if (previousUrl && previousUrl !== url) {
+          try {
+            await deleteR2ObjectByUrl(previousUrl);
+          } catch {
+            // Non-fatal — leaves an orphan but doesn't fail the run.
+          }
+        }
+
         done++;
-        console.log(`${tag} — "${word}" -> ${url}`);
+        console.log(`${tag} — motifs: [${motifs.join(", ")}] -> ${url}`);
       } catch (e) {
         failed++;
         console.error(`${tag} — error:`, (e as Error).message);
@@ -91,10 +151,12 @@ async function main() {
   }
 
   await Promise.all(
-    Array.from({ length: CONCURRENCY }, (_, n) => worker(n + 1))
+    Array.from({ length: CONCURRENCY }, (_, n) => worker(n + 1)),
   );
 
-  console.log(`\nDone. ${done} updated, ${failed} failed, ${queue.length - done - failed} skipped.`);
+  console.log(
+    `\nDone. ${done} updated, ${failed} failed, ${queue.length - done - failed} skipped.`,
+  );
 }
 
 main()
