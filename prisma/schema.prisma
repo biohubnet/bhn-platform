@@ -153,6 +153,10 @@ model User {
   merchRewards   MerchReward[]
   fulfilledMerch MerchReward[] @relation("MerchFulfiller")
 
+  // Launch readiness checklist — admin tooling only.
+  ownedChecklistItems   LaunchChecklistState[] @relation("ChecklistOwner")
+  updatedChecklistItems LaunchChecklistState[] @relation("ChecklistUpdater")
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -1182,4 +1186,37 @@ model ChangeLog {
   createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+/// Per-item state for the Launch Readiness dashboard. The canonical
+/// list of items lives in src/lib/launch/checklist.ts (so the schema
+/// is stable and admins can't break the structure); only mutable
+/// state lives here — manual override status, owner, target date,
+/// notes. Auto-items don't need a row unless an admin explicitly
+/// overrode the auto-detected status.
+model LaunchChecklistState {
+  id             String    @id @default(cuid())
+  /// Stable key from the canonical checklist (e.g. "infra.smtp",
+  /// "content.real-courses"). One row per key.
+  itemKey        String    @unique
+  /// Admin override of the system-detected status. Wins over auto
+  /// probes when set. Values: "not_started" | "in_progress" |
+  /// "done" | "blocked" | "not_applicable".
+  manualStatus   String?
+  /// Free text — what's blocking, link to ticket, who's working on it.
+  notes          String?
+  /// Person responsible. Null = unassigned.
+  ownerId        String?
+  /// When this item is expected to land. Drives the timeline view.
+  targetDate     DateTime?
+  /// True when this needs an executive decision (surfaces in the
+  /// "Decisions for the boss" panel on the page).
+  decisionNeeded Boolean   @default(false)
+  /// Last admin who touched the row — populates the audit footer.
+  updatedById    String?
+  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime  @default(now())
+
+  owner     User? @relation("ChecklistOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ChecklistUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
 }

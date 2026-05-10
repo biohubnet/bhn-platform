@@ -49,6 +49,7 @@ import {
   X,
   Compass,
   Gift,
+  Rocket,
 } from "lucide-react";
 
 interface NavItem {
@@ -181,6 +182,8 @@ const adminExperienceItems: NavItem[] = [
 // they're told, what reports admins read, the Inbox/letter-box that
 // gathers every pending request, plus superadmin-only ops.
 const adminPlatformItems: NavItem[] = [
+  { label: "Launch Readiness",    href: "/admin/launch-readiness",    icon: Rocket,      minRole: "admin",
+    description: "Executive dashboard tracking go-live status — % ready, days to launch, decisions needed, top risks, detailed checklist by phase. Auto-detects what's done." },
   { label: "Inbox",               href: "/admin/inbox",               icon: Inbox,       minRole: "admin",
     description: "Every pending admin request in one queue — credit apps, role changes, employer invites, mailing requests." },
   { label: "Users",               href: "/admin/users",               icon: Users,       minRole: "admin",
