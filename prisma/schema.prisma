@@ -47,11 +47,18 @@ model User {
   /// /admin/newsletter. Null = not yet exported. Filtered against this
   /// to only show new sign-ups in the export view.
   newsletterExportedAt   DateTime?
-  /// Account category: "real" | "sandbox" | "demo".
-  ///   sandbox — admin's personal play pair (one employer + one trainee
-  ///             per admin). Never auto-deletes.
-  ///   demo    — time-limited demo workspace claimed by a prospective
-  ///             partner. Cleaned up when demoExpiresAt < NOW().
+  /// Account category: "real" | "sandbox" | "demo" | "showcase".
+  ///   sandbox  — admin's personal play pair (one employer + one trainee
+  ///              per admin). Never auto-deletes.
+  ///   demo     — time-limited demo workspace claimed by a prospective
+  ///              partner. Cleaned up when demoExpiresAt < NOW().
+  ///   showcase — single global "showcase trainee" account used for
+  ///              sales calls and training-team demos. Pre-populated
+  ///              with the full advanced-trainee journey: completed
+  ///              courses, completed pathway, certificates, both
+  ///              earned merch rewards, full job profile (resume +
+  ///              1-min video + elevator pitch), scheduled
+  ///              interviews. Refreshable; never expires.
   /// All admin counts and stats default to filtering for "real" only.
   accountKind            String    @default("real")
   /// Set on demo accounts; the cleanup sweeper deletes the user + all

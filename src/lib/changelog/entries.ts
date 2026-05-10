@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Showcase Trainee — single global advanced-trainee demo account",
+    body: "New admin tool at /admin/showcases (Admin · Experience). Spawns a single global trainee account at showcase.trainee@biohubnet.test ('Maya Okafor') pre-populated with the full advanced-trainee state: 200+6,000 credit history with three enrollment debits totalling 5,200 spent (so both merch tiers unlock cleanly), both reward bundles claimed for office pickup, completed coursework + pathway + certificates when the DB has those rows seeded, full job profile (resume URL + 1-min video URL + elevator pitch + bio + jobTitle + organization), two scheduled interviews. accountKind='showcase' — fourth value alongside real / sandbox / demo, filtered out of 'real' admin stats by default. The /sandbox/[token] magic-link route was extended to honour showcase tokens, so admins get a one-click 'Sign in as Maya' from the panel (or use 'View as trainee' as superadmin to peek without leaving their session). Reset wipes related rows + re-seeds for known-good demo state; Delete removes the account entirely. Different concept from sandbox accounts (one per admin) and demo workspaces (time-limited prospect trials) — showcase is the lived-in advanced-state demo for sales calls and training-team walkthroughs.",
+    kind: "feature",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
     title: "OBIO Entrepreneurship Bootcamp now has a full landing page on /forms/obio-bootcamp",
     body: "The /forms/obio-bootcamp page used to render only the registration form. It now leads with a full marketing-style landing built in the platform's own design language: hero with intro copy and format tags (3½-day intensive · trainee entrepreneurs · pitch to investors); 'Bootcamp at a glance' card with dates / location / format / cost; 4-phase timeline (Pre-training → Bootcamp → Post-training → Follow-up) with virtual / in-person tags and the ~40-hour total commitment; numbered Section 01 Curriculum (4 topic blocks: Market & Industry · Product Development & IP · Regulatory & Legal · Business Planning & Finance); Section 02 Experience (workshops + panels); Section 03 Impact (3 stat cards from past-participant surveys); and a travel & accommodation support callout. The in-platform registration form sits below — better than the external Google Form on biohubnet.ca because trainees are already authenticated and submissions land in the admin inbox. Per-slug content is now wired through a SLUG_CONTENT map in the [slug] route, so we can add similar landings for other forms (talent-application, etc.) without forking the page.",
     kind: "feature",

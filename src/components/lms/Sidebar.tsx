@@ -171,6 +171,8 @@ const adminExperienceItems: NavItem[] = [
     description: "Personal play pairs (one employer + one trainee per admin) for testing the platform end-to-end." },
   { label: "Demo workspaces",     href: "/admin/demo-workspaces",     icon: FlaskConical, minRole: "admin",
     description: "Time-limited demo workspaces for prospective partners. Auto-cleanup after expiry." },
+  { label: "Showcase Trainee",    href: "/admin/showcases",           icon: Sparkles,     minRole: "admin",
+    description: "Single global advanced-trainee demo account — completed coursework, both merch tiers earned, full profile, scheduled interviews. For sales calls and training-team demos." },
 ];
 
 // PLATFORM — operating the platform itself: who has access, what

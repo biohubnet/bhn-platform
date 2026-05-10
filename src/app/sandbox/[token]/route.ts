@@ -1,14 +1,15 @@
 /**
- * One-click magic-link sign-in for sandbox + demo accounts.
+ * One-click magic-link sign-in for sandbox + demo + showcase accounts.
  *
  *   GET /sandbox/[token]
  *
  * Looks up a User by `magicToken`. If the user exists AND their
- * accountKind is "sandbox" or "demo", we mint a NextAuth JWT and
- * redirect to the appropriate dashboard. Real accounts (accountKind
- * = "real") are *never* honoured here — even if a token were
- * somehow set on a real user, the route would refuse, so a leaked
- * sandbox token can't escalate to a real-user takeover.
+ * accountKind is one of "sandbox" / "demo" / "showcase", we mint a
+ * NextAuth JWT and redirect to the appropriate dashboard. Real
+ * accounts (accountKind = "real") are *never* honoured here — even
+ * if a token were somehow set on a real user, the route would refuse,
+ * so a leaked sandbox/showcase token can't escalate to a real-user
+ * takeover.
  *
  * The cookie scope is browser-wide; visitors should open the link
  * in an incognito window if they want to keep their main admin
@@ -38,7 +39,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   if (!user.isActive) {
     return NextResponse.redirect(`${origin}/login?error=sandbox_disabled`);
   }
-  if (user.accountKind !== "sandbox" && user.accountKind !== "demo") {
+  if (
+    user.accountKind !== "sandbox" &&
+    user.accountKind !== "demo" &&
+    user.accountKind !== "showcase"
+  ) {
     // Defence in depth — should never happen since real accounts
     // never have magicToken set, but if they do, refuse anyway.
     return NextResponse.redirect(`${origin}/login?error=sandbox_invalid`);
