@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession, isAdmin, isStaff } from "@/lib/auth";
 import { trackServer } from "@/lib/analytics";
+import { ensureMerchUnlocks } from "@/lib/rewards/merch";
 
 export const TRAINEE_CONCURRENT_LIMIT = 3;
 
@@ -79,6 +80,22 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     update: { status: "active" },
     create: { userId, courseId, status: "active" },
   });
+
+  // Loyalty unlock — every credit-spending enrollment is a chance to
+  // cross a merch threshold. Idempotent + sandbox-safe; safe to await
+  // synchronously since it does at most one count + a couple inserts.
+  // We don't await this on no-cost courses (admin path) because no
+  // debit means no progress toward "lifetime spent".
+  if (!isAdmin(role) && course.creditCost > 0) {
+    try {
+      await ensureMerchUnlocks(prisma, userId);
+    } catch (err) {
+      // Don't fail the enrollment if the loyalty side errors — the
+      // /rewards page calls ensureMerchUnlocks on every load and will
+      // self-heal next time the trainee visits.
+      console.error("ensureMerchUnlocks failed for", userId, err);
+    }
+  }
 
   await trackServer({
     userId,

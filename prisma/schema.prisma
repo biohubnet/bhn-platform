@@ -10,31 +10,31 @@ datasource db {
 
 // Roles: user | admin | superadmin | evaluating
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          String    @default("trainee") // trainee | evaluating | employer | instructor | admin | superadmin
-  isActive      Boolean   @default(true)
-  credits       Float     @default(200)
+  id                     String    @id @default(cuid())
+  name                   String?
+  email                  String    @unique
+  emailVerified          DateTime?
+  image                  String?
+  password               String?
+  role                   String    @default("trainee") // trainee | evaluating | employer | instructor | admin | superadmin
+  isActive               Boolean   @default(true)
+  credits                Float     @default(200)
   /// Employer-only: whether they can browse the rest of the platform
   /// (Engage / Experience nav). Off by default — employers see their
   /// portal; admins flip on if a partner needs broader access.
-  allowPlatformContent Boolean @default(false)
+  allowPlatformContent   Boolean   @default(false)
   /// Employer-only: company they post on behalf of. Free text.
-  employerCompany String?
+  employerCompany        String?
   /// Employer-only company-profile fields. AI auto-fill populates them
   /// from the website on demand; user can edit.
-  companyWebsite     String?
-  companyLogo        String?
-  companyIndustry    String?
-  companySize        String?  // "1-10" | "11-50" | etc.
-  companyLocation    String?
-  companyDescription String?
-  companyFounded     String?  // year as string (free-form)
-  lastLoginAt   DateTime?
+  companyWebsite         String?
+  companyLogo            String?
+  companyIndustry        String?
+  companySize            String? // "1-10" | "11-50" | etc.
+  companyLocation        String?
+  companyDescription     String?
+  companyFounded         String? // year as string (free-form)
+  lastLoginAt            DateTime?
   newsletterSubscribed   Boolean   @default(false)
   newsletterSubscribedAt DateTime?
   /// Three-state intent declared at signup:
@@ -96,49 +96,55 @@ model User {
   elevatorPitch          String?
   applicationUpdatedAt   DateTime?
   /// Onboarding progress: { version, seenStepIds[], minimized, dismissed, completedAt }
-  onboarding    Json?
+  onboarding             Json?
   /// GDPR/CCPA consent: { necessary, analytics, marketing, version, acceptedAt }
-  consent       Json?
+  consent                Json?
   /// Preferred UI language ISO code: en | es | fr | zh
-  locale        String    @default("en")
-  phone         String?
-  bio           String?
-  organization  String?
-  jobTitle      String?
-  country       String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  locale                 String    @default("en")
+  phone                  String?
+  bio                    String?
+  organization           String?
+  jobTitle               String?
+  country                String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
-  accounts           Account[]
-  sessions           Session[]
-  enrollments        Enrollment[]
-  scormSessions      ScormSession[]
-  xapiStatements     XapiStatement[]
-  certificates       Certificate[]
-  instructedCourses  Course[]          @relation("Instructor")
-  assessmentAttempts AssessmentAttempt[]
-  creditTransactions CreditTransaction[]
-  groupMemberships   GroupMembership[]
-  auditLogs          AuditLog[]
-  creditApplications CreditApplication[]   @relation("Applicant")
+  accounts             Account[]
+  sessions             Session[]
+  enrollments          Enrollment[]
+  scormSessions        ScormSession[]
+  xapiStatements       XapiStatement[]
+  certificates         Certificate[]
+  instructedCourses    Course[]            @relation("Instructor")
+  assessmentAttempts   AssessmentAttempt[]
+  creditTransactions   CreditTransaction[]
+  groupMemberships     GroupMembership[]
+  auditLogs            AuditLog[]
+  creditApplications   CreditApplication[] @relation("Applicant")
   reviewedApplications CreditApplication[] @relation("Reviewer")
-  roleRequests       RoleChangeRequest[]   @relation("RoleRequester")
+  roleRequests         RoleChangeRequest[] @relation("RoleRequester")
   reviewedRoleRequests RoleChangeRequest[] @relation("RoleReviewer")
-  buddiesInitiated   BuddyPair[]           @relation("InitiatorBuddies")
-  buddiesPartnered   BuddyPair[]           @relation("PartnerBuddies")
-  buddyMessages      BuddyMessage[]        @relation("BuddyMessageSender")
+  buddiesInitiated     BuddyPair[]         @relation("InitiatorBuddies")
+  buddiesPartnered     BuddyPair[]         @relation("PartnerBuddies")
+  buddyMessages        BuddyMessage[]      @relation("BuddyMessageSender")
 
   // Phase 1–5 additions
-  skills              UserSkill[]
-  applicationStatuses ApplicationStatus[]   @relation("Applicant")
-  statusEdits         ApplicationStatus[]   @relation("StatusEditor")
-  interviews          Interview[]           @relation("Interviewee")
-  scheduledInterviews Interview[]           @relation("Interviewer")
-  accessRequestsHandled AccessRequest[]     @relation("AccessRequestHandler")
-  formSubmissions     EventFormSubmission[] @relation("FormSubmitter")
-  savedPostings       UserSavedPosting[]    @relation("SavedPostingUser")
-  reviewBookmarks     ReviewBookmark[]
-  signatures          ElectronicSignature[]
+  skills                UserSkill[]
+  applicationStatuses   ApplicationStatus[]   @relation("Applicant")
+  statusEdits           ApplicationStatus[]   @relation("StatusEditor")
+  interviews            Interview[]           @relation("Interviewee")
+  scheduledInterviews   Interview[]           @relation("Interviewer")
+  accessRequestsHandled AccessRequest[]       @relation("AccessRequestHandler")
+  formSubmissions       EventFormSubmission[] @relation("FormSubmitter")
+  savedPostings         UserSavedPosting[]    @relation("SavedPostingUser")
+  reviewBookmarks       ReviewBookmark[]
+  signatures            ElectronicSignature[]
+
+  // Loyalty / merch rewards. `merchRewards` is the trainee's own
+  // claimed/unclaimed reward records; `fulfilledMerch` is the queue
+  // an admin has personally marked as shipped.
+  merchRewards   MerchReward[]
+  fulfilledMerch MerchReward[] @relation("MerchFulfiller")
 
   @@index([newsletterStatus, newsletterExportedAt])
 }
@@ -157,6 +163,7 @@ model Account {
   id_token          String?
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
 }
 
@@ -172,6 +179,7 @@ model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
+
   @@unique([identifier, token])
 }
 
@@ -209,25 +217,25 @@ model EventForm {
 /// long random string; the recipient hits /signup/employer/[token] to
 /// claim. Used invites stay around for the audit trail.
 model EmployerInvite {
-  id          String    @id @default(cuid())
-  email       String
-  token       String    @unique
+  id             String    @id @default(cuid())
+  email          String
+  token          String    @unique
   /// Optional: company name pre-filled at claim time.
-  companyName String?
+  companyName    String?
   /// Optional: company website pre-filled at claim time.
   companyWebsite String?
-  invitedById String?
-  createdAt   DateTime  @default(now())
-  expiresAt   DateTime
-  usedAt      DateTime?
-  usedById    String?
+  invitedById    String?
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime
+  usedAt         DateTime?
+  usedById       String?
   /// Phase 6 demo-mode: read-only preview link admins can hand to a
   /// prospective partner so they can browse the portal before committing.
-  demoMode    Boolean   @default(false)
+  demoMode       Boolean   @default(false)
   /// Each magic-link click bumps these. Useful for the admin's
   /// "did they open the link" signal.
-  openCount    Int      @default(0)
-  lastOpenedAt DateTime?
+  openCount      Int       @default(0)
+  lastOpenedAt   DateTime?
 
   @@index([email])
   @@index([invitedById, createdAt])
@@ -238,19 +246,19 @@ model EmployerInvite {
 /// /admin/access-requests and approve into an EmployerInvite or a
 /// trainee welcome.
 model AccessRequest {
-  id          String   @id @default(cuid())
-  kind        String   // "employer" | "trainee"
+  id          String    @id @default(cuid())
+  kind        String // "employer" | "trainee"
   email       String
   name        String?
   company     String?
   website     String?
   message     String?
-  source      String   @default("for-employers")
-  status      String   @default("pending") // pending | approved | rejected
+  source      String    @default("for-employers")
+  status      String    @default("pending") // pending | approved | rejected
   handledAt   DateTime?
   handledById String?
-  handledBy   User?    @relation("AccessRequestHandler", fields: [handledById], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
+  handledBy   User?     @relation("AccessRequestHandler", fields: [handledById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
 
   @@index([status, createdAt])
   @@index([kind])
@@ -260,24 +268,24 @@ model AccessRequest {
 /// to canonical Skill rows so the matching engine can reason about a
 /// shared vocabulary instead of free strings.
 model Skill {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  category    String?
-  description String?
+  id           String                      @id @default(cuid())
+  name         String                      @unique
+  slug         String                      @unique
+  category     String?
+  description  String?
   /// 384-d BGE-small embedding; managed via raw SQL (pgvector).
-  embedding   Unsupported("vector(384)")?
-  status      String   @default("active") // active | deprecated | merged
+  embedding    Unsupported("vector(384)")?
+  status       String                      @default("active") // active | deprecated | merged
   mergedIntoId String?
-  mergedInto   Skill?  @relation("SkillMerge", fields: [mergedIntoId], references: [id])
-  mergedFrom   Skill[] @relation("SkillMerge")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  mergedInto   Skill?                      @relation("SkillMerge", fields: [mergedIntoId], references: [id])
+  mergedFrom   Skill[]                     @relation("SkillMerge")
+  createdAt    DateTime                    @default(now())
+  updatedAt    DateTime                    @updatedAt
 
-  aliases       SkillAlias[]
-  courses       CourseSkill[]
-  users         UserSkill[]
-  postings      PostingSkill[]
+  aliases  SkillAlias[]
+  courses  CourseSkill[]
+  users    UserSkill[]
+  postings PostingSkill[]
 
   @@index([status])
   @@index([category])
@@ -298,7 +306,7 @@ model CourseSkill {
   courseId   String
   skillId    String
   weight     Float    @default(0.5)
-  source     String   @default("ai")  // ai | admin | seed
+  source     String   @default("ai") // ai | admin | seed
   confidence Float?
   createdAt  DateTime @default(now())
   course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -327,16 +335,16 @@ model UserSkill {
 }
 
 model PostingSkill {
-  id         String   @id @default(cuid())
+  id         String            @id @default(cuid())
   postingId  String
   skillId    String
-  weight     Float    @default(0.5)
-  required   Boolean  @default(true)
-  source     String   @default("ai") // ai | admin | employer
+  weight     Float             @default(0.5)
+  required   Boolean           @default(true)
+  source     String            @default("ai") // ai | admin | employer
   confidence Float?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime          @default(now())
   posting    InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
-  skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  skill      Skill             @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
   @@unique([postingId, skillId])
   @@index([skillId])
@@ -367,19 +375,19 @@ model ApplicationStatus {
 /// Phase 5 interview scheduling. Lightweight: employer proposes time
 /// slots, applicant accepts one. No external calendar integration in v1.
 model Interview {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   postingId     String
   applicantId   String
   scheduledById String
-  proposedSlots Json     // ISO[] strings
+  proposedSlots Json // ISO[] strings
   acceptedSlot  DateTime?
-  status        String   @default("proposed") // proposed | accepted | declined | completed | cancelled
-  format        String?  // phone | video | onsite
+  status        String    @default("proposed") // proposed | accepted | declined | completed | cancelled
+  format        String? // phone | video | onsite
   location      String?
   notes         String?
   respondedAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   posting     InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
   applicant   User              @relation("Interviewee", fields: [applicantId], references: [id], onDelete: Cascade)
@@ -493,20 +501,20 @@ model Course {
   creditCost   Float    @default(0)
   // Catalog filter facets — see src/lib/courses/filters.ts for the
   // canonical option lists. Free-text so admins can extend later.
-  topic        String?  // e.g. "Regulatory Affairs"
-  delivery     String?  // "Asynchronous" | "Online" | "In-Person" | "Blended"
-  provider     String?  // e.g. "CASTL", "BioTalent Canada"
-  isSpecial    Boolean  @default(false)  // Special Programs / Workshops flag
+  topic        String? // e.g. "Regulatory Affairs"
+  delivery     String? // "Asynchronous" | "Online" | "In-Person" | "Blended"
+  provider     String? // e.g. "CASTL", "BioTalent Canada"
+  isSpecial    Boolean  @default(false) // Special Programs / Workshops flag
   instructorId String?
   instructor   User?    @relation("Instructor", fields: [instructorId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // AI-generated summary of the course (visible to learners; refreshable by staff).
-  aiSummary    String?
-  embeddedAt   DateTime?
+  aiSummary  String?
+  embeddedAt DateTime?
   /// 384-d BGE-small embedding; managed via raw SQL (pgvector).
-  embedding    Unsupported("vector(384)")?
+  embedding  Unsupported("vector(384)")?
 
   scormPackage ScormPackage?
   modules      Module[]
@@ -519,23 +527,23 @@ model Course {
 }
 
 model ScormPackage {
-  id           String   @id @default(cuid())
-  courseId     String   @unique
-  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  id           String         @id @default(cuid())
+  courseId     String         @unique
+  course       Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   version      String
   entryPoint   String
   manifestData String
   uploadPath   String
-  uploadedAt   DateTime @default(now())
+  uploadedAt   DateTime       @default(now())
   sessions     ScormSession[]
 }
 
 model ScormSession {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   userId        String
   packageId     String
-  attemptNumber Int      @default(1)
-  status        String   @default("not attempted")
+  attemptNumber Int       @default(1)
+  status        String    @default("not attempted")
   score         Float?
   scoreMin      Float?
   scoreMax      Float?
@@ -544,29 +552,29 @@ model ScormSession {
   suspendData   String?
   interactions  String?
   completedAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   package ScormPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
 }
 
 model Module {
-  id          String   @id @default(cuid())
+  id          String                      @id @default(cuid())
   courseId    String
   title       String
   description String?
   order       Int
-  type        String   @default("content")
+  type        String                      @default("content")
   content     String?
   videoUrl    String?
   fileUrl     String?
   duration    Int?
-  isRequired  Boolean  @default(true)
+  isRequired  Boolean                     @default(true)
   /// 384-d BGE-small embedding; managed via raw SQL (pgvector).
   embedding   Unsupported("vector(384)")?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
 
   course      Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
   progress    ModuleProgress[]
@@ -574,17 +582,18 @@ model Module {
 }
 
 model ModuleProgress {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
   moduleId    String
-  status      String   @default("not_started")
+  status      String    @default("not_started")
   score       Float?
   timeSpent   Int?
   completedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
   @@unique([userId, moduleId])
 }
 
@@ -601,20 +610,21 @@ model Enrollment {
   dueDate     DateTime?
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
   @@unique([userId, courseId])
 }
 
 model Assessment {
-  id          String   @id @default(cuid())
-  courseId    String
-  title       String
-  description String?
-  timeLimit   Int?
-  passingScore Float   @default(80)
-  maxAttempts Int      @default(0)
-  shuffleQ    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  courseId     String
+  title        String
+  description  String?
+  timeLimit    Int?
+  passingScore Float    @default(80)
+  maxAttempts  Int      @default(0)
+  shuffleQ     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   course    Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
   questions Question[]
@@ -622,20 +632,20 @@ model Assessment {
 }
 
 model Question {
-  id            String   @id @default(cuid())
+  id            String             @id @default(cuid())
   assessmentId  String
   text          String
   type          String
   options       String?
   correctAnswer String?
-  points        Float    @default(1)
+  points        Float              @default(1)
   order         Int
   explanation   String?
   /// Free-text topic label for the mastery heatmap. Author-supplied
   /// — no separate KC ontology yet. Items without a topic fall under
   /// the assessment title in the heatmap aggregation.
   topic         String?
-  assessment    Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessment    Assessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   bookmarks     ReviewBookmark[]
   checkpoints   ModuleCheckpoint[]
 }
@@ -655,8 +665,9 @@ model ReviewBookmark {
   /// 0 = "still tricky" (resets ladder), 1 = "got it" (advances).
   lastQuality    Int?
   createdAt      DateTime  @default(now())
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question       Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
   @@unique([userId, questionId])
   @@index([userId, nextReviewAt])
 }
@@ -666,19 +677,20 @@ model ReviewBookmark {
 /// question. When `questionId` is null the player just shows a
 /// "checkpoint" pause card with a Continue button.
 model ModuleCheckpoint {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   moduleId         String
   timestampSeconds Float
   questionId       String?
-  orderIndex       Int      @default(0)
-  createdAt        DateTime @default(now())
-  module   Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  question Question? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+  orderIndex       Int       @default(0)
+  createdAt        DateTime  @default(now())
+  module           Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  question         Question? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+
   @@index([moduleId, orderIndex])
 }
 
 model AssessmentAttempt {
-  id           String    @id @default(cuid())
+  id           String     @id @default(cuid())
   assessmentId String
   userId       String
   score        Float?
@@ -686,7 +698,7 @@ model AssessmentAttempt {
   passed       Boolean?
   answers      String
   timeSpent    Int?
-  startedAt    DateTime  @default(now())
+  startedAt    DateTime   @default(now())
   submittedAt  DateTime?
   assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -735,31 +747,32 @@ model Certificate {
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   course     Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   pathway    Pathway?  @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+
   @@unique([userId, courseId])
   @@unique([userId, pathwayId])
 }
 
 model Pathway {
-  id           String   @id @default(cuid())
-  title        String
-  description  String?
-  thumbnail    String?
-  category     String?
-  status       String   @default("draft") // draft | published
-  creditCost   Float    @default(0)
-  createdById  String?
-  embeddedAt   DateTime?
+  id          String                      @id @default(cuid())
+  title       String
+  description String?
+  thumbnail   String?
+  category    String?
+  status      String                      @default("draft") // draft | published
+  creditCost  Float                       @default(0)
+  createdById String?
+  embeddedAt  DateTime?
   /// 384-d BGE-small embedding; managed via raw SQL (pgvector).
-  embedding    Unsupported("vector(384)")?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  embedding   Unsupported("vector(384)")?
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
 
   // Enrollment management
-  enrollmentStatus    String    @default("open")   // open | closed | full
-  enrollmentOpensAt   DateTime?
-  enrollmentClosesAt  DateTime?
-  capacity            Int?
-  allowWaitlist       Boolean   @default(true)
+  enrollmentStatus   String    @default("open") // open | closed | full
+  enrollmentOpensAt  DateTime?
+  enrollmentClosesAt DateTime?
+  capacity           Int?
+  allowWaitlist      Boolean   @default(true)
 
   courses      PathwayCourse[]
   enrollments  PathwayEnrollment[]
@@ -774,20 +787,21 @@ model PathwayCourse {
   required  Boolean @default(true)
   pathway   Pathway @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
   course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
   @@unique([pathwayId, courseId])
 }
 
 model PathwayEnrollment {
-  id          String    @id @default(cuid())
-  userId      String
-  pathwayId   String
+  id            String    @id @default(cuid())
+  userId        String
+  pathwayId     String
   // pending | approved | rejected | waitlisted | withdrawn | completed
   status        String    @default("pending")
   requestReason String?
   reviewerId    String?
   reviewerNote  String?
   reviewedAt    DateTime?
-  enrolledAt    DateTime  @default(now())  // request created
+  enrolledAt    DateTime  @default(now()) // request created
   approvedAt    DateTime?
   completedAt   DateTime?
   pathway       Pathway   @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
@@ -799,41 +813,41 @@ model PathwayEnrollment {
 /// Application from a trainee for additional starter credits beyond the
 /// 200 granted at registration. Reviewed manually by admin staff.
 model CreditApplication {
-  id            String    @id @default(cuid())
-  userId        String
-  status        String    @default("pending")  // pending | approved | rejected
-  requestedAmount Float   @default(4800)
+  id              String    @id @default(cuid())
+  userId          String
+  status          String    @default("pending") // pending | approved | rejected
+  requestedAmount Float     @default(4800)
   approvedAmount  Float?
-  fullName      String
-  organization  String?
-  title         String?
-  country       String?
-  phone         String?
-  useCase       String     // why they need the credits
-  documents     Json       // array of { key, name, size, contentType }
-  reviewerId    String?
-  reviewerNote  String?
-  reviewedAt    DateTime?
-  submittedAt   DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  fullName        String
+  organization    String?
+  title           String?
+  country         String?
+  phone           String?
+  useCase         String // why they need the credits
+  documents       Json // array of { key, name, size, contentType }
+  reviewerId      String?
+  reviewerNote    String?
+  reviewedAt      DateTime?
+  submittedAt     DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  user      User  @relation("Applicant", fields: [userId], references: [id], onDelete: Cascade)
-  reviewer  User? @relation("Reviewer",  fields: [reviewerId], references: [id], onDelete: SetNull)
+  user     User  @relation("Applicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
 
   @@index([status, submittedAt])
   @@index([userId, submittedAt])
 }
 
 model CreditTransaction {
-  id          String   @id @default(cuid())
-  userId      String
-  amount      Float
-  type        String   // credit | debit
-  reason      String   // enrollment | refund | admin_grant | initial
-  courseId    String?
+  id           String   @id @default(cuid())
+  userId       String
+  amount       Float
+  type         String // credit | debit
+  reason       String // enrollment | refund | admin_grant | initial
+  courseId     String?
   balanceAfter Float
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Group {
@@ -843,27 +857,29 @@ model Group {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  members  GroupMembership[]
-  courses  GroupCourse[]
+  members GroupMembership[]
+  courses GroupCourse[]
 }
 
 model GroupMembership {
-  id        String   @id @default(cuid())
-  groupId   String
-  userId    String
-  addedAt   DateTime @default(now())
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String   @id @default(cuid())
+  groupId String
+  userId  String
+  addedAt DateTime @default(now())
+  group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([groupId, userId])
 }
 
 model GroupCourse {
-  id       String @id @default(cuid())
+  id       String   @id @default(cuid())
   groupId  String
   courseId String
   addedAt  DateTime @default(now())
-  group    Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
   @@unique([groupId, courseId])
 }
 
@@ -880,10 +896,10 @@ model Announcement {
 model AuditLog {
   id         String   @id @default(cuid())
   actorId    String
-  action     String   // user.create | user.deactivate | course.publish | enrollment.create | credit.grant …
-  targetType String?  // user | course | enrollment | certificate
+  action     String // user.create | user.deactivate | course.publish | enrollment.create | credit.grant …
+  targetType String? // user | course | enrollment | certificate
   targetId   String?
-  detail     String?  // JSON
+  detail     String? // JSON
   ip         String?
   createdAt  DateTime @default(now())
   actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
@@ -897,8 +913,8 @@ model AuditLog {
 model ElectronicSignature {
   id          String   @id @default(cuid())
   signerId    String
-  action      String   // e.g. "training.complete"
-  subjectType String   // "AssessmentAttempt" | "ModuleProgress" | "Course"
+  action      String // e.g. "training.complete"
+  subjectType String // "AssessmentAttempt" | "ModuleProgress" | "Course"
   subjectId   String
   meaning     String
   performedAt DateTime @default(now())
@@ -910,6 +926,7 @@ model ElectronicSignature {
   ipAddress   String?
   userAgent   String?
   signer      User     @relation(fields: [signerId], references: [id], onDelete: Restrict)
+
   @@index([signerId, performedAt])
   @@index([subjectType, subjectId])
 }
@@ -919,8 +936,8 @@ model ElectronicSignature {
 model AIInteraction {
   id               String   @id @default(cuid())
   userId           String?
-  kind             String   // chat | embed | summarize | search | tutor | classify
-  provider         String   // cloudflare | gemini
+  kind             String // chat | embed | summarize | search | tutor | classify
+  provider         String // cloudflare | gemini
   model            String
   promptTokens     Int?
   completionTokens Int?
@@ -944,7 +961,7 @@ model Translation {
   targetLang     String
   sourceText     String
   translatedText String
-  model          String   // e.g. "m2m100-1.2b"
+  model          String // e.g. "m2m100-1.2b"
   createdAt      DateTime @default(now())
 
   @@index([targetLang])
@@ -953,13 +970,13 @@ model Translation {
 /// GDPR / CCPA data-subject request log. Used to record exports and
 /// deletion requests with timestamps so we can prove compliance later.
 model DataSubjectRequest {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
-  kind        String   // export | delete | rectify
-  status      String   @default("completed")  // completed | pending | rejected
-  detail      String?  // free text — what was requested or done
+  kind        String // export | delete | rectify
+  status      String    @default("completed") // completed | pending | rejected
+  detail      String? // free text — what was requested or done
   completedAt DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   @@index([userId, createdAt])
 }
@@ -975,20 +992,20 @@ model PlatformSetting {
 /// time. Pairs are unique per (initiator, partner); a 'reverse' invite
 /// from the partner reuses the same row by flipping who initiated.
 model BuddyPair {
-  id           String   @id @default(cuid())
-  initiatorId  String
-  partnerId    String
-  status       String   @default("invited")  // invited | active | declined | ended
-  focusType    String?  // course | pathway | open
-  focusId      String?
-  goalNote     String?
-  invitedAt    DateTime @default(now())
-  acceptedAt   DateTime?
-  endedAt      DateTime?
-  endedById    String?
+  id          String    @id @default(cuid())
+  initiatorId String
+  partnerId   String
+  status      String    @default("invited") // invited | active | declined | ended
+  focusType   String? // course | pathway | open
+  focusId     String?
+  goalNote    String?
+  invitedAt   DateTime  @default(now())
+  acceptedAt  DateTime?
+  endedAt     DateTime?
+  endedById   String?
 
-  initiator User @relation("InitiatorBuddies", fields: [initiatorId], references: [id], onDelete: Cascade)
-  partner   User @relation("PartnerBuddies",   fields: [partnerId],   references: [id], onDelete: Cascade)
+  initiator User           @relation("InitiatorBuddies", fields: [initiatorId], references: [id], onDelete: Cascade)
+  partner   User           @relation("PartnerBuddies", fields: [partnerId], references: [id], onDelete: Cascade)
   messages  BuddyMessage[]
 
   @@unique([initiatorId, partnerId])
@@ -1003,7 +1020,7 @@ model BuddyMessage {
   pairId    String
   senderId  String
   body      String
-  refType   String?   // course | pathway | module
+  refType   String? // course | pathway | module
   refId     String?
   createdAt DateTime  @default(now())
   readAt    DateTime?
@@ -1022,15 +1039,15 @@ model RoleChangeRequest {
   fromRole     String
   toRole       String
   reason       String?
-  status       String    @default("pending")  // pending | approved | rejected
+  status       String    @default("pending") // pending | approved | rejected
   reviewerId   String?
   reviewerNote String?
   reviewedAt   DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  user     User  @relation("RoleRequester", fields: [userId],     references: [id], onDelete: Cascade)
-  reviewer User? @relation("RoleReviewer",  fields: [reviewerId], references: [id], onDelete: SetNull)
+  user     User  @relation("RoleRequester", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("RoleReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
@@ -1041,23 +1058,92 @@ model RoleChangeRequest {
 /// (which records sensitive admin actions) and XapiStatement (which records
 /// formal SCORM/xAPI learning statements).
 model Event {
-  id         String   @id @default(cuid())
-  userId     String?
-  sessionId  String?
-  name       String   // page_view | course_view | enroll | scorm_start | scorm_complete | theme_change | login | register | search | feature_use
-  path       String?
-  referrer   String?
-  props      Json?
-  role       String?  // snapshot of role at event time
-  device     String?  // desktop | mobile | tablet
-  country    String?
-  ip         String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String?
+  sessionId String?
+  name      String // page_view | course_view | enroll | scorm_start | scorm_complete | theme_change | login | register | search | feature_use
+  path      String?
+  referrer  String?
+  props     Json?
+  role      String? // snapshot of role at event time
+  device    String? // desktop | mobile | tablet
+  country   String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([createdAt])
   @@index([name, createdAt])
   @@index([userId, createdAt])
+}
+
+/// Loyalty / engagement reward — once a trainee has SPENT (debited) a
+/// cumulative amount of credits on training, a tier unlocks and a
+/// MerchReward row is created. The trainee then submits shipping
+/// details (CLAIMED) and an admin marks it shipped.
+///
+/// We use lifetime spent rather than current balance so receiving more
+/// credits later doesn't double-count, and so the threshold reads as
+/// "you've engaged with this much training" rather than "you have a
+/// pile of unspent credits". Tier registry lives in
+/// src/lib/rewards/merch.ts (single source of truth for thresholds +
+/// bundle contents). The (userId, tier) unique constraint is the
+/// natural one-time-per-user lock.
+model MerchReward {
+  id     String @id @default(cuid())
+  userId String
+
+  /// 1 = Apprentice (2500 credits spent), 2 = Champion (5000).
+  tier       Int
+  /// Snapshot of the threshold at unlock time so historical records
+  /// stay accurate even if we later rebalance the tier table.
+  threshold  Int
+  unlockedAt DateTime @default(now())
+
+  /// Lifecycle:
+  ///   UNCLAIMED → trainee hasn't filled out shipping yet
+  ///   CLAIMED   → shipping captured; in admin fulfillment queue
+  ///   SHIPPED   → admin sent it; tracking attached
+  ///   DELIVERED → optional terminal state (admin or trainee marks)
+  ///   CANCELLED → admin cancelled (returned, address bad, etc.)
+  status String @default("UNCLAIMED")
+
+  // Shipping snapshot — frozen at claim time so later edits to the
+  // user's profile don't quietly redirect already-queued packages.
+  claimedAt     DateTime?
+  recipientName String?
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  region        String?
+  postalCode    String?
+  country       String?
+  phone         String?
+  /// T-shirt / hoodie size — both bundles include apparel. Free text
+  /// so we can accept "M (Tall)" / "XS women's" without an enum bog.
+  shirtSize     String?
+  /// Anything else the trainee wants the fulfilment team to know
+  /// (allergies for sticker adhesive, gate code, holiday hold, etc.).
+  notes         String?
+
+  // Fulfilment metadata.
+  shippedAt       DateTime?
+  carrier         String?
+  trackingNumber  String?
+  trackingUrl     String?
+  fulfilledById   String?
+  cancelledReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fulfilledBy User? @relation("MerchFulfiller", fields: [fulfilledById], references: [id], onDelete: SetNull)
+
+  /// One reward per tier per user. Trying to insert a duplicate is the
+  /// natural idempotency check for the auto-unlock helper.
+  @@unique([userId, tier])
+  @@index([status, unlockedAt])
 }
 
 /// Public release / what's-new feed. Each entry's audience is controlled
@@ -1067,7 +1153,7 @@ model ChangeLog {
   id          String   @id @default(cuid())
   title       String
   body        String
-  kind        String   @default("feature")  // feature | fix | improvement | note
+  kind        String   @default("feature") // feature | fix | improvement | note
   version     String?
   /// Build commit SHA the entry first shipped on. Populated from
   /// NEXT_PUBLIC_COMMIT_SHA at create time. Surfaced only to

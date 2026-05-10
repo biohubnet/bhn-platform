@@ -23,6 +23,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Earn the gear — BHN merch rewards at 2,500 and 5,000 credits",
+    body: "Two milestone bundles now unlock as you train. The Apprentice Bundle (heavyweight tee + enamel pin + sticker pack) unlocks the moment you've spent 2,500 credits on coursework. Cross 5,000 and the Champion Bundle (technical hoodie + canvas tote + insulated 16 oz bottle) unlocks too. Each tier is one-time and ships free to Canada/US within 60 days of unlocking; international addresses ship at-cost with a quote sent first. New 'Rewards' page in the sidebar (under ENGAGE) shows your lifetime credits trained, a progress bar to the next tier, and the claim form when you're eligible — pick a size, confirm address, hit submit. Once admin packs and ships, you get tracking on the same card. Sandbox and demo accounts don't earn merch; rewards are a real-trainee perk only. Admins manage the queue at /admin/merch (Engage section).",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Theme picker descriptions roll on hover — full text, no truncation",
+    body: "Long theme blurbs (Cold Brew, Retro 8-bit, the new ones with sentences instead of phrases) used to truncate under '…' and you had to guess what was past the edge. Now the description rolls horizontally on hover so the full text reads in a continuous loop, and pauses back to truncated when you mouse away. Reduced-motion users still see the static head, same as before. Small detail, but the picker now actually explains what each theme is supposed to evoke.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Tighter sidebar footer — tour, theme, build SHA share one row",
     body: "The 'Take the tour' button now uses a compass icon (orientation, guided exploration) rather than the generic question-mark help glyph it shared with FAQ pages. Take the tour, the theme picker, and — for staff — the build SHA chip all live on the same compact row at the bottom of the sidebar, replacing the earlier two-row split. The 'View as…' role switcher (superadmin only) collapses from a stacked label to a single line with the active role tag riding inline on the right. Net: roughly 32 px shorter sidebar footer, more breathing room for the nav.",
     kind: "improvement",

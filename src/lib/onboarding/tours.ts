@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.09c";
+export const TOUR_VERSION = "2026.05.09d";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -81,6 +81,16 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "View credits", href: "/credits" },
     roles: ["trainee", "evaluating"],
     since: "2025.04",
+  },
+  {
+    id: "trainee.rewards",
+    title: "Earn the gear — BHN merch rewards",
+    body: "Spend 2,500 credits on coursework and the Apprentice Bundle (heavyweight tee + enamel pin + sticker pack) unlocks. Cross 5,000 and the Champion Bundle (technical hoodie + canvas tote + insulated bottle) unlocks too. Each tier is one-time and ships free to Canada / US in the first 60 days.",
+    path: "/rewards",
+    placement: "center",
+    cta: { label: "Open Rewards", href: "/rewards" },
+    roles: ["trainee", "evaluating"],
+    since: "2026.05.09d",
   },
   {
     id: "trainee.buddy",

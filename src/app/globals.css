@@ -652,6 +652,25 @@ body {
 .animate-fade-in { animation: fade-in 200ms ease-out; }
 .animate-slide-up-in { animation: slide-up-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 
+/* Marquee-style rolling text. Used in the theme picker so long
+ * descriptions can be read without truncation: at rest, the text
+ * sits in its container clipped by overflow-hidden; on hover, the
+ * inline-flex wrapper animates from translateX(0) → -50%, which
+ * works because the text is duplicated inside, giving a seamless
+ * loop. Speed (16s) is slow enough to read and not feel frantic.
+ * `prefers-reduced-motion` halts the animation — the text just
+ * shows the truncated head, same as before. */
+@keyframes roll-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-roll-x {
+  animation: roll-x 16s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-roll-x { animation: none; }
+}
+
 /* Greeting tagline — gentle entrance, soft float of the sparkle.
  * Used by GreetingTagline.tsx when a fresh AI greeting renders. */
 @keyframes greeting-in {

@@ -48,6 +48,7 @@ import {
   Menu,
   X,
   Compass,
+  Gift,
 } from "lucide-react";
 
 interface NavItem {
@@ -63,7 +64,7 @@ const dashboardItem: NavItem & { labelKey: string } = {
   label: "Dashboard", labelKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true,
 };
 
-// ENGAGE — the learning loop: catalog → pathway → progress → credits.
+// ENGAGE — the learning loop: catalog → pathway → progress → credits → rewards.
 const engageItems: (NavItem & { labelKey: string })[] = [
   { label: "Course Catalog",     labelKey: "nav.catalog",     href: "/courses", icon: BookOpen },
   { label: "Learning Pathways",  labelKey: "nav.pathways",    href: "/pathways", icon: Layers },
@@ -71,6 +72,7 @@ const engageItems: (NavItem & { labelKey: string })[] = [
   { label: "Gradebook",          labelKey: "nav.gradebook",   href: "/gradebook", icon: BarChart3 },
   { label: "Certificates",       labelKey: "nav.certificates",href: "/certificates", icon: Award },
   { label: "My Credits",         labelKey: "nav.credits",     href: "/credits", icon: Coins },
+  { label: "Rewards",            labelKey: "nav.rewards",     href: "/rewards", icon: Gift },
 ];
 
 // EXPERIENCE — applications and connections to industry placements.
@@ -123,6 +125,7 @@ const adminEngageItems: NavItem[] = [
   { label: "Manage pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers,       minRole: "admin" },
   { label: "Course filters",            href: "/admin/course-filters",      icon: ListChecks,   minRole: "admin" },
   { label: "Manage certificates",       href: "/admin/certificates",        icon: Award,        minRole: "admin" },
+  { label: "Merch fulfillment",         href: "/admin/merch",               icon: Gift,         minRole: "admin" },
 ];
 
 // EXPERIENCE — the matching marketplace: skill ontology that wires

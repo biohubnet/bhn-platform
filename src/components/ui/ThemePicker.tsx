@@ -175,7 +175,7 @@ function ThemeMenu({
                   type="button"
                   onClick={() => onPick(t.id)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all",
+                    "group/themerow w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all",
                     active ? "bg-brand-50 ring-1 ring-brand-200" : "hover:bg-elevated"
                   )}
                 >
@@ -195,8 +195,18 @@ function ThemeMenu({
                         </span>
                       )}
                     </span>
-                    <span className="block text-[10px] text-subtle leading-tight mt-0.5 truncate">
-                      {t.description}
+                    {/* Rolling description: at rest, the text is clipped by
+                        overflow-hidden so long blurbs (Cold Brew, Retro 8-bit
+                        — the ones that got truncated before) read as a
+                        truncated headline. On hover/focus, the inline-flex
+                        wrapper rolls left at a steady pace, and because the
+                        text is duplicated the loop is seamless. Reduced-
+                        motion users see the static truncated head. */}
+                    <span className="block overflow-hidden text-[10px] text-subtle leading-tight mt-0.5">
+                      <span className="inline-flex whitespace-nowrap group-hover/themerow:animate-roll-x group-focus-within/themerow:animate-roll-x">
+                        <span className="pr-10">{t.description}</span>
+                        <span className="pr-10" aria-hidden>{t.description}</span>
+                      </span>
                     </span>
                   </span>
                   {active && <Check size={13} className="text-brand-600 shrink-0" />}
