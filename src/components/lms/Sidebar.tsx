@@ -50,6 +50,7 @@ import {
   Compass,
   Gift,
   Rocket,
+  Palette,
 } from "lucide-react";
 
 interface NavItem {
@@ -112,6 +113,8 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
 const miscItems: (NavItem & { labelKey: string })[] = [
   { label: "Learning buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake,
     description: "Pair up with someone for accountability — share a course or pathway, see each other's progress, leave async notes." },
+  { label: "Theme feedback",     labelKey: "nav.themes",      href: "/themes", icon: Palette,
+    description: "Vote on your favourite and least-favourite themes, and pitch ideas for new ones. If we build your idea, you earn a Theme Designer Bundle." },
   // labelKey is overridden per-role at render time ("What's new" for trainees).
   { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Bell,
     description: "What's shipped recently — features, fixes, and improvements." },
@@ -161,6 +164,8 @@ const adminEngageItems: NavItem[] = [
     description: "Reward bundles claimed by trainees. Pack pickups for the office; review mailing requests." },
   { label: "Course thumbnails",         href: "/admin/course-thumbnails",   icon: Sparkles,     minRole: "admin",
     description: "AI cover art for the catalog. Bulk regenerate topic-specific thumbnails — LLM extracts visual motifs per course, SDXL renders them." },
+  { label: "Theme proposals",           href: "/admin/theme-proposals",     icon: Palette,      minRole: "admin",
+    description: "Trainee-submitted theme ideas + aggregated vote totals. Review queue with one-click actions for review / build / ship / decline. Ship+bounty issues a tier-3 MerchReward." },
 ];
 
 // EXPERIENCE — the matching marketplace: skill ontology that wires
