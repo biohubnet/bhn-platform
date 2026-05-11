@@ -50,6 +50,7 @@ export default async function AdminEventRegistrationsPage({
     includesSymposiumDay: r.includesSymposiumDay,
     dietaryRestrictions: r.dietaryRestrictions,
     accessibilityNeeds: r.accessibilityNeeds,
+    adminNote: r.adminNote,
     checkedInAt: r.checkedInAt ? r.checkedInAt.toISOString() : null,
     createdAt: r.createdAt.toISOString(),
   }));

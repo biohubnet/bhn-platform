@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.11c";
+export const TOUR_VERSION = "2026.05.11d";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -515,6 +515,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
     cta: { label: "Open Demo workspaces", href: "/admin/demo-workspaces" },
+  },
+  {
+    id: "events-admin-attendee-ops",
+    title: "Full attendee operations on the registrations page",
+    body: "Open Administration → Engage → Events → any event → Registrations. New: row checkboxes + sticky bulk-action bar (check in / clear check-in / cancel / reinstate); a 'Has note' filter chip; •••• menu per row for resend email and cancel/reinstate. Click any attendee name for a full detail page — edit every field, cancel/reinstate, resend email, manage their workshop bookings (book or cancel on their behalf with waitlist promotion), and leave an internal admin note (VIP / press / special handling). Cancelling a registration auto-releases their workshop bookings and promotes waitlisters.",
+    path: "/admin/events",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.11d",
+    cta: { label: "Open events admin", href: "/admin/events" },
   },
   {
     id: "events-workshop-pick-in-register",

@@ -1,0 +1,205 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  CheckCircle2, Circle, XCircle, RotateCcw, Mail, Loader2, AlertCircle,
+} from "lucide-react";
+
+/**
+ * Top-of-page action buttons for /admin/events/[slug]/registrations/[rid].
+ *
+ *   • Check-in toggle — POST .../check-in
+ *   • Cancel / Reinstate — PATCH ...{registrationStatus}
+ *   • Resend confirmation email — POST .../resend-email
+ *
+ * Each action shows a small inline flash on success and an inline
+ * error chip on failure. router.refresh() pulls the latest data
+ * after any mutation so the rest of the page (status chip,
+ * workshop list) stays in sync.
+ */
+export function AttendeeActions({
+  slug,
+  registrationId,
+  attendeeName,
+  initialCheckedInAt,
+  initialStatus,
+}: {
+  slug: string;
+  registrationId: string;
+  attendeeName: string;
+  initialCheckedInAt: string | null;
+  initialStatus: "pending" | "confirmed" | "cancelled";
+}) {
+  const router = useRouter();
+  const [busy, startTransition] = useTransition();
+  const [checkedIn, setCheckedIn] = useState<boolean>(initialCheckedInAt !== null);
+  const [status, setStatus] = useState(initialStatus);
+  const [error, setError] = useState<string | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+
+  const cancelled = status === "cancelled";
+
+  function setFlashAuto(s: string) {
+    setFlash(s);
+    setTimeout(() => setFlash(null), 3500);
+  }
+
+  async function toggleCheckIn() {
+    const desired = !checkedIn;
+    setError(null);
+    setCheckedIn(desired); // optimistic
+    try {
+      const res = await fetch(
+        `/api/admin/events/${slug}/registrations/${registrationId}/check-in`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ checkedIn: desired }),
+        },
+      );
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Toggle failed");
+      setFlashAuto(desired ? "Checked in." : "Check-in cleared.");
+      router.refresh();
+    } catch (e) {
+      setCheckedIn(!desired); // roll back
+      setError((e as Error).message);
+    }
+  }
+
+  async function cancelRegistration() {
+    if (!confirm(`Cancel ${attendeeName}'s registration?\n\nThis will release every workshop booking they hold for the event and promote waitlisters into the freed spots. This action is reversible (you can reinstate them later) but their workshop bookings will NOT auto-restore.`)) {
+      return;
+    }
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/admin/events/${slug}/registrations/${registrationId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ registrationStatus: "cancelled" }),
+        },
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        cancelMeta?: { cancelledBookings: number; promoted: number } | null;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Cancel failed");
+      setStatus("cancelled");
+      const meta = data.cancelMeta;
+      setFlashAuto(
+        meta && meta.cancelledBookings > 0
+          ? `Cancelled — ${meta.cancelledBookings} booking${meta.cancelledBookings === 1 ? "" : "s"} released${meta.promoted > 0 ? `, ${meta.promoted} waitlister${meta.promoted === 1 ? "" : "s"} promoted` : ""}.`
+          : "Registration cancelled.",
+      );
+      router.refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  async function reinstateRegistration() {
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/admin/events/${slug}/registrations/${registrationId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ registrationStatus: "confirmed" }),
+        },
+      );
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Reinstate failed");
+      setStatus("confirmed");
+      setFlashAuto("Reinstated as confirmed. Workshop bookings were not restored.");
+      router.refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  async function resendEmail() {
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/admin/events/${slug}/registrations/${registrationId}/resend-email`,
+        { method: "POST" },
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        sentTo?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Email send failed");
+      setFlashAuto(`Email sent to ${data.sentTo ?? "attendee"}.`);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2 items-start">
+      <button
+        type="button"
+        disabled={busy || cancelled}
+        onClick={() => startTransition(() => { void toggleCheckIn(); })}
+        title={cancelled ? "Reinstate registration before checking in." : ""}
+        className={`inline-flex items-center gap-1.5 text-xs font-bold rounded-xl px-3 py-2 ring-1 ring-inset transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          checkedIn
+            ? "bg-emerald-100 text-emerald-800 ring-emerald-200 hover:bg-emerald-200"
+            : "bg-card text-fg ring-line hover:bg-elevated"
+        }`}
+      >
+        {checkedIn ? <CheckCircle2 size={12} /> : <Circle size={12} />}
+        {checkedIn ? "Checked in" : "Check in"}
+      </button>
+
+      {cancelled ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => startTransition(() => { void reinstateRegistration(); })}
+          className="inline-flex items-center gap-1.5 text-xs font-bold rounded-xl px-3 py-2 ring-1 ring-inset bg-card text-emerald-700 ring-line hover:bg-emerald-50 hover:ring-emerald-200 disabled:opacity-50"
+        >
+          <RotateCcw size={12} /> Reinstate
+        </button>
+      ) : (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => startTransition(() => { void cancelRegistration(); })}
+          className="inline-flex items-center gap-1.5 text-xs font-bold rounded-xl px-3 py-2 ring-1 ring-inset bg-card text-rose-700 ring-line hover:bg-rose-50 hover:ring-rose-200 disabled:opacity-50"
+        >
+          <XCircle size={12} /> Cancel registration
+        </button>
+      )}
+
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => startTransition(() => { void resendEmail(); })}
+        className="inline-flex items-center gap-1.5 text-xs font-bold rounded-xl px-3 py-2 ring-1 ring-inset bg-card text-fg ring-line hover:bg-elevated disabled:opacity-50"
+      >
+        {busy ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
+        Resend email
+      </button>
+
+      <div className="basis-full" />
+
+      {error && (
+        <div className="inline-flex items-start gap-2 text-xs text-rose-700 bg-rose-50 ring-1 ring-inset ring-rose-200 rounded-lg px-3 py-2 max-w-md">
+          <AlertCircle size={11} className="mt-0.5 shrink-0" />
+          {error}
+        </div>
+      )}
+      {flash && (
+        <div className="inline-flex items-start gap-2 text-xs text-emerald-800 bg-emerald-50 ring-1 ring-inset ring-emerald-200 rounded-lg px-3 py-2 max-w-md">
+          <CheckCircle2 size={11} className="mt-0.5 shrink-0" />
+          {flash}
+        </div>
+      )}
+    </div>
+  );
+}

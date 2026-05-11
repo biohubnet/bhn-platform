@@ -1497,6 +1497,10 @@ model Registration {
   dietaryRestrictions  String?
   /// Free text. Wheelchair access, hearing loop, etc.
   accessibilityNeeds   String?
+  /// Admin-only annotation. VIP / press / speaker flag, special
+  /// handling notes, anything the events team wants to remember.
+  /// Never shown to the registrant.
+  adminNote            String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 

@@ -183,6 +183,76 @@ export async function bookWorkshop(
 }
 
 /**
+ * Cancel a workshop booking inside an already-open transaction.
+ * Same side-effect semantics as cancelWorkshopBooking; exposed so
+ * admin operations (cancel registration → cascade-cancel each of
+ * their bookings) can run the whole thing atomically.
+ */
+export async function cancelWorkshopBookingInTx(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  workshopId: string,
+): Promise<{ ok: true; promoted: boolean } | BookingErr> {
+  const booking = await tx.workshopBooking.findUnique({
+    where: { workshopId_userId: { workshopId, userId } },
+    select: { id: true, status: true, waitlistPosition: true },
+  });
+  if (!booking) {
+    return { ok: false as const, error: "No booking to cancel.", code: "not_found" };
+  }
+  if (booking.status === "cancelled") {
+    return { ok: true as const, promoted: false };
+  }
+
+  await tx.workshopBooking.update({
+    where: { id: booking.id },
+    data: {
+      status: "cancelled",
+      waitlistPosition: null,
+      cancelledAt: new Date(),
+    },
+  });
+
+  let promoted = false;
+  if (booking.status === "confirmed") {
+    // Promote the next waitlister.
+    const next = await tx.workshopBooking.findFirst({
+      where: { workshopId, status: "waitlist" },
+      orderBy: { waitlistPosition: "asc" },
+      select: { id: true, waitlistPosition: true },
+    });
+    if (next) {
+      await tx.workshopBooking.update({
+        where: { id: next.id },
+        data: { status: "confirmed", waitlistPosition: null },
+      });
+      // Renumber remaining waitlisters down by 1.
+      await tx.workshopBooking.updateMany({
+        where: {
+          workshopId,
+          status: "waitlist",
+          waitlistPosition: { gt: next.waitlistPosition ?? 0 },
+        },
+        data: { waitlistPosition: { decrement: 1 } },
+      });
+      promoted = true;
+    }
+  } else if (booking.status === "waitlist" && booking.waitlistPosition !== null) {
+    // Renumber waitlisters after this one.
+    await tx.workshopBooking.updateMany({
+      where: {
+        workshopId,
+        status: "waitlist",
+        waitlistPosition: { gt: booking.waitlistPosition },
+      },
+      data: { waitlistPosition: { decrement: 1 } },
+    });
+  }
+
+  return { ok: true as const, promoted };
+}
+
+/**
  * Cancel a workshop booking. Side effects:
  *   • If the cancelled booking was CONFIRMED, the first waitlister
  *     (lowest waitlistPosition) is promoted to confirmed.
@@ -196,64 +266,68 @@ export async function cancelWorkshopBooking(
   userId: string,
   workshopId: string,
 ): Promise<{ ok: true; promoted: boolean } | BookingErr> {
+  return prisma.$transaction((tx) => cancelWorkshopBookingInTx(tx, userId, workshopId));
+}
+
+/**
+ * Cancel an entire event registration and cascade-cancel every
+ * non-cancelled workshop booking the attendee held for that event.
+ * Each freed-up confirmed spot triggers the same waitlist-promotion
+ * logic cancelWorkshopBookingInTx uses, so the released seats fill
+ * back up automatically.
+ *
+ * Idempotent — calling on an already-cancelled registration is a no-op
+ * (returns the existing state with cancelledBookings=0).
+ */
+export async function cancelRegistration(
+  prisma: PrismaClient,
+  eventId: string,
+  userId: string,
+): Promise<{ ok: true; cancelledBookings: number; promoted: number } | BookingErr> {
   return prisma.$transaction(async (tx) => {
-    const booking = await tx.workshopBooking.findUnique({
-      where: { workshopId_userId: { workshopId, userId } },
-      select: { id: true, status: true, waitlistPosition: true },
+    const registration = await tx.registration.findUnique({
+      where: { eventId_userId: { eventId, userId } },
+      select: { id: true, registrationStatus: true },
     });
-    if (!booking) {
-      return { ok: false as const, error: "No booking to cancel.", code: "not_found" };
+    if (!registration) {
+      return { ok: false as const, error: "Registration not found.", code: "not_found" };
     }
-    if (booking.status === "cancelled") {
-      return { ok: true as const, promoted: false };
+    if (registration.registrationStatus === "cancelled") {
+      return { ok: true as const, cancelledBookings: 0, promoted: 0 };
     }
 
-    await tx.workshopBooking.update({
-      where: { id: booking.id },
-      data: {
-        status: "cancelled",
-        waitlistPosition: null,
-        cancelledAt: new Date(),
+    await tx.registration.update({
+      where: { id: registration.id },
+      data: { registrationStatus: "cancelled" },
+    });
+
+    // Find every active booking for this attendee on this event and
+    // cancel each — cascade-promoting waitlisters per booking.
+    const activeBookings = await tx.workshopBooking.findMany({
+      where: {
+        userId,
+        status: { not: "cancelled" },
+        workshop: { eventId },
       },
+      select: { workshopId: true },
     });
 
-    let promoted = false;
-    if (booking.status === "confirmed") {
-      // Promote the next waitlister.
-      const next = await tx.workshopBooking.findFirst({
-        where: { workshopId, status: "waitlist" },
-        orderBy: { waitlistPosition: "asc" },
-        select: { id: true, waitlistPosition: true },
-      });
-      if (next) {
-        await tx.workshopBooking.update({
-          where: { id: next.id },
-          data: { status: "confirmed", waitlistPosition: null },
-        });
-        // Renumber remaining waitlisters down by 1.
-        await tx.workshopBooking.updateMany({
-          where: {
-            workshopId,
-            status: "waitlist",
-            waitlistPosition: { gt: next.waitlistPosition ?? 0 },
-          },
-          data: { waitlistPosition: { decrement: 1 } },
-        });
-        promoted = true;
-      }
-    } else if (booking.status === "waitlist" && booking.waitlistPosition !== null) {
-      // Renumber waitlisters after this one.
-      await tx.workshopBooking.updateMany({
-        where: {
-          workshopId,
-          status: "waitlist",
-          waitlistPosition: { gt: booking.waitlistPosition },
-        },
-        data: { waitlistPosition: { decrement: 1 } },
-      });
+    let promoted = 0;
+    for (const b of activeBookings) {
+      const r = await cancelWorkshopBookingInTx(tx, userId, b.workshopId);
+      if (r.ok && r.promoted) promoted++;
     }
 
-    return { ok: true as const, promoted };
+    // Also clear any personal-agenda entries (breakout picks).
+    await tx.personalAgendaEntry.deleteMany({
+      where: { userId, session: { eventId } },
+    });
+
+    return {
+      ok: true as const,
+      cancelledBookings: activeBookings.length,
+      promoted,
+    };
   });
 }
 
