@@ -167,6 +167,14 @@ model User {
   eventQuestionVotes SymposiumQuestionVote[]
   eventPollResponses PollResponse[]
 
+  // ── Theme feedback relations ──
+  // Per-user theme votes + theme proposals (user-submitted ideas).
+  // Admin reviews via /admin/theme-proposals; "ship + bounty"
+  // optionally issues a tier-3 MerchReward.
+  themeVotes             ThemeVote[]
+  themeProposals         ThemeProposal[] @relation("ThemeProposals")
+  reviewedThemeProposals ThemeProposal[] @relation("ThemeProposalReviewer")
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -1605,4 +1613,103 @@ model PollResponse {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([pollId, userId])
+}
+
+// ════════════════════════════════════════════════════════════════
+// Theme feedback — user voting + theme-proposal pipeline
+//
+// Users can pick one favorite + one least-favorite theme from the
+// thirteen built-in themes (see THEMES in ThemeProvider.tsx), and
+// they can submit ideas for new themes. Admins review proposals at
+// /admin/theme-proposals and can optionally "ship + bounty" — which
+// issues a tier-3 MerchReward to the proposer.
+//
+// Conventions
+//   • themeId stored as String (not FK) — themes are code constants,
+//     not rows. Drift between code and DB is acceptable here; a
+//     deleted theme just leaves orphan votes (cleaned up via admin
+//     SQL when a theme retires).
+//   • One favorite + one least-favorite per user — enforced via
+//     @@unique([userId, sentiment]). Changing your mind is an upsert,
+//     not a new row.
+//   • Tier-3 MerchReward is the bounty surface — see MERCH_TIERS in
+//     src/lib/rewards/merch.ts. Existing (userId, tier) unique
+//     constraint on MerchReward means each user gets at most ONE
+//     bounty across all their shipped proposals — they're rewarded
+//     for contributing, not per-idea. Multiple shipped proposals
+//     link to the same MerchReward via bountyRewardId.
+// ════════════════════════════════════════════════════════════════
+
+/// User vote on a specific theme. One favorite + one least-favorite
+/// per user (enforced via @@unique([userId, sentiment])).
+model ThemeVote {
+  id        String   @id @default(cuid())
+  userId    String
+  /// Matches the ThemeId enum in src/components/ui/ThemeProvider.tsx.
+  /// Stored as String rather than FK because themes are code
+  /// constants, not rows.
+  themeId   String
+  /// "favorite" | "least_favorite"
+  sentiment String // favorite | least_favorite
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// One favorite + one least-favorite per user. Upsert by this
+  /// composite to "change your mind" rather than accumulate votes.
+  @@unique([userId, sentiment])
+  /// Supports the aggregated "top loved" / "top disliked" stats on
+  /// the /themes page and the admin queue.
+  @@index([themeId, sentiment])
+}
+
+/// User-submitted theme idea. Admin triages via the
+/// /admin/theme-proposals queue. When admin marks "shipped", they
+/// can issue a one-time tier-3 MerchReward bounty for the proposer.
+model ThemeProposal {
+  id             String    @id @default(cuid())
+  proposerId     String
+  /// Short title, e.g. "Lab Bench" or "Citrus Grove".
+  title          String
+  /// Markdown — palette ideas, mood, intended use, references.
+  description    String
+  /// Optional palette / mood notes the proposer wants to call out
+  /// separately from the description.
+  inspiration    String?
+  /// Lifecycle:
+  ///   "submitted"    → just in. Admin hasn't looked yet.
+  ///   "under_review" → admin acknowledged; deciding.
+  ///   "building"     → admin chose to build it.
+  ///   "shipped"      → built and deployed. Theme is live.
+  ///   "declined"     → not building. reviewerNote explains why.
+  status         String    @default("submitted") // submitted | under_review | building | shipped | declined
+  reviewerId     String?
+  /// Admin's note back to the proposer. Strongly recommended for
+  /// "declined" and "shipped" so the proposer always gets context.
+  reviewerNote   String?
+  reviewedAt     DateTime?
+  /// Once shipped, the ThemeId actually deployed (may differ in name
+  /// from the proposal). Drives the proposer's "see your theme live"
+  /// link on /themes.
+  shippedThemeId String?
+  /// True when the admin issued the tier-3 MerchReward bounty.
+  /// Prevents double-issuing per proposal; not all "shipped"
+  /// proposals must trigger a bounty (admin discretion).
+  bountyIssued   Boolean   @default(false)
+  /// FK to the MerchReward row at bounty time. Null until the admin
+  /// clicks "ship + reward". When multiple proposals from the same
+  /// user ship, they all link to the same MerchReward (one bundle
+  /// per user, by the (userId, tier) unique on MerchReward).
+  bountyRewardId String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  proposer User  @relation("ThemeProposals", fields: [proposerId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("ThemeProposalReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  /// Supports the admin queue's status filter + chronological sort.
+  @@index([status, createdAt])
+  /// Supports the proposer's "my proposals" page.
+  @@index([proposerId])
 }
