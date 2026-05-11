@@ -157,6 +157,16 @@ model User {
   ownedChecklistItems   LaunchChecklistState[] @relation("ChecklistOwner")
   updatedChecklistItems LaunchChecklistState[] @relation("ChecklistUpdater")
 
+  // ── Events module relations ──
+  // Single-tenant Events module. See models grouped at the bottom of
+  // this schema. Adding back-relations here so Prisma can validate.
+  eventRegistrations Registration[]
+  workshopBookings   WorkshopBooking[]
+  personalAgenda     PersonalAgendaEntry[]
+  eventQuestions     SymposiumQuestion[]
+  eventQuestionVotes SymposiumQuestionVote[]
+  eventPollResponses PollResponse[]
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -1219,4 +1229,379 @@ model LaunchChecklistState {
 
   owner     User? @relation("ChecklistOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   updatedBy User? @relation("ChecklistUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+}
+
+// ════════════════════════════════════════════════════════════════
+// Events module — single-tenant
+//
+// Powers the BioHubNet Annual Symposium & Training Week (and future
+// editions). Replaces external WordPress + Luma tooling. No tenantId
+// fields by design — the platform is single-tenant.
+//
+// Conventions
+//   • State machines stored as commented String fields (matches the
+//     rest of the schema — no Prisma enums anywhere in the codebase)
+//   • Cascade delete down the Event → Workshop → Booking chain
+//   • Restrict on User FKs for Registration + WorkshopBooking
+//     (audit-bearing records — matches the ElectronicSignature pattern)
+//   • Each Workshop row is one bookable slot. A workshop that runs
+//     morning + afternoon is two rows, not one row with two children.
+// ════════════════════════════════════════════════════════════════
+
+/// The Training Week umbrella. One BhnEvent spans multiple days and
+/// holds workshops (bookable training-week slots), symposium-day
+/// agenda sessions, speakers, sponsors, and registrations.
+///
+/// Named `BhnEvent` rather than `Event` because `Event` is taken by
+/// the analytics-telemetry model elsewhere in this schema. In code
+/// the relation field is still `event` for readability; only the
+/// type name carries the `Bhn` prefix.
+model BhnEvent {
+  id                   String    @id @default(cuid())
+  /// URL-safe identifier, e.g. "2025-annual-symposium".
+  slug                 String    @unique
+  title                String
+  /// Short marketing line shown on the landing-page hero.
+  tagline              String?
+  /// Long description (markdown).
+  description          String?
+  startDate            DateTime
+  endDate              DateTime
+  timezone             String    @default("America/Toronto")
+  mainVenueName        String?
+  mainVenueAddress     String?
+  mainVenueMapUrl      String?
+  coverImageUrl        String?
+  /// Per-event branding overrides (palette, logo, hero image). Null
+  /// = use the platform default theme.
+  brandingJson         Json?
+  /// "draft" → not visible publicly. "published" → public landing
+  /// + registration. "archived" → past event, read-only.
+  status               String    @default("draft") // draft | published | archived
+  /// Optional registration window. Null = open whenever
+  /// status="published".
+  registrationOpensAt  DateTime?
+  registrationClosesAt DateTime?
+  /// Hotel block / accommodation guidance for attendees. Markdown.
+  accommodationInfo    String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  workshops         Workshop[]
+  symposiumSessions SymposiumSession[]
+  speakers          Speaker[]
+  sponsors          Sponsor[]
+  registrations     Registration[]
+
+  /// Supports admin filtering by status (draft / published / archived).
+  @@index([status])
+}
+
+/// One bookable workshop, tour, or bootcamp slot. The "slot" framing
+/// matters: if a workshop runs morning + afternoon, it's two rows
+/// (not one row with two children) — this keeps the booking math
+/// simple and lets each slot have its own capacity, location,
+/// transport requirement, etc.
+model Workshop {
+  id                  String   @id @default(cuid())
+  eventId             String
+  /// URL-safe identifier, unique within the parent event.
+  slug                String
+  title               String
+  shortDescription    String?
+  /// Long description (markdown) for the workshop's Learn More page.
+  longDescription     String?
+  /// Hosting partner org, e.g. "OBIO", "CATTI", "BioZone".
+  partnerOrganization String?
+  /// "workshop" | "tour" | "bootcamp" — drives presentation in UI.
+  kind                String   @default("workshop") // workshop | tour | bootcamp
+  startDateTime       DateTime
+  endDateTime         DateTime
+  locationName        String?
+  locationAddress     String?
+  /// True when attendees need to board a bus from a common pickup.
+  requiresTransport   Boolean  @default(false)
+  /// Where the bus departs from, e.g. "Chelsea Hotel Front Entrance".
+  /// Null unless requiresTransport.
+  departureLocation   String?
+  /// Hard capacity. Bookings above capacity go to the waitlist.
+  capacity            Int
+  /// Optional external page (partner site, host org URL).
+  learnMoreUrl        String?
+  /// Render order within the event's workshop list.
+  displayOrder        Int      @default(0)
+  /// Soft on/off — false hides the workshop from public listings
+  /// without deleting bookings.
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  event    BhnEvent          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  bookings WorkshopBooking[]
+
+  @@unique([eventId, slug])
+  /// Supports "show me all workshops on day X in chronological order".
+  @@index([eventId, startDateTime])
+  /// Supports "show only active workshops on the public landing".
+  @@index([eventId, isActive])
+}
+
+/// A user's booking for a specific Workshop slot. Status flows are
+/// enforced at the service layer (Phase 1); the schema only ensures
+/// uniqueness per (workshop, user) and supports the two queries that
+/// matter at scale: "this user's bookings" (for the max-2 rule) and
+/// "this workshop's confirmed + waitlist roster in order".
+model WorkshopBooking {
+  id               String    @id @default(cuid())
+  workshopId       String
+  userId           String
+  /// "confirmed" → has a seat. "waitlist" → queued; promoted when a
+  /// confirmed booking cancels. "cancelled" → kept for audit.
+  status           String    @default("confirmed") // confirmed | waitlist | cancelled
+  /// 1-indexed position when status="waitlist"; null otherwise.
+  /// Re-numbered densely on earlier waitlist cancellation.
+  waitlistPosition Int?
+  bookedAt         DateTime  @default(now())
+  cancelledAt      DateTime?
+
+  workshop Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([workshopId, userId])
+  /// Supports the MAX_WORKSHOPS_PER_USER = 2 check at booking time
+  /// (count this user's non-cancelled bookings).
+  @@index([userId, status])
+  /// Supports "next waitlist person to promote on this workshop".
+  @@index([workshopId, status, waitlistPosition])
+}
+
+/// One slot on the symposium-day agenda. Different from Workshop —
+/// these are not bookable individually (everyone with a Registration
+/// has access). For parallel breakouts where attendees pick one,
+/// isSelectable=true and breakoutGroupId groups the choices.
+model SymposiumSession {
+  id              String   @id @default(cuid())
+  eventId         String
+  title           String
+  description     String?
+  startTime       DateTime
+  endTime         DateTime
+  room            String?
+  /// "registration" | "keynote" | "panel" | "spotlight" | "breakout"
+  /// | "pitch_competition" | "break" | "meal" | "networking" | "closing"
+  kind            String // registration | keynote | panel | spotlight | breakout | pitch_competition | break | meal | networking | closing
+  /// True only for parallel-breakout slots where attendees must pick
+  /// one of N. UI enforces "pick at most one per breakoutGroupId" —
+  /// schema doesn't constrain that directly.
+  isSelectable    Boolean  @default(false)
+  /// Groups concurrent selectable sessions. e.g. two 1:30pm breakouts
+  /// both have breakoutGroupId="afternoon-breakouts".
+  breakoutGroupId String?
+  displayOrder    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  event         BhnEvent                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  speakers      SymposiumSessionSpeaker[]
+  agendaEntries PersonalAgendaEntry[]
+  questions     SymposiumQuestion[]
+  polls         Poll[]
+
+  /// Supports "render the agenda in chronological order".
+  @@index([eventId, startTime])
+  /// Supports "show me all sessions in the afternoon-breakouts group".
+  @@index([eventId, breakoutGroupId])
+}
+
+/// Speaker bio scoped to a specific Event (the same person can appear
+/// in multiple events as separate Speaker rows — bio/title might
+/// evolve between editions).
+model Speaker {
+  id           String   @id @default(cuid())
+  eventId      String
+  fullName     String
+  title        String?
+  organization String?
+  /// Markdown.
+  bio          String?
+  photoUrl     String?
+  /// JSON array of { platform, url } — twitter, linkedin, etc.
+  socialLinks  Json?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  event    BhnEvent                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sessions SymposiumSessionSpeaker[]
+
+  /// Supports "show me this event's speaker grid in display order".
+  @@index([eventId])
+}
+
+/// Many-to-many between SymposiumSession and Speaker, plus the
+/// speaker's role within that specific session.
+model SymposiumSessionSpeaker {
+  sessionId String
+  speakerId String
+  /// "speaker" | "moderator" | "panelist" | "facilitator"
+  role      String @default("speaker") // speaker | moderator | panelist | facilitator
+  /// Render order within the session's speaker list.
+  order     Int    @default(0)
+
+  session SymposiumSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  speaker Speaker          @relation(fields: [speakerId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, speakerId])
+}
+
+/// Event-level registration. One per (event, user). Holds payment +
+/// check-in state. Workshops and breakout picks are separate models —
+/// the service layer enforces "must have a CONFIRMED Registration
+/// before booking workshops" (not enforced via FK).
+model Registration {
+  id                   String    @id @default(cuid())
+  eventId              String
+  userId               String
+  /// "trainee" | "industry" | "academic" | "student" | "sponsor" | "guest"
+  attendeeType         String    @default("trainee") // trainee | industry | academic | student | sponsor | guest
+  /// "pending" | "confirmed" | "cancelled"
+  registrationStatus   String    @default("pending") // pending | confirmed | cancelled
+  /// Some attendees register only for the Training Week workshops
+  /// and skip the symposium day. Default true.
+  includesSymposiumDay Boolean   @default(true)
+  /// "moneris" | "stripe" | "invoice" | "free" | "none"
+  paymentProvider      String    @default("none") // moneris | stripe | invoice | free | none
+  /// "pending" | "paid" | "refunded" | "failed" | "waived"
+  paymentStatus        String    @default("pending") // pending | paid | refunded | failed | waived
+  /// Provider's payment ID for reconciliation.
+  externalPaymentId    String?
+  amountCents          Int       @default(0)
+  currency             String    @default("CAD")
+  /// Random 128-bit hex string. Drives the check-in QR code; unique.
+  qrToken              String    @unique
+  checkedInAt          DateTime?
+  /// Free text. Collected by the registration form so catering plans.
+  dietaryRestrictions  String?
+  /// Free text. Wheelchair access, hearing loop, etc.
+  accessibilityNeeds   String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  event BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([eventId, userId])
+  /// Supports the admin attendee list — "show me all confirmed
+  /// registrations for this event".
+  @@index([eventId, registrationStatus])
+}
+
+/// A user's saved symposium-day session. Used for two purposes:
+///   1. Pick-one breakout selection (multiple agenda entries with
+///      the same breakoutGroupId is a UI-level conflict the form
+///      prevents — schema allows multiple)
+///   2. "Add to my personal schedule" for non-selectable items
+model PersonalAgendaEntry {
+  id                 String   @id @default(cuid())
+  userId             String
+  symposiumSessionId String
+  createdAt          DateTime @default(now())
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session SymposiumSession @relation(fields: [symposiumSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, symposiumSessionId])
+  /// Supports "render this user's personal schedule".
+  @@index([userId])
+}
+
+/// Event sponsor / partner / funder. Tier drives logo size on the
+/// landing page.
+model Sponsor {
+  id           String   @id @default(cuid())
+  eventId      String
+  name         String
+  /// "title" | "gold" | "silver" | "bronze" | "partner" | "funder"
+  tier         String   @default("partner") // title | gold | silver | bronze | partner | funder
+  logoUrl      String?
+  website      String?
+  description  String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  event BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  /// Supports "render this event's sponsor grid in display order".
+  @@index([eventId])
+}
+
+/// Live Q&A entry tied to a symposium session. Phase 0 ships the
+/// schema only — no creation/voting routes yet. The upvoteCount
+/// field is denormalised (incremented in a transaction with the
+/// SymposiumQuestionVote insert at Phase 1) so the "top questions"
+/// view stays fast under load.
+///
+/// Named `SymposiumQuestion` rather than `Question` because
+/// `Question` is taken by the assessment-quiz model elsewhere in
+/// this schema.
+model SymposiumQuestion {
+  id                 String   @id @default(cuid())
+  symposiumSessionId String
+  userId             String
+  body               String
+  upvoteCount        Int      @default(0)
+  isAnswered         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  session SymposiumSession        @relation(fields: [symposiumSessionId], references: [id], onDelete: Cascade)
+  user    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes   SymposiumQuestionVote[]
+
+  /// Supports the live Q&A "top of the room" sort — highest-voted
+  /// unanswered questions first.
+  @@index([symposiumSessionId, upvoteCount(sort: Desc)])
+}
+
+/// One upvote per (question, user).
+model SymposiumQuestionVote {
+  questionId String
+  userId     String
+  createdAt  DateTime @default(now())
+
+  question SymposiumQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, userId])
+}
+
+/// Live poll launched by the moderator during a symposium session.
+/// Options are stored as JSON to keep them tiny; PollResponse keeps
+/// the (poll, user, picked-option) tuple.
+model Poll {
+  id                 String    @id @default(cuid())
+  symposiumSessionId String
+  question           String
+  /// JSON array of { id: string, label: string }
+  options            Json
+  isOpen             Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  closedAt           DateTime?
+
+  session   SymposiumSession @relation(fields: [symposiumSessionId], references: [id], onDelete: Cascade)
+  responses PollResponse[]
+}
+
+model PollResponse {
+  id        String   @id @default(cuid())
+  pollId    String
+  userId    String
+  /// One of the option ids from Poll.options.
+  optionId  String
+  createdAt DateTime @default(now())
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
 }
