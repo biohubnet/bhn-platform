@@ -36,7 +36,9 @@ import type { PrismaClient } from "@prisma/client";
 export interface MerchTier {
   /** Numeric tier — 1 (lower) → N (higher). Stable, never reused. */
   tier: number;
-  /** Lifetime credits spent required to unlock. */
+  /** Lifetime credits spent required to unlock — only meaningful
+   *  when triggeredBy === "credit_threshold". Admin-issued tiers
+   *  set this to 0. */
   threshold: number;
   /** User-facing bundle title. */
   title: string;
@@ -48,6 +50,17 @@ export interface MerchTier {
   /** Hex tint used as the card accent — picked per tier so the
    *  Apprentice and Champion bundles read as distinct moments. */
   accent: string;
+  /**
+   * How this tier gets issued:
+   *   "credit_threshold" — auto-issued by ensureMerchUnlocks once
+   *     lifetime credits spent crosses `threshold`. Tier 1 and 2.
+   *   "admin_issued"     — discretionary, never auto. Admin tooling
+   *     creates the MerchReward row directly (e.g. theme-proposal
+   *     bounty issued from /admin/theme-proposals).
+   * ensureMerchUnlocks + nextTierFor SKIP non-credit-threshold tiers
+   * so the credit-progress UI doesn't get confused.
+   */
+  triggeredBy: "credit_threshold" | "admin_issued";
 }
 
 export const MERCH_TIERS: readonly MerchTier[] = [
@@ -62,6 +75,7 @@ export const MERCH_TIERS: readonly MerchTier[] = [
       "Mystery item (rotates — past trainees got pins, sticker packs, micro-tools)",
     ],
     accent: "#10b981", // emerald — engage / learn
+    triggeredBy: "credit_threshold",
   },
   {
     tier: 2,
@@ -72,6 +86,21 @@ export const MERCH_TIERS: readonly MerchTier[] = [
       "BHN insulated stainless bottle (16 oz, double-wall vacuum)",
     ],
     accent: "#0ea5e9", // sky — championship / signal
+    triggeredBy: "credit_threshold",
+  },
+  {
+    tier: 3,
+    threshold: 0,
+    title: "Theme Designer Bundle",
+    blurb: "Issued when your theme idea ships. A hand-picked thank-you for shaping the platform.",
+    items: [
+      "Hand-written thank-you note from the BHN team",
+      "BHN sticker pack",
+      "Custom \"I designed this theme\" enamel pin",
+      "Mystery item",
+    ],
+    accent: "#a855f7", // violet — creativity / ideas
+    triggeredBy: "admin_issued",
   },
 ] as const;
 
@@ -151,6 +180,10 @@ export async function ensureMerchUnlocks(
 
   const newlyUnlocked: number[] = [];
   for (const t of MERCH_TIERS) {
+    // Admin-issued tiers (e.g. theme-proposal bounty) are never
+    // auto-unlocked from credit spend — they're created directly
+    // by admin tooling. Skip here.
+    if (t.triggeredBy !== "credit_threshold") continue;
     if (have.has(t.tier)) continue;
     if (spent < t.threshold) continue;
     try {
@@ -175,14 +208,63 @@ export async function ensureMerchUnlocks(
 }
 
 /**
+ * Admin-issued tier-3 bounty for a theme-proposal author. Idempotent:
+ * if the user already has a tier-3 MerchReward (e.g. from a previous
+ * shipped proposal), returns the existing row rather than creating
+ * a duplicate. The (userId, tier) unique constraint enforces this
+ * — even multiple shipped proposals from the same user share one
+ * bundle.
+ *
+ * Sandbox / demo / showcase accounts skip the same way credit-threshold
+ * unlocks do — bounty is a real-trainee perk only.
+ *
+ * Returns the MerchReward row id (existing or new). Caller is expected
+ * to link it from ThemeProposal.bountyRewardId.
+ */
+export async function issueThemeProposalBounty(
+  prisma: PrismaClient,
+  userId: string,
+): Promise<{ rewardId: string; created: boolean } | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { accountKind: true },
+  });
+  if (!user || user.accountKind !== "real") return null;
+
+  const tier = MERCH_TIERS.find((t) => t.tier === 3 && t.triggeredBy === "admin_issued");
+  if (!tier) return null;
+
+  const existing = await prisma.merchReward.findUnique({
+    where: { userId_tier: { userId, tier: tier.tier } },
+    select: { id: true },
+  });
+  if (existing) return { rewardId: existing.id, created: false };
+
+  const reward = await prisma.merchReward.create({
+    data: {
+      userId,
+      tier: tier.tier,
+      threshold: tier.threshold,
+      status: "UNCLAIMED",
+    },
+    select: { id: true },
+  });
+  return { rewardId: reward.id, created: true };
+}
+
+/**
  * For progress UI — "you've spent X / Y credits" + "next unlock at Y".
  * Returns the next-still-locked tier and how close the user is. Once
  * all tiers are unlocked, returns nextTier = null.
  */
 export function nextTierFor(spent: number): { nextTier: MerchTier | null; pctToNext: number } {
-  for (const t of MERCH_TIERS) {
+  // Only credit-threshold tiers participate in progress — admin-issued
+  // bounties (tier 3+) don't have a meaningful "you're X% there".
+  const creditTiers = MERCH_TIERS.filter((t) => t.triggeredBy === "credit_threshold");
+  for (const t of creditTiers) {
     if (spent < t.threshold) {
-      const prevThreshold = MERCH_TIERS.find((p) => p.tier === t.tier - 1)?.threshold ?? 0;
+      const prevThreshold =
+        creditTiers.find((p) => p.tier === t.tier - 1)?.threshold ?? 0;
       const span = t.threshold - prevThreshold;
       const into = spent - prevThreshold;
       return { nextTier: t, pctToNext: Math.max(0, Math.min(100, (into / span) * 100)) };
