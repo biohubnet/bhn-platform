@@ -65,8 +65,12 @@ export default async function ThemesPage() {
     }),
   ]);
 
-  const favorite = votes.find((v) => v.sentiment === "favorite")?.themeId ?? null;
-  const leastFavorite = votes.find((v) => v.sentiment === "least_favorite")?.themeId ?? null;
+  const favoriteIds = votes
+    .filter((v) => v.sentiment === "favorite")
+    .map((v) => v.themeId);
+  const leastFavoriteIds = votes
+    .filter((v) => v.sentiment === "least_favorite")
+    .map((v) => v.themeId);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -78,8 +82,8 @@ export default async function ThemesPage() {
           Your themes, your call
         </h1>
         <p className="text-sm text-muted mt-3 max-w-3xl leading-relaxed">
-          Pick the theme you like best, flag the one you like least, and
-          pitch ideas for new ones. If we build your idea, you'll earn
+          Pick up to <span className="font-semibold text-fg">3 themes you love</span> and up to <span className="font-semibold text-fg">3 you don't</span>,
+          and pitch ideas for new ones. If we build your idea, you'll earn
           a <span className="font-semibold text-fg">Theme Designer Bundle</span> — a hand-picked thank-you
           delivered through the regular Rewards pickup at the BHN office.
         </p>
@@ -87,8 +91,8 @@ export default async function ThemesPage() {
 
       {/* Vote panel — client island */}
       <ThemeVotePanel
-        initialFavorite={(favorite as string | null) ?? null}
-        initialLeastFavorite={(leastFavorite as string | null) ?? null}
+        initialFavorites={favoriteIds}
+        initialLeastFavorites={leastFavoriteIds}
       />
 
       {/* Proposal submission — client island */}

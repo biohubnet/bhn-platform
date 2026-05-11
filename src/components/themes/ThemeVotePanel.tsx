@@ -3,28 +3,33 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, ThumbsDown, Loader2, AlertCircle, X } from "lucide-react";
 import { THEMES, type ThemeId } from "@/components/ui/ThemeProvider";
+import { MAX_VOTES_PER_SENTIMENT } from "@/lib/themes/constants";
 import { cn } from "@/lib/utils";
 
 /**
- * Theme voting panel — pick one favourite + one least-favourite.
+ * Theme voting panel — pick up to MAX_VOTES_PER_SENTIMENT (3)
+ * favourites and up to 3 least-favourites.
  *
- * UX choices
- *   • Two-button-per-card layout: each theme card carries a Heart
- *     and a ThumbsDown button. Solid icon when selected. Single
- *     click toggles, so re-clicking the active button clears the
- *     vote (matches the DELETE endpoint).
- *   • Optimistic state. On API failure the local state reverts and
+ * UX rules
+ *   • Per-theme card has two buttons (Heart / ThumbsDown). Filled
+ *     icon when the theme is in the corresponding set; outline
+ *     otherwise.
+ *   • Capped buttons (3 votes already picked, this theme not in
+ *     the set) are disabled with an explanatory title so users
+ *     understand why they can't click.
+ *   • Optimistic state. On API failure the local set reverts and
  *     an error banner surfaces.
- *   • Conflict resolution lives on the server (deleteMany on the
- *     opposite sentiment with the same themeId, in the upsert
- *     transaction). Client mirrors that: setting favourite on a
- *     theme you previously disliked silently clears the dislike.
+ *   • Conflict rule mirrors the server: adding a favourite for a
+ *     theme you previously disliked silently moves it (and vice
+ *     versa). Done client-side so the UI stays consistent without
+ *     waiting for a refetch.
+ *   • The current-selection card shows chips for each picked
+ *     theme; × on a chip removes that one vote.
  */
 
 // Mirror of SWATCH in ThemePicker.tsx. Kept duplicated rather than
-// extracted because the picker's Swatch component is private to
-// that file. If a third surface needs swatches, hoist to a shared
-// module then.
+// extracted because the picker's Swatch is private to that file.
+// If a third surface needs swatches, hoist to a shared module.
 const SWATCH: Record<ThemeId, [string, string, string]> = {
   light:      ["#ffffff", "#3b6cef", "#0b1b3b"],
   dark:       ["#0f1d3d", "#5e8ff7", "#eaf0fb"],
@@ -61,33 +66,41 @@ function Swatch({ id, size = 36 }: { id: ThemeId; size?: number }) {
 }
 
 interface Props {
-  initialFavorite: string | null;
-  initialLeastFavorite: string | null;
+  initialFavorites: string[];
+  initialLeastFavorites: string[];
 }
 
-export function ThemeVotePanel({ initialFavorite, initialLeastFavorite }: Props) {
+type Sentiment = "favorite" | "least_favorite";
+
+export function ThemeVotePanel({ initialFavorites, initialLeastFavorites }: Props) {
   const router = useRouter();
-  const [fav, setFav] = useState<string | null>(initialFavorite);
-  const [least, setLeast] = useState<string | null>(initialLeastFavorite);
+  const [favs, setFavs] = useState<Set<string>>(() => new Set(initialFavorites));
+  const [leasts, setLeasts] = useState<Set<string>>(() => new Set(initialLeastFavorites));
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function setVote(themeId: ThemeId, sentiment: "favorite" | "least_favorite") {
-    const key = `${sentiment}:${themeId}`;
+  async function addVote(themeId: ThemeId, sentiment: Sentiment) {
+    const key = `add:${sentiment}:${themeId}`;
     setBusyKey(key);
     setError(null);
 
-    // Optimistic update — also mirror the server's "opposite-sentiment
-    // on same theme gets cleared" rule client-side.
-    const prevFav = fav;
-    const prevLeast = least;
-    if (sentiment === "favorite") {
-      setFav(themeId);
-      if (least === themeId) setLeast(null);
-    } else {
-      setLeast(themeId);
-      if (fav === themeId) setFav(null);
-    }
+    // Optimistic update mirroring the server's conflict rule:
+    // adding to one set silently removes the same theme from the
+    // opposite set (you can't both love and dislike a theme).
+    const prevFavs = favs;
+    const prevLeasts = leasts;
+    setFavs((cur) => {
+      const next = new Set(cur);
+      if (sentiment === "favorite") next.add(themeId);
+      else next.delete(themeId);
+      return next;
+    });
+    setLeasts((cur) => {
+      const next = new Set(cur);
+      if (sentiment === "least_favorite") next.add(themeId);
+      else next.delete(themeId);
+      return next;
+    });
 
     try {
       const res = await fetch("/api/themes/vote", {
@@ -102,65 +115,89 @@ export function ThemeVotePanel({ initialFavorite, initialLeastFavorite }: Props)
       router.refresh();
     } catch (e) {
       setError((e as Error).message);
-      setFav(prevFav);
-      setLeast(prevLeast);
+      setFavs(prevFavs);
+      setLeasts(prevLeasts);
     } finally {
       setBusyKey(null);
     }
   }
 
-  async function clearVote(sentiment: "favorite" | "least_favorite") {
-    const key = `clear:${sentiment}`;
+  async function removeVote(themeId: string, sentiment: Sentiment) {
+    const key = `remove:${sentiment}:${themeId}`;
     setBusyKey(key);
     setError(null);
 
-    const prevFav = fav;
-    const prevLeast = least;
-    if (sentiment === "favorite") setFav(null);
-    else setLeast(null);
+    const prevFavs = favs;
+    const prevLeasts = leasts;
+    if (sentiment === "favorite") {
+      setFavs((cur) => {
+        const next = new Set(cur);
+        next.delete(themeId);
+        return next;
+      });
+    } else {
+      setLeasts((cur) => {
+        const next = new Set(cur);
+        next.delete(themeId);
+        return next;
+      });
+    }
 
     try {
-      const res = await fetch(`/api/themes/vote?sentiment=${sentiment}`, { method: "DELETE" });
+      const res = await fetch(
+        `/api/themes/vote?themeId=${encodeURIComponent(themeId)}&sentiment=${sentiment}`,
+        { method: "DELETE" },
+      );
       if (!res.ok) {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(j.error ?? "Clear failed");
+        throw new Error(j.error ?? "Remove failed");
       }
       router.refresh();
     } catch (e) {
       setError((e as Error).message);
-      setFav(prevFav);
-      setLeast(prevLeast);
+      setFavs(prevFavs);
+      setLeasts(prevLeasts);
     } finally {
       setBusyKey(null);
     }
   }
+
+  const favAtCap = favs.size >= MAX_VOTES_PER_SENTIMENT;
+  const leastAtCap = leasts.size >= MAX_VOTES_PER_SENTIMENT;
 
   return (
     <section className="rounded-2xl border border-line bg-card p-5 sm:p-6 surface-shadow">
       <header className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-4">
         <h2 className="text-base font-bold text-fg tracking-tight">Your votes</h2>
         <p className="text-xs text-muted">
-          One favourite, one least-favourite. Click an active button to clear it.
+          Up to {MAX_VOTES_PER_SENTIMENT} favourites and {MAX_VOTES_PER_SENTIMENT} least-favourites.
+          Click an active button to remove it.
         </p>
       </header>
 
-      {/* Current selection summary */}
+      {/* Current selection summary — chip lists */}
       <div className="grid sm:grid-cols-2 gap-3 mb-5">
-        <CurrentVoteCard
-          label="Favourite"
-          themeId={fav}
+        <SentimentSummary
+          label="Favourites"
           icon={Heart}
-          accentClass="text-rose-600"
-          onClear={() => clearVote("favorite")}
-          busy={busyKey === "clear:favorite"}
+          iconClass="text-rose-600"
+          chipClass="bg-rose-100 text-rose-800 ring-rose-200"
+          themeIds={Array.from(favs)}
+          cap={MAX_VOTES_PER_SENTIMENT}
+          onRemove={(id) => removeVote(id, "favorite")}
+          busyKey={busyKey}
+          sentiment="favorite"
         />
-        <CurrentVoteCard
-          label="Least favourite"
-          themeId={least}
+        <SentimentSummary
+          label="Least favourites"
           icon={ThumbsDown}
-          accentClass="text-amber-700"
-          onClear={() => clearVote("least_favorite")}
-          busy={busyKey === "clear:least_favorite"}
+          iconClass="text-amber-700"
+          chipClass="bg-amber-100 text-amber-800 ring-amber-200"
+          themeIds={Array.from(leasts)}
+          cap={MAX_VOTES_PER_SENTIMENT}
+          onRemove={(id) => removeVote(id, "least_favorite")}
+          busyKey={busyKey}
+          sentiment="least_favorite"
         />
       </div>
 
@@ -174,10 +211,12 @@ export function ThemeVotePanel({ initialFavorite, initialLeastFavorite }: Props)
       {/* Grid of all 13 themes */}
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {THEMES.map((t) => {
-          const isFav = fav === t.id;
-          const isLeast = least === t.id;
-          const favBusy = busyKey === `favorite:${t.id}`;
-          const leastBusy = busyKey === `least_favorite:${t.id}`;
+          const isFav = favs.has(t.id);
+          const isLeast = leasts.has(t.id);
+          const favBlocked = !isFav && favAtCap;
+          const leastBlocked = !isLeast && leastAtCap;
+          const favBusy = busyKey === `add:favorite:${t.id}` || busyKey === `remove:favorite:${t.id}`;
+          const leastBusy = busyKey === `add:least_favorite:${t.id}` || busyKey === `remove:least_favorite:${t.id}`;
           return (
             <li
               key={t.id}
@@ -201,10 +240,15 @@ export function ThemeVotePanel({ initialFavorite, initialLeastFavorite }: Props)
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => (isFav ? clearVote("favorite") : setVote(t.id, "favorite"))}
-                  disabled={busyKey !== null}
+                  onClick={() => (isFav ? removeVote(t.id, "favorite") : addVote(t.id, "favorite"))}
+                  disabled={busyKey !== null || favBlocked}
+                  title={
+                    favBlocked
+                      ? `Pick up to ${MAX_VOTES_PER_SENTIMENT} favourites — remove one first`
+                      : undefined
+                  }
                   className={cn(
-                    "inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50",
+                    "inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
                     isFav
                       ? "bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-300 hover:bg-rose-200"
                       : "bg-card text-muted ring-1 ring-inset ring-line hover:bg-card hover:text-rose-700",
@@ -220,10 +264,15 @@ export function ThemeVotePanel({ initialFavorite, initialLeastFavorite }: Props)
                 </button>
                 <button
                   type="button"
-                  onClick={() => (isLeast ? clearVote("least_favorite") : setVote(t.id, "least_favorite"))}
-                  disabled={busyKey !== null}
+                  onClick={() => (isLeast ? removeVote(t.id, "least_favorite") : addVote(t.id, "least_favorite"))}
+                  disabled={busyKey !== null || leastBlocked}
+                  title={
+                    leastBlocked
+                      ? `Pick up to ${MAX_VOTES_PER_SENTIMENT} least-favourites — remove one first`
+                      : undefined
+                  }
                   className={cn(
-                    "inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50",
+                    "inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
                     isLeast
                       ? "bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-300 hover:bg-amber-200"
                       : "bg-card text-muted ring-1 ring-inset ring-line hover:bg-card hover:text-amber-800",
@@ -246,44 +295,59 @@ export function ThemeVotePanel({ initialFavorite, initialLeastFavorite }: Props)
   );
 }
 
-function CurrentVoteCard({
-  label,
-  themeId,
-  icon: Icon,
-  accentClass,
-  onClear,
-  busy,
+function SentimentSummary({
+  label, icon: Icon, iconClass, chipClass, themeIds, cap, onRemove, busyKey, sentiment,
 }: {
   label: string;
-  themeId: string | null;
   icon: React.ElementType;
-  accentClass: string;
-  onClear: () => void;
-  busy: boolean;
+  iconClass: string;
+  chipClass: string;
+  themeIds: string[];
+  cap: number;
+  onRemove: (themeId: string) => void;
+  busyKey: string | null;
+  sentiment: Sentiment;
 }) {
-  const theme = themeId
-    ? THEMES.find((t) => t.id === themeId)
-    : undefined;
   return (
-    <div className="rounded-xl border border-line bg-elevated p-3 flex items-center gap-3">
-      <Icon size={16} className={cn("shrink-0", accentClass)} />
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle">{label}</p>
-        <p className="text-sm font-semibold text-fg truncate">
-          {theme ? theme.name : <span className="text-subtle italic">Not picked yet</span>}
-        </p>
+    <div className="rounded-xl border border-line bg-elevated p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon size={14} className={cn("shrink-0", iconClass)} />
+        <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle flex-1">{label}</p>
+        <span className="text-[11px] font-mono tabular-nums text-subtle">
+          {themeIds.length}/{cap}
+        </span>
       </div>
-      {theme && (
-        <button
-          type="button"
-          onClick={onClear}
-          disabled={busy}
-          className="p-1 rounded text-muted hover:bg-card hover:text-fg disabled:opacity-40"
-          title="Clear"
-          aria-label="Clear vote"
-        >
-          {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
-        </button>
+      {themeIds.length === 0 ? (
+        <p className="text-xs text-subtle italic">No picks yet.</p>
+      ) : (
+        <ul className="flex flex-wrap gap-1.5">
+          {themeIds.map((id) => {
+            const themeName =
+              THEMES.find((t) => t.id === id)?.name ?? id;
+            const busy = busyKey === `remove:${sentiment}:${id}`;
+            return (
+              <li key={id}>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ring-1 ring-inset",
+                    chipClass,
+                  )}
+                >
+                  {themeName}
+                  <button
+                    type="button"
+                    onClick={() => onRemove(id)}
+                    disabled={busyKey !== null}
+                    className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-card/40 disabled:opacity-40"
+                    aria-label={`Remove ${themeName}`}
+                  >
+                    {busy ? <Loader2 size={10} className="animate-spin" /> : <X size={10} />}
+                  </button>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );

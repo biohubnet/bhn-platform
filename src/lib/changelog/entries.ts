@@ -23,8 +23,8 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
-    title: "Theme feedback — vote on your favourite, pitch new ideas, earn merch when one ships",
-    body: "New /themes page in the sidebar lets you mark one favourite theme and one least-favourite from the existing thirteen, and pitch ideas for new ones. Submitting a proposal kicks off a review by an admin — every proposal lands in /admin/theme-proposals with one-click actions (review · build · ship · ship + bounty · decline). When your idea is built and shipped, the admin can issue a Theme Designer Bundle: a hand-picked thank-you with a custom \"I designed this theme\" enamel pin, sticker pack, hand-written note, and a mystery item — delivered through the same Rewards pickup at the BHN office (or mailing on request if you're far from Toronto). The bundle is one-per-user across all your shipped proposals — submit as many ideas as you want; the bounty lands once per contributor. Voter privacy: per-user votes are private to you. Admins see aggregated top-loved / top-disliked stats only.",
+    title: "Theme feedback — vote on your favourites, pitch new ideas, earn merch when one ships",
+    body: "New /themes page in the sidebar lets you mark up to 3 favourite themes and up to 3 least-favourites from the existing thirteen, and pitch ideas for new ones. Submitting a proposal kicks off a review by an admin — every proposal lands in /admin/theme-proposals with one-click actions (review · build · ship · ship + bounty · decline). When your idea is built and shipped, the admin can issue a Theme Designer Bundle: a hand-picked thank-you with a custom \"I designed this theme\" enamel pin, sticker pack, hand-written note, and a mystery item — delivered through the same Rewards pickup at the BHN office (or mailing on request if you're far from Toronto). The bundle is one-per-user across all your shipped proposals — submit as many ideas as you want; the bounty lands once per contributor. Voter privacy: per-user votes are private to you. Admins see aggregated top-loved / top-disliked stats only.",
     kind: "feature",
     visibleTo: ALL,
     daysAgo: 0,
