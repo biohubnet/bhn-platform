@@ -1,11 +1,18 @@
 import Link from "next/link";
-import { ArrowLeft, FilePlus, Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Badge } from "@/components/ui/Badge";
+import { PostingsTable } from "@/components/employer/PostingsTable";
 
-/** Employer's own internship postings. Filters by createdById so each
- *  employer only sees their own; admins see everything. */
+/**
+ * Employer's own internship postings. Filters by createdById so each
+ * employer only sees their own; admins see everything.
+ *
+ * This page is a fast triage queue. Interactive bits — checkboxes,
+ * status cycling, bulk actions — live in <PostingsTable> as a
+ * client component. Edit happens on the per-posting detail page at
+ * /employer/postings/[id], not here.
+ */
 export default async function EmployerPostings() {
   const session = await getSession();
   const role = (session!.user as { role?: string }).role ?? "trainee";
@@ -22,6 +29,14 @@ export default async function EmployerPostings() {
   const postings = await prisma.internshipPosting.findMany({
     where: isAdminLike ? {} : { createdById: userId ?? "_" },
     orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      location: true,
+      status: true,
+      createdAt: true,
+      deadline: true,
+    },
   });
 
   return (
@@ -47,51 +62,16 @@ export default async function EmployerPostings() {
         </Link>
       </div>
 
-      {postings.length === 0 ? (
-        <div className="bg-card border border-line rounded-2xl p-12 text-center">
-          <div className="w-12 h-12 mx-auto rounded-xl bg-elevated text-muted flex items-center justify-center mb-3">
-            <FilePlus size={20} />
-          </div>
-          <p className="font-medium text-muted">No postings yet</p>
-          <p className="text-sm text-muted mt-1">Click "New posting" — paste the job description and the AI will fill in the fields for you.</p>
-        </div>
-      ) : (
-        <div className="bg-card border border-line rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-elevated/60 border-b border-line">
-              <tr>
-                <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-4 py-3">Title</th>
-                <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-4 py-3">Location</th>
-                <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-4 py-3">Status</th>
-                <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-4 py-3">Posted</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {postings.map((p) => (
-                <tr key={p.id} className="hover:bg-elevated/40">
-                  <td className="px-4 py-3 font-medium text-fg">{p.title}</td>
-                  <td className="px-4 py-3 text-muted">{p.location ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    {p.status === "active" ? <Badge tone="success">Active</Badge>
-                      : p.status === "draft" ? <Badge tone="warning">Draft</Badge>
-                      : <Badge tone="neutral">Closed</Badge>}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-subtle">{p.createdAt.toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/internships/${p.id}/edit`}
-                      className="text-xs text-brand-700 hover:underline"
-                    >
-                      Edit
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <PostingsTable
+        postings={postings.map((p) => ({
+          id: p.id,
+          title: p.title,
+          location: p.location,
+          status: p.status,
+          createdAt: p.createdAt.toISOString(),
+          deadline: p.deadline?.toISOString() ?? null,
+        }))}
+      />
     </div>
   );
 }

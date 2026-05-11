@@ -459,8 +459,12 @@ model InternshipPosting {
   deadline        DateTime?
   keySkills       String[]
   positionDetails String
-  /// "active" | "closed" | "draft"
-  status          String    @default("active")
+  /// "active" | "closed" | "expired" | "draft"
+  ///   active   — live, accepting applications
+  ///   closed   — manually closed by HR, no more applications
+  ///   expired  — deadline passed or bulk-marked expired
+  ///   draft    — being prepped, not visible on the public board
+  status          String    @default("active") // active | closed | expired | draft
   /// Apply-direct contact. Email is the primary target; name + phone
   /// are optional. Trainees see these on the posting detail page so
   /// they can email a tailored pitch directly to the hiring contact.
