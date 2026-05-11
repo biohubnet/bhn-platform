@@ -1387,9 +1387,10 @@ model SymposiumSession {
   startTime       DateTime
   endTime         DateTime
   room            String?
-  /// "registration" | "keynote" | "panel" | "spotlight" | "breakout"
-  /// | "pitch_competition" | "break" | "meal" | "networking" | "closing"
-  kind            String // registration | keynote | panel | spotlight | breakout | pitch_competition | break | meal | networking | closing
+  /// "registration" | "opening" | "presentation" | "keynote" | "panel"
+  /// | "spotlight" | "breakout" | "pitch_competition" | "break" | "meal"
+  /// | "networking" | "closing"
+  kind            String // registration | opening | presentation | keynote | panel | spotlight | breakout | pitch_competition | break | meal | networking | closing
   /// True only for parallel-breakout slots where attendees must pick
   /// one of N. UI enforces "pick at most one per breakoutGroupId" —
   /// schema doesn't constrain that directly.
