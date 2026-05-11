@@ -13,6 +13,7 @@ import { GreetingTagline } from "@/components/lms/GreetingTagline";
 import { SkillGapWidget } from "@/components/lms/SkillGapWidget";
 import { DailyThemeCard } from "@/components/ui/DailyThemeCard";
 import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
+import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -206,6 +207,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Upcoming BHN event — Symposium / Training Week. Auto-hides
+          when there's no published event in the future, or registration
+          is closed and the viewer isn't already registered. */}
+      <UpcomingEventBanner userId={userId} />
+
       {/* Theme of the day — once-per-calendar-day suggestion the
           trainee can try without committing, then keep if they like it. */}
       <DailyThemeCard />

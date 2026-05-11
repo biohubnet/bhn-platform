@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.11a";
+export const TOUR_VERSION = "2026.05.11b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -515,6 +515,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
     cta: { label: "Open Demo workspaces", href: "/admin/demo-workspaces" },
+  },
+  {
+    id: "events-discovery",
+    title: "The Symposium is now one click away",
+    body: "A new 'Events' item under ENGAGE in the sidebar takes you to /events — the public listing of upcoming BHN editions. You'll also see a banner at the top of your dashboard whenever there's an event coming up: 'Register' if you're not in yet, or 'Open my event dashboard' once you've confirmed. The banner auto-hides after the event ends.",
+    path: "/dashboard",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    since: "2026.05.11b",
+    cta: { label: "See upcoming events", href: "/events" },
   },
   {
     id: "events-module",

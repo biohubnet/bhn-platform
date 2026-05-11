@@ -87,6 +87,8 @@ const engageItems: (NavItem & { labelKey: string })[] = [
     description: "Balance plus a log of every grant and spend. Apply for additional credits here." },
   { label: "Rewards",            labelKey: "nav.rewards",     href: "/rewards", icon: Gift,
     description: "BHN merch rewards at 2,500 and 5,000 credits trained. Pickup at U of T or request mailing." },
+  { label: "Events",             labelKey: "nav.events",      href: "/events", icon: Calendar,
+    description: "BHN Annual Symposium & Training Week. Workshops, agenda, speakers. Register here." },
 ];
 
 // EXPERIENCE — applications and connections to industry placements.
