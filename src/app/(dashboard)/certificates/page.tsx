@@ -2,24 +2,18 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Award, Download } from "lucide-react";
 
-interface CertWithCourse {
-  id: string;
-  issueDate: Date;
-  expiryDate: Date | null;
-  metadata: string | null;
-  pdfUrl: string | null;
-  revokedAt: Date | null;
-  course: { title: string; category: string | null };
-}
-
 export default async function CertificatesPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
 
+  // Certificates can be either course- or pathway-issued (kind says
+  // which). Include both relations and pick at render time — earlier
+  // versions only included `course`, which crashed for pathway certs.
   const certificates = await prisma.certificate.findMany({
     where: { userId },
     include: {
-      course: { select: { title: true, category: true } },
+      course:  { select: { title: true, category: true } },
+      pathway: { select: { title: true, category: true } },
     },
     orderBy: { issueDate: "desc" },
   });
@@ -41,8 +35,21 @@ export default async function CertificatesPage() {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(certificates as CertWithCourse[]).map((cert: CertWithCourse) => {
+          {certificates.map((cert) => {
             const meta = cert.metadata ? JSON.parse(cert.metadata) : {};
+            // Pick the title + category from whichever relation
+            // populated — course for course certs, pathway for
+            // pathway certs (kind tells which). The deleted-row
+            // fallback shouldn't trigger in practice (FK cascade
+            // would wipe the cert too), but keeps the page from
+            // crashing if data ever drifts.
+            const isPathway = cert.kind === "pathway";
+            const subjectTitle = isPathway
+              ? cert.pathway?.title ?? "Pathway (deleted)"
+              : cert.course?.title ?? "Course (deleted)";
+            const subjectCategory = isPathway
+              ? cert.pathway?.category ?? null
+              : cert.course?.category ?? null;
             return (
               <div
                 key={cert.id}
@@ -54,13 +61,16 @@ export default async function CertificatesPage() {
                   <p className="text-white font-bold text-center text-sm leading-tight">
                     Certificate of Completion
                   </p>
+                  <p className="text-white/85 text-[10px] font-bold uppercase tracking-[0.18em] mt-1">
+                    {isPathway ? "Pathway" : "Course"}
+                  </p>
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-fg text-sm mb-1">
-                    {cert.course.title}
+                    {subjectTitle}
                   </h3>
-                  {cert.course.category && (
-                    <p className="text-xs text-subtle mb-2">{cert.course.category}</p>
+                  {subjectCategory && (
+                    <p className="text-xs text-subtle mb-2">{subjectCategory}</p>
                   )}
                   <div className="flex items-center justify-between text-xs text-muted">
                     <span>Issued {new Date(cert.issueDate).toLocaleDateString()}</span>

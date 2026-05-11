@@ -5,28 +5,25 @@ import { cn } from "@/lib/utils";
 import { CertificateActions } from "@/components/admin/CertificateActions";
 import { RevokeButton } from "@/components/admin/RevokeButton";
 
-interface CertRow {
-  id: string;
-  issueDate: Date;
-  expiryDate: Date | null;
-  revokedAt: Date | null;
-  user: { id: string; name: string | null; email: string };
-  course: { id: string; title: string };
-}
-
 export default async function AdminCertificatesPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
 
+  // Certificates can be tied to either a Course or a Pathway —
+  // `kind` says which. Include BOTH relations and pick at render
+  // time. Earlier versions of this page only included `course`,
+  // which crashed for pathway certs (showcase-trainee seed creates
+  // one) because `course` is null in that case.
   const [certs, users, courses] = await Promise.all([
     prisma.certificate.findMany({
       include: {
-        user: { select: { id: true, name: true, email: true } },
-        course: { select: { id: true, title: true } },
+        user:    { select: { id: true, name: true, email: true } },
+        course:  { select: { id: true, title: true } },
+        pathway: { select: { id: true, title: true } },
       },
       orderBy: { issueDate: "desc" },
       take: 300,
-    }) as Promise<CertRow[]>,
+    }),
     prisma.user.findMany({
       where: { isActive: true },
       select: { id: true, name: true, email: true },
@@ -55,7 +52,7 @@ export default async function AdminCertificatesPage() {
             <thead>
               <tr className="border-b border-line text-left text-xs text-muted uppercase tracking-wide">
                 <th className="px-5 py-3">User</th>
-                <th className="px-5 py-3">Course</th>
+                <th className="px-5 py-3">For</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Issued</th>
                 <th className="px-5 py-3">Expires</th>
@@ -63,13 +60,35 @@ export default async function AdminCertificatesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {certs.map((cert: CertRow) => (
+              {certs.map((cert) => {
+                // Pathway certs have course=null and vice versa. Pick
+                // the title from whichever relation populated; fall
+                // back to a placeholder if both are somehow null (e.g.
+                // the underlying row was deleted with onDelete cascade
+                // before this query — shouldn't happen but harmless).
+                const isPathway = cert.kind === "pathway";
+                const subjectTitle = isPathway
+                  ? cert.pathway?.title ?? "Pathway (deleted)"
+                  : cert.course?.title ?? "Course (deleted)";
+                return (
                 <tr key={cert.id} className={cn("hover:bg-elevated", cert.revokedAt && "opacity-50")}>
                   <td className="px-5 py-3">
                     <p className="font-medium text-fg">{cert.user.name ?? "—"}</p>
                     <p className="text-xs text-subtle">{cert.user.email}</p>
                   </td>
-                  <td className="px-5 py-3 text-muted">{cert.course.title}</td>
+                  <td className="px-5 py-3">
+                    <p className="text-fg">{subjectTitle}</p>
+                    <span
+                      className={cn(
+                        "inline-block text-[10px] font-bold uppercase tracking-[0.14em] px-1.5 py-0.5 rounded mt-1 ring-1 ring-inset",
+                        isPathway
+                          ? "bg-sky-50 text-sky-800 ring-sky-200"
+                          : "bg-emerald-50 text-emerald-800 ring-emerald-200",
+                      )}
+                    >
+                      {isPathway ? "Pathway" : "Course"}
+                    </span>
+                  </td>
                   <td className="px-5 py-3">
                     <span className={cn(
                       "text-xs px-2 py-0.5 rounded-full",
@@ -88,7 +107,8 @@ export default async function AdminCertificatesPage() {
                     <RevokeButton certId={cert.id} revoked={!!cert.revokedAt} />
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
