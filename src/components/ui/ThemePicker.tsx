@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Palette, Check, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { Palette, Check, Sparkles, ArrowRight } from "lucide-react";
 import {
   useTheme, THEMES, activeThemes, THEME_CATEGORIES,
   type ThemeId, type ThemeCategory,
@@ -216,6 +217,22 @@ function ThemeMenu({
           </div>
         );
       })}
+
+      {/* Discovery link — the /themes page is where users vote and
+          propose new themes. We don't surface it in the sidebar
+          (would just clutter the misc group); instead the link lives
+          here, where users are already engaging with themes. Soft
+          navigation closes the dropdown naturally as the page swaps. */}
+      <div className="border-t border-line mt-2 pt-2 px-1">
+        <Link
+          href="/themes"
+          className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium text-muted hover:bg-elevated hover:text-fg transition-colors"
+        >
+          <Sparkles size={12} className="text-brand-600 shrink-0" />
+          <span className="flex-1">Vote on themes &amp; suggest a new one</span>
+          <ArrowRight size={12} className="text-subtle shrink-0" />
+        </Link>
+      </div>
     </div>
   );
 }
