@@ -1640,8 +1640,14 @@ model PollResponse {
 //     link to the same MerchReward via bountyRewardId.
 // ════════════════════════════════════════════════════════════════
 
-/// User vote on a specific theme. One favorite + one least-favorite
-/// per user (enforced via @@unique([userId, sentiment])).
+/// User vote on a specific theme. Up to MAX_VOTES_PER_SENTIMENT (3,
+/// see src/lib/themes/constants.ts) favourites and 3 least-favourites
+/// per user — the count cap is enforced at the API layer, not the
+/// schema. Schema enforces only that the same (user, sentiment,
+/// themeId) triple is unique (idempotent re-vote, not duplicate row).
+/// A theme can't appear as both favourite AND least-favourite for the
+/// same user; the API enforces that via a delete-the-opposite-side
+/// step inside the upsert transaction.
 model ThemeVote {
   id        String   @id @default(cuid())
   userId    String
@@ -1656,11 +1662,12 @@ model ThemeVote {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  /// One favorite + one least-favorite per user. Upsert by this
-  /// composite to "change your mind" rather than accumulate votes.
-  @@unique([userId, sentiment])
+  /// (user, sentiment, theme) is the natural identity of a vote.
+  /// Re-voting the same theme with the same sentiment is a no-op;
+  /// the count cap (≤ 3 per sentiment per user) lives at the API.
+  @@unique([userId, sentiment, themeId])
   /// Supports the aggregated "top loved" / "top disliked" stats on
-  /// the /themes page and the admin queue.
+  /// the admin queue.
   @@index([themeId, sentiment])
 }
 

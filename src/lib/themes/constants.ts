@@ -47,6 +47,16 @@ export const SENTIMENT_LABELS: Record<VoteSentiment, string> = {
   least_favorite: "Least favourite",
 };
 
+/**
+ * Maximum votes per (user, sentiment) — users can pick up to this
+ * many favourites AND up to this many least-favourites. Enforced at
+ * the POST /api/themes/vote layer; the schema only enforces that
+ * the same (user, sentiment, themeId) triple isn't duplicated.
+ *
+ * Keep in sync with the cap copy in the user-facing voting UI.
+ */
+export const MAX_VOTES_PER_SENTIMENT = 3;
+
 export const THEME_PROPOSAL_STATUSES = [
   "submitted",
   "under_review",
