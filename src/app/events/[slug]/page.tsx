@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import {
   Calendar,
   MapPin,
@@ -14,6 +15,7 @@ import {
   Building2,
   Hotel,
   ArrowRight,
+  CheckCircle2,
 } from "lucide-react";
 
 /* ─── Metadata ───────────────────────────────────────────────────── */
@@ -81,14 +83,40 @@ export default async function EventLandingPage(
 
   if (!event || event.status !== "published") notFound();
 
+  // ── Session-aware CTA ──
+  //
+  // The landing page is public, so we can't *require* auth — but we
+  // can detect it. When a signed-in visitor reaches this page, the
+  // big "Register" button should NOT bounce them through /login (a
+  // round-trip they don't need); it should go straight to
+  // /events/[slug]/register. And if they've already got a confirmed
+  // Registration, send them to their attendee dashboard instead so
+  // the page doesn't keep nagging them to register.
+  const session = await getSession();
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+  const myReg = userId
+    ? await prisma.registration.findUnique({
+        where: { eventId_userId: { eventId: event.id, userId } },
+        select: { registrationStatus: true },
+      })
+    : null;
+  const isConfirmed = myReg?.registrationStatus === "confirmed";
+
+  const ctaHref = !session
+    ? `/login?callbackUrl=${encodeURIComponent(`/events/${slug}/register`)}`
+    : isConfirmed
+      ? `/events/${slug}/me`
+      : `/events/${slug}/register`;
+  const ctaPrimary = isConfirmed ? "Open my event dashboard" : "Register";
+  const ctaFooter = isConfirmed ? "Open my event dashboard" : "Register now";
+  const CtaIcon = isConfirmed ? CheckCircle2 : ArrowRight;
+
   // ── derived data ──
   const workshopDays = groupWorkshopsByDay(event.workshops);
   const sponsorsByTier = groupSponsorsByTier(event.sponsors);
   const heroBg = event.coverImageUrl
     ? `linear-gradient(180deg, rgba(15,29,61,0.55) 0%, rgba(15,29,61,0.85) 100%), url(${event.coverImageUrl})`
     : "linear-gradient(135deg, var(--color-brand-900, #0b1b3b), var(--color-brand-700, #2d4cb8) 60%, var(--color-brand-600, #3b6cef))";
-
-  const registerHref = `/login?callbackUrl=${encodeURIComponent(`/events/${slug}/register`)}`;
 
   return (
     <>
@@ -122,10 +150,10 @@ export default async function EventLandingPage(
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href={registerHref}
+              href={ctaHref}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-brand-900 text-sm font-bold hover:bg-brand-50 transition-colors shadow-lg"
             >
-              Register <ArrowRight size={14} />
+              {ctaPrimary} <CtaIcon size={14} />
             </Link>
             <a
               href="#agenda"
@@ -326,10 +354,10 @@ export default async function EventLandingPage(
           </p>
           <div className="mt-6">
             <Link
-              href={registerHref}
+              href={ctaHref}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-brand-900 text-sm font-bold hover:bg-brand-50 transition-colors shadow-lg"
             >
-              Register now <ArrowRight size={14} />
+              {ctaFooter} <CtaIcon size={14} />
             </Link>
           </div>
           {event.registrationClosesAt && (

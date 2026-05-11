@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/ui/Logo";
+import { getSession } from "@/lib/auth";
 
 /**
  * Public layout for the Events module surfaces (/events/[slug] etc.).
@@ -9,12 +10,19 @@ import { LogoMark } from "@/components/ui/Logo";
  * non-logged-in visitor can land on (after clicking through from
  * biohubnet.ca / LinkedIn / email) and decide whether to register.
  *
- * Header has the BHN logo (links home) and a small Sign-in affordance
- * for return visitors. Footer keeps the privacy/terms links visible
- * since this page collects no personal data itself — the registration
- * flow is where consent matters, and that flow is gated by auth.
+ * Header has the BHN logo (links home) plus a context-sensitive
+ * affordance in the top-right: "Sign in →" for anonymous visitors,
+ * "Dashboard →" for signed-in users. Showing "Sign in" to a logged-in
+ * user was previously confusing — they'd assume they weren't signed
+ * in and end up in a login loop. Footer keeps the privacy/terms
+ * links visible since this page collects no personal data itself —
+ * the registration flow is where consent matters, and that flow is
+ * gated by auth.
  */
-export default function EventsLayout({ children }: { children: React.ReactNode }) {
+export default async function EventsLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  const signedIn = session !== null;
+
   return (
     <div className="min-h-screen bg-page flex flex-col">
       <header className="border-b border-line bg-card">
@@ -26,10 +34,10 @@ export default function EventsLayout({ children }: { children: React.ReactNode }
             </span>
           </Link>
           <Link
-            href="/login"
+            href={signedIn ? "/dashboard" : "/login"}
             className="text-xs font-semibold text-muted hover:text-fg transition-colors"
           >
-            Sign in →
+            {signedIn ? "Dashboard →" : "Sign in →"}
           </Link>
         </div>
       </header>
