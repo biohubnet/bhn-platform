@@ -3,7 +3,7 @@
  *
  *   POST /api/events/[slug]/register
  *     body: { attendeeType, dietaryRestrictions?, accessibilityNeeds?,
- *             includesSymposiumDay? }
+ *             includesSymposiumDay?, workshopIds?: string[] }
  *
  * Behaviour
  *   • Auth-gated. Anonymous → 401 (the form should redirect through
@@ -12,10 +12,18 @@
  *   • Registration window honoured when set (registrationOpensAt /
  *     registrationClosesAt). Outside window → 403.
  *   • Idempotent. If a Registration already exists for (event, user),
- *     return it as-is. The (eventId, userId) unique constraint
- *     guarantees one row per pair; we surface it instead of crashing
- *     on a P2002.
+ *     return it as-is and DO NOT touch their existing workshop
+ *     bookings — they have a dedicated UI at /me/workshops for that.
+ *     The (eventId, userId) unique constraint guarantees one row per
+ *     pair; we surface it instead of crashing on a P2002.
  *   • qrToken is 128-bit hex generated server-side, never reused.
+ *   • workshopIds (optional) lets the registration form double as a
+ *     workshop-pick form. Every workshop is booked inside the same
+ *     transaction as the Registration insert — partial failures roll
+ *     back the whole thing. Capacity-full slots become waitlist
+ *     bookings; the caller gets the per-workshop status back so the
+ *     UI can show "confirmed × 2" / "1 confirmed, 1 waitlisted".
+ *     Max length: MAX_WORKSHOPS_PER_USER (2).
  *   • Confirmation email is best-effort. SMTP failures don't fail the
  *     registration — the user can still see their QR on the success
  *     page even if the email never lands.
@@ -25,6 +33,8 @@ import { randomBytes } from "node:crypto";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendMail, mailConfigured } from "@/lib/mail";
+import { bookWorkshopInTx } from "@/lib/events/bookings";
+import { MAX_WORKSHOPS_PER_USER } from "@/lib/events/constants";
 
 export const runtime = "nodejs";
 
@@ -126,6 +136,7 @@ export async function POST(
     dietaryRestrictions,
     accessibilityNeeds,
     includesSymposiumDay,
+    workshopIds: rawWorkshopIds,
   } = body as Record<string, unknown>;
 
   if (!isAttendeeType(attendeeType)) {
@@ -133,6 +144,40 @@ export async function POST(
       { error: `attendeeType must be one of: ${VALID_ATTENDEE_TYPES.join(", ")}` },
       { status: 400 },
     );
+  }
+
+  // workshopIds validation. Optional; if present must be an array of
+  // strings up to the per-user cap. Dedupe defensively in case the
+  // client double-toggled the same option.
+  let workshopIds: string[] = [];
+  if (rawWorkshopIds !== undefined) {
+    if (!Array.isArray(rawWorkshopIds) || !rawWorkshopIds.every((id) => typeof id === "string")) {
+      return NextResponse.json(
+        { error: "workshopIds must be an array of strings" },
+        { status: 400 },
+      );
+    }
+    workshopIds = Array.from(new Set(rawWorkshopIds as string[]));
+    if (workshopIds.length > MAX_WORKSHOPS_PER_USER) {
+      return NextResponse.json(
+        { error: `Pick at most ${MAX_WORKSHOPS_PER_USER} workshops.` },
+        { status: 400 },
+      );
+    }
+    // Pre-flight: every requested workshop must belong to THIS event
+    // and be active. Cheaper than failing inside the transaction.
+    if (workshopIds.length > 0) {
+      const validWorkshops = await prisma.workshop.findMany({
+        where: { id: { in: workshopIds }, eventId: event.id, isActive: true },
+        select: { id: true },
+      });
+      if (validWorkshops.length !== workshopIds.length) {
+        return NextResponse.json(
+          { error: "One or more selected workshops are no longer available." },
+          { status: 400 },
+        );
+      }
+    }
   }
 
   const clean = (v: unknown, max: number): string | null => {
@@ -144,23 +189,80 @@ export async function POST(
 
   const qrToken = randomBytes(16).toString("hex");
 
-  const registration = await prisma.registration.create({
-    data: {
-      eventId: event.id,
-      userId,
-      attendeeType,
-      registrationStatus: "confirmed",
-      includesSymposiumDay: includesSymposiumDay !== false, // default true
-      paymentProvider: "free",
-      paymentStatus: "waived",
-      amountCents: 0,
-      currency: "CAD",
-      qrToken,
-      dietaryRestrictions: clean(dietaryRestrictions, 500),
-      accessibilityNeeds: clean(accessibilityNeeds, 1000),
-    },
-    select: { id: true, qrToken: true },
-  });
+  // One transaction creates the Registration AND books any selected
+  // workshops. Partial failures (e.g. a workshop fills up mid-flight)
+  // roll back the registration too, so the user never ends up
+  // half-signed-up. Per-workshop results are returned to the client
+  // so the success surface can say "1 confirmed, 1 on waitlist".
+  type WorkshopBookingOutcome = {
+    workshopId: string;
+    status: "confirmed" | "waitlist";
+    waitlistPosition: number | null;
+  };
+
+  let registration: { id: string; qrToken: string };
+  let workshopOutcomes: WorkshopBookingOutcome[] = [];
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const reg = await tx.registration.create({
+        data: {
+          eventId: event.id,
+          userId,
+          attendeeType,
+          registrationStatus: "confirmed",
+          includesSymposiumDay: includesSymposiumDay !== false, // default true
+          paymentProvider: "free",
+          paymentStatus: "waived",
+          amountCents: 0,
+          currency: "CAD",
+          qrToken,
+          dietaryRestrictions: clean(dietaryRestrictions, 500),
+          accessibilityNeeds: clean(accessibilityNeeds, 1000),
+        },
+        select: { id: true, qrToken: true },
+      });
+
+      const outcomes: WorkshopBookingOutcome[] = [];
+      for (const wId of workshopIds) {
+        const r = await bookWorkshopInTx(tx, userId, wId);
+        if (!r.ok) {
+          // Surface the booking-service error verbatim so the user
+          // sees something actionable ("you can book at most 2…",
+          // etc.). Throwing aborts the transaction and rolls back
+          // the registration insert above.
+          throw new Error(`booking_failed:${r.code}:${r.error}`);
+        }
+        outcomes.push({
+          workshopId: wId,
+          status: r.status,
+          waitlistPosition: r.waitlistPosition,
+        });
+      }
+      return { reg, outcomes };
+    });
+    registration = result.reg;
+    workshopOutcomes = result.outcomes;
+  } catch (err) {
+    const message = (err as Error).message;
+    if (message.startsWith("booking_failed:")) {
+      const parts = message.split(":");
+      const code = parts[1] ?? "unknown";
+      const detail = parts.slice(2).join(":") || "Workshop booking failed.";
+      return NextResponse.json({ error: detail, code }, { status: 400 });
+    }
+    throw err;
+  }
+
+  // Resolve workshop titles for the email body + response payload.
+  // One query keeps it cheap.
+  const bookedWorkshops = workshopOutcomes.length
+    ? await prisma.workshop.findMany({
+        where: { id: { in: workshopOutcomes.map((o) => o.workshopId) } },
+        select: { id: true, title: true },
+      })
+    : [];
+  const titleById = new Map(bookedWorkshops.map((w) => [w.id, w.title]));
 
   // Best-effort confirmation email — don't fail the registration if
   // SMTP isn't configured (dev / preview deploys) or if the send
@@ -168,6 +270,18 @@ export async function POST(
   if (mailConfigured()) {
     const eventDates = formatEventDates(event.startDate, event.endDate, event.timezone);
     const greeting = userName ? `Hi ${userName.split(/\s+/)[0]},` : "Hi,";
+
+    const workshopLines = workshopOutcomes.map((o) => {
+      const title = titleById.get(o.workshopId) ?? "Workshop";
+      return o.status === "confirmed"
+        ? `  ✓ ${title} — confirmed`
+        : `  • ${title} — waitlisted (position ${o.waitlistPosition ?? "?"})`;
+    });
+
+    const workshopBlock = workshopLines.length
+      ? `Your workshop picks:\n${workshopLines.join("\n")}\n\n`
+      : "";
+
     const text =
       `${greeting}\n\n` +
       `You're registered for ${event.title}.\n\n` +
@@ -175,12 +289,15 @@ export async function POST(
       `Where: ${event.mainVenueName ?? "TBA"}` +
       (event.mainVenueAddress ? ` · ${event.mainVenueAddress}` : "") +
       `\n\n` +
+      workshopBlock +
       `Your check-in code: ${qrToken}\n` +
       `(We'll scan this at the door — bring the confirmation page or this email on your phone.)\n\n` +
       `What's next:\n` +
-      `• Pick the workshops you want to attend from the Training Week (max 2)\n` +
+      (workshopOutcomes.length < 2
+        ? `• Pick ${2 - workshopOutcomes.length} more workshop${2 - workshopOutcomes.length === 1 ? "" : "s"} from the Training Week\n`
+        : "") +
       `• Choose which afternoon breakout you'll attend on the symposium day\n` +
-      `• Find both at: /events/${event.slug}/me\n\n` +
+      `• Find everything at: /events/${event.slug}/me\n\n` +
       `Questions? Reply to this email or contact the BHN team at support@biohubnet.ca.\n\n` +
       `— BioHubNet`;
 
@@ -201,6 +318,12 @@ export async function POST(
     ok: true,
     alreadyRegistered: false,
     registration: { id: registration.id, qrToken: registration.qrToken },
+    workshops: workshopOutcomes.map((o) => ({
+      workshopId: o.workshopId,
+      title: titleById.get(o.workshopId) ?? null,
+      status: o.status,
+      waitlistPosition: o.waitlistPosition,
+    })),
   });
 }
 

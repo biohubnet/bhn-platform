@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Pick your Training Week workshops while you register",
+    body: "Registration is now one step instead of two. The form at /events/[slug]/register shows every active Training Week workshop and tour grouped by day, with title, partner org, time, location, transport flag, and a live spots-taken counter (X / capacity, plus 'waitlist' chip when full). Tap up to 2 — the picker tracks 'N / 2 picked' and disables further options when you reach the cap so you can swap without going over. Capacity-full picks become waitlist bookings automatically, with your position issued on submit. Skipping is fine — registering with zero picks lands you on the same flow as before and you can come back to /events/[slug]/me/workshops later. Everything (registration row + workshop bookings) commits in a single Prisma transaction so partial failures roll back cleanly. Confirmation email now lists your picks with confirmed / waitlisted status and remaining-slot guidance.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Find the Symposium — Events in the sidebar + a dashboard banner",
     body: "Closing the discovery loop on the Events module. The Engage sidebar now carries an 'Events' item (calendar icon, all 8 locales) linking to the new /events index — a public listing of upcoming + recent BHN editions with the Symposium / Training Week as the headline card. Above the dashboard's daily-theme card, trainees see a brand-gradient banner with the next upcoming event: 'Coming up' if they haven't registered (CTA → Register), or 'You're registered' with a checkmark if they have (CTA → Open my event dashboard). The banner auto-hides when no event is upcoming, or when registration's closed and the viewer isn't already in. Until now the only way to find /events/2025-annual-symposium was a direct link.",
     kind: "feature",

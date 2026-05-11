@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.11b";
+export const TOUR_VERSION = "2026.05.11c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -515,6 +515,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
     cta: { label: "Open Demo workspaces", href: "/admin/demo-workspaces" },
+  },
+  {
+    id: "events-workshop-pick-in-register",
+    title: "Pick workshops while you register",
+    body: "The Symposium registration form now includes the full Training Week menu — workshops + tours grouped by day, with live spots-taken counters. Pick up to 2 in the same step that creates your registration. If a slot is full you'll join its waitlist automatically with your position assigned on submit. Skip it if you'd rather choose later — your event dashboard at /events/[slug]/me/workshops has the same picker available any time before the event.",
+    path: "/events/2025-annual-symposium/register",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    since: "2026.05.11c",
+    cta: { label: "Open the registration form", href: "/events/2025-annual-symposium/register" },
   },
   {
     id: "events-discovery",

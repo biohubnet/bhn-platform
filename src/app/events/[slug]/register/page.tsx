@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, AlertCircle, Clock } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { RegistrationForm } from "@/components/events/RegistrationForm";
+import { RegistrationForm, type WorkshopOption } from "@/components/events/RegistrationForm";
 
 /**
  * /events/[slug]/register — auth-gated registration form for the
@@ -70,6 +70,75 @@ export default async function RegisterPage({
     event.registrationOpensAt !== null && event.registrationOpensAt > now;
   const closed =
     event.registrationClosesAt !== null && event.registrationClosesAt < now;
+
+  // Workshops + per-workshop confirmed counts. Loaded once SSR-side
+  // and threaded into the form so the user can pick during sign-up.
+  // We deliberately skip workshops when the registration form is
+  // disabled (window not open / closed) — the form isn't rendered
+  // then.
+  let workshops: WorkshopOption[] = [];
+  if (!notYetOpen && !closed) {
+    const [activeWorkshops, allBookings] = await Promise.all([
+      prisma.workshop.findMany({
+        where: { eventId: event.id, isActive: true },
+        orderBy: [{ startDateTime: "asc" }, { displayOrder: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          shortDescription: true,
+          kind: true,
+          partnerOrganization: true,
+          startDateTime: true,
+          endDateTime: true,
+          locationName: true,
+          capacity: true,
+          requiresTransport: true,
+        },
+      }),
+      prisma.workshopBooking.groupBy({
+        by: ["workshopId", "status"],
+        where: {
+          workshop: { eventId: event.id },
+          status: { not: "cancelled" },
+        },
+        _count: { _all: true },
+      }),
+    ]);
+    const countLookup = new Map<string, { confirmed: number; waitlist: number }>();
+    for (const w of activeWorkshops) countLookup.set(w.id, { confirmed: 0, waitlist: 0 });
+    for (const row of allBookings) {
+      const entry = countLookup.get(row.workshopId);
+      if (!entry) continue;
+      if (row.status === "confirmed") entry.confirmed = row._count._all;
+      else if (row.status === "waitlist") entry.waitlist = row._count._all;
+    }
+
+    workshops = activeWorkshops.map((w) => {
+      const c = countLookup.get(w.id) ?? { confirmed: 0, waitlist: 0 };
+      const dayKey = w.startDateTime.toLocaleDateString("en-CA", { timeZone: event.timezone });
+      const dayLabel = w.startDateTime.toLocaleDateString("en-CA", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        timeZone: event.timezone,
+      });
+      return {
+        id: w.id,
+        title: w.title,
+        shortDescription: w.shortDescription,
+        kind: w.kind,
+        partnerOrganization: w.partnerOrganization,
+        locationName: w.locationName,
+        requiresTransport: w.requiresTransport,
+        capacity: w.capacity,
+        confirmedCount: c.confirmed,
+        waitlistCount: c.waitlist,
+        timeLabel: formatTimeRange(w.startDateTime, w.endDateTime, event.timezone),
+        dayKey,
+        dayLabel,
+      };
+    });
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
@@ -145,7 +214,7 @@ export default async function RegisterPage({
           }
         />
       ) : (
-        <RegistrationForm slug={slug} />
+        <RegistrationForm slug={slug} workshops={workshops} />
       )}
     </div>
   );
@@ -175,6 +244,21 @@ function WindowPanel({
       </div>
     </div>
   );
+}
+
+function formatTimeRange(start: Date, end: Date, timeZone: string): string {
+  const sameDay =
+    start.toLocaleDateString("en-CA", { timeZone }) ===
+    end.toLocaleDateString("en-CA", { timeZone });
+  const t = (d: Date) =>
+    d.toLocaleTimeString("en-CA", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone,
+    });
+  if (sameDay) return `${t(start)}–${t(end)}`;
+  return `${start.toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric", timeZone })} – ${end.toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric", timeZone })}`;
 }
 
 function formatDates(start: Date, end: Date, timeZone: string): string {
