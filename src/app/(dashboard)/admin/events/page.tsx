@@ -73,41 +73,50 @@ export default async function AdminEventsListPage() {
       ) : (
         <ul className="space-y-3">
           {events.map((e) => (
-            <li key={e.id}>
+            <li
+              key={e.id}
+              className="relative rounded-2xl border border-line bg-card surface-shadow p-5 hover:border-brand-300 transition-colors"
+            >
+              {/* Whole-card click target. Sits underneath the
+                  "View public page" link via z-index so the public
+                  link captures its own clicks. Nested <a> would be
+                  invalid HTML — this overlay pattern avoids it. */}
               <Link
                 href={`/admin/events/${e.slug}`}
-                className="block rounded-2xl border border-line bg-card surface-shadow p-5 hover:border-brand-300 transition-colors"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-3 flex-wrap">
-                      <h2 className="text-lg font-bold text-fg tracking-tight">{e.title}</h2>
-                      <StatusChip status={e.status} />
-                    </div>
-                    <p className="text-sm text-muted mt-1.5">
-                      {formatRange(e.startDate, e.endDate, e.timezone)}
-                      {e.mainVenueName && <> · {e.mainVenueName}</>}
-                    </p>
-                    <p className="text-xs text-subtle font-mono mt-1">/{e.slug}</p>
-                  </div>
-                  <ArrowRight size={16} className="text-subtle shrink-0 mt-1" />
-                </div>
+                className="absolute inset-0 rounded-2xl"
+                aria-label={`Edit ${e.title}`}
+              />
 
-                <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs">
-                  <Stat icon={Users} label="Registered" value={e._count.registrations} />
-                  <Stat icon={Calendar} label="Workshops" value={e._count.workshops} />
-                  <Stat icon={ExternalLink} label="Sessions" value={e._count.symposiumSessions} />
-                  {e.status === "published" && (
-                    <Link
-                      href={`/events/${e.slug}`}
-                      onClick={(ev) => ev.stopPropagation()}
-                      className="text-brand-700 font-semibold hover:underline inline-flex items-center gap-1 ml-auto"
-                    >
-                      View public page <ExternalLink size={10} />
-                    </Link>
-                  )}
-                </dl>
-              </Link>
+              <div className="relative flex flex-wrap items-start justify-between gap-3 pointer-events-none">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <h2 className="text-lg font-bold text-fg tracking-tight">{e.title}</h2>
+                    <StatusChip status={e.status} />
+                  </div>
+                  <p className="text-sm text-muted mt-1.5">
+                    {formatRange(e.startDate, e.endDate, e.timezone)}
+                    {e.mainVenueName && <> · {e.mainVenueName}</>}
+                  </p>
+                  <p className="text-xs text-subtle font-mono mt-1">/{e.slug}</p>
+                </div>
+                <ArrowRight size={16} className="text-subtle shrink-0 mt-1" />
+              </div>
+
+              <dl className="relative mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs pointer-events-none">
+                <Stat icon={Users} label="Registered" value={e._count.registrations} />
+                <Stat icon={Calendar} label="Workshops" value={e._count.workshops} />
+                <Stat icon={ExternalLink} label="Sessions" value={e._count.symposiumSessions} />
+                {e.status === "published" && (
+                  <Link
+                    href={`/events/${e.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-700 font-semibold hover:underline inline-flex items-center gap-1 ml-auto pointer-events-auto"
+                  >
+                    View public page <ExternalLink size={10} />
+                  </Link>
+                )}
+              </dl>
             </li>
           ))}
         </ul>
