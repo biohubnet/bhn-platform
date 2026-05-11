@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.09d";
+export const TOUR_VERSION = "2026.05.10a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -91,6 +91,15 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Rewards", href: "/rewards" },
     roles: ["trainee", "evaluating"],
     since: "2026.05.09d",
+  },
+  {
+    id: "trainee.themes",
+    title: "Vote on themes — and pitch your own",
+    body: "Mark a favourite theme, flag a least-favourite, and submit ideas for new ones. An admin reviews every proposal. If we build your idea, you earn a Theme Designer Bundle — a hand-picked thank-you with a custom \"I designed this theme\" pin, picked up at the same BHN office as the other rewards.",
+    path: "/themes",
+    placement: "center",
+    cta: { label: "Open Theme feedback", href: "/themes" },
+    since: "2026.05.10a",
   },
   {
     id: "trainee.buddy",
