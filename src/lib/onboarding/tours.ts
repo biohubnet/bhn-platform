@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.10a";
+export const TOUR_VERSION = "2026.05.11a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -515,6 +515,15 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
     cta: { label: "Open Demo workspaces", href: "/admin/demo-workspaces" },
+  },
+  {
+    id: "events-module",
+    title: "Annual Symposium & Training Week is live",
+    body: "The /events/2025-annual-symposium page is now the public home for the Symposium + Training Week — workshops, agenda, speakers, sponsors, venue. Trainees register in one click, get a QR pass, and use /events/[slug]/me to browse workshops (book up to 2), pick a breakout for the symposium day, and check their schedule. Admins manage everything under Administration → Engage → Events: edit basics, run the day-of check-in queue, export the attendee CSV for catering / badges / accessibility. Workshops, sessions, speakers, and sponsors are still seeded via prisma/seed-events.ts for now — dedicated CRUD UIs come in a future phase.",
+    path: "/dashboard",
+    placement: "center",
+    since: "2026.05.11a",
+    cta: { label: "Open Events admin", href: "/admin/events" },
   },
   {
     id: "complete",
