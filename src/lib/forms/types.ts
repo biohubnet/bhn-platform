@@ -111,6 +111,13 @@ export interface FileField extends BaseField {
   accept?: string;
   /** Max size in bytes. Default 10 MB. */
   maxBytes?: number;
+  /** Optional downloadable template the renderer surfaces as a
+   *  "Download template" affordance above the upload control. Used
+   *  for letter / form-style uploads where the applicant fills in
+   *  a provided PDF and uploads the completed version. */
+  templateUrl?: string;
+  /** Override the default button label (default: "Download template"). */
+  templateLabel?: string;
 }
 
 export type FormField =

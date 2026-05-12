@@ -126,10 +126,12 @@ export const TALENT_APPLICATION_DEFAULTS = {
       id: "support_letter",
       type: "file",
       label: "Support letter from your research supervisor",
-      hint: "PDF, max 10 MB.",
+      hint: "Use the BioHubNet template below — download, fill out, sign, scan, and upload as PDF (max 10 MB).",
       required: false,
       accept: "application/pdf,.pdf",
       maxBytes: 10 * 1024 * 1024,
+      templateUrl: "/templates/supervisor-support-letter.pdf",
+      templateLabel: "Download supervisor support-letter template (PDF)",
     },
     {
       id: "earliest_availability",

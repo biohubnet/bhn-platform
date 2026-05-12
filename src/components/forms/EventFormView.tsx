@@ -656,6 +656,23 @@ function FileInput({
 
   return (
     <div>
+      {/* Optional downloadable template — surfaced as a small affordance
+          above the upload control whenever the schema sets templateUrl
+          (e.g. the BioHubNet supervisor support letter on talent-app).
+          Shown whether or not a file is already attached so the user
+          can still re-download for reference. */}
+      {field.templateUrl && (
+        <a
+          href={field.templateUrl}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800 hover:underline"
+        >
+          <Paperclip size={11} />
+          {field.templateLabel ?? "Download template"}
+        </a>
+      )}
       {value ? (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-line bg-card-solid text-sm">
           <Paperclip size={14} className="text-brand-600 shrink-0" />
