@@ -185,7 +185,13 @@ export const TALENT_APPLICATION_DEFAULTS = {
       ],
     },
 
-    { id: "section_french", type: "section", label: "French proficiency" },
+    {
+      id: "section_french",
+      type: "section",
+      label: "French proficiency",
+      hint: "Self-rate your French across the three modes.",
+      layout: "vertical-tabs",
+    },
     {
       id: "french_speaking",
       type: "select",

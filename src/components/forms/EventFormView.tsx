@@ -384,23 +384,62 @@ export function EventFormView({
           </>
         ) : (
           <form onSubmit={submit} className="space-y-5">
-            {schema.map((f) => {
-              // Honor showWhen — hide fields whose conditional rule
-              // isn't met (recursively walking the chain so a
-              // grandchild like grad_internship_required disappears
-              // the moment its grandparent current_position flips
-              // away from a grad role).
-              if (!isFieldVisible(f, schema, values)) return null;
-              return (
-                <FieldRender
-                  key={f.id}
-                  slug={slug}
-                  field={f}
-                  value={values[f.id]}
-                  onChange={(v) => setValues((cur) => ({ ...cur, [f.id]: v }))}
-                />
-              );
-            })}
+            {/* Render loop with section-layout support. A section
+                whose layout is "vertical-tabs" consumes every
+                non-section field that follows it (up to the next
+                section or schema end) and renders them in a
+                left-tabs / right-content panel instead of the
+                default stack. Everything else renders inline.
+                showWhen visibility is checked per-field and per
+                tab so chained hides cascade correctly. */}
+            {(() => {
+              const items: React.ReactNode[] = [];
+              let i = 0;
+              while (i < schema.length) {
+                const f = schema[i];
+                if (isSectionField(f) && f.layout === "vertical-tabs") {
+                  // Collect the followers, respecting showWhen
+                  // visibility so hidden sub-fields don't earn a
+                  // tab entry they can't use.
+                  const children: typeof schema = [];
+                  let j = i + 1;
+                  while (j < schema.length && !isSectionField(schema[j])) {
+                    if (isFieldVisible(schema[j], schema, values)) {
+                      children.push(schema[j]);
+                    }
+                    j++;
+                  }
+                  // Section itself can be conditional too — if hidden,
+                  // skip the whole tab strip.
+                  if (isFieldVisible(f, schema, values) && children.length > 0) {
+                    items.push(
+                      <VerticalTabsSection
+                        key={f.id}
+                        section={f}
+                        fields={children}
+                        slug={slug}
+                        values={values}
+                        onChange={(id, v) => setValues((cur) => ({ ...cur, [id]: v }))}
+                      />,
+                    );
+                  }
+                  i = j;
+                  continue;
+                }
+                if (!isFieldVisible(f, schema, values)) { i++; continue; }
+                items.push(
+                  <FieldRender
+                    key={f.id}
+                    slug={slug}
+                    field={f}
+                    value={values[f.id]}
+                    onChange={(v) => setValues((cur) => ({ ...cur, [f.id]: v }))}
+                  />,
+                );
+                i++;
+              }
+              return items;
+            })()}
             {submitError && (
               <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700 flex items-start gap-2">
                 <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -423,6 +462,105 @@ export function EventFormView({
 }
 
 // ── Field renderers ────────────────────────────────────────────────────
+
+/**
+ * VerticalTabsSection — alternative layout for a SectionField whose
+ * layout is "vertical-tabs". Renders the section header at the top,
+ * then a two-column body: tab labels stacked on the left (one per
+ * non-section follower), and the active tab's input on the right.
+ *
+ * Each tab's label comes from the underlying field's label. The
+ * section header stays visible above the tab area so the section's
+ * own label + hint context is intact.
+ *
+ * State is per-instance — the active tab is local. We don't sync
+ * to URL or persist; the data stored is exactly the same as the
+ * "default" layout, just reached via a different UI affordance.
+ */
+function VerticalTabsSection({
+  section, fields, slug, values, onChange,
+}: {
+  section: FormField;
+  fields: FormField[];
+  slug: string;
+  values: Record<string, string | string[]>;
+  onChange: (id: string, v: string | string[]) => void;
+}) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const safeIdx = Math.min(activeIdx, Math.max(0, fields.length - 1));
+  const active = fields[safeIdx];
+
+  return (
+    <div className="space-y-3 pt-2">
+      <h3 className="text-sm font-semibold text-fg uppercase tracking-wider border-b border-line pb-2">
+        {section.label}
+      </h3>
+      {section.hint && (
+        <p className="text-xs text-subtle leading-relaxed -mt-1">{section.hint}</p>
+      )}
+
+      <div className="grid grid-cols-[160px_1fr] gap-4">
+        {/* Tab strip — labels stacked vertically. Brand-tinted active
+            row with a 2px brand-600 left bar (matches the active-link
+            treatment in the sidebar). Each tab is keyboard-focusable
+            so users navigating by Tab can drive the strip too. */}
+        <nav role="tablist" aria-orientation="vertical" className="flex flex-col gap-0.5">
+          {fields.map((f, i) => {
+            const isActive = i === safeIdx;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`tabpanel-${f.id}`}
+                onClick={() => setActiveIdx(i)}
+                className={cnTabClass(isActive)}
+              >
+                {isActive && (
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-brand-600"
+                  />
+                )}
+                <span className="text-sm font-medium truncate">{f.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Active-tab content. We re-use FieldRender so each input
+            renders exactly like its default-layout twin would. We
+            hide FieldRender's own label since the tab strip already
+            shows it — duplicating would feel cluttered in a tabs
+            context — by passing a label-less clone of the field. */}
+        <div
+          id={`tabpanel-${active?.id}`}
+          role="tabpanel"
+          aria-labelledby={active?.id}
+        >
+          {active && (
+            <FieldRender
+              key={active.id}
+              slug={slug}
+              field={{ ...active, label: active.label } as FormField}
+              value={values[active.id]}
+              onChange={(v) => onChange(active.id, v)}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function cnTabClass(active: boolean): string {
+  const base =
+    "relative text-left px-3 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60";
+  return active
+    ? `${base} bg-brand-50 text-brand-700`
+    : `${base} text-muted hover:bg-raised hover:text-fg`;
+}
 
 function FieldRender({
   slug, field, value, onChange,

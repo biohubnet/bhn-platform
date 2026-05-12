@@ -80,6 +80,18 @@ export function isFieldVisible(
 
 export interface SectionField extends BaseField {
   type: "section";
+  /** Presentation hint for the fields that follow this section
+   *  (up to the next SectionField, or end of schema).
+   *
+   *   • undefined / "default" — renders each field stacked
+   *     vertically as a separate row.
+   *   • "vertical-tabs"       — groups the following non-section
+   *     fields into a vertical tab strip: tab labels stacked on
+   *     the left, the active field's input on the right. Useful
+   *     for sets of parallel sub-questions like a language-
+   *     proficiency block (Speaking / Reading / Writing) where
+   *     each sub-question shares the same answer shape. */
+  layout?: "default" | "vertical-tabs";
 }
 
 export interface InputField extends BaseField {
