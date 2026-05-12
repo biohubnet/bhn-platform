@@ -2,11 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "path": "/api/admin/phantom-users/sweep",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/admin/credits/sweep",
+      "path": "/api/admin/daily-maintenance",
       "schedule": "0 6 * * *"
     }
   ]
