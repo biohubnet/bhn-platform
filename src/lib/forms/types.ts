@@ -3,10 +3,46 @@
 
 export type FieldId = string;
 
+/**
+ * Conditional visibility rule for any field. When set, the field
+ * is shown only if the referenced field's current value matches.
+ *
+ *   showWhen: { fieldId: "current_position",
+ *               equals: ["Master's student", "PhD candidate"] }
+ *
+ * The renderer hides the field when the condition isn't met; the
+ * server-side validator treats a hidden field as if `required:
+ * false` (so a graduate-only field doesn't block a non-graduate
+ * submission).
+ */
+export interface ConditionalRule {
+  /** Id of another field on the same form whose value drives this
+   *  field's visibility. */
+  fieldId: FieldId;
+  /** Show the field when the referenced value equals any of these.
+   *  Single-string short-hand also accepted. */
+  equals: string | string[];
+}
+
 interface BaseField {
   id: FieldId;
   label: string;
   hint?: string;
+  /** Optional conditional visibility — see ConditionalRule. */
+  showWhen?: ConditionalRule;
+}
+
+/** Returns true if a field's `showWhen` rule is satisfied (or
+ *  absent). The current-value lookup needs the field id → value
+ *  map the renderer / validator already holds. */
+export function isConditionMet(
+  rule: ConditionalRule | undefined,
+  values: Record<FieldId, unknown>,
+): boolean {
+  if (!rule) return true;
+  const current = values[rule.fieldId];
+  const allowed = Array.isArray(rule.equals) ? rule.equals : [rule.equals];
+  return typeof current === "string" && allowed.includes(current);
 }
 
 export interface SectionField extends BaseField {

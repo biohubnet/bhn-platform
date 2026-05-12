@@ -29,6 +29,79 @@ export const TALENT_APPLICATION_DEFAULTS = {
         "Other",
       ],
     },
+    // ───── Graduate-program block ────────────────────────────────
+    // Conditional: only shown when current_position is a graduate
+    // role (Master's / PhD). Used to gather the institutional context
+    // needed for the ENGAGE credit-application eligibility check —
+    // institution, program, supervisor, expected graduation, plus the
+    // grad-office verification file.
+    {
+      id: "section_grad_program",
+      type: "section",
+      label: "Graduate program details",
+      showWhen: { fieldId: "current_position", equals: ["Master's student", "PhD candidate"] },
+    },
+    {
+      id: "grad_institution",
+      type: "text",
+      label: "Home institution",
+      hint: "University where you're enrolled.",
+      required: true,
+      placeholder: "University of Toronto",
+      showWhen: { fieldId: "current_position", equals: ["Master's student", "PhD candidate"] },
+    },
+    {
+      id: "grad_program",
+      type: "text",
+      label: "Program / Department",
+      required: true,
+      placeholder: "Molecular Genetics, PhD",
+      showWhen: { fieldId: "current_position", equals: ["Master's student", "PhD candidate"] },
+    },
+    {
+      id: "grad_supervisor",
+      type: "text",
+      label: "Research supervisor's full name",
+      required: true,
+      placeholder: "Dr. Jane Smith",
+      showWhen: { fieldId: "current_position", equals: ["Master's student", "PhD candidate"] },
+    },
+    {
+      id: "grad_supervisor_email",
+      type: "email",
+      label: "Supervisor's institutional email",
+      required: true,
+      placeholder: "jane.smith@utoronto.ca",
+      showWhen: { fieldId: "current_position", equals: ["Master's student", "PhD candidate"] },
+    },
+    {
+      id: "grad_semesters_completed",
+      type: "text",
+      label: "Semesters completed in your current program",
+      hint: "ENGAGE eligibility requires at least 2 semesters completed.",
+      required: true,
+      placeholder: "3",
+      showWhen: { fieldId: "current_position", equals: ["Master's student", "PhD candidate"] },
+    },
+    {
+      id: "grad_expected_graduation",
+      type: "date",
+      label: "Expected graduation date",
+      required: true,
+      showWhen: { fieldId: "current_position", equals: ["Master's student", "PhD candidate"] },
+    },
+    {
+      id: "grad_office_verification",
+      type: "file",
+      label: "Graduate office verification (signed)",
+      hint: "Verification form signed by your grad office, OR an unofficial transcript. PDF, max 10 MB. Required for ENGAGE credit eligibility.",
+      required: false,
+      accept: "application/pdf,.pdf",
+      maxBytes: 10 * 1024 * 1024,
+      showWhen: { fieldId: "current_position", equals: ["Master's student", "PhD candidate"] },
+    },
+    // ─────────────────────────────────────────────────────────────
+
     {
       id: "support_letter",
       type: "file",

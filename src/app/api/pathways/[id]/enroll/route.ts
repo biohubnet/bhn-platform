@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { resolvePathwayWindow } from "@/lib/pathway-enrollment";
 import { trackServer } from "@/lib/analytics";
+import { enrollInCohort, pathwayHasCohorts } from "@/lib/pathways/cohorts";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: pathwayId } = await params;
@@ -12,7 +13,36 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const role = (session.user as { role?: string }).role ?? "trainee";
   const body = await req.json().catch(() => ({}));
   const requestReason = typeof body.reason === "string" ? body.reason.trim().slice(0, 1000) : null;
+  const cohortId = typeof body.cohortId === "string" && body.cohortId.length > 0 ? body.cohortId : null;
 
+  // Cohort-mode path: when the pathway has cohorts, the legacy
+  // pathway-level capacity/window is ignored and we route through
+  // the cohort service which handles its own state computation,
+  // capacity, and waitlist promotion.
+  const usesCohorts = await pathwayHasCohorts(pathwayId);
+  if (usesCohorts) {
+    if (!cohortId) {
+      return NextResponse.json(
+        { error: "This pathway runs in cohorts — pick one to enroll.", code: "cohort_required" },
+        { status: 400 },
+      );
+    }
+    const r = await enrollInCohort(userId, cohortId, requestReason);
+    if (!r.ok) {
+      return NextResponse.json({ error: r.error, code: r.code }, { status: 409 });
+    }
+    trackServer({
+      userId, role, name: "pathway_request",
+      props: { pathwayId, cohortId, status: r.status },
+    });
+    return NextResponse.json({
+      id: r.enrollmentId,
+      status: r.status,
+      waitlistPosition: r.waitlistPosition,
+    }, { status: 201 });
+  }
+
+  // Legacy path — pathway-level enrollment (no cohorts).
   const window = await resolvePathwayWindow(pathwayId);
   if (!window) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (window.state === "closed") {

@@ -125,9 +125,44 @@ export default async function FormPage({
 
   const ExtraContent = SLUG_CONTENT[slug];
 
+  // Per-applicant review-state banner — talent-application only. Shows
+  // their most recent submission's state and the reviewer note (if any)
+  // so they aren't left guessing about "will I be in the pool?"
+  const myReviewState = slug === "talent-application" && mySubmission
+    ? {
+        status: (mySubmission as unknown as { reviewStatus: string }).reviewStatus,
+        note: (mySubmission as unknown as { reviewerNote: string | null }).reviewerNote,
+      }
+    : null;
+
   return (
     <>
       {ExtraContent && <ExtraContent />}
+
+      {slug === "talent-application" && (
+        <div className="rounded-2xl bg-sky-50 ring-1 ring-inset ring-sky-200 px-4 py-3 mb-5 flex items-start gap-2">
+          <span className="text-sky-600 text-sm mt-0.5">ⓘ</span>
+          <div className="flex-1 text-sm text-sky-900 leading-snug">
+            <p className="font-bold">New applications go through admin review.</p>
+            <p className="text-xs mt-1">
+              We review every new talent-pool submission before it becomes
+              visible to vetted industry partners. You'll be notified by email
+              when a decision is made; resubmitting before review just updates
+              the same submission.
+            </p>
+            {myReviewState && (
+              <p className="text-xs mt-2 font-semibold inline-flex items-center gap-1.5">
+                Your status:
+                <ReviewBadge status={myReviewState.status} />
+                {myReviewState.note && (
+                  <span className="font-normal italic">— "{myReviewState.note}"</span>
+                )}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <EventFormView
         slug={form.slug}
         title={form.title}
@@ -141,5 +176,20 @@ export default async function FormPage({
         applicationDefaultsApplied={applicationDefaultsApplied}
       />
     </>
+  );
+}
+
+function ReviewBadge({ status }: { status: string }) {
+  const meta: Record<string, { label: string; cls: string }> = {
+    pending:               { label: "Pending review",   cls: "bg-amber-100 text-amber-800 ring-amber-200" },
+    approved:              { label: "Approved",         cls: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
+    approved_skip_review:  { label: "Approved",         cls: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
+    rejected:              { label: "Not approved",     cls: "bg-rose-100 text-rose-800 ring-rose-200" },
+  };
+  const m = meta[status] ?? meta.pending;
+  return (
+    <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ring-1 ring-inset ${m.cls}`}>
+      {m.label}
+    </span>
   );
 }

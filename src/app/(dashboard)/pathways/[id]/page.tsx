@@ -8,8 +8,11 @@ import { Card } from "@/components/ui/Card";
 import { PathwayEnrollButton } from "@/components/lms/PathwayEnrollButton";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
 import { PathwayEnrollmentSettings } from "@/components/admin/PathwayEnrollmentSettings";
+import { PathwayCohortManager, type CohortRow } from "@/components/admin/PathwayCohortManager";
+import { PathwayCohortPicker, type PublicCohort } from "@/components/lms/PathwayCohortPicker";
 import { ThumbnailGenerator } from "@/components/lms/ThumbnailGenerator";
 import { resolvePathwayWindow, waitlistPosition } from "@/lib/pathway-enrollment";
+import { cohortAvailability } from "@/lib/pathways/cohorts";
 
 interface PathwayCourseRow {
   id: string;
@@ -66,6 +69,42 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
   const certificate = await prisma.certificate.findUnique({
     where: { userId_pathwayId: { userId, pathwayId: id } },
   });
+
+  // Cohort-mode detection. If ≥ 1 cohort exists we surface them
+  // (admin sees the manager; trainees see the picker + state badges).
+  const cohorts = await cohortAvailability(id);
+  const hasCohorts = cohorts.length > 0;
+  const adminCohortRows: CohortRow[] = cohorts.map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    name: c.name,
+    description: c.description,
+    startDate: c.startDate.toISOString(),
+    endDate: c.endDate?.toISOString() ?? null,
+    capacity: c.capacity,
+    allowWaitlist: c.allowWaitlist,
+    waitlistCapacity: c.waitlistCapacity,
+    enrollmentOpensAt: c.enrollmentOpensAt?.toISOString() ?? null,
+    enrollmentClosesAt: c.enrollmentClosesAt?.toISOString() ?? null,
+    status: c.status,
+    displayOrder: c.displayOrder,
+    confirmedCount: c.confirmedCount,
+    waitlistCount: c.waitlistCount,
+    state: c.state,
+  }));
+  const publicCohortRows: PublicCohort[] = cohorts.map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    name: c.name,
+    description: c.description,
+    startDate: c.startDate.toISOString(),
+    endDate: c.endDate?.toISOString() ?? null,
+    capacity: c.capacity,
+    confirmedCount: c.confirmedCount,
+    waitlistCount: c.waitlistCount,
+    state: c.state,
+    enrollmentClosesAt: c.enrollmentClosesAt?.toISOString() ?? null,
+  }));
 
   const allCoursesForEdit = isStaff
     ? await prisma.course.findMany({
@@ -132,13 +171,21 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
                 courses={allCoursesForEdit}
               />
             )}
-            {!isStaff && !enrollment && pathway.status === "published" && (
+            {!isStaff && !enrollment && pathway.status === "published" && !hasCohorts && (
               <PathwayEnrollButton
                 pathwayId={pathway.id}
                 windowState={window?.state ?? "closed"}
                 windowReason={window?.reason ?? null}
                 allowWaitlist={!!window?.config.allowWaitlist}
               />
+            )}
+            {!isStaff && !enrollment && pathway.status === "published" && hasCohorts && (
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 min-w-[220px]">
+                <p className="text-xs uppercase tracking-wider text-brand-200 mb-1">Pick a cohort below</p>
+                <p className="text-sm text-brand-50 leading-snug">
+                  This pathway runs in cohorts — each has its own dates and capacity.
+                </p>
+              </div>
             )}
             {enrollment && enrollment.status === "pending" && (
               <div className="bg-white/10 backdrop-blur-md border border-amber-300/40 rounded-xl px-4 py-3 min-w-[220px]">
@@ -185,7 +232,9 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
         </div>
       </div>
 
-      {/* Admin enrollment settings card */}
+      {/* Admin enrollment settings card — pathway-level fallback.
+          Ignored at runtime when ≥ 1 cohort exists, but kept visible
+          so admins can restore it by deleting all cohorts. */}
       {isStaff && (
         <PathwayEnrollmentSettings
           pathwayId={pathway.id}
@@ -193,6 +242,26 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
           enrollmentClosesAt={pathway.enrollmentClosesAt?.toISOString() ?? null}
           capacity={pathway.capacity ?? null}
           allowWaitlist={pathway.allowWaitlist}
+        />
+      )}
+
+      {/* Admin: cohort manager — staff-only. Adding the first
+          cohort flips this pathway into cohort-mode. */}
+      {isStaff && (
+        <PathwayCohortManager
+          pathwayId={pathway.id}
+          initialCohorts={adminCohortRows}
+        />
+      )}
+
+      {/* Public: cohort picker. Only renders when the pathway has
+          cohorts AND the viewer is a trainee (staff see admin
+          manager above instead). */}
+      {!isStaff && hasCohorts && (
+        <PathwayCohortPicker
+          pathwayId={pathway.id}
+          cohorts={publicCohortRows}
+          alreadyEnrolledCohortId={enrollment?.cohortId ?? null}
         />
       )}
 

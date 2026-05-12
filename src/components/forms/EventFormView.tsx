@@ -19,6 +19,7 @@ import {
   isSectionField,
   isMultiCheckboxField,
   isFileField,
+  isConditionMet,
 } from "@/lib/forms/types";
 
 interface Props {
@@ -162,10 +163,14 @@ export function EventFormView({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitError(null);
-    // Client-side required check (covers strings + arrays)
+    // Client-side required check (covers strings + arrays).
+    // Conditionally-hidden fields are treated as optional — we
+    // skip them even if `required: true` because the user can't
+    // see them to fill them in.
     for (const f of schema) {
       if (isSectionField(f)) continue;
       if (!f.required) continue;
+      if (!isConditionMet(f.showWhen, values)) continue;
       const v = values[f.id];
       const empty =
         v === undefined ||
@@ -377,15 +382,22 @@ export function EventFormView({
           </>
         ) : (
           <form onSubmit={submit} className="space-y-5">
-            {schema.map((f) => (
-              <FieldRender
-                key={f.id}
-                slug={slug}
-                field={f}
-                value={values[f.id]}
-                onChange={(v) => setValues((cur) => ({ ...cur, [f.id]: v }))}
-              />
-            ))}
+            {schema.map((f) => {
+              // Honor showWhen — hide fields whose conditional rule
+              // isn't met by the current values. Section headers
+              // can be conditional too (used to hide whole
+              // subgroups like the graduate-program block).
+              if (!isConditionMet(f.showWhen, values)) return null;
+              return (
+                <FieldRender
+                  key={f.id}
+                  slug={slug}
+                  field={f}
+                  value={values[f.id]}
+                  onChange={(v) => setValues((cur) => ({ ...cur, [f.id]: v }))}
+                />
+              );
+            })}
             {submitError && (
               <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700 flex items-start gap-2">
                 <AlertCircle size={16} className="mt-0.5 shrink-0" />

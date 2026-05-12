@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.12c";
+export const TOUR_VERSION = "2026.05.12d";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -515,6 +515,23 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
     cta: { label: "Open Demo workspaces", href: "/admin/demo-workspaces" },
+  },
+  {
+    id: "pathway-cohorts",
+    title: "Pathways now run in cohorts",
+    body: "Pathways can be split into cohorts (Spring 2026, Fall 2026, …), each with its own capacity, dates, and waitlist policy. On any pathway with cohorts, you'll see a card per cohort with a live state badge — Open / Waitlist only / Full / Closed / Opens soon. Pick the cohort that fits your schedule. Admins manage cohorts inline on the pathway detail page; pathways without cohorts continue to behave as before.",
+    path: "/pathways",
+    placement: "center",
+    since: "2026.05.12d",
+    cta: { label: "Open pathways", href: "/pathways" },
+  },
+  {
+    id: "talent-review-gate",
+    title: "Talent applications now go through admin review",
+    body: "New talent-application submissions are pending until an admin approves them, then become visible in the talent pool / partner-visible directory. You'll see your own review state on /forms/talent-application and a notification when a decision is made. Admins have a Skip-approval fast-path for obvious-fit candidates — audit-logged separately.",
+    path: "/forms/talent-application",
+    placement: "center",
+    since: "2026.05.12d",
   },
   {
     id: "credit-expiry-policy",

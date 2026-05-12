@@ -520,11 +520,32 @@ model EventFormSubmission {
   /// Optional FK to User — set null if the user is deleted; submissions
   /// outlive accounts so we keep the row but lose the link.
   user      User?     @relation("FormSubmitter", fields: [userId], references: [id], onDelete: SetNull)
-  createdAt DateTime  @default(now())
+  /// Review state for talent-pool gating. Default "pending" so any
+  /// new submission waits for admin review before becoming visible
+  /// in the talent pool / searchable directory. Forms that don't
+  /// gate on review (e.g. OBIO bootcamp registration) treat the
+  /// field as informational only — UI only shows it when the form
+  /// slug is talent-application.
+  ///   pending     — fresh submission; not in talent pool yet
+  ///   approved    — admin reviewed + admitted
+  ///   approved_skip_review — admin "skip approval — add directly"
+  ///                  fast-path; same talent-pool membership as
+  ///                  "approved" but flagged for audit
+  ///   rejected    — admin reviewed + declined
+  reviewStatus String   @default("pending")
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  /// Free-text reviewer note shown to the applicant when status
+  /// changes (e.g. "Need supervisor letter" or rejection reason).
+  reviewerNote String?
+  createdAt    DateTime  @default(now())
 
   @@index([formId, createdAt])
   @@index([email])
   @@index([userId])
+  /// Supports the talent-pool admin queue: "pending submissions
+  /// for the talent-application form, oldest first."
+  @@index([formId, reviewStatus, createdAt])
 }
 
 model Course {
@@ -808,7 +829,10 @@ model Pathway {
   createdAt   DateTime                    @default(now())
   updatedAt   DateTime                    @updatedAt
 
-  // Enrollment management
+  /// Pathway-level fallback enrollment fields. Used when no
+  /// PathwayCohort rows exist (legacy / single-cohort pathways).
+  /// When cohorts exist these are ignored and the per-cohort
+  /// capacity / window / waitlist values drive the experience.
   enrollmentStatus   String    @default("open") // open | closed | full
   enrollmentOpensAt  DateTime?
   enrollmentClosesAt DateTime?
@@ -816,8 +840,63 @@ model Pathway {
   allowWaitlist      Boolean   @default(true)
 
   courses      PathwayCourse[]
+  cohorts      PathwayCohort[]
   enrollments  PathwayEnrollment[]
   certificates Certificate[]
+}
+
+/// One cohort within a Pathway — e.g. "Spring 2026 — OBIO Bootcamp"
+/// for the Entrepreneurship Pathway. Each cohort has its own
+/// capacity, registration window, and waitlist policy.
+///
+/// When a Pathway has 0 cohorts → behaves as before (pathway-level
+/// fields drive enrollment). When ≥ 1 cohort exists → applicants
+/// pick a cohort at enrollment time, capacity / status are
+/// computed per cohort, and PathwayEnrollment.cohortId is set on
+/// every new enrollment row.
+model PathwayCohort {
+  id            String   @id @default(cuid())
+  pathwayId     String
+  /// URL-safe slug, unique within the pathway (eg. "spring-2026").
+  slug          String
+  /// Human-readable label shown in the picker. "Spring 2026 cohort"
+  name          String
+  /// Optional rich-text description shown alongside the cohort
+  /// — e.g. "Hybrid format, weekly Wednesdays, in-person retreat
+  /// in March". Markdown.
+  description   String?
+  /// Program dates. End is optional for open-ended self-paced cohorts.
+  startDate     DateTime
+  endDate       DateTime?
+  /// Hard capacity for confirmed seats. Beyond this, applicants
+  /// either join the waitlist (if allowWaitlist) or see "full".
+  capacity      Int
+  /// Whether confirmed-full means waitlist or hard-stop.
+  allowWaitlist Boolean  @default(true)
+  /// Optional waitlist cap. Null = unlimited waitlist.
+  waitlistCapacity Int?
+  /// Optional registration window. Null on either side = no bound.
+  enrollmentOpensAt  DateTime?
+  enrollmentClosesAt DateTime?
+  /// Operator-driven state. Computed UI state (open / full /
+  /// waitlisted / closed) combines this with capacity + window.
+  ///   draft     — admin still working on it; hidden from public.
+  ///   open      — public; standard rules apply.
+  ///   closed    — admin manually closed early.
+  ///   archived  — past cohort; visible read-only on detail page.
+  status        String   @default("draft") // draft | open | closed | archived
+  /// Sort order when listing cohorts; earliest startDate is usually
+  /// fine but admins can pin a particular cohort to top via this.
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pathway     Pathway             @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  enrollments PathwayEnrollment[]
+
+  @@unique([pathwayId, slug])
+  /// Supports "list cohorts for this pathway in display order".
+  @@index([pathwayId, displayOrder])
 }
 
 model PathwayCourse {
@@ -836,8 +915,18 @@ model PathwayEnrollment {
   id            String    @id @default(cuid())
   userId        String
   pathwayId     String
+  /// Set when the pathway has cohorts. Null on legacy pre-cohort
+  /// enrollments and on enrollments to single-cohort pathways
+  /// (which keep using pathway-level fields). The (userId,
+  /// pathwayId) uniqueness still applies even with cohorts —
+  /// one user, one enrollment per pathway, regardless of cohort.
+  cohortId      String?
   // pending | approved | rejected | waitlisted | withdrawn | completed
   status        String    @default("pending")
+  /// 1-indexed waitlist position when status="waitlisted". Null
+  /// otherwise. Densely renumbered when an earlier waitlister
+  /// cancels.
+  waitlistPosition Int?
   requestReason String?
   reviewerId    String?
   reviewerNote  String?
@@ -845,10 +934,13 @@ model PathwayEnrollment {
   enrolledAt    DateTime  @default(now()) // request created
   approvedAt    DateTime?
   completedAt   DateTime?
-  pathway       Pathway   @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  pathway       Pathway        @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  cohort        PathwayCohort? @relation(fields: [cohortId], references: [id], onDelete: SetNull)
 
   @@unique([userId, pathwayId])
   @@index([pathwayId, status, enrolledAt])
+  /// Supports per-cohort capacity + waitlist queries.
+  @@index([cohortId, status, waitlistPosition])
 }
 
 /// Application from a trainee for additional starter credits beyond the

@@ -5,6 +5,10 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { answerFields, type FormField } from "@/lib/forms/types";
 import { FormReseedButton } from "@/components/admin/FormReseedButton";
+import {
+  TalentReviewActions,
+  type TalentReviewStatus,
+} from "@/components/admin/TalentReviewActions";
 
 export default async function AdminFormSubmissionsPage({
   params,
@@ -28,6 +32,16 @@ export default async function AdminFormSubmissionsPage({
   const fields = form.fields as unknown as FormField[];
   const ansFields = answerFields(fields);
 
+  // Talent-application is the one form that gates submissions
+  // behind admin review before they appear in the talent pool /
+  // searchable directory. Other slugs (OBIO bootcamp, etc.) treat
+  // every submission as immediately complete — we hide the review
+  // column for them.
+  const isTalentApp = slug === "talent-application";
+  const pendingCount = isTalentApp
+    ? form.submissions.filter((s) => s.reviewStatus === "pending").length
+    : 0;
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -43,7 +57,21 @@ export default async function AdminFormSubmissionsPage({
             {form._count.submissions}{" "}
             {form._count.submissions === 1 ? "submission" : "submissions"}
             {form._count.submissions > 200 && " — showing latest 200"}
+            {isTalentApp && pendingCount > 0 && (
+              <span className="ml-2 inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ring-1 ring-inset bg-amber-100 text-amber-800 ring-amber-200">
+                {pendingCount} pending review
+              </span>
+            )}
           </p>
+          {isTalentApp && (
+            <p className="text-xs text-muted mt-1.5 leading-snug max-w-2xl">
+              New submissions are <strong>pending</strong> until an admin
+              reviews them — only approved entries appear in the talent pool.
+              Use <em>Skip approval</em> for fast-track admits you're already
+              confident about; it's audit-logged separately so you can find
+              them later.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <FormReseedButton slug={slug} />
@@ -79,6 +107,11 @@ export default async function AdminFormSubmissionsPage({
                     <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-2 py-2 whitespace-nowrap">
                       Email
                     </th>
+                    {isTalentApp && (
+                      <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-2 py-2 whitespace-nowrap">
+                        Review
+                      </th>
+                    )}
                     {ansFields.map((f) => (
                       <th
                         key={f.id}
@@ -108,6 +141,17 @@ export default async function AdminFormSubmissionsPage({
                         <td className="px-2 py-1.5 text-[11px] text-fg whitespace-nowrap max-w-[160px] truncate" title={s.email ?? ""}>
                           {s.email ?? "—"}
                         </td>
+                        {isTalentApp && (
+                          <td className="px-2 py-1.5 whitespace-nowrap">
+                            <TalentReviewActions
+                              slug={slug}
+                              submission={{
+                                id: s.id,
+                                reviewStatus: s.reviewStatus as TalentReviewStatus,
+                              }}
+                            />
+                          </td>
+                        )}
                         {ansFields.map((f) => {
                           const txt = cellText(f.id);
                           const isUrl = typeof txt === "string" && /^https?:\/\//.test(txt);
