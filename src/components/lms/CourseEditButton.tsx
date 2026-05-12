@@ -17,6 +17,7 @@ interface CourseShape {
   duration: number | null;
   creditCost: number;
   thumbnail: string | null;
+  requiresApproval?: boolean;
 }
 
 export function CourseEditButton({ course }: { course: CourseShape }) {
@@ -36,6 +37,7 @@ export function CourseEditButton({ course }: { course: CourseShape }) {
   const [duration, setDuration] = useState(course.duration != null ? String(course.duration) : "");
   const [creditCost, setCreditCost] = useState(String(course.creditCost));
   const [thumbnail, setThumbnail] = useState(course.thumbnail ?? "");
+  const [requiresApproval, setRequiresApproval] = useState(course.requiresApproval ?? false);
 
   async function hardDelete() {
     if (deleteConfirm !== course.title) {
@@ -79,6 +81,7 @@ export function CourseEditButton({ course }: { course: CourseShape }) {
           duration: duration ? Number(duration) : null,
           creditCost: Number(creditCost) || 0,
           thumbnail: thumbnail.trim() || null,
+          requiresApproval,
         }),
       });
       if (!res.ok) {
@@ -198,6 +201,29 @@ export function CourseEditButton({ course }: { course: CourseShape }) {
               <Input value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} placeholder="https://…" />
             </Field>
           </div>
+
+          {/* Approval gate — opt this course into the same admin-review
+              flow that pathways already use. When on, the user-facing
+              enrol creates a Pending row (instead of Active) and skips
+              the credit deduction; the deduction happens on approval. */}
+          <label className="flex items-start gap-3 rounded-xl border border-line bg-bg p-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={requiresApproval}
+              onChange={(e) => setRequiresApproval(e.target.checked)}
+              className="mt-0.5 accent-brand-600 w-4 h-4"
+            />
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-fg">
+                Require admin approval to enrol
+              </span>
+              <span className="block text-xs text-muted leading-snug mt-0.5">
+                Trainee clicks Enrol → status is set to <strong>Pending</strong> and the
+                request lands on the admin queue at <code className="font-mono text-fg">/admin/enrollments</code>.
+                Credits are charged only on approval, so a rejected request costs nothing.
+              </span>
+            </span>
+          </label>
         </div>
       </Modal>
     </>

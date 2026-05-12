@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { PathwayEnrollmentDecideButtons } from "@/components/admin/PathwayEnrollmentDecideButtons";
+import { DemoPhantomTray, type DemoScenario } from "@/components/admin/DemoPhantomTray";
 
 interface Row {
   id: string;
@@ -114,6 +115,22 @@ export default async function AdminPathwayEnrollmentsPage({ searchParams }: { se
       <Section title="Approved · in pathway" tone="brand" rows={approvedRows}  approvedMap={approvedMap} showQueuePosition={false} />
       <Section title="Completed"           tone="success" rows={completedRows} approvedMap={approvedMap} showQueuePosition={false} />
       <Section title="Rejected · withdrawn" tone="neutral" rows={rejectedRows} approvedMap={approvedMap} showQueuePosition={false} />
+
+      {/* Demo controls — same pattern as the /admin/enrollments dashboard.
+          Spawns phantoms with pending pathway-enrollment requests so this
+          page has something to show during a walkthrough. */}
+      <DemoPhantomTray
+        scenarios={[
+          {
+            kind: "pathway_enrollment_request",
+            label: pathwayList.length === 0
+              ? "Pending pathway request (no published pathways yet)"
+              : "Pending pathway request",
+            options: pathwayList.map((p) => ({ id: p.id, label: p.title })),
+          } satisfies DemoScenario,
+        ]}
+        contextLabel="pathway requests"
+      />
     </div>
   );
 }

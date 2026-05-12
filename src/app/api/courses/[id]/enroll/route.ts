@@ -58,36 +58,45 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     }
   }
 
-  // Deduct credits for regular users (admins/superadmins bypass)
-  if (!isAdmin(role) && course.creditCost > 0) {
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } });
-    if (!user || user.credits < course.creditCost) {
-      return NextResponse.json(
-        { error: `Insufficient credits. Need ${course.creditCost}, have ${user?.credits ?? 0}.` },
-        { status: 402 }
-      );
-    }
+  // Approval gate. When the course requires admin review, the
+  // user-facing enrol creates a Pending row and skips the credit
+  // deduction. Credits are charged on admin approval (so a rejected
+  // request never costs the trainee anything). Admins enrolling on
+  // someone's behalf still bypass the gate.
+  const needsApproval = course.requiresApproval && !isAdmin(role);
 
-    const newBalance = user.credits - course.creditCost;
-    await prisma.$transaction([
-      prisma.user.update({ where: { id: userId }, data: { credits: newBalance } }),
-      prisma.creditTransaction.create({
-        data: {
-          userId,
-          amount: -course.creditCost,
-          type: "debit",
-          reason: "enrollment",
-          courseId,
-          balanceAfter: newBalance,
-        },
-      }),
-    ]);
+  if (!needsApproval) {
+    // Deduct credits for regular users (admins/superadmins bypass)
+    if (!isAdmin(role) && course.creditCost > 0) {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } });
+      if (!user || user.credits < course.creditCost) {
+        return NextResponse.json(
+          { error: `Insufficient credits. Need ${course.creditCost}, have ${user?.credits ?? 0}.` },
+          { status: 402 }
+        );
+      }
+
+      const newBalance = user.credits - course.creditCost;
+      await prisma.$transaction([
+        prisma.user.update({ where: { id: userId }, data: { credits: newBalance } }),
+        prisma.creditTransaction.create({
+          data: {
+            userId,
+            amount: -course.creditCost,
+            type: "debit",
+            reason: "enrollment",
+            courseId,
+            balanceAfter: newBalance,
+          },
+        }),
+      ]);
+    }
   }
 
   const enrollment = await prisma.enrollment.upsert({
     where: { userId_courseId: { userId, courseId } },
-    update: { status: "active" },
-    create: { userId, courseId, status: "active" },
+    update: { status: needsApproval ? "pending" : "active" },
+    create: { userId, courseId, status: needsApproval ? "pending" : "active" },
   });
 
   // Loyalty unlock — every credit-spending enrollment is a chance to

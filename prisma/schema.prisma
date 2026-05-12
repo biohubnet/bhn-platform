@@ -702,6 +702,11 @@ model Course {
   delivery     String? // "Asynchronous" | "Online" | "In-Person" | "Blended"
   provider     String? // e.g. "CASTL", "BioTalent Canada"
   isSpecial    Boolean  @default(false) // Special Programs / Workshops flag
+  /// When true, enrollment creates an Enrollment row with
+  /// status="pending" instead of "active". Admins approve / reject
+  /// from /admin/enrollments. Defaults to false so existing courses
+  /// stay self-serve.
+  requiresApproval Boolean @default(false)
   instructorId String?
   instructor   User?    @relation("Instructor", fields: [instructorId], references: [id])
   createdAt    DateTime @default(now())

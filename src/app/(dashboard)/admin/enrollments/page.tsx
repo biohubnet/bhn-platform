@@ -1,27 +1,29 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  BookOpen, Layers, ArrowRight, Plus, TrendingUp, CheckCircle2,
+  BookOpen, Layers, ArrowRight, TrendingUp, CheckCircle2,
   Clock, AlertCircle, Users, Calendar,
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PendingEnrollmentRequests, type PendingRequest } from "@/components/admin/PendingEnrollmentRequests";
+import { DemoPhantomTray, type DemoScenario } from "@/components/admin/DemoPhantomTray";
 
 /**
  * /admin/enrollments — overview dashboard for ALL enrollment activity.
  *
- * Two equally-weighted panels (Courses / Pathways) showing the
- * numbers admins actually need at a glance: published item counts,
- * total enrollments, status breakdown, today's new enrollments,
- * pending-review queue depth, and the top items by enrollment.
+ * Three vertical sections:
+ *   1. Two equally-weighted stat panels (Courses + Pathways) — same
+ *      shape as before, no top action bar; each panel still has its
+ *      own "Manage →" link to the deeper page.
+ *   2. Pending enrollment requests pool — grouped by which course /
+ *      pathway each requester is trying to enrol in. Approve / reject
+ *      inline.
+ *   3. Demo controls — spawn pre-seeded phantom requesters with one
+ *      click; clear all phantoms with another.
  *
- * Action bar at the top routes to:
- *   • /admin/enrollments/new            — proper "create enrollment" page
- *   • /admin/enrollments/courses        — full course-enrollment list
- *   • /admin/pathway-enrollments        — pathway-enrollment review queue
- *
- * Replaces the previous page where everything (table + popup-modal
- * action) was crammed onto a single screen.
+ * The Courses panel shows status="pending" alongside the other
+ * statuses now that some courses can require admin approval.
  */
 export default async function AdminEnrollmentsOverviewPage() {
   const session = await requireRole("admin").catch(() => null);
@@ -36,6 +38,8 @@ export default async function AdminEnrollmentsOverviewPage() {
     publishedPathways, totalPathwayEnrollments,
     pathwayStatusGroups, newPathwayEnrollments24h,
     topCourses, topPathways,
+    pendingCourseRows, pendingPathwayRows,
+    approvalCourses, allPathways,
   ] = await Promise.all([
     prisma.course.count({ where: { status: "published" } }),
     prisma.enrollment.count(),
@@ -48,7 +52,6 @@ export default async function AdminEnrollmentsOverviewPage() {
     prisma.pathwayEnrollment.groupBy({ by: ["status"], _count: { _all: true } }),
     prisma.pathwayEnrollment.count({ where: { enrolledAt: { gte: since24h } } }),
 
-    // Top 5 courses by enrollment count.
     prisma.course.findMany({
       where: { status: "published" },
       select: { id: true, title: true, _count: { select: { enrollments: true } } },
@@ -61,10 +64,105 @@ export default async function AdminEnrollmentsOverviewPage() {
       orderBy: { enrollments: { _count: "desc" } },
       take: 5,
     }),
+
+    // Pending enrollment pool — course requests
+    prisma.enrollment.findMany({
+      where: { status: "pending" },
+      include: {
+        course: { select: { id: true, title: true } },
+        user:   { select: { id: true, name: true, email: true, accountKind: true } },
+      },
+      orderBy: { enrolledAt: "asc" },
+      take: 200,
+    }),
+    // Pending enrollment pool — pathway requests
+    prisma.pathwayEnrollment.findMany({
+      where: { status: "pending" },
+      include: {
+        pathway: { select: { id: true, title: true } },
+      },
+      orderBy: { enrolledAt: "asc" },
+      take: 200,
+    }),
+
+    // Demo-tray pickers — only approval-required courses + every
+    // published pathway can be the demo target.
+    prisma.course.findMany({
+      where: { status: "published", requiresApproval: true },
+      select: { id: true, title: true },
+      orderBy: { title: "asc" },
+    }),
+    prisma.pathway.findMany({
+      where: { status: "published" },
+      select: { id: true, title: true },
+      orderBy: { title: "asc" },
+    }),
   ]);
+
+  // Pathway requests need user lookups since they don't include user
+  // by relation — fetch separately and join.
+  const pathwayUserIds = pendingPathwayRows.map((r) => r.userId);
+  const pathwayUsers = pathwayUserIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: pathwayUserIds } },
+        select: { id: true, name: true, email: true, accountKind: true },
+      })
+    : [];
+  const pathwayUserMap = new Map(pathwayUsers.map((u) => [u.id, u]));
+
+  const pendingRequests: PendingRequest[] = [
+    ...pendingCourseRows.map((r) => ({
+      id: r.id,
+      kind: "course" as const,
+      targetId: r.course.id,
+      targetTitle: r.course.title,
+      requestedAt: r.enrolledAt.toISOString(),
+      requestReason: null,
+      user: {
+        id: r.user.id,
+        name: r.user.name,
+        email: r.user.email,
+        accountKind: r.user.accountKind,
+      },
+    })),
+    ...pendingPathwayRows.map((r) => {
+      const u = pathwayUserMap.get(r.userId);
+      return {
+        id: r.id,
+        kind: "pathway" as const,
+        targetId: r.pathway.id,
+        targetTitle: r.pathway.title,
+        requestedAt: r.enrolledAt.toISOString(),
+        requestReason: r.requestReason,
+        user: {
+          id: r.userId,
+          name: u?.name ?? null,
+          email: u?.email ?? "—",
+          accountKind: u?.accountKind ?? "real",
+        },
+      };
+    }),
+  ];
 
   const courseStatus = mapStatusCounts(courseStatusGroups);
   const pathwayStatus = mapStatusCounts(pathwayStatusGroups);
+
+  const demoScenarios: DemoScenario[] = [
+    {
+      kind: "course_enrollment_request",
+      label: approvalCourses.length === 0
+        ? "Pending course request (no approval-required courses yet)"
+        : "Pending course request",
+      options: approvalCourses.map((c) => ({ id: c.id, label: c.title })),
+    },
+    {
+      kind: "pathway_enrollment_request",
+      label: allPathways.length === 0
+        ? "Pending pathway request (no published pathways yet)"
+        : "Pending pathway request",
+      options: allPathways.map((p) => ({ id: p.id, label: p.title })),
+    },
+  ];
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -76,37 +174,14 @@ export default async function AdminEnrollmentsOverviewPage() {
           Enrollment Management
         </h1>
         <p className="text-sm text-muted mt-2 leading-snug max-w-3xl">
-          Overview of course and pathway enrollment health. Use the actions
-          below to create new enrollments, drill into a per-row list, or
-          handle pending pathway requests.
+          Overview of course and pathway enrollment health. Use the panel
+          links to drill into the full per-row lists, or work through the
+          pending-request pool below to approve / reject incoming requests.
         </p>
       </header>
 
-      {/* Action bar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Link
-          href="/admin/enrollments/new"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 text-white px-4 py-2 text-sm font-bold hover:bg-brand-700 surface-shadow"
-        >
-          <Plus size={14} /> New enrollment
-        </Link>
-        <Link
-          href="/admin/enrollments/courses"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-card text-fg px-4 py-2 text-sm font-bold hover:border-brand-300"
-        >
-          <BookOpen size={14} /> Course enrollments list
-        </Link>
-        <Link
-          href="/admin/pathway-enrollments"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-card text-fg px-4 py-2 text-sm font-bold hover:border-brand-300"
-        >
-          <Layers size={14} /> Pathway enrollment queue
-        </Link>
-      </div>
-
       {/* Two equally-weighted panels */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* ── COURSES ─────────────────────────────────────────── */}
         <section className="rounded-2xl border border-line bg-card p-5 surface-shadow space-y-4">
           <header className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
@@ -122,33 +197,18 @@ export default async function AdminEnrollmentsOverviewPage() {
           </header>
 
           <div className="grid grid-cols-3 gap-3">
-            <StatTile
-              icon={BookOpen}
-              label="Published"
-              value={publishedCourses}
-              hint="Live in catalog"
-            />
-            <StatTile
-              icon={Users}
-              label="Enrollments"
-              value={totalCourseEnrollments}
-              hint="All time"
-              big
-            />
-            <StatTile
-              icon={TrendingUp}
-              label="New (24h)"
-              value={newCourseEnrollments24h}
-              hint={`${newCourseEnrollments7d} this week`}
-            />
+            <StatTile icon={BookOpen}     label="Published"   value={publishedCourses}        hint="Live in catalog" />
+            <StatTile icon={Users}        label="Enrollments" value={totalCourseEnrollments}  hint="All time" big />
+            <StatTile icon={TrendingUp}   label="New (24h)"   value={newCourseEnrollments24h} hint={`${newCourseEnrollments7d} this week`} />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+            <MiniStat icon={Clock}        label="Pending"    value={courseStatus.pending}    tone="amber" />
             <MiniStat icon={Clock}        label="Active"     value={courseStatus.active}     tone="brand"  />
             <MiniStat icon={CheckCircle2} label="Completed"  value={courseStatus.completed}  tone="emerald" />
             <MiniStat icon={AlertCircle}  label="Withdrawn"  value={courseStatus.withdrawn}  tone="slate" />
             <MiniStat icon={AlertCircle}  label="Other"      value={
-              totalCourseEnrollments - courseStatus.active - courseStatus.completed - courseStatus.withdrawn
+              totalCourseEnrollments - courseStatus.active - courseStatus.completed - courseStatus.withdrawn - courseStatus.pending
             } tone="amber" />
           </div>
 
@@ -162,15 +222,10 @@ export default async function AdminEnrollmentsOverviewPage() {
               <ul className="space-y-1.5">
                 {topCourses.map((c) => (
                   <li key={c.id} className="flex items-center justify-between text-sm">
-                    <Link
-                      href={`/courses/${c.id}`}
-                      className="text-fg hover:text-brand-700 truncate"
-                    >
+                    <Link href={`/courses/${c.id}`} className="text-fg hover:text-brand-700 truncate">
                       {c.title}
                     </Link>
-                    <span className="text-xs font-mono tabular-nums text-muted">
-                      {c._count.enrollments}
-                    </span>
+                    <span className="text-xs font-mono tabular-nums text-muted">{c._count.enrollments}</span>
                   </li>
                 ))}
               </ul>
@@ -178,7 +233,6 @@ export default async function AdminEnrollmentsOverviewPage() {
           </div>
         </section>
 
-        {/* ── PATHWAYS ────────────────────────────────────────── */}
         <section className="rounded-2xl border border-line bg-card p-5 surface-shadow space-y-4">
           <header className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
@@ -194,25 +248,9 @@ export default async function AdminEnrollmentsOverviewPage() {
           </header>
 
           <div className="grid grid-cols-3 gap-3">
-            <StatTile
-              icon={Layers}
-              label="Published"
-              value={publishedPathways}
-              hint="Live pathways"
-            />
-            <StatTile
-              icon={Users}
-              label="Enrollments"
-              value={totalPathwayEnrollments}
-              hint="All time"
-              big
-            />
-            <StatTile
-              icon={TrendingUp}
-              label="New (24h)"
-              value={newPathwayEnrollments24h}
-              hint=""
-            />
+            <StatTile icon={Layers}     label="Published"   value={publishedPathways}        hint="Live pathways" />
+            <StatTile icon={Users}      label="Enrollments" value={totalPathwayEnrollments}  hint="All time" big />
+            <StatTile icon={TrendingUp} label="New (24h)"   value={newPathwayEnrollments24h} hint="" />
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
@@ -221,18 +259,6 @@ export default async function AdminEnrollmentsOverviewPage() {
             <MiniStat icon={Calendar}     label="Waitlist"   value={pathwayStatus.waitlisted} tone="amber" />
             <MiniStat icon={CheckCircle2} label="Completed"  value={pathwayStatus.completed}  tone="emerald" />
           </div>
-
-          {pathwayStatus.pending > 0 && (
-            <div className="rounded-xl bg-amber-50 ring-1 ring-inset ring-amber-200 px-3 py-2 text-xs text-amber-900 inline-flex items-start gap-2">
-              <AlertCircle size={11} className="text-amber-700 shrink-0 mt-0.5" />
-              <span>
-                <strong>{pathwayStatus.pending} pending request{pathwayStatus.pending === 1 ? "" : "s"}</strong> waiting on admin review.{" "}
-                <Link href="/admin/pathway-enrollments" className="font-semibold underline hover:no-underline">
-                  Review now →
-                </Link>
-              </span>
-            </div>
-          )}
 
           <div className="pt-2 border-t border-line">
             <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-2">
@@ -244,15 +270,10 @@ export default async function AdminEnrollmentsOverviewPage() {
               <ul className="space-y-1.5">
                 {topPathways.map((p) => (
                   <li key={p.id} className="flex items-center justify-between text-sm">
-                    <Link
-                      href={`/pathways/${p.id}`}
-                      className="text-fg hover:text-brand-700 truncate"
-                    >
+                    <Link href={`/pathways/${p.id}`} className="text-fg hover:text-brand-700 truncate">
                       {p.title}
                     </Link>
-                    <span className="text-xs font-mono tabular-nums text-muted">
-                      {p._count.enrollments}
-                    </span>
+                    <span className="text-xs font-mono tabular-nums text-muted">{p._count.enrollments}</span>
                   </li>
                 ))}
               </ul>
@@ -260,20 +281,23 @@ export default async function AdminEnrollmentsOverviewPage() {
           </div>
         </section>
       </div>
+
+      {/* Pending request pool, grouped by target */}
+      <PendingEnrollmentRequests initialRequests={pendingRequests} />
+
+      {/* Demo controls */}
+      <DemoPhantomTray
+        scenarios={demoScenarios}
+        contextLabel="enrollment requests"
+      />
     </div>
   );
 }
 
 interface StatusCounts {
-  active: number;
-  completed: number;
-  withdrawn: number;
-  pending: number;
-  approved: number;
-  waitlisted: number;
-  rejected: number;
+  active: number; completed: number; withdrawn: number;
+  pending: number; approved: number; waitlisted: number; rejected: number;
 }
-
 function mapStatusCounts(rows: { status: string; _count: { _all: number } }[]): StatusCounts {
   const base: StatusCounts = {
     active: 0, completed: 0, withdrawn: 0,
@@ -284,7 +308,6 @@ function mapStatusCounts(rows: { status: string; _count: { _all: number } }[]): 
   }
   return base;
 }
-
 function StatTile({
   icon: Icon, label, value, hint, big,
 }: {
@@ -297,8 +320,7 @@ function StatTile({
   return (
     <div className="rounded-xl border border-line bg-bg p-3">
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] font-bold text-subtle">
-        <Icon size={11} />
-        {label}
+        <Icon size={11} /> {label}
       </div>
       <p className={`font-bold font-mono tabular-nums text-fg mt-1 ${big ? "text-3xl" : "text-2xl"}`}>
         {value.toLocaleString()}
@@ -307,7 +329,6 @@ function StatTile({
     </div>
   );
 }
-
 function MiniStat({
   icon: Icon, label, value, tone,
 }: {
@@ -325,8 +346,7 @@ function MiniStat({
   return (
     <div className="rounded-lg bg-bg border border-line px-2.5 py-1.5">
       <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-subtle">
-        <Icon size={9} />
-        {label}
+        <Icon size={9} /> {label}
       </div>
       <p className={`text-base font-bold font-mono tabular-nums ${colours[tone]}`}>
         {value.toLocaleString()}

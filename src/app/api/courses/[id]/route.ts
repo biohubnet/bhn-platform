@@ -57,6 +57,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(data.delivery !== undefined ? { delivery: data.delivery || null } : {}),
       ...(data.provider !== undefined ? { provider: data.provider || null } : {}),
       ...(data.isSpecial !== undefined ? { isSpecial: !!data.isSpecial } : {}),
+      ...(data.requiresApproval !== undefined ? { requiresApproval: !!data.requiresApproval } : {}),
     },
   });
 
