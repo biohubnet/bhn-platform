@@ -19,7 +19,7 @@ import {
   isSectionField,
   isMultiCheckboxField,
   isFileField,
-  isConditionMet,
+  isFieldVisible,
 } from "@/lib/forms/types";
 
 interface Props {
@@ -166,11 +166,13 @@ export function EventFormView({
     // Client-side required check (covers strings + arrays).
     // Conditionally-hidden fields are treated as optional — we
     // skip them even if `required: true` because the user can't
-    // see them to fill them in.
+    // see them to fill them in. isFieldVisible walks the whole
+    // showWhen chain so grandchildren of a hidden ancestor are
+    // also treated as hidden.
     for (const f of schema) {
       if (isSectionField(f)) continue;
       if (!f.required) continue;
-      if (!isConditionMet(f.showWhen, values)) continue;
+      if (!isFieldVisible(f, schema, values)) continue;
       const v = values[f.id];
       const empty =
         v === undefined ||
@@ -384,10 +386,11 @@ export function EventFormView({
           <form onSubmit={submit} className="space-y-5">
             {schema.map((f) => {
               // Honor showWhen — hide fields whose conditional rule
-              // isn't met by the current values. Section headers
-              // can be conditional too (used to hide whole
-              // subgroups like the graduate-program block).
-              if (!isConditionMet(f.showWhen, values)) return null;
+              // isn't met (recursively walking the chain so a
+              // grandchild like grad_internship_required disappears
+              // the moment its grandparent current_position flips
+              // away from a grad role).
+              if (!isFieldVisible(f, schema, values)) return null;
               return (
                 <FieldRender
                   key={f.id}

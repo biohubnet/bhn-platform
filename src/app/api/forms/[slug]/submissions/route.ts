@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import type { FormField } from "@/lib/forms/types";
 import {
   isSectionField, isChoiceField, isMultiCheckboxField, isFileField,
-  isConditionMet,
+  isFieldVisible,
 } from "@/lib/forms/types";
 
 export const runtime = "nodejs";
@@ -31,17 +31,18 @@ export async function POST(
 
   // Validate against schema. Strings get trimmed, choice values must be
   // in their option list, multicheckbox/file values must be string[].
-  // Conditionally-hidden fields (showWhen rule not met) are treated
-  // as not-required and their incoming values are dropped — matches
+  // Conditionally-hidden fields — both direct and chained (i.e. a
+  // grandchild whose grandparent is hidden) — are treated as
+  // not-required and their incoming values are dropped, matching
   // what the user actually saw on screen.
   const fields = form.fields as unknown as FormField[];
   const cleaned: Record<string, string | string[]> = {};
   for (const f of fields) {
     if (isSectionField(f)) continue;
-    const conditionMet = isConditionMet(f.showWhen, incoming);
+    const visible = isFieldVisible(f, fields, incoming);
     const raw = incoming[f.id];
 
-    if (!conditionMet) {
+    if (!visible) {
       // Field hidden — skip both validation and storage.
       continue;
     }

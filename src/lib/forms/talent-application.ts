@@ -26,7 +26,6 @@ export const TALENT_APPLICATION_DEFAULTS = {
         "Research Associate",
         "Lab Technician",
         "Industry Professional",
-        "Other",
       ],
     },
     // ───── Graduate-program block ────────────────────────────────
@@ -40,6 +39,27 @@ export const TALENT_APPLICATION_DEFAULTS = {
       type: "section",
       label: "Graduate program details",
       showWhen: { fieldId: "current_position", equals: ["Master's student", "PhD candidate"] },
+    },
+    {
+      id: "grad_program_type",
+      type: "radio",
+      label: "Is your graduate program thesis-based or course-based?",
+      required: true,
+      options: ["Thesis-based", "Course-based"],
+      showWhen: { fieldId: "current_position", equals: ["Master's student", "PhD candidate"] },
+    },
+    // Doubly conditional: only when program is Course-based AND
+    // current_position is still a graduate role. The visibility chain
+    // helper (isFieldVisible) walks back to current_position, so
+    // switching to a non-grad role hides this question too even though
+    // the rule directly only references grad_program_type.
+    {
+      id: "grad_internship_required",
+      type: "radio",
+      label: "Is an internship required for the completion of the program?",
+      required: true,
+      options: ["Yes", "No"],
+      showWhen: { fieldId: "grad_program_type", equals: "Course-based" },
     },
     {
       id: "grad_institution",

@@ -33,8 +33,8 @@ interface BaseField {
 }
 
 /** Returns true if a field's `showWhen` rule is satisfied (or
- *  absent). The current-value lookup needs the field id → value
- *  map the renderer / validator already holds. */
+ *  absent). Single-step check — does NOT walk up the visibility
+ *  chain. Use isFieldVisible() for the full chain. */
 export function isConditionMet(
   rule: ConditionalRule | undefined,
   values: Record<FieldId, unknown>,
@@ -43,6 +43,39 @@ export function isConditionMet(
   const current = values[rule.fieldId];
   const allowed = Array.isArray(rule.equals) ? rule.equals : [rule.equals];
   return typeof current === "string" && allowed.includes(current);
+}
+
+/**
+ * Full visibility check that walks the whole `showWhen` chain.
+ * Renderer + validator should prefer this over isConditionMet so a
+ * grandchild like grad_internship_required becomes invisible the
+ * moment its grandparent (current_position) flips to a non-graduate
+ * role — even though its OWN rule only references its immediate
+ * parent (grad_program_type), which still carries a stale value.
+ *
+ * Returns true if the field has no rule, OR its rule is satisfied
+ * AND the referenced field is itself visible (recursive). Cycle
+ * defence via a small visit set — a malformed schema can't put us
+ * in an infinite loop.
+ */
+export function isFieldVisible(
+  field: FormField,
+  schema: FormField[],
+  values: Record<FieldId, unknown>,
+): boolean {
+  const fieldById = new Map(schema.map((f) => [f.id, f]));
+  const visit = (id: FieldId, seen: Set<FieldId>): boolean => {
+    if (seen.has(id)) return true; // cycle — fail open
+    seen.add(id);
+    const f = fieldById.get(id);
+    if (!f) return true; // unknown referent — fail open
+    if (!f.showWhen) return true;
+    // Single-step check on this field's rule
+    if (!isConditionMet(f.showWhen, values)) return false;
+    // Then check whether the parent is itself visible
+    return visit(f.showWhen.fieldId, seen);
+  };
+  return visit(field.id, new Set());
 }
 
 export interface SectionField extends BaseField {
