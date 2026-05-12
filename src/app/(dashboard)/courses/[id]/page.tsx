@@ -10,7 +10,7 @@ import { CourseAISummary } from "@/components/lms/CourseAISummary";
 import { CourseTutorWidget } from "@/components/lms/CourseTutorWidget";
 import { MasteryHeatmap } from "@/components/adaptive/MasteryHeatmap";
 import { formatDuration, statusColor, cn } from "@/lib/utils";
-import { BookOpen, Clock, Users, Award, Play, Upload, Coins } from "lucide-react";
+import { BookOpen, Clock, Users, Award, Play, Upload, Coins, Archive, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
 export default async function CourseDetailPage({
@@ -38,7 +38,12 @@ export default async function CourseDetailPage({
     },
   });
 
-  if (!course || (!isStaff && course.status !== "published")) notFound();
+  // Visibility: staff see everything (draft / published / archived);
+  // trainees see published + archived (archived stays viewable so they
+  // can read about past offerings; the enroll button is disabled
+  // below). Only draft is hidden from trainees.
+  if (!course || (!isStaff && course.status === "draft")) notFound();
+  const isArchived = course.status === "archived";
 
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId: id } },
@@ -51,8 +56,54 @@ export default async function CourseDetailPage({
       })
     : null;
 
+  // Trainees who don't have enough credits to enroll get a clear,
+  // upstream nudge to /credits/apply BEFORE they hit the enroll button
+  // and discover the gap. Skips when: already enrolled, or staff (who
+  // bypass credit gates), or course is archived (enroll is closed
+  // anyway), or the course is free.
+  const showCreditApplyBanner =
+    !isStaff &&
+    !enrollment &&
+    !isArchived &&
+    course.creditCost > 0 &&
+    userCredits < course.creditCost;
+
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Archived banner — explains why enrolment is closed. */}
+      {isArchived && !isStaff && (
+        <div className="rounded-2xl bg-slate-100 ring-1 ring-inset ring-slate-300 px-4 py-3 flex items-start gap-2">
+          <Archive size={14} className="text-slate-700 shrink-0 mt-0.5" />
+          <p className="text-sm text-slate-900 leading-snug">
+            <span className="font-bold">This course is archived.</span>{" "}
+            New enrolments are closed, but you can still read the course
+            details below. If you're already enrolled, your access continues.
+          </p>
+        </div>
+      )}
+
+      {/* Credit-application nudge — proactive guidance before they
+          discover the credit gap mid-enroll. */}
+      {showCreditApplyBanner && (
+        <div className="rounded-2xl bg-amber-50 ring-1 ring-inset ring-amber-200 px-4 py-3 flex items-start gap-2">
+          <AlertCircle size={14} className="text-amber-700 shrink-0 mt-0.5" />
+          <div className="flex-1 text-sm text-amber-900 leading-snug">
+            <p className="font-bold">
+              You'll need {(course.creditCost - userCredits).toLocaleString()} more credits to enroll.
+            </p>
+            <p className="text-xs mt-1">
+              Eligible HQP (graduate students with 2+ semesters, postdocs,
+              research associates, lab technicians) at one of the 14 partner
+              Ontario institutions can apply for 5 000 training credits at
+              no cost.{" "}
+              <Link href="/credits/apply" className="font-semibold underline hover:no-underline">
+                Apply for credits →
+              </Link>
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Thumbnail hero — only when present, or when staff for the generator */}
       {(course.thumbnail || isStaff) && (
         <div className="relative aspect-[16/6] w-full rounded-[var(--radius-xl)] overflow-hidden bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 group">
@@ -155,6 +206,16 @@ export default async function CourseDetailPage({
             {isStaff && <PublishToggle courseId={id} status={course.status} />}
             {!enrollment && !isStaff && course.status === "published" && (
               <EnrollButton courseId={id} />
+            )}
+            {!enrollment && !isStaff && isArchived && (
+              <button
+                type="button"
+                disabled
+                title="This course is archived — enrolment is closed. You can still read the course details."
+                className="flex items-center gap-2 bg-elevated text-subtle text-sm font-medium px-4 py-2 rounded-lg cursor-not-allowed ring-1 ring-inset ring-line"
+              >
+                Enrolment closed (archived)
+              </button>
             )}
             {enrollment && course.scormPackage && (
               <Link

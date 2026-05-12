@@ -3,10 +3,11 @@ import {
   Users, BookOpen, GraduationCap, Award, Layers, Coins,
   ShieldCheck, Settings, FileText, AlertCircle, ArrowRight,
   Sparkles, ClipboardList, ChevronRight, UserCog, Building2,
-  Activity,
+  Activity, Clock,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { GreetingTagline } from "@/components/lms/GreetingTagline";
+import { CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
 
 /** Admin / superadmin dashboard. Platform overview + the queues
  *  needing action, with system-health extras shown only to superadmin. */
@@ -51,6 +52,31 @@ export async function AdminDashboard({
   ]);
 
   const totalPending = pendingCreditApps + pendingRoleRequests + pendingPathwayApps;
+
+  // Credit-expiry awareness — three look-ahead windows. Sums up the
+  // unspent remainder of every active credit grant (amount minus
+  // expiredAmount) whose timer falls inside the window. Used to drive
+  // the "Credits expiring" tile so admins can see when notifications
+  // and sweeps are about to fire.
+  const now = new Date();
+  const horizon = (days: number) => new Date(now.getTime() + days * 86_400_000);
+  const expiringWindow = async (days: number) => {
+    const rows = await prisma.creditTransaction.findMany({
+      where: {
+        type: "credit",
+        expiresAt: { not: null, gt: now, lte: horizon(days) },
+        expiredAt: null,
+        user: { accountKind: "real" },
+      },
+      select: { amount: true, expiredAmount: true, userId: true },
+    }).catch(() => []);
+    const credits = rows.reduce((sum, r) => sum + Math.max(0, r.amount - r.expiredAmount), 0);
+    const users = new Set(rows.map((r) => r.userId)).size;
+    return { credits, users };
+  };
+  const [expiring7, expiring30, expiring90] = await Promise.all([
+    expiringWindow(7), expiringWindow(30), expiringWindow(90),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -143,6 +169,41 @@ export async function AdminDashboard({
           empty="None to approve"
         />
       </div>
+
+      {/* Credit expiry — awareness for the platform. ENGAGE policy
+          expires credits {CREDIT_GRANT_TTL_DAYS} days from grant date;
+          trainees receive 90/30/7-day-before warnings, then a sweep
+          deducts the remainder. */}
+      <section>
+        <header className="flex items-end justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
+              <Clock size={16} className="text-brand-600" />
+              Credit expiry — {CREDIT_GRANT_TTL_DAYS}-day TTL
+            </h2>
+            <p className="text-xs text-muted mt-1 leading-snug">
+              Live look-ahead at unspent credits across real trainees. The
+              daily sweep deducts expired grants and sends 90/30/7-day
+              warnings ahead of time. ENGAGE policy: credits also expire
+              early if &lt; 2 500 used in the first 6 months — UI surfaces
+              the warning, hard enforcement is a follow-up.
+            </p>
+          </div>
+          <Link
+            href="/api/admin/credits/sweep"
+            prefetch={false}
+            className="text-xs font-semibold text-muted hover:text-fg inline-flex items-center gap-1"
+            title="Trigger the sweep manually (cron does this daily anyway)"
+          >
+            Run sweep now <ArrowRight size={11} />
+          </Link>
+        </header>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <ExpiryTile tone="rose"  days={7}  credits={expiring7.credits}  users={expiring7.users} />
+          <ExpiryTile tone="amber" days={30} credits={expiring30.credits} users={expiring30.users} />
+          <ExpiryTile tone="brand" days={90} credits={expiring90.credits} users={expiring90.users} />
+        </div>
+      </section>
 
       {/* Quick links */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -266,6 +327,37 @@ export async function AdminDashboard({
           <AlertCircle size={14} className="text-subtle shrink-0 mt-1" />
         </div>
       )}
+    </div>
+  );
+}
+
+function ExpiryTile({
+  tone, days, credits, users,
+}: {
+  tone: "rose" | "amber" | "brand";
+  days: number;
+  credits: number;
+  users: number;
+}) {
+  const colours: Record<string, string> = {
+    rose:  "bg-rose-50 text-rose-700 ring-rose-200",
+    amber: "bg-amber-50 text-amber-700 ring-amber-200",
+    brand: "bg-brand-50 text-brand-700 ring-brand-200",
+  };
+  const heading =
+    days === 7 ? "Last call (≤ 7 days)"
+    : days === 30 ? "Expiring soon (≤ 30 days)"
+    : "Within 90 days";
+  return (
+    <div className={`rounded-2xl bg-card border border-line p-5 ring-1 ring-inset ${colours[tone]}`}>
+      <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle">{heading}</p>
+      <p className="text-2xl font-bold text-fg mt-2 font-mono tabular-nums">
+        {credits.toLocaleString()}
+        <span className="text-sm font-semibold text-muted ml-1">credits</span>
+      </p>
+      <p className="text-xs text-muted mt-1">
+        Across {users.toLocaleString()} trainee{users === 1 ? "" : "s"}
+      </p>
     </div>
   );
 }

@@ -103,5 +103,21 @@ export const OBIO_BOOTCAMP_DEFAULTS = {
       hint: "Do you require any support? Please describe.",
       required: false,
     },
+
+    { id: "section_logistics", type: "section", label: "Catering & Accessibility" },
+    {
+      id: "dietary_restrictions",
+      type: "textarea",
+      label: "Dietary restrictions or food allergies",
+      hint: "Vegetarian, vegan, halal, kosher, gluten-free, nut allergy, etc. We'll share with the bootcamp caterer. Leave blank if none.",
+      required: false,
+    },
+    {
+      id: "accessibility_needs",
+      type: "textarea",
+      label: "Accessibility needs",
+      hint: "Wheelchair access, ASL interpreter, large-print materials — anything we should plan for. Leave blank if none.",
+      required: false,
+    },
   ] as FormField[],
 };

@@ -14,6 +14,7 @@ import { SkillGapWidget } from "@/components/lms/SkillGapWidget";
 import { DailyThemeCard } from "@/components/ui/DailyThemeCard";
 import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
 import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
+import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanner";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -207,6 +208,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Credit-expiry nudge — auto-hides unless a grant is within 90
+          days of expiry; ramps urgency at 30 and 7 days. Renders above
+          the event banner so time-sensitive credit warnings beat the
+          general "register for the symposium" CTA. */}
+      <ExpiringCreditsBanner userId={userId} />
+
       {/* Upcoming BHN event — Symposium / Training Week. Auto-hides
           when there's no published event in the future, or registration
           is closed and the viewer isn't already registered. */}

@@ -117,6 +117,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Approved amount must be positive." }, { status: 400 });
   }
 
+  // Approved credits inherit the 365-day ENGAGE TTL — the grant
+  // ledger row gets an `expiresAt` stamp so the daily sweep can
+  // deduct the remainder when it lapses, and so the user-facing
+  // /credits page can show a countdown.
+  const { CREDIT_GRANT_TTL_MS } = await import("@/lib/credits/expiry");
+  const grantExpiresAt = new Date(Date.now() + CREDIT_GRANT_TTL_MS);
+
   const result = await prisma.$transaction(async (tx) => {
     const u = await tx.user.update({
       where: { id: existing.userId },
@@ -130,6 +137,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         type: "credit",
         reason: "application_approved",
         balanceAfter: u.credits,
+        expiresAt: grantExpiresAt,
       },
     });
     return tx.creditApplication.update({

@@ -884,11 +884,39 @@ model CreditTransaction {
   userId       String
   amount       Float
   type         String // credit | debit
-  reason       String // enrollment | refund | admin_grant | initial
+  reason       String // enrollment | refund | admin_grant | initial | expiry
   courseId     String?
   balanceAfter Float
   createdAt    DateTime @default(now())
+  /// Expiry timestamp for credit grants (rows where type="credit").
+  /// Per the BioHubNet ENGAGE policy, awarded credits expire 365 days
+  /// from the grant date. Null on debit rows and on legacy pre-policy
+  /// grants. The daily credit-expiry sweep deducts expired balances
+  /// from User.credits and writes a matching "expiry" debit row for
+  /// audit traceability.
+  expiresAt    DateTime?
+  /// Set by the sweep when this grant's remaining balance was
+  /// expired. Null for live grants. Prevents the sweep from
+  /// double-expiring the same row.
+  expiredAt    DateTime?
+  /// How much of the original `amount` has been expired so far.
+  /// Tracks the running deduction so partial debits between grant
+  /// and expiry are accounted for. 0 for live grants.
+  expiredAmount Float    @default(0)
+  /// Notification milestones already sent for this grant. Lets the
+  /// daily sweep send 90-/30-/7-day-before-expiry warnings without
+  /// re-spamming. Null per field = not yet sent.
+  notified90At DateTime?
+  notified30At DateTime?
+  notified7At  DateTime?
+
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Supports the daily sweep: "find grants past expiresAt that haven't
+  /// been expired yet" and "find grants approaching expiry needing
+  /// notification."
+  @@index([userId, type, expiresAt])
+  @@index([expiresAt, expiredAt])
 }
 
 model Group {

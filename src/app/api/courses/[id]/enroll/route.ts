@@ -15,7 +15,16 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
   const role = (session.user as { role?: string }).role ?? "user";
 
   const course = await prisma.course.findUnique({ where: { id: courseId } });
-  if (!course || course.status !== "published") {
+  if (!course) {
+    return NextResponse.json({ error: "Course not found" }, { status: 404 });
+  }
+  if (course.status === "archived") {
+    return NextResponse.json(
+      { error: "This course is archived — new enrolment is closed.", code: "archived" },
+      { status: 409 },
+    );
+  }
+  if (course.status !== "published") {
     return NextResponse.json({ error: "Course not available" }, { status: 404 });
   }
 

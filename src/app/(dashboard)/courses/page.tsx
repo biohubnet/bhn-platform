@@ -34,9 +34,13 @@ export default async function CoursesPage({
   await ensureCourseFilterOptions();
   const options = await getCourseFilterOptions();
 
+  // Non-staff see published AND archived courses (archived stay in
+  // the catalog so trainees can read about courses that ran in the
+  // past — the detail page disables the enroll button). Staff see
+  // everything including drafts so they can edit unreleased work.
   const courses = await prisma.course.findMany({
     where: {
-      ...(isStaff ? {} : { status: "published" }),
+      ...(isStaff ? {} : { status: { in: ["published", "archived"] } }),
       ...(filters.topic.length    && { topic:    { in: filters.topic } }),
       ...(filters.delivery.length && { delivery: { in: filters.delivery } }),
       ...(filters.provider.length && { provider: { in: filters.provider } }),

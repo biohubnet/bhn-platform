@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.12b";
+export const TOUR_VERSION = "2026.05.12c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -515,6 +515,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
     cta: { label: "Open Demo workspaces", href: "/admin/demo-workspaces" },
+  },
+  {
+    id: "credit-expiry-policy",
+    title: "Your training credits have a 365-day life",
+    body: "Per the BioHubNet ENGAGE policy, awarded training credits expire 365 days from their grant date. We'll email you 90, 30, and 7 days before any expiry — and a banner on your dashboard ramps urgency as the deadline gets closer — so you have time to enroll in courses you want to take. Open the /credits page to see your balance, when your next grant expires, and apply for additional credits if you're an eligible HQP at one of the 14 partner Ontario institutions.",
+    path: "/credits",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    since: "2026.05.12c",
+    cta: { label: "Open my credits", href: "/credits" },
   },
   {
     id: "phantom-users",

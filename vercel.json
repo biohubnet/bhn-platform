@@ -4,6 +4,10 @@
     {
       "path": "/api/admin/phantom-users/sweep",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/admin/credits/sweep",
+      "schedule": "0 6 * * *"
     }
   ]
 }

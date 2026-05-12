@@ -22,19 +22,33 @@ interface CourseCardProps {
 
 export function CourseCard({ course, role }: CourseCardProps) {
   const isStaff = role === "admin" || role === "superadmin" || role === "instructor";
+  const isArchived = course.status === "archived";
 
   return (
     <Link
       href={`/courses/${course.id}`}
-      className="bg-card backdrop-blur-md rounded-[var(--radius-lg)] border border-line hover:border-brand-300 transition-all overflow-hidden group flex flex-col shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_16px_40px_rgba(15,23,42,0.10)] hover:-translate-y-0.5"
+      className={cn(
+        "bg-card backdrop-blur-md rounded-[var(--radius-lg)] border transition-all overflow-hidden group flex flex-col shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_16px_40px_rgba(15,23,42,0.10)] hover:-translate-y-0.5",
+        isArchived ? "border-line opacity-75 hover:opacity-100" : "border-line hover:border-brand-300",
+      )}
     >
       {/* Thumbnail */}
-      <div className="h-36 bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center">
+      <div className={cn(
+        "relative h-36 flex items-center justify-center",
+        isArchived
+          ? "bg-gradient-to-br from-slate-400 to-slate-600 grayscale"
+          : "bg-gradient-to-br from-brand-500 to-indigo-600",
+      )}>
         {course.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={course.thumbnail} alt="" className="w-full h-full object-cover" />
+          <img src={course.thumbnail} alt="" className={cn("w-full h-full object-cover", isArchived && "grayscale")} />
         ) : (
           <BookOpen size={32} className="text-white/60" />
+        )}
+        {isArchived && (
+          <span className="absolute top-2 right-2 inline-flex items-center text-[10px] uppercase tracking-[0.18em] font-bold px-2 py-0.5 rounded-full bg-slate-900/80 text-white ring-1 ring-inset ring-white/20">
+            Not active
+          </span>
         )}
       </div>
 

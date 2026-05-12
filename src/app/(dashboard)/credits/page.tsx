@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Coins, ArrowUpCircle, ArrowDownCircle, FileText, ArrowRight, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
+import { nextExpiringGrant, CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
 
 export default async function CreditsPage() {
   const session = await requireSession().catch(() => null);
@@ -14,7 +15,7 @@ export default async function CreditsPage() {
   const role = (session.user as { role?: string }).role ?? "trainee";
   const showApplication = !isStaff(role); // trainees + evaluating only
 
-  const [user, transactions, latestApp] = await Promise.all([
+  const [user, transactions, latestApp, expiring] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { credits: true } }),
     prisma.creditTransaction.findMany({
       where: { userId },
@@ -27,6 +28,7 @@ export default async function CreditsPage() {
           orderBy: { submittedAt: "desc" },
         })
       : Promise.resolve(null),
+    nextExpiringGrant(userId),
   ]);
 
   const courseTitles: Record<string, string> = {};
@@ -47,13 +49,19 @@ export default async function CreditsPage() {
     admin_grant: "Admin Credit Grant",
     initial: "Welcome Credits",
     application_approved: "Application Approved",
+    expiry: "Credits Expired",
   };
 
   return (
     <div className="space-y-8 max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold text-fg">My BHN Credits</h1>
-        <p className="text-muted text-sm mt-1">Credits are used to enroll in paid courses.</p>
+        <p className="text-muted text-sm mt-1 leading-relaxed">
+          Credits are used to enroll in paid courses. Per the BioHubNet
+          ENGAGE program, awarded credits expire <strong className="text-fg">{CREDIT_GRANT_TTL_DAYS} days</strong> from their grant
+          date. We'll email you 90, 30, and 7 days before any expiry so you have
+          time to enroll in courses you want to take.
+        </p>
       </div>
 
       {/* Balance card */}
@@ -64,6 +72,16 @@ export default async function CreditsPage() {
         </div>
         <p className="text-5xl font-bold tracking-tight">{balance.toLocaleString()}</p>
         <p className="text-amber-100 mt-1">BHN Credits</p>
+        {expiring && (
+          <div className="mt-4 pt-4 border-t border-white/30 flex items-center gap-2 text-sm text-amber-100">
+            <Clock size={14} />
+            <span>
+              <strong className="text-white">{expiring.amount.toLocaleString()}</strong> expire in{" "}
+              <strong className="text-white">{expiring.daysRemaining} day{expiring.daysRemaining === 1 ? "" : "s"}</strong>{" "}
+              ({expiring.expiresAt.toLocaleDateString("en-CA", { month: "long", day: "numeric", year: "numeric" })})
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Application status / CTA — trainees only */}
@@ -136,13 +154,44 @@ function ApplicationStatusCard({ latestApp }: { latestApp: AppRow | null }) {
             <FileText size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-fg">Apply for additional 4,800 credits</p>
+            <p className="font-semibold text-fg">Apply for ENGAGE training credits</p>
             <p className="text-sm text-muted mt-1 leading-relaxed">
-              Submit a short application with supporting documents. An admin will review and credit
-              your account if approved. Most reviews complete within a few business days.
+              Eligible Highly Qualified Personnel (HQP) at one of the 14 partner
+              Ontario institutions can receive up to <strong className="text-fg">5,000 training credits</strong>{" "}
+              at no cost.
             </p>
           </div>
         </div>
+
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted">
+          <div className="rounded-xl bg-card border border-line p-3">
+            <p className="font-bold text-fg mb-1">Who qualifies</p>
+            <ul className="list-disc list-inside leading-relaxed space-y-0.5">
+              <li>Graduate students (Master's / PhD, 2+ semesters)</li>
+              <li>Postdoctoral fellows</li>
+              <li>Research associates</li>
+              <li>Lab technicians in STEM programs</li>
+            </ul>
+          </div>
+          <div className="rounded-xl bg-card border border-line p-3">
+            <p className="font-bold text-fg mb-1">What you'll need</p>
+            <ul className="list-disc list-inside leading-relaxed space-y-0.5">
+              <li>Grad students: unofficial transcript + grad-office signed verification</li>
+              <li>Other roles: letter confirming employment / appointment</li>
+            </ul>
+          </div>
+        </div>
+
+        <p className="mt-3 text-xs text-muted leading-relaxed">
+          Credits expire <strong className="text-fg">{CREDIT_GRANT_TTL_DAYS} days</strong> from
+          the approval date. The BHN policy also expires the remainder if
+          fewer than 2,500 credits are used in the first 6 months — plan
+          your enrolments accordingly. Full eligibility details at{" "}
+          <a href="https://biohubnet.ca/engage/" target="_blank" rel="noopener noreferrer" className="text-brand-700 font-semibold hover:underline">
+            biohubnet.ca/engage
+          </a>.
+        </p>
+
         <Link
           href="/credits/apply"
           className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-md shadow-brand-600/25 transition-all hover:-translate-y-0.5"
