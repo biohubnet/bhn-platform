@@ -519,6 +519,20 @@ function NavLink({ item, pathname, onNavigate }: {
     };
   }, [pos !== null]);
 
+  // Route-change cleanup. Without this, the classic "stuck tooltip"
+  // bug fires: click a link → Next.js client-navigates with no
+  // movement of the cursor → new page renders under the stationary
+  // pointer → browser never emits a mouseleave because no movement
+  // occurred → state stays set → tooltip lingers. Forcing hide() on
+  // every pathname change makes it impossible for a tooltip to
+  // survive a navigation.
+  useEffect(() => {
+    hide();
+    // hide() is stable enough for this — the next render uses the
+    // closed-over instance and we don't want a re-attach loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   const tooltipId = `navtip-${item.href.replace(/[^a-z0-9]/gi, "_")}`;
 
   return (
@@ -529,6 +543,10 @@ function NavLink({ item, pathname, onNavigate }: {
         onClick={() => { hide(); onNavigate?.(); }}
         onMouseEnter={showSoon}
         onMouseLeave={hide}
+        // pointerleave is the modern pointer-events equivalent; some
+        // hybrid (mouse-plus-touch) browsers fire one but not the
+        // other, so we listen for both as a belt-and-suspenders.
+        onPointerLeave={hide}
         onFocus={showNow}
         onBlur={hide}
         aria-current={active ? "page" : undefined}
