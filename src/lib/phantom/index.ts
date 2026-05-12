@@ -175,6 +175,12 @@ export async function deletePhantom(userId: string): Promise<{ ok: boolean; reas
     await tx.workshopBooking.deleteMany({ where: { userId } });
     await tx.registration.deleteMany({ where: { userId } });
     await tx.electronicSignature.deleteMany({ where: { signerId: userId } });
+    // PathwayEnrollment.userId carries no Prisma relation (legacy
+    // schema oversight) so Postgres doesn't cascade on user.delete.
+    // Wipe explicitly; otherwise demo phantoms leave dangling
+    // pending-request rows that render as "No name / —" in
+    // /admin/enrollments after a clear-all.
+    await tx.pathwayEnrollment.deleteMany({ where: { userId } });
     // Postings + downstream applicants for phantom employers.
     await tx.internshipPosting.deleteMany({ where: { createdById: userId } });
     // Everything else cascades from User onDelete: Cascade.
