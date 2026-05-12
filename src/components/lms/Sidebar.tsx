@@ -158,7 +158,7 @@ const adminOverview: NavItem = {
 // items at a glance — both in the sidebar and in nav-history.
 const adminEngageItems: NavItem[] = [
   { label: "Manage enrollments",        href: "/admin/enrollments",         icon: ClipboardList, minRole: "admin",
-    description: "Enrollments across all courses. Filter by status / course / trainee; manually enroll or withdraw." },
+    description: "Overview of course + pathway enrollment health. Per-course and per-pathway stats, top items by enrollment, pending pathway requests. Sub-pages: course-enrollments list, new-enrollment workflow, pathway-enrollment queue." },
   { label: "Groups",                    href: "/admin/groups",              icon: UsersRound,   minRole: "admin",
     description: "User groups for batch-assigning courses or pathways. Useful for cohorts and corporate clients." },
   { label: "Credit applications",       href: "/admin/credit-applications", icon: CoinsIcon,    minRole: "admin",
