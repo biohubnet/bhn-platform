@@ -5,6 +5,7 @@ import { getOrSeedForm } from "@/lib/forms/registry";
 import type { FormField } from "@/lib/forms/types";
 import { EventFormView } from "@/components/forms/EventFormView";
 import { ObioBootcampInfo } from "@/components/forms/content/ObioBootcampInfo";
+import { LeavePoolPanel } from "@/components/talent-pool/LeavePoolPanel";
 
 /**
  * Per-slug marketing/info content rendered ABOVE the registration form.
@@ -130,10 +131,17 @@ export default async function FormPage({
   // so they aren't left guessing about "will I be in the pool?"
   const myReviewState = slug === "talent-application" && mySubmission
     ? {
-        status: (mySubmission as unknown as { reviewStatus: string }).reviewStatus,
-        note: (mySubmission as unknown as { reviewerNote: string | null }).reviewerNote,
+        status:       (mySubmission as unknown as { reviewStatus: string }).reviewStatus,
+        note:         (mySubmission as unknown as { reviewerNote: string | null }).reviewerNote,
+        leftPoolAt:   (mySubmission as unknown as { leftPoolAt: Date | null }).leftPoolAt,
       }
     : null;
+  // Pool membership flags drive the leave panel below.
+  const myInPool =
+    myReviewState !== null &&
+    (myReviewState.status === "approved" || myReviewState.status === "approved_skip_review") &&
+    myReviewState.leftPoolAt === null;
+  const myAlreadyLeft = myReviewState !== null && myReviewState.leftPoolAt !== null;
 
   return (
     <>
@@ -175,6 +183,12 @@ export default async function FormPage({
         previousAt={mySubmission?.createdAt.toISOString() ?? null}
         applicationDefaultsApplied={applicationDefaultsApplied}
       />
+
+      {slug === "talent-application" && myReviewState && (
+        <div className="mt-6">
+          <LeavePoolPanel inPool={myInPool} alreadyLeft={myAlreadyLeft} />
+        </div>
+      )}
     </>
   );
 }

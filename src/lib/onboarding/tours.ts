@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.12d";
+export const TOUR_VERSION = "2026.05.12e";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -515,6 +515,35 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
     cta: { label: "Open Demo workspaces", href: "/admin/demo-workspaces" },
+  },
+  {
+    id: "talent-pool-comments",
+    title: "Comment on talent applications (admin + employer)",
+    body: "The new shared /talent-pool surface lets admins and employers browse approved talent-application submissions and leave private comments on each. Comments stay invisible to the applicant. Commenting is locked until an admin has reviewed + approved the applicant's eligibility — the lock keeps the review gate enforceable across reviewers. Find it under Engage → Experience → Talent pool (admin) or Employer portal → Talent pool.",
+    path: "/talent-pool",
+    placement: "center",
+    roles: ["admin", "superadmin", "employer", "instructor"],
+    since: "2026.05.12e",
+    cta: { label: "Open talent pool", href: "/talent-pool" },
+  },
+  {
+    id: "leave-pool-and-exit-survey",
+    title: "You can now leave the talent pool (with an optional exit survey)",
+    body: "On /forms/talent-application, scroll to 'Leave the talent pool'. Pick a reason and either submit the exit survey now or skip and come back later via a one-shot link we'll generate for you. Found a job? Changed direction? Let us know — your feedback shapes the experience for the next cohort.",
+    path: "/forms/talent-application",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    since: "2026.05.12e",
+  },
+  {
+    id: "admin-feedback-dashboard",
+    title: "Aggregated trainee feedback — /admin/feedback",
+    body: "New dashboard under Admin · Platform: total responses, NPS, ratings per dimension, exit-reason breakdown, and individual responses with the full text answers + follow-up opt-in state. Mint single-use feedback-invitation links from the same page — useful for following up with someone who left without filling the inline survey, or running an out-of-band NPS check.",
+    path: "/admin/feedback",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.12e",
+    cta: { label: "Open feedback dashboard", href: "/admin/feedback" },
   },
   {
     id: "pathway-cohorts",

@@ -52,6 +52,7 @@ import {
   Rocket,
   Palette,
   Ghost,
+  MessageSquare,
 } from "lucide-react";
 
 interface NavItem {
@@ -136,6 +137,8 @@ const employerItems: (NavItem & { labelKey: string })[] = [
     description: "Postings you've published. Edit, pause, or close them; track applicant counts inline." },
   { label: "Applicants",        labelKey: "nav.employerApplicants", href: "/employer/applicants", icon: Users2,
     description: "Candidates who've applied to your postings. Filter by skill, shortlist, schedule interviews." },
+  { label: "Talent pool",       labelKey: "nav.talentPool",         href: "/talent-pool",         icon: Users,
+    description: "Browse approved talent-application members. View full applications and leave comments (visible to admins + employers, never to the applicant). Commenting unlocks only after admin approves the applicant's eligibility." },
 ];
 
 // Admin menu, mirrored after the user-facing ENGAGE / EXPERIENCE
@@ -187,6 +190,8 @@ const adminExperienceItems: NavItem[] = [
     description: "Time-limited demo workspaces for prospective partners. Auto-cleanup after expiry." },
   { label: "Showcase Trainee",    href: "/admin/showcases",           icon: Sparkles,     minRole: "admin",
     description: "Single global advanced-trainee demo account — completed coursework, both merch tiers earned, full profile, scheduled interviews. For sales calls and training-team demos." },
+  { label: "Talent pool",         href: "/talent-pool",               icon: Users,        minRole: "admin",
+    description: "Approved talent-application members — same surface employers see, with full submission data + comment threads. Use this to coordinate with employer reviewers." },
 ];
 
 // PLATFORM — operating the platform itself: who has access, what
@@ -197,6 +202,8 @@ const adminPlatformItems: NavItem[] = [
     description: "Executive dashboard tracking go-live status — % ready, days to launch, decisions needed, top risks, detailed checklist by phase. Auto-detects what's done." },
   { label: "Phantom users",       href: "/admin/phantom-users",       icon: Ghost,       minRole: "admin",
     description: "Spawn throwaway test accounts for a day. Enroll them in courses, register them for events, exercise admin queues — they auto-delete when their TTL expires (hourly sweep)." },
+  { label: "Feedback",            href: "/admin/feedback",            icon: MessageSquare, minRole: "admin",
+    description: "Aggregated exit-survey responses from trainees leaving the talent pool — NPS, per-dimension ratings, reason breakdown, individual responses. Plus mint feedback-invitation links to send out of band." },
   { label: "Theme proposals",     href: "/admin/theme-proposals",     icon: Palette,     minRole: "admin",
     description: "Trainee-submitted theme ideas + aggregated vote totals. Review queue with one-click actions for review / build / ship / decline. Ship+bounty issues a tier-3 MerchReward." },
   { label: "Inbox",               href: "/admin/inbox",               icon: Inbox,       minRole: "admin",

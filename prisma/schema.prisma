@@ -183,6 +183,15 @@ model User {
   themeProposals         ThemeProposal[] @relation("ThemeProposals")
   reviewedThemeProposals ThemeProposal[] @relation("ThemeProposalReviewer")
 
+  // ── Application-comment + feedback relations ──
+  // Admin / employer comments authored on talent-application
+  // submissions; the talent-pool exit-survey row when they leave;
+  // any feedback invites issued or received.
+  applicationComments     ApplicationComment[]   @relation("ApplicationCommentAuthor")
+  poolExitFeedback        PoolExitFeedback[]     @relation("PoolExitFeedbackUser")
+  feedbackInvitesReceived FeedbackInvitation[]   @relation("FeedbackInvitationUser")
+  feedbackInvitesSent     FeedbackInvitation[]   @relation("FeedbackInvitationInvitedBy")
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -538,7 +547,20 @@ model EventFormSubmission {
   /// Free-text reviewer note shown to the applicant when status
   /// changes (e.g. "Need supervisor letter" or rejection reason).
   reviewerNote String?
+  /// User-driven exit from the talent pool. Set when an approved
+  /// applicant chooses to leave. Pairs with leftPoolReason +
+  /// (optionally) a PoolExitFeedback row. A submission with
+  /// leftPoolAt set is hidden from employer-facing talent-pool
+  /// views even if reviewStatus is approved. Re-submission flips
+  /// it back to null on save.
+  leftPoolAt    DateTime?
+  /// found_job | career_change | not_relevant | platform_quality |
+  /// found_elsewhere | other
+  leftPoolReason String?
   createdAt    DateTime  @default(now())
+
+  comments     ApplicationComment[]
+  exitFeedback PoolExitFeedback?
 
   @@index([formId, createdAt])
   @@index([email])
@@ -546,6 +568,119 @@ model EventFormSubmission {
   /// Supports the talent-pool admin queue: "pending submissions
   /// for the talent-application form, oldest first."
   @@index([formId, reviewStatus, createdAt])
+  /// Supports "active talent-pool members" — approved AND
+  /// haven't left.
+  @@index([formId, reviewStatus, leftPoolAt])
+}
+
+/// Admin- or employer-authored comment on a talent-application
+/// submission. Commenting is gated behind the submission's
+/// reviewStatus reaching "approved" (or "approved_skip_review") —
+/// the intent is to keep employers from advancing a candidate
+/// through review-side conversations before the eligibility check
+/// passes.
+model ApplicationComment {
+  id           String   @id @default(cuid())
+  submissionId String
+  authorId     String
+  /// admin | superadmin | employer | instructor — captured at write
+  /// time so the comment renders with role context even if the
+  /// author's role later changes. Trainees can't comment via this
+  /// model (their input lives on the submission's own form data).
+  authorRole   String
+  body         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  submission EventFormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  author     User                @relation("ApplicationCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  /// Supports "comments for this submission, oldest first" (thread).
+  @@index([submissionId, createdAt])
+  /// Supports "every comment by this employer" admin view.
+  @@index([authorId, createdAt])
+}
+
+/// Exit survey response when a trainee leaves the talent pool.
+/// One-to-one with EventFormSubmission so re-submitting after a
+/// leave (i.e. coming back) doesn't accumulate stale exit rows —
+/// re-entering the pool clears the old leftPoolAt and the old
+/// PoolExitFeedback gets superseded on the next leave.
+model PoolExitFeedback {
+  id            String   @id @default(cuid())
+  submissionId  String   @unique
+  userId        String
+  /// Echoes EventFormSubmission.leftPoolReason for analytics
+  /// convenience. The canonical value is on the submission.
+  reason        String
+  /// All scale ratings 1-10 (0 means "not answered" — UI treats
+  /// "not answered" as nullable but we store as nullable Int for
+  /// aggregations).
+  helpfulness        Int?
+  partnerQuality     Int?
+  platformExperience Int?
+  communicationFreq  Int?
+  /// Net Promoter Score 0-10 (industry-standard scale).
+  npsScore           Int?
+  foundJob           Boolean  @default(false)
+  /// Where they found the job, if applicable (free text).
+  jobSource          String?
+  /// Free-text fields — the qualitative half of the survey.
+  whatWorkedWell     String?
+  whatToImprove      String?
+  additionalComments String?
+  /// Whether the BHN team may follow up with this person for
+  /// further insights. Off by default; respects post-departure
+  /// preference.
+  allowFollowUp      Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  submission EventFormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  user       User                @relation("PoolExitFeedbackUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Supports "all feedback ordered by recency" admin dashboard view.
+  @@index([createdAt])
+  /// Supports "feedback bucket by reason" stacked-bar / pie chart.
+  @@index([reason, createdAt])
+}
+
+/// Open-ended feedback invitation — admin-issued or auto-issued
+/// (e.g. when a user leaves the pool, we mint one of these so the
+/// exit survey can be filled later if they skipped at the time).
+/// Token is single-use; on submit it flips to consumed.
+model FeedbackInvitation {
+  id          String   @id @default(cuid())
+  /// Single-use opaque token used in the public /feedback/[token]
+  /// URL. 128-bit hex generated server-side; never reused.
+  token       String   @unique
+  /// User the invite was sent to. If null, this is a "general"
+  /// invite that anyone with the link can submit against — used
+  /// for the auto-leave path where we don't want to require login
+  /// before they share a quick rating.
+  userId      String?
+  /// Who minted the invite. Null for system-issued (auto-on-leave).
+  invitedById String?
+  /// found_job | exit_survey | post_completion | nps_check | custom
+  /// Drives which question set the form shows; we keep the set
+  /// configurable in code rather than DB for now.
+  kind        String   @default("exit_survey")
+  /// Optional preface admin can add when issuing the invite.
+  message     String?
+  expiresAt   DateTime
+  /// Set when the invitation has been used. Null while pending.
+  consumedAt  DateTime?
+  /// FK back to the resulting feedback row when consumed.
+  feedbackId  String?
+  createdAt   DateTime @default(now())
+
+  user      User? @relation("FeedbackInvitationUser",       fields: [userId],      references: [id], onDelete: SetNull)
+  invitedBy User? @relation("FeedbackInvitationInvitedBy",  fields: [invitedById], references: [id], onDelete: SetNull)
+
+  /// Supports "all pending invites I sent" admin filter.
+  @@index([invitedById, createdAt])
+  /// Supports "is this token still valid?" lookup on the public
+  /// /feedback/[token] route.
+  @@index([token, expiresAt])
 }
 
 model Course {
