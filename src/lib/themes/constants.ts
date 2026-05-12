@@ -24,6 +24,7 @@ export const VALID_THEME_IDS = [
   "retro8bit",
   "salty",
   "chilli",
+  "greenwood",
   // Limited-time
   "sakura",
 ] as const;

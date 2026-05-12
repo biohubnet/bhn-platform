@@ -22,6 +22,7 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
   retro8bit:  ["#1a0d2e", "#ff4dff", "#00ffff"],
   salty:      ["#fbfdfd", "#2e4750", "#8aa3ad"],
   chilli:     ["#240e0a", "#ff6b3d", "#ffeacf"],
+  greenwood:  ["#f7faf2", "#456224", "#c6a449"],
 };
 
 // Each theme picks its own corner-roundness for the swatch, mirroring
@@ -40,6 +41,7 @@ const SWATCH_RADIUS: Record<ThemeId, string> = {
   retro8bit:  "0px",
   salty:      "12px",
   chilli:     "10px",
+  greenwood:  "14px",
 };
 
 function Swatch({ id, size = 24 }: { id: ThemeId; size?: number }) {

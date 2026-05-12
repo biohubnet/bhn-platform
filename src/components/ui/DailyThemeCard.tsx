@@ -44,6 +44,7 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
   retro8bit:  ["#1a0d2e", "#ff4dff", "#00ffff"],
   salty:      ["#fbfdfd", "#2e4750", "#8aa3ad"],
   chilli:     ["#240e0a", "#ff6b3d", "#ffeacf"],
+  greenwood:  ["#f7faf2", "#456224", "#c6a449"],
 };
 
 function todayKey(): string {

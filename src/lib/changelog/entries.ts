@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "New theme: Greenwood — a walk through deep forest",
+    body: "Fourteenth theme, sits under Flavours alongside Salty and Chilli. Mossy sage-cream parchment surfaces, fern-green CTAs (bg-brand-600 with white text passes AAA at 7.8:1), deep-humus body text, and a dashboard hero gradient that reads like looking up at the canopy at golden hour — deep emerald base with a shaft of sunlight breaking through and a sunlit leaf-edge corner. Tailwind's saturated tints (rose / amber / sky) are tamped so state surfaces harmonise instead of fighting the moss-and-bark palette; emerald rides alongside the brand ramp. Calm, organic, alive — the antidote to office-tech grey. Try it from the theme picker.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Events admin: full attendee operations — edit, cancel, resend email, manage workshops, bulk actions",
     body: "Major upgrade to /admin/events/[slug]/registrations and a new per-attendee detail page. The registrations table now supports row selection with a sticky bulk-action bar (check in selected · clear check-in · cancel · reinstate), inline check-in toggle per row, and a •••• menu per row for opening the detail page, resending the confirmation email, or cancelling/reinstating without leaving the table. A new 'Has note' filter chip surfaces every attendee with an admin annotation. Clicking an attendee name opens the new detail page at /registrations/[rid] — a full dossier with: identity + status header; top-level action buttons (check in / cancel + reinstate / resend email); a sectioned editor for every editable Registration field (attendee type · status · payment status · symposium-day toggle · dietary · accessibility); a new admin-note field for VIP / press / speaker flags (internal-only, never shown to the registrant); a workshop manager that lists every active booking with one-tap cancellation (with waitlist promotion) and an inline 'book another for them' picker that respects the 2-cap and capacity rules; and a read-only view of their symposium breakout picks + QR token. Cancelling a registration cascade-cancels every active workshop booking they hold and promotes waitlisters into the freed spots, all in one transaction; reinstating doesn't auto-restore the bookings, so admins consciously re-book if needed. Resend email regenerates from current state, so it reflects any admin changes (e.g. workshops booked on their behalf).",
     kind: "feature",

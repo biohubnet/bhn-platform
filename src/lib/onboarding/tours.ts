@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.11d";
+export const TOUR_VERSION = "2026.05.12a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -515,6 +515,14 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
     cta: { label: "Open Demo workspaces", href: "/admin/demo-workspaces" },
+  },
+  {
+    id: "greenwood-theme",
+    title: "New theme — Greenwood",
+    body: "Open the theme picker (bottom-left of the sidebar) and look under Flavours. Greenwood is a forest-inspired light theme: mossy sage-cream surfaces, fern-green CTAs, deep-humus text, and a dashboard hero that reads like looking up at the canopy at golden hour. Calm, organic, easy on the eyes — try it for a session before you commit.",
+    placement: "center",
+    since: "2026.05.12a",
+    cta: { label: "Try Greenwood", href: "/dashboard?try-theme=greenwood" },
   },
   {
     id: "events-admin-attendee-ops",

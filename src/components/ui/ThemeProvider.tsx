@@ -28,6 +28,7 @@ export const THEMES = [
   { id: "retro8bit",  name: "Retro 8-bit", description: "NES boss screen — magenta + cyan on CRT-purple, scanlines, pixel font", category: "flavour" },
   { id: "salty",      name: "Salty",      description: "Sea-fog and weathered driftwood — coastal calm", category: "flavour" },
   { id: "chilli",     name: "Chilli",     description: "Charred earth + paprika flame — warm, bold, spicy dark mode", category: "flavour" },
+  { id: "greenwood",  name: "Greenwood",  description: "A walk through deep forest — mossy parchment, fern-green CTAs, canopy-and-sunlight hero", category: "flavour" },
 
   // Limited-time / seasonal.
   {

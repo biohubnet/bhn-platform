@@ -1180,6 +1180,96 @@ body {
 [data-theme="chilli"] .text-sky-700     { color: #88c5d4; }
 [data-theme="chilli"] .text-sky-800     { color: #b8dfe9; }
 
+/* ───── Greenwood — a walk through deep forest. Mossy parchment
+ *  surfaces with chlorophyll undertones, fern-green CTAs, deep
+ *  humus text, canopy-and-sunlight hero. Calm, organic, alive —
+ *  the antidote to office-tech grey. Light variant; pair with the
+ *  flavours' atmospheric tradition (salty / coldbrew / icecream).
+ *  ───── */
+[data-theme="greenwood"] {
+  --popover-bg: #e3ead8;
+  --bg:        #eef1ea;           /* sage-cream parchment */
+  --bg-mesh:
+    radial-gradient(at 12% 16%, rgba(120, 160, 90, 0.08) 0px, transparent 55%),
+    radial-gradient(at 86% 14%, rgba(180, 200, 130, 0.10) 0px, transparent 50%),
+    radial-gradient(at 26% 90%, rgba(80, 130, 70, 0.08) 0px, transparent 50%),
+    radial-gradient(at 78% 88%, rgba(200, 170, 80, 0.06) 0px, transparent 55%);
+  --card:      rgba(248, 251, 240, 0.92);
+  --card-solid: #f7faf2;          /* inner-leaf cream */
+  --elevated:  #e1e8d5;           /* young moss */
+  --raised:    #d0d9c1;           /* older moss */
+  --fg:        #1f2a1a;           /* humus — deep forest floor */
+  --fg-muted:  #4d5a44;           /* damp bark */
+  --fg-subtle: #7e8d72;           /* lichen grey-green */
+  --line:      rgba(31, 42, 26, 0.10);
+  --line-strong: rgba(31, 42, 26, 0.20);
+  --backdrop:  rgba(31, 42, 26, 0.42);
+
+  /* Brand: fern → deep-forest ramp. brand-600 is the CTA — white-on-
+   * #456224 reads ~7.8:1 (AAA). brand-50 stays leaf-tinted so cards
+   * using bg-brand-50 blend with the page parchment. */
+  --brand-50:  #eaf1de;
+  --brand-100: #d6e4be;
+  --brand-200: #b8cf94;
+  --brand-300: #94b569;
+  --brand-400: #759a48;
+  --brand-500: #5d7f33;
+  --brand-600: #456224;
+  --brand-700: #36501c;
+  --brand-800: #283c14;
+  --brand-900: #1c2a0d;
+
+  /* Soft, hand-rounded radii — like river stones and rounded leaves.
+   * Matches the organic feel without going playful. */
+  --radius-sm: 10px;
+  --radius:    14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Hero — looking up through the canopy at golden hour. Deep emerald
+   * base, mid-canopy fern, a shaft of sunlight breaking through, and
+   * a sunlit leaf-edge corner. Reads as "I am in a forest", not
+   * "this is a website with green on it". */
+  --hero-bg:     #1f3a1e;
+  --hero-mesh-1: #6f9151;
+  --hero-mesh-2: #c6a449;
+  --hero-mesh-3: #2a4a22;
+  --hero-mesh-4: #8ba85b;
+}
+
+/* Tame Tailwind's saturated tints so rose-* / amber-* / sky-* tints
+ * harmonise with the moss-and-bark palette instead of fighting it.
+ * Emerald stays close to the brand ramp — it's already at home. */
+[data-theme="greenwood"] {
+  --color-rose-50:    rgba(140, 80, 70, 0.10);
+  --color-rose-100:   rgba(140, 80, 70, 0.18);
+  --color-rose-200:   rgba(140, 80, 70, 0.26);
+  --color-amber-50:   rgba(180, 140, 60, 0.10);
+  --color-amber-100:  rgba(180, 140, 60, 0.18);
+  --color-amber-200:  rgba(180, 140, 60, 0.26);
+  --color-emerald-50: rgba(80, 130, 70, 0.10);
+  --color-emerald-100:rgba(80, 130, 70, 0.18);
+  --color-emerald-200:rgba(80, 130, 70, 0.26);
+  --color-sky-50:     rgba(90, 130, 110, 0.10);
+  --color-sky-100:    rgba(90, 130, 110, 0.16);
+}
+
+/* Lift deep-state text colours so they read on the moss-tinted tint
+ * surfaces above. Rose drifts toward rosehip, amber toward honey,
+ * emerald toward deep-forest, sky toward riverstone. */
+[data-theme="greenwood"] .text-rose-700    { color: #8a4438; }
+[data-theme="greenwood"] .text-rose-800    { color: #6e362c; }
+[data-theme="greenwood"] .text-rose-900    { color: #582921; }
+[data-theme="greenwood"] .text-amber-700   { color: #876820; }
+[data-theme="greenwood"] .text-amber-800   { color: #6b5118; }
+[data-theme="greenwood"] .text-amber-900   { color: #523e12; }
+[data-theme="greenwood"] .text-emerald-700 { color: #3d6d34; }
+[data-theme="greenwood"] .text-emerald-800 { color: #2e5527; }
+[data-theme="greenwood"] .text-emerald-900 { color: #21401c; }
+[data-theme="greenwood"] .text-sky-700     { color: #46706b; }
+[data-theme="greenwood"] .text-sky-800     { color: #355751; }
+[data-theme="greenwood"] .text-sky-900     { color: #28433f; }
+
 /* ───── Retro 8-bit — NES boss screen meets CRT phosphor. Dark
  *  CRT-purple canvas, pure 8-bit magenta brand, sharp pixel edges
  *  (radii 0-3 px), monospace pixel font, scanline overlay across
@@ -1527,6 +1617,22 @@ body {
   --heading-weight: 500;
   --heading-transform: none;
   --popover-shadow: 0 0 0 1px rgba(143, 200, 220, 0.24), 0 24px 60px rgba(0, 8, 14, 0.70);
+}
+
+/* Greenwood — calm humanist sans with dappled-leaf shadows (gently
+ * green-tinted so cards feel lit by sunlight filtered through a
+ * canopy rather than fluorescent office light). Mid-weight headings
+ * with humanist tracking — relaxed, not corporate. */
+[data-theme="greenwood"] {
+  --font-sans-theme: "Inter", system-ui, sans-serif;
+  --font-display-theme: var(--font-sans-theme);
+  --body-features: "ss01", "cv11";
+  --surface-shadow: 0 4px 16px rgba(50, 80, 30, 0.08), 0 1px 3px rgba(50, 80, 30, 0.05);
+  --surface-border: 1px solid rgba(50, 80, 30, 0.10);
+  --heading-tracking: -0.012em;
+  --heading-weight: 550;
+  --heading-transform: none;
+  --popover-shadow: 0 16px 40px rgba(50, 80, 30, 0.18), 0 2px 6px rgba(50, 80, 30, 0.08);
 }
 
 /* Wire the body + headings to the active theme's tokens. */
