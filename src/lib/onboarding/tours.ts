@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.12a";
+export const TOUR_VERSION = "2026.05.12b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -515,6 +515,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",
     cta: { label: "Open Demo workspaces", href: "/admin/demo-workspaces" },
+  },
+  {
+    id: "phantom-users",
+    title: "Phantom users — spawn-and-forget test accounts",
+    body: "Open Administration → Platform → Phantom users. Spawn up to 50 throwaway accounts in a batch (trainee / evaluating / employer / instructor) — each gets a plausible name + phantom-xxxx@bhn.test email + one-click magic-token sign-in. Trainees start with 200 credits so they can enroll in courses immediately. Use them in Manage Enrollments, event registrations, internship pipeline — anywhere a real user works. They auto-delete when their TTL expires (default 24 h, hourly cron sweep). No cleanup to remember.",
+    path: "/admin/phantom-users",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.12b",
+    cta: { label: "Open phantom users", href: "/admin/phantom-users" },
   },
   {
     id: "greenwood-theme",

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Beaker, Sparkles, Users } from "lucide-react";
+import { Beaker, Sparkles, Users, Ghost } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -18,7 +18,7 @@ interface UserRow {
   _count: { enrollments: number; certificates: number };
 }
 
-const VALID_KINDS = ["real", "sandbox", "demo"] as const;
+const VALID_KINDS = ["real", "sandbox", "demo", "phantom"] as const;
 type Kind = (typeof VALID_KINDS)[number];
 
 export default async function AdminUsersPage({
@@ -58,9 +58,10 @@ export default async function AdminUsersPage({
       prisma.user.count({ where: { accountKind: "real" } }),
       prisma.user.count({ where: { accountKind: "sandbox" } }),
       prisma.user.count({ where: { accountKind: "demo" } }),
+      prisma.user.count({ where: { accountKind: "phantom", demoExpiresAt: { gt: new Date() } } }),
     ]),
   ]);
-  const [realCount, sandboxCount, demoCount] = kindCounts;
+  const [realCount, sandboxCount, demoCount, phantomCount] = kindCounts;
 
   return (
     <div className="space-y-6">
@@ -79,6 +80,7 @@ export default async function AdminUsersPage({
         <Tab href="/admin/users?kind=real"     active={kind === "real"}     icon={Users}    label="Real"     count={realCount} />
         <Tab href="/admin/users?kind=sandbox"  active={kind === "sandbox"}  icon={Beaker}   label="Sandbox"  count={sandboxCount} tone="cyan" />
         <Tab href="/admin/users?kind=demo"     active={kind === "demo"}     icon={Sparkles} label="Demo"     count={demoCount}    tone="violet" />
+        <Tab href="/admin/users?kind=phantom"  active={kind === "phantom"}  icon={Ghost}    label="Phantom"  count={phantomCount} tone="amber" />
       </div>
 
       {kind === "sandbox" && (
@@ -89,6 +91,11 @@ export default async function AdminUsersPage({
       {kind === "demo" && (
         <div className="bg-violet-50 border border-violet-200 text-violet-900 rounded-lg px-3 py-2 text-xs">
           These are time-limited demo workspace accounts. Manage them from <Link href="/admin/demo-workspaces" className="font-semibold underline">/admin/demo-workspaces</Link>.
+        </div>
+      )}
+      {kind === "phantom" && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg px-3 py-2 text-xs">
+          These are ephemeral test accounts that auto-delete after their TTL. Spawn + manage them from <Link href="/admin/phantom-users" className="font-semibold underline">/admin/phantom-users</Link>.
         </div>
       )}
 
@@ -105,11 +112,12 @@ function Tab({
   icon: React.ElementType;
   label: string;
   count: number;
-  tone?: "cyan" | "violet";
+  tone?: "cyan" | "violet" | "amber";
 }) {
   const activeBorder =
     tone === "cyan"   ? "border-cyan-600 text-cyan-700"
   : tone === "violet" ? "border-violet-600 text-violet-700"
+  : tone === "amber"  ? "border-amber-600 text-amber-700"
                       : "border-brand-600 text-brand-700";
   return (
     <Link

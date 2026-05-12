@@ -51,6 +51,7 @@ import {
   Gift,
   Rocket,
   Palette,
+  Ghost,
 } from "lucide-react";
 
 interface NavItem {
@@ -194,6 +195,8 @@ const adminExperienceItems: NavItem[] = [
 const adminPlatformItems: NavItem[] = [
   { label: "Launch Readiness",    href: "/admin/launch-readiness",    icon: Rocket,      minRole: "admin",
     description: "Executive dashboard tracking go-live status — % ready, days to launch, decisions needed, top risks, detailed checklist by phase. Auto-detects what's done." },
+  { label: "Phantom users",       href: "/admin/phantom-users",       icon: Ghost,       minRole: "admin",
+    description: "Spawn throwaway test accounts for a day. Enroll them in courses, register them for events, exercise admin queues — they auto-delete when their TTL expires (hourly sweep)." },
   { label: "Theme proposals",     href: "/admin/theme-proposals",     icon: Palette,     minRole: "admin",
     description: "Trainee-submitted theme ideas + aggregated vote totals. Review queue with one-click actions for review / build / ship / decline. Ship+bounty issues a tier-3 MerchReward." },
   { label: "Inbox",               href: "/admin/inbox",               icon: Inbox,       minRole: "admin",

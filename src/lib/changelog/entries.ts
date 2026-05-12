@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Phantom users — spawn-and-forget test accounts that auto-delete in 24 h",
+    body: "New admin tool at /admin/phantom-users (Admin · Platform). Spawn up to 50 throwaway accounts in one batch — trainee, evaluating, employer, or instructor role — each gets a plausible name, a phantom-xxxx@bhn.test email, and a one-click magic-token sign-in. Trainees + evaluating roles start with the standard 200 starter credits so they can enroll in courses immediately. Use them anywhere a real user works: populate Manage Enrollments to test bulk actions, register them for events to test the registrations table, point them at the internship pipeline. They auto-delete when their TTL expires (default 24 h, extendable up to 7 days). An hourly Vercel cron at /api/admin/phantom-users/sweep wipes any expired phantoms — admins don't have to remember cleanup. Cascade-safe deletion handles WorkshopBooking + Registration + ElectronicSignature + InternshipPosting before removing the user. accountKind=\"phantom\" keeps them out of real-user stats and admin filters by default; they get their own count chip on /admin/users so you can see how many are alive at a glance.",
+    kind: "feature",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
     title: "New theme: Greenwood — a walk through deep forest",
     body: "Fourteenth theme, sits under Flavours alongside Salty and Chilli. Mossy sage-cream parchment surfaces, fern-green CTAs (bg-brand-600 with white text passes AAA at 7.8:1), deep-humus body text, and a dashboard hero gradient that reads like looking up at the canopy at golden hour — deep emerald base with a shaft of sunlight breaking through and a sunlit leaf-edge corner. Tailwind's saturated tints (rose / amber / sky) are tamped so state surfaces harmonise instead of fighting the moss-and-bark palette; emerald rides alongside the brand ramp. Calm, organic, alive — the antidote to office-tech grey. Try it from the theme picker.",
     kind: "feature",

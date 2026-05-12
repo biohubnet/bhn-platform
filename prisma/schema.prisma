@@ -47,7 +47,7 @@ model User {
   /// /admin/newsletter. Null = not yet exported. Filtered against this
   /// to only show new sign-ups in the export view.
   newsletterExportedAt   DateTime?
-  /// Account category: "real" | "sandbox" | "demo" | "showcase".
+  /// Account category: "real" | "sandbox" | "demo" | "showcase" | "phantom".
   ///   sandbox  — admin's personal play pair (one employer + one trainee
   ///              per admin). Never auto-deletes.
   ///   demo     — time-limited demo workspace claimed by a prospective
@@ -59,10 +59,18 @@ model User {
   ///              earned merch rewards, full job profile (resume +
   ///              1-min video + elevator pitch), scheduled
   ///              interviews. Refreshable; never expires.
+  ///   phantom  — ephemeral test trainee/employer spawned by an admin
+  ///              for one-day testing (e.g. populate the Manage
+  ///              Enrollments page with throwaway rows). Cleaned up
+  ///              when demoExpiresAt < NOW() by the phantom sweeper —
+  ///              separate cleanup path from demos so the two volumes
+  ///              don't tangle. Default TTL 24 h, admin-extendable.
   /// All admin counts and stats default to filtering for "real" only.
   accountKind            String    @default("real")
-  /// Set on demo accounts; the cleanup sweeper deletes the user + all
-  /// owned rows once this passes. Null on real and sandbox accounts.
+  /// Set on demo + phantom accounts; the respective sweepers delete the
+  /// user + all owned rows once this passes. Null on real, sandbox,
+  /// and showcase accounts. (Name kept for backwards compatibility —
+  /// the field is effectively a generic "auto-delete after" timestamp.)
   demoExpiresAt          DateTime?
   /// Set on sandbox + demo accounts; tracks the admin who minted them
   /// so the admin sees their own sandboxes first in the panel.
