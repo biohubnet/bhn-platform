@@ -9,6 +9,7 @@ import { UnverifiedEmailBanner } from "@/components/auth/UnverifiedEmailBanner";
 import { Onboarding } from "@/components/onboarding/Onboarding";
 import { PageTranslator } from "@/components/translation/PageTranslator";
 import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
+import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
 
 /**
  * /events layout. Two modes:
@@ -88,6 +89,7 @@ export default async function EventsLayout({ children }: { children: React.React
         </div>
         <Onboarding />
         <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
+        <NavHighlightOverlay />
       </div>
     );
   }

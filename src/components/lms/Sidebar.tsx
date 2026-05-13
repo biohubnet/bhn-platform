@@ -557,12 +557,18 @@ function NavLink({ item, pathname, onNavigate }: {
   }, [item.href]);
 
   const tooltipId = `navtip-${item.href.replace(/[^a-z0-9]/gi, "_")}`;
+  // Stable data-attribute selector for the NavHighlightOverlay so a
+  // guide-page pill can locate "the sidebar copy of this href" even
+  // when the same href appears elsewhere on the page (e.g. inside a
+  // <NavHighlight> pill that the user is hovering).
+  const navDataAttr = item.href;
 
   return (
     <>
       <Link
         ref={linkRef}
         href={item.href}
+        data-sidebar-nav-href={navDataAttr}
         onClick={() => { hide(); onNavigate?.(); }}
         onMouseEnter={showSoon}
         onMouseLeave={hide}
