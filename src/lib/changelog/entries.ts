@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Apply now — unified application flow on every posting",
+    body: "Every internship posting now has a prominent Apply now button at the top of the page, regardless of what contact details the employer provided. Click → modal opens → three rendered paths chosen by what the posting carries:\n\n• Posting has a contact email: prefilled mail-client flow (subject + greeting + your elevator pitch + resume / video URLs). Your optional cover note is appended to the body.\n• Posting has only a website: opens the employer's apply page in a new tab and records the application on BHN so it appears on Application Tracker.\n• Posting has neither: 'Express interest' — captures your cover note as the application record so the BHN team can route it to the employer.\n\nIn every case the same /api/internships/[id]/apply call lands an ApplicationStatus row at status='new'. Your application shows up on Application Tracker immediately; the employer's kanban inherits the row whether they applied via email, web, or BHN-routed.\n\nReplaces the previous ApplyButtonClient, which was buried inside the contact box and only rendered when contactEmail was present — so a third of the postings had no apply control at all.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "EXPERIENCE program guide — flow chart + sidebar-syncing mentions",
     body: "New page at /experience walks trainees through the full EXPERIENCE program: build your application materials in Application Builder, submit to the talent pool via Talent Application, browse Internship Opportunities, watch progress in Application Tracker, and find scheduled interviews on Interviews. Two-track flow chart shows the journey end-to-end with one branching node (admin review) and a parallel pool-track vs. self-apply-track split.\n\nMain trick: every mention of a sidebar item in the guide is a NavHighlight pill — hover or focus the pill, and the matching nav row in the sidebar pulses amber so you can find that control without hunting. Same mechanism wraps each flow-chart node, so hovering 'Talent Application' in the diagram lights up Talent Application in the menu.\n\nSidebar gains a 'Program guide' entry at the top of EXPERIENCE pointing to /experience. Compass icon, brand tone.",
     kind: "feature",

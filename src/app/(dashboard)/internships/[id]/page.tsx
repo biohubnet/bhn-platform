@@ -24,7 +24,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  Briefcase, MapPin, Clock, Calendar, DollarSign, ExternalLink, ArrowLeft,
+  Briefcase, MapPin, Clock, Calendar, DollarSign, ArrowLeft,
   Pencil, Globe, Mail, User, Phone,
 } from "lucide-react";
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
@@ -34,7 +34,7 @@ import { scoreMatch } from "@/lib/skills/ontology";
 import { PostingMatchPanel } from "@/components/lms/PostingMatchPanel";
 import { PostingActions } from "@/components/lms/PostingActions";
 import { PostingDetailsMarkdown } from "@/components/lms/PostingDetailsMarkdown";
-import { ApplyButtonClient } from "@/components/lms/ApplyButtonClient";
+import { ApplyDialog } from "@/components/lms/ApplyDialog";
 
 export const dynamic = "force-dynamic";
 
@@ -153,6 +153,22 @@ export default async function InternshipDetailPage({
             <div className="flex items-center gap-2 shrink-0">
               {posting.status === "draft" && <Badge tone="warning">Draft</Badge>}
               {posting.status === "closed" && <Badge tone="neutral">Closed</Badge>}
+              {/* Always-visible primary Apply CTA — surfaces the
+                  apply path the moment the trainee lands on the
+                  page, regardless of whether the posting has a
+                  contactEmail, a website, or neither. */}
+              {!isStaff && userId && posting.status === "active" && (
+                <ApplyDialog
+                  postingId={posting.id}
+                  postingTitle={posting.title}
+                  companyName={posting.companyName}
+                  contactEmail={posting.contactEmail}
+                  contactName={posting.contactName}
+                  websiteUrl={fmtUrl}
+                  trainee={myArtifacts}
+                  alreadyApplied={!!statusRow}
+                />
+              )}
               {!isStaff && userId && (
                 <PostingActions
                   postingId={posting.id}
@@ -250,27 +266,10 @@ export default async function InternshipDetailPage({
               )}
             </div>
 
-            {!isStaff && userId && posting.contactEmail && (
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <ApplyButtonClient
-                  postingId={posting.id}
-                  contactEmail={posting.contactEmail}
-                  contactName={posting.contactName}
-                  postingTitle={posting.title}
-                  companyName={posting.companyName}
-                  trainee={myArtifacts}
-                  alreadyApplied={!!statusRow}
-                />
-                <p className="text-xs text-muted">
-                  Opens your email client with a pitch + resume link pre-filled. We&apos;ll
-                  also mark this posting as applied on{" "}
-                  <Link href="/profile/applications" className="underline hover:no-underline text-brand-700">
-                    My applications
-                  </Link>
-                  .
-                </p>
-              </div>
-            )}
+            {/* The Apply CTA lives in the page header so it's the
+                first thing the trainee sees. This contact box stays
+                read-only — name / email / phone for direct outreach
+                if the trainee prefers to skip the prefilled flow. */}
           </div>
         )}
 
@@ -280,29 +279,10 @@ export default async function InternshipDetailPage({
           <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle mb-3">Position details</p>
           <PostingDetailsMarkdown content={posting.positionDetails} />
 
-          {/* Fallback "Apply on company site" link, shown when there's
-              no contactEmail to use for the in-app flow but we DO have
-              a website. */}
-          {!posting.contactEmail && fmtUrl && (
-            <div className="mt-8 pt-6 border-t border-line">
-              <a
-                href={fmtUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm px-5 py-3 rounded-lg shadow-md transition-colors"
-              >
-                Apply on company site <ExternalLink size={14} />
-              </a>
-              <p className="text-xs text-muted mt-2">
-                This posting doesn&apos;t list a contact email yet — apply through their website
-                and use{" "}
-                <Link href="/profile/application" className="underline hover:no-underline text-brand-700">
-                  My Application
-                </Link>{" "}
-                to grab your resume + pitch first.
-              </p>
-            </div>
-          )}
+          {/* No standalone fallback CTA here — the unified
+              ApplyDialog in the page header handles every case
+              (email / website-only / no-contact-at-all) through one
+              modal flow. */}
         </div>
       </article>
     </div>
