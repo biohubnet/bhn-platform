@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import {
   BookOpen, Award, Clock, TrendingUp, Layers, Coins, ArrowRight,
-  GraduationCap, Sparkles, Calendar,
+  GraduationCap, Sparkles, Calendar, Briefcase, Compass,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
@@ -278,108 +278,112 @@ export default async function DashboardPage() {
         </Link>
       )}
 
-      {/* Hero — bold full-bleed welcome with drifting organic blobs */}
-      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-10 hero-mesh-brand">
-        {/* Drifting blobs */}
+      {/* ─── HERO ────────────────────────────────────────────────────
+          Magazine-style greeting + a one-line statement of what
+          BioHubNet actually is. The point of leading with "what is
+          BHN" rather than just "Hi, name" is that a returning user
+          should still be reminded of the platform's purpose every
+          time they land here — it's a network, not just a course
+          catalogue. The personalised hint about in-progress courses
+          slots underneath the identity line, so it's the second
+          thing the eye lands on. */}
+      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-8 hero-mesh-brand">
         <div className="absolute inset-0 pointer-events-none">
           <div className="blob-shape blob-soft drift" style={{ width: 560, height: 560, top: -200, left: -160 }} />
           <div className="blob-shape blob-soft drift-slow" style={{ width: 700, height: 700, bottom: -300, right: -200, opacity: 0.55 }} />
           <div className="blob-shape drift" style={{ width: 320, height: 320, top: "20%", left: "58%", opacity: 0.35 }} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-20">
-          <div className="grid md:grid-cols-[2fr_1fr] gap-10 md:gap-14 items-end">
-            <div>
-              <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
-                <Sparkles size={12} />
-                {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-              </span>
-              <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.05] mt-3">
-                Hi, <span className="gradient-text">{firstName}</span>.
-              </h1>
-              <GreetingTagline tone="dark" />
-              <p className="mt-5 text-white/90 leading-relaxed max-w-xl text-lg">
-                {inProgress > 0
-                  ? `You have ${inProgress} course${inProgress === 1 ? "" : "s"} in progress. Pick up where you left off.`
-                  : completed > 0
-                    ? `You've completed ${completed} course${completed === 1 ? "" : "s"}. Keep the streak going.`
-                    : "Browse the catalog or jump into a training pathway to get started."}
-              </p>
-              <div className="mt-7 flex flex-wrap items-center gap-3">
-                <Link
-                  href={inProgress > 0 ? "/my-courses" : "/courses"}
-                  className="inline-flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-6 py-3 organic-card shadow-lg shadow-brand-900/30 transition-all hover:-translate-y-0.5"
-                >
-                  {inProgress > 0 ? "Continue learning" : "Browse courses"} <ArrowRight size={16} />
-                </Link>
-                <Link
-                  href="/pathways"
-                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/25 text-white hover:bg-white/20 text-sm font-semibold px-6 py-3 organic-card-alt transition-colors"
-                >
-                  <Layers size={16} /> Explore pathways
-                </Link>
-              </div>
-            </div>
-
-            {/* Side stat panel — organic-cornered tiles */}
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { icon: BookOpen,    label: "Enrolled",     value: enrollments.length, alt: false },
-                { icon: Clock,       label: "In progress",  value: inProgress,         alt: true },
-                { icon: TrendingUp,  label: "Completed",    value: completed,          alt: true },
-                { icon: Award,       label: "Certificates", value: certificates,       alt: false },
-              ].map((s, i) => {
-                const Icon = s.icon;
-                return (
-                  <div
-                    key={s.label}
-                    className={`bg-white/10 backdrop-blur border border-white/20 px-4 py-3.5 ${(i % 2 === 0) ? "organic-card" : "organic-card-alt"}`}
-                  >
-                    <div className="flex items-center gap-2 text-white/75 text-[11px] uppercase tracking-wider">
-                      <Icon size={12} /> {s.label}
-                    </div>
-                    <p className="text-3xl font-bold mt-1">{s.value}</p>
-                  </div>
-                );
-              })}
-            </div>
+        <div className="relative max-w-7xl mx-auto px-6 pt-16 pb-14">
+          <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
+            <Sparkles size={12} />
+            {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+          </span>
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.05] mt-3">
+            Hi, <span className="gradient-text">{firstName}</span>.
+          </h1>
+          <GreetingTagline tone="dark" />
+          <p className="mt-5 text-white/90 leading-relaxed max-w-3xl text-lg">
+            <strong className="text-white">BioHubNet</strong> is Canada&apos;s biomanufacturing training
+            network — a single platform that wires Ontario HQP from their first course
+            all the way to their first industry placement.{" "}
+            <span className="text-white/75">
+              {inProgress > 0
+                ? `You have ${inProgress} course${inProgress === 1 ? "" : "s"} in progress.`
+                : completed > 0
+                  ? `You've completed ${completed} course${completed === 1 ? "" : "s"} so far.`
+                  : "Start with a course, or skip ahead to the talent pool."}
+            </span>
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Link
+              href={inProgress > 0 ? "/my-courses" : "/courses"}
+              className="inline-flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-6 py-3 organic-card shadow-lg shadow-brand-900/30 transition-all hover:-translate-y-0.5"
+            >
+              {inProgress > 0 ? "Continue learning" : "Browse courses"} <ArrowRight size={16} />
+            </Link>
+            <Link
+              href="/experience"
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/25 text-white hover:bg-white/20 text-sm font-semibold px-6 py-3 organic-card-alt transition-colors"
+            >
+              <Compass size={16} /> How the program works
+            </Link>
           </div>
         </div>
         <div className="curve-down" />
       </section>
 
-      {/* Quick actions row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { href: "/courses", label: "Catalog", icon: BookOpen, tone: "brand" },
-          { href: "/pathways", label: "Pathways", icon: Layers, tone: "violet" },
-          { href: "/certificates", label: "Certificates", icon: Award, tone: "amber" },
-          { href: "/credits", label: `${(user?.credits ?? 0).toLocaleString()} Credits`, icon: Coins, tone: "emerald" },
-        ].map((a) => {
-          const Icon = a.icon;
-          const tones: Record<string, string> = {
-            brand: "from-brand-500 to-brand-700 shadow-brand-600/20",
-            violet: "from-violet-500 to-violet-700 shadow-violet-600/20",
-            amber: "from-amber-400 to-amber-600 shadow-amber-500/20",
-            emerald: "from-emerald-500 to-emerald-700 shadow-emerald-600/20",
-          };
-          return (
-            <Link
-              key={a.href}
-              href={a.href}
-              className="group bg-card border border-line rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-md hover:border-brand-200 transition-all flex items-center gap-3"
-            >
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${tones[a.tone]} text-white flex items-center justify-center shadow-md shrink-0`}>
-                <Icon size={18} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-fg truncate">{a.label}</p>
-                <p className="text-xs text-subtle mt-0.5">Open →</p>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      {/* ─── THE IDEA ────────────────────────────────────────────────
+          Three-pillar explainer. Reads as: this is what we're trying
+          to do here, in plain English. Each card is a clickable
+          jump-off so the page doubles as platform navigation for a
+          returning user who's been away a while. */}
+      <section className="grid md:grid-cols-3 gap-4 -mt-2">
+        <PillarCard
+          icon={BookOpen}
+          label="LEARN"
+          title="Train the craft"
+          body="Self-paced SCORM courses, instructor-led workshops, multi-course pathways that ladder up to a certificate. Pick a single topic from the catalog or commit to a curated journey."
+          href="/courses"
+          ctaLabel="Open the catalog"
+          tone="brand"
+        />
+        <PillarCard
+          icon={Briefcase}
+          label="CONNECT"
+          title="Wire to industry"
+          body="Build a reusable application kit once. Submit to the talent pool. Browse live internship postings from BHN partners. Every conversation tracked in one place."
+          href="/experience"
+          ctaLabel="See how it works"
+          tone="violet"
+        />
+        <PillarCard
+          icon={Coins}
+          label="EARN"
+          title="Train, unlock gear"
+          body="Every credit you spend on coursework counts toward real BHN merch — a swag bag at 2,500, an insulated bottle at 5,000. Pick up at U of T or request mailing."
+          href="/rewards"
+          ctaLabel="See rewards"
+          tone="amber"
+        />
+      </section>
+
+      {/* ─── YOUR NUMBERS ────────────────────────────────────────────
+          Personal stats split out of the hero into a slim row so
+          the hero stays focused on identity + idea. Each tile is
+          one figure, neither over-decorated nor hidden. */}
+      <section>
+        <h2 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
+          Your numbers
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <NumberTile icon={BookOpen}   label="Enrolled"     value={enrollments.length} tone="brand"   />
+          <NumberTile icon={Clock}      label="In progress"  value={inProgress}         tone="amber"   />
+          <NumberTile icon={TrendingUp} label="Completed"    value={completed}          tone="emerald" />
+          <NumberTile icon={Award}      label="Certificates" value={certificates}       tone="violet"  />
+          <NumberTile icon={Coins}      label="Credits"      value={(user?.credits ?? 0)} tone="ember" href="/credits" />
+        </div>
+      </section>
 
       {/* Skill-gap widget — only renders if there are open postings */}
       {openPostings.length > 0 && (
@@ -600,4 +604,85 @@ export default async function DashboardPage() {
       )}
     </div>
   );
+}
+
+// ─── Helper components ───────────────────────────────────────────
+
+/**
+ * One tile of the three-pillar "what BHN actually is" explainer.
+ * Clickable card with a brand-toned icon badge, a label / title /
+ * body, and a CTA arrow that links to the relevant top-level section.
+ */
+function PillarCard({
+  icon: Icon, label, title, body, href, ctaLabel, tone,
+}: {
+  icon: React.ElementType;
+  label: string;
+  title: string;
+  body: string;
+  href: string;
+  ctaLabel: string;
+  tone: "brand" | "violet" | "amber";
+}) {
+  const toneClasses = {
+    brand:  { ring: "hover:border-brand-300",  badge: "from-brand-500 to-brand-700",   text: "text-brand-700",   icon: "shadow-brand-600/30" },
+    violet: { ring: "hover:border-violet-300", badge: "from-violet-500 to-violet-700", text: "text-violet-700",  icon: "shadow-violet-600/30" },
+    amber:  { ring: "hover:border-amber-300",  badge: "from-amber-500 to-amber-600",   text: "text-amber-700",   icon: "shadow-amber-500/30" },
+  }[tone];
+  return (
+    <Link
+      href={href}
+      className={`group bg-card rounded-2xl border border-line p-5 transition-all ${toneClasses.ring} hover:shadow-md hover:-translate-y-0.5 flex flex-col`}
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${toneClasses.badge} text-white flex items-center justify-center shadow-md ${toneClasses.icon} shrink-0`}>
+          <Icon size={18} />
+        </div>
+        <span className={`text-[10px] uppercase tracking-[0.24em] font-bold ${toneClasses.text}`}>
+          {label}
+        </span>
+      </div>
+      <h3 className="text-lg font-bold text-fg tracking-tight">{title}</h3>
+      <p className="text-sm text-muted mt-1.5 leading-relaxed flex-1">{body}</p>
+      <p className={`text-xs font-semibold ${toneClasses.text} mt-3 inline-flex items-center gap-1 opacity-80 group-hover:opacity-100 group-hover:gap-2 transition-all`}>
+        {ctaLabel} <ArrowRight size={12} />
+      </p>
+    </Link>
+  );
+}
+
+/**
+ * Slim numeric tile for the "Your numbers" row. Icon + label + big
+ * number. Optional href to make the whole tile a click-target —
+ * used by the Credits tile so trainees can jump straight to the
+ * credits page where their balance is the actionable surface.
+ */
+function NumberTile({
+  icon: Icon, label, value, tone, href,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: number;
+  tone: "brand" | "amber" | "emerald" | "violet" | "ember";
+  href?: string;
+}) {
+  const toneClass = {
+    brand:   "text-brand-700",
+    amber:   "text-amber-700",
+    emerald: "text-emerald-700",
+    violet:  "text-violet-700",
+    ember:   "text-rose-700",
+  }[tone];
+  const inner = (
+    <div className="bg-card border border-line rounded-2xl px-4 py-3.5 transition-colors hover:border-brand-200">
+      <div className="flex items-center gap-2 text-subtle text-[10px] uppercase tracking-[0.18em] font-bold">
+        <Icon size={11} className={toneClass} /> {label}
+      </div>
+      <p className={`text-3xl font-bold mt-1 font-mono tabular-nums leading-none ${toneClass}`}>
+        {value.toLocaleString()}
+      </p>
+    </div>
+  );
+  if (href) return <Link href={href} className="block">{inner}</Link>;
+  return inner;
 }
