@@ -35,7 +35,10 @@ export function DemoEventsControls() {
   }
 
   async function clear() {
-    if (!window.confirm("Delete every demo event and their registrations? Real events aren't touched.")) return;
+    // No confirm prompt — demo events use the `demo-` slug prefix
+    // and the endpoint refuses to touch real events, so the blast
+    // radius is bounded by definition. Aligns with the rest of the
+    // platform's demo-data buttons (no prompt, fires on first click).
     setBusy("clear");
     setMsg(null);
     try {

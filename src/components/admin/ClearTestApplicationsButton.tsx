@@ -23,9 +23,9 @@ export function ClearTestApplicationsButton() {
   const [, startTransition] = useTransition();
 
   async function run() {
-    if (!confirm("Delete every demo talent-application submission?\n\nThe demo USERS themselves stay (they're reusable for other tests) — only their pool applications are removed. Phantom accounts have their own dedicated 'Clear all phantoms' control; they aren't touched by this button.")) {
-      return;
-    }
+    // No confirm prompt — only demo accounts are touched, the action
+    // is reversible by re-submitting the form, and the platform-wide
+    // convention is that demo-data buttons fire on first click.
     setSubmitting(true); setError(null); setFlash(null);
     try {
       const res = await fetch("/api/admin/talent-pool/clear-test-applications", {

@@ -47,13 +47,11 @@ export function ClearTestDataButton({
   const [, startTransition] = useTransition();
 
   async function run() {
-    const defaultHelp =
-      "Delete every row in this view that belongs to a demo account. " +
-      "The accounts themselves stay (they're reusable for other tests). " +
-      "Phantom accounts have their own dedicated 'Clear all phantoms' control " +
-      "and aren't touched by this button.";
-    if (!confirm(helpText ?? defaultHelp)) return;
-
+    // No confirm prompt — Clear-demo only touches demo-account rows,
+    // the action is reversible with a Seed press, and the platform-
+    // wide convention is that demo-data buttons fire on first click.
+    // (`helpText` survives as a tooltip / changelog hint, not as a
+    // modal blocker.)
     setSubmitting(true); setError(null); setFlash(null);
     try {
       const res = await fetch("/api/admin/clear-test-data", {
@@ -92,7 +90,7 @@ export function ClearTestDataButton({
         onClick={() => startTransition(() => { void run(); })}
         disabled={submitting}
         className="admin-glow inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 px-3 py-1.5 ring-1 ring-inset ring-rose-200 rounded-lg disabled:opacity-50"
-        title="Delete demo rows in this view. Users are kept."
+        title={helpText ?? "Delete demo rows in this view. Users are kept."}
       >
         <Trash2 size={12} />
         {submitting ? "Clearing…" : label}

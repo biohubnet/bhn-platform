@@ -82,10 +82,10 @@ export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) 
   }
 
   async function clear() {
-    const helpDefault =
-      `Delete every ${nounLabel} from demo accounts. ` +
-      "The accounts themselves stay (reusable). Phantoms have their own clear control.";
-    if (!confirm(clearHelp ?? helpDefault)) return;
+    // No confirm prompt — Clear-demo only ever touches rows attached
+    // to demo accounts, the action is reversible with a Seed press,
+    // and the platform-wide convention (set when phantom clears lost
+    // their prompts) is that demo-data buttons fire on first click.
     setBusy("clear");
     setError(null);
     setFlash(null);
@@ -132,6 +132,7 @@ export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) 
         type="button"
         onClick={() => startTransition(() => { void clear(); })}
         disabled={busy !== null}
+        title={clearHelp ?? `Delete every ${nounLabel} from demo accounts. The accounts themselves stay.`}
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-rose-700 bg-rose-50 ring-1 ring-inset ring-rose-200 hover:bg-rose-100 font-semibold disabled:opacity-50 transition-colors"
       >
         <Trash2 size={11} />
