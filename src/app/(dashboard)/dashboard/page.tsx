@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/Badge";
 import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
 import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
-import { GreetingTagline } from "@/components/lms/GreetingTagline";
 import { SkillGapWidget } from "@/components/lms/SkillGapWidget";
 import { DailyThemeCard } from "@/components/ui/DailyThemeCard";
 import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
@@ -209,19 +208,10 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Credit-expiry nudge — auto-hides unless a grant is within 90
-          days of expiry; ramps urgency at 30 and 7 days. Renders above
-          the event banner so time-sensitive credit warnings beat the
-          general "register for the symposium" CTA. */}
+          days of expiry; ramps urgency at 30 and 7 days. Stays above
+          the hero because time-sensitive credit warnings are the one
+          banner urgent enough to read before the hero. */}
       <ExpiringCreditsBanner userId={userId} />
-
-      {/* Upcoming BHN event — Symposium / Training Week. Auto-hides
-          when there's no published event in the future, or registration
-          is closed and the viewer isn't already registered. */}
-      <UpcomingEventBanner userId={userId} />
-
-      {/* Theme of the day — once-per-calendar-day suggestion the
-          trainee can try without committing, then keep if they like it. */}
-      <DailyThemeCard />
 
       {/* Today's review bookmarks — auto-hidden when nothing's due. */}
       <TodaysReviewsCard initial={reviewQueue} />
@@ -279,59 +269,64 @@ export default async function DashboardPage() {
       )}
 
       {/* ─── HERO ────────────────────────────────────────────────────
-          Magazine-style greeting + a one-line statement of what
-          BioHubNet actually is. The point of leading with "what is
-          BHN" rather than just "Hi, name" is that a returning user
-          should still be reminded of the platform's purpose every
-          time they land here — it's a network, not just a course
-          catalogue. The personalised hint about in-progress courses
-          slots underneath the identity line, so it's the second
-          thing the eye lands on. */}
-      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-8 hero-mesh-brand">
+          Compact identity strip — ~1/3 of the previous height.
+          Single-line greeting + the BHN one-liner + CTAs all share
+          one row on desktop. The point is to remind a returning
+          user what BHN is without eating half the screen above the
+          fold. GreetingTagline + the per-state status copy got
+          folded into the body line so the hero is one short
+          paragraph plus actions. */}
+      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-5 hero-mesh-brand">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="blob-shape blob-soft drift" style={{ width: 560, height: 560, top: -200, left: -160 }} />
-          <div className="blob-shape blob-soft drift-slow" style={{ width: 700, height: 700, bottom: -300, right: -200, opacity: 0.55 }} />
-          <div className="blob-shape drift" style={{ width: 320, height: 320, top: "20%", left: "58%", opacity: 0.35 }} />
+          <div className="blob-shape blob-soft drift" style={{ width: 360, height: 360, top: -120, left: -100 }} />
+          <div className="blob-shape blob-soft drift-slow" style={{ width: 420, height: 420, bottom: -200, right: -140, opacity: 0.55 }} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 pt-16 pb-14">
-          <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
-            <Sparkles size={12} />
-            {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-          </span>
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.05] mt-3">
-            Hi, <span className="gradient-text">{firstName}</span>.
-          </h1>
-          <GreetingTagline tone="dark" />
-          <p className="mt-5 text-white/90 leading-relaxed max-w-3xl text-lg">
-            <strong className="text-white">BioHubNet</strong> is Canada&apos;s biomanufacturing training
-            network — a single platform that wires Ontario HQP from their first course
-            all the way to their first industry placement.{" "}
-            <span className="text-white/75">
-              {inProgress > 0
-                ? `You have ${inProgress} course${inProgress === 1 ? "" : "s"} in progress.`
-                : completed > 0
-                  ? `You've completed ${completed} course${completed === 1 ? "" : "s"} so far.`
-                  : "Start with a course, or skip ahead to the talent pool."}
-            </span>
-          </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Link
-              href={inProgress > 0 ? "/my-courses" : "/courses"}
-              className="inline-flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-6 py-3 organic-card shadow-lg shadow-brand-900/30 transition-all hover:-translate-y-0.5"
-            >
-              {inProgress > 0 ? "Continue learning" : "Browse courses"} <ArrowRight size={16} />
-            </Link>
-            <Link
-              href="/experience"
-              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/25 text-white hover:bg-white/20 text-sm font-semibold px-6 py-3 organic-card-alt transition-colors"
-            >
-              <Compass size={16} /> How the program works
-            </Link>
+        <div className="relative max-w-7xl mx-auto px-6 pt-6 pb-5">
+          <div className="flex items-end justify-between gap-5 flex-wrap">
+            <div className="min-w-0">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">
+                <Sparkles size={11} />
+                {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+              </span>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight leading-[1.1] mt-1">
+                Hi, <span className="gradient-text">{firstName}</span>.
+              </h1>
+              <p className="mt-1.5 text-white/85 text-sm max-w-3xl leading-snug">
+                <strong className="text-white">BioHubNet</strong> wires Ontario biomanufacturing HQP
+                from their first course to their first industry placement.{" "}
+                <span className="text-white/75">
+                  {inProgress > 0
+                    ? `${inProgress} in progress.`
+                    : completed > 0
+                      ? `${completed} completed so far.`
+                      : "Start with a course, or skip ahead to the talent pool."}
+                </span>
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Link
+                href={inProgress > 0 ? "/my-courses" : "/courses"}
+                className="inline-flex items-center gap-1.5 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-xs px-4 py-2 organic-card shadow-md shadow-brand-900/30 transition-all hover:-translate-y-0.5"
+              >
+                {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={12} />
+              </Link>
+              <Link
+                href="/experience"
+                className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur border border-white/25 text-white hover:bg-white/20 text-xs font-semibold px-4 py-2 organic-card-alt transition-colors"
+              >
+                <Compass size={12} /> How it works
+              </Link>
+            </div>
           </div>
         </div>
         <div className="curve-down" />
       </section>
+
+      {/* Below-the-hero soft banners (moved here so they don't push
+          the hero down the page). Both auto-hide when not relevant. */}
+      <UpcomingEventBanner userId={userId} />
+      <DailyThemeCard />
 
       {/* ─── THE IDEA ────────────────────────────────────────────────
           Three-pillar explainer. Reads as: this is what we're trying
