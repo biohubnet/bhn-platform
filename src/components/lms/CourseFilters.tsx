@@ -135,27 +135,38 @@ export function CourseFilters({ options }: { options: CourseFilterOptions }) {
         </button>
       </div>
 
-      {/* Three-column grid of filter groups. md+ shows three columns;
-          mobile stacks. Each group is a labelled chip cloud. */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <ChipGroup
-          label="Topic"
-          values={options.topic}
-          selected={selected.topic}
-          onToggle={(v) => toggle("topic", v)}
-        />
-        <ChipGroup
-          label="Delivery"
-          values={options.delivery}
-          selected={selected.delivery}
-          onToggle={(v) => toggle("delivery", v)}
-        />
-        <ChipGroup
-          label="Provider"
-          values={options.provider}
-          selected={selected.provider}
-          onToggle={(v) => toggle("provider", v)}
-        />
+      {/* Three-column grid of filter groups. md+ uses unequal widths
+          so the longest chip cloud (Topic — typically 10+ options) gets
+          the lion's share and the shorter clouds (Delivery, Provider)
+          don't waste a third of the row on whitespace. Mobile stacks
+          to single column. Vertical dividers between sections come
+          from `divide-x` plus a per-column left padding so the chips
+          stay clear of the rule. */}
+      <div className="md:grid md:grid-cols-[1.8fr_1fr_1.3fr] md:divide-x md:divide-line space-y-5 md:space-y-0">
+        <div className="md:pr-5">
+          <ChipGroup
+            label="Topic"
+            values={options.topic}
+            selected={selected.topic}
+            onToggle={(v) => toggle("topic", v)}
+          />
+        </div>
+        <div className="md:px-5">
+          <ChipGroup
+            label="Delivery"
+            values={options.delivery}
+            selected={selected.delivery}
+            onToggle={(v) => toggle("delivery", v)}
+          />
+        </div>
+        <div className="md:pl-5">
+          <ChipGroup
+            label="Provider"
+            values={options.provider}
+            selected={selected.provider}
+            onToggle={(v) => toggle("provider", v)}
+          />
+        </div>
       </div>
     </section>
   );

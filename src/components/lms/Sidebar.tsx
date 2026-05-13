@@ -303,11 +303,13 @@ const TONE_STYLES: Record<SectionTone, ToneStyles> = {
     hover:     "focus:bg-amber-200 group-hover/section:bg-amber-200 transition-colors",
   },
   electric: {
-    // Soft sky — Administration. Still its own colour family so admin
-    // reads as different from learner sections, but no longer shouts.
-    container: "border-sky-200/70 bg-sky-50/25",
-    chip:      "text-sky-800 bg-sky-100 ring-1 ring-inset ring-sky-200/70 shadow-sm",
-    hover:     "focus:bg-sky-200 group-hover/section:bg-sky-200 transition-colors",
+    // Soft sky — Administration. Tinted just-enough-stronger than the
+    // ENGAGE / EXPERIENCE sections so the privileged territory reads
+    // more obviously as "you're now in admin land" without losing the
+    // clean palette.
+    container: "border-sky-300 bg-sky-100/60 ring-1 ring-inset ring-sky-200/60",
+    chip:      "text-sky-900 bg-sky-200 ring-1 ring-inset ring-sky-300 shadow-sm",
+    hover:     "focus:bg-sky-300 group-hover/section:bg-sky-300 transition-colors",
   },
 };
 
@@ -478,9 +480,11 @@ function NavLink({ item, pathname, onNavigate }: {
   // popover escapes the sidebar <nav>'s overflow-y-auto box (which
   // would otherwise clip anything past the right edge), and we
   // recompute the link's screen-space rect on scroll/resize while
-  // the tooltip is visible. Hover has a 350ms warm-up to avoid
-  // flickering as the cursor scans the list; keyboard focus is
-  // instant (assistive-tech users actively chose to land here).
+  // the tooltip is visible. Hover has a 1.2 s warm-up — long enough
+  // that the tooltip doesn't fire when the cursor merely passes
+  // through, but short enough to feel responsive when someone
+  // actually stops on a row. Keyboard focus is still instant
+  // (assistive-tech users actively chose to land here).
   const linkRef = useRef<HTMLAnchorElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -493,7 +497,7 @@ function NavLink({ item, pathname, onNavigate }: {
   function showSoon() {
     if (!hasTooltip) return;
     if (showTimer.current) clearTimeout(showTimer.current);
-    showTimer.current = setTimeout(place, 350);
+    showTimer.current = setTimeout(place, 1200);
   }
   function showNow() {
     if (!hasTooltip) return;

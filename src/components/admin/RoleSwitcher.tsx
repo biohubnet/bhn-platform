@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Check, ChevronDown } from "lucide-react";
+import { Eye, Check, ChevronDown, User, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TARGETS: { id: string; label: string; description: string }[] = [
@@ -10,6 +10,15 @@ const TARGETS: { id: string; label: string; description: string }[] = [
   { id: "employer",   label: "Employer HR", description: "Industry partner posting jobs" },
   { id: "instructor", label: "Instructor",  description: "Course author tools" },
   { id: "admin",      label: "Admin",       description: "Full admin minus superadmin" },
+];
+
+/** Quick-switch shortcuts surfaced inline beside the main "View as"
+ *  dropdown — one tap toggles between the named role and the user's
+ *  real superadmin seat. These are the two most-frequent preview
+ *  jumps, so admins shouldn't have to open a popover for them. */
+const QUICK: { id: string; short: string; icon: React.ElementType; title: string }[] = [
+  { id: "trainee",  short: "T",  icon: User,      title: "Quick switch · Trainee ↔ Superadmin" },
+  { id: "employer", short: "HR", icon: Building2, title: "Quick switch · Employer HR ↔ Superadmin" },
 ];
 
 interface Props {
@@ -58,30 +67,66 @@ export function RoleSwitcher({ actingAs }: Props) {
     }
   }
 
+  /** Quick-switch toggle: if we're already viewing-as the target,
+   *  flip back to superadmin; otherwise jump straight into it. */
+  async function quickToggle(targetId: string) {
+    if (actingAs === targetId) await stop();
+    else await pick(targetId);
+  }
+
   return (
     <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className={cn(
-          // Single-line layout: "View as" sits in the foreground, the
-          // current actingAs role rides on the right as an inline tag.
-          // Halves the row height vs. the old two-line stack while
-          // still surfacing both pieces of information.
-          "flex items-center gap-2 px-2.5 py-1 w-full rounded-lg text-xs transition-colors",
-          actingAs
-            ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
-            : "hover:bg-elevated text-muted hover:text-fg"
-        )}
-        aria-label="Switch viewing role"
-      >
-        <Eye size={14} className="shrink-0" />
-        <span className="flex-1 text-left font-medium leading-none">View as</span>
-        <span className="text-[10px] uppercase tracking-[0.14em] text-subtle leading-none">
-          {actingAs ?? "superadmin"}
-        </span>
-        <ChevronDown size={11} className={cn("shrink-0 transition-transform", open && "rotate-180")} />
-      </button>
+      <div className="flex items-stretch gap-1">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className={cn(
+            // Main "View as" pill — opens the full dropdown for the
+            // less-common previews (evaluating, instructor, admin).
+            "flex items-center gap-2 px-2.5 py-1 flex-1 rounded-lg text-xs transition-colors",
+            actingAs
+              ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
+              : "hover:bg-elevated text-muted hover:text-fg"
+          )}
+          aria-label="Switch viewing role"
+        >
+          <Eye size={14} className="shrink-0" />
+          <span className="flex-1 text-left font-medium leading-none">View as</span>
+          <span className="text-[10px] uppercase tracking-[0.14em] text-subtle leading-none">
+            {actingAs ?? "superadmin"}
+          </span>
+          <ChevronDown size={11} className={cn("shrink-0 transition-transform", open && "rotate-180")} />
+        </button>
+
+        {/* Quick-switch chips — Trainee + HR. Each one toggles
+            between that role and the user's real superadmin seat,
+            saving a dropdown round-trip for the two most-common
+            preview jumps. Highlighted when active so the admin
+            knows which seat they're in at a glance. */}
+        {QUICK.map((q) => {
+          const Icon = q.icon;
+          const active = actingAs === q.id;
+          return (
+            <button
+              key={q.id}
+              type="button"
+              onClick={() => quickToggle(q.id)}
+              disabled={busy}
+              title={q.title}
+              aria-pressed={active}
+              className={cn(
+                "inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50",
+                active
+                  ? "bg-brand-600 text-white hover:bg-brand-700"
+                  : "bg-elevated text-muted hover:text-fg hover:bg-raised ring-1 ring-inset ring-line",
+              )}
+            >
+              <Icon size={11} className="shrink-0" />
+              {q.short}
+            </button>
+          );
+        })}
+      </div>
 
       {open && (
         <div className="absolute bottom-full left-0 right-0 mb-2 popover p-2 z-30 min-w-[240px] animate-fade-in">
