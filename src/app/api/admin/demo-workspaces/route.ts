@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
   await requireRole("admin");
   const session = await getSession();
   const meId = (session?.user as { id?: string } | undefined)?.id ?? null;
+  const meName = (session?.user as { name?: string | null; email?: string | null } | undefined)?.name
+    ?? (session?.user as { email?: string | null } | undefined)?.email
+    ?? null;
   const body = (await req.json().catch(() => ({}))) as {
     email?: string;
     companyName?: string;
@@ -67,6 +70,10 @@ export async function POST(req: NextRequest) {
       token,
       companyName,
       companyWebsite: body.companyWebsite?.trim() ?? null,
+      // invitedById records the admin who minted the link. The
+      // /admin/demo-workspaces page resolves this id to a name for
+      // the "minted by X" line on each card, so audit-style review
+      // doesn't need to dig into the DB.
       invitedById: meId ?? undefined,
       expiresAt,
       demoMode: true,
@@ -82,6 +89,9 @@ export async function POST(req: NextRequest) {
       companyName: invite.companyName,
       expiresAt: invite.expiresAt,
       claimUrl: `/employer/demo/${invite.token}`,
+      // Echo the minter back so the client can paint "minted by X"
+      // on the freshly-added card without a page reload.
+      mintedBy: meName,
     },
   });
 }

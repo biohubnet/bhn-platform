@@ -18,6 +18,8 @@ interface Invite {
   expiresAt: string;
   createdAt: string;
   usedAt: string | null;
+  /** Friendly name (or email) of the admin who minted this link. */
+  mintedBy: string | null;
 }
 
 interface Active {
@@ -28,6 +30,8 @@ interface Active {
   expiresAt: string | null;
   createdAt: string;
   lastLoginAt: string | null;
+  /** Friendly name (or email) of the admin who created this workspace. */
+  createdBy: string | null;
 }
 
 interface Props {
@@ -43,6 +47,31 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
   const [form, setForm] = useState({ email: "", companyName: "", companyWebsite: "", days: 7 });
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  // Multi-select state for the bulk-delete action. Sets keep the
+  // membership-check fast even at the page's 50-row hard cap.
+  const [selectedInvites, setSelectedInvites] = useState<Set<string>>(() => new Set());
+  const [selectedActive, setSelectedActive] = useState<Set<string>>(() => new Set());
+
+  function toggleInvite(id: string) {
+    setSelectedInvites((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function toggleActive(id: string) {
+    setSelectedActive((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function toggleAllInvites() {
+    setSelectedInvites((prev) => prev.size === invites.length ? new Set() : new Set(invites.map((i) => i.id)));
+  }
+  function toggleAllActive() {
+    setSelectedActive((prev) => prev.size === active.length ? new Set() : new Set(active.map((a) => a.id)));
+  }
 
   function copyLink(token: string) {
     const url = `${window.location.origin}/employer/demo/${token}`;
@@ -72,6 +101,7 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
         expiresAt: j.invite.expiresAt,
         createdAt: new Date().toISOString(),
         usedAt: null,
+        mintedBy: j.invite.mintedBy ?? null,
       }, ...cur]);
       setForm({ email: "", companyName: "", companyWebsite: "", days: 7 });
       setCreating(false);
@@ -124,8 +154,40 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
       }
       setActive([]);
       setInvites([]);
+      setSelectedActive(new Set());
+      setSelectedInvites(new Set());
     } finally { setBusy(false); }
   }
+
+  // Bulk-delete the rows the admin has ticked. Calls the
+  // /api/admin/demo-workspaces/bulk-delete endpoint, then prunes
+  // both local lists by the ids that were sent. Resets selection.
+  async function deleteSelected() {
+    if (selectedInvites.size === 0 && selectedActive.size === 0) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const r = await fetch("/api/admin/demo-workspaces/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employerIds: Array.from(selectedActive),
+          inviteIds:   Array.from(selectedInvites),
+        }),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        setErr(j.error ?? "Couldn't delete selected.");
+        return;
+      }
+      setActive((cur) => cur.filter((a) => !selectedActive.has(a.id)));
+      setInvites((cur) => cur.filter((i) => !selectedInvites.has(i.id)));
+      setSelectedActive(new Set());
+      setSelectedInvites(new Set());
+    } finally { setBusy(false); }
+  }
+
+  const totalSelected = selectedInvites.size + selectedActive.size;
 
   return (
     <div className="space-y-6">
@@ -211,13 +273,56 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
         )}
       </section>
 
+      {/* Sticky bulk-delete bar — appears once any rows are ticked.
+          Single button collapses the two parallel lists (links +
+          active workspaces) into one "delete selected" action. */}
+      {totalSelected > 0 && (
+        <div className="sticky top-2 z-30 rounded-xl bg-rose-50 ring-1 ring-inset ring-rose-200 px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap shadow-md shadow-rose-900/5">
+          <p className="text-sm text-rose-900 font-semibold">
+            {totalSelected} selected
+            <span className="text-xs font-normal text-rose-800/80 ml-2">
+              {selectedInvites.size > 0 && `${selectedInvites.size} link${selectedInvites.size === 1 ? "" : "s"}`}
+              {selectedInvites.size > 0 && selectedActive.size > 0 && " · "}
+              {selectedActive.size > 0 && `${selectedActive.size} workspace${selectedActive.size === 1 ? "" : "s"}`}
+            </span>
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setSelectedInvites(new Set()); setSelectedActive(new Set()); }}
+              disabled={busy}
+              className="text-xs font-medium px-3 py-1.5 rounded-md text-rose-800 hover:bg-rose-100"
+            >
+              Clear selection
+            </button>
+            <button
+              onClick={deleteSelected}
+              disabled={busy}
+              className="admin-glow text-xs font-bold px-3 py-1.5 rounded-md bg-rose-600 text-white hover:bg-rose-700 inline-flex items-center gap-1 disabled:opacity-50"
+            >
+              <Trash2 size={11} /> Delete selected
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Demo links (claimed and not) — magic links are reusable, so
           everything stays here until expiry. */}
       {invites.length > 0 && (
         <section>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-subtle font-semibold mb-2">
-            Demo links · {invites.length}
-          </p>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-subtle font-semibold">
+              Demo links · {invites.length}
+            </p>
+            <label className="text-[11px] text-muted hover:text-fg inline-flex items-center gap-1.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={selectedInvites.size === invites.length && invites.length > 0}
+                onChange={toggleAllInvites}
+                className="accent-rose-600"
+              />
+              Select all
+            </label>
+          </div>
           <div className="space-y-2">
             {invites.map((i) => (
               <DemoLinkCard
@@ -225,6 +330,8 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
                 invite={i}
                 copied={copied === i.token}
                 onCopy={() => copyLink(i.token)}
+                checked={selectedInvites.has(i.id)}
+                onToggle={() => toggleInvite(i.id)}
               />
             ))}
           </div>
@@ -234,9 +341,22 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
       {/* Active demos */}
       <section>
         <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-subtle font-semibold">
-            Active demos · {active.length}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-subtle font-semibold">
+              Active demos · {active.length}
+            </p>
+            {active.length > 0 && (
+              <label className="text-[11px] text-muted hover:text-fg inline-flex items-center gap-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={selectedActive.size === active.length && active.length > 0}
+                  onChange={toggleAllActive}
+                  className="accent-rose-600"
+                />
+                Select all
+              </label>
+            )}
+          </div>
           <div className="flex items-center gap-3">
             <button
               onClick={sweep}
@@ -266,17 +386,40 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
           <div className="space-y-2">
             {active.map((a) => {
               const expiresIn = a.expiresAt ? Math.max(0, Math.floor((new Date(a.expiresAt).getTime() - Date.now()) / (24 * 3600 * 1000))) : 0;
+              const checked = selectedActive.has(a.id);
               return (
-                <div key={a.id} className="bg-card border border-line rounded-xl p-4 flex items-center gap-3 flex-wrap">
+                <div
+                  key={a.id}
+                  className={cn(
+                    "rounded-xl border p-4 flex items-center gap-3 flex-wrap transition-colors",
+                    checked
+                      ? "bg-rose-50/50 border-rose-200"
+                      : "bg-card border-line",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleActive(a.id)}
+                    className="accent-rose-600 shrink-0"
+                    aria-label={`Select ${a.companyName ?? a.email}`}
+                  />
                   <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                     <User size={15} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-fg truncate">{a.companyName ?? a.name ?? a.email}</p>
                     <p className="text-xs text-muted truncate">{a.email}</p>
-                    {a.lastLoginAt && (
-                      <p className="text-[11px] text-subtle mt-0.5">last sign-in {new Date(a.lastLoginAt).toLocaleString()}</p>
-                    )}
+                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                      {a.createdBy && (
+                        <p className="text-[11px] text-subtle inline-flex items-center gap-1">
+                          <User size={10} /> created by {a.createdBy}
+                        </p>
+                      )}
+                      {a.lastLoginAt && (
+                        <p className="text-[11px] text-subtle">last sign-in {new Date(a.lastLoginAt).toLocaleString()}</p>
+                      )}
+                    </div>
                   </div>
                   <p className="text-[11px] text-subtle inline-flex items-center gap-1 shrink-0">
                     <Clock size={11} /> {expiresIn > 0 ? `${expiresIn}d left` : "expired"}
@@ -299,11 +442,13 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
 }
 
 function DemoLinkCard({
-  invite, copied, onCopy,
+  invite, copied, onCopy, checked, onToggle,
 }: {
   invite: Invite;
   copied: boolean;
   onCopy: () => void;
+  checked: boolean;
+  onToggle: () => void;
 }) {
   // The full URL the admin would paste somewhere. Built on the client
   // (window.location.origin isn't available during SSR) so it picks
@@ -314,8 +459,18 @@ function DemoLinkCard({
   }, [invite.token]);
   const expiresIn = Math.max(0, Math.floor((new Date(invite.expiresAt).getTime() - Date.now()) / (24 * 3600 * 1000)));
   return (
-    <div className="bg-card border border-line rounded-xl p-4 space-y-3">
+    <div className={cn(
+      "rounded-xl border p-4 space-y-3 transition-colors",
+      checked ? "bg-rose-50/50 border-rose-200" : "bg-card border-line",
+    )}>
       <div className="flex items-center gap-3 flex-wrap">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onToggle}
+          className="accent-rose-600 shrink-0"
+          aria-label={`Select demo link for ${invite.companyName ?? invite.email}`}
+        />
         <div className="w-9 h-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center shrink-0">
           <Building2 size={15} />
         </div>
@@ -333,6 +488,11 @@ function DemoLinkCard({
             )}
           </div>
           <p className="text-xs text-muted truncate">{invite.email}</p>
+          {invite.mintedBy && (
+            <p className="text-[11px] text-subtle mt-0.5 inline-flex items-center gap-1">
+              <User size={10} /> minted by {invite.mintedBy}
+            </p>
+          )}
         </div>
         <p className="text-[11px] text-subtle inline-flex items-center gap-1 shrink-0">
           <Clock size={11} /> {expiresIn > 0 ? `${expiresIn}d left` : "expires today"}

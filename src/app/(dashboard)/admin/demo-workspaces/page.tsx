@@ -27,11 +27,36 @@ export default async function DemoWorkspacesPage() {
         id: true, email: true, name: true,
         employerCompany: true, demoExpiresAt: true,
         createdAt: true, lastLoginAt: true,
+        createdByAdminId: true,
       },
       orderBy: { createdAt: "desc" },
       take: 50,
     }),
   ]);
+
+  // Resolve the admin who minted each invite + the admin who created
+  // each active workspace, in a single batched lookup so the page
+  // can show "minted by X" / "created by X" cards. We do this here
+  // rather than via Prisma relations because EmployerInvite doesn't
+  // declare an invitedBy relation yet and we don't want a schema
+  // migration just to surface a name.
+  const adminIds = Array.from(new Set([
+    ...invites.map((i) => i.invitedById).filter(Boolean) as string[],
+    ...active.map((a) => a.createdByAdminId).filter(Boolean) as string[],
+  ]));
+  const admins = adminIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: adminIds } },
+        select: { id: true, name: true, email: true },
+      })
+    : [];
+  const adminMap = new Map(admins.map((a) => [a.id, a]));
+  function label(id: string | null | undefined): string | null {
+    if (!id) return null;
+    const u = adminMap.get(id);
+    if (!u) return null;
+    return u.name ?? u.email;
+  }
 
   return (
     <div className="space-y-6">
@@ -55,6 +80,7 @@ export default async function DemoWorkspacesPage() {
           expiresAt: i.expiresAt.toISOString(),
           createdAt: i.createdAt.toISOString(),
           usedAt: i.usedAt?.toISOString() ?? null,
+          mintedBy: label(i.invitedById),
         }))}
         initialActive={active.map((a) => ({
           id: a.id,
@@ -64,6 +90,7 @@ export default async function DemoWorkspacesPage() {
           expiresAt: a.demoExpiresAt?.toISOString() ?? null,
           createdAt: a.createdAt.toISOString(),
           lastLoginAt: a.lastLoginAt?.toISOString() ?? null,
+          createdBy: label(a.createdByAdminId),
         }))}
       />
     </div>
