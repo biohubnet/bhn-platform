@@ -18,16 +18,12 @@ export const THEMES = [
   { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents", category: "classic" },
   { id: "scientific", name: "Scientific", description: "Cool sky-blue, paper-like surfaces", category: "classic" },
   { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic", category: "classic" },
-  { id: "mist",       name: "Mist",       description: "Translucent glass panels in a calm atmosphere — visionOS-inspired", category: "classic" },
   { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black", category: "classic" },
 
   // Flavours — sensory / atmospheric themes.
   { id: "coldbrew",   name: "Cold Brew",  description: "Looking into the cup — dark roast canvas, crema accents, polished-ceramic cards", category: "flavour" },
   { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright", category: "flavour" },
-  { id: "dryice",     name: "Dry Ice",    description: "Frosty fog over deep teal-black — cold, mysterious, dramatic", category: "flavour" },
   { id: "retro8bit",  name: "Retro 8-bit", description: "NES boss screen — magenta + cyan on CRT-purple, scanlines, pixel font", category: "flavour" },
-  { id: "salty",      name: "Salty",      description: "Sea-fog and weathered driftwood — coastal calm", category: "flavour" },
-  { id: "chilli",     name: "Chilli",     description: "Charred earth + paprika flame — warm, bold, spicy dark mode", category: "flavour" },
   { id: "greenwood",  name: "Greenwood",  description: "A walk through deep forest — mossy parchment, fern-green CTAs, canopy-and-sunlight hero", category: "flavour" },
 
   // Limited-time / seasonal.
