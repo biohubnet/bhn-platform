@@ -104,7 +104,7 @@ export default async function AdminAttendeeDetailPage({
     partnerOrganization: b.workshop.partnerOrganization,
     locationName: b.workshop.locationName,
     timeLabel: formatTimeRange(b.workshop.startDateTime, b.workshop.endDateTime, event.timezone),
-    status: b.status as "confirmed" | "waitlist" | "cancelled",
+    status: b.status as "pending" | "confirmed" | "waitlist" | "cancelled",
     waitlistPosition: b.waitlistPosition,
     bookedAt: b.bookedAt.toISOString(),
   }));

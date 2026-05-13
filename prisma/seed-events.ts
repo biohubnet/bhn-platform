@@ -56,6 +56,22 @@ function stableQrToken(eventId: string, userId: string): string {
 }
 
 // ─── Workshops (Oct 27–29) ──────────────────────────────────────
+//
+// Per the symposium tour/workshop policy: every slot defaults to a
+// 20-seat capacity, a 5-spot waitlist, and admin approval — applied
+// here uniformly except where physical capacity caps the room
+// (CL3, BioZone bench-scale bioreactor space).
+const TOUR_DEFAULTS = {
+  /** Hard cap on confirmed seats. Overridable per workshop below. */
+  capacity: 20,
+  /** Hard cap on waitlist length. Once full, the booking endpoint
+   *  returns waitlist_full. */
+  waitlistCapacity: 5,
+  /** Whether new bookings need admin approval before the seat is
+   *  held — symposium policy is `true` by default. */
+  requiresApproval: true,
+} as const;
+
 const WORKSHOPS = [
   {
     id: wsId("obio-bootcamp"),
@@ -75,6 +91,8 @@ const WORKSHOPS = [
     requiresTransport: false,
     departureLocation: null,
     capacity: 30,
+    waitlistCapacity: 5,
+    requiresApproval: true,
     learnMoreUrl: "https://biohubnet.ca/2025-annual-symposium/2025-annual-symposium-and-training-week-obio-bootcamp/",
     displayOrder: 1,
   },
@@ -96,6 +114,8 @@ const WORKSHOPS = [
     requiresTransport: false,
     departureLocation: null,
     capacity: 50,
+    waitlistCapacity: 5,
+    requiresApproval: true,
     learnMoreUrl: "https://biohubnet.ca/?page_id=8134",
     displayOrder: 2,
   },
@@ -116,6 +136,8 @@ const WORKSHOPS = [
     requiresTransport: true,
     departureLocation: "U of T St. George campus",
     capacity: 24,
+    waitlistCapacity: 5,
+    requiresApproval: true,
     learnMoreUrl: "https://biohubnet.ca/aseptic-techniques-and-gdp-workshop",
     displayOrder: 3,
   },
@@ -136,6 +158,8 @@ const WORKSHOPS = [
     requiresTransport: false,
     departureLocation: null,
     capacity: 10,
+    waitlistCapacity: 5,
+    requiresApproval: true,
     learnMoreUrl: "https://biohubnet.ca/toronto-high-containment-facility-cl3-facility-tour/",
     displayOrder: 4,
   },
@@ -156,6 +180,8 @@ const WORKSHOPS = [
     requiresTransport: false,
     departureLocation: null,
     capacity: 10,
+    waitlistCapacity: 5,
+    requiresApproval: true,
     learnMoreUrl: "https://biohubnet.ca/toronto-high-containment-facility-cl3-facility-tour/",
     displayOrder: 5,
   },
@@ -176,6 +202,8 @@ const WORKSHOPS = [
     requiresTransport: false,
     departureLocation: null,
     capacity: 10,
+    waitlistCapacity: 5,
+    requiresApproval: true,
     learnMoreUrl: "https://biohubnet.ca/biozone-bioreactor-workshop/",
     displayOrder: 6,
   },
@@ -196,6 +224,8 @@ const WORKSHOPS = [
     requiresTransport: false,
     departureLocation: null,
     capacity: 10,
+    waitlistCapacity: 5,
+    requiresApproval: true,
     learnMoreUrl: "https://biohubnet.ca/biozone-bioreactor-workshop/",
     displayOrder: 7,
   },
@@ -216,6 +246,8 @@ const WORKSHOPS = [
     requiresTransport: true,
     departureLocation: "U of T St. George campus",
     capacity: 40,
+    waitlistCapacity: 5,
+    requiresApproval: true,
     learnMoreUrl: "https://biohubnet.ca/omniabio-company-tour/",
     displayOrder: 8,
   },
@@ -236,6 +268,8 @@ const WORKSHOPS = [
     requiresTransport: true,
     departureLocation: "U of T St. George campus",
     capacity: 30,
+    waitlistCapacity: 5,
+    requiresApproval: true,
     learnMoreUrl: "https://biohubnet.ca/eurofins-cdmo-alphora-inc-tour/",
     displayOrder: 9,
   },
@@ -703,6 +737,10 @@ async function main() {
         userId: user.id,
         attendeeType: a.attendeeType,
         registrationStatus: "confirmed",
+        // Pre-stamped so the seed-demo attendees show as already
+        // approved in the admin queue (otherwise every seed-run would
+        // pile 5 rows into "pending approval", which is noise).
+        approvedAt: new Date(),
         includesSymposiumDay: true,
         paymentProvider: a.paymentProvider,
         paymentStatus: a.paymentStatus,
@@ -722,18 +760,59 @@ async function main() {
   }
   console.log(`  • ${ATTENDEES.length} demo attendees + Registrations upserted`);
 
-  // 8. Two demo WorkshopBookings — to demonstrate the bookings flow
+  // 8. Demo WorkshopBookings — exercise every status the new flow
+  //    supports: confirmed, waitlist, and the new pending-approval
+  //    state. The latter gives the admin a row to click "Approve" on
+  //    from /admin/events/2025-annual-symposium/registrations/[rid].
+  const seedNow = new Date();
   await prisma.workshopBooking.upsert({
     where: { workshopId_userId: { workshopId: wsId("obio-bootcamp"), userId: attendeeUsers[0].id } },
-    create: { workshopId: wsId("obio-bootcamp"), userId: attendeeUsers[0].id, status: "confirmed" },
-    update: { status: "confirmed", waitlistPosition: null, cancelledAt: null },
+    create: {
+      workshopId: wsId("obio-bootcamp"),
+      userId: attendeeUsers[0].id,
+      status: "confirmed",
+      approvedAt: seedNow,
+    },
+    update: {
+      status: "confirmed",
+      waitlistPosition: null,
+      cancelledAt: null,
+      approvedAt: seedNow,
+    },
   });
   await prisma.workshopBooking.upsert({
     where: { workshopId_userId: { workshopId: wsId("agilis-medical-affairs"), userId: attendeeUsers[1].id } },
-    create: { workshopId: wsId("agilis-medical-affairs"), userId: attendeeUsers[1].id, status: "confirmed" },
-    update: { status: "confirmed", waitlistPosition: null, cancelledAt: null },
+    create: {
+      workshopId: wsId("agilis-medical-affairs"),
+      userId: attendeeUsers[1].id,
+      status: "confirmed",
+      approvedAt: seedNow,
+    },
+    update: {
+      status: "confirmed",
+      waitlistPosition: null,
+      cancelledAt: null,
+      approvedAt: seedNow,
+    },
   });
-  console.log("  • 2 demo WorkshopBookings upserted (OBIO bootcamp, Agilis workshop)");
+  // Demo pending booking — surfaces the admin "Approve" action.
+  await prisma.workshopBooking.upsert({
+    where: { workshopId_userId: { workshopId: wsId("omniabio-tour"), userId: attendeeUsers[3].id } },
+    create: {
+      workshopId: wsId("omniabio-tour"),
+      userId: attendeeUsers[3].id,
+      status: "pending",
+      approvedAt: null,
+    },
+    update: {
+      status: "pending",
+      waitlistPosition: null,
+      cancelledAt: null,
+      approvedAt: null,
+      approvedById: null,
+    },
+  });
+  console.log("  • 3 demo WorkshopBookings upserted (2 confirmed, 1 pending — exercises the admin approval queue)");
 
   // 9. CL3 morning tour — 10 confirmed + 2 waitlist (capacity = 10)
   const cl3UserIds: string[] = [];
@@ -761,6 +840,7 @@ async function main() {
         userId: user.id,
         attendeeType: "trainee",
         registrationStatus: "confirmed",
+        approvedAt: new Date(),
         paymentProvider: "free",
         paymentStatus: "waived",
         amountCents: 0,
@@ -784,11 +864,13 @@ async function main() {
         userId: cl3UserIds[i],
         status: isWaitlist ? "waitlist" : "confirmed",
         waitlistPosition: isWaitlist ? i - 9 : null,
+        approvedAt: seedNow,
       },
       update: {
         status: isWaitlist ? "waitlist" : "confirmed",
         waitlistPosition: isWaitlist ? i - 9 : null,
         cancelledAt: null,
+        approvedAt: seedNow,
       },
     });
   }

@@ -168,12 +168,17 @@ model User {
   // ── Events module relations ──
   // Single-tenant Events module. See models grouped at the bottom of
   // this schema. Adding back-relations here so Prisma can validate.
-  eventRegistrations Registration[]
-  workshopBookings   WorkshopBooking[]
-  personalAgenda     PersonalAgendaEntry[]
-  eventQuestions     SymposiumQuestion[]
-  eventQuestionVotes SymposiumQuestionVote[]
-  eventPollResponses PollResponse[]
+  eventRegistrations       Registration[]
+  workshopBookings         WorkshopBooking[]
+  personalAgenda           PersonalAgendaEntry[]
+  eventQuestions           SymposiumQuestion[]
+  eventQuestionVotes       SymposiumQuestionVote[]
+  eventPollResponses       PollResponse[]
+  // Approver back-relations — populated when this user (an admin)
+  // approves another attendee's Registration or WorkshopBooking out
+  // of `pending`. SetNull on User delete so the audit row survives.
+  approvedRegistrations    Registration[]          @relation("RegistrationApprover")
+  approvedWorkshopBookings WorkshopBooking[]       @relation("WorkshopBookingApprover")
 
   // ── Theme feedback relations ──
   // Per-user theme votes + theme proposals (user-submitted ideas).
@@ -187,10 +192,10 @@ model User {
   // Admin / employer comments authored on talent-application
   // submissions; the talent-pool exit-survey row when they leave;
   // any feedback invites issued or received.
-  applicationComments     ApplicationComment[]   @relation("ApplicationCommentAuthor")
-  poolExitFeedback        PoolExitFeedback[]     @relation("PoolExitFeedbackUser")
-  feedbackInvitesReceived FeedbackInvitation[]   @relation("FeedbackInvitationUser")
-  feedbackInvitesSent     FeedbackInvitation[]   @relation("FeedbackInvitationInvitedBy")
+  applicationComments     ApplicationComment[] @relation("ApplicationCommentAuthor")
+  poolExitFeedback        PoolExitFeedback[]   @relation("PoolExitFeedbackUser")
+  feedbackInvitesReceived FeedbackInvitation[] @relation("FeedbackInvitationUser")
+  feedbackInvitesSent     FeedbackInvitation[] @relation("FeedbackInvitationInvitedBy")
 
   @@index([newsletterStatus, newsletterExportedAt])
 }
@@ -520,15 +525,15 @@ model UserSavedPosting {
 
 /// Individual answer set for an EventForm. `data` is keyed by field id.
 model EventFormSubmission {
-  id        String    @id @default(cuid())
-  formId    String
-  form      EventForm @relation(fields: [formId], references: [id], onDelete: Cascade)
-  data      Json
-  email     String?
-  userId    String?
+  id             String    @id @default(cuid())
+  formId         String
+  form           EventForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  data           Json
+  email          String?
+  userId         String?
   /// Optional FK to User — set null if the user is deleted; submissions
   /// outlive accounts so we keep the row but lose the link.
-  user      User?     @relation("FormSubmitter", fields: [userId], references: [id], onDelete: SetNull)
+  user           User?     @relation("FormSubmitter", fields: [userId], references: [id], onDelete: SetNull)
   /// Review state for talent-pool gating. Default "pending" so any
   /// new submission waits for admin review before becoming visible
   /// in the talent pool / searchable directory. Forms that don't
@@ -541,23 +546,23 @@ model EventFormSubmission {
   ///                  fast-path; same talent-pool membership as
   ///                  "approved" but flagged for audit
   ///   rejected    — admin reviewed + declined
-  reviewStatus String   @default("pending")
-  reviewedBy   String?
-  reviewedAt   DateTime?
+  reviewStatus   String    @default("pending")
+  reviewedBy     String?
+  reviewedAt     DateTime?
   /// Free-text reviewer note shown to the applicant when status
   /// changes (e.g. "Need supervisor letter" or rejection reason).
-  reviewerNote String?
+  reviewerNote   String?
   /// User-driven exit from the talent pool. Set when an approved
   /// applicant chooses to leave. Pairs with leftPoolReason +
   /// (optionally) a PoolExitFeedback row. A submission with
   /// leftPoolAt set is hidden from employer-facing talent-pool
   /// views even if reviewStatus is approved. Re-submission flips
   /// it back to null on save.
-  leftPoolAt    DateTime?
+  leftPoolAt     DateTime?
   /// found_job | career_change | not_relevant | platform_quality |
   /// found_elsewhere | other
   leftPoolReason String?
-  createdAt    DateTime  @default(now())
+  createdAt      DateTime  @default(now())
 
   comments     ApplicationComment[]
   exitFeedback PoolExitFeedback?
@@ -607,12 +612,12 @@ model ApplicationComment {
 /// re-entering the pool clears the old leftPoolAt and the old
 /// PoolExitFeedback gets superseded on the next leave.
 model PoolExitFeedback {
-  id            String   @id @default(cuid())
-  submissionId  String   @unique
-  userId        String
+  id                 String   @id @default(cuid())
+  submissionId       String   @unique
+  userId             String
   /// Echoes EventFormSubmission.leftPoolReason for analytics
   /// convenience. The canonical value is on the submission.
-  reason        String
+  reason             String
   /// All scale ratings 1-10 (0 means "not answered" — UI treats
   /// "not answered" as nullable but we store as nullable Int for
   /// aggregations).
@@ -649,10 +654,10 @@ model PoolExitFeedback {
 /// exit survey can be filled later if they skipped at the time).
 /// Token is single-use; on submit it flips to consumed.
 model FeedbackInvitation {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   /// Single-use opaque token used in the public /feedback/[token]
   /// URL. 128-bit hex generated server-side; never reused.
-  token       String   @unique
+  token       String    @unique
   /// User the invite was sent to. If null, this is a "general"
   /// invite that anyone with the link can submit against — used
   /// for the auto-leave path where we don't want to require login
@@ -663,7 +668,7 @@ model FeedbackInvitation {
   /// found_job | exit_survey | post_completion | nps_check | custom
   /// Drives which question set the form shows; we keep the set
   /// configurable in code rather than DB for now.
-  kind        String   @default("exit_survey")
+  kind        String    @default("exit_survey")
   /// Optional preface admin can add when issuing the invite.
   message     String?
   expiresAt   DateTime
@@ -671,10 +676,10 @@ model FeedbackInvitation {
   consumedAt  DateTime?
   /// FK back to the resulting feedback row when consumed.
   feedbackId  String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
-  user      User? @relation("FeedbackInvitationUser",       fields: [userId],      references: [id], onDelete: SetNull)
-  invitedBy User? @relation("FeedbackInvitationInvitedBy",  fields: [invitedById], references: [id], onDelete: SetNull)
+  user      User? @relation("FeedbackInvitationUser", fields: [userId], references: [id], onDelete: SetNull)
+  invitedBy User? @relation("FeedbackInvitationInvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
 
   /// Supports "all pending invites I sent" admin filter.
   @@index([invitedById, createdAt])
@@ -684,37 +689,37 @@ model FeedbackInvitation {
 }
 
 model Course {
-  id           String   @id @default(cuid())
-  title        String
-  description  String?
-  thumbnail    String?
-  category     String?
-  tags         String?
-  status       String   @default("draft")
-  courseType   String   @default("scorm")
-  passingScore Float    @default(80)
-  maxAttempts  Int      @default(0)
-  duration     Int?
-  creditCost   Float    @default(0)
+  id               String   @id @default(cuid())
+  title            String
+  description      String?
+  thumbnail        String?
+  category         String?
+  tags             String?
+  status           String   @default("draft")
+  courseType       String   @default("scorm")
+  passingScore     Float    @default(80)
+  maxAttempts      Int      @default(0)
+  duration         Int?
+  creditCost       Float    @default(0)
   // Catalog filter facets — see src/lib/courses/filters.ts for the
   // canonical option lists. Free-text so admins can extend later.
-  topic        String? // e.g. "Regulatory Affairs"
-  delivery     String? // "Asynchronous" | "Online" | "In-Person" | "Blended"
-  provider     String? // e.g. "CASTL", "BioTalent Canada"
-  isSpecial    Boolean  @default(false) // Special Programs / Workshops flag
+  topic            String? // e.g. "Regulatory Affairs"
+  delivery         String? // "Asynchronous" | "Online" | "In-Person" | "Blended"
+  provider         String? // e.g. "CASTL", "BioTalent Canada"
+  isSpecial        Boolean  @default(false) // Special Programs / Workshops flag
   /// When true, enrollment creates an Enrollment row with
   /// status="pending" instead of "active". Admins approve / reject
   /// from /admin/enrollments. Defaults to false so existing courses
   /// stay self-serve.
-  requiresApproval Boolean @default(false)
+  requiresApproval Boolean  @default(false)
   /// Admin-controlled catalog display order. Lower numbers render
   /// first; ties fall back to createdAt desc (the previous default).
   /// Admins can drag-reorder tiles on /courses to set this.
-  displayOrder Int @default(0)
-  instructorId String?
-  instructor   User?    @relation("Instructor", fields: [instructorId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  displayOrder     Int      @default(0)
+  instructorId     String?
+  instructor       User?    @relation("Instructor", fields: [instructorId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // AI-generated summary of the course (visible to learners; refreshable by staff).
   aiSummary  String?
@@ -999,26 +1004,26 @@ model Pathway {
 /// computed per cohort, and PathwayEnrollment.cohortId is set on
 /// every new enrollment row.
 model PathwayCohort {
-  id            String   @id @default(cuid())
-  pathwayId     String
+  id                 String    @id @default(cuid())
+  pathwayId          String
   /// URL-safe slug, unique within the pathway (eg. "spring-2026").
-  slug          String
+  slug               String
   /// Human-readable label shown in the picker. "Spring 2026 cohort"
-  name          String
+  name               String
   /// Optional rich-text description shown alongside the cohort
   /// — e.g. "Hybrid format, weekly Wednesdays, in-person retreat
   /// in March". Markdown.
-  description   String?
+  description        String?
   /// Program dates. End is optional for open-ended self-paced cohorts.
-  startDate     DateTime
-  endDate       DateTime?
+  startDate          DateTime
+  endDate            DateTime?
   /// Hard capacity for confirmed seats. Beyond this, applicants
   /// either join the waitlist (if allowWaitlist) or see "full".
-  capacity      Int
+  capacity           Int
   /// Whether confirmed-full means waitlist or hard-stop.
-  allowWaitlist Boolean  @default(true)
+  allowWaitlist      Boolean   @default(true)
   /// Optional waitlist cap. Null = unlimited waitlist.
-  waitlistCapacity Int?
+  waitlistCapacity   Int?
   /// Optional registration window. Null on either side = no bound.
   enrollmentOpensAt  DateTime?
   enrollmentClosesAt DateTime?
@@ -1028,12 +1033,12 @@ model PathwayCohort {
   ///   open      — public; standard rules apply.
   ///   closed    — admin manually closed early.
   ///   archived  — past cohort; visible read-only on detail page.
-  status        String   @default("draft") // draft | open | closed | archived
+  status             String    @default("draft") // draft | open | closed | archived
   /// Sort order when listing cohorts; earliest startDate is usually
   /// fine but admins can pin a particular cohort to top via this.
-  displayOrder  Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  displayOrder       Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   pathway     Pathway             @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
   enrollments PathwayEnrollment[]
@@ -1056,30 +1061,30 @@ model PathwayCourse {
 }
 
 model PathwayEnrollment {
-  id            String    @id @default(cuid())
-  userId        String
-  pathwayId     String
+  id               String         @id @default(cuid())
+  userId           String
+  pathwayId        String
   /// Set when the pathway has cohorts. Null on legacy pre-cohort
   /// enrollments and on enrollments to single-cohort pathways
   /// (which keep using pathway-level fields). The (userId,
   /// pathwayId) uniqueness still applies even with cohorts —
   /// one user, one enrollment per pathway, regardless of cohort.
-  cohortId      String?
+  cohortId         String?
   // pending | approved | rejected | waitlisted | withdrawn | completed
-  status        String    @default("pending")
+  status           String         @default("pending")
   /// 1-indexed waitlist position when status="waitlisted". Null
   /// otherwise. Densely renumbered when an earlier waitlister
   /// cancels.
   waitlistPosition Int?
-  requestReason String?
-  reviewerId    String?
-  reviewerNote  String?
-  reviewedAt    DateTime?
-  enrolledAt    DateTime  @default(now()) // request created
-  approvedAt    DateTime?
-  completedAt   DateTime?
-  pathway       Pathway        @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
-  cohort        PathwayCohort? @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  requestReason    String?
+  reviewerId       String?
+  reviewerNote     String?
+  reviewedAt       DateTime?
+  enrolledAt       DateTime       @default(now()) // request created
+  approvedAt       DateTime?
+  completedAt      DateTime?
+  pathway          Pathway        @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  cohort           PathwayCohort? @relation(fields: [cohortId], references: [id], onDelete: SetNull)
 
   @@unique([userId, pathwayId])
   @@index([pathwayId, status, enrolledAt])
@@ -1116,37 +1121,37 @@ model CreditApplication {
 }
 
 model CreditTransaction {
-  id           String   @id @default(cuid())
-  userId       String
-  amount       Float
-  type         String // credit | debit
-  reason       String // enrollment | refund | admin_grant | initial | expiry
-  courseId     String?
-  balanceAfter Float
-  createdAt    DateTime @default(now())
+  id            String    @id @default(cuid())
+  userId        String
+  amount        Float
+  type          String // credit | debit
+  reason        String // enrollment | refund | admin_grant | initial | expiry
+  courseId      String?
+  balanceAfter  Float
+  createdAt     DateTime  @default(now())
   /// Expiry timestamp for credit grants (rows where type="credit").
   /// Per the BioHubNet ENGAGE policy, awarded credits expire 365 days
   /// from the grant date. Null on debit rows and on legacy pre-policy
   /// grants. The daily credit-expiry sweep deducts expired balances
   /// from User.credits and writes a matching "expiry" debit row for
   /// audit traceability.
-  expiresAt    DateTime?
+  expiresAt     DateTime?
   /// Set by the sweep when this grant's remaining balance was
   /// expired. Null for live grants. Prevents the sweep from
   /// double-expiring the same row.
-  expiredAt    DateTime?
+  expiredAt     DateTime?
   /// How much of the original `amount` has been expired so far.
   /// Tracks the running deduction so partial debits between grant
   /// and expiry are accounted for. 0 for live grants.
-  expiredAmount Float    @default(0)
+  expiredAmount Float     @default(0)
   /// Notification milestones already sent for this grant. Lets the
   /// daily sweep send 90-/30-/7-day-before-expiry warnings without
   /// re-spamming. Null per field = not yet sent.
-  notified90At DateTime?
-  notified30At DateTime?
-  notified7At  DateTime?
+  notified90At  DateTime?
+  notified30At  DateTime?
+  notified7At   DateTime?
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   /// Supports the daily sweep: "find grants past expiresAt that haven't
   /// been expired yet" and "find grants approaching expiry needing
@@ -1580,6 +1585,13 @@ model BhnEvent {
   registrationClosesAt DateTime?
   /// Hotel block / accommodation guidance for attendees. Markdown.
   accommodationInfo    String?
+  /// When true, new symposium-day Registration rows start in
+  /// `pending` status and admins must approve them from
+  /// /admin/events/[slug]/registrations before the spot is held.
+  /// Mirrors Workshop.requiresApproval but at the event level. Set to
+  /// false to allow auto-confirm (e.g. paid-event flows where Stripe
+  /// settlement is the only gate).
+  requiresApproval     Boolean   @default(true)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
@@ -1621,7 +1633,19 @@ model Workshop {
   /// Null unless requiresTransport.
   departureLocation   String?
   /// Hard capacity. Bookings above capacity go to the waitlist.
-  capacity            Int
+  /// Default 20 reflects the standard symposium tour/workshop size.
+  capacity            Int      @default(20)
+  /// Hard cap on the waitlist length. Once both `capacity` confirmed
+  /// AND `waitlistCapacity` waitlisted rows are taken, new booking
+  /// attempts return a `waitlist_full` error and the UI surfaces a
+  /// "waitlist is closed" state. Default 5.
+  waitlistCapacity    Int      @default(5)
+  /// When true, every new WorkshopBooking starts in `pending` status
+  /// and an admin must approve it before the seat is held (or the
+  /// waitlist position is assigned). When false, the legacy
+  /// auto-confirm-or-waitlist behaviour applies. Default true — the
+  /// symposium tours/workshops want admin curation by policy.
+  requiresApproval    Boolean  @default(true)
   /// Optional external page (partner site, host org URL).
   learnMoreUrl        String?
   /// Render order within the event's workshop list.
@@ -1651,17 +1675,27 @@ model WorkshopBooking {
   id               String    @id @default(cuid())
   workshopId       String
   userId           String
-  /// "confirmed" → has a seat. "waitlist" → queued; promoted when a
-  /// confirmed booking cancels. "cancelled" → kept for audit.
-  status           String    @default("confirmed") // confirmed | waitlist | cancelled
+  /// "pending"   → admin hasn't approved yet; no seat held, not counted
+  ///                toward capacity. Default for new bookings whenever
+  ///                the parent Workshop has `requiresApproval=true`.
+  /// "confirmed" → has a seat. Counts toward `Workshop.capacity`.
+  /// "waitlist"  → queued; promoted when a confirmed booking cancels.
+  ///                Counts toward `Workshop.waitlistCapacity`.
+  /// "cancelled" → kept for audit; doesn't count toward anything.
+  status           String    @default("pending") // pending | confirmed | waitlist | cancelled
   /// 1-indexed position when status="waitlist"; null otherwise.
   /// Re-numbered densely on earlier waitlist cancellation.
   waitlistPosition Int?
   bookedAt         DateTime  @default(now())
   cancelledAt      DateTime?
+  /// When the admin moved this row out of `pending` (to confirmed
+  /// or waitlist). Stays null on rows that never required approval.
+  approvedAt       DateTime?
+  approvedById     String?
 
-  workshop Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  approvedBy User?    @relation("WorkshopBookingApprover", fields: [approvedById], references: [id], onDelete: SetNull)
 
   @@unique([workshopId, userId])
   /// Supports the MAX_WORKSHOPS_PER_USER = 2 check at booking time
@@ -1785,11 +1819,18 @@ model Registration {
   /// handling notes, anything the events team wants to remember.
   /// Never shown to the registrant.
   adminNote            String?
+  /// When an admin moved this row out of `pending` to `confirmed`.
+  /// Null while still pending (or on legacy auto-confirmed rows
+  /// migrated in via backfill — those get the row's createdAt to
+  /// match the audit story).
+  approvedAt           DateTime?
+  approvedById         String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  event BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  event      BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  approvedBy User?    @relation("RegistrationApprover", fields: [approvedById], references: [id], onDelete: SetNull)
 
   @@unique([eventId, userId])
   /// Supports the admin attendee list — "show me all confirmed

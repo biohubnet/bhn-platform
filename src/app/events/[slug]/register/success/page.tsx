@@ -9,6 +9,7 @@ import {
   ListChecks,
   Coffee,
   ArrowRight,
+  Hourglass,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -73,12 +74,35 @@ export default async function RegistrationSuccessPage({
       qrToken: true,
       attendeeType: true,
       includesSymposiumDay: true,
+      registrationStatus: true,
       dietaryRestrictions: true,
       accessibilityNeeds: true,
       createdAt: true,
     },
   });
   if (!registration) notFound();
+
+  // Workshop bookings the user holds for this event. Drives:
+  //   • the "pending workshop bookings" notice list
+  //   • the cross-prompt that nudges users to pick a tour/workshop
+  //     when they registered for the symposium but didn't pick any
+  const workshopBookings = await prisma.workshopBooking.findMany({
+    where: {
+      userId,
+      workshop: { eventId: event.id },
+      status: { not: "cancelled" },
+    },
+    select: {
+      id: true,
+      status: true,
+      waitlistPosition: true,
+      workshop: { select: { title: true, kind: true } },
+    },
+    orderBy: { bookedAt: "asc" },
+  });
+  const isRegistrationPending = registration.registrationStatus === "pending";
+  const anyPendingBooking = workshopBookings.some((b) => b.status === "pending");
+  const showApprovalBanner = isRegistrationPending || anyPendingBooking;
 
   // Server-rendered QR. qrcode-svg returns a plain string we inject
   // via dangerouslySetInnerHTML on a wrapper div — there's no XSS
@@ -99,20 +123,112 @@ export default async function RegistrationSuccessPage({
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16 print:py-6 print:max-w-full">
       {/* Confirmation header */}
       <div className="text-center mb-10 print:mb-6">
-        <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-4 print:hidden">
-          <CheckCircle2 size={28} />
+        <div
+          className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 print:hidden ${
+            showApprovalBanner
+              ? "bg-amber-50 text-amber-700"
+              : "bg-emerald-50 text-emerald-700"
+          }`}
+        >
+          {showApprovalBanner ? <Hourglass size={28} /> : <CheckCircle2 size={28} />}
         </div>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-emerald-700 print:hidden">
-          You're registered
+        <p
+          className={`text-[10px] uppercase tracking-[0.22em] font-bold print:hidden ${
+            showApprovalBanner ? "text-amber-700" : "text-emerald-700"
+          }`}
+        >
+          {showApprovalBanner ? "Submitted — pending approval" : "You're registered"}
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold text-fg tracking-tight mt-1.5">
-          {firstName ? `See you in ${event.mainVenueName ?? "Toronto"}, ${firstName}.` : "You're in."}
+          {showApprovalBanner
+            ? firstName
+              ? `Thanks for registering, ${firstName}.`
+              : "Thanks for registering."
+            : firstName
+              ? `See you in ${event.mainVenueName ?? "Toronto"}, ${firstName}.`
+              : "You're in."}
         </h1>
         <p className="text-sm text-muted mt-3 leading-relaxed max-w-md mx-auto">
-          A confirmation email is on its way. Save this page or the email —
-          you'll need the QR for check-in.
+          {showApprovalBanner ? (
+            <>
+              Your request is in the admin queue. We'll email you within 1–2
+              business days once it's approved — your spot is{" "}
+              <span className="font-bold">not guaranteed</span> until then.
+              Save this page in the meantime.
+            </>
+          ) : (
+            <>
+              A confirmation email is on its way. Save this page or the email —
+              you'll need the QR for check-in.
+            </>
+          )}
         </p>
       </div>
+
+      {/* Pending bookings detail strip — when at least one workshop
+          booking is awaiting approval, surface the list explicitly so
+          attendees know which slots they asked for. */}
+      {workshopBookings.length > 0 && (
+        <section className="rounded-2xl bg-card border border-line p-5 mb-6 print:hidden">
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-3 inline-flex items-center gap-1.5">
+            <ListChecks size={11} /> Your tour / workshop picks
+          </p>
+          <ul className="space-y-2">
+            {workshopBookings.map((b) => {
+              const tint =
+                b.status === "pending"
+                  ? "bg-violet-100 text-violet-800 ring-violet-200"
+                  : b.status === "confirmed"
+                    ? "bg-emerald-100 text-emerald-800 ring-emerald-200"
+                    : "bg-amber-100 text-amber-800 ring-amber-200";
+              const label =
+                b.status === "pending"
+                  ? "Pending approval"
+                  : b.status === "waitlist" && b.waitlistPosition !== null
+                    ? `Waitlist #${b.waitlistPosition}`
+                    : "Confirmed";
+              return (
+                <li key={b.id} className="flex items-start justify-between gap-3 text-sm">
+                  <span className="flex-1 min-w-0">
+                    <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mr-1.5">
+                      {b.workshop.kind}
+                    </span>
+                    <span className="text-fg font-semibold">{b.workshop.title}</span>
+                  </span>
+                  <span
+                    className={`shrink-0 inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ring-1 ring-inset ${tint}`}
+                  >
+                    {label}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {/* Cross-prompt: registered for symposium but didn't pick any
+          tour/workshop. Workshops are independent from the symposium
+          registration; the events team specifically wants this nudge
+          to make sure people don't miss the tour opportunity. */}
+      {workshopBookings.length === 0 && registration.includesSymposiumDay && (
+        <Link
+          href={`/events/${slug}/me/workshops`}
+          className="block rounded-2xl bg-brand-50 ring-1 ring-inset ring-brand-200 p-5 mb-6 print:hidden hover:bg-brand-100 transition-colors group"
+        >
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-brand-700">
+            Add a tour or workshop
+          </p>
+          <p className="text-sm font-bold text-fg mt-1">
+            You haven't picked a Training Week tour or workshop yet
+            <ArrowRight size={14} className="inline-block ml-1 text-brand-700 group-hover:translate-x-0.5 transition-transform" />
+          </p>
+          <p className="text-xs text-muted mt-1.5 leading-snug">
+            Tours and workshops have separate 20-seat caps and require
+            admin approval. Pick early — the popular ones fill quickly.
+          </p>
+        </Link>
+      )}
 
       {/* QR + check-in token */}
       <section className="rounded-2xl bg-card border border-line surface-shadow p-6 sm:p-8 mb-6 text-center">

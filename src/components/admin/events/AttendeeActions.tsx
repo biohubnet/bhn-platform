@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CheckCircle2, Circle, XCircle, RotateCcw, Mail, Loader2, AlertCircle, Trash2,
+  CheckCircle2, Circle, XCircle, RotateCcw, Mail, Loader2, AlertCircle, Trash2, Check,
 } from "lucide-react";
 
 /**
@@ -64,6 +64,30 @@ export function AttendeeActions({
       router.refresh();
     } catch (e) {
       setCheckedIn(!desired); // roll back
+      setError((e as Error).message);
+    }
+  }
+
+  async function approveRegistration() {
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/admin/events/${slug}/registrations/${registrationId}/approve`,
+        { method: "POST" },
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        alreadyConfirmed?: boolean;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Approve failed");
+      setStatus("confirmed");
+      setFlashAuto(
+        data.alreadyConfirmed
+          ? "Already confirmed."
+          : "Approved — registration confirmed.",
+      );
+      router.refresh();
+    } catch (e) {
       setError((e as Error).message);
     }
   }
@@ -178,13 +202,27 @@ export function AttendeeActions({
     }
   }
 
+  const pending = status === "pending";
+
   return (
     <div className="flex flex-wrap gap-2 items-start">
+      {pending && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => startTransition(() => { void approveRegistration(); })}
+          title="Approve this pending registration — confirms the symposium-day spot"
+          className="admin-glow inline-flex items-center gap-1.5 text-xs font-bold rounded-xl px-3 py-2 ring-1 ring-inset bg-emerald-600 text-white ring-emerald-500 hover:bg-emerald-700 disabled:opacity-50"
+        >
+          <Check size={12} /> Approve registration
+        </button>
+      )}
+
       <button
         type="button"
-        disabled={busy || cancelled}
+        disabled={busy || cancelled || pending}
         onClick={() => startTransition(() => { void toggleCheckIn(); })}
-        title={cancelled ? "Reinstate registration before checking in." : ""}
+        title={pending ? "Approve registration before checking in." : cancelled ? "Reinstate registration before checking in." : ""}
         className={`inline-flex items-center gap-1.5 text-xs font-bold rounded-xl px-3 py-2 ring-1 ring-inset transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
           checkedIn
             ? "bg-emerald-100 text-emerald-800 ring-emerald-200 hover:bg-emerald-200"

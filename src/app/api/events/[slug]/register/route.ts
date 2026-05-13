@@ -81,6 +81,7 @@ export async function POST(
       timezone: true,
       registrationOpensAt: true,
       registrationClosesAt: true,
+      requiresApproval: true,
     },
   });
   if (!event || event.status !== "published") {
@@ -194,13 +195,24 @@ export async function POST(
   // roll back the registration too, so the user never ends up
   // half-signed-up. Per-workshop results are returned to the client
   // so the success surface can say "1 confirmed, 1 on waitlist".
+  //
+  // Registration starts in `pending` whenever event.requiresApproval
+  // is true — the events team reviews and approves from the admin
+  // queue. Workshop bookings independently honour Workshop.requires
+  // Approval (see bookWorkshopInTx for the per-booking decision).
   type WorkshopBookingOutcome = {
     workshopId: string;
-    status: "confirmed" | "waitlist";
+    status: "pending" | "confirmed" | "waitlist";
     waitlistPosition: number | null;
   };
 
-  let registration: { id: string; qrToken: string };
+  const initialRegistrationStatus = event.requiresApproval ? "pending" : "confirmed";
+
+  let registration: {
+    id: string;
+    qrToken: string;
+    registrationStatus: string;
+  };
   let workshopOutcomes: WorkshopBookingOutcome[] = [];
 
   try {
@@ -210,7 +222,10 @@ export async function POST(
           eventId: event.id,
           userId,
           attendeeType,
-          registrationStatus: "confirmed",
+          registrationStatus: initialRegistrationStatus,
+          // Stamp approvedAt only when we auto-confirm — keeps the
+          // pending-queue admin view honest.
+          approvedAt: initialRegistrationStatus === "confirmed" ? new Date() : null,
           includesSymposiumDay: includesSymposiumDay !== false, // default true
           paymentProvider: "free",
           paymentStatus: "waived",
@@ -220,7 +235,7 @@ export async function POST(
           dietaryRestrictions: clean(dietaryRestrictions, 500),
           accessibilityNeeds: clean(accessibilityNeeds, 1000),
         },
-        select: { id: true, qrToken: true },
+        select: { id: true, qrToken: true, registrationStatus: true },
       });
 
       const outcomes: WorkshopBookingOutcome[] = [];
@@ -267,12 +282,16 @@ export async function POST(
   // Best-effort confirmation email — don't fail the registration if
   // SMTP isn't configured (dev / preview deploys) or if the send
   // itself throws.
+  const isPending = registration.registrationStatus === "pending";
   if (mailConfigured()) {
     const eventDates = formatEventDates(event.startDate, event.endDate, event.timezone);
     const greeting = userName ? `Hi ${userName.split(/\s+/)[0]},` : "Hi,";
 
     const workshopLines = workshopOutcomes.map((o) => {
       const title = titleById.get(o.workshopId) ?? "Workshop";
+      if (o.status === "pending") {
+        return `  • ${title} — request received (pending admin approval)`;
+      }
       return o.status === "confirmed"
         ? `  ✓ ${title} — confirmed`
         : `  • ${title} — waitlisted (position ${o.waitlistPosition ?? "?"})`;
@@ -282,9 +301,16 @@ export async function POST(
       ? `Your workshop picks:\n${workshopLines.join("\n")}\n\n`
       : "";
 
+    const approvalNotice = isPending
+      ? `Your registration is **pending admin approval**. Your spot is not ` +
+        `guaranteed until the BHN events team confirms it — we'll email you ` +
+        `as soon as it's approved (usually within 1–2 business days).\n\n`
+      : "";
+
     const text =
       `${greeting}\n\n` +
-      `You're registered for ${event.title}.\n\n` +
+      `${isPending ? "Thanks for registering for" : "You're registered for"} ${event.title}.\n\n` +
+      approvalNotice +
       `When: ${eventDates}\n` +
       `Where: ${event.mainVenueName ?? "TBA"}` +
       (event.mainVenueAddress ? ` · ${event.mainVenueAddress}` : "") +
@@ -304,7 +330,9 @@ export async function POST(
     try {
       await sendMail({
         to: userEmail,
-        subject: `You're registered for ${event.title}`,
+        subject: isPending
+          ? `Registration received — ${event.title} (pending approval)`
+          : `You're registered for ${event.title}`,
         text,
       });
     } catch (err) {
@@ -317,7 +345,12 @@ export async function POST(
   return NextResponse.json({
     ok: true,
     alreadyRegistered: false,
-    registration: { id: registration.id, qrToken: registration.qrToken },
+    pendingApproval: isPending,
+    registration: {
+      id: registration.id,
+      qrToken: registration.qrToken,
+      registrationStatus: registration.registrationStatus,
+    },
     workshops: workshopOutcomes.map((o) => ({
       workshopId: o.workshopId,
       title: titleById.get(o.workshopId) ?? null,

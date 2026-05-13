@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Loader2, AlertCircle, ArrowRight, ShieldCheck, Clock, MapPin, Users, Bus, Check,
+  Loader2, AlertCircle, ArrowRight, ShieldCheck, Clock, MapPin, Users, Bus, Check, Hourglass,
 } from "lucide-react";
 import { MAX_WORKSHOPS_PER_USER } from "@/lib/events/constants";
 
@@ -16,8 +16,11 @@ export interface WorkshopOption {
   locationName: string | null;
   requiresTransport: boolean;
   capacity: number;
+  waitlistCapacity: number;
   confirmedCount: number;
   waitlistCount: number;
+  pendingCount: number;
+  requiresApproval: boolean;
   timeLabel: string;
   dayKey: string;   // stable ISO date string, for grouping
   dayLabel: string; // human label per day, e.g. "Monday, October 27"
@@ -26,6 +29,14 @@ export interface WorkshopOption {
 interface Props {
   slug: string;
   workshops: WorkshopOption[];
+  /**
+   * When true, the parent BhnEvent has `requiresApproval=true` — the
+   * symposium-day Registration this form creates will land in
+   * `pending` and need admin approval before the spot is held. We
+   * use this to render the prominent pending-approval banner at the
+   * top of the form and adjust button copy.
+   */
+  symposiumRequiresApproval: boolean;
 }
 
 const ATTENDEE_TYPES: { value: string; label: string; description: string }[] = [
@@ -56,7 +67,15 @@ const ATTENDEE_TYPES: { value: string; label: string; description: string }[] = 
  * an existing registration returns the same row and the success
  * page renders normally.
  */
-export function RegistrationForm({ slug, workshops }: Props) {
+export function RegistrationForm({ slug, workshops, symposiumRequiresApproval }: Props) {
+  /**
+   * If ANY picked workshop requires approval — OR the symposium-day
+   * Registration itself requires approval — we surface the pending
+   * banner. This is what the user means by "let registrants know
+   * that their spots are not guaranteed until approved by admin."
+   */
+  const anyApprovalGated = symposiumRequiresApproval ||
+    workshops.some((w) => w.requiresApproval);
   const router = useRouter();
   const [attendeeType, setAttendeeType] = useState<string>("trainee");
   const [includesSymposiumDay, setIncludesSymposiumDay] = useState(true);
@@ -121,6 +140,29 @@ export function RegistrationForm({ slug, workshops }: Props) {
 
   return (
     <form onSubmit={submit} className="space-y-6">
+      {/* Pending-approval notice — the policy ask from the events team:
+          "let registrants know that their spots are not guaranteed until
+          approved by admin." We render this above the form so it's
+          impossible to miss; tone is amber, not rose, because nothing's
+          wrong — it's just the expected workflow. */}
+      {anyApprovalGated && (
+        <div className="rounded-2xl bg-amber-50 ring-1 ring-inset ring-amber-200 p-4 sm:p-5 flex items-start gap-3">
+          <Hourglass size={18} className="text-amber-700 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-amber-900">
+              Your spot is not guaranteed until admin approval
+            </p>
+            <p className="text-xs text-amber-900/85 leading-relaxed mt-1.5">
+              Symposium and tour/workshop slots are limited and curated by the
+              BHN events team. After you submit, your request lands in the
+              admin queue. We'll email you within 1–2 business days once it's
+              approved — at which point your seat is confirmed (or the next
+              waitlist spot is held for you if the slot fills first).
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Attendee type */}
       <fieldset>
         <legend className="text-sm font-bold text-fg mb-3">
@@ -217,10 +259,16 @@ export function RegistrationForm({ slug, workshops }: Props) {
                   {group.items.map((w) => {
                     const picked = pickedWorkshops.has(w.id);
                     const isFull = w.confirmedCount >= w.capacity;
-                    // Disable a card iff we're at cap AND this one isn't
-                    // picked — we still need the picked cards toggleable
-                    // so the user can swap their selections.
-                    const disabled = busy || (atCap && !picked);
+                    const waitlistFull = w.waitlistCount >= w.waitlistCapacity;
+                    // Disable a card iff: (a) we're at cap AND this one
+                    // isn't picked — we still need the picked cards
+                    // toggleable so the user can swap their selections;
+                    // or (b) the workshop AND its waitlist are both full.
+                    // Approval-gated workshops never become "waitlist full"
+                    // at the form layer — pending bookings can stack.
+                    const disabled = busy
+                      || (atCap && !picked)
+                      || (!w.requiresApproval && isFull && waitlistFull && !picked);
                     return (
                       <label
                         key={w.id}
@@ -281,15 +329,32 @@ export function RegistrationForm({ slug, workshops }: Props) {
                             <span className={isFull ? "text-amber-700 font-bold" : ""}>
                               {w.confirmedCount} / {w.capacity}
                             </span>
-                            {isFull && (
-                              <span className="text-amber-700 font-semibold"> · waitlist</span>
+                            {isFull && !waitlistFull && (
+                              <span className="text-amber-700 font-semibold">
+                                {" · waitlist "}{w.waitlistCount}/{w.waitlistCapacity}
+                              </span>
+                            )}
+                            {isFull && waitlistFull && !w.requiresApproval && (
+                              <span className="text-rose-700 font-semibold"> · waitlist full</span>
                             )}
                             {w.waitlistCount > 0 && !isFull && (
-                              <span className="text-amber-700"> · {w.waitlistCount} waiting</span>
+                              <span className="text-amber-700">
+                                {" · "}{w.waitlistCount} waiting
+                              </span>
+                            )}
+                            {w.requiresApproval && w.pendingCount > 0 && (
+                              <span className="text-violet-700">
+                                {" · "}{w.pendingCount} pending
+                              </span>
                             )}
                           </Meta>
                           {w.requiresTransport && (
                             <Meta icon={Bus} picked={picked}>Bus from venue</Meta>
+                          )}
+                          {w.requiresApproval && (
+                            <span className="inline-flex items-center gap-1 text-violet-700 font-semibold">
+                              <Hourglass size={11} /> needs admin approval
+                            </span>
                           )}
                         </dl>
                       </label>
@@ -372,7 +437,11 @@ export function RegistrationForm({ slug, workshops }: Props) {
           className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-md shadow-brand-600/25"
         >
           {busy ? <Loader2 size={14} className="animate-spin" /> : null}
-          {busy ? "Registering…" : "Confirm registration"}
+          {busy
+            ? "Submitting…"
+            : anyApprovalGated
+              ? "Submit for approval"
+              : "Confirm registration"}
           {!busy && <ArrowRight size={14} />}
         </button>
         <span className="text-xs text-subtle">Free for BHN trainees</span>

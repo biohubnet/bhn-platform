@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Clock, MapPin, Users, X, Plus, AlertTriangle, CheckCircle2, AlertCircle,
+  Clock, MapPin, Users, X, Plus, AlertTriangle, CheckCircle2, AlertCircle, Check,
 } from "lucide-react";
 
 export interface BookingRowAdmin {
@@ -14,7 +14,7 @@ export interface BookingRowAdmin {
   partnerOrganization: string | null;
   locationName: string | null;
   timeLabel: string;
-  status: "confirmed" | "waitlist" | "cancelled";
+  status: "pending" | "confirmed" | "waitlist" | "cancelled";
   waitlistPosition: number | null;
   bookedAt: string;
 }
@@ -78,6 +78,35 @@ export function AttendeeWorkshopManager({
         data.promoted
           ? "Cancelled — next waitlister promoted."
           : "Cancelled.",
+      );
+      setTimeout(() => setFlash(null), 3500);
+      router.refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  async function approveBooking(b: BookingRowAdmin) {
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/admin/events/${slug}/registrations/${registrationId}/workshop-bookings/${b.id}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "approve" }),
+        },
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        status?: "confirmed" | "waitlist";
+        waitlistPosition?: number | null;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Approve failed");
+      setFlash(
+        data.status === "confirmed"
+          ? "Approved — confirmed."
+          : `Approved — waitlist position ${data.waitlistPosition ?? "?"}.`,
       );
       setTimeout(() => setFlash(null), 3500);
       router.refresh();
@@ -164,14 +193,27 @@ export function AttendeeWorkshopManager({
                   <span className="inline-flex items-center gap-1"><MapPin size={10} />{b.locationName ?? "TBA"}</span>
                 </dl>
               </div>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => startTransition(() => { void cancelBooking(b); })}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg border border-line bg-card text-rose-700 hover:bg-rose-50 hover:border-rose-300 px-3 py-1.5 disabled:opacity-50"
-              >
-                <X size={12} /> Cancel
-              </button>
+              <div className="flex items-center gap-1.5">
+                {b.status === "pending" && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => startTransition(() => { void approveBooking(b); })}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 disabled:opacity-50 admin-glow"
+                    title="Approve this pending booking — moves it to confirmed if seats are open, else waitlist"
+                  >
+                    <Check size={12} /> Approve
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => startTransition(() => { void cancelBooking(b); })}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg border border-line bg-card text-rose-700 hover:bg-rose-50 hover:border-rose-300 px-3 py-1.5 disabled:opacity-50"
+                >
+                  <X size={12} /> {b.status === "pending" ? "Reject" : "Cancel"}
+                </button>
+              </div>
             </article>
           ))
         )}
@@ -262,19 +304,25 @@ export function AttendeeWorkshopManager({
 function BookingStatusChip({
   status, pos,
 }: {
-  status: "confirmed" | "waitlist" | "cancelled";
+  status: "pending" | "confirmed" | "waitlist" | "cancelled";
   pos: number | null;
 }) {
   const tints: Record<string, string> = {
+    pending: "bg-violet-100 text-violet-800 ring-violet-200",
     confirmed: "bg-emerald-100 text-emerald-800 ring-emerald-200",
     waitlist: "bg-amber-100 text-amber-800 ring-amber-200",
     cancelled: "bg-slate-100 text-slate-700 ring-slate-200",
   };
+  const label = status === "pending"
+    ? "Pending approval"
+    : status === "waitlist" && pos !== null
+      ? `Waitlist #${pos}`
+      : status;
   return (
     <span
       className={`inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ring-1 ring-inset ${tints[status] ?? tints.cancelled}`}
     >
-      {status === "waitlist" && pos !== null ? `Waitlist #${pos}` : status}
+      {label}
     </span>
   );
 }

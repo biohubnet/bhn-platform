@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.13a";
+export const TOUR_VERSION = "2026.05.13b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -622,6 +622,15 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05.12a",
     cta: { label: "Try Greenwood", href: "/dashboard?try-theme=greenwood" },
+  },
+  {
+    id: "events-workshop-approval-quota",
+    title: "Tours & workshops now require admin approval",
+    body: "Big change to the symposium tour/workshop flow:\n\n  • Every booking starts in **pending** — your seat isn't held until the BHN events team approves it. The form and the workshops browse page both flag this prominently so registrants know to expect a 1–2 day approval wait.\n  • Each slot has its own **20-seat capacity + 5 waitlist spots** (admin-editable per workshop). When both are full, the booking endpoint returns 'waitlist full' and the button says so.\n  • Tour/workshop registration is now **independent of the symposium-day registration** — people can attend one without the other. After each success we cross-prompt: 'You're registered for the symposium but didn't pick a tour — want to?' and vice versa.\n\nFor admins: the registrations queue shows a new 'Pending approval' tile, the attendee detail page has a green Approve button, and each pending workshop booking gets its own per-row Approve action.",
+    path: "/admin/events",
+    placement: "center",
+    since: "2026.05.13b",
+    cta: { label: "Open events admin", href: "/admin/events" },
   },
   {
     id: "events-admin-attendee-ops",

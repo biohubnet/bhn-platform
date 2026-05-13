@@ -3,7 +3,32 @@
  *
  * All state-mutating operations live here so the API routes stay
  * thin and the business rules (cap, waitlist promotion, breakout
- * mutual exclusion) live in one place.
+ * mutual exclusion, admin approval) live in one place.
+ *
+ * Booking lifecycle
+ * ─────────────────
+ *
+ *   pending ──admin approve──▶ confirmed (seat held)
+ *      │                ╲
+ *      │                 ╲─▶ waitlist (full; next in queue)
+ *      │
+ *      ╰──admin reject──▶ cancelled
+ *
+ *   confirmed ──cancel──▶ cancelled        (promotes next waitlister)
+ *   waitlist  ──cancel──▶ cancelled        (renumbers tail of queue)
+ *
+ * The `pending` state is what the symposium tour/workshop policy
+ * needs — registrants are told their spot is held only after admin
+ * review, so capacity isn't decremented until approval. Workshops
+ * that opt out via `requiresApproval=false` skip the pending state
+ * and land directly in confirmed/waitlist (the legacy behaviour).
+ *
+ * Symposium-day Registration is independent of workshop bookings:
+ *   • A workshop booking does NOT require an event Registration —
+ *     people can come for a tour without attending the symposium.
+ *   • A symposium Registration does NOT auto-book workshops —
+ *     people can attend the symposium without booking a tour.
+ *   • The UI cross-prompts in both directions after each success.
  *
  * Conventions
  *   • All mutations run inside Prisma transactions so cap + capacity
@@ -17,9 +42,11 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { MAX_WORKSHOPS_PER_USER } from "./constants";
 
+export type BookingStatus = "pending" | "confirmed" | "waitlist";
+
 export type BookingOk = {
   ok: true;
-  status: "confirmed" | "waitlist";
+  status: BookingStatus;
   bookingId: string;
   waitlistPosition: number | null;
 };
@@ -33,6 +60,11 @@ export type BookingErr = { ok: false; error: string; code: string };
  * transaction so a partial failure doesn't leave the user
  * half-registered.
  *
+ * No longer requires a confirmed Registration for the parent event —
+ * workshop attendees can come for the tour without attending the
+ * symposium day. The UI cross-prompts after a successful booking to
+ * encourage adding a Registration when it makes sense.
+ *
  * Note on read-your-writes: because Prisma's interactive transactions
  * are read-your-writes consistent, the Registration this caller just
  * inserted on the same tx IS visible to the registration-gate check
@@ -45,7 +77,14 @@ export async function bookWorkshopInTx(
 ): Promise<BookingOk | BookingErr> {
   const workshop = await tx.workshop.findUnique({
     where: { id: workshopId },
-    select: { id: true, eventId: true, isActive: true, capacity: true },
+    select: {
+      id: true,
+      eventId: true,
+      isActive: true,
+      capacity: true,
+      waitlistCapacity: true,
+      requiresApproval: true,
+    },
   });
   if (!workshop) {
     return { ok: false as const, error: "Workshop not found", code: "not_found" };
@@ -54,22 +93,10 @@ export async function bookWorkshopInTx(
     return { ok: false as const, error: "This workshop isn't accepting bookings.", code: "inactive" };
   }
 
-  // Registration gate — must have a confirmed Registration for
-  // this event before any workshop can be booked.
-  const registration = await tx.registration.findUnique({
-    where: { eventId_userId: { eventId: workshop.eventId, userId } },
-    select: { registrationStatus: true },
-  });
-  if (!registration || registration.registrationStatus !== "confirmed") {
-    return {
-      ok: false as const,
-      error: "Register for the event first before booking workshops.",
-      code: "no_registration",
-    };
-  }
-
-  // Existing booking? Idempotent: re-book on a non-cancelled row
-  // returns that row's identity.
+  // Idempotent re-book on a non-cancelled row returns that row's
+  // identity. Pending rows show through as `pending` so the UI can
+  // keep showing "awaiting admin review" rather than recreating the
+  // booking. Capacity / waitlist limits still apply to fresh writes.
   const existing = await tx.workshopBooking.findUnique({
     where: { workshopId_userId: { workshopId, userId } },
     select: { id: true, status: true, waitlistPosition: true },
@@ -77,16 +104,16 @@ export async function bookWorkshopInTx(
   if (existing && existing.status !== "cancelled") {
     return {
       ok: true as const,
-      status: existing.status as "confirmed" | "waitlist",
+      status: existing.status as BookingStatus,
       bookingId: existing.id,
       waitlistPosition: existing.waitlistPosition,
     };
   }
 
-  // Cap check — count this user's non-cancelled bookings on
-  // workshops belonging to this same event. The (userId, status)
-  // index keeps this cheap; we filter by eventId via a relation
-  // condition.
+  // Per-user cap on non-cancelled bookings across the whole event.
+  // Pending rows count too — the user has committed to picking these,
+  // they just need admin sign-off. (Otherwise someone could "park"
+  // pending picks on every workshop and effectively skip the cap.)
   const activeCount = await tx.workshopBooking.count({
     where: {
       userId,
@@ -102,32 +129,46 @@ export async function bookWorkshopInTx(
     };
   }
 
-  // Capacity check — count confirmed bookings on this specific
-  // workshop. If under capacity, status="confirmed". Otherwise
-  // join the waitlist with the next free position.
-  const confirmedCount = await tx.workshopBooking.count({
-    where: { workshopId, status: "confirmed" },
-  });
+  // Decide the landing state. When the workshop is approval-gated, we
+  // park the booking in `pending` — no seat decrement, no waitlist
+  // slot taken. Admin moves it forward via approveWorkshopBooking.
+  let bookingStatus: BookingStatus;
+  let waitlistPosition: number | null = null;
 
-  let bookingStatus: "confirmed" | "waitlist";
-  let waitlistPosition: number | null;
-  if (confirmedCount < workshop.capacity) {
-    bookingStatus = "confirmed";
-    waitlistPosition = null;
+  if (workshop.requiresApproval) {
+    bookingStatus = "pending";
   } else {
-    bookingStatus = "waitlist";
-    const lastWaitlist = await tx.workshopBooking.findFirst({
-      where: { workshopId, status: "waitlist" },
-      orderBy: { waitlistPosition: "desc" },
-      select: { waitlistPosition: true },
-    });
-    waitlistPosition = (lastWaitlist?.waitlistPosition ?? 0) + 1;
+    const [confirmedCount, waitlistCount] = await Promise.all([
+      tx.workshopBooking.count({ where: { workshopId, status: "confirmed" } }),
+      tx.workshopBooking.count({ where: { workshopId, status: "waitlist" } }),
+    ]);
+
+    if (confirmedCount < workshop.capacity) {
+      bookingStatus = "confirmed";
+    } else if (waitlistCount < workshop.waitlistCapacity) {
+      bookingStatus = "waitlist";
+      const lastWaitlist = await tx.workshopBooking.findFirst({
+        where: { workshopId, status: "waitlist" },
+        orderBy: { waitlistPosition: "desc" },
+        select: { waitlistPosition: true },
+      });
+      waitlistPosition = (lastWaitlist?.waitlistPosition ?? 0) + 1;
+    } else {
+      return {
+        ok: false as const,
+        error:
+          "This workshop is fully booked and the waitlist is also full. " +
+          "Please pick a different workshop or contact the BHN events team.",
+        code: "waitlist_full",
+      };
+    }
   }
 
   let created;
   if (existing) {
     // Re-using a cancelled row — flip status + bump timestamps
     // rather than inserting a duplicate. Keeps history minimal.
+    // approvedAt clears when re-entering pending; admin must re-approve.
     created = await tx.workshopBooking.update({
       where: { id: existing.id },
       data: {
@@ -135,6 +176,8 @@ export async function bookWorkshopInTx(
         waitlistPosition,
         bookedAt: new Date(),
         cancelledAt: null,
+        approvedAt: bookingStatus === "pending" ? null : new Date(),
+        approvedById: null,
       },
       select: { id: true },
     });
@@ -145,6 +188,10 @@ export async function bookWorkshopInTx(
         userId,
         status: bookingStatus,
         waitlistPosition,
+        // approvedAt stays null when the row lands as pending; when
+        // requiresApproval=false we stamp the create-time so the
+        // admin queue doesn't surface auto-confirmed bookings.
+        approvedAt: bookingStatus === "pending" ? null : new Date(),
       },
       select: { id: true },
     });
@@ -160,15 +207,23 @@ export async function bookWorkshopInTx(
 
 /**
  * Book a workshop for a user. Returns:
- *   • { status: "confirmed" }  — seat was available
+ *   • { status: "pending" }    — admin needs to approve before the
+ *                                spot is held. The default for
+ *                                approval-gated workshops.
+ *   • { status: "confirmed" }  — seat was available + no approval needed
  *   • { status: "waitlist", waitlistPosition: N }  — full; queued
  *
  * Refuses if the user:
- *   • doesn't have a confirmed Registration for the workshop's event
  *   • has already booked another workshop in this event up to the
- *     MAX_WORKSHOPS_PER_USER cap (cancelled bookings don't count)
+ *     MAX_WORKSHOPS_PER_USER cap (cancelled bookings don't count;
+ *     pending bookings DO count)
  *   • already has a non-cancelled booking on this specific workshop
- *     (idempotent re-book — returns the existing row)
+ *     (idempotent re-book — returns the existing row, including its
+ *      current status)
+ *   • the workshop AND its waitlist are both full
+ *     (`waitlist_full` — only reachable on workshops with
+ *      requiresApproval=false; approval-gated workshops can grow
+ *      the pending queue without bound)
  *
  * Use this from API routes that book a single workshop. For
  * compound operations (e.g. register + book within one transaction),
@@ -180,6 +235,110 @@ export async function bookWorkshop(
   workshopId: string,
 ): Promise<BookingOk | BookingErr> {
   return prisma.$transaction((tx) => bookWorkshopInTx(tx, userId, workshopId));
+}
+
+/**
+ * Approve a pending WorkshopBooking. Decides at approval time whether
+ * there's room — promotes to `confirmed` if there's a seat, otherwise
+ * to `waitlist` (assigning the next position). Returns `waitlist_full`
+ * when both confirmed seats and waitlist slots are exhausted; the
+ * admin then chooses to reject the booking or wait for cancellations.
+ *
+ * Idempotent on already-approved rows: returns ok with the current
+ * status without re-stamping approvedAt.
+ */
+export async function approveWorkshopBookingInTx(
+  tx: Prisma.TransactionClient,
+  bookingId: string,
+  adminUserId: string,
+): Promise<BookingOk | BookingErr> {
+  const booking = await tx.workshopBooking.findUnique({
+    where: { id: bookingId },
+    select: {
+      id: true,
+      status: true,
+      waitlistPosition: true,
+      workshopId: true,
+      workshop: {
+        select: { capacity: true, waitlistCapacity: true, isActive: true },
+      },
+    },
+  });
+  if (!booking) {
+    return { ok: false as const, error: "Booking not found.", code: "not_found" };
+  }
+  if (booking.status === "cancelled") {
+    return {
+      ok: false as const,
+      error: "Cancelled bookings can't be approved — ask the attendee to re-book.",
+      code: "cancelled",
+    };
+  }
+  if (booking.status === "confirmed" || booking.status === "waitlist") {
+    return {
+      ok: true as const,
+      status: booking.status,
+      bookingId: booking.id,
+      waitlistPosition: booking.waitlistPosition,
+    };
+  }
+  // status === "pending" — decide based on current capacity.
+  const [confirmedCount, waitlistCount] = await Promise.all([
+    tx.workshopBooking.count({
+      where: { workshopId: booking.workshopId, status: "confirmed" },
+    }),
+    tx.workshopBooking.count({
+      where: { workshopId: booking.workshopId, status: "waitlist" },
+    }),
+  ]);
+
+  let nextStatus: BookingStatus;
+  let nextWaitlistPosition: number | null = null;
+  if (confirmedCount < booking.workshop.capacity) {
+    nextStatus = "confirmed";
+  } else if (waitlistCount < booking.workshop.waitlistCapacity) {
+    nextStatus = "waitlist";
+    const lastWaitlist = await tx.workshopBooking.findFirst({
+      where: { workshopId: booking.workshopId, status: "waitlist" },
+      orderBy: { waitlistPosition: "desc" },
+      select: { waitlistPosition: true },
+    });
+    nextWaitlistPosition = (lastWaitlist?.waitlistPosition ?? 0) + 1;
+  } else {
+    return {
+      ok: false as const,
+      error:
+        "Both the seat capacity and the waitlist are full. Reject this booking, or " +
+        "wait for a cancellation before approving.",
+      code: "waitlist_full",
+    };
+  }
+
+  await tx.workshopBooking.update({
+    where: { id: booking.id },
+    data: {
+      status: nextStatus,
+      waitlistPosition: nextWaitlistPosition,
+      approvedAt: new Date(),
+      approvedById: adminUserId,
+    },
+  });
+
+  return {
+    ok: true as const,
+    status: nextStatus,
+    bookingId: booking.id,
+    waitlistPosition: nextWaitlistPosition,
+  };
+}
+
+/** Single-shot wrapper around approveWorkshopBookingInTx. */
+export async function approveWorkshopBooking(
+  prisma: PrismaClient,
+  bookingId: string,
+  adminUserId: string,
+): Promise<BookingOk | BookingErr> {
+  return prisma.$transaction((tx) => approveWorkshopBookingInTx(tx, bookingId, adminUserId));
 }
 
 /**
@@ -248,6 +407,7 @@ export async function cancelWorkshopBookingInTx(
       data: { waitlistPosition: { decrement: 1 } },
     });
   }
+  // pending → cancelled: no capacity/waitlist accounting to do.
 
   return { ok: true as const, promoted };
 }
@@ -258,6 +418,8 @@ export async function cancelWorkshopBookingInTx(
  *     (lowest waitlistPosition) is promoted to confirmed.
  *   • If the cancelled booking was on the WAITLIST, every waitlist
  *     row with a higher position is renumbered down by 1.
+ *   • If the cancelled booking was PENDING, no further bookkeeping
+ *     is needed — pending bookings don't hold a seat or position.
  *
  * Idempotent — cancelling an already-cancelled row returns ok=true.
  */
@@ -332,6 +494,47 @@ export async function cancelRegistration(
 }
 
 /**
+ * Approve a pending Registration. Flips `registrationStatus` from
+ * pending → confirmed and stamps approval audit columns. Idempotent
+ * on already-confirmed rows.
+ */
+export async function approveRegistration(
+  prisma: PrismaClient,
+  eventId: string,
+  userId: string,
+  adminUserId: string,
+): Promise<{ ok: true; alreadyConfirmed: boolean } | BookingErr> {
+  return prisma.$transaction(async (tx) => {
+    const registration = await tx.registration.findUnique({
+      where: { eventId_userId: { eventId, userId } },
+      select: { id: true, registrationStatus: true },
+    });
+    if (!registration) {
+      return { ok: false as const, error: "Registration not found.", code: "not_found" };
+    }
+    if (registration.registrationStatus === "cancelled") {
+      return {
+        ok: false as const,
+        error: "This registration has been cancelled.",
+        code: "cancelled",
+      };
+    }
+    if (registration.registrationStatus === "confirmed") {
+      return { ok: true as const, alreadyConfirmed: true };
+    }
+    await tx.registration.update({
+      where: { id: registration.id },
+      data: {
+        registrationStatus: "confirmed",
+        approvedAt: new Date(),
+        approvedById: adminUserId,
+      },
+    });
+    return { ok: true as const, alreadyConfirmed: false };
+  });
+}
+
+/**
  * Pick (or switch to) a specific SymposiumSession breakout. Enforces
  * the "pick at most one per breakoutGroupId" rule at the service
  * layer (the schema doesn't constrain this).
@@ -357,7 +560,9 @@ export async function pickBreakout(
       return { ok: false as const, error: "Session not found", code: "not_found" };
     }
 
-    // Registration gate.
+    // Registration gate — pending registrations can't pick breakouts
+    // yet either (no point promising a breakout seat to someone who
+    // might not be approved).
     const registration = await tx.registration.findUnique({
       where: { eventId_userId: { eventId: session.eventId, userId } },
       select: { registrationStatus: true, includesSymposiumDay: true },

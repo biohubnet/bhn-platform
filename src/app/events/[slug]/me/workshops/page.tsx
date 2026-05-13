@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Clock, MapPin, Users, Bus, ExternalLink, AlertCircle,
+  ArrowLeft, Clock, MapPin, Users, Bus, ExternalLink, AlertCircle, Hourglass, ArrowRight,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -10,13 +10,19 @@ import { WorkshopBookButton } from "@/components/events/WorkshopBookButton";
 
 /**
  * /events/[slug]/me/workshops — browse + book Training Week
- * workshops.
+ * tours & workshops.
  *
- * Gate: signed in + has a confirmed Registration for this event.
- * The user's current booking status per workshop is computed in
- * one query against WorkshopBooking; the per-card button uses that
- * to render the right state (Book / Join waitlist / Booked /
- * Waitlist #N / Pick 2 reached).
+ * Gate: signed in only. **No symposium-Registration requirement** —
+ * workshop bookings are intentionally decoupled from the symposium
+ * day. People can come for the tour without attending the symposium,
+ * and vice versa. When the user lands here without a Registration we
+ * render a "register for the symposium too?" prompt rather than
+ * bouncing them. After a booking the prompt becomes the primary CTA.
+ *
+ * The user's current booking status per workshop is computed in one
+ * query against WorkshopBooking; the per-card button uses that to
+ * render the right state (Request / Pending / Booked / Waitlist #N /
+ * Pick 2 reached / Workshop & waitlist full).
  *
  * Workshops grouped by day, sorted chronologically within each day.
  */
@@ -42,13 +48,16 @@ export default async function BrowseWorkshopsPage({
   });
   if (!event || event.status !== "published") notFound();
 
+  // Workshop bookings are decoupled from symposium registration —
+  // this page is reachable for anyone signed in. We DO fetch the
+  // Registration so the cross-prompt below can adapt copy: "you
+  // haven't registered" vs. "you're registered for the symposium too".
   const registration = await prisma.registration.findUnique({
     where: { eventId_userId: { eventId: event.id, userId } },
     select: { registrationStatus: true },
   });
-  if (!registration || registration.registrationStatus !== "confirmed") {
-    redirect(`/events/${slug}/register`);
-  }
+  const hasActiveRegistration = registration !== null &&
+    registration.registrationStatus !== "cancelled";
 
   // Workshops + all non-cancelled bookings for this event in two
   // queries. We compute per-workshop counts + the user's own state
@@ -74,25 +83,25 @@ export default async function BrowseWorkshopsPage({
   ]);
 
   // Build the per-workshop lookup.
-  const stats = new Map<
-    string,
-    {
-      confirmed: number;
-      waitlist: number;
-      mine: { status: "confirmed" | "waitlist"; pos: number | null } | null;
-    }
-  >();
+  type StatBucket = {
+    confirmed: number;
+    waitlist: number;
+    pending: number;
+    mine: { status: "pending" | "confirmed" | "waitlist"; pos: number | null } | null;
+  };
+  const stats = new Map<string, StatBucket>();
   for (const w of workshops) {
-    stats.set(w.id, { confirmed: 0, waitlist: 0, mine: null });
+    stats.set(w.id, { confirmed: 0, waitlist: 0, pending: 0, mine: null });
   }
   for (const b of allBookings) {
     const entry = stats.get(b.workshopId);
     if (!entry) continue;
     if (b.status === "confirmed") entry.confirmed++;
     if (b.status === "waitlist") entry.waitlist++;
+    if (b.status === "pending") entry.pending++;
     if (b.userId === userId) {
       entry.mine = {
-        status: b.status as "confirmed" | "waitlist",
+        status: b.status as "pending" | "confirmed" | "waitlist",
         pos: b.waitlistPosition,
       };
     }
@@ -123,10 +132,10 @@ export default async function BrowseWorkshopsPage({
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-6">
       <Link
-        href={`/events/${slug}/me`}
+        href={hasActiveRegistration ? `/events/${slug}/me` : `/events/${slug}`}
         className="text-xs text-muted hover:text-fg inline-flex items-center gap-1"
       >
-        <ArrowLeft size={12} /> Your dashboard
+        <ArrowLeft size={12} /> {hasActiveRegistration ? "Your dashboard" : "Event page"}
       </Link>
 
       <header className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
@@ -135,8 +144,14 @@ export default async function BrowseWorkshopsPage({
             Training Week
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold text-fg tracking-tight mt-1">
-            Workshops &amp; tours
+            Tours &amp; workshops
           </h1>
+          <p className="text-xs text-muted mt-1 max-w-xl">
+            Tour and workshop registration is independent of the symposium —
+            you can attend one without the other. Each tour seats 20, with a
+            5-spot waitlist; spots are not held until the BHN team approves
+            your request.
+          </p>
         </div>
         <p className="ml-auto text-sm font-mono tabular-nums text-fg">
           <span
@@ -153,6 +168,29 @@ export default async function BrowseWorkshopsPage({
           <span className="text-subtle">picked</span>
         </p>
       </header>
+
+      {/* Cross-prompt: workshop attendees who haven't registered for
+          the symposium day. Workshops and the symposium are separate
+          events; this nudge keeps the symposium from getting forgotten
+          while still respecting the user's choice to skip it. */}
+      {!hasActiveRegistration && (
+        <Link
+          href={`/events/${slug}/register`}
+          className="block rounded-2xl bg-brand-50 ring-1 ring-inset ring-brand-200 p-4 sm:p-5 hover:bg-brand-100 transition-colors group"
+        >
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-brand-700">
+            You're not registered for the symposium yet
+          </p>
+          <p className="text-sm font-bold text-fg mt-1">
+            Add a symposium-day registration too?{" "}
+            <ArrowRight size={14} className="inline-block text-brand-700 group-hover:translate-x-0.5 transition-transform" />
+          </p>
+          <p className="text-xs text-muted mt-1.5 leading-snug">
+            Booking a tour doesn't sign you up for the symposium day. You can
+            attend either or both — they're registered separately.
+          </p>
+        </Link>
+      )}
 
       {atCap && (
         <div className="rounded-xl bg-amber-50 ring-1 ring-inset ring-amber-200 px-4 py-3 flex items-start gap-2">
@@ -218,10 +256,22 @@ export default async function BrowseWorkshopsPage({
                       <span className="text-subtle">spots taken</span>
                       {s.waitlist > 0 && (
                         <span className="text-amber-700 ml-1">
-                          · {s.waitlist} on waitlist
+                          · waitlist {s.waitlist}/{w.waitlistCapacity}
                         </span>
                       )}
                     </Row>
+                    {w.requiresApproval && (
+                      <Row icon={Hourglass}>
+                        <span className="text-violet-700 font-semibold">
+                          Needs admin approval
+                        </span>
+                        {s.pending > 0 && (
+                          <span className="text-subtle ml-1">
+                            · {s.pending} other{s.pending === 1 ? "" : "s"} pending
+                          </span>
+                        )}
+                      </Row>
+                    )}
                     {w.requiresTransport && (
                       <Row icon={Bus}>
                         Bus from {w.departureLocation ?? "common pickup"}
@@ -248,6 +298,9 @@ export default async function BrowseWorkshopsPage({
                       myWaitlistPosition={s.mine?.pos ?? null}
                       confirmedCount={s.confirmed}
                       capacity={w.capacity}
+                      waitlistCount={s.waitlist}
+                      waitlistCapacity={w.waitlistCapacity}
+                      requiresApproval={w.requiresApproval}
                       atCap={atCap}
                     />
                   </div>

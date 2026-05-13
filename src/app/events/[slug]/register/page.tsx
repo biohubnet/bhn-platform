@@ -51,6 +51,7 @@ export default async function RegisterPage({
       timezone: true,
       registrationOpensAt: true,
       registrationClosesAt: true,
+      requiresApproval: true,
     },
   });
   if (!event || event.status !== "published") notFound();
@@ -92,6 +93,8 @@ export default async function RegisterPage({
           endDateTime: true,
           locationName: true,
           capacity: true,
+          waitlistCapacity: true,
+          requiresApproval: true,
           requiresTransport: true,
         },
       }),
@@ -104,17 +107,19 @@ export default async function RegisterPage({
         _count: { _all: true },
       }),
     ]);
-    const countLookup = new Map<string, { confirmed: number; waitlist: number }>();
-    for (const w of activeWorkshops) countLookup.set(w.id, { confirmed: 0, waitlist: 0 });
+    type CountBucket = { confirmed: number; waitlist: number; pending: number };
+    const countLookup = new Map<string, CountBucket>();
+    for (const w of activeWorkshops) countLookup.set(w.id, { confirmed: 0, waitlist: 0, pending: 0 });
     for (const row of allBookings) {
       const entry = countLookup.get(row.workshopId);
       if (!entry) continue;
       if (row.status === "confirmed") entry.confirmed = row._count._all;
       else if (row.status === "waitlist") entry.waitlist = row._count._all;
+      else if (row.status === "pending") entry.pending = row._count._all;
     }
 
     workshops = activeWorkshops.map((w) => {
-      const c = countLookup.get(w.id) ?? { confirmed: 0, waitlist: 0 };
+      const c = countLookup.get(w.id) ?? { confirmed: 0, waitlist: 0, pending: 0 };
       const dayKey = w.startDateTime.toLocaleDateString("en-CA", { timeZone: event.timezone });
       const dayLabel = w.startDateTime.toLocaleDateString("en-CA", {
         weekday: "long",
@@ -131,8 +136,11 @@ export default async function RegisterPage({
         locationName: w.locationName,
         requiresTransport: w.requiresTransport,
         capacity: w.capacity,
+        waitlistCapacity: w.waitlistCapacity,
+        requiresApproval: w.requiresApproval,
         confirmedCount: c.confirmed,
         waitlistCount: c.waitlist,
+        pendingCount: c.pending,
         timeLabel: formatTimeRange(w.startDateTime, w.endDateTime, event.timezone),
         dayKey,
         dayLabel,
@@ -214,7 +222,11 @@ export default async function RegisterPage({
           }
         />
       ) : (
-        <RegistrationForm slug={slug} workshops={workshops} />
+        <RegistrationForm
+          slug={slug}
+          workshops={workshops}
+          symposiumRequiresApproval={event.requiresApproval}
+        />
       )}
     </div>
   );

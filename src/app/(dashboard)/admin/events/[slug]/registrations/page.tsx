@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { ArrowLeft, Download, Ticket, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Download, Ticket, CheckCircle2, Hourglass } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { RegistrationsTable, type RegistrationRow } from "@/components/admin/events/RegistrationsTable";
@@ -57,6 +57,7 @@ export default async function AdminEventRegistrationsPage({
 
   const checkedInCount = rows.filter((r) => r.checkedInAt !== null).length;
   const confirmedCount = rows.filter((r) => r.registrationStatus === "confirmed").length;
+  const pendingCount = rows.filter((r) => r.registrationStatus === "pending").length;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -95,6 +96,12 @@ export default async function AdminEventRegistrationsPage({
 
       <div className="flex flex-wrap gap-3">
         <Stat label="Total" value={rows.length} />
+        <Stat
+          label="Pending approval"
+          value={pendingCount}
+          accent={pendingCount > 0}
+          icon={<Hourglass size={12} className="text-violet-700" />}
+        />
         <Stat label="Confirmed" value={confirmedCount} />
         <Stat
           label="Checked in"

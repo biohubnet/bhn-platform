@@ -24,6 +24,7 @@ const ERROR_STATUS: Record<string, number> = {
   inactive: 409,
   no_registration: 403,
   max_reached: 409,
+  waitlist_full: 409,
 };
 
 async function gate(slug: string, workshopId: string) {
