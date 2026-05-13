@@ -74,35 +74,49 @@ export function RoleSwitcher({ actingAs }: Props) {
     else await pick(targetId);
   }
 
+  // Currently-active role label — drives the compact pill below.
+  // Truncated to 8 chars so even long role names ("instructor") stay
+  // inside the sidebar's 220-px-ish width without ellipsising the
+  // chevron off the right edge.
+  const activeLabel = actingAs ?? "superadmin";
+
   return (
     <div ref={ref} className="relative">
-      <div className="flex items-stretch gap-1">
+      {/* Single 28-px-tall row that fits the sidebar even at its
+          narrowest. The previous two-line layout (full "View as
+          SUPERADMIN" pill + two text chips) overflowed the moment the
+          active role name grew past four letters. Now:
+            • One pill: eye-icon · current-role · chevron — opens dropdown
+            • Two icon-only square buttons for the quick toggles
+                (Trainee + Employer HR), labels collapsed into title
+                tooltips. Pressed state still shows via brand fill.
+          The dropdown that opens has the full descriptive labels, so
+          nothing is hidden — just reorganised. */}
+      <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           className={cn(
-            // Main "View as" pill — opens the full dropdown for the
-            // less-common previews (evaluating, instructor, admin).
-            "flex items-center gap-2 px-2.5 py-1 flex-1 rounded-lg text-xs transition-colors",
+            "flex items-center gap-1.5 min-w-0 flex-1 px-2 py-1 rounded-lg text-[11px] transition-colors",
             actingAs
               ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
               : "hover:bg-elevated text-muted hover:text-fg"
           )}
           aria-label="Switch viewing role"
+          title={`View as ${activeLabel}`}
         >
-          <Eye size={14} className="shrink-0" />
-          <span className="flex-1 text-left font-medium leading-none">View as</span>
-          <span className="text-[10px] uppercase tracking-[0.14em] text-subtle leading-none">
-            {actingAs ?? "superadmin"}
+          <Eye size={12} className="shrink-0" />
+          <span className="flex-1 min-w-0 text-left font-semibold uppercase tracking-[0.1em] leading-none truncate">
+            {activeLabel}
           </span>
-          <ChevronDown size={11} className={cn("shrink-0 transition-transform", open && "rotate-180")} />
+          <ChevronDown size={10} className={cn("shrink-0 transition-transform", open && "rotate-180")} />
         </button>
 
-        {/* Quick-switch chips — Trainee + HR. Each one toggles
-            between that role and the user's real superadmin seat,
-            saving a dropdown round-trip for the two most-common
-            preview jumps. Highlighted when active so the admin
-            knows which seat they're in at a glance. */}
+        {/* Icon-only quick toggles. Each one flips between the named
+            role and the user's real superadmin seat. Compact 24-px
+            squares so two of them fit beside the main pill even when
+            the sidebar narrows. Active-state fill makes the current
+            seat obvious without needing a label. */}
         {QUICK.map((q) => {
           const Icon = q.icon;
           const active = actingAs === q.id;
@@ -114,15 +128,15 @@ export function RoleSwitcher({ actingAs }: Props) {
               disabled={busy}
               title={q.title}
               aria-pressed={active}
+              aria-label={q.title}
               className={cn(
-                "inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50",
+                "inline-flex items-center justify-center w-6 h-6 rounded-md transition-colors disabled:opacity-50 shrink-0",
                 active
                   ? "bg-brand-600 text-white hover:bg-brand-700"
                   : "bg-elevated text-muted hover:text-fg hover:bg-raised ring-1 ring-inset ring-line",
               )}
             >
               <Icon size={11} className="shrink-0" />
-              {q.short}
             </button>
           );
         })}

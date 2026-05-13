@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import {
   Calendar,
   MapPin,
@@ -16,6 +16,9 @@ import {
   Hotel,
   ArrowRight,
   CheckCircle2,
+  Pencil,
+  Ticket,
+  Wrench,
 } from "lucide-react";
 
 /* ─── Metadata ───────────────────────────────────────────────────── */
@@ -94,6 +97,11 @@ export default async function EventLandingPage(
   // the page doesn't keep nagging them to register.
   const session = await getSession();
   const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+  // Staff get an inline edit bar so they don't have to navigate
+  // through /admin/events to find the editor for the page they're
+  // already looking at. Public visitors never see the bar.
+  const role = (session?.user as { role?: string } | undefined)?.role ?? "";
+  const isStaff = role ? checkIsStaff(role) : false;
   const myReg = userId
     ? await prisma.registration.findUnique({
         where: { eventId_userId: { eventId: event.id, userId } },
@@ -120,6 +128,44 @@ export default async function EventLandingPage(
 
   return (
     <>
+      {/* ───── Admin edit bar ──────────────────────────────────────
+          Sticky strip pinned to the top of the event page for staff.
+          Surfaces the four most-used edit affordances right where the
+          admin is already looking: Edit basics (title / dates / venue /
+          status), Registrations (queue + check-in), See it as a learner
+          (clears acting-as to validate the real public flow), and the
+          full Admin · Events index. Public visitors never see this. */}
+      {isStaff && (
+        <div className="sticky top-0 z-40 border-b border-amber-300 bg-amber-50/95 backdrop-blur-sm">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-2 flex-wrap text-xs">
+            <span className="inline-flex items-center gap-1.5 text-amber-900 font-semibold uppercase tracking-[0.16em] text-[10px] mr-1">
+              <Wrench size={11} /> Admin
+            </span>
+            <Link
+              href={`/admin/events/${slug}`}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-amber-900 bg-amber-100 ring-1 ring-inset ring-amber-300 hover:bg-amber-200 transition-colors font-semibold"
+            >
+              <Pencil size={11} /> Edit basics
+            </Link>
+            <Link
+              href={`/admin/events/${slug}/registrations`}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-amber-900 bg-amber-100 ring-1 ring-inset ring-amber-300 hover:bg-amber-200 transition-colors font-semibold"
+            >
+              <Ticket size={11} /> Registrations
+            </Link>
+            <Link
+              href="/admin/events"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-amber-900 ring-1 ring-inset ring-transparent hover:ring-amber-300 hover:bg-amber-100 transition-colors"
+            >
+              <ExternalLink size={11} /> All events
+            </Link>
+            <span className="ml-auto text-[10px] text-amber-800/80">
+              Workshops, sessions, speakers, sponsors still seed-managed (see <code className="font-mono">prisma/seed-events.ts</code>)
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* ───── Hero ─────────────────────────────────────────────── */}
       <section
         className="relative text-white"

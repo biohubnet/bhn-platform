@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.12f";
+export const TOUR_VERSION = "2026.05.12g";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -561,6 +561,14 @@ export const TOUR_STEPS: TourStep[] = [
     path: "/forms/talent-application",
     placement: "center",
     since: "2026.05.12d",
+  },
+  {
+    id: "events-calendar-and-rewards-hero",
+    title: "New: events calendar, rewards journey, form clear",
+    body: "Three things to try: 1) /events now has a monthly calendar grid alongside the upcoming list — click any event day to jump straight in. Admins get demo-seed buttons there too. 2) /rewards opens with a 'journey' progress bar showing your position between every reward tier, plus a much louder lifetime-credits headline. 3) Every form now has a Clear button next to Submit — one confirm and the whole form resets to blank. Bonus: the View-as switcher in the sidebar is now compact (icon-only quick-toggles), and staff visiting any /events/[slug] page get a sticky admin edit bar pinned to the top.",
+    placement: "center",
+    since: "2026.05.12g",
+    cta: { label: "Open events", href: "/events" },
   },
   {
     id: "keyboard-shortcuts",

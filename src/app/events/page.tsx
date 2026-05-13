@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Calendar, MapPin, ArrowRight, Users, Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
+import { EventCalendar, type EventDot } from "@/components/events/EventCalendar";
+import { DemoEventsControls } from "@/components/events/DemoEventsControls";
 
 /**
  * /events — public landing for all currently-published BHN events.
@@ -22,6 +25,9 @@ export const dynamic = "force-dynamic";
 
 export default async function EventsIndexPage() {
   const now = new Date();
+  const session = await getSession();
+  const role = (session?.user as { role?: string } | undefined)?.role ?? "";
+  const isStaff = role ? checkIsStaff(role) : false;
 
   // Two queries kept separate so we can render the "upcoming" and
   // "past" sections with distinct headers + visual weight, instead
@@ -66,11 +72,18 @@ export default async function EventsIndexPage() {
         </p>
       </header>
 
-      {/* Upcoming */}
-      <section>
-        <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-subtle mb-4">
-          Upcoming
-        </h2>
+      {/* Upcoming — split into a calendar view (visual scan of when)
+          + a list view (everything else: tagline, venue, registration
+          count). Calendar appears first because most visitors are
+          scanning "when's the next thing?" not "what's it called?". */}
+      <section id="upcoming">
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-subtle">
+            Upcoming
+          </h2>
+          {isStaff && <DemoEventsControls />}
+        </div>
+
         {upcoming.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-line bg-card p-10 text-center">
             <div className="w-12 h-12 mx-auto rounded-xl bg-elevated text-muted flex items-center justify-center mb-3">
@@ -80,26 +93,42 @@ export default async function EventsIndexPage() {
             <p className="text-xs text-subtle mt-1.5 max-w-md mx-auto leading-relaxed">
               The next edition is usually announced in late spring. Watch
               the BioHubNet newsletter or check back here.
+              {isStaff && <> Or seed a few demo events above for testing.</>}
             </p>
           </div>
         ) : (
-          <ul className="space-y-4">
-            {upcoming.map((e) => (
-              <li key={e.id}>
-                <EventCard
-                  slug={e.slug}
-                  title={e.title}
-                  tagline={e.tagline}
-                  start={e.startDate}
-                  end={e.endDate}
-                  timezone={e.timezone}
-                  venue={e.mainVenueName}
-                  registered={e._count.registrations}
-                  emphasis
-                />
-              </li>
-            ))}
-          </ul>
+          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-5">
+            <EventCalendar
+              events={upcoming.map((e, i): EventDot => ({
+                id: e.id,
+                slug: e.slug,
+                title: e.title,
+                start: e.startDate.toISOString(),
+                end: e.endDate.toISOString(),
+                // First (earliest) upcoming gets the brand emphasis;
+                // everything else renders as a neutral band so the
+                // calendar doesn't read as one big blob of brand colour.
+                tone: i === 0 ? "brand" : "neutral",
+              }))}
+            />
+            <ul className="space-y-4">
+              {upcoming.map((e, i) => (
+                <li key={e.id}>
+                  <EventCard
+                    slug={e.slug}
+                    title={e.title}
+                    tagline={e.tagline}
+                    start={e.startDate}
+                    end={e.endDate}
+                    timezone={e.timezone}
+                    venue={e.mainVenueName}
+                    registered={e._count.registrations}
+                    emphasis={i === 0}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </section>
 

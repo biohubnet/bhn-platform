@@ -6,7 +6,7 @@ import { TALENT_APPLICATION_PRESETS } from "@/lib/demo/presets";
 import {
   Pencil, Save, X, Plus, Trash2, Check, AlertCircle, Loader2, ListChecks,
   ChevronUp, ChevronDown, Type, Mail, Link as LinkIcon, AlignLeft, ListChecks as RadioIcon, Heading,
-  Upload, Paperclip,
+  Upload, Paperclip, Eraser,
 } from "lucide-react";
 import {
   type FormField,
@@ -446,14 +446,36 @@ export function EventFormView({
                 {submitError}
               </div>
             )}
-            <button
-              type="submit"
-              disabled={submitting || !active}
-              className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-medium py-2.5 px-4 rounded-lg transition-colors shadow-md shadow-brand-600/25 text-sm flex items-center justify-center gap-2"
-            >
-              {submitting && <Loader2 size={14} className="animate-spin" />}
-              {submitting ? "Submitting…" : "Submit"}
-            </button>
+            {/* Submit + Clear pair. Clear is a destructive-ish action
+                so we keep it visually quieter than Submit (ghost-style,
+                small icon, single confirm prompt) — but always present
+                next to it so a half-filled-then-abandoned draft is one
+                click to recover from. */}
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={submitting || !active}
+                className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-medium py-2.5 px-4 rounded-lg transition-colors shadow-md shadow-brand-600/25 text-sm flex items-center justify-center gap-2"
+              >
+                {submitting && <Loader2 size={14} className="animate-spin" />}
+                {submitting ? "Submitting…" : "Submit"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (submitting) return;
+                  if (!window.confirm("Clear every field on this form? This can't be undone — but you can refill it.")) return;
+                  setValues({});
+                  setSubmitError(null);
+                }}
+                disabled={submitting}
+                title="Clear every field — reset the form to blank"
+                className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2.5 rounded-lg text-muted hover:text-fg hover:bg-elevated ring-1 ring-inset ring-line disabled:opacity-50 transition-colors"
+              >
+                <Eraser size={14} />
+                Clear
+              </button>
+            </div>
           </form>
         )}
       </div>

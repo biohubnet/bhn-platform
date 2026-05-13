@@ -2,7 +2,7 @@ import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Gift, Lock, CheckCircle2, Truck, Package, Sparkles, MapPin, Info, Eye, ArrowRight } from "lucide-react";
+import { Gift, Lock, CheckCircle2, Truck, Package, Sparkles, MapPin, Info, Eye, ArrowRight, Trophy, Flame, Star } from "lucide-react";
 import {
   MERCH_TIERS,
   PICKUP_LOCATION,
@@ -71,76 +71,149 @@ export default async function RewardsPage() {
   const unlockedCount = rewards.length;
   const claimedCount = rewards.filter((r) => r.status !== "UNCLAIMED").length;
 
+  // Build the "journey" — a sorted list of credit-threshold tiers so
+  // the progress bar can render milestone markers at each one. The
+  // bar's overall width represents lifetime credits trained, capped
+  // at the top tier so the marker never falls off the right edge.
+  const journeyTiers = MERCH_TIERS.filter((t) => t.triggeredBy === "credit_threshold")
+    .slice()
+    .sort((a, b) => a.threshold - b.threshold);
+  const journeyMax = journeyTiers[journeyTiers.length - 1]?.threshold ?? 5000;
+  const journeyPct = Math.min(100, (spent / journeyMax) * 100);
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Hero — lifetime spend + progress to the next tier. */}
-      <section className="rounded-2xl border border-line bg-card p-6 sm:p-8 surface-shadow">
-        <div className="flex items-start justify-between gap-4 mb-5">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Loyalty rewards</p>
-            <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight">
-              BHN merch — earned, not bought
-            </h1>
-            <p className="text-sm text-muted mt-2 max-w-2xl">
-              Train hard, get the gear. Every credit you spend on coursework
-              counts toward two milestone rewards. When a tier unlocks, swing
-              by the BHN office at <span className="font-medium text-fg">Leslie Dan Faculty of Pharmacy, U of T</span> to
-              pick it up — or request mailing if you're far from Toronto.
-            </p>
-          </div>
-          <Gift size={40} className="text-brand-600 shrink-0 hidden sm:block" />
+      {/* Hero — full-bleed brand-gradient surface with the lifetime
+          credits count as the dramatic headline figure. Built with
+          stacked decorative blur blobs for depth, an outer ring of
+          glowing sparkle hints, and a generous typography scale so
+          it reads as a "wall display" of progress rather than yet
+          another card. */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 text-white px-6 sm:px-10 py-9 sm:py-12 surface-shadow">
+        {/* Decorative blobs */}
+        <div className="pointer-events-none absolute -top-20 -right-16 w-64 h-64 rounded-full bg-amber-400/25 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-24 -left-10 w-72 h-72 rounded-full bg-brand-400/30 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute top-8 right-10 hidden sm:block text-amber-300/80" aria-hidden>
+          <Sparkles size={28} />
         </div>
 
-        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 mb-3">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-subtle leading-none">Credits trained</p>
-            <p className="text-3xl font-bold text-fg leading-tight font-mono tabular-nums">
-              {spent.toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-subtle leading-none">Tiers unlocked</p>
-            <p className="text-2xl font-bold text-fg leading-tight font-mono tabular-nums">
-              {unlockedCount} / {MERCH_TIERS.length}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-subtle leading-none">Claimed</p>
-            <p className="text-2xl font-bold text-fg leading-tight font-mono tabular-nums">
-              {claimedCount}
-            </p>
-          </div>
-        </div>
-
-        {/* Progress bar — even when at the top tier, render a full
-            green bar so the page reads as a finished journey rather
-            than an empty unconfigured state. */}
-        <div className="mt-2">
-          <div className="h-2 bg-elevated rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all"
-              style={{ width: `${pctToNext}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted mt-2">
-            {nextTier ? (
-              <>
-                <span className="font-semibold text-fg">{(nextTier.threshold - spent).toLocaleString()}</span>{" "}
-                more credits trained until{" "}
-                <span className="font-semibold text-fg">{nextTier.title}</span> unlocks.
-              </>
-            ) : (
-              <>
-                <Sparkles size={12} className="inline -mt-0.5 mr-1 text-amber-500" />
-                You've unlocked every tier. Future tiers will appear here as we add them.
-              </>
-            )}
+        <div className="relative">
+          <p className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] font-bold text-white/85">
+            <Trophy size={12} />
+            Loyalty rewards
           </p>
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mt-3 leading-[1.05]">
+            Train hard. Earn the gear.
+          </h1>
+          <p className="text-base text-white/85 mt-3 max-w-2xl leading-relaxed">
+            Every credit you spend on coursework counts toward milestone
+            rewards. Pickup at <span className="font-semibold text-white">Leslie Dan Faculty of Pharmacy, U of T</span> —
+            or request mailing in the claim form.
+          </p>
+
+          {/* Big lifetime-credits headline */}
+          <div className="mt-7 flex flex-wrap items-end gap-x-8 gap-y-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-white/70">Credits trained</p>
+              <p className="text-5xl sm:text-6xl font-bold leading-none font-mono tabular-nums mt-1">
+                {spent.toLocaleString()}
+              </p>
+            </div>
+            <div className="flex gap-6">
+              <Stat label="Tiers unlocked" value={`${unlockedCount} / ${journeyTiers.length}`} icon={Star} />
+              <Stat label="Claimed" value={String(claimedCount)} icon={CheckCircle2} />
+              {nextTier && (
+                <Stat
+                  label="To next reward"
+                  value={(nextTier.threshold - spent).toLocaleString()}
+                  icon={Flame}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Journey progress bar — marker per tier. Reads as a
+              physical journey: every milestone is dot-anchored at its
+              threshold-percentage; the trainee's current position is a
+              taller glowing marker. */}
+          <div className="mt-7">
+            <div className="relative h-3 rounded-full bg-white/15 overflow-visible">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 shadow-[0_0_18px_rgba(251,191,36,0.6)] transition-all"
+                style={{ width: `${journeyPct}%` }}
+              />
+              {/* Tier markers */}
+              {journeyTiers.map((t) => {
+                const pct = Math.min(100, (t.threshold / journeyMax) * 100);
+                const reached = spent >= t.threshold;
+                return (
+                  <div
+                    key={t.tier}
+                    className="absolute -top-1.5 -translate-x-1/2"
+                    style={{ left: `${pct}%` }}
+                  >
+                    <div
+                      className={
+                        "w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold " +
+                        (reached
+                          ? "bg-amber-300 border-white text-brand-900 shadow-md"
+                          : "bg-brand-900 border-white/60 text-white/70")
+                      }
+                      title={`Tier ${t.tier} · ${t.threshold.toLocaleString()} credits`}
+                    >
+                      {reached ? "★" : t.tier}
+                    </div>
+                  </div>
+                );
+              })}
+              {/* You-are-here marker */}
+              <div
+                className="absolute -top-2 -translate-x-1/2 pointer-events-none"
+                style={{ left: `${journeyPct}%` }}
+                aria-hidden
+              >
+                <div className="w-2 h-7 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)]" />
+              </div>
+            </div>
+            <div className="mt-5 flex flex-wrap justify-between gap-2 text-[11px] text-white/85">
+              <span>
+                Start
+                <span className="block font-bold text-white text-sm font-mono tabular-nums">0</span>
+              </span>
+              {journeyTiers.map((t) => (
+                <span key={t.tier} className="text-center">
+                  {t.title}
+                  <span className="block font-bold text-white text-sm font-mono tabular-nums">
+                    {t.threshold.toLocaleString()}
+                  </span>
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-white/85 mt-4">
+              {nextTier ? (
+                <>
+                  <Flame size={12} className="inline -mt-0.5 mr-1 text-amber-300" />
+                  <span className="font-semibold text-white">{(nextTier.threshold - spent).toLocaleString()}</span>{" "}
+                  more credits trained until{" "}
+                  <span className="font-semibold text-white">{nextTier.title}</span> unlocks.
+                </>
+              ) : (
+                <>
+                  <Sparkles size={12} className="inline -mt-0.5 mr-1 text-amber-300" />
+                  You&apos;ve unlocked every tier. Future tiers will appear here as we add them.
+                </>
+              )}
+            </p>
+          </div>
         </div>
       </section>
 
       {/* Tier cards — one per registry entry. Each is in one of four
-          states; <MerchTierCard /> picks the right rendering. */}
+          states; the state chip + accent treatment vary so a single
+          glance tells you which tier you're standing on, which is
+          mid-claim, and which is still ahead. The dramatic tone shift
+          between locked and unlocked is intentional — unlocked cards
+          should feel like a moment, not a checkbox. */}
       <section className="grid sm:grid-cols-2 gap-4">
         {MERCH_TIERS.map((t) => {
           const reward = rewards.find((r) => r.tier === t.tier) ?? null;
@@ -149,17 +222,44 @@ export default async function RewardsPage() {
           return (
             <article
               key={t.tier}
-              className="rounded-2xl border border-line bg-card p-5 surface-shadow flex flex-col"
-              style={{
-                borderLeft: `4px solid ${locked ? "rgba(120,120,120,0.25)" : t.accent}`,
-              }}
+              className={
+                "relative overflow-hidden rounded-2xl border bg-card p-5 surface-shadow flex flex-col transition-transform hover:-translate-y-0.5 " +
+                (locked ? "border-line" : "border-transparent")
+              }
+              style={
+                locked
+                  ? { borderLeft: `4px solid rgba(120,120,120,0.25)` }
+                  : {
+                      // Painted accent strip + faint glow halo behind
+                      // the title for unlocked tiers, anchored on the
+                      // tier's accent colour so each tier still reads
+                      // as distinct.
+                      borderLeft: `4px solid ${t.accent}`,
+                      boxShadow: `0 0 0 1px ${t.accent}33, 0 8px 24px -12px ${t.accent}66`,
+                    }
+              }
             >
-              <header className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-                    Tier {t.tier} · {t.threshold.toLocaleString()} credits
-                  </p>
-                  <h2 className="text-lg font-bold text-fg mt-1 tracking-tight">{t.title}</h2>
+              {!locked && (
+                <div
+                  className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full blur-3xl opacity-25"
+                  style={{ background: t.accent }}
+                  aria-hidden
+                />
+              )}
+              <header className="relative flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <span
+                    className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white"
+                    style={{ background: locked ? "rgba(120,120,120,0.35)" : t.accent }}
+                  >
+                    {locked ? <Lock size={16} /> : <Gift size={16} />}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                      Tier {t.tier} · {t.threshold.toLocaleString()} credits
+                    </p>
+                    <h2 className="text-lg font-bold text-fg mt-0.5 tracking-tight">{t.title}</h2>
+                  </div>
                 </div>
                 <StateChip state={locked ? "LOCKED" : reward!.status} />
               </header>
@@ -476,6 +576,24 @@ function NonTraineeLanding({
           </p>
         </div>
       </section>
+    </div>
+  );
+}
+
+/**
+ * Compact stat tile used in the hero. Renders an icon-label-value
+ * vertical column matching the dark-hero typography.
+ */
+function Stat({ label, value, icon: Icon }: { label: string; value: string; icon: React.ElementType }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-white/70 inline-flex items-center gap-1">
+        <Icon size={11} />
+        {label}
+      </p>
+      <p className="text-2xl font-bold text-white leading-tight font-mono tabular-nums mt-1">
+        {value}
+      </p>
     </div>
   );
 }
