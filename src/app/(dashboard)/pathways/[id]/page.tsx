@@ -6,6 +6,7 @@ import { CheckCircle2, Circle, Award, Layers, BookOpen, Clock } from "lucide-rea
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PathwayEnrollButton } from "@/components/lms/PathwayEnrollButton";
+import { LeavePathwayButton } from "@/components/lms/LeavePathwayButton";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
 import { PathwayEnrollmentSettings } from "@/components/admin/PathwayEnrollmentSettings";
 import { PathwayCohortManager, type CohortRow } from "@/components/admin/PathwayCohortManager";
@@ -226,6 +227,16 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
                   <div className="h-full bg-emerald-400 transition-all" style={{ width: `${progress}%` }} />
                 </div>
                 <p className="text-xs text-brand-100 mt-2">{completedCount}/{courseIds.length} courses complete</p>
+              </div>
+            )}
+            {/* Admin fast-leave. Shown for any non-withdrawn enrollment
+                so admins can clean up after testing approval queues,
+                waitlist promotion, the trainee dashboard, etc. The
+                same DELETE endpoint also promotes the next cohort
+                waitlist entry, so leaving doesn't strand a seat. */}
+            {isStaff && enrollment && enrollment.status !== "withdrawn" && (
+              <div className="self-start">
+                <LeavePathwayButton pathwayId={pathway.id} pathwayTitle={pathway.title} />
               </div>
             )}
           </div>

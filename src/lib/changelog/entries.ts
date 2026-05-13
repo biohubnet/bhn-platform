@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Admin fast-leave for pathways",
+    body: "Mirror of the course-side admin fast-leave (shipped earlier this week) for pathway enrollments. A small 'Leave (admin)' button appears on the pathway detail hero whenever the viewing admin / superadmin holds a non-withdrawn enrollment — pending, waitlisted, approved, completed, rejected. One confirm prompt → DELETE /api/pathways/[id]/enroll → row flips to status=\"withdrawn\". \n\nFor cohort-mode pathways the route uses cancelCohortEnrollment, which also promotes the next waitlist entry in the same transaction so the admin's exit doesn't strand a seat. For legacy (no-cohort) pathways the row just flips state — same idempotency rules as the course-side button. Trainees still use the regular flow; the button is gated to staff at the parent and absent for trainees.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Editable page copy — admins can rewrite headlines, subtitles, hero text",
     body: "New CMS-lite layer for page text. Defaults stay in code; overrides live in a new EditableCopy table and take effect immediately when saved.\n\n• Inline pencils on the live page — hover any registered string (course-catalog subtitle, events index headline + intro, rewards hero title + body, pathways subtitle) and a small pencil appears for admins / superadmins. Click → modal editor with Save / Cancel / Reset-to-default. Trainees see nothing; layout doesn't shift.\n\n• /admin/copy index — every editable string on the platform, grouped by page (Catalog · Events · Rewards · Pathways), with an inline editor per row and an at-a-glance chip (\"Default\" vs \"Overridden\") so admins can scan which copy has been touched. Find it in the sidebar under Administration → Platform → Editable copy.\n\n• Reset behaviour — deleting the override row reverts the page to the in-code default. The code default never changes; overrides are purely additive.\n\n• Registry catalogue — src/lib/copy-registry.ts is the authoritative list of editable keys. Adding a new editable string is two lines: append a CopyEntry, swap the hard-coded string in the page for an <EditableText> wrapper. The /admin/copy editor and inline pencils pick up the new key automatically.\n\nWired surfaces in this first pass: /courses (subtitle), /events (headline + intro), /rewards (hero title + body), /pathways (subtitle). More pages get the treatment as we audit the rest.",
     kind: "feature",

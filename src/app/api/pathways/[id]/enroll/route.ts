@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { resolvePathwayWindow } from "@/lib/pathway-enrollment";
 import { trackServer } from "@/lib/analytics";
-import { enrollInCohort, pathwayHasCohorts } from "@/lib/pathways/cohorts";
+import { enrollInCohort, pathwayHasCohorts, cancelCohortEnrollment } from "@/lib/pathways/cohorts";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: pathwayId } = await params;
@@ -97,4 +97,59 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
   trackServer({ userId, role, name: "pathway_request", props: { pathwayId, status: placement } });
   return NextResponse.json(created, { status: 201 });
+}
+
+/**
+ * Withdraw the calling user's enrollment from a pathway.
+ *
+ * Mirrors the course-side DELETE: flips the user's PathwayEnrollment
+ * row to status="withdrawn" so they can re-apply later if they want.
+ * For cohort-mode pathways we route through `cancelCohortEnrollment`
+ * which also promotes the next-in-line waitlist entry — leaving an
+ * approved seat dangling would penalise the next trainee for no
+ * reason.
+ *
+ * This is admin-fast-path-equivalent on the trainee side too — the
+ * UI exposes the button only for admin/superadmin (testing flows),
+ * but the API isn't role-gated because a trainee withdrawing their
+ * own row is fundamentally safe. The withdrawn state is reversible
+ * (re-enroll), audit-logged via the pathway_request track event,
+ * and doesn't touch course enrollments inside the pathway.
+ */
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: pathwayId } = await params;
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+  const userId = (session.user as { id?: string }).id!;
+  const role = (session.user as { role?: string }).role ?? "trainee";
+
+  // Route through the cohort cancel helper when the pathway is in
+  // cohort-mode — it handles waitlist promotion in the same tx.
+  const usesCohorts = await pathwayHasCohorts(pathwayId);
+  if (usesCohorts) {
+    const r = await cancelCohortEnrollment(userId, pathwayId);
+    if (!("ok" in r) || !r.ok) {
+      return NextResponse.json({ error: (r as { error?: string }).error ?? "Couldn't leave." }, { status: 409 });
+    }
+    trackServer({ userId, role, name: "pathway_withdraw", props: { pathwayId, promoted: r.promoted } });
+    return NextResponse.json({ ok: true, promoted: r.promoted });
+  }
+
+  // Legacy path — pathway-level enrollment.
+  const existing = await prisma.pathwayEnrollment.findUnique({
+    where: { userId_pathwayId: { userId, pathwayId } },
+  });
+  if (!existing) {
+    // Idempotent: no row means there's nothing to withdraw, return ok.
+    return NextResponse.json({ ok: true, alreadyGone: true });
+  }
+  if (existing.status === "withdrawn") {
+    return NextResponse.json({ ok: true, alreadyGone: true });
+  }
+  await prisma.pathwayEnrollment.update({
+    where: { id: existing.id },
+    data: { status: "withdrawn", waitlistPosition: null },
+  });
+  trackServer({ userId, role, name: "pathway_withdraw", props: { pathwayId } });
+  return NextResponse.json({ ok: true });
 }
