@@ -18,7 +18,10 @@ import { prisma } from "@/lib/prisma";
  * data they aren't supposed to see in their own seat.
  */
 const SUPERADMIN_TARGETS = new Set(["trainee", "evaluating", "employer", "instructor", "admin"]);
-const ADMIN_TARGETS = new Set(["trainee"]);
+// Admins can also flip into the employer / HR seat — it's the
+// portal they help manage anyway and the keyboard shortcut for HR
+// view (xx) needs to work for admins, not only superadmins.
+const ADMIN_TARGETS = new Set(["trainee", "employer"]);
 
 export async function POST(req: NextRequest) {
   const session = await getRawSession();

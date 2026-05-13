@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { X, Keyboard } from "lucide-react";
@@ -50,10 +50,13 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
     };
   }, []);
 
-  const toggleRole = useCallback(async () => {
+  // Single press of the role-toggle key — flips trainee on/off.
+  //   • acting as trainee  → clear, return to real seat
+  //   • anything else      → switch to trainee
+  const fireSingleToggleRole = useCallback(async () => {
     if (!canActAs) return;
     try {
-      if (actingAs) {
+      if (actingAs === "trainee") {
         await fetch("/api/admin/act-as", { method: "DELETE" });
       } else {
         await fetch("/api/admin/act-as", {
@@ -67,6 +70,40 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
       // swallow — the user will see the role unchanged and retry
     }
   }, [canActAs, actingAs, router]);
+
+  // Double-tap of the role-toggle key — flips HR on, or escapes to
+  // real seat from any active view-as.
+  //   • acting as anything (trainee or employer) → clear to real
+  //   • real seat → switch to employer / HR
+  // Net effect: superadmin -xx-> HR, HR -x-> trainee, trainee -xx->
+  // back to real (the sequence the request described).
+  const fireDoubleToggleRole = useCallback(async () => {
+    if (!canActAs) return;
+    try {
+      if (actingAs) {
+        await fetch("/api/admin/act-as", { method: "DELETE" });
+      } else {
+        await fetch("/api/admin/act-as", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "employer" }),
+        });
+      }
+      router.refresh();
+    } catch {
+      // swallow
+    }
+  }, [canActAs, actingAs, router]);
+
+  // Double-tap detection for the role key. We delay the single-tap
+  // action by DOUBLE_TAP_WINDOW_MS so a fast second press can promote
+  // the press to a double-tap without firing the single-tap first
+  // (which would otherwise cause a flicker — switch to trainee, then
+  // immediately switch to HR). 320 ms is the sweet spot — long enough
+  // for a deliberate double-tap, short enough that single x still
+  // feels snappy.
+  const DOUBLE_TAP_WINDOW_MS = 320;
+  const xPendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     function isEditable(t: EventTarget | null): boolean {
@@ -86,7 +123,20 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
       if (kLower === map.toggleRole.toLowerCase()) {
         if (!canActAs) return;
         e.preventDefault();
-        void toggleRole();
+        if (xPendingTimer.current) {
+          // Second press inside the double-tap window — cancel the
+          // queued single action and fire the double action instead.
+          clearTimeout(xPendingTimer.current);
+          xPendingTimer.current = null;
+          void fireDoubleToggleRole();
+        } else {
+          // First press — queue the single action. If a second press
+          // lands within the window the timer is cleared above.
+          xPendingTimer.current = setTimeout(() => {
+            xPendingTimer.current = null;
+            void fireSingleToggleRole();
+          }, DOUBLE_TAP_WINDOW_MS);
+        }
         return;
       }
       if (k === map.shortcutsHelp) {
@@ -100,8 +150,14 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
       if (kLower === map.goEvents.toLowerCase())    { e.preventDefault(); router.push("/events");    return; }
     }
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [map, canActAs, toggleRole, router]);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (xPendingTimer.current) {
+        clearTimeout(xPendingTimer.current);
+        xPendingTimer.current = null;
+      }
+    };
+  }, [map, canActAs, fireSingleToggleRole, fireDoubleToggleRole, router]);
 
   return (
     <>
@@ -143,17 +199,30 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
               </button>
             </div>
             <ul className="space-y-1.5">
-              {SHORTCUT_CATALOG.filter((d) => !(d.roleGate === "staff" && !canActAs)).map((d) => (
-                <li key={d.action} className="flex items-start justify-between gap-3 px-3 py-2 rounded-lg hover:bg-elevated">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-fg leading-tight">{d.label}</p>
-                    <p className="text-xs text-muted leading-tight mt-0.5">{d.description}</p>
-                  </div>
-                  <kbd className="shrink-0 text-[11px] font-bold px-2 py-1 rounded bg-elevated ring-1 ring-inset ring-line text-fg uppercase tracking-wider">
-                    {String(map[d.action])}
-                  </kbd>
-                </li>
-              ))}
+              {SHORTCUT_CATALOG.filter((d) => !(d.roleGate === "staff" && !canActAs)).map((d) => {
+                const key = String(map[d.action]);
+                const isRoleToggle = d.action === "toggleRole";
+                return (
+                  <li key={d.action} className="flex items-start justify-between gap-3 px-3 py-2 rounded-lg hover:bg-elevated">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-fg leading-tight">{d.label}</p>
+                      <p className="text-xs text-muted leading-tight mt-0.5">{d.description}</p>
+                      {isRoleToggle && (
+                        <p className="text-xs text-brand-700 leading-tight mt-1">
+                          Double-tap{" "}
+                          <kbd className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-50 ring-1 ring-inset ring-brand-200">
+                            {key}{key}
+                          </kbd>{" "}
+                          → switch to HR / employer view (or back to your real seat).
+                        </p>
+                      )}
+                    </div>
+                    <kbd className="shrink-0 text-[11px] font-bold px-2 py-1 rounded bg-elevated ring-1 ring-inset ring-line text-fg uppercase tracking-wider">
+                      {key}
+                    </kbd>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

@@ -48,7 +48,7 @@ export interface ShortcutDef {
 }
 
 export const SHORTCUT_CATALOG: ShortcutDef[] = [
-  { action: "toggleRole",    label: "Quick role-toggle",     description: "Flip between your real role and trainee view (admin / superadmin only).",            roleGate: "staff" },
+  { action: "toggleRole",    label: "Quick role-toggle",     description: "Single tap: flip trainee view on/off. Double tap (same key twice fast): flip HR / employer view on/off, or escape any view-as back to your real seat. Admin / superadmin only.", roleGate: "staff" },
   { action: "shortcutsHelp", label: "Show shortcut cheat-sheet", description: "Pop up an overlay listing every active shortcut." },
   { action: "goDashboard",   label: "Go to · Dashboard",     description: "Jump to /dashboard from anywhere." },
   { action: "goCourses",     label: "Go to · Catalog",       description: "Jump to /courses (the course catalog)." },
