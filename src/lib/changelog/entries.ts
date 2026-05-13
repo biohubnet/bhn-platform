@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Editable page copy — admins can rewrite headlines, subtitles, hero text",
+    body: "New CMS-lite layer for page text. Defaults stay in code; overrides live in a new EditableCopy table and take effect immediately when saved.\n\n• Inline pencils on the live page — hover any registered string (course-catalog subtitle, events index headline + intro, rewards hero title + body, pathways subtitle) and a small pencil appears for admins / superadmins. Click → modal editor with Save / Cancel / Reset-to-default. Trainees see nothing; layout doesn't shift.\n\n• /admin/copy index — every editable string on the platform, grouped by page (Catalog · Events · Rewards · Pathways), with an inline editor per row and an at-a-glance chip (\"Default\" vs \"Overridden\") so admins can scan which copy has been touched. Find it in the sidebar under Administration → Platform → Editable copy.\n\n• Reset behaviour — deleting the override row reverts the page to the in-code default. The code default never changes; overrides are purely additive.\n\n• Registry catalogue — src/lib/copy-registry.ts is the authoritative list of editable keys. Adding a new editable string is two lines: append a CopyEntry, swap the hard-coded string in the page for an <EditableText> wrapper. The /admin/copy editor and inline pencils pick up the new key automatically.\n\nWired surfaces in this first pass: /courses (subtitle), /events (headline + intro), /rewards (hero title + body), /pathways (subtitle). More pages get the treatment as we audit the rest.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "CRM_EP renamed; phantom clear loses its confirm",
     body: "Two small but visible cleanups:\n\n• The catalog course titled \"CRM_EP\" (a working-title slug that escaped from the admin-create flow) is now \"Customer Relationship Management for Founders\" — a descriptive name that fits the OBIO entrepreneurship pathway and reads naturally on the catalog and the certificate. Renamed via a SQL migration that catches the realistic casing / separator variants so a typo at creation time can't dodge the rename. Idempotent — safe to re-run.\n\n• Clear-all-phantoms no longer asks for confirmation. Phantoms are throwaway test fixtures that respawn in 5 seconds, so the modal was costing more time mid-demo than it ever protected. Affects both /admin/phantom-users (\"Delete all\" bulk button) and the embedded DemoPhantomTray on per-page surfaces (Manage Enrollments, Credit Applications, Talent Pool, etc.). Per-row delete still confirms — that one's a single named user, much easier to mis-click.",
     kind: "improvement",

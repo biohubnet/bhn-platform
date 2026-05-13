@@ -1293,6 +1293,18 @@ model PlatformSetting {
   updatedAt DateTime @updatedAt
 }
 
+/// Free-text site copy editable from /admin/copy.
+/// Stable code-side defaults live in src/lib/copy-registry.ts;
+/// a row here is an override. Missing row = use the code default.
+model EditableCopy {
+  key         String   @id
+  value       String
+  updatedAt   DateTime @updatedAt
+  updatedById String?
+
+  @@index([updatedAt(sort: Desc)])
+}
+
 /// Two-person learning buddy relationship. Either side can end it at any
 /// time. Pairs are unique per (initiator, partner); a 'reverse' invite
 /// from the partner reuses the same row by flipping who initiated.

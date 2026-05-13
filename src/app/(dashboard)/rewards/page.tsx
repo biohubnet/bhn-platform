@@ -1,4 +1,4 @@
-import { requireSession } from "@/lib/auth";
+import { requireSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +11,8 @@ import {
   nextTierFor,
 } from "@/lib/rewards/merch";
 import { MerchClaimDialog } from "@/components/rewards/MerchClaimDialog";
+import { EditableText } from "@/components/cms/EditableText";
+import { getCopyMap } from "@/lib/copy";
 
 /**
  * /rewards — trainee-facing loyalty page.
@@ -81,6 +83,15 @@ export default async function RewardsPage() {
   const journeyMax = journeyTiers[journeyTiers.length - 1]?.threshold ?? 5000;
   const journeyPct = Math.min(100, (spent / journeyMax) * 100);
 
+  const heroTitleDefault = "Train hard. Earn the gear.";
+  const heroBodyDefault = "Every credit you spend on coursework counts toward milestone rewards. Pickup at Leslie Dan Faculty of Pharmacy, U of T — or request mailing in the claim form.";
+  const heroCopy = await getCopyMap(["rewards.heroTitle", "rewards.heroBody"]);
+  const heroTitle = heroCopy["rewards.heroTitle"] ?? heroTitleDefault;
+  const heroBody = heroCopy["rewards.heroBody"] ?? heroBodyDefault;
+  // Real role gates the pencil — an admin viewing-as-trainee should
+  // still be able to edit the hero copy without flipping seats first.
+  const editableIsStaff = checkIsStaff(realRole);
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       {/* Hero — full-bleed brand-gradient surface with the lifetime
@@ -103,12 +114,10 @@ export default async function RewardsPage() {
             Loyalty rewards
           </p>
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mt-3 leading-[1.05]">
-            Train hard. Earn the gear.
+            <EditableText copyKey="rewards.heroTitle" defaultText={heroTitle} isStaff={editableIsStaff} multiline={false} />
           </h1>
           <p className="text-base text-white/85 mt-3 max-w-2xl leading-relaxed">
-            Every credit you spend on coursework counts toward milestone
-            rewards. Pickup at <span className="font-semibold text-white">Leslie Dan Faculty of Pharmacy, U of T</span> —
-            or request mailing in the claim form.
+            <EditableText copyKey="rewards.heroBody" defaultText={heroBody} isStaff={editableIsStaff} />
           </p>
 
           {/* Big lifetime-credits headline */}

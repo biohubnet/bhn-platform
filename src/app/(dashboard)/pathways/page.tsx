@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Layers, Award, BookOpen, Users, ClipboardList, Check, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { PageHero } from "@/components/ui/PageHero";
+import { EditableText } from "@/components/cms/EditableText";
+import { getCopy } from "@/lib/copy";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
 import { ensureRegisteredForms } from "@/lib/forms/registry";
 
@@ -78,12 +80,17 @@ export default async function PathwaysPage() {
       })
     : [];
 
+  const pathwaysSubtitleDefault = "Stack of courses that ladder up to a single certificate, plus open registrations for live programmes. Pick something to build toward.";
+  const pathwaysSubtitle = await getCopy("pathways.subtitle", pathwaysSubtitleDefault);
+
   return (
     <div>
       <PageHero
         eyebrow={<><Layers size={11} /> Training programmes</>}
         title="Pathways and registrations"
-        description="Stack of courses that ladder up to a single certificate, plus open registrations for live programmes. Pick something to build toward."
+        description={
+          <EditableText copyKey="pathways.subtitle" defaultText={pathwaysSubtitle} isStaff={isStaff} />
+        }
         actions={isStaff ? <PathwayManageButton mode="create" courses={courses} /> : null}
       />
 

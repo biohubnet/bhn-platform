@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { EventCalendar, type EventDot } from "@/components/events/EventCalendar";
 import { DemoEventsControls } from "@/components/events/DemoEventsControls";
+import { EditableText } from "@/components/cms/EditableText";
+import { getCopyMap } from "@/lib/copy";
 
 /**
  * /events — public landing for all currently-published BHN events.
@@ -55,6 +57,12 @@ export default async function EventsIndexPage() {
     }),
   ]);
 
+  const titleDefault = "Symposium, Training Week & more";
+  const introDefault = "The BioHubNet Annual Symposium + Training Week is the flagship gathering for biomanufacturing trainees, faculty, and industry partners across Canada. Browse upcoming editions below and register from the event page.";
+  const copy = await getCopyMap(["events.indexHeader.title", "events.indexHeader.intro"]);
+  const headerTitle = copy["events.indexHeader.title"] ?? titleDefault;
+  const headerIntro = copy["events.indexHeader.intro"] ?? introDefault;
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16 space-y-10">
       <header>
@@ -62,13 +70,10 @@ export default async function EventsIndexPage() {
           BHN Events
         </p>
         <h1 className="text-3xl sm:text-4xl font-bold text-fg mt-2 tracking-tight">
-          Symposium, Training Week &amp; more
+          <EditableText copyKey="events.indexHeader.title" defaultText={headerTitle} isStaff={isStaff} multiline={false} />
         </h1>
         <p className="text-base text-muted mt-3 max-w-2xl leading-relaxed">
-          The BioHubNet Annual Symposium + Training Week is the flagship
-          gathering for biomanufacturing trainees, faculty, and industry
-          partners across Canada. Browse upcoming editions below and
-          register from the event page.
+          <EditableText copyKey="events.indexHeader.intro" defaultText={headerIntro} isStaff={isStaff} />
         </p>
       </header>
 

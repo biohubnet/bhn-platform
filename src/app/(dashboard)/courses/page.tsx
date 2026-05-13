@@ -6,6 +6,8 @@ import { CourseSearchBar } from "@/components/lms/CourseSearchBar";
 import { CourseFilters } from "@/components/lms/CourseFilters";
 import { CatalogGrid, type CatalogCourse } from "@/components/lms/CatalogGrid";
 import { PageHero } from "@/components/ui/PageHero";
+import { EditableText } from "@/components/cms/EditableText";
+import { getCopy } from "@/lib/copy";
 import { parseFilters } from "@/lib/courses/filters";
 import {
   ensureCourseFilterOptions, getCourseFilterOptions,
@@ -79,12 +81,21 @@ export default async function CoursesPage({
     scormPackage: c.scormPackage,
   }));
 
+  const subtitleDefault = "Self-paced modules, SCORM-backed simulations, and instructor-led series — all in one library. Filter by topic, delivery, provider, or run a search.";
+  const subtitle = await getCopy("courses.subtitle", subtitleDefault);
+
   return (
     <div>
       <PageHero
         eyebrow={<><BookOpen size={11} /> Course catalog</>}
         title={`${courses.length} courses to explore`}
-        description="Self-paced modules, SCORM-backed simulations, and instructor-led series — all in one library. Filter by topic, delivery, provider, or run a search."
+        description={
+          <EditableText
+            copyKey="courses.subtitle"
+            defaultText={subtitle}
+            isStaff={isStaff}
+          />
+        }
         tone="brand"
         actions={isStaff ? <NewCourseButton /> : null}
       />

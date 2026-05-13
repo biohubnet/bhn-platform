@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.12g";
+export const TOUR_VERSION = "2026.05.12h";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -561,6 +561,15 @@ export const TOUR_STEPS: TourStep[] = [
     path: "/forms/talent-application",
     placement: "center",
     since: "2026.05.12d",
+  },
+  {
+    id: "editable-copy",
+    title: "New: edit page text inline",
+    body: "Admins can now rewrite page headlines, subtitles, and hero copy without a deploy. Hover any text on /courses, /events, /rewards, or /pathways and a small pencil appears — click it to open a modal editor. Or open Administration → Platform → Editable copy for every editable string in one place, with a chip showing which ones have been overridden. Reset reverts a string to the in-code default.",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.12h",
+    cta: { label: "Open editable copy", href: "/admin/copy" },
   },
   {
     id: "events-calendar-and-rewards-hero",

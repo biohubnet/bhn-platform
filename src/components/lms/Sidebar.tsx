@@ -228,6 +228,8 @@ const adminPlatformItems: NavItem[] = [
     description: "LTI 1.3 launch configuration for external LMS integrations." },
   { label: "System status",       href: "/admin/system-status",       icon: Activity,    minRole: "superadmin",
     description: "Live system health — DB latency, queue depth, third-party API status." },
+  { label: "Editable copy",       href: "/admin/copy",                icon: FileText,    minRole: "admin",
+    description: "Every editable page string in one place — change headlines, subtitles, hero copy. Live pages also have inline pencils." },
   { label: "Settings",            href: "/admin/settings",            icon: Settings,    minRole: "superadmin",
     description: "Platform-wide settings only superadmins can change." },
 ];
