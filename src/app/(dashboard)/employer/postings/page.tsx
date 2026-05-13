@@ -3,6 +3,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PostingsTable } from "@/components/employer/PostingsTable";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 /**
  * Employer's own internship postings. Filters by createdById so each
@@ -61,6 +62,21 @@ export default async function EmployerPostings() {
           <Plus size={14} /> New posting
         </Link>
       </div>
+
+      {/* Admin-only seed/clear tray. Real HR users don't see it (the
+          tray's endpoints reject non-admin requests, so showing it
+          would just bait a 403). Admins acting-as employer via the
+          xx shortcut can use it to populate the HR view with demo
+          postings or wipe back to a fresh state. */}
+      {isAdminLike && (
+        <div className="mb-4">
+          <DemoSeedAndClearTray
+            entity="internship_posting"
+            noun="demo postings"
+            clearHelp="Delete every internship posting authored by a demo employer account. Real employer postings stay. Phantom + showcase aren't touched here."
+          />
+        </div>
+      )}
 
       <PostingsTable
         postings={postings.map((p) => ({

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Users2, Paperclip, Video, Mail, Calendar } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 /** Read-only roster of talent applications, scoped to employer view.
  *  Stub for the full ATS — saved/shortlist/interview status comes next. */
@@ -15,6 +16,7 @@ export default async function EmployerApplicants() {
       </div>
     );
   }
+  const isAdminLike = role === "admin" || role === "superadmin";
 
   const form = await prisma.eventForm.findUnique({
     where: { slug: "talent-application" },
@@ -42,6 +44,20 @@ export default async function EmployerApplicants() {
           {applicants.length} {applicants.length === 1 ? "applicant" : "applicants"} · sorted by most recent
         </p>
       </div>
+
+      {/* Admin-only seed/clear tray on the HR-facing applicants view.
+          Lets admins (and admins acting-as employer) populate the
+          page with demo applicants or wipe back to a fresh slate. */}
+      {isAdminLike && (
+        <div className="mb-4">
+          <DemoSeedAndClearTray
+            entity="form_submission"
+            scope={{ formSlug: "talent-application" }}
+            noun="demo applicants"
+            clearHelp="Delete every talent-application submission from demo accounts. The submitters themselves stay (reusable for other tests). Real applicants are not touched."
+          />
+        </div>
+      )}
 
       {applicants.length === 0 ? (
         <div className="bg-card border border-line rounded-2xl p-12 text-center">
