@@ -236,7 +236,7 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
                 waitlist entry, so leaving doesn't strand a seat. */}
             {isStaff && enrollment && enrollment.status !== "withdrawn" && (
               <div className="self-start">
-                <LeavePathwayButton pathwayId={pathway.id} pathwayTitle={pathway.title} />
+                <LeavePathwayButton pathwayId={pathway.id} pathwayTitle={pathway.title} tone="onDark" />
               </div>
             )}
           </div>

@@ -7,6 +7,7 @@ import { PageHero } from "@/components/ui/PageHero";
 import { EditableText } from "@/components/cms/EditableText";
 import { getCopy } from "@/lib/copy";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
+import { LeavePathwayButton } from "@/components/lms/LeavePathwayButton";
 import { ensureRegisteredForms } from "@/lib/forms/registry";
 
 interface PathwayRow {
@@ -186,17 +187,35 @@ export default async function PathwaysPage() {
                         {p.title}
                       </h3>
                     </div>
-                    {myStatus === "completed" ? (
-                      <Badge tone="success">Completed</Badge>
-                    ) : myStatus === "approved" ? (
-                      <Badge tone="brand">Enrolled</Badge>
-                    ) : myStatus === "pending" ? (
-                      <Badge tone="amber">Requested</Badge>
-                    ) : myStatus === "waitlisted" ? (
-                      <Badge tone="warning">Waitlist</Badge>
-                    ) : isStaff && p.status === "draft" ? (
-                      <Badge tone="warning">Draft</Badge>
-                    ) : null}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      {myStatus === "completed" ? (
+                        <Badge tone="success">Completed</Badge>
+                      ) : myStatus === "approved" ? (
+                        <Badge tone="brand">Enrolled</Badge>
+                      ) : myStatus === "pending" ? (
+                        <Badge tone="amber">Requested</Badge>
+                      ) : myStatus === "waitlisted" ? (
+                        <Badge tone="warning">Waitlist</Badge>
+                      ) : isStaff && p.status === "draft" ? (
+                        <Badge tone="warning">Draft</Badge>
+                      ) : null}
+                      {/* Admin fast-leave shown inline on the card so an
+                          admin can clean up their test enrollments
+                          without clicking through to each pathway. The
+                          wrapping span captures the click before it
+                          bubbles to the parent Link, so the button can
+                          fire its confirm + DELETE without navigation. */}
+                      {isStaff && myStatus && myStatus !== "withdrawn" && (
+                        <span
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          // Tap-through prevention on touch + keyboard
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="inline-flex"
+                        >
+                          <LeavePathwayButton pathwayId={p.id} pathwayTitle={p.title} />
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {p.description && (
                     <p className="text-sm text-muted line-clamp-3 mb-3 leading-relaxed">{p.description}</p>
