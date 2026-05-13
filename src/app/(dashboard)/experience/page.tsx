@@ -187,9 +187,16 @@ function Step({
   title: string;
   body: React.ReactNode;
 }) {
+  // Stagger the idle bob so the row reads as a soft wave on first
+  // paint (1 bobs first, 2 a quarter cycle later, etc.). Hover
+  // scales the chip a notch and accelerates the cycle.
+  const delaySec = ((n - 1) * 0.45).toFixed(2);
   return (
-    <div className="flex items-start gap-4">
-      <div className="shrink-0 w-12 h-12 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-md shadow-brand-600/30">
+    <div className="group/step flex items-start gap-4">
+      <div
+        className="shrink-0 w-12 h-12 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-md shadow-brand-600/30 animate-step-bob transition-transform group-hover/step:scale-110 group-hover/step:rotate-[-4deg]"
+        style={{ animationDelay: `${delaySec}s` }}
+      >
         <span className="text-base font-bold leading-none">{n}</span>
       </div>
       <div className="flex-1 min-w-0">
@@ -308,10 +315,15 @@ function FlowBox({
     amber:   "border-amber-300 bg-amber-50 text-amber-900",
     success: "border-emerald-300 bg-emerald-50 text-emerald-900",
   }[tone];
+  // Boxes without an href don't get the curve-to-nav affordance,
+  // so give the icon a gentle wobble — keeps the page alive and
+  // signals "this is a process step, not a click target." Boxes
+  // with an href use the curve hover, no animation needed.
+  const iconAnim = href ? "" : "animate-icon-wobble";
   const inner = (
     <div className={`rounded-xl border-2 px-4 py-3 transition-colors hover:shadow-md ${toneClasses}`}>
       <div className="flex items-start gap-3">
-        <span className="shrink-0 w-8 h-8 rounded-lg bg-white/70 flex items-center justify-center">
+        <span className={`shrink-0 w-8 h-8 rounded-lg bg-white/70 flex items-center justify-center ${iconAnim}`}>
           <Icon size={14} />
         </span>
         <div className="flex-1 min-w-0">
@@ -332,15 +344,20 @@ function FlowBox({
 function FlowArrow() {
   return (
     <div className="flex justify-center text-muted py-0.5" aria-hidden>
-      <ArrowDown size={18} />
+      <ArrowDown size={18} className="animate-flow-down" />
     </div>
   );
 }
 
 function FlowMini({ label }: { label: string }) {
+  // Mini label above a track box. Subtle animated chevron + label
+  // pairing — calls the eye to look down into the box without
+  // adding another full FlowArrow row to the chart's vertical
+  // rhythm.
   return (
-    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle text-center">
-      {label}
+    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle text-center inline-flex flex-col items-center justify-center gap-0.5">
+      <span>{label}</span>
+      <ArrowDown size={10} className="animate-mini-arrow text-brand-600" aria-hidden />
     </p>
   );
 }

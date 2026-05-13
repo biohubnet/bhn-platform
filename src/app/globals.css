@@ -1708,3 +1708,58 @@ h1, h2, h3 {
       0 0 12px 2px rgba(125, 211, 252, 0.45);
   }
 }
+
+/* ─── Guide-page animations ────────────────────────────────────────
+ *
+ * Light idle motion for the parts of the EXPERIENCE program guide
+ * that don't link to a sidebar item (so they don't have the curve-
+ * to-nav affordance). The goal is "this page is alive without being
+ * distracting." All four animations honour prefers-reduced-motion.
+ *
+ *   .animate-flow-down     — vertical arrow in the flow chart;
+ *                            gently dips down then back up.
+ *   .animate-icon-wobble   — for the Admin-review box icon. Tilts
+ *                            left/right to suggest "review in
+ *                            motion." Slow cycle.
+ *   .animate-step-bob      — for the numbered step circles (1-6) in
+ *                            the step-by-step. Subtle vertical bob;
+ *                            stagger via inline animation-delay so
+ *                            the row reads like a soft wave on
+ *                            first paint.
+ *   .animate-mini-arrow    — for the "Pool track" / "Self-apply
+ *                            track" mini-arrow markers; slides
+ *                            sideways so the eye knows the box
+ *                            below belongs to that branch.
+ */
+@keyframes flow-down-arrow {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  50%      { transform: translateY(6px); opacity: 1; }
+}
+.animate-flow-down { animation: flow-down-arrow 2.2s ease-in-out infinite; }
+
+@keyframes icon-wobble {
+  0%, 100% { transform: rotate(-6deg); }
+  50%      { transform: rotate(6deg); }
+}
+.animate-icon-wobble { animation: icon-wobble 1.6s ease-in-out infinite; }
+
+@keyframes step-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+.animate-step-bob { animation: step-bob 3.6s ease-in-out infinite; }
+
+@keyframes mini-arrow-dip {
+  0%, 100% { transform: translateY(0);   opacity: 0.55; }
+  50%      { transform: translateY(3px); opacity: 1; }
+}
+.animate-mini-arrow { animation: mini-arrow-dip 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-flow-down,
+  .animate-icon-wobble,
+  .animate-step-bob,
+  .animate-mini-arrow {
+    animation: none;
+  }
+}
