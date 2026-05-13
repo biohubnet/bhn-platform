@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CheckCircle2, Circle, XCircle, RotateCcw, Mail, Loader2, AlertCircle,
+  CheckCircle2, Circle, XCircle, RotateCcw, Mail, Loader2, AlertCircle, Trash2,
 } from "lucide-react";
 
 /**
@@ -121,6 +121,45 @@ export function AttendeeActions({
     }
   }
 
+  /**
+   * Hard-delete the registration. Distinct from Cancel:
+   *   • Cancel keeps the row as soft-cancelled so it can be
+   *     reinstated and the audit trail survives.
+   *   • Delete wipes the row entirely. Used for duplicates,
+   *     fraudulent records, or PIPEDA right-to-deletion requests.
+   * Confirmation is deliberately stronger than the cancel one —
+   * this is the destructive path with no in-app undo (admin would
+   * have to recreate the registration from scratch).
+   */
+  async function deleteRegistration() {
+    if (!confirm(`PERMANENTLY DELETE ${attendeeName}'s registration?\n\nThis can't be undone from the UI. The attendee's workshop bookings and breakout picks will be released and any waitlisters promoted. For a soft-cancel that keeps the row recoverable, use Cancel instead.`)) {
+      return;
+    }
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/admin/events/${slug}/registrations/${registrationId}`,
+        { method: "DELETE" },
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        cancelMeta?: { cancelledBookings: number; promoted: number } | null;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Delete failed");
+      const meta = data.cancelMeta;
+      const detail = meta && meta.cancelledBookings > 0
+        ? ` — ${meta.cancelledBookings} booking${meta.cancelledBookings === 1 ? "" : "s"} released${meta.promoted > 0 ? `, ${meta.promoted} waitlister${meta.promoted === 1 ? "" : "s"} promoted` : ""}`
+        : "";
+      setFlashAuto(`Registration deleted${detail}. Redirecting…`);
+      // The page we're on is keyed on the registration id we just
+      // deleted — pop back to the queue so the admin doesn't sit on
+      // a 404.
+      setTimeout(() => router.push(`/admin/events/${slug}/registrations`), 800);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
   async function resendEmail() {
     setError(null);
     try {
@@ -184,6 +223,18 @@ export function AttendeeActions({
       >
         {busy ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
         Resend email
+      </button>
+
+      {/* Destructive: outright deletion. Distinct from cancel; tuned
+          stronger (deeper rose, explicit "permanently" label) so the
+          admin reads it as the no-undo path. */}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => startTransition(() => { void deleteRegistration(); })}
+        className="admin-glow inline-flex items-center gap-1.5 text-xs font-bold rounded-xl px-3 py-2 ring-1 ring-inset bg-rose-50 text-rose-800 ring-rose-200 hover:bg-rose-100 hover:ring-rose-300 disabled:opacity-50"
+      >
+        <Trash2 size={12} /> Delete permanently
       </button>
 
       <div className="basis-full" />

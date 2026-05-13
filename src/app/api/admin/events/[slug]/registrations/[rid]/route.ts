@@ -139,3 +139,68 @@ export async function PATCH(
   const updated = await prisma.registration.findUnique({ where: { id: rid } });
   return NextResponse.json({ ok: true, registration: updated, cancelMeta });
 }
+
+/**
+ * Admin: hard-delete a Registration.
+ *
+ *   DELETE /api/admin/events/[slug]/registrations/[rid]
+ *
+ * Removes the attendee from the event entirely — workshop bookings
+ * released, waitlist promoted, and the Registration row itself
+ * deleted. This is the "remove from the list" path management
+ * needs when a duplicate slips through, a record was created
+ * fraudulently, or someone needs to be fully scrubbed for privacy
+ * reasons (PIPEDA right-to-deletion request).
+ *
+ * Distinct from PATCH registrationStatus=cancelled — the cancel
+ * path keeps the row around as a soft-cancelled record (so the
+ * attendee can later be reinstated and the audit trail survives).
+ * Delete is a clean wipe.
+ *
+ * Side effects on delete:
+ *   1. Run cancelRegistration first — releases every workshop
+ *      booking the attendee held and promotes waitlisters into
+ *      the freed spots. We always go through this path even if
+ *      registrationStatus was already "cancelled" (idempotent;
+ *      bookings may not have been released yet for older rows).
+ *   2. Delete the Registration row. Workshop bookings + breakout
+ *      picks should cascade via FK; check-in records are part of
+ *      the Registration row itself so no separate cleanup.
+ */
+export async function DELETE(
+  _req: NextRequest,
+  ctx: { params: Promise<{ slug: string; rid: string }> },
+) {
+  const session = await requireRole("admin").catch(() => null);
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { slug, rid } = await ctx.params;
+  const event = await prisma.bhnEvent.findUnique({
+    where: { slug },
+    select: { id: true },
+  });
+  if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+
+  const registration = await prisma.registration.findUnique({
+    where: { id: rid },
+    select: { id: true, eventId: true, userId: true, registrationStatus: true },
+  });
+  if (!registration || registration.eventId !== event.id) {
+    return NextResponse.json({ error: "Registration not found for this event" }, { status: 404 });
+  }
+
+  // Release any held workshop bookings + promote waitlist. Idempotent
+  // when the row was already cancelled (no bookings left to release;
+  // returns ok with zeros).
+  let cancelMeta: { cancelledBookings: number; promoted: number } | null = null;
+  if (registration.registrationStatus !== "cancelled") {
+    const r = await cancelRegistration(prisma, event.id, registration.userId);
+    if (!r.ok) {
+      return NextResponse.json({ error: r.error, code: r.code }, { status: 400 });
+    }
+    cancelMeta = { cancelledBookings: r.cancelledBookings, promoted: r.promoted };
+  }
+
+  await prisma.registration.delete({ where: { id: rid } });
+  return NextResponse.json({ ok: true, deleted: true, cancelMeta });
+}

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Search, CheckCircle2, Circle, UserX, AlertTriangle, MoreHorizontal,
-  XCircle, RotateCcw, Mail, ExternalLink, StickyNote,
+  XCircle, RotateCcw, Mail, ExternalLink, StickyNote, Trash2,
 } from "lucide-react";
 
 export interface RegistrationRow {
@@ -179,6 +179,49 @@ export function RegistrationsTable({
         prev.map((r) => (r.id === row.id ? { ...r, checkedInAt: row.checkedInAt } : r)),
       );
       setError((err as Error).message);
+    } finally {
+      setBusyIds((s) => {
+        const next = new Set(s);
+        next.delete(row.id);
+        return next;
+      });
+    }
+  }
+
+  // ── Per-row hard delete ────────────────────────────────────────
+  async function deleteRow(row: RegistrationRow) {
+    if (!confirm(
+      `PERMANENTLY DELETE ${row.name ?? row.email}'s registration?\n\n` +
+      `This can't be undone from the UI. Workshop bookings will be ` +
+      `released and waitlisters promoted. For a soft-cancel that ` +
+      `keeps the row recoverable, use Cancel instead.`,
+    )) return;
+    setBusyIds((s) => new Set(s).add(row.id));
+    try {
+      const res = await fetch(
+        `/api/admin/events/${slug}/registrations/${row.id}`,
+        { method: "DELETE" },
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        cancelMeta?: { cancelledBookings: number; promoted: number } | null;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Delete failed");
+      setRows((prev) => prev.filter((r) => r.id !== row.id));
+      // Drop from selection if it was ticked.
+      setSelected((s) => {
+        const next = new Set(s);
+        next.delete(row.id);
+        return next;
+      });
+      const meta = data.cancelMeta;
+      const detail = meta && meta.cancelledBookings > 0
+        ? ` — ${meta.cancelledBookings} booking${meta.cancelledBookings === 1 ? "" : "s"} released${meta.promoted > 0 ? `, ${meta.promoted} waitlister${meta.promoted === 1 ? "" : "s"} promoted` : ""}`
+        : "";
+      setFlashAuto(`Deleted${detail}.`);
+      startTransition(() => router.refresh());
+    } catch (e) {
+      alert((e as Error).message);
     } finally {
       setBusyIds((s) => {
         const next = new Set(s);
@@ -577,6 +620,16 @@ export function RegistrationsTable({
                               Cancel registration
                             </MenuItem>
                           )}
+                          <MenuItem
+                            icon={Trash2}
+                            danger
+                            onClick={() => {
+                              setOpenMenu(null);
+                              startTransition(() => { void deleteRow(r); });
+                            }}
+                          >
+                            Delete permanently
+                          </MenuItem>
                         </div>
                       )}
                     </td>
