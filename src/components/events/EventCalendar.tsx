@@ -61,18 +61,16 @@ function ymd(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function EventCalendar({ events, monthsAhead = 1 }: Props) {
-  // Anchor on the earliest upcoming event's month if present, else
-  // today's month — feels much more useful than always starting on
-  // "now" if the next event is six months out.
-  const initial = useMemo(() => {
-    if (events.length === 0) return startOfMonth(new Date());
-    const earliest = events
-      .map((e) => new Date(e.start))
-      .reduce((a, b) => (a < b ? a : b));
-    return startOfMonth(earliest < new Date() ? new Date() : earliest);
-  }, [events]);
-  const [anchor, setAnchor] = useState<Date>(initial);
+export function EventCalendar({ events: _events, monthsAhead = 1 }: Props) {
+  // Always anchor on the current month at first paint. Earlier
+  // versions auto-skipped to the earliest upcoming event's month,
+  // but that surprised readers who expected "today" by default.
+  // The shared nav still lets them flip forward when they want.
+  // (events param kept on the signature but only consumed below
+  // via the byDay map; the initial-anchor logic doesn't depend on
+  // it any more.)
+  const events = _events;
+  const [anchor, setAnchor] = useState<Date>(() => startOfMonth(new Date()));
 
   // Pre-compute a map: day-key (YYYY-MM-DD) → list of events covering
   // that day. Each multi-day event lands on every day in its inclusive
@@ -183,8 +181,9 @@ function MonthGrid({ month, byDay }: { month: Date; byDay: Map<string, EventDot[
 
   return (
     <div className="bg-card ring-1 ring-inset ring-line/60 overflow-hidden flex flex-col">
-      {/* Per-month label + count */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-line bg-elevated/40">
+      {/* Per-month label + count — tightened vertical padding so an
+          empty month uses well under half the height of one event row. */}
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-line bg-elevated/40">
         <h4 className="text-sm font-semibold text-fg tracking-tight">
           {monthLabel}
         </h4>
@@ -196,9 +195,9 @@ function MonthGrid({ month, byDay }: { month: Date; byDay: Map<string, EventDot[
       </div>
 
       {/* Weekday row */}
-      <div className="grid grid-cols-7 px-2 pt-2 text-[10px] uppercase tracking-[0.12em] font-bold text-subtle">
+      <div className="grid grid-cols-7 px-2 pt-1 text-[10px] uppercase tracking-[0.12em] font-bold text-subtle">
         {WEEKDAYS.map((w) => (
-          <div key={w} className="px-1 py-1 text-center">
+          <div key={w} className="px-1 py-0.5 text-center">
             {w}
           </div>
         ))}
@@ -276,9 +275,10 @@ function DayCell({
 }) {
   // Per-row min-height. Tall when the week carries any event so
   // chips can wrap to two lines; short when nothing happens that
-  // week, so the calendar doesn't waste a third of its height on
-  // empty whitespace.
-  const minH = rowExpanded ? "min-h-24" : "min-h-10";
+  // week, so the calendar collapses to barely-the-digit. The
+  // shorter floor here (h-6 = 24 px) is just enough to read the
+  // date number at text-[10px] with a hair of vertical air.
+  const minH = rowExpanded ? "min-h-24" : "min-h-6";
 
   if (d === null) {
     return <div className={`${minH} bg-card`} />;
@@ -298,12 +298,11 @@ function DayCell({
   const inner = (
     <div
       className={cn(
-        // Sharp-corner rectangles. Min height varies by week, but
-        // a cell with events still has its own min so the chips
-        // are never crushed even if the row's flex stretches it
-        // taller than the row min.
-        "h-full flex flex-col items-stretch text-[11px] transition-colors",
-        rowExpanded ? "p-2 min-h-24" : "px-2 py-1 min-h-10",
+        // Sharp-corner rectangles. Empty-week cells are a thin
+        // 24 px-min strip with just the date number; rows with
+        // events open up to 96 px so chips have room to wrap.
+        "h-full flex flex-col items-stretch transition-colors",
+        rowExpanded ? "p-2 min-h-24 text-[11px]" : "px-1.5 py-0.5 min-h-6 text-[10px]",
         hasEvents
           ? firstEvent.tone === "brand"
             ? "bg-brand-50 text-brand-900 hover:bg-brand-100"
@@ -314,7 +313,8 @@ function DayCell({
       )}
     >
       <span className={cn(
-        "text-left font-semibold leading-none text-xs",
+        "text-left font-semibold leading-none",
+        rowExpanded ? "text-xs" : "text-[10px]",
         isToday && "text-brand-700",
         !hasEvents && !isToday && "text-muted",
       )}>
