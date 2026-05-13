@@ -267,7 +267,7 @@ export function PhantomUsersClient({
               type="button"
               onClick={() => startTransition(() => { void deleteAll(); })}
               disabled={busy}
-              className="text-xs font-semibold text-rose-700 hover:underline inline-flex items-center gap-1 disabled:opacity-50"
+              className="admin-glow text-xs font-semibold text-rose-700 hover:bg-rose-50 inline-flex items-center gap-1 disabled:opacity-50 px-2 py-1 rounded-md ring-1 ring-inset ring-rose-200"
             >
               <Trash2 size={11} /> Delete all
             </button>

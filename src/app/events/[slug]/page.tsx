@@ -136,7 +136,7 @@ export default async function EventLandingPage(
           (clears acting-as to validate the real public flow), and the
           full Admin · Events index. Public visitors never see this. */}
       {isStaff && (
-        <div className="sticky top-0 z-40 border-b border-amber-300 bg-amber-50/95 backdrop-blur-sm">
+        <div className="admin-glow sticky top-0 z-40 border-b border-amber-300 bg-amber-50/95 backdrop-blur-sm">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-2 flex-wrap text-xs">
             <span className="inline-flex items-center gap-1.5 text-amber-900 font-semibold uppercase tracking-[0.16em] text-[10px] mr-1">
               <Wrench size={11} /> Admin

@@ -114,7 +114,7 @@ export function DemoPhantomTray({
   }
 
   return (
-    <section className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/40 p-4 space-y-3">
+    <section className="admin-glow rounded-2xl border border-dashed border-amber-300 bg-amber-50/40 p-4 space-y-3">
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="text-sm font-bold text-amber-900 inline-flex items-center gap-2">
           <Wand2 size={14} />

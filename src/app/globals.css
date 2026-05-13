@@ -1646,3 +1646,54 @@ h1, h2, h3 {
   text-transform: var(--heading-transform, none);
   font-family: var(--font-display-theme, inherit);
 }
+
+/* ─── Admin-only "snow glow" indicator ─────────────────────────────
+ *
+ * Wraps any element with `.admin-glow` in a soft, cyan/white halo
+ * that pulses gently — a visual cue that this control is admin-only
+ * and shouldn't be there in the trainee view. White + sky-300/200
+ * are picked deliberately:
+ *   • White reads as "ghost / system overlay," distinct from the
+ *     brand palette and the loud warning amber we use for danger.
+ *   • Sky anchors it to the same accent we already use for the
+ *     Administration section in the sidebar (the "electric" tone),
+ *     so admins recognise the visual language at a glance.
+ *
+ * The animation breathes at 2.4s — slow enough not to distract
+ * during sustained reading, fast enough that the pulse clearly
+ * marks the element as "not-for-everyone." On hover the cycle
+ * shortens to 1.4s so the pulse intensifies and binds itself to
+ * the element under the cursor. prefers-reduced-motion drops the
+ * pulse but keeps a static halo, so the affordance still reads.
+ */
+@keyframes admin-snow-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0    rgba(56, 189, 248, 0.45),
+      0 0 10px 1px rgba(255, 255, 255, 0.35),
+      0 0 22px 4px rgba(125, 211, 252, 0.30);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px  rgba(56, 189, 248, 0),
+      0 0 16px 4px rgba(255, 255, 255, 0.55),
+      0 0 30px 10px rgba(186, 230, 253, 0.55);
+  }
+}
+
+.admin-glow {
+  animation: admin-snow-glow 2.4s ease-in-out infinite;
+  border-radius: inherit;
+}
+.admin-glow:hover,
+.admin-glow:focus-within {
+  animation-duration: 1.4s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-glow {
+    animation: none;
+    box-shadow:
+      0 0 0 1px rgba(56, 189, 248, 0.55),
+      0 0 12px 2px rgba(125, 211, 252, 0.45);
+  }
+}

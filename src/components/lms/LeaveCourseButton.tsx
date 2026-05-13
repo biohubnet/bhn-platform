@@ -43,7 +43,7 @@ export function LeaveCourseButton({ courseId, courseTitle }: { courseId: string;
       onClick={leave}
       disabled={busy}
       title="Admin fast-leave — withdraws you from this course"
-      className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg text-rose-700 bg-rose-50 ring-1 ring-inset ring-rose-200 hover:bg-rose-100 hover:ring-rose-300 disabled:opacity-50 transition-colors"
+      className="admin-glow inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg text-rose-700 bg-rose-50 ring-1 ring-inset ring-rose-200 hover:bg-rose-100 hover:ring-rose-300 disabled:opacity-50 transition-colors"
     >
       <LogOut size={11} />
       {busy ? "Leaving…" : "Leave"}

@@ -137,7 +137,7 @@ export function EditableText({
             onClick={openEditor}
             title={`Edit "${copyKey}"`}
             aria-label={`Edit copy: ${copyKey}`}
-            className="opacity-0 group-hover/copy:opacity-100 focus:opacity-100 transition-opacity inline-flex items-center justify-center w-5 h-5 ml-1 align-baseline rounded text-current/70 hover:text-current bg-current/10 hover:bg-current/20"
+            className="admin-glow opacity-0 group-hover/copy:opacity-100 focus:opacity-100 transition-opacity inline-flex items-center justify-center w-5 h-5 ml-1 align-baseline rounded text-current/70 hover:text-current bg-current/10 hover:bg-current/20"
           >
             <Pencil size={10} />
           </button>

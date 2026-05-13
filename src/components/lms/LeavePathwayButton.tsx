@@ -42,7 +42,7 @@ export function LeavePathwayButton({ pathwayId, pathwayTitle }: { pathwayId: str
       onClick={leave}
       disabled={busy}
       title="Admin fast-leave — withdraws you from this pathway (cohort waitlist promoted automatically)"
-      className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg text-rose-100 bg-rose-500/30 ring-1 ring-inset ring-rose-300/40 hover:bg-rose-500/50 hover:ring-rose-300/70 disabled:opacity-50 transition-colors"
+      className="admin-glow inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg text-rose-100 bg-rose-500/30 ring-1 ring-inset ring-rose-300/40 hover:bg-rose-500/50 hover:ring-rose-300/70 disabled:opacity-50 transition-colors"
     >
       <LogOut size={11} />
       {busy ? "Leaving…" : "Leave (admin)"}

@@ -53,7 +53,7 @@ export function DemoEventsControls() {
   }
 
   return (
-    <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/60 p-3 flex flex-wrap items-center gap-2 text-xs">
+    <div className="admin-glow rounded-xl border border-dashed border-amber-300 bg-amber-50/60 p-3 flex flex-wrap items-center gap-2 text-xs">
       <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-amber-900">Admin · Demo data</span>
       <button
         type="button"

@@ -91,7 +91,7 @@ export function ClearTestDataButton({
         type="button"
         onClick={() => startTransition(() => { void run(); })}
         disabled={submitting}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 px-3 py-1.5 ring-1 ring-inset ring-rose-200 rounded-lg disabled:opacity-50"
+        className="admin-glow inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 px-3 py-1.5 ring-1 ring-inset ring-rose-200 rounded-lg disabled:opacity-50"
         title="Delete demo + sandbox rows in this view. Users are kept."
       >
         <Trash2 size={12} />

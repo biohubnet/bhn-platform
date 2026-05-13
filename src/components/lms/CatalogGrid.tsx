@@ -207,7 +207,7 @@ export function CatalogGrid({
                     onDragStart={(e) => onDragStart(e, c.id)}
                     onDragEnd={() => { setDragId(null); setOverId(null); }}
                     title="Drag to reorder"
-                    className="absolute top-3 right-3 z-10 bg-card-solid border border-line text-muted rounded-md p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all cursor-grab active:cursor-grabbing hover:text-brand-700 hover:border-brand-300"
+                    className="admin-glow absolute top-3 right-3 z-10 bg-card-solid border border-line text-muted rounded-md p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all cursor-grab active:cursor-grabbing hover:text-brand-700 hover:border-brand-300"
                   >
                     <GripVertical size={13} />
                   </div>

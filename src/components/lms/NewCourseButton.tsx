@@ -116,7 +116,7 @@ export function NewCourseButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        className="admin-glow flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
       >
         <Plus size={16} />
         New Course

@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Snow glow — admin-only controls now visibly pulse",
+    body: "Admin-only buttons and trays across the platform now wear a soft cyan/white halo that breathes at 2.4s intervals — a visual reminder that the control isn't part of the trainee experience. Tightens to 1.4s on hover so it binds to the element under your cursor. Honours prefers-reduced-motion: the static halo stays, the pulse switches off.\n\nWhy cyan-white? White reads as 'system overlay' (distinct from the brand palette and the loud danger-amber we use for warnings), and sky-300 matches the 'electric' accent the Administration section already wears in the sidebar. So when an admin sees the glow they recognise the visual language at a glance.\n\nWired surfaces in this pass:\n  • Admin fast-leave buttons on /my-courses and pathway detail\n  • Demo-events seed/clear tray on /events (admin-only)\n  • Sticky admin edit bar on /events/[slug]\n  • Catalog tile drag-grip (admin re-ordering affordance)\n  • Inline pencil on every <EditableText> (admin copy edits)\n  • Phantom-user Delete-all + DemoPhantomTray on every embedded page\n  • Generic 'Clear demo + sandbox' button across admin views\n  • 'New Course' button on the catalog\n\nMore controls pick up the class as we audit the rest. Adding it to a future admin-only element is one className token: 'admin-glow'.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Admin fast-leave for pathways",
     body: "Mirror of the course-side admin fast-leave (shipped earlier this week) for pathway enrollments. A small 'Leave (admin)' button appears on the pathway detail hero whenever the viewing admin / superadmin holds a non-withdrawn enrollment — pending, waitlisted, approved, completed, rejected. One confirm prompt → DELETE /api/pathways/[id]/enroll → row flips to status=\"withdrawn\". \n\nFor cohort-mode pathways the route uses cancelCohortEnrollment, which also promotes the next waitlist entry in the same transaction so the admin's exit doesn't strand a seat. For legacy (no-cohort) pathways the row just flips state — same idempotency rules as the course-side button. Trainees still use the regular flow; the button is gated to staff at the parent and absent for trainees.",
     kind: "improvement",
