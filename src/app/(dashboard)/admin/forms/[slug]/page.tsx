@@ -9,6 +9,7 @@ import {
   TalentReviewActions,
   type TalentReviewStatus,
 } from "@/components/admin/TalentReviewActions";
+import { ClearTestDataButton } from "@/components/admin/ClearTestDataButton";
 
 export default async function AdminFormSubmissionsPage({
   params,
@@ -73,7 +74,13 @@ export default async function AdminFormSubmissionsPage({
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ClearTestDataButton
+            entity="form_submission"
+            scope={{ formSlug: slug }}
+            label="Clear demo + sandbox submissions"
+            helpText={`Delete every "${slug}" submission from demo or sandbox accounts. The users themselves stay (reusable for other tests). Real applicants and phantoms are not touched.`}
+          />
           <FormReseedButton slug={slug} />
           <a
             href={`/api/forms/${slug}/export.csv`}

@@ -18,7 +18,7 @@
  */
 import Link from "next/link";
 import { Briefcase, MapPin, Clock, Calendar, ArrowRight, Plus, Sparkles, Heart, Search } from "lucide-react";
-import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff, isAdmin as checkIsAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { Badge } from "@/components/ui/Badge";
@@ -26,6 +26,7 @@ import { scoreMatch } from "@/lib/skills/ontology";
 import { cn } from "@/lib/utils";
 import { InternshipFilters } from "@/components/lms/InternshipFilters";
 import { PostingSaveButton } from "@/components/lms/PostingSaveButton";
+import { ClearTestDataButton } from "@/components/admin/ClearTestDataButton";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export default async function InternshipsPage({
   const role = (session!.user as { role?: string }).role ?? "trainee";
   const userId = (session!.user as { id?: string }).id ?? null;
   const isStaff = checkIsStaff(role);
+  const isAdmin = checkIsAdmin(role);
   const isTrainee = role === "trainee" || role === "evaluating";
 
   // Build the WHERE clause from filters. Free-text search runs over
@@ -120,6 +122,20 @@ export default async function InternshipsPage({
           ) : null
         }
       />
+
+      {/* Admin demo-cleanup affordance — wipes postings authored by
+          demo or sandbox employer accounts so the public board is
+          back to real industry partners. Employers / trainees see
+          nothing here; the button is admin-only. */}
+      {isAdmin && (
+        <div className="mb-4 flex justify-end">
+          <ClearTestDataButton
+            entity="internship_posting"
+            label="Clear demo + sandbox postings"
+            helpText="Delete every internship posting authored by a demo or sandbox employer account. The employer accounts themselves stay (they're reusable). Phantom + showcase aren't touched here — phantoms have their own dedicated cleanup."
+          />
+        </div>
+      )}
 
       <div>
         {showProfileNudge && (

@@ -7,6 +7,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EXIT_REASON_LABEL, type ExitReason } from "@/lib/talent-pool/comments";
 import { FeedbackInviteForm } from "@/components/admin/FeedbackInviteForm";
+import { ClearTestDataButton } from "@/components/admin/ClearTestDataButton";
 
 /**
  * /admin/feedback — aggregated view of every PoolExitFeedback row
@@ -76,20 +77,27 @@ export default async function AdminFeedbackPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          Admin · Platform
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-          <MessageSquare size={22} className="text-brand-600" />
-          Feedback
-          <span className="text-xs font-mono tabular-nums text-subtle">{total}</span>
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
-          Aggregated exit-survey responses from trainees leaving the talent
-          pool, plus open feedback invitations. Click any row for the full
-          response.
-        </p>
+      <header className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+            Admin · Platform
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
+            <MessageSquare size={22} className="text-brand-600" />
+            Feedback
+            <span className="text-xs font-mono tabular-nums text-subtle">{total}</span>
+          </h1>
+          <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
+            Aggregated exit-survey responses from trainees leaving the talent
+            pool, plus open feedback invitations. Click any row for the full
+            response.
+          </p>
+        </div>
+        <ClearTestDataButton
+          entity="pool_exit_feedback"
+          label="Clear demo + sandbox feedback"
+          helpText="Delete every exit-survey response from demo or sandbox accounts. The accounts themselves stay. Real feedback is untouched."
+        />
       </header>
 
       {/* Summary */}
