@@ -29,36 +29,48 @@ function inDays(d: number, hours = 9, minutes = 0) {
   return dt;
 }
 
+// Demo events deliberately land inside the calendar's default
+// 2-month visible window (anchor month + 1 month ahead). With
+// monthsAhead=1 on EventCalendar, that's roughly the next ~50 days
+// from today. Sitting all three demo events inside that band means
+// an admin who clicks "Seed demo events" sees every seeded row on
+// the calendar without having to nav forward — the whole point of
+// the seed is to populate the current view.
+//
+// First event lands a few days out (not today — leaves room for
+// "upcoming" framing), the second slides into the second visible
+// month, and the third caps at the far edge of that month so the
+// three dots spread across the calendar instead of clustering.
 const DEMO_EVENTS = [
   {
     slug: `${DEMO_PREFIX}biomanufacturing-day`,
     title: "Demo · Biomanufacturing Industry Day",
     tagline: "A one-day showcase connecting trainees with industry partners — sample event for demos.",
     description:
-      "Demo event auto-generated for testing the public events surface, registration flow, and admin queues. Safe to delete via the Clear-demos button on /events.",
+      "Demo event auto-generated for testing the public events surface, registration flow, and admin queues. Safe to delete via the Clear-demo button on /events.",
     venue: "MaRS Discovery District, Toronto",
-    daysFromNowStart: 14,
-    daysFromNowEnd: 14,
+    daysFromNowStart: 5,
+    daysFromNowEnd: 5,
   },
   {
     slug: `${DEMO_PREFIX}summer-workshop-series`,
     title: "Demo · Summer Cleanroom Workshop Series",
     tagline: "Three days of hands-on cleanroom practice — gowning, aseptic technique, environmental monitoring.",
     description:
-      "Demo event auto-generated for testing the public events surface, registration flow, and admin queues. Safe to delete via the Clear-demos button on /events.",
+      "Demo event auto-generated for testing the public events surface, registration flow, and admin queues. Safe to delete via the Clear-demo button on /events.",
     venue: "Centre for Cellular and Biomolecular Research, U of T",
-    daysFromNowStart: 60,
-    daysFromNowEnd: 62,
+    daysFromNowStart: 20,
+    daysFromNowEnd: 22,
   },
   {
     slug: `${DEMO_PREFIX}fall-symposium-preview`,
     title: "Demo · Fall Mini-Symposium",
     tagline: "Industry talks + trainee posters + reception. A scaled-down sibling to the annual flagship.",
     description:
-      "Demo event auto-generated for testing the public events surface, registration flow, and admin queues. Safe to delete via the Clear-demos button on /events.",
+      "Demo event auto-generated for testing the public events surface, registration flow, and admin queues. Safe to delete via the Clear-demo button on /events.",
     venue: "Bahen Centre for Information Technology, U of T",
-    daysFromNowStart: 180,
-    daysFromNowEnd: 180,
+    daysFromNowStart: 40,
+    daysFromNowEnd: 40,
   },
 ];
 
