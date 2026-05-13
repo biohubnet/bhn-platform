@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { ArrowRight, Inbox } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
-import { DemoCreditAppsControls } from "@/components/admin/DemoCreditAppsControls";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 interface AppRow {
   id: string;
@@ -48,7 +48,11 @@ export default async function AdminCreditApplicationsPage({ searchParams }: { se
         title="Credit applications"
         description="Trainee applications for additional starter credits. Approving here grants credits and writes a transaction to their history."
       />
-      <DemoCreditAppsControls />
+      <DemoSeedAndClearTray
+        entity="credit_application"
+        noun="demo applications"
+        clearHelp="Delete every credit application from demo or sandbox accounts. The accounts themselves stay. Phantoms have their own clear control."
+      />
 
       {/* Filter pills */}
       <div className="flex items-center gap-2 flex-wrap">

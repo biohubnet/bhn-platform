@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Every Clear-demo button is now paired with a Seed-demo button",
+    body: "Generalised the seed + clear pattern (introduced on /events and /admin/credit-applications) across every admin surface that has a 'Clear demo + sandbox' button. One unified tray, one shared endpoint, four pages.\n\nWired surfaces:\n  • /internships — Seed/Clear demo postings (employer-authored)\n  • /admin/forms/[slug] — Seed/Clear demo form submissions (per-form scope)\n  • /admin/feedback — Seed/Clear demo exit-survey feedback\n  • /admin/credit-applications — Seed/Clear demo applications (migrated to the unified tray)\n\nSymmetry by design: the seed endpoint (POST /api/admin/demo-seed) only ever attaches new rows to demo/sandbox accountKinds; the clear endpoint (POST /api/admin/clear-test-data) targets exactly those accountKinds. Whatever a tray inserts, the same tray can take back out — never more, never less. Bootstrap rule: if no demo/sandbox user with the right role exists, the seeder auto-creates one with a 'demo-{entity}-{ts}@bhn.test' email so a fresh DB never blocks the demo flow. The auto-created user is itself demo-kind so the next Clear sweeps it out alongside everything else.\n\nNew DemoSeedAndClearTray component is generic: drop it on any future admin queue that wants the pair, point `entity` (+ optional scope) at the right rows, and the page picks up Seed + Clear together. Replaces the per-page bespoke DemoCreditAppsControls that was shipped two days ago.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "/admin/credit-applications gets a Seed-demo button",
     body: "/admin/credit-applications now has the same seed + clear pair we ship on /events: one tray, two buttons, both pulsing the admin snow-glow.\n\nSeed creates four plausible CreditApplication rows on demo / sandbox account holders (one each of pending / approved / rejected, varied amounts and use-cases) so the queue has content for screenshots and walkthroughs without manual setup. If no demo / sandbox users exist (fresh DB, post-clear environment), the seeder auto-creates one stub demo user — the row gets cleared on the next \"Clear demo + sandbox\" press, same as everything else.\n\nClear is unchanged in behaviour — it routes through the existing /api/admin/clear-test-data endpoint with entity=credit_application. The seed deliberately attaches rows only to demo / sandbox accounts so the symmetry holds: whatever Seed inserts, Clear removes. No phantom or showcase entanglement; no real-account rows are ever touched.\n\nReplaces the standalone Clear button that lived alone in the header.",
     kind: "improvement",

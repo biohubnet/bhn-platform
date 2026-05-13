@@ -7,7 +7,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EXIT_REASON_LABEL, type ExitReason } from "@/lib/talent-pool/comments";
 import { FeedbackInviteForm } from "@/components/admin/FeedbackInviteForm";
-import { ClearTestDataButton } from "@/components/admin/ClearTestDataButton";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 /**
  * /admin/feedback — aggregated view of every PoolExitFeedback row
@@ -93,10 +93,10 @@ export default async function AdminFeedbackPage() {
             response.
           </p>
         </div>
-        <ClearTestDataButton
+        <DemoSeedAndClearTray
           entity="pool_exit_feedback"
-          label="Clear demo + sandbox feedback"
-          helpText="Delete every exit-survey response from demo or sandbox accounts. The accounts themselves stay. Real feedback is untouched."
+          noun="demo feedback"
+          clearHelp="Delete every exit-survey response from demo or sandbox accounts. The accounts themselves stay. Real feedback is untouched."
         />
       </header>
 

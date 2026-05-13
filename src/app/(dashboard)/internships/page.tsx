@@ -26,7 +26,7 @@ import { scoreMatch } from "@/lib/skills/ontology";
 import { cn } from "@/lib/utils";
 import { InternshipFilters } from "@/components/lms/InternshipFilters";
 import { PostingSaveButton } from "@/components/lms/PostingSaveButton";
-import { ClearTestDataButton } from "@/components/admin/ClearTestDataButton";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 export const dynamic = "force-dynamic";
 
@@ -123,16 +123,16 @@ export default async function InternshipsPage({
         }
       />
 
-      {/* Admin demo-cleanup affordance — wipes postings authored by
-          demo or sandbox employer accounts so the public board is
-          back to real industry partners. Employers / trainees see
-          nothing here; the button is admin-only. */}
+      {/* Admin demo-data tray — seeds plausible postings authored by
+          a demo employer account, and wipes everything those accounts
+          have authored. Employers / trainees see nothing here; the
+          tray is admin-only. */}
       {isAdmin && (
-        <div className="mb-4 flex justify-end">
-          <ClearTestDataButton
+        <div className="mb-4">
+          <DemoSeedAndClearTray
             entity="internship_posting"
-            label="Clear demo + sandbox postings"
-            helpText="Delete every internship posting authored by a demo or sandbox employer account. The employer accounts themselves stay (they're reusable). Phantom + showcase aren't touched here — phantoms have their own dedicated cleanup."
+            noun="demo postings"
+            clearHelp="Delete every internship posting authored by a demo or sandbox employer account. The employer accounts themselves stay (they're reusable). Phantom + showcase aren't touched here — phantoms have their own dedicated cleanup."
           />
         </div>
       )}

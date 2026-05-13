@@ -9,7 +9,7 @@ import {
   TalentReviewActions,
   type TalentReviewStatus,
 } from "@/components/admin/TalentReviewActions";
-import { ClearTestDataButton } from "@/components/admin/ClearTestDataButton";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 export default async function AdminFormSubmissionsPage({
   params,
@@ -75,11 +75,11 @@ export default async function AdminFormSubmissionsPage({
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <ClearTestDataButton
+          <DemoSeedAndClearTray
             entity="form_submission"
             scope={{ formSlug: slug }}
-            label="Clear demo + sandbox submissions"
-            helpText={`Delete every "${slug}" submission from demo or sandbox accounts. The users themselves stay (reusable for other tests). Real applicants and phantoms are not touched.`}
+            noun="demo submissions"
+            clearHelp={`Delete every "${slug}" submission from demo or sandbox accounts. The users themselves stay (reusable for other tests). Real applicants and phantoms are not touched.`}
           />
           <FormReseedButton slug={slug} />
           <a

@@ -4,30 +4,54 @@ import { useRouter } from "next/navigation";
 import { Sparkles, Trash2, CheckCircle2, AlertTriangle } from "lucide-react";
 
 /**
- * Combined seed + clear tray for the credit-applications admin page.
+ * Combined Seed + Clear admin tray.
  *
- * The two buttons are paired deliberately: the seeder creates rows
- * attached to demo / sandbox account holders, and the Clear button
- * uses the existing /api/admin/clear-test-data endpoint with
- * entity="credit_application" — which targets the exact same rows.
- * Symmetry by design: whatever Seed inserts, Clear removes.
+ * Wraps the two complementary endpoints into one row:
+ *   • POST /api/admin/demo-seed       — creates a small batch of
+ *     plausible demo rows on demo/sandbox accounts
+ *   • POST /api/admin/clear-test-data — removes every row in this
+ *     entity scope that belongs to a demo/sandbox account
  *
- * Shipping this as one component (instead of two separate buttons
- * side-by-side) makes the relationship visible at a glance, gives
- * us one place to surface the success / error flash, and keeps the
- * page header from sprouting extra trays as we add more demo-data
- * affordances elsewhere.
+ * The pair is logically airtight: the seed only ever attaches new
+ * rows to demo/sandbox accountKinds, and the clear endpoint targets
+ * exactly those accountKinds. So whatever this tray inserts, this
+ * tray can take back out — never more, never less.
  *
- * Marked .admin-glow at the tray level so the whole pair pulses
- * together — these are testing-only controls and the cyan halo is
- * how the platform consistently calls that out.
+ * Replaces a per-page bespoke component for each entity. Drop the
+ * tray into any admin page that has a Clear button today, point
+ * `entity` (+ optional `scope`) at the right rows, and the page
+ * gets a matching Seed button for free.
  */
-export function DemoCreditAppsControls() {
+export type DemoSeedEntity =
+  | "internship_posting"
+  | "form_submission"
+  | "credit_application"
+  | "pool_exit_feedback";
+
+interface Props {
+  entity: DemoSeedEntity;
+  scope?: { formSlug?: string };
+  /** Override the eye-line label, e.g. "demo postings", "demo submissions". */
+  noun?: string;
+  /** Override the confirm-dialog body for Clear if the default doesn't fit. */
+  clearHelp?: string;
+}
+
+const DEFAULT_NOUNS: Record<DemoSeedEntity, string> = {
+  internship_posting: "demo postings",
+  form_submission:    "demo submissions",
+  credit_application: "demo applications",
+  pool_exit_feedback: "demo feedback",
+};
+
+export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<"seed" | "clear" | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  const nounLabel = noun ?? DEFAULT_NOUNS[entity];
 
   function showFlash(msg: string) {
     setFlash(msg);
@@ -40,13 +64,17 @@ export function DemoCreditAppsControls() {
     setError(null);
     setFlash(null);
     try {
-      const res = await fetch("/api/admin/credit-applications/demo-seed", { method: "POST" });
+      const res = await fetch("/api/admin/demo-seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entity, scope }),
+      });
       const j = (await res.json().catch(() => ({}))) as { error?: string; created?: number };
       if (!res.ok) {
-        setError(j.error ?? "Couldn't seed demo applications.");
+        setError(j.error ?? "Couldn't seed.");
         return;
       }
-      showFlash(`Seeded ${j.created ?? 0} demo application${j.created === 1 ? "" : "s"}.`);
+      showFlash(`Seeded ${j.created ?? 0} ${nounLabel}.`);
       startTransition(() => router.refresh());
     } finally {
       setBusy(null);
@@ -54,10 +82,10 @@ export function DemoCreditAppsControls() {
   }
 
   async function clear() {
-    if (!confirm(
-      "Delete every credit application from demo or sandbox accounts. " +
-      "The accounts themselves stay. Phantoms have their own clear control."
-    )) return;
+    const helpDefault =
+      `Delete every ${nounLabel} from demo or sandbox accounts. ` +
+      "The accounts themselves stay (reusable). Phantoms have their own clear control.";
+    if (!confirm(clearHelp ?? helpDefault)) return;
     setBusy("clear");
     setError(null);
     setFlash(null);
@@ -65,13 +93,13 @@ export function DemoCreditAppsControls() {
       const res = await fetch("/api/admin/clear-test-data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entity: "credit_application" }),
+        body: JSON.stringify({ entity, scope }),
       });
       const j = (await res.json().catch(() => ({}))) as {
         error?: string; deleted?: number; byKind?: Record<string, number>;
       };
       if (!res.ok) {
-        setError(j.error ?? "Couldn't clear applications.");
+        setError(j.error ?? "Couldn't clear.");
         return;
       }
       const parts = Object.entries(j.byKind ?? {}).map(([k, n]) => `${n} ${k}`).join(", ");
@@ -98,7 +126,7 @@ export function DemoCreditAppsControls() {
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-100 text-amber-900 ring-1 ring-inset ring-amber-300 hover:bg-amber-200 font-semibold disabled:opacity-50 transition-colors"
       >
         <Sparkles size={11} />
-        {busy === "seed" ? "Seeding…" : "Seed demo applications"}
+        {busy === "seed" ? "Seeding…" : `Seed ${nounLabel}`}
       </button>
       <button
         type="button"
@@ -120,7 +148,7 @@ export function DemoCreditAppsControls() {
         </span>
       )}
       <span className="ml-auto text-[10px] text-amber-800/80">
-        Seed creates rows on demo / sandbox accounts so Clear can find them.
+        Seed creates rows on demo/sandbox accounts so Clear can find them.
       </span>
     </div>
   );
