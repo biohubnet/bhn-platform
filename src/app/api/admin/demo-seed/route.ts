@@ -44,6 +44,13 @@ const VALID_ENTITIES = [
   "form_submission",
   "credit_application",
   "pool_exit_feedback",
+  // Self-scoped entities — attach rows to the calling admin's own
+  // user id so the demo content shows up on the admin's own page
+  // (Application Tracker / My Skills / Interviews are user-private
+  // surfaces). Clear targets the marker baked into the row.
+  "user_application_status",
+  "user_skill",
+  "user_interview",
 ] as const;
 type Entity = (typeof VALID_ENTITIES)[number];
 
@@ -362,6 +369,143 @@ async function seedPoolExitFeedback(): Promise<number> {
   return created;
 }
 
+// ── Self-scoped seeders ──────────────────────────────────────────
+//
+// These three seeders attach rows to the calling admin's OWN user
+// row, so the demo content shows up immediately on the same page
+// they pressed the button from (Application Tracker / My Skills /
+// Interviews are user-private surfaces — seeding to a demo user
+// wouldn't be visible). Each row carries a baked-in marker so
+// Clear can find them again:
+//   • ApplicationStatus / Interview — notes start with "[demo]"
+//   • UserSkill — source = "demo"
+
+/** Ensure there are demo internship postings to attach statuses /
+ *  interviews to. If none exist, seed them. Returns the postings. */
+async function ensureDemoPostings(): Promise<{ id: string; title: string }[]> {
+  const demoEmployers = await prisma.user.findMany({
+    where: { accountKind: "demo", role: "employer" },
+    select: { id: true },
+  });
+  let postings = await prisma.internshipPosting.findMany({
+    where: { createdById: { in: demoEmployers.map((u) => u.id) } },
+    select: { id: true, title: true },
+    take: 4,
+  });
+  if (postings.length < 3) {
+    await seedInternshipPostings();
+    const refreshedEmployers = await prisma.user.findMany({
+      where: { accountKind: "demo", role: "employer" },
+      select: { id: true },
+    });
+    postings = await prisma.internshipPosting.findMany({
+      where: { createdById: { in: refreshedEmployers.map((u) => u.id) } },
+      select: { id: true, title: true },
+      take: 4,
+    });
+  }
+  return postings;
+}
+
+async function seedUserApplicationStatuses(userId: string): Promise<number> {
+  const postings = await ensureDemoPostings();
+  if (postings.length === 0) return 0;
+  const stages = ["new", "reviewing", "shortlisted", "phone_screen"];
+  let created = 0;
+  for (let i = 0; i < Math.min(postings.length, stages.length); i++) {
+    const cleanTitle = postings[i].title.replace(/^Demo · /, "");
+    await prisma.applicationStatus.upsert({
+      where: { postingId_applicantId: { postingId: postings[i].id, applicantId: userId } },
+      create: {
+        postingId: postings[i].id,
+        applicantId: userId,
+        status: stages[i],
+        notes: `[demo] Sample application status for ${cleanTitle}.`,
+      },
+      update: {
+        status: stages[i],
+        notes: `[demo] Sample application status for ${cleanTitle}.`,
+      },
+    });
+    created++;
+  }
+  return created;
+}
+
+async function seedUserSkills(userId: string): Promise<number> {
+  // Pick existing skills if the ontology has any; otherwise create
+  // five anchor skills tagged "Demo · ..." so the global registry
+  // doesn't end up polluted with unrecognisable demo entries.
+  const wanted = [
+    "Aseptic technique",
+    "GMP documentation",
+    "Cell culture",
+    "Bioreactor operations",
+    "Quality assurance",
+  ];
+  const existing = await prisma.skill.findMany({
+    where: { name: { in: wanted } },
+    select: { id: true, name: true },
+  });
+  const byName = new Map(existing.map((s) => [s.name, s.id]));
+  for (const name of wanted) {
+    if (byName.has(name)) continue;
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const created = await prisma.skill.create({ data: { name, slug } });
+    byName.set(name, created.id);
+  }
+
+  let created = 0;
+  for (const name of wanted) {
+    const skillId = byName.get(name);
+    if (!skillId) continue;
+    // upsert via @@unique([userId, skillId]). We deliberately stamp
+    // source="demo" so the clear pass can find these rows.
+    await prisma.userSkill.upsert({
+      where: { userId_skillId: { userId, skillId } },
+      create: { userId, skillId, level: 0.65 + Math.random() * 0.25, source: "demo" },
+      update: { source: "demo", level: 0.65 + Math.random() * 0.25 },
+    });
+    created++;
+  }
+  return created;
+}
+
+async function seedUserInterviews(userId: string): Promise<number> {
+  const postings = await ensureDemoPostings();
+  if (postings.length === 0) return 0;
+  // 3 upcoming interview slots over the next ~3 weeks, varied formats.
+  const samples = [
+    { days:  3, format: "video",  location: null,                                 status: "accepted" as const },
+    { days: 10, format: "phone",  location: null,                                 status: "proposed" as const },
+    { days: 21, format: "onsite", location: "MaRS Discovery District, Toronto",   status: "proposed" as const },
+  ];
+  let created = 0;
+  for (let i = 0; i < Math.min(postings.length, samples.length); i++) {
+    const s = samples[i];
+    const slot = new Date();
+    slot.setDate(slot.getDate() + s.days);
+    slot.setHours(10 + i, 0, 0, 0);
+    await prisma.interview.create({
+      data: {
+        postingId: postings[i].id,
+        applicantId: userId,
+        // scheduledById uses the same user — these are demo rows, not
+        // real employer-scheduled interviews. Avoids FK noise.
+        scheduledById: userId,
+        proposedSlots: [slot.toISOString()],
+        acceptedSlot: s.status === "accepted" ? slot : null,
+        status: s.status,
+        format: s.format,
+        location: s.location,
+        notes: `[demo] Sample interview for ${postings[i].title.replace(/^Demo · /, "")}.`,
+      },
+    });
+    created++;
+  }
+  return created;
+}
+
 // ── Route handler ────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -393,6 +537,18 @@ export async function POST(req: NextRequest) {
       created = await seedFormSubmissions(formSlug);
     }
     else if (entity === "pool_exit_feedback") created = await seedPoolExitFeedback();
+    else if (entity === "user_application_status") {
+      if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
+      created = await seedUserApplicationStatuses(reviewerId);
+    }
+    else if (entity === "user_skill") {
+      if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
+      created = await seedUserSkills(reviewerId);
+    }
+    else if (entity === "user_interview") {
+      if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
+      created = await seedUserInterviews(reviewerId);
+    }
 
     return NextResponse.json({ ok: true, entity, created });
   } catch (e) {

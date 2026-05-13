@@ -26,7 +26,13 @@ export type DemoSeedEntity =
   | "internship_posting"
   | "form_submission"
   | "credit_application"
-  | "pool_exit_feedback";
+  | "pool_exit_feedback"
+  // Self-scoped — these write rows on the calling admin's own user
+  // row, so they show up immediately on the admin's view of pages
+  // like Application Tracker / My Skills / Interviews.
+  | "user_application_status"
+  | "user_skill"
+  | "user_interview";
 
 interface Props {
   entity: DemoSeedEntity;
@@ -38,10 +44,13 @@ interface Props {
 }
 
 const DEFAULT_NOUNS: Record<DemoSeedEntity, string> = {
-  internship_posting: "demo postings",
-  form_submission:    "demo submissions",
-  credit_application: "demo applications",
-  pool_exit_feedback: "demo feedback",
+  internship_posting:       "demo postings",
+  form_submission:          "demo submissions",
+  credit_application:       "demo applications",
+  pool_exit_feedback:       "demo feedback",
+  user_application_status:  "demo application rows",
+  user_skill:               "demo skills",
+  user_interview:           "demo interviews",
 };
 
 export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) {

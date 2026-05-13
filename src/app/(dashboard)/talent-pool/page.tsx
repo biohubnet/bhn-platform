@@ -4,7 +4,7 @@ import { Users, Search, ArrowRight, MessageCircle, Lock } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canComment, isCommentable } from "@/lib/talent-pool/comments";
-import { ClearTestApplicationsButton } from "@/components/admin/ClearTestApplicationsButton";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 /**
  * /talent-pool — admin + employer + instructor view of approved
@@ -81,7 +81,14 @@ export default async function TalentPoolPage({
             (visible to admins + employers only — never to the applicant).
           </p>
         </div>
-        {isAdmin && <ClearTestApplicationsButton />}
+        {isAdmin && (
+          <DemoSeedAndClearTray
+            entity="form_submission"
+            scope={{ formSlug: "talent-application" }}
+            noun="demo applicants"
+            clearHelp="Delete every talent-application submission from demo accounts. The submitters themselves stay (reusable for other tests). Real applicants are not touched."
+          />
+        )}
       </header>
 
       <form action="/talent-pool" method="get" className="flex items-center gap-2">

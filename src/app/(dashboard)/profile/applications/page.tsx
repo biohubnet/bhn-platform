@@ -15,7 +15,7 @@
  * page (the mailto-pre-fill flow), and Unsave lives in the heart
  * icon on the same detail page. This page is the read-only ledger.
  */
-import { requireSession } from "@/lib/auth";
+import { requireSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
@@ -23,6 +23,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Briefcase, MapPin, Calendar, ArrowRight, Heart, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,8 @@ export default async function MyApplicationsPage() {
   const session = await requireSession().catch(() => null);
   if (!session) redirect("/login");
   const userId = (session.user as { id?: string }).id!;
+  const role = (session.user as { role?: string }).role ?? "trainee";
+  const isStaff = checkIsStaff(role);
 
   const [applied, saved] = await Promise.all([
     prisma.applicationStatus.findMany({
@@ -97,6 +100,21 @@ export default async function MyApplicationsPage() {
         title="My applications"
         description="Postings you've applied to (with current stage) and the ones you've saved for later. Stages mirror what the employer sees on their side."
       />
+
+      {/* Admin-only demo seed/clear tray. Attaches [demo]-marked
+          ApplicationStatus rows to the viewing admin's own user so
+          the page renders with content for screenshots / walk-
+          throughs. Clear removes only the [demo]-prefixed rows;
+          real employer-managed statuses are not touched. */}
+      {isStaff && (
+        <div className="mb-4">
+          <DemoSeedAndClearTray
+            entity="user_application_status"
+            noun="demo application rows"
+            clearHelp="Delete [demo]-prefixed ApplicationStatus rows on your own user. Real employer-managed statuses are not touched."
+          />
+        </div>
+      )}
 
       {soon.length > 0 && (
         <Card className="mb-5 p-4 border-amber-200 bg-amber-50/60">

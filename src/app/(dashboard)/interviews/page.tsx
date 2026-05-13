@@ -1,14 +1,17 @@
-import { getSession } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Calendar } from "lucide-react";
 import { InterviewResponseList } from "@/components/lms/InterviewResponseList";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 export const dynamic = "force-dynamic";
 
 export default async function MyInterviewsPage() {
   const session = await getSession();
   if (!session?.user?.email) redirect("/login");
+  const role = (session.user as { role?: string }).role ?? "trainee";
+  const isStaff = checkIsStaff(role);
   const me = await prisma.user.findUnique({
     where: { email: session.user.email },
     select: { id: true },
@@ -35,6 +38,18 @@ export default async function MyInterviewsPage() {
           When an employer proposes interview times, they appear here. Pick the one that works, or decline.
         </p>
       </header>
+
+      {/* Admin-only demo seed/clear. Writes Interview rows on the
+          viewing admin's own user (applicantId = self), marked with
+          [demo] in the notes field. Clear targets exactly that
+          marker so real employer-scheduled interviews aren't touched. */}
+      {isStaff && (
+        <DemoSeedAndClearTray
+          entity="user_interview"
+          noun="demo interviews"
+          clearHelp="Delete Interview rows on your user where notes start with [demo]. Real employer-scheduled interviews are not touched."
+        />
+      )}
 
       <InterviewResponseList
         interviews={list.map((i) => ({

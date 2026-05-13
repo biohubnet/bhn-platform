@@ -45,6 +45,14 @@ const VALID_ENTITIES = [
   "credit_application",
   "pool_exit_feedback",
   "event_registration",
+  // Self-scoped — the matching demo-seed pass writes these to the
+  // calling admin's own user id with a [demo] marker baked in.
+  // Clear targets that marker so it can't reach real rows on the
+  // same user (real ApplicationStatus / Interview rows from the
+  // employer don't carry the [demo] prefix).
+  "user_application_status",
+  "user_skill",
+  "user_interview",
 ] as const;
 type Entity = (typeof VALID_ENTITIES)[number];
 
@@ -203,6 +211,51 @@ export async function POST(req: NextRequest) {
       for (const t of targets) {
         const k = t.user?.accountKind ?? "unknown";
         byKind[k] = (byKind[k] ?? 0) + 1;
+      }
+    }
+  } else if (entity === "user_application_status") {
+    // Scoped to the calling admin's own rows. Marker is the
+    // [demo] prefix on `notes`, baked in at seed time so we can't
+    // hit a real employer-managed status row by accident.
+    const meId = (session.user as { id?: string }).id;
+    if (meId) {
+      const targets = await prisma.applicationStatus.findMany({
+        where: { applicantId: meId, notes: { startsWith: "[demo]" } },
+        select: { id: true },
+      });
+      if (targets.length > 0) {
+        const r = await prisma.applicationStatus.deleteMany({
+          where: { id: { in: targets.map((t) => t.id) } },
+        });
+        deleted = r.count;
+        byKind["self-demo"] = r.count;
+      }
+    }
+  } else if (entity === "user_skill") {
+    // Self-scoped, marker is source="demo". Only the calling
+    // admin's demo-seeded skill rows are removed — real skill
+    // rows (source ∈ {self, resume, ai, inferred, admin}) stay.
+    const meId = (session.user as { id?: string }).id;
+    if (meId) {
+      const r = await prisma.userSkill.deleteMany({
+        where: { userId: meId, source: "demo" },
+      });
+      deleted = r.count;
+      if (r.count > 0) byKind["self-demo"] = r.count;
+    }
+  } else if (entity === "user_interview") {
+    const meId = (session.user as { id?: string }).id;
+    if (meId) {
+      const targets = await prisma.interview.findMany({
+        where: { applicantId: meId, notes: { startsWith: "[demo]" } },
+        select: { id: true },
+      });
+      if (targets.length > 0) {
+        const r = await prisma.interview.deleteMany({
+          where: { id: { in: targets.map((t) => t.id) } },
+        });
+        deleted = r.count;
+        byKind["self-demo"] = r.count;
       }
     }
   }
