@@ -132,7 +132,7 @@ export default async function InternshipsPage({
           <DemoSeedAndClearTray
             entity="internship_posting"
             noun="demo postings"
-            clearHelp="Delete every internship posting authored by a demo or sandbox employer account. The employer accounts themselves stay (they're reusable). Phantom + showcase aren't touched here — phantoms have their own dedicated cleanup."
+            clearHelp="Delete every internship posting authored by a demo employer account. The employer accounts themselves stay (they're reusable). Phantom + showcase aren't touched here — phantoms have their own dedicated cleanup."
           />
         </div>
       )}

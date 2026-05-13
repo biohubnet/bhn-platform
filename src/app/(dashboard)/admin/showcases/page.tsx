@@ -61,15 +61,8 @@ export default async function ShowcasesPage() {
       />
 
       <section className="rounded-2xl border border-line bg-card p-5 surface-shadow">
-        <h2 className="text-sm font-semibold text-fg mb-3">How this differs from sandbox + demo</h2>
-        <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div>
-            <dt className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-1">Sandbox</dt>
-            <dd className="text-fg leading-snug">
-              One pair (employer + trainee) per admin. Personal play space
-              for testing flows end-to-end. Empty-ish state by default.
-            </dd>
-          </div>
+        <h2 className="text-sm font-semibold text-fg mb-3">How this differs from demo workspaces</h2>
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div>
             <dt className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-1">Demo workspace</dt>
             <dd className="text-fg leading-snug">

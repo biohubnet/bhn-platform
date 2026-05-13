@@ -9,11 +9,11 @@
  *             | "pool_exit_feedback"
  *             | "event_registration",
  *       scope?: { formSlug?: string, eventSlug?: string },
- *       accountKinds?: string[]   default ["demo", "sandbox"]
+ *       accountKinds?: string[]   default ["demo"]
  *     }
  *
  * One endpoint, switch-by-entity, so any admin surface that wants
- * a "Clear demo + sandbox" affordance can call the same path with
+ * a "Clear demo" affordance can call the same path with
  * a different `entity` and (when needed) a `scope`.
  *
  * Defence-in-depth
@@ -22,7 +22,7 @@
  *   • Each entity validates its own required scope (e.g.
  *     form_submission requires scope.formSlug). Missing → 400.
  *   • The USERS that own the deleted rows are never deleted by
- *     this endpoint — sandbox + demo + showcase accounts are
+ *     this endpoint — demo + showcase accounts are
  *     reusable across testing rounds. Phantom accounts have their
  *     own lifecycle controls and are excluded by default.
  */
@@ -32,8 +32,13 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-const KNOWN_KINDS = ["real", "sandbox", "demo", "showcase", "phantom"] as const;
-const DEFAULT_KINDS = ["demo", "sandbox"] as const;
+// "sandbox" is intentionally absent — the sandbox account feature
+// was retired in favour of /admin/split-view, and the
+// 20260513100000_drop_sandbox_kind migration converted any leftover
+// rows to "demo". Listing it would let a stale UI pass it through
+// and quietly hit zero rows; better to reject early.
+const KNOWN_KINDS = ["real", "demo", "showcase", "phantom"] as const;
+const DEFAULT_KINDS = ["demo"] as const;
 const VALID_ENTITIES = [
   "internship_posting",
   "form_submission",

@@ -1,7 +1,7 @@
 import {
   ShieldCheck, Database, Activity, AlertTriangle, CheckCircle2, KeyRound,
   Users, Sparkles, Clock, GitCommit, Cpu, ServerCrash, UserCog, Building2,
-  ScrollText, Zap, Eye, Beaker,
+  ScrollText, Zap, Eye,
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -34,7 +34,7 @@ export default async function SystemStatusPage() {
   const [
     userCount, activeUserCount, deactivatedCount, inactive90dCount,
     superadminCount, adminCount, instructorCount, employerCount,
-    sandboxUserCount, demoUserCount,
+    demoUserCount,
     sessionCount,
     courseCount, publishedCount,
     enrollCount, enroll24h,
@@ -49,7 +49,7 @@ export default async function SystemStatusPage() {
     recentRoleAudits,
     recentLogins,
   ] = await Promise.all([
-    // System-status focuses on REAL users — sandbox + demo are
+    // System-status focuses on REAL users — demo accounts are
     // filtered out and shown separately below the vitals row.
     prisma.user.count({ where: { accountKind: "real" } }),
     prisma.user.count({ where: { isActive: true, accountKind: "real" } }),
@@ -67,7 +67,6 @@ export default async function SystemStatusPage() {
     prisma.user.count({ where: { role: "admin",      accountKind: "real" } }),
     prisma.user.count({ where: { role: "instructor", accountKind: "real" } }),
     prisma.user.count({ where: { role: "employer",   accountKind: "real" } }),
-    prisma.user.count({ where: { accountKind: "sandbox" } }),
     prisma.user.count({ where: { accountKind: "demo" } }),
     prisma.session.count().catch(() => 0),
     prisma.course.count(),
@@ -227,27 +226,12 @@ export default async function SystemStatusPage() {
         <Vital icon={Database}  label="DB ping"        value={`${dbLatencyMs}ms`} sub={dbOk ? "Healthy" : "Failed"} />
         <Vital icon={GitCommit} label="Build commit"   value={sha}             sub="Inlined at build time" mono />
       </div>
-      {(sandboxUserCount > 0 || demoUserCount > 0) && (
+      {demoUserCount > 0 && (
         <p className="-mt-3 text-[11px] text-subtle">
-          Plus {sandboxUserCount} sandbox · {demoUserCount} demo accounts
-          (excluded from real-user counts above; manage at <a className="text-brand-600 hover:underline" href="/admin/sandboxes">/admin/sandboxes</a> and <a className="text-brand-600 hover:underline" href="/admin/demo-workspaces">/admin/demo-workspaces</a>).
+          Plus {demoUserCount} demo accounts
+          (excluded from real-user counts above; manage at <a className="text-brand-600 hover:underline" href="/admin/demo-workspaces">/admin/demo-workspaces</a>).
         </p>
       )}
-
-      {/* Sandboxes moved to their own page — link out so admins can find it. */}
-      <Section icon={Beaker} title="Sandbox accounts" aside="Moved to its own page">
-        <a
-          href="/admin/sandboxes"
-          className="block bg-elevated/40 border border-line rounded-lg p-3 hover:border-brand-300 transition-colors group"
-        >
-          <p className="text-sm font-medium text-fg group-hover:text-brand-700 transition-colors">
-            Open sandbox accounts →
-          </p>
-          <p className="text-xs text-muted mt-0.5">
-            Spawn / reset / delete your dummy Employer HR + Trainee pair. See other admins&apos; sandboxes too.
-          </p>
-        </a>
-      </Section>
 
       {/* Database section */}
       <Section icon={Database} title="Database">

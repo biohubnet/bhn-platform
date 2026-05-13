@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 /**
- * Generic admin-only "Clear demo + sandbox X" button.
+ * Generic admin-only "Clear demo X" button.
  *
  * Pages embed it with an `entity` (and `scope` where the entity
  * needs it) — same endpoint, different rows wiped per page. The
@@ -22,7 +22,7 @@ import { Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
 export function ClearTestDataButton({
   entity,
   scope,
-  label = "Clear demo + sandbox",
+  label = "Clear demo",
   helpText,
   kinds,
 }: {
@@ -48,7 +48,7 @@ export function ClearTestDataButton({
 
   async function run() {
     const defaultHelp =
-      "Delete every row in this view that belongs to a demo or sandbox account. " +
+      "Delete every row in this view that belongs to a demo account. " +
       "The accounts themselves stay (they're reusable for other tests). " +
       "Phantom accounts have their own dedicated 'Clear all phantoms' control " +
       "and aren't touched by this button.";
@@ -92,7 +92,7 @@ export function ClearTestDataButton({
         onClick={() => startTransition(() => { void run(); })}
         disabled={submitting}
         className="admin-glow inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 px-3 py-1.5 ring-1 ring-inset ring-rose-200 rounded-lg disabled:opacity-50"
-        title="Delete demo + sandbox rows in this view. Users are kept."
+        title="Delete demo rows in this view. Users are kept."
       >
         <Trash2 size={12} />
         {submitting ? "Clearing…" : label}

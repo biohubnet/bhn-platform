@@ -96,7 +96,7 @@ export default async function AdminFeedbackPage() {
         <DemoSeedAndClearTray
           entity="pool_exit_feedback"
           noun="demo feedback"
-          clearHelp="Delete every exit-survey response from demo or sandbox accounts. The accounts themselves stay. Real feedback is untouched."
+          clearHelp="Delete every exit-survey response from demo accounts. The accounts themselves stay. Real feedback is untouched."
         />
       </header>
 

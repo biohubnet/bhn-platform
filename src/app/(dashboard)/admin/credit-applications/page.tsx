@@ -51,7 +51,7 @@ export default async function AdminCreditApplicationsPage({ searchParams }: { se
       <DemoSeedAndClearTray
         entity="credit_application"
         noun="demo applications"
-        clearHelp="Delete every credit application from demo or sandbox accounts. The accounts themselves stay. Phantoms have their own clear control."
+        clearHelp="Delete every credit application from demo accounts. The accounts themselves stay. Phantoms have their own clear control."
       />
 
       {/* Filter pills */}

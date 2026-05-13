@@ -79,7 +79,7 @@ export default async function AdminFormSubmissionsPage({
             entity="form_submission"
             scope={{ formSlug: slug }}
             noun="demo submissions"
-            clearHelp={`Delete every "${slug}" submission from demo or sandbox accounts. The users themselves stay (reusable for other tests). Real applicants and phantoms are not touched.`}
+            clearHelp={`Delete every "${slug}" submission from demo accounts. The users themselves stay (reusable for other tests). Real applicants and phantoms are not touched.`}
           />
           <FormReseedButton slug={slug} />
           <a

@@ -2,13 +2,13 @@
  * Admin: clear test-account talent-application submissions.
  *
  *   POST /api/admin/talent-pool/clear-test-applications
- *     body: { accountKinds?: string[] }   default ["demo", "sandbox"]
+ *     body: { accountKinds?: string[] }   default ["demo"]
  *
  * Wipes every EventFormSubmission on the talent-application form
  * whose submitter belongs to one of the named accountKinds. The
- * USERS themselves stay — sandbox + demo accounts are useful for
- * other tests — but their pool applications are removed so the
- * talent-pool view is back to real candidates only.
+ * USERS themselves stay — demo accounts are useful for other
+ * tests — but their pool applications are removed so the talent-
+ * pool view is back to real candidates only.
  *
  * Phantom + showcase deliberately default OFF (admins can pass
  * them explicitly if they want). Phantoms auto-expire via the
@@ -22,8 +22,8 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-const KNOWN_KINDS = ["real", "sandbox", "demo", "showcase", "phantom"] as const;
-const DEFAULT_KINDS = ["demo", "sandbox"] as const;
+const KNOWN_KINDS = ["real", "demo", "showcase", "phantom"] as const;
+const DEFAULT_KINDS = ["demo"] as const;
 
 export async function POST(req: NextRequest) {
   const session = await requireRole("admin").catch(() => null);

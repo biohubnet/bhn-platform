@@ -1,15 +1,20 @@
 /**
- * One-click magic-link sign-in for sandbox + demo + showcase accounts.
+ * One-click magic-link sign-in for demo + showcase accounts.
  *
  *   GET /sandbox/[token]
  *
  * Looks up a User by `magicToken`. If the user exists AND their
- * accountKind is one of "sandbox" / "demo" / "showcase", we mint a
- * NextAuth JWT and redirect to the appropriate dashboard. Real
- * accounts (accountKind = "real") are *never* honoured here — even
- * if a token were somehow set on a real user, the route would refuse,
- * so a leaked sandbox/showcase token can't escalate to a real-user
- * takeover.
+ * accountKind is one of "demo" / "showcase", we mint a NextAuth JWT
+ * and redirect to the appropriate dashboard. Real accounts
+ * (accountKind = "real") are *never* honoured here — even if a token
+ * were somehow set on a real user, the route would refuse, so a
+ * leaked demo/showcase token can't escalate to a real-user takeover.
+ *
+ * The URL path is `/sandbox/` for historical reasons (the route used
+ * to also serve the now-retired sandbox account kind). It's kept
+ * stable so existing magic-link emails and the phantom-user / show-
+ * case panels don't need to coordinate a URL change. Renaming would
+ * be a future cleanup; the functional surface is demo + showcase only.
  *
  * The cookie scope is browser-wide; visitors should open the link
  * in an incognito window if they want to keep their main admin
@@ -26,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   const origin = req.nextUrl.origin;
 
   if (!token || token.length < 12) {
-    return NextResponse.redirect(`${origin}/login?error=sandbox_invalid`);
+    return NextResponse.redirect(`${origin}/login?error=magiclink_invalid`);
   }
 
   const user = await prisma.user.findUnique({
@@ -34,19 +39,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     select: { id: true, email: true, name: true, role: true, accountKind: true, demoExpiresAt: true, isActive: true },
   });
   if (!user) {
-    return NextResponse.redirect(`${origin}/login?error=sandbox_invalid`);
+    return NextResponse.redirect(`${origin}/login?error=magiclink_invalid`);
   }
   if (!user.isActive) {
-    return NextResponse.redirect(`${origin}/login?error=sandbox_disabled`);
+    return NextResponse.redirect(`${origin}/login?error=magiclink_disabled`);
   }
-  if (
-    user.accountKind !== "sandbox" &&
-    user.accountKind !== "demo" &&
-    user.accountKind !== "showcase"
-  ) {
+  if (user.accountKind !== "demo" && user.accountKind !== "showcase") {
     // Defence in depth — should never happen since real accounts
     // never have magicToken set, but if they do, refuse anyway.
-    return NextResponse.redirect(`${origin}/login?error=sandbox_invalid`);
+    return NextResponse.redirect(`${origin}/login?error=magiclink_invalid`);
   }
   if (user.accountKind === "demo" && user.demoExpiresAt && user.demoExpiresAt < new Date()) {
     return NextResponse.redirect(`${origin}/login?error=demo_expired`);
@@ -57,8 +58,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     return NextResponse.redirect(`${origin}/login?error=server`);
   }
 
-  // Cap the session at the demo expiry for demo accounts; sandboxes
-  // get a 7-day session (refreshed on each magic-link click).
+  // Cap the session at the demo expiry for demo accounts; showcase
+  // accounts (long-lived demo persona) get a 7-day session.
   const exp = user.accountKind === "demo" && user.demoExpiresAt
     ? Math.floor(user.demoExpiresAt.getTime() / 1000)
     : Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;

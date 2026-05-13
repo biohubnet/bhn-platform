@@ -83,7 +83,7 @@ export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) 
 
   async function clear() {
     const helpDefault =
-      `Delete every ${nounLabel} from demo or sandbox accounts. ` +
+      `Delete every ${nounLabel} from demo accounts. ` +
       "The accounts themselves stay (reusable). Phantoms have their own clear control.";
     if (!confirm(clearHelp ?? helpDefault)) return;
     setBusy("clear");
@@ -135,7 +135,7 @@ export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) 
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-rose-700 bg-rose-50 ring-1 ring-inset ring-rose-200 hover:bg-rose-100 font-semibold disabled:opacity-50 transition-colors"
       >
         <Trash2 size={11} />
-        {busy === "clear" ? "Clearing…" : "Clear demo + sandbox"}
+        {busy === "clear" ? "Clearing…" : "Clear demo"}
       </button>
       {flash && (
         <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 ring-1 ring-inset ring-emerald-200 rounded-md px-2 py-1 font-semibold">
@@ -148,7 +148,7 @@ export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) 
         </span>
       )}
       <span className="ml-auto text-[10px] text-amber-800/80">
-        Seed creates rows on demo/sandbox accounts so Clear can find them.
+        Seed creates rows on demo accounts so Clear can find them.
       </span>
     </div>
   );

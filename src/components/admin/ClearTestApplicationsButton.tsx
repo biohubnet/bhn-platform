@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 /**
- * Admin-only inline action on /talent-pool: wipe demo + sandbox
+ * Admin-only inline action on /talent-pool: wipe demo
  * talent-application submissions in one click so the list is back
  * to real candidates between testing rounds.
  *
@@ -23,7 +23,7 @@ export function ClearTestApplicationsButton() {
   const [, startTransition] = useTransition();
 
   async function run() {
-    if (!confirm("Delete every demo + sandbox talent-application submission?\n\nThe sandbox / demo USERS themselves stay (they're reusable for other tests) — only their pool applications are removed. Phantom accounts have their own dedicated 'Clear all phantoms' control; they aren't touched by this button.")) {
+    if (!confirm("Delete every demo talent-application submission?\n\nThe demo USERS themselves stay (they're reusable for other tests) — only their pool applications are removed. Phantom accounts have their own dedicated 'Clear all phantoms' control; they aren't touched by this button.")) {
       return;
     }
     setSubmitting(true); setError(null); setFlash(null);
@@ -38,14 +38,14 @@ export function ClearTestApplicationsButton() {
       };
       if (!res.ok) throw new Error(data.error ?? "Clear failed");
 
-      // Tally text — "5 demo, 2 sandbox" — based on what actually
-      // got deleted, not what we asked to delete.
+      // Tally text — "5 demo" — based on what actually got deleted,
+      // not what we asked to delete.
       const parts = Object.entries(data.byKind ?? {})
         .map(([k, n]) => `${n} ${k}`)
         .join(", ");
       setFlash(
         data.deleted === 0
-          ? "No demo or sandbox applications to clear."
+          ? "No demo applications to clear."
           : `Cleared ${data.deleted} application${data.deleted === 1 ? "" : "s"}${parts ? ` (${parts})` : ""}.`,
       );
       setTimeout(() => setFlash(null), 5000);
@@ -64,10 +64,10 @@ export function ClearTestApplicationsButton() {
         onClick={() => startTransition(() => { void run(); })}
         disabled={submitting}
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 px-3 py-1.5 ring-1 ring-inset ring-rose-200 rounded-lg disabled:opacity-50"
-        title="Delete every talent-application submission from demo + sandbox accounts. Users are kept."
+        title="Delete every talent-application submission from demo accounts. Users are kept."
       >
         <Trash2 size={12} />
-        {submitting ? "Clearing…" : "Clear demo + sandbox applications"}
+        {submitting ? "Clearing…" : "Clear demo applications"}
       </button>
       {flash && (
         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 ring-1 ring-inset ring-emerald-200 rounded-lg px-2 py-1">

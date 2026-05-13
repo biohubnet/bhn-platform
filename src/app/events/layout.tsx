@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/lms/Sidebar";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
-import { SandboxBanner } from "@/components/admin/SandboxBanner";
+import { DemoBanner } from "@/components/admin/DemoBanner";
 import { UnverifiedEmailBanner } from "@/components/auth/UnverifiedEmailBanner";
 import { Onboarding } from "@/components/onboarding/Onboarding";
 import { PageTranslator } from "@/components/translation/PageTranslator";
@@ -70,8 +70,8 @@ export default async function EventsLayout({ children }: { children: React.React
         />
         <main className="flex-1 overflow-y-auto relative">
           {actingAs && <ImpersonationBanner actingAs={actingAs} />}
-          {(userRow?.accountKind === "sandbox" || userRow?.accountKind === "demo") && (
-            <SandboxBanner kind={userRow.accountKind} expiresAt={userRow.demoExpiresAt?.toISOString() ?? null} />
+          {userRow?.accountKind === "demo" && (
+            <DemoBanner kind="demo" expiresAt={userRow.demoExpiresAt?.toISOString() ?? null} />
           )}
           {showUnverifiedBanner && userRow?.email && (
             <UnverifiedEmailBanner email={userRow.email} />

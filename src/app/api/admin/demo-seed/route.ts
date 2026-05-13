@@ -58,7 +58,7 @@ async function ensureDemoUser(opts: {
 }): Promise<string> {
   const existing = await prisma.user.findFirst({
     where: {
-      accountKind: { in: ["demo", "sandbox"] },
+      accountKind: "demo",
       role: opts.role,
     },
     select: { id: true },
@@ -93,7 +93,7 @@ const INTERNSHIP_SAMPLES = [
     compensation: "$24/hr + transit pass",
     keySkills: ["GMP", "Aseptic technique", "Bioreactor operations"],
     positionDetails:
-      "Demo posting auto-seeded for the admin walkthrough. Real applicants are not contacted. Safe to clear via Clear demo + sandbox postings.",
+      "Demo posting auto-seeded for the admin walkthrough. Real applicants are not contacted. Safe to clear via Clear demo postings.",
     contactEmail: "demo-hiring@bhn.test",
   },
   {
@@ -106,7 +106,7 @@ const INTERNSHIP_SAMPLES = [
     compensation: "$26/hr",
     keySkills: ["Document control", "QA review", "Deviation handling"],
     positionDetails:
-      "Demo posting auto-seeded for the admin walkthrough. Real applicants are not contacted. Safe to clear via Clear demo + sandbox postings.",
+      "Demo posting auto-seeded for the admin walkthrough. Real applicants are not contacted. Safe to clear via Clear demo postings.",
     contactEmail: "demo-hiring@bhn.test",
   },
   {
@@ -119,7 +119,7 @@ const INTERNSHIP_SAMPLES = [
     compensation: "$22/hr",
     keySkills: ["Cell culture", "Aseptic transfer", "Plate reading"],
     positionDetails:
-      "Demo posting auto-seeded for the admin walkthrough. Real applicants are not contacted. Safe to clear via Clear demo + sandbox postings.",
+      "Demo posting auto-seeded for the admin walkthrough. Real applicants are not contacted. Safe to clear via Clear demo postings.",
     contactEmail: "demo-hiring@bhn.test",
   },
 ];
