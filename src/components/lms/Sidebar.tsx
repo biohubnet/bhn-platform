@@ -222,6 +222,8 @@ const adminPlatformItems: NavItem[] = [
     description: "Engagement, learning, and conversion metrics across the platform." },
   { label: "Reports",             href: "/admin/reports",             icon: FileText,    minRole: "admin",
     description: "Generated reports for compliance, billing, and exec views." },
+  { label: "Compliance",          href: "/compliance",                icon: ShieldCheck, minRole: "admin",
+    description: "Management overview — every framework BHN follows (PIPEDA, AODA, CASL, encryption, MFA, audit, RBAC, backups), what we actually do for each, and honest status. Five-minute readable." },
   { label: "Audit Log",           href: "/admin/audit",               icon: ShieldCheck, minRole: "admin",
     description: "Append-only log of admin actions. Required for SOC 2 and 21 CFR Part 11 attestation." },
   { label: "Security",            href: "/admin/security",            icon: ShieldCheck, minRole: "admin",

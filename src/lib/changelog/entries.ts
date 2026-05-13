@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Compliance overview at /compliance for management",
+    body: "New admin-only page at /compliance gives management a five-minute readable summary of every regulatory framework BHN follows, what we actually do for each, and the honest current status (Met / Partial / In progress / N-A).\n\nFive groups:\n  • Privacy — PIPEDA, Canadian data residency, retention\n  • Accessibility — AODA + WCAG 2.1 AA\n  • Communications — CASL\n  • Security — encryption, MFA + authentication, audit logging, RBAC, vendor security\n  • Operational — backups + disaster recovery\n\nEach item lays out the regulator / authority, why we follow it, the specific platform measures we have today, and (for partials) an honest 'gap' note explaining what's still open. Linkable evidence rows jump into the live admin surfaces where the implementation lives (audit log, security settings, etc.).\n\nA status scorecard at the top tallies how many controls sit in each state. Source data is plain-English code in src/lib/compliance/items.ts — keep it honest; partials build management trust where aspirational marketing copy doesn't.\n\nFind it in the sidebar under Administration → Platform → Compliance.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Apply now — unified application flow on every posting",
     body: "Every internship posting now has a prominent Apply now button at the top of the page, regardless of what contact details the employer provided. Click → modal opens → three rendered paths chosen by what the posting carries:\n\n• Posting has a contact email: prefilled mail-client flow (subject + greeting + your elevator pitch + resume / video URLs). Your optional cover note is appended to the body.\n• Posting has only a website: opens the employer's apply page in a new tab and records the application on BHN so it appears on Application Tracker.\n• Posting has neither: 'Express interest' — captures your cover note as the application record so the BHN team can route it to the employer.\n\nIn every case the same /api/internships/[id]/apply call lands an ApplicationStatus row at status='new'. Your application shows up on Application Tracker immediately; the employer's kanban inherits the row whether they applied via email, web, or BHN-routed.\n\nReplaces the previous ApplyButtonClient, which was buried inside the contact box and only rendered when contactEmail was present — so a third of the postings had no apply control at all.",
     kind: "feature",
