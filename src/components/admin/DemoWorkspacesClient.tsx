@@ -107,6 +107,26 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
     } finally { setBusy(false); }
   }
 
+  // Nuke every demo workspace + every demo invite. Wipes both
+  // server-side and the local lists so the UI is immediately
+  // empty. Aligns with the platform convention for demo-data
+  // buttons: no confirm prompt; demo data is throwaway by
+  // construction.
+  async function clearAll() {
+    setBusy(true);
+    setErr(null);
+    try {
+      const r = await fetch("/api/admin/demo-workspaces?all=true", { method: "DELETE" });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        setErr(j.error ?? "Couldn't clear.");
+        return;
+      }
+      setActive([]);
+      setInvites([]);
+    } finally { setBusy(false); }
+  }
+
   return (
     <div className="space-y-6">
       {/* Mint CTA */}
@@ -213,13 +233,30 @@ export function DemoWorkspacesClient({ initialInvites, initialActive }: Props) {
 
       {/* Active demos */}
       <section>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
           <p className="text-[10px] uppercase tracking-[0.22em] text-subtle font-semibold">
             Active demos · {active.length}
           </p>
-          <button onClick={sweep} disabled={busy} className="text-[11px] text-muted hover:text-fg inline-flex items-center gap-1">
-            <Trash2 size={11} /> Run cleanup sweeper
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={sweep}
+              disabled={busy}
+              className="text-[11px] text-muted hover:text-fg inline-flex items-center gap-1"
+              title="Delete only the workspaces whose lifetime has expired."
+            >
+              <Trash2 size={11} /> Run cleanup sweeper
+            </button>
+            {(active.length > 0 || invites.length > 0) && (
+              <button
+                onClick={clearAll}
+                disabled={busy}
+                className="admin-glow text-[11px] font-semibold text-rose-700 bg-rose-50 ring-1 ring-inset ring-rose-200 hover:bg-rose-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1 disabled:opacity-50"
+                title="Delete every demo workspace + every demo invite. Real accounts and partner data are not touched."
+              >
+                <Trash2 size={11} /> Clear all demos
+              </button>
+            )}
+          </div>
         </div>
         {active.length === 0 ? (
           <div className="bg-card border border-line rounded-xl p-8 text-center text-sm text-muted">

@@ -89,6 +89,28 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   await requireRole("admin");
   const url = new URL(req.url);
+  const all = url.searchParams.get("all") === "true";
+
+  // ?all=true → nuke every demo workspace + every demo invite. Used
+  // by the "Clear all demos" admin button when wiping the deployed
+  // instance back to a clean slate. Workspace deletion cascades
+  // through postings + applicants per deleteDemoWorkspace's logic;
+  // invites are wiped separately because they're a parallel parent
+  // table.
+  if (all) {
+    const demos = await prisma.user.findMany({
+      where: { accountKind: "demo", role: "employer" },
+      select: { id: true },
+    });
+    let removed = 0;
+    for (const d of demos) {
+      const r = await deleteDemoWorkspace(d.id);
+      removed += r.removed;
+    }
+    const inv = await prisma.employerInvite.deleteMany({ where: { demoMode: true } });
+    return NextResponse.json({ ok: true, removed, invitesDeleted: inv.count });
+  }
+
   const employerId = url.searchParams.get("employerId");
   if (!employerId) return NextResponse.json({ error: "employerId required" }, { status: 400 });
   const r = await deleteDemoWorkspace(employerId);
