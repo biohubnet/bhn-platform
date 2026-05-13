@@ -190,21 +190,17 @@ export function ApplicationClient({
         setVideoUrl(j.url);
       }
 
-      // 3) Elevator pitch.
-      setSeedStep("Saving pitch…");
-      {
-        const res = await fetch("/api/profile/application", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ elevatorPitch: SAMPLE_PITCH }),
-        });
-        const j = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(j.error ?? "Pitch save failed.");
-        setPitch(SAMPLE_PITCH);
-        setUpdatedAt(j.applicationUpdatedAt ?? new Date().toISOString());
-      }
+      // 3) Elevator pitch — populate the textarea only, don't auto-
+      // save. Resume + video have to go through the server (they're
+      // file uploads) but the pitch is plain text the user might
+      // want to tweak before committing. Leaving it as "dirty
+      // local state" enables the Save Pitch button and matches the
+      // mental model that auto-fill = a starting draft, Save = "I
+      // commit this version".
+      setSeedStep("Loading sample pitch…");
+      setPitch(SAMPLE_PITCH);
 
-      flash({ tone: "ok", msg: "Sample application filled." });
+      flash({ tone: "ok", msg: "Sample filled — review the pitch and Save when ready." });
       router.refresh();
     } catch (e) {
       flash({ tone: "err", msg: (e as Error).message ?? "Sample fill failed." });
@@ -214,27 +210,69 @@ export function ApplicationClient({
     }
   }
 
+  /**
+   * Reset every auto-filled field back to empty. Wipes resume +
+   * video URLs server-side via the existing PATCH endpoint, clears
+   * the local pitch textarea, and lets the user fill or upload
+   * again from scratch. The R2 files behind the resume / video
+   * URLs are intentionally left in place — they're cheap to keep
+   * and a separate cleanup sweep can prune orphans on its own
+   * schedule.
+   */
+  async function clearAutoFills() {
+    setBusyKind("seed");
+    try {
+      const res = await fetch("/api/profile/application", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resumeUrl: null, videoIntroUrl: null, elevatorPitch: null }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? "Clear failed.");
+      setResumeUrl(null);
+      setVideoUrl(null);
+      setPitch("");
+      setUpdatedAt(j.applicationUpdatedAt ?? new Date().toISOString());
+      flash({ tone: "ok", msg: "Auto-fills cleared." });
+      router.refresh();
+    } catch (e) {
+      flash({ tone: "err", msg: (e as Error).message ?? "Clear failed." });
+    } finally {
+      setBusyKind(null);
+    }
+  }
+
   return (
     <div className="space-y-5">
       {canSeedSample && (
-        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50/60">
+        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50/60 flex-wrap">
           <div className="min-w-0">
             <p className="text-sm font-medium text-amber-900 inline-flex items-center gap-1.5">
               <Sparkles size={14} /> Admin tools
             </p>
             <p className="text-xs text-amber-800/80 mt-0.5">
-              Generate a sample resume PDF, record an ~8 s video introduction from a canvas animation, and set a sample elevator pitch — all in one click. Real upload pipeline.
+              Generate a sample resume PDF, record an ~8 s video introduction from a canvas animation, and pre-fill the elevator pitch — all in one click. Pitch lands as an unsaved draft so you can tweak before committing.
             </p>
           </div>
-          <Button
-            variant="secondary"
-            onClick={fillWithSample}
-            disabled={busyKind !== null}
-            loading={busyKind === "seed"}
-            className="shrink-0"
-          >
-            <Sparkles size={14} /> Fill with sample
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="ghost"
+              onClick={clearAutoFills}
+              disabled={busyKind !== null || (!resumeUrl && !videoUrl && !pitch)}
+              className="!text-rose-700 hover:!bg-rose-50"
+              title="Wipe resume + video + pitch so you can fill again from scratch."
+            >
+              Clear auto-fills
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={fillWithSample}
+              disabled={busyKind !== null}
+              loading={busyKind === "seed"}
+            >
+              <Sparkles size={14} /> Fill with sample
+            </Button>
+          </div>
         </div>
       )}
       {busyKind === "seed" && seedStep && (
