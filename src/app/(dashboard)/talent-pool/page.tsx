@@ -4,6 +4,7 @@ import { Users, Search, ArrowRight, MessageCircle, Lock } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canComment, isCommentable } from "@/lib/talent-pool/comments";
+import { ClearTestApplicationsButton } from "@/components/admin/ClearTestApplicationsButton";
 
 /**
  * /talent-pool — admin + employer + instructor view of approved
@@ -60,22 +61,27 @@ export default async function TalentPoolPage({
     },
   });
 
+  const isAdmin = role === "admin" || role === "superadmin";
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          {role === "employer" ? "Employer" : "Admin"} · Experience
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-          <Users size={22} className="text-brand-600" />
-          Talent pool
-          <span className="text-xs font-mono tabular-nums text-subtle">{submissions.length}</span>
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
-          Approved talent-application submissions, ordered by most recent. Click
-          any entry to view the full application and leave private comments
-          (visible to admins + employers only — never to the applicant).
-        </p>
+      <header className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+            {role === "employer" ? "Employer" : "Admin"} · Experience
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
+            <Users size={22} className="text-brand-600" />
+            Talent pool
+            <span className="text-xs font-mono tabular-nums text-subtle">{submissions.length}</span>
+          </h1>
+          <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
+            Approved talent-application submissions, ordered by most recent. Click
+            any entry to view the full application and leave private comments
+            (visible to admins + employers only — never to the applicant).
+          </p>
+        </div>
+        {isAdmin && <ClearTestApplicationsButton />}
       </header>
 
       <form action="/talent-pool" method="get" className="flex items-center gap-2">
