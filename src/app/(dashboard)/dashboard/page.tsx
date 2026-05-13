@@ -1,15 +1,11 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import {
-  BookOpen, Award, Clock, TrendingUp, Layers, Coins, ArrowRight,
-  GraduationCap, Sparkles, Calendar, Briefcase, Compass,
-} from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { ArrowRight, Sparkles, Compass } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
 import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
-import { SkillGapWidget } from "@/components/lms/SkillGapWidget";
 import { DailyThemeCard } from "@/components/ui/DailyThemeCard";
 import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
 import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
@@ -22,7 +18,7 @@ interface EnrollmentWithCourse {
   progress: number;
   score: number | null;
   enrolledAt: Date;
-  course: { id: string; title: string; category: string | null; thumbnail: string | null };
+  course: { id: string; title: string; category: string | null };
 }
 
 interface ScormSessionWithCourse {
@@ -32,25 +28,6 @@ interface ScormSessionWithCourse {
   score: number | null;
   updatedAt: Date;
   package: { course: { id: string; title: string } };
-}
-
-interface PathwayEnrollmentRow {
-  id: string;
-  status: string;
-  pathway: {
-    id: string;
-    title: string;
-    category: string | null;
-    courses: { courseId: string }[];
-  };
-}
-
-interface FeaturedPathwayRow {
-  id: string;
-  title: string;
-  description: string | null;
-  category: string | null;
-  _count: { courses: number; enrollments: number };
 }
 
 export default async function DashboardPage() {
@@ -80,82 +57,49 @@ export default async function DashboardPage() {
     return <InstructorDashboard user={{ id: userId, name: session!.user?.name ?? null }} />;
   }
 
-  const [enrollments, certificates, recentActivity, user, myPathways, featuredPathways, suggestedCourses] =
+  // Minimal data for the stripped trainee home. We only need:
+  //   • the one active enrollment (most-recent in-progress course)
+  //   • recent activity (3-row list)
+  //   • user credits (for the explore-links footer)
+  //   • pathway-enrolment count (for the line under the next card)
+  //   • one suggested course (fallback when no in-progress course)
+  const [enrollments, recentActivity, user, myPathways, suggestedCourses] =
     await Promise.all([
       prisma.enrollment.findMany({
-        where: { userId },
-        include: { course: { select: { id: true, title: true, category: true, thumbnail: true } } },
+        where: { userId, status: "active" },
+        include: { course: { select: { id: true, title: true, category: true } } },
         orderBy: { enrolledAt: "desc" },
-        take: 12,
+        take: 1,
       }) as Promise<EnrollmentWithCourse[]>,
-      prisma.certificate.count({ where: { userId, revokedAt: null } }),
       prisma.scormSession.findMany({
         where: { userId },
         include: { package: { include: { course: { select: { id: true, title: true } } } } },
         orderBy: { updatedAt: "desc" },
-        take: 5,
+        take: 3,
       }) as Promise<ScormSessionWithCourse[]>,
       prisma.user.findUnique({ where: { id: userId }, select: { credits: true, role: true } }),
       prisma.pathwayEnrollment.findMany({
-        where: { userId },
-        include: {
-          pathway: {
-            select: {
-              id: true,
-              title: true,
-              category: true,
-              courses: { select: { courseId: true } },
-            },
-          },
-        },
-        orderBy: { enrolledAt: "desc" },
-        take: 4,
-      }) as Promise<PathwayEnrollmentRow[]>,
-      prisma.pathway.findMany({
-        where: { status: "published" },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          category: true,
-          _count: { select: { courses: true, enrollments: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 3,
-      }) as Promise<FeaturedPathwayRow[]>,
+        where: { userId, status: { in: ["approved", "completed"] } },
+        select: { id: true },
+      }),
       prisma.course.findMany({
         where: {
           status: "published",
           enrollments: { none: { userId } },
         },
-        select: { id: true, title: true, category: true, duration: true },
+        select: { id: true, title: true, category: true },
         orderBy: { createdAt: "desc" },
-        take: 4,
+        take: 1,
       }),
     ]);
 
-  // Active postings for the skill-gap widget
-  const openPostings = await prisma.internshipPosting.findMany({
-    where: { status: "active" },
-    select: { id: true, title: true, companyName: true },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
-
-  const completed = enrollments.filter((e) => e.status === "completed").length;
-  const inProgress = enrollments.filter((e) => e.status === "active").length;
-
-  // Compute pathway progress for "my pathways"
-  const courseIdsAcrossPathways = Array.from(
-    new Set(myPathways.flatMap((p) => p.pathway.courses.map((c) => c.courseId)))
-  );
-  const courseEnrollmentMap = new Map(
-    enrollments
-      .filter((e) => courseIdsAcrossPathways.includes(e.courseId))
-      .map((e) => [e.courseId, e])
-  );
-
-  const activeContinue = enrollments.filter((e) => e.status === "active").slice(0, 3);
+  // The single in-progress course (or null) drives the
+  // PrimaryNextCard's "Pick up where you left off" state. We only
+  // pull take:1 above; the array is just for the convenience of
+  // .length checks in the hero copy.
+  const activeContinue = enrollments;
+  const inProgress = enrollments.length;
+  const completed = 0; // No longer surfaced anywhere — keep symbol for the hero copy fallback path below.
 
   // Pending buddy invites (incoming) — surfaced as a top banner
   const pendingBuddyInvites = await prisma.buddyPair.findMany({
@@ -328,356 +272,161 @@ export default async function DashboardPage() {
       <UpcomingEventBanner userId={userId} />
       <DailyThemeCard />
 
-      {/* ─── THE IDEA ────────────────────────────────────────────────
-          Three-pillar explainer. Reads as: this is what we're trying
-          to do here, in plain English. Each card is a clickable
-          jump-off so the page doubles as platform navigation for a
-          returning user who's been away a while. */}
-      <section className="grid md:grid-cols-3 gap-4 -mt-2">
-        <PillarCard
-          icon={BookOpen}
-          label="LEARN"
-          title="Train the craft"
-          body="Self-paced SCORM courses, instructor-led workshops, multi-course pathways that ladder up to a certificate. Pick a single topic from the catalog or commit to a curated journey."
-          href="/courses"
-          ctaLabel="Open the catalog"
-          tone="brand"
-        />
-        <PillarCard
-          icon={Briefcase}
-          label="CONNECT"
-          title="Wire to industry"
-          body="Build a reusable application kit once. Submit to the talent pool. Browse live internship postings from BHN partners. Every conversation tracked in one place."
-          href="/experience"
-          ctaLabel="See how it works"
-          tone="violet"
-        />
-        <PillarCard
-          icon={Coins}
-          label="EARN"
-          title="Train, unlock gear"
-          body="Every credit you spend on coursework counts toward real BHN merch — a swag bag at 2,500, an insulated bottle at 5,000. Pick up at U of T or request mailing."
-          href="/rewards"
-          ctaLabel="See rewards"
-          tone="amber"
-        />
-      </section>
-
-      {/* ─── YOUR NUMBERS ────────────────────────────────────────────
-          Personal stats split out of the hero into a slim row so
-          the hero stays focused on identity + idea. Each tile is
-          one figure, neither over-decorated nor hidden. */}
-      <section>
-        <h2 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
-          Your numbers
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <NumberTile icon={BookOpen}   label="Enrolled"     value={enrollments.length} tone="brand"   />
-          <NumberTile icon={Clock}      label="In progress"  value={inProgress}         tone="amber"   />
-          <NumberTile icon={TrendingUp} label="Completed"    value={completed}          tone="emerald" />
-          <NumberTile icon={Award}      label="Certificates" value={certificates}       tone="violet"  />
-          <NumberTile icon={Coins}      label="Credits"      value={(user?.credits ?? 0)} tone="ember" href="/credits" />
-        </div>
-      </section>
-
-      {/* Skill-gap widget — only renders if there are open postings */}
-      {openPostings.length > 0 && (
-        <SkillGapWidget postings={openPostings} />
-      )}
-
-      {/* Continue learning */}
-      {activeContinue.length > 0 && (
+      {/* ─── MINIMAL BODY ───────────────────────────────────────────
+          Deliberately not a dashboard. No stat tiles, no card grids,
+          no sidebars, no widgets. One primary action card + a quiet
+          activity list + text-only explore links. Reader answers a
+          single question here — "what should I do next?" — and
+          everything else lives behind the sidebar. */}
+      <PrimaryNextCard
+        active={activeContinue[0] ?? null}
+        myPathwayCount={myPathways.length}
+        suggestion={suggestedCourses[0] ?? null}
+      />
+      {recentActivity.length > 0 && (
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-fg">Continue learning</h2>
-              <p className="text-sm text-muted">Pick up where you left off.</p>
-            </div>
-            <Link href="/my-courses" className="text-sm font-medium text-brand-600 hover:text-brand-700">
-              View all →
-            </Link>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activeContinue.map((enrollment) => (
-              <Link
-                key={enrollment.id}
-                href={`/courses/${enrollment.courseId}`}
-                className="group bg-card rounded-2xl border border-line p-5 hover:border-brand-300 hover:shadow-md hover:-translate-y-0.5 transition-all"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center shrink-0 group-hover:from-brand-200 transition-colors">
-                    <BookOpen size={18} className="text-brand-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-fg text-sm leading-tight group-hover:text-brand-700 transition-colors line-clamp-2">
-                      {enrollment.course.title}
-                    </p>
-                    <p className="text-xs text-subtle mt-1">
-                      {enrollment.course.category ?? "General"}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <div className="flex justify-between text-xs text-muted mb-1.5">
-                    <span>Progress</span>
-                    <span className="font-semibold text-muted">{Math.round(enrollment.progress)}%</span>
-                  </div>
-                  <div className="h-1.5 bg-raised rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all"
-                      style={{ width: `${enrollment.progress}%` }}
-                    />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* My pathways */}
-      {myPathways.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-fg">Your pathways</h2>
-              <p className="text-sm text-muted">Multi-course journeys you've enrolled in.</p>
-            </div>
-            <Link href="/pathways" className="text-sm font-medium text-brand-600 hover:text-brand-700">
-              All pathways →
-            </Link>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            {myPathways.map((pe) => {
-              const total = pe.pathway.courses.length;
-              const done = pe.pathway.courses.filter(
-                (c) => courseEnrollmentMap.get(c.courseId)?.status === "completed"
-              ).length;
-              const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+          <h2 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
+            Recent
+          </h2>
+          <ul className="divide-y divide-line border-y border-line">
+            {recentActivity.slice(0, 3).map((s) => {
+              const done = s.status === "passed" || s.status === "completed";
               return (
-                <Link
-                  key={pe.id}
-                  href={`/pathways/${pe.pathway.id}`}
-                  className="group bg-card rounded-2xl border border-line p-5 hover:border-brand-300 hover:shadow-md transition-all"
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 text-white flex items-center justify-center shadow-md shadow-violet-600/20 shrink-0">
-                      <Layers size={18} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-fg truncate group-hover:text-brand-700 transition-colors">
-                          {pe.pathway.title}
-                        </p>
-                        {pe.status === "completed" && <Badge tone="success">Done</Badge>}
-                      </div>
-                      <p className="text-xs text-subtle mt-0.5">
-                        {pe.pathway.category ?? "Pathway"} · {done}/{total} complete
-                      </p>
-                    </div>
-                  </div>
-                  <div className="h-1.5 bg-raised rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </Link>
+                <li key={s.id} className="flex items-baseline gap-3 py-2.5">
+                  <span className={cn(
+                    "text-sm flex-1 truncate",
+                    done ? "text-fg" : "text-muted",
+                  )}>
+                    {s.package.course.title}
+                  </span>
+                  {s.score != null && (
+                    <span className="text-xs text-subtle font-mono tabular-nums shrink-0">{Math.round(s.score)}%</span>
+                  )}
+                  <span className="text-xs text-subtle shrink-0">{new Date(s.updatedAt).toLocaleDateString()}</span>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </section>
       )}
-
-      {/* Two column lower section */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent activity */}
-        <section className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-fg">Recent activity</h2>
-          </div>
-          <div className="bg-card rounded-2xl border border-line overflow-hidden">
-            {recentActivity.length === 0 ? (
-              <div className="p-12 text-center">
-                <Calendar size={32} className="mx-auto text-subtle mb-3" />
-                <p className="text-sm text-muted">No activity yet.</p>
-              </div>
-            ) : (
-              <ul className="divide-y divide-line">
-                {recentActivity.map((s) => {
-                  const tone = s.status === "passed" || s.status === "completed"
-                    ? "success" as const
-                    : s.status === "failed" ? "danger" as const : "neutral" as const;
-                  return (
-                    <li key={s.id} className="flex items-center justify-between px-5 py-3 hover:bg-elevated/50">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-                          <GraduationCap size={16} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-fg truncate">{s.package.course.title}</p>
-                          <p className="text-xs text-subtle">Attempt #{s.attemptNumber} · {new Date(s.updatedAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0 pl-3">
-                        {s.score != null && (
-                          <span className="text-sm font-semibold text-muted">{Math.round(s.score)}%</span>
-                        )}
-                        <Badge tone={tone}>{s.status}</Badge>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        </section>
-
-        {/* Right column: featured + suggested */}
-        <aside className="space-y-6">
-          {featuredPathways.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-muted mb-3 flex items-center gap-2">
-                <Layers size={14} className="text-violet-500" /> Featured pathways
-              </h3>
-              <div className="space-y-2">
-                {featuredPathways.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/pathways/${p.id}`}
-                    className="block bg-card border border-line rounded-xl p-3 hover:border-brand-300 hover:shadow-sm transition-all group"
-                  >
-                    <p className="text-sm font-medium text-fg group-hover:text-brand-700 line-clamp-1">{p.title}</p>
-                    <p className="text-xs text-subtle mt-0.5">
-                      {p._count.courses} courses · {p._count.enrollments} learners
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {suggestedCourses.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-muted mb-3 flex items-center gap-2">
-                <Sparkles size={14} className="text-amber-500" /> Suggested for you
-              </h3>
-              <div className="space-y-2">
-                {suggestedCourses.map((c) => (
-                  <Link
-                    key={c.id}
-                    href={`/courses/${c.id}`}
-                    className="block bg-card border border-line rounded-xl p-3 hover:border-brand-300 hover:shadow-sm transition-all group"
-                  >
-                    <p className="text-sm font-medium text-fg group-hover:text-brand-700 line-clamp-1">{c.title}</p>
-                    <p className="text-xs text-subtle mt-0.5">
-                      {c.category ?? "General"}{c.duration ? ` · ${c.duration} min` : ""}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </aside>
-      </div>
-
-      {/* Empty state if truly nothing */}
-      {enrollments.length === 0 && (
-        <div className="text-center py-16 bg-card rounded-2xl border border-line">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
-            <BookOpen size={20} />
-          </div>
-          <p className="text-muted font-semibold">Ready to start your first course?</p>
-          <p className="text-sm text-muted mt-1">Browse the catalog to find something for your role.</p>
-          <Link
-            href="/courses"
-            className="inline-flex items-center gap-2 mt-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg shadow-md shadow-brand-600/20 transition-all hover:-translate-y-0.5"
-          >
-            Browse courses <ArrowRight size={14} />
-          </Link>
-        </div>
-      )}
+      <ExploreLinks credits={user?.credits ?? 0} />
     </div>
   );
 }
 
-// ─── Helper components ───────────────────────────────────────────
+// ─── Minimal helpers ─────────────────────────────────────────────
+
+interface ActiveCourse {
+  id: string;
+  courseId: string;
+  progress: number;
+  course: { id: string; title: string; category: string | null };
+}
 
 /**
- * One tile of the three-pillar "what BHN actually is" explainer.
- * Clickable card with a brand-toned icon badge, a label / title /
- * body, and a CTA arrow that links to the relevant top-level section.
+ * The page's single primary action card. Answers "what should I do
+ * next?" with whichever of three states applies:
+ *
+ *   • If the trainee has an in-progress course → resume it.
+ *   • If they don't but the platform has suggested one → start it.
+ *   • Otherwise → push them to the catalog with friendly copy.
+ *
+ * One card, one CTA. Replaces the previous three-pillar / numbers /
+ * grid / sidebar tangle.
  */
-function PillarCard({
-  icon: Icon, label, title, body, href, ctaLabel, tone,
+function PrimaryNextCard({
+  active, myPathwayCount, suggestion,
 }: {
-  icon: React.ElementType;
-  label: string;
-  title: string;
-  body: string;
-  href: string;
-  ctaLabel: string;
-  tone: "brand" | "violet" | "amber";
+  active: ActiveCourse | null;
+  myPathwayCount: number;
+  suggestion: { id: string; title: string; category: string | null } | null;
 }) {
-  const toneClasses = {
-    brand:  { ring: "hover:border-brand-300",  badge: "from-brand-500 to-brand-700",   text: "text-brand-700",   icon: "shadow-brand-600/30" },
-    violet: { ring: "hover:border-violet-300", badge: "from-violet-500 to-violet-700", text: "text-violet-700",  icon: "shadow-violet-600/30" },
-    amber:  { ring: "hover:border-amber-300",  badge: "from-amber-500 to-amber-600",   text: "text-amber-700",   icon: "shadow-amber-500/30" },
-  }[tone];
+  if (active) {
+    return (
+      <Link
+        href={`/courses/${active.courseId}`}
+        className="group block rounded-2xl border border-line bg-card surface-shadow p-6 hover:border-brand-300 hover:-translate-y-0.5 transition-all"
+      >
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+          Pick up where you left off
+        </p>
+        <h2 className="text-2xl font-bold text-fg mt-1 tracking-tight group-hover:text-brand-700 transition-colors">
+          {active.course.title}
+        </h2>
+        <p className="text-xs text-muted mt-1">
+          {active.course.category ?? "Course"}
+          {myPathwayCount > 0 && (
+            <>{" "}· you&apos;re also enrolled in <Link href="/pathways" className="underline hover:text-brand-700" onClick={(e) => e.stopPropagation()}>{myPathwayCount} pathway{myPathwayCount === 1 ? "" : "s"}</Link></>
+          )}
+        </p>
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-xs text-muted mb-1.5">
+            <span>{Math.round(active.progress)}% complete</span>
+            <span className="inline-flex items-center gap-1 font-semibold text-brand-700">
+              Resume <ArrowRight size={12} />
+            </span>
+          </div>
+          <div className="h-2 bg-raised rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full"
+              style={{ width: `${active.progress}%` }}
+            />
+          </div>
+        </div>
+      </Link>
+    );
+  }
+  if (suggestion) {
+    return (
+      <Link
+        href={`/courses/${suggestion.id}`}
+        className="group block rounded-2xl border border-line bg-card surface-shadow p-6 hover:border-brand-300 hover:-translate-y-0.5 transition-all"
+      >
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+          One suggestion to start with
+        </p>
+        <h2 className="text-2xl font-bold text-fg mt-1 tracking-tight group-hover:text-brand-700 transition-colors">
+          {suggestion.title}
+        </h2>
+        <p className="text-xs text-muted mt-1">{suggestion.category ?? "Course"}</p>
+        <p className="text-xs font-semibold text-brand-700 mt-4 inline-flex items-center gap-1">
+          Open course <ArrowRight size={12} />
+        </p>
+      </Link>
+    );
+  }
   return (
     <Link
-      href={href}
-      className={`group bg-card rounded-2xl border border-line p-5 transition-all ${toneClasses.ring} hover:shadow-md hover:-translate-y-0.5 flex flex-col`}
+      href="/courses"
+      className="group block rounded-2xl border border-line bg-card surface-shadow p-6 hover:border-brand-300 hover:-translate-y-0.5 transition-all"
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${toneClasses.badge} text-white flex items-center justify-center shadow-md ${toneClasses.icon} shrink-0`}>
-          <Icon size={18} />
-        </div>
-        <span className={`text-[10px] uppercase tracking-[0.24em] font-bold ${toneClasses.text}`}>
-          {label}
-        </span>
-      </div>
-      <h3 className="text-lg font-bold text-fg tracking-tight">{title}</h3>
-      <p className="text-sm text-muted mt-1.5 leading-relaxed flex-1">{body}</p>
-      <p className={`text-xs font-semibold ${toneClasses.text} mt-3 inline-flex items-center gap-1 opacity-80 group-hover:opacity-100 group-hover:gap-2 transition-all`}>
-        {ctaLabel} <ArrowRight size={12} />
+      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Start somewhere</p>
+      <h2 className="text-2xl font-bold text-fg mt-1 tracking-tight group-hover:text-brand-700 transition-colors">
+        Browse the catalog
+      </h2>
+      <p className="text-sm text-muted mt-1">
+        Pick one course to anchor your training. Pathways and certificates follow.
+      </p>
+      <p className="text-xs font-semibold text-brand-700 mt-4 inline-flex items-center gap-1">
+        Open the catalog <ArrowRight size={12} />
       </p>
     </Link>
   );
 }
 
 /**
- * Slim numeric tile for the "Your numbers" row. Icon + label + big
- * number. Optional href to make the whole tile a click-target —
- * used by the Credits tile so trainees can jump straight to the
- * credits page where their balance is the actionable surface.
+ * Text-only "explore the rest" footer. Deliberately not a card grid;
+ * the page already answers the primary question. Anything else is
+ * just a list of inline links — no boxes, no badges.
  */
-function NumberTile({
-  icon: Icon, label, value, tone, href,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: number;
-  tone: "brand" | "amber" | "emerald" | "violet" | "ember";
-  href?: string;
-}) {
-  const toneClass = {
-    brand:   "text-brand-700",
-    amber:   "text-amber-700",
-    emerald: "text-emerald-700",
-    violet:  "text-violet-700",
-    ember:   "text-rose-700",
-  }[tone];
-  const inner = (
-    <div className="bg-card border border-line rounded-2xl px-4 py-3.5 transition-colors hover:border-brand-200">
-      <div className="flex items-center gap-2 text-subtle text-[10px] uppercase tracking-[0.18em] font-bold">
-        <Icon size={11} className={toneClass} /> {label}
-      </div>
-      <p className={`text-3xl font-bold mt-1 font-mono tabular-nums leading-none ${toneClass}`}>
-        {value.toLocaleString()}
-      </p>
-    </div>
+function ExploreLinks({ credits }: { credits: number }) {
+  return (
+    <p className="text-xs text-muted flex flex-wrap items-center gap-x-4 gap-y-1">
+      <Link href="/courses"      className="hover:text-fg hover:underline">Browse courses</Link>
+      <Link href="/pathways"     className="hover:text-fg hover:underline">Pathways</Link>
+      <Link href="/certificates" className="hover:text-fg hover:underline">Certificates</Link>
+      <Link href="/credits"      className="hover:text-fg hover:underline">{credits.toLocaleString()} credits</Link>
+      <Link href="/experience"   className="hover:text-fg hover:underline">How the program works</Link>
+    </p>
   );
-  if (href) return <Link href={href} className="block">{inner}</Link>;
-  return inner;
 }
