@@ -26,13 +26,15 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { ShieldCheck, FileText, ExternalLink, ChevronDown, KeyRound, Lock, AlertTriangle, Activity, UserCheck, Users } from "lucide-react";
+import { ShieldCheck, FileText, ExternalLink, ChevronDown, KeyRound, Lock, AlertTriangle, Activity, UserCheck, Users, ShieldAlert, CalendarClock, ClipboardCheck } from "lucide-react";
 import fs from "fs";
 import path from "path";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
+import { COMPLIANCE_ITEMS } from "@/lib/compliance/items";
 
 export const dynamic = "force-dynamic";
 
@@ -173,6 +175,20 @@ async function loadVitals(): Promise<SecurityVitals> {
   };
 }
 
+/**
+ * Posture = traffic-light read on the platform's current security
+ * stance. Computed from the same compliance registry the management
+ * overview at /compliance uses: zero open partials/in-progress items
+ * = Strong; one or two = Caution; three or more = Needs attention.
+ * Senior management can glance once and know whether to read more.
+ */
+function computePosture(): { label: "Strong" | "Caution" | "Needs attention"; tone: "success" | "warning" | "danger"; openCount: number } {
+  const open = COMPLIANCE_ITEMS.filter((it) => it.status === "partial" || it.status === "in_progress").length;
+  if (open === 0) return { label: "Strong",            tone: "success", openCount: open };
+  if (open <= 2)  return { label: "Caution",           tone: "warning", openCount: open };
+  return                { label: "Needs attention",   tone: "danger",  openCount: open };
+}
+
 export default async function AdminSecurityPage() {
   await requireRole("admin").catch(() => redirect("/dashboard"));
   const [reports, vitals] = await Promise.all([
@@ -180,15 +196,26 @@ export default async function AdminSecurityPage() {
     loadVitals(),
   ]);
 
-  // Derived rates. Staff-MFA rate is the headline coverage number —
-  // staff are required to enrol so anything <100% is a real action
-  // item.
   const staffMfaPct = vitals.staffUsers > 0
     ? Math.round((vitals.staffMfaEnrolled / vitals.staffUsers) * 100)
     : 0;
   const allMfaPct = vitals.realUsers > 0
     ? Math.round((vitals.mfaEnrolled / vitals.realUsers) * 100)
     : 0;
+
+  // Senior-management facing tiles. The numbers below are the ones an
+  // exec actually scans on this page; the operational signals (locked
+  // accounts, failed-login bursts, session count) move to a collapsed
+  // detail panel further down.
+  const posture = computePosture();
+  const openActions = COMPLIANCE_ITEMS.filter((it) => it.status === "partial" || it.status === "in_progress");
+  const lastReport = reports[0];
+  const lastReportDate = lastReport?.date
+    ? new Date(lastReport.date)
+    : null;
+  const daysSinceLastReport = lastReportDate
+    ? Math.floor((Date.now() - lastReportDate.getTime()) / (24 * 60 * 60 * 1000))
+    : null;
 
   return (
     <div className="max-w-4xl">
@@ -198,21 +225,22 @@ export default async function AdminSecurityPage() {
             <ShieldCheck size={20} className="text-sky-600" /> Security
           </span>
         }
-        description="Live security vitals + internal incident reviews. Vitals are scoped to real accounts (demo / phantom / showcase excluded). Reports under docs/security/ are version-controlled."
+        description="High-level posture for senior management. Plain-English status, current MFA coverage, open action items, recent reports. Operational signals (locked accounts, failed logins, session counts) sit collapsed at the bottom."
       />
 
-      {/* Security vitals scorecard. Six tiles surface the numbers
-          management actually reads on this page: MFA coverage on
-          staff (must be ≈100%), MFA coverage platform-wide, locked
-          accounts right now, failed-login bursts in the last 24 h,
-          privileged-action volume on the audit log, and live
-          session count for sanity-checking deploy windows. Tones
-          warn the eye to anything that isn't green. */}
-      <section className="mb-8 mt-4">
+      {/* Posture banner — single sentence, traffic-light tinted, so
+          a senior reader knows whether to keep reading. The count of
+          open compliance items drives the colour. */}
+      <PostureBanner posture={posture} />
+
+      {/* Four management tiles — the high-level stuff. Operational
+          numbers (locked accounts, failed logins, sessions, audit
+          volume) are below in a collapsed details panel. */}
+      <section className="mb-8 mt-6">
         <h2 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-3">
-          At a glance · live vitals
+          Key indicators
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Tile
             icon={KeyRound}
             label="Staff MFA coverage"
@@ -221,49 +249,139 @@ export default async function AdminSecurityPage() {
             tone={staffMfaPct >= 100 ? "success" : staffMfaPct >= 80 ? "warning" : "danger"}
           />
           <Tile
-            icon={UserCheck}
-            label="All MFA coverage"
-            value={`${allMfaPct}%`}
-            sub={`${vitals.mfaEnrolled} / ${vitals.realUsers} real users`}
+            icon={ShieldAlert}
+            label="Open action items"
+            value={openActions.length}
+            sub="from the compliance registry"
+            tone={openActions.length === 0 ? "success" : openActions.length <= 2 ? "warning" : "danger"}
+          />
+          <Tile
+            icon={ClipboardCheck}
+            label="Security reports"
+            value={reports.length}
+            sub={lastReport ? `latest · ${lastReport.title.split(/\s+/).slice(0, 4).join(" ")}…` : "no reports filed yet"}
             tone="info"
           />
           <Tile
-            icon={Lock}
-            label="Locked accounts"
-            value={vitals.lockedNow}
-            sub="lockedUntil > now"
-            tone={vitals.lockedNow === 0 ? "success" : vitals.lockedNow >= 5 ? "danger" : "warning"}
-          />
-          <Tile
-            icon={AlertTriangle}
-            label="Failed logins (24h)"
-            value={vitals.failedLast24h}
-            sub="real accounts with a recent miss"
-            tone={vitals.failedLast24h === 0 ? "success" : vitals.failedLast24h >= 20 ? "danger" : "warning"}
-          />
-          <Tile
-            icon={Activity}
-            label="Privileged actions (7d)"
-            value={vitals.privilegedActions7d}
-            sub="audit log rows · last 7 days"
-            tone="info"
-          />
-          <Tile
-            icon={Users}
-            label="Active sessions"
-            value={vitals.activeSessions}
-            sub="logged-in browsers right now"
-            tone="info"
+            icon={CalendarClock}
+            label="Days since last review"
+            value={daysSinceLastReport ?? "—"}
+            sub={lastReportDate ? lastReportDate.toLocaleDateString() : "no dated report on file"}
+            tone={daysSinceLastReport === null
+              ? "warning"
+              : daysSinceLastReport <= 90 ? "success" : daysSinceLastReport <= 180 ? "warning" : "danger"}
           />
         </div>
         <p className="text-xs text-subtle mt-3 leading-relaxed">
-          Threshold: staff-MFA should sit at 100% — anything under is a real
-          action item.{" "}
-          <a className="text-brand-600 hover:underline" href="/admin/audit">Open the audit log</a> for full action history,
-          or{" "}
-          <a className="text-brand-600 hover:underline" href="/admin/users">/admin/users</a> to chase non-MFA staff
-          individually.
+          Threshold: staff-MFA should sit at 100%; a security report
+          should land at least once per quarter. Open action items
+          come from the same registry as <Link className="text-brand-600 hover:underline" href="/compliance">/compliance</Link> — partials and
+          in-progress controls.
         </p>
+      </section>
+
+      {/* Open action items — the partials/in-progress from the
+          compliance registry, pulled inline so senior management
+          can see what's still open without navigating away. */}
+      {openActions.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-sm font-bold text-fg mb-3 inline-flex items-center gap-2">
+            <ShieldAlert size={14} className="text-amber-700" />
+            Open action items
+          </h2>
+          <ol className="space-y-2">
+            {openActions.map((it, i) => (
+              <li
+                key={it.id}
+                className="rounded-xl border border-line bg-card surface-shadow px-4 py-3 flex items-start gap-3"
+              >
+                <span className="shrink-0 w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+                  {i + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm font-semibold text-fg tracking-tight">{it.title}</h3>
+                    <span className={cn(
+                      "inline-flex items-center text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset",
+                      it.status === "partial" ? "bg-amber-50 text-amber-800 ring-amber-200" : "bg-sky-50 text-sky-800 ring-sky-200",
+                    )}>
+                      {it.status === "partial" ? "Partial" : "In progress"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted mt-0.5">{it.authority}</p>
+                  {it.notes && (
+                    <p className="text-sm text-fg mt-1.5 leading-snug">{it.notes}</p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+          <p className="text-xs text-subtle mt-3">
+            Full context for each item is on <Link className="text-brand-600 hover:underline" href="/compliance">/compliance</Link>.
+          </p>
+        </section>
+      )}
+
+      {/* Operational signals — folded by default so management
+          isn't drowned in noise. Admins on-call still want to see
+          locked accounts / failed-login spikes / privileged-action
+          volume / session counts, so we keep them, just not in the
+          top fold. */}
+      <section className="mb-8">
+        <details className="group/ops rounded-2xl border border-line bg-card">
+          <summary className="list-none cursor-pointer px-5 py-3 flex items-center justify-between gap-2 select-none">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-fg">
+              <Activity size={14} className="text-subtle" />
+              Operational signals
+              <span className="text-xs text-muted font-normal">— locked accounts, failed logins, sessions</span>
+            </span>
+            <ChevronDown size={14} className="text-muted transition-transform group-open/ops:rotate-180" />
+          </summary>
+          <div className="px-5 pb-5 pt-2 border-t border-line space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Tile
+                icon={UserCheck}
+                label="All MFA coverage"
+                value={`${allMfaPct}%`}
+                sub={`${vitals.mfaEnrolled} / ${vitals.realUsers} real users`}
+                tone="info"
+              />
+              <Tile
+                icon={Lock}
+                label="Locked accounts"
+                value={vitals.lockedNow}
+                sub="lockedUntil > now"
+                tone={vitals.lockedNow === 0 ? "success" : vitals.lockedNow >= 5 ? "danger" : "warning"}
+              />
+              <Tile
+                icon={AlertTriangle}
+                label="Failed logins (24h)"
+                value={vitals.failedLast24h}
+                sub="real accounts with a recent miss"
+                tone={vitals.failedLast24h === 0 ? "success" : vitals.failedLast24h >= 20 ? "danger" : "warning"}
+              />
+              <Tile
+                icon={Activity}
+                label="Privileged actions (7d)"
+                value={vitals.privilegedActions7d}
+                sub="audit log rows · last 7 days"
+                tone="info"
+              />
+              <Tile
+                icon={Users}
+                label="Active sessions"
+                value={vitals.activeSessions}
+                sub="logged-in browsers right now"
+                tone="info"
+              />
+            </div>
+            <p className="text-xs text-subtle">
+              <Link className="text-brand-600 hover:underline" href="/admin/audit">Open the audit log</Link> for full action
+              history, or <Link className="text-brand-600 hover:underline" href="/admin/users">/admin/users</Link> to chase
+              non-MFA staff individually.
+            </p>
+          </div>
+        </details>
       </section>
 
       <h2 className="text-sm font-bold text-fg mb-3 inline-flex items-center gap-2">
@@ -350,6 +468,46 @@ export default async function AdminSecurityPage() {
 }
 
 // ─── Scorecard tile ──────────────────────────────────────────────
+
+function PostureBanner({
+  posture,
+}: {
+  posture: { label: "Strong" | "Caution" | "Needs attention"; tone: "success" | "warning" | "danger"; openCount: number };
+}) {
+  const tone = {
+    success: "from-emerald-500 to-emerald-600 ring-emerald-200/50",
+    warning: "from-amber-500 to-amber-600 ring-amber-200/50",
+    danger:  "from-rose-500 to-rose-600 ring-rose-200/50",
+  }[posture.tone];
+  const subtitle = posture.openCount === 0
+    ? "No open action items in the compliance registry. Posture is clean — keep it that way."
+    : `${posture.openCount} open action item${posture.openCount === 1 ? "" : "s"} on the compliance registry. Details below.`;
+  return (
+    <section className="mt-4">
+      <div className={cn(
+        "relative overflow-hidden rounded-2xl bg-gradient-to-r text-white px-5 sm:px-6 py-4 sm:py-5 ring-1 ring-inset surface-shadow",
+        tone,
+      )}>
+        <div className="flex items-start gap-3">
+          <span className="inline-flex w-10 h-10 rounded-xl bg-white/20 ring-1 ring-inset ring-white/30 items-center justify-center shrink-0">
+            <ShieldCheck size={18} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-white/85">
+              Current posture
+            </p>
+            <p className="text-2xl font-bold leading-tight mt-0.5 tracking-tight">
+              {posture.label}
+            </p>
+            <p className="text-sm text-white/85 leading-snug mt-1 max-w-xl">
+              {subtitle}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function Tile({
   icon: Icon, label, value, sub, tone,
