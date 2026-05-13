@@ -39,8 +39,10 @@ export interface EventDot {
 interface Props {
   events: EventDot[];
   /**
-   * How many extra months past the anchor to render. Default 2 (so
-   * 3 months show in total). Pass 0 to render a single month.
+   * How many extra months past the anchor to render. Default 1 (so
+   * 2 months show in total, stacked vertically — each month takes
+   * the full canvas width so every cell is roomy enough for two
+   * lines of event copy). Pass 0 for a single month.
    */
   monthsAhead?: number;
 }
@@ -59,7 +61,7 @@ function ymd(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function EventCalendar({ events, monthsAhead = 2 }: Props) {
+export function EventCalendar({ events, monthsAhead = 1 }: Props) {
   // Anchor on the earliest upcoming event's month if present, else
   // today's month — feels much more useful than always starting on
   // "now" if the next event is six months out.
@@ -102,12 +104,13 @@ export function EventCalendar({ events, monthsAhead = 2 }: Props) {
 
   const months = Array.from({ length: monthsAhead + 1 }, (_, i) => addMonths(anchor, i));
 
-  // Pick a grid template — 1 / 2 / 3 columns based on the number of
-  // rendered months. monthsAhead=0 → single-column wide; =1 → side by
-  // side at md; =2 (default) → 3-up on xl, 2-up on md, 1-up below.
-  let monthGridClass = "grid grid-cols-1 gap-4";
-  if (monthsAhead === 1) monthGridClass = "grid grid-cols-1 md:grid-cols-2 gap-4";
-  else if (monthsAhead >= 2) monthGridClass = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4";
+  // Always stack months vertically — every rendered month uses the
+  // full canvas width so each day cell stays roomy. Putting two
+  // months side-by-side halves the per-cell width, which forced
+  // event labels to truncate to a few characters. Single column =
+  // ~150px+ per cell on a max-w-6xl page = full event titles
+  // comfortably visible on two lines.
+  const monthGridClass = "grid grid-cols-1 gap-4";
 
   return (
     <div className="rounded-2xl border border-line bg-card surface-shadow overflow-hidden">
@@ -179,7 +182,7 @@ function MonthGrid({ month, byDay }: { month: Date; byDay: Map<string, EventDot[
   }
 
   return (
-    <div className="rounded-xl bg-card ring-1 ring-inset ring-line/60 overflow-hidden flex flex-col">
+    <div className="bg-card ring-1 ring-inset ring-line/60 overflow-hidden flex flex-col">
       {/* Per-month label + count */}
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-line bg-elevated/40">
         <h4 className="text-sm font-semibold text-fg tracking-tight">
@@ -201,10 +204,18 @@ function MonthGrid({ month, byDay }: { month: Date; byDay: Map<string, EventDot[
         ))}
       </div>
 
-      {/* Day grid */}
-      <div className="grid grid-cols-7 gap-1 p-2">
+      {/* Day grid — tight px gap between cells so the surface reads
+          as a true grid (less negative space, more useful area per
+          cell). Straight-corner rectangles (no rounded radius) on
+          both cells and event chips: the previous rounded-lg made
+          today's ring look like an oval that wasn't quite centred
+          on the date number, and the soft corners stole horizontal
+          room that could carry a longer label. */}
+      <div className="grid grid-cols-7 gap-px bg-line/40 border-t border-line/40">
         {cells.map((d, idx) => {
-          if (d === null) return <div key={`b${idx}`} className="min-h-20" />;
+          if (d === null) {
+            return <div key={`b${idx}`} className="min-h-20 bg-card" />;
+          }
           const key = ymd(new Date(month.getFullYear(), month.getMonth(), d));
           const dayEvents = byDay.get(key) ?? [];
           const isToday = key === todayKey;
@@ -220,22 +231,26 @@ function MonthGrid({ month, byDay }: { month: Date; byDay: Map<string, EventDot[
           const inner = (
             <div
               className={cn(
-                // Rectangular cell — taller than wide so event labels
-                // get vertical room to wrap to a second line.
-                "min-h-20 rounded-lg flex flex-col items-stretch p-1.5 text-[11px] transition-colors",
+                // Sharp-corner rectangles, generous min-height so the
+                // event chips inside have two lines of breathing room.
+                "min-h-24 h-full flex flex-col items-stretch p-2 text-[11px] transition-colors",
                 hasEvents
                   ? firstEvent.tone === "brand"
-                    ? "bg-brand-50 text-brand-900 hover:bg-brand-100 ring-1 ring-inset ring-brand-200"
-                    : "bg-elevated text-fg hover:bg-raised ring-1 ring-inset ring-line"
+                    ? "bg-brand-50 text-brand-900 hover:bg-brand-100"
+                    : "bg-elevated text-fg hover:bg-raised"
                   : isToday
-                    ? "ring-1 ring-inset ring-brand-300"
-                    : "",
+                    ? "bg-card ring-2 ring-inset ring-brand-400"
+                    : "bg-card",
               )}
             >
+              {/* Date number — top-left, the universal calendar
+                  convention. The previous top-right placement
+                  combined with the rounded-lg cell border made the
+                  today highlight look misaligned with the digit. */}
               <span className={cn(
-                "text-right font-semibold leading-none text-[11px]",
-                isToday && !hasEvents && "text-brand-700",
-                hasEvents ? "" : "text-muted",
+                "text-left font-semibold leading-none text-xs",
+                isToday && "text-brand-700",
+                !hasEvents && !isToday && "text-muted",
               )}>
                 {d}
               </span>
@@ -244,12 +259,10 @@ function MonthGrid({ month, byDay }: { month: Date; byDay: Map<string, EventDot[
                   <div
                     key={e.id}
                     className={cn(
-                      // line-clamp-2 lets two-word event names like
-                      // "Biomanufacturing Day" sit on two lines instead
-                      // of truncating to "Bioma…". 11px is the cell
-                      // floor; smaller and the brand background can't
-                      // hold its own visually.
-                      "rounded px-1 py-0.5 text-[11px] font-semibold leading-tight line-clamp-2 break-words",
+                      // Sharp-corner chips. line-clamp-2 + break-words
+                      // lets long event titles sit on two lines
+                      // instead of being truncated to a few chars.
+                      "px-1.5 py-0.5 text-[11px] font-semibold leading-tight line-clamp-2 break-words",
                       e.tone === "brand"
                         ? "bg-brand-600 text-white"
                         : "bg-muted/30 text-fg",
@@ -260,14 +273,14 @@ function MonthGrid({ month, byDay }: { month: Date; byDay: Map<string, EventDot[
                   </div>
                 ))}
                 {dayEvents.length > 2 && (
-                  <p className="text-[9px] text-muted text-right leading-none">+{dayEvents.length - 2}</p>
+                  <p className="text-[10px] text-muted text-right leading-none">+{dayEvents.length - 2}</p>
                 )}
               </div>
             </div>
           );
           if (!href) return <div key={idx}>{inner}</div>;
           return (
-            <Link key={idx} href={href} className="block focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-lg">
+            <Link key={idx} href={href} className="block focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0">
               {inner}
             </Link>
           );

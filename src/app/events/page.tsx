@@ -108,7 +108,7 @@ export default async function EventsIndexPage() {
           // metadata that wouldn't fit inside the cells.
           <div className="space-y-6">
             <EventCalendar
-              monthsAhead={2}
+              monthsAhead={1}
               events={upcoming.map((e, i): EventDot => ({
                 id: e.id,
                 slug: e.slug,
