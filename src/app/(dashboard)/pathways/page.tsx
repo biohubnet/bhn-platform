@@ -8,6 +8,7 @@ import { EditableText } from "@/components/cms/EditableText";
 import { getCopy } from "@/lib/copy";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
 import { LeavePathwayButton } from "@/components/lms/LeavePathwayButton";
+import { ClickStop } from "@/components/lms/ClickStop";
 import { ensureRegisteredForms } from "@/lib/forms/registry";
 
 interface PathwayRow {
@@ -201,19 +202,16 @@ export default async function PathwaysPage() {
                       ) : null}
                       {/* Admin fast-leave shown inline on the card so an
                           admin can clean up their test enrollments
-                          without clicking through to each pathway. The
-                          wrapping span captures the click before it
-                          bubbles to the parent Link, so the button can
-                          fire its confirm + DELETE without navigation. */}
+                          without clicking through to each pathway.
+                          ClickStop is a tiny client component that
+                          swallows the click before it bubbles to the
+                          parent Link — server components can't define
+                          inline onClick handlers, so we delegate to a
+                          named wrapper. */}
                       {isStaff && myStatus && myStatus !== "withdrawn" && (
-                        <span
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                          // Tap-through prevention on touch + keyboard
-                          onKeyDown={(e) => e.stopPropagation()}
-                          className="inline-flex"
-                        >
+                        <ClickStop>
                           <LeavePathwayButton pathwayId={p.id} pathwayTitle={p.title} />
-                        </span>
+                        </ClickStop>
                       )}
                     </div>
                   </div>
