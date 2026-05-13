@@ -99,13 +99,13 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 // distinction next to each other was demonstrably confusing. Routes
 // kept the same so deep links stay alive.
 const experienceItems: (NavItem & { labelKey: string })[] = [
-  { label: "Program guide",             labelKey: "nav.experienceGuide", href: "/experience",            icon: Compass,
+  { label: "How it works",              labelKey: "nav.experienceGuide", href: "/experience",            icon: Compass,
     description: "End-to-end explainer for the EXPERIENCE program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
   { label: "Application Builder",       labelKey: "nav.application", href: "/profile/application",      icon: FileText,
     description: "Build a reusable resume + 1-min video intro + elevator pitch. Made once; auto-attached to every application form." },
   { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase,
     description: "Submit bio, supervisor letter, transcript, resume, and STAR video — we share with vetted industry partners." },
-  { label: "Internship Opportunities",  labelKey: "nav.internships", href: "/internships",              icon: Briefcase,
+  { label: "Internships",               labelKey: "nav.internships", href: "/internships",              icon: Briefcase,
     description: "Live job board of internship and co-op postings from BHN industry partners. Apply directly from here." },
   { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList,
     description: "Status of every application you've submitted across the platform — submitted, reviewed, interview, offer." },
@@ -809,7 +809,7 @@ export function Sidebar({
                 body: "Submit your bio, supervisor letter, transcript, resume, and STAR video — we share with vetted partners.",
               },
               {
-                title: "Internship Opportunities",
+                title: "Internships",
                 body: "Live job board of internship and co-op postings from BHN industry partners.",
               },
             ]}
