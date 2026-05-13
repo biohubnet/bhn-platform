@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { Calendar, ArrowRight, Users, ExternalLink, Plus } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { EventCalendar, type EventDot } from "@/components/events/EventCalendar";
+import { DemoEventsControls } from "@/components/events/DemoEventsControls";
 
 /**
  * /admin/events — list of every BhnEvent on the platform.
@@ -42,22 +44,51 @@ export default async function AdminEventsListPage() {
     },
   });
 
+  // Calendar dots — every event regardless of status (admin needs
+  // to see drafts and archived editions on the calendar too).
+  // Brand-tone the next upcoming edition so it stands out.
+  const now = new Date();
+  const nextUpcomingId = events
+    .filter((e) => e.endDate >= now)
+    .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())[0]?.id ?? null;
+  const calendarDots: EventDot[] = events.map((e) => ({
+    id: e.id,
+    slug: e.slug,
+    title: e.title,
+    start: e.startDate.toISOString(),
+    end: e.endDate.toISOString(),
+    tone: e.id === nextUpcomingId ? "brand" : "neutral",
+  }));
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Admin · Engage</p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-          <Calendar size={22} className="text-brand-600" />
-          Events
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
-          Manage BHN Annual Symposium &amp; Training Week editions. Click any
-          event to edit basics, see registrations, and run check-in.
-          Workshops, sessions, speakers, and sponsors are managed via the
-          seed file (prisma/seed-events.ts) until a future phase brings
-          dedicated CRUD UI.
-        </p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <header className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Admin · Engage</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
+            <Calendar size={22} className="text-brand-600" />
+            Events
+          </h1>
+          <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
+            Manage BHN Annual Symposium &amp; Training Week editions. Click any
+            event to edit basics, see registrations, and run check-in.
+            Workshops, sessions, speakers, and sponsors are managed via the
+            seed file (prisma/seed-events.ts) until a future phase brings
+            dedicated CRUD UI.
+          </p>
+        </div>
+        <DemoEventsControls />
       </header>
+
+      {/* Calendar at the top of the admin page so the back-to-all-
+          events nav from event detail lands on the same visual
+          context as the public /events landing — sortable list plus
+          a glance-able timeline. Empty weeks collapse, weeks with
+          events expand for the chips, so the calendar takes less
+          space than a uniform-height grid. */}
+      {events.length > 0 && (
+        <EventCalendar events={calendarDots} monthsAhead={1} />
+      )}
 
       {events.length === 0 ? (
         <div className="bg-card border border-line rounded-2xl p-12 text-center">

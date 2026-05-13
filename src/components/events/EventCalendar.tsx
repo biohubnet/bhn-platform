@@ -204,88 +204,149 @@ function MonthGrid({ month, byDay }: { month: Date; byDay: Map<string, EventDot[
         ))}
       </div>
 
-      {/* Day grid — tight px gap between cells so the surface reads
-          as a true grid (less negative space, more useful area per
-          cell). Straight-corner rectangles (no rounded radius) on
-          both cells and event chips: the previous rounded-lg made
-          today's ring look like an oval that wasn't quite centred
-          on the date number, and the soft corners stole horizontal
-          room that could carry a longer label. */}
-      <div className="grid grid-cols-7 gap-px bg-line/40 border-t border-line/40">
-        {cells.map((d, idx) => {
-          if (d === null) {
-            return <div key={`b${idx}`} className="min-h-20 bg-card" />;
-          }
-          const key = ymd(new Date(month.getFullYear(), month.getMonth(), d));
-          const dayEvents = byDay.get(key) ?? [];
-          const isToday = key === todayKey;
-          const hasEvents = dayEvents.length > 0;
-          const firstEvent = dayEvents[0];
-          // Single event → cell links to it. Multiple events → cell
-          // links to the upcoming list anchor so the user can pick.
-          const href = !hasEvents
-            ? null
-            : dayEvents.length === 1
-              ? `/events/${firstEvent.slug}`
-              : "#upcoming";
-          const inner = (
-            <div
-              className={cn(
-                // Sharp-corner rectangles, generous min-height so the
-                // event chips inside have two lines of breathing room.
-                "min-h-24 h-full flex flex-col items-stretch p-2 text-[11px] transition-colors",
-                hasEvents
-                  ? firstEvent.tone === "brand"
-                    ? "bg-brand-50 text-brand-900 hover:bg-brand-100"
-                    : "bg-elevated text-fg hover:bg-raised"
-                  : isToday
-                    ? "bg-card ring-2 ring-inset ring-brand-400"
-                    : "bg-card",
-              )}
-            >
-              {/* Date number — top-left, the universal calendar
-                  convention. The previous top-right placement
-                  combined with the rounded-lg cell border made the
-                  today highlight look misaligned with the digit. */}
-              <span className={cn(
-                "text-left font-semibold leading-none text-xs",
-                isToday && "text-brand-700",
-                !hasEvents && !isToday && "text-muted",
-              )}>
-                {d}
-              </span>
-              <div className="flex-1 flex flex-col justify-end gap-0.5 mt-1 overflow-hidden">
-                {dayEvents.slice(0, 2).map((e) => (
-                  <div
-                    key={e.id}
-                    className={cn(
-                      // Sharp-corner chips. line-clamp-2 + break-words
-                      // lets long event titles sit on two lines
-                      // instead of being truncated to a few chars.
-                      "px-1.5 py-0.5 text-[11px] font-semibold leading-tight line-clamp-2 break-words",
-                      e.tone === "brand"
-                        ? "bg-brand-600 text-white"
-                        : "bg-muted/30 text-fg",
-                    )}
-                    title={e.title.replace(/^Demo · /, "")}
-                  >
-                    {e.title.replace(/^Demo · /, "")}
-                  </div>
-                ))}
-                {dayEvents.length > 2 && (
-                  <p className="text-[10px] text-muted text-right leading-none">+{dayEvents.length - 2}</p>
-                )}
-              </div>
-            </div>
-          );
-          if (!href) return <div key={idx}>{inner}</div>;
-          return (
-            <Link key={idx} href={href} className="block focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0">
-              {inner}
-            </Link>
-          );
-        })}
-      </div>
+      {/* Day grid — split into one row per week so each week can
+          claim its own min-height. Weeks with at least one event
+          inflate to give cells room for two-line event chips; empty
+          weeks collapse to a thin date-only strip, saving vertical
+          real estate without dropping any dates. */}
+      <WeekRows
+        cells={cells}
+        month={month}
+        byDay={byDay}
+        todayKey={todayKey}
+      />
     </div>
+  );
+}
+
+/**
+ * Splits the flat cells array into 7-cell rows and renders each
+ * row in its own grid. Rows with events get min-h-24 so event chips
+ * have room to breathe; empty rows get min-h-10 (≈ 40 px), which is
+ * tall enough to show the date number plainly but ⅓ the height of a
+ * full row. Net effect: a month with two scattered events takes
+ * about half the vertical space the old uniform-height grid did.
+ */
+function WeekRows({
+  cells, month, byDay, todayKey,
+}: {
+  cells: (number | null)[];
+  month: Date;
+  byDay: Map<string, EventDot[]>;
+  todayKey: string;
+}) {
+  const weeks: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+
+  return (
+    <div className="flex flex-col gap-px bg-line/40 border-t border-line/40">
+      {weeks.map((week, wi) => {
+        const weekHasEvent = week.some((d) => {
+          if (d === null) return false;
+          const k = ymd(new Date(month.getFullYear(), month.getMonth(), d));
+          return (byDay.get(k)?.length ?? 0) > 0;
+        });
+        return (
+          <div key={wi} className="grid grid-cols-7 gap-px">
+            {week.map((d, ci) => (
+              <DayCell
+                key={`${wi}-${ci}`}
+                d={d}
+                month={month}
+                byDay={byDay}
+                todayKey={todayKey}
+                rowExpanded={weekHasEvent}
+              />
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DayCell({
+  d, month, byDay, todayKey, rowExpanded,
+}: {
+  d: number | null;
+  month: Date;
+  byDay: Map<string, EventDot[]>;
+  todayKey: string;
+  rowExpanded: boolean;
+}) {
+  // Per-row min-height. Tall when the week carries any event so
+  // chips can wrap to two lines; short when nothing happens that
+  // week, so the calendar doesn't waste a third of its height on
+  // empty whitespace.
+  const minH = rowExpanded ? "min-h-24" : "min-h-10";
+
+  if (d === null) {
+    return <div className={`${minH} bg-card`} />;
+  }
+  const key = ymd(new Date(month.getFullYear(), month.getMonth(), d));
+  const dayEvents = byDay.get(key) ?? [];
+  const isToday = key === todayKey;
+  const hasEvents = dayEvents.length > 0;
+  const firstEvent = dayEvents[0];
+  // Single event → cell links to it. Multiple events → cell links
+  // to the upcoming list anchor so the user can pick.
+  const href = !hasEvents
+    ? null
+    : dayEvents.length === 1
+      ? `/events/${firstEvent.slug}`
+      : "#upcoming";
+  const inner = (
+    <div
+      className={cn(
+        // Sharp-corner rectangles. Min height varies by week, but
+        // a cell with events still has its own min so the chips
+        // are never crushed even if the row's flex stretches it
+        // taller than the row min.
+        "h-full flex flex-col items-stretch text-[11px] transition-colors",
+        rowExpanded ? "p-2 min-h-24" : "px-2 py-1 min-h-10",
+        hasEvents
+          ? firstEvent.tone === "brand"
+            ? "bg-brand-50 text-brand-900 hover:bg-brand-100"
+            : "bg-elevated text-fg hover:bg-raised"
+          : isToday
+            ? "bg-card ring-2 ring-inset ring-brand-400"
+            : "bg-card",
+      )}
+    >
+      <span className={cn(
+        "text-left font-semibold leading-none text-xs",
+        isToday && "text-brand-700",
+        !hasEvents && !isToday && "text-muted",
+      )}>
+        {d}
+      </span>
+      {rowExpanded && (
+        <div className="flex-1 flex flex-col justify-end gap-0.5 mt-1 overflow-hidden">
+          {dayEvents.slice(0, 2).map((e) => (
+            <div
+              key={e.id}
+              className={cn(
+                "px-1.5 py-0.5 text-[11px] font-semibold leading-tight line-clamp-2 break-words",
+                e.tone === "brand"
+                  ? "bg-brand-600 text-white"
+                  : "bg-muted/30 text-fg",
+              )}
+              title={e.title.replace(/^Demo · /, "")}
+            >
+              {e.title.replace(/^Demo · /, "")}
+            </div>
+          ))}
+          {dayEvents.length > 2 && (
+            <p className="text-[10px] text-muted text-right leading-none">+{dayEvents.length - 2}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+  if (!href) return <div>{inner}</div>;
+  return (
+    <Link href={href} className="block focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0">
+      {inner}
+    </Link>
   );
 }
