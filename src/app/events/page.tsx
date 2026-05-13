@@ -64,7 +64,7 @@ export default async function EventsIndexPage() {
   const headerIntro = copy["events.indexHeader.intro"] ?? introDefault;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16 space-y-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16 space-y-10">
       <header>
         <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-brand-600">
           BHN Events
@@ -102,8 +102,13 @@ export default async function EventsIndexPage() {
             </p>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-5">
+          // Calendar + list stack vertically. Calendar takes the full
+          // page width so it can show three months side-by-side with
+          // roomy cells; the list sits below with the per-event
+          // metadata that wouldn't fit inside the cells.
+          <div className="space-y-6">
             <EventCalendar
+              monthsAhead={2}
               events={upcoming.map((e, i): EventDot => ({
                 id: e.id,
                 slug: e.slug,
