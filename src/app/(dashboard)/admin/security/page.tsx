@@ -23,14 +23,16 @@
  * and why — internal context, not external comms).
  */
 import { requireRole } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { ShieldCheck, FileText, ExternalLink, ChevronDown } from "lucide-react";
+import { ShieldCheck, FileText, ExternalLink, ChevronDown, KeyRound, Lock, AlertTriangle, Activity, UserCheck, Users } from "lucide-react";
 import fs from "fs";
 import path from "path";
 import { redirect } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -122,20 +124,152 @@ const PROSE_CLASSES =
   "prose-code:text-brand-700 prose-code:bg-elevated prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-code:font-mono prose-code:before:content-[''] prose-code:after:content-[''] " +
   "prose-table:text-sm prose-table:my-3";
 
+/** Time helpers — short-window thresholds for the scorecard counts. */
+function startOfWindow(daysAgo: number): Date {
+  return new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+}
+
+interface SecurityVitals {
+  realUsers: number;
+  staffUsers: number;       // admin + superadmin + instructor + employer
+  mfaEnrolled: number;       // any user with totpEnabledAt set
+  staffMfaEnrolled: number;  // staff specifically — should approach 100%
+  lockedNow: number;         // lockedUntil > now
+  failedLast24h: number;     // users with lastFailedLoginAt < 24h
+  privilegedActions7d: number; // AuditLog rows in last 7 days
+  activeSessions: number;    // sessions row count
+}
+
+/**
+ * Live security-vitals pulled in one Promise.all so the page renders
+ * in a single DB round-trip's worth of latency. Numbers are scoped
+ * to real accounts (accountKind="real") for everything user-related —
+ * demo / phantom / showcase noise would distort the picture.
+ */
+async function loadVitals(): Promise<SecurityVitals> {
+  const since24h = startOfWindow(1);
+  const since7d  = startOfWindow(7);
+  const now = new Date();
+  const STAFF_ROLES = ["admin", "superadmin", "instructor", "employer"];
+
+  const [
+    realUsers, staffUsers, mfaEnrolled, staffMfaEnrolled,
+    lockedNow, failedLast24h,
+    privilegedActions7d, activeSessions,
+  ] = await Promise.all([
+    prisma.user.count({ where: { accountKind: "real" } }),
+    prisma.user.count({ where: { accountKind: "real", role: { in: STAFF_ROLES } } }),
+    prisma.user.count({ where: { accountKind: "real", totpEnabledAt: { not: null } } }),
+    prisma.user.count({ where: { accountKind: "real", role: { in: STAFF_ROLES }, totpEnabledAt: { not: null } } }),
+    prisma.user.count({ where: { accountKind: "real", lockedUntil: { gt: now } } }),
+    prisma.user.count({ where: { accountKind: "real", lastFailedLoginAt: { gt: since24h } } }),
+    prisma.auditLog.count({ where: { createdAt: { gt: since7d } } }).catch(() => 0),
+    prisma.session.count().catch(() => 0),
+  ]);
+
+  return {
+    realUsers, staffUsers, mfaEnrolled, staffMfaEnrolled,
+    lockedNow, failedLast24h, privilegedActions7d, activeSessions,
+  };
+}
+
 export default async function AdminSecurityPage() {
   await requireRole("admin").catch(() => redirect("/dashboard"));
-  const reports = loadReports();
+  const [reports, vitals] = await Promise.all([
+    Promise.resolve(loadReports()),
+    loadVitals(),
+  ]);
+
+  // Derived rates. Staff-MFA rate is the headline coverage number —
+  // staff are required to enrol so anything <100% is a real action
+  // item.
+  const staffMfaPct = vitals.staffUsers > 0
+    ? Math.round((vitals.staffMfaEnrolled / vitals.staffUsers) * 100)
+    : 0;
+  const allMfaPct = vitals.realUsers > 0
+    ? Math.round((vitals.mfaEnrolled / vitals.realUsers) * 100)
+    : 0;
 
   return (
     <div className="max-w-4xl">
       <PageHeader
         title={
           <span className="inline-flex items-center gap-2">
-            <ShieldCheck size={20} className="text-sky-600" /> Security reports
+            <ShieldCheck size={20} className="text-sky-600" /> Security
           </span>
         }
-        description="Internal incident reviews and pre-emptive audits. Each report is committed to the repo under docs/security/ so it's version-controlled and citable. Click 'Read full report' to expand."
+        description="Live security vitals + internal incident reviews. Vitals are scoped to real accounts (demo / phantom / showcase excluded). Reports under docs/security/ are version-controlled."
       />
+
+      {/* Security vitals scorecard. Six tiles surface the numbers
+          management actually reads on this page: MFA coverage on
+          staff (must be ≈100%), MFA coverage platform-wide, locked
+          accounts right now, failed-login bursts in the last 24 h,
+          privileged-action volume on the audit log, and live
+          session count for sanity-checking deploy windows. Tones
+          warn the eye to anything that isn't green. */}
+      <section className="mb-8 mt-4">
+        <h2 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-3">
+          At a glance · live vitals
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <Tile
+            icon={KeyRound}
+            label="Staff MFA coverage"
+            value={`${staffMfaPct}%`}
+            sub={`${vitals.staffMfaEnrolled} / ${vitals.staffUsers} staff enrolled`}
+            tone={staffMfaPct >= 100 ? "success" : staffMfaPct >= 80 ? "warning" : "danger"}
+          />
+          <Tile
+            icon={UserCheck}
+            label="All MFA coverage"
+            value={`${allMfaPct}%`}
+            sub={`${vitals.mfaEnrolled} / ${vitals.realUsers} real users`}
+            tone="info"
+          />
+          <Tile
+            icon={Lock}
+            label="Locked accounts"
+            value={vitals.lockedNow}
+            sub="lockedUntil > now"
+            tone={vitals.lockedNow === 0 ? "success" : vitals.lockedNow >= 5 ? "danger" : "warning"}
+          />
+          <Tile
+            icon={AlertTriangle}
+            label="Failed logins (24h)"
+            value={vitals.failedLast24h}
+            sub="real accounts with a recent miss"
+            tone={vitals.failedLast24h === 0 ? "success" : vitals.failedLast24h >= 20 ? "danger" : "warning"}
+          />
+          <Tile
+            icon={Activity}
+            label="Privileged actions (7d)"
+            value={vitals.privilegedActions7d}
+            sub="audit log rows · last 7 days"
+            tone="info"
+          />
+          <Tile
+            icon={Users}
+            label="Active sessions"
+            value={vitals.activeSessions}
+            sub="logged-in browsers right now"
+            tone="info"
+          />
+        </div>
+        <p className="text-xs text-subtle mt-3 leading-relaxed">
+          Threshold: staff-MFA should sit at 100% — anything under is a real
+          action item.{" "}
+          <a className="text-brand-600 hover:underline" href="/admin/audit">Open the audit log</a> for full action history,
+          or{" "}
+          <a className="text-brand-600 hover:underline" href="/admin/users">/admin/users</a> to chase non-MFA staff
+          individually.
+        </p>
+      </section>
+
+      <h2 className="text-sm font-bold text-fg mb-3 inline-flex items-center gap-2">
+        <FileText size={14} className="text-sky-600" />
+        Reports
+      </h2>
 
       {reports.length === 0 ? (
         <Card className="p-10 text-center">
@@ -211,6 +345,39 @@ export default async function AdminSecurityPage() {
       <p className="mt-6 text-xs text-subtle">
         Need to file a vulnerability disclosure? Email <a className="text-brand-600 hover:underline" href="mailto:security@biohubnetwork.ca">security@biohubnetwork.ca</a>.
       </p>
+    </div>
+  );
+}
+
+// ─── Scorecard tile ──────────────────────────────────────────────
+
+function Tile({
+  icon: Icon, label, value, sub, tone,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  sub: string;
+  tone: "success" | "info" | "warning" | "danger";
+}) {
+  const toneClass = {
+    success: "bg-emerald-50 text-emerald-900 ring-emerald-200",
+    info:    "bg-sky-50 text-sky-900 ring-sky-200",
+    warning: "bg-amber-50 text-amber-900 ring-amber-200",
+    danger:  "bg-rose-50 text-rose-900 ring-rose-200",
+  }[tone];
+  return (
+    <div className={cn("rounded-2xl ring-1 ring-inset p-4 surface-shadow", toneClass)}>
+      <div className="flex items-center gap-2 mb-1">
+        <Icon size={14} className="shrink-0 opacity-80" />
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold opacity-80">
+          {label}
+        </p>
+      </div>
+      <p className="text-3xl font-bold font-mono tabular-nums leading-none">
+        {value}
+      </p>
+      <p className="text-[11px] opacity-75 mt-1 leading-tight">{sub}</p>
     </div>
   );
 }
