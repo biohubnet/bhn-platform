@@ -79,31 +79,38 @@ export async function AdminDashboard({
 
   return (
     <div className="space-y-8">
-      {/* Hero — compact identity strip. Greeting + one-line status +
-          CTAs on one row; the four headline stats sit in a slim
-          numbers row right below the hero. ~1/3 of the previous
-          hero's height, freeing the fold for the action queue. */}
+      {/* Hero — compact identity strip with proper headroom above
+          the curve-down decoration. The curve sits at the bottom of
+          the section as a 64-px wavy strip; without enough bottom
+          padding it eats the body text + CTAs (the issue called out
+          on the deployed page). pt-7 / pb-20 gives the curve its
+          full 64-px breathing room while keeping the visible
+          content compact. */}
       <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-4 hero-mesh-brand">
         <div className="absolute inset-0 pointer-events-none">
           <div className="blob-shape blob-soft drift" style={{ width: 360, height: 360, top: -120, left: -100 }} />
           <div className="blob-shape blob-soft drift-slow" style={{ width: 420, height: 420, bottom: -200, right: -140, opacity: 0.55 }} />
         </div>
-        <div className="relative max-w-7xl mx-auto px-6 pt-6 pb-5">
+        <div className="relative max-w-7xl mx-auto px-6 pt-7 pb-20">
           <div className="flex items-end justify-between gap-5 flex-wrap">
             <div className="min-w-0">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white drop-shadow-sm">
                 <ShieldCheck size={11} /> {isSuperAdmin ? "Superadmin" : "Admin"} desk
               </span>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight leading-[1.1] mt-1">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight leading-[1.1] mt-1 drop-shadow-sm">
                 Hi, <span className="gradient-text">{firstName}</span>.
               </h1>
-              <p className="mt-1.5 text-white/85 text-sm max-w-2xl leading-snug">
+              {/* Solid white at full opacity + drop-shadow so the
+                  body line stays readable across the gradient's
+                  brighter cyan stretch. Same fix on the secondary
+                  copy (new sign-ups). */}
+              <p className="mt-1.5 text-white text-sm max-w-2xl leading-snug drop-shadow">
                 {totalPending > 0
                   ? `${totalPending} item${totalPending === 1 ? "" : "s"} waiting on you across credits, role requests, and pathway approvals.`
                   : "Nothing in the action queue. Platform is humming."}
                 {" "}
                 {new7dUsers > 0 && (
-                  <span className="text-white/70">{new7dUsers} new sign-up{new7dUsers === 1 ? "" : "s"} this week.</span>
+                  <span className="text-white/90">{new7dUsers} new sign-up{new7dUsers === 1 ? "" : "s"} this week.</span>
                 )}
               </p>
             </div>
@@ -114,9 +121,13 @@ export async function AdminDashboard({
               >
                 Admin overview <ArrowRight size={12} />
               </Link>
+              {/* Secondary CTA — was bg-white/10 which disappeared on
+                  the lighter cyan portion of the gradient. Bumped to
+                  /25 with a brighter ring so it has a visible edge on
+                  every theme tint. */}
               <Link
                 href="/admin/users"
-                className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur border border-white/25 text-white hover:bg-white/20 text-xs font-semibold px-4 py-2 organic-card-alt transition-colors"
+                className="inline-flex items-center gap-1.5 bg-white/25 backdrop-blur ring-1 ring-inset ring-white/60 text-white hover:bg-white/35 text-xs font-semibold px-4 py-2 organic-card-alt transition-colors shadow-sm shadow-brand-900/20"
               >
                 <Users size={12} /> Users
               </Link>

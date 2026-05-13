@@ -226,20 +226,23 @@ export default async function DashboardPage() {
           <div className="blob-shape blob-soft drift-slow" style={{ width: 420, height: 420, bottom: -200, right: -140, opacity: 0.55 }} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 pt-6 pb-5">
+        <div className="relative max-w-7xl mx-auto px-6 pt-7 pb-20">
           <div className="flex items-end justify-between gap-5 flex-wrap">
             <div className="min-w-0">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white drop-shadow-sm">
                 <Sparkles size={11} />
                 {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
               </span>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight leading-[1.1] mt-1">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight leading-[1.1] mt-1 drop-shadow-sm">
                 Hi, <span className="gradient-text">{firstName}</span>.
               </h1>
-              <p className="mt-1.5 text-white/85 text-sm max-w-3xl leading-snug">
+              {/* Solid white + drop-shadow so the body line stays
+                  readable across the lighter cyan portion of the
+                  gradient. */}
+              <p className="mt-1.5 text-white text-sm max-w-3xl leading-snug drop-shadow">
                 <strong className="text-white">BioHubNet</strong> wires Ontario biomanufacturing HQP
                 from their first course to their first industry placement.{" "}
-                <span className="text-white/75">
+                <span className="text-white/90">
                   {inProgress > 0
                     ? `${inProgress} in progress.`
                     : completed > 0
@@ -255,9 +258,12 @@ export default async function DashboardPage() {
               >
                 {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={12} />
               </Link>
+              {/* Secondary CTA — bumped from /10 to /25 with a
+                  brighter ring so the silhouette holds on the
+                  lighter end of the gradient. */}
               <Link
                 href="/experience"
-                className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur border border-white/25 text-white hover:bg-white/20 text-xs font-semibold px-4 py-2 organic-card-alt transition-colors"
+                className="inline-flex items-center gap-1.5 bg-white/25 backdrop-blur ring-1 ring-inset ring-white/60 text-white hover:bg-white/35 text-xs font-semibold px-4 py-2 organic-card-alt transition-colors shadow-sm shadow-brand-900/20"
               >
                 <Compass size={12} /> How it works
               </Link>
