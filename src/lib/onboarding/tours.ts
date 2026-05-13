@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.12h";
+export const TOUR_VERSION = "2026.05.13a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -561,6 +561,14 @@ export const TOUR_STEPS: TourStep[] = [
     path: "/forms/talent-application",
     placement: "center",
     since: "2026.05.12d",
+  },
+  {
+    id: "experience-program-guide",
+    title: "New: program guide at /experience",
+    body: "End-to-end explainer for the EXPERIENCE program — Application Builder → Talent Application → Internship Opportunities → Application Tracker → Interviews. Includes a flow chart with one branching node (admin review). Every mention of a sidebar item is a clickable pill — hover it, and the matching row in your sidebar pulses so you can find the control instantly. Find it at the top of the EXPERIENCE section in the sidebar.",
+    placement: "center",
+    since: "2026.05.13a",
+    cta: { label: "Open the program guide", href: "/experience" },
   },
   {
     id: "editable-copy",

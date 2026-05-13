@@ -99,6 +99,8 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 // distinction next to each other was demonstrably confusing. Routes
 // kept the same so deep links stay alive.
 const experienceItems: (NavItem & { labelKey: string })[] = [
+  { label: "Program guide",             labelKey: "nav.experienceGuide", href: "/experience",            icon: Compass,
+    description: "End-to-end explainer for the EXPERIENCE program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
   { label: "Application Builder",       labelKey: "nav.application", href: "/profile/application",      icon: FileText,
     description: "Build a reusable resume + 1-min video intro + elevator pitch. Made once; auto-attached to every application form." },
   { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase,
@@ -539,6 +541,21 @@ function NavLink({ item, pathname, onNavigate }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
+  // External-highlight listener — guide pages dispatch
+  // `bhn:nav-highlight` events with an href payload when the reader
+  // hovers a nav mention. The matching nav row lights up so the
+  // reader can find the corresponding control in the menu without
+  // hunting. Empty href clears the highlight.
+  const [externalHighlight, setExternalHighlight] = useState(false);
+  useEffect(() => {
+    function onHl(e: Event) {
+      const detail = (e as CustomEvent<{ href: string | null }>).detail;
+      setExternalHighlight(detail?.href === item.href);
+    }
+    window.addEventListener("bhn:nav-highlight", onHl as EventListener);
+    return () => window.removeEventListener("bhn:nav-highlight", onHl as EventListener);
+  }, [item.href]);
+
   const tooltipId = `navtip-${item.href.replace(/[^a-z0-9]/gi, "_")}`;
 
   return (
@@ -566,6 +583,11 @@ function NavLink({ item, pathname, onNavigate }: {
           active
             ? "bg-brand-50 text-brand-700"
             : "text-muted hover:bg-raised hover:text-fg",
+          // External highlight — when a guide-page NavHighlight pill
+          // is hovered, the matching nav row lights up with a brand
+          // ring + amber-ish flash so the reader can locate the
+          // mentioned control at a glance.
+          externalHighlight && "ring-2 ring-amber-400 bg-amber-50 text-amber-900 shadow-[0_0_18px_rgba(251,191,36,0.5)] animate-pulse",
         )}
       >
         {/* Theme-independent active accent — a 2px left edge in brand-600.
