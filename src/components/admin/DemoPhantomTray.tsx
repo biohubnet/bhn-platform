@@ -92,7 +92,11 @@ export function DemoPhantomTray({
   }
 
   async function clearAll() {
-    if (!confirm("Delete ALL phantom users on this platform?\n\nThis affects every page that uses phantoms (Manage Enrollments, Credit Applications, Talent Pool, etc.) — not just this one. Test fixtures only; real users are unaffected.")) return;
+    // No confirm — phantoms are throwaway test fixtures. The blast
+    // radius (every page that uses phantoms) sounds dramatic but
+    // every affected row is by definition demo-only, so spending an
+    // extra click on each clear hurt the demo cadence more than it
+    // protected anything.
     setError(null);
     try {
       const res = await fetch("/api/admin/phantom-users/clear-all", {

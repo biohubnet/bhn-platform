@@ -124,7 +124,10 @@ export function PhantomUsersClient({
 
   async function deleteAll() {
     if (rows.length === 0) return;
-    if (!confirm(`Delete ALL ${rows.length} phantom users now?`)) return;
+    // No confirm prompt — phantoms are throwaway test fixtures and
+    // the action is reversible with a 5-second spawn. The button was
+    // demanding a confirm for the bulk case which slowed admins down
+    // mid-demo for no real safety win.
     setBusy(true); setError(null);
     let failed = 0;
     for (const r of rows) {
