@@ -362,7 +362,12 @@ function PrimaryNextCard({
         <p className="text-xs text-muted mt-1">
           {active.course.category ?? "Course"}
           {myPathwayCount > 0 && (
-            <>{" "}· you&apos;re also enrolled in <Link href="/pathways" className="underline hover:text-brand-700" onClick={(e) => e.stopPropagation()}>{myPathwayCount} pathway{myPathwayCount === 1 ? "" : "s"}</Link></>
+            // Plain text — can't nest a Link with an onClick handler
+            // inside the parent <Link> (server component would have
+            // to serialise the handler to the client and crashes).
+            // The pathway shortcut lives below the card in the
+            // ExploreLinks row instead.
+            <> · enrolled in {myPathwayCount} pathway{myPathwayCount === 1 ? "" : "s"}</>
           )}
         </p>
         <div className="mt-4">
