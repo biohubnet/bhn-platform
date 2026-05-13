@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getHolidayInfo, type HolidayInfo } from "@/lib/holidays";
 
 /**
  * Multi-month calendar surface. Renders the anchor month plus
@@ -112,15 +113,22 @@ export function EventCalendar({ events: _events, monthsAhead = 1 }: Props) {
 
   return (
     <div className="rounded-2xl border border-line bg-card surface-shadow overflow-hidden">
-      {/* Shared header — range label + nav. Shifts every rendered
-          month by 1 step at a time. */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-line">
-        <span className="inline-flex w-7 h-7 rounded-lg bg-brand-50 text-brand-700 items-center justify-center">
-          <CalendarIcon size={14} />
+      {/* Shared header — range label + nav + legend. Shifts every
+          rendered month by 1 step at a time. The legend pips decode
+          the cell-corner dots: red for federal, amber for Ontario,
+          violet for U of T academic breaks. */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-line">
+        <span className="inline-flex w-6 h-6 rounded-lg bg-brand-50 text-brand-700 items-center justify-center">
+          <CalendarIcon size={12} />
         </span>
         <h3 className="text-sm font-semibold text-fg flex-1 truncate">
           {rangeLabel}
         </h3>
+        <div className="hidden md:inline-flex items-center gap-2 text-[10px] text-muted">
+          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />Fed</span>
+          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />ON</span>
+          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-violet-500" />U of T</span>
+        </div>
         <button
           type="button"
           onClick={() => setAnchor((v) => addMonths(v, -1))}
@@ -273,21 +281,42 @@ function DayCell({
   todayKey: string;
   rowExpanded: boolean;
 }) {
-  // Per-row min-height. Tall when the week carries any event so
-  // chips can wrap to two lines; short when nothing happens that
-  // week, so the calendar collapses to barely-the-digit. The
-  // shorter floor here (h-6 = 24 px) is just enough to read the
-  // date number at text-[10px] with a hair of vertical air.
-  const minH = rowExpanded ? "min-h-24" : "min-h-6";
+  // Per-row min-height. Event rows still get vertical room for two
+  // lines of chip text; empty rows collapse aggressively (20 px) so
+  // a quiet month barely takes any vertical space at all.
+  const minHEmpty = "min-h-5";
+  const minHEvent = "min-h-20";
 
   if (d === null) {
-    return <div className={`${minH} bg-card`} />;
+    return <div className={`${rowExpanded ? minHEvent : minHEmpty} bg-card`} />;
   }
-  const key = ymd(new Date(month.getFullYear(), month.getMonth(), d));
+  const date = new Date(month.getFullYear(), month.getMonth(), d);
+  const key = ymd(date);
   const dayEvents = byDay.get(key) ?? [];
   const isToday = key === todayKey;
   const hasEvents = dayEvents.length > 0;
   const firstEvent = dayEvents[0];
+  const dow = date.getDay(); // 0 Sun … 6 Sat
+  const isWeekend = dow === 0 || dow === 6;
+  const holiday: HolidayInfo | null = getHolidayInfo(date);
+
+  // Background priority: event > today-ring > holiday tint > weekend
+  // tint > default card. Event styling pulls bolder colours so an
+  // event day stands out unambiguously even on a busy week.
+  const baseBg = hasEvents
+    ? firstEvent.tone === "brand"
+      ? "bg-brand-200/70 ring-1 ring-inset ring-brand-300 hover:bg-brand-200"
+      : "bg-sky-100/80 ring-1 ring-inset ring-sky-300 hover:bg-sky-100"
+    : holiday?.kind === "fed"
+      ? "bg-rose-50/70"
+      : holiday?.kind === "prov"
+        ? "bg-amber-50/70"
+        : holiday?.kind === "uoft"
+          ? "bg-violet-50/70"
+          : isWeekend
+            ? "bg-elevated/70"
+            : "bg-card";
+
   // Single event → cell links to it. Multiple events → cell links
   // to the upcoming list anchor so the user can pick.
   const href = !hasEvents
@@ -295,30 +324,50 @@ function DayCell({
     : dayEvents.length === 1
       ? `/events/${firstEvent.slug}`
       : "#upcoming";
+
+  // Tooltip for the date cell. Combines holiday name + event titles.
+  const titleParts: string[] = [];
+  if (holiday) titleParts.push(holiday.name);
+  for (const e of dayEvents) titleParts.push(e.title.replace(/^Demo · /, ""));
+  const tooltip = titleParts.length ? titleParts.join(" · ") : undefined;
+
   const inner = (
     <div
+      title={tooltip}
       className={cn(
-        // Sharp-corner rectangles. Empty-week cells are a thin
-        // 24 px-min strip with just the date number; rows with
-        // events open up to 96 px so chips have room to wrap.
-        "h-full flex flex-col items-stretch transition-colors",
-        rowExpanded ? "p-2 min-h-24 text-[11px]" : "px-1.5 py-0.5 min-h-6 text-[10px]",
-        hasEvents
-          ? firstEvent.tone === "brand"
-            ? "bg-brand-50 text-brand-900 hover:bg-brand-100"
-            : "bg-elevated text-fg hover:bg-raised"
-          : isToday
-            ? "bg-card ring-2 ring-inset ring-brand-400"
-            : "bg-card",
+        "h-full flex flex-col items-stretch transition-colors relative",
+        rowExpanded ? `p-1.5 ${minHEvent} text-[11px]` : `px-1 py-0 ${minHEmpty} text-[10px]`,
+        baseBg,
+        isToday && !hasEvents && "ring-2 ring-inset ring-brand-400",
       )}
     >
       <span className={cn(
-        "text-left font-semibold leading-none",
+        "text-left font-semibold leading-none flex items-center gap-1",
         rowExpanded ? "text-xs" : "text-[10px]",
         isToday && "text-brand-700",
-        !hasEvents && !isToday && "text-muted",
+        !hasEvents && !isToday && (
+          holiday?.kind === "fed" ? "text-rose-800"
+          : holiday?.kind === "prov" ? "text-amber-800"
+          : holiday?.kind === "uoft" ? "text-violet-800"
+          : isWeekend ? "text-subtle"
+          : "text-muted"
+        ),
       )}>
         {d}
+        {holiday && (
+          // Tiny coloured pip beside the date number — federal red,
+          // provincial amber, U of T violet. Pure decoration; the
+          // tooltip carries the name for screen readers.
+          <span
+            aria-hidden
+            className={cn(
+              "inline-block w-1 h-1 rounded-full",
+              holiday.kind === "fed"  && "bg-rose-500",
+              holiday.kind === "prov" && "bg-amber-500",
+              holiday.kind === "uoft" && "bg-violet-500",
+            )}
+          />
+        )}
       </span>
       {rowExpanded && (
         <div className="flex-1 flex flex-col justify-end gap-0.5 mt-1 overflow-hidden">
@@ -328,8 +377,8 @@ function DayCell({
               className={cn(
                 "px-1.5 py-0.5 text-[11px] font-semibold leading-tight line-clamp-2 break-words",
                 e.tone === "brand"
-                  ? "bg-brand-600 text-white"
-                  : "bg-muted/30 text-fg",
+                  ? "bg-brand-700 text-white"
+                  : "bg-sky-600 text-white",
               )}
               title={e.title.replace(/^Demo · /, "")}
             >
