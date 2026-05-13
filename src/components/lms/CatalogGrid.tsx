@@ -1,8 +1,9 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Pencil, Save, X, Loader2, AlertCircle, CheckSquare, Square, Sparkles,
+  GripVertical, CheckCircle2,
 } from "lucide-react";
 import { CourseCard } from "./CourseCard";
 import type { CourseFilterOptions } from "./CourseFilters";
@@ -49,6 +50,17 @@ export function CatalogGrid({
   const [editing, setEditing] = useState<CatalogCourse | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
 
+  // Local reorder state — initialised from props, updated optimistically
+  // on drop. router.refresh() after the persistence call pulls the
+  // canonical server order back in via the useEffect below.
+  const [localOrder, setLocalOrder] = useState<CatalogCourse[]>(courses);
+  useEffect(() => { setLocalOrder(courses); }, [courses]);
+
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const [reorderFlash, setReorderFlash] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+
   function toggle(id: string) {
     setSelected((cur) => {
       const next = new Set(cur);
@@ -58,15 +70,75 @@ export function CatalogGrid({
     });
   }
 
-  function selectAll() { setSelected(new Set(courses.map((c) => c.id))); }
+  function selectAll() { setSelected(new Set(localOrder.map((c) => c.id))); }
   function clearAll()  { setSelected(new Set()); }
 
-  const allSelected = courses.length > 0 && selected.size === courses.length;
+  const allSelected = localOrder.length > 0 && selected.size === localOrder.length;
+
+  // ── Drag-and-drop handlers ─────────────────────────────────────
+  function onDragStart(e: React.DragEvent<HTMLElement>, id: string) {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = "move";
+    // Some browsers need data to be set or dragenter never fires.
+    e.dataTransfer.setData("text/plain", id);
+  }
+  function onDragOver(e: React.DragEvent<HTMLElement>, id: string) {
+    if (!dragId || dragId === id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (overId !== id) setOverId(id);
+  }
+  function onDragLeave() {
+    setOverId(null);
+  }
+  async function onDrop(e: React.DragEvent<HTMLElement>, dropOnId: string) {
+    e.preventDefault();
+    if (!dragId || dragId === dropOnId) {
+      setDragId(null); setOverId(null);
+      return;
+    }
+    const next = [...localOrder];
+    const from = next.findIndex((c) => c.id === dragId);
+    const to   = next.findIndex((c) => c.id === dropOnId);
+    if (from < 0 || to < 0) {
+      setDragId(null); setOverId(null);
+      return;
+    }
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setLocalOrder(next);
+    setDragId(null); setOverId(null);
+
+    // Persist. We send EVERY id (in current order) so the server can
+    // assign clean integer slots and ties with off-page courses don't
+    // matter.
+    try {
+      const res = await fetch("/api/admin/courses/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds: next.map((c) => c.id) }),
+      });
+      if (!res.ok) {
+        // Roll back if server rejected
+        setLocalOrder(localOrder);
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setReorderFlash(`Reorder failed: ${data.error ?? res.status}`);
+      } else {
+        setReorderFlash("Order saved.");
+      }
+    } catch (err) {
+      setLocalOrder(localOrder);
+      setReorderFlash(`Reorder failed: ${(err as Error).message}`);
+    } finally {
+      setTimeout(() => setReorderFlash(null), 2500);
+      startTransition(() => router.refresh());
+    }
+  }
 
   return (
     <>
-      {isAdmin && courses.length > 0 && (
-        <div className="flex items-center gap-2 mb-3 text-xs">
+      {isAdmin && localOrder.length > 0 && (
+        <div className="flex items-center gap-2 mb-3 text-xs flex-wrap">
           <button
             type="button"
             onClick={allSelected ? clearAll : selectAll}
@@ -78,44 +150,81 @@ export function CatalogGrid({
           {selected.size > 0 && (
             <span className="text-subtle">· {selected.size} selected</span>
           )}
+          <span className="ml-auto text-subtle inline-flex items-center gap-1">
+            <GripVertical size={11} />
+            Drag the grip on any tile to rearrange.
+          </span>
+          {reorderFlash && (
+            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+              <CheckCircle2 size={11} /> {reorderFlash}
+            </span>
+          )}
         </div>
       )}
 
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-        {courses.map((c) => (
-          <div key={c.id} className="relative group">
-            {isAdmin && (
-              <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-                <label className="cursor-pointer bg-card-solid border border-line rounded-md p-1 shadow-sm hover:border-brand-300 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(c.id)}
-                    onChange={() => toggle(c.id)}
-                    className="block accent-brand-600"
-                    aria-label={`Select ${c.title}`}
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setEditing(c)}
-                  className="bg-card-solid border border-line text-muted hover:text-brand-700 hover:border-brand-300 rounded-md p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
-                  title="Quick-edit filters"
-                >
-                  <Pencil size={13} />
-                </button>
-              </div>
-            )}
-            <CourseCard course={c} role={role} />
-            {isAdmin && (c.topic || c.delivery || c.provider || c.isSpecial) && (
-              <div className="mt-1.5 flex flex-wrap gap-1 px-1">
-                {c.topic    && <Tag>{c.topic}</Tag>}
-                {c.delivery && <Tag>{c.delivery}</Tag>}
-                {c.provider && <Tag>{c.provider}</Tag>}
-                {c.isSpecial && <Tag amber>Special</Tag>}
-              </div>
-            )}
-          </div>
-        ))}
+        {localOrder.map((c) => {
+          const isDragging = dragId === c.id;
+          const isDropTarget = overId === c.id && dragId !== c.id;
+          return (
+            <div
+              key={c.id}
+              className={`relative group transition-all ${
+                isDragging ? "opacity-40" : ""
+              } ${
+                isDropTarget ? "ring-2 ring-brand-400 ring-offset-2 ring-offset-bg rounded-[var(--radius-lg)]" : ""
+              }`}
+              onDragOver={isAdmin ? (e) => onDragOver(e, c.id) : undefined}
+              onDragLeave={isAdmin ? onDragLeave : undefined}
+              onDrop={isAdmin ? (e) => { void onDrop(e, c.id); } : undefined}
+            >
+              {isAdmin && (
+                <>
+                  <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+                    <label className="cursor-pointer bg-card-solid border border-line rounded-md p-1 shadow-sm hover:border-brand-300 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(c.id)}
+                        onChange={() => toggle(c.id)}
+                        className="block accent-brand-600"
+                        aria-label={`Select ${c.title}`}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setEditing(c)}
+                      className="bg-card-solid border border-line text-muted hover:text-brand-700 hover:border-brand-300 rounded-md p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
+                      title="Quick-edit filters"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                  </div>
+                  {/* Drag grip — admin only. The handle is the
+                      draggable element so the underlying Link inside
+                      CourseCard stays clickable for navigation. */}
+                  <div
+                    draggable
+                    onDragStart={(e) => onDragStart(e, c.id)}
+                    onDragEnd={() => { setDragId(null); setOverId(null); }}
+                    title="Drag to reorder"
+                    className="absolute top-3 right-3 z-10 bg-card-solid border border-line text-muted rounded-md p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all cursor-grab active:cursor-grabbing hover:text-brand-700 hover:border-brand-300"
+                  >
+                    <GripVertical size={13} />
+                  </div>
+                </>
+              )}
+              <CourseCard course={c} role={role} />
+              {isAdmin && (c.topic || c.delivery || c.provider || c.isSpecial) && (
+                <div className="mt-1.5 flex flex-wrap gap-1 px-1">
+                  {c.topic    && <Tag>{c.topic}</Tag>}
+                  {c.delivery && <Tag>{c.delivery}</Tag>}
+                  {c.provider && <Tag>{c.provider}</Tag>}
+                  {c.isSpecial && <Tag amber>Special</Tag>}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Sticky bulk toolbar — admin only */}

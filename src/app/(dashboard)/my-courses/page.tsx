@@ -1,10 +1,11 @@
-import { getSession } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { cn, formatDuration } from "@/lib/utils";
 import { Play, CheckCircle, Clock, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
+import { LeaveCourseButton } from "@/components/lms/LeaveCourseButton";
 
 interface MyEnrollment {
   id: string;
@@ -35,6 +36,10 @@ function classifyStatus(status: string, progress: number) {
 export default async function MyCoursesPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
+  const role = (session!.user as { role?: string }).role ?? "user";
+  // Admin / superadmin get an inline "Leave" affordance on every row.
+  // Trainees use the regular completion / withdrawal path elsewhere.
+  const isStaff = checkIsStaff(role);
 
   const enrollments = await prisma.enrollment.findMany({
     where: { userId },
@@ -82,11 +87,11 @@ export default async function MyCoursesPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          <Section title="In progress" emptyHint="Courses you've started will show here." rows={buckets.in_progress} />
-          <Section title="Not yet started" emptyHint={null} rows={buckets.active} />
-          <Section title="Completed"  emptyHint={null} rows={buckets.completed} />
+          <Section title="In progress"     emptyHint="Courses you've started will show here." rows={buckets.in_progress} isStaff={isStaff} />
+          <Section title="Not yet started" emptyHint={null}                                    rows={buckets.active}      isStaff={isStaff} />
+          <Section title="Completed"       emptyHint={null}                                    rows={buckets.completed}   isStaff={isStaff} />
           {buckets.failed.length > 0 && (
-            <Section title="Did not pass" emptyHint={null} rows={buckets.failed} />
+            <Section title="Did not pass"  emptyHint={null}                                    rows={buckets.failed}      isStaff={isStaff} />
           )}
         </div>
       )}
@@ -94,7 +99,7 @@ export default async function MyCoursesPage() {
   );
 }
 
-function Section({ title, rows, emptyHint }: { title: string; rows: MyEnrollment[]; emptyHint: string | null }) {
+function Section({ title, rows, emptyHint, isStaff }: { title: string; rows: MyEnrollment[]; emptyHint: string | null; isStaff: boolean }) {
   if (rows.length === 0 && !emptyHint) return null;
   return (
     <div>
@@ -103,14 +108,14 @@ function Section({ title, rows, emptyHint }: { title: string; rows: MyEnrollment
         <p className="text-sm text-subtle px-4 py-3 bg-elevated/50 rounded-lg">{emptyHint}</p>
       ) : (
         <div className="space-y-2">
-          {rows.map((e) => <Row key={e.id} e={e} />)}
+          {rows.map((e) => <Row key={e.id} e={e} isStaff={isStaff} />)}
         </div>
       )}
     </div>
   );
 }
 
-function Row({ e }: { e: MyEnrollment }) {
+function Row({ e, isStaff }: { e: MyEnrollment; isStaff: boolean }) {
   const klass = classifyStatus(e.status, e.progress);
   const tone =
     klass === "completed" ? "success" as const :
@@ -175,6 +180,9 @@ function Row({ e }: { e: MyEnrollment }) {
             <Play size={12} />
             {klass === "completed" ? "Review" : klass === "failed" ? "Retry" : "Launch"}
           </Link>
+        )}
+        {isStaff && (
+          <LeaveCourseButton courseId={e.courseId} courseTitle={e.course.title} />
         )}
       </div>
     </div>

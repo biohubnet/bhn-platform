@@ -52,7 +52,11 @@ export default async function CoursesPage({
       _count: { select: { enrollments: true, modules: true } },
       scormPackage: { select: { version: true } },
     },
-    orderBy: { createdAt: "desc" },
+    // Admin-controlled order first, recency as tiebreaker. Every
+    // pre-displayOrder course sits at 0 and falls back to the
+    // historical createdAt ordering; admins drag tiles on the page
+    // to set new positions.
+    orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
   });
 
   const catalogCourses: CatalogCourse[] = courses.map((c) => ({

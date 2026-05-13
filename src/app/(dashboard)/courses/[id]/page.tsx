@@ -2,6 +2,7 @@ import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { EnrollButton } from "@/components/lms/EnrollButton";
+import { getTraineeCourseLimit } from "@/lib/settings";
 import { ScormUploadButton } from "@/components/lms/ScormUploadButton";
 import { PublishToggle } from "@/components/lms/PublishToggle";
 import { CourseEditButton } from "@/components/lms/CourseEditButton";
@@ -48,6 +49,17 @@ export default async function CourseDetailPage({
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId: id } },
   });
+
+  // For staff: how many active courses do they hold right now, and
+  // what's the current trainee-facing cap? The enrol button uses these
+  // to show a "you're bypassing the cap" warning so admins don't
+  // forget the rule still applies to learners.
+  const [staffActiveCount, traineeLimit] = isStaff
+    ? await Promise.all([
+        prisma.enrollment.count({ where: { userId, status: "active" } }),
+        getTraineeCourseLimit(),
+      ])
+    : [0, 3];
 
   const scormSession = course.scormPackage
     ? await prisma.scormSession.findFirst({
@@ -206,6 +218,18 @@ export default async function CourseDetailPage({
             {isStaff && <PublishToggle courseId={id} status={course.status} />}
             {!enrollment && !isStaff && course.status === "published" && (
               <EnrollButton courseId={id} />
+            )}
+            {!enrollment && isStaff && course.status === "published" && (
+              // Staff bypass the cap silently in the API, but the
+              // button shows a one-time warning popup if they're at /
+              // past the trainee limit, so they don't forget the rule
+              // still applies to learners.
+              <EnrollButton
+                courseId={id}
+                staffRole
+                activeCount={staffActiveCount}
+                limit={traineeLimit}
+              />
             )}
             {!enrollment && !isStaff && isArchived && (
               <button

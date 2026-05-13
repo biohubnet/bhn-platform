@@ -3,20 +3,36 @@ import { cookies } from "next/headers";
 import { getRawSession, ACT_AS_COOKIE, ROLE_RANK } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const TARGET_ROLES = new Set(["trainee", "evaluating", "employer", "instructor", "admin"]);
+/**
+ * View-as authorisation matrix:
+ *
+ *   superadmin → may act-as any non-superadmin role (full preview
+ *                surface for QA and demos)
+ *   admin      → may act-as trainee only (the X-keyboard fast toggle
+ *                so admins can verify the learner experience without
+ *                signing out)
+ *
+ * Admins explicitly cannot act-as superadmin / admin / instructor /
+ * employer — view-as is a downgrade tool, not a lateral move, and
+ * letting admins flip into instructor or employer roles would surface
+ * data they aren't supposed to see in their own seat.
+ */
+const SUPERADMIN_TARGETS = new Set(["trainee", "evaluating", "employer", "instructor", "admin"]);
+const ADMIN_TARGETS = new Set(["trainee"]);
 
 export async function POST(req: NextRequest) {
   const session = await getRawSession();
   const role = (session?.user as { role?: string })?.role;
-  if (role !== "superadmin") {
-    return NextResponse.json({ error: "Only superadmins can use view-as." }, { status: 403 });
+  if (role !== "superadmin" && role !== "admin") {
+    return NextResponse.json({ error: "Only admins and superadmins can use view-as." }, { status: 403 });
   }
   const actorId = (session!.user as { id?: string }).id!;
+  const allowedTargets = role === "superadmin" ? SUPERADMIN_TARGETS : ADMIN_TARGETS;
 
   const body = await req.json().catch(() => ({}));
   const target = body.role as string | undefined;
-  if (!target || !TARGET_ROLES.has(target) || ROLE_RANK[target] === undefined) {
-    return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+  if (!target || !allowedTargets.has(target) || ROLE_RANK[target] === undefined) {
+    return NextResponse.json({ error: "Invalid or disallowed role" }, { status: 400 });
   }
 
   const cs = await cookies();
@@ -34,7 +50,7 @@ export async function POST(req: NextRequest) {
       action: "admin.act_as.start",
       targetType: "role",
       targetId: target,
-      detail: JSON.stringify({ asRole: target }),
+      detail: JSON.stringify({ asRole: target, fromRole: role }),
       ip: req.headers.get("x-forwarded-for") ?? undefined,
     },
   });
@@ -45,8 +61,8 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const session = await getRawSession();
   const role = (session?.user as { role?: string })?.role;
-  if (role !== "superadmin") {
-    return NextResponse.json({ error: "Only superadmins can use view-as." }, { status: 403 });
+  if (role !== "superadmin" && role !== "admin") {
+    return NextResponse.json({ error: "Only admins and superadmins can use view-as." }, { status: 403 });
   }
   const actorId = (session!.user as { id?: string }).id!;
 

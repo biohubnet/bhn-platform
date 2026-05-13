@@ -3,7 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { requireSession, isAdmin, isStaff } from "@/lib/auth";
 import { trackServer } from "@/lib/analytics";
 import { ensureMerchUnlocks } from "@/lib/rewards/merch";
+import { getTraineeCourseLimit } from "@/lib/settings";
 
+/**
+ * Static fallback used only if the settings table isn't reachable.
+ * The real limit comes from `getTraineeCourseLimit()` so superadmins
+ * can tune it from /admin/settings without a redeploy.
+ */
 export const TRAINEE_CONCURRENT_LIMIT = 3;
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -35,7 +41,10 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     return NextResponse.json(existing);
   }
 
-  // Trainees can have at most 3 concurrent active courses. Staff are exempt.
+  // Trainees can have at most N concurrent active courses (configurable
+  // by superadmin at /admin/settings). Staff are exempt — the cap is a
+  // learner-fairness constraint, not a security boundary.
+  const traineeLimit = await getTraineeCourseLimit();
   if (!isStaff(role)) {
     const activeCount = await prisma.enrollment.count({
       where: {
@@ -45,12 +54,12 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
         NOT: existing ? { id: existing.id } : undefined,
       },
     });
-    if (activeCount >= TRAINEE_CONCURRENT_LIMIT) {
+    if (activeCount >= traineeLimit) {
       return NextResponse.json(
         {
-          error: `You can have up to ${TRAINEE_CONCURRENT_LIMIT} active courses at a time. Complete or withdraw from one before enrolling in another.`,
+          error: `You can have up to ${traineeLimit} active courses at a time. Complete or withdraw from one before enrolling in another.`,
           code: "concurrent_limit",
-          limit: TRAINEE_CONCURRENT_LIMIT,
+          limit: traineeLimit,
           currentActive: activeCount,
         },
         { status: 409 }

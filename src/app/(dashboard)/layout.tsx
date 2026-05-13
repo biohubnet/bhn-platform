@@ -6,6 +6,7 @@ import { SandboxBanner } from "@/components/admin/SandboxBanner";
 import { UnverifiedEmailBanner } from "@/components/auth/UnverifiedEmailBanner";
 import { Onboarding } from "@/components/onboarding/Onboarding";
 import { PageTranslator } from "@/components/translation/PageTranslator";
+import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -66,6 +67,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       </div>
       <Onboarding />
+      <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
     </div>
   );
 }

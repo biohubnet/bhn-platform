@@ -7,6 +7,7 @@ import {
   TrendingUp,
   CheckCircle2,
   Clock,
+  Sparkles,
 } from "lucide-react";
 
 /**
@@ -28,7 +29,7 @@ import {
  */
 export function ObioBootcampInfo() {
   return (
-    <div className="space-y-8 mb-10">
+    <div className="space-y-10 sm:space-y-14 mb-12">
       <Hero />
       <AtAGlance />
       <Timeline />
@@ -47,27 +48,46 @@ export function ObioBootcampInfo() {
 }
 
 /* ─── Hero ────────────────────────────────────────────────────────── */
+//
+// Bigger / bolder treatment to match the editorial feel of
+// biohubnet.ca/entrepreneurship-learning-pathway/obio-bootcamp.
+// The brand-gradient background + decorative blobs give the hero the
+// same "this is the marquee page on the site" weight; theme tokens
+// still drive the brand ramp so it adapts across the 13 themes.
 
 function Hero() {
   return (
-    <section className="rounded-2xl border border-line bg-card p-6 sm:p-8 surface-shadow">
-      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-        Entrepreneurship Learning Pathway
-      </p>
-      <h1 className="text-2xl sm:text-4xl font-bold text-fg mt-1.5 tracking-tight">
-        OBIO Entrepreneurship Bootcamp
-      </h1>
-      <p className="text-base text-muted mt-4 max-w-3xl leading-relaxed">
-        Designed for trainees leading life-sciences ventures at the pre-seed
-        stage — at minimum, an invention disclosure filed with your home
-        institution. Trainee-entrepreneurs get individualized support to map
-        their skill and knowledge gaps, then access tailored resources and
-        mentorship that move the venture toward its next milestone.
-      </p>
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Tag>3½-day intensive</Tag>
-        <Tag>Trainee entrepreneurs</Tag>
-        <Tag>Pitch to investors</Tag>
+    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 text-white px-6 sm:px-10 py-10 sm:py-14 surface-shadow">
+      {/* Decorative drift — same idiom as the dashboard hero */}
+      <div
+        aria-hidden
+        className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none"
+      />
+      <div
+        aria-hidden
+        className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-white/5 blur-3xl pointer-events-none"
+      />
+
+      <div className="relative max-w-3xl">
+        <p className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] font-bold text-white/85">
+          <Sparkles size={12} />
+          Entrepreneurship Learning Pathway
+        </p>
+        <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mt-3 leading-[1.05]">
+          OBIO Entrepreneurship Bootcamp
+        </h1>
+        <p className="text-base sm:text-lg text-white/85 mt-5 leading-relaxed">
+          Designed for trainees leading life-sciences ventures at the pre-seed
+          stage — at minimum, an invention disclosure filed with your home
+          institution. Trainee-entrepreneurs get individualized support to map
+          their skill and knowledge gaps, then access tailored resources and
+          mentorship that move the venture toward its next milestone.
+        </p>
+        <div className="mt-7 flex flex-wrap gap-2">
+          <Tag>3½-day intensive</Tag>
+          <Tag>Trainee entrepreneurs</Tag>
+          <Tag>Pitch to investors</Tag>
+        </div>
       </div>
     </section>
   );
@@ -75,7 +95,7 @@ function Hero() {
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-[0.16em] px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200">
+    <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-[0.16em] px-3 py-1 rounded-full bg-white/15 text-white ring-1 ring-inset ring-white/25 backdrop-blur">
       {children}
     </span>
   );

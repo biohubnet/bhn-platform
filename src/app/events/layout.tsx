@@ -1,28 +1,98 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/ui/Logo";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { Sidebar } from "@/components/lms/Sidebar";
+import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
+import { SandboxBanner } from "@/components/admin/SandboxBanner";
+import { UnverifiedEmailBanner } from "@/components/auth/UnverifiedEmailBanner";
+import { Onboarding } from "@/components/onboarding/Onboarding";
+import { PageTranslator } from "@/components/translation/PageTranslator";
+import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
 
 /**
- * Public layout for the Events module surfaces (/events/[slug] etc.).
+ * /events layout. Two modes:
  *
- * Distinct from the (dashboard) layout: no sidebar, no auth gate, no
- * heavy chrome. Designed to feel like a clean marketing page that a
- * non-logged-in visitor can land on (after clicking through from
- * biohubnet.ca / LinkedIn / email) and decide whether to register.
+ *   • Signed in → render the full dashboard chrome (sidebar, banners,
+ *     translator dock, onboarding) so it feels like every other
+ *     authenticated surface. Previously the sidebar disappeared the
+ *     moment a user clicked the Events nav link, which made the route
+ *     feel like a dead-end and broke the "always-on" sidebar mental
+ *     model.
  *
- * Header has the BHN logo (links home) plus a context-sensitive
- * affordance in the top-right: "Sign in →" for anonymous visitors,
- * "Dashboard →" for signed-in users. Showing "Sign in" to a logged-in
- * user was previously confusing — they'd assume they weren't signed
- * in and end up in a login loop. Footer keeps the privacy/terms
- * links visible since this page collects no personal data itself —
- * the registration flow is where consent matters, and that flow is
- * gated by auth.
+ *   • Anonymous → marketing chrome (logo header + footer) so the page
+ *     can also be linked from biohubnet.ca / LinkedIn / email. No
+ *     redirect — the same URL serves both audiences.
+ *
+ * The signed-in branch deliberately mirrors `src/app/(dashboard)/
+ * layout.tsx` instead of nesting through a route group: keeping
+ * /events outside `(dashboard)` preserves the anonymous-visitor case
+ * (no `redirect("/login")`), and the chrome duplication is cheap
+ * given how rarely it changes.
  */
 export default async function EventsLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   const signedIn = session !== null;
 
+  if (signedIn) {
+    const role = (session.user as { role?: string }).role ?? "trainee";
+    const realRole = (session.user as { realRole?: string }).realRole;
+    const actingAs = (session.user as { actingAs?: string }).actingAs;
+    const userId = (session.user as { id?: string }).id;
+    const userRow = userId
+      ? await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            credits: true,
+            allowPlatformContent: true,
+            accountKind: true,
+            demoExpiresAt: true,
+            email: true,
+            emailVerified: true,
+          },
+        })
+      : null;
+
+    const showUnverifiedBanner =
+      !!userRow &&
+      !userRow.emailVerified &&
+      (userRow.accountKind === "real" || userRow.accountKind == null);
+
+    return (
+      <div className="flex h-screen bg-page">
+        <Sidebar
+          role={role}
+          realRole={realRole}
+          actingAs={actingAs ?? null}
+          user={session.user ?? {}}
+          credits={userRow?.credits ?? undefined}
+          allowPlatformContent={userRow?.allowPlatformContent ?? false}
+        />
+        <main className="flex-1 overflow-y-auto relative">
+          {actingAs && <ImpersonationBanner actingAs={actingAs} />}
+          {(userRow?.accountKind === "sandbox" || userRow?.accountKind === "demo") && (
+            <SandboxBanner kind={userRow.accountKind} expiresAt={userRow.demoExpiresAt?.toISOString() ?? null} />
+          )}
+          {showUnverifiedBanner && userRow?.email && (
+            <UnverifiedEmailBanner email={userRow.email} />
+          )}
+          {/* Events pages bring their own hero/typography — we skip
+              the (dashboard) wrapper's max-width + padding so the
+              event marketing layout has the full canvas. */}
+          <div className="pt-16">{children}</div>
+        </main>
+        <div className="fixed top-3 right-4 z-40 pointer-events-auto" data-no-translate>
+          <div className="surface px-1 py-1">
+            <PageTranslator />
+          </div>
+        </div>
+        <Onboarding />
+        <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
+      </div>
+    );
+  }
+
+  // Anonymous branch — marketing chrome.
   return (
     <div className="min-h-screen bg-page flex flex-col">
       <header className="border-b border-line bg-card">
@@ -34,10 +104,10 @@ export default async function EventsLayout({ children }: { children: React.React
             </span>
           </Link>
           <Link
-            href={signedIn ? "/dashboard" : "/login"}
+            href="/login"
             className="text-xs font-semibold text-muted hover:text-fg transition-colors"
           >
-            {signedIn ? "Dashboard →" : "Sign in →"}
+            Sign in →
           </Link>
         </div>
       </header>

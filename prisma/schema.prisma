@@ -707,6 +707,10 @@ model Course {
   /// from /admin/enrollments. Defaults to false so existing courses
   /// stay self-serve.
   requiresApproval Boolean @default(false)
+  /// Admin-controlled catalog display order. Lower numbers render
+  /// first; ties fall back to createdAt desc (the previous default).
+  /// Admins can drag-reorder tiles on /courses to set this.
+  displayOrder Int @default(0)
   instructorId String?
   instructor   User?    @relation("Instructor", fields: [instructorId], references: [id])
   createdAt    DateTime @default(now())

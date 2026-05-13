@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.12e";
+export const TOUR_VERSION = "2026.05.12f";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -561,6 +561,14 @@ export const TOUR_STEPS: TourStep[] = [
     path: "/forms/talent-application",
     placement: "center",
     since: "2026.05.12d",
+  },
+  {
+    id: "keyboard-shortcuts",
+    title: "New: keyboard shortcuts",
+    body: "Press ? from anywhere to see the cheat-sheet. Default bindings: X flips between your real role and trainee-view (admin / superadmin), 1-4 jump to Dashboard / Catalog / My Courses / Events. Rebind any of them at Profile · Shortcuts — settings live on this device. Admin extras: there's also a new admin-only 'Leave' button on /my-courses for fast cleanup after testing player flows, and the trainee 3-course cap is now tunable at /admin/settings.",
+    placement: "center",
+    since: "2026.05.12f",
+    cta: { label: "Open Shortcuts", href: "/profile/shortcuts" },
   },
   {
     id: "credit-expiry-policy",

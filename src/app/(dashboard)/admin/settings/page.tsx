@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS: Record<string, { label: string; description: string; def
   sessionTimeoutMinutes: { label: "Session Timeout (minutes)", description: "Idle session timeout", default: "60", type: "number" },
   allowSelfRegistration: { label: "Allow Self-Registration", description: "Allow users to register without admin invite", default: "true", type: "boolean" },
   defaultUserCredits: { label: "Default User Credits", description: "Credits granted to new users on registration", default: "5000", type: "number" },
+  traineeCourseLimit: { label: "Concurrent Course Limit (trainees)", description: "How many active courses a trainee can hold at once. Admins and superadmins bypass this cap (a warning popup reminds them the cap still applies to learners).", default: "3", type: "number" },
   supportEmail: { label: "Support Email", description: "Shown to learners for help requests", default: "", type: "email" },
   maintenanceMode: { label: "Maintenance Mode", description: "Show maintenance message to all users", default: "false", type: "boolean" },
 };
