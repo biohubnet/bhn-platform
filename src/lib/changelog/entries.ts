@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "/admin/credit-applications gets a Seed-demo button",
+    body: "/admin/credit-applications now has the same seed + clear pair we ship on /events: one tray, two buttons, both pulsing the admin snow-glow.\n\nSeed creates four plausible CreditApplication rows on demo / sandbox account holders (one each of pending / approved / rejected, varied amounts and use-cases) so the queue has content for screenshots and walkthroughs without manual setup. If no demo / sandbox users exist (fresh DB, post-clear environment), the seeder auto-creates one stub demo user — the row gets cleared on the next \"Clear demo + sandbox\" press, same as everything else.\n\nClear is unchanged in behaviour — it routes through the existing /api/admin/clear-test-data endpoint with entity=credit_application. The seed deliberately attaches rows only to demo / sandbox accounts so the symmetry holds: whatever Seed inserts, Clear removes. No phantom or showcase entanglement; no real-account rows are ever touched.\n\nReplaces the standalone Clear button that lived alone in the header.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Snow glow — admin-only controls now visibly pulse",
     body: "Admin-only buttons and trays across the platform now wear a soft cyan/white halo that breathes at 2.4s intervals — a visual reminder that the control isn't part of the trainee experience. Tightens to 1.4s on hover so it binds to the element under your cursor. Honours prefers-reduced-motion: the static halo stays, the pulse switches off.\n\nWhy cyan-white? White reads as 'system overlay' (distinct from the brand palette and the loud danger-amber we use for warnings), and sky-300 matches the 'electric' accent the Administration section already wears in the sidebar. So when an admin sees the glow they recognise the visual language at a glance.\n\nWired surfaces in this pass:\n  • Admin fast-leave buttons on /my-courses and pathway detail\n  • Demo-events seed/clear tray on /events (admin-only)\n  • Sticky admin edit bar on /events/[slug]\n  • Catalog tile drag-grip (admin re-ordering affordance)\n  • Inline pencil on every <EditableText> (admin copy edits)\n  • Phantom-user Delete-all + DemoPhantomTray on every embedded page\n  • Generic 'Clear demo + sandbox' button across admin views\n  • 'New Course' button on the catalog\n\nMore controls pick up the class as we audit the rest. Adding it to a future admin-only element is one className token: 'admin-glow'.",
     kind: "improvement",
