@@ -1,5 +1,6 @@
 "use client";
 import { ReactNode, useEffect, useRef, useState, PointerEvent as RPointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +46,19 @@ export function Modal({
   // natural centering / max-width respectively.
   const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+
+  // Portal mount gate — `document` is undefined during SSR, so we
+  // delay the createPortal call until after hydration to avoid
+  // mismatches. Portalling the modal to <body> is what guarantees
+  // the dialog escapes every parent stacking context: a page hero
+  // that sets `z-index: 1` on its direct children (or any other
+  // ancestor with z-index / transform / filter / contain) used to
+  // trap the modal in a sub-stack where its `z-50` was still being
+  // painted under a `position: absolute` sibling like the hero's
+  // curve-down decoration. Body-portalling sidesteps the whole
+  // class of problem.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
@@ -127,7 +141,7 @@ export function Modal({
     resizeStart.current = null;
   }
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   const dialogStyle: React.CSSProperties = {
     transform: `translate(${offset.x}px, ${offset.y}px)`,
@@ -135,7 +149,7 @@ export function Modal({
     height: dims?.h,
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-8 animate-fade-in">
       <div
         className="absolute inset-0 bg-slate-900/55 backdrop-blur-sm"
@@ -202,6 +216,7 @@ export function Modal({
           />
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

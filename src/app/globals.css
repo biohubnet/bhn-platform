@@ -838,9 +838,20 @@ body {
 }
 
 /* Wavy bottom edge for hero bands — masks a strip of the page bg
- * over the hero so the transition reads as an organic curve. */
+ * over the hero so the transition reads as an organic curve.
+ *
+ * `z-index: 0` is load-bearing: the hero rule
+ * `.hero-mesh-brand > * { z-index: 1 }` would otherwise elevate
+ * this decorative strip into the same stacking layer as the
+ * content wrapper, and because the curve comes later in DOM order
+ * it would paint *over* any modal opened from inside the hero
+ * (e.g. PathwayManageButton). Pinning to z-0 keeps the curve
+ * visually at the hero's bottom but always behind interactive
+ * content. (Modals also portal to <body> now, so this is defence
+ * in depth.) */
 .curve-down {
   position: absolute;
+  z-index: 0;
   bottom: -1px;
   left: 0;
   right: 0;
