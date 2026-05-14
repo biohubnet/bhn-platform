@@ -79,6 +79,8 @@ export const COMPLIANCE_ITEMS: ComplianceItem[] = [
       "AI inference routes through Cloudflare Workers AI on the same residency. No customer data is sent to third-party AI providers.",
     ],
     status: "met",
+    evidenceHref: "/admin/security/policies/sub-processors",
+    evidenceLabel: "Policy · Sub-processors",
   },
   {
     id: "retention",
@@ -94,8 +96,8 @@ export const COMPLIANCE_ITEMS: ComplianceItem[] = [
       "Backups inherit the retention of the underlying managed-Postgres provider.",
     ],
     status: "met",
-    evidenceHref: "/admin/settings",
-    evidenceLabel: "Admin · Settings",
+    evidenceHref: "/admin/security/policies/data-retention",
+    evidenceLabel: "Policy · Data retention",
   },
 
   // ─── Accessibility ──────────────────────────────────────────────
@@ -133,6 +135,8 @@ export const COMPLIANCE_ITEMS: ComplianceItem[] = [
       "Transactional mail (verify email, credit-grant notifications, application updates) is exempt from CASL but still carries the same sender identification block.",
     ],
     status: "met",
+    evidenceHref: "/admin/security/policies/acceptable-use-policy",
+    evidenceLabel: "Policy · Acceptable Use",
   },
 
   // ─── Security ───────────────────────────────────────────────────
@@ -150,6 +154,8 @@ export const COMPLIANCE_ITEMS: ComplianceItem[] = [
       "Passwords hashed with bcrypt (cost factor 10). Plaintext passwords never logged.",
     ],
     status: "met",
+    evidenceHref: "/admin/security/policies/encryption-posture",
+    evidenceLabel: "Policy · Encryption posture",
   },
   {
     id: "auth",
@@ -210,9 +216,28 @@ export const COMPLIANCE_ITEMS: ComplianceItem[] = [
       "AI: Cloudflare Workers AI — no customer data shared outside the platform's residency.",
     ],
     status: "met",
+    evidenceHref: "/admin/security/policies/sub-processors",
+    evidenceLabel: "Policy · Sub-processors",
   },
 
   // ─── Operational resilience ─────────────────────────────────────
+  {
+    id: "incident-response",
+    group: "Operational",
+    title: "Incident response + breach notification",
+    authority: "PIPEDA breach-notification + ISO 27001 A.16",
+    why: "PIPEDA requires notification to affected individuals + the Office of the Privacy Commissioner where a breach of security safeguards creates a real risk of significant harm. Predictable response procedures + pre-written notification templates cut hours off the response time.",
+    measures: [
+      "Documented incident-response runbook covering detect / triage / contain / eradicate / recover / lessons-learned.",
+      "Pre-written breach notification templates for trainees, partner institutions, and the OPC — drafted offline so we're not writing them under pressure.",
+      "Severity scale (SEV 1–4) with decision criteria for invoking notification.",
+      "Quarterly tabletop drill documented in the runbook.",
+    ],
+    status: "partial",
+    evidenceHref: "/admin/security/policies/incident-response",
+    evidenceLabel: "Policy · Incident response",
+    notes: "Runbook is documented; first live tabletop drill is on the calendar for next quarter.",
+  },
   {
     id: "backups",
     group: "Operational",
@@ -226,6 +251,8 @@ export const COMPLIANCE_ITEMS: ComplianceItem[] = [
       "Restore drill performed on a quarterly cadence into a staging environment; documented in an internal runbook.",
     ],
     status: "partial",
+    evidenceHref: "/admin/security/policies",
+    evidenceLabel: "Policy hub",
     notes: "Cross-region replica is not yet provisioned — RTO depends on the primary region's recovery time. Slated for the Q3 infra pass.",
   },
 ];

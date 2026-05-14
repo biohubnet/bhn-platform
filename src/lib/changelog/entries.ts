@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Security policies hub at /admin/security/policies",
+    body: "Every governance document in `docs/security/` is now findable from one admin page — no more emailing PDFs or pointing auditors at GitHub.\n\n**What's there**: a hub at `/admin/security/policies` lists every policy in two groups — evergreen Policies & Plans (encryption posture, incident response, breach notification templates, sub-processors, ROPA, AUP, data retention, pentest procurement, 21 CFR Part 11 alignment) and dated Operational Artefacts (incident write-ups, roadmaps). Each entry shows title, one-line description, and last-modified date. Click any policy to land on `/admin/security/policies/[slug]` which renders the markdown body inline.\n\n**Source of truth stays in markdown.** The pages read directly from `docs/security/*.md` at request time — no caching, no rebuild needed when a policy ships via PR. Edits go through pull requests so git-blame + review + history all survive. The pages can't drift from source because they don't have their own copy.\n\n**Cross-linked from /compliance.** Six compliance items now point at specific policies as evidence: data residency → sub-processors, retention → data-retention policy, CASL → AUP, encryption → encryption-posture, vendor → sub-processors, plus a new incident-response item. Auditors clicking from the compliance overview land at the canonical policy.\n\n**Sidebar entry**: Administration → Platform → Security policies. Defence-in-depth slug validation on the detail route (`/^[a-z0-9-]+$/i` + post-resolve path-prefix check) so a hostile slug can't escape the policy directory.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Superadmin sidebar now shows an 'HR view · preview' panel",
     body: "Inside the Administration section, a new sub-group called **HR view · preview** renders the same five items an employer sees in their EMPLOYER PORTAL menu — Overview, Company profile, My Postings, Applicants, Talent pool.\n\nVisible only to superadmin. Lets you peek at the HR mental model without flipping seats. Clicking any item navigates directly to that route; some employer pages will gate against your superadmin role and redirect you back — for the full HR-seat experience, the double-tap `xx` shortcut still flips the act-as cookie and lands you properly inside the employer view.\n\nThe sub-group sits between Design & Research and Platform, with an italicised note under the heading reminding you of the `xx` path.",
     kind: "improvement",

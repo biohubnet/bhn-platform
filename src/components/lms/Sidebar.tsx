@@ -251,6 +251,8 @@ const adminPlatformItems: NavItem[] = [
     description: "Append-only log of admin actions. Required for SOC 2 and 21 CFR Part 11 attestation." },
   { label: "Security",            href: "/admin/security",            icon: ShieldCheck, minRole: "admin",
     description: "MFA enrollment, password policy, lockouts, e-signature configuration." },
+  { label: "Security policies",   href: "/admin/security/policies",   icon: FileText,    minRole: "admin",
+    description: "Every governance doc in one place — encryption posture, incident response, breach notification, sub-processors, ROPA, AUP, retention, pentest playbook. Reads from docs/security/ markdown so source-of-truth + rendered page can't drift." },
   { label: "LTI Config",          href: "/admin/lti",                 icon: Link2,       minRole: "superadmin",
     description: "LTI 1.3 launch configuration for external LMS integrations." },
   { label: "System status",       href: "/admin/system-status",       icon: Activity,    minRole: "superadmin",
