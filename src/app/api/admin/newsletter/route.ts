@@ -37,6 +37,11 @@ export async function GET(req: NextRequest) {
         createdAt: true,
         newsletterSubscribedAt: true,
         newsletterExportedAt: true,
+        // Mailchimp-side reconciliation state — surfaced on the admin
+        // table so the operator can tell at a glance who's confirmed
+        // (clicked the DOI link) vs still pending vs failed-to-push.
+        mailchimpStatus: true,
+        mailchimpSyncedAt: true,
       },
       orderBy: { createdAt: "desc" },
       take: 500,

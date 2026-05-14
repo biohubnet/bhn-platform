@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.14c";
+export const TOUR_VERSION = "2026.05.14d";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -632,6 +632,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.13d",
     cta: { label: "Open insights", href: "/admin/insights" },
+  },
+  {
+    id: "mailchimp-doi-signup",
+    title: "Newsletter signups now flow through Mailchimp with double-opt-in",
+    body: "Two changes on /register: the newsletter radio now defaults to *No thanks* (CASL/GDPR require an active tick, not a pre-selected one), and when a user does pick *Yes, sign me up* the server pushes them to Mailchimp with `status=pending` — Mailchimp emails the confirmation link, and only the click flips them to subscribed. Watch the rollup on /admin/newsletter: the All tab has a new **Mailchimp** column with per-row pills (Pending DOI / Confirmed / Unsubscribed / Cleaned / Push failed). Wire `MAILCHIMP_API_KEY` + `MAILCHIMP_LIST_ID` + `MAILCHIMP_WEBHOOK_SECRET` in env, point Mailchimp's webhook at `/api/webhooks/mailchimp?secret=…`, and you're live.",
+    path: "/admin/newsletter",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.14d",
+    cta: { label: "Open newsletter admin", href: "/admin/newsletter" },
   },
   {
     id: "talent-applicants-rebuild",

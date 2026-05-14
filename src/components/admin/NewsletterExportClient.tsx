@@ -32,6 +32,11 @@ interface Row {
   createdAt: string;
   newsletterSubscribedAt: string | null;
   newsletterExportedAt: string | null;
+  /** Last-known Mailchimp-side state. Null = never pushed (legacy
+   *  rows before the Mailchimp integration, or rows where the user
+   *  declined the newsletter on signup). */
+  mailchimpStatus: string | null;
+  mailchimpSyncedAt: string | null;
 }
 
 interface Payload {
@@ -299,6 +304,7 @@ export function NewsletterExportClient() {
                 <th className="text-left py-2 px-2">Name</th>
                 <th className="text-left py-2 px-2">Org · role</th>
                 <th className="text-left py-2 px-2">Signed up</th>
+                <th className="text-left py-2 px-2">Mailchimp</th>
                 {scope === "all" && <th className="text-left py-2 px-2">Last exported</th>}
                 <th className="text-right py-2 px-5"></th>
               </tr>
@@ -327,6 +333,12 @@ export function NewsletterExportClient() {
                       {r.newsletterSubscribedAt
                         ? new Date(r.newsletterSubscribedAt).toLocaleDateString()
                         : new Date(r.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-2 px-2 text-xs">
+                      <MailchimpStatusPill
+                        status={r.mailchimpStatus}
+                        syncedAt={r.mailchimpSyncedAt}
+                      />
                     </td>
                     {scope === "all" && (
                       <td className="py-2 px-2 text-xs">
@@ -399,5 +411,48 @@ function Tab({
     >
       {children}
     </button>
+  );
+}
+
+/** Small chip rendering the Mailchimp-side state. The values come
+ *  from `User.mailchimpStatus`. We deliberately render "never pushed"
+ *  for null so an admin doesn't confuse "no Mailchimp record" with
+ *  "actively unsubscribed". */
+function MailchimpStatusPill({
+  status,
+  syncedAt,
+}: {
+  status: string | null;
+  syncedAt: string | null;
+}) {
+  const meta: { label: string; cls: string } = (() => {
+    switch (status) {
+      case "pending":
+        return { label: "Pending DOI", cls: "bg-amber-100 text-amber-800 ring-amber-200" };
+      case "subscribed":
+        return { label: "Confirmed", cls: "bg-emerald-100 text-emerald-800 ring-emerald-200" };
+      case "unsubscribed":
+        return { label: "Unsubscribed", cls: "bg-slate-100 text-slate-700 ring-slate-200" };
+      case "cleaned":
+        return { label: "Cleaned", cls: "bg-rose-100 text-rose-800 ring-rose-200" };
+      case "error":
+        return { label: "Push failed", cls: "bg-rose-100 text-rose-800 ring-rose-200" };
+      default:
+        return { label: "Never pushed", cls: "bg-elevated text-subtle ring-line" };
+    }
+  })();
+  const title = syncedAt
+    ? `Last reconciled: ${new Date(syncedAt).toLocaleString()}`
+    : "No Mailchimp activity recorded";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center text-[10px] font-bold uppercase tracking-[0.14em] px-1.5 py-0.5 rounded-full ring-1 ring-inset",
+        meta.cls,
+      )}
+      title={title}
+    >
+      {meta.label}
+    </span>
   );
 }

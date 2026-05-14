@@ -5,12 +5,19 @@ import { trackServer } from "@/lib/analytics";
 import { verifyTurnstile, clientIpFromHeaders, TURNSTILE_ENABLED } from "@/lib/security/captcha";
 import { issueAndSendEmailVerification } from "@/lib/security/email-verify";
 import { checkPassword } from "@/lib/security/password-policy";
+import { subscribeMember, mailchimpEnabled } from "@/lib/mailchimp/client";
 
 /**
  * Newsletter intent at signup. Tri-state:
- *   "subscribe" — opt in (default in the form)
- *   "no"        — not interested
+ *   "subscribe" — opt in (user actively chose; form default is "no")
+ *   "no"        — not interested (default in the form per CASL: consent
+ *                  must be a clear affirmative action, not pre-checked)
  *   "already"   — user is already on the BioHubNet list (don't double-add)
+ *
+ * When the value is "subscribe" the register API pushes the user to
+ * Mailchimp with status="pending", which triggers Mailchimp's DOI
+ * confirmation email — only the link click flips them to "subscribed".
+ * That click is the CASL-grade audit trail.
  */
 type NewsletterStatus = "subscribe" | "no" | "already";
 
@@ -19,7 +26,7 @@ function normaliseNewsletter(input: unknown): NewsletterStatus {
   // Back-compat: older clients still post a boolean.
   if (input === true)  return "subscribe";
   if (input === false) return "no";
-  return "subscribe";
+  return "no";
 }
 
 const SUPPORTED_LOCALES = ["en", "es", "fr", "zh", "hi", "ko", "pa", "ar"];
@@ -102,10 +109,43 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // TODO: when a real ESP (Mailchimp / MailerLite / etc.) is wired in,
-  // enqueue a subscription job here for `email` IF newsletterStatus ===
-  // "subscribe". For now we record intent and the admin exports the
-  // list manually from /admin/newsletter.
+  // Mailchimp push — only when the user actively opted in. We always
+  // request status="pending" (double-opt-in), so the legal audit
+  // trail comes from the user clicking the Mailchimp confirmation
+  // email, NOT from the signup form tick alone. Best-effort: if
+  // Mailchimp is down or unconfigured we store mailchimpStatus="error"
+  // so an admin can retry later, but account creation still succeeds.
+  let mailchimpFinalStatus: string | null = null;
+  let mailchimpMemberId: string | null = null;
+  if (subscribed && mailchimpEnabled()) {
+    const ip = clientIpFromHeaders(req.headers);
+    const firstName = cleanName.split(/\s+/)[0] ?? null;
+    const lastName = cleanName.split(/\s+/).slice(1).join(" ") || null;
+    const mcResult = await subscribeMember({
+      email: cleanEmail,
+      firstName,
+      lastName,
+      tags: ["bhn-signup", user.role],
+      ipSignup: ip ?? null,
+      timestampSignup: new Date().toISOString(),
+      status: "pending",
+      mergeFields: cleanJobTitle ? { JOBTITLE: cleanJobTitle } : undefined,
+    });
+    if (mcResult.ok) {
+      mailchimpFinalStatus = mcResult.status;
+      mailchimpMemberId = mcResult.memberId;
+    } else {
+      mailchimpFinalStatus = "error";
+    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        mailchimpMemberId,
+        mailchimpStatus: mailchimpFinalStatus,
+        mailchimpSyncedAt: new Date(),
+      },
+    });
+  }
 
   // Email verification: issue a token + send the link. Best-effort —
   // if SMTP isn't configured we still create the account but tell the
@@ -140,6 +180,7 @@ export async function POST(req: NextRequest) {
       locale: cleanLocale,
       emailVerificationSent,
       captchaEnabled: TURNSTILE_ENABLED,
+      mailchimpStatus: mailchimpFinalStatus,
     },
   });
 

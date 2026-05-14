@@ -58,7 +58,11 @@ export default function RegisterPage() {
     jobTitle: "",
     locale: defaultLocale(),
   }));
-  const [newsletter, setNewsletter] = useState<NewsletterChoice>("subscribe");
+  // Default to "no" — under CASL + GDPR a pre-selected opt-in isn't
+  // legally valid consent (Planet49 / CRTC guidance). We require an
+  // explicit affirmative tick before the register API pushes the user
+  // to Mailchimp in "pending" status (double-opt-in confirmation).
+  const [newsletter, setNewsletter] = useState<NewsletterChoice>("no");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
@@ -343,7 +347,7 @@ export default function RegisterPage() {
               <fieldset className="space-y-1.5">
                 <legend className="sr-only">Newsletter preference</legend>
                 {([
-                  { id: "subscribe", title: "Yes, sign me up", body: "Add me to the BioHubNet newsletter list." },
+                  { id: "subscribe", title: "Yes, sign me up", body: "We'll email you to confirm — click the link to finish subscribing." },
                   { id: "already",   title: "I'm already subscribed", body: "I'm on the list — no need to add me again." },
                   { id: "no",        title: "No thanks", body: "Don't add me to the newsletter." },
                 ] as const).map((opt) => {
@@ -390,8 +394,9 @@ export default function RegisterPage() {
                 <div className="mt-3 flex items-start gap-2 text-[11px] text-muted bg-card rounded-lg border border-line px-3 py-2">
                   <Info size={12} className="text-brand-600 mt-0.5 shrink-0" />
                   <span>
-                    Heads-up: BHN Training can&apos;t unsubscribe you from the BioHubNet newsletter.
-                    To opt out later, use the <strong>Unsubscribe</strong> link at the bottom of any newsletter email.
+                    After you create your account, watch for a confirmation email from BioHubNet
+                    — click the link inside to finish subscribing. You can unsubscribe anytime
+                    via the link at the bottom of any newsletter email.
                   </span>
                 </div>
               )}

@@ -1,7 +1,8 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Mail, Sparkles, History, Users, Ban } from "lucide-react";
+import { Mail, Sparkles, History, Users, Ban, Webhook, AlertCircle } from "lucide-react";
 import { NewsletterExportClient } from "@/components/admin/NewsletterExportClient";
+import { mailchimpEnabled } from "@/lib/mailchimp/client";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ interface ExportRow {
 
 export default async function NewsletterAdminPage() {
   await requireRole("admin");
+  const integrationLive = mailchimpEnabled();
 
   const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
@@ -73,9 +75,49 @@ export default async function NewsletterAdminPage() {
           Newsletter exports
         </h1>
         <p className="text-sm text-muted mt-1">
-          New sign-ups who chose to be added to the BioHubNet newsletter. Copy them to the clipboard, then mark them as exported so they don&apos;t appear next time.
+          {integrationLive
+            ? "Mailchimp auto-sync is live: new opt-ins are pushed straight to your audience in 'pending' status — Mailchimp emails them a confirmation link, and only the click flips them to subscribed. Use the manual export tools below for backfill or when push failed."
+            : "Mailchimp auto-sync isn't configured. The manual export workflow is the fallback: copy opt-ins, paste into Mailchimp, then mark them as exported here."}
         </p>
       </header>
+
+      {/* Integration status — green when env is wired up, amber when
+          the legacy manual workflow is the only option. */}
+      <div
+        className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${
+          integrationLive
+            ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+            : "bg-amber-50 border-amber-200 text-amber-900"
+        }`}
+      >
+        {integrationLive ? (
+          <Webhook size={16} className="mt-0.5 shrink-0 text-emerald-700" />
+        ) : (
+          <AlertCircle size={16} className="mt-0.5 shrink-0 text-amber-700" />
+        )}
+        <div className="text-xs leading-relaxed">
+          <p className="font-semibold">
+            Mailchimp integration: {integrationLive ? "active" : "not configured"}
+          </p>
+          {integrationLive ? (
+            <p className="mt-0.5">
+              On signup, the API calls <code className="text-[11px] font-mono">PUT /lists/{"{id}"}/members/{"{hash}"}</code>{" "}
+              with <code className="text-[11px] font-mono">status_if_new=pending</code>. Inbound webhooks at{" "}
+              <code className="text-[11px] font-mono">/api/webhooks/mailchimp</code> keep the BHN side in sync on
+              unsubscribe / cleaned / email-change events. The Mailchimp column on the All tab below shows the
+              live state per row.
+            </p>
+          ) : (
+            <p className="mt-0.5">
+              Set <code className="text-[11px] font-mono">MAILCHIMP_API_KEY</code>,{" "}
+              <code className="text-[11px] font-mono">MAILCHIMP_LIST_ID</code>, and{" "}
+              <code className="text-[11px] font-mono">MAILCHIMP_WEBHOOK_SECRET</code> in your env, then wire the
+              webhook URL inside Mailchimp&apos;s audience settings. Until then, sign-ups land in the &quot;New to
+              export&quot; tab below and the operator pushes them manually.
+            </p>
+          )}
+        </div>
+      </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">

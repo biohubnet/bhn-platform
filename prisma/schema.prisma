@@ -47,6 +47,25 @@ model User {
   /// /admin/newsletter. Null = not yet exported. Filtered against this
   /// to only show new sign-ups in the export view.
   newsletterExportedAt   DateTime?
+  /// Mailchimp audience-member ID (md5(lowercased email)) — set when
+  /// the register API successfully pushed a "pending" subscribe to
+  /// Mailchimp. Used to PATCH/DELETE the member idempotently on
+  /// subsequent state changes.
+  mailchimpMemberId      String?
+  /// Last-known Mailchimp-side state:
+  ///   pending      — DOI confirmation email sent, not yet clicked
+  ///   subscribed   — user clicked the confirmation link, on the list
+  ///   unsubscribed — left via a Mailchimp email (webhook updated us)
+  ///   cleaned      — bounced + scrubbed by Mailchimp
+  ///   error        — last push failed; admin can retry from the
+  ///                  /admin/newsletter page.
+  /// Null = never pushed to Mailchimp (legacy users, or signup was
+  /// before the integration shipped).
+  mailchimpStatus        String?
+  /// When the BHN side last reconciled with Mailchimp (push attempt
+  /// or inbound webhook event). Helps the audit trail + lets admins
+  /// see which rows are stale.
+  mailchimpSyncedAt      DateTime?
   /// Account category: "real" | "sandbox" | "demo" | "showcase" | "phantom".
   ///   sandbox  — admin's personal play pair (one employer + one trainee
   ///              per admin). Never auto-deletes.
