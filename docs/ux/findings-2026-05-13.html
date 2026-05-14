@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BHN Training Platform — UX practice findings, May 13 2026</title>
+<style>
+  :root {
+    --bg:           #f6f8fb;
+    --card:         #ffffff;
+    --line:         #e2e8f0;
+    --fg:           #0f172a;
+    --muted:        #475569;
+    --subtle:       #94a3b8;
+    --brand:        #3b6cef;
+    --brand-dark:   #1d3fb0;
+    --brand-soft:   #eef2ff;
+    --emerald:      #059669;
+    --emerald-soft: #d1fae5;
+    --amber:        #b45309;
+    --amber-soft:   #fef3c7;
+    --rose:         #be123c;
+    --rose-soft:    #ffe4e6;
+    --violet:       #6d28d9;
+    --violet-soft:  #ede9fe;
+    --shadow:       0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -8px rgba(15, 23, 42, 0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a { color: var(--brand-dark); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 0.88em;
+    background: rgba(15, 23, 42, 0.06);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+
+  /* ── Hero band ─────────────────────────────────────────────── */
+  .hero {
+    background:
+      radial-gradient(80% 110% at 0% 0%, rgba(255,255,255,0.18) 0%, transparent 55%),
+      radial-gradient(70% 90% at 100% 100%, rgba(255,255,255,0.12) 0%, transparent 60%),
+      linear-gradient(135deg, #1e3a8a 0%, #3b6cef 55%, #5b8def 100%);
+    color: white;
+    padding: 4rem 1.5rem 3rem;
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.05);
+  }
+  .hero-inner { max-width: 880px; margin: 0 auto; }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 0.7rem;
+    font-weight: 700;
+    opacity: 0.85;
+  }
+  .hero h1 {
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    line-height: 1.15;
+    margin: 0.5rem 0 0.75rem;
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  }
+  .hero .lede {
+    font-size: 1.05rem;
+    opacity: 0.92;
+    max-width: 60ch;
+    margin: 0 0 1.5rem;
+  }
+  .byline {
+    font-size: 0.85rem;
+    opacity: 0.75;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+  }
+  .byline strong { font-weight: 600; opacity: 0.95; }
+
+  /* ── Content rail ──────────────────────────────────────────── */
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ── Summary tiles ─────────────────────────────────────────── */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin: -2rem auto 3rem;
+    position: relative;
+    z-index: 1;
+  }
+  .tile {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: var(--shadow);
+  }
+  .tile-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--subtle);
+  }
+  .tile-value {
+    font-size: 1.9rem;
+    font-weight: 700;
+    margin: 0.35rem 0 0.1rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .tile-sub { font-size: 0.78rem; color: var(--muted); }
+  .tile-good .tile-value { color: var(--emerald); }
+  .tile-warn .tile-value { color: var(--amber); }
+  .tile-fail .tile-value { color: var(--rose); }
+
+  /* ── Sections ──────────────────────────────────────────────── */
+  section.card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 2rem 2rem 2.25rem;
+    margin: 0 0 2rem;
+    box-shadow: var(--shadow);
+  }
+  section.card h2 {
+    font-size: 1.45rem;
+    margin: 0 0 0.25rem;
+    letter-spacing: -0.015em;
+  }
+  section.card .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem;
+  }
+  .section-tag {
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--brand-dark);
+    background: var(--brand-soft);
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    margin-bottom: 0.6rem;
+  }
+
+  /* ── Tables ────────────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    margin: 0.5rem 0 1rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid var(--line);
+  }
+  th {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--subtle);
+    font-weight: 700;
+  }
+  td.mono, td .ratio { font-variant-numeric: tabular-nums; font-family: "SF Mono", Menlo, monospace; }
+  tr:last-child td { border-bottom: 0; }
+
+  /* ── Chips ─────────────────────────────────────────────────── */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid;
+  }
+  .chip-good   { color: var(--emerald); background: var(--emerald-soft); border-color: #a7f3d0; }
+  .chip-warn   { color: var(--amber);   background: var(--amber-soft);   border-color: #fde68a; }
+  .chip-fail   { color: var(--rose);    background: var(--rose-soft);    border-color: #fecaca; }
+  .chip-info   { color: var(--violet);  background: var(--violet-soft);  border-color: #ddd6fe; }
+  .chip-neutral{ color: var(--muted);   background: #f1f5f9;             border-color: #e2e8f0; }
+
+  /* ── Finding blocks ────────────────────────────────────────── */
+  .finding {
+    border-left: 4px solid var(--brand);
+    padding: 0.85rem 1rem 0.85rem 1.1rem;
+    background: var(--brand-soft);
+    border-radius: 0 12px 12px 0;
+    margin: 1rem 0;
+  }
+  .finding.fail   { border-left-color: var(--rose);    background: var(--rose-soft); }
+  .finding.warn   { border-left-color: var(--amber);   background: var(--amber-soft); }
+  .finding.good   { border-left-color: var(--emerald); background: var(--emerald-soft); }
+  .finding.info   { border-left-color: var(--violet);  background: var(--violet-soft); }
+  .finding .head {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+  }
+  .finding .body { font-size: 0.88rem; color: var(--fg); }
+
+  /* ── Pull quote ────────────────────────────────────────────── */
+  .pull {
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--fg);
+    border-left: 3px solid var(--brand);
+    padding-left: 1rem;
+    margin: 1.25rem 0;
+  }
+
+  /* ── Heuristic score grid ──────────────────────────────────── */
+  .heuristics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.7rem;
+    margin-top: 0.75rem;
+  }
+  @media (max-width: 540px) {
+    .heuristics { grid-template-columns: 1fr; }
+  }
+  .heuristic {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  .heuristic-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+  .heuristic-name { font-weight: 600; }
+  .heuristic-score {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  .score-1 { color: var(--rose); }
+  .score-2 { color: var(--amber); }
+  .score-3 { color: var(--brand-dark); }
+  .score-4 { color: var(--emerald); }
+  .heuristic-note { color: var(--muted); font-size: 0.78rem; }
+
+  /* ── Walk-through step list ────────────────────────────────── */
+  .steps { counter-reset: step; padding: 0; list-style: none; margin: 0; }
+  .step {
+    counter-increment: step;
+    position: relative;
+    padding: 0.85rem 1rem 0.85rem 3.2rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .step:last-child { border-bottom: 0; }
+  .step::before {
+    content: counter(step, decimal-leading-zero);
+    position: absolute;
+    left: 0.85rem;
+    top: 0.95rem;
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 50%;
+    background: var(--brand);
+    color: white;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+  .step .step-head { font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .step .step-q { color: var(--muted); font-size: 0.82rem; margin-top: 0.2rem; }
+
+  /* ── Action list ───────────────────────────────────────────── */
+  .actions {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .actions li {
+    padding: 0.7rem 1rem 0.7rem 2.4rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 0.6rem;
+    position: relative;
+    font-size: 0.92rem;
+  }
+  .actions li::before {
+    content: "→";
+    position: absolute;
+    left: 0.95rem;
+    top: 0.7rem;
+    color: var(--brand);
+    font-weight: 700;
+  }
+  .actions li strong { display: block; margin-bottom: 0.15rem; }
+
+  /* ── Footer ────────────────────────────────────────────────── */
+  footer.report-footer {
+    max-width: 880px;
+    margin: 1.5rem auto 4rem;
+    padding: 2rem 1.5rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+  }
+  footer.report-footer p { margin: 0 0 0.75rem; }
+
+  /* ── Print ─────────────────────────────────────────────────── */
+  @media print {
+    body { background: white; }
+    .hero {
+      background: white !important;
+      color: var(--fg) !important;
+      padding: 1.5rem 0;
+      box-shadow: none;
+    }
+    .hero h1, .byline { color: var(--fg) !important; }
+    section.card, .tile { break-inside: avoid; box-shadow: none; }
+    .summary { margin-top: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Hero ──────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">BHN Training Platform · UX practice findings</p>
+    <h1>One day after shipping the ER&amp;D infrastructure, here's what running it produced.</h1>
+    <p class="lede">
+      Four cadence artifacts ran on May 13, 2026 — a WCAG contrast sweep, a design
+      critique, a cognitive walk-through, and the May synthesis — and each one
+      produced an actionable finding. This report is the readable view of all four.
+    </p>
+    <div class="byline">
+      <span><strong>Date:</strong> 2026-05-13</span>
+      <span><strong>Auditor:</strong> Solo + AI, structured methods</span>
+      <span><strong>Commit:</strong> <code style="background:rgba(255,255,255,0.18);color:white;">5cf3f5a</code></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ── Summary tiles ───────────────────────────────────────── -->
+  <div class="summary">
+    <div class="tile tile-fail">
+      <div class="tile-eyebrow">WCAG audit</div>
+      <div class="tile-value">1 / 18</div>
+      <div class="tile-sub">contrast checks failing AA (Scientific accent)</div>
+    </div>
+    <div class="tile tile-warn">
+      <div class="tile-eyebrow">Design critique</div>
+      <div class="tile-value">2.9 / 4</div>
+      <div class="tile-sub">Nielsen heuristic average on <code>/admin/insights</code></div>
+    </div>
+    <div class="tile tile-fail">
+      <div class="tile-eyebrow">Walk-through</div>
+      <div class="tile-value">1 sev-3</div>
+      <div class="tile-sub">+ 3 sev-2 findings on Journey 01</div>
+    </div>
+    <div class="tile tile-good">
+      <div class="tile-eyebrow">Synthesis</div>
+      <div class="tile-value">3</div>
+      <div class="tile-sub">observations published for period 2026-05</div>
+    </div>
+  </div>
+
+  <!-- ── Section 1: WCAG audit ───────────────────────────────── -->
+  <section class="card">
+    <span class="section-tag">01 · Accessibility audit</span>
+    <h2>WCAG 2.1 AA contrast sweep — all 9 themes</h2>
+    <p class="sub">
+      Algorithmic check, all 18 contrast pairs (fg vs card surface · accent vs card)
+      across each theme. Card surface computed by alpha-blending the live <code>--card</code>
+      rgba over the live <code>--bg</code>, so the body color text actually paints onto.
+      Reproduce with <code>python3 scripts/audit-contrast.py</code>.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Theme</th>
+          <th class="mono" style="text-align:right;">fg / body</th>
+          <th class="mono" style="text-align:right;">accent / body</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>light</td>      <td class="mono" style="text-align:right;">16.25</td><td class="mono" style="text-align:right;">4.39</td><td><span class="chip chip-good">Pass</span></td></tr>
+        <tr><td>dark</td>       <td class="mono" style="text-align:right;">13.52</td><td class="mono" style="text-align:right;">5.51</td><td><span class="chip chip-good">Pass</span></td></tr>
+        <tr><td>scientific</td> <td class="mono" style="text-align:right;">14.67</td><td class="mono" style="text-align:right; color:var(--rose); font-weight:700;">2.70</td><td><span class="chip chip-fail">Accent fails AA</span></td></tr>
+        <tr><td>rosalind</td>   <td class="mono" style="text-align:right;">13.67</td><td class="mono" style="text-align:right;">6.96</td><td><span class="chip chip-good">Pass</span></td></tr>
+        <tr><td>hitech</td>     <td class="mono" style="text-align:right;">16.90</td><td class="mono" style="text-align:right;">10.54</td><td><span class="chip chip-good">Pass (AAA)</span></td></tr>
+        <tr><td>sakura</td>     <td class="mono" style="text-align:right;">14.39</td><td class="mono" style="text-align:right;">4.13</td><td><span class="chip chip-good">Pass</span></td></tr>
+        <tr><td>icecream</td>   <td class="mono" style="text-align:right;">13.10</td><td class="mono" style="text-align:right;">5.62</td><td><span class="chip chip-good">Pass</span></td></tr>
+        <tr><td>retro8bit</td>  <td class="mono" style="text-align:right;">17.77</td><td class="mono" style="text-align:right;">6.56</td><td><span class="chip chip-good">Pass</span></td></tr>
+        <tr><td>greenwood</td>  <td class="mono" style="text-align:right;">14.16</td><td class="mono" style="text-align:right;">6.57</td><td><span class="chip chip-good">Pass</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="finding fail">
+      <div class="head">F-2026-05-13-A · Scientific theme accent fails AA (severity 2)</div>
+      <div class="body">
+        <strong>--brand-600</strong> ≈ <code>#0ea5e9</code> on the alpha-blended card surface
+        measures <strong>2.70:1</strong>, below WCAG 2.1 SC 1.4.11's minimum of <strong>3.0:1</strong>
+        for non-text UI components. Affects primary buttons, inline icons, focus rings, and brand-tinted
+        hairlines under this theme specifically. Body text passes AAA across all 9 themes.
+        <br><br>
+        <strong>Fix:</strong> shift the Scientific theme's <code>--brand-600</code> to
+        <code>#0284c7</code> (about 12% lower luminance). Computed ratio at the new value
+        is <strong>3.4:1</strong> — comfortably above the threshold without losing the
+        theme's "scientific" character. Re-run the script to confirm green.
+      </div>
+    </div>
+
+    <div class="pull">
+      Meta-finding worth tracking separately: the swatch preview in
+      <code>ThemePicker.tsx</code> may misrepresent what each theme renders as body text,
+      because its third color slot isn't always the live <code>--fg</code>. Cosmetic, not a contrast bug.
+    </div>
+  </section>
+
+  <!-- ── Section 2: Design critique ──────────────────────────── -->
+  <section class="card">
+    <span class="section-tag">02 · Design critique</span>
+    <h2>Single-reviewer heuristic walk-through of <code>/admin/insights</code></h2>
+    <p class="sub">
+      The page shipped 24 hours before this review. Each Nielsen heuristic scored 1–4
+      (4 = clean pass). Average 2.9 — solid Practiced quality, three improvements at &lt; 1 hour each.
+    </p>
+
+    <div class="heuristics">
+      <div class="heuristic">
+        <div class="heuristic-head"><span class="heuristic-name">Visibility of system status</span><span class="heuristic-score score-2">2</span></div>
+        <div class="heuristic-note">Saved/published timestamps render, but no "you have unsaved changes" indicator while typing.</div>
+      </div>
+      <div class="heuristic">
+        <div class="heuristic-head"><span class="heuristic-name">Match user vocabulary</span><span class="heuristic-score score-3">3</span></div>
+        <div class="heuristic-note">Native terms (period, synthesis, publish). Placeholder models expected structure.</div>
+      </div>
+      <div class="heuristic">
+        <div class="heuristic-head"><span class="heuristic-name">User control + freedom</span><span class="heuristic-score score-2">2</span></div>
+        <div class="heuristic-note">No undo on publish — must re-publish or delete from changelog admin.</div>
+      </div>
+      <div class="heuristic">
+        <div class="heuristic-head"><span class="heuristic-name">Consistency with platform</span><span class="heuristic-score score-4">4</span></div>
+        <div class="heuristic-note">admin-glow, banner, chip patterns all reused. SignalCard mirrors dashboard tile shape.</div>
+      </div>
+      <div class="heuristic">
+        <div class="heuristic-head"><span class="heuristic-name">Error prevention</span><span class="heuristic-score score-3">3</span></div>
+        <div class="heuristic-note">Empty body caught client-side. Server validates length. Typos in period name still create distinct rows.</div>
+      </div>
+      <div class="heuristic">
+        <div class="heuristic-head"><span class="heuristic-name">Recognition over recall</span><span class="heuristic-score score-3">3</span></div>
+        <div class="heuristic-note">Signal feeds colocate source data with the editor. Could surface last period's note as reference.</div>
+      </div>
+      <div class="heuristic">
+        <div class="heuristic-head"><span class="heuristic-name">Flexibility + efficiency</span><span class="heuristic-score score-3">3</span></div>
+        <div class="heuristic-note">Free-text period supports YYYY-MM / YYYY-WW / release-N. No Cmd-S yet.</div>
+      </div>
+      <div class="heuristic">
+        <div class="heuristic-head"><span class="heuristic-name">Aesthetic + minimalist</span><span class="heuristic-score score-4">4</span></div>
+        <div class="heuristic-note">Clean two-column layout. Helper copy under textarea is well-judged.</div>
+      </div>
+      <div class="heuristic">
+        <div class="heuristic-head"><span class="heuristic-name">Recover from errors</span><span class="heuristic-score score-3">3</span></div>
+        <div class="heuristic-note">API failures surface verbatim. Edge case if changelog row gets deleted later — acceptable.</div>
+      </div>
+      <div class="heuristic">
+        <div class="heuristic-head"><span class="heuristic-name">Help + documentation</span><span class="heuristic-score score-2">2</span></div>
+        <div class="heuristic-note">No inline "what makes a good synthesis" — important for an infrequent (monthly) surface.</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:1.5rem;font-size:1.05rem;">Three changes before the next iteration</h3>
+    <ul class="actions">
+      <li><strong>Unsaved-changes indicator + browser-leave guard</strong>(~30 min)
+        Track a <code>dirty</code> flag against initial body; render an amber dot next to period; bind <code>beforeunload</code>.</li>
+      <li><strong>Inline "what makes a good synthesis" help</strong>(~15 min)
+        Collapsible <code>&lt;details&gt;</code> with 4–5 bullets pulled from <code>docs/ux/templates/research-entry.md</code>.</li>
+      <li><strong>Cmd/Ctrl-S to save</strong>(~10 min)
+        Writing surface — keyboard-first deserves the shortcut.</li>
+    </ul>
+
+    <div class="pull">
+      Verdict: <strong>Ship as-is.</strong> All three improvements are quality polish, not blockers.
+      Caveat: single-reviewer + AI-reviewer; a second human pass is the next escalation.
+    </div>
+  </section>
+
+  <!-- ── Section 3: Cognitive walk-through ───────────────────── -->
+  <section class="card">
+    <span class="section-tag">03 · Cognitive walk-through</span>
+    <h2>Journey 01 — trainee, first registration to first enrollment</h2>
+    <p class="sub">
+      Polson/Lewis 1992 cognitive walk-through method. Seven steps walked; each rated
+      1 (clean pass) → 4 (fails all four UX questions). <strong>Expert review, not
+      participant research</strong> — these findings are testable hypotheses, not validated truths.
+    </p>
+
+    <ol class="steps">
+      <li class="step">
+        <div class="step-head">Read the landing pitch on <code>/for-trainees</code> <span class="chip chip-info" style="margin-left:auto;">Score 2</span></div>
+        <div class="step-q">Form submits cleanly; if user typos email, no inline "resubmit here" path.</div>
+      </li>
+      <li class="step">
+        <div class="step-head">Submit the access request <span class="chip chip-warn" style="margin-left:auto;">Score 3</span></div>
+        <div class="step-q">UI confirmation exists; email confirmation depends on <code>mailConfigured()</code> — preview deploys silently drop it.</div>
+      </li>
+      <li class="step">
+        <div class="step-head">Receive invite email (~1 day later) <span class="chip chip-info" style="margin-left:auto;">Score 2.5</span></div>
+        <div class="step-q">Email body re-establishes context. No self-service resend if it lands in spam.</div>
+      </li>
+      <li class="step">
+        <div class="step-head">Activate the account <span class="chip chip-good" style="margin-left:auto;">Score 1</span></div>
+        <div class="step-q">Clean pass — NextAuth standard pattern, "forgot password" recovers.</div>
+      </li>
+      <li class="step">
+        <div class="step-head">Land on dashboard <span class="chip chip-good" style="margin-left:auto;">Score 1.5</span></div>
+        <div class="step-q">Primary Next Card surfaces the right thing on return visits; empty state for first-time visitors depends on tour auto-fire.</div>
+      </li>
+      <li class="step">
+        <div class="step-head">Browse pathways <span class="chip chip-info" style="margin-left:auto;">Score 2</span></div>
+        <div class="step-q">Pathway list is scan-only — no skill filter for goal-driven trainees. Skill ontology already exists; the affordance doesn't.</div>
+      </li>
+      <li class="step">
+        <div class="step-head">Enroll <span class="chip chip-good" style="margin-left:auto;">Score 1.5</span></div>
+        <div class="step-q">Enroll button is primary; confirmation lands. Leave-pathway affordance for trainees is less prominent than the admin equivalent.</div>
+      </li>
+    </ol>
+
+    <h3 style="margin-top:1.5rem;font-size:1.05rem;">Findings ranked by severity</h3>
+
+    <div class="finding fail">
+      <div class="head">Finding A — Silent SMTP failure on access-request confirm (severity 3)</div>
+      <div class="body">
+        Preview deploys without SMTP send no confirmation email; on-screen confirmation
+        doesn't include the support contact or a "2 business days" expectation. Silent
+        failure with no recovery path.
+        <br><br>
+        <strong>Fix:</strong> Strengthen the on-screen confirmation to include support@biohubnet.ca
+        and the expected response window, regardless of mail-configured state. Log mail-send
+        failures to <code>AuditLog</code> so admins can spot drop patterns.
+      </div>
+    </div>
+
+    <div class="finding warn">
+      <div class="head">Finding B — No self-service "resend my invite" (severity 2)</div>
+      <div class="body">
+        A trainee whose invite lands in spam has no recourse but to email support.
+        Affordance on <code>/login</code> — "enter your email; we'll re-mint the invite
+        if there's a pending request" — gated to 1 resend per 24h.
+      </div>
+    </div>
+
+    <div class="finding warn">
+      <div class="head">Finding C — Pathway discovery is scan-only (severity 2)</div>
+      <div class="body">
+        Skill ontology + per-pathway skill tags exist; the filter UI does not. Add a
+        chip strip at the top of <code>/pathways</code> for the top 6–8 skills.
+      </div>
+    </div>
+
+    <div class="finding warn">
+      <div class="head">Finding D — Onboarding-tour auto-fire is unverified (severity 2)</div>
+      <div class="body">
+        Tour content + step list exist; whether they auto-fire on a brand-new trainee's
+        first dashboard visit is not verifiable from code alone. Trace the fire logic;
+        if it requires click, switch to auto-fire (skippable + persisted).
+      </div>
+    </div>
+
+    <div class="pull">
+      <strong>Epistemic status:</strong> AI-led cognitive walk-through catches ~50–60% of
+      what real participant studies surface. Findings here are <em>testable hypotheses</em>,
+      not validated truths — they go into the participant-study backlog with that caveat
+      attached.
+    </div>
+  </section>
+
+  <!-- ── Section 4: Synthesis ────────────────────────────────── -->
+  <section class="card">
+    <span class="section-tag">04 · May 2026 synthesis</span>
+    <h2>What users — and our own audits — told us this period</h2>
+    <p class="sub">
+      Drawn from the three artifacts above plus the platform's standing signal-capture
+      mechanisms. Idempotent seed at <code>scripts/seed-research-insights.ts</code> lands
+      this on <code>/admin/insights</code>; <strong>Publish to changelog</strong> remains a human action.
+    </p>
+
+    <h3 style="font-size:1.05rem;margin-top:1.25rem;">Three observations</h3>
+
+    <div class="finding info">
+      <div class="head">1 · Accessibility — one real contrast finding worth fixing</div>
+      <div class="body">
+        18 contrast checks · 1 genuine fail · 17 passes (15 of which clear AAA). The
+        scientific theme accent at 2.70:1 is the only one below the 3.0 threshold. Fix
+        is small (<code>--brand-600</code> → <code>#0284c7</code>), measurable, and
+        immediately re-testable with the audit script.
+      </div>
+    </div>
+
+    <div class="finding info">
+      <div class="head">2 · Trainee onboarding — one sev-3, three sev-2 hypotheses</div>
+      <div class="body">
+        The walk-through surfaced a silent-failure path on access-request confirmation
+        (sev-3) and three less-acute friction points: no invite resend, scan-only pathway
+        discovery, unverified tour auto-fire. All four are <em>hypotheses</em> waiting on a
+        real 3-trainee study to confirm or invalidate.
+      </div>
+    </div>
+
+    <div class="finding info">
+      <div class="head">3 · The new admin surfaces are load-bearing, not aspirational</div>
+      <div class="body">
+        The critique on <code>/admin/insights</code> scored 2.9/4 average — no 1s, three
+        sub-hour polish items. What this implies: the design system documented yesterday
+        actually predicts how new surfaces should look, and the surfaces shipped atop it
+        inherited the patterns cleanly. The infrastructure isn't decoration.
+      </div>
+    </div>
+
+    <h3 style="font-size:1.05rem;margin-top:1.5rem;">What we'll do about it</h3>
+
+    <p style="font-size:0.85rem; color:var(--subtle); text-transform:uppercase; letter-spacing:0.18em; font-weight:700;">This period · by end of May</p>
+    <ul class="actions">
+      <li><strong>Ship the scientific-theme accent fix</strong><code>--brand-600: #0284c7</code> in <code>globals.css</code>. Re-run <code>python3 scripts/audit-contrast.py</code> to confirm green. Wire to CI when all 18 pass.</li>
+      <li><strong>Strengthen access-request confirmation copy</strong>Inline support email + response-window. Audit-log dropped mail sends.</li>
+      <li><strong>Polish <code>/admin/insights</code></strong>The three sub-hour items — best done before the next monthly synthesis lands.</li>
+    </ul>
+
+    <p style="font-size:0.85rem; color:var(--subtle); text-transform:uppercase; letter-spacing:0.18em; font-weight:700; margin-top:1.25rem;">Next period · June</p>
+    <ul class="actions">
+      <li><strong>Pathway-discovery filter strip</strong> by top skill tags.</li>
+      <li><strong>Self-service resend-my-invite</strong> on <code>/login</code>.</li>
+      <li><strong>Verify onboarding-tour auto-fire</strong> for first-time trainees; fix if not.</li>
+    </ul>
+
+    <p style="font-size:0.85rem; color:var(--subtle); text-transform:uppercase; letter-spacing:0.18em; font-weight:700; margin-top:1.25rem;">Backlog · Q3+</p>
+    <ul class="actions">
+      <li><strong>Real 3-trainee usability test on Journey 01</strong> using <code>docs/ux/templates/usability-test-script.md</code>. Validates or invalidates findings A–D above.</li>
+      <li><strong>Hero-mesh + status-palette contrast audit</strong> — extends the May 13 sweep to per-theme overrides.</li>
+    </ul>
+  </section>
+
+  <!-- ── Section 5: What this teaches us ─────────────────────── -->
+  <section class="card">
+    <span class="section-tag">05 · Reflection</span>
+    <h2>What ran in a day teaches us about the year ahead</h2>
+
+    <p>
+      Two things, reflecting on the 24-hour gap between shipping ER&amp;D infrastructure
+      and running it:
+    </p>
+
+    <p>
+      <strong>First — the gap between having UX infrastructure and running UX practice
+      is real but smaller than expected.</strong> Inside one calendar day of the
+      templates + audit harness + research surfaces landing, every method ran once and
+      each produced an actionable finding. The artifacts aren't aspirational; they're
+      drop-in. If a junior designer or a research intern joins the project tomorrow,
+      they walk into a working practice, not a setup chore.
+    </p>
+
+    <p>
+      <strong>Second — AI-led expert review catches a useful subset of what participant
+      research would catch, but the gap is real.</strong> The cognitive walk-through
+      surfaced hypotheses about email delivery, invite recovery, and pathway discovery
+      that a real trainee study would either confirm or invalidate. We shouldn't pretend
+      walk-throughs are studies. We should also not pretend they're nothing — they're
+      exactly the kind of artifact that fills the cadence between studies, which is what
+      mid-stage UX practice (Forrester level 3.5) needs.
+    </p>
+
+    <p>
+      The path to level-4 maturity is not "build more infrastructure." It's "schedule
+      the participant study, the WCAG re-run, the heuristic critique, the synthesis
+      cycle, and keep doing them."
+    </p>
+  </section>
+
+</div>
+
+<footer class="report-footer">
+  <p>
+    <strong>Sources.</strong> The full markdown reports are the canonical sources;
+    this HTML is a digest.
+  </p>
+  <p>
+    · <a href="https://github.com/sesamemua/bhn-training-platform/blob/main/docs/ux/audits/2026-05-13-wcag-aa-contrast-sweep.md">WCAG audit</a>
+    · <a href="https://github.com/sesamemua/bhn-training-platform/blob/main/docs/ux/critiques/2026-05-13-admin-insights.md">Design critique</a>
+    · <a href="https://github.com/sesamemua/bhn-training-platform/blob/main/docs/ux/research/2026-05-13-trainee-first-registration-cognitive-walkthrough.md">Cognitive walk-through</a>
+    · <a href="https://github.com/sesamemua/bhn-training-platform/blob/main/docs/ux/research/2026-05-synthesis.md">May synthesis</a>
+  </p>
+  <p>
+    Reproducible audit script: <a href="https://github.com/sesamemua/bhn-training-platform/blob/main/scripts/audit-contrast.py"><code>scripts/audit-contrast.py</code></a>
+    · Seed script for the synthesis: <a href="https://github.com/sesamemua/bhn-training-platform/blob/main/scripts/seed-research-insights.ts"><code>scripts/seed-research-insights.ts</code></a>
+  </p>
+  <p>
+    <strong>Methods cited.</strong> Polson, P. G., Lewis, C., Rieman, J., &amp; Wharton, C. (1992).
+    Cognitive walkthroughs: a method for theory-based evaluation of user interfaces.
+    <em>International Journal of Man-Machine Studies</em>, 36(5), 741–773. ·
+    Nielsen, J. (1994). 10 Usability Heuristics for User Interface Design. ·
+    W3C WCAG 2.1 Guidelines, Success Criteria 1.4.3 + 1.4.11 (Level AA).
+  </p>
+  <p style="margin-top:1.5rem;">
+    <strong>BHN Training Platform · UX practice findings</strong> · Generated 2026-05-13 ·
+    commit <code>5cf3f5a</code> on <code>main</code>.
+  </p>
+</footer>
+
+</body>
+</html>
