@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "View-as dropdown shrunk to ~2/3 size",
+    body: "The 'View as' pull-up menu in the superadmin sidebar footer is now noticeably more compact:\n\n  • Width — 240 px → 160 px minimum.\n  • Per-row padding — py-2 → py-1; gap tightened from 2 → 1.5.\n  • Row text — 13 px → 12 px; per-role descriptions dropped (the role labels are clear enough on their own; full description still shows on hover as a `title` tooltip).\n  • Section heading shortened (\"Preview as another role\" → \"Preview as\"); footer note shortened to \"Reverts in 1 hr · audited\".\n  • Stop-viewing-as button text trimmed.\n\nNo capability change — every target role + the stop affordance is still present.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Cleaner role-switcher: dropped the two inline quick-toggle icons",
     body: "The 'View as' control in the sidebar footer (superadmin only) used to render two icon-only square buttons beside the main pill — one for Trainee, one for Employer HR — for one-tap switching. Removed 2026-05-14 to declutter; same switches remain one click away in the dropdown, and one keypress away via the `x` / `xx` keyboard shortcuts (ADR-0003 in `docs/ux/decisions/`).\n\nUI simplification, not a capability removal — no role-switching path was eliminated. The `quickToggle` function and the `User` + `Building2` icon imports are gone with it.",
     kind: "improvement",

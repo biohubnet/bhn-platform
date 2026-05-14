@@ -103,23 +103,28 @@ export function RoleSwitcher({ actingAs }: Props) {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 popover p-2 z-30 min-w-[240px] animate-fade-in">
+        // Compact dropdown — sized to ~2/3 of the original.
+        // Width: 240 → 160; per-row padding: py-2 → py-1; label
+        // descriptions dropped (the role labels alone are clear
+        // enough); footer copy tightened to one short sentence.
+        // The "Stop viewing-as" button shrinks in lockstep.
+        <div className="absolute bottom-full left-0 right-0 mb-2 popover p-1.5 z-30 min-w-[160px] animate-fade-in">
           {actingAs && (
-            <div className="mb-2 pb-2 border-b border-line px-1">
+            <div className="mb-1.5 pb-1.5 border-b border-line">
               <button
                 type="button"
                 onClick={stop}
                 disabled={busy}
-                className="w-full text-xs font-medium px-2.5 py-2 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 disabled:opacity-40 transition-colors"
+                className="w-full text-[11px] font-medium px-2 py-1.5 rounded-md bg-brand-50 text-brand-700 hover:bg-brand-100 disabled:opacity-40 transition-colors"
               >
-                Stop viewing-as · Restore superadmin
+                Stop viewing-as
               </button>
             </div>
           )}
-          <p className="px-2 py-1.5 text-[10px] font-semibold text-subtle uppercase tracking-[0.18em]">
-            Preview as another role
+          <p className="px-1.5 pt-0.5 pb-1 text-[9px] font-semibold text-subtle uppercase tracking-[0.18em]">
+            Preview as
           </p>
-          <div className="space-y-1">
+          <div>
             {TARGETS.map((t) => {
               const active = actingAs === t.id;
               return (
@@ -128,30 +133,23 @@ export function RoleSwitcher({ actingAs }: Props) {
                   type="button"
                   onClick={() => pick(t.id)}
                   disabled={busy}
+                  title={t.description}
                   className={cn(
-                    "w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all",
-                    active ? "bg-brand-50 ring-1 ring-brand-200" : "hover:bg-elevated"
+                    "w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-left text-[12px] font-medium leading-tight transition-colors",
+                    active
+                      ? "bg-brand-50 text-brand-700 ring-1 ring-brand-200"
+                      : "hover:bg-elevated text-fg"
                   )}
                 >
-                  <span className="flex-1 min-w-0">
-                    <span className={cn(
-                      "block text-[13px] font-medium leading-tight",
-                      active ? "text-brand-700" : "text-fg"
-                    )}>
-                      {t.label}
-                    </span>
-                    <span className="block text-[10px] text-subtle leading-tight">
-                      {t.description}
-                    </span>
-                  </span>
-                  {active && <Check size={12} className="text-brand-600" />}
+                  <span className="flex-1 min-w-0 truncate">{t.label}</span>
+                  {active && <Check size={11} className="text-brand-600 shrink-0" />}
                 </button>
               );
             })}
           </div>
 
-          <p className="px-2 pt-2 text-[10px] text-subtle leading-snug">
-            Sessions auto-revert after 1 hour. Every switch is logged.
+          <p className="px-1.5 pt-1.5 text-[9px] text-subtle leading-snug">
+            Reverts in 1 hr · audited
           </p>
         </div>
       )}
