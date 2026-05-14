@@ -186,6 +186,12 @@ model User {
   authoredResearchInsights ResearchInsight[] @relation("ResearchInsightAuthor")
   updatedResearchInsights  ResearchInsight[] @relation("ResearchInsightUpdater")
 
+  // Application-prep + STAR-story relations. Cascade on user delete:
+  // both rows are user-private artefacts with no audit value once the
+  // owner is gone.
+  prepSessions PrepSession[] @relation("UserPrepSession")
+  starStories  StarStory[]   @relation("UserStarStory")
+
   // ── Theme feedback relations ──
   // Per-user theme votes + theme proposals (user-submitted ideas).
   // Admin reviews via /admin/theme-proposals; "ship + bounty"
@@ -343,6 +349,9 @@ model Skill {
   courses  CourseSkill[]
   users    UserSkill[]
   postings PostingSkill[]
+  // STAR stories tagged with this skill. Drives the "you have a
+  // story for this skill" hint in the prep flow.
+  stories  StarStorySkill[]
 
   @@index([status])
   @@index([category])
@@ -508,6 +517,10 @@ model InternshipPosting {
   applicationStatuses ApplicationStatus[]
   interviews          Interview[]
   saves               UserSavedPosting[]
+
+  // Coaching back-relations — see PrepSession + StarStory models.
+  prepSessions   PrepSession[]
+  sourcedStories StarStory[]   @relation("StarStorySource")
 
   @@index([status, createdAt])
 }
@@ -2105,4 +2118,98 @@ model ResearchInsight {
 
   /// Supports the chronological list on /admin/insights.
   @@index([createdAt])
+}
+
+/// Per-posting application-prep coaching session.
+///
+/// Each trainee gets one PrepSession per posting they prepare for.
+/// The session walks them through four steps:
+///   1. compare    — resume vs JD keyword analysis
+///   2. gaps       — actions to close the gaps (resume bullets, courses)
+///   3. interview  — common-question drafts
+///   4. star       — STAR-story drafts tied to required skills
+///
+/// State is stored as JSON per step rather than a wide column set —
+/// the shape of each step's data is allowed to evolve without a
+/// migration. The state shape is documented in
+/// src/lib/prep/types.ts as `PrepSessionState`.
+model PrepSession {
+  id          String   @id @default(cuid())
+  userId      String
+  postingId   String
+  /// Current step the user is on. 1..4 corresponding to the four
+  /// stages above. Saved so coming back lands on the right step.
+  currentStep Int      @default(1)
+  /// Per-step blobs. Each blob is keyed by step name and matches the
+  /// PrepSessionState type. Null until the trainee opens the step.
+  state       Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User              @relation("UserPrepSession", fields: [userId], references: [id], onDelete: Cascade)
+  posting InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
+
+  /// One session per (user, posting) — re-opening returns the same row.
+  @@unique([userId, postingId])
+  @@index([userId, updatedAt])
+  @@index([postingId])
+}
+
+/// Reusable STAR-format story authored by a trainee.
+///
+/// Decoupled from PrepSession because stories are valuable beyond one
+/// posting — a trainee who writes "the time I troubleshot a stalled
+/// bioreactor run" should be able to reuse that story for every
+/// posting that needs the corresponding skills. The Story Bank at
+/// /profile/stories lists every story the trainee has authored.
+///
+/// Skills (zero or more) link the story to the skill ontology so the
+/// prep flow can suggest "you have a story for this skill" when
+/// drafting answers for a new posting. Tags are free-form keywords
+/// the trainee adds for their own organisation.
+model StarStory {
+  id              String   @id @default(cuid())
+  userId          String
+  /// Short noun phrase the user names the story by. Surfaced in the
+  /// Story Bank list + when picking a story to attach to an answer.
+  title           String
+  /// The four STAR fields. Stored as free text; word count +
+  /// structure-hint feedback is computed client-side from these.
+  situation       String
+  task            String
+  action          String
+  result          String
+  /// Free-form keywords the trainee tags for their own organisation.
+  tags            String[] @default([])
+  /// AI-suggested revisions, kept as history so the trainee can revert.
+  /// Each item: { suggestedAt: ISO string, body: string, accepted?: boolean }.
+  /// Null when no polish has run.
+  aiHistory       Json?
+  /// Where the story was drafted from — kept for analytics so we can
+  /// see how often Story Bank entries are reused across postings.
+  sourcePostingId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user   User               @relation("UserStarStory", fields: [userId], references: [id], onDelete: Cascade)
+  skills StarStorySkill[]
+  source InternshipPosting? @relation("StarStorySource", fields: [sourcePostingId], references: [id], onDelete: SetNull)
+
+  /// Supports "every story this trainee has authored, newest first".
+  @@index([userId, updatedAt])
+}
+
+/// Many-to-many between StarStory and Skill — a single story can
+/// demonstrate multiple skills. The platform's matching layer
+/// reads this back when suggesting story candidates for a posting:
+/// "you already have a story tagged with `cell culture` — reuse it?"
+model StarStorySkill {
+  storyId String
+  skillId String
+
+  story StarStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  skill Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([storyId, skillId])
+  @@index([skillId])
 }

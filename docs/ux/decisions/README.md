@@ -18,8 +18,9 @@ One file per decision: `NNNN-short-title.md`. Numbered sequentially. Each follow
 | 0002 | Pending-approval gate on all symposium tour bookings | Accepted |
 | 0003 | Double-tap `x` keyboard shortcut for HR view-as | Accepted |
 | 0004 | AI trainee-to-posting matching with explainable subscores | Accepted |
-| 0005 | User-voting on themes instead of staff-curated theme list | Accepted (legacy) |
-| 0006 | EXPERIENCE program guide with idle motion | Accepted (legacy) |
+| 0005 | Application-prep coach — AI as scaffolding, trainee as writer | Accepted |
+| 0006 | User-voting on themes instead of staff-curated theme list | Accepted (legacy) |
+| 0007 | EXPERIENCE program guide with idle motion | Accepted (legacy) |
 
 ## When to write an ADR
 

@@ -114,6 +114,8 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
     description: "Status of every application you've submitted across the platform — submitted, reviewed, interview, offer." },
   { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Lightbulb,
     description: "Skills you've earned through training. Mapped against postings to surface ones you'd be strong for." },
+  { label: "Story Bank",                labelKey: "nav.stories",     href: "/profile/stories",          icon: BookOpen,
+    description: "Reusable STAR-format stories from your application prep. Tagged by skill so the prep flow can suggest 'use this story' on the next posting." },
   { label: "Interviews",                labelKey: "nav.interviews",  href: "/interviews",               icon: Calendar,
     description: "Interviews scheduled with employers — date, format, link, and prep notes in one place." },
 ];

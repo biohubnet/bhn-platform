@@ -42,6 +42,14 @@ const ROADMAP_ITEMS: { horizon: "Now" | "Next" | "Later"; items: RoadmapItem[] }
     horizon: "Now",
     items: [
       {
+        title: "Application-prep coach — keyword match, gap-closing, interview prep, STAR builder",
+        summary:
+          "4-step coach at /internships/[id]/prepare. AI extracts JD keywords + compares to the trainee's resume; the trainee writes bullets to close gaps; common interview questions come with fill-in-the-blank scaffolding; STAR stories are scaffolded + structure-validated + AI-polishable, and save to a reusable Story Bank at /profile/stories. Design pattern: AI is scaffolding, the trainee writes everything that matters. See ADR-0005.",
+        audience: "Trainees",
+        status: "shipped-recently",
+        evidence: { label: "See changelog", href: "/changelog" },
+      },
+      {
         title: "AI matching v1 — trainee-side ranking with explainability",
         summary:
           "/profile/matches ranks open postings against the trainee's skill profile + completed pathways. FitExplain panel shows direct overlap, semantic similarity, pathway alignment, gaps, and caveats. Posting detail page swaps the old chip for the full panel.",
@@ -89,6 +97,13 @@ const ROADMAP_ITEMS: { horizon: "Now" | "Next" | "Later"; items: RoadmapItem[] }
         title: "Course recommendations from match gaps",
         summary:
           "When a trainee's match shows missing required skills, link those skills to the courses that teach them. Takes the gap → action loop one step further. Cheap: skill ontology + course-skill mapping already exist.",
+        audience: "Trainees",
+        status: "planned",
+      },
+      {
+        title: "Pull existing Story Bank entries into prep Step 4",
+        summary:
+          "When a trainee starts Step 4 for a skill they already have a story for, surface it as a starting point rather than a blank scaffold. Eliminates duplicate writing across postings.",
         audience: "Trainees",
         status: "planned",
       },

@@ -25,7 +25,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   Briefcase, MapPin, Clock, Calendar, DollarSign, ArrowLeft,
-  Pencil, Globe, Mail, User, Phone,
+  Pencil, Globe, Mail, User, Phone, Sparkles,
 } from "lucide-react";
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -150,16 +150,29 @@ export default async function InternshipDetailPage({
                   page, regardless of whether the posting has a
                   contactEmail, a website, or neither. */}
               {!isStaff && userId && posting.status === "active" && (
-                <ApplyDialog
-                  postingId={posting.id}
-                  postingTitle={posting.title}
-                  companyName={posting.companyName}
-                  contactEmail={posting.contactEmail}
-                  contactName={posting.contactName}
-                  websiteUrl={fmtUrl}
-                  trainee={myArtifacts}
-                  alreadyApplied={!!statusRow}
-                />
+                <>
+                  {/* Prepare-with-AI CTA — pairs with the primary Apply
+                      action. Sits next to Apply rather than below the
+                      JD because the trainee's intent at this point is
+                      almost always "should I apply, and am I ready?" */}
+                  <Link
+                    href={`/internships/${posting.id}/prepare`}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-violet-50 text-violet-800 ring-1 ring-inset ring-violet-200 hover:bg-violet-100 px-3 py-2 text-xs font-bold"
+                    title="4-step AI coach: resume comparison + gap closure + interview prep + STAR story builder"
+                  >
+                    <Sparkles size={12} /> Prepare for this posting
+                  </Link>
+                  <ApplyDialog
+                    postingId={posting.id}
+                    postingTitle={posting.title}
+                    companyName={posting.companyName}
+                    contactEmail={posting.contactEmail}
+                    contactName={posting.contactName}
+                    websiteUrl={fmtUrl}
+                    trainee={myArtifacts}
+                    alreadyApplied={!!statusRow}
+                  />
+                </>
               )}
               {!isStaff && userId && (
                 <PostingActions

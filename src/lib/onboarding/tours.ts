@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.14a";
+export const TOUR_VERSION = "2026.05.14b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -632,6 +632,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.13d",
     cta: { label: "Open insights", href: "/admin/insights" },
+  },
+  {
+    id: "application-prep-coach",
+    title: "AI prep coach for every posting — 4 steps, you write, AI scaffolds",
+    body: "On any internship posting, look for **Prepare for this posting** next to Apply. Opens a 4-step coach: (1) compare your resume to the JD with AI keyword analysis, (2) draft bullets to close any gaps, (3) work through common interview questions with fill-in-the-blank scaffolding + decoders for what they're really asking, (4) scaffold STAR stories with structure validation + on-demand AI polish. STAR stories save to a reusable Story Bank at /profile/stories. Design principle: AI scaffolds, you write — nothing goes out under your name that wasn't yours.",
+    path: "/profile/stories",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    since: "2026.05.14b",
+    cta: { label: "Open Story Bank", href: "/profile/stories" },
   },
   {
     id: "ai-matching-launch",
