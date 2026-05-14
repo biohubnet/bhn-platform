@@ -52,6 +52,7 @@ const en: Dict = {
   "nav.buddy": "Learning buddies",
   "nav.changelog": "Change log",
   "nav.changelogTrainee": "What's new",
+  "nav.roadmap": "Roadmap",
   "nav.administration": "Administration",
   "nav.signOut": "Sign out",
 
@@ -119,6 +120,7 @@ const es: Dict = {
   "nav.buddy": "Compañeros de estudio",
   "nav.changelog": "Registro de cambios",
   "nav.changelogTrainee": "Novedades",
+  "nav.roadmap": "Hoja de ruta",
   "nav.administration": "Administración",
   "nav.signOut": "Cerrar sesión",
 
@@ -183,6 +185,7 @@ const fr: Dict = {
   "nav.buddy": "Binômes d'apprentissage",
   "nav.changelog": "Journal des modifications",
   "nav.changelogTrainee": "Nouveautés",
+  "nav.roadmap": "Feuille de route",
   "nav.administration": "Administration",
   "nav.signOut": "Se déconnecter",
 
@@ -247,6 +250,7 @@ const zh: Dict = {
   "nav.buddy": "学习伙伴",
   "nav.changelog": "更新日志",
   "nav.changelogTrainee": "新功能",
+  "nav.roadmap": "路线图",
   "nav.administration": "管理",
   "nav.signOut": "退出登录",
 
@@ -311,6 +315,7 @@ const hi: Dict = {
   "nav.buddy": "अध्ययन साथी",
   "nav.changelog": "परिवर्तन लॉग",
   "nav.changelogTrainee": "नया क्या है",
+  "nav.roadmap": "रोडमैप",
   "nav.administration": "प्रशासन",
   "nav.signOut": "लॉग आउट",
 
@@ -375,6 +380,7 @@ const ko: Dict = {
   "nav.buddy": "스터디 메이트",
   "nav.changelog": "변경 로그",
   "nav.changelogTrainee": "새로운 기능",
+  "nav.roadmap": "로드맵",
   "nav.administration": "관리",
   "nav.signOut": "로그아웃",
 
@@ -439,6 +445,7 @@ const pa: Dict = {
   "nav.buddy": "ਸਿੱਖਣ ਦੇ ਸਾਥੀ",
   "nav.changelog": "ਬਦਲਾਅ ਲੌਗ",
   "nav.changelogTrainee": "ਨਵਾਂ ਕੀ ਹੈ",
+  "nav.roadmap": "ਰੋਡਮੈਪ",
   "nav.administration": "ਪ੍ਰਸ਼ਾਸਨ",
   "nav.signOut": "ਸਾਈਨ ਆਉਟ",
 
@@ -503,6 +510,7 @@ const ar: Dict = {
   "nav.buddy": "شركاء التعلم",
   "nav.changelog": "سجل التغييرات",
   "nav.changelogTrainee": "ما الجديد",
+  "nav.roadmap": "خارطة الطريق",
   "nav.administration": "الإدارة",
   "nav.signOut": "تسجيل الخروج",
 

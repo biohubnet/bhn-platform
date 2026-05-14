@@ -1,0 +1,515 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import {
+  Palette, Type, Box, Layers, Zap, Accessibility, Sparkles,
+  CheckCircle2, AlertTriangle, Info, XCircle, Plus, Loader2, ArrowRight, Check, Hourglass, ExternalLink,
+} from "lucide-react";
+import { requireRole } from "@/lib/auth";
+
+/**
+ * /admin/design-system — live mirror of docs/design-system.md.
+ *
+ * The doc is the canonical reference (commits + reviewable in PRs);
+ * this page renders the tokens + components inline so the system
+ * stays in sync with what's actually shipped. Each section pulls
+ * directly from the same Tailwind utility classes the rest of the
+ * platform uses — if a token here renders differently than expected,
+ * the issue is in the Tailwind config + theme variables, not in
+ * this surface.
+ *
+ * Sections:
+ *   1. Surfaces (Page / Card / Elevated / Popover / Overlay)
+ *   2. Brand color scale (50 → 900)
+ *   3. Status palettes (success / pending / warning / error / neutral)
+ *   4. Type scale
+ *   5. Radius scale
+ *   6. Elevation / shadow scale
+ *   7. Motion primitives — visible-but-restrained
+ *   8. Component patterns — buttons / banners / status chips / form fields
+ *   9. Accessibility checklist
+ *
+ * Audience: admins extending the platform, contributors orienting
+ * to the codebase, anyone asking "what's the token for X?"
+ */
+export default async function AdminDesignSystemPage() {
+  const session = await requireRole("admin").catch(() => null);
+  if (!session) redirect("/dashboard");
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-10">
+      <header>
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+          Admin · Design &amp; Research
+        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
+          <Palette size={22} className="text-brand-600" />
+          Design system
+        </h1>
+        <p className="text-sm text-muted mt-2 max-w-2xl leading-relaxed">
+          Live mirror of <code className="font-mono text-fg bg-elevated px-1 rounded">docs/design-system.md</code>.
+          Every token here is rendered with the same Tailwind utility the rest
+          of the platform uses — what you see is exactly what ships.
+        </p>
+        <p className="text-xs text-muted mt-3">
+          For the doc, see{" "}
+          <Link
+            href="https://github.com/sesamemua/bhn-training-platform/blob/main/docs/design-system.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-700 font-semibold hover:underline inline-flex items-center gap-1"
+          >
+            docs/design-system.md <ExternalLink size={11} />
+          </Link>
+          {" · "}
+          For the UX charter:{" "}
+          <Link
+            href="https://github.com/sesamemua/bhn-training-platform/blob/main/docs/ux/charter.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-700 font-semibold hover:underline inline-flex items-center gap-1"
+          >
+            docs/ux/charter.md <ExternalLink size={11} />
+          </Link>
+        </p>
+      </header>
+
+      {/* ── 1. Surfaces ───────────────────────────────────────── */}
+      <Section icon={Layers} title="Surfaces" eyebrow="01">
+        <p className="text-sm text-muted leading-relaxed mb-4">
+          Five named surface layers. Each carries an implicit z-index
+          contract — never stack a Popover behind a Card; never put a
+          Page background on a Card.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <SurfaceSwatch name="Page" cls="bg-bg text-fg" caption="bg-bg" />
+          <SurfaceSwatch name="Card" cls="bg-card text-fg surface-shadow" caption="bg-card · surface-shadow" />
+          <SurfaceSwatch name="Elevated" cls="bg-elevated text-fg" caption="bg-elevated" />
+          <SurfaceSwatch name="Popover" cls="popover" caption="popover (utility)" />
+          <SurfaceSwatch name="Overlay" cls="bg-backdrop text-white" caption="bg-backdrop · z-40" />
+          <SurfaceSwatch name="Glass" cls="glass text-fg" caption="glass (sidebar/header)" />
+        </div>
+      </Section>
+
+      {/* ── 2. Brand scale ────────────────────────────────────── */}
+      <Section icon={Palette} title="Brand color scale" eyebrow="02">
+        <p className="text-sm text-muted leading-relaxed mb-4">
+          The brand-N tokens swap per theme. Usage stays constant —
+          brand-600 is always the primary action color, regardless of
+          whether the user picked Scientific or Rosalind or Retro 8-bit.
+        </p>
+        <div className="grid grid-cols-5 sm:grid-cols-9 gap-2">
+          {[50, 100, 200, 300, 400, 500, 600, 700, 800].map((n) => (
+            <BrandSwatch key={n} step={n} />
+          ))}
+        </div>
+        <dl className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+          <Pair k="brand-50" v="Soft fill — banner backgrounds, focused row tint" />
+          <Pair k="brand-200" v="Ring/outline on focused cards" />
+          <Pair k="brand-500" v="Focus ring (focus:ring-brand-500/30)" />
+          <Pair k="brand-600" v="Primary action — buttons, links, primary icons" />
+          <Pair k="brand-700" v="Hover state for primary; primary text on light fill" />
+          <Pair k="brand-800" v="Strong text on brand-tinted backgrounds" />
+        </dl>
+      </Section>
+
+      {/* ── 3. Status palettes ────────────────────────────────── */}
+      <Section icon={CheckCircle2} title="Status palettes" eyebrow="03">
+        <p className="text-sm text-muted leading-relaxed mb-4">
+          Five sentiments. Each gets a fill + text + ring triple. Status
+          colors do NOT swap per theme — they're meaning-bearing.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <StatusSwatch
+            label="Success / confirmed"
+            chip="bg-emerald-100 text-emerald-800 ring-emerald-200"
+            example="Approved"
+          />
+          <StatusSwatch
+            label="Pending / approval"
+            chip="bg-violet-100 text-violet-800 ring-violet-200"
+            example="Pending approval"
+          />
+          <StatusSwatch
+            label="Waitlist / warning"
+            chip="bg-amber-100 text-amber-800 ring-amber-200"
+            example="Waitlist #3"
+          />
+          <StatusSwatch
+            label="Error / destructive"
+            chip="bg-rose-100 text-rose-800 ring-rose-200"
+            example="Cancelled"
+          />
+          <StatusSwatch
+            label="Neutral"
+            chip="bg-slate-100 text-slate-700 ring-slate-200"
+            example="Draft"
+          />
+        </div>
+      </Section>
+
+      {/* ── 4. Type scale ─────────────────────────────────────── */}
+      <Section icon={Type} title="Type scale" eyebrow="04">
+        <div className="space-y-3">
+          <TypeRow size="text-[10px] uppercase tracking-[0.22em] font-bold">
+            Eyebrow · section label
+          </TypeRow>
+          <TypeRow size="text-[11px]">Metadata · inline label</TypeRow>
+          <TypeRow size="text-xs">Caption · helper copy</TypeRow>
+          <TypeRow size="text-sm">Body copy · form inputs</TypeRow>
+          <TypeRow size="text-base">Body emphasis · list items</TypeRow>
+          <TypeRow size="text-lg">Sub-section title</TypeRow>
+          <TypeRow size="text-xl">Card title</TypeRow>
+          <TypeRow size="text-2xl sm:text-3xl font-bold tracking-tight">Page H1</TypeRow>
+        </div>
+      </Section>
+
+      {/* ── 5. Radius scale ───────────────────────────────────── */}
+      <Section icon={Box} title="Radius scale" eyebrow="05">
+        <p className="text-sm text-muted leading-relaxed mb-4">
+          The platform's "voice" varies by theme — each theme picks
+          its own radius. Defaults below are the <code className="font-mono text-fg bg-elevated px-1 rounded">light</code> theme; others override.
+        </p>
+        <div className="flex flex-wrap items-end gap-3">
+          {[
+            { cls: "rounded", label: "rounded" },
+            { cls: "rounded-md", label: "rounded-md" },
+            { cls: "rounded-lg", label: "rounded-lg" },
+            { cls: "rounded-xl", label: "rounded-xl" },
+            { cls: "rounded-2xl", label: "rounded-2xl" },
+            { cls: "rounded-3xl", label: "rounded-3xl" },
+            { cls: "rounded-full", label: "rounded-full" },
+          ].map((r) => (
+            <div key={r.label} className="flex flex-col items-center gap-1.5">
+              <div className={`w-14 h-14 bg-brand-100 ${r.cls}`} />
+              <p className="text-[10px] font-mono text-subtle">{r.label}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── 6. Shadow / elevation ─────────────────────────────── */}
+      <Section icon={Layers} title="Shadow scale" eyebrow="06">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <ShadowBox label="surface-shadow" cls="surface-shadow" />
+          <ShadowBox label="shadow-sm" cls="shadow-sm" />
+          <ShadowBox label="shadow-md" cls="shadow-md" />
+          <ShadowBox label="shadow-lg" cls="shadow-lg" />
+        </div>
+        <p className="text-xs text-muted mt-4 max-w-xl leading-relaxed">
+          Never combine <code className="font-mono text-fg bg-elevated px-1 rounded">shadow-</code> and{" "}
+          <code className="font-mono text-fg bg-elevated px-1 rounded">ring-</code> on the same element — rings own focus + selection states; shadows own elevation.
+        </p>
+      </Section>
+
+      {/* ── 7. Motion ─────────────────────────────────────────── */}
+      <Section icon={Zap} title="Motion primitives" eyebrow="07">
+        <p className="text-sm text-muted leading-relaxed mb-4">
+          Custom keyframes live in <code className="font-mono text-fg bg-elevated px-1 rounded">src/app/globals.css</code> and respect{" "}
+          <code className="font-mono text-fg bg-elevated px-1 rounded">prefers-reduced-motion: reduce</code>.
+        </p>
+        <ul className="space-y-3 text-sm">
+          <li className="flex items-start gap-3">
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700">
+              <Sparkles size={14} />
+            </span>
+            <div>
+              <p className="font-semibold text-fg">animate-fade-in</p>
+              <p className="text-xs text-muted">Popover appear, modal mount.</p>
+            </div>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 admin-glow">
+              <Sparkles size={14} />
+            </span>
+            <div>
+              <p className="font-semibold text-fg">admin-glow</p>
+              <p className="text-xs text-muted">Admin-only high-stakes buttons. Cyan/white pulsing ring. Static under reduced-motion.</p>
+            </div>
+          </li>
+        </ul>
+        <p className="text-xs text-muted mt-4 max-w-xl leading-relaxed">
+          <strong className="text-fg">Idle motion budget:</strong> at most ONE animated element at idle. The EXPERIENCE guide deliberately stops idle motion after 30 seconds.
+        </p>
+      </Section>
+
+      {/* ── 8. Components ─────────────────────────────────────── */}
+      <Section icon={Box} title="Component patterns" eyebrow="08">
+        <SubSection title="Buttons">
+          <div className="flex flex-wrap items-center gap-3">
+            <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 text-white px-4 py-2 text-sm font-bold hover:bg-brand-700 shadow-md shadow-brand-600/25">
+              <Plus size={14} /> Primary
+            </button>
+            <button className="inline-flex items-center gap-2 rounded-xl border border-line bg-card px-4 py-2 text-sm font-bold text-fg hover:bg-elevated">
+              Secondary
+            </button>
+            <button className="inline-flex items-center gap-2 rounded-xl text-muted hover:text-fg hover:bg-elevated px-3 py-2 text-sm">
+              Ghost
+            </button>
+            <button className="inline-flex items-center gap-1.5 rounded-xl bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200 hover:bg-rose-100 px-3 py-2 text-xs font-bold">
+              <XCircle size={12} /> Destructive
+            </button>
+            <button className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 text-white admin-glow hover:bg-emerald-700 px-3 py-2 text-xs font-bold">
+              <Check size={12} /> Approval (admin)
+            </button>
+            <button className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 px-3 py-1.5 text-xs font-bold">
+              <Hourglass size={11} /> Request a spot
+            </button>
+            <button className="inline-flex items-center gap-2 rounded-xl bg-brand-600/40 text-white px-4 py-2 text-sm font-bold cursor-not-allowed opacity-50">
+              <Loader2 size={14} className="animate-spin" /> Loading
+            </button>
+          </div>
+        </SubSection>
+
+        <SubSection title="Banners">
+          <div className="space-y-3">
+            <BannerExample
+              tone="info"
+              icon={Info}
+              title="Heads up"
+              body="Single-line note that nothing's wrong; you might want to know."
+            />
+            <BannerExample
+              tone="warning"
+              icon={Hourglass}
+              title="Your spot is not guaranteed until admin approval"
+              body="Pending-approval messaging. The canonical example — used on /events/[slug]/register."
+            />
+            <BannerExample
+              tone="error"
+              icon={AlertTriangle}
+              title="Couldn't save"
+              body="Actionable error. Always offers a path forward, never just states what failed."
+            />
+            <BannerExample
+              tone="success"
+              icon={CheckCircle2}
+              title="Approved — confirmed"
+              body="Admin queue success flash. Auto-dismisses after 3.5 s."
+            />
+          </div>
+        </SubSection>
+
+        <SubSection title="Status chips">
+          <div className="flex flex-wrap gap-2">
+            <Chip tone="emerald">Confirmed</Chip>
+            <Chip tone="violet">Pending approval</Chip>
+            <Chip tone="amber">Waitlist #3</Chip>
+            <Chip tone="rose">Cancelled</Chip>
+            <Chip tone="slate">Draft</Chip>
+          </div>
+        </SubSection>
+
+        <SubSection title="Form fields">
+          <div className="space-y-3 max-w-md">
+            <div>
+              <label className="block text-sm font-semibold text-fg mb-1.5">
+                Email
+              </label>
+              <input
+                type="email"
+                placeholder="you@biohubnet.ca"
+                className="w-full bg-card border border-line rounded-lg px-3 py-2 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-fg mb-1.5">
+                Notes
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Anything else we should know?"
+                className="w-full bg-card border border-line rounded-lg px-3 py-2 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 resize-y"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-fg mb-1.5">
+                Disabled
+              </label>
+              <input
+                type="text"
+                disabled
+                value="Can't edit this"
+                className="w-full bg-card border border-line rounded-lg px-3 py-2 text-sm text-fg disabled:opacity-60"
+              />
+            </div>
+          </div>
+        </SubSection>
+
+        <SubSection title="CTA card (cross-prompt pattern)">
+          <Link
+            href="#"
+            className="block rounded-2xl bg-brand-50 ring-1 ring-inset ring-brand-200 p-4 sm:p-5 hover:bg-brand-100 transition-colors group max-w-xl"
+          >
+            <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-brand-700">
+              Cross-prompt example
+            </p>
+            <p className="text-sm font-bold text-fg mt-1">
+              You haven't picked a tour yet
+              <ArrowRight size={14} className="inline-block ml-1 text-brand-700 group-hover:translate-x-0.5 transition-transform" />
+            </p>
+            <p className="text-xs text-muted mt-1.5 leading-snug">
+              Tours and the symposium are registered separately — pick one,
+              both, or neither.
+            </p>
+          </Link>
+        </SubSection>
+      </Section>
+
+      {/* ── 9. Accessibility ──────────────────────────────────── */}
+      <Section icon={Accessibility} title="Accessibility checklist" eyebrow="09">
+        <p className="text-sm text-muted leading-relaxed mb-4">
+          Patterns the platform commits to. Each new surface is heuristic-walked against this list (see <code className="font-mono text-fg bg-elevated px-1 rounded">docs/ux/templates/design-critique.md</code>).
+        </p>
+        <ul className="space-y-2 text-sm">
+          <A11yItem ok>Every interactive element shows a brand-500 focus ring on keyboard focus.</A11yItem>
+          <A11yItem ok>
+            <code className="font-mono text-fg bg-elevated px-1 rounded">prefers-reduced-motion</code> is honoured for every keyframe.
+          </A11yItem>
+          <A11yItem ok>Color is never the only signal — chips combine fill + icon + text.</A11yItem>
+          <A11yItem ok>Skip-link present on the dashboard layout.</A11yItem>
+          <A11yItem ok>Keyboard shortcuts (<code className="font-mono text-fg bg-elevated px-1 rounded">x</code>, <code className="font-mono text-fg bg-elevated px-1 rounded">xx</code>) gated to superadmin to avoid accidental activation.</A11yItem>
+          <A11yItem todo>Quarterly WCAG 2.1 AA contrast sweep across all 9 themes — current cadence ad-hoc.</A11yItem>
+          <A11yItem todo>Screen-reader walkthrough of every critical journey — not yet done.</A11yItem>
+        </ul>
+      </Section>
+    </div>
+  );
+}
+
+/* ─── atoms ──────────────────────────────────────────────────── */
+
+function Section({
+  icon: Icon, title, eyebrow, children,
+}: { icon: React.ElementType; title: string; eyebrow: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-line bg-card p-6 surface-shadow">
+      <header className="mb-5">
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">{eyebrow}</p>
+        <h2 className="text-lg font-bold text-fg tracking-tight mt-1 inline-flex items-center gap-2">
+          <Icon size={16} className="text-brand-600" />
+          {title}
+        </h2>
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-5 first:mt-0">
+      <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-subtle mb-3">
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function SurfaceSwatch({ name, cls, caption }: { name: string; cls: string; caption: string }) {
+  return (
+    <div className={`rounded-xl p-4 border border-line ${cls}`}>
+      <p className="text-sm font-bold">{name}</p>
+      <p className="text-[10px] font-mono opacity-70 mt-1">{caption}</p>
+    </div>
+  );
+}
+
+function BrandSwatch({ step }: { step: number }) {
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className={`w-full h-12 rounded-md bg-brand-${step} border border-line`} />
+      <p className="text-[10px] font-mono text-subtle">{step}</p>
+    </div>
+  );
+}
+
+function StatusSwatch({ label, chip, example }: { label: string; chip: string; example: string }) {
+  return (
+    <div className="rounded-xl border border-line bg-card p-3 flex items-center justify-between gap-3">
+      <p className="text-xs text-muted">{label}</p>
+      <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ring-1 ring-inset ${chip}`}>
+        {example}
+      </span>
+    </div>
+  );
+}
+
+function TypeRow({ size, children }: { size: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-4 border-b border-line/60 pb-2 last:border-0">
+      <span className={`${size} text-fg`}>{children}</span>
+      <code className="ml-auto text-[10px] font-mono text-subtle">{size}</code>
+    </div>
+  );
+}
+
+function ShadowBox({ label, cls }: { label: string; cls: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className={`w-full h-16 bg-card rounded-xl ${cls}`} />
+      <p className="text-[10px] font-mono text-subtle">{label}</p>
+    </div>
+  );
+}
+
+function BannerExample({
+  tone, icon: Icon, title, body,
+}: { tone: "info" | "warning" | "error" | "success"; icon: React.ElementType; title: string; body: string }) {
+  const styles: Record<typeof tone, string> = {
+    info: "bg-brand-50 ring-brand-200 text-brand-900",
+    warning: "bg-amber-50 ring-amber-200 text-amber-900",
+    error: "bg-rose-50 ring-rose-200 text-rose-900",
+    success: "bg-emerald-50 ring-emerald-200 text-emerald-900",
+  };
+  const iconCol: Record<typeof tone, string> = {
+    info: "text-brand-700",
+    warning: "text-amber-700",
+    error: "text-rose-700",
+    success: "text-emerald-700",
+  };
+  return (
+    <div className={`rounded-2xl ring-1 ring-inset p-4 flex items-start gap-3 ${styles[tone]}`}>
+      <Icon size={18} className={`shrink-0 mt-0.5 ${iconCol[tone]}`} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold">{title}</p>
+        <p className="text-xs leading-relaxed mt-1 opacity-85">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+function Chip({ tone, children }: { tone: "emerald" | "violet" | "amber" | "rose" | "slate"; children: React.ReactNode }) {
+  const styles: Record<string, string> = {
+    emerald: "bg-emerald-100 text-emerald-800 ring-emerald-200",
+    violet: "bg-violet-100 text-violet-800 ring-violet-200",
+    amber: "bg-amber-100 text-amber-800 ring-amber-200",
+    rose: "bg-rose-100 text-rose-800 ring-rose-200",
+    slate: "bg-slate-100 text-slate-700 ring-slate-200",
+  };
+  return (
+    <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ring-1 ring-inset ${styles[tone]}`}>
+      {children}
+    </span>
+  );
+}
+
+function Pair({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <code className="font-mono text-fg bg-elevated px-1.5 py-0.5 rounded text-[11px]">{k}</code>
+      <span className="text-muted">{v}</span>
+    </div>
+  );
+}
+
+function A11yItem({ ok, todo, children }: { ok?: boolean; todo?: boolean; children: React.ReactNode }) {
+  const Icon = ok ? CheckCircle2 : AlertTriangle;
+  const color = ok ? "text-emerald-700" : todo ? "text-amber-700" : "text-subtle";
+  return (
+    <li className="flex items-start gap-2">
+      <Icon size={13} className={`shrink-0 mt-0.5 ${color}`} />
+      <span className="text-muted">{children}</span>
+    </li>
+  );
+}

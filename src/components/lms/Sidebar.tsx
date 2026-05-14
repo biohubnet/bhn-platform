@@ -53,6 +53,7 @@ import {
   Palette,
   Ghost,
   MessageSquare,
+  Gauge,
 } from "lucide-react";
 
 interface NavItem {
@@ -127,6 +128,8 @@ const miscItems: (NavItem & { labelKey: string })[] = [
   // labelKey is overridden per-role at render time ("What's new" for trainees).
   { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Bell,
     description: "What's shipped recently — features, fixes, and improvements." },
+  { label: "Roadmap",            labelKey: "nav.roadmap",     href: "/roadmap",  icon: Compass,
+    description: "What we're building now, what's next, and what's parked for later. Public-facing — same view trainees, admins, and employers all see." },
 ];
 
 // EMPLOYER PORTAL — visible only when role === "employer".
@@ -194,6 +197,22 @@ const adminExperienceItems: NavItem[] = [
     description: "Single global advanced-trainee demo account — completed coursework, both merch tiers earned, full profile, scheduled interviews. For sales calls and training-team demos." },
   { label: "Talent pool",         href: "/talent-pool",               icon: Users,        minRole: "admin",
     description: "Approved talent-application members — same surface employers see, with full submission data + comment threads. Use this to coordinate with employer reviewers." },
+];
+
+// DESIGN & RESEARCH — the ER&D maturity surface. Where the
+// platform's UX practice lives in code: the canonical design
+// system, the synthesis of user signals into a periodic "what
+// users told us" note, the experience-metrics KPI dashboard that
+// scores us against the UX-charter outcomes. Treated as a
+// distinct sub-group rather than buried under Platform because
+// the charter outcomes are first-class.
+const adminDesignResearchItems: NavItem[] = [
+  { label: "Design system",       href: "/admin/design-system",       icon: Palette,    minRole: "admin",
+    description: "Live mirror of the design tokens, type scale, radius scale, motion primitives, component patterns, and accessibility checklist. The doc at docs/design-system.md is the canonical source; this page renders it." },
+  { label: "Insights",            href: "/admin/insights",            icon: Lightbulb,  minRole: "admin",
+    description: "Per-period 'what users told us' synthesis. Read the signal feeds (theme votes, exit-survey responses, access requests, pending-queue heat), write the synthesis note, publish to /changelog so the loop closes back to users." },
+  { label: "Experience metrics",  href: "/admin/experience-metrics",  icon: Gauge,      minRole: "admin",
+    description: "UX-charter KPI dashboard. Tracks the three named user outcomes — trainee arrival latency, admin queue depth, transparency cadence — against the targets named in docs/ux/charter.md." },
 ];
 
 // PLATFORM — operating the platform itself: who has access, what
@@ -696,9 +715,10 @@ export function Sidebar({
     const required = ROLE_RANK[item.minRole ?? "admin"] ?? ROLE_RANK.admin;
     return userRank >= required;
   };
-  const visibleEngageAdmin     = adminEngageItems.filter(filterByRole);
-  const visibleExperienceAdmin = adminExperienceItems.filter(filterByRole);
-  const visiblePlatformAdmin   = adminPlatformItems.filter(filterByRole);
+  const visibleEngageAdmin         = adminEngageItems.filter(filterByRole);
+  const visibleExperienceAdmin     = adminExperienceItems.filter(filterByRole);
+  const visibleDesignResearchAdmin = adminDesignResearchItems.filter(filterByRole);
+  const visiblePlatformAdmin       = adminPlatformItems.filter(filterByRole);
 
   return (
     <>
@@ -863,6 +883,15 @@ export function Sidebar({
               <>
                 <AdminSubheading label="Experience" />
                 {visibleExperienceAdmin.map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+                ))}
+              </>
+            )}
+
+            {visibleDesignResearchAdmin.length > 0 && (
+              <>
+                <AdminSubheading label="Design & Research" />
+                {visibleDesignResearchAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
                 ))}
               </>

@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.13c";
+export const TOUR_VERSION = "2026.05.13d";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -622,6 +622,25 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05.12a",
     cta: { label: "Try Greenwood", href: "/dashboard?try-theme=greenwood" },
+  },
+  {
+    id: "erd-maturity-design-research",
+    title: "New: Design & Research admin group + public Roadmap",
+    body: "Three new admin pages under Administration → Design & Research:\n\n  • Design system — every token + component pattern rendered live.\n  • Insights — per-period 'what users told us' synthesis. Read the signals, write the note, publish to changelog.\n  • Experience metrics — UX-charter KPIs (queue depth, approval latency, transparency cadence).\n\nA public Roadmap (Now / Next / Later) is now in the sidebar misc group — same view for trainees, admins, and employers.\n\nFor the framing: docs/ux/charter.md names the three user outcomes the platform optimises for, and docs/design-system.md is the canonical companion to the live page.",
+    path: "/admin",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.13d",
+    cta: { label: "Open insights", href: "/admin/insights" },
+  },
+  {
+    id: "public-roadmap",
+    title: "There's a public roadmap now",
+    body: "We've added a /roadmap page that anyone signed in can read — what we're building now, what's next, and what's parked for later. Same view for trainees, admins, and employers. Find it in the sidebar's misc group, between Change log and the dashboard buddies link.",
+    path: "/roadmap",
+    placement: "center",
+    since: "2026.05.13d",
+    cta: { label: "Open roadmap", href: "/roadmap" },
   },
   {
     id: "playwright-smoke-pack",

@@ -180,6 +180,12 @@ model User {
   approvedRegistrations    Registration[]          @relation("RegistrationApprover")
   approvedWorkshopBookings WorkshopBooking[]       @relation("WorkshopBookingApprover")
 
+  // Research synthesis authoring — per-period "what users told us"
+  // notes on /admin/insights. SetNull on delete keeps the synthesis
+  // row but loses the author link.
+  authoredResearchInsights ResearchInsight[] @relation("ResearchInsightAuthor")
+  updatedResearchInsights  ResearchInsight[] @relation("ResearchInsightUpdater")
+
   // ── Theme feedback relations ──
   // Per-user theme votes + theme proposals (user-submitted ideas).
   // Admin reviews via /admin/theme-proposals; "ship + bounty"
@@ -2052,4 +2058,51 @@ model ThemeProposal {
   @@index([status, createdAt])
   /// Supports the proposer's "my proposals" page.
   @@index([proposerId])
+}
+
+/// Per-period "what users told us" research synthesis.
+///
+/// The /admin/insights page surfaces every user signal the platform
+/// already captures (theme votes, theme proposals, exit-survey
+/// responses, access requests, audit-log patterns) — but signals
+/// without synthesis stay at level-2 maturity. This model captures
+/// the synthesis itself: one admin reads the period's signals,
+/// writes a 1–3 paragraph note, optionally publishes it to the
+/// changelog so the loop closes back to users.
+///
+/// One row per period (typically YYYY-MM, but admins can also use
+/// YYYY-WW for weekly cadence or "release-N" tied to a deploy).
+model ResearchInsight {
+  id String @id @default(cuid())
+
+  /// Period key — free text, but conventionally YYYY-MM or
+  /// release-NNN. Unique so per-period upserts are natural.
+  period String @unique
+
+  /// 1–3 paragraph synthesis. Markdown supported. This is the
+  /// answer to "what did users tell us this period?".
+  body String
+
+  /// Optional array of `{ kind, id, snippet }` references back to
+  /// the signals that informed this insight — theme votes, feedback
+  /// rows, etc. Used by /admin/insights to render an evidence
+  /// trail so the synthesis isn't taken on faith.
+  signalsLinked Json?
+
+  /// When non-null, a copy of the body was published to ChangeLog
+  /// as a "What users told us" entry. Idempotency guard for the
+  /// publish-to-changelog button.
+  publishedToChangelogAt DateTime?
+  publishedChangelogId   String?
+
+  createdById String?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User? @relation("ResearchInsightAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ResearchInsightUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  /// Supports the chronological list on /admin/insights.
+  @@index([createdAt])
 }
