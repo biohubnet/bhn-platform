@@ -1,0 +1,107 @@
+# Playwright E2E smoke pack — runs against the Vercel preview that
+# pairs 1:1 with the open PR (or against the production alias on
+# manual dispatch).
+#
+# How it gates a PR
+# ─────────────────
+# 1. Wait for the Vercel "Preview" deployment to reach Ready state.
+# 2. Read the deployment URL into PLAYWRIGHT_BASE_URL.
+# 3. Run the full suite (one project per role; serial; 2 retries).
+# 4. On failure, upload the HTML report + traces as a workflow
+#    artifact so the reviewer can scrub through every screenshot
+#    and DOM snapshot without re-running anything locally.
+#
+# Secrets the workflow needs (set under repo Settings → Secrets):
+#   E2E_AUTH_SECRET        — must match the value on the Vercel preview
+#                             environment so /api/test/e2e-sign-in opens.
+#   E2E_ADMIN_EMAIL        — an admin (or superadmin) email present on
+#                             the preview DB.
+#   E2E_TRAINEE_EMAIL      — optional; defaults to the seeded demo email
+#                             (demo.attendee.trainee@biohubnet.test).
+
+name: E2E (Playwright)
+
+on:
+  # Per-PR coverage: every push to a PR branch retests the preview.
+  pull_request:
+    branches: [main]
+  # Manual smoke against production — for "before tomorrow's release"
+  # confidence-check days.
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Override target URL (default: latest production)."
+        required: false
+        type: string
+
+# Concurrency: cancel an in-flight run when a new push lands on the
+# same PR. Avoids two suites racing on the same DB.
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Smoke suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # Resolve PLAYWRIGHT_BASE_URL.
+      # On pull_request: ask the Vercel GitHub integration for the
+      # latest "Preview" deployment of THIS PR's head SHA. Vercel
+      # creates a `deployment_status` event with the URL once ready;
+      # we wait for the deployment using an off-the-shelf action so
+      # the suite doesn't race the build.
+      - name: Wait for Vercel preview deployment
+        if: github.event_name == 'pull_request'
+        id: waitpreview
+        uses: patrickedqvist/wait-for-vercel-preview@v1.3.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          max_timeout: 600
+
+      - name: Pick base URL
+        id: baseurl
+        run: |
+          if [ -n "${{ github.event.inputs.base_url }}" ]; then
+            echo "url=${{ github.event.inputs.base_url }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ steps.waitpreview.outputs.url }}" ]; then
+            echo "url=${{ steps.waitpreview.outputs.url }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::No base URL resolved — check the wait-for-vercel-preview step."
+            exit 1
+          fi
+
+      - name: Run Playwright
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.baseurl.outputs.url }}
+          E2E_AUTH_SECRET: ${{ secrets.E2E_AUTH_SECRET }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_TRAINEE_EMAIL: ${{ secrets.E2E_TRAINEE_EMAIL }}
+          CI: "true"
+        run: npx playwright test
+
+      # Always upload — green or red. The HTML report is the
+      # evidence trail you share when a reviewer asks "what does
+      # it test?". On red, traces + screenshots make the failure
+      # reproducible without a local re-run.
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 14

@@ -53,3 +53,11 @@ prisma/*.db-journal
 
 !.env.example
 .env*.local
+
+# Playwright — auth state holds live session cookies; reports are
+# uploaded as CI artifacts so no need to keep locally.
+/playwright/.auth/
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/

@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.13b";
+export const TOUR_VERSION = "2026.05.13c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -622,6 +622,15 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05.12a",
     cta: { label: "Try Greenwood", href: "/dashboard?try-theme=greenwood" },
+  },
+  {
+    id: "playwright-smoke-pack",
+    title: "Every PR now goes through Playwright before merge",
+    body: "Six headless-browser smoke tests run against every PR's Vercel preview. The symposium registration → admin approve → confirmed flow is fully wired; the other five (login, role switch, workshop booking, permanent-delete promotion, SCORM completion) have strategy outlines and are marked `test.fixme` until filled in.\n\nWhen a PR check goes red, the failure includes a screen recording, DOM trace, and screenshots — drop them into `npx playwright show-report` locally for frame-by-frame replay. See `tests/e2e/README.md` for the full guide.",
+    path: "/admin",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.13c",
   },
   {
     id: "events-workshop-approval-quota",
