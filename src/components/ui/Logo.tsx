@@ -1,112 +1,68 @@
 import { cn } from "@/lib/utils";
 
-/* ─── Official BioHubNet brand colours ─────────────────────────────
- *   Teal  · #327A80  · "Bio" wordmark, top-left + middle-left diamonds
- *   Blue  · #1A8DB6  · "Hub" wordmark, center + bottom diamonds
- *   Mint  · #7FC9A5  · "Net" wordmark, top-right + middle-right diamonds
- *
- *   Treated as immutable inside the LogoMark — the mark is brand
- *   identity, not a themeable element. Themes recolour everything
- *   else; the mark stays canonical. */
-const BHN = {
-  teal: "#327A80",
-  blue: "#1A8DB6",
-  mint: "#7FC9A5",
-} as const;
-
 interface LogoMarkProps {
   size?: number;
   className?: string;
 }
 
 /**
- * BioHubNet mark — four diamond cells in a plus-cluster, each one
- * a tilted square filled with horizontal chevron stripes. Reads as
- * a DNA-strand silhouette (the stripes look like base-pair rungs);
- * also reads as a network / cluster, hence "BioHub**Net**".
- *
- * Geometry choices
- * ────────────────
- *   • 64×64 viewBox — clean grid math, scales without subpixel jank
- *     from 14 px (favicon-ish) up to 400 px (hero badge).
- *   • Each diamond is a clipped square (rotated 45°) with horizontal
- *     white stripes laid over a solid brand fill. The stripes are
- *     positioned + sized to read as four chevron bands per diamond
- *     at any size.
- *   • The four cells:
- *         top-left  (teal)
- *         top-right (mint)
- *         middle    (blue)  ← drawn last, sits on top at overlaps
- *         bottom    (blue)
- *     The middle blue is rendered LAST so it sits on top — that's
- *     how the original logo creates the central focal point.
+ * BHN Training mark — soft circular medallion with a flowing rising arc
+ * that ends in a small destination dot. Reads as "ascent / continuous
+ * learning" and pairs naturally with the curved Aurora theme.
  */
 export function LogoMark({ size = 36, className }: LogoMarkProps) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 48 48"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="BioHubNet"
+      aria-label="BHN Training"
       className={cn("inline-block", className)}
     >
       <defs>
-        {/* One clipPath per diamond cell — each cell's stripes are
-            drawn as horizontal rectangles, then clipped down to the
-            diamond outline. Cheaper + cleaner than building each
-            chevron as its own polygon. */}
-        <clipPath id="bhn-d-tl">
-          <path d="M18,4 L32,18 L18,32 L4,18 Z" />
-        </clipPath>
-        <clipPath id="bhn-d-tr">
-          <path d="M46,4 L60,18 L46,32 L32,18 Z" />
-        </clipPath>
-        <clipPath id="bhn-d-mid">
-          <path d="M32,18 L46,32 L32,46 L18,32 Z" />
-        </clipPath>
-        <clipPath id="bhn-d-btm">
-          <path d="M32,32 L46,46 L32,60 L18,46 Z" />
-        </clipPath>
+        <linearGradient id="bhn-medallion" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"  stopColor="#5e8ff7" />
+          <stop offset="55%" stopColor="#2a4fdb" />
+          <stop offset="100%" stopColor="#1c2f7a" />
+        </linearGradient>
+        <linearGradient id="bhn-arc" x1="8" y1="38" x2="40" y2="10" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.95" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.55" />
+        </linearGradient>
+        <radialGradient id="bhn-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </radialGradient>
       </defs>
 
-      {/* Top-left — teal */}
-      <Diamond clipId="bhn-d-tl" color={BHN.teal} />
-      {/* Top-right — mint */}
-      <Diamond clipId="bhn-d-tr" color={BHN.mint} />
-      {/* Bottom — blue. Drawn before middle so middle stacks above
-          at the shared edge. */}
-      <Diamond clipId="bhn-d-btm" color={BHN.blue} />
-      {/* Middle — blue. Sits on top of the others at overlap points. */}
-      <Diamond clipId="bhn-d-mid" color={BHN.blue} />
-    </svg>
-  );
-}
+      {/* Outer medallion — soft circle replaces the rounded square. */}
+      <circle cx="24" cy="24" r="22" fill="url(#bhn-medallion)" />
+      <circle cx="20" cy="18" r="14" fill="url(#bhn-glow)" />
 
-/**
- * One diamond cell — solid fill + horizontal white stripes,
- * all clipped to the diamond outline. Stripe positions are tuned
- * to read as four chevron bands at any size from 14 px upward.
- */
-function Diamond({ clipId, color }: { clipId: string; color: string }) {
-  return (
-    <g clipPath={`url(#${clipId})`}>
-      <rect x="0" y="0" width="64" height="64" fill={color} />
-      {/* Nine horizontal "rungs". The Y positions are spaced so a
-          diamond at any cluster position reads as four colour bands
-          separated by thinner white gaps + thicker white middles. */}
-      <rect x="0" y="9.5"  width="64" height="1.6" fill="white" />
-      <rect x="0" y="14.5" width="64" height="2.2" fill="white" />
-      <rect x="0" y="20"   width="64" height="1.6" fill="white" />
-      <rect x="0" y="25.5" width="64" height="2.2" fill="white" />
-      <rect x="0" y="31"   width="64" height="1.6" fill="white" />
-      <rect x="0" y="36.5" width="64" height="2.2" fill="white" />
-      <rect x="0" y="42"   width="64" height="1.6" fill="white" />
-      <rect x="0" y="47.5" width="64" height="2.2" fill="white" />
-      <rect x="0" y="53"   width="64" height="1.6" fill="white" />
-    </g>
+      {/* Two flowing curves rise from lower-left to upper-right. */}
+      <path
+        d="M11 35 C 16 27, 22 22, 30 16"
+        stroke="url(#bhn-arc)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M14 38 C 19 30, 25 25, 33 19"
+        stroke="#ffffff"
+        strokeOpacity="0.32"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+      />
+
+      {/* Destination/credential dot at the arc's terminus. */}
+      <circle cx="32" cy="14" r="5.5" fill="#fbbf24" fillOpacity="0.18" />
+      <circle cx="32" cy="14" r="3" fill="#fbbf24" />
+    </svg>
   );
 }
 
@@ -120,38 +76,23 @@ const markSize = { sm: 28, md: 36, lg: 44 };
 const wordmarkSize = { sm: "text-sm", md: "text-base", lg: "text-lg" };
 
 /**
- * Full lockup — mark + tri-colour wordmark.
- *
- * "BioHubNet" is rendered as three coloured segments matching the
- * mark's brand palette ("Bio" teal, "Hub" blue, "Net" mint). On the
- * `light` variant (over a dark hero), every segment renders white
- * so the lockup reads against the gradient — the tri-colour version
- * lives only on light backgrounds where it has enough contrast.
+ * Mark + wordmark. The wordmark is intentionally thin on "Training"
+ * for an airy, modern flow.
  */
 export function Logo({ size = "md", variant = "default", className }: LogoProps) {
   const isLight = variant === "light";
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <LogoMark
-        size={markSize[size]}
-        className="drop-shadow-[0_2px_6px_rgba(50,122,128,0.18)]"
-      />
-      {isLight ? (
-        <p
-          className={cn(
-            "font-bold tracking-tight text-white",
-            wordmarkSize[size],
-          )}
-        >
-          BioHubNet
+      <LogoMark size={markSize[size]} className="drop-shadow-[0_3px_10px_rgba(42,79,219,0.25)]" />
+      <div className="leading-tight">
+        <p className={cn(
+          "font-semibold tracking-tight",
+          wordmarkSize[size],
+          isLight ? "text-white" : "text-fg"
+        )}>
+          BHN<span className={cn("font-light ml-1.5", isLight ? "text-brand-100" : "text-brand-600")}>Training</span>
         </p>
-      ) : (
-        <p className={cn("font-bold tracking-tight leading-tight", wordmarkSize[size])}>
-          <span style={{ color: BHN.teal }}>Bio</span>
-          <span style={{ color: BHN.blue }}>Hub</span>
-          <span style={{ color: BHN.mint }}>Net</span>
-        </p>
-      )}
+      </div>
     </div>
   );
 }
