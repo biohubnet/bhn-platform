@@ -9,7 +9,8 @@ import {
 import { cn } from "@/lib/utils";
 
 const SWATCH: Record<ThemeId, [string, string, string]> = {
-  light:      ["#ffffff", "#3b6cef", "#0b1b3b"],
+  biohubnet:  ["#ffffff", "#1A8DB6", "#327A80"], // brand blue + teal — the canonical identity
+  light:      ["#ffffff", "#1A8DB6", "#0F5F7C"], // realigned to BHN blue
   dark:       ["#0f1d3d", "#5e8ff7", "#eaf0fb"],
   scientific: ["#ffffff", "#0ea5e9", "#1e293b"],
   rosalind:   ["#fbf6ec", "#485940", "#a8625a"],
@@ -23,6 +24,7 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
 // Each theme picks its own corner-roundness for the swatch, mirroring
 // its own --radius scale so the picker previews the silhouette too.
 const SWATCH_RADIUS: Record<ThemeId, string> = {
+  biohubnet:  "4px",     // tighter corners — the official identity is diamond/geometric, not soft
   light:      "10px",
   dark:       "10px",
   scientific: "8px",
