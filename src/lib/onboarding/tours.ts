@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.14b";
+export const TOUR_VERSION = "2026.05.14c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -632,6 +632,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.13d",
     cta: { label: "Open insights", href: "/admin/insights" },
+  },
+  {
+    id: "talent-applicants-rebuild",
+    title: "Talent applicants — match score, inline previews, team-private comments",
+    body: "Open `/employer/applicants` (Employer portal → Applicants). Each talent-application card now shows an AI match-score chip against your active postings (Strong / Possible / Weak fit + 0–100 + best-matching posting title — admins see platform-wide), a one-click resume preview that opens inline (PDF, with open-in-tab as the escape hatch), an inline 1-minute video player (native MP4 / WebM, embedded YouTube + Vimeo + Loom), and a team-private comments thread per applicant (trainees never see it; comments load lazily when you open the section). The optional note candidates leave at apply time is also now saved as a separate cover-letter field on the application — visible on the per-applicant detail page.",
+    path: "/employer/applicants",
+    placement: "center",
+    roles: ["employer", "admin", "superadmin", "instructor"],
+    since: "2026.05.14c",
+    cta: { label: "Open Talent applicants", href: "/employer/applicants" },
   },
   {
     id: "application-prep-coach",

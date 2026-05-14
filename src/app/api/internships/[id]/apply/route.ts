@@ -32,8 +32,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   const userId = (session.user as { id?: string }).id!;
   const { id: postingId } = await params;
-  const body = (await req.json().catch(() => ({}))) as { notes?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    notes?: string;
+    coverLetter?: string;
+  };
+  // `notes` stays trainee-private. `coverLetter` is the new
+  // employer-visible field. ApplyDialog currently sends the user-
+  // composed note under both keys for back-compat — we trim each
+  // independently.
   const notes = typeof body.notes === "string" ? body.notes.trim().slice(0, 500) : null;
+  const coverLetter =
+    typeof body.coverLetter === "string"
+      ? body.coverLetter.trim().slice(0, 2000)
+      : null;
 
   const posting = await prisma.internshipPosting.findUnique({
     where: { id: postingId },
@@ -44,6 +55,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Posting not found." }, { status: 404 });
   }
 
+  const updateData: Record<string, unknown> = {};
+  if (notes) updateData.notes = notes;
+  // Cover letter, unlike notes, is allowed to be cleared (null)
+  // when the trainee removes it on re-apply. We only touch the
+  // column when the field is explicitly present in the body.
+  if (body.coverLetter !== undefined) updateData.coverLetter = coverLetter;
+
   const status = await prisma.applicationStatus.upsert({
     where: { postingId_applicantId: { postingId, applicantId: userId } },
     create: {
@@ -51,10 +69,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       applicantId: userId,
       status: "new",
       notes,
+      coverLetter,
     },
     // Don't trample the employer's stage if it's already past "new".
-    // We DO refresh notes if the trainee passed new ones.
-    update: notes ? { notes } : {},
+    update: updateData,
   });
 
   return NextResponse.json({ ok: true, status: status.status });

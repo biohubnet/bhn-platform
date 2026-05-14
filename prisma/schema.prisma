@@ -445,6 +445,11 @@ model ApplicationStatus {
   stageEnteredAt  DateTime @default(now())
   notes           String?
   rating          Int?
+  /// Cover letter the trainee writes at apply time — "why I'm a fit
+  /// for this role". Distinct from `notes` (which is trainee-
+  /// private); the cover letter IS surfaced to the employer on the
+  /// applicant detail view.
+  coverLetter     String?
   /// Reason the application was passed/rejected/withdrawn — visible
   /// to the trainee on transition emails when set. Null = no public
   /// reason (we may still email a polite "moved on" note).

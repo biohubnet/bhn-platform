@@ -115,7 +115,14 @@ export function ApplyDialog({
       const res = await fetch(`/api/internships/${postingId}/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(includeNote && note.trim() ? { notes: note.trim() } : {}),
+        // Send the note under both keys: `coverLetter` is the new
+        // employer-visible field; `notes` keeps the trainee-private
+        // surface for back-compat. Same text in both for now.
+        body: JSON.stringify(
+          includeNote && note.trim()
+            ? { notes: note.trim(), coverLetter: note.trim() }
+            : {},
+        ),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));

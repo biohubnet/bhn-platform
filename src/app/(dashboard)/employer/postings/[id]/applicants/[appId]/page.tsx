@@ -2,11 +2,14 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import {
   ArrowLeft, User, Mail, Building2, Star, FileText, Briefcase, Calendar,
+  GraduationCap, Lightbulb, ClipboardList,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { STAGE_LABELS, legalNextStages, type Stage } from "@/lib/hiring/transitions";
 import { ApplicantActions } from "@/components/hiring/ApplicantActions";
+import { scoreFitForTrainee } from "@/lib/matching/fit";
+import { FitExplain } from "@/components/matching/FitExplain";
 
 /**
  * /employer/postings/[id]/applicants/[appId] — per-applicant ATS view.
@@ -93,6 +96,43 @@ export default async function ApplicantDetailPage({
         })
       : [];
 
+  // Trainee context: skills + completed pathways + AI fit score
+  // for THIS posting. All loaded in parallel.
+  const [skills, completedPathways, fit, talentAppForm] = await Promise.all([
+    prisma.userSkill.findMany({
+      where: { userId: app.applicantId },
+      select: {
+        level: true,
+        source: true,
+        skill: { select: { id: true, name: true, category: true } },
+      },
+      orderBy: { level: "desc" },
+      take: 30,
+    }),
+    prisma.pathwayEnrollment.findMany({
+      where: { userId: app.applicantId, status: "completed" },
+      select: {
+        pathway: { select: { id: true, title: true } },
+        completedAt: true,
+      },
+      orderBy: { completedAt: "desc" },
+      take: 10,
+    }),
+    scoreFitForTrainee(app.applicantId, id),
+    // Talent application — global form submission cross-link.
+    prisma.eventForm.findUnique({
+      where: { slug: "talent-application" },
+      select: { id: true },
+    }),
+  ]);
+  const talentAppSubmission = talentAppForm
+    ? await prisma.eventFormSubmission.findFirst({
+        where: { formId: talentAppForm.id, userId: app.applicantId },
+        select: { id: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      })
+    : null;
+
   const stage = (app.status as Stage) ?? "new";
 
   return (
@@ -131,12 +171,28 @@ export default async function ApplicantDetailPage({
         </div>
       </header>
 
-      {/* Applicant artifacts */}
-      <section className="rounded-2xl border border-line bg-card p-5 surface-shadow space-y-3">
+      {/* ── AI fit score for this posting ───────────────────────── */}
+      <FitExplain fit={fit} variant="panel" heading="Fit for this posting" />
+
+      {/* ── Cover letter (employer-visible, from apply time) ───── */}
+      {app.coverLetter && (
+        <section className="rounded-2xl border border-line bg-card p-5 surface-shadow">
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle inline-flex items-center gap-1.5">
+            <ClipboardList size={11} />
+            Cover letter
+          </p>
+          <p className="text-sm text-fg leading-relaxed whitespace-pre-line mt-2">
+            {app.coverLetter}
+          </p>
+        </section>
+      )}
+
+      {/* ── Applicant materials ────────────────────────────────── */}
+      <section className="rounded-2xl border border-line bg-card p-5 surface-shadow space-y-4">
         <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
           Applicant materials
         </p>
-        {app.applicant.elevatorPitch ? (
+        {app.applicant.elevatorPitch && (
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-subtle mb-1">
               Elevator pitch
@@ -145,10 +201,21 @@ export default async function ApplicantDetailPage({
               {app.applicant.elevatorPitch}
             </p>
           </div>
-        ) : (
-          <p className="text-sm text-muted italic">No elevator pitch on file.</p>
         )}
-        <div className="flex flex-wrap gap-2 pt-2">
+        {app.applicant.bio && (
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-subtle mb-1">
+              Bio
+            </p>
+            <p className="text-sm text-fg leading-relaxed whitespace-pre-line">
+              {app.applicant.bio}
+            </p>
+          </div>
+        )}
+        {!app.applicant.elevatorPitch && !app.applicant.bio && (
+          <p className="text-sm text-muted italic">No pitch or bio on file.</p>
+        )}
+        <div className="flex flex-wrap gap-2 pt-1">
           {app.applicant.resumeUrl && (
             <a
               href={app.applicant.resumeUrl}
@@ -169,8 +236,68 @@ export default async function ApplicantDetailPage({
               📹 Video intro
             </a>
           )}
+          {talentAppSubmission && (
+            <Link
+              href={`/employer/applicants#${talentAppSubmission.id}`}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200 hover:bg-brand-100 px-3 py-1.5"
+              title={`Submitted ${new Date(talentAppSubmission.createdAt).toLocaleDateString("en-CA")}`}
+            >
+              <ClipboardList size={11} /> Talent application on file
+            </Link>
+          )}
         </div>
       </section>
+
+      {/* ── Skills + Training ──────────────────────────────────── */}
+      {(skills.length > 0 || completedPathways.length > 0) && (
+        <section className="rounded-2xl border border-line bg-card p-5 surface-shadow space-y-4">
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+            Skills &amp; training
+          </p>
+          {skills.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-subtle mb-2 inline-flex items-center gap-1.5">
+                <Lightbulb size={11} />
+                Skills on file ({skills.length})
+              </p>
+              <ul className="flex flex-wrap gap-1.5">
+                {skills.map((s) => (
+                  <li
+                    key={s.skill.id}
+                    className="text-[10px] font-semibold uppercase tracking-[0.1em] px-2 py-1 rounded-full bg-elevated text-fg ring-1 ring-inset ring-line"
+                    title={`Level ${(s.level * 5).toFixed(1)}/5 · source: ${s.source}`}
+                  >
+                    {s.skill.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {completedPathways.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-subtle mb-2 inline-flex items-center gap-1.5">
+                <GraduationCap size={11} />
+                Completed BHN pathways ({completedPathways.length})
+              </p>
+              <ul className="space-y-1">
+                {completedPathways.map((p) => (
+                  <li
+                    key={p.pathway.id}
+                    className="text-sm text-fg flex items-center justify-between gap-2"
+                  >
+                    <span className="font-semibold">{p.pathway.title}</span>
+                    {p.completedAt && (
+                      <span className="text-[10px] text-subtle font-mono">
+                        {new Date(p.completedAt).toLocaleDateString("en-CA", { dateStyle: "medium" })}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Action surface — client component */}
       <ApplicantActions
