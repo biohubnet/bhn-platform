@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Cleaner role-switcher: dropped the two inline quick-toggle icons",
+    body: "The 'View as' control in the sidebar footer (superadmin only) used to render two icon-only square buttons beside the main pill — one for Trainee, one for Employer HR — for one-tap switching. Removed 2026-05-14 to declutter; same switches remain one click away in the dropdown, and one keypress away via the `x` / `xx` keyboard shortcuts (ADR-0003 in `docs/ux/decisions/`).\n\nUI simplification, not a capability removal — no role-switching path was eliminated. The `quickToggle` function and the `User` + `Building2` icon imports are gone with it.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Roadmap is now superadmin-only",
     body: "The `/roadmap` page is no longer visible to trainees, employers, instructors, or admins — it's restricted to superadmin. Same rationale as why /admin/inbox isn't public: the roadmap doubles as an internal planning surface, and tentative commitments shouldn't be telegraphed to users before they ship.\n\nThe public-facing 'what shipped' surface remains `/changelog` — exactly where you're reading this. Nothing else has changed about how features land; only the planning view is now scoped to the operator.\n\nGuard is enforced at three layers:\n  • Page itself — `requireRole(\"superadmin\")` server-side; non-superadmin gets sent back to the dashboard.\n  • Sidebar — the Roadmap item only renders for superadmin.\n  • Onboarding tour — the tour step is gated to the superadmin role and updated copy explains the scoping.",
     kind: "improvement",

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Check, ChevronDown, User, Building2 } from "lucide-react";
+import { Eye, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TARGETS: { id: string; label: string; description: string }[] = [
@@ -12,14 +12,13 @@ const TARGETS: { id: string; label: string; description: string }[] = [
   { id: "admin",      label: "Admin",       description: "Full admin minus superadmin" },
 ];
 
-/** Quick-switch shortcuts surfaced inline beside the main "View as"
- *  dropdown — one tap toggles between the named role and the user's
- *  real superadmin seat. These are the two most-frequent preview
- *  jumps, so admins shouldn't have to open a popover for them. */
-const QUICK: { id: string; short: string; icon: React.ElementType; title: string }[] = [
-  { id: "trainee",  short: "T",  icon: User,      title: "Quick switch · Trainee ↔ Superadmin" },
-  { id: "employer", short: "HR", icon: Building2, title: "Quick switch · Employer HR ↔ Superadmin" },
-];
+// Inline quick-toggle icons (T / HR) used to sit beside the main "View
+// as" dropdown for one-tap Trainee / Employer-HR switches. Removed
+// 2026-05-14 to declutter the sidebar footer. The same two switches
+// remain available via:
+//   • the dropdown (every role is one click in)
+//   • the `x` / `xx` keyboard shortcuts (ADR-0003 in docs/ux/decisions/)
+// so this is a UI simplification, not a capability removal.
 
 interface Props {
   actingAs?: string | null;
@@ -67,13 +66,6 @@ export function RoleSwitcher({ actingAs }: Props) {
     }
   }
 
-  /** Quick-switch toggle: if we're already viewing-as the target,
-   *  flip back to superadmin; otherwise jump straight into it. */
-  async function quickToggle(targetId: string) {
-    if (actingAs === targetId) await stop();
-    else await pick(targetId);
-  }
-
   // Currently-active role label — drives the compact pill below.
   // Truncated to 8 chars so even long role names ("instructor") stay
   // inside the sidebar's 220-px-ish width without ellipsising the
@@ -83,64 +75,32 @@ export function RoleSwitcher({ actingAs }: Props) {
   return (
     <div ref={ref} className="relative">
       {/* Single 28-px-tall row that fits the sidebar even at its
-          narrowest. The previous two-line layout (full "View as
-          SUPERADMIN" pill + two text chips) overflowed the moment the
-          active role name grew past four letters. Now:
-            • One pill: eye-icon · current-role · chevron — opens dropdown
-            • Two icon-only square buttons for the quick toggles
-                (Trainee + Employer HR), labels collapsed into title
-                tooltips. Pressed state still shows via brand fill.
-          The dropdown that opens has the full descriptive labels, so
-          nothing is hidden — just reorganised. */}
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className={cn(
-            "flex items-center gap-1.5 min-w-0 flex-1 px-2 py-1 rounded-lg text-[11px] transition-colors",
-            actingAs
-              ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
-              : "hover:bg-elevated text-muted hover:text-fg"
-          )}
-          aria-label="Switch viewing role"
-          title={`View as ${activeLabel}`}
-        >
-          <Eye size={12} className="shrink-0" />
-          <span className="flex-1 min-w-0 text-left font-semibold uppercase tracking-[0.1em] leading-none truncate">
-            {activeLabel}
-          </span>
-          <ChevronDown size={10} className={cn("shrink-0 transition-transform", open && "rotate-180")} />
-        </button>
-
-        {/* Icon-only quick toggles. Each one flips between the named
-            role and the user's real superadmin seat. Compact 24-px
-            squares so two of them fit beside the main pill even when
-            the sidebar narrows. Active-state fill makes the current
-            seat obvious without needing a label. */}
-        {QUICK.map((q) => {
-          const Icon = q.icon;
-          const active = actingAs === q.id;
-          return (
-            <button
-              key={q.id}
-              type="button"
-              onClick={() => quickToggle(q.id)}
-              disabled={busy}
-              title={q.title}
-              aria-pressed={active}
-              aria-label={q.title}
-              className={cn(
-                "inline-flex items-center justify-center w-6 h-6 rounded-md transition-colors disabled:opacity-50 shrink-0",
-                active
-                  ? "bg-brand-600 text-white hover:bg-brand-700"
-                  : "bg-elevated text-muted hover:text-fg hover:bg-raised ring-1 ring-inset ring-line",
-              )}
-            >
-              <Icon size={11} className="shrink-0" />
-            </button>
-          );
-        })}
-      </div>
+          narrowest. One pill: eye-icon · current-role · chevron —
+          opens the full dropdown with all 5 target roles + a "stop
+          viewing-as" affordance. The inline quick-toggle icons that
+          used to sit beside this pill (Trainee + Employer HR) were
+          removed 2026-05-14 to declutter; the same switches remain
+          one click away in the dropdown, and one keypress away via
+          the `x` / `xx` shortcuts (ADR-0003). */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={busy}
+        className={cn(
+          "flex items-center gap-1.5 min-w-0 w-full px-2 py-1 rounded-lg text-[11px] transition-colors disabled:opacity-50",
+          actingAs
+            ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
+            : "hover:bg-elevated text-muted hover:text-fg"
+        )}
+        aria-label="Switch viewing role"
+        title={`View as ${activeLabel}`}
+      >
+        <Eye size={12} className="shrink-0" />
+        <span className="flex-1 min-w-0 text-left font-semibold uppercase tracking-[0.1em] leading-none truncate">
+          {activeLabel}
+        </span>
+        <ChevronDown size={10} className={cn("shrink-0 transition-transform", open && "rotate-180")} />
+      </button>
 
       {open && (
         <div className="absolute bottom-full left-0 right-0 mb-2 popover p-2 z-30 min-w-[240px] animate-fade-in">
