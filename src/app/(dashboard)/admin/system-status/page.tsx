@@ -176,7 +176,14 @@ export default async function SystemStatusPage() {
     : healthFlags.some((f) => f.tone === "warn") ? "warn" : "ok";
   const overallTone = worst;
 
-  const sha = process.env.NEXT_PUBLIC_COMMIT_SHA || "(local)";
+  // Prefer the explicit NEXT_PUBLIC_ override if set; otherwise fall
+  // back to Vercel's auto-injected VERCEL_GIT_COMMIT_SHA (set on every
+  // build, no manual env config needed). Short-form for legibility.
+  const rawSha =
+    process.env.NEXT_PUBLIC_COMMIT_SHA ||
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    "";
+  const sha = rawSha ? rawSha.slice(0, 7) : "(local)";
 
   return (
     <div className="space-y-6">

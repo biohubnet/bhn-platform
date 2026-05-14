@@ -471,9 +471,26 @@ async function seedUserSkills(userId: string): Promise<number> {
   return created;
 }
 
-async function seedUserInterviews(userId: string): Promise<number> {
+/** Result shape that the route handler unwraps into the JSON
+ *  response. `note` surfaces a human-readable explanation when
+ *  `created === 0` so the UI doesn't say "Seeded 0" with no context. */
+interface SeedDetail {
+  created: number;
+  note?: string;
+}
+
+async function seedUserInterviews(userId: string): Promise<SeedDetail> {
+  // Skip the existing-interview check so each click stacks more rows
+  // — admins explicitly want repeatable seed for demo loops. The
+  // Clear button takes them all back out.
   const postings = await ensureDemoPostings();
-  if (postings.length === 0) return 0;
+  if (postings.length === 0) {
+    return {
+      created: 0,
+      note:
+        "Couldn't bootstrap a demo employer or demo postings. Try clicking 'Seed demo postings' on /employer/postings first, or check the server logs for the underlying Prisma error.",
+    };
+  }
   // 3 upcoming interview slots over the next ~3 weeks, varied formats.
   const samples = [
     { days:  3, format: "video",  location: null,                                 status: "accepted" as const },
@@ -481,29 +498,40 @@ async function seedUserInterviews(userId: string): Promise<number> {
     { days: 21, format: "onsite", location: "MaRS Discovery District, Toronto",   status: "proposed" as const },
   ];
   let created = 0;
+  const errors: string[] = [];
   for (let i = 0; i < Math.min(postings.length, samples.length); i++) {
     const s = samples[i];
     const slot = new Date();
     slot.setDate(slot.getDate() + s.days);
     slot.setHours(10 + i, 0, 0, 0);
-    await prisma.interview.create({
-      data: {
-        postingId: postings[i].id,
-        applicantId: userId,
-        // scheduledById uses the same user — these are demo rows, not
-        // real employer-scheduled interviews. Avoids FK noise.
-        scheduledById: userId,
-        proposedSlots: [slot.toISOString()],
-        acceptedSlot: s.status === "accepted" ? slot : null,
-        status: s.status,
-        format: s.format,
-        location: s.location,
-        notes: `[demo] Sample interview for ${postings[i].title.replace(/^Demo · /, "")}.`,
-      },
-    });
-    created++;
+    try {
+      await prisma.interview.create({
+        data: {
+          postingId: postings[i].id,
+          applicantId: userId,
+          // scheduledById uses the same user — these are demo rows, not
+          // real employer-scheduled interviews. Avoids FK noise.
+          scheduledById: userId,
+          proposedSlots: [slot.toISOString()],
+          acceptedSlot: s.status === "accepted" ? slot : null,
+          status: s.status,
+          format: s.format,
+          location: s.location,
+          notes: `[demo] Sample interview for ${postings[i].title.replace(/^Demo · /, "")}.`,
+        },
+      });
+      created++;
+    } catch (err) {
+      // Capture per-row failures so a single bad row doesn't
+      // poison the whole batch. The first 2 messages are
+      // surfaced to the admin UI verbatim.
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
   }
-  return created;
+  if (created === 0 && errors.length > 0) {
+    return { created: 0, note: `All ${errors.length} inserts failed: ${errors.slice(0, 2).join("; ")}` };
+  }
+  return { created, note: errors.length > 0 ? `${errors.length} of ${samples.length} rows failed` : undefined };
 }
 
 // ── Route handler ────────────────────────────────────────────────
@@ -528,6 +556,7 @@ export async function POST(req: NextRequest) {
 
   try {
     let created = 0;
+    let note: string | undefined;
     if (entity === "internship_posting") created = await seedInternshipPostings();
     else if (entity === "credit_application") created = await seedCreditApplications(reviewerId);
     else if (entity === "form_submission") {
@@ -547,11 +576,21 @@ export async function POST(req: NextRequest) {
     }
     else if (entity === "user_interview") {
       if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
-      created = await seedUserInterviews(reviewerId);
+      const detail = await seedUserInterviews(reviewerId);
+      created = detail.created;
+      note = detail.note;
     }
 
-    return NextResponse.json({ ok: true, entity, created });
+    return NextResponse.json({ ok: true, entity, created, note });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message ?? "Seed failed." }, { status: 500 });
+    // Surface the actual Prisma / runtime error to the admin instead
+    // of a flat "Seed failed." — this is admin-only, so leaking the
+    // detail is fine and saves a round-trip to the server logs.
+    const message = e instanceof Error ? e.message : String(e);
+    console.error("[demo-seed]", entity, message);
+    return NextResponse.json(
+      { error: `Seed failed: ${message}` },
+      { status: 500 },
+    );
   }
 }

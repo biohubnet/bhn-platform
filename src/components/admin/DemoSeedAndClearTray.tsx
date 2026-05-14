@@ -78,12 +78,28 @@ export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entity, scope }),
       });
-      const j = (await res.json().catch(() => ({}))) as { error?: string; created?: number };
+      const j = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        created?: number;
+        // `note` surfaces non-fatal diagnostics from the server (e.g.
+        // "Couldn't bootstrap a demo employer …"). We show it instead
+        // of a bare "Seeded 0" so the admin knows why.
+        note?: string;
+      };
       if (!res.ok) {
         setError(j.error ?? "Couldn't seed.");
         return;
       }
-      showFlash(`Seeded ${j.created ?? 0} ${nounLabel}.`);
+      const created = j.created ?? 0;
+      if (created === 0 && j.note) {
+        setError(j.note);
+      } else {
+        showFlash(
+          j.note
+            ? `Seeded ${created} ${nounLabel} (${j.note}).`
+            : `Seeded ${created} ${nounLabel}.`,
+        );
+      }
       startTransition(() => router.refresh());
     } finally {
       setBusy(null);
