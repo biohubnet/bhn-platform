@@ -723,6 +723,13 @@ export function Sidebar({
   const visibleExperienceAdmin     = adminExperienceItems.filter(filterByRole);
   const visibleDesignResearchAdmin = adminDesignResearchItems.filter(filterByRole);
   const visiblePlatformAdmin       = adminPlatformItems.filter(filterByRole);
+  // HR-view preview — surfaces the exact employer-portal nav (same
+  // routes the EMPLOYER PORTAL section would render at the top of
+  // the sidebar for a real employer) inside the Administration
+  // section so superadmins can peek at the HR mental model without
+  // role-switching first. Gated to superadmin only — admins see
+  // less than full HR, so they shouldn't claim the preview either.
+  const showHrViewPreview = realRole === "superadmin";
 
   return (
     <>
@@ -906,6 +913,34 @@ export function Sidebar({
                 <AdminSubheading label="Design & Research" />
                 {visibleDesignResearchAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+                ))}
+              </>
+            )}
+
+            {showHrViewPreview && (
+              <>
+                {/* HR-view preview — same routes the EMPLOYER PORTAL
+                    group would render for an actual employer. Gives
+                    a superadmin one-click peek at what HR sees in
+                    their menu, without flipping seats. The links
+                    navigate directly; some routes will redirect to
+                    /dashboard if the page itself gates on
+                    role==="employer". The two-tap `xx` shortcut
+                    remains the way to land inside the HR seat
+                    properly with the act-as cookie set.
+                    Superadmin only. */}
+                <AdminSubheading label="HR view · preview" />
+                <p className="px-3 -mt-1 pb-1 text-[10px] text-subtle leading-snug italic">
+                  What an employer sees. Click to preview the route;
+                  use <code className="font-mono text-fg bg-elevated px-1 rounded">xx</code> to view-as HR.
+                </p>
+                {employerItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    item={{ ...item, label: t(item.labelKey) }}
+                    pathname={pathname}
+                    onNavigate={() => setMobileOpen(false)}
+                  />
                 ))}
               </>
             )}
