@@ -192,6 +192,12 @@ model User {
   prepSessions PrepSession[] @relation("UserPrepSession")
   starStories  StarStory[]   @relation("UserStarStory")
 
+  // Hiring pipeline relations — offers + interview scores authored
+  // (HR side) and offers received (trainee side).
+  offersAuthored  Offer[]          @relation("OfferAuthor")
+  offersReceived  Offer[]          @relation("OfferRecipient")
+  interviewScores InterviewScore[] @relation("InterviewScorer")
+
   // ── Theme feedback relations ──
   // Per-user theme votes + theme proposals (user-submitted ideas).
   // Admin reviews via /admin/theme-proposals; "ship + bounty"
@@ -419,23 +425,45 @@ model PostingSkill {
 /// Phase 4 kanban: tracks an applicant's status per posting. One row
 /// per (postingId, applicantId) — created lazily when the employer
 /// first interacts with the application.
+///
+/// Status string is free-form but conventionally one of:
+///   new | reviewing | shortlisted | interview_scheduled |
+///   interviewed | offer | hired | passed | withdrawn | closed
+///
+/// `stageEnteredAt` is updated by the transition service every time
+/// `status` changes — drives pipeline-analytics time-in-stage. The
+/// older `updatedAt` reflects ANY column change; `stageEnteredAt`
+/// reflects status-only.
 model ApplicationStatus {
-  id          String   @id @default(cuid())
-  postingId   String
-  applicantId String
-  status      String   @default("new") // new | reviewing | shortlisted | phone_screen | onsite | offer | hired | rejected | closed
-  notes       String?
-  rating      Int?
-  updatedById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  postingId       String
+  applicantId     String
+  status          String   @default("new") // see header comment
+  /// When the current `status` was set. Stamped by the transition
+  /// service so pipeline analytics can compute time-in-stage without
+  /// needing a separate event-log query.
+  stageEnteredAt  DateTime @default(now())
+  notes           String?
+  rating          Int?
+  /// Reason the application was passed/rejected/withdrawn — visible
+  /// to the trainee on transition emails when set. Null = no public
+  /// reason (we may still email a polite "moved on" note).
+  rejectionReason String?
+  /// Internal-only note the employer team uses for deliberation.
+  /// Never surfaced to the trainee.
+  employerNote    String?
+  updatedById     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   posting   InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
   applicant User              @relation("Applicant", fields: [applicantId], references: [id], onDelete: Cascade)
   updatedBy User?             @relation("StatusEditor", fields: [updatedById], references: [id], onDelete: SetNull)
+  offer     Offer?
 
   @@unique([postingId, applicantId])
   @@index([status])
+  @@index([postingId, status, stageEnteredAt])
 }
 
 /// Phase 5 interview scheduling. Lightweight: employer proposes time
@@ -455,9 +483,10 @@ model Interview {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  posting     InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
-  applicant   User              @relation("Interviewee", fields: [applicantId], references: [id], onDelete: Cascade)
-  scheduledBy User              @relation("Interviewer", fields: [scheduledById], references: [id], onDelete: Cascade)
+  posting         InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  applicant       User              @relation("Interviewee", fields: [applicantId], references: [id], onDelete: Cascade)
+  scheduledBy     User              @relation("Interviewer", fields: [scheduledById], references: [id], onDelete: Cascade)
+  interviewScores InterviewScore[]
 
   @@index([postingId])
   @@index([applicantId])
@@ -521,6 +550,7 @@ model InternshipPosting {
   // Coaching back-relations — see PrepSession + StarStory models.
   prepSessions   PrepSession[]
   sourcedStories StarStory[]   @relation("StarStorySource")
+  offers         Offer[]
 
   @@index([status, createdAt])
 }
@@ -2212,4 +2242,92 @@ model StarStorySkill {
 
   @@id([storyId, skillId])
   @@index([skillId])
+}
+
+/// Job offer issued by an employer to a trainee at the end of the
+/// hiring pipeline. One per ApplicationStatus row — when a posting
+/// is at status `offer` or `hired`, this row holds the actual offer
+/// terms + the trainee's response.
+///
+/// The body is plain markdown rendered into the offer-view page.
+/// When the trainee accepts, we record a corresponding
+/// ElectronicSignature row (via signatureId) so the acceptance has
+/// the same audit trail as a training-completion signature.
+model Offer {
+  id                  String    @id @default(cuid())
+  applicationStatusId String    @unique
+  /// Denormalised for query convenience — both also reachable
+  /// through applicationStatus.posting / applicationStatus.applicant.
+  postingId           String
+  applicantId         String
+  /// Employer who authored the offer. Null if HR composed via the
+  /// admin act-as path and the audit later loses the link.
+  createdById         String?
+  /// draft | sent | accepted | declined | withdrawn | expired
+  status              String    @default("draft")
+  /// Which template the offer was drafted from. Free-text; the
+  /// template registry lives in src/lib/hiring/offer-templates.ts.
+  templateKey         String?
+  /// Rendered offer letter body — markdown. Template variables are
+  /// already substituted at the time the row is created/edited.
+  body                String
+  /// Surfaceable summary fields. Optional; the body is the source
+  /// of truth but these power list-view chips + analytics filters.
+  compensation        String?
+  startDate           DateTime?
+  endDate             DateTime?
+  hoursPerWeek        String?
+  location            String?
+  /// Hard deadline for the trainee to respond. After this passes the
+  /// nightly sweep flips status from `sent` → `expired`.
+  acceptDeadline      DateTime?
+  sentAt              DateTime?
+  respondedAt         DateTime?
+  /// Optional reason the trainee gave when declining. Visible to the
+  /// employer.
+  declineReason       String?
+  /// FK to ElectronicSignature when the trainee countersigns on
+  /// accept. Null until accepted.
+  signatureId         String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  applicationStatus ApplicationStatus @relation(fields: [applicationStatusId], references: [id], onDelete: Cascade)
+  posting           InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  applicant         User              @relation("OfferRecipient", fields: [applicantId], references: [id], onDelete: Cascade)
+  createdBy         User?             @relation("OfferAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([applicantId, status])
+  @@index([postingId, status])
+}
+
+/// Structured score + rubric for one interviewer's evaluation of an
+/// Interview. Multi-stakeholder by design: each interviewer creates
+/// their own InterviewScore row; the deliberation view aggregates
+/// them. The (interviewId, scorerUserId) unique constraint stops
+/// duplicate rows per scorer.
+model InterviewScore {
+  id             String   @id @default(cuid())
+  interviewId    String
+  scorerUserId   String
+  /// 1..5 — overall fit for the role.
+  overallScore   Int
+  /// Per-skill scoring. JSON: { [skillId]: 1..5 }. Lets the
+  /// deliberation page compare on the same axes across scorers.
+  skillScores    Json?
+  /// hire | maybe | pass — the recommendation the scorer wants
+  /// recorded. Aggregates as a tally on the deliberation page.
+  recommendation String
+  /// Free-text: what stood out (positively).
+  strengths      String?
+  /// Free-text: what didn't (concerns / gaps / red flags).
+  concerns       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  scorer    User      @relation("InterviewScorer", fields: [scorerUserId], references: [id], onDelete: Cascade)
+
+  @@unique([interviewId, scorerUserId])
+  @@index([interviewId])
 }

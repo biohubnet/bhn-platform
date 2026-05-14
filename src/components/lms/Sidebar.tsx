@@ -243,6 +243,8 @@ const adminPlatformItems: NavItem[] = [
     description: "New newsletter opt-ins ready to export to BioHubNet's mailing list." },
   { label: "Analytics",           href: "/admin/analytics",           icon: LineChart,   minRole: "admin",
     description: "Engagement, learning, and conversion metrics across the platform." },
+  { label: "Pipeline analytics",  href: "/admin/pipeline-analytics",  icon: Activity,    minRole: "admin",
+    description: "Hiring-pipeline health — stage distribution, median time-in-stage, stalled (≥14d) applications, conversion-to-offer rate across the platform." },
   { label: "Reports",             href: "/admin/reports",             icon: FileText,    minRole: "admin",
     description: "Generated reports for compliance, billing, and exec views." },
   { label: "Compliance",          href: "/compliance",                icon: ShieldCheck, minRole: "admin",
