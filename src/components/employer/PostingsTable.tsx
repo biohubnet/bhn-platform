@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Loader2, AlertCircle, Trash2, CalendarX, MapPin, ExternalLink, X,
+  RefreshCw, Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -233,6 +234,25 @@ export function PostingsTable({ postings: initialPostings }: { postings: Posting
         </div>
       )}
 
+      {/* Standing reminder so a new reviewer doesn't have to discover
+          the cycle behaviour by hovering a tooltip. Lists the order
+          left-to-right so the next-state on click is predictable. */}
+      <div className="inline-flex items-start gap-2 text-[11px] text-muted bg-elevated/60 ring-1 ring-inset ring-line rounded-lg px-3 py-2">
+        <Info size={11} className="mt-0.5 shrink-0 text-brand-700" />
+        <span>
+          <span className="font-semibold text-fg">Tip:</span>{" "}
+          click any status pill to cycle through{" "}
+          <StatusHint label="Active" cls={STATUS_STYLE.active.cls} />{" "}
+          <span className="text-subtle">→</span>{" "}
+          <StatusHint label="Closed" cls={STATUS_STYLE.closed.cls} />{" "}
+          <span className="text-subtle">→</span>{" "}
+          <StatusHint label="Expired" cls={STATUS_STYLE.expired.cls} />{" "}
+          <span className="text-subtle">→</span>{" "}
+          <StatusHint label="Draft" cls={STATUS_STYLE.draft.cls} />{" "}
+          (loops back). Changes save instantly.
+        </span>
+      </div>
+
       <div className="bg-card border border-line rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -252,7 +272,19 @@ export function PostingsTable({ postings: initialPostings }: { postings: Posting
                 </th>
                 <Th>Title</Th>
                 <Th>Location</Th>
-                <Th>Status</Th>
+                <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-4 py-3">
+                  <span className="inline-flex items-center gap-1">
+                    Status
+                    <RefreshCw
+                      size={9}
+                      className="text-brand-700"
+                      aria-hidden
+                    />
+                    <span className="normal-case tracking-normal text-[9px] font-medium text-subtle">
+                      click to cycle
+                    </span>
+                  </span>
+                </th>
                 <Th>Posted</Th>
                 <Th>Expires</Th>
               </tr>
@@ -313,13 +345,22 @@ export function PostingsTable({ postings: initialPostings }: { postings: Posting
                         type="button"
                         onClick={() => cycleStatus(p.id, p.status)}
                         disabled={busyStatusId === p.id}
-                        title={`Click to cycle (currently ${statusStyle.label})`}
+                        aria-label={`Status: ${statusStyle.label}. Click to change to ${STATUS_STYLE[nextStatus(p.status)].label}.`}
+                        title={`Currently ${statusStyle.label}. Click to set ${STATUS_STYLE[nextStatus(p.status)].label} — keep clicking to cycle through all 4 states.`}
                         className={cn(
-                          "inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ring-1 ring-inset transition-all hover:ring-2 hover:ring-offset-1 hover:ring-offset-card disabled:opacity-50",
+                          "group inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] pl-2 pr-1.5 py-0.5 rounded-full ring-1 ring-inset transition-all cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-offset-card disabled:opacity-50 disabled:cursor-not-allowed",
                           statusStyle.cls,
                         )}
                       >
-                        {busyStatusId === p.id && <Loader2 size={10} className="animate-spin" />}
+                        {busyStatusId === p.id ? (
+                          <Loader2 size={10} className="animate-spin" />
+                        ) : (
+                          <RefreshCw
+                            size={9}
+                            className="opacity-50 group-hover:opacity-100 group-hover:rotate-90 transition-all"
+                            aria-hidden
+                          />
+                        )}
                         {statusStyle.label}
                       </button>
                     </td>
@@ -354,5 +395,21 @@ function Th({ children }: { children: React.ReactNode }) {
     <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-4 py-3">
       {children}
     </th>
+  );
+}
+
+/** Inline mini-pill used in the "click to cycle" reminder banner.
+ *  Matches the real status pill colours so the visual mapping is
+ *  immediate ("oh, that's the same shape I click in the row"). */
+function StatusHint({ label, cls }: { label: string; cls: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-block text-[9px] font-bold uppercase tracking-[0.14em] px-1.5 py-px rounded-full ring-1 ring-inset align-middle",
+        cls,
+      )}
+    >
+      {label}
+    </span>
   );
 }
