@@ -14,8 +14,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
  */
 export const THEMES = [
   // Classic — foundational themes, always present.
-  { id: "biohubnet",  name: "BioHubNet",  description: "Official brand identity — teal, blue and mint, full-bleed tri-colour hero", category: "classic" },
-  { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces (now anchored on the BHN blue)", category: "classic" },
+  { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces", category: "classic" },
   { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents", category: "classic" },
   { id: "scientific", name: "Scientific", description: "Cool sky-blue, paper-like surfaces", category: "classic" },
   { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic", category: "classic" },

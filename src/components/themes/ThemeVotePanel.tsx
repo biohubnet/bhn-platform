@@ -31,8 +31,7 @@ import { cn } from "@/lib/utils";
 // extracted because the picker's Swatch is private to that file.
 // If a third surface needs swatches, hoist to a shared module.
 const SWATCH: Record<ThemeId, [string, string, string]> = {
-  biohubnet:  ["#ffffff", "#1A8DB6", "#327A80"],
-  light:      ["#ffffff", "#1A8DB6", "#0F5F7C"],
+  light:      ["#ffffff", "#3b6cef", "#0b1b3b"],
   dark:       ["#0f1d3d", "#5e8ff7", "#eaf0fb"],
   scientific: ["#ffffff", "#0ea5e9", "#1e293b"],
   rosalind:   ["#fbf6ec", "#485940", "#a8625a"],

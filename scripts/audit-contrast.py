@@ -66,8 +66,7 @@ def verdict(ratio: float) -> str:
 # (bg, card-rgba, fg, accent). Update when a theme is added or its
 # tokens move. Source of truth: src/app/globals.css.
 THEMES: dict[str, tuple[str, tuple[int, int, int, float], str, str]] = {
-    "biohubnet":  ("#F4F8F8", (255, 255, 255, 0.92), "#0F2A30", "#137495"),
-    "light":      ("#ecedea", (252, 252, 250, 0.88), "#1c1c20", "#137495"),
+    "light":      ("#ecedea", (252, 252, 250, 0.88), "#1c1c20", "#3b6cef"),
     "dark":       ("#0c0d12", (28, 30, 40, 0.82),   "#e3e4e9", "#5e8ff7"),
     "scientific": ("#e8ebef", (252, 253, 254, 0.94), "#1e2733", "#0ea5e9"),
     "rosalind":   ("#f4ede0", (251, 246, 236, 0.92), "#2e261f", "#485940"),

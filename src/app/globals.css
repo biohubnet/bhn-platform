@@ -27,107 +27,31 @@
   --line-strong: rgba(28,28,32,0.16);
   --backdrop:  rgba(28,28,32,0.45);
 
-  /* Brand scale anchored on the official BioHubNet blue (#1A8DB6).
-   * brand-500 IS the brand blue. brand-600 is a darker step so
-   * white text on it clears WCAG AA for body text (4.88:1 vs white,
-   * verified via scripts/audit-contrast.py).
-   * The teal + mint complementary colours live as `--bhn-teal`
-   * + `--bhn-mint` further down — they're not part of the brand-N
-   * gradient so a button can be brand-600 without looking minty. */
-  --brand-50:  #E6F3F8;
-  --brand-100: #C9E5F0;
-  --brand-200: #9BD0E5;
-  --brand-300: #6FBED7;
-  --brand-400: #2E99C2;
-  --brand-500: #1A8DB6;     /* official BHN blue */
-  --brand-600: #137495;     /* AA-safe action colour */
-  --brand-700: #0F5F7C;
-  --brand-800: #094458;
-  --brand-900: #052F3D;
-
-  /* Official BHN brand palette — exposed for hero gradients,
-   * logo recoloring, and any surface that wants the full tri-colour
-   * identity (teal + blue + mint). The wordmark uses all three;
-   * brand-N above uses only the blue stop. */
-  --bhn-teal: #327A80;
-  --bhn-blue: #1A8DB6;
-  --bhn-mint: #7FC9A5;
+  /* Dark blue-teal brand — refined marine-editorial feel.
+   * bg-brand-600 #2c4f5a + text-white ≈ 9:1 contrast, AAA pass.
+   * bg-brand-50 #e3edf0 + text-brand-700 #213c46 ≈ 12:1, AAA pass. */
+  --brand-50:  #e3edf0;
+  --brand-100: #cadbe1;
+  --brand-200: #a3bdc6;
+  --brand-300: #7398a4;
+  --brand-400: #517986;
+  --brand-500: #3b6471;
+  --brand-600: #2c4f5a;
+  --brand-700: #213c46;
+  --brand-800: #182d35;
+  --brand-900: #101e24;
 
   --radius-sm: 10px;
   --radius:    14px;
   --radius-lg: 22px;
   --radius-xl: 28px;
 
-  /* Dashboard hero gradient — Daylight: tri-colour brand sweep.
-   * Reads teal → blue → mint left-to-right, matching the logo's
-   * colour story. Slightly darkened anchor so white text passes AA. */
-  --hero-bg:     #0F5F7C;
-  --hero-mesh-1: #1A8DB6;
-  --hero-mesh-2: #327A80;
-  --hero-mesh-3: #7FC9A5;
-  --hero-mesh-4: #0E5A75;
-}
-
-/* ───── BioHubNet — the official brand theme ─────────────────────
- * Tri-colour identity expressed at every layer: teal + blue + mint
- * sweep across the hero, brand-50 surfaces carry a faint teal tint,
- * the brand-N scale uses the official blue at brand-500. Compared
- * to Daylight (which only borrows the blue), this theme owns all
- * three brand colours as first-class surfaces — picked when you
- * want the platform to read unambiguously as BHN.
- *
- * Designed to pass WCAG 2.1 AA across body text + UI elements. */
-[data-theme="biohubnet"] {
-  --popover-bg: #EEF6F8;
-  --bg:        #F4F8F8;          /* faint teal-cream parchment */
-  --bg-mesh:
-    radial-gradient(at 12% 18%, rgba(50, 122, 128, 0.06) 0px, transparent 55%),
-    radial-gradient(at 88% 12%, rgba(127, 201, 165, 0.05) 0px, transparent 50%),
-    radial-gradient(at 90% 88%, rgba(26, 141, 182, 0.05) 0px, transparent 55%);
-  --card:      rgba(255, 255, 255, 0.92);
-  --card-solid: #ffffff;
-  --elevated:  #E8EFF1;
-  --raised:    #D9E4E7;
-  --fg:        #0F2A30;          /* deep teal-charcoal */
-  --fg-muted:  #4A6166;
-  --fg-subtle: #87979B;
-  --line:      rgba(15, 42, 48, 0.10);
-  --line-strong: rgba(15, 42, 48, 0.20);
-  --backdrop:  rgba(15, 42, 48, 0.55);
-
-  /* Brand-N — same blue-anchored scale as Daylight, restated here
-   * so a hot-swap from Daylight → BioHubNet doesn't briefly inherit
-   * the wrong palette during the var refresh. */
-  --brand-50:  #E6F3F8;
-  --brand-100: #C9E5F0;
-  --brand-200: #9BD0E5;
-  --brand-300: #6FBED7;
-  --brand-400: #2E99C2;
-  --brand-500: #1A8DB6;
-  --brand-600: #137495;
-  --brand-700: #0F5F7C;
-  --brand-800: #094458;
-  --brand-900: #052F3D;
-
-  --bhn-teal: #327A80;
-  --bhn-blue: #1A8DB6;
-  --bhn-mint: #7FC9A5;
-
-  /* Tighter, more geometric radius — the brand mark is built from
-   * diamonds, so the theme leans angular rather than rounded. */
-  --radius-sm: 6px;
-  --radius:    10px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
-
-  /* Hero gradient — the full tri-colour sweep: deep teal-blue
-   * anchor with a teal lobe top-left and a mint lobe bottom-right.
-   * White text on this clears AA. */
-  --hero-bg:     #0F5F7C;
-  --hero-mesh-1: #327A80;
-  --hero-mesh-2: #1A8DB6;
-  --hero-mesh-3: #7FC9A5;
-  --hero-mesh-4: #094458;
+  /* Dashboard hero gradient — Daylight: cyan + teal + deep blue. */
+  --hero-bg:     #0d3a51;
+  --hero-mesh-1: #0891b2;
+  --hero-mesh-2: #2dd4bf;
+  --hero-mesh-3: #1d4ed8;
+  --hero-mesh-4: #0e7490;
 }
 
 /* ───── Nightfall (dark) — refined, less saturated, warmer ───── */

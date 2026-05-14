@@ -23,10 +23,10 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
-    title: "Official BioHubNet brand colours — theme realignment, new BHN theme, OG card",
-    body: "The platform's tokenised colour layer now uses the official BHN brand palette. The logo + favicon stay on the existing medallion-and-arc mark (separate decision).\n\n**Daylight theme realigned to brand.** The `light` theme's `brand-N` scale (50 → 900) is now anchored on the official BHN blue `#1A8DB6` instead of the previous generic teal-grey. brand-500 is the brand blue exactly; brand-600 is the AA-safe action colour (5.07:1 against the card surface). Hero gradient sweeps teal → blue → mint to match the official wordmark.\n\n**New BioHubNet theme** — the canonical brand expression. Full tri-colour identity (teal-tinted surfaces, geometric corner radii to echo the diamond mark, all three brand colours in the hero mesh). Pick it from the theme picker; it sits first in the Classic group.\n\n**Open Graph share card.** A new 1200×630 image at `/opengraph-image` renders the brand mark + tri-colour wordmark + tagline. Any platform link shared on LinkedIn, Slack, Twitter/X, etc. now previews with the BHN identity.\n\n**Contrast preserved.** Re-ran `scripts/audit-contrast.py` — both `biohubnet` and the updated `light` pass WCAG 2.1 AA (5.07–5.26:1 for the accent on card; 14.65+ for fg). One pre-existing fail on the Scientific theme remains (separate fix, see `docs/ux/audits/2026-05-13-wcag-aa-contrast-sweep.md`).\n\n**Brand colour constants** are now first-class CSS variables: `--bhn-teal #327A80`, `--bhn-blue #1A8DB6`, `--bhn-mint #7FC9A5`. Any surface that wants the full identity (hero gradients, custom cards) can reach for them without re-hardcoding hex values.",
-    kind: "feature",
-    visibleTo: ALL,
+    title: "Open Graph share card",
+    body: "A new 1200×630 image lives at `/opengraph-image`. Any platform link shared on LinkedIn, Slack, Twitter/X, etc. now previews with a proper BioHubNet brand card — the diamond cluster mark, the tri-colour wordmark (`Bio` teal, `Hub` blue, `Net` mint), and the \"Transformative Talent Development\" tagline.\n\nTwitter/X falls back to this when no `twitter-image` route is set, so a single file covers both surfaces.\n\nThe logo + favicon + themes are unchanged from before — this commit only adds the social preview card.",
+    kind: "improvement",
+    visibleTo: ADMINS,
     daysAgo: 0,
   },
   {
