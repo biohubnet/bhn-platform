@@ -108,6 +108,8 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
     description: "Submit bio, supervisor letter, transcript, resume, and STAR video — we share with vetted industry partners." },
   { label: "Internships",               labelKey: "nav.internships", href: "/internships",              icon: Briefcase,
     description: "Live job board of internship and co-op postings from BHN industry partners. Apply directly from here." },
+  { label: "Matches for you",           labelKey: "nav.matches",     href: "/profile/matches",          icon: Sparkles,
+    description: "AI-ranked internship postings, scored against your skill profile + completed pathways. Each row shows the receipts — direct overlap, semantic similarity, pathway alignment, gaps, and honest caveats." },
   { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList,
     description: "Status of every application you've submitted across the platform — submitted, reviewed, interview, offer." },
   { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Lightbulb,

@@ -42,6 +42,14 @@ const ROADMAP_ITEMS: { horizon: "Now" | "Next" | "Later"; items: RoadmapItem[] }
     horizon: "Now",
     items: [
       {
+        title: "AI matching v1 — trainee-side ranking with explainability",
+        summary:
+          "/profile/matches ranks open postings against the trainee's skill profile + completed pathways. FitExplain panel shows direct overlap, semantic similarity, pathway alignment, gaps, and caveats. Posting detail page swaps the old chip for the full panel.",
+        audience: "Trainees",
+        status: "shipped-recently",
+        evidence: { label: "See changelog", href: "/changelog" },
+      },
+      {
         title: "Symposium tour/workshop registration overhaul",
         summary:
           "Tour registration is now independent of the symposium day; every booking goes through admin approval; per-tour 20-seat capacity + 5-spot waitlist.",
@@ -70,6 +78,20 @@ const ROADMAP_ITEMS: { horizon: "Now" | "Next" | "Later"; items: RoadmapItem[] }
   {
     horizon: "Next",
     items: [
+      {
+        title: "AI matching v1.1 — employer side + admin observability",
+        summary:
+          "Sort-by-fit toggle + score column on /employer/postings/[id]/applicants. /admin/matching dashboard showing match-quality distribution + the top under-tagged postings. Trainee opt-out preference on /profile. See ADR-0004 for the deferred-for-v1 list.",
+        audience: "Employers / HR",
+        status: "planned",
+      },
+      {
+        title: "Course recommendations from match gaps",
+        summary:
+          "When a trainee's match shows missing required skills, link those skills to the courses that teach them. Takes the gap → action loop one step further. Cheap: skill ontology + course-skill mapping already exist.",
+        audience: "Trainees",
+        status: "planned",
+      },
       {
         title: "Fill in the remaining five Playwright specs",
         summary:

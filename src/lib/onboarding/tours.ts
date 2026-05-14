@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.14";
+export const TOUR_VERSION = "2026.05.14a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -632,6 +632,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.13d",
     cta: { label: "Open insights", href: "/admin/insights" },
+  },
+  {
+    id: "ai-matching-launch",
+    title: "AI matching: postings ranked for you with full receipts",
+    body: "New under EXPERIENCE: `Matches for you` at /profile/matches. Every open internship posting is now scored 0–100 against your skill profile + completed pathways, with the full receipts — direct skill overlap, semantic similarity (your adjacent skills that count), pathway alignment, the gaps, and honest caveats when confidence is low. The same explanation panel appears on every posting detail page. Full design notes in docs/ux/decisions/0004-ai-matching-explainability.md.",
+    path: "/profile/matches",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    since: "2026.05.14a",
+    cta: { label: "Open my matches", href: "/profile/matches" },
   },
   {
     id: "internal-roadmap",

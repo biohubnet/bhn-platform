@@ -30,8 +30,8 @@ import {
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/Badge";
-import { scoreMatch } from "@/lib/skills/ontology";
-import { PostingMatchPanel } from "@/components/lms/PostingMatchPanel";
+import { scoreFitForTrainee } from "@/lib/matching/fit";
+import { FitExplain } from "@/components/matching/FitExplain";
 import { PostingActions } from "@/components/lms/PostingActions";
 import { PostingDetailsMarkdown } from "@/components/lms/PostingDetailsMarkdown";
 import { ApplyDialog } from "@/components/lms/ApplyDialog";
@@ -102,22 +102,14 @@ export default async function InternshipDetailPage({
       : `https://${posting.website}`
     : null;
 
-  // Match score: mapped from PostingSkill rows + UserSkill rows. We
-  // also pass a simple keySkills heuristic when there are no
-  // PostingSkill rows yet (older postings created before the skill-
-  // ontology batch shipped) — falls back gracefully so the panel
-  // doesn't render an empty score.
-  const haveOntologyMapping = postingSkills.length > 0;
-  const match = haveOntologyMapping
-    ? scoreMatch(
-        mySkills,
-        postingSkills.map((ps) => ({
-          skillId: ps.skillId,
-          weight: ps.weight ?? 1,
-          required: ps.required ?? false,
-        })),
-      )
-    : null;
+  // Match: switched 2026-05-14 from the simpler scoreMatch helper to
+  // the richer scoreFitForTrainee from src/lib/matching/fit.ts. The
+  // new pipeline adds semantic-similarity (pgvector cosine) and
+  // pathway-alignment subscores, plus explainability data (bridges,
+  // gaps, caveats) the FitExplain panel renders. Only computed for
+  // signed-in trainees (skipped for staff who are viewing the page).
+  const fit =
+    !isStaff && userId ? await scoreFitForTrainee(userId, posting.id) : null;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -202,19 +194,18 @@ export default async function InternshipDetailPage({
           </div>
         </div>
 
-        {/* Skill-match panel — always rendered; falls back to a "complete
-            your profile" prompt when the trainee has no skills. */}
-        {!isStaff && userId && (
+        {/* Skill-match panel — replaces the older lightweight match
+            chip with the full FitExplain panel from
+            src/components/matching/FitExplain.tsx. Always-expanded
+            ("panel" variant) on the detail page because trainees
+            land here with intent to evaluate, so hiding evidence
+            behind a "Why this score?" toggle isn't right here. */}
+        {fit && (
           <div className="px-6 sm:px-8 py-5 border-b border-line">
-            <PostingMatchPanel
-              haveOntologyMapping={haveOntologyMapping}
-              match={match}
-              postingSkills={postingSkills.map((ps) => ({
-                skillId: ps.skillId,
-                name: ps.skill.name,
-                required: ps.required ?? false,
-              }))}
-              mySkillCount={mySkills.length}
+            <FitExplain
+              fit={fit}
+              variant="panel"
+              heading="Why this match for you"
             />
           </div>
         )}
