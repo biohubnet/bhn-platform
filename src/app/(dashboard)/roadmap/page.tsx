@@ -1,28 +1,32 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   Compass, CircleDot, Circle, CheckCircle2, Megaphone, ArrowRight, MessageSquare,
 } from "lucide-react";
+import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /**
- * /roadmap — public roadmap surface.
+ * /roadmap — internal planning surface, SUPERADMIN ONLY.
  *
  * Three horizons: Now (in the next ~2 weeks), Next (in the next
  * quarter), Later (parked but committed). What's NOT here:
  *
  *   • Items not yet decided. We don't tease vapor.
- *   • Internal-only refactors. The roadmap is the user's view.
+ *   • Internal-only refactors irrelevant to the user's view.
  *   • Exact dates. "Now / Next / Later" survives slippage better.
+ *
+ * Visibility: superadmin only. The original framing was "public to
+ * any signed-in user" — that's been narrowed because the roadmap
+ * doubles as an internal planning document, and surfacing tentative
+ * commitments to trainees/employers risks setting expectations the
+ * platform isn't ready to meet. When something here ships, it moves
+ * to /changelog — and /changelog IS the user-facing surface.
  *
  * Edits land via PR — see ROADMAP_ITEMS below. The roadmap is
  * intentionally not behind editable-copy because each item should
  * be reviewable in version control (and tied to a commit when it
- * ships). When something here ships, move it to /changelog and
- * drop the row.
- *
- * Sits under (dashboard) so it inherits the standard layout, but
- * is visible to any signed-in role — including trainees. That's
- * the point.
+ * ships).
  */
 
 interface RoadmapItem {
@@ -118,6 +122,12 @@ const ROADMAP_ITEMS: { horizon: "Now" | "Next" | "Later"; items: RoadmapItem[] }
 ];
 
 export default async function RoadmapPage() {
+  // Superadmin gate. Anyone below superadmin gets sent back to the
+  // dashboard — /changelog remains the user-facing "what's new"
+  // surface; roadmap is an internal planning view.
+  const session = await requireRole("superadmin").catch(() => null);
+  if (!session) redirect("/dashboard");
+
   // Recent changelog entries that map to "what shipped" — informational.
   const recent = await prisma.changeLog.findMany({
     where: {
@@ -132,9 +142,14 @@ export default async function RoadmapPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10">
       <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          BHN Training Platform
-        </p>
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+            BHN Training Platform · Internal planning
+          </p>
+          <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ring-1 ring-inset bg-violet-100 text-violet-800 ring-violet-200">
+            Superadmin only
+          </span>
+        </div>
         <h1 className="text-3xl sm:text-4xl font-bold text-fg tracking-tight mt-1 inline-flex items-center gap-3">
           <Compass size={28} className="text-brand-600" />
           Roadmap
@@ -142,15 +157,15 @@ export default async function RoadmapPage() {
         <p className="text-sm text-muted mt-3 max-w-2xl leading-relaxed">
           What we're building now, what's next, and what we've parked
           for later. No exact dates — those slip — but every item
-          here is committed enough that the team is willing to be held
-          accountable in public.
+          here is committed enough to plan around. <strong className="text-fg">
+          This view is restricted to superadmin</strong>: it doubles as
+          internal planning, and tentative commitments shouldn't be
+          telegraphed to trainees or employers before they ship. The
+          public surface is <Link href="/changelog" className="text-brand-700 font-semibold hover:underline">/changelog</Link> — that's
+          what users see once something lands.
         </p>
         <p className="text-xs text-muted mt-3">
-          For what already shipped, see the{" "}
-          <Link href="/changelog" className="text-brand-700 font-semibold hover:underline">
-            changelog
-          </Link>
-          . For the UX charter that frames how we choose what's worth doing,{" "}
+          For the UX charter that frames how we choose what's worth doing,{" "}
           <Link
             href="https://github.com/sesamemua/bhn-training-platform/blob/main/docs/ux/charter.md"
             target="_blank"
@@ -234,23 +249,29 @@ export default async function RoadmapPage() {
         </Link>
       </section>
 
-      {/* Closing — invite feedback */}
+      {/* Closing — internal-only "where user signal lands" reminder */}
       <section className="rounded-2xl bg-brand-50 ring-1 ring-inset ring-brand-200 p-6">
         <h2 className="text-base font-bold text-fg inline-flex items-center gap-2">
           <MessageSquare size={14} className="text-brand-700" />
-          Anything you'd like to see here?
+          Where user signal feeds back in
         </h2>
         <p className="text-sm text-muted leading-relaxed mt-2">
-          The roadmap isn't fixed. If a feature you'd find useful isn't on
-          this list, or you disagree with the ordering, tell us. Theme
-          ideas, in particular, go through the dedicated voting flow at{" "}
+          Items here aren't pulled from thin air — they're shaped by{" "}
+          <Link href="/admin/insights" className="text-brand-700 font-semibold hover:underline">
+            /admin/insights
+          </Link>{" "}
+          (the per-period research synthesis),{" "}
+          <Link href="/admin/feedback" className="text-brand-700 font-semibold hover:underline">
+            /admin/feedback
+          </Link>{" "}
+          (exit-survey responses), and the user-voted theme proposals at{" "}
           <Link
-            href="/themes"
+            href="/admin/theme-proposals"
             className="text-brand-700 font-semibold hover:underline"
           >
-            /themes
+            /admin/theme-proposals
           </Link>
-          .
+          . Reorder this list when synthesis says the bet has shifted.
         </p>
       </section>
     </div>

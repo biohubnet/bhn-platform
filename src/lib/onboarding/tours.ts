@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.13d";
+export const TOUR_VERSION = "2026.05.14";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -634,12 +634,13 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open insights", href: "/admin/insights" },
   },
   {
-    id: "public-roadmap",
-    title: "There's a public roadmap now",
-    body: "We've added a /roadmap page that anyone signed in can read — what we're building now, what's next, and what's parked for later. Same view for trainees, admins, and employers. Find it in the sidebar's misc group, between Change log and the dashboard buddies link.",
+    id: "internal-roadmap",
+    title: "Internal roadmap at /roadmap (superadmin only)",
+    body: "There's an internal /roadmap page — Now / Next / Later horizons for the platform. Visible to superadmin only; tentative commitments shouldn't be telegraphed to trainees or employers before they ship. The public-facing 'what shipped' surface stays at /changelog.",
     path: "/roadmap",
     placement: "center",
-    since: "2026.05.13d",
+    roles: ["superadmin"],
+    since: "2026.05.14",
     cta: { label: "Open roadmap", href: "/roadmap" },
   },
   {

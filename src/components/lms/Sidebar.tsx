@@ -128,8 +128,8 @@ const miscItems: (NavItem & { labelKey: string })[] = [
   // labelKey is overridden per-role at render time ("What's new" for trainees).
   { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Bell,
     description: "What's shipped recently — features, fixes, and improvements." },
-  { label: "Roadmap",            labelKey: "nav.roadmap",     href: "/roadmap",  icon: Compass,
-    description: "What we're building now, what's next, and what's parked for later. Public-facing — same view trainees, admins, and employers all see." },
+  { label: "Roadmap",            labelKey: "nav.roadmap",     href: "/roadmap",  icon: Compass, minRole: "superadmin",
+    description: "Internal planning surface — Now / Next / Later horizons for the platform. Superadmin only; the public-facing 'what shipped' view is /changelog." },
 ];
 
 // EMPLOYER PORTAL — visible only when role === "employer".
@@ -852,12 +852,21 @@ export function Sidebar({
         {showLearnerNav && (
           <>
             <div className="pt-2" />
-            {miscItems.map((item) => {
-              // Trainees see the changelog as "What's new"; staff as "Change log".
-              const key = item.href === "/changelog" && !isStaff ? "nav.changelogTrainee" : item.labelKey;
-              const labeled = { ...item, label: t(key) };
-              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} />;
-            })}
+            {miscItems
+              // miscItems default to trainee-visible unless an explicit
+              // `minRole` is set (e.g. roadmap is superadmin-only). The
+              // shared filterByRole helper assumes admin-default for
+              // admin-zone items, which is the wrong default here.
+              .filter((item) => {
+                const required = ROLE_RANK[item.minRole ?? "trainee"] ?? 0;
+                return userRank >= required;
+              })
+              .map((item) => {
+                // Trainees see the changelog as "What's new"; staff as "Change log".
+                const key = item.href === "/changelog" && !isStaff ? "nav.changelogTrainee" : item.labelKey;
+                const labeled = { ...item, label: t(key) };
+                return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} />;
+              })}
           </>
         )}
 
