@@ -161,13 +161,17 @@ export function ChangeLogDashboard({ data }: { data: DashboardData }) {
             </div>
           </div>
 
-          {/* X-axis date labels — sit BELOW the baseline (no
-              overlap with the bars) on a dedicated row that's tall
-              enough to fit the rotated text. Each visible label is
-              connected to its bar's baseline by a tiny vertical
-              tick, so it's obvious which bar a date belongs to even
+          {/* X-axis date labels — sit BELOW the baseline on a
+              dedicated row tall enough to fit the rotated text.
+              Each visible label is connected to its bar by a long
+              vertical tick line that drops 20 px from the chart
+              baseline. The label is rotated -45° anchored at the
+              tick's *bottom* via `origin-top-right`, so the END
+              character of the date (the last digit) sits at the
+              end of the tick line — no gap between line and label,
+              and it's unambiguous which bar a date belongs to even
               when bars are 1 px wide. */}
-          <div className="relative h-12 mt-1">
+          <div className="relative h-20 mt-2">
             <div className="absolute inset-0 flex gap-px">
               {data.daily.map((d) => {
                 const show = d.index % labelStride === 0 || d.index === days - 1;
@@ -175,13 +179,21 @@ export function ChangeLogDashboard({ data }: { data: DashboardData }) {
                   <div key={d.ymd} className="flex-1 min-w-px relative">
                     {show && (
                       <>
-                        {/* Tick: 1 px wide, 10 px tall, drops from the
-                            chart baseline to just above the label. */}
+                        {/* Long vertical tick — 20 px drop, same
+                            colour as the dashed gridlines so it
+                            reads as part of the axis. */}
                         <div
                           aria-hidden
-                          className="absolute top-0 left-0 w-px h-2.5 bg-line"
+                          className="absolute top-0 left-0 w-px h-5 bg-line"
                         />
-                        <span className="absolute top-4 left-0 origin-top-left -rotate-45 text-[10px] text-subtle tabular-nums whitespace-nowrap">
+                        {/* Date label, anchored so its rightmost
+                            character (the day-number) lands exactly
+                            at the tick's bottom. The rest of the
+                            text extends down-LEFT from there. */}
+                        <span
+                          className="absolute origin-top-right -rotate-45 text-[10px] text-subtle tabular-nums whitespace-nowrap"
+                          style={{ top: "20px", right: "100%" }}
+                        >
                           {d.label}
                         </span>
                       </>
