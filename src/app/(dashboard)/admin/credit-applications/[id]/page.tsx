@@ -2,13 +2,15 @@ import { requireRole } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft, FileText, Mail, Phone, MapPin, Building2, User as UserIcon, Coins, Calendar } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Building2, User as UserIcon, Coins, Calendar } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { CreditApplicationReview } from "@/components/admin/CreditApplicationReview";
-
-interface DocEntry { key: string; name: string; size: number; contentType: string }
+import {
+  SupportingDocuments,
+  type DocEntry,
+} from "@/components/admin/SupportingDocuments";
 
 export default async function AdminCreditApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requireRole("admin").catch(() => null);
@@ -66,33 +68,10 @@ export default async function AdminCreditApplicationDetailPage({ params }: { par
         <p className="text-sm text-fg leading-relaxed whitespace-pre-line">{app.useCase}</p>
       </Card>
 
-      {/* Documents */}
-      <Card className="p-5">
-        <h3 className="text-xs font-semibold text-subtle uppercase tracking-wider mb-3">
-          Supporting documents · {docs.length}
-        </h3>
-        {docs.length === 0 ? (
-          <p className="text-sm text-subtle">No documents.</p>
-        ) : (
-          <ul className="space-y-2">
-            {docs.map((d) => (
-              <li key={d.key} className="flex items-center gap-3 bg-elevated rounded-lg px-3 py-2 text-sm">
-                <FileText size={16} className="text-muted shrink-0" />
-                <span className="flex-1 truncate text-fg">{d.name}</span>
-                <span className="text-xs text-subtle">{(d.size / 1024).toFixed(0)} KB</span>
-                <a
-                  href={`/api/admin/credit-applications/${app.id}/document?key=${encodeURIComponent(d.key)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-medium text-brand-600 hover:text-brand-700"
-                >
-                  Open →
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      {/* Documents — collapsible card with inline letter-sized
+          preview when expanded. The whole card is the toggle target
+          so the reviewer doesn't hunt for a chevron. */}
+      <SupportingDocuments applicationId={app.id} docs={docs} />
 
       {/* Review action OR past decision */}
       {app.status === "pending" && (
