@@ -112,10 +112,24 @@ function EditProfileModal({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  // Logo upload state.
+  // ─── Logo state ─────────────────────────────────────────────
+  // Three flows live on the same field, in priority order from the
+  // operator's perspective:
+  //   1. Search the company website for legit candidates (primary)
+  //   2. Pick a different candidate from the search results / search
+  //      again if none feel right
+  //   3. Upload a file (last resort)
+  // We never auto-pick a result from search — the operator has to
+  // explicitly click a candidate to set it as the current logo. That
+  // keeps "what you see" === "what gets saved".
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [logoSearching, setLogoSearching] = useState(false);
+  const [logoCandidates, setLogoCandidates] = useState<
+    { url: string; source: string; score: number }[]
+  >([]);
+  const [logoSearchMsg, setLogoSearchMsg] = useState<string | null>(null);
 
   // Cache-bust the preview so the new image renders immediately after
   // upload (the new URL is short-lived in the browser cache otherwise).
@@ -151,6 +165,66 @@ function EditProfileModal({
     } finally {
       setLogoUploading(false);
     }
+  }
+
+  async function searchLogos() {
+    if (!values.companyWebsite?.trim()) {
+      setLogoSearchMsg("Add your company website first.");
+      return;
+    }
+    setLogoSearching(true);
+    setLogoSearchMsg(null);
+    setLogoError(null);
+    try {
+      const res = await fetch("/api/employer/profile/logo-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ website: values.companyWebsite }),
+      });
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        best?: string | null;
+        candidates?: { url: string; source: string; score: number }[];
+        favicon?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        setLogoSearchMsg(j.error ?? "Search failed.");
+        return;
+      }
+      const list = j.candidates ?? [];
+      setLogoCandidates(list);
+      if (list.length === 0) {
+        setLogoSearchMsg(
+          "Couldn't find a logo on the homepage. Try again, paste a URL into the override field below, or upload a file.",
+        );
+      } else {
+        setLogoSearchMsg(null);
+        // Pre-pick the best one (top score) but only if the user
+        // doesn't already have a logo set — never silently overwrite
+        // a result they previously chose.
+        if (!values.companyLogo && j.best) {
+          setValues((cur) => ({ ...cur, companyLogo: j.best ?? cur.companyLogo }));
+          setLogoBust(Date.now());
+          setSaved(false);
+        }
+      }
+    } finally {
+      setLogoSearching(false);
+    }
+  }
+
+  function pickCandidate(url: string) {
+    setValues((cur) => ({ ...cur, companyLogo: url }));
+    setLogoBust(Date.now());
+    setSaved(false);
+    setLogoError(null);
+  }
+
+  function clearLogo() {
+    setValues((cur) => ({ ...cur, companyLogo: "" }));
+    setLogoError(null);
+    setSaved(false);
   }
 
   // ─── Escape / click-outside to close ────────────────────────
@@ -446,11 +520,19 @@ function EditProfileModal({
                   />
                 </Field>
                 <Field label="Logo">
-                  {/* Big-preview row — left tile is the live preview
-                      (with broken-image fallback to a glyph), right
-                      side has upload button + URL input stacked. */}
+                  {/* Flow:
+                      1. Current logo preview (with × to clear)
+                      2. Find / re-search candidates from the website
+                      3. Candidate grid — operator picks one
+                      4. Upload file (last resort, behind a disclosure)
+                      The order matters: searching is first because the
+                      AI is much better at finding a real logo than the
+                      operator is at finding a file. Upload is the
+                      escape hatch when search comes up dry. */}
+
+                  {/* ── 1. Current logo preview ─────────────────── */}
                   <div className="flex items-start gap-3">
-                    <div className="relative w-20 h-20 rounded-xl bg-elevated border border-line flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="relative w-20 h-20 rounded-xl bg-elevated border border-line flex items-center justify-center overflow-hidden shrink-0 group/preview">
                       {values.companyLogo ? (
                         <>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -461,8 +543,7 @@ function EditProfileModal({
                             className="w-full h-full object-contain p-2"
                             onError={(e) => {
                               // Hide the broken image so the glyph
-                              // fallback (rendered absolutely below)
-                              // takes over.
+                              // fallback below takes over.
                               (e.currentTarget as HTMLImageElement).style.display = "none";
                             }}
                           />
@@ -470,13 +551,139 @@ function EditProfileModal({
                             size={24}
                             className="absolute inset-0 m-auto text-subtle pointer-events-none -z-0"
                           />
+                          {/* Remove (X) — top-right of the tile. Only
+                              shows on hover so it doesn't compete with
+                              the preview visually at rest. */}
+                          <button
+                            type="button"
+                            onClick={clearLogo}
+                            aria-label="Remove current logo"
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white shadow-md flex items-center justify-center opacity-0 group-hover/preview:opacity-100 focus:opacity-100 transition-opacity"
+                          >
+                            <X size={11} />
+                          </button>
                         </>
                       ) : (
                         <ImageIcon size={24} className="text-subtle" />
                       )}
                     </div>
-                    <div className="flex-1 min-w-0 space-y-2">
-                      {/* Upload control */}
+
+                    {/* ── 2. Primary action: search the website ──── */}
+                    <div className="flex-1 min-w-0">
+                      <button
+                        type="button"
+                        onClick={searchLogos}
+                        disabled={logoSearching || !values.companyWebsite?.trim()}
+                        className="w-full inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm shadow-brand-600/25 transition-colors"
+                      >
+                        {logoSearching
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <Sparkles size={12} />}
+                        {logoSearching
+                          ? "Searching…"
+                          : logoCandidates.length > 0
+                            ? "Search again"
+                            : values.companyLogo
+                              ? "Find a different logo"
+                              : "Find logo from website"}
+                      </button>
+                      <p className="text-[10px] text-subtle mt-1.5 leading-snug">
+                        Scans your homepage for{" "}
+                        <span className="font-semibold text-fg">og:logo</span>, the Apple
+                        touch icon, schema.org metadata, header images
+                        tagged as logos, etc. Pick from the results
+                        below — or upload a file at the bottom.
+                      </p>
+                    </div>
+                  </div>
+
+                  {logoSearchMsg && (
+                    <p
+                      className={
+                        "mt-2 text-[11px] inline-flex items-start gap-1.5 " +
+                        (logoSearchMsg.toLowerCase().includes("couldn't") ||
+                         logoSearchMsg.toLowerCase().includes("fail") ||
+                         logoSearchMsg.toLowerCase().includes("first")
+                          ? "text-rose-700"
+                          : "text-emerald-700")
+                      }
+                    >
+                      <AlertCircle size={11} className="mt-px shrink-0" />
+                      <span>{logoSearchMsg}</span>
+                    </p>
+                  )}
+
+                  {/* ── 3. Candidate grid ────────────────────────── */}
+                  {logoCandidates.length > 0 && (
+                    <div className="mt-3 rounded-xl border border-line bg-elevated/40 p-3">
+                      <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-2 inline-flex items-center gap-1.5">
+                        <Sparkles size={10} className="text-brand-600" />
+                        AI found {logoCandidates.length} candidate{logoCandidates.length === 1 ? "" : "s"} · click to pick
+                      </p>
+                      <ul className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {logoCandidates.map((c, i) => {
+                          const isPicked = values.companyLogo === c.url;
+                          const isBest = i === 0;
+                          return (
+                            <li key={c.url}>
+                              <button
+                                type="button"
+                                onClick={() => pickCandidate(c.url)}
+                                title={`${c.source} · score ${Math.round(c.score)}`}
+                                className={
+                                  "group/cand relative block w-full aspect-square rounded-lg bg-card-solid border-2 overflow-hidden transition-all " +
+                                  (isPicked
+                                    ? "border-brand-600 ring-2 ring-brand-500/30"
+                                    : "border-line hover:border-brand-300")
+                                }
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={c.url}
+                                  alt=""
+                                  className="absolute inset-0 w-full h-full object-contain p-1.5"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                                  }}
+                                />
+                                {/* Best-pick badge */}
+                                {isBest && (
+                                  <span className="absolute top-0.5 left-0.5 text-[8px] font-bold uppercase tracking-wider px-1 py-px rounded bg-brand-600 text-white shadow-sm">
+                                    Best
+                                  </span>
+                                )}
+                                {/* Picked check */}
+                                {isPicked && (
+                                  <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-sm">
+                                    <CheckCircle2 size={10} />
+                                  </span>
+                                )}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <p className="text-[10px] text-subtle mt-2 leading-snug">
+                        Not happy with these? Click <em>Search again</em> above, paste a URL into the override field below, or upload a file.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* ── 4. Last-resort: URL paste + file upload ─── */}
+                  <details className="mt-3 rounded-lg border border-line bg-card-solid">
+                    <summary className="cursor-pointer list-none px-3 py-2 text-[11px] font-semibold text-muted hover:text-fg inline-flex items-center gap-1.5 select-none w-full">
+                      <Upload size={11} />
+                      Manual override (paste URL or upload file)
+                      <ChevronDown size={11} className="ml-auto transition-transform [details[open]_&]:rotate-180" />
+                    </summary>
+                    <div className="px-3 pb-3 space-y-2 border-t border-line pt-3">
+                      <input
+                        type="url"
+                        value={values.companyLogo ?? ""}
+                        onChange={(e) => set("companyLogo", e.target.value)}
+                        placeholder="https://your-site.com/logo.svg"
+                        className={`${inputCls} text-xs py-1.5`}
+                      />
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -485,8 +692,6 @@ function EditProfileModal({
                         onChange={(e) => {
                           const f = e.currentTarget.files?.[0];
                           if (f) uploadLogo(f);
-                          // Clear the input so re-uploading the same
-                          // file twice in a row still fires onChange.
                           e.currentTarget.value = "";
                         }}
                       />
@@ -494,28 +699,19 @@ function EditProfileModal({
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={logoUploading}
-                        className="w-full inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm shadow-brand-600/25 transition-colors"
+                        className="w-full inline-flex items-center justify-center gap-1.5 bg-card-solid hover:bg-elevated border border-line text-fg text-xs font-semibold px-3 py-2 rounded-lg transition-colors disabled:opacity-60"
                       >
-                        {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-                        {logoUploading ? "Uploading…" : "Upload logo file"}
+                        {logoUploading
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <Upload size={12} />}
+                        {logoUploading ? "Uploading…" : "Upload PNG / JPG / SVG (up to 2 MB)"}
                       </button>
-                      {/* URL override — small under the button */}
-                      <input
-                        type="url"
-                        value={values.companyLogo ?? ""}
-                        onChange={(e) => set("companyLogo", e.target.value)}
-                        placeholder="…or paste an image URL"
-                        className={`${inputCls} text-xs py-1.5`}
-                      />
                     </div>
-                  </div>
-                  {logoError ? (
+                  </details>
+
+                  {logoError && (
                     <p className="mt-2 text-[11px] text-rose-700 inline-flex items-center gap-1.5">
                       <AlertCircle size={11} /> {logoError}
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-subtle mt-2 leading-snug">
-                      PNG / JPG / SVG / WebP / GIF up to 2 MB. Auto-fill grabs your favicon automatically; upload or paste a URL to override.
                     </p>
                   )}
                 </Field>
