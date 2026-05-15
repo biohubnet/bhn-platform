@@ -489,6 +489,7 @@ export async function AdminDashboard({
             <p className="text-sm font-semibold text-fg">Superadmin shortcuts</p>
             <p className="text-xs text-muted mt-0.5 leading-relaxed">
               <Link href="/admin/settings" className="text-brand-700 hover:underline">Platform settings</Link> ·
+              {" "}<Link href="/admin/matching-config" className="text-brand-700 hover:underline">AI matching engine</Link> ·
               {" "}<Link href="/admin/lti" className="text-brand-700 hover:underline">LTI</Link> ·
               {" "}<Link href="/admin/course-filters" className="text-brand-700 hover:underline">Course filter options</Link> ·
               {" "}<Link href="/admin/security" className="text-brand-700 hover:underline">Security policies</Link> ·

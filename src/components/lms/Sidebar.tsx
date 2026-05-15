@@ -54,6 +54,7 @@ import {
   Ghost,
   MessageSquare,
   Gauge,
+  Sliders,
 } from "lucide-react";
 
 interface NavItem {
@@ -263,6 +264,8 @@ const adminPlatformItems: NavItem[] = [
     description: "Every editable page string in one place — change headlines, subtitles, hero copy. Live pages also have inline pencils." },
   { label: "Settings",            href: "/admin/settings",            icon: Settings,    minRole: "superadmin",
     description: "Platform-wide settings only superadmins can change." },
+  { label: "AI matching engine",  href: "/admin/matching-config",     icon: Sliders,     minRole: "admin",
+    description: "Tune the subscore weights, band thresholds, and cosine cutoffs that drive the fit scorer. Includes a live tester to preview impact on a real (trainee × posting) pair before saving." },
 ];
 
 const ROLE_RANK: Record<string, number> = {

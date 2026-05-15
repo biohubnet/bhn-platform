@@ -85,26 +85,23 @@ export interface FitResult {
 }
 
 // ── Constants ────────────────────────────────────────────────────
+//
+// These mirror the DEFAULT_MATCHING_CONFIG in src/lib/matching/config.ts
+// and are referenced only as documentation + as a "last resort" when
+// the scorer is called without an explicit config and config.ts is
+// unavailable. The actual runtime values flow through MatchingConfig.
 
-const W_DIRECT = 50;
-const W_SEMANTIC = 30;
-const W_PATHWAY = 20;
-
-/** Skills below this profile-completeness count → confidence-cap kicks in. */
-const PROFILE_CONFIDENCE_THRESHOLD = 5;
-
-/** Cosine similarity threshold for a "semantic bridge" to count. */
-const SEMANTIC_BRIDGE_MIN = 0.55;
-
-/** Cosine similarity threshold for a completed pathway to count
- *  toward pathwayAlignment. */
-const PATHWAY_ALIGN_MIN = 0.55;
+import {
+  type MatchingConfig,
+  DEFAULT_MATCHING_CONFIG,
+  getMatchingConfig,
+} from "@/lib/matching/config";
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-function band(score: number): FitResult["band"] {
-  if (score >= 70) return "high";
-  if (score >= 40) return "medium";
+function bandFor(score: number, cfg: MatchingConfig): FitResult["band"] {
+  if (score >= cfg.bands.high) return "high";
+  if (score >= cfg.bands.medium) return "medium";
   return "low";
 }
 
@@ -186,6 +183,7 @@ async function nearestUserSkillPerPostingSkill(
 async function completedPathwayAlignment(
   userId: string,
   postingId: string,
+  pathwayAlignMin: number,
 ): Promise<Array<{ pathwayId: string; title: string; sim: number }>> {
   const rows = await prisma.$queryRaw<
     Array<{ pathway_id: string; title: string; sim: number }>
@@ -209,7 +207,7 @@ async function completedPathwayAlignment(
            1 - (dp."embedding" <=> pc.centroid) AS sim
       FROM done_pathways dp, posting_centroid pc
      WHERE pc.centroid IS NOT NULL
-       AND 1 - (dp."embedding" <=> pc.centroid) >= ${PATHWAY_ALIGN_MIN}
+       AND 1 - (dp."embedding" <=> pc.centroid) >= ${pathwayAlignMin}
      ORDER BY sim DESC
      LIMIT 5
   `);
@@ -234,7 +232,22 @@ async function completedPathwayAlignment(
 export async function scoreFitForTrainee(
   userId: string,
   postingId: string,
+  /** Optional override — supply an in-memory config for the admin
+   *  /admin/matching-config tester (preview impact without saving).
+   *  When omitted, reads the persisted config; on any failure, falls
+   *  back to DEFAULT_MATCHING_CONFIG. */
+  overrideCfg?: MatchingConfig,
 ): Promise<FitResult> {
+  const cfg = overrideCfg ?? (await getMatchingConfig().catch(() => DEFAULT_MATCHING_CONFIG));
+  const W_DIRECT = cfg.weights.direct;
+  const W_SEMANTIC = cfg.weights.semantic;
+  const W_PATHWAY = cfg.weights.pathway;
+  const PROFILE_CONFIDENCE_THRESHOLD = cfg.thresholds.profileCompleteness;
+  const SEMANTIC_BRIDGE_MIN = cfg.thresholds.semanticBridgeMin;
+  const REQUIRED_BONUS = cfg.thresholds.requiredSkillBonus;
+  const PER_PATHWAY_BOOST = cfg.thresholds.perPathwayBoost;
+  const MIN_POSTING_SKILLS = cfg.thresholds.minPostingSkillsForFullConfidence;
+
   const [userSkills, postingSkills, completedCount] = await Promise.all([
     prisma.userSkill.findMany({
       where: { userId },
@@ -301,7 +314,7 @@ export async function scoreFitForTrainee(
   let matchSum = 0;
   let weightSum = 0;
   for (const p of postingSkills) {
-    const w = p.required ? p.weight + 0.5 : p.weight;
+    const w = p.required ? p.weight + REQUIRED_BONUS : p.weight;
     weightSum += w;
     const lvl = userLevel.get(p.skillId);
     if (lvl !== undefined) {
@@ -352,7 +365,7 @@ export async function scoreFitForTrainee(
   let pathwayScore = 0;
   let pathwaysCounting: FitResult["pathwaysCounting"] = [];
   if (completedCount > 0) {
-    const rows = await completedPathwayAlignment(userId, postingId);
+    const rows = await completedPathwayAlignment(userId, postingId, cfg.thresholds.pathwayAlignMin);
     pathwaysCounting = rows.map((r) => ({
       id: r.pathwayId,
       title: r.title,
@@ -360,8 +373,7 @@ export async function scoreFitForTrainee(
     }));
     // Each strongly-aligned completed pathway is worth up to 10 pts,
     // capped at the W_PATHWAY total.
-    const perPathway = 10;
-    pathwayScore = Math.min(W_PATHWAY, pathwaysCounting.length * perPathway);
+    pathwayScore = Math.min(W_PATHWAY, pathwaysCounting.length * PER_PATHWAY_BOOST);
   } else {
     caveats.push(
       "You haven't completed any pathways yet — pathway completion contributes up to 20% of the fit score.",
@@ -378,7 +390,7 @@ export async function scoreFitForTrainee(
     confidence = Math.min(0.5, userSkills.length / PROFILE_CONFIDENCE_THRESHOLD);
   }
   // Soft penalty for postings tagged with very few skills (less signal).
-  if (postingSkills.length < 3) {
+  if (postingSkills.length < MIN_POSTING_SKILLS) {
     confidence = Math.min(confidence, 0.6);
     caveats.push(
       `This posting only lists ${postingSkills.length} required skill${postingSkills.length === 1 ? "" : "s"} — ` +
@@ -388,7 +400,7 @@ export async function scoreFitForTrainee(
 
   return {
     score,
-    band: band(score),
+    band: bandFor(score, cfg),
     confidence,
     subscores: {
       directOverlap: { score: directOverlapScore, max: W_DIRECT },
@@ -441,6 +453,9 @@ export async function rankPostingsForTrainee(
     take: 200,
   });
 
+  // Fetch the config once outside the loop — scoreFitForTrainee would
+  // otherwise hit the PlatformSetting table N times for the same row.
+  const cfg = await getMatchingConfig().catch(() => DEFAULT_MATCHING_CONFIG);
   // Score serially — Phase 1 volumes are sub-200 postings × sub-50
   // skills. If volume grows, batch into a single SQL with window
   // functions (the directOverlap is straight SQL).
@@ -451,7 +466,7 @@ export async function rankPostingsForTrainee(
       companyName: p.companyName,
       location: p.location,
       deadline: p.deadline,
-      fit: await scoreFitForTrainee(userId, p.id),
+      fit: await scoreFitForTrainee(userId, p.id, cfg),
     })),
   );
 
@@ -468,10 +483,11 @@ export async function rankApplicantsForPosting(
   postingId: string,
   userIds: string[],
 ): Promise<Array<{ userId: string; fit: FitResult }>> {
+  const cfg = await getMatchingConfig().catch(() => DEFAULT_MATCHING_CONFIG);
   const scored = await Promise.all(
     userIds.map(async (userId) => ({
       userId,
-      fit: await scoreFitForTrainee(userId, postingId),
+      fit: await scoreFitForTrainee(userId, postingId, cfg),
     })),
   );
   return scored.sort((a, b) => b.fit.score - a.fit.score);

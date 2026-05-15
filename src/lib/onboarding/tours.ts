@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.14e";
+export const TOUR_VERSION = "2026.05.14f";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -632,6 +632,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.13d",
     cta: { label: "Open insights", href: "/admin/insights" },
+  },
+  {
+    id: "matching-config-panel",
+    title: "Tune the AI matching engine from /admin/matching-config",
+    body: "The fit scorer's constants are now editable from a UI — no deploy needed. Open Administration → AI matching engine (or click the link in the Superadmin shortcuts at the bottom of /admin). Three sections: subscore weights (sliders, must sum to 100), score bands (where Weak / Possible / Strong cuts off), and 6 cosine/threshold knobs. The live tester at the bottom lets you pick a real trainee × posting and re-score them with your UNSAVED form values, so you can preview the impact of a weight change before committing. Every save audits.",
+    path: "/admin/matching-config",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.14f",
+    cta: { label: "Open matching config", href: "/admin/matching-config" },
   },
   {
     id: "admin-dashboard-redesign",
