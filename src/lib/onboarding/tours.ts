@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.14f";
+export const TOUR_VERSION = "2026.05.15a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -269,6 +269,15 @@ export const TOUR_STEPS: TourStep[] = [
     path: "/courses",
     placement: "center",
     since: "2026.05.07h",
+    cta: { label: "Open the catalog", href: "/courses" },
+  },
+  {
+    id: "catalog-filters-compact",
+    title: "Catalog filter strip is now compact + dark",
+    body: "We rebuilt the catalog filter as a tight dark control strip — same chips, less real estate. The 'Special programs & workshops (instructor-led)' toggle is now featured in the header as a glowing amber pill, since that's the one most people are reaching for.",
+    path: "/courses",
+    placement: "center",
+    since: "2026.05.15a",
     cta: { label: "Open the catalog", href: "/courses" },
   },
   {
