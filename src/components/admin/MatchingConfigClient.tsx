@@ -22,6 +22,7 @@ import {
   Sliders, Target, FlaskConical,
 } from "lucide-react";
 import type { MatchingConfig } from "@/lib/matching/config";
+import { MatchingPipelineAnimation } from "@/components/admin/MatchingPipelineAnimation";
 
 interface Option { id: string; label: string }
 
@@ -145,6 +146,12 @@ export function MatchingConfigClient({ initial, defaults, users, postings }: Pro
 
   return (
     <div className="space-y-6">
+      {/* Hi-tech system diagram. Reads the LIVE form config so pipe
+          thickness + pulse density update in real time as the user
+          drags a weight slider. Pure visual surface — doesn't gate
+          form submission. */}
+      <MatchingPipelineAnimation config={cfg} />
+
       {/* Flash / error bar */}
       {(flash || error) && (
         <div
