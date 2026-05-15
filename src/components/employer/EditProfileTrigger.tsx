@@ -6,6 +6,13 @@ import {
   Upload, Image as ImageIcon,
 } from "lucide-react";
 import { normalizeLogoShape, logoShapeClasses } from "@/lib/employer/logo-shape";
+import {
+  parseLogoTransform,
+  isIdentityTransform,
+  logoTransformCss,
+  type LogoTransform,
+} from "@/lib/employer/logo-transform";
+import { LogoCropper } from "@/components/employer/LogoCropper";
 
 interface Profile {
   employerCompany: string | null;
@@ -15,6 +22,9 @@ interface Profile {
    *  "" | "natural" | "circle" | "rounded" | "square". null === ""
    *  === natural fallback. */
   companyLogoShape: string | null;
+  /** Pan + zoom transform applied INSIDE the shape mask. JSON
+   *  `{ offsetX, offsetY, scale }`. null = default identity. */
+  companyLogoTransform: unknown;
   companyIndustry: string | null;
   companySize: string | null;
   companyLocation: string | null;
@@ -103,15 +113,16 @@ function EditProfileModal({
 
   // ─── Form state ─────────────────────────────────────────────
   const [values, setValues] = useState<Profile>({
-    employerCompany:    initial.employerCompany    ?? "",
-    companyWebsite:     initial.companyWebsite     ?? "",
-    companyLogo:        initial.companyLogo        ?? "",
-    companyLogoShape:   initial.companyLogoShape   ?? "",
-    companyIndustry:    initial.companyIndustry    ?? "",
-    companySize:        initial.companySize        ?? "",
-    companyLocation:    initial.companyLocation    ?? "",
-    companyDescription: initial.companyDescription ?? "",
-    companyFounded:     initial.companyFounded     ?? "",
+    employerCompany:      initial.employerCompany    ?? "",
+    companyWebsite:       initial.companyWebsite     ?? "",
+    companyLogo:          initial.companyLogo        ?? "",
+    companyLogoShape:     initial.companyLogoShape   ?? "",
+    companyLogoTransform: initial.companyLogoTransform ?? null,
+    companyIndustry:      initial.companyIndustry    ?? "",
+    companySize:          initial.companySize        ?? "",
+    companyLocation:      initial.companyLocation    ?? "",
+    companyDescription:   initial.companyDescription ?? "",
+    companyFounded:       initial.companyFounded     ?? "",
   });
   function set<K extends keyof Profile>(k: K, v: Profile[K]) {
     setValues((cur) => ({ ...cur, [k]: v }));
@@ -178,8 +189,13 @@ function EditProfileModal({
         return;
       }
       // The endpoint persisted companyLogo already; reflect that in
-      // local form state and cache-bust the preview.
-      setValues((cur) => ({ ...cur, companyLogo: j.url ?? cur.companyLogo }));
+      // local form state and cache-bust the preview. Reset the
+      // crop transform because a fresh upload starts from scratch.
+      setValues((cur) => ({
+        ...cur,
+        companyLogo: j.url ?? cur.companyLogo,
+        companyLogoTransform: null,
+      }));
       setLogoBust(Date.now());
       setSaved(false);
     } finally {
@@ -242,14 +258,25 @@ function EditProfileModal({
   }
 
   function pickCandidate(url: string) {
-    setValues((cur) => ({ ...cur, companyLogo: url }));
+    // Different image → existing crop transform (tuned for the old
+    // image's bbox) no longer makes sense. Reset to identity; the
+    // operator can re-run Auto-fit on the new logo.
+    setValues((cur) => ({
+      ...cur,
+      companyLogo: url,
+      companyLogoTransform: null,
+    }));
     setLogoBust(Date.now());
     setSaved(false);
     setLogoError(null);
   }
 
   function clearLogo() {
-    setValues((cur) => ({ ...cur, companyLogo: "" }));
+    setValues((cur) => ({
+      ...cur,
+      companyLogo: "",
+      companyLogoTransform: null,
+    }));
     setLogoError(null);
     setSaved(false);
   }
@@ -594,6 +621,10 @@ function EditProfileModal({
                     {(() => {
                       const shape = normalizeLogoShape(values.companyLogoShape);
                       const { containerMask, imageFit } = logoShapeClasses(shape);
+                      const xform = parseLogoTransform(values.companyLogoTransform);
+                      const xformStyle = isIdentityTransform(xform)
+                        ? undefined
+                        : { transform: logoTransformCss(xform), transformOrigin: "center center" as const };
                       return (
                         <div
                           className={
@@ -611,6 +642,7 @@ function EditProfileModal({
                                 className={
                                   "w-full h-full p-1.5 " + imageFit
                                 }
+                                style={xformStyle}
                                 onError={(e) => {
                                   // Hide the broken image so the glyph
                                   // fallback below takes over.
@@ -804,6 +836,28 @@ function EditProfileModal({
                         keeps the original image contained in a circle disc;
                         the other three crop it.
                       </p>
+                    </div>
+                  )}
+
+                  {/* ── Cropper: pan / zoom / auto-fit ────────────
+                      Lives between the shape picker and the manual-
+                      override disclosure. Only renders when a logo
+                      is set — the cropper has nothing to crop
+                      otherwise. */}
+                  {values.companyLogo && (
+                    <div className="mt-3">
+                      <LogoCropper
+                        src={values.companyLogo}
+                        shape={normalizeLogoShape(values.companyLogoShape)}
+                        value={parseLogoTransform(values.companyLogoTransform)}
+                        onChange={(next) => {
+                          setValues((cur) => ({
+                            ...cur,
+                            companyLogoTransform: next,
+                          }));
+                          setSaved(false);
+                        }}
+                      />
                     </div>
                   )}
 

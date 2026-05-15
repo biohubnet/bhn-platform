@@ -50,6 +50,12 @@ import { prisma } from "@/lib/prisma";
 import { EditProfileTrigger } from "@/components/employer/EditProfileTrigger";
 import { SetPasswordBanner } from "@/components/employer/SetPasswordBanner";
 import { normalizeLogoShape, logoShapeClasses } from "@/lib/employer/logo-shape";
+import {
+  parseLogoTransform,
+  isIdentityTransform,
+  logoTransformCss,
+  type LogoTransform,
+} from "@/lib/employer/logo-transform";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +90,7 @@ export default async function EmployerHomePage() {
           companyWebsite: true,
           companyLogo: true,
           companyLogoShape: true,
+          companyLogoTransform: true,
           companyIndustry: true,
           companySize: true,
           companyLocation: true,
@@ -210,6 +217,7 @@ export default async function EmployerHomePage() {
     companyWebsite: user?.companyWebsite ?? null,
     companyLogo: user?.companyLogo ?? null,
     companyLogoShape: user?.companyLogoShape ?? null,
+    companyLogoTransform: user?.companyLogoTransform ?? null,
     companyIndustry: user?.companyIndustry ?? null,
     companySize: user?.companySize ?? null,
     companyLocation: user?.companyLocation ?? null,
@@ -255,6 +263,7 @@ export default async function EmployerHomePage() {
                 src={user?.companyLogo}
                 alt={user?.employerCompany ?? ""}
                 shape={normalizeLogoShape(user?.companyLogoShape)}
+                transform={parseLogoTransform(user?.companyLogoTransform)}
               />
 
               <div className="min-w-0">
@@ -613,7 +622,7 @@ function CoverBanner() {
 }
 
 function LogoDisc({
-  src, alt, shape,
+  src, alt, shape, transform,
 }: {
   src?: string | null;
   alt: string;
@@ -624,8 +633,15 @@ function LogoDisc({
    *  the inner mask so the disc always reads as the "centre of
    *  gravity" of the identity row. */
   shape: "natural" | "circle" | "rounded" | "square";
+  /** Pan / zoom applied INSIDE the mask. Mirrors what the
+   *  operator dialed in via the cropper in the Edit Profile
+   *  modal. Identity-default transform short-circuits to no style. */
+  transform: LogoTransform;
 }) {
   const { containerMask, imageFit } = logoShapeClasses(shape);
+  const xformStyle = isIdentityTransform(transform)
+    ? undefined
+    : { transform: logoTransformCss(transform), transformOrigin: "center center" as const };
   // NO event handlers here — this is a server-component-rendered
   // chunk and onError={() => ...} on the <img> throws at render
   // ("Event handlers cannot be passed to Client Component props").
@@ -666,6 +682,7 @@ function LogoDisc({
                 // Cropping shapes: fill the wrapper edge-to-edge.
                 : "w-full h-full")
             }
+            style={xformStyle}
           />
         )}
       </div>

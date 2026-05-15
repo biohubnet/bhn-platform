@@ -38,6 +38,18 @@ model User {
   ///   • "square"    — square crop, no rounding
   /// Settable from /employer (Edit Profile modal → Logo shape).
   companyLogoShape       String?
+  /// Pan + zoom transform applied to the company logo inside its
+  /// shape mask. Stored as JSON `{ offsetX: number, offsetY: number,
+  /// scale: number }` where offsets are pixels relative to the
+  /// preview-size container (display-resolution agnostic — the
+  /// renderer normalises). null === no transform === default
+  /// `(0, 0, 1)`.
+  ///
+  /// Settable from /employer's Edit Profile modal → Crop & centre.
+  /// Auto-fit computes the transform from the image's non-
+  /// transparent bounding box; the manual cropper lets the
+  /// operator dial it in by hand if Auto-fit gets it wrong.
+  companyLogoTransform   Json?
   companyIndustry        String?
   companySize            String? // "1-10" | "11-50" | etc.
   companyLocation        String?
