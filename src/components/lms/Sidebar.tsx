@@ -55,6 +55,7 @@ import {
   MessageSquare,
   Gauge,
   Sliders,
+  Eye,
 } from "lucide-react";
 
 interface NavItem {
@@ -330,7 +331,7 @@ interface ProgramHint {
  *  uses a fixed Tailwind palette (NOT theme-driven brand vars) so the
  *  ENGAGE / EXPERIENCE / ADMINISTRATION blocks read with the same
  *  identity colour on every theme. */
-type SectionTone = "neutral" | "engage" | "experience" | "electric";
+type SectionTone = "neutral" | "engage" | "experience" | "electric" | "hr-preview";
 
 interface ToneStyles {
   /** Outer container: border colour + faint wash + soft outer ring. */
@@ -375,6 +376,15 @@ const TONE_STYLES: Record<SectionTone, ToneStyles> = {
     chip:      "text-sky-900 bg-sky-200 ring-1 ring-inset ring-sky-300 shadow-sm",
     hover:     "focus:bg-sky-300 group-hover/section:bg-sky-300 transition-colors",
   },
+  "hr-preview": {
+    // Violet — superadmin "preview the HR seat" peek. Distinctively
+    // brighter than the surrounding sections so the operator can spot
+    // it instantly even when scanning a packed sidebar. Pairs with
+    // the violet-tinted explainer + eye glyph the preview row uses.
+    container: "border-violet-300 bg-violet-100/55 ring-1 ring-inset ring-violet-200/70 shadow-[0_2px_12px_-6px_rgba(124,58,237,0.35)]",
+    chip:      "text-violet-900 bg-violet-200 ring-1 ring-inset ring-violet-400 shadow-sm",
+    hover:     "focus:bg-violet-300 group-hover/section:bg-violet-300 transition-colors",
+  },
 };
 
 function SectionGroup({
@@ -385,16 +395,17 @@ function SectionGroup({
   programs?: ProgramHint[];
   children: React.ReactNode;
   /** Visual emphasis for the section. Each tone uses a fixed Tailwind
-   * palette (NOT theme-driven brand vars) so the three sections stay
+   * palette (NOT theme-driven brand vars) so the sections stay
    * visually distinct across every theme — trainees navigating between
    * themes shouldn't lose their muscle memory of which color block
    * means which group of features.
    *   • engage     — emerald (learn / practise / earn)
    *   • experience — amber  (real-world / employer-facing)
    *   • electric   — sky    (administration / privileged territory)
+   *   • hr-preview — violet (superadmin peek into the HR seat)
    *   • neutral    — line color, no tint (default fallback)
    */
-  tone?: "neutral" | "engage" | "experience" | "electric";
+  tone?: SectionTone;
 }) {
   const hasTooltip = !!description || (programs && programs.length > 0);
   const toneStyles = TONE_STYLES[tone];
@@ -934,6 +945,7 @@ export function Sidebar({
           <SectionGroup
             title="EMPLOYER PORTAL · preview"
             description="What an HR account sees in their menu. Click any link to preview the route; use the xx keyboard shortcut to view-as HR with the act-as cookie set."
+            tone="hr-preview"
           >
             {/* Lifted out of the Admin section so the HR surface
                 reads as a peer of ENGAGE / EXPERIENCE rather than
@@ -941,9 +953,19 @@ export function Sidebar({
                 (showHrViewPreview) AND not currently acting as
                 employer — the top-of-nav EMPLOYER PORTAL block
                 already covers that case and we don't want to
-                render the same six links twice. */}
-            <p className="px-3 -mt-1 pb-1 text-[10px] text-subtle leading-snug italic">
-              Preview only. Use <code className="font-mono text-fg bg-elevated px-1 rounded">xx</code> to view-as HR.
+                render the same six links twice.
+
+                Visual treatment: violet "hr-preview" tone — distinctly
+                brighter than the surrounding sections so a superadmin
+                spots it instantly when scanning the sidebar. Pairs
+                with the Eye glyph + violet-tinted explainer below. */}
+            <p className="px-3 -mt-0.5 pb-1.5 text-[11px] text-violet-800 leading-snug inline-flex items-start gap-1.5">
+              <Eye size={11} className="text-violet-700 mt-0.5 shrink-0" />
+              <span>
+                Preview only · use{" "}
+                <code className="font-mono text-violet-900 bg-violet-50 ring-1 ring-inset ring-violet-200 px-1 rounded">xx</code>{" "}
+                to view-as HR
+              </span>
             </p>
             {employerItems.map((item) => (
               <NavLink
