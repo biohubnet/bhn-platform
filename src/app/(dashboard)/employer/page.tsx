@@ -178,9 +178,11 @@ export default async function EmployerHomePage() {
   // the application_status row survived) doesn't throw on the
   // `row.posting.id` access. Prisma's generated types claim the
   // relations are non-null since the FK columns are required, but
-  // legacy data sometimes disagrees.
+  // legacy data sometimes disagrees. Same for stageEnteredAt —
+  // the column is non-null with a default but old rows may pre-date
+  // the migration that backfilled it.
   const actionQueue = queueRows.flatMap((row) => {
-    if (!row.posting || !row.applicant) return [];
+    if (!row.posting || !row.applicant || !row.stageEnteredAt) return [];
     const days = Math.floor((Date.now() - row.stageEnteredAt.getTime()) / 86_400_000);
     const isOffer = row.status === "offer";
     const isStale = ACTIVE_STAGES.includes(row.status as (typeof ACTIVE_STAGES)[number])
@@ -604,6 +606,13 @@ function CoverBanner() {
 }
 
 function LogoDisc({ src, alt }: { src?: string | null; alt: string }) {
+  // NO event handlers here — this is a server-component-rendered
+  // chunk and onError={() => ...} on the <img> throws at render
+  // ("Event handlers cannot be passed to Client Component props").
+  // Broken-image fallback is handled by the CSS `&::after`-style
+  // briefcase glyph layered absolutely under the img: when the
+  // browser can't load the src, the img leaves a transparent gap
+  // and the glyph shows through.
   return (
     <div className="relative shrink-0">
       <div
@@ -615,18 +624,17 @@ function LogoDisc({ src, alt }: { src?: string | null; alt: string }) {
         }}
       />
       <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white ring-4 ring-white shadow-[0_18px_40px_-10px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center overflow-hidden">
-        {src ? (
+        {/* Glyph fallback rendered first (sits under the img). When
+            the img loads, it covers the glyph; when it 404s, the
+            glyph shows through. */}
+        <Briefcase size={40} className="absolute text-slate-300" />
+        {src && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
             alt={alt}
-            className="w-24 h-24 sm:w-28 sm:h-28 object-contain"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
+            className="relative w-24 h-24 sm:w-28 sm:h-28 object-contain"
           />
-        ) : (
-          <Briefcase size={40} className="text-slate-400" />
         )}
       </div>
     </div>
@@ -735,11 +743,15 @@ interface PostingPreview {
   compensation: string | null;
   deadline: Date | null;
   keySkills: string[];
-  _count: { applicationStatuses: number };
+  // Type-wise Prisma always populates this when included, but
+  // defensive in case the runtime row is malformed.
+  _count?: { applicationStatuses: number } | null;
 }
 
 function PostingListRow({ posting }: { posting: PostingPreview }) {
-  const skills = (posting.keySkills ?? []).slice(0, 4);
+  const allSkills = posting.keySkills ?? [];
+  const skills = allSkills.slice(0, 4);
+  const applicantCount = posting._count?.applicationStatuses ?? 0;
   return (
     <li>
       <Link
@@ -778,7 +790,7 @@ function PostingListRow({ posting }: { posting: PostingPreview }) {
             {skills.length > 0 && (
               <p className="mt-1.5 text-xs text-subtle truncate">
                 {skills.join(" · ")}
-                {posting.keySkills.length > 4 && ` · +${posting.keySkills.length - 4} more`}
+                {allSkills.length > 4 && ` · +${allSkills.length - 4} more`}
               </p>
             )}
           </div>
@@ -793,10 +805,10 @@ function PostingListRow({ posting }: { posting: PostingPreview }) {
                 color: "transparent",
               }}
             >
-              {posting._count.applicationStatuses}
+              {applicantCount}
             </p>
             <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mt-1">
-              applicant{posting._count.applicationStatuses === 1 ? "" : "s"}
+              applicant{applicantCount === 1 ? "" : "s"}
             </p>
           </div>
         </div>
