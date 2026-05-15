@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -25,8 +25,15 @@ interface Body {
 export async function POST(req: NextRequest) {
   let session;
   try {
-    session = await requireRole("admin");
+    session = await requireSession();
   } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const role = (session.user as { role?: string }).role ?? "";
+  // Posting creation is allowed for employer accounts (their own
+  // postings) and any admin/superadmin (manages anyone's). Trainees
+  // and instructors can't create postings.
+  if (!["employer", "admin", "superadmin"].includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const userId = (session.user as { id?: string }).id ?? null;

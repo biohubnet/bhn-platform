@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { AI_CONFIGURED } from "@/lib/ai";
 
 export const runtime = "nodejs";
@@ -66,9 +66,17 @@ Rules:
 - positionDetails should preserve paragraphs with \\n\\n.`;
 
 export async function POST(req: NextRequest) {
+  // Posting AI-parse is open to employer + admin + superadmin so the
+  // inline new-posting composer on /employer can autofill from a
+  // pasted JD.
+  let session;
   try {
-    await requireRole("admin");
+    session = await requireSession();
   } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const role = (session.user as { role?: string }).role ?? "";
+  if (!["employer", "admin", "superadmin"].includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (!AI_CONFIGURED.chat) {
