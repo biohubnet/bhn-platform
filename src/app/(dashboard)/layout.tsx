@@ -62,7 +62,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     adminCounts || traineeCounts ? { ...traineeCounts, ...adminCounts } : undefined;
 
   return (
-    <div className="flex h-screen bg-page">
+    <div className="dashboard-layout flex h-screen bg-page">
       <Sidebar
         role={role}
         realRole={realRole}

@@ -691,12 +691,28 @@ body {
  *  for hero bands, then collapse cleanly back in for content.
  *  ============================================================ */
 
-/* Escape the layout's max-w-7xl + px-6 to span the viewport edge. */
+/* Escape the layout's max-w-7xl + px-6 to span the viewport edge.
+ *
+ * The naive `100vw` math worked when the page had no sidebar — at
+ * the dashboard layout it would shoot UNDER the sidebar. We clamp
+ * the bleed by `--full-bleed-inset` (default 0; the dashboard layout
+ * sets it to the sidebar's width at md+). Pages without a sidebar
+ * still get the original edge-to-edge bleed. */
 .full-bleed {
-  margin-left: calc(50% - 50vw);
+  margin-left: calc(50% - 50vw + var(--full-bleed-inset, 0px));
   margin-right: calc(50% - 50vw);
-  width: 100vw;
-  max-width: 100vw;
+  width: calc(100vw - var(--full-bleed-inset, 0px));
+  max-width: calc(100vw - var(--full-bleed-inset, 0px));
+}
+
+/* Dashboard layout has a md:w-64 sidebar to the LEFT of <main>. At
+ * md+ we set the inset so full-bleed heroes stop at the sidebar's
+ * right edge instead of sliding under it. Below md the sidebar is
+ * a fixed drawer (out-of-flow), so inset stays 0. */
+@media (min-width: 768px) {
+  .dashboard-layout {
+    --full-bleed-inset: 16rem;
+  }
 }
 
 /* Hero mesh gradients — saturated multi-stop fills for full-bleed

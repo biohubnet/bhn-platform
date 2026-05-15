@@ -86,11 +86,12 @@ export function ChangeLogDashboard({ data }: { data: DashboardData }) {
         <ByKindBreakdown byKind={data.byKind} total={data.total} />
       </div>
 
-      {/* Release-cadence chart — daily, day 1 → today */}
+      {/* Daily release activity — one bar per day from the first
+          published changelog entry through today. */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle">
-            Release cadence · day-by-day
+            Daily release activity
           </p>
           <p className="text-[10px] text-subtle tabular-nums">
             {days} day{days === 1 ? "" : "s"} · peak {data.peakDailyCount}/day
@@ -181,18 +182,23 @@ export function ChangeLogDashboard({ data }: { data: DashboardData }) {
                       <>
                         {/* Long vertical tick — 20 px drop, same
                             colour as the dashed gridlines so it
-                            reads as part of the axis. */}
+                            reads as part of the axis. Centred at
+                            the column's mid-point (= the bar's
+                            mid-point) so the tick lines up under
+                            the middle of the bar instead of its
+                            left edge. */}
                         <div
                           aria-hidden
-                          className="absolute top-0 left-0 w-px h-5 bg-line"
+                          className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-5 bg-line"
                         />
-                        {/* Date label, anchored so its rightmost
-                            character (the day-number) lands exactly
-                            at the tick's bottom. The rest of the
-                            text extends down-LEFT from there. */}
+                        {/* Date label — moved with the tick so the
+                            label's rotation pivot (its rightmost
+                            character, the day-number) sits at the
+                            tick's bottom. The text extends down-LEFT
+                            from there. */}
                         <span
                           className="absolute origin-top-right -rotate-45 text-[10px] text-subtle tabular-nums whitespace-nowrap"
-                          style={{ top: "20px", right: "100%" }}
+                          style={{ top: "20px", right: "50%" }}
                         >
                           {d.label}
                         </span>
