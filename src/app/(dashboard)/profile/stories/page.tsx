@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BookOpen, Plus, ArrowRight, Sparkles } from "lucide-react";
-import { getSession } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { StoryBankClient } from "@/components/prep/StoryBankClient";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 /**
  * /profile/stories — reusable STAR Story Bank.
@@ -52,6 +53,8 @@ export default async function StoryBankPage() {
     },
   });
 
+  const isStaff = checkIsStaff(role);
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-6">
       <header>
@@ -69,6 +72,17 @@ export default async function StoryBankPage() {
           in the prep flow.
         </p>
       </header>
+
+      {/* Admin-only seed/clear. Demo stories land on the calling
+          admin's own user (Story Bank is user-private), titled with
+          a [demo] prefix so the Clear pass can find them exactly. */}
+      {isStaff && (
+        <DemoSeedAndClearTray
+          entity="user_star_story"
+          noun="demo STAR stories"
+          clearHelp="Delete StarStory rows on your user where the title starts with [demo]. Real stories you've authored are not touched."
+        />
+      )}
 
       {stories.length === 0 ? (
         <div className="rounded-2xl border border-line bg-card p-8 text-center surface-shadow">

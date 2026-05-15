@@ -53,6 +53,9 @@ const VALID_ENTITIES = [
   "user_application_status",
   "user_skill",
   "user_interview",
+  "user_star_story",
+  "user_buddy_pair",
+  "user_matches",
 ] as const;
 type Entity = (typeof VALID_ENTITIES)[number];
 
@@ -257,6 +260,54 @@ export async function POST(req: NextRequest) {
         deleted = r.count;
         byKind["self-demo"] = r.count;
       }
+    }
+  } else if (entity === "user_star_story") {
+    // Self-scoped, marker is [demo] prefix on the title.
+    const meId = (session.user as { id?: string }).id;
+    if (meId) {
+      const r = await prisma.starStory.deleteMany({
+        where: { userId: meId, title: { startsWith: "[demo]" } },
+      });
+      deleted = r.count;
+      if (r.count > 0) byKind["self-demo"] = r.count;
+    }
+  } else if (entity === "user_buddy_pair") {
+    // Pairs the calling admin is either side of, where the goalNote
+    // carries the [demo] marker (matches the seed convention).
+    const meId = (session.user as { id?: string }).id;
+    if (meId) {
+      const r = await prisma.buddyPair.deleteMany({
+        where: {
+          OR: [{ initiatorId: meId }, { partnerId: meId }],
+          goalNote: { startsWith: "[demo]" },
+        },
+      });
+      deleted = r.count;
+      if (r.count > 0) byKind["self-demo"] = r.count;
+    }
+  } else if (entity === "user_matches") {
+    // Matches scenario deposited UserSkill rows (source="demo") and
+    // PostingSkill rows on demo-employer-owned postings. Both are
+    // cleaned to fully revert the scenario.
+    const meId = (session.user as { id?: string }).id;
+    if (meId) {
+      const r1 = await prisma.userSkill.deleteMany({
+        where: { userId: meId, source: "demo" },
+      });
+      const demoEmployers = await prisma.user.findMany({
+        where: { accountKind: "demo", role: "employer" },
+        select: { id: true },
+      });
+      const demoPostings = await prisma.internshipPosting.findMany({
+        where: { createdById: { in: demoEmployers.map((u) => u.id) } },
+        select: { id: true },
+      });
+      const r2 = await prisma.postingSkill.deleteMany({
+        where: { postingId: { in: demoPostings.map((p) => p.id) } },
+      });
+      deleted = r1.count + r2.count;
+      if (r1.count > 0) byKind["self-demo-skills"] = r1.count;
+      if (r2.count > 0) byKind["demo-posting-skills"] = r2.count;
     }
   }
 

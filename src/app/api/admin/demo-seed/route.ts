@@ -46,11 +46,15 @@ const VALID_ENTITIES = [
   "pool_exit_feedback",
   // Self-scoped entities — attach rows to the calling admin's own
   // user id so the demo content shows up on the admin's own page
-  // (Application Tracker / My Skills / Interviews are user-private
-  // surfaces). Clear targets the marker baked into the row.
+  // (Application Tracker / My Skills / Interviews / Stories / Buddies
+  // / Matches are user-private surfaces). Clear targets the marker
+  // baked into the row.
   "user_application_status",
   "user_skill",
   "user_interview",
+  "user_star_story",
+  "user_buddy_pair",
+  "user_matches",
 ] as const;
 type Entity = (typeof VALID_ENTITIES)[number];
 
@@ -432,38 +436,40 @@ async function seedUserApplicationStatuses(userId: string): Promise<number> {
   return created;
 }
 
-async function seedUserSkills(userId: string): Promise<number> {
-  // Pick existing skills if the ontology has any; otherwise create
-  // five anchor skills tagged "Demo · ..." so the global registry
-  // doesn't end up polluted with unrecognisable demo entries.
-  const wanted = [
-    "Aseptic technique",
-    "GMP documentation",
-    "Cell culture",
-    "Bioreactor operations",
-    "Quality assurance",
-  ];
-  const existing = await prisma.skill.findMany({
-    where: { name: { in: wanted } },
-    select: { id: true, name: true },
+/** Helper: idempotently upsert a Skill row given (name, slug). Handles
+ *  the case where the slug already exists with a slightly different
+ *  name capitalisation (e.g. "Aseptic Technique" vs the demo's
+ *  "Aseptic technique") — that was the bug that made seedUserSkills
+ *  return `Unique constraint failed on (slug)`. */
+async function upsertSkill(name: string, slug: string): Promise<{ id: string; slug: string }> {
+  return prisma.skill.upsert({
+    where: { slug },
+    create: { name, slug },
+    update: {}, // never overwrite name — keep whatever's there
+    select: { id: true, slug: true },
   });
-  const byName = new Map(existing.map((s) => [s.name, s.id]));
-  for (const name of wanted) {
-    if (byName.has(name)) continue;
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const created = await prisma.skill.create({ data: { name, slug } });
-    byName.set(name, created.id);
-  }
+}
 
+const DEMO_SKILLS: Array<{ name: string; slug: string }> = [
+  { name: "Aseptic technique",     slug: "aseptic-technique" },
+  { name: "GMP documentation",     slug: "gmp-documentation" },
+  { name: "Cell culture",          slug: "cell-culture" },
+  { name: "Bioreactor operations", slug: "bioreactor-operations" },
+  { name: "Quality assurance",     slug: "quality-assurance" },
+];
+
+async function seedUserSkills(userId: string): Promise<number> {
+  // Each demo skill is upsert-by-slug — never a bare create — so a
+  // pre-existing slug (different casing, prior seed run, ontology
+  // already populated) is handled silently.
+  const skills = await Promise.all(DEMO_SKILLS.map((s) => upsertSkill(s.name, s.slug)));
   let created = 0;
-  for (const name of wanted) {
-    const skillId = byName.get(name);
-    if (!skillId) continue;
+  for (const s of skills) {
     // upsert via @@unique([userId, skillId]). We deliberately stamp
     // source="demo" so the clear pass can find these rows.
     await prisma.userSkill.upsert({
-      where: { userId_skillId: { userId, skillId } },
-      create: { userId, skillId, level: 0.65 + Math.random() * 0.25, source: "demo" },
+      where: { userId_skillId: { userId, skillId: s.id } },
+      create: { userId, skillId: s.id, level: 0.65 + Math.random() * 0.25, source: "demo" },
       update: { source: "demo", level: 0.65 + Math.random() * 0.25 },
     });
     created++;
@@ -534,6 +540,256 @@ async function seedUserInterviews(userId: string): Promise<SeedDetail> {
   return { created, note: errors.length > 0 ? `${errors.length} of ${samples.length} rows failed` : undefined };
 }
 
+/** Three reusable STAR stories on the admin's own user. Title is
+ *  prefixed [demo] so clear-test-data can find them with a startsWith
+ *  filter (mirrors the user_interview pattern). */
+const STAR_STORY_SAMPLES: Array<{
+  title: string;
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+  tags: string[];
+}> = [
+  {
+    title: "[demo] Aseptic gowning audit — taught a new hire the protocol",
+    situation: "Two new co-op trainees joined the production floor and needed to clear aseptic gowning certification within their first week, but the training queue was already 3 weeks long.",
+    task: "I had to get both trainees certified without pulling them out of their first project rotation, while keeping our gowning fail-rate under the QA team's 5% threshold.",
+    action: "Built a 90-minute paired-shadow session — I gowned, narrated each step, then watched them gown twice each, scoring against the SOP checklist. We did the third attempt under our QA lead's supervision so the sign-off was real.",
+    result: "Both certified inside three days; zero gowning fails in their first month. The paired-shadow flow became the unofficial onboarding pattern; QA referenced it in their next quarterly review.",
+    tags: ["aseptic technique", "mentoring", "process improvement"],
+  },
+  {
+    title: "[demo] Cell-culture contamination — root-cause + comms",
+    situation: "Three consecutive shake-flask cultures contaminated within 48 hours of each other in the same hood. Senior scientist was on vacation; I was the most experienced person in the lab that week.",
+    task: "Identify the source, stop the bleed, and brief the lead before he flew back.",
+    action: "Pulled the contaminated plate prints, autoclave logs, and HEPA-filter records into one timeline. The pattern lined up with a single autoclave cycle that ran 8 minutes shorter than spec. Flagged it to facilities, swapped the autoclave out, escalated to QA, and ran a written brief that the lead could read on the plane.",
+    result: "No contamination since. The autoclave-cycle deviation became a watch metric on the daily ops dashboard. Lead specifically called out the written brief as the format he wants going forward.",
+    tags: ["cell culture", "root cause analysis", "communication"],
+  },
+  {
+    title: "[demo] GMP doc rollover — got 40 SOPs through change-control in 6 weeks",
+    situation: "Our facility was migrating from paper SOPs to an electronic QMS. 40 GMP documents needed re-authoring, change-controlled, signed-off, and live in the eQMS before the next inspection in 6 weeks.",
+    task: "Coordinate the SME reviews, run the change-control board, and stay ahead of the audit clock.",
+    action: "Built a status board showing every SOP, owner, current state, and blocker. Ran a 15-minute standup three times a week with just the bottlenecked owners. Personally handled the change-control packets for the 12 highest-risk SOPs.",
+    result: "All 40 live with seven days to spare. The inspection passed clean — no GMP doc observations. The standup format stayed in place for the next quarterly review cycle.",
+    tags: ["GMP documentation", "project management", "stakeholder management"],
+  },
+  {
+    title: "[demo] Bioreactor failed mid-run — rescued the batch",
+    situation: "Mid-day on the second day of a 14-day run, the bioreactor's pH probe drifted out of spec and the controller started over-dosing base. Production lead was off-site.",
+    task: "Decide whether to salvage the run or call it. The batch was worth ~$80k in materials + 10 days of operator time already committed.",
+    action: "Pulled the calibration log, recalibrated the probe in-situ, manually titrated the broth back to spec over 20 minutes, then dropped the next sample to QC early to confirm the cells were still viable. Documented every step against the deviation form.",
+    result: "Cells stayed in log-phase; final yield was within 3% of the historical mean for that strain. Deviation closed clean. SOP updated to include the in-situ recalibration procedure I'd improvised.",
+    tags: ["bioreactor operations", "troubleshooting", "decision under pressure"],
+  },
+];
+
+async function seedUserStarStories(userId: string): Promise<SeedDetail> {
+  let created = 0;
+  const errors: string[] = [];
+  for (const s of STAR_STORY_SAMPLES) {
+    try {
+      await prisma.starStory.create({
+        data: {
+          userId,
+          title: s.title,
+          situation: s.situation,
+          task: s.task,
+          action: s.action,
+          result: s.result,
+          tags: s.tags,
+        },
+      });
+      created++;
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
+  }
+  if (created === 0 && errors.length > 0) {
+    return { created: 0, note: `All ${errors.length} inserts failed: ${errors.slice(0, 2).join("; ")}` };
+  }
+  return { created, note: errors.length > 0 ? `${errors.length} row(s) failed` : undefined };
+}
+
+/** Ensure at least 3 distinct demo trainees exist with plausible
+ *  names, so buddy pairs aren't all on the same fake account. */
+async function ensureDemoTraineeFriends(min: number): Promise<string[]> {
+  const existing = await prisma.user.findMany({
+    where: { accountKind: "demo", role: "trainee" },
+    select: { id: true },
+    orderBy: { createdAt: "desc" },
+    take: min,
+  });
+  if (existing.length >= min) return existing.map((u) => u.id);
+
+  const friendNames = [
+    "Demo · Priya Iyer",
+    "Demo · Marcus Bell",
+    "Demo · Aisha Khan",
+    "Demo · Jordan Wong",
+    "Demo · Lin Sun",
+  ];
+  const ids: string[] = existing.map((u) => u.id);
+  for (let i = 0; ids.length < min && i < friendNames.length; i++) {
+    const created = await prisma.user.create({
+      data: {
+        name: friendNames[i],
+        email: `demo-buddy-${Date.now()}-${i}@bhn.test`,
+        role: "trainee",
+        accountKind: "demo",
+        credits: 200,
+        emailVerified: new Date(),
+      },
+      select: { id: true },
+    });
+    ids.push(created.id);
+  }
+  return ids;
+}
+
+async function seedUserBuddyPairs(userId: string): Promise<SeedDetail> {
+  const friends = await ensureDemoTraineeFriends(3);
+  if (friends.length < 3) {
+    return { created: 0, note: "Couldn't bootstrap enough demo trainee accounts to pair with." };
+  }
+  // Three pairs, varied state so the buddy hub has something to
+  // render in every UI bucket: one incoming invite waiting on the
+  // admin, one active partnership, one ended.
+  const samples: Array<{
+    initiatorId: string;
+    partnerId: string;
+    status: "invited" | "active" | "ended";
+    focusType: "course" | "pathway" | "open";
+    goalNote: string;
+  }> = [
+    {
+      initiatorId: friends[0],
+      partnerId: userId,
+      status: "invited",
+      focusType: "pathway",
+      goalNote: "[demo] Aseptic Technique pathway — would love a study buddy for the final assessment.",
+    },
+    {
+      initiatorId: userId,
+      partnerId: friends[1],
+      status: "active",
+      focusType: "course",
+      goalNote: "[demo] GMP Documentation 101 — biweekly check-ins on Fridays.",
+    },
+    {
+      initiatorId: friends[2],
+      partnerId: userId,
+      status: "ended",
+      focusType: "open",
+      goalNote: "[demo] Open accountability — we both got hired, parted on good terms.",
+    },
+  ];
+
+  let created = 0;
+  const errors: string[] = [];
+  for (const s of samples) {
+    try {
+      await prisma.buddyPair.upsert({
+        where: { initiatorId_partnerId: { initiatorId: s.initiatorId, partnerId: s.partnerId } },
+        create: {
+          initiatorId: s.initiatorId,
+          partnerId: s.partnerId,
+          status: s.status,
+          focusType: s.focusType,
+          goalNote: s.goalNote,
+          acceptedAt: s.status === "active" || s.status === "ended" ? new Date() : null,
+          endedAt: s.status === "ended" ? new Date() : null,
+        },
+        update: {
+          status: s.status,
+          goalNote: s.goalNote,
+          acceptedAt: s.status === "active" || s.status === "ended" ? new Date() : null,
+          endedAt: s.status === "ended" ? new Date() : null,
+        },
+      });
+      created++;
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
+  }
+  if (created === 0 && errors.length > 0) {
+    return { created: 0, note: `All ${errors.length} inserts failed: ${errors.slice(0, 2).join("; ")}` };
+  }
+  return { created, note: errors.length > 0 ? `${errors.length} row(s) failed` : undefined };
+}
+
+/** A "matches scenario" seeder — different from the others in that
+ *  it bootstraps everything the /profile/matches page needs to show
+ *  interesting rankings, not just create one entity. Specifically:
+ *
+ *    1. The admin has ≥5 UserSkill rows tagged source="demo".
+ *    2. Demo postings exist with PostingSkill rows linking them to
+ *       overlapping demo skills, so the fit scorer can do its work.
+ *
+ *  We deliberately attach 3–4 skills per posting with varied
+ *  required/weight values so the ranking is non-trivial. */
+async function seedUserMatchesScenario(userId: string): Promise<SeedDetail> {
+  // 1. Ensure admin has the demo skill set
+  await seedUserSkills(userId);
+  // 2. Ensure demo postings exist
+  const postings = await ensureDemoPostings();
+  if (postings.length === 0) {
+    return { created: 0, note: "Couldn't bootstrap demo postings for matching." };
+  }
+  // 3. Make sure the demo Skill rows exist (idempotent)
+  const skills = await Promise.all(DEMO_SKILLS.map((s) => upsertSkill(s.name, s.slug)));
+
+  // 4. Per-posting skill links — each posting gets 3 demo skills
+  //    with varied required-flag + weight so ranking is meaningful.
+  const linkPlan: Array<{ postingIdx: number; skillIdx: number; required: boolean; weight: number }> = [
+    // posting 0: aseptic + cell culture + GMP doc — mostly required
+    { postingIdx: 0, skillIdx: 0, required: true,  weight: 1.0 },
+    { postingIdx: 0, skillIdx: 2, required: true,  weight: 0.8 },
+    { postingIdx: 0, skillIdx: 1, required: false, weight: 0.5 },
+    // posting 1: GMP doc + QA + aseptic — QA-flavoured
+    { postingIdx: 1, skillIdx: 1, required: true,  weight: 1.0 },
+    { postingIdx: 1, skillIdx: 4, required: true,  weight: 0.9 },
+    { postingIdx: 1, skillIdx: 0, required: false, weight: 0.4 },
+    // posting 2: cell culture + bioreactor + aseptic — bioprocess
+    { postingIdx: 2, skillIdx: 2, required: true,  weight: 1.0 },
+    { postingIdx: 2, skillIdx: 3, required: true,  weight: 0.9 },
+    { postingIdx: 2, skillIdx: 0, required: false, weight: 0.5 },
+  ];
+  let created = 0;
+  const errors: string[] = [];
+  for (const l of linkPlan) {
+    if (!postings[l.postingIdx] || !skills[l.skillIdx]) continue;
+    try {
+      await prisma.postingSkill.upsert({
+        where: {
+          postingId_skillId: {
+            postingId: postings[l.postingIdx].id,
+            skillId: skills[l.skillIdx].id,
+          },
+        },
+        create: {
+          postingId: postings[l.postingIdx].id,
+          skillId: skills[l.skillIdx].id,
+          required: l.required,
+          weight: l.weight,
+        },
+        update: { required: l.required, weight: l.weight },
+      });
+      created++;
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
+  }
+  return {
+    created,
+    note:
+      errors.length > 0
+        ? `${errors.length} link(s) failed`
+        : `Skills attached to ${postings.length} demo postings — visit /profile/matches.`,
+  };
+}
+
 // ── Route handler ────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -577,6 +833,24 @@ export async function POST(req: NextRequest) {
     else if (entity === "user_interview") {
       if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
       const detail = await seedUserInterviews(reviewerId);
+      created = detail.created;
+      note = detail.note;
+    }
+    else if (entity === "user_star_story") {
+      if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
+      const detail = await seedUserStarStories(reviewerId);
+      created = detail.created;
+      note = detail.note;
+    }
+    else if (entity === "user_buddy_pair") {
+      if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
+      const detail = await seedUserBuddyPairs(reviewerId);
+      created = detail.created;
+      note = detail.note;
+    }
+    else if (entity === "user_matches") {
+      if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
+      const detail = await seedUserMatchesScenario(reviewerId);
       created = detail.created;
       note = detail.note;
     }

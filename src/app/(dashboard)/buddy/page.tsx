@@ -1,4 +1,4 @@
-import { requireSession } from "@/lib/auth";
+import { requireSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { BuddyInviteButton } from "@/components/lms/BuddyInviteButton";
 import { BuddyInviteResponseButtons } from "@/components/lms/BuddyInviteResponseButtons";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 interface PairRow {
   id: string;
@@ -31,6 +32,8 @@ export default async function BuddyHubPage() {
   const session = await requireSession().catch(() => null);
   if (!session) redirect("/login");
   const userId = (session.user as { id?: string }).id!;
+  const role = (session.user as { role?: string }).role ?? "trainee";
+  const isStaff = checkIsStaff(role);
 
   const pairs = (await prisma.buddyPair.findMany({
     where: { OR: [{ initiatorId: userId }, { partnerId: userId }] },
@@ -69,6 +72,18 @@ export default async function BuddyHubPage() {
         description="Pair up with someone for accountability — share a goal, see each other's progress, and leave notes."
         actions={<BuddyInviteButton />}
       />
+
+      {/* Admin-only seed/clear. Demo pairs land on the calling
+          admin's own user with [demo] in the goalNote — Clear finds
+          them exactly. Real buddy pairs the admin participates in
+          are not touched. */}
+      {isStaff && (
+        <DemoSeedAndClearTray
+          entity="user_buddy_pair"
+          noun="demo buddy pairs"
+          clearHelp="Delete BuddyPair rows where you're initiator or partner AND the goalNote starts with [demo]. Real buddy pairs are not touched."
+        />
+      )}
 
       {/* Incoming invites — high priority */}
       {incoming.length > 0 && (

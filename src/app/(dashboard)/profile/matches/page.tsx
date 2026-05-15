@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import {
   Sparkles, ArrowRight, Briefcase, MapPin, Calendar, AlertCircle, Compass,
 } from "lucide-react";
-import { getSession } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rankPostingsForTrainee } from "@/lib/matching/fit";
 import { FitExplain } from "@/components/matching/FitExplain";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 /**
  * /profile/matches — trainee's personalised posting recommendations.
@@ -74,11 +75,21 @@ export default async function MatchesPage() {
   // the (potentially expensive) ranking — saves a wasted compute
   // sweep when the user has nothing on file.
   const skillCount = await prisma.userSkill.count({ where: { userId } });
+  const isStaff = checkIsStaff(role);
 
   if (skillCount === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 space-y-6">
         <PageHeader />
+        {/* Admin tray surfaces even on the empty state — one click
+            seeds both skills + posting-skill links so the page lights up. */}
+        {isStaff && (
+          <DemoSeedAndClearTray
+            entity="user_matches"
+            noun="matches scenario"
+            clearHelp="Removes demo UserSkill rows (source=demo) on your user and PostingSkill rows on demo-employer postings. Real skill profile is not touched."
+          />
+        )}
         <div className="rounded-2xl border border-line bg-card p-8 surface-shadow text-center">
           <div className="w-14 h-14 mx-auto rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-4">
             <Sparkles size={22} />
@@ -114,6 +125,18 @@ export default async function MatchesPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-6">
       <PageHeader />
+
+      {/* Admin-only seed/clear. Bootstraps the matches scenario in
+          one click: 5 demo skills on the calling admin + PostingSkill
+          links on demo postings so the fit scorer has something to
+          rank. */}
+      {isStaff && (
+        <DemoSeedAndClearTray
+          entity="user_matches"
+          noun="matches scenario"
+          clearHelp="Removes demo UserSkill rows (source=demo) on your user and PostingSkill rows on demo-employer postings. Real skill profile is not touched."
+        />
+      )}
 
       {thinProfile && (
         <div className="rounded-2xl bg-amber-50 ring-1 ring-inset ring-amber-200 p-4 flex items-start gap-3">
