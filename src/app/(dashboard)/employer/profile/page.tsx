@@ -126,24 +126,24 @@ export default async function EmployerProfilePage() {
         <ArrowLeft size={12} /> Employer overview
       </Link>
 
-      {/* ── COVER BANNER ──────────────────────────────────────── */}
-      <CoverBanner />
+      {/* ── PANEL ──────────────────────────────────────────────
+          One outer container wraps both the cover banner and the
+          body, with a single rounded-3xl + overflow-hidden + shadow
+          on the outside. Previously the cover and body each had
+          their OWN ring (dark for cover, light for body), and where
+          they met on the sides you could see a 1px transition seam
+          on each edge. With a single wrapper there's exactly one
+          continuous edge per side. */}
+      <div className="rounded-3xl overflow-hidden shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)]">
+        <CoverBanner />
 
-      {/* ── BODY — one continuous gradient-washed canvas ──────── */}
-      {/* The body slides up into the bottom of the cover banner via
-          its own negative top margin AND has overflow-hidden so
-          rounded corners stay clean. The logo sits inside this
-          body; because the body's top is already up inside the
-          cover area, the logo naturally appears to overlap the
-          cover without needing any negative margin of its own.
-
-          Top corners are deliberately SQUARE here (rounded-b-3xl
-          only): the cover banner above has its own bottom corners
-          made square too, so the two surfaces meet on a single
-          clean horizontal seam instead of fighting each other with
-          two overlapping rounded-corner curves on the sides. */}
-      <div
-        className="relative -mt-24 sm:-mt-28 rounded-b-3xl overflow-hidden ring-1 ring-line"
+        {/* ── BODY — one continuous gradient-washed canvas ───── */}
+        {/* Negative top margin slides the body up into the cover's
+            bottom 96px; the outer wrapper's overflow-hidden keeps
+            everything inside the rounded shape. No ring or rounding
+            here — the outer panel owns those. */}
+        <div
+        className="relative -mt-24 sm:-mt-28"
         style={{
           background:
             "linear-gradient(180deg, rgba(59,130,246,0.07) 0%, rgba(244,114,182,0.04) 18%, rgba(255,255,255,0) 35%), linear-gradient(180deg, var(--card) 0%, var(--card) 100%)",
@@ -391,7 +391,8 @@ export default async function EmployerProfilePage() {
             defaultOpen={editorDefaultOpen}
           />
         </section>
-      </div>
+        </div> {/* /body */}
+      </div>   {/* /panel */}
     </div>
   );
 }
@@ -414,12 +415,11 @@ function SectionEyebrow({ children }: { children: React.ReactNode }) {
 }
 
 function CoverBanner() {
-  // Only the TOP corners are rounded — the body container below has
-  // a matching `rounded-b-3xl` so the seam where they meet is a
-  // single clean horizontal line, not two overlapping rounded
-  // curves clashing at the edges.
+  // No own rounding / ring / shadow — those live on the outer panel
+  // wrapper so the cover↔body seam has a single continuous edge per
+  // side instead of two stacked rings clashing.
   return (
-    <div className="relative h-56 sm:h-72 lg:h-[22rem] rounded-t-3xl overflow-hidden ring-1 ring-slate-800 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)]">
+    <div className="relative h-56 sm:h-72 lg:h-[22rem] overflow-hidden">
       {/* Base — deeper, more saturated, with more colour movement */}
       <div
         className="absolute inset-0"
