@@ -30,6 +30,7 @@ import {
   R2_PUBLIC_URL,
   deleteR2ObjectByUrl,
 } from "@/lib/r2";
+import { applyDefaultOverlayIfAbsent } from "@/lib/courses/thumbnail-overlay-default";
 
 export async function POST(
   _req: Request,
@@ -98,6 +99,13 @@ export async function POST(
   if (previousUrl && previousUrl !== url) {
     try { await deleteR2ObjectByUrl(previousUrl); } catch { /* non-fatal */ }
   }
+
+  // 6. Apply the platform-wide default overlay if one is configured
+  //    AND this course doesn't already have its own. Lets admins set
+  //    a "house style" once on /admin/cover-art and have every future
+  //    thumbnail pick it up automatically. Per-course customisations
+  //    win and are not overwritten.
+  await applyDefaultOverlayIfAbsent("course", course.id).catch(() => null);
 
   return NextResponse.json({
     ok: true,

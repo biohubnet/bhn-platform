@@ -68,7 +68,16 @@ const rowKey = (item: { kind: "course" | "pathway"; id: string }) =>
  *   • Overlay builder preview is rendered on every SELECTED row in
  *     the list — easier to spot bad treatments before commit.
  */
-export function CourseThumbnailRegenerator({ items }: { items: ThumbnailItem[] }) {
+export function CourseThumbnailRegenerator({
+  items,
+  defaultOverlay,
+}: {
+  items: ThumbnailItem[];
+  /** The site-wide default overlay currently configured in
+   *  PlatformSetting, or null when none is set. Used to seed the
+   *  builder + the "save as default" toggle when the page loads. */
+  defaultOverlay: ThumbnailOverlay | null;
+}) {
   const router = useRouter();
 
   // Local per-row state — keyed by rowKey so course/pathway IDs can't collide.
@@ -90,10 +99,20 @@ export function CourseThumbnailRegenerator({ items }: { items: ThumbnailItem[] }
   const [completed, setCompleted] = useState(0);
   const [total, setTotal] = useState(0);
 
-  // Overlay builder state.
-  const [overlay, setOverlay] = useState<ThumbnailOverlay>(DEFAULT_OVERLAY);
+  // Overlay builder state. If the platform already has a site-wide
+  // default configured, seed the builder with it so the operator's
+  // first sight matches what regenerates apply.
+  const [overlay, setOverlay] = useState<ThumbnailOverlay>(defaultOverlay ?? DEFAULT_OVERLAY);
   const [overlayBusy, setOverlayBusy] = useState(false);
   const [overlayMsg, setOverlayMsg] = useState<string | null>(null);
+  // "Save as default" toggle. Pre-checked when a default already
+  // exists so re-applying preserves it (rather than silently clearing
+  // because the operator forgot to tick the box).
+  const [saveAsDefault, setSaveAsDefault] = useState<boolean>(Boolean(defaultOverlay));
+  // Locally track the "live" default so the UI knows whether to show
+  // the "default active" badge after an apply / clear without a full
+  // server round-trip refresh.
+  const [defaultActive, setDefaultActive] = useState<boolean>(Boolean(defaultOverlay));
 
   function toggleAll() {
     if (allSelected) setSelected(new Set());
@@ -175,10 +194,13 @@ export function CourseThumbnailRegenerator({ items }: { items: ThumbnailItem[] }
   }
 
   async function applyOverlay(clearInstead: boolean) {
-    if (!someSelected) {
-      setOverlayMsg("Pick at least one item to apply the overlay to.");
+    // Either a selection OR the "save as default" toggle (or both)
+    // is required — the endpoint accepts either as a meaningful op.
+    if (!someSelected && !saveAsDefault) {
+      setOverlayMsg("Pick at least one item, or toggle 'Apply to future thumbnails' to save as the default.");
       return;
     }
+
     // Split the selected keys by kind so we can hit each table with
     // its own batch request. The endpoint accepts one kind at a
     // time, by design — keeps the response count predictable.
@@ -194,35 +216,92 @@ export function CourseThumbnailRegenerator({ items }: { items: ThumbnailItem[] }
     setOverlayMsg(null);
     try {
       const payload = clearInstead ? null : overlay;
-      const reqs: Promise<{ updated: number }>[] = [];
+      type Resp = { ok?: boolean; updated?: number; defaultSaved?: boolean; defaultCleared?: boolean; error?: string };
+      type Result = { updated: number; defaultSaved: boolean; defaultCleared: boolean };
+
+      const requests: Promise<Result>[] = [];
+
+      // Route each kind's batch separately. The saveAsDefault flag
+      // is sent with the FIRST batch (course-side by convention) —
+      // the endpoint handles it independently of ids, so sending it
+      // on both would just double-write the same value.
+      let sentDefault = false;
+
       if (courseIds.length > 0) {
-        reqs.push(
+        requests.push(
           fetch(`/api/admin/courses/thumbnail-overlay/batch`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ kind: "course", ids: courseIds, overlay: payload }),
+            body: JSON.stringify({
+              kind: "course",
+              ids: courseIds,
+              overlay: payload,
+              saveAsDefault: saveAsDefault && !sentDefault,
+            }),
           }).then(async (r) => {
-            const j = (await r.json().catch(() => ({}))) as { ok?: boolean; updated?: number; error?: string };
+            const j = (await r.json().catch(() => ({}))) as Resp;
             if (!r.ok || !j.ok) throw new Error(j.error ?? "Course batch failed.");
-            return { updated: j.updated ?? courseIds.length };
+            return {
+              updated: j.updated ?? courseIds.length,
+              defaultSaved: Boolean(j.defaultSaved),
+              defaultCleared: Boolean(j.defaultCleared),
+            };
           }),
         );
+        if (saveAsDefault) sentDefault = true;
       }
       if (pathwayIds.length > 0) {
-        reqs.push(
+        requests.push(
           fetch(`/api/admin/courses/thumbnail-overlay/batch`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ kind: "pathway", ids: pathwayIds, overlay: payload }),
+            body: JSON.stringify({
+              kind: "pathway",
+              ids: pathwayIds,
+              overlay: payload,
+              saveAsDefault: saveAsDefault && !sentDefault,
+            }),
           }).then(async (r) => {
-            const j = (await r.json().catch(() => ({}))) as { ok?: boolean; updated?: number; error?: string };
+            const j = (await r.json().catch(() => ({}))) as Resp;
             if (!r.ok || !j.ok) throw new Error(j.error ?? "Pathway batch failed.");
-            return { updated: j.updated ?? pathwayIds.length };
+            return {
+              updated: j.updated ?? pathwayIds.length,
+              defaultSaved: Boolean(j.defaultSaved),
+              defaultCleared: Boolean(j.defaultCleared),
+            };
+          }),
+        );
+        if (saveAsDefault) sentDefault = true;
+      }
+      // If saveAsDefault is on but no items are selected, fire a
+      // default-only request (ids empty).
+      if (saveAsDefault && !sentDefault) {
+        requests.push(
+          fetch(`/api/admin/courses/thumbnail-overlay/batch`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              kind: "course",
+              ids: [],
+              overlay: payload,
+              saveAsDefault: true,
+            }),
+          }).then(async (r) => {
+            const j = (await r.json().catch(() => ({}))) as Resp;
+            if (!r.ok || !j.ok) throw new Error(j.error ?? "Save-default failed.");
+            return {
+              updated: 0,
+              defaultSaved: Boolean(j.defaultSaved),
+              defaultCleared: Boolean(j.defaultCleared),
+            };
           }),
         );
       }
-      const results = await Promise.all(reqs);
+
+      const results = await Promise.all(requests);
       const totalUpdated = results.reduce((sum, r) => sum + r.updated, 0);
+      const anyDefaultSaved = results.some((r) => r.defaultSaved);
+      const anyDefaultCleared = results.some((r) => r.defaultCleared);
 
       const stamp = clearInstead ? null : overlay;
       setOverlayOverrides((o) => {
@@ -230,11 +309,21 @@ export function CourseThumbnailRegenerator({ items }: { items: ThumbnailItem[] }
         for (const k of selected) next[k] = stamp;
         return next;
       });
-      setOverlayMsg(
-        clearInstead
-          ? `Cleared overlay on ${totalUpdated} item${totalUpdated === 1 ? "" : "s"}.`
-          : `Applied overlay to ${totalUpdated} item${totalUpdated === 1 ? "" : "s"}.`,
-      );
+      if (anyDefaultSaved) setDefaultActive(true);
+      if (anyDefaultCleared) setDefaultActive(false);
+
+      // Compose a single human-readable summary.
+      const parts: string[] = [];
+      if (totalUpdated > 0) {
+        parts.push(
+          clearInstead
+            ? `Cleared overlay on ${totalUpdated} item${totalUpdated === 1 ? "" : "s"}`
+            : `Applied overlay to ${totalUpdated} item${totalUpdated === 1 ? "" : "s"}`,
+        );
+      }
+      if (anyDefaultSaved) parts.push("set as default for future thumbnails");
+      if (anyDefaultCleared) parts.push("default for future thumbnails cleared");
+      setOverlayMsg(parts.length ? parts.join(" · ") + "." : null);
     } catch (err) {
       setOverlayMsg((err as Error).message);
     } finally {
@@ -260,6 +349,9 @@ export function CourseThumbnailRegenerator({ items }: { items: ThumbnailItem[] }
         busy={overlayBusy}
         message={overlayMsg}
         selectedCount={selected.size}
+        saveAsDefault={saveAsDefault}
+        setSaveAsDefault={setSaveAsDefault}
+        defaultActive={defaultActive}
       />
 
       {/* Action bar */}
@@ -412,6 +504,7 @@ export function CourseThumbnailRegenerator({ items }: { items: ThumbnailItem[] }
 
 function OverlayBuilder({
   overlay, setOverlay, onApply, onClear, busy, message, selectedCount,
+  saveAsDefault, setSaveAsDefault, defaultActive,
 }: {
   overlay: ThumbnailOverlay;
   setOverlay: (o: ThumbnailOverlay) => void;
@@ -420,18 +513,28 @@ function OverlayBuilder({
   busy: boolean;
   message: string | null;
   selectedCount: number;
+  saveAsDefault: boolean;
+  setSaveAsDefault: (v: boolean) => void;
+  /** True when the platform currently has a site-wide default
+   *  configured. Drives the "Default active" badge in the header. */
+  defaultActive: boolean;
 }) {
   const isGradient = overlay.mode === "gradient";
   const previewStyle = overlayStyle(overlay);
 
   return (
     <section className="rounded-2xl border border-line bg-card p-4 sm:p-5 surface-shadow space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Palette size={14} className="text-brand-600" />
         <h2 className="text-sm font-semibold text-fg">Colour / gradient overlay</h2>
         <span className="text-[11px] text-subtle">
           · non-destructive · rendered on top of the AI thumbnail
         </span>
+        {defaultActive && (
+          <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.18em] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200">
+            <CheckCircle2 size={10} /> Default active
+          </span>
+        )}
       </div>
 
       <div className="grid md:grid-cols-[1fr_auto] gap-4 md:gap-5 items-start">
@@ -536,27 +639,63 @@ function OverlayBuilder({
         </div>
       </div>
 
+      {/* "Apply to future thumbnails" toggle — checkbox row above
+          the action buttons. Lives between the builder controls and
+          the Apply/Clear bar so the operator can see it before they
+          commit. When checked, the same overlay JSON is persisted
+          as the platform-wide default (PlatformSetting key
+          `defaultThumbnailOverlay`) and the course / pathway
+          regenerate endpoints will apply it to freshly-generated
+          thumbnails that don't already have a per-item overlay. */}
+      <div className="pt-3 border-t border-line">
+        <label className="flex items-start gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={saveAsDefault}
+            onChange={(e) => setSaveAsDefault(e.currentTarget.checked)}
+            className="mt-0.5 w-4 h-4 rounded border-line accent-brand-600 cursor-pointer"
+          />
+          <span className="text-xs leading-snug">
+            <span className="font-bold text-fg">Apply to future thumbnails</span>
+            <span className="text-muted">
+              {" — "}save this overlay as the platform default. New thumbnails
+              generated from now on will pick it up automatically. Items with
+              their own custom overlay stay untouched.
+            </span>
+          </span>
+        </label>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line">
         <button
           type="button"
           onClick={onApply}
-          disabled={busy || selectedCount === 0}
+          disabled={busy || (selectedCount === 0 && !saveAsDefault)}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-sm shadow-brand-600/25"
         >
           {busy ? <Loader2 size={12} className="animate-spin" /> : <Palette size={12} />}
-          Apply overlay to {selectedCount || "selected"}{selectedCount > 0 ? ` (${selectedCount})` : ""}
+          {selectedCount > 0
+            ? `Apply overlay to ${selectedCount}${saveAsDefault ? " + set default" : ""}`
+            : saveAsDefault
+              ? "Set as default for future thumbnails"
+              : "Apply overlay to selected"}
         </button>
         <button
           type="button"
           onClick={onClear}
-          disabled={busy || selectedCount === 0}
+          disabled={busy || (selectedCount === 0 && !saveAsDefault)}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200 hover:bg-rose-100 text-xs font-semibold disabled:opacity-50 transition-colors"
         >
-          <Eraser size={12} /> Clear on selected
+          <Eraser size={12} />
+          {selectedCount === 0 && saveAsDefault
+            ? "Clear default"
+            : selectedCount > 0 && saveAsDefault
+              ? "Clear on selected + clear default"
+              : "Clear on selected"}
         </button>
-        {selectedCount === 0 && (
+        {selectedCount === 0 && !saveAsDefault && (
           <span className="text-[11px] text-subtle">
-            Tick items in the list below — the overlay applies to that subset.
+            Tick items below — or toggle <em>Apply to future thumbnails</em> to save as the default.
           </span>
         )}
         {message && (

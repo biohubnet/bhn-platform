@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { generateImage, buildThumbnailPrompt, AI_CONFIGURED } from "@/lib/ai";
 import { putR2Object, r2PublicUrl, R2_PUBLIC_URL } from "@/lib/r2";
 import { trackServer } from "@/lib/analytics";
+import { applyDefaultOverlayIfAbsent } from "@/lib/courses/thumbnail-overlay-default";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -41,6 +42,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   await prisma.pathway.update({ where: { id }, data: { thumbnail: url } });
   trackServer({ userId, name: "thumbnail_generated", props: { type: "pathway", pathwayId: id } });
+
+  // Apply the site-wide default overlay if one is configured AND
+  // this pathway doesn't already have its own. Mirrors the course
+  // regenerate behaviour so the "house style" is consistent.
+  await applyDefaultOverlayIfAbsent("pathway", id).catch(() => null);
 
   // `url` + `prompt` are kept for backwards-compatibility with any
   // existing caller. `ok` + `thumbnail` + `motifs` mirror the course

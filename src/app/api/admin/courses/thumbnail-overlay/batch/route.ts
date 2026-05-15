@@ -1,32 +1,34 @@
 /**
  * POST /api/admin/courses/thumbnail-overlay/batch
  *
- * Apply (or clear) a single colour / gradient overlay across a list
- * of course OR pathway IDs in one request. Admin-only — called from
- * /admin/cover-art after the operator builds the overlay in the
- * panel and ticks which items to stamp it onto.
+ * Apply (or clear) a colour / gradient overlay across a list of
+ * course OR pathway IDs in one request. Admin-only — called from
+ * /admin/cover-art's overlay builder.
  *
- * The URL says "courses" for legacy reasons; the body now accepts a
- * `kind` discriminator so the same endpoint can stamp pathways too
- * (the overlay shape and persistence logic are identical for both
- * tables).
- *
- * Body shape:
+ * Body:
  *   {
- *     kind: "course" | "pathway",          // default "course" for legacy callers
- *     ids: string[],                       // non-empty
- *     overlay: ThumbnailOverlay | null,    // null clears
+ *     kind?: "course" | "pathway",   // default "course"; ignored when ids is empty
+ *     ids?: string[],                // courses or pathways to stamp
+ *     overlay: ThumbnailOverlay | null,
+ *     saveAsDefault?: boolean,       // also persist this overlay as the
+ *                                    //   platform-wide default that
+ *                                    //   regenerate endpoints apply
+ *                                    //   to future thumbnails (only when
+ *                                    //   the target has no per-item
+ *                                    //   overlay of its own). When the
+ *                                    //   overlay is null, the default
+ *                                    //   gets cleared too.
  *   }
  *
- * The overlay blob is validated through `parseOverlay` before being
- * persisted — bad shapes are rejected with 400 rather than written.
- * Clear-overlay uses `null` so a single endpoint covers both apply
- * and clear without a delete-by-querystring contortion.
+ * Either ids[] or saveAsDefault must be set. The overlay blob is
+ * validated through `parseOverlay` before being persisted — bad
+ * shapes are rejected with 400.
  */
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseOverlay } from "@/lib/courses/thumbnail-overlay";
+import { setDefaultThumbnailOverlay } from "@/lib/courses/thumbnail-overlay-default";
 import { Prisma } from "@prisma/client";
 
 export async function POST(req: Request) {
@@ -34,46 +36,67 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = (await req.json().catch(() => null)) as
-    | { kind?: unknown; ids?: unknown; overlay?: unknown }
+    | { kind?: unknown; ids?: unknown; overlay?: unknown; saveAsDefault?: unknown }
     | null;
   if (!body) return NextResponse.json({ error: "Bad JSON" }, { status: 400 });
 
   const kind: "course" | "pathway" = body.kind === "pathway" ? "pathway" : "course";
-
   const ids = Array.isArray(body.ids)
     ? body.ids.filter((x): x is string => typeof x === "string")
     : [];
-  if (ids.length === 0) {
-    return NextResponse.json({ error: "ids[] is required" }, { status: 400 });
+  const saveAsDefault = body.saveAsDefault === true;
+
+  if (ids.length === 0 && !saveAsDefault) {
+    return NextResponse.json(
+      { error: "Pick at least one item OR enable saveAsDefault." },
+      { status: 400 },
+    );
   }
 
-  // overlay === null is the explicit clear signal. Otherwise validate
-  // the shape; reject rather than silently coerce.
+  // Validate the overlay shape once. Null = explicit clear signal.
+  let overlay: ReturnType<typeof parseOverlay> | null = null;
   let overlayJson: Prisma.InputJsonValue | null;
   if (body.overlay === null) {
     overlayJson = null;
   } else {
-    const parsed = parseOverlay(body.overlay);
-    if (!parsed) {
+    overlay = parseOverlay(body.overlay);
+    if (!overlay) {
       return NextResponse.json({ error: "Invalid overlay shape" }, { status: 400 });
     }
-    overlayJson = parsed as unknown as Prisma.InputJsonValue;
+    overlayJson = overlay as unknown as Prisma.InputJsonValue;
   }
 
-  // Prisma needs the DbNull sentinel to actually write NULL to a
-  // JSON column — passing literal null leaves the field unchanged.
-  const data = {
-    thumbnailOverlay: overlayJson === null ? Prisma.DbNull : overlayJson,
-  };
-
+  // ── Per-item batch update ───────────────────────────────────
   let updated = 0;
-  if (kind === "pathway") {
-    const r = await prisma.pathway.updateMany({ where: { id: { in: ids } }, data });
-    updated = r.count;
-  } else {
-    const r = await prisma.course.updateMany({ where: { id: { in: ids } }, data });
-    updated = r.count;
+  if (ids.length > 0) {
+    // Prisma needs the DbNull sentinel to actually write NULL to a
+    // JSON column — passing literal null leaves the field unchanged.
+    const data = {
+      thumbnailOverlay: overlayJson === null ? Prisma.DbNull : overlayJson,
+    };
+    if (kind === "pathway") {
+      const r = await prisma.pathway.updateMany({ where: { id: { in: ids } }, data });
+      updated = r.count;
+    } else {
+      const r = await prisma.course.updateMany({ where: { id: { in: ids } }, data });
+      updated = r.count;
+    }
   }
 
-  return NextResponse.json({ ok: true, kind, updated });
+  // ── Site-wide default ───────────────────────────────────────
+  let defaultSaved = false;
+  let defaultCleared = false;
+  if (saveAsDefault) {
+    await setDefaultThumbnailOverlay(overlay ?? null);
+    if (overlay) defaultSaved = true;
+    else defaultCleared = true;
+  }
+
+  return NextResponse.json({
+    ok: true,
+    kind,
+    updated,
+    defaultSaved,
+    defaultCleared,
+  });
 }

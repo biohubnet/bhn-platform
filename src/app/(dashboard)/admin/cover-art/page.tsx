@@ -6,6 +6,7 @@ import {
   CourseThumbnailRegenerator,
   type ThumbnailItem,
 } from "@/components/admin/CourseThumbnailRegenerator";
+import { getDefaultThumbnailOverlay } from "@/lib/courses/thumbnail-overlay-default";
 
 /**
  * /admin/cover-art — bulk-manage AI thumbnails + colour overlays
@@ -32,7 +33,7 @@ export default async function CoverArtAdminPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
 
-  const [courses, pathways] = await Promise.all([
+  const [courses, pathways, defaultOverlay] = await Promise.all([
     prisma.course.findMany({
       select: {
         id: true,
@@ -55,6 +56,7 @@ export default async function CoverArtAdminPage() {
       },
       orderBy: [{ status: "asc" }, { title: "asc" }],
     }),
+    getDefaultThumbnailOverlay(),
   ]);
 
   const items: ThumbnailItem[] = [
@@ -91,10 +93,14 @@ export default async function CoverArtAdminPage() {
         <Stat label="Courses"        value={courses.length} />
         <Stat label="Pathways"       value={pathways.length} />
         <Stat label="With thumbnails" value={withThumbnails} />
-        <Stat label="With overlays"   value={withOverlays} accent={withOverlays > 0 ? "brand" : "neutral"} />
+        <Stat
+          label={defaultOverlay ? "Overlays · default set" : "With overlays"}
+          value={withOverlays}
+          accent={defaultOverlay ? "brand" : withOverlays > 0 ? "brand" : "neutral"}
+        />
       </section>
 
-      <CourseThumbnailRegenerator items={items} />
+      <CourseThumbnailRegenerator items={items} defaultOverlay={defaultOverlay} />
 
       <section className="rounded-2xl border border-line bg-card p-5 surface-shadow">
         <h2 className="text-sm font-semibold text-fg mb-2 inline-flex items-center gap-2">
