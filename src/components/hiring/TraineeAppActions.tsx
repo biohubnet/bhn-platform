@@ -19,7 +19,9 @@ import {
   Calendar, Check, X, Loader2, Briefcase, AlertCircle, Trophy,
   Sparkles, ArrowRight,
 } from "lucide-react";
-import type { Stage } from "@/lib/hiring/transitions";
+// Pure metadata module — see comment in ApplicantActions.tsx for the
+// "Module not found: 'tls'" backstory.
+import type { Stage } from "@/lib/hiring/stages";
 
 interface InterviewView {
   id: string;

@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { STAGE_LABELS, legalNextStages, type Stage } from "@/lib/hiring/transitions";
+import { STAGE_LABELS, legalNextStages, type Stage } from "@/lib/hiring/stages";
 import { ApplicantActions } from "@/components/hiring/ApplicantActions";
 import { scoreFitForTrainee } from "@/lib/matching/fit";
 import { FitExplain } from "@/components/matching/FitExplain";

@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { STAGE_LABELS, type Stage } from "@/lib/hiring/transitions";
+import { STAGE_LABELS, type Stage } from "@/lib/hiring/stages";
 import { TraineeAppActions } from "@/components/hiring/TraineeAppActions";
 
 /**

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Activity, Briefcase, Clock, ExternalLink } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { STAGE_LABELS, type Stage } from "@/lib/hiring/transitions";
+import { STAGE_LABELS, type Stage } from "@/lib/hiring/stages";
 
 /**
  * /admin/pipeline-analytics — hiring pipeline health view.

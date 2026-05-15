@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { ArrowLeft, Users2, Clock, Inbox } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { KANBAN_COLUMNS, STAGE_LABELS, type Stage } from "@/lib/hiring/transitions";
+import { KANBAN_COLUMNS, STAGE_LABELS, type Stage } from "@/lib/hiring/stages";
 import { PipelineKanban } from "@/components/hiring/PipelineKanban";
 
 /**

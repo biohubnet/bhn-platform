@@ -24,7 +24,10 @@ import {
   ClipboardCheck, FileEdit, MessageSquare, Briefcase,
 } from "lucide-react";
 import { OFFER_TEMPLATES, getOfferTemplate, renderOfferTemplate } from "@/lib/hiring/offer-templates";
-import { STAGE_LABELS, type Stage } from "@/lib/hiring/transitions";
+// Import from the pure metadata module — NOT from transitions.ts —
+// because transitions.ts pulls nodemailer through mail.ts, which would
+// break this client bundle ("Module not found: Can't resolve 'tls'").
+import { STAGE_LABELS, type Stage } from "@/lib/hiring/stages";
 
 interface InterviewView {
   id: string;
