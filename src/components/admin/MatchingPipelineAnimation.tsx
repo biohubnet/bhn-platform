@@ -37,25 +37,27 @@ import type { MatchingConfig } from "@/lib/matching/config";
 interface Props { config: MatchingConfig }
 
 // ── Geometry ─────────────────────────────────────────────────────
-// Compact viewBox; the panel sits inside the centered max-w-5xl
-// column rather than going full-bleed.
-const W = 620;
-const H = 280;
-const PAD_X = 70;
+// Wider + shorter viewBox so the panel reads as a horizontal strip
+// of bioluminescence sitting above the form. With preserveAspectRatio
+// "meet" the SVG scales to its container; aspect ratio (6.5:1) gives
+// the rendered height ~155 px inside the max-w-5xl page column.
+const W = 1240;
+const H = 200;
+const PAD_X = 120;
 
-// Five input rows, three hidden rows, one output. y-positions chosen
-// asymmetrically so the network looks grown, not generated.
+// Five input rows, three hidden, one output. Vertical positions
+// spread across the shorter canvas.
 const INPUTS = [
-  { y: 40,  label: "cell culture" },
-  { y: 88,  label: "aseptic" },
-  { y: 138, label: "GMP doc" },
-  { y: 188, label: "bioreactor" },
-  { y: 238, label: "QA" },
+  { y: 30,  label: "cell culture" },
+  { y: 65,  label: "aseptic" },
+  { y: 100, label: "GMP doc" },
+  { y: 135, label: "bioreactor" },
+  { y: 170, label: "QA" },
 ];
-const HIDDEN_YS = [70, 140, 210];
-const OUTPUT_Y = 140;
-const HIDDEN_X = W / 2 - 20;
-const OUTPUT_X = W - PAD_X - 10;
+const HIDDEN_YS = [55, 100, 145];
+const OUTPUT_Y = 100;
+const HIDDEN_X = 600;
+const OUTPUT_X = W - PAD_X;
 
 export function MatchingPipelineAnimation({ config }: Props) {
   const { score, tone, bandLabel } = useSampleScore(config);
@@ -81,7 +83,7 @@ export function MatchingPipelineAnimation({ config }: Props) {
   }
 
   return (
-    <section className="relative overflow-hidden rounded-2xl ring-1 ring-inset ring-cyan-900/40 bg-[#0a0a14] mx-auto" style={{ maxWidth: 700 }}>
+    <section className="relative overflow-hidden rounded-2xl ring-1 ring-inset ring-cyan-900/40 bg-[#0a0a14] mx-auto w-full">
       {/* Faint scan line top edge */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent animate-mpa-scan" aria-hidden />
 
@@ -256,16 +258,16 @@ export function MatchingPipelineAnimation({ config }: Props) {
                 {/* Three concentric "membrane" rings, breathing out of
                     phase to look biological. CSS animations defined
                     below give each ring its own scale rhythm. */}
-                <circle cx={HIDDEN_X} cy={y} r={20} fill="none" stroke={h.hue} strokeWidth="0.7" opacity="0.18" className={`mpa-ring mpa-ring-3-${hi}`} />
-                <circle cx={HIDDEN_X} cy={y} r={15} fill="none" stroke={h.hue} strokeWidth="0.9" opacity="0.30" className={`mpa-ring mpa-ring-2-${hi}`} />
-                <circle cx={HIDDEN_X} cy={y} r={11} fill="none" stroke={h.hue} strokeWidth="1.1" opacity="0.55" className={`mpa-ring mpa-ring-1-${hi}`} />
+                <circle cx={HIDDEN_X} cy={y} r={16} fill="none" stroke={h.hue} strokeWidth="0.7" opacity="0.18" className={`mpa-ring mpa-ring-3-${hi}`} />
+                <circle cx={HIDDEN_X} cy={y} r={12} fill="none" stroke={h.hue} strokeWidth="0.9" opacity="0.30" className={`mpa-ring mpa-ring-2-${hi}`} />
+                <circle cx={HIDDEN_X} cy={y} r={9}  fill="none" stroke={h.hue} strokeWidth="1.1" opacity="0.55" className={`mpa-ring mpa-ring-1-${hi}`} />
                 {/* Inner body — dark with a glow halo */}
-                <circle cx={HIDDEN_X} cy={y} r={10} fill="#10101e" stroke={h.hue} strokeWidth="1.4" />
-                <circle cx={HIDDEN_X} cy={y} r={4} fill={h.hue} filter="url(#mpa-glow)" />
+                <circle cx={HIDDEN_X} cy={y} r={8} fill="#10101e" stroke={h.hue} strokeWidth="1.4" />
+                <circle cx={HIDDEN_X} cy={y} r={3} fill={h.hue} filter="url(#mpa-glow)" />
                 <text
                   x={HIDDEN_X} y={y + 3}
                   fill="#ffffff"
-                  fontSize="9"
+                  fontSize="8"
                   fontWeight="900"
                   fontFamily="ui-monospace, monospace"
                   textAnchor="middle"
@@ -273,14 +275,17 @@ export function MatchingPipelineAnimation({ config }: Props) {
                 >
                   {h.weight}
                 </text>
+                {/* Subscore label — placed to the SIDE of the node
+                    in the wide canvas, not below, because vertical
+                    space is tight in the new shorter strip. */}
                 <text
-                  x={HIDDEN_X} y={y + 30}
+                  x={HIDDEN_X + 22} y={y + 3}
                   fill={h.hue}
                   fontSize="8"
                   letterSpacing="2.5"
                   fontWeight="700"
                   fontFamily="ui-monospace, monospace"
-                  textAnchor="middle"
+                  textAnchor="start"
                   opacity="0.85"
                 >
                   {h.label}
@@ -292,17 +297,17 @@ export function MatchingPipelineAnimation({ config }: Props) {
           {/* ── Output node ───────────────────────────────── */}
           <g>
             {/* Outermost "field" — large, faint */}
-            <circle cx={OUTPUT_X} cy={OUTPUT_Y} r={38} fill={tone} opacity="0.08" filter="url(#mpa-glow-strong)" />
+            <circle cx={OUTPUT_X} cy={OUTPUT_Y} r={32} fill={tone} opacity="0.08" filter="url(#mpa-glow-strong)" />
             {/* Mid membrane */}
-            <circle cx={OUTPUT_X} cy={OUTPUT_Y} r={30} fill="none" stroke={tone} strokeWidth="0.7" opacity="0.32" />
+            <circle cx={OUTPUT_X} cy={OUTPUT_Y} r={24} fill="none" stroke={tone} strokeWidth="0.7" opacity="0.32" />
             {/* Inner ring — breathes */}
-            <circle cx={OUTPUT_X} cy={OUTPUT_Y} r={26} fill="none" stroke={tone} strokeWidth="1" opacity="0.55" className="mpa-output-breathe" />
+            <circle cx={OUTPUT_X} cy={OUTPUT_Y} r={20} fill="none" stroke={tone} strokeWidth="1" opacity="0.55" className="mpa-output-breathe" />
             {/* Core */}
-            <circle cx={OUTPUT_X} cy={OUTPUT_Y} r={20} fill="url(#mpa-output-fill)" stroke={tone} strokeWidth="1.5" filter="url(#mpa-glow)" />
+            <circle cx={OUTPUT_X} cy={OUTPUT_Y} r={16} fill="url(#mpa-output-fill)" stroke={tone} strokeWidth="1.5" filter="url(#mpa-glow)" />
             <text
               x={OUTPUT_X} y={OUTPUT_Y + 5}
               fill="#0a0a14"
-              fontSize="14"
+              fontSize="13"
               fontWeight="900"
               fontFamily="ui-monospace, monospace"
               textAnchor="middle"
@@ -311,14 +316,22 @@ export function MatchingPipelineAnimation({ config }: Props) {
             </text>
           </g>
 
-          {/* ── Pulses ────────────────────────────────────── */}
+          {/* ── Pulses ────────────────────────────────────
+              灵动 = sprightly, graceful. Each pulse is now a slow
+              traveller (5.5 s end-to-end) that fades up gently as
+              it leaves the input, holds full brightness through the
+              middle of its journey, then dims back to invisible
+              before it reaches the output. The dim-in / dim-out
+              points coincide with the endpoint nodes so the pulse
+              feels like it's being "received" by each node rather
+              than crashing into it. */}
           {hiddens.flatMap((h, hi) => {
             const n = Math.max(1, Math.min(3, Math.round(h.weight / 25)));
             const sourceIdxs = [hi % INPUTS.length, (hi + 2) % INPUTS.length];
             return sourceIdxs.flatMap((_idx, k) => {
-              const dur = 3.0;
+              const dur = 5.5;
               const pulses = Array.from({ length: n }).map((__, i) => {
-                const delay = (dur / n) * i + k * 0.45 + hi * 0.22;
+                const delay = (dur / n) * i + k * 0.7 + hi * 0.35;
                 const colour =
                   h.id === "direct"   ? "#a5f3fc" :
                   h.id === "semantic" ? "#f0abfc" : "#fed7aa";
@@ -327,6 +340,7 @@ export function MatchingPipelineAnimation({ config }: Props) {
                     key={`pulse-${hi}-${k}-${i}`}
                     r={2.6}
                     fill={colour}
+                    opacity={0}
                     filter="url(#mpa-glow)"
                   >
                     <animateMotion
@@ -336,6 +350,14 @@ export function MatchingPipelineAnimation({ config }: Props) {
                     >
                       <mpath href={`#mpa-pulse-${hi}-${k}`} />
                     </animateMotion>
+                    <animate
+                      attributeName="opacity"
+                      values="0;0.3;1;1;0.3;0"
+                      keyTimes="0;0.12;0.32;0.68;0.88;1"
+                      dur={`${dur}s`}
+                      repeatCount="indefinite"
+                      begin={`${delay}s`}
+                    />
                   </circle>
                 );
               });
