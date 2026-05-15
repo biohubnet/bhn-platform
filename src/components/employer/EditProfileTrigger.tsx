@@ -142,7 +142,27 @@ function EditProfileModal({
   const [autoFilling, setAutoFilling] = useState(false);
   const [autoError, setAutoError] = useState<string | null>(null);
   const [autoFilled, setAutoFilled] = useState(false);
-  const [manualOpen, setManualOpen] = useState(false);
+  // "Tweak any field manually" disclosure. Default-open when the
+  // operator already has data on file — they're not "filling in"
+  // for the first time, they're EDITING what's there, and the
+  // manual fields are the only way to see / change individual
+  // values. Default-closed for the day-one URL-auto-fill flow.
+  // useState's init callback runs once on mount so we read `initial`
+  // without it influencing the value on subsequent renders.
+  const [manualOpen, setManualOpen] = useState(() => {
+    const filled = [
+      initial.employerCompany,
+      initial.companyIndustry,
+      initial.companySize,
+      initial.companyLocation,
+      initial.companyDescription,
+      initial.companyFounded,
+    ].filter((v) => v && v.toString().trim().length > 0).length;
+    // Two or more fields populated → operator clearly has a profile
+    // already. Open the manual section so the edit affordances are
+    // visible without an extra click.
+    return filled >= 2;
+  });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
