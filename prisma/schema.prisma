@@ -50,6 +50,23 @@ model User {
   /// transparent bounding box; the manual cropper lets the
   /// operator dial it in by hand if Auto-fit gets it wrong.
   companyLogoTransform   Json?
+  /// Per-company brand tokens — drives the hero gradient + accent
+  /// colours on /employer so every company page reads as its own
+  /// brand. JSON blob populated either by the brand-fetch endpoint
+  /// (which scans the homepage for theme-color, CSS vars, and asks
+  /// the LLM for a second opinion) or hand-tuned in the Edit
+  /// Profile modal's Brand section.
+  ///
+  /// Shape (all optional, all hex strings unless noted):
+  ///   {
+  ///     primary?:    "#RRGGBB",
+  ///     secondary?:  "#RRGGBB",
+  ///     accent?:     "#RRGGBB",
+  ///     style?:      "gradient" | "solid"
+  ///   }
+  ///
+  /// See src/lib/employer/brand.ts.
+  companyBrand           Json?
   companyIndustry        String?
   companySize            String? // "1-10" | "11-50" | etc.
   companyLocation        String?

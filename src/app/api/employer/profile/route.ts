@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import { parseCompanyBrand } from "@/lib/employer/brand";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,9 @@ interface Body {
   /** Pan + zoom transform JSON: { offsetX, offsetY, scale }. null
    *  clears the transform. */
   companyLogoTransform?: unknown;
+  /** Brand tokens JSON: { primary?, secondary?, accent?, style? }.
+   *  null clears the brand back to platform default. */
+  companyBrand?: unknown;
   companyIndustry?: string | null;
   companySize?: string | null;
   companyLocation?: string | null;
@@ -92,6 +96,21 @@ export async function PATCH(req: NextRequest) {
       ? Prisma.DbNull
       : (parsed.value as Prisma.InputJsonValue);
   }
+
+  // companyBrand — same JSON-with-explicit-null treatment.
+  if ("companyBrand" in body) {
+    if (body.companyBrand === null) {
+      data.companyBrand = Prisma.DbNull;
+    } else {
+      const parsed = parseCompanyBrand(body.companyBrand);
+      if (parsed === null) {
+        // Empty or invalid → clear the row.
+        data.companyBrand = Prisma.DbNull;
+      } else {
+        data.companyBrand = parsed as unknown as Prisma.InputJsonValue;
+      }
+    }
+  }
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }
@@ -113,6 +132,7 @@ export async function PATCH(req: NextRequest) {
       companyLogo: user.companyLogo,
       companyLogoShape: user.companyLogoShape,
       companyLogoTransform: user.companyLogoTransform,
+      companyBrand: user.companyBrand,
       companyIndustry: user.companyIndustry,
       companySize: user.companySize,
       companyLocation: user.companyLocation,

@@ -13,6 +13,12 @@ import {
   type LogoTransform,
 } from "@/lib/employer/logo-transform";
 import { LogoCropper } from "@/components/employer/LogoCropper";
+import {
+  parseCompanyBrand,
+  brandHeroBackground,
+  isHexColor,
+  type CompanyBrand,
+} from "@/lib/employer/brand";
 
 interface Profile {
   employerCompany: string | null;
@@ -25,6 +31,9 @@ interface Profile {
   /** Pan + zoom transform applied INSIDE the shape mask. JSON
    *  `{ offsetX, offsetY, scale }`. null = default identity. */
   companyLogoTransform: unknown;
+  /** Brand tokens JSON for the per-company hero theme. null =
+   *  platform default gradient. */
+  companyBrand: unknown;
   companyIndustry: string | null;
   companySize: string | null;
   companyLocation: string | null;
@@ -118,6 +127,7 @@ function EditProfileModal({
     companyLogo:          initial.companyLogo        ?? "",
     companyLogoShape:     initial.companyLogoShape   ?? "",
     companyLogoTransform: initial.companyLogoTransform ?? null,
+    companyBrand:         initial.companyBrand         ?? null,
     companyIndustry:      initial.companyIndustry    ?? "",
     companySize:          initial.companySize        ?? "",
     companyLocation:      initial.companyLocation    ?? "",
@@ -269,6 +279,54 @@ function EditProfileModal({
     setLogoBust(Date.now());
     setSaved(false);
     setLogoError(null);
+  }
+
+  // ── Brand detection ────────────────────────────────────────
+  const [brandFetching, setBrandFetching] = useState(false);
+  const [brandFetchMsg, setBrandFetchMsg] = useState<string | null>(null);
+
+  /** Helper — mutate the brand JSON in form state. Pass null to
+   *  clear; pass a partial to merge with existing. */
+  function setBrand(next: CompanyBrand | null) {
+    setValues((cur) => ({ ...cur, companyBrand: next }));
+    setSaved(false);
+  }
+
+  async function detectBrand() {
+    if (!values.companyWebsite?.trim()) {
+      setBrandFetchMsg("Add your company website first.");
+      return;
+    }
+    setBrandFetching(true);
+    setBrandFetchMsg(null);
+    try {
+      const res = await fetch("/api/employer/profile/brand-fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ website: values.companyWebsite }),
+      });
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        brand?: CompanyBrand | null;
+        source?: "mechanical" | "ai" | "none";
+        error?: string;
+      };
+      if (!res.ok) {
+        setBrandFetchMsg(j.error ?? "Couldn't detect brand colours.");
+        return;
+      }
+      if (!j.brand || !j.brand.primary) {
+        setBrandFetchMsg(
+          "Couldn't find brand colours on the homepage. Pick them manually below.",
+        );
+        return;
+      }
+      setBrand(j.brand);
+      const tag = j.source === "ai" ? "AI" : j.source === "mechanical" ? "page metadata" : "homepage";
+      setBrandFetchMsg(`Pulled from ${tag}. Tweak below if anything's off.`);
+    } finally {
+      setBrandFetching(false);
+    }
   }
 
   function clearLogo() {
@@ -907,6 +965,20 @@ function EditProfileModal({
                     </p>
                   )}
                 </Field>
+
+                {/* ── Brand colours ────────────────────────────
+                    Pulled from the company homepage (theme-color +
+                    CSS vars + AI fallback) or hand-tuned. Drives
+                    the cover-banner gradient on /employer so every
+                    company page reads as its own brand. */}
+                <BrandField
+                  brand={parseCompanyBrand(values.companyBrand)}
+                  setBrand={setBrand}
+                  onDetect={detectBrand}
+                  busy={brandFetching}
+                  message={brandFetchMsg}
+                  canDetect={Boolean(values.companyWebsite?.trim())}
+                />
               </div>
             </div>
           </div>
@@ -964,6 +1036,190 @@ function Field({
         {required && <span className="text-rose-600 ml-0.5 normal-case">*</span>}
       </span>
       {children}
+    </label>
+  );
+}
+
+/**
+ * Brand-colours field inside the Edit Profile modal.
+ *
+ * Three controls:
+ *   • "Detect from website" — runs the brand-fetch endpoint and
+ *     fills the three colour pickers from the homepage.
+ *   • Primary / Secondary / Accent colour pickers — hand-tune.
+ *   • Style toggle — gradient (default) or solid fill.
+ *
+ * A live preview swatch at the right of the row shows exactly how
+ * the /employer hero will paint with the current values.
+ */
+function BrandField({
+  brand, setBrand, onDetect, busy, message, canDetect,
+}: {
+  brand: CompanyBrand | null;
+  setBrand: (next: CompanyBrand | null) => void;
+  onDetect: () => void;
+  busy: boolean;
+  message: string | null;
+  canDetect: boolean;
+}) {
+  // Local working copy — non-null so the pickers can edit freely
+  // even before the operator has set anything.
+  const b: CompanyBrand = brand ?? {};
+  const style: "gradient" | "solid" = b.style ?? "gradient";
+
+  function update(patch: Partial<CompanyBrand>) {
+    const next = { ...b, ...patch };
+    // Drop blank entries so the JSON stays clean.
+    if (!isHexColor(next.primary)) delete next.primary;
+    if (!isHexColor(next.secondary)) delete next.secondary;
+    if (!isHexColor(next.accent)) delete next.accent;
+    setBrand(Object.keys(next).length > 0 ? next : null);
+  }
+
+  const previewBg = brandHeroBackground({
+    ...b,
+    primary: b.primary ?? "#1e3a8a",
+    secondary: b.secondary ?? "#312e81",
+    accent: b.accent ?? "#831843",
+    style,
+  });
+  const hasAny =
+    isHexColor(b.primary) || isHexColor(b.secondary) || isHexColor(b.accent);
+
+  return (
+    <Field label="Brand colours">
+      <div className="rounded-xl border border-line bg-elevated/40 p-3 space-y-3">
+        {/* Detect row */}
+        <div className="flex items-start gap-3">
+          <button
+            type="button"
+            onClick={onDetect}
+            disabled={busy || !canDetect}
+            className="inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm shadow-brand-600/25 transition-colors shrink-0"
+          >
+            {busy
+              ? <Loader2 size={12} className="animate-spin" />
+              : <Sparkles size={12} />}
+            {busy ? "Scanning…" : "Detect from website"}
+          </button>
+          <p className="text-[10px] text-subtle leading-snug flex-1">
+            Scans your homepage for{" "}
+            <span className="font-semibold text-fg">theme-color</span>, CSS
+            brand variables, and a Safari mask-icon hint. If those come up
+            empty, the AI takes a second pass on the page text. Tweak the
+            results below if anything's off.
+          </p>
+        </div>
+
+        {/* Colour pickers + style + preview */}
+        <div className="grid sm:grid-cols-[1fr_auto] gap-3 items-start">
+          <div className="space-y-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <BrandColorField
+                label="Primary"
+                value={b.primary}
+                onChange={(v) => update({ primary: v })}
+              />
+              <BrandColorField
+                label="Secondary"
+                value={b.secondary}
+                onChange={(v) => update({ secondary: v })}
+              />
+              <BrandColorField
+                label="Accent"
+                value={b.accent}
+                onChange={(v) => update({ accent: v })}
+              />
+            </div>
+
+            {/* Style toggle */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle">
+                Style
+              </span>
+              <div className="inline-flex rounded-lg ring-1 ring-inset ring-line overflow-hidden">
+                {(["gradient", "solid"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => update({ style: s })}
+                    className={
+                      "px-3 py-1 text-xs font-semibold transition-colors " +
+                      (style === s
+                        ? "bg-brand-600 text-white"
+                        : "bg-card-solid text-muted hover:bg-elevated")
+                    }
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              {hasAny && (
+                <button
+                  type="button"
+                  onClick={() => setBrand(null)}
+                  className="ml-auto text-[10px] uppercase tracking-wider font-bold text-muted hover:text-rose-700 transition-colors"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Live preview swatch — same shape as the /employer hero
+              top-left corner. */}
+          <div className="flex flex-col items-center gap-1.5">
+            <div
+              className="relative w-28 h-16 rounded-lg border border-line overflow-hidden shadow-inner"
+              style={{ background: previewBg }}
+              aria-label="Brand preview swatch"
+            >
+              {/* Tiny eyebrow simulating the hero label */}
+              <span className="absolute top-1.5 left-2 text-[8px] uppercase tracking-[0.22em] font-bold text-white/80">
+                Stage
+              </span>
+            </div>
+            <span className="text-[10px] text-subtle leading-snug">
+              Live preview
+            </span>
+          </div>
+        </div>
+
+        {message && (
+          <p className="text-[10px] text-emerald-700 leading-snug">
+            {message}
+          </p>
+        )}
+      </div>
+    </Field>
+  );
+}
+
+/** Small inline color-picker tile used inside BrandField. Differs
+ *  from the top-level Field component by always being inline. */
+function BrandColorField({
+  label, value, onChange,
+}: {
+  label: string;
+  value: string | undefined;
+  onChange: (v: string) => void;
+}) {
+  const safe = isHexColor(value) ? value : "#1e3a8a";
+  return (
+    <label className="inline-flex items-center gap-1.5">
+      <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle">
+        {label}
+      </span>
+      <input
+        type="color"
+        value={safe}
+        onChange={(e) => onChange(e.target.value.toUpperCase())}
+        className="w-8 h-8 rounded-md border border-line bg-card-solid cursor-pointer p-0.5"
+        aria-label={label}
+      />
+      <span className="text-[10px] font-mono text-muted tabular-nums">
+        {isHexColor(value) ? value : "—"}
+      </span>
     </label>
   );
 }

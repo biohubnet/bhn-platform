@@ -56,6 +56,12 @@ import {
   logoTransformCss,
   type LogoTransform,
 } from "@/lib/employer/logo-transform";
+import {
+  parseCompanyBrand,
+  isUsableBrand,
+  brandHeroBackground,
+  type CompanyBrand,
+} from "@/lib/employer/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +97,7 @@ export default async function EmployerHomePage() {
           companyLogo: true,
           companyLogoShape: true,
           companyLogoTransform: true,
+          companyBrand: true,
           companyIndustry: true,
           companySize: true,
           companyLocation: true,
@@ -218,6 +225,7 @@ export default async function EmployerHomePage() {
     companyLogo: user?.companyLogo ?? null,
     companyLogoShape: user?.companyLogoShape ?? null,
     companyLogoTransform: user?.companyLogoTransform ?? null,
+    companyBrand: user?.companyBrand ?? null,
     companyIndustry: user?.companyIndustry ?? null,
     companySize: user?.companySize ?? null,
     companyLocation: user?.companyLocation ?? null,
@@ -234,7 +242,7 @@ export default async function EmployerHomePage() {
           and the body — one continuous edge per side instead of two
           stacked rings clashing at the seam. */}
       <div className="rounded-3xl overflow-hidden shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)]">
-        <CoverBanner />
+        <CoverBanner brand={parseCompanyBrand(user?.companyBrand)} />
 
         <div
           className="relative -mt-24 sm:-mt-28"
@@ -539,19 +547,31 @@ function SectionEyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CoverBanner() {
+function CoverBanner({ brand }: { brand: CompanyBrand | null }) {
+  // When a usable brand is set, paint the base layer with the
+  // operator-chosen gradient and dial the platform-default auroras
+  // back so they accent — not overwhelm — the brand palette. When
+  // no brand is set, the original 5-aurora platform stage stands.
+  const useBrand = isUsableBrand(brand);
+  const brandBg = useBrand ? brandHeroBackground(brand) : null;
   return (
     <div className="relative h-56 sm:h-72 lg:h-[22rem] overflow-hidden">
+      {/* Base layer — operator-set brand gradient (or the platform
+          default 5-stop purple-pink). */}
       <div
         className="absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(135deg, #0b0f24 0%, #142046 25%, #312e81 50%, #6b21a8 75%, #831843 100%)",
+            brandBg
+              ?? "linear-gradient(135deg, #0b0f24 0%, #142046 25%, #312e81 50%, #6b21a8 75%, #831843 100%)",
         }}
       />
+      {/* Auroras — when a brand is set we dim these so the brand
+          palette stays dominant. Without a brand they paint at full
+          strength to give the platform stage its identity. */}
       <div
         aria-hidden
-        className="absolute -top-40 -left-32 w-[36rem] h-[36rem] rounded-full opacity-70 blur-3xl"
+        className={"absolute -top-40 -left-32 w-[36rem] h-[36rem] rounded-full blur-3xl " + (useBrand ? "opacity-30" : "opacity-70")}
         style={{
           background:
             "radial-gradient(closest-side, rgba(56,189,248,0.7), rgba(56,189,248,0) 70%)",
@@ -559,7 +579,7 @@ function CoverBanner() {
       />
       <div
         aria-hidden
-        className="absolute -bottom-32 right-1/3 w-[34rem] h-[34rem] rounded-full opacity-60 blur-3xl"
+        className={"absolute -bottom-32 right-1/3 w-[34rem] h-[34rem] rounded-full blur-3xl " + (useBrand ? "opacity-25" : "opacity-60")}
         style={{
           background:
             "radial-gradient(closest-side, rgba(244,114,182,0.7), rgba(244,114,182,0) 70%)",
@@ -567,7 +587,7 @@ function CoverBanner() {
       />
       <div
         aria-hidden
-        className="absolute top-0 right-0 w-[24rem] h-[24rem] rounded-full opacity-40 blur-3xl"
+        className={"absolute top-0 right-0 w-[24rem] h-[24rem] rounded-full blur-3xl " + (useBrand ? "opacity-20" : "opacity-40")}
         style={{
           background:
             "radial-gradient(closest-side, rgba(250,204,21,0.5), rgba(250,204,21,0) 70%)",
@@ -575,7 +595,7 @@ function CoverBanner() {
       />
       <div
         aria-hidden
-        className="absolute bottom-0 left-1/3 w-[22rem] h-[22rem] rounded-full opacity-40 blur-3xl"
+        className={"absolute bottom-0 left-1/3 w-[22rem] h-[22rem] rounded-full blur-3xl " + (useBrand ? "opacity-20" : "opacity-40")}
         style={{
           background:
             "radial-gradient(closest-side, rgba(74,222,128,0.5), rgba(74,222,128,0) 70%)",
