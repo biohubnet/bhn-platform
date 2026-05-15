@@ -24,7 +24,7 @@ import {
   Loader2, Sparkles, Star, MessageSquare, Calendar, FileText, Video, Mail,
   FileSignature, ExternalLink, ChevronDown, ChevronRight, Send,
   CheckCircle2, AlertTriangle, XCircle, Clock, Inbox, Plus, X, Save,
-  GraduationCap,
+  GraduationCap, Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FitExplain } from "@/components/matching/FitExplain";
@@ -42,25 +42,56 @@ interface Props {
   onReloadAll: () => void;
 }
 
-// Stage labels & legal transitions — kept inline so this component
-// doesn't depend on the `transitions` module (which pulls
-// nodemailer). The /transition API enforces legality on the server.
-const STAGE_TONE: Record<string, { label: string; cls: string }> = {
-  new:                 { label: "New",          cls: "bg-slate-100 text-slate-700 ring-slate-200" },
-  reviewing:           { label: "Reviewing",    cls: "bg-brand-100 text-brand-800 ring-brand-200" },
-  shortlisted:         { label: "Shortlisted",  cls: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
-  phone_screen:        { label: "Phone screen", cls: "bg-amber-100 text-amber-800 ring-amber-200" },
-  interview_scheduled: { label: "Interview scheduled", cls: "bg-amber-100 text-amber-800 ring-amber-200" },
-  interviewed:         { label: "Interviewed",  cls: "bg-amber-100 text-amber-800 ring-amber-200" },
-  onsite:              { label: "Onsite",       cls: "bg-amber-100 text-amber-800 ring-amber-200" },
-  offer:               { label: "Offer sent",   cls: "bg-violet-100 text-violet-800 ring-violet-200" },
-  hired:               { label: "Hired",        cls: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
-  passed:              { label: "Passed",       cls: "bg-rose-100 text-rose-700 ring-rose-200" },
-  rejected:            { label: "Rejected",     cls: "bg-rose-100 text-rose-700 ring-rose-200" },
-  withdrawn:           { label: "Withdrawn",    cls: "bg-slate-100 text-slate-700 ring-slate-200" },
-  closed:              { label: "Closed",       cls: "bg-slate-100 text-slate-700 ring-slate-200" },
+// Stage labels — used by the collapsed-row pill chip on each
+// applicant. Restrained palette: only the current stage gets a tone;
+// everything else is neutral.
+const STAGE_LABEL: Record<string, string> = {
+  new:                 "New",
+  reviewing:           "Reviewing",
+  shortlisted:         "Shortlisted",
+  phone_screen:        "Phone screen",
+  interview_scheduled: "Interview scheduled",
+  interviewed:         "Interviewed",
+  onsite:              "Onsite",
+  offer:               "Offer sent",
+  hired:               "Hired",
+  passed:              "Passed",
+  rejected:            "Rejected",
+  withdrawn:           "Withdrawn",
+  closed:              "Closed",
 };
-const QUICK_STAGES = ["reviewing", "shortlisted", "interview_scheduled", "offer", "hired", "rejected"] as const;
+const STAGE_PILL_CLS: Record<string, string> = {
+  new:                 "bg-slate-100 text-slate-700 ring-slate-200",
+  reviewing:           "bg-brand-100 text-brand-800 ring-brand-200",
+  shortlisted:         "bg-brand-100 text-brand-800 ring-brand-200",
+  phone_screen:        "bg-brand-100 text-brand-800 ring-brand-200",
+  interview_scheduled: "bg-brand-100 text-brand-800 ring-brand-200",
+  interviewed:         "bg-brand-100 text-brand-800 ring-brand-200",
+  onsite:              "bg-brand-100 text-brand-800 ring-brand-200",
+  offer:               "bg-brand-100 text-brand-800 ring-brand-200",
+  hired:               "bg-emerald-100 text-emerald-800 ring-emerald-200",
+  passed:              "bg-slate-100 text-slate-700 ring-slate-200",
+  rejected:            "bg-slate-100 text-slate-700 ring-slate-200",
+  withdrawn:           "bg-slate-100 text-slate-700 ring-slate-200",
+  closed:              "bg-slate-100 text-slate-700 ring-slate-200",
+};
+
+// Quick-action stages, presented in pipeline order. Each carries a
+// lucide icon for identity instead of relying on colour. The button
+// row uses a single neutral tone for everything except the current
+// stage (filled brand) and the reject action (rose-hover only).
+const QUICK_STAGES: Array<{
+  id: "reviewing" | "shortlisted" | "interview_scheduled" | "offer" | "hired";
+  label: string;
+  icon: React.ElementType;
+}> = [
+  { id: "reviewing",           label: "Reviewing",  icon: Eye },
+  { id: "shortlisted",         label: "Shortlist",  icon: Star },
+  { id: "interview_scheduled", label: "Interview",  icon: Calendar },
+  { id: "offer",               label: "Offer",      icon: Send },
+  { id: "hired",               label: "Hired",      icon: CheckCircle2 },
+];
+const REJECT_STAGE = { id: "rejected", label: "Reject", icon: X } as const;
 
 interface Comment {
   id: string;
@@ -91,13 +122,17 @@ export function ApplicantPanel({
 
   useEffect(() => {
     if (!isExpanded) return;
+    // loadFit / loadComments are function declarations defined below
+    // (hoisted); the lint rule's strict reading flags the forward
+    // reference but the runtime behaviour is fine.
+    /* eslint-disable react-hooks/exhaustive-deps, react-hooks/immutability */
     if (fit === null && !fitLoading) {
       void loadFit();
     }
     if (comments === null) {
       void loadComments();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    /* eslint-enable react-hooks/exhaustive-deps, react-hooks/immutability */
   }, [isExpanded]);
 
   async function loadFit() {
@@ -187,7 +222,8 @@ export function ApplicantPanel({
 
   // ── Collapsed row (default) ──────────────────────────────
   const tone = a.score >= 70 ? "emerald" : a.score >= 40 ? "amber" : "rose";
-  const stage = STAGE_TONE[a.status] ?? STAGE_TONE.new;
+  const stageLabel = STAGE_LABEL[a.status] ?? a.status;
+  const stagePill = STAGE_PILL_CLS[a.status] ?? STAGE_PILL_CLS.new;
 
   return (
     <div className={cn(isExpanded ? "bg-card" : "")}>
@@ -216,8 +252,8 @@ export function ApplicantPanel({
                                    "bg-rose-100 text-rose-700")}>
               {a.score}
             </span>
-            <span className={cn("text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ring-1 ring-inset", stage.cls)}>
-              {stage.label}
+            <span className={cn("text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ring-1 ring-inset", stagePill)}>
+              {stageLabel}
             </span>
           </div>
           <p className="text-[11px] text-muted truncate">
@@ -232,32 +268,66 @@ export function ApplicantPanel({
       {/* ── Expanded inline detail ───────────────────────── */}
       {isExpanded && (
         <div className="px-5 pb-5 pt-2 space-y-5 border-t border-line/70 bg-elevated/30">
-          {/* ── Stage transitions (one-click) ────────── */}
+          {/* ── Stage transitions ───────────────────────
+              Pipeline-order row: Reviewing → Shortlist →
+              Interview → Offer → Hired, with Reject visually
+              separated to the right. Single neutral palette —
+              identity comes from the icon, not the colour. The
+              current stage is the only one filled in (brand);
+              everything else is ghost, with a subtle brand-tinted
+              hover. Reject hovers rose. */}
           <section>
             <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
               Move to stage
             </p>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {QUICK_STAGES.map((s) => {
-                const meta = STAGE_TONE[s];
-                const isCurrent = s === a.status;
+            <div className="flex flex-wrap items-center gap-1">
+              {QUICK_STAGES.map((s, i) => {
+                const Icon = s.icon;
+                const isCurrent = s.id === a.status;
                 return (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => changeStage(s)}
-                    disabled={busyStage || isCurrent}
-                    className={cn(
-                      "inline-flex items-center text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ring-1 ring-inset transition-colors disabled:opacity-50",
-                      isCurrent ? "bg-fg/5 text-fg ring-fg/20"
-                                : `${meta.cls} hover:-translate-y-0.5`,
+                  <div key={s.id} className="inline-flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => changeStage(s.id)}
+                      disabled={busyStage || isCurrent}
+                      title={isCurrent ? `Current stage: ${s.label}` : `Move to ${s.label}`}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-md transition-all disabled:cursor-default",
+                        isCurrent
+                          ? "bg-brand-600 text-white ring-1 ring-inset ring-brand-700 shadow-sm"
+                          : "bg-card text-fg ring-1 ring-inset ring-line hover:ring-brand-300 hover:bg-brand-50/60 hover:-translate-y-0.5",
+                      )}
+                    >
+                      <Icon size={12} className={isCurrent ? "" : "text-muted"} />
+                      {s.label}
+                    </button>
+                    {/* Connector tick — visually links the stages
+                        as a pipeline. Hidden after the last
+                        forward stage. */}
+                    {i < QUICK_STAGES.length - 1 && (
+                      <span className="mx-0.5 w-2 h-px bg-line shrink-0" aria-hidden />
                     )}
-                  >
-                    {meta.label}
-                  </button>
+                  </div>
                 );
               })}
-              {busyStage && <Loader2 size={12} className="animate-spin text-muted" />}
+              {/* Divider before the reject action */}
+              <span className="mx-1 sm:mx-2 h-5 w-px bg-line shrink-0" aria-hidden />
+              <button
+                type="button"
+                onClick={() => changeStage(REJECT_STAGE.id)}
+                disabled={busyStage || a.status === REJECT_STAGE.id}
+                title={a.status === REJECT_STAGE.id ? "Already rejected" : "Reject this candidate"}
+                className={cn(
+                  "inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-md transition-all disabled:cursor-default",
+                  a.status === REJECT_STAGE.id
+                    ? "bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-300"
+                    : "bg-card text-muted ring-1 ring-inset ring-line hover:ring-rose-300 hover:bg-rose-50 hover:text-rose-800 hover:-translate-y-0.5",
+                )}
+              >
+                <REJECT_STAGE.icon size={12} />
+                {REJECT_STAGE.label}
+              </button>
+              {busyStage && <Loader2 size={12} className="animate-spin text-muted ml-1" />}
             </div>
             {stageError && (
               <p className="text-xs text-rose-700 mt-2">{stageError}</p>
@@ -299,28 +369,36 @@ export function ApplicantPanel({
               )}
             </div>
 
-            {showResume && a.resumeUrl && (
-              <div className="mt-3 rounded-xl border border-line overflow-hidden">
-                <div className="flex items-center justify-between px-3 py-2 text-[11px] text-muted bg-elevated/40 border-b border-line/70">
-                  <span className="truncate">{a.resumeUrl}</span>
-                  <a
-                    href={a.resumeUrl}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="inline-flex items-center gap-1 text-brand-700 hover:underline shrink-0 ml-2"
-                  >
-                    Open in new tab <ExternalLink size={10} />
-                  </a>
+            {/* Resume preview — Collapse smooths the height change.
+                The iframe stays mounted while collapsed (avoiding a
+                second network load on re-open) but is aria-hidden +
+                pointer-events skipped by the wrapper. */}
+            {a.resumeUrl && (
+              <Collapse open={showResume}>
+                <div className="mt-3 rounded-xl border border-line overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 text-[11px] text-muted bg-elevated/40 border-b border-line/70">
+                    <span className="truncate">{a.resumeUrl}</span>
+                    <a
+                      href={a.resumeUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex items-center gap-1 text-brand-700 hover:underline shrink-0 ml-2"
+                    >
+                      Open in new tab <ExternalLink size={10} />
+                    </a>
+                  </div>
+                  <iframe src={a.resumeUrl} title="Resume" className="w-full h-[500px] bg-white" />
                 </div>
-                <iframe src={a.resumeUrl} title="Resume" className="w-full h-[500px] bg-white" />
-              </div>
+              </Collapse>
             )}
-            {showVideo && a.videoUrl && (
-              <div className="mt-3 rounded-xl border border-line overflow-hidden bg-black">
-                <div className="aspect-video w-full">
-                  <iframe src={a.videoUrl} title="1-min video" allow="autoplay; fullscreen" allowFullScreen className="w-full h-full" />
+            {a.videoUrl && (
+              <Collapse open={showVideo}>
+                <div className="mt-3 rounded-xl border border-line overflow-hidden bg-black">
+                  <div className="aspect-video w-full">
+                    <iframe src={a.videoUrl} title="1-min video" allow="autoplay; fullscreen" allowFullScreen className="w-full h-full" />
+                  </div>
                 </div>
-              </div>
+              </Collapse>
             )}
 
             {a.coverLetter && (
@@ -399,7 +477,11 @@ export function ApplicantPanel({
             </button>
           </section>
 
-          {actionMode === "interview" && (
+          {/* Inline action forms — height-animated open/close via
+              Collapse so the transition feels intentional. Forms
+              stay mounted while collapsed so a half-typed draft
+              survives toggling. */}
+          <Collapse open={actionMode === "interview"}>
             <InterviewForm
               applicantId={a.applicantId}
               applicationStatusId={a.applicationStatusId}
@@ -409,8 +491,8 @@ export function ApplicantPanel({
                 onReloadAll();
               }}
             />
-          )}
-          {actionMode === "offer" && (
+          </Collapse>
+          <Collapse open={actionMode === "offer"}>
             <OfferForm
               applicantId={a.applicantId}
               applicationStatusId={a.applicationStatusId}
@@ -422,7 +504,7 @@ export function ApplicantPanel({
                 onReloadAll();
               }}
             />
-          )}
+          </Collapse>
 
           {/* ── Comments thread ─────────────────────── */}
           <section>
@@ -850,3 +932,50 @@ function Input({
 void AlertTriangle;
 void Inbox;
 void XCircle;
+
+// ─── <Collapse>: snappy height-animated open/close ──────────────
+//
+// Uses the modern grid-template-rows trick: animating from 0fr →
+// 1fr lets the browser smoothly interpolate the row's height without
+// us having to measure the inner content first. The inner div is
+// min-h-0 + overflow-hidden so as the row shrinks, content gets
+// clipped instead of overflowing.
+//
+// Why this pattern beats max-height
+//   max-height transitions require a known max value — too small
+//   and content clips; too large and the easing curve eats most of
+//   the duration before anything visible happens. grid-template-rows
+//   is auto-sized, so the transition feels snappy regardless of
+//   content height.
+//
+// We pair it with an opacity fade so the inner content doesn't pop
+// in at zero height, and aria-hidden so screen readers don't
+// re-read collapsed content.
+function Collapse({
+  open, children, durationMs = 220,
+}: {
+  open: boolean;
+  children: React.ReactNode;
+  durationMs?: number;
+}) {
+  return (
+    <div
+      className="grid"
+      style={{
+        gridTemplateRows: open ? "1fr" : "0fr",
+        transition: `grid-template-rows ${durationMs}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+      }}
+      aria-hidden={!open}
+    >
+      <div
+        className="min-h-0 overflow-hidden"
+        style={{
+          opacity: open ? 1 : 0,
+          transition: `opacity ${durationMs}ms ease-out`,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
