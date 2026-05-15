@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.14d";
+export const TOUR_VERSION = "2026.05.14e";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -632,6 +632,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.13d",
     cta: { label: "Open insights", href: "/admin/insights" },
+  },
+  {
+    id: "admin-dashboard-redesign",
+    title: "Admin home redesigned around first-hour shortcuts",
+    body: "Open /dashboard with admin rights — the home page now leads with eight large quick-action tiles (Demo workspaces, Invite employer, New posting, Talent applicants, Phantom users, View-as, Users, System status / Audit). On fresh installs, a Setup checklist appears above them with the 5 milestones every BHN deployment needs in place (spawn demo workspace, invite first employer, first posting, first course, first talent application). The checklist auto-hides once everything's set up. Approval queues collapse to a single 'all clear' badge when empty, the stat row is now slim chips instead of big tiles, and the hero CTA is context-aware (Review queue / Continue setup / Admin overview). Secondary CTA went from 'Users' to 'View as'.",
+    path: "/dashboard",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.14e",
+    cta: { label: "Open admin home", href: "/dashboard" },
   },
   {
     id: "mailchimp-doi-signup",
