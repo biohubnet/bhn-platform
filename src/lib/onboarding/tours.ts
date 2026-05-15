@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.15c";
+export const TOUR_VERSION = "2026.05.15d";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -297,6 +297,16 @@ export const TOUR_STEPS: TourStep[] = [
     path: "/employer/profile",
     placement: "center",
     since: "2026.05.15c",
+    roles: ["employer", "admin", "superadmin"],
+    cta: { label: "Open my profile", href: "/employer/profile" },
+  },
+  {
+    id: "employer-profile-flagship",
+    title: "Profile is now your hiring brand page",
+    body: "/employer/profile is now a flagship layout — full-bleed cover banner, overlapping identity card with a 160px logo, three oversized stats, an About pull-quote, and a preview of your live postings as trainees would see them. The edit form is collapsed by default once your profile is in good shape so the polished surfaces carry the page.",
+    path: "/employer/profile",
+    placement: "center",
+    since: "2026.05.15d",
     roles: ["employer", "admin", "superadmin"],
     cta: { label: "Open my profile", href: "/employer/profile" },
   },
