@@ -226,6 +226,18 @@ export function ApplyDialog({
                 </span>
               </p>
             )}
+            {hasArtifacts && (
+              <p className="text-xs text-brand-700 bg-brand-50 border border-brand-200 rounded-lg px-3 py-2 mb-3 inline-flex items-start gap-1.5">
+                <Sparkles size={11} className="mt-0.5 shrink-0" />
+                <span>
+                  Tip:{" "}
+                  <Link href={`/internships/${postingId}/tailor`} className="underline hover:no-underline font-semibold">
+                    tailor your application
+                  </Link>{" "}
+                  against this JD before submitting — close every gap and earn a hiring-manager &quot;yes&quot; first.
+                </span>
+              </p>
+            )}
 
             {/* Optional cover note — pre-filled into the email body,
                 stored on the BHN ApplicationStatus row, and shown to

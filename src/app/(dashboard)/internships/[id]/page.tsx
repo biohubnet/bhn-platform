@@ -156,11 +156,18 @@ export default async function InternshipDetailPage({
                       JD because the trainee's intent at this point is
                       almost always "should I apply, and am I ready?" */}
                   <Link
+                    href={`/internships/${posting.id}/tailor`}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200 hover:bg-brand-100 px-3 py-2 text-xs font-bold"
+                    title="Gap-by-gap AI tailor: parse JD requirements, score your evidence, close each gap, get a hiring-manager verdict."
+                  >
+                    <Sparkles size={12} /> Tailor application
+                  </Link>
+                  <Link
                     href={`/internships/${posting.id}/prepare`}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-violet-50 text-violet-800 ring-1 ring-inset ring-violet-200 hover:bg-violet-100 px-3 py-2 text-xs font-bold"
                     title="4-step AI coach: resume comparison + gap closure + interview prep + STAR story builder"
                   >
-                    <Sparkles size={12} /> Prepare for this posting
+                    <Sparkles size={12} /> Prep coach
                   </Link>
                   <ApplyDialog
                     postingId={posting.id}
