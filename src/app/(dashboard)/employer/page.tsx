@@ -174,13 +174,19 @@ export default async function EmployerHomePage() {
     }>),
   ]);
 
-  const actionQueue = queueRows.map((row) => {
+  // flatMap-with-guard so an orphan row (relation cascaded away but
+  // the application_status row survived) doesn't throw on the
+  // `row.posting.id` access. Prisma's generated types claim the
+  // relations are non-null since the FK columns are required, but
+  // legacy data sometimes disagrees.
+  const actionQueue = queueRows.flatMap((row) => {
+    if (!row.posting || !row.applicant) return [];
     const days = Math.floor((Date.now() - row.stageEnteredAt.getTime()) / 86_400_000);
     const isOffer = row.status === "offer";
     const isStale = ACTIVE_STAGES.includes(row.status as (typeof ACTIVE_STAGES)[number])
       && days >= 7 && row.status !== "new";
     const kind: QueueKind = isOffer ? "offer-waiting" : isStale ? "stale" : "new";
-    return {
+    return [{
       applicationStatusId: row.id,
       postingId: row.posting.id,
       postingTitle: row.posting.title,
@@ -188,7 +194,7 @@ export default async function EmployerHomePage() {
       applicantName: row.applicant.name ?? row.applicant.email,
       kind,
       daysInStage: days,
-    };
+    }];
   });
 
   const hasName = Boolean(user?.employerCompany?.trim());

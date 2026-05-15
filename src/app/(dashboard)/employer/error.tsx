@@ -26,8 +26,10 @@ export default function EmployerError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Bubble to the browser console so it shows up in Vercel logs
-    // alongside the original error.
+    // Bubble to the browser console so it shows up alongside the
+    // original error. Server-side errors get logged automatically
+    // by Next.js to Vercel function logs — readable by the project
+    // owner in the Vercel dashboard → Logs tab.
     // eslint-disable-next-line no-console
     console.error("Employer page error:", error);
   }, [error]);
