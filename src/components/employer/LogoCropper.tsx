@@ -244,7 +244,15 @@ export function LogoCropper({
   }
 
   return (
-    <div className="rounded-xl border border-line bg-elevated/40 p-3">
+    // stopPropagation at the cropper root so the drag-preview clicks
+    // (pointerdown → pointerup synthesises a click on the wrapper div)
+    // and button clicks don't bubble up to the modal backdrop's
+    // onClose handler. Without this the modal closed every time the
+    // operator clicked on the preview tile.
+    <div
+      className="rounded-xl border border-line bg-elevated/40 p-3"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="flex items-center justify-between mb-2">
         <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle">
           Crop &amp; centre
