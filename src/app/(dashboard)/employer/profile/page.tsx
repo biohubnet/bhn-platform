@@ -130,9 +130,12 @@ export default async function EmployerProfilePage() {
       <CoverBanner />
 
       {/* ── BODY — one continuous gradient-washed canvas ──────── */}
-      {/* The whole content area sits on a top-down gradient that
-          bleeds out of the cover. No hard card boundaries between
-          sections — hairlines + typography do the dividing. */}
+      {/* The body slides up into the bottom of the cover banner via
+          its own negative top margin AND has overflow-hidden so
+          rounded corners stay clean. The logo sits inside this
+          body; because the body's top is already up inside the
+          cover area, the logo naturally appears to overlap the
+          cover without needing any negative margin of its own. */}
       <div
         className="relative -mt-24 sm:-mt-28 rounded-3xl overflow-hidden ring-1 ring-line"
         style={{
@@ -140,11 +143,13 @@ export default async function EmployerProfilePage() {
             "linear-gradient(180deg, rgba(59,130,246,0.07) 0%, rgba(244,114,182,0.04) 18%, rgba(255,255,255,0) 35%), linear-gradient(180deg, var(--card) 0%, var(--card) 100%)",
         }}
       >
-        {/* Soft accent wash near the top — a brand-tinted bloom that
-            mirrors the cover's aurora and dies out before the stats. */}
+        {/* Soft accent wash near the top — a brand-tinted bloom
+            that mirrors the cover's aurora and dies out before the
+            stats. Positioned inside the body so overflow-hidden
+            can't clip the logo above it. */}
         <div
           aria-hidden
-          className="absolute -top-20 left-1/4 w-[40rem] h-[40rem] rounded-full opacity-30 blur-3xl pointer-events-none"
+          className="absolute top-10 left-1/4 w-[40rem] h-[40rem] rounded-full opacity-30 blur-3xl pointer-events-none"
           style={{
             background:
               "radial-gradient(closest-side, rgba(59,130,246,0.5), rgba(59,130,246,0) 70%)",
@@ -490,8 +495,14 @@ function CoverBanner() {
 }
 
 function LogoDisc({ src, alt }: { src?: string | null; alt: string }) {
+  // No negative top margin — the body container already slides up
+  // into the cover banner via its own negative margin, so the logo
+  // naturally sits at the top of the body content which is already
+  // up inside the cover area. Adding -mt here would pull the logo
+  // past the body's top edge, where overflow-hidden would slice
+  // off its top half (which is what the user saw before).
   return (
-    <div className="relative shrink-0 -mt-20 sm:-mt-24">
+    <div className="relative shrink-0">
       <div
         aria-hidden
         className="absolute -inset-6 rounded-full opacity-70 blur-2xl"
