@@ -19,7 +19,12 @@ export async function PATCH(req: NextRequest) {
   const session = await getSession();
   const role = (session?.user as { role?: string })?.role ?? "";
   const userId = (session?.user as { id?: string })?.id;
-  if (!session || !userId || role !== "employer") {
+  // Admins and superadmins also reach the employer profile page (via
+  // view-as / direct visit) and must be able to save edits on their
+  // own user record. The auto-fill sibling endpoint already allows
+  // both; this one was inconsistent and produced a "Forbidden"
+  // toast on save.
+  if (!session || !userId || (role !== "employer" && !["admin", "superadmin"].includes(role))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = (await req.json().catch(() => ({}))) as Body;

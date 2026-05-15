@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Pencil, Sparkles, Loader2, AlertCircle, X, Save, ChevronDown, Globe, CheckCircle2,
+  Upload, Image as ImageIcon,
 } from "lucide-react";
 
 interface Profile {
@@ -111,6 +112,47 @@ function EditProfileModal({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
+  // Logo upload state.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+
+  // Cache-bust the preview so the new image renders immediately after
+  // upload (the new URL is short-lived in the browser cache otherwise).
+  const [logoBust, setLogoBust] = useState(0);
+  const logoPreviewSrc = values.companyLogo
+    ? `${values.companyLogo}${values.companyLogo.includes("?") ? "&" : "?"}t=${logoBust}`
+    : "";
+
+  async function uploadLogo(file: File) {
+    setLogoUploading(true);
+    setLogoError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/employer/profile/logo", {
+        method: "POST",
+        body: fd,
+      });
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        url?: string;
+        error?: string;
+      };
+      if (!res.ok || !j.url) {
+        setLogoError(j.error ?? "Upload failed.");
+        return;
+      }
+      // The endpoint persisted companyLogo already; reflect that in
+      // local form state and cache-bust the preview.
+      setValues((cur) => ({ ...cur, companyLogo: j.url ?? cur.companyLogo }));
+      setLogoBust(Date.now());
+      setSaved(false);
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
   // ─── Escape / click-outside to close ────────────────────────
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -195,8 +237,10 @@ function EditProfileModal({
     }
   }
 
+  // Fully opaque card-solid bg so inputs don't show the page behind
+  // the modal — pairs with the outer dialog using bg-card-solid too.
   const inputCls =
-    "w-full bg-card border border-line rounded-lg px-3 py-2 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 disabled:opacity-60";
+    "w-full bg-card-solid border border-line rounded-lg px-3 py-2 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 disabled:opacity-60";
 
   return (
     <div
@@ -209,7 +253,7 @@ function EditProfileModal({
       <div
         ref={dialogRef}
         onClick={stopBackdrop}
-        className="bg-card rounded-3xl border border-line w-full max-w-2xl my-8 shadow-xl overflow-hidden"
+        className="bg-card-solid rounded-3xl border border-line w-full max-w-2xl my-8 shadow-xl overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3 px-6 sm:px-8 pt-6 pb-4 border-b border-line">
@@ -389,28 +433,79 @@ function EditProfileModal({
                     className={`${inputCls} resize-y`}
                   />
                 </Field>
-                <Field label="Logo URL (override)">
-                  <div className="flex items-center gap-3">
-                    {values.companyLogo && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={values.companyLogo}
-                        alt=""
-                        className="w-10 h-10 rounded-lg object-contain bg-elevated border border-line p-1 shrink-0"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                <Field label="Logo">
+                  {/* Big-preview row — left tile is the live preview
+                      (with broken-image fallback to a glyph), right
+                      side has upload button + URL input stacked. */}
+                  <div className="flex items-start gap-3">
+                    <div className="relative w-20 h-20 rounded-xl bg-elevated border border-line flex items-center justify-center overflow-hidden shrink-0">
+                      {values.companyLogo ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            key={logoPreviewSrc}
+                            src={logoPreviewSrc}
+                            alt=""
+                            className="w-full h-full object-contain p-2"
+                            onError={(e) => {
+                              // Hide the broken image so the glyph
+                              // fallback (rendered absolutely below)
+                              // takes over.
+                              (e.currentTarget as HTMLImageElement).style.display = "none";
+                            }}
+                          />
+                          <ImageIcon
+                            size={24}
+                            className="absolute inset-0 m-auto text-subtle pointer-events-none -z-0"
+                          />
+                        </>
+                      ) : (
+                        <ImageIcon size={24} className="text-subtle" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      {/* Upload control */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const f = e.currentTarget.files?.[0];
+                          if (f) uploadLogo(f);
+                          // Clear the input so re-uploading the same
+                          // file twice in a row still fires onChange.
+                          e.currentTarget.value = "";
+                        }}
                       />
-                    )}
-                    <input
-                      type="url"
-                      value={values.companyLogo ?? ""}
-                      onChange={(e) => set("companyLogo", e.target.value)}
-                      placeholder="https://your-site.com/logo.png"
-                      className={inputCls}
-                    />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={logoUploading}
+                        className="w-full inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm shadow-brand-600/25 transition-colors"
+                      >
+                        {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                        {logoUploading ? "Uploading…" : "Upload logo file"}
+                      </button>
+                      {/* URL override — small under the button */}
+                      <input
+                        type="url"
+                        value={values.companyLogo ?? ""}
+                        onChange={(e) => set("companyLogo", e.target.value)}
+                        placeholder="…or paste an image URL"
+                        className={`${inputCls} text-xs py-1.5`}
+                      />
+                    </div>
                   </div>
-                  <p className="text-[10px] text-subtle mt-1 leading-snug">
-                    Auto-fill grabs your favicon automatically. Paste a URL here to override.
-                  </p>
+                  {logoError ? (
+                    <p className="mt-2 text-[11px] text-rose-700 inline-flex items-center gap-1.5">
+                      <AlertCircle size={11} /> {logoError}
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-subtle mt-2 leading-snug">
+                      PNG / JPG / SVG / WebP / GIF up to 2 MB. Auto-fill grabs your favicon automatically; upload or paste a URL to override.
+                    </p>
+                  )}
                 </Field>
               </div>
             </div>
