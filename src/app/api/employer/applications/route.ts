@@ -125,6 +125,14 @@ export async function GET(req: NextRequest) {
     return {
       applicantId: u.id,
       submissionId: s.id,
+      // ApplicationStatus row primary key — distinct from applicantId
+      // (User id) and submissionId (EventFormSubmission id). Needed so
+      // the drawer "Open full applicant detail" link can route to the
+      // /employer/postings/[id]/applicants/[appId] page, which keys
+      // on ApplicationStatus.id. Null when the trainee has submitted
+      // the talent application but hasn't formally applied to THIS
+      // specific posting yet.
+      applicationStatusId: st?.id ?? null,
       submittedAt: s.createdAt,
       // Real name visible to authorized employer/admin only
       name: u.name,

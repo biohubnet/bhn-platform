@@ -50,6 +50,13 @@ import type { FitResult } from "@/lib/matching/fit";
 interface Applicant {
   applicantId: string;
   submissionId: string;
+  /** ApplicationStatus row id — distinct from applicantId (User PK)
+   *  and submissionId (EventFormSubmission PK). Needed so the drawer
+   *  link to /employer/postings/[id]/applicants/[appId] can route to
+   *  the right row. Null when the trainee submitted the talent
+   *  application but hasn't formally applied to this specific
+   *  posting yet — in that case the detail page link hides. */
+  applicationStatusId: string | null;
   submittedAt: string;
   name: string | null;
   email: string;
@@ -233,14 +240,27 @@ export function ApplicantsBoard({ postingId }: { postingId: string }) {
   async function setStatus(a: Applicant, status: StatusKey) {
     setBusy(true);
     try {
-      await fetch("/api/employer/applications", {
+      const r = await fetch("/api/employer/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ postingId, applicantId: a.applicantId, status }),
       });
+      // Read the new ApplicationStatus row id from the response so the
+      // drawer's "Open full applicant detail" link can light up
+      // immediately. Without this, an applicant moved out of the
+      // talent-pool-only state would keep showing the disabled-link
+      // copy until the next full reload.
+      const j = await r.json().catch(() => ({})) as { ok?: boolean; status?: { id?: string } };
+      const newAppId = j?.status?.id ?? a.applicationStatusId ?? null;
       setApplicants((cur) =>
         cur.map((c) => (c.applicantId === a.applicantId
-          ? { ...c, status, daysInStage: 0, stageEnteredAt: new Date().toISOString() }
+          ? {
+              ...c,
+              status,
+              daysInStage: 0,
+              stageEnteredAt: new Date().toISOString(),
+              applicationStatusId: newAppId,
+            }
           : c)),
       );
     } finally { setBusy(false); }
@@ -257,13 +277,12 @@ export function ApplicantsBoard({ postingId }: { postingId: string }) {
         body: JSON.stringify({ postingId, applicantIds, status }),
       });
       if (r.ok) {
-        const stamped = new Date().toISOString();
-        setApplicants((cur) =>
-          cur.map((c) => (selected.has(c.applicantId)
-            ? { ...c, status, daysInStage: 0, stageEnteredAt: stamped }
-            : c)),
-        );
         setSelected(new Set());
+        // The bulk endpoint doesn't echo back per-applicant row ids,
+        // so just refetch to pick up the freshly-minted
+        // ApplicationStatus PKs (and any concurrent updates from
+        // teammates).
+        await load();
       }
     } finally { setBusy(false); }
   }
@@ -1035,12 +1054,25 @@ function Drawer({
         <h2 className="text-xl font-bold text-fg">{a.name ?? a.email}</h2>
         <p className="text-sm text-muted">{a.email}{a.country ? ` · ${a.country}` : ""}</p>
 
-        <a
-          href={`/employer/postings/${postingId}/applicants/${a.applicantId}`}
-          className="mt-2 inline-flex items-center gap-1 text-xs text-brand-700 hover:underline"
-        >
-          Open full applicant detail page <ExternalLink size={11} />
-        </a>
+        {/* Detail-page link — only renders when an ApplicationStatus
+            row exists for this (applicant, posting) pair. Without
+            one, the detail page would 404 because it keys on
+            ApplicationStatus.id. */}
+        {a.applicationStatusId ? (
+          <a
+            href={`/employer/postings/${postingId}/applicants/${a.applicationStatusId}`}
+            className="mt-2 inline-flex items-center gap-1 text-xs text-brand-700 hover:underline"
+          >
+            Open full applicant detail page <ExternalLink size={11} />
+          </a>
+        ) : (
+          <p className="mt-2 text-[11px] text-subtle italic">
+            Trainee hasn&apos;t formally applied to this posting yet — they&apos;re
+            in the talent pool but no ApplicationStatus row exists. Move them
+            to &quot;Reviewing&quot; (or any active stage) to create one and
+            unlock the full detail page.
+          </p>
+        )}
 
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
           <div className="bg-elevated/60 rounded-lg p-2"><p className="text-2xl font-bold tabular-nums">{a.score}</p><p className="text-[10px] uppercase tracking-wider text-subtle">match</p></div>
