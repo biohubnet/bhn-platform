@@ -576,6 +576,14 @@ model CourseFilterOption {
 /// AI parser pre-fill the form.
 model InternshipPosting {
   id              String    @id @default(cuid())
+  /// True for postings created by the HR-side "Seed demo data"
+  /// self-service tool on /employer/postings. Lets each employer
+  /// stand up a sandbox of postings + applicants at varied pipeline
+  /// stages to try things out, and clear them all at the click of
+  /// a button. ApplicationStatus / Interview / Offer rows attached
+  /// to a demo posting follow it down via ON DELETE CASCADE — we
+  /// only need to filter / clear at the posting level.
+  isDemoSeed      Boolean   @default(false)
   companyName     String
   website         String?
   title           String

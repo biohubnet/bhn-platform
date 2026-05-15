@@ -32,6 +32,7 @@ import {
   type QueueItem,
 } from "@/components/employer/workspace/HrWorkspace";
 import { SetPasswordBanner } from "@/components/employer/SetPasswordBanner";
+import { DemoSeederBar } from "@/components/employer/DemoSeederBar";
 
 export const dynamic = "force-dynamic";
 
@@ -193,9 +194,17 @@ export default async function EmployerWorkspacePage() {
   const isFresh = postings.length === 0 && profileEmpty;
   const noPassword = !me?.password;
 
+  // Has the operator already populated some demo data? Drives the
+  // "Add more" vs "Seed demo data" label + whether the Clear button
+  // shows. Cheap COUNT — no risk of pulling all rows.
+  const demoCount = await prisma.internshipPosting.count({
+    where: { createdById: userId ?? "_", isDemoSeed: true },
+  }).catch(() => 0);
+
   return (
     <>
       {noPassword && <SetPasswordBanner className="mb-4" />}
+      <DemoSeederBar hasExistingDemos={demoCount > 0} />
       <HrWorkspace
         firstName={me?.name?.split(" ")[0] ?? null}
         companyName={me?.employerCompany ?? null}
