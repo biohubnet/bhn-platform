@@ -14,6 +14,8 @@ export interface CatalogCourse {
   description: string | null;
   category: string | null;
   thumbnail: string | null;
+  /** Optional colour / gradient wash stamped from /admin/course-thumbnails. */
+  thumbnailOverlay?: unknown;
   status: string;
   courseType: string;
   duration: number | null;

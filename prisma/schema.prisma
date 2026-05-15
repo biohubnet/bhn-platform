@@ -766,6 +766,13 @@ model Course {
   title            String
   description      String?
   thumbnail        String?
+  /// Non-destructive colour / gradient overlay rendered on top of
+  /// `thumbnail` in the catalog. Admins set it from
+  /// /admin/course-thumbnails (batch) so a row of cards can share a
+  /// visual treatment without re-running SDXL. Shape:
+  ///   { mode: "solid"|"gradient", color1, color2?, angle, opacity, blendMode? }
+  /// See src/lib/courses/thumbnail-overlay.ts.
+  thumbnailOverlay Json?
   category         String?
   tags             String?
   status           String   @default("draft")

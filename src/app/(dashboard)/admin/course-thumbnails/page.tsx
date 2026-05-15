@@ -28,6 +28,7 @@ export default async function CourseThumbnailsAdminPage() {
       title: true,
       category: true,
       thumbnail: true,
+      thumbnailOverlay: true,
       status: true,
     },
     orderBy: [{ status: "asc" }, { title: "asc" }],

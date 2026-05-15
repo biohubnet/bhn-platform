@@ -67,6 +67,7 @@ export default async function CoursesPage({
     description: c.description,
     category: c.category,
     thumbnail: c.thumbnail,
+    thumbnailOverlay: c.thumbnailOverlay,
     status: c.status,
     courseType: c.courseType,
     duration: c.duration,

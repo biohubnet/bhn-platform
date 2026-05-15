@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { BookOpen, Users, Clock, Badge } from "lucide-react";
 import { cn, formatDuration, statusColor } from "@/lib/utils";
+import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
 
 interface CourseCardProps {
   course: {
@@ -13,6 +14,9 @@ interface CourseCardProps {
     courseType: string;
     duration?: number | null;
     thumbnail?: string | null;
+    /** Optional JSON colour / gradient wash rendered above the
+     *  thumbnail. Stamped by /admin/course-thumbnails. */
+    thumbnailOverlay?: unknown;
     instructor?: { name: string | null } | null;
     scormPackage?: { version: string } | null;
     _count: { enrollments: number; modules: number };
@@ -23,6 +27,10 @@ interface CourseCardProps {
 export function CourseCard({ course, role }: CourseCardProps) {
   const isStaff = role === "admin" || role === "superadmin" || role === "instructor";
   const isArchived = course.status === "archived";
+  // Live thumbnails get the optional admin-stamped overlay. Archived
+  // cards skip it — the grayscale treatment already does the visual
+  // "not active" work and we don't want two filters competing.
+  const overlay = isArchived ? null : parseOverlay(course.thumbnailOverlay);
 
   return (
     <Link
@@ -44,6 +52,9 @@ export function CourseCard({ course, role }: CourseCardProps) {
           <img src={course.thumbnail} alt="" className={cn("w-full h-full object-cover", isArchived && "grayscale")} />
         ) : (
           <BookOpen size={32} className="text-white/60" />
+        )}
+        {overlay && (
+          <div className="absolute inset-0" style={overlayStyle(overlay)} />
         )}
         {isArchived && (
           <span className="absolute top-2 right-2 inline-flex items-center text-[10px] uppercase tracking-[0.18em] font-bold px-2 py-0.5 rounded-full bg-slate-900/80 text-white ring-1 ring-inset ring-white/20">

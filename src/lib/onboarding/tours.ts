@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.15a";
+export const TOUR_VERSION = "2026.05.15b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -279,6 +279,16 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05.15a",
     cta: { label: "Open the catalog", href: "/courses" },
+  },
+  {
+    id: "course-thumbnails-overlay",
+    title: "Batch-tone course thumbnails",
+    body: "Open /admin/course-thumbnails — there's a new Colour / gradient overlay panel above the rows. Tick the courses you want, dial in colour + angle + opacity + blend mode, and stamp the treatment onto all of them in one click. Non-destructive: the underlying SDXL art is untouched and you can clear the overlay any time.",
+    path: "/admin/course-thumbnails",
+    placement: "center",
+    since: "2026.05.15b",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open thumbnails admin", href: "/admin/course-thumbnails" },
   },
   {
     id: "internship-board",
