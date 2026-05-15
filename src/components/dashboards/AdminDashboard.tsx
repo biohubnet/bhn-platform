@@ -173,6 +173,59 @@ export async function AdminDashboard({
     { label: "Certificates", value: totalCertificates, help: "Lifetime",       tone: "muted" },
   ];
 
+  // ── Spotlight (the focal element) ──────────────────────────────
+  // One thing on the page should be obviously The Hero. We pick it
+  // from a priority cascade:
+  //   1. Pending approvals — there's work waiting; that's the focus.
+  //   2. Setup incomplete — push them through the next milestone.
+  //   3. Otherwise — "all systems go" with a forward-looking nudge
+  //      toward Talent applicants (the operational nerve centre).
+  const spotlight: {
+    eyebrow: string;
+    headline: string;
+    detail: string;
+    primary: { href: string; label: string };
+    secondary?: { href: string; label: string };
+    icon: React.ElementType;
+    bigNumber?: string;
+    bigNumberLabel?: string;
+    tone: "amber" | "brand" | "emerald";
+  } = totalPending > 0
+    ? {
+        eyebrow: "Most pressing",
+        headline: `${totalPending} approval${totalPending === 1 ? "" : "s"} waiting on you`,
+        detail: `Trainees across credits, role-change requests, and pathway enrolments are blocked until you triage. Open the queue — most rows take less than a minute.`,
+        primary:   { href: "/admin/credit-applications", label: "Open the queue" },
+        secondary: { href: "/admin/audit", label: "What happened recently" },
+        icon: ClipboardList,
+        bigNumber: totalPending.toLocaleString(),
+        bigNumberLabel: "pending",
+        tone: "amber",
+      }
+    : showChecklist && nextChecklistItem
+      ? {
+          eyebrow: `Setup · step ${checklistDone + 1} of ${checklist.length}`,
+          headline: nextChecklistItem.label,
+          detail: nextChecklistItem.detail,
+          primary:   { href: nextChecklistItem.href, label: "Do this now" },
+          secondary: { href: "/admin/demo-workspaces", label: "Or spin up a demo workspace" },
+          icon: nextChecklistItem.icon,
+          bigNumber: `${setupPct}%`,
+          bigNumberLabel: "setup complete",
+          tone: "brand",
+        }
+      : {
+          eyebrow: "All systems go",
+          headline: "Eyes on the talent pipeline",
+          detail: "Queues are clear. The highest-leverage surface day-to-day is /employer/applicants — AI match scores, inline previews, team-private comments per candidate.",
+          primary:   { href: "/employer/applicants", label: "Open talent applicants" },
+          secondary: { href: "/admin/split-view", label: "View as a trainee" },
+          icon: Inbox,
+          bigNumber: totalUsers.toLocaleString(),
+          bigNumberLabel: "active users",
+          tone: "emerald",
+        };
+
   return (
     <div className="space-y-6">
       {/* ── Hero ─────────────────────────────────────────────────── */}
@@ -223,11 +276,20 @@ export async function AdminDashboard({
         <div className="curve-down" />
       </section>
 
+      {/* ── Spotlight ────────────────────────────────────────────────
+          The page's focal element. Heavy ambient shadow + a radial-
+          gradient "spotlight" backlight from upper-left and a softer
+          counter-light from lower-right. Everything below this panel
+          is intentionally lighter (no shadows, hairline borders) so
+          this is the unambiguous hero. */}
+      <SpotlightPanel s={spotlight} />
+
       {/* ── At-a-glance metric strip ─────────────────────────────────
           One large panel with subtle brand-tinted gradient. Six
           stat columns separated by hairlines — no individual borders.
-          Big number ramp = command-center feel. */}
-      <section className="relative overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-brand-50/40 via-card to-card surface-shadow">
+          De-weighted (no shadow) so the spotlight above keeps the
+          attention. */}
+      <section className="relative overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-brand-50/40 via-card to-card">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y divide-x divide-line/70 md:divide-y-0">
           {metrics.map((m, idx) => {
             // Re-add the bottom border for the first md row on mobile +
@@ -257,8 +319,9 @@ export async function AdminDashboard({
         </div>
       </section>
 
-      {/* ── Command Deck — Setup + Quick Actions inside ONE panel ─── */}
-      <section className="rounded-2xl border border-line bg-gradient-to-br from-card via-card to-brand-50/30 surface-shadow overflow-hidden">
+      {/* ── Command Deck — Setup + Quick Actions inside ONE panel ───
+          Lighter than the spotlight by design. */}
+      <section className="rounded-2xl border border-line bg-gradient-to-br from-card via-card to-brand-50/30 overflow-hidden">
         <header className="flex items-end justify-between gap-3 flex-wrap px-6 pt-5 pb-4 border-b border-line/70">
           <div>
             <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
@@ -440,6 +503,177 @@ export async function AdminDashboard({
 }
 
 // ─── Sub-components ─────────────────────────────────────────────
+
+/** The page's single focal element.
+ *
+ *  Stagecraft this panel uses:
+ *    • Two layered radial-gradient "spotlights" — a brand-tinted key
+ *      light from the upper-left, a softer counter-light from lower-
+ *      right. They sit absolute-positioned over a near-white card so
+ *      the panel reads as if light is falling on it.
+ *    • Large ambient drop shadow — wide blur + far offset so the panel
+ *      lifts off the page (no other panel has this much shadow).
+ *    • A big tone-coloured number on the right side mirroring whatever
+ *      the spotlight is telling the admin to act on (count of pending
+ *      approvals, % setup complete, active-user count).
+ *    • An accent ring on the icon plus a subtle glow halo behind it to
+ *      reinforce the "this is the thing" hierarchy.
+ *
+ *  Use sparingly: only one SpotlightPanel per page. Anything else
+ *  reading at the same visual weight defeats the focal hierarchy.
+ */
+function SpotlightPanel({
+  s,
+}: {
+  s: {
+    eyebrow: string;
+    headline: string;
+    detail: string;
+    primary: { href: string; label: string };
+    secondary?: { href: string; label: string };
+    icon: React.ElementType;
+    bigNumber?: string;
+    bigNumberLabel?: string;
+    tone: "amber" | "brand" | "emerald";
+  };
+}) {
+  // Tone drives the icon chip, the eyebrow colour, the big number,
+  // and the key-light tint. Centralised here so the cascade is
+  // visually coherent.
+  const toneCfg: Record<
+    typeof s.tone,
+    {
+      eyebrow: string;
+      chip: string;
+      bigNumber: string;
+      keyLight: string; // CSS for the upper-left radial gradient
+      iconHalo: string;  // glow ring behind the icon
+    }
+  > = {
+    amber: {
+      eyebrow: "text-amber-700",
+      chip: "from-amber-400 to-amber-600 shadow-amber-500/40",
+      bigNumber: "text-amber-700",
+      keyLight: "radial-gradient(ellipse 80% 70% at 18% 22%, rgba(245, 158, 11, 0.22), transparent 60%)",
+      iconHalo: "bg-amber-400/40",
+    },
+    brand: {
+      eyebrow: "text-brand-700",
+      chip: "from-brand-500 to-brand-700 shadow-brand-600/40",
+      bigNumber: "text-brand-700",
+      keyLight: "radial-gradient(ellipse 80% 70% at 18% 22%, rgba(94, 143, 247, 0.22), transparent 60%)",
+      iconHalo: "bg-brand-500/40",
+    },
+    emerald: {
+      eyebrow: "text-emerald-700",
+      chip: "from-emerald-500 to-emerald-700 shadow-emerald-600/40",
+      bigNumber: "text-emerald-700",
+      keyLight: "radial-gradient(ellipse 80% 70% at 18% 22%, rgba(16, 185, 129, 0.22), transparent 60%)",
+      iconHalo: "bg-emerald-400/40",
+    },
+  };
+  const tc = toneCfg[s.tone];
+  const Icon = s.icon;
+  return (
+    <section
+      className="relative overflow-hidden rounded-3xl border border-line bg-card"
+      style={{
+        boxShadow:
+          "0 40px 80px -28px rgba(15, 23, 42, 0.28), 0 18px 36px -12px rgba(15, 23, 42, 0.12)",
+      }}
+    >
+      {/* Layered spotlight gradients. Pointer-events-none so clicks
+          fall through to the content beneath. */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: tc.keyLight }}
+        aria-hidden
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 80% at 92% 92%, rgba(168, 85, 247, 0.12), transparent 65%)",
+        }}
+        aria-hidden
+      />
+      {/* Subtle vignette around the edges so the centre reads as
+          "lit" relative to the panel border. */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 100% 100% at 50% 50%, transparent 55%, rgba(15, 23, 42, 0.05) 100%)",
+        }}
+        aria-hidden
+      />
+
+      <div className="relative px-7 py-8 md:px-10 md:py-9">
+        <div className="flex items-start gap-6 md:gap-8 flex-wrap">
+          {/* Icon block — bigger than anywhere else on the page, with
+              a halo glow behind it so the lit-by-spotlight reading
+              holds even on the lighter themes. */}
+          <div className="relative shrink-0">
+            <div
+              className={`absolute -inset-2 rounded-3xl ${tc.iconHalo} blur-2xl opacity-70`}
+              aria-hidden
+            />
+            <div
+              className={`relative w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-gradient-to-br ${tc.chip} text-white flex items-center justify-center shadow-2xl ring-1 ring-white/40`}
+            >
+              <Icon size={32} strokeWidth={2} />
+            </div>
+          </div>
+
+          {/* Headline + body + CTAs */}
+          <div className="flex-1 min-w-0">
+            <p className={`text-[10px] uppercase tracking-[0.28em] font-bold ${tc.eyebrow}`}>
+              {s.eyebrow}
+            </p>
+            <h2 className="text-2xl md:text-3xl font-bold text-fg mt-1.5 tracking-tight leading-tight">
+              {s.headline}
+            </h2>
+            <p className="text-sm text-muted mt-2 max-w-2xl leading-relaxed">
+              {s.detail}
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <Link
+                href={s.primary.href}
+                className={`inline-flex items-center gap-2 bg-gradient-to-br ${tc.chip} text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-lg ring-1 ring-white/30 transition-all hover:-translate-y-0.5 hover:shadow-xl`}
+              >
+                {s.primary.label} <ArrowRight size={14} />
+              </Link>
+              {s.secondary && (
+                <Link
+                  href={s.secondary.href}
+                  className="text-sm font-medium text-muted hover:text-fg inline-flex items-center gap-1"
+                >
+                  {s.secondary.label} <ArrowRight size={12} className="opacity-60" />
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Big tone-coloured KPI on the right — visually echoes
+              the headline so the eye lands in two places: copy on
+              the left, scale on the right. Drops to the bottom on
+              narrow viewports via flex-wrap above. */}
+          {s.bigNumber && (
+            <div className="ml-auto text-right shrink-0 self-stretch flex flex-col justify-center">
+              <p className={`text-5xl md:text-6xl font-black tabular-nums leading-none tracking-tight ${tc.bigNumber}`}>
+                {s.bigNumber}
+              </p>
+              <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mt-2">
+                {s.bigNumberLabel}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 
 /** Vertical setup list — numbered steps, hairline-divided rows, all
  *  inside the Command Deck. No individual borders per row — the panel
