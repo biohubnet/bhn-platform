@@ -1,10 +1,9 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Wand2, RotateCcw, Move } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Wand2, RotateCcw } from "lucide-react";
 import {
   type LogoTransform,
   DEFAULT_LOGO_TRANSFORM,
-  parseLogoTransform,
   logoTransformCss,
 } from "@/lib/employer/logo-transform";
 import {
@@ -52,51 +51,12 @@ export function LogoCropper({
   const transform = value ?? DEFAULT_LOGO_TRANSFORM;
   const { containerMask, imageFit } = logoShapeClasses(shape);
 
-  // ── Drag-to-pan ────────────────────────────────────────────
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{
-    active: boolean;
-    startX: number;
-    startY: number;
-    baseOffsetX: number;
-    baseOffsetY: number;
-  } | null>(null);
-
-  const onPointerDown = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!src) return;
-      // Capture the pointer so dragging keeps tracking even if the
-      // cursor leaves the preview while panning.
-      (e.target as Element).setPointerCapture?.(e.pointerId);
-      dragRef.current = {
-        active: true,
-        startX: e.clientX,
-        startY: e.clientY,
-        baseOffsetX: transform.offsetX,
-        baseOffsetY: transform.offsetY,
-      };
-    },
-    [src, transform.offsetX, transform.offsetY],
-  );
-
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      const d = dragRef.current;
-      if (!d?.active) return;
-      const dx = e.clientX - d.startX;
-      const dy = e.clientY - d.startY;
-      onChange({
-        ...transform,
-        offsetX: d.baseOffsetX + dx,
-        offsetY: d.baseOffsetY + dy,
-      });
-    },
-    [onChange, transform],
-  );
-
-  const onPointerUp = useCallback(() => {
-    if (dragRef.current) dragRef.current.active = false;
-  }, []);
+  // Manual drag-to-pan + zoom slider were removed at the operator's
+  // request — clicks inside those controls were closing the modal
+  // dialog on certain platforms. Auto-fit covers the common case;
+  // we'll re-introduce manual fine-tuning once the input shell is
+  // more robust. The transform plumbing stays so saved transforms
+  // continue to apply at render time.
 
   // ── Auto-fit (canvas bbox) ─────────────────────────────────
   const [autoFitting, setAutoFitting] = useState(false);
@@ -224,12 +184,6 @@ export function LogoCropper({
     onChange(DEFAULT_LOGO_TRANSFORM);
   }
 
-  // ── Defensive: clamp scale on slider change ────────────────
-  function setScale(s: number) {
-    const safe = parseLogoTransform({ ...transform, scale: s });
-    onChange(safe);
-  }
-
   // Clear the auto-fit note whenever the operator interacts with
   // any control afterwards — keeps the surface from looking stuck
   // in a permanent error state.
@@ -244,18 +198,17 @@ export function LogoCropper({
   }
 
   return (
-    // stopPropagation at the cropper root so the drag-preview clicks
-    // (pointerdown → pointerup synthesises a click on the wrapper div)
-    // and button clicks don't bubble up to the modal backdrop's
-    // onClose handler. Without this the modal closed every time the
-    // operator clicked on the preview tile.
+    // stopPropagation at the cropper root so the preview-tile / button
+    // clicks don't bubble up to the modal backdrop's onClose handler.
+    // (Without this the modal closed every time the operator clicked
+    // anywhere inside this section.)
     <div
       className="rounded-xl border border-line bg-elevated/40 p-3"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between mb-2">
         <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle">
-          Crop &amp; centre
+          Auto-centre logo
         </p>
         <p className="text-[10px] text-subtle tabular-nums">
           {Math.round(transform.scale * 100)}%
@@ -263,57 +216,33 @@ export function LogoCropper({
       </div>
 
       <div className="flex items-start gap-3">
-        {/* Live cropper preview — drag to pan. */}
+        {/* Read-only preview — shows the current transform applied
+            inside the chosen shape mask. Manual drag-to-pan + zoom
+            slider were removed at the operator's request; they were
+            causing the modal to close on click and we'll re-add them
+            once we have a more robust input shell. Auto-fit covers
+            the 80%-case automatically. */}
         <div
-          ref={containerRef}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
           className={
-            "relative w-32 h-32 bg-elevated border border-line overflow-hidden shrink-0 select-none touch-none " +
+            "relative w-32 h-32 bg-elevated border border-line overflow-hidden shrink-0 pointer-events-none " +
             containerMask
           }
-          style={{ cursor: dragRef.current?.active ? "grabbing" : "grab" }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
             alt=""
             draggable={false}
-            className={"absolute inset-0 w-full h-full pointer-events-none " + imageFit}
+            className={"absolute inset-0 w-full h-full " + imageFit}
             style={{
               transform: logoTransformCss(transform),
               transformOrigin: "center center",
             }}
           />
-          {/* Subtle drag-hint glyph in the corner; fades away once
-              the operator has touched the cropper. */}
-          <div className="absolute bottom-1 right-1 inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-fg/70 text-white pointer-events-none">
-            <Move size={9} /> drag
-          </div>
         </div>
 
-        {/* Controls column */}
+        {/* Controls column — Auto-fit + Reset only. */}
         <div className="flex-1 min-w-0 space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle w-12 shrink-0">
-              Zoom
-            </span>
-            <input
-              type="range"
-              min={0.5}
-              max={3}
-              step={0.01}
-              value={transform.scale}
-              onChange={(e) => setScale(parseFloat(e.target.value))}
-              className="flex-1 accent-brand-600"
-            />
-            <span className="text-[10px] font-mono tabular-nums text-fg w-10 text-right">
-              {transform.scale.toFixed(2)}×
-            </span>
-          </div>
-
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -337,9 +266,9 @@ export function LogoCropper({
 
           <p className="text-[10px] text-subtle leading-snug">
             <strong className="text-fg">Auto-fit</strong> scans the
-            image for the brand mark and centres it inside the shape.
-            If it gets it wrong, drag the preview to nudge or use the
-            zoom slider — your manual changes save with the rest.
+            image for the brand mark and centres it inside the shape
+            automatically. Manual fine-tuning is temporarily off; we
+            apologise for the inconvenience.
           </p>
 
           {autoFitNote && (
