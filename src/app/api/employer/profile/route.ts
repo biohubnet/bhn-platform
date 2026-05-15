@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 export const runtime = "nodejs";
 
@@ -40,6 +41,15 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }
   const user = await prisma.user.update({ where: { id: userId }, data });
+
+  // Invalidate the server-rendered employer surfaces so the next
+  // navigation / refresh sees the new profile values. Without this,
+  // Next.js can serve a stale RSC payload after save and the page
+  // looks broken ("page can't be loaded" on some browsers when the
+  // soft-refresh RSC fetch returns inconsistent data).
+  revalidatePath("/employer");
+  revalidatePath("/employer/profile");
+
   return NextResponse.json({
     ok: true,
     profile: {

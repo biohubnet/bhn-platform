@@ -210,6 +210,12 @@ function EditProfileModal({
   }
 
   // ─── Save ───────────────────────────────────────────────────
+  // After PATCH succeeds we hard-reload the page rather than rely on
+  // Next.js soft refresh. router.refresh() worked in dev but landed
+  // some users on a "page can't be loaded" overlay on Vercel when
+  // the RSC payload fetch raced the modal-close timeout. A full
+  // reload is bulletproof and the perceived UX is only a couple
+  // hundred ms slower.
   async function save({ closeOnSuccess }: { closeOnSuccess: boolean }) {
     setSaving(true);
     setSaveError(null);
@@ -226,12 +232,18 @@ function EditProfileModal({
         return;
       }
       setSaved(true);
-      router.refresh();
       if (closeOnSuccess) {
-        // Small delay so the success state flashes before the modal
-        // disappears.
-        setTimeout(() => onClose(), 300);
+        // Brief green-state flash, then hard reload — modal disappears
+        // as part of the reload.
+        setTimeout(() => {
+          window.location.reload();
+        }, 400);
+      } else {
+        // Inline save (no close) — still want surfaces to reflect.
+        router.refresh();
       }
+    } catch (err) {
+      setSaveError((err as Error).message || "Save failed.");
     } finally {
       setSaving(false);
     }

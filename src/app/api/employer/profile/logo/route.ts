@@ -22,6 +22,7 @@
  *     re-uploads.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -107,6 +108,11 @@ export async function POST(req: NextRequest) {
   if (before?.companyLogo && before.companyLogo !== url) {
     try { await deleteR2ObjectByUrl(before.companyLogo); } catch { /* non-fatal */ }
   }
+
+  // Same invalidation reason as the PATCH endpoint — logo lives on
+  // /employer's hero.
+  revalidatePath("/employer");
+  revalidatePath("/employer/profile");
 
   return NextResponse.json({ ok: true, url });
 }
