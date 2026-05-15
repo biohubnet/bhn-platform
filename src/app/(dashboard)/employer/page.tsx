@@ -43,7 +43,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Globe, MapPin, Users, Calendar, Briefcase, Sparkles,
-  ShieldCheck, Quote, Clock, ArrowRight, Inbox, AlertTriangle, Hourglass,
+  ShieldCheck, Clock, ArrowRight, Inbox, AlertTriangle, Hourglass,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -401,7 +401,7 @@ export default async function EmployerHomePage() {
               }}
             >
               <SectionEyebrow>About {user?.employerCompany?.trim() || "us"}</SectionEyebrow>
-              <div className="relative pl-6 sm:pl-8 max-w-3xl">
+              <div className="relative pl-8 sm:pl-12 max-w-3xl">
                 <div
                   aria-hidden
                   className="absolute left-0 top-1 bottom-1 w-1 rounded-full"
@@ -410,12 +410,21 @@ export default async function EmployerHomePage() {
                       "linear-gradient(180deg, rgb(56,189,248), rgb(124,58,237), rgb(244,114,182))",
                   }}
                 />
-                <Quote
-                  size={120}
+                {/* Decorative opening quote — use the actual “
+                    (U+201C) glyph at large size so the shape is the
+                    correct opening orientation (the lucide `Quote`
+                    icon is a closing 99-style mark that looked wrong
+                    at the START of the quote). Inset past the brand
+                    rule + given negative top so the giant glyph
+                    hangs above the first word instead of overlapping
+                    the rule. */}
+                <span
                   aria-hidden
-                  className="absolute -top-4 -left-2 sm:-left-4 text-brand-100 pointer-events-none opacity-60"
-                  strokeWidth={1.2}
-                />
+                  className="absolute -top-10 left-7 sm:left-11 text-[8rem] sm:text-[10rem] leading-none font-serif text-brand-100/70 pointer-events-none select-none"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  &ldquo;
+                </span>
                 <blockquote className="relative text-lg sm:text-xl lg:text-2xl text-fg leading-relaxed font-medium">
                   {user.companyDescription}
                 </blockquote>
