@@ -118,13 +118,15 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "Matches for you",           labelKey: "nav.matches",     href: "/profile/matches",          icon: Sparkles,
     description: "AI-ranked internship postings, scored against your skill profile + completed pathways. Each row shows the receipts — direct overlap, semantic similarity, pathway alignment, gaps, and honest caveats." },
   { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList,
-    description: "Status of every application you've submitted across the platform — submitted, reviewed, interview, offer." },
+    description: "Status of every application you've submitted across the platform — submitted, reviewed, interview, offer.",
+    badgeKey: "offer-requests" },
   { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Lightbulb,
     description: "Skills you've earned through training. Mapped against postings to surface ones you'd be strong for." },
   { label: "Story Bank",                labelKey: "nav.stories",     href: "/profile/stories",          icon: BookOpen,
     description: "Reusable STAR-format stories from your application prep. Tagged by skill so the prep flow can suggest 'use this story' on the next posting." },
   { label: "Interviews",                labelKey: "nav.interviews",  href: "/interviews",               icon: Calendar,
-    description: "Interviews scheduled with employers — date, format, link, and prep notes in one place." },
+    description: "Interviews scheduled with employers — date, format, link, and prep notes in one place.",
+    badgeKey: "interview-requests" },
 ];
 
 // Other top-level items rendered after the groups.
@@ -135,7 +137,8 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
 // sidebar item most trainees would scroll past.
 const miscItems: (NavItem & { labelKey: string })[] = [
   { label: "Learning buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake,
-    description: "Pair up with someone for accountability — share a course or pathway, see each other's progress, leave async notes." },
+    description: "Pair up with someone for accountability — share a course or pathway, see each other's progress, leave async notes.",
+    badgeKey: "buddy-invites" },
   // labelKey is overridden per-role at render time ("What's new" for trainees).
   { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Bell,
     description: "What's shipped recently — features, fixes, and improvements." },
@@ -280,6 +283,16 @@ const adminPlatformItems: NavItem[] = [
   { label: "Settings",            href: "/admin/settings",            icon: Settings,    minRole: "superadmin",
     description: "Platform-wide settings only superadmins can change." },
 ];
+
+/** Nav badgeKeys that should flip to the urgent rose chip the moment
+ *  there's ≥1 pending — used for trainee-facing "someone's waiting on
+ *  you" items where even one item shouldn't sit quietly in a brand-
+ *  tone informational chip. */
+const URGENT_FROM_ONE = new Set<string>([
+  "interview-requests",
+  "offer-requests",
+  "buddy-invites",
+]);
 
 const ROLE_RANK: Record<string, number> = {
   user: 0,
@@ -667,22 +680,30 @@ function NavLink({ item, pathname, onNavigate, queueCounts }: {
         {/* Queue badge — only renders when the nav item has a
             badgeKey AND its count is > 0. We never render "0" because
             the absence of a chip already means "nothing pending".
-            Brand fill when ≤ 5 (informational), rose when ≥ 6 (the
-            queue is piling up — needs attention). Capped at 99+ for
-            visual stability. */}
-        {badgeText && (
-          <span
-            className={cn(
-              "shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold tabular-nums",
-              badgeCount >= 6
-                ? "bg-rose-500 text-white"
-                : "bg-brand-100 text-brand-800 ring-1 ring-inset ring-brand-200",
-            )}
-            aria-label={`${badgeCount} pending`}
-          >
-            {badgeText}
-          </span>
-        )}
+            Tone scales with severity:
+              • urgent-from-one keys (interview / offer / buddy
+                invites — trainee-side, time-sensitive) → rose chip
+                with a soft pulse on every count ≥ 1.
+              • everything else → brand fill ≤ 5, rose ≥ 6
+                (the original admin-queue threshold).
+            Capped at 99+ for visual stability. */}
+        {badgeText && (() => {
+          const urgentFromOne = item.badgeKey ? URGENT_FROM_ONE.has(item.badgeKey) : false;
+          const isUrgent = urgentFromOne || badgeCount >= 6;
+          return (
+            <span
+              className={cn(
+                "shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold tabular-nums",
+                isUrgent
+                  ? "bg-rose-500 text-white animate-nav-badge-pulse"
+                  : "bg-brand-100 text-brand-800 ring-1 ring-inset ring-brand-200",
+              )}
+              aria-label={`${badgeCount} pending`}
+            >
+              {badgeText}
+            </span>
+          );
+        })()}
         {active && <ChevronRight size={14} className="text-brand-400 shrink-0" />}
       </Link>
 

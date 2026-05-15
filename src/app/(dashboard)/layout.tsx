@@ -10,6 +10,7 @@ import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
 import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
 import { prisma } from "@/lib/prisma";
 import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
+import { getTraineeQueueCounts } from "@/lib/trainee/queue-counts";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -41,15 +42,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
     !userRow.emailVerified &&
     (userRow.accountKind === "real" || userRow.accountKind == null);
 
-  // Admin queue badges — only fetched when the effective role can act
-  // on the queues. For trainees / employers the map stays empty, the
-  // Sidebar's nav items don't match any badgeKey, so no DOM is added.
-  // realRole gate (not the acted-as role) because a superadmin "view-
-  // as-trainee" still genuinely has the queue badges available.
-  const canSeeQueues = ROLE_RANK[realRole ?? role] >= ROLE_RANK.admin;
-  const queueCounts: QueueCounts | undefined = canSeeQueues
-    ? await getAdminQueueCounts()
-    : undefined;
+  // Queue badges — two layers stitched into one map:
+  //   • Admin badges (credit apps, role requests, pathway enrolments,
+  //     theme proposals, inbox) — only for admin/superadmin.
+  //   • Trainee badges (interview requests, offer requests, buddy
+  //     invites) — for every signed-in user, since they're per-user
+  //     "someone's waiting on you" counts.
+  //
+  // Using the same Record<string, number> shape means the Sidebar
+  // doesn't need to know which set it received; it just looks up by
+  // badgeKey. The two key namespaces ("interview-requests" vs.
+  // "credit-applications") never collide.
+  const canSeeAdminQueues = ROLE_RANK[realRole ?? role] >= ROLE_RANK.admin;
+  const [adminCounts, traineeCounts] = await Promise.all([
+    canSeeAdminQueues ? getAdminQueueCounts() : Promise.resolve(undefined),
+    userId ? getTraineeQueueCounts(userId) : Promise.resolve(undefined),
+  ]);
+  const queueCounts: QueueCounts | undefined =
+    adminCounts || traineeCounts ? { ...traineeCounts, ...adminCounts } : undefined;
 
   return (
     <div className="flex h-screen bg-page">

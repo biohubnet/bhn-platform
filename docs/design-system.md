@@ -206,6 +206,8 @@ Severity-tonal:
 | 6+ | `bg-rose-500` | `text-white` | Queue is piling up; nudge the operator. |
 | 100+ | *(rendered as `99+`)* | — | Visual stability — never overflow the chip width. |
 
+**Urgent-from-one keys** (trainee-side "someone's waiting on you" items — incoming interview request, offer waiting, buddy invite) flip straight to the rose chip on any count ≥ 1 AND add a soft pulse (`animate-nav-badge-pulse`). These are time-sensitive on the trainee's calendar; the platform shouldn't bury them in an informational tone. The whitelist lives in `URGENT_FROM_ONE` inside `src/components/lms/Sidebar.tsx`.
+
 **Where it lives.** The pattern is implemented by passing a `queueCounts: Record<string, number>` map into the Sidebar component. Each `NavItem` can carry an optional `badgeKey: string`; when the count for that key is > 0, the chip renders. The map is populated in `src/lib/admin/queue-counts.ts` (server-side, called from `DashboardLayout` only when the effective role can act on the queues).
 
 **Adding a new badge.** Three steps:

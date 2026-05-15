@@ -1755,11 +1755,29 @@ h1, h2, h3 {
 }
 .animate-mini-arrow { animation: mini-arrow-dip 1.6s ease-in-out infinite; }
 
+/* Sidebar nav-badge pulse — used for urgent-from-one trainee badges
+ * (incoming interview request, offer waiting, buddy invite). Subtle
+ * shadow ramp + tiny scale so it catches the eye without thrashing. */
+@keyframes nav-badge-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.55);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0);
+    transform: scale(1.05);
+  }
+}
+.animate-nav-badge-pulse {
+  animation: nav-badge-pulse 1.8s ease-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-flow-down,
   .animate-icon-wobble,
   .animate-step-bob,
-  .animate-mini-arrow {
+  .animate-mini-arrow,
+  .animate-nav-badge-pulse {
     animation: none;
   }
 }
