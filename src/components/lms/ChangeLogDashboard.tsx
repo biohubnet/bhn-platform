@@ -100,7 +100,7 @@ export function ChangeLogDashboard({ data }: { data: DashboardData }) {
         {/* Plot area. Bars sit in a flex row with each bar `flex-1`
             so widths auto-shrink as the timeline grows. A right-side
             gutter (`pr-8`) reserves room for the tick numbers. */}
-        <div className="relative pr-8 pb-12">
+        <div className="relative pr-8">
           {/* Y-axis ticks — drawn as horizontal dashed lines + a
               numeric label on the right edge. Two ticks (peak + mid)
               are enough at this density. */}
@@ -144,9 +144,16 @@ export function ChangeLogDashboard({ data }: { data: DashboardData }) {
                     />
                     {/* Tooltip — works even when the bar is 1px wide
                         because we extend the hover surface to the
-                        full column. */}
-                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded-md bg-fg text-bg text-[10px] whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
-                      {d.fullLabel}: {d.count}
+                        full column. Explicit slate-900 / white instead
+                        of the theme tokens because `text-bg` was
+                        rendering invisible against `bg-fg` on some
+                        themes (both resolved to the same shade). */}
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-md bg-slate-900 text-white shadow-lg text-[10px] whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-20">
+                      <span className="font-semibold">{d.fullLabel}</span>
+                      <span className="opacity-60 mx-1.5">·</span>
+                      <span className="tabular-nums">
+                        {d.count} {d.count === 1 ? "release" : "releases"}
+                      </span>
                     </span>
                   </div>
                 );
@@ -154,28 +161,35 @@ export function ChangeLogDashboard({ data }: { data: DashboardData }) {
             </div>
           </div>
 
-          {/* X-axis date labels — rotated 45° so they don't overlap.
-              We render every label in the DOM but visually hide
-              non-stride ones via `invisible` to keep horizontal
-              alignment with bars stable. */}
-          <div className="absolute left-0 right-8 top-[100%] -mt-9 flex gap-px">
-            {data.daily.map((d) => {
-              const show = d.index % labelStride === 0 || d.index === days - 1;
-              return (
-                <div
-                  key={d.ymd}
-                  className="flex-1 min-w-px relative"
-                >
-                  {show && (
-                    <span
-                      className="absolute top-1 left-0 origin-top-left -rotate-45 text-[10px] text-subtle tabular-nums whitespace-nowrap"
-                    >
-                      {d.label}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+          {/* X-axis date labels — sit BELOW the baseline (no
+              overlap with the bars) on a dedicated row that's tall
+              enough to fit the rotated text. Each visible label is
+              connected to its bar's baseline by a tiny vertical
+              tick, so it's obvious which bar a date belongs to even
+              when bars are 1 px wide. */}
+          <div className="relative h-12 mt-1">
+            <div className="absolute inset-0 flex gap-px">
+              {data.daily.map((d) => {
+                const show = d.index % labelStride === 0 || d.index === days - 1;
+                return (
+                  <div key={d.ymd} className="flex-1 min-w-px relative">
+                    {show && (
+                      <>
+                        {/* Tick: 1 px wide, 10 px tall, drops from the
+                            chart baseline to just above the label. */}
+                        <div
+                          aria-hidden
+                          className="absolute top-0 left-0 w-px h-2.5 bg-line"
+                        />
+                        <span className="absolute top-4 left-0 origin-top-left -rotate-45 text-[10px] text-subtle tabular-nums whitespace-nowrap">
+                          {d.label}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
