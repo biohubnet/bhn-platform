@@ -149,11 +149,9 @@ const miscItems: (NavItem & { labelKey: string })[] = [
 // EMPLOYER PORTAL — visible only when role === "employer".
 const employerItems: (NavItem & { labelKey: string })[] = [
   { label: "Overview",          labelKey: "nav.employerHome",       href: "/employer",            icon: Building2, exact: true,
-    description: "Hiring-side home — your postings, applicants, and pipeline at a glance." },
+    description: "Your company brand stage — profile (with one-URL AI auto-fill), live action queue, and the hiring shopfront trainees see on every posting. The pencil top-right opens the edit modal." },
   { label: "How it works",      labelKey: "nav.employerGuide",      href: "/employer/how-it-works", icon: Compass,
     description: "End-to-end explainer for the hiring program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
-  { label: "Company profile",   labelKey: "nav.employerProfile",    href: "/employer/profile",    icon: Building2,
-    description: "The profile shown on every posting and to applicants. AI auto-fill drafts it from your website." },
   { label: "My Postings",       labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: FilePlus,
     description: "Postings you've published. Edit, pause, or close them; track applicant counts inline." },
   { label: "Applicants",        labelKey: "nav.employerApplicants", href: "/employer/applicants", icon: Users2,

@@ -1,39 +1,64 @@
+/**
+ * /employer — flagship employer home.
+ *
+ * The home page used to be the linear HR workspace (HrWorkspace
+ * component) — postings + applicant queue + inline expand. That was
+ * functional but didn't lead with the employer's own brand identity.
+ *
+ * This page now opens with the cinematic profile layout that used to
+ * live at /employer/profile, then surfaces the action queue + hiring
+ * shopfront inline beneath it. The old /employer/profile route is
+ * preserved as a redirect alias.
+ *
+ * Section flow, top → bottom (continuous gradient-washed canvas,
+ * sections separated by hairlines + eyebrows):
+ *
+ *   COVER BANNER — full-bleed cinematic gradient with 5 auroras and
+ *      noise texture. The visual stage.
+ *
+ *   IDENTITY ROW — logo + company name + chips + trust signals,
+ *      floating directly on a brand-tinted wash bleeding out of the
+ *      cover. Pencil button top-right opens the edit modal (URL
+ *      auto-fill first, manual fields behind a disclosure).
+ *
+ *   ABOUT QUOTE — pull-quote rendered with a three-colour gradient
+ *      rule on the left, only shown when a description is set.
+ *
+ *   STAT TRIPLET — three numbers (postings live, applicants
+ *      reviewed, interviews held) divided by vertical hairlines.
+ *
+ *   ACTION QUEUE — items needing the employer's attention right
+ *      now (new triage, stale, awaiting offer response). Pulled
+ *      forward from the old HrWorkspace home so this critical signal
+ *      doesn't get buried.
+ *
+ *   HIRING SHOPFRONT — live postings as hairline-divided list rows,
+ *      with a link to the per-posting management page.
+ *
+ * The full single-page workspace (inline applicant expand, drag-drop
+ * pipeline, etc.) still lives at /employer/postings/[id] for deep
+ * work; this home page is the "brand stage" entry point.
+ */
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import {
+  Globe, MapPin, Users, Calendar, Briefcase, Sparkles,
+  ShieldCheck, Quote, Clock, ArrowRight, Inbox, AlertTriangle, Hourglass,
+} from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { HrWorkspace, type PostingSummary, type QueueItem } from "@/components/employer/workspace/HrWorkspace";
+import { EditProfileTrigger } from "@/components/employer/EditProfileTrigger";
 import { SetPasswordBanner } from "@/components/employer/SetPasswordBanner";
 
-/**
- * /employer — the unified HR workspace.
- *
- * Single linear scroll. Every action expands inline; the recruiter
- * never clicks through to a separate page. Replaces the earlier
- * navigation tree (postings list → posting detail → applicants
- * board → applicant detail → interview dialog → offer composer)
- * with one page that opens depth in place.
- *
- * Server responsibilities
- *   - Load all postings the recruiter owns (admins see everything)
- *   - Compute per-stage counts in one groupBy
- *   - Build the action queue (new triage / stale / awaiting offer
- *     response) so the workspace can lead with what needs attention
- *   - Detect "fresh employer" (no company profile + zero postings)
- *     so the welcome banner shows the right copy
- *   - Render <HrWorkspace> with everything pre-computed
- *
- * Client (HrWorkspace) handles all interactivity:
- *   - Expand a posting → loads applicants lazily
- *   - Expand an applicant → shows materials / AI fit / stage / comments inline
- *   - Schedule interview / send offer / create new posting → inline forms
- */
 export const dynamic = "force-dynamic";
 
 const ACTIVE_STAGES = [
   "new", "reviewing", "shortlisted", "phone_screen", "onsite", "offer",
 ] as const;
 
-export default async function EmployerWorkspacePage() {
+type QueueKind = "new" | "stale" | "offer-waiting";
+
+export default async function EmployerHomePage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
@@ -48,98 +73,93 @@ export default async function EmployerWorkspacePage() {
     );
   }
 
-  const me = userId
+  const user = userId
     ? await prisma.user.findUnique({
         where: { id: userId },
         select: {
-          id: true, name: true, password: true,
-          employerCompany: true, companyDescription: true, companyIndustry: true,
-          companyLocation: true, companyLogo: true,
+          createdAt: true,
+          password: true,
+          employerCompany: true,
+          companyWebsite: true,
+          companyLogo: true,
+          companyIndustry: true,
+          companySize: true,
+          companyLocation: true,
+          companyDescription: true,
+          companyFounded: true,
         },
       })
     : null;
 
-  const postingsRaw = await prisma.internshipPosting.findMany({
-    where: isAdmin ? {} : { createdById: userId ?? "_" },
-    select: {
-      id: true,
-      title: true,
-      companyName: true,
-      location: true,
-      status: true,
-      deadline: true,
-      contactEmail: true,
-      createdAt: true,
-      updatedAt: true,
-      keySkills: true,
-      compensation: true,
-      hours: true,
-      duration: true,
-      type: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  // ── Per-stage counts in one groupBy ────────────────────────
-  // Returns rows shaped { postingId, status, _count: { status } }.
-  // We pivot to a Map keyed by postingId.
-  const postingIds = postingsRaw.map((p) => p.id);
-  const stageCounts = postingIds.length
-    ? await prisma.applicationStatus.groupBy({
-        by: ["postingId", "status"],
-        where: { postingId: { in: postingIds } },
-        _count: { status: true },
-      })
-    : [];
-  const countsByPosting = new Map<string, Record<string, number>>();
-  for (const g of stageCounts) {
-    const m = countsByPosting.get(g.postingId) ?? {};
-    m[g.status] = g._count.status;
-    countsByPosting.set(g.postingId, m);
-  }
-
+  const postingsWhere = isAdmin ? {} : { createdById: userId ?? "_" };
   const since7d = new Date(Date.now() - 7 * 86_400_000);
   const since2d = new Date(Date.now() - 2 * 86_400_000);
 
-  // ── Action queue: things genuinely needing attention ─────
-  const queueRows = postingIds.length
-    ? await prisma.applicationStatus.findMany({
-        where: {
-          postingId: { in: postingIds },
-          OR: [
-            // (1) new applications: status=new for any duration (just-arrived triage)
-            { status: "new" },
-            // (2) stale: in a non-terminal active stage for ≥7 days
-            {
-              status: { in: [...ACTIVE_STAGES] as string[] },
-              stageEnteredAt: { lt: since7d },
-            },
-            // (3) offers waiting: status=offer for >2 days (waiting on candidate)
-            {
-              status: "offer",
-              stageEnteredAt: { lt: since2d },
-            },
-          ],
-        },
-        select: {
-          id: true,
-          status: true,
-          stageEnteredAt: true,
-          posting: { select: { id: true, title: true } },
-          applicant: { select: { id: true, name: true, email: true } },
-        },
-        orderBy: { stageEnteredAt: "asc" },
-        take: 12,
-      })
-    : [];
+  const [
+    postingsLive,
+    applicantsCount,
+    interviewsCount,
+    hiredCount,
+    livePostingsPreview,
+    firstPosting,
+    queueRows,
+  ] = await Promise.all([
+    prisma.internshipPosting.count({ where: { ...postingsWhere, status: "active" } }),
+    prisma.applicationStatus.count({ where: { posting: postingsWhere } }),
+    prisma.interview.count({ where: { posting: postingsWhere } }),
+    prisma.applicationStatus.count({
+      where: { posting: postingsWhere, status: "hired" },
+    }),
+    prisma.internshipPosting.findMany({
+      where: { ...postingsWhere, status: "active" },
+      select: {
+        id: true,
+        title: true,
+        location: true,
+        type: true,
+        compensation: true,
+        deadline: true,
+        keySkills: true,
+        _count: { select: { applicationStatuses: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    prisma.internshipPosting.findFirst({
+      where: postingsWhere,
+      select: { createdAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.applicationStatus.findMany({
+      where: {
+        posting: postingsWhere,
+        OR: [
+          { status: "new" },
+          {
+            status: { in: [...ACTIVE_STAGES] as string[] },
+            stageEnteredAt: { lt: since7d },
+          },
+          { status: "offer", stageEnteredAt: { lt: since2d } },
+        ],
+      },
+      select: {
+        id: true,
+        status: true,
+        stageEnteredAt: true,
+        posting: { select: { id: true, title: true } },
+        applicant: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { stageEnteredAt: "asc" },
+      take: 8,
+    }),
+  ]);
 
-  const actionQueue: QueueItem[] = queueRows.map((row) => {
+  const actionQueue = queueRows.map((row) => {
     const days = Math.floor((Date.now() - row.stageEnteredAt.getTime()) / 86_400_000);
     const isOffer = row.status === "offer";
-    const isStale = ACTIVE_STAGES.includes(row.status as (typeof ACTIVE_STAGES)[number]) && days >= 7 && row.status !== "new";
-    const kind: QueueItem["kind"] =
-      isOffer ? "offer-waiting" :
-      isStale ? "stale" : "new";
+    const isStale = ACTIVE_STAGES.includes(row.status as (typeof ACTIVE_STAGES)[number])
+      && days >= 7 && row.status !== "new";
+    const kind: QueueKind = isOffer ? "offer-waiting" : isStale ? "stale" : "new";
     return {
       applicationStatusId: row.id,
       postingId: row.posting.id,
@@ -151,50 +171,627 @@ export default async function EmployerWorkspacePage() {
     };
   });
 
-  const postings: PostingSummary[] = postingsRaw.map((p) => {
-    const m = countsByPosting.get(p.id) ?? {};
-    const total = Object.values(m).reduce((a, b) => a + b, 0);
-    const newCount = m.new ?? 0;
-    const inProgress =
-      (m.reviewing ?? 0) + (m.shortlisted ?? 0) +
-      (m.phone_screen ?? 0) + (m.onsite ?? 0) + (m.offer ?? 0);
-    const hired = m.hired ?? 0;
-    const closed = (m.rejected ?? 0) + (m.closed ?? 0);
-    return {
-      id: p.id,
-      title: p.title,
-      companyName: p.companyName,
-      location: p.location,
-      status: p.status,
-      deadline: p.deadline?.toISOString() ?? null,
-      contactEmail: p.contactEmail,
-      createdAt: p.createdAt.toISOString(),
-      updatedAt: p.updatedAt.toISOString(),
-      keySkills: p.keySkills,
-      compensation: p.compensation,
-      hours: p.hours,
-      duration: p.duration,
-      type: p.type,
-      counts: { total, newCount, inProgress, hired, closed },
-    };
-  });
+  const hasName = Boolean(user?.employerCompany?.trim());
+  const memberSinceYear = (firstPosting?.createdAt ?? user?.createdAt)?.getFullYear();
+  const noPassword = !user?.password;
 
-  const profileEmpty = !me?.companyDescription && !me?.companyIndustry
-    && !me?.companyLocation && !me?.companyLogo;
-  const isFresh = postings.length === 0 && profileEmpty;
-  const noPassword = !me?.password;
+  const profileForEditor = {
+    employerCompany: user?.employerCompany ?? null,
+    companyWebsite: user?.companyWebsite ?? null,
+    companyLogo: user?.companyLogo ?? null,
+    companyIndustry: user?.companyIndustry ?? null,
+    companySize: user?.companySize ?? null,
+    companyLocation: user?.companyLocation ?? null,
+    companyDescription: user?.companyDescription ?? null,
+    companyFounded: user?.companyFounded ?? null,
+  };
 
   return (
-    <>
+    <div className="-mt-2 space-y-0">
       {noPassword && <SetPasswordBanner className="mb-4" />}
-      <HrWorkspace
-        firstName={me?.name?.split(" ")[0] ?? null}
-        companyName={me?.employerCompany ?? null}
-        isAdmin={isAdmin}
-        isFresh={isFresh}
-        postings={postings}
-        actionQueue={actionQueue}
-      />
-    </>
+
+      {/* ── PANEL ──────────────────────────────────────────────
+          Single rounded outer wrapper containing the cover banner
+          and the body — one continuous edge per side instead of two
+          stacked rings clashing at the seam. */}
+      <div className="rounded-3xl overflow-hidden shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)]">
+        <CoverBanner />
+
+        <div
+          className="relative -mt-24 sm:-mt-28"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(59,130,246,0.07) 0%, rgba(244,114,182,0.04) 18%, rgba(255,255,255,0) 35%), linear-gradient(180deg, var(--card) 0%, var(--card) 100%)",
+          }}
+        >
+          {/* Soft accent wash */}
+          <div
+            aria-hidden
+            className="absolute top-10 left-1/4 w-[40rem] h-[40rem] rounded-full opacity-30 blur-3xl pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(closest-side, rgba(59,130,246,0.5), rgba(59,130,246,0) 70%)",
+            }}
+          />
+
+          {/* ── IDENTITY ROW ───────────────────────────────── */}
+          <section
+            aria-label="Company identity"
+            className="relative px-6 sm:px-10 lg:px-14 pt-8 sm:pt-10 pb-10"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-6 sm:gap-10 items-start">
+              <LogoDisc src={user?.companyLogo} alt={user?.employerCompany ?? ""} />
+
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.28em] font-bold text-brand-700 mb-3">
+                  Company profile
+                </p>
+                <h1
+                  className={
+                    "font-bold tracking-tight leading-[1.02] " +
+                    (hasName
+                      ? "text-4xl sm:text-5xl lg:text-6xl text-fg"
+                      : "text-3xl sm:text-4xl text-muted italic")
+                  }
+                  style={
+                    hasName
+                      ? {
+                          backgroundImage:
+                            "linear-gradient(135deg, var(--fg) 0%, var(--fg) 60%, rgb(59,130,246) 100%)",
+                          WebkitBackgroundClip: "text",
+                          backgroundClip: "text",
+                          color: "transparent",
+                        }
+                      : undefined
+                  }
+                >
+                  {user?.employerCompany?.trim() || "Add your company name"}
+                </h1>
+
+                <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm">
+                  {user?.companyIndustry && (
+                    <InlineMeta icon={Briefcase}>{user.companyIndustry}</InlineMeta>
+                  )}
+                  {user?.companyLocation && (
+                    <>
+                      <Dot />
+                      <InlineMeta icon={MapPin}>{user.companyLocation}</InlineMeta>
+                    </>
+                  )}
+                  {user?.companySize && (
+                    <>
+                      <Dot />
+                      <InlineMeta icon={Users}>{user.companySize} people</InlineMeta>
+                    </>
+                  )}
+                  {user?.companyFounded && (
+                    <>
+                      <Dot />
+                      <InlineMeta icon={Calendar}>Since {user.companyFounded}</InlineMeta>
+                    </>
+                  )}
+                </div>
+
+                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+                  {user?.companyWebsite && (
+                    <a
+                      href={normalizeUrl(user.companyWebsite)}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex items-center gap-1.5 font-bold transition-colors"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(90deg, rgb(29,78,216), rgb(124,58,237))",
+                        WebkitBackgroundClip: "text",
+                        backgroundClip: "text",
+                        color: "transparent",
+                      }}
+                    >
+                      <Globe size={12} className="text-brand-700" />
+                      Visit {hostnameFor(user.companyWebsite)}
+                      <ArrowRight size={11} className="text-brand-700" />
+                    </a>
+                  )}
+                  <span className="inline-flex items-center gap-1.5 text-emerald-700 font-semibold">
+                    <ShieldCheck size={12} /> Verified employer
+                  </span>
+                  {memberSinceYear && (
+                    <span className="inline-flex items-center gap-1.5 text-subtle">
+                      <Clock size={11} /> On BHN since {memberSinceYear}
+                    </span>
+                  )}
+                  {hiredCount > 0 && (
+                    <span
+                      className="inline-flex items-center gap-1.5 font-semibold"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(90deg, rgb(244,114,182), rgb(124,58,237))",
+                        WebkitBackgroundClip: "text",
+                        backgroundClip: "text",
+                        color: "transparent",
+                      }}
+                    >
+                      <Sparkles size={11} className="text-fuchsia-500" /> {hiredCount} BHN talent hired
+                    </span>
+                  )}
+                </div>
+
+                {/* Empty-state CTA — if hardly anything is filled in,
+                    surface the auto-fill button right here so day-one
+                    employers don't have to hunt for the pencil. */}
+                {!hasName && (
+                  <div className="mt-5">
+                    <EditProfileTrigger initial={profileForEditor} variant="button" />
+                  </div>
+                )}
+              </div>
+
+              {/* Right column: edit pencil + live status. The pencil
+                  is the new primary entry point to the edit modal. */}
+              <div className="flex flex-row sm:flex-col items-start gap-2 shrink-0">
+                <EditProfileTrigger initial={profileForEditor} variant="icon" />
+                <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200 whitespace-nowrap">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* ── ABOUT QUOTE ──────────────────────────────────── */}
+          {user?.companyDescription?.trim() && (
+            <section
+              aria-label="About"
+              className="relative px-6 sm:px-10 lg:px-14 py-10 sm:py-12 border-t border-line"
+              style={{
+                backgroundImage:
+                  "linear-gradient(180deg, rgba(59,130,246,0.04) 0%, rgba(244,114,182,0.04) 100%)",
+              }}
+            >
+              <SectionEyebrow>About {user?.employerCompany?.trim() || "us"}</SectionEyebrow>
+              <div className="relative pl-6 sm:pl-8 max-w-3xl">
+                <div
+                  aria-hidden
+                  className="absolute left-0 top-1 bottom-1 w-1 rounded-full"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgb(56,189,248), rgb(124,58,237), rgb(244,114,182))",
+                  }}
+                />
+                <Quote
+                  size={120}
+                  aria-hidden
+                  className="absolute -top-4 -left-2 sm:-left-4 text-brand-100 pointer-events-none opacity-60"
+                  strokeWidth={1.2}
+                />
+                <blockquote className="relative text-lg sm:text-xl lg:text-2xl text-fg leading-relaxed font-medium">
+                  {user.companyDescription}
+                </blockquote>
+              </div>
+            </section>
+          )}
+
+          {/* ── STATS ────────────────────────────────────────── */}
+          <section
+            aria-label="Hiring at a glance"
+            className="relative px-6 sm:px-10 lg:px-14 py-10 sm:py-12 border-t border-line"
+            style={{
+              backgroundImage:
+                "linear-gradient(135deg, rgba(56,189,248,0.06) 0%, rgba(124,58,237,0.04) 50%, rgba(244,114,182,0.05) 100%)",
+            }}
+          >
+            <SectionEyebrow>By the numbers</SectionEyebrow>
+            <div className="grid grid-cols-3 divide-x divide-line">
+              <InlineStat
+                label={isAdmin ? "Postings live (platform)" : "Postings live"}
+                value={postingsLive}
+                tone="brand"
+              />
+              <InlineStat
+                label="Applicants reviewed"
+                value={applicantsCount}
+                tone="violet"
+              />
+              <InlineStat
+                label="Interviews held"
+                value={interviewsCount}
+                tone="rose"
+              />
+            </div>
+          </section>
+
+          {/* ── ACTION QUEUE ─────────────────────────────────── */}
+          {actionQueue.length > 0 && (
+            <section
+              aria-label="Action queue"
+              className="relative px-6 sm:px-10 lg:px-14 py-10 sm:py-12 border-t border-line"
+            >
+              <div className="flex items-end justify-between gap-4 flex-wrap mb-5">
+                <div>
+                  <SectionEyebrow>Needs your attention</SectionEyebrow>
+                  <h2 className="text-xl sm:text-2xl font-bold text-fg tracking-tight">
+                    Action queue · {actionQueue.length}
+                  </h2>
+                </div>
+              </div>
+              <ul className="divide-y divide-line">
+                {actionQueue.map((q) => (
+                  <QueueRow key={q.applicationStatusId} item={q} />
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* ── HIRING SHOPFRONT ─────────────────────────────── */}
+          {livePostingsPreview.length > 0 && (
+            <section
+              aria-label="Live postings"
+              className="relative px-6 sm:px-10 lg:px-14 py-10 sm:py-12 border-t border-line"
+            >
+              <div className="flex items-end justify-between gap-4 flex-wrap mb-6">
+                <div>
+                  <SectionEyebrow>Hiring shopfront</SectionEyebrow>
+                  <h2 className="text-xl sm:text-2xl font-bold text-fg tracking-tight">
+                    What trainees see when they find you
+                  </h2>
+                </div>
+                <Link
+                  href="/employer/postings"
+                  className="text-xs font-bold inline-flex items-center gap-1"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(90deg, rgb(29,78,216), rgb(124,58,237))",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                  }}
+                >
+                  Manage all postings <ArrowRight size={11} className="text-brand-700" />
+                </Link>
+              </div>
+              <ul className="divide-y divide-line">
+                {livePostingsPreview.map((p) => (
+                  <PostingListRow key={p.id} posting={p} />
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* ── Empty postings hint ──────────────────────────── */}
+          {livePostingsPreview.length === 0 && (
+            <section className="relative px-6 sm:px-10 lg:px-14 py-10 sm:py-12 border-t border-line">
+              <SectionEyebrow>Hiring shopfront</SectionEyebrow>
+              <p className="text-sm text-muted max-w-xl leading-snug">
+                No live postings yet. Once you publish your first one, this section will show what trainees see when they find your company.
+              </p>
+              <Link
+                href="/employer/postings"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-800"
+              >
+                Create your first posting <ArrowRight size={11} />
+              </Link>
+            </section>
+          )}
+        </div>
+      </div>
+    </div>
   );
+}
+
+// ─── Section sub-components ──────────────────────────────────────
+
+function SectionEyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] uppercase tracking-[0.28em] font-bold text-subtle mb-4 inline-flex items-center gap-2">
+      <span
+        aria-hidden
+        className="w-6 h-px"
+        style={{
+          background: "linear-gradient(90deg, rgb(56,189,248), rgb(124,58,237))",
+        }}
+      />
+      {children}
+    </p>
+  );
+}
+
+function CoverBanner() {
+  return (
+    <div className="relative h-56 sm:h-72 lg:h-[22rem] overflow-hidden">
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(135deg, #0b0f24 0%, #142046 25%, #312e81 50%, #6b21a8 75%, #831843 100%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute -top-40 -left-32 w-[36rem] h-[36rem] rounded-full opacity-70 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(56,189,248,0.7), rgba(56,189,248,0) 70%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute -bottom-32 right-1/3 w-[34rem] h-[34rem] rounded-full opacity-60 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(244,114,182,0.7), rgba(244,114,182,0) 70%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute top-0 right-0 w-[24rem] h-[24rem] rounded-full opacity-40 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(250,204,21,0.5), rgba(250,204,21,0) 70%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute bottom-0 left-1/3 w-[22rem] h-[22rem] rounded-full opacity-40 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(74,222,128,0.5), rgba(74,222,128,0) 70%)",
+        }}
+      />
+      <svg
+        aria-hidden
+        className="absolute inset-0 w-full h-full opacity-[0.22] mix-blend-overlay pointer-events-none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <filter id="cover-noise">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" />
+          <feColorMatrix
+            type="matrix"
+            values="0 0 0 0 1
+                    0 0 0 0 1
+                    0 0 0 0 1
+                    0 0 0 0.4 0"
+          />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#cover-noise)" />
+      </svg>
+      <div
+        aria-hidden
+        className="absolute left-0 right-0 top-1/2 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+      />
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-transparent to-black/40"
+      />
+      <div className="absolute top-5 left-6 sm:left-10 flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] font-bold text-white/70">
+        <span
+          aria-hidden
+          className="w-6 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.7))",
+          }}
+        />
+        Brand stage
+      </div>
+    </div>
+  );
+}
+
+function LogoDisc({ src, alt }: { src?: string | null; alt: string }) {
+  return (
+    <div className="relative shrink-0">
+      <div
+        aria-hidden
+        className="absolute -inset-6 rounded-full opacity-70 blur-2xl"
+        style={{
+          background:
+            "conic-gradient(from 0deg, rgba(56,189,248,0.5), rgba(244,114,182,0.5), rgba(250,204,21,0.4), rgba(74,222,128,0.4), rgba(56,189,248,0.5))",
+        }}
+      />
+      <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white ring-4 ring-white shadow-[0_18px_40px_-10px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center overflow-hidden">
+        {src ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            alt={alt}
+            className="w-24 h-24 sm:w-28 sm:h-28 object-contain"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <Briefcase size={40} className="text-slate-400" />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InlineMeta({
+  icon: Icon, children,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-fg font-medium">
+      <Icon size={13} className="text-subtle" />
+      {children}
+    </span>
+  );
+}
+
+function Dot() {
+  return <span aria-hidden className="inline-block w-1 h-1 rounded-full bg-line" />;
+}
+
+function InlineStat({
+  label, value, tone,
+}: {
+  label: string;
+  value: number;
+  tone: "brand" | "violet" | "rose";
+}) {
+  const gradients: Record<typeof tone, string> = {
+    brand:  "linear-gradient(135deg, rgb(56,189,248) 0%, rgb(29,78,216) 100%)",
+    violet: "linear-gradient(135deg, rgb(167,139,250) 0%, rgb(109,40,217) 100%)",
+    rose:   "linear-gradient(135deg, rgb(251,113,133) 0%, rgb(190,18,60) 100%)",
+  };
+  return (
+    <div className="px-5 sm:px-8 first:pl-0 last:pr-0">
+      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+        {label}
+      </p>
+      <p
+        className="text-4xl sm:text-5xl lg:text-6xl font-bold tabular-nums tracking-tight leading-none mt-2"
+        style={{
+          backgroundImage: gradients[tone],
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          color: "transparent",
+        }}
+      >
+        {value.toLocaleString()}
+      </p>
+    </div>
+  );
+}
+
+interface QueueItem {
+  applicationStatusId: string;
+  postingId: string;
+  postingTitle: string;
+  applicantId: string;
+  applicantName: string | null;
+  kind: QueueKind;
+  daysInStage: number;
+}
+
+function QueueRow({ item }: { item: QueueItem }) {
+  const kindMeta: Record<QueueKind, { label: string; icon: typeof Inbox; tone: string }> = {
+    "new":             { label: "New application",  icon: Inbox,         tone: "text-brand-700" },
+    "stale":           { label: "Stalled",          icon: AlertTriangle, tone: "text-amber-700" },
+    "offer-waiting":   { label: "Awaiting reply",   icon: Hourglass,     tone: "text-violet-700" },
+  };
+  const meta = kindMeta[item.kind];
+  const Icon = meta.icon;
+  return (
+    <li>
+      <Link
+        href={`/employer/postings/${item.postingId}/applicants/${item.applicationStatusId}`}
+        className="group block py-3 hover:bg-elevated/40 transition-colors -mx-3 sm:-mx-5 px-3 sm:px-5 rounded-xl"
+      >
+        <div className="flex items-center gap-3 flex-wrap">
+          <Icon size={14} className={`${meta.tone} shrink-0`} />
+          <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle whitespace-nowrap">
+            {meta.label}
+          </span>
+          <span className="font-semibold text-fg group-hover:text-brand-700 transition-colors truncate min-w-0 flex-1">
+            {item.applicantName ?? "Unknown applicant"}
+          </span>
+          <span className="text-xs text-muted truncate">
+            {item.postingTitle}
+          </span>
+          <span className="text-[10px] uppercase tracking-[0.16em] font-bold text-subtle tabular-nums whitespace-nowrap">
+            {item.daysInStage}d
+          </span>
+        </div>
+      </Link>
+    </li>
+  );
+}
+
+interface PostingPreview {
+  id: string;
+  title: string;
+  location: string | null;
+  type: string | null;
+  compensation: string | null;
+  deadline: Date | null;
+  keySkills: string[];
+  _count: { applicationStatuses: number };
+}
+
+function PostingListRow({ posting }: { posting: PostingPreview }) {
+  const skills = (posting.keySkills ?? []).slice(0, 4);
+  return (
+    <li>
+      <Link
+        href={`/employer/postings/${posting.id}/applicants`}
+        className="group block py-4 hover:bg-elevated/40 transition-colors -mx-3 sm:-mx-5 px-3 sm:px-5 rounded-xl"
+      >
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h3 className="font-bold text-fg text-base group-hover:text-brand-700 transition-colors">
+                {posting.title}
+              </h3>
+              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.16em] font-bold text-emerald-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Live
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+              {posting.location && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin size={11} /> {posting.location}
+                </span>
+              )}
+              {posting.type && (<><Dot /><span>{posting.type}</span></>)}
+              {posting.compensation && (<><Dot /><span>{posting.compensation}</span></>)}
+              {posting.deadline && (
+                <>
+                  <Dot />
+                  <span className="inline-flex items-center gap-1">
+                    <Calendar size={11} />
+                    Closes {posting.deadline.toLocaleDateString("en-CA", { month: "short", day: "numeric" })}
+                  </span>
+                </>
+              )}
+            </div>
+            {skills.length > 0 && (
+              <p className="mt-1.5 text-xs text-subtle truncate">
+                {skills.join(" · ")}
+                {posting.keySkills.length > 4 && ` · +${posting.keySkills.length - 4} more`}
+              </p>
+            )}
+          </div>
+          <div className="text-right shrink-0">
+            <p
+              className="text-2xl font-bold tabular-nums tracking-tight leading-none"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, rgb(56,189,248), rgb(124,58,237))",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              {posting._count.applicationStatuses}
+            </p>
+            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mt-1">
+              applicant{posting._count.applicationStatuses === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+      </Link>
+    </li>
+  );
+}
+
+// ─── URL helpers ─────────────────────────────────────────────────
+
+function normalizeUrl(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return "#";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function hostnameFor(input: string): string {
+  try {
+    return new URL(normalizeUrl(input)).hostname.replace(/^www\./, "");
+  } catch {
+    return input;
+  }
 }

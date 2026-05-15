@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.15f";
+export const TOUR_VERSION = "2026.05.15g";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -318,7 +318,17 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05.15d",
     roles: ["employer", "admin", "superadmin"],
-    cta: { label: "Open my profile", href: "/employer/profile" },
+    cta: { label: "Open my profile", href: "/employer" },
+  },
+  {
+    id: "employer-home-brand-stage",
+    title: "Employer home is now your brand stage",
+    body: "The /employer overview opens with the cinematic profile layout — cover banner, identity card, stats, action queue, hiring shopfront. Click the pencil top-right to open the edit modal, which leads with the URL auto-fill: paste your site and the AI pulls industry, HQ, size, founding year, logo, and description in one round trip.",
+    path: "/employer",
+    placement: "center",
+    since: "2026.05.15g",
+    roles: ["employer", "admin", "superadmin"],
+    cta: { label: "Open my employer home", href: "/employer" },
   },
   {
     id: "internship-board",
