@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getSession, ROLE_RANK } from "@/lib/auth";
 import { Sidebar } from "@/components/lms/Sidebar";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 import { DemoBanner } from "@/components/admin/DemoBanner";
@@ -9,6 +9,7 @@ import { PageTranslator } from "@/components/translation/PageTranslator";
 import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
 import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
 import { prisma } from "@/lib/prisma";
+import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -40,6 +41,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     !userRow.emailVerified &&
     (userRow.accountKind === "real" || userRow.accountKind == null);
 
+  // Admin queue badges — only fetched when the effective role can act
+  // on the queues. For trainees / employers the map stays empty, the
+  // Sidebar's nav items don't match any badgeKey, so no DOM is added.
+  // realRole gate (not the acted-as role) because a superadmin "view-
+  // as-trainee" still genuinely has the queue badges available.
+  const canSeeQueues = ROLE_RANK[realRole ?? role] >= ROLE_RANK.admin;
+  const queueCounts: QueueCounts | undefined = canSeeQueues
+    ? await getAdminQueueCounts()
+    : undefined;
+
   return (
     <div className="flex h-screen bg-page">
       <Sidebar
@@ -49,6 +60,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         user={session.user ?? {}}
         credits={userRow?.credits ?? undefined}
         allowPlatformContent={userRow?.allowPlatformContent ?? false}
+        queueCounts={queueCounts}
       />
       <main className="flex-1 overflow-y-auto relative">
         {actingAs && <ImpersonationBanner actingAs={actingAs} />}

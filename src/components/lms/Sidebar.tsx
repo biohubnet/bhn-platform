@@ -67,6 +67,12 @@ interface NavItem {
    *  popover next to the link. Kept English-only for now; if we localize
    *  later, swap for descriptionKey + dictionary entry. */
   description?: string;
+  /** Optional queue-badge key. When the parent passes a queueCounts
+   *  map (admin sidebar only), the matching count is rendered as a
+   *  small chip to the right of the label. Absent / 0 → no badge.
+   *  Keep in sync with the QueueBadgeKey union in
+   *  src/lib/admin/queue-counts.ts. */
+  badgeKey?: string;
 }
 
 // Always-visible top item.
@@ -172,9 +178,11 @@ const adminEngageItems: NavItem[] = [
   { label: "Groups",                    href: "/admin/groups",              icon: UsersRound,   minRole: "admin",
     description: "User groups for batch-assigning courses or pathways. Useful for cohorts and corporate clients." },
   { label: "Credit applications",       href: "/admin/credit-applications", icon: CoinsIcon,    minRole: "admin",
-    description: "Trainees applying for additional starter credits beyond the 200 default. Review and approve." },
+    description: "Trainees applying for additional starter credits beyond the 200 default. Review and approve.",
+    badgeKey: "credit-applications" },
   { label: "Manage pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers,       minRole: "admin",
-    description: "Enrollments into multi-course pathways. Approve gated pathways here." },
+    description: "Enrollments into multi-course pathways. Approve gated pathways here.",
+    badgeKey: "pathway-enrollments" },
   { label: "Course filters",            href: "/admin/course-filters",      icon: ListChecks,   minRole: "admin",
     description: "Topic and skill taxonomy that powers the catalog filter panel. Add, rename, retire." },
   { label: "Manage certificates",       href: "/admin/certificates",        icon: Award,        minRole: "admin",
@@ -233,13 +241,16 @@ const adminPlatformItems: NavItem[] = [
   { label: "Feedback",            href: "/admin/feedback",            icon: MessageSquare, minRole: "admin",
     description: "Aggregated exit-survey responses from trainees leaving the talent pool — NPS, per-dimension ratings, reason breakdown, individual responses. Plus mint feedback-invitation links to send out of band." },
   { label: "Theme proposals",     href: "/admin/theme-proposals",     icon: Palette,     minRole: "admin",
-    description: "Trainee-submitted theme ideas + aggregated vote totals. Review queue with one-click actions for review / build / ship / decline. Ship+bounty issues a tier-3 MerchReward." },
+    description: "Trainee-submitted theme ideas + aggregated vote totals. Review queue with one-click actions for review / build / ship / decline. Ship+bounty issues a tier-3 MerchReward.",
+    badgeKey: "theme-proposals" },
   { label: "Inbox",               href: "/admin/inbox",               icon: Inbox,       minRole: "admin",
-    description: "Every pending admin request in one queue — credit apps, role changes, employer invites, mailing requests." },
+    description: "Every pending admin request in one queue — credit apps, role changes, employer invites, mailing requests.",
+    badgeKey: "inbox-total" },
   { label: "Users",               href: "/admin/users",               icon: Users,       minRole: "admin",
     description: "Every user on the platform. Search, filter, edit role / credits, deactivate." },
   { label: "Role requests",       href: "/admin/role-requests",       icon: UserCog,     minRole: "admin",
-    description: "Trainees asking to upgrade their role (e.g. evaluating → trainee). Review and approve." },
+    description: "Trainees asking to upgrade their role (e.g. evaluating → trainee). Review and approve.",
+    badgeKey: "role-requests" },
   { label: "Announcements",       href: "/admin/announcements",       icon: Megaphone,   minRole: "admin",
     description: "Banner announcements shown across the platform. Schedule, target by role, set expiry." },
   { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,        minRole: "admin",
@@ -285,6 +296,10 @@ interface SidebarProps {
   credits?: number;
   /** Employer-only flag — when false (default), employers see only their portal. */
   allowPlatformContent?: boolean;
+  /** Per-queue pending counts. Admin-side nav items with a matching
+   *  `badgeKey` render a small count chip. Absent / 0 → no badge.
+   *  See src/lib/admin/queue-counts.ts for the canonical key set. */
+  queueCounts?: Record<string, number>;
 }
 
 /**
@@ -499,18 +514,25 @@ function AdminSubheading({ label }: { label: string }) {
   );
 }
 
-function NavLink({ item, pathname, onNavigate }: {
+function NavLink({ item, pathname, onNavigate, queueCounts }: {
   item: NavItem;
   pathname: string;
   /** Optional callback fired on click — used by the mobile off-canvas
    *  variant to close the sheet after the user navigates. */
   onNavigate?: () => void;
+  /** Per-queue pending counts. When `item.badgeKey` matches a key in
+   *  this map and the count is > 0, a small chip renders to the right
+   *  of the label. New "queue badge" design-system pattern (May 2026)
+   *  — see docs/design-system.md and src/lib/admin/queue-counts.ts. */
+  queueCounts?: Record<string, number>;
 }) {
   const active = item.exact
     ? pathname === item.href
     : pathname === item.href || pathname.startsWith(item.href + "/");
   const Icon = item.icon;
   const hasTooltip = !!item.description;
+  const badgeCount = item.badgeKey && queueCounts ? (queueCounts[item.badgeKey] ?? 0) : 0;
+  const badgeText = badgeCount === 0 ? null : badgeCount > 99 ? "99+" : String(badgeCount);
 
   // Hover/focus tooltip plumbing. We use position: fixed so the
   // popover escapes the sidebar <nav>'s overflow-y-auto box (which
@@ -640,6 +662,25 @@ function NavLink({ item, pathname, onNavigate }: {
         )}
         <Icon size={16} className="shrink-0" />
         <span className="flex-1 truncate">{item.label}</span>
+        {/* Queue badge — only renders when the nav item has a
+            badgeKey AND its count is > 0. We never render "0" because
+            the absence of a chip already means "nothing pending".
+            Brand fill when ≤ 5 (informational), rose when ≥ 6 (the
+            queue is piling up — needs attention). Capped at 99+ for
+            visual stability. */}
+        {badgeText && (
+          <span
+            className={cn(
+              "shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold tabular-nums",
+              badgeCount >= 6
+                ? "bg-rose-500 text-white"
+                : "bg-brand-100 text-brand-800 ring-1 ring-inset ring-brand-200",
+            )}
+            aria-label={`${badgeCount} pending`}
+          >
+            {badgeText}
+          </span>
+        )}
         {active && <ChevronRight size={14} className="text-brand-400 shrink-0" />}
       </Link>
 
@@ -666,6 +707,7 @@ function NavLink({ item, pathname, onNavigate }: {
 
 export function Sidebar({
   role, realRole, actingAs, user, credits, allowPlatformContent = false,
+  queueCounts,
 }: SidebarProps) {
   const pathname = usePathname();
   const t = useT();
@@ -800,7 +842,7 @@ export function Sidebar({
         </Link>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+        <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
 
         {isEmployer && (
           <SectionGroup
@@ -808,7 +850,7 @@ export function Sidebar({
             description="Hiring side: company profile, postings you've published, and the candidates who applied."
           >
             {employerItems.map((item) => (
-              <NavLink key={item.href} item={{ ...item, label: t(item.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+              <NavLink key={item.href} item={{ ...item, label: t(item.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
             ))}
           </SectionGroup>
         )}
@@ -831,7 +873,7 @@ export function Sidebar({
           >
             {engageItems.map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
-              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} />;
+              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
             })}
           </SectionGroup>
         )}
@@ -862,7 +904,7 @@ export function Sidebar({
           >
             {experienceItems.map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
-              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} />;
+              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
             })}
           </SectionGroup>
         )}
@@ -883,7 +925,7 @@ export function Sidebar({
                 // Trainees see the changelog as "What's new"; staff as "Change log".
                 const key = item.href === "/changelog" && !isStaff ? "nav.changelogTrainee" : item.labelKey;
                 const labeled = { ...item, label: t(key) };
-                return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} />;
+                return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
               })}
           </>
         )}
@@ -895,13 +937,13 @@ export function Sidebar({
             description="Privileged territory — manage learners, employers, and the platform itself. Sub-grouped into Engage / Experience / Platform so the long list stays scannable."
           >
             {/* Overview sits at the top, ungrouped — single canonical link. */}
-            <NavLink item={adminOverview} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+            <NavLink item={adminOverview} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
 
             {visibleEngageAdmin.length > 0 && (
               <>
                 <AdminSubheading label="Engage" />
                 {visibleEngageAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
               </>
             )}
@@ -910,7 +952,7 @@ export function Sidebar({
               <>
                 <AdminSubheading label="Experience" />
                 {visibleExperienceAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
               </>
             )}
@@ -919,7 +961,7 @@ export function Sidebar({
               <>
                 <AdminSubheading label="Design & Research" />
                 {visibleDesignResearchAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
               </>
             )}
@@ -947,6 +989,7 @@ export function Sidebar({
                     item={{ ...item, label: t(item.labelKey) }}
                     pathname={pathname}
                     onNavigate={() => setMobileOpen(false)}
+                    queueCounts={queueCounts}
                   />
                 ))}
               </>
@@ -973,7 +1016,7 @@ export function Sidebar({
                   />
                 </button>
                 {platformOpen && visiblePlatformAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
               </>
             )}

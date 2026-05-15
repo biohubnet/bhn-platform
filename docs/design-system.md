@@ -188,6 +188,33 @@ px-2 py-0.5 rounded-full ring-1 ring-inset
 
 Then a status palette (see "Status palettes" above). Always uppercase, always tracking-[0.16em].
 
+### Queue badges (new, May 2026)
+
+Small numeric chip stamped next to a nav-row label when a queue behind that route has items pending the role's attention. Surfaces the workload at a glance — no click required.
+
+```
+shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5
+rounded-full text-[10px] font-bold tabular-nums
+```
+
+Severity-tonal:
+
+| Pending count | Fill | Text | Rationale |
+|---|---|---|---|
+| 0 | *(no chip rendered)* | — | Absence is the signal — "nothing pending". |
+| 1–5 | `bg-brand-100` + `ring-brand-200` | `text-brand-800` | Informational — there's some work, not urgent. |
+| 6+ | `bg-rose-500` | `text-white` | Queue is piling up; nudge the operator. |
+| 100+ | *(rendered as `99+`)* | — | Visual stability — never overflow the chip width. |
+
+**Where it lives.** The pattern is implemented by passing a `queueCounts: Record<string, number>` map into the Sidebar component. Each `NavItem` can carry an optional `badgeKey: string`; when the count for that key is > 0, the chip renders. The map is populated in `src/lib/admin/queue-counts.ts` (server-side, called from `DashboardLayout` only when the effective role can act on the queues).
+
+**Adding a new badge.** Three steps:
+1. Add the count query to `getAdminQueueCounts()` in `src/lib/admin/queue-counts.ts`.
+2. Add the key to the `QueueBadgeKey` union there.
+3. Set `badgeKey: "<your-key>"` on the matching `NavItem` in `src/components/lms/Sidebar.tsx`.
+
+Don't badge "informational" items (a count of total users, posted internships, etc.) — only badge queues where 0 is the desired state and any positive number is an action the role can take. Otherwise the chip loses its "this needs me" signal.
+
 ---
 
 ## Accessibility patterns

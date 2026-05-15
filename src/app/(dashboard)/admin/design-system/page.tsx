@@ -299,6 +299,25 @@ export default async function AdminDesignSystemPage() {
           </div>
         </SubSection>
 
+        <SubSection title="Queue badges (new, May 2026)">
+          <p className="text-xs text-muted mb-3 max-w-2xl leading-relaxed">
+            Numeric chip stamped next to a nav-row label when a queue behind that route
+            has items pending the role&apos;s attention. Brand fill ≤ 5 (informational),
+            rose fill ≥ 6 (queue is piling up). Absence of the chip = nothing pending.
+            Capped at <code className="font-mono text-[11px] bg-elevated px-1 rounded">99+</code> for visual stability.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <NavRowDemo label="Credit applications" count={3} />
+            <NavRowDemo label="Role requests" count={12} />
+            <NavRowDemo label="Pathway enrollments" count={0} />
+            <NavRowDemo label="Inbox" count={142} />
+          </div>
+          <p className="text-[11px] text-subtle mt-3">
+            See <code className="font-mono">docs/design-system.md → Queue badges</code> for the
+            three-step &quot;how to add a new one&quot; recipe.
+          </p>
+        </SubSection>
+
         <SubSection title="Form fields">
           <div className="space-y-3 max-w-md">
             <div>
@@ -475,6 +494,29 @@ function BannerExample({
         <p className="text-sm font-bold">{title}</p>
         <p className="text-xs leading-relaxed mt-1 opacity-85">{body}</p>
       </div>
+    </div>
+  );
+}
+
+/** Sample nav-row used by the Queue badges swatch. Mirrors the
+ *  shape rendered by Sidebar → NavLink so the swatch reads as a
+ *  true-to-life preview, not a custom illustration. */
+function NavRowDemo({ label, count }: { label: string; count: number }) {
+  const badgeText = count === 0 ? null : count > 99 ? "99+" : String(count);
+  const tone =
+    count >= 6
+      ? "bg-rose-500 text-white"
+      : "bg-brand-100 text-brand-800 ring-1 ring-inset ring-brand-200";
+  return (
+    <div className="inline-flex items-center gap-3 px-3 py-2 rounded-lg bg-card border border-line text-sm min-w-[200px]">
+      <span className="flex-1 truncate text-fg font-medium">{label}</span>
+      {badgeText ? (
+        <span className={`shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold tabular-nums ${tone}`}>
+          {badgeText}
+        </span>
+      ) : (
+        <span className="text-[10px] text-subtle italic">no badge</span>
+      )}
     </div>
   );
 }
