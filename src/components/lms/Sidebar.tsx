@@ -932,6 +932,33 @@ export function Sidebar({
           </SectionGroup>
         )}
 
+        {showHrViewPreview && !isEmployer && (
+          <SectionGroup
+            title="EMPLOYER PORTAL · preview"
+            description="What an HR account sees in their menu. Click any link to preview the route; use the xx keyboard shortcut to view-as HR with the act-as cookie set."
+          >
+            {/* Lifted out of the Admin section so the HR surface
+                reads as a peer of ENGAGE / EXPERIENCE rather than
+                buried under Administration. Gated on superadmin
+                (showHrViewPreview) AND not currently acting as
+                employer — the top-of-nav EMPLOYER PORTAL block
+                already covers that case and we don't want to
+                render the same six links twice. */}
+            <p className="px-3 -mt-1 pb-1 text-[10px] text-subtle leading-snug italic">
+              Preview only. Use <code className="font-mono text-fg bg-elevated px-1 rounded">xx</code> to view-as HR.
+            </p>
+            {employerItems.map((item) => (
+              <NavLink
+                key={item.href}
+                item={{ ...item, label: t(item.labelKey) }}
+                pathname={pathname}
+                onNavigate={() => setMobileOpen(false)}
+                queueCounts={queueCounts}
+              />
+            ))}
+          </SectionGroup>
+        )}
+
         {showLearnerNav && (
           <>
             <div className="pt-2" />
@@ -989,34 +1016,11 @@ export function Sidebar({
               </>
             )}
 
-            {showHrViewPreview && (
-              <>
-                {/* HR-view preview — same routes the EMPLOYER PORTAL
-                    group would render for an actual employer. Gives
-                    a superadmin one-click peek at what HR sees in
-                    their menu, without flipping seats. The links
-                    navigate directly; some routes will redirect to
-                    /dashboard if the page itself gates on
-                    role==="employer". The two-tap `xx` shortcut
-                    remains the way to land inside the HR seat
-                    properly with the act-as cookie set.
-                    Superadmin only. */}
-                <AdminSubheading label="HR view · preview" />
-                <p className="px-3 -mt-1 pb-1 text-[10px] text-subtle leading-snug italic">
-                  What an employer sees. Click to preview the route;
-                  use <code className="font-mono text-fg bg-elevated px-1 rounded">xx</code> to view-as HR.
-                </p>
-                {employerItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    item={{ ...item, label: t(item.labelKey) }}
-                    pathname={pathname}
-                    onNavigate={() => setMobileOpen(false)}
-                    queueCounts={queueCounts}
-                  />
-                ))}
-              </>
-            )}
+            {/* HR-view preview was here; moved out of Admin into
+                its own top-level SectionGroup placed before the
+                misc items (Learning buddies, Change log) so it
+                reads as a peer surface, not buried under
+                Administration. */}
 
             {visiblePlatformAdmin.length > 0 && (
               <>
