@@ -1,67 +1,143 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { HighlightRect } from "./NavHighlight";
+import type { HighlightRect, NavHighlightDetail } from "./NavHighlight";
 
 /**
  * Viewport-level SVG overlay that draws a dotted curved line from a
- * hovered <NavHighlight> pill to the matching sidebar nav row. Listens
- * for `bhn:nav-highlight` events fired by NavHighlight / NavHighlightZone
- * — the pill includes its own bounding rect in the event detail; this
- * overlay queries the DOM for the sidebar link with the matching
- * `data-sidebar-nav-href` attribute and computes the curve.
+ * hovered <NavHighlight> pill to the matching sidebar nav row.
  *
- * Why bother with the curve at all? The amber pulse on the sidebar
- * row already tells you *which* row matches. But a curve answers the
- * spatial question — "OK and where IS that row from where I'm
- * looking?" — much faster than scanning the sidebar yourself. The
- * effect is most useful on long guide pages where the matching row
- * may be far from the cursor, or hidden inside a collapsed section.
+ * The line tracks both endpoints in real time:
+ *   • Source pill — kept as an HTMLElement ref. As long as it's on
+ *     the page, every animation frame re-queries getBoundingClientRect
+ *     so the right end of the line stays glued to the pill even while
+ *     the page scrolls under it.
+ *   • Sidebar target — re-queried via `[data-sidebar-nav-href]` on
+ *     every frame too. The sidebar has its own scrollable column, so
+ *     the target's screen position can change independently of the
+ *     page.
+ *
+ * On initial hover, if the matching sidebar row is outside the
+ * sidebar's scrollable viewport (i.e. scrolled out of sight),
+ * `scrollIntoView({ block: "nearest" })` auto-scrolls the sidebar so
+ * the target ends up visible. `block: "nearest"` is a no-op when the
+ * row is already in view, so this is free for the common case.
+ *
+ * Without these two fixes the line was confusing — it could drift
+ * away from the pill on long pages, or terminate off-screen on short
+ * viewports.
  *
  * Mount once at the dashboard layout (sibling of the page main + the
  * sidebar) so the SVG renders above page content but below modals.
  */
 export function NavHighlightOverlay() {
   const [mounted, setMounted] = useState(false);
-  const [from, setFrom] = useState<HighlightRect | null>(null);
-  const [to, setTo] = useState<HighlightRect | null>(null);
+  const [rects, setRects] = useState<{ from: HighlightRect; to: HighlightRect } | null>(null);
+  // Source element ref — survives across renders, used by the rAF
+  // loop to re-query the pill's screen rect every frame.
+  const sourceElRef = useRef<HTMLElement | null>(null);
+  const activeHrefRef = useRef<string | null>(null);
+  const rafRef = useRef<number | null>(null);
 
+  // Mount gate — the SVG portal targets document.body, which isn't
+  // defined during SSR. Flipping a state bit lets us guard against
+  // that for the very first render only.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    function snapshotTarget(href: string): HighlightRect | null {
-      const el = document.querySelector(`[data-sidebar-nav-href="${cssEscape(href)}"]`) as HTMLElement | null;
-      if (!el) return null;
+    function snapshotRect(el: HTMLElement): HighlightRect {
       const r = el.getBoundingClientRect();
-      return {
-        top: r.top, left: r.left, right: r.right, bottom: r.bottom,
-        width: r.width, height: r.height,
-      };
+      return { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+    }
+
+    function findTarget(href: string): HTMLElement | null {
+      return document.querySelector(`[data-sidebar-nav-href="${cssEscape(href)}"]`) as HTMLElement | null;
+    }
+
+    function loop() {
+      const href = activeHrefRef.current;
+      const sourceEl = sourceElRef.current;
+      if (!href || !sourceEl || !document.body.contains(sourceEl)) {
+        setRects(null);
+        rafRef.current = null;
+        return;
+      }
+      const targetEl = findTarget(href);
+      if (!targetEl) {
+        // Target nav row isn't on the page (collapsed group, role-
+        // gated, etc.) — draw nothing rather than a half-line.
+        setRects(null);
+      } else {
+        const from = snapshotRect(sourceEl);
+        const to   = snapshotRect(targetEl);
+        // setState only when meaningfully changed; otherwise we
+        // burn renders for nothing on idle frames.
+        setRects((prev) => {
+          if (!prev) return { from, to };
+          if (
+            sameRect(prev.from, from) &&
+            sameRect(prev.to, to)
+          ) return prev;
+          return { from, to };
+        });
+      }
+      rafRef.current = requestAnimationFrame(loop);
+    }
+
+    function start(href: string, element: HTMLElement) {
+      activeHrefRef.current = href;
+      sourceElRef.current = element;
+      // Auto-scroll the sidebar so the matching nav row is in view
+      // before the line starts drawing. block:"nearest" is a no-op
+      // when the target is already on screen, so this only triggers
+      // a scroll when the user couldn't see the row anyway.
+      const target = findTarget(href);
+      if (target) {
+        try {
+          target.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        } catch {
+          // Older browsers that lack the options form — fall back to
+          // the boolean variant.
+          target.scrollIntoView(false);
+        }
+      }
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(loop);
+      }
+    }
+
+    function stop() {
+      activeHrefRef.current = null;
+      sourceElRef.current = null;
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      setRects(null);
     }
 
     function onHl(e: Event) {
-      const detail = (e as CustomEvent<{ href: string | null; rect: HighlightRect | null }>).detail;
-      if (!detail?.href || !detail?.rect) {
-        setFrom(null);
-        setTo(null);
+      const detail = (e as CustomEvent<NavHighlightDetail>).detail;
+      if (!detail?.href || !detail?.element) {
+        stop();
         return;
       }
-      const target = snapshotTarget(detail.href);
-      if (!target) {
-        // Sidebar item not on the page (collapsed section, hidden by
-        // role gate, etc.) — show nothing rather than a half-drawn line.
-        setFrom(null);
-        setTo(null);
-        return;
-      }
-      setFrom(detail.rect);
-      setTo(target);
+      start(detail.href, detail.element);
     }
+
     window.addEventListener("bhn:nav-highlight", onHl as EventListener);
-    return () => window.removeEventListener("bhn:nav-highlight", onHl as EventListener);
+    return () => {
+      window.removeEventListener("bhn:nav-highlight", onHl as EventListener);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
   }, []);
 
-  if (!mounted || !from || !to) return null;
+  if (!mounted || !rects) return null;
+  const { from, to } = rects;
 
   // Anchor points. Pill is in content area (right of sidebar);
   // sidebar item is to the left. Line leaves the pill's left edge
@@ -92,8 +168,8 @@ export function NavHighlightOverlay() {
       aria-hidden="true"
     >
       {/* The dotted curve itself. Stroke uses the brand accent so it
-          reads as part of the platform's nav language, and slight
-          drop-shadow keeps it legible against busy hero gradients. */}
+          reads as part of the platform's nav language, and a soft
+          glow keeps it legible against busy hero gradients. */}
       <defs>
         <filter id="bhn-navhl-glow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="2" />
@@ -132,4 +208,17 @@ export function NavHighlightOverlay() {
  */
 function cssEscape(s: string): string {
   return s.replace(/(["\\])/g, "\\$1");
+}
+
+/** Pixel-precision rect equality check. Sub-pixel jitter from
+ *  layout effects is normal; we ignore differences below 0.5px so
+ *  the overlay doesn't re-render every animation frame on a
+ *  perfectly still page. */
+function sameRect(a: HighlightRect, b: HighlightRect): boolean {
+  return (
+    Math.abs(a.top - b.top) < 0.5 &&
+    Math.abs(a.left - b.left) < 0.5 &&
+    Math.abs(a.width - b.width) < 0.5 &&
+    Math.abs(a.height - b.height) < 0.5
+  );
 }
