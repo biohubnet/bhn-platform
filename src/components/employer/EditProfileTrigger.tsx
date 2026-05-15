@@ -490,7 +490,12 @@ function EditProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-backdrop p-4 sm:p-6 animate-fade-in overflow-y-auto"
+      // Outer scroller. We use items-start (NOT items-center) so a
+      // dialog taller than the viewport scrolls naturally instead of
+      // having its top pushed off-screen. The dialog's own `my-8`
+      // handles vertical breathing room; min-h-full keeps a short
+      // dialog still feeling vertically anchored.
+      className="fixed inset-0 z-50 flex items-start justify-center bg-backdrop p-4 sm:p-6 animate-fade-in overflow-y-auto min-h-screen"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -712,24 +717,30 @@ function EditProfileModal({
                         >
                           {values.companyLogo ? (
                             <>
+                              {/* Glyph fallback FIRST in DOM so the
+                                  img (rendered next, positioned
+                                  absolutely with z-10) paints over
+                                  it on success. onError hides the
+                                  img, letting the glyph show
+                                  through as the placeholder. */}
+                              <ImageIcon
+                                size={24}
+                                className="absolute inset-0 m-auto text-subtle pointer-events-none"
+                              />
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 key={logoPreviewSrc}
                                 src={logoPreviewSrc}
                                 alt=""
                                 className={
-                                  "w-full h-full p-1.5 " + imageFit
+                                  "absolute inset-0 w-full h-full p-1.5 z-10 " + imageFit
                                 }
                                 style={xformStyle}
                                 onError={(e) => {
-                                  // Hide the broken image so the glyph
-                                  // fallback below takes over.
+                                  // Hide the broken image so the
+                                  // glyph fallback behind takes over.
                                   (e.currentTarget as HTMLImageElement).style.display = "none";
                                 }}
-                              />
-                              <ImageIcon
-                                size={24}
-                                className="absolute inset-0 m-auto text-subtle pointer-events-none -z-0"
                               />
                               {/* Remove (X) — top-right of the tile.
                                   Only shows on hover so it doesn't
