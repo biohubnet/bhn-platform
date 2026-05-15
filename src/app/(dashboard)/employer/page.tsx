@@ -91,10 +91,22 @@ export default async function EmployerHomePage() {
       })
     : null;
 
-  const postingsWhere = isAdmin ? {} : { createdById: userId ?? "_" };
+  // Filter shape for InternshipPosting. Admins see the full platform;
+  // employers see only their own postings. Each downstream query
+  // either uses this directly or wraps it as a nested `posting`
+  // relation filter — we conditionally OMIT the `posting:` key when
+  // the filter is empty (admin) to keep Prisma from interpreting
+  // `posting: {}` as a relation filter (which can be ambiguous).
+  const postingsWhere = isAdmin ? undefined : { createdById: userId ?? "_" };
+  const nestedPostingWhere = postingsWhere ? { posting: postingsWhere } : {};
+
   const since7d = new Date(Date.now() - 7 * 86_400_000);
   const since2d = new Date(Date.now() - 2 * 86_400_000);
 
+  // Every query has a per-call `.catch(() => safe_default)` so a
+  // single DB hiccup or schema drift on one query never takes down
+  // the whole hero. Worst case the relevant section reads as zero /
+  // empty — the page still renders.
   const [
     postingsLive,
     applicantsCount,
@@ -104,14 +116,14 @@ export default async function EmployerHomePage() {
     firstPosting,
     queueRows,
   ] = await Promise.all([
-    prisma.internshipPosting.count({ where: { ...postingsWhere, status: "active" } }),
-    prisma.applicationStatus.count({ where: { posting: postingsWhere } }),
-    prisma.interview.count({ where: { posting: postingsWhere } }),
+    prisma.internshipPosting.count({ where: { ...(postingsWhere ?? {}), status: "active" } }).catch(() => 0),
+    prisma.applicationStatus.count({ where: nestedPostingWhere }).catch(() => 0),
+    prisma.interview.count({ where: nestedPostingWhere }).catch(() => 0),
     prisma.applicationStatus.count({
-      where: { posting: postingsWhere, status: "hired" },
-    }),
+      where: { ...nestedPostingWhere, status: "hired" },
+    }).catch(() => 0),
     prisma.internshipPosting.findMany({
-      where: { ...postingsWhere, status: "active" },
+      where: { ...(postingsWhere ?? {}), status: "active" },
       select: {
         id: true,
         title: true,
@@ -124,15 +136,19 @@ export default async function EmployerHomePage() {
       },
       orderBy: { createdAt: "desc" },
       take: 5,
-    }),
+    }).catch(() => [] as Array<{
+      id: string; title: string; location: string | null; type: string | null;
+      compensation: string | null; deadline: Date | null; keySkills: string[];
+      _count: { applicationStatuses: number };
+    }>),
     prisma.internshipPosting.findFirst({
-      where: postingsWhere,
+      where: postingsWhere ?? {},
       select: { createdAt: true },
       orderBy: { createdAt: "asc" },
-    }),
+    }).catch(() => null),
     prisma.applicationStatus.findMany({
       where: {
-        posting: postingsWhere,
+        ...nestedPostingWhere,
         OR: [
           { status: "new" },
           {
@@ -151,7 +167,11 @@ export default async function EmployerHomePage() {
       },
       orderBy: { stageEnteredAt: "asc" },
       take: 8,
-    }),
+    }).catch(() => [] as Array<{
+      id: string; status: string; stageEnteredAt: Date;
+      posting: { id: string; title: string };
+      applicant: { id: string; name: string | null; email: string };
+    }>),
   ]);
 
   const actionQueue = queueRows.map((row) => {
