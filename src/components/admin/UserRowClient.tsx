@@ -15,9 +15,12 @@ interface UserData {
 export function UserRowClient({ user }: { user: UserData }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function patch(data: Record<string, unknown>) {
     setLoading(true);
+    setError(null);
     await fetch(`/api/admin/users/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -25,6 +28,23 @@ export function UserRowClient({ user }: { user: UserData }) {
     });
     router.refresh();
     setLoading(false);
+  }
+
+  async function deleteUser() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !j.ok) {
+        setError(j.error ?? "Couldn't delete.");
+        setConfirming(false);
+        return;
+      }
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function grantCredits() {
@@ -81,6 +101,45 @@ export function UserRowClient({ user }: { user: UserData }) {
       >
         Reset PW
       </button>
+
+      {/* Delete — two-click confirm so an accidental tap can't drop a
+          row. First click flips to "Are you sure?"; second commits.
+          Wrapping containers (e.g. the user list page) can refresh on
+          success via router.refresh which we already trigger. */}
+      {confirming ? (
+        <span className="inline-flex items-center gap-1 rounded ring-1 ring-rose-300 bg-rose-50 px-1.5 py-0.5">
+          <span className="text-[11px] font-bold text-rose-900">Delete?</span>
+          <button
+            onClick={() => setConfirming(false)}
+            disabled={loading}
+            className="text-[10px] text-rose-800 hover:text-rose-950"
+          >
+            cancel
+          </button>
+          <button
+            onClick={deleteUser}
+            disabled={loading}
+            className="text-[10px] font-bold text-white bg-rose-600 hover:bg-rose-700 rounded px-1.5 py-0.5"
+          >
+            {loading ? "…" : "Yes"}
+          </button>
+        </span>
+      ) : (
+        <button
+          onClick={() => setConfirming(true)}
+          disabled={loading}
+          className="text-xs px-2 py-1 rounded border border-rose-200 text-rose-700 hover:bg-rose-50"
+          title="Permanently delete this user + every owned row (cascades)"
+        >
+          Delete
+        </button>
+      )}
+
+      {error && (
+        <span className="inline-block text-[11px] text-rose-700 bg-rose-50 ring-1 ring-rose-200 rounded px-2 py-0.5">
+          {error}
+        </span>
+      )}
     </div>
   );
 }

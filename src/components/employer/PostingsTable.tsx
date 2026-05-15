@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -60,6 +60,25 @@ export function PostingsTable({ postings: initialPostings }: { postings: Posting
   const [bulkBusy, setBulkBusy] = useState<"expire" | "delete" | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Re-sync the local table state when the parent (server component)
+  // re-renders with a fresh `postings` prop. Without this, optimistic
+  // edits live in `rows` forever and outside actions — demo
+  // seed/clear tray, a route refresh, the admin nuking the page —
+  // wouldn't surface in the table until the user reloaded by hand.
+  // The deep-equality skip below avoids reset thrash on every render
+  // when nothing actually changed.
+  useEffect(() => {
+    setRows((prev) => {
+      if (prev.length === initialPostings.length
+        && prev.every((p, i) => p.id === initialPostings[i].id
+          && p.status === initialPostings[i].status
+          && p.title === initialPostings[i].title)) {
+        return prev;
+      }
+      return initialPostings;
+    });
+  }, [initialPostings]);
 
   // Pre-format dates once. Listing-scale data; no need to format
   // each row on every render.

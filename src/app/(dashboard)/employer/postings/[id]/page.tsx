@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import {
   ArrowLeft, Users2, ArrowRight, Inbox, Activity, Sparkles,
-  CheckCircle2, XCircle, Layers,
+  CheckCircle2, XCircle,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -167,12 +167,16 @@ export default async function EmployerPostingPage({
             </div>
           </div>
 
-          {/* CTAs — equal weight, the two surfaces recruiters
-              actually want from this page. */}
+          {/* Single primary CTA — was two ("Review applicants" +
+              "Open pipeline") pointing at near-identical surfaces.
+              The unified ApplicantsBoard at /applicants now carries
+              both Kanban + List view modes plus the full recruiter
+              toolkit, so the second CTA was just extra cognitive
+              load. The old /pipeline route still redirects here. */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <Link
               href={`/employer/postings/${id}/applicants`}
-              className="flex-1 sm:flex-initial min-w-[200px] inline-flex items-center justify-between gap-3 px-5 py-3 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white font-bold text-sm shadow-lg shadow-brand-600/30 ring-1 ring-white/30 hover:-translate-y-0.5 hover:shadow-xl transition-all"
+              className="flex-1 sm:flex-initial min-w-[260px] inline-flex items-center justify-between gap-3 px-5 py-3 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white font-bold text-sm shadow-lg shadow-brand-600/30 ring-1 ring-white/30 hover:-translate-y-0.5 hover:shadow-xl transition-all"
             >
               <span className="inline-flex items-center gap-2">
                 <Users2 size={16} />
@@ -184,16 +188,6 @@ export default async function EmployerPostingPage({
                 )}
               </span>
               <ArrowRight size={14} />
-            </Link>
-            <Link
-              href={`/employer/postings/${id}/pipeline`}
-              className="flex-1 sm:flex-initial min-w-[200px] inline-flex items-center justify-between gap-3 px-5 py-3 rounded-xl bg-card text-fg font-bold text-sm ring-1 ring-inset ring-line hover:ring-brand-300 hover:bg-elevated transition-all"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Layers size={16} className="text-brand-600" />
-                Open pipeline
-              </span>
-              <ArrowRight size={14} className="text-muted" />
             </Link>
             {applicantCount === 0 && (
               <p className="text-xs text-muted inline-flex items-center gap-1.5 ml-1">

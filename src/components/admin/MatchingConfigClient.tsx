@@ -22,7 +22,6 @@ import {
   Sliders, Target, FlaskConical,
 } from "lucide-react";
 import type { MatchingConfig } from "@/lib/matching/config";
-import { MatchingPipelineAnimation } from "@/components/admin/MatchingPipelineAnimation";
 
 interface Option { id: string; label: string }
 
@@ -31,6 +30,14 @@ interface Props {
   defaults: MatchingConfig;
   users: Option[];
   postings: Option[];
+  /** Controlled-mode override. When supplied (along with the
+   *  matching setter pair), cfg + savedCfg live in the parent shell
+   *  so the full-bleed animation up top can mirror live edits. When
+   *  omitted, the component owns its own state (back-compat). */
+  cfg?: MatchingConfig;
+  setCfg?: React.Dispatch<React.SetStateAction<MatchingConfig>>;
+  savedCfg?: MatchingConfig;
+  setSavedCfg?: React.Dispatch<React.SetStateAction<MatchingConfig>>;
 }
 
 interface FitResult {
@@ -53,10 +60,19 @@ interface FitResult {
   caveats: string[];
 }
 
-export function MatchingConfigClient({ initial, defaults, users, postings }: Props) {
+export function MatchingConfigClient({
+  initial, defaults, users, postings,
+  cfg: cfgProp, setCfg: setCfgProp, savedCfg: savedCfgProp, setSavedCfg: setSavedCfgProp,
+}: Props) {
   const router = useRouter();
-  const [cfg, setCfg] = useState<MatchingConfig>(initial);
-  const [savedCfg, setSavedCfg] = useState<MatchingConfig>(initial);
+  // Controlled vs uncontrolled cfg state. When the parent shell passes
+  // cfg + setters, we use those; otherwise we own internal state.
+  const [internalCfg, setInternalCfg] = useState<MatchingConfig>(initial);
+  const [internalSavedCfg, setInternalSavedCfg] = useState<MatchingConfig>(initial);
+  const cfg = cfgProp ?? internalCfg;
+  const setCfg = setCfgProp ?? setInternalCfg;
+  const savedCfg = savedCfgProp ?? internalSavedCfg;
+  const setSavedCfg = setSavedCfgProp ?? setInternalSavedCfg;
   const [saving, setSaving] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -146,12 +162,6 @@ export function MatchingConfigClient({ initial, defaults, users, postings }: Pro
 
   return (
     <div className="space-y-6">
-      {/* Hi-tech system diagram. Reads the LIVE form config so pipe
-          thickness + pulse density update in real time as the user
-          drags a weight slider. Pure visual surface — doesn't gate
-          form submission. */}
-      <MatchingPipelineAnimation config={cfg} />
-
       {/* Flash / error bar */}
       {(flash || error) && (
         <div

@@ -38,10 +38,59 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json(user);
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole("superadmin");
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireRole("admin");
   const actorId = (session.user as { id?: string }).id!;
   const { id } = await params;
+
+  // ── Safety gates ─────────────────────────────────────────────
+  // 1. Never delete yourself — accidental keyboard sweeps shouldn't
+  //    lock you out.
+  if (id === actorId) {
+    return NextResponse.json(
+      { error: "You can't delete your own account from this surface." },
+      { status: 400 },
+    );
+  }
+
+  // 2. Look up the target to inspect role + accountKind. Admins can
+  //    delete demo / sandbox / phantom freely; deleting a real user
+  //    or a superadmin requires superadmin level.
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, role: true, accountKind: true, email: true },
+  });
+  if (!target) {
+    return NextResponse.json({ error: "User not found." }, { status: 404 });
+  }
+
+  const actorRole = (session.user as { role?: string }).role ?? "";
+  const isSuperadmin = actorRole === "superadmin";
+  const isProtectedAccountKind = target.accountKind === "real";
+  if (isProtectedAccountKind && !isSuperadmin) {
+    return NextResponse.json(
+      { error: "Deleting a real user account requires superadmin." },
+      { status: 403 },
+    );
+  }
+  if (target.role === "superadmin") {
+    if (!isSuperadmin) {
+      return NextResponse.json(
+        { error: "Only a superadmin can delete a superadmin account." },
+        { status: 403 },
+      );
+    }
+    // 3. Last-superadmin guard — never leave the platform without one.
+    const otherSupers = await prisma.user.count({
+      where: { role: "superadmin", id: { not: id } },
+    });
+    if (otherSupers === 0) {
+      return NextResponse.json(
+        { error: "Refusing to delete the last superadmin." },
+        { status: 400 },
+      );
+    }
+  }
 
   await prisma.user.delete({ where: { id } });
 
@@ -51,6 +100,12 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
       action: "user.delete",
       targetType: "user",
       targetId: id,
+      detail: JSON.stringify({
+        targetEmail: target.email,
+        targetRole: target.role,
+        targetAccountKind: target.accountKind,
+      }),
+      ip: req.headers.get("x-forwarded-for") ?? undefined,
     },
   });
 
