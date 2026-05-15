@@ -5,17 +5,30 @@ import {
   Pencil, Sparkles, Loader2, AlertCircle, X, Save, ChevronDown, Globe, CheckCircle2,
   Upload, Image as ImageIcon,
 } from "lucide-react";
+import { normalizeLogoShape, logoShapeClasses } from "@/lib/employer/logo-shape";
 
 interface Profile {
   employerCompany: string | null;
   companyWebsite: string | null;
   companyLogo: string | null;
+  /** Mask shape applied to the logo wherever it renders. One of:
+   *  "" | "natural" | "circle" | "rounded" | "square". null === ""
+   *  === natural fallback. */
+  companyLogoShape: string | null;
   companyIndustry: string | null;
   companySize: string | null;
   companyLocation: string | null;
   companyDescription: string | null;
   companyFounded: string | null;
 }
+
+export type LogoShape = "natural" | "circle" | "rounded" | "square";
+const LOGO_SHAPES: { key: LogoShape; label: string }[] = [
+  { key: "natural", label: "Natural" },
+  { key: "circle",  label: "Circle" },
+  { key: "rounded", label: "Rounded" },
+  { key: "square",  label: "Square" },
+];
 
 const COMPANY_SIZES = [
   "", "1-10", "11-50", "51-200", "201-500", "501-1000", "1000+",
@@ -93,6 +106,7 @@ function EditProfileModal({
     employerCompany:    initial.employerCompany    ?? "",
     companyWebsite:     initial.companyWebsite     ?? "",
     companyLogo:        initial.companyLogo        ?? "",
+    companyLogoShape:   initial.companyLogoShape   ?? "",
     companyIndustry:    initial.companyIndustry    ?? "",
     companySize:        initial.companySize        ?? "",
     companyLocation:    initial.companyLocation    ?? "",
@@ -130,6 +144,12 @@ function EditProfileModal({
     { url: string; source: string; score: number }[]
   >([]);
   const [logoSearchMsg, setLogoSearchMsg] = useState<string | null>(null);
+  // Search attempt counter — each "Search again" click increments
+  // this and the endpoint widens the crawl (homepage → /about → /press
+  // → /contact → /media …) so subsequent searches actually find
+  // different candidates instead of returning the same homepage
+  // signals every time.
+  const [logoSearchAttempt, setLogoSearchAttempt] = useState(0);
 
   // Cache-bust the preview so the new image renders immediately after
   // upload (the new URL is short-lived in the browser cache otherwise).
@@ -175,17 +195,24 @@ function EditProfileModal({
     setLogoSearching(true);
     setLogoSearchMsg(null);
     setLogoError(null);
+    // Bump the attempt counter so each re-search widens the crawl.
+    const nextAttempt = logoSearchAttempt + (logoCandidates.length > 0 ? 1 : 0);
+    setLogoSearchAttempt(nextAttempt);
     try {
       const res = await fetch("/api/employer/profile/logo-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ website: values.companyWebsite }),
+        body: JSON.stringify({
+          website: values.companyWebsite,
+          attempt: nextAttempt,
+        }),
       });
       const j = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         best?: string | null;
         candidates?: { url: string; source: string; score: number }[];
         favicon?: string;
+        pagesScanned?: string[];
         error?: string;
       };
       if (!res.ok) {
@@ -262,22 +289,50 @@ function EditProfileModal({
         setAutoError(j.error ?? "Couldn't fetch.");
         return;
       }
-      // Empty-fields-only merge — don't overwrite what the operator typed.
-      setValues((cur) => ({
-        ...cur,
-        employerCompany:    cur.employerCompany    || j.profile!.companyName        || cur.employerCompany,
-        companyLogo:        cur.companyLogo        || j.profile!.companyLogo        || cur.companyLogo,
-        companyIndustry:    cur.companyIndustry    || j.profile!.companyIndustry    || cur.companyIndustry,
-        companySize:        cur.companySize        || j.profile!.companySize        || cur.companySize,
-        companyLocation:    cur.companyLocation    || j.profile!.companyLocation    || cur.companyLocation,
-        companyDescription: cur.companyDescription || j.profile!.companyDescription || cur.companyDescription,
-        companyFounded:     cur.companyFounded     || j.profile!.companyFounded     || cur.companyFounded,
-        companyWebsite:     j.profile!.companyWebsite || cur.companyWebsite,
-      }));
+      // Two modes:
+      //   • First Auto-fill (autoFilled === false): merge with what
+      //     the operator already typed. Empty fields only — never
+      //     overwrite their work.
+      //   • Re-fetch (autoFilled === true): the operator has already
+      //     seen the AI result once and clicked again. They want a
+      //     clean refresh — overwrite every field the AI returned a
+      //     value for, leaving only fields the AI couldn't answer
+      //     untouched. Their previous edits get replaced, which is
+      //     the whole point of "Re-fetch".
+      const isReFetch = autoFilled;
+      setValues((cur) => {
+        const pick = (
+          existing: string | null | undefined,
+          fresh: string | null | undefined,
+        ): string => {
+          const e = (existing ?? "").trim();
+          const f = (fresh ?? "").trim();
+          // Re-fetch: AI value wins (existing only if AI was empty).
+          // First fill: existing wins (AI only fills blank slots).
+          return isReFetch ? f || e : e || f;
+        };
+        return {
+          ...cur,
+          employerCompany:    pick(cur.employerCompany,    j.profile!.companyName),
+          companyLogo:        pick(cur.companyLogo,        j.profile!.companyLogo),
+          companyIndustry:    pick(cur.companyIndustry,    j.profile!.companyIndustry),
+          companySize:        pick(cur.companySize,        j.profile!.companySize),
+          companyLocation:    pick(cur.companyLocation,    j.profile!.companyLocation),
+          companyDescription: pick(cur.companyDescription, j.profile!.companyDescription),
+          companyFounded:     pick(cur.companyFounded,     j.profile!.companyFounded),
+          companyWebsite:     j.profile!.companyWebsite || cur.companyWebsite,
+        };
+      });
       setAutoFilled(true);
       // Surface the manual section after auto-fill so the operator
       // can immediately scan the result and tweak anything wrong.
       setManualOpen(true);
+      // Re-fetch invalidates the previously-chosen logo candidates —
+      // the website might have changed; clear the grid and re-search.
+      if (isReFetch) {
+        setLogoCandidates([]);
+        setLogoSearchAttempt(0);
+      }
     } finally {
       setAutoFilling(false);
     }
@@ -530,43 +585,60 @@ function EditProfileModal({
                       operator is at finding a file. Upload is the
                       escape hatch when search comes up dry. */}
 
+                  {/* Shape resolved once for this render — drives the
+                      live-preview mask in the picker and the candidate
+                      grid below, plus tells the renderer downstream
+                      how to mask the logo on the live profile. */}
                   {/* ── 1. Current logo preview ─────────────────── */}
                   <div className="flex items-start gap-3">
-                    <div className="relative w-20 h-20 rounded-xl bg-elevated border border-line flex items-center justify-center overflow-hidden shrink-0 group/preview">
-                      {values.companyLogo ? (
-                        <>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            key={logoPreviewSrc}
-                            src={logoPreviewSrc}
-                            alt=""
-                            className="w-full h-full object-contain p-2"
-                            onError={(e) => {
-                              // Hide the broken image so the glyph
-                              // fallback below takes over.
-                              (e.currentTarget as HTMLImageElement).style.display = "none";
-                            }}
-                          />
-                          <ImageIcon
-                            size={24}
-                            className="absolute inset-0 m-auto text-subtle pointer-events-none -z-0"
-                          />
-                          {/* Remove (X) — top-right of the tile. Only
-                              shows on hover so it doesn't compete with
-                              the preview visually at rest. */}
-                          <button
-                            type="button"
-                            onClick={clearLogo}
-                            aria-label="Remove current logo"
-                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white shadow-md flex items-center justify-center opacity-0 group-hover/preview:opacity-100 focus:opacity-100 transition-opacity"
-                          >
-                            <X size={11} />
-                          </button>
-                        </>
-                      ) : (
-                        <ImageIcon size={24} className="text-subtle" />
-                      )}
-                    </div>
+                    {(() => {
+                      const shape = normalizeLogoShape(values.companyLogoShape);
+                      const { containerMask, imageFit } = logoShapeClasses(shape);
+                      return (
+                        <div
+                          className={
+                            "relative w-20 h-20 bg-elevated border border-line flex items-center justify-center overflow-hidden shrink-0 group/preview " +
+                            containerMask
+                          }
+                        >
+                          {values.companyLogo ? (
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                key={logoPreviewSrc}
+                                src={logoPreviewSrc}
+                                alt=""
+                                className={
+                                  "w-full h-full p-1.5 " + imageFit
+                                }
+                                onError={(e) => {
+                                  // Hide the broken image so the glyph
+                                  // fallback below takes over.
+                                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                                }}
+                              />
+                              <ImageIcon
+                                size={24}
+                                className="absolute inset-0 m-auto text-subtle pointer-events-none -z-0"
+                              />
+                              {/* Remove (X) — top-right of the tile.
+                                  Only shows on hover so it doesn't
+                                  compete with the preview at rest. */}
+                              <button
+                                type="button"
+                                onClick={clearLogo}
+                                aria-label="Remove current logo"
+                                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white shadow-md flex items-center justify-center opacity-0 group-hover/preview:opacity-100 focus:opacity-100 transition-opacity"
+                              >
+                                <X size={11} />
+                              </button>
+                            </>
+                          ) : (
+                            <ImageIcon size={24} className="text-subtle" />
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* ── 2. Primary action: search the website ──── */}
                     <div className="flex-1 min-w-0">
@@ -665,6 +737,72 @@ function EditProfileModal({
                       </ul>
                       <p className="text-[10px] text-subtle mt-2 leading-snug">
                         Not happy with these? Click <em>Search again</em> above, paste a URL into the override field below, or upload a file.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* ── Shape picker ─────────────────────────────
+                      Tucked between the candidate grid and the manual-
+                      override disclosure. Only matters once the user
+                      has a logo set, so we gate on that — fresh forms
+                      stay uncluttered. */}
+                  {values.companyLogo && (
+                    <div className="mt-3 rounded-xl border border-line bg-elevated/40 p-3">
+                      <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-2">
+                        Logo shape
+                      </p>
+                      <div className="flex flex-wrap items-stretch gap-2">
+                        {LOGO_SHAPES.map((s) => {
+                          const isPicked =
+                            normalizeLogoShape(values.companyLogoShape) === s.key;
+                          const { containerMask, imageFit } = logoShapeClasses(s.key);
+                          return (
+                            <button
+                              key={s.key}
+                              type="button"
+                              onClick={() => set("companyLogoShape", s.key)}
+                              className={
+                                "group/shape relative flex flex-col items-center gap-1.5 p-2 rounded-lg ring-1 ring-inset transition-colors " +
+                                (isPicked
+                                  ? "bg-brand-50 ring-brand-500 text-brand-800"
+                                  : "bg-card-solid ring-line hover:ring-brand-300 text-muted hover:text-fg")
+                              }
+                              aria-pressed={isPicked}
+                            >
+                              {/* Mini live preview in the chosen shape */}
+                              <span
+                                className={
+                                  "w-9 h-9 bg-elevated border border-line overflow-hidden flex items-center justify-center " +
+                                  containerMask
+                                }
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={logoPreviewSrc}
+                                  alt=""
+                                  className={"w-full h-full " + imageFit}
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                                  }}
+                                />
+                              </span>
+                              <span className="text-[10px] font-semibold uppercase tracking-wider">
+                                {s.label}
+                              </span>
+                              {isPicked && (
+                                <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-sm">
+                                  <CheckCircle2 size={9} />
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[10px] text-subtle mt-2 leading-snug">
+                        How the logo is masked on your /employer page
+                        and on every internship posting. <em>Natural</em>{" "}
+                        keeps the original image contained in a circle disc;
+                        the other three crop it.
                       </p>
                     </div>
                   )}

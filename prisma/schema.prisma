@@ -29,6 +29,15 @@ model User {
   /// from the website on demand; user can edit.
   companyWebsite         String?
   companyLogo            String?
+  /// How the logo is masked when rendered on /employer and on
+  /// employer-facing surfaces. One of:
+  ///   • null / ""   — natural (current behaviour: contained in a
+  ///                  circular disc)
+  ///   • "circle"    — explicit circle crop
+  ///   • "rounded"   — rounded-rectangle mask (rounded-2xl)
+  ///   • "square"    — square crop, no rounding
+  /// Settable from /employer (Edit Profile modal → Logo shape).
+  companyLogoShape       String?
   companyIndustry        String?
   companySize            String? // "1-10" | "11-50" | etc.
   companyLocation        String?

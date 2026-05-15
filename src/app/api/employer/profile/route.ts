@@ -9,12 +9,15 @@ interface Body {
   employerCompany?: string | null;
   companyWebsite?: string | null;
   companyLogo?: string | null;
+  companyLogoShape?: string | null;
   companyIndustry?: string | null;
   companySize?: string | null;
   companyLocation?: string | null;
   companyDescription?: string | null;
   companyFounded?: string | null;
 }
+
+const ALLOWED_LOGO_SHAPES = new Set(["", "circle", "rounded", "square", "natural"]);
 
 export async function PATCH(req: NextRequest) {
   const session = await getSession();
@@ -31,11 +34,23 @@ export async function PATCH(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as Body;
   const data: Record<string, unknown> = {};
   const fields: (keyof Body)[] = [
-    "employerCompany", "companyWebsite", "companyLogo", "companyIndustry",
-    "companySize", "companyLocation", "companyDescription", "companyFounded",
+    "employerCompany", "companyWebsite", "companyLogo", "companyLogoShape",
+    "companyIndustry", "companySize", "companyLocation", "companyDescription",
+    "companyFounded",
   ];
   for (const f of fields) {
-    if (body[f] !== undefined) data[f] = body[f]?.toString().trim() || null;
+    if (body[f] !== undefined) {
+      const raw = body[f]?.toString().trim() || null;
+      // Validate the logo shape so a malformed value can't sneak
+      // through and break the CSS mask lookup in the renderer.
+      if (f === "companyLogoShape" && raw !== null && !ALLOWED_LOGO_SHAPES.has(raw)) {
+        return NextResponse.json(
+          { error: `Invalid companyLogoShape "${raw}"` },
+          { status: 400 },
+        );
+      }
+      data[f] = raw;
+    }
   }
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
@@ -56,6 +71,7 @@ export async function PATCH(req: NextRequest) {
       employerCompany: user.employerCompany,
       companyWebsite: user.companyWebsite,
       companyLogo: user.companyLogo,
+      companyLogoShape: user.companyLogoShape,
       companyIndustry: user.companyIndustry,
       companySize: user.companySize,
       companyLocation: user.companyLocation,

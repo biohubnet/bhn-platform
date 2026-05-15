@@ -49,6 +49,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EditProfileTrigger } from "@/components/employer/EditProfileTrigger";
 import { SetPasswordBanner } from "@/components/employer/SetPasswordBanner";
+import { normalizeLogoShape, logoShapeClasses } from "@/lib/employer/logo-shape";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,7 @@ export default async function EmployerHomePage() {
           employerCompany: true,
           companyWebsite: true,
           companyLogo: true,
+          companyLogoShape: true,
           companyIndustry: true,
           companySize: true,
           companyLocation: true,
@@ -207,6 +209,7 @@ export default async function EmployerHomePage() {
     employerCompany: user?.employerCompany ?? null,
     companyWebsite: user?.companyWebsite ?? null,
     companyLogo: user?.companyLogo ?? null,
+    companyLogoShape: user?.companyLogoShape ?? null,
     companyIndustry: user?.companyIndustry ?? null,
     companySize: user?.companySize ?? null,
     companyLocation: user?.companyLocation ?? null,
@@ -248,7 +251,11 @@ export default async function EmployerHomePage() {
             className="relative px-6 sm:px-10 lg:px-14 pt-8 sm:pt-10 pb-10"
           >
             <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-6 sm:gap-10 items-start">
-              <LogoDisc src={user?.companyLogo} alt={user?.employerCompany ?? ""} />
+              <LogoDisc
+                src={user?.companyLogo}
+                alt={user?.employerCompany ?? ""}
+                shape={normalizeLogoShape(user?.companyLogoShape)}
+              />
 
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.28em] font-bold text-brand-700 mb-3">
@@ -605,14 +612,27 @@ function CoverBanner() {
   );
 }
 
-function LogoDisc({ src, alt }: { src?: string | null; alt: string }) {
+function LogoDisc({
+  src, alt, shape,
+}: {
+  src?: string | null;
+  alt: string;
+  /** Mask shape resolved by `normalizeLogoShape` — "natural"
+   *  | "circle" | "rounded" | "square". Drives the wrapper's
+   *  corner radius and whether the inner image is contained or
+   *  cropped. The conic glow ring stays circular regardless of
+   *  the inner mask so the disc always reads as the "centre of
+   *  gravity" of the identity row. */
+  shape: "natural" | "circle" | "rounded" | "square";
+}) {
+  const { containerMask, imageFit } = logoShapeClasses(shape);
   // NO event handlers here — this is a server-component-rendered
   // chunk and onError={() => ...} on the <img> throws at render
   // ("Event handlers cannot be passed to Client Component props").
-  // Broken-image fallback is handled by the CSS `&::after`-style
-  // briefcase glyph layered absolutely under the img: when the
-  // browser can't load the src, the img leaves a transparent gap
-  // and the glyph shows through.
+  // Broken-image fallback is handled by the briefcase glyph
+  // layered absolutely under the img: when the browser can't load
+  // the src, the img leaves a transparent gap and the glyph shows
+  // through.
   return (
     <div className="relative shrink-0">
       <div
@@ -623,7 +643,12 @@ function LogoDisc({ src, alt }: { src?: string | null; alt: string }) {
             "conic-gradient(from 0deg, rgba(56,189,248,0.5), rgba(244,114,182,0.5), rgba(250,204,21,0.4), rgba(74,222,128,0.4), rgba(56,189,248,0.5))",
         }}
       />
-      <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white ring-4 ring-white shadow-[0_18px_40px_-10px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center overflow-hidden">
+      <div
+        className={
+          "relative w-32 h-32 sm:w-40 sm:h-40 bg-white ring-4 ring-white shadow-[0_18px_40px_-10px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center overflow-hidden " +
+          containerMask
+        }
+      >
         {/* Glyph fallback rendered first (sits under the img). When
             the img loads, it covers the glyph; when it 404s, the
             glyph shows through. */}
@@ -633,7 +658,14 @@ function LogoDisc({ src, alt }: { src?: string | null; alt: string }) {
           <img
             src={src}
             alt={alt}
-            className="relative w-24 h-24 sm:w-28 sm:h-28 object-contain"
+            className={
+              "relative " + imageFit + " " +
+              (imageFit === "object-contain"
+                // Natural: contain the logo inside the disc, with breathing room.
+                ? "w-24 h-24 sm:w-28 sm:h-28"
+                // Cropping shapes: fill the wrapper edge-to-edge.
+                : "w-full h-full")
+            }
           />
         )}
       </div>
