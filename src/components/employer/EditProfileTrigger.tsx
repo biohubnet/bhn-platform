@@ -1204,21 +1204,56 @@ function BrandColorField({
   value: string | undefined;
   onChange: (v: string) => void;
 }) {
-  const safe = isHexColor(value) ? value : "#1e3a8a";
+  const isSet = isHexColor(value);
+  const safe = isSet ? value : "#1e3a8a";
   return (
-    <label className="inline-flex items-center gap-1.5">
+    <label
+      className="inline-flex items-center gap-2"
+      onClick={(e) => e.stopPropagation()}
+    >
       <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle">
         {label}
       </span>
-      <input
-        type="color"
-        value={safe}
-        onChange={(e) => onChange(e.target.value.toUpperCase())}
-        className="w-8 h-8 rounded-md border border-line bg-card-solid cursor-pointer p-0.5"
-        aria-label={label}
-      />
+      {/* The swatch is a positioned wrapper around the native color
+          input. The wrapper paints the visible square via inline
+          background-color so a "set but light" colour still reads
+          clearly against the page (the previous implementation
+          relied on the input's own paint, which on some browsers
+          renders a near-invisible swatch on light values). Native
+          input is layered on top with `opacity-0` so clicks still
+          open the system colour picker.
+
+          We also stopPropagation on the click — the native picker
+          can emit document-level events when it closes; without
+          this, those events sometimes bubble to the modal backdrop
+          and close the whole dialog ("when I click any of these
+          boxes they just disappear"). */}
+      <span
+        className={
+          "relative inline-block w-10 h-10 rounded-md ring-1 ring-inset cursor-pointer shadow-sm overflow-hidden " +
+          (isSet ? "ring-line" : "ring-line/70")
+        }
+        style={{
+          backgroundColor: safe,
+          // Diagonal-stripe overlay when unset so the placeholder
+          // state reads as "no value picked yet" instead of "the
+          // brand colour is dark blue".
+          backgroundImage: isSet
+            ? undefined
+            : "repeating-linear-gradient(45deg, rgba(255,255,255,0.35) 0 4px, transparent 4px 8px)",
+        }}
+      >
+        <input
+          type="color"
+          value={safe}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          onClick={(e) => e.stopPropagation()}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          aria-label={label}
+        />
+      </span>
       <span className="text-[10px] font-mono text-muted tabular-nums">
-        {isHexColor(value) ? value : "—"}
+        {isSet ? value : "—"}
       </span>
     </label>
   );
