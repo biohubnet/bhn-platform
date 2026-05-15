@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.15b";
+export const TOUR_VERSION = "2026.05.15c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -289,6 +289,16 @@ export const TOUR_STEPS: TourStep[] = [
     since: "2026.05.15b",
     roles: ["admin", "superadmin"],
     cta: { label: "Open thumbnails admin", href: "/admin/course-thumbnails" },
+  },
+  {
+    id: "employer-profile-hero",
+    title: "Your company profile, now with presence",
+    body: "/employer/profile opens with a cinematic hero showing your logo, name, identity chips, and a live stat strip of postings, applicants, and interviews — this is the face trainees see on every internship you post. Edit form sits below; the hero refreshes the moment you save.",
+    path: "/employer/profile",
+    placement: "center",
+    since: "2026.05.15c",
+    roles: ["employer", "admin", "superadmin"],
+    cta: { label: "Open my profile", href: "/employer/profile" },
   },
   {
     id: "internship-board",
