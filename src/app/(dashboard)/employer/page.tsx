@@ -88,7 +88,7 @@ export default async function EmployerHomePage() {
           companyDescription: true,
           companyFounded: true,
         },
-      })
+      }).catch(() => null)
     : null;
 
   // Filter shape for InternshipPosting. Admins see the full platform;
