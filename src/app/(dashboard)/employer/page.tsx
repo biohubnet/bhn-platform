@@ -56,12 +56,6 @@ import {
   logoTransformCss,
   type LogoTransform,
 } from "@/lib/employer/logo-transform";
-import {
-  parseCompanyBrand,
-  isUsableBrand,
-  brandHeroBackground,
-  type CompanyBrand,
-} from "@/lib/employer/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -242,7 +236,7 @@ export default async function EmployerHomePage() {
           and the body — one continuous edge per side instead of two
           stacked rings clashing at the seam. */}
       <div className="rounded-3xl overflow-hidden shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)]">
-        <CoverBanner brand={parseCompanyBrand(user?.companyBrand)} />
+        <CoverBanner />
 
         <div
           className="relative -mt-24 sm:-mt-28"
@@ -556,31 +550,23 @@ function SectionEyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CoverBanner({ brand }: { brand: CompanyBrand | null }) {
-  // When a usable brand is set, paint the base layer with the
-  // operator-chosen gradient and dial the platform-default auroras
-  // back so they accent — not overwhelm — the brand palette. When
-  // no brand is set, the original 5-aurora platform stage stands.
-  const useBrand = isUsableBrand(brand);
-  const brandBg = useBrand ? brandHeroBackground(brand) : null;
+function CoverBanner() {
+  // Per-company brand-colour theming temporarily removed; cover
+  // banner is the platform-default 5-stop purple-pink stage with
+  // four auroras at full strength.
   return (
     <div className="relative h-56 sm:h-72 lg:h-[22rem] overflow-hidden">
-      {/* Base layer — operator-set brand gradient (or the platform
-          default 5-stop purple-pink). */}
+      {/* Base layer — platform-default 5-stop gradient. */}
       <div
         className="absolute inset-0"
         style={{
           backgroundImage:
-            brandBg
-              ?? "linear-gradient(135deg, #0b0f24 0%, #142046 25%, #312e81 50%, #6b21a8 75%, #831843 100%)",
+            "linear-gradient(135deg, #0b0f24 0%, #142046 25%, #312e81 50%, #6b21a8 75%, #831843 100%)",
         }}
       />
-      {/* Auroras — when a brand is set we dim these so the brand
-          palette stays dominant. Without a brand they paint at full
-          strength to give the platform stage its identity. */}
       <div
         aria-hidden
-        className={"absolute -top-40 -left-32 w-[36rem] h-[36rem] rounded-full blur-3xl " + (useBrand ? "opacity-30" : "opacity-70")}
+        className="absolute -top-40 -left-32 w-[36rem] h-[36rem] rounded-full blur-3xl opacity-70"
         style={{
           background:
             "radial-gradient(closest-side, rgba(56,189,248,0.7), rgba(56,189,248,0) 70%)",
@@ -588,7 +574,7 @@ function CoverBanner({ brand }: { brand: CompanyBrand | null }) {
       />
       <div
         aria-hidden
-        className={"absolute -bottom-32 right-1/3 w-[34rem] h-[34rem] rounded-full blur-3xl " + (useBrand ? "opacity-25" : "opacity-60")}
+        className="absolute -bottom-32 right-1/3 w-[34rem] h-[34rem] rounded-full blur-3xl opacity-60"
         style={{
           background:
             "radial-gradient(closest-side, rgba(244,114,182,0.7), rgba(244,114,182,0) 70%)",
@@ -596,7 +582,7 @@ function CoverBanner({ brand }: { brand: CompanyBrand | null }) {
       />
       <div
         aria-hidden
-        className={"absolute top-0 right-0 w-[24rem] h-[24rem] rounded-full blur-3xl " + (useBrand ? "opacity-20" : "opacity-40")}
+        className="absolute top-0 right-0 w-[24rem] h-[24rem] rounded-full blur-3xl opacity-40"
         style={{
           background:
             "radial-gradient(closest-side, rgba(250,204,21,0.5), rgba(250,204,21,0) 70%)",
@@ -604,7 +590,7 @@ function CoverBanner({ brand }: { brand: CompanyBrand | null }) {
       />
       <div
         aria-hidden
-        className={"absolute bottom-0 left-1/3 w-[22rem] h-[22rem] rounded-full blur-3xl " + (useBrand ? "opacity-20" : "opacity-40")}
+        className="absolute bottom-0 left-1/3 w-[22rem] h-[22rem] rounded-full blur-3xl opacity-40"
         style={{
           background:
             "radial-gradient(closest-side, rgba(74,222,128,0.5), rgba(74,222,128,0) 70%)",
