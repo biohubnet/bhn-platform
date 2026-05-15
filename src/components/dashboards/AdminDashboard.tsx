@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  Users, BookOpen, GraduationCap, Award, Layers, Coins,
+  Users, BookOpen, GraduationCap, Layers, Coins,
   ShieldCheck, AlertCircle, ArrowRight,
   Sparkles, ClipboardList, UserCog, Building2,
   Activity, Clock, Briefcase, Ghost, GitFork, CheckCircle2,
@@ -12,27 +12,23 @@ import { CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
 /**
  * Admin / superadmin dashboard.
  *
- * Redesign principle (May 2026): the previous layout was a flat stack
- * of stat tiles + counters + queues + counters again, which buried
- * the actually-frequent operations under summary data. Admins on a
- * fresh install spend most of their time on a narrow set of bootstrap
- * tasks — spawn a demo workspace, invite an employer, create a
- * posting, view-as a trainee — and the dashboard should put those one
- * click away. Mature platforms have different priorities (action
- * queues, audit log), so the surface adapts:
+ * Redesign v2 (May 2026): the previous version solved the "what is
+ * the admin trying to do?" problem (setup checklist, quick actions,
+ * adaptive empty states) but the visual language was still a quilt
+ * of independently-bordered tiles — too fragmented. This pass keeps
+ * the same information architecture and rebuilds the surface as a
+ * smaller number of large panels, with hairline dividers inside each
+ * panel instead of borders around every cell. Three rules now:
  *
- *   1. SetupChecklist — auto-shown when the platform is fresh (few
- *      employers / no demo workspace / no postings / etc.); auto-
- *      hides once each milestone clears. Replaces the "0 of every
- *      stat" wall a fresh admin used to see.
- *   2. QuickActions — 8 large shortcuts, the bootstrap operations
- *      identified above. Same surface for mature platforms; the
- *      buttons just point to lists instead of "create your first".
- *   3. StatChips — slim one-row stat row (vs. four big tiles).
- *   4. ActionQueues — auto-collapse to a single "all clear" line
- *      when every queue is empty.
- *   5. Credit-expiry + recent activity — compacted versions of the
- *      previous sections.
+ *   1. Bigger gradient sections, not many small boxes.
+ *   2. Hairline dividers inside panels, not borders around every
+ *      cell. The eye should travel across a panel as one unit.
+ *   3. Asymmetric weight — the hero element gets dominance, supporting
+ *      elements stay quiet. Numbers in the metrics strip use a much
+ *      bigger type ramp than before so the platform pulse reads at a
+ *      glance, command-center style.
+ *
+ * Same data-fetching shape as v1 so nothing downstream changes.
  */
 export async function AdminDashboard({
   user, role,
@@ -82,9 +78,6 @@ export async function AdminDashboard({
 
   const totalPending = pendingCreditApps + pendingRoleRequests + pendingPathwayApps;
 
-  // Credit-expiry awareness — same data as before, just rendered in a
-  // narrower strip. Auto-hides the whole section if no credits are
-  // due to expire in any window (fresh install has zero grants).
   const now = new Date();
   const horizon = (days: number) => new Date(now.getTime() + days * 86_400_000);
   const expiringWindow = async (days: number) => {
@@ -107,10 +100,6 @@ export async function AdminDashboard({
   const anyExpiry = expiring7.credits + expiring30.credits + expiring90.credits > 0;
 
   // ── Setup checklist heuristics ─────────────────────────────────
-  // The platform is "fresh" if at least 3 of these milestones are
-  // unmet. We never hide more than one at a time so a partial setup
-  // still sees the rest of the checklist. Once everything is met the
-  // whole section auto-hides.
   const checklist: Array<{
     id: string;
     done: boolean;
@@ -123,7 +112,7 @@ export async function AdminDashboard({
       id: "demo-workspace",
       done: demoWorkspaceCount > 0,
       label: "Spawn a demo workspace",
-      detail: "Test the full platform end-to-end with throwaway accounts. Use it to walk a prospective partner through what their experience will look like.",
+      detail: "Throwaway accounts that walk a prospective partner through the full platform.",
       href: "/admin/demo-workspaces",
       icon: Rocket,
     },
@@ -131,15 +120,15 @@ export async function AdminDashboard({
       id: "invite-employer",
       done: employerCount > 0 || employerInvitesPending > 0,
       label: "Invite your first employer",
-      detail: "Drop in their email, copy the generated link, send via your usual channel. They land in /employer with HR role assigned.",
+      detail: "Drop in their email, copy the link, send via your usual channel.",
       href: "/admin/employer-invites",
       icon: Building2,
     },
     {
       id: "first-posting",
       done: activePostings > 0,
-      label: "Create the first internship posting",
-      detail: "Paste a job description and the AI fills in the fields. Or click 'Seed demo postings' on /employer/postings to populate three samples.",
+      label: "Create the first posting",
+      detail: "Paste a JD; the AI fills in the fields. Or seed demo postings from /employer/postings.",
       href: "/admin/internships/new",
       icon: Briefcase,
     },
@@ -147,7 +136,7 @@ export async function AdminDashboard({
       id: "first-course",
       done: totalCourses > 0,
       label: "Publish at least one course",
-      detail: "The training catalog is the backbone of the platform — even one published course lets sign-ups try the LMS loop. Use the 'New course' button on the catalog page.",
+      detail: "The training catalog is the backbone — even one course lets sign-ups try the LMS loop.",
       href: "/courses?from=instructor",
       icon: BookOpen,
     },
@@ -155,18 +144,39 @@ export async function AdminDashboard({
       id: "talent-application",
       done: totalApplications > 0,
       label: "See talent flow through",
-      detail: "Once a trainee signs up and submits the talent application, the cards appear on /employer/applicants with AI match scores.",
+      detail: "Once a trainee submits the talent application, cards appear on /employer/applicants with AI match scores.",
       href: "/employer/applicants",
       icon: Inbox,
     },
   ];
-  const checklistOpen = checklist.filter((c) => !c.done).length;
+  const checklistDone = checklist.filter((c) => c.done).length;
+  const checklistOpen = checklist.length - checklistDone;
+  const setupPct = Math.round((checklistDone / checklist.length) * 100);
   const showChecklist = checklistOpen > 0 && (totalUsers < 10 || activePostings === 0 || employerCount === 0);
+  const nextChecklistItem = checklist.find((c) => !c.done);
+
+  // Stats for the command-deck metric strip. Six entries; the layout
+  // renders all six as hairline-separated columns. The "primary"
+  // pair (Users + Pending) gets dominance via type-ramp.
+  const metrics: Array<{
+    label: string;
+    value: number;
+    help: string;
+    emphasis?: boolean;
+    tone: "amber" | "brand" | "muted";
+  }> = [
+    { label: "Pending",     value: totalPending,      help: "Approval queues", emphasis: true,  tone: totalPending > 0 ? "amber" : "muted" },
+    { label: "Users",       value: totalUsers,        help: "Real accounts",   emphasis: true,  tone: "brand" },
+    { label: "Employers",   value: employerCount,     help: `${employerInvitesPending} pending invite${employerInvitesPending === 1 ? "" : "s"}`, tone: "muted" },
+    { label: "Postings",    value: activePostings,    help: "Active",          tone: "muted" },
+    { label: "Enrolments",  value: totalEnrollments,  help: `+${new24hEnrollments} today`, tone: "muted" },
+    { label: "Certificates", value: totalCertificates, help: "Lifetime",       tone: "muted" },
+  ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-4 hero-mesh-brand">
+      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-2 hero-mesh-brand">
         <div className="absolute inset-0 pointer-events-none">
           <div className="blob-shape blob-soft drift" style={{ width: 360, height: 360, top: -120, left: -100 }} />
           <div className="blob-shape blob-soft drift-slow" style={{ width: 420, height: 420, bottom: -200, right: -140, opacity: 0.55 }} />
@@ -182,13 +192,9 @@ export async function AdminDashboard({
               </h1>
               <p className="mt-1.5 text-white text-sm max-w-2xl leading-snug drop-shadow">
                 {totalPending > 0 ? (
-                  <>
-                    {totalPending} item{totalPending === 1 ? "" : "s"} waiting on you across credits, role requests, and pathway approvals.
-                  </>
+                  <>{totalPending} item{totalPending === 1 ? "" : "s"} waiting on you across credits, role requests, and pathway approvals.</>
                 ) : showChecklist ? (
-                  <>
-                    {checklistOpen} setup step{checklistOpen === 1 ? "" : "s"} left to get the platform humming.
-                  </>
+                  <>{checklistOpen} setup step{checklistOpen === 1 ? "" : "s"} left to get the platform humming.</>
                 ) : (
                   "Nothing in the action queue. Platform is humming."
                 )}
@@ -200,7 +206,7 @@ export async function AdminDashboard({
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Link
-                href={totalPending > 0 ? "/admin/credit-applications" : showChecklist ? checklist.find((c) => !c.done)!.href : "/admin"}
+                href={totalPending > 0 ? "/admin/credit-applications" : showChecklist && nextChecklistItem ? nextChecklistItem.href : "/admin"}
                 className="inline-flex items-center gap-1.5 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-xs px-4 py-2 organic-card shadow-md shadow-brand-900/30 transition-all hover:-translate-y-0.5"
               >
                 {totalPending > 0 ? "Review queue" : showChecklist ? "Continue setup" : "Admin overview"} <ArrowRight size={12} />
@@ -217,135 +223,98 @@ export async function AdminDashboard({
         <div className="curve-down" />
       </section>
 
-      {/* ── Setup checklist (auto-hides when complete) ───────────── */}
-      {showChecklist && (
-        <section className="bg-card border border-brand-200 rounded-2xl p-5 surface-shadow">
-          <header className="flex items-end justify-between gap-3 flex-wrap mb-3">
-            <div>
-              <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
-                <Rocket size={16} className="text-brand-600" />
-                Get the platform off the ground
-              </h2>
-              <p className="text-xs text-muted mt-0.5 leading-snug">
-                A short setup punch-list. These are the things every BHN deployment needs in place before real trainees + employers can self-serve.
-                Each tile auto-checks off once it&apos;s done.
-              </p>
-            </div>
-            <p className="text-[11px] text-subtle tabular-nums">
-              {checklist.length - checklistOpen} / {checklist.length} done
-            </p>
-          </header>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {checklist.map((c) => (
-              <Link
-                key={c.id}
-                href={c.href}
-                className={`group rounded-xl border p-4 flex items-start gap-3 transition-all ${
-                  c.done
-                    ? "bg-emerald-50/60 border-emerald-200"
-                    : "bg-elevated/40 border-line hover:border-brand-300 hover:-translate-y-0.5 hover:shadow-md"
-                }`}
-              >
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                  c.done
-                    ? "bg-emerald-500 text-white"
-                    : "bg-brand-50 text-brand-700 group-hover:bg-brand-600 group-hover:text-white transition-colors"
-                }`}>
-                  {c.done ? <CheckCircle2 size={16} /> : <c.icon size={16} />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold leading-tight ${c.done ? "text-emerald-900 line-through decoration-emerald-400/40" : "text-fg"}`}>
-                    {c.label}
-                  </p>
-                  <p className="text-[11px] text-muted mt-1 leading-snug">
-                    {c.detail}
-                  </p>
-                </div>
-                {!c.done && (
-                  <ArrowRight size={13} className="text-subtle mt-1 group-hover:text-brand-700 transition-colors shrink-0" />
-                )}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ── Quick actions — the eight most-used admin shortcuts ──── */}
-      <section>
-        <header className="flex items-end justify-between gap-3 mb-3">
-          <div>
-            <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
-              <Zap size={16} className="text-brand-600" />
-              Quick actions
-            </h2>
-            <p className="text-xs text-muted mt-0.5">
-              The eight surfaces an admin opens most often. Bookmark whichever you reach for daily.
-            </p>
-          </div>
-        </header>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {QUICK_ACTIONS(isSuperAdmin).map((a) => (
-            <Link
-              key={a.href}
-              href={a.href}
-              className="group relative bg-card border border-line rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-md hover:border-brand-200 transition-all"
-            >
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${a.tone} text-white flex items-center justify-center shadow-md shrink-0`}>
-                <a.icon size={18} />
-              </div>
-              <p className="text-sm font-semibold text-fg mt-3 leading-tight group-hover:text-brand-700 transition-colors">
-                {a.label}
-              </p>
-              <p className="text-[11px] text-muted mt-0.5 leading-snug">{a.help}</p>
-              {a.badge !== undefined && a.badge > 0 && (
-                <span className="absolute top-3 right-3 inline-flex items-center justify-center min-w-[1.4rem] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[10px] font-bold tabular-nums">
-                  {a.badge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Stat strip — slim, one row ───────────────────────────── */}
-      <section>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-          {[
-            { icon: Users,         label: "Users",        value: totalUsers },
-            { icon: Building2,     label: "Employers",    value: employerCount },
-            { icon: BookOpen,      label: "Published",    value: totalCourses },
-            { icon: Briefcase,     label: "Postings",     value: activePostings },
-            { icon: GraduationCap, label: "Enrolments",   value: totalEnrollments },
-            { icon: Award,         label: "Certificates", value: totalCertificates },
-          ].map((s) => {
-            const Icon = s.icon;
+      {/* ── At-a-glance metric strip ─────────────────────────────────
+          One large panel with subtle brand-tinted gradient. Six
+          stat columns separated by hairlines — no individual borders.
+          Big number ramp = command-center feel. */}
+      <section className="relative overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-brand-50/40 via-card to-card surface-shadow">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y divide-x divide-line/70 md:divide-y-0">
+          {metrics.map((m, idx) => {
+            // Re-add the bottom border for the first md row on mobile +
+            // hide it on lg via the grid's auto behavior. Tailwind's
+            // `divide-y` already handles vertical divisions; we lean
+            // on it.
+            const tones: Record<string, string> = {
+              amber: "text-amber-700",
+              brand: "text-brand-700",
+              muted: "text-fg",
+            };
             return (
-              <div key={s.label} className="bg-card border border-line rounded-xl px-3 py-2.5">
-                <div className="flex items-center gap-1.5 text-subtle text-[9px] uppercase tracking-[0.18em] font-bold">
-                  <Icon size={10} className="text-brand-600" /> {s.label}
-                </div>
-                <p className="text-xl font-bold mt-0.5 font-mono tabular-nums leading-none">
-                  {s.value.toLocaleString()}
+              <div
+                key={m.label}
+                className={`px-5 py-4 ${idx >= 3 ? "lg:border-l lg:border-line/70" : ""}`}
+              >
+                <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                  {m.label}
                 </p>
+                <p className={`mt-1 font-bold tabular-nums leading-none ${m.emphasis ? "text-4xl" : "text-2xl"} ${tones[m.tone]}`}>
+                  {m.value.toLocaleString()}
+                </p>
+                <p className="text-[11px] text-muted mt-1.5 truncate">{m.help}</p>
               </div>
             );
           })}
         </div>
       </section>
 
-      {/* ── Action queues (compacted; collapses to one line when empty) ── */}
-      {totalPending > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {pendingCreditApps > 0 && (
-            <QueueTile icon={Coins} tone="amber" label="Credit applications" count={pendingCreditApps} href="/admin/credit-applications" />
+      {/* ── Command Deck — Setup + Quick Actions inside ONE panel ─── */}
+      <section className="rounded-2xl border border-line bg-gradient-to-br from-card via-card to-brand-50/30 surface-shadow overflow-hidden">
+        <header className="flex items-end justify-between gap-3 flex-wrap px-6 pt-5 pb-4 border-b border-line/70">
+          <div>
+            <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
+              <Zap size={16} className="text-brand-600" />
+              Command deck
+            </h2>
+            <p className="text-xs text-muted mt-0.5">
+              {showChecklist
+                ? "Bootstrap first, then the surfaces you'll reach for daily."
+                : "The surfaces an admin opens most. Bookmark whichever you reach for daily."}
+            </p>
+          </div>
+          {showChecklist && (
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="w-32 h-1.5 bg-elevated rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all"
+                  style={{ width: `${setupPct}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-muted tabular-nums whitespace-nowrap">
+                Setup {setupPct}% — {checklistDone} / {checklist.length}
+              </p>
+            </div>
           )}
-          {pendingRoleRequests > 0 && (
-            <QueueTile icon={UserCog} tone="violet" label="Role-change requests" count={pendingRoleRequests} href="/admin/role-requests" />
+        </header>
+
+        <div className={`grid ${showChecklist ? "lg:grid-cols-[1.05fr_1.5fr]" : "grid-cols-1"} divide-y lg:divide-y-0 lg:divide-x divide-line/70`}>
+          {showChecklist && (
+            <SetupColumn checklist={checklist} />
           )}
-          {pendingPathwayApps > 0 && (
-            <QueueTile icon={Layers} tone="brand" label="Pathway enrolments" count={pendingPathwayApps} href="/admin/pathway-enrollments" />
-          )}
+          <QuickActionsList isSuperAdmin={isSuperAdmin} pending={totalPending} />
         </div>
+      </section>
+
+      {/* ── Approval queues ─────────────────────────────────────────
+          Single panel with hairline-separated columns when non-zero;
+          compact emerald-zen badge when fully clear. */}
+      {totalPending > 0 ? (
+        <section className="rounded-2xl border border-line bg-card surface-shadow overflow-hidden">
+          <header className="px-5 pt-4 pb-3 border-b border-line/70 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold text-fg inline-flex items-center gap-2">
+              <ClipboardList size={14} className="text-amber-600" />
+              Approval queues
+              <span className="text-[11px] font-bold text-amber-700 bg-amber-50 ring-1 ring-amber-200 rounded-full px-2 py-0.5 tabular-nums">
+                {totalPending} pending
+              </span>
+            </h2>
+            <p className="text-[11px] text-subtle">Tap any column to triage.</p>
+          </header>
+          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line/70">
+            <QueueRow icon={Coins}   tone="amber"  label="Credit applications"  count={pendingCreditApps}   href="/admin/credit-applications" />
+            <QueueRow icon={UserCog} tone="violet" label="Role-change requests" count={pendingRoleRequests} href="/admin/role-requests" />
+            <QueueRow icon={Layers}  tone="brand"  label="Pathway enrolments"   count={pendingPathwayApps}  href="/admin/pathway-enrollments" />
+          </div>
+        </section>
       ) : (
         <div className="bg-emerald-50/60 border border-emerald-200 rounded-xl px-4 py-3 inline-flex items-center gap-2 text-sm">
           <CheckCircle2 size={14} className="text-emerald-700" />
@@ -354,88 +323,102 @@ export async function AdminDashboard({
         </div>
       )}
 
-      {/* ── Credit expiry — auto-hidden when nothing is expiring ─── */}
+      {/* ── Credit expiry (auto-hidden when nothing is expiring) ─── */}
       {anyExpiry && (
-        <section className="bg-card border border-line rounded-2xl p-5">
-          <header className="flex items-end justify-between gap-3 flex-wrap mb-3">
+        <section className="rounded-2xl border border-line bg-gradient-to-br from-amber-50/30 via-card to-card overflow-hidden">
+          <header className="px-5 pt-4 pb-3 border-b border-line/70 flex items-end justify-between gap-3 flex-wrap">
             <div>
-              <h2 className="text-base font-bold text-fg tracking-tight inline-flex items-center gap-2">
-                <Clock size={14} className="text-brand-600" />
-                Credit expiry — {CREDIT_GRANT_TTL_DAYS}-day TTL
+              <h2 className="text-sm font-bold text-fg tracking-tight inline-flex items-center gap-2">
+                <Clock size={14} className="text-amber-600" />
+                Credit expiry · {CREDIT_GRANT_TTL_DAYS}-day TTL
               </h2>
-              <p className="text-xs text-muted mt-0.5 leading-snug">
-                Unspent credits across real trainees. Daily sweep + 90/30/7-day warnings handle this automatically.
+              <p className="text-[11px] text-muted mt-0.5 leading-snug max-w-2xl">
+                Daily sweep + 90/30/7-day warnings handle the runs automatically. This strip is the live look-ahead.
               </p>
             </div>
             <Link
               href="/api/admin/credits/sweep"
               prefetch={false}
-              className="text-xs font-semibold text-muted hover:text-fg inline-flex items-center gap-1"
+              className="text-[11px] font-semibold text-muted hover:text-fg inline-flex items-center gap-1"
               title="Trigger the sweep manually (cron does this daily anyway)"
             >
               Run sweep now <ArrowRight size={11} />
             </Link>
           </header>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <ExpiryTile tone="rose"  days={7}  credits={expiring7.credits}  users={expiring7.users} />
-            <ExpiryTile tone="amber" days={30} credits={expiring30.credits} users={expiring30.users} />
-            <ExpiryTile tone="brand" days={90} credits={expiring90.credits} users={expiring90.users} />
+          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line/70">
+            <ExpiryColumn tone="rose"  days={7}  credits={expiring7.credits}  users={expiring7.users} />
+            <ExpiryColumn tone="amber" days={30} credits={expiring30.credits} users={expiring30.users} />
+            <ExpiryColumn tone="brand" days={90} credits={expiring90.credits} users={expiring90.users} />
           </div>
         </section>
       )}
 
-      {/* ── Live counters ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Counter icon={GraduationCap} label="Enrolments today"  value={new24hEnrollments} help="Last 24 hours" />
-        <Counter icon={Sparkles}      label="New sign-ups (7d)" value={new7dUsers}       help="Real accounts only" />
-        {isSuperAdmin ? (
-          <Counter icon={Cpu}        label="AI calls (7d)"      value={aiCalls7d}        help="Cloudflare + Gemini combined" href="/admin/analytics" />
-        ) : (
-          <Counter icon={Ghost}      label="Phantom users"      value={phantomCount}     help="Throwaway test accounts" href="/admin/phantom-users" />
-        )}
-      </div>
-
-      {/* ── Recent activity (compact) ────────────────────────────── */}
-      <section className="bg-card border border-line rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-line flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-fg text-sm inline-flex items-center gap-1.5">
-              <ClipboardList size={14} className="text-brand-600" />
-              Recent activity
+      {/* ── Pulse + Activity ───────────────────────────────────────
+          Two-up: live pulse (left) + recent activity feed (right) in
+          a single 2-column grid panel. Hairline divider between.
+          The asymmetry — pulse takes 1 col, activity takes 2 — keeps
+          the eye on the audit feed which is the more-scanned surface. */}
+      <section className="grid lg:grid-cols-[1fr_2fr] gap-3">
+        <div className="rounded-2xl border border-line bg-gradient-to-br from-brand-50/30 via-card to-card overflow-hidden">
+          <header className="px-5 pt-4 pb-3 border-b border-line/70">
+            <h2 className="text-sm font-bold text-fg inline-flex items-center gap-2">
+              <Activity size={14} className="text-brand-600" />
+              Live pulse
             </h2>
-            <p className="text-[11px] text-muted">Last five audit-log entries</p>
-          </div>
-          <Link href="/admin/audit" className="text-xs font-medium text-brand-700 hover:underline inline-flex items-center gap-1">
-            See all <ArrowRight size={11} />
-          </Link>
-        </div>
-        {recentAudit.length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-muted">No audit entries yet.</div>
-        ) : (
-          <ul className="divide-y divide-line">
-            {recentAudit.map((a) => (
-              <li key={a.id} className="flex items-center gap-3 px-4 py-2.5">
-                <div className="w-6 h-6 rounded-md bg-elevated text-subtle flex items-center justify-center shrink-0">
-                  <ClipboardList size={12} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-fg truncate">{a.action}</p>
-                  <p className="text-xs text-muted truncate">
-                    {a.actor?.name ?? a.actor?.email ?? "system"}
-                    {a.targetType && ` · ${a.targetType}`}
-                  </p>
-                </div>
-                <p className="text-[11px] text-subtle shrink-0">
-                  {new Date(a.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                </p>
-              </li>
-            ))}
+            <p className="text-[11px] text-muted mt-0.5">Beats from the last day / week.</p>
+          </header>
+          <ul className="divide-y divide-line/70">
+            <PulseRow icon={GraduationCap} label="Enrolments today"   value={new24hEnrollments} help="Last 24 hours" />
+            <PulseRow icon={Sparkles}      label="New sign-ups (7d)"  value={new7dUsers}        help="Real accounts only" />
+            {isSuperAdmin ? (
+              <PulseRow icon={Cpu}   label="AI calls (7d)"     value={aiCalls7d} help="Cloudflare + Gemini combined" href="/admin/analytics" />
+            ) : (
+              <PulseRow icon={Ghost} label="Phantom users"     value={phantomCount} help="Throwaway test accounts"     href="/admin/phantom-users" />
+            )}
           </ul>
-        )}
+        </div>
+
+        <div className="rounded-2xl border border-line bg-card overflow-hidden">
+          <header className="px-5 pt-4 pb-3 border-b border-line/70 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-fg inline-flex items-center gap-2">
+                <ClipboardList size={14} className="text-brand-600" />
+                Recent activity
+              </h2>
+              <p className="text-[11px] text-muted mt-0.5">Last five audit-log entries</p>
+            </div>
+            <Link href="/admin/audit" className="text-xs font-medium text-brand-700 hover:underline inline-flex items-center gap-1">
+              See all <ArrowRight size={11} />
+            </Link>
+          </header>
+          {recentAudit.length === 0 ? (
+            <div className="px-5 py-10 text-center text-sm text-muted">No audit entries yet.</div>
+          ) : (
+            <ul className="divide-y divide-line/70">
+              {recentAudit.map((a) => (
+                <li key={a.id} className="flex items-center gap-3 px-5 py-3 hover:bg-elevated/30 transition-colors">
+                  <div className="w-6 h-6 rounded-md bg-elevated text-subtle flex items-center justify-center shrink-0">
+                    <ClipboardList size={12} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-fg truncate">{a.action}</p>
+                    <p className="text-xs text-muted truncate">
+                      {a.actor?.name ?? a.actor?.email ?? "system"}
+                      {a.targetType && ` · ${a.targetType}`}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-subtle shrink-0 tabular-nums">
+                    {new Date(a.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
 
       {isSuperAdmin && (
-        <div className="bg-elevated/50 border border-dashed border-line rounded-xl px-4 py-3 flex items-start gap-3">
+        <div className="bg-elevated/40 border border-dashed border-line rounded-xl px-4 py-3 flex items-start gap-3">
           <div className="w-8 h-8 rounded-lg bg-card-solid border border-line text-brand-600 flex items-center justify-center shrink-0">
             <ShieldCheck size={14} />
           </div>
@@ -456,13 +439,139 @@ export async function AdminDashboard({
   );
 }
 
-/** The eight admin shortcuts most-used during the initial state of
- *  the platform (and surprisingly, also during steady state — these
- *  are the navigation patterns a recruiter / ops admin opens daily).
- *  Order is deliberate: bootstrap operations first, day-to-day ops
- *  second. The badge slot is for live counts (e.g. talent applicants)
- *  so the chip nudges itself when something needs attention. */
-function QUICK_ACTIONS(isSuperAdmin: boolean): Array<{
+// ─── Sub-components ─────────────────────────────────────────────
+
+/** Vertical setup list — numbered steps, hairline-divided rows, all
+ *  inside the Command Deck. No individual borders per row — the panel
+ *  border is the only one. */
+function SetupColumn({
+  checklist,
+}: {
+  checklist: Array<{
+    id: string;
+    done: boolean;
+    label: string;
+    detail: string;
+    href: string;
+    icon: React.ElementType;
+  }>;
+}) {
+  return (
+    <div>
+      <div className="px-6 pt-5 pb-2">
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+          <Rocket size={10} className="inline -mt-0.5 mr-1 text-brand-600" />
+          Get airborne
+        </p>
+        <p className="text-[11px] text-muted mt-1">
+          Five milestones every BHN deployment needs in place before real trainees + employers can self-serve.
+        </p>
+      </div>
+      <ul className="divide-y divide-line/70 border-t border-line/70">
+        {checklist.map((c, idx) => {
+          const Icon = c.icon;
+          return (
+            <li key={c.id}>
+              <Link
+                href={c.href}
+                className={`flex items-start gap-3 px-6 py-3.5 group transition-colors ${
+                  c.done ? "bg-emerald-50/30" : "hover:bg-elevated/40"
+                }`}
+              >
+                <span className={`mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-bold tabular-nums ${
+                  c.done
+                    ? "bg-emerald-500 text-white"
+                    : "bg-elevated text-fg ring-1 ring-line group-hover:bg-brand-50 group-hover:text-brand-700 group-hover:ring-brand-200 transition-colors"
+                }`}>
+                  {c.done ? <CheckCircle2 size={14} /> : idx + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-semibold leading-tight inline-flex items-center gap-1.5 ${
+                    c.done ? "text-emerald-900 line-through decoration-emerald-400/40" : "text-fg"
+                  }`}>
+                    <Icon size={12} className={c.done ? "text-emerald-700" : "text-subtle"} />
+                    {c.label}
+                  </p>
+                  <p className="text-[11px] text-muted leading-snug mt-0.5">{c.detail}</p>
+                </div>
+                {!c.done && (
+                  <ArrowRight size={13} className="text-subtle group-hover:text-brand-700 transition-colors mt-1 shrink-0" />
+                )}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/** Quick-actions list — single panel column, hairline-divided rows.
+ *  Two columns at desktop, single column on mobile. Replaces the
+ *  8-tile grid that read as fragmented. */
+function QuickActionsList({
+  isSuperAdmin, pending,
+}: {
+  isSuperAdmin: boolean;
+  pending: number;
+}) {
+  const actions = QUICK_ACTIONS(isSuperAdmin, pending);
+  return (
+    <div>
+      <div className="px-6 pt-5 pb-2">
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+          <Zap size={10} className="inline -mt-0.5 mr-1 text-brand-600" />
+          Daily reach
+        </p>
+        <p className="text-[11px] text-muted mt-1">
+          Eight surfaces an admin opens most. Pinned here so they&apos;re always one click away.
+        </p>
+      </div>
+      <ul className="grid md:grid-cols-2 border-t border-line/70 divide-y md:divide-y-0 divide-line/70">
+        {actions.map((a, idx) => {
+          const Icon = a.icon;
+          // Add a vertical divider between the two columns at md+.
+          // Bottom border on every row up to (but not) the last row of
+          // each column for the mobile collapsed layout.
+          const isRightCol = idx % 2 === 1;
+          const isLastRowLeft = idx === actions.length - 2;
+          const isLastRowRight = idx === actions.length - 1;
+          return (
+            <li
+              key={a.href}
+              className={`${isRightCol ? "md:border-l md:border-line/70" : ""} ${
+                !isLastRowLeft && !isLastRowRight ? "md:border-b md:border-line/70" : ""
+              }`}
+            >
+              <Link
+                href={a.href}
+                className="flex items-center gap-3 px-6 py-4 group hover:bg-elevated/40 transition-colors relative"
+              >
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${a.tone} text-white flex items-center justify-center shadow-md shrink-0 transition-transform group-hover:scale-105`}>
+                  <Icon size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-fg leading-tight group-hover:text-brand-700 transition-colors">
+                    {a.label}
+                  </p>
+                  <p className="text-[11px] text-muted mt-0.5 leading-snug truncate">{a.help}</p>
+                </div>
+                {a.badge !== undefined && a.badge > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[1.4rem] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[10px] font-bold tabular-nums shrink-0">
+                    {a.badge}
+                  </span>
+                )}
+                <ArrowRight size={13} className="text-subtle group-hover:text-brand-700 group-hover:translate-x-0.5 transition-all shrink-0" />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function QUICK_ACTIONS(isSuperAdmin: boolean, pending: number): Array<{
   href: string;
   label: string;
   help: string;
@@ -470,26 +579,54 @@ function QUICK_ACTIONS(isSuperAdmin: boolean): Array<{
   tone: string;
   badge?: number;
 }> {
-  const list = [
-    { href: "/admin/demo-workspaces", label: "Demo workspaces", help: "Spin up a throwaway end-to-end test", icon: Rocket,      tone: "from-violet-500 to-violet-700 shadow-violet-600/20" },
-    { href: "/admin/employer-invites", label: "Invite employer", help: "Generate an HR-onboarding link",      icon: Building2,   tone: "from-amber-400 to-amber-600 shadow-amber-500/20" },
-    { href: "/admin/internships/new", label: "New posting",     help: "AI-fills the fields from a JD paste",  icon: FilePlus,    tone: "from-brand-500 to-brand-700 shadow-brand-600/20" },
-    { href: "/employer/applicants",   label: "Talent applicants", help: "Match scores + comments + previews", icon: Inbox,       tone: "from-emerald-500 to-emerald-700 shadow-emerald-600/20" },
-    { href: "/admin/phantom-users",   label: "Phantom users",   help: "Throwaway accounts for batch testing", icon: Ghost,       tone: "from-fuchsia-500 to-fuchsia-700 shadow-fuchsia-600/20" },
-    { href: "/admin/split-view",      label: "View as",         help: "Walk every role's experience",         icon: GitFork,     tone: "from-sky-500 to-sky-700 shadow-sky-600/20" },
-    { href: "/admin/users",           label: "Users",           help: "Search, edit, deactivate",             icon: Users,       tone: "from-brand-500 to-brand-700 shadow-brand-600/20" },
+  return [
+    { href: "/admin/demo-workspaces",  label: "Demo workspaces", help: "Spin up a throwaway end-to-end test",  icon: Rocket,    tone: "from-violet-500 to-violet-700 shadow-violet-600/20" },
+    { href: "/admin/employer-invites", label: "Invite employer", help: "Generate an HR-onboarding link",        icon: Building2, tone: "from-amber-400 to-amber-600 shadow-amber-500/20" },
+    { href: "/admin/internships/new",  label: "New posting",     help: "AI fills the fields from a JD paste",   icon: FilePlus,  tone: "from-brand-500 to-brand-700 shadow-brand-600/20" },
+    { href: "/employer/applicants",    label: "Talent applicants", help: "Match scores · previews · comments",  icon: Inbox,     tone: "from-emerald-500 to-emerald-700 shadow-emerald-600/20" },
+    { href: "/admin/phantom-users",    label: "Phantom users",   help: "Throwaway accounts for batch testing",  icon: Ghost,     tone: "from-fuchsia-500 to-fuchsia-700 shadow-fuchsia-600/20" },
+    { href: "/admin/split-view",       label: "View as",         help: "Walk every role's experience",          icon: GitFork,   tone: "from-sky-500 to-sky-700 shadow-sky-600/20" },
+    { href: "/admin/users",            label: "Users",           help: "Search, edit, deactivate",              icon: Users,     tone: "from-brand-500 to-brand-700 shadow-brand-600/20" },
     {
-      href: isSuperAdmin ? "/admin/system-status" : "/admin/audit",
-      label: isSuperAdmin ? "System status" : "Audit log",
-      help:  isSuperAdmin ? "DB / AI / security at a glance" : "Every state change, every actor",
+      href:  isSuperAdmin ? "/admin/system-status" : "/admin/audit",
+      label: isSuperAdmin ? "System status"        : "Audit log",
+      help:  isSuperAdmin ? "DB · AI · security · build SHA" : "Every state change, every actor",
       icon:  isSuperAdmin ? Activity : ShieldCheck,
       tone:  "from-slate-500 to-slate-700 shadow-slate-600/20",
+      badge: pending > 0 ? pending : undefined,
     },
   ];
-  return list;
 }
 
-function ExpiryTile({
+/** Hairline-separated row for the live pulse panel. No individual
+ *  border per cell — the parent panel owns the frame. */
+function PulseRow({
+  icon: Icon, label, value, help, href,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: number | string;
+  help?: string;
+  href?: string;
+}) {
+  const inner = (
+    <div className="flex items-center gap-3 px-5 py-3.5 group hover:bg-elevated/30 transition-colors">
+      <div className="w-9 h-9 rounded-lg bg-elevated text-brand-600 border border-line flex items-center justify-center shrink-0">
+        <Icon size={15} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle">{label}</p>
+        {help && <p className="text-[11px] text-muted mt-0.5">{help}</p>}
+      </div>
+      <p className="text-2xl font-bold text-fg tabular-nums leading-none shrink-0">{value}</p>
+    </div>
+  );
+  return href ? <li><Link href={href} className="block">{inner}</Link></li> : <li>{inner}</li>;
+}
+
+/** Column inside the Credit-expiry panel. Hairline-separated, no
+ *  individual border per cell. */
+function ExpiryColumn({
   tone, days, credits, users,
 }: {
   tone: "rose" | "amber" | "brand";
@@ -497,30 +634,32 @@ function ExpiryTile({
   credits: number;
   users: number;
 }) {
-  const colours: Record<string, string> = {
-    rose:  "ring-rose-200",
-    amber: "ring-amber-200",
-    brand: "ring-brand-200",
+  const toneCls: Record<string, string> = {
+    rose:  "text-rose-700",
+    amber: "text-amber-700",
+    brand: "text-brand-700",
   };
   const heading =
     days === 7 ? "Last call (≤ 7 days)"
     : days === 30 ? "Expiring soon (≤ 30 days)"
     : "Within 90 days";
   return (
-    <div className={`rounded-xl bg-elevated/40 border border-line p-4 ring-1 ring-inset ${colours[tone]}`}>
-      <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle">{heading}</p>
-      <p className="text-xl font-bold text-fg mt-1.5 font-mono tabular-nums">
+    <div className="px-5 py-4">
+      <p className={`text-[10px] uppercase tracking-[0.22em] font-bold ${toneCls[tone]}`}>{heading}</p>
+      <p className="text-3xl font-bold text-fg mt-1.5 tabular-nums leading-none">
         {credits.toLocaleString()}
-        <span className="text-xs font-semibold text-muted ml-1">credits</span>
+        <span className="text-xs font-semibold text-muted ml-1.5">credits</span>
       </p>
-      <p className="text-[11px] text-muted mt-0.5">
+      <p className="text-[11px] text-muted mt-2">
         Across {users.toLocaleString()} trainee{users === 1 ? "" : "s"}
       </p>
     </div>
   );
 }
 
-function QueueTile({
+/** Column inside the Approval-queues panel. Same hairline-divided
+ *  pattern; the icon-coloured chip is the only colour cue. */
+function QueueRow({
   icon: Icon, tone, label, count, href,
 }: {
   icon: React.ElementType;
@@ -537,41 +676,17 @@ function QueueTile({
   return (
     <Link
       href={href}
-      className="group bg-card border border-line rounded-2xl p-4 hover:border-brand-300 hover:shadow-md transition-all flex items-start gap-3"
+      className="group flex items-center gap-3 px-5 py-4 hover:bg-elevated/30 transition-colors"
     >
-      <div className={`w-9 h-9 rounded-lg ${colours[tone]} flex items-center justify-center shrink-0`}>
-        <Icon size={16} />
+      <div className={`w-10 h-10 rounded-lg ${colours[tone]} flex items-center justify-center shrink-0`}>
+        <Icon size={17} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle">Queue</p>
+        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle">Pending</p>
         <p className="text-sm font-semibold text-fg leading-tight mt-0.5">{label}</p>
-        <p className="text-2xl font-bold text-fg mt-1.5 tabular-nums">{count}</p>
       </div>
-      <ArrowRight size={13} className="text-subtle group-hover:text-brand-700 mt-1 transition-colors" />
+      <p className="text-2xl font-bold text-fg tabular-nums leading-none shrink-0">{count}</p>
+      <ArrowRight size={13} className="text-subtle group-hover:text-brand-700 group-hover:translate-x-0.5 transition-all shrink-0" />
     </Link>
   );
-}
-
-function Counter({
-  icon: Icon, label, value, help, href,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: number | string;
-  help?: string;
-  href?: string;
-}) {
-  const inner = (
-    <div className="bg-card border border-line rounded-xl p-4 flex items-start gap-3 hover:border-brand-200 transition-colors h-full">
-      <div className="w-8 h-8 rounded-lg bg-elevated text-brand-600 border border-line flex items-center justify-center shrink-0">
-        <Icon size={14} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle">{label}</p>
-        <p className="text-xl font-bold text-fg mt-0.5">{value}</p>
-        {help && <p className="text-[11px] text-muted mt-0.5">{help}</p>}
-      </div>
-    </div>
-  );
-  return href ? <Link href={href} className="block">{inner}</Link> : inner;
 }
