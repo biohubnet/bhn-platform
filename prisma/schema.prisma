@@ -1048,6 +1048,11 @@ model Pathway {
   title       String
   description String?
   thumbnail   String?
+  /// Non-destructive colour / gradient overlay rendered on top of
+  /// `thumbnail` wherever the pathway is shown. Same shape as
+  /// Course.thumbnailOverlay — see src/lib/courses/thumbnail-overlay.ts.
+  /// Set from /admin/cover-art alongside course overlays.
+  thumbnailOverlay Json?
   category    String?
   status      String                      @default("draft") // draft | published
   creditCost  Float                       @default(0)

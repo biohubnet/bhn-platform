@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.15e";
+export const TOUR_VERSION = "2026.05.15f";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -288,7 +288,17 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05.15b",
     roles: ["admin", "superadmin"],
-    cta: { label: "Open thumbnails admin", href: "/admin/course-thumbnails" },
+    cta: { label: "Open thumbnails admin", href: "/admin/cover-art" },
+  },
+  {
+    id: "cover-art-admin",
+    title: "Cover art admin now includes pathways",
+    body: "The cover-art tool (previously /admin/course-thumbnails, now /admin/cover-art) manages AI thumbnails and colour overlays for courses AND pathways in one list. Each row shows its kind (course / pathway) and routes regenerate calls to the right pipeline. Overlay batching splits mixed selections across both tables under the hood.",
+    path: "/admin/cover-art",
+    placement: "center",
+    since: "2026.05.15f",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open cover art admin", href: "/admin/cover-art" },
   },
   {
     id: "employer-profile-hero",

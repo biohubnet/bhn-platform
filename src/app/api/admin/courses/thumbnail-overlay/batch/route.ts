@@ -2,14 +2,20 @@
  * POST /api/admin/courses/thumbnail-overlay/batch
  *
  * Apply (or clear) a single colour / gradient overlay across a list
- * of course IDs in one request. Admin-only — the endpoint is called
- * from /admin/course-thumbnails after the operator builds the overlay
- * in the panel and ticks which courses to stamp it onto.
+ * of course OR pathway IDs in one request. Admin-only — called from
+ * /admin/cover-art after the operator builds the overlay in the
+ * panel and ticks which items to stamp it onto.
+ *
+ * The URL says "courses" for legacy reasons; the body now accepts a
+ * `kind` discriminator so the same endpoint can stamp pathways too
+ * (the overlay shape and persistence logic are identical for both
+ * tables).
  *
  * Body shape:
  *   {
- *     ids: string[],                // course IDs (non-empty)
- *     overlay: ThumbnailOverlay | null,  // null clears
+ *     kind: "course" | "pathway",          // default "course" for legacy callers
+ *     ids: string[],                       // non-empty
+ *     overlay: ThumbnailOverlay | null,    // null clears
  *   }
  *
  * The overlay blob is validated through `parseOverlay` before being
@@ -28,9 +34,11 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = (await req.json().catch(() => null)) as
-    | { ids?: unknown; overlay?: unknown }
+    | { kind?: unknown; ids?: unknown; overlay?: unknown }
     | null;
   if (!body) return NextResponse.json({ error: "Bad JSON" }, { status: 400 });
+
+  const kind: "course" | "pathway" = body.kind === "pathway" ? "pathway" : "course";
 
   const ids = Array.isArray(body.ids)
     ? body.ids.filter((x): x is string => typeof x === "string")
@@ -39,8 +47,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "ids[] is required" }, { status: 400 });
   }
 
-  // overlay === null is the explicit clear signal. Otherwise we
-  // validate the shape; reject rather than silently coerce.
+  // overlay === null is the explicit clear signal. Otherwise validate
+  // the shape; reject rather than silently coerce.
   let overlayJson: Prisma.InputJsonValue | null;
   if (body.overlay === null) {
     overlayJson = null;
@@ -49,19 +57,23 @@ export async function POST(req: Request) {
     if (!parsed) {
       return NextResponse.json({ error: "Invalid overlay shape" }, { status: 400 });
     }
-    // Cast through unknown — parseOverlay's return type is a plain
-    // object so it's structurally a Prisma JSON value.
     overlayJson = parsed as unknown as Prisma.InputJsonValue;
   }
 
-  const result = await prisma.course.updateMany({
-    where: { id: { in: ids } },
-    data: {
-      // Prisma needs the DbNull sentinel to actually write NULL to a
-      // JSON column — passing literal null leaves the field unchanged.
-      thumbnailOverlay: overlayJson === null ? Prisma.DbNull : overlayJson,
-    },
-  });
+  // Prisma needs the DbNull sentinel to actually write NULL to a
+  // JSON column — passing literal null leaves the field unchanged.
+  const data = {
+    thumbnailOverlay: overlayJson === null ? Prisma.DbNull : overlayJson,
+  };
 
-  return NextResponse.json({ ok: true, updated: result.count });
+  let updated = 0;
+  if (kind === "pathway") {
+    const r = await prisma.pathway.updateMany({ where: { id: { in: ids } }, data });
+    updated = r.count;
+  } else {
+    const r = await prisma.course.updateMany({ where: { id: { in: ids } }, data });
+    updated = r.count;
+  }
+
+  return NextResponse.json({ ok: true, kind, updated });
 }

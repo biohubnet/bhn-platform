@@ -14,6 +14,7 @@ import { PathwayCohortPicker, type PublicCohort } from "@/components/lms/Pathway
 import { ThumbnailGenerator } from "@/components/lms/ThumbnailGenerator";
 import { resolvePathwayWindow, waitlistPosition } from "@/lib/pathway-enrollment";
 import { cohortAvailability } from "@/lib/pathways/cohorts";
+import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
 
 interface PathwayCourseRow {
   id: string;
@@ -127,6 +128,12 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
             className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay"
           />
         )}
+        {/* Optional admin-stamped colour / gradient wash. Sits above
+            the AI thumbnail and below the readable hero content. */}
+        {(() => {
+          const overlay = parseOverlay(pathway.thumbnailOverlay);
+          return overlay ? <div className="absolute inset-0" style={overlayStyle(overlay)} /> : null;
+        })()}
         <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-brand-300/10 rounded-full blur-3xl" />
         {isStaff && (

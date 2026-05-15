@@ -42,5 +42,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await prisma.pathway.update({ where: { id }, data: { thumbnail: url } });
   trackServer({ userId, name: "thumbnail_generated", props: { type: "pathway", pathwayId: id } });
 
-  return NextResponse.json({ url, prompt });
+  // `url` + `prompt` are kept for backwards-compatibility with any
+  // existing caller. `ok` + `thumbnail` + `motifs` mirror the course
+  // regenerate endpoint so the /admin/cover-art batch UI can use a
+  // single response normalizer for both course and pathway rows.
+  // Pathways don't run the LLM motif-extractor step, so motifs is
+  // an empty array.
+  return NextResponse.json({
+    ok: true,
+    pathwayId: id,
+    thumbnail: url,
+    motifs: [] as string[],
+    url,
+    prompt,
+  });
 }

@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Loader2, RefreshCw, Sparkles, CheckCircle2, AlertCircle, Image as ImageIcon, Square, CheckSquare,
-  Palette, Eraser,
+  Palette, Eraser, BookOpen, Map,
 } from "lucide-react";
 import {
   parseOverlay,
@@ -13,7 +13,16 @@ import {
   type ThumbnailOverlay,
 } from "@/lib/courses/thumbnail-overlay";
 
-interface Course {
+/**
+ * A row in the cover-art admin tool. Both courses and pathways flow
+ * through the same React surface — they share a thumbnail URL and an
+ * overlay JSON shape, and the operator typically wants to batch the
+ * same colour treatment across a mix of both. The `kind` field
+ * routes per-row regen calls to the right endpoint and tells the
+ * batch overlay API which table to write.
+ */
+export interface ThumbnailItem {
+  kind: "course" | "pathway";
   id: string;
   title: string;
   category: string | null;
@@ -27,54 +36,52 @@ interface RegenResult {
   motifs: string[];
 }
 
+/** Stable per-row key so course and pathway IDs can't collide in the
+ *  selection / busy / override / errors maps. */
+const rowKey = (item: { kind: "course" | "pathway"; id: string }) =>
+  `${item.kind}:${item.id}`;
+
 /**
- * Bulk + per-course thumbnail regenerator. Calls
- * /api/admin/courses/[id]/thumbnail/regenerate one course at a time
- * (sequential — Cloudflare AI is rate-limited per account, and the
- * progress bar is more honest about wall-clock time when serialized).
+ * Bulk + per-row thumbnail regenerator + overlay batcher.
  *
- * Now also hosts the colour / gradient overlay builder. The builder
- * applies a CSS overlay to every thumbnail in the page (preview only)
- * so an admin can dial in colour + angle + opacity and see the
- * treatment land on actual cards before stamping it onto the DB via
- * the batch endpoint. "Apply to selected" persists; "Clear" wipes it.
+ * Two operations live in this surface:
  *
- * UX choices
- *   • Local optimistic state: when a course finishes, swap the
- *     thumbnail in the row immediately so the admin sees the result
- *     without a full page refresh.
- *   • Cache-bust the new image URL with ?t=<timestamp>, otherwise
- *     <img> can read a stale entry from the browser cache when the
- *     R2 URL ends in the same .png filename pattern.
- *   • Motif chips render alongside each row so admins can see what
- *     the LLM extracted — debugging tool for catalog editors.
- *   • Selection + "Regenerate selected" lets editors target specific
- *     courses instead of always running the full catalog. The same
- *     selection set drives the overlay batch — pick once, decide
- *     whether you want to regen or re-tone.
- *   • Overlay preview is live across every visible row, not just
- *     selected ones — easier to spot where the treatment looks bad
- *     before you commit. The selected subset only matters at apply
- *     time.
+ *   1. AI regeneration — calls the per-row regen endpoint one row at
+ *      a time (sequential; the Cloudflare AI image side is rate
+ *      limited per account). Courses go through the motif-extractor
+ *      pipeline; pathways take the simpler path. Both return a new
+ *      URL + (for courses) motif chips.
+ *
+ *   2. Overlay batching — applies a single colour / gradient overlay
+ *      blob to the selected rows via /api/admin/courses/thumbnail-overlay/batch
+ *      (the URL keeps "courses" for legacy reasons; the endpoint
+ *      now takes a `kind` discriminator and routes to the right
+ *      table). Non-destructive — the underlying AI thumbnail is
+ *      untouched and the overlay can be cleared at any time.
+ *
+ * UX choices unchanged from the original course-only tool:
+ *   • Local optimistic state so a finished row updates immediately.
+ *   • Cache-busted ?t=<timestamp> on the new image URL so the
+ *     browser doesn't read a stale entry from cache.
+ *   • Per-kind row icon (BookOpen for course, Map for pathway) so
+ *     the operator can tell at a glance what they're touching.
+ *   • Overlay builder preview is rendered on every SELECTED row in
+ *     the list — easier to spot bad treatments before commit.
  */
-export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
+export function CourseThumbnailRegenerator({ items }: { items: ThumbnailItem[] }) {
   const router = useRouter();
 
-  // Course-row local state — each course has an optional optimistic
-  // override + last-run motifs + last-run error.
+  // Local per-row state — keyed by rowKey so course/pathway IDs can't collide.
   const [overrides, setOverrides] = useState<Record<string, RegenResult>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
-
-  // Local override of the stored overlay per course — after Apply we
-  // stamp this so the row reflects the change without a server round
-  // trip. `false` is "no override yet"; `null` is "cleared".
+  const [busyKeys, setBusyKeys] = useState<Set<string>>(new Set());
   const [overlayOverrides, setOverlayOverrides] =
     useState<Record<string, ThumbnailOverlay | null>>({});
 
-  // Selection set. Empty => bulk button regenerates all.
+  // Selection set. Stores rowKeys; the kind is recovered from the
+  // prefix when batching.
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const allSelected = selected.size > 0 && selected.size === courses.length;
+  const allSelected = selected.size > 0 && selected.size === items.length;
   const someSelected = selected.size > 0;
 
   // Bulk-run progress.
@@ -83,66 +90,75 @@ export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
   const [completed, setCompleted] = useState(0);
   const [total, setTotal] = useState(0);
 
-  // ── Overlay builder state ────────────────────────────────────
+  // Overlay builder state.
   const [overlay, setOverlay] = useState<ThumbnailOverlay>(DEFAULT_OVERLAY);
   const [overlayBusy, setOverlayBusy] = useState(false);
   const [overlayMsg, setOverlayMsg] = useState<string | null>(null);
 
   function toggleAll() {
     if (allSelected) setSelected(new Set());
-    else setSelected(new Set(courses.map((c) => c.id)));
+    else setSelected(new Set(items.map(rowKey)));
   }
-  function toggleOne(id: string) {
+  function toggleOne(item: ThumbnailItem) {
     setSelected((cur) => {
       const next = new Set(cur);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const key = rowKey(item);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
 
-  async function regenOne(courseId: string): Promise<RegenResult | null> {
-    setBusyIds((s) => new Set(s).add(courseId));
-    setErrors((e) => { const n = { ...e }; delete n[courseId]; return n; });
+  async function regenOne(item: ThumbnailItem): Promise<RegenResult | null> {
+    const key = rowKey(item);
+    setBusyKeys((s) => new Set(s).add(key));
+    setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
     try {
-      const res = await fetch(`/api/admin/courses/${courseId}/thumbnail/regenerate`, {
-        method: "POST",
-      });
+      const endpoint =
+        item.kind === "pathway"
+          ? `/api/admin/pathways/${item.id}/thumbnail`
+          : `/api/admin/courses/${item.id}/thumbnail/regenerate`;
+      const res = await fetch(endpoint, { method: "POST" });
       const j = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         thumbnail?: string;
+        url?: string;
         motifs?: string[];
         error?: string;
       };
-      if (!res.ok || !j.thumbnail) {
+      // Normalize either response shape — courses return `thumbnail`,
+      // legacy pathway callers may still return only `url`. The
+      // pathway endpoint now returns both for safety.
+      const newUrl = j.thumbnail ?? j.url;
+      if (!res.ok || !newUrl) {
         throw new Error(j.error ?? "Regeneration failed.");
       }
       const result: RegenResult = {
-        thumbnail: `${j.thumbnail}?t=${Date.now()}`, // cache-bust
+        thumbnail: `${newUrl}?t=${Date.now()}`,
         motifs: j.motifs ?? [],
       };
-      setOverrides((o) => ({ ...o, [courseId]: result }));
+      setOverrides((o) => ({ ...o, [key]: result }));
       return result;
     } catch (err) {
-      setErrors((e) => ({ ...e, [courseId]: (err as Error).message }));
+      setErrors((e) => ({ ...e, [key]: (err as Error).message }));
       return null;
     } finally {
-      setBusyIds((s) => {
+      setBusyKeys((s) => {
         const n = new Set(s);
-        n.delete(courseId);
+        n.delete(key);
         return n;
       });
     }
   }
 
-  async function regenBatch(targets: Course[]) {
+  async function regenBatch(targets: ThumbnailItem[]) {
     setRunning(true);
     setCancelled(false);
     setCompleted(0);
     setTotal(targets.length);
     for (const c of targets) {
       if (cancelled) break;
-      await regenOne(c.id);
+      await regenOne(c);
       setCompleted((n) => n + 1);
     }
     setRunning(false);
@@ -151,8 +167,8 @@ export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
 
   function startBulk() {
     const targets = someSelected
-      ? courses.filter((c) => selected.has(c.id))
-      : courses;
+      ? items.filter((c) => selected.has(rowKey(c)))
+      : items;
     if (targets.length === 0) return;
     if (!confirm(`Regenerate ${targets.length} thumbnail${targets.length === 1 ? "" : "s"}? Each takes ~5–10 seconds.`)) return;
     regenBatch(targets);
@@ -160,32 +176,64 @@ export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
 
   async function applyOverlay(clearInstead: boolean) {
     if (!someSelected) {
-      setOverlayMsg("Pick at least one course to apply the overlay to.");
+      setOverlayMsg("Pick at least one item to apply the overlay to.");
       return;
     }
-    const ids = Array.from(selected);
+    // Split the selected keys by kind so we can hit each table with
+    // its own batch request. The endpoint accepts one kind at a
+    // time, by design — keeps the response count predictable.
+    const courseIds: string[] = [];
+    const pathwayIds: string[] = [];
+    for (const key of selected) {
+      const [k, id] = key.split(":", 2);
+      if (k === "pathway") pathwayIds.push(id);
+      else courseIds.push(id);
+    }
+
     setOverlayBusy(true);
     setOverlayMsg(null);
     try {
-      const res = await fetch(`/api/admin/courses/thumbnail-overlay/batch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids, overlay: clearInstead ? null : overlay }),
-      });
-      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; updated?: number; error?: string };
-      if (!res.ok || !j.ok) throw new Error(j.error ?? "Apply failed.");
-      // Stamp the local override so rows reflect the change without
-      // a full router.refresh (which would also re-pull thumbnails).
+      const payload = clearInstead ? null : overlay;
+      const reqs: Promise<{ updated: number }>[] = [];
+      if (courseIds.length > 0) {
+        reqs.push(
+          fetch(`/api/admin/courses/thumbnail-overlay/batch`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ kind: "course", ids: courseIds, overlay: payload }),
+          }).then(async (r) => {
+            const j = (await r.json().catch(() => ({}))) as { ok?: boolean; updated?: number; error?: string };
+            if (!r.ok || !j.ok) throw new Error(j.error ?? "Course batch failed.");
+            return { updated: j.updated ?? courseIds.length };
+          }),
+        );
+      }
+      if (pathwayIds.length > 0) {
+        reqs.push(
+          fetch(`/api/admin/courses/thumbnail-overlay/batch`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ kind: "pathway", ids: pathwayIds, overlay: payload }),
+          }).then(async (r) => {
+            const j = (await r.json().catch(() => ({}))) as { ok?: boolean; updated?: number; error?: string };
+            if (!r.ok || !j.ok) throw new Error(j.error ?? "Pathway batch failed.");
+            return { updated: j.updated ?? pathwayIds.length };
+          }),
+        );
+      }
+      const results = await Promise.all(reqs);
+      const totalUpdated = results.reduce((sum, r) => sum + r.updated, 0);
+
       const stamp = clearInstead ? null : overlay;
       setOverlayOverrides((o) => {
         const next = { ...o };
-        for (const id of ids) next[id] = stamp;
+        for (const k of selected) next[k] = stamp;
         return next;
       });
       setOverlayMsg(
         clearInstead
-          ? `Cleared overlay on ${j.updated ?? ids.length} course${ids.length === 1 ? "" : "s"}.`
-          : `Applied overlay to ${j.updated ?? ids.length} course${ids.length === 1 ? "" : "s"}.`,
+          ? `Cleared overlay on ${totalUpdated} item${totalUpdated === 1 ? "" : "s"}.`
+          : `Applied overlay to ${totalUpdated} item${totalUpdated === 1 ? "" : "s"}.`,
       );
     } catch (err) {
       setOverlayMsg((err as Error).message);
@@ -194,20 +242,16 @@ export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
     }
   }
 
-  // Effective overlay per course (local override wins; otherwise the
-  // server-supplied stored value, validated through parseOverlay).
-  function effectiveOverlay(c: Course): ThumbnailOverlay | null {
-    if (c.id in overlayOverrides) return overlayOverrides[c.id];
+  function effectiveOverlay(c: ThumbnailItem): ThumbnailOverlay | null {
+    const key = rowKey(c);
+    if (key in overlayOverrides) return overlayOverrides[key];
     return parseOverlay(c.thumbnailOverlay);
   }
 
-  // Builder-preview style is rendered onto every row that's currently
-  // selected so the admin sees the proposed overlay before applying.
   const previewStyle = useMemo(() => overlayStyle(overlay), [overlay]);
 
   return (
     <section className="space-y-4">
-      {/* Overlay builder ────────────────────────────────────────── */}
       <OverlayBuilder
         overlay={overlay}
         setOverlay={setOverlay}
@@ -258,7 +302,6 @@ export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
         </div>
       </div>
 
-      {/* Progress bar (only while running) */}
       {running && total > 0 && (
         <div className="h-1.5 bg-elevated rounded-full overflow-hidden">
           <div
@@ -268,30 +311,28 @@ export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
         </div>
       )}
 
-      {/* Course rows */}
+      {/* Rows */}
       <ul className="rounded-2xl border border-line bg-card surface-shadow divide-y divide-line overflow-hidden">
-        {courses.map((c) => {
-          const override = overrides[c.id];
-          const error = errors[c.id];
-          const busy = busyIds.has(c.id);
+        {items.map((c) => {
+          const key = rowKey(c);
+          const override = overrides[key];
+          const error = errors[key];
+          const busy = busyKeys.has(key);
           const thumb = override?.thumbnail ?? c.thumbnail;
-          const isSel = selected.has(c.id);
+          const isSel = selected.has(key);
           const stored = effectiveOverlay(c);
+          const KindIcon = c.kind === "pathway" ? Map : BookOpen;
           return (
-            <li key={c.id} className="px-4 py-3 flex items-center gap-4">
+            <li key={key} className="px-4 py-3 flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => toggleOne(c.id)}
+                onClick={() => toggleOne(c)}
                 className="text-muted hover:text-fg shrink-0"
                 aria-label={isSel ? "Deselect" : "Select"}
               >
                 {isSel ? <CheckSquare size={15} /> : <Square size={15} />}
               </button>
 
-              {/* Thumbnail preview. Two overlay layers possible:
-                    • the stored one (persisted, the "current" treatment)
-                    • the builder preview (only while selected, shows the
-                      proposed treatment swap). Both inset-0 absolute. */}
               <div className="relative w-20 h-12 rounded-lg overflow-hidden bg-elevated border border-line flex items-center justify-center shrink-0">
                 {thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -304,22 +345,24 @@ export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
                 ) : (
                   <ImageIcon size={16} className="text-subtle" />
                 )}
-                {/* Stored overlay (only when NOT selected — when
-                    selected the builder preview replaces it). */}
                 {stored && !isSel && (
                   <div className="absolute inset-0" style={overlayStyle(stored)} />
                 )}
-                {/* Builder preview — only on selected rows so the
-                    admin can A/B-compare against unselected siblings. */}
                 {isSel && (
                   <div className="absolute inset-0" style={previewStyle} />
                 )}
               </div>
 
-              {/* Title + meta */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-fg truncate">{c.title}</p>
+                <p className="text-sm font-semibold text-fg truncate inline-flex items-center gap-1.5">
+                  <KindIcon size={12} className={c.kind === "pathway" ? "text-violet-600" : "text-brand-600"} />
+                  {c.title}
+                </p>
                 <p className="text-[11px] text-subtle truncate">
+                  <span className="uppercase tracking-wider font-semibold">
+                    {c.kind === "pathway" ? "Pathway" : "Course"}
+                  </span>
+                  {" · "}
                   {c.category ?? "Uncategorised"} · {c.status}
                   {stored && (
                     <>
@@ -345,10 +388,9 @@ export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
                 )}
               </div>
 
-              {/* Per-row action */}
               <button
                 type="button"
-                onClick={() => regenOne(c.id)}
+                onClick={() => regenOne(c)}
                 disabled={busy || running}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-fg hover:bg-elevated disabled:opacity-40 transition-colors shrink-0"
               >
@@ -358,9 +400,9 @@ export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
             </li>
           );
         })}
-        {courses.length === 0 && (
+        {items.length === 0 && (
           <li className="px-4 py-8 text-sm text-subtle text-center">
-            No courses in the catalog yet.
+            No courses or pathways in the catalog yet.
           </li>
         )}
       </ul>
@@ -368,16 +410,6 @@ export function CourseThumbnailRegenerator({ courses }: { courses: Course[] }) {
   );
 }
 
-/**
- * The overlay builder. Sticky panel above the row list with colour
- * pickers, gradient toggle, angle + opacity sliders, blend-mode
- * select, a swatch preview, and Apply / Clear actions wired to the
- * batch endpoint.
- *
- * Kept inside this file (rather than its own component) because every
- * piece of state it touches lives in the parent — splitting it out
- * would just be prop-drilling for the sake of file count.
- */
 function OverlayBuilder({
   overlay, setOverlay, onApply, onClear, busy, message, selectedCount,
 }: {
@@ -403,9 +435,7 @@ function OverlayBuilder({
       </div>
 
       <div className="grid md:grid-cols-[1fr_auto] gap-4 md:gap-5 items-start">
-        {/* Controls */}
         <div className="space-y-3">
-          {/* Mode toggle */}
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle w-16">Mode</span>
             <div className="inline-flex rounded-lg ring-1 ring-inset ring-line overflow-hidden">
@@ -433,7 +463,6 @@ function OverlayBuilder({
             </div>
           </div>
 
-          {/* Colours */}
           <div className="flex items-center gap-3 flex-wrap">
             <ColorField
               label={isGradient ? "From" : "Colour"}
@@ -447,7 +476,6 @@ function OverlayBuilder({
                   value={overlay.color2 ?? "#1e3a8a"}
                   onChange={(v) => setOverlay({ ...overlay, color2: v })}
                 />
-                {/* Angle slider — only meaningful for gradients. */}
                 <div className="flex items-center gap-2 min-w-[180px]">
                   <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle">Angle</span>
                   <input
@@ -464,7 +492,6 @@ function OverlayBuilder({
             )}
           </div>
 
-          {/* Opacity */}
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle w-16">Opacity</span>
             <input
@@ -482,7 +509,6 @@ function OverlayBuilder({
             </span>
           </div>
 
-          {/* Blend mode */}
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle w-16">Blend</span>
             <select
@@ -499,12 +525,8 @@ function OverlayBuilder({
           </div>
         </div>
 
-        {/* Swatch preview — same shape as a thumbnail tile so the
-            admin can read the treatment in isolation. */}
         <div className="flex items-center gap-3 md:flex-col md:items-stretch">
           <div className="relative w-28 h-20 rounded-lg overflow-hidden border border-line shrink-0">
-            {/* Stand-in for a thumbnail — a neutral gradient so the
-                overlay reads as it would on real content. */}
             <div className="absolute inset-0 bg-gradient-to-br from-slate-300 via-slate-400 to-slate-600" />
             <div className="absolute inset-0" style={previewStyle} />
           </div>
@@ -514,7 +536,6 @@ function OverlayBuilder({
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line">
         <button
           type="button"
@@ -535,7 +556,7 @@ function OverlayBuilder({
         </button>
         {selectedCount === 0 && (
           <span className="text-[11px] text-subtle">
-            Tick courses in the list below — the overlay applies to that subset.
+            Tick items in the list below — the overlay applies to that subset.
           </span>
         )}
         {message && (

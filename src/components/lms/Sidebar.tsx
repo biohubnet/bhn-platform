@@ -194,8 +194,8 @@ const adminEngageItems: NavItem[] = [
     description: "Every issued certificate. Revoke a credential or look it up by SHA hash." },
   { label: "Merch fulfillment",         href: "/admin/merch",               icon: Gift,         minRole: "admin",
     description: "Reward bundles claimed by trainees. Pack pickups for the office; review mailing requests." },
-  { label: "Course thumbnails",         href: "/admin/course-thumbnails",   icon: Sparkles,     minRole: "admin",
-    description: "AI cover art for the catalog. Bulk regenerate topic-specific thumbnails — LLM extracts visual motifs per course, SDXL renders them." },
+  { label: "Cover art",                 href: "/admin/cover-art",           icon: Sparkles,     minRole: "admin",
+    description: "AI-rendered cover art and colour overlays for every course and pathway. Bulk regenerate topic-specific thumbnails or stamp a shared gradient treatment across a series." },
   { label: "Events",                    href: "/admin/events",              icon: Calendar,     minRole: "admin",
     description: "BHN Annual Symposium & Training Week editions. Edit basics, manage registrations, run check-in. Workshops / sessions / speakers / sponsors are seeded for now." },
 ];

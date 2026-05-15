@@ -10,6 +10,7 @@ import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
 import { LeavePathwayButton } from "@/components/lms/LeavePathwayButton";
 import { ClickStop } from "@/components/lms/ClickStop";
 import { ensureRegisteredForms } from "@/lib/forms/registry";
+import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
 
 interface PathwayRow {
   id: string;
@@ -18,6 +19,8 @@ interface PathwayRow {
   category: string | null;
   status: string;
   thumbnail: string | null;
+  /** Optional colour / gradient wash stamped from /admin/cover-art. */
+  thumbnailOverlay: unknown;
   _count: { courses: number; enrollments: number };
 }
 
@@ -171,9 +174,16 @@ export default async function PathwaysPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
                   )}
+                  {/* Optional admin-stamped colour / gradient wash. Same
+                      helper that course cards use; rendered above the
+                      AI thumbnail and below the Layers icon. */}
+                  {(() => {
+                    const overlay = parseOverlay(p.thumbnailOverlay);
+                    return overlay ? <div className="absolute inset-0" style={overlayStyle(overlay)} /> : null;
+                  })()}
                   <Layers className="absolute top-5 right-5 text-white/40 z-10 drop-shadow" size={56} />
                   {p.category && (
-                    <span className="absolute top-4 left-4 text-[10px] uppercase tracking-[0.18em] font-semibold bg-white/15 backdrop-blur-sm text-white border border-white/20 px-2 py-1 rounded">
+                    <span className="absolute top-4 left-4 text-[10px] uppercase tracking-[0.18em] font-semibold bg-white/15 backdrop-blur-sm text-white border border-white/20 px-2 py-1 rounded z-10">
                       {p.category}
                     </span>
                   )}
