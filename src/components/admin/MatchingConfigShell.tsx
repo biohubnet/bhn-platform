@@ -55,18 +55,12 @@ export function MatchingConfigShell({
 
   return (
     <>
-      {/* ── Full-bleed hi-tech diagram at the very top of the page.
-            The `full-bleed` utility (declared in globals.css) breaks
-            out of any max-width parent with `width: 100vw; margin-left:
-            calc(50% - 50vw)`. Negative top margin matches the
-            dashboard layout's pt-16 so the panel hugs the top of the
-            viewport without a strip of bg-page above it. */}
-      <section className="full-bleed -mt-16 mb-6">
-        <MatchingPipelineAnimation config={cfg} />
-      </section>
-
-      {/* ── Centered column for the rest of the page ───────────── */}
+      {/* Centered column — the alien-neural pipeline diagram sits at
+          the top of this column rather than going full-bleed. It's
+          compact (~280 px tall, max-w-[700px] centered) so it reads
+          as a small lit organism above the form, not a hero banner. */}
       <div className="max-w-5xl mx-auto space-y-6">
+        <MatchingPipelineAnimation config={cfg} />
         {pageHeader}
         {explainer}
         <MatchingConfigClient
