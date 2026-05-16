@@ -309,6 +309,12 @@ model User {
   equipDeadlinesClosed    EquipDeadline[] @relation("EquipDeadlineCloser")
   equipDeadlinesExtended  EquipDeadline[] @relation("EquipDeadlineExtender")
 
+  // HQP advisory committee — member applications + the open-
+  // call windows. See models below for the workflow.
+  hqpApplications       HqpMemberApplication[] @relation("HqpApplicant")
+  hqpAppsDecided        HqpMemberApplication[] @relation("HqpAppDecider")
+  hqpWindowsCreated     HqpApplicationWindow[] @relation("HqpWindowCreator")
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -2802,4 +2808,60 @@ model EquipDeadline {
 
   @@index([stream, status, deadlineAt])
   @@index([deadlineAt])
+}
+
+// ─── HQP Advisory Committee ─────────────────────────────────────
+// The committee runs an annual open call for new members. Each
+// call lives as a "window" — open + close timestamps mirroring
+// the EquipDeadline pattern. Eligible trainees submit an
+// application against the active window; admins review and
+// approve / reject. Approval creates a CommitteeMembership row
+// with slug = "hqp".
+
+model HqpApplicationWindow {
+  id          String   @id @default(cuid())
+  /// Annual cycle the window belongs to (eg. 2026).
+  year        Int
+  title       String
+  description String?
+  opensAt     DateTime
+  closesAt    DateTime
+  /// "open" | "closed" — manual close OR closesAt passed.
+  status      String   @default("open")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User                   @relation("HqpWindowCreator", fields: [createdById], references: [id])
+  applications HqpMemberApplication[]
+
+  @@index([year])
+  @@index([status, opensAt, closesAt])
+}
+
+model HqpMemberApplication {
+  id           String    @id @default(cuid())
+  userId       String
+  windowId     String
+  /// Form body — see lib/hqp/types.ts for shape:
+  ///   motivation, programsParticipating[], perspective,
+  ///   areasOfInterest[], timeCommitmentAcknowledged,
+  ///   confidentialityAck, nameImageConsent, additionalNotes
+  formData     Json      @default("{}")
+  /// "draft" | "submitted" | "approved" | "rejected"
+  status       String    @default("draft")
+  submittedAt  DateTime?
+  decidedAt    DateTime?
+  decidedById  String?
+  reviewerNote String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user      User                 @relation("HqpApplicant",   fields: [userId],     references: [id], onDelete: Cascade)
+  window    HqpApplicationWindow @relation(                  fields: [windowId],   references: [id], onDelete: Cascade)
+  decidedBy User?                @relation("HqpAppDecider",  fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, windowId])
+  @@index([windowId, status])
+  @@index([userId])
 }

@@ -78,7 +78,7 @@ export default async function HqpCommitteePage() {
       </section>
 
       <p className="text-[11px] text-subtle leading-snug">
-        Want a different surface here? Add to the registry at <code className="font-mono text-fg">src/lib/committees/registry.ts</code> or tell an admin what you need — we can wire dedicated HQP dashboards once we know the cadence.
+        Know someone who&apos;d be a great fit? Share <Link href="/committee/hqp/apply" className="text-violet-700 underline font-semibold">/committee/hqp/apply</Link> — the form opens when an admin schedules the annual call.
       </p>
     </div>
   );
