@@ -2626,9 +2626,21 @@ model EquipApplication {
   userId                   String
   /// "venture_connect" | "venture_lift"
   stream                   String
-  /// "draft" | "submitted" | "under_review" | "approved"
-  /// | "rejected" | "funded"
+  /// Pipeline status — extended set:
+  ///   draft | submitted | under_review
+  ///   | pre_screen_approved | pre_screen_rejected   ← VL stage-1 outcomes
+  ///   | approved | rejected | funded
+  /// VentureLift moves through pre_screen_approved before its
+  /// applicant can open the full Stage-2 form; VentureConnect
+  /// skips that intermediate state.
   status                   String    @default("draft")
+  /// Which stage of the application is currently in play.
+  ///   pre_screen — only set for VL while it's pre-screening
+  ///   full_app   — set when VL has moved past pre-screening and
+  ///                the applicant is filling in the full form,
+  ///                or when VC (no pre-screen) is anywhere in
+  ///                its flow.
+  applicationStage         String    @default("pre_screen")
   requestedAmount          Float?
   approvedAmount           Float?
   /// "grad" | "postdoc" | "research_associate" | "founder"
@@ -2644,12 +2656,28 @@ model EquipApplication {
   formData                 Json      @default("{}")
   /// Attachments. Shape: [{ key, name, size, contentType, kind }]
   /// where kind is "pitch_deck" | "prototype_photo" | "letter" |
-  /// "video_pitch" | "other".
+  /// "video_pitch" | "cv" | "support_letter" | "ip_doc" | "other".
   documents                Json      @default("[]")
   reviewerId               String?
   reviewerNote             String?
   reviewedAt               DateTime?
   submittedAt              DateTime?
+  /// VL pre-screening decision timestamp. Distinct from
+  /// decidedAt (final approve/reject of the full app).
+  preScreenDecidedAt       DateTime?
+  /// Reviewer note from the pre-screening decision. Distinct
+  /// from reviewerNote which now refers to the final Stage-2
+  /// decision.
+  preScreenReviewerNote    String?
+  /// When the full (Stage-2) application form was submitted.
+  /// Null while the applicant is still drafting Stage 2.
+  fullAppSubmittedAt       DateTime?
+  /// Per-criterion reviewer scores for VL Stage 2. Mirrors the
+  /// 6 categories in the Evaluation Guide. Shape:
+  ///   { innovation: 1-5, market: 1-5, plan: 1-5,
+  ///     commercialization: 1-5, impact: 1-5, budget: 1-5,
+  ///     comment?: string }
+  reviewerScores           Json?
   decidedAt                DateTime?
   fundedAt                 DateTime?
   disbursementNote         String?

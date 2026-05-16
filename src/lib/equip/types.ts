@@ -13,10 +13,22 @@
 
 export type EquipStream = "venture_connect" | "venture_lift";
 
+/** Stage of the application:
+ *   pre_screen — VL Stage-1 (the short pre-screening form). VC
+ *                also starts here for schema consistency but
+ *                its applicants never linger — submitting a VC
+ *                app advances it to full_app automatically.
+ *   full_app   — the long-form application. For VL this is
+ *                Stage-2 unlocked by a pre_screen_approved
+ *                decision; for VC it's the only form. */
+export type ApplicationStage = "pre_screen" | "full_app";
+
 export type EquipStatus =
   | "draft"
   | "submitted"
   | "under_review"
+  | "pre_screen_approved"
+  | "pre_screen_rejected"
   | "approved"
   | "rejected"
   | "funded";
@@ -68,12 +80,14 @@ export const STREAM_META: Record<EquipStream, {
 /** Status display metadata — colour ramp + human label.
  *  Used by both the applicant tracker and the admin queue. */
 export const STATUS_META: Record<EquipStatus, { label: string; tone: "neutral" | "brand" | "amber" | "emerald" | "rose" | "violet" }> = {
-  draft:        { label: "Draft",          tone: "neutral" },
-  submitted:    { label: "Submitted",      tone: "brand"   },
-  under_review: { label: "Under review",   tone: "amber"   },
-  approved:     { label: "Approved",       tone: "emerald" },
-  rejected:     { label: "Not selected",   tone: "rose"    },
-  funded:       { label: "Funded",         tone: "violet"  },
+  draft:                { label: "Draft",                tone: "neutral" },
+  submitted:            { label: "Submitted",            tone: "brand"   },
+  under_review:         { label: "Under review",         tone: "amber"   },
+  pre_screen_approved:  { label: "Pre-screen passed",    tone: "emerald" },
+  pre_screen_rejected:  { label: "Pre-screen — not selected", tone: "rose" },
+  approved:             { label: "Approved",             tone: "emerald" },
+  rejected:             { label: "Not selected",         tone: "rose"    },
+  funded:               { label: "Funded",               tone: "violet"  },
 };
 
 // ── IP status shared between both forms ────────────────────────
@@ -200,6 +214,150 @@ export interface VentureLiftFormData {
   signatureDate?: string;
 }
 
+// ── VentureLift FULL application (Stage 2 — Oct 2025 PDF) ──────
+
+/** Single line item in the Stage-2 budget table. Mirrors the
+ *  columns in the VentureLift Budget Template xlsx so the form
+ *  produces a structured equivalent of the spreadsheet. */
+export interface VentureLiftBudgetLine {
+  id: string;
+  /** Maps to the four categories on the spreadsheet:
+   *   services | consulting | materials_supplies | other */
+  category: "services" | "consulting" | "materials_supplies" | "other";
+  /** References Activity # in Part 2.3.2's timeline table. */
+  activityNumber?: string;
+  itemDescription?: string;
+  justification?: string;
+  unitCount?: number;
+  unitRate?: number;
+  /** Computed client-side as unitCount × unitRate but stored
+   *  too so saved drafts don't drift if the schema evolves. */
+  amount?: number;
+  serviceProviderName?: string;
+}
+
+/** Partner / external contribution to the project. Used to show
+ *  matched funding or in-kind support alongside the BHN ask. */
+export interface VentureLiftPartnerContribution {
+  id: string;
+  partnerName?: string;
+  kind?: "cash" | "in_kind";
+  description?: string;
+  amountOrUnitCount?: string;
+}
+
+/** Row in Part 2.3.2 — Expected Timeline and Deliverables.
+ *  PDF caps the project at 6 months. */
+export interface VentureLiftTimelineRow {
+  id: string;
+  activityNumber?: string;
+  deliverables?: string;
+  primaryPlaceOfWork?: string;
+  completionDate?: string; // ISO yyyy-mm-dd
+}
+
+/** Team-member row from Part 1.4. */
+export interface VentureLiftTeamMember {
+  id: string;
+  name?: string;
+  role?: string;
+  areaOfExpertise?: string;
+  institution?: string;
+}
+
+/** Shape stored under EquipApplication.formData when
+ *  stream = "venture_lift" AND applicationStage = "full_app".
+ *  Mirrors the EQUIP VentureLift Grant Application Form
+ *  (Oct 2025 PDF) section-by-section. */
+export interface VentureLiftFullData {
+  // ── Project title ────────────────────────────────────────
+  projectTitle?: string;
+
+  // ── Part 1.1 Primary Applicant ───────────────────────────
+  applicantFullName?: string;
+  applicantRole?: ApplicantRole;
+  applicantInstitution?: string;
+  applicantDepartment?: string;
+  applicantTitleInCompany?: string;
+  applicantTimeCommitment?: string;
+
+  // ── Part 1.2 Principal Investigator ─────────────────────
+  piFullName?: string;
+  piInstitution?: string;
+  piDepartment?: string;
+  piTitleInCompany?: string;
+  /** Bulleted role description — three lines on the PDF; we
+   *  store one string and let the renderer split on newlines. */
+  piRoleDescription?: string;
+
+  // ── Part 1.3 Company Information ────────────────────────
+  companyName?: string;
+  companyAddress?: string;
+  companyWebsite?: string;
+  companyIncorporationDate?: string; // ISO yyyy-mm-dd
+  /** Nature of the IP / startup. Multi-check per the PDF. */
+  natureProduct?: boolean;
+  natureService?: boolean;
+  natureTechnologyPlatform?: boolean;
+
+  // ── Part 1.4 Other Team Members ─────────────────────────
+  teamMembers?: VentureLiftTeamMember[];
+
+  // ── Part 2.1 Innovation & Technical Merit ───────────────
+  innovationCompanyOverview?: string;        // 2.1.1
+  innovationProblemAndImpact?: string;       // 2.1.2
+  innovationIpDescription?: string;          // 2.1.3 (free-form)
+
+  // ── Part 2.2 Market Potential ───────────────────────────
+  marketOverview?: string;          // 2.2.1
+  marketCompetitive?: string;       // 2.2.2
+  marketAdvancement?: string;       // 2.2.3
+
+  // ── Part 2.3 Project Plan ───────────────────────────────
+  planActivities?: string;                  // 2.3.1
+  planTimeline?: VentureLiftTimelineRow[];  // 2.3.2
+  planRationale?: string;                   // 2.3.3
+
+  // ── Part 2.4 Commercialization Potential ────────────────
+  commercializationMilestones?: string;       // 2.4.1
+  commercializationImpacts?: string;          // 2.4.2
+  commercializationEngagement?: string;       // 2.4.3
+
+  // ── Part 2.5 Impact & Follow-on Potential ──────────────
+  impactNextSteps?: string;                 // 2.5.1
+  impactIncubatorParticipation?: string;    // 2.5.2
+
+  // ── Part 3 Budget ───────────────────────────────────────
+  budgetLines?: VentureLiftBudgetLine[];
+  partnerContributions?: VentureLiftPartnerContribution[];
+  budgetNotes?: string;
+
+  // ── Part 5 Signatures (three signers) ───────────────────
+  primarySignatureName?: string;
+  primarySignatureDate?: string;     // ISO yyyy-mm-dd
+  founderSignatureName?: string;
+  founderSignatureDate?: string;
+  piSignatureName?: string;
+  piSignatureDate?: string;
+  /** Master "I acknowledge" block — all three signers tick it. */
+  acknowledged?: boolean;
+}
+
+/** Reviewer scoring rubric for VL Stage 2 (Reviewer Guide).
+ *  Six 1–5 scores + an overall comment. We don't store a total
+ *  — the reviewer surface computes it client-side from the
+ *  individual scores so changing the weighting doesn't require
+ *  a backfill. */
+export interface VentureLiftReviewerScores {
+  innovation?: number;          // 1.  Innovation and Technical Merit
+  market?: number;              // 2.  Market Potential and Industry Relevance
+  plan?: number;                // 3.  Project Plan and Deliverables
+  commercialization?: number;   // 4.  Commercialization Potential
+  impact?: number;              // 5.  Impact and Follow-on Potential
+  budget?: number;              // 6.  Budget and Use of Funds
+  comment?: string;
+}
+
 /** Document attachment record stored inside
  *  EquipApplication.documents. Pitch decks are explicitly
  *  encouraged by both PDFs ("attach a business pitch deck to
@@ -209,8 +367,18 @@ export interface EquipDocument {
   name: string;
   size: number;
   contentType: string;
-  /** What this attachment represents in the application. */
-  kind: "pitch_deck" | "prototype_photo" | "letter" | "video_pitch" | "other";
+  /** What this attachment represents in the application. The
+   *  cv / support_letter / ip_doc kinds are VL Stage-2 appendix
+   *  categories from the application PDF. */
+  kind:
+    | "pitch_deck"
+    | "prototype_photo"
+    | "letter"
+    | "video_pitch"
+    | "cv"
+    | "support_letter"
+    | "ip_doc"
+    | "other";
   uploadedAt: string;
 }
 
@@ -228,9 +396,11 @@ export interface EquipMilestone {
 
 // ── State-machine guards ───────────────────────────────────────
 
-/** Statuses where the applicant can still edit. */
+/** Statuses where the applicant can still edit. The applicant
+ *  can also edit when their pre-screening was approved — they
+ *  need to fill in Stage 2. */
 export function isEditable(status: EquipStatus): boolean {
-  return status === "draft";
+  return status === "draft" || status === "pre_screen_approved";
 }
 
 /** Statuses considered "open" — counted in the admin queue. */
@@ -238,9 +408,25 @@ export function isOpenForReview(status: EquipStatus): boolean {
   return status === "submitted" || status === "under_review";
 }
 
-/** Statuses that lock the application. */
+/** Statuses that lock the application. Pre-screen rejection is
+ *  terminal; pre-screen approval is NOT (the applicant still
+ *  needs to fill in Stage 2). */
 export function isTerminal(status: EquipStatus): boolean {
-  return status === "approved" || status === "rejected" || status === "funded";
+  return status === "approved" || status === "rejected" || status === "funded" || status === "pre_screen_rejected";
+}
+
+/** True when the application is VL and is currently in Stage 2
+ *  (the full-application form is unlocked). Helps the applicant
+ *  page pick which form component to render. */
+export function isInFullAppStage(
+  stream: EquipStream,
+  stage: ApplicationStage,
+  status: EquipStatus,
+): boolean {
+  // VC has no pre-screening — every VC app is full_app once
+  // saved. VL has to reach pre_screen_approved first.
+  if (stream === "venture_connect") return true;
+  return stage === "full_app" || status === "pre_screen_approved";
 }
 
 /** Recommended stream for a given commercialization stage.
