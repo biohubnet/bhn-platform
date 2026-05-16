@@ -126,7 +126,13 @@ export default async function AdminEquipPage({
         eyebrow="Admin · Equip pillar"
         title="Equip review queue"
         icon={<Rocket size={22} className="text-brand-600" />}
-        description="VentureConnect (≤$5K, monthly) + VentureLift (≤$25K, quarterly). Click a row to review, leave a note, and decide."
+        description={
+          <>
+            VentureConnect (≤$5K, monthly) + VentureLift (≤$25K, quarterly). Click a row to review, leave a note, and decide.
+            {" "}For the program-management dashboard (apps in flight, stalled-app alerts, per-stream funnel),{" "}
+            <Link href="/admin/equip/overview" className="text-brand-700 font-bold hover:underline">open the Equip overview →</Link>
+          </>
+        }
       />
 
       {tableMissing && (

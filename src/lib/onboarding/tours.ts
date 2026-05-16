@@ -238,6 +238,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.16c",
   },
+  {
+    id: "admin.equipOverview",
+    title: "Equip program overview",
+    body: "Aggregate health of the Equip pillar at a glance. Stat tiles for apps in flight + approved this quarter + $ approved YTD + open windows. Three alert cards for stalled apps + closing deadlines. Per-stream funnels for VC + VL. Routes-scoped to render in the Studio design system.",
+    path: "/admin/equip/overview",
+    placement: "center",
+    cta: { label: "Open overview", href: "/admin/equip/overview" },
+    roles: ["admin", "superadmin"],
+    since: "2026.05.16e",
+  },
 
   // ─── Superadmin only ─────────────────────────────────────────────
   {

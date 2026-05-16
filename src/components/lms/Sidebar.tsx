@@ -281,6 +281,8 @@ const adminPlatformItems: NavItem[] = [
     description: "Hiring-pipeline health — stage distribution, median time-in-stage, stalled (≥14d) applications, conversion-to-offer rate across the platform." },
   { label: "AutoPipette",          href: "/admin/assist",              icon: Pipette,     minRole: "admin",
     description: "Health, helpfulness, and findings for AutoPipette — BHN's AI lab partner that dispenses precise, single-dose help when learners look stuck. Per-card helpful rate, top stuck surfaces, latest weekly journey summaries, operator actions (run rollup / weekly summary / ad-hoc AI inference)." },
+  { label: "Equip overview",       href: "/admin/equip/overview",      icon: Activity,    minRole: "admin",
+    description: "Program-management dashboard for the Equip pillar — apps in flight, approved this quarter, $ funded YTD, stalled-app alerts, per-stream funnel, open windows, recent activity. Renders in Studio." },
   { label: "Equip review",         href: "/admin/equip",               icon: Rocket,      minRole: "admin",
     description: "Review queue for the Equip funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
   { label: "Equip deadlines",      href: "/admin/equip/deadlines",     icon: ClipboardList, minRole: "admin",
