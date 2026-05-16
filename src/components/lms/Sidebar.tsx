@@ -263,6 +263,8 @@ const adminPlatformItems: NavItem[] = [
     description: "Engagement, learning, and conversion metrics across the platform." },
   { label: "Pipeline analytics",  href: "/admin/pipeline-analytics",  icon: Activity,    minRole: "admin",
     description: "Hiring-pipeline health — stage distribution, median time-in-stage, stalled (≥14d) applications, conversion-to-offer rate across the platform." },
+  { label: "AI assist",            href: "/admin/assist",              icon: Sparkles,    minRole: "admin",
+    description: "Health, helpfulness, and findings for the AI behaviour-assist pipeline. Per-card helpful rate, top stuck surfaces, latest weekly journey summaries, operator actions (run rollup / weekly summary / ad-hoc AI inference)." },
   { label: "Reports",             href: "/admin/reports",             icon: FileText,    minRole: "admin",
     description: "Generated reports for compliance, billing, and exec views." },
   { label: "Compliance",          href: "/compliance",                icon: ShieldCheck, minRole: "admin",
