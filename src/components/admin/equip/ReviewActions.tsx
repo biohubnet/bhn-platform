@@ -21,13 +21,24 @@ interface Props {
   currentStatus: EquipStatus;
   requestedAmount: number | null;
   approvedAmount: number | null;
+  /** VC only — remaining cumulative cap for this applicant.
+   *  Null on VL or when no cap applies. When set, the approve
+   *  flow clamps its default + shows a warning if the reviewer
+   *  exceeds it. */
+  remainingCap?: number | null;
 }
 
-export function ReviewActions({ applicationId, currentStatus, requestedAmount, approvedAmount }: Props) {
+export function ReviewActions({ applicationId, currentStatus, requestedAmount, approvedAmount, remainingCap }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<"idle" | "approve" | "reject" | "fund">("idle");
   const [note, setNote] = useState("");
-  const [amount, setAmount] = useState<number>(approvedAmount ?? requestedAmount ?? 0);
+  // Default the approve amount to min(requestedAmount, remainingCap)
+  // so the field opens with a number the server will accept.
+  const [amount, setAmount] = useState<number>(() => {
+    const requested = approvedAmount ?? requestedAmount ?? 0;
+    if (typeof remainingCap === "number") return Math.min(requested, remainingCap);
+    return requested;
+  });
   const [disbursement, setDisbursement] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,10 +131,16 @@ export function ReviewActions({ applicationId, currentStatus, requestedAmount, a
             <input
               type="number"
               min={0}
+              max={typeof remainingCap === "number" ? remainingCap : undefined}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
               className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-2 text-sm font-mono tabular-nums"
             />
+            {typeof remainingCap === "number" && amount > remainingCap && (
+              <span className="text-[11px] text-rose-700 inline-flex items-center gap-1.5 mt-1">
+                <AlertCircle size={11} /> Exceeds the applicant&apos;s remaining ${remainingCap.toLocaleString()} cap. Server will reject.
+              </span>
+            )}
           </label>
           <label className="block">
             <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Reviewer note (optional)</span>
