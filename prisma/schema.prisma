@@ -315,6 +315,11 @@ model User {
   hqpAppsDecided        HqpMemberApplication[] @relation("HqpAppDecider")
   hqpWindowsCreated     HqpApplicationWindow[] @relation("HqpWindowCreator")
 
+  // HQP feedback rounds — admin-published topic sets that
+  // committee members respond to.
+  hqpRoundsCreated      HqpFeedbackRound[]    @relation("HqpRoundCreator")
+  hqpResponses          HqpFeedbackResponse[] @relation("HqpResponder")
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -2863,5 +2868,56 @@ model HqpMemberApplication {
 
   @@unique([userId, windowId])
   @@index([windowId, status])
+  @@index([userId])
+}
+
+// ─── HQP Feedback Rounds ─────────────────────────────────────────
+// Replaces the manual "send out a docx, collect them by filename"
+// workflow the BHN team currently runs. An admin creates a round
+// with N topics; every active HQP committee member sees the same
+// set and responds inline. Responses aggregate per-topic for the
+// program team.
+
+model HqpFeedbackRound {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  /// JSON array of topic objects:
+  ///   [{ id: string, label: string, question: string, order: number }]
+  /// Topics are admin-defined per round so the form can adapt
+  /// to whatever the program team wants feedback on this cycle.
+  topics      Json     @default("[]")
+  opensAt     DateTime
+  closesAt    DateTime
+  /// "open" | "closed". Manual close OR closesAt passed.
+  status      String   @default("open")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User                   @relation("HqpRoundCreator", fields: [createdById], references: [id])
+  responses HqpFeedbackResponse[]
+
+  @@index([status, opensAt, closesAt])
+}
+
+model HqpFeedbackResponse {
+  id          String   @id @default(cuid())
+  roundId     String
+  userId      String
+  /// JSON map { topicId: answerText }. Topics that aren't in the
+  /// answers object are treated as unanswered.
+  answers     Json     @default("{}")
+  /// "draft" | "submitted"
+  status      String   @default("draft")
+  submittedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  round HqpFeedbackRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  user  User             @relation("HqpResponder", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, userId])
+  @@index([roundId, status])
   @@index([userId])
 }
