@@ -154,7 +154,7 @@ const miscItems: (NavItem & { labelKey: string })[] = [
 // fully in-platform. No PDFs, profile pre-fill, auto-save, status
 // tracking visible to the applicant.
 const equipItems: (NavItem & { labelKey: string })[] = [
-  { label: "Equip · funding",            labelKey: "nav.equip",            href: "/equip", icon: Rocket, exact: true,
+  { label: "Funding",                    labelKey: "nav.equip.funding",    href: "/equip", icon: Rocket, exact: true,
     description: "BHN's commercialization-funding pillar. Start a new VentureConnect (≤$5K) or VentureLift (≤$25K) application; the 3-question wizard routes you to the right stream and pre-fills everything from your profile." },
   { label: "My applications",            labelKey: "nav.equip.tracker",    href: "/equip/my-applications", icon: ClipboardList,
     description: "Status of every Equip application you've submitted — draft, submitted, under review, approved, funded. Click any row for the full submission body and reviewer notes." },
