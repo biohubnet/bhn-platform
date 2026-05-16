@@ -18,27 +18,27 @@
 CREATE TABLE "EquipApplication" (
   "id"                       TEXT PRIMARY KEY,
   "userId"                   TEXT NOT NULL,
-  /// "venture_connect" | "venture_lift"
+  -- "venture_connect" | "venture_lift"
   "stream"                   TEXT NOT NULL,
-  /// "draft" | "submitted" | "under_review" | "approved" | "rejected" | "funded"
+  -- "draft" | "submitted" | "under_review" | "approved" | "rejected" | "funded"
   "status"                   TEXT NOT NULL DEFAULT 'draft',
   "requestedAmount"          DOUBLE PRECISION,
   "approvedAmount"           DOUBLE PRECISION,
-  /// "grad" | "postdoc" | "research_associate" | "founder"
+  -- "grad" | "postdoc" | "research_associate" | "founder"
   "applicantType"            TEXT,
-  /// Slug from the curated 14-institution list (see lib/equip/institutions.ts).
+  -- Slug from the curated 14-institution list (see lib/equip/institutions.ts).
   "institution"              TEXT,
-  /// Free-text for "Other" institution case.
+  -- Free-text for "Other" institution case.
   "institutionOther"         TEXT,
-  /// "exploring" | "building" | "unsure" — used to route streams.
+  -- "exploring" | "building" | "unsure" — used to route streams.
   "commercializationStage"   TEXT,
-  /// Stream-specific form data. Shape lives in lib/equip/types.ts so
-  /// reads on the client are typed; we keep it as JSON in the DB so
-  /// we can iterate on questions without per-field migrations.
+  -- Stream-specific form data. Shape lives in lib/equip/types.ts so
+  -- reads on the client are typed; we keep it as JSON in the DB so
+  -- we can iterate on questions without per-field migrations.
   "formData"                 JSONB NOT NULL DEFAULT '{}'::jsonb,
-  /// Array of { key, name, size, contentType, kind } — kind is the
-  /// document role ("pitch_deck" | "prototype_photo" | "letter" |
-  /// "video_pitch" | "other"). Mirrors the CreditApplication shape.
+  -- Array of { key, name, size, contentType, kind } — kind is the
+  -- document role ("pitch_deck" | "prototype_photo" | "letter" |
+  -- "video_pitch" | "other"). Mirrors the CreditApplication shape.
   "documents"                JSONB NOT NULL DEFAULT '[]'::jsonb,
   "reviewerId"               TEXT,
   "reviewerNote"             TEXT,
@@ -47,13 +47,13 @@ CREATE TABLE "EquipApplication" (
   "decidedAt"                TIMESTAMP(3),
   "fundedAt"                 TIMESTAMP(3),
   "disbursementNote"         TEXT,
-  /// Tagged true when any AI auto-fill action touched this draft
-  /// (research-URL → narrative summary, suggested budget, etc.).
-  /// Auditable so reviewers can spot fully AI-authored applications.
+  -- Tagged true when any AI auto-fill action touched this draft
+  -- (research-URL → narrative summary, suggested budget, etc.).
+  -- Auditable so reviewers can spot fully AI-authored applications.
   "aiAssisted"               BOOLEAN NOT NULL DEFAULT FALSE,
-  /// Post-approval check-ins. Shape: [{ id, title, dueOn, status,
-  /// note, updatedAt }]. Lives in JSON so the templates can change
-  /// without per-app schema work.
+  -- Post-approval check-ins. Shape: [{ id, title, dueOn, status,
+  -- note, updatedAt }]. Lives in JSON so the templates can change
+  -- without per-app schema work.
   "milestones"               JSONB NOT NULL DEFAULT '[]'::jsonb,
   "createdAt"                TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt"                TIMESTAMP(3) NOT NULL
