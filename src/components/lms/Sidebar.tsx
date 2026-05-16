@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/ui/Logo";
 import { ThemePicker } from "@/components/ui/ThemePicker";
+import { DesignSystemPicker } from "@/components/ui/DesignSystemPicker";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
 import { useT } from "@/lib/i18n/I18nProvider";
 import {
@@ -1128,6 +1129,7 @@ export function Sidebar({
           <span className="truncate">{t("nav.tour")}</span>
         </button>
         <ThemePicker compact />
+        <DesignSystemPicker compact />
         {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
           <code
             className="font-mono text-[11px] font-semibold text-brand-700 bg-brand-50 ring-1 ring-inset ring-brand-200 px-1.5 py-1 rounded select-all leading-none shrink-0"

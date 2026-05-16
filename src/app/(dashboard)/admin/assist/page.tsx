@@ -22,11 +22,12 @@
  * Auth: admin or superadmin only.
  */
 import Link from "next/link";
-import { ArrowLeft, Activity, Sparkles, AlertTriangle, BarChart3, Users, Clock, Share2, Pipette } from "lucide-react";
+import { ArrowLeft, Activity, Sparkles, AlertTriangle, Users, Clock, Share2, Pipette } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AssistAdminTools } from "@/components/admin/AssistAdminTools";
+import { DSPageHeader, DSSection, DSStatGrid, DSStat } from "@/components/design-system";
 
 export const dynamic = "force-dynamic";
 
@@ -151,48 +152,52 @@ export default async function AdminAssistDashboardPage() {
         <ArrowLeft size={12} /> Admin overview
       </Link>
 
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          Admin · platform
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-          <Pipette size={22} className="text-brand-600" />
-          AutoPipette
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
-          Health, helpfulness, and findings for AutoPipette — BHN's
-          AI lab partner that dispenses a single, precise hint when
-          a learner looks stuck. Per-user data on this page is
-          aggregated; for individual drill-down, take a user id and
-          visit{" "}
-          <code className="font-mono text-fg bg-elevated px-1 rounded">
-            /profile/assist-history
-          </code>{" "}
-          while view-as'd as them.
-        </p>
-      </header>
+      <DSPageHeader
+        eyebrow="Admin · platform"
+        title="AutoPipette"
+        icon={Pipette}
+        description={
+          <>
+            Health, helpfulness, and findings for AutoPipette — BHN&apos;s
+            AI lab partner that dispenses a single, precise hint when
+            a learner looks stuck. Per-user data on this page is
+            aggregated; for individual drill-down, take a user id and
+            visit{" "}
+            <code className="font-mono text-fg bg-elevated px-1 rounded">
+              /profile/assist-history
+            </code>{" "}
+            while view-as&apos;d as them.
+          </>
+        }
+      />
 
       {/* ── 1. Health strip ──────────────────────────────────── */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat icon={Users} label="Opted in"
+      <DSStatGrid>
+        <DSStat
+          icon={Users}
+          label="Opted in"
           value={totalConsented}
           help={`${(optInRate * 100).toFixed(0)}% of ${totalUsers} users`}
+          tone="brand"
         />
-        <Stat icon={Activity} label="Active 7d" value={activeLast7d} help="distinct users" />
-        <Stat icon={Clock} label="Events 24h" value={eventsLast24h} help="raw signal volume" />
-        <Stat icon={Sparkles} label="Open hints"
+        <DSStat icon={Activity} label="Active 7d" value={activeLast7d} help="distinct users" tone="violet" />
+        <DSStat icon={Clock} label="Events 24h" value={eventsLast24h} help="raw signal volume" tone="emerald" />
+        <DSStat
+          icon={Sparkles}
+          label="Open hints"
           value={openHints}
           help={`${pendingHints} pending · ${aiHintsToday} AI today`}
+          tone="rose"
           accent={openHints > 0 ? "brand" : undefined}
         />
-      </section>
+      </DSStatGrid>
 
       {/* ── 2. Helpfulness ───────────────────────────────────── */}
-      <section className="rounded-2xl border border-line bg-card surface-shadow p-5">
-        <h2 className="text-sm font-bold text-fg mb-3 inline-flex items-center gap-2">
-          <Sparkles size={14} className="text-brand-600" />
-          Helpfulness by help card · last 30d
-        </h2>
+      <DSSection
+        eyebrow="Last 30 days"
+        title="Helpfulness by help card"
+        icon={Sparkles}
+      >
         {helpfulnessRows.length === 0 ? (
           <p className="text-sm text-subtle">No hints surfaced yet.</p>
         ) : (
@@ -240,14 +245,14 @@ export default async function AdminAssistDashboardPage() {
         <p className="text-[11px] text-subtle mt-3 leading-snug">
           Industry benchmark for JIT-help systems: 20–40% helpful. Cards under 15% are candidates for retirement or rewrite; cards over 50% dismiss% are interrupting too aggressively.
         </p>
-      </section>
+      </DSSection>
 
       {/* ── 3. Top stuck surfaces ────────────────────────────── */}
-      <section className="rounded-2xl border border-line bg-card surface-shadow p-5">
-        <h2 className="text-sm font-bold text-fg mb-3 inline-flex items-center gap-2">
-          <AlertTriangle size={14} className="text-amber-600" />
-          Top stuck surfaces · last 7d
-        </h2>
+      <DSSection
+        eyebrow="Last 7 days"
+        title="Top stuck surfaces"
+        icon={AlertTriangle}
+      >
         {stuckSurfaces.length === 0 ? (
           <p className="text-sm text-subtle">No stuck-state aggregates yet — run the rollup cron once events are flowing.</p>
         ) : (
@@ -282,15 +287,15 @@ export default async function AdminAssistDashboardPage() {
             </table>
           </div>
         )}
-      </section>
+      </DSSection>
 
       {/* ── 5. Latest weekly summaries ───────────────────────── */}
       {recentSummaries.length > 0 && (
-        <section className="rounded-2xl border border-line bg-card surface-shadow p-5">
-          <h2 className="text-sm font-bold text-fg mb-3 inline-flex items-center gap-2">
-            <Share2 size={14} className="text-violet-600" />
-            Latest weekly findings
-          </h2>
+        <DSSection
+          eyebrow="LLM-written journey snapshots"
+          title="Latest weekly findings"
+          icon={Share2}
+        >
           <ul className="space-y-3">
             {recentSummaries.map((s, i) => (
               <li key={i} className="rounded-xl border border-line bg-card-solid p-3">
@@ -306,15 +311,15 @@ export default async function AdminAssistDashboardPage() {
               </li>
             ))}
           </ul>
-        </section>
+        </DSSection>
       )}
 
       {/* ── 4. Recent hints ──────────────────────────────────── */}
-      <section className="rounded-2xl border border-line bg-card surface-shadow p-5">
-        <h2 className="text-sm font-bold text-fg mb-3 inline-flex items-center gap-2">
-          <Sparkles size={14} className="text-brand-600" />
-          Recent hints · last 50
-        </h2>
+      <DSSection
+        eyebrow="Last 50 across all users"
+        title="Recent hints"
+        icon={Sparkles}
+      >
         {recentHints.length === 0 ? (
           <p className="text-sm text-subtle">No hints have been queued yet.</p>
         ) : (
@@ -349,30 +354,10 @@ export default async function AdminAssistDashboardPage() {
             </table>
           </div>
         )}
-      </section>
+      </DSSection>
 
       {/* ── 6. Operator actions ──────────────────────────────── */}
       <AssistAdminTools />
-    </div>
-  );
-}
-
-function Stat({
-  icon: Icon, label, value, help, accent,
-}: {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  label: string;
-  value: number;
-  help?: string;
-  accent?: "brand";
-}) {
-  return (
-    <div className={"rounded-xl border bg-card p-3 " + (accent ? "border-brand-200" : "border-line")}>
-      <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle inline-flex items-center gap-1.5">
-        <Icon size={11} /> {label}
-      </div>
-      <p className="text-2xl font-bold text-fg tabular-nums mt-1">{value.toLocaleString()}</p>
-      {help && <p className="text-[10px] text-subtle mt-0.5">{help}</p>}
     </div>
   );
 }
