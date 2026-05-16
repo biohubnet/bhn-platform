@@ -26,6 +26,7 @@ import {
   type VentureConnectFormData,
   type VentureLiftFormData,
 } from "@/lib/equip/types";
+import { nextOpenDeadline } from "@/lib/equip/deadlines";
 
 export const runtime = "nodejs";
 
@@ -174,6 +175,18 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   if (errors.length > 0) {
     return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
+  }
+
+  // Deadline gating. Block the submit if there's no open window
+  // for this stream. The /equip landing page already nudges the
+  // applicant about open / closed status; this is the server-side
+  // safety net so a stale tab can't slip past a closed window.
+  const upcoming = await nextOpenDeadline(app.stream as EquipStream);
+  if (!upcoming) {
+    return NextResponse.json(
+      { error: "There's no open funding window for this stream right now. Watch /equip for the next deadline." },
+      { status: 400 },
+    );
   }
 
   const cap = STREAM_BUDGETS[app.stream as EquipStream];

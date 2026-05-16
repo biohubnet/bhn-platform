@@ -283,6 +283,8 @@ const adminPlatformItems: NavItem[] = [
     description: "Health, helpfulness, and findings for AutoPipette — BHN's AI lab partner that dispenses precise, single-dose help when learners look stuck. Per-card helpful rate, top stuck surfaces, latest weekly journey summaries, operator actions (run rollup / weekly summary / ad-hoc AI inference)." },
   { label: "Equip review",         href: "/admin/equip",               icon: Rocket,      minRole: "admin",
     description: "Review queue for the Equip funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
+  { label: "Equip deadlines",      href: "/admin/equip/deadlines",     icon: ClipboardList, minRole: "admin",
+    description: "Schedule + manage the funding-window deadlines for VentureConnect (monthly) and VentureLift (quarterly). List + calendar views. Open / close / extend any window. Late submissions are blocked automatically." },
   { label: "Reports",             href: "/admin/reports",             icon: FileText,    minRole: "admin",
     description: "Generated reports for compliance, billing, and exec views." },
   { label: "Compliance",          href: "/compliance",                icon: ShieldCheck, minRole: "admin",

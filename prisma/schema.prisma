@@ -301,6 +301,14 @@ model User {
   // primary role.
   committees         CommitteeMembership[]
 
+  // Equip deadline audit relations — who created / closed /
+  // extended each funding window. The triple relation is needed
+  // because Prisma's relation discovery requires unambiguous
+  // names when one model points at the same target three times.
+  equipDeadlinesCreated   EquipDeadline[] @relation("EquipDeadlineCreator")
+  equipDeadlinesClosed    EquipDeadline[] @relation("EquipDeadlineCloser")
+  equipDeadlinesExtended  EquipDeadline[] @relation("EquipDeadlineExtender")
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -2702,4 +2710,68 @@ model CommitteeMembership {
 
   @@unique([userId, committee])
   @@index([committee, active])
+}
+
+// ─── Equip application deadlines ─────────────────────────────────
+// Each row is one funding window for one stream. VentureConnect
+// runs roughly monthly; VentureLift runs roughly quarterly. The
+// schema doesn't enforce the cadence — admins create whichever
+// windows they want, with whatever cycle labels make sense.
+//
+// status semantics:
+//   • open     — applicants can submit against this window. May
+//                be in the future (a scheduled window) or
+//                actively running.
+//   • closed   — manually closed by an admin, OR the original
+//                deadlineAt passed without extension. Submissions
+//                blocked.
+//   • extended — equivalent to open for gating purposes. The flag
+//                preserves the audit trail ("this deadline was
+//                originally X, we moved it to Y"). originalDeadlineAt
+//                is the pre-extension date; deadlineAt is the
+//                current effective deadline.
+
+model EquipDeadline {
+  id                 String    @id @default(cuid())
+  /// "venture_connect" | "venture_lift" — see lib/equip/types.ts.
+  /// Stored as plain text so adding a third stream is a code-only
+  /// change, not a migration.
+  stream             String
+  /// The currently active deadline. Submissions are blocked when
+  /// `status = "closed"` OR (`status = "open"` AND now > deadlineAt).
+  deadlineAt         DateTime
+  /// The original deadlineAt at creation time. Stays put when an
+  /// admin extends the window — the audit trail says "shipped
+  /// originally at X, extended to Y".
+  originalDeadlineAt DateTime
+  /// "open" | "closed" | "extended" — see model header.
+  status             String    @default("open")
+  /// Free-form label admins use to find the right window in the
+  /// admin list view. Examples: "May 2026 cycle", "Q2 2026",
+  /// "Pilot batch — Toronto". Optional; the date alone is also
+  /// fine as a discriminator.
+  cycleLabel         String?
+  /// Free-form note shown on the admin row + the applicant
+  /// deadline card. Useful for "moved from May 1 because of the
+  /// holiday Monday."
+  note               String?
+  /// Who created this window (audit + display).
+  createdById        String
+  /// Who closed it manually, if anyone (status = "closed" can
+  /// also reflect a date-passed close, in which case this is
+  /// null and closedAt is the deadlineAt date).
+  closedAt           DateTime?
+  closedById         String?
+  /// When the window was last extended. Null until first extend.
+  extendedAt         DateTime?
+  extendedById       String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  createdBy User  @relation("EquipDeadlineCreator", fields: [createdById], references: [id])
+  closedBy  User? @relation("EquipDeadlineCloser",  fields: [closedById],  references: [id])
+  extendedBy User? @relation("EquipDeadlineExtender", fields: [extendedById], references: [id])
+
+  @@index([stream, status, deadlineAt])
+  @@index([deadlineAt])
 }

@@ -219,6 +219,16 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     since: "2026.05.16b",
   },
+  {
+    id: "admin.equipDeadlines",
+    title: "Equip deadlines — list + calendar",
+    body: "Schedule new funding windows, extend in-flight deadlines, close cycles early, reopen prematurely-closed ones. Default time is 12:00 PM Eastern on the selected date; adjust if you need an off-hours cut-off. Equip Review committee members can run this without an admin role. Applicants see a Next-deadlines card at the top of /equip.",
+    path: "/admin/equip/deadlines",
+    placement: "center",
+    cta: { label: "Open deadlines", href: "/admin/equip/deadlines" },
+    roles: ["admin", "superadmin"],
+    since: "2026.05.16c",
+  },
 
   // ─── Superadmin only ─────────────────────────────────────────────
   {

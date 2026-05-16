@@ -24,6 +24,7 @@ import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { DSSection } from "@/components/design-system/DSSection";
 import { DSStatGrid, DSStat } from "@/components/design-system/DSStatGrid";
 import { STREAM_META, STATUS_META, type EquipStatus, type EquipStream } from "@/lib/equip/types";
+import { DeadlinesCard } from "@/components/equip/DeadlinesCard";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +116,12 @@ WHERE migration_name = '20260620000000_equip_application_pipeline';`}
           </div>
         </section>
       )}
+
+      {/* Next deadlines — server-fetched. Auto-hides when no open
+          windows exist (no useful state to show). Sits above the
+          stat grid so applicants know what they're racing toward
+          before they evaluate their own progress. */}
+      <DeadlinesCard />
 
       {totalApps > 0 && (
         <DSStatGrid>

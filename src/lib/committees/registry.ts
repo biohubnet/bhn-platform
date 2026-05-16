@@ -68,7 +68,8 @@ export const COMMITTEES: readonly CommitteeMeta[] = [
     badgeTone: "emerald",
     grantsEquipReview: true,
     sidebarItems: [
-      { label: "Equip review queue", href: "/admin/equip", icon: "Rocket" },
+      { label: "Equip review queue", href: "/admin/equip",           icon: "Rocket" },
+      { label: "Equip deadlines",    href: "/admin/equip/deadlines", icon: "ClipboardList" },
     ],
   },
   {
