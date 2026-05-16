@@ -20,17 +20,22 @@ import { Beaker, Rocket, Loader2, ArrowRight, CheckCircle2 } from "lucide-react"
 import {
   STREAM_META,
   recommendStream,
-  type ApplicantType,
+  type ApplicantRole,
   type CommercializationStage,
   type EquipStream,
 } from "@/lib/equip/types";
 import { INSTITUTIONS } from "@/lib/equip/institutions";
 
-const APPLICANT_OPTIONS: { id: ApplicantType; label: string; hint: string }[] = [
-  { id: "grad",                label: "Graduate student",  hint: "Master's or PhD candidate" },
-  { id: "postdoc",             label: "Postdoctoral fellow", hint: "Post-PhD researcher" },
-  { id: "research_associate",  label: "Research associate", hint: "Reviewed case-by-case" },
-  { id: "founder",             label: "Early-stage founder", hint: "Affiliated with an eligible institution" },
+// Roles match the EQUIP VentureConnect application form PDF
+// (Master's Student / PhD Student / Postdoctoral Fellow / Research
+// Associate). The VL pre-screening PDF groups Master's + PhD as
+// "Graduate Student" — the LiftForm renders that coarser grouping
+// while the wizard stores the finer-grained value here.
+const APPLICANT_OPTIONS: { id: ApplicantRole; label: string; hint: string }[] = [
+  { id: "master_student",     label: "Master's Student",       hint: "MSc / MASc / etc." },
+  { id: "phd_student",        label: "PhD Student",            hint: "Doctoral candidate" },
+  { id: "postdoc",             label: "Postdoctoral Fellow",   hint: "Post-PhD researcher" },
+  { id: "research_associate",  label: "Research Associate",    hint: "Reviewed case-by-case" },
 ];
 
 const STAGE_OPTIONS: { id: CommercializationStage; label: string; hint: string; stream: EquipStream | null }[] = [
@@ -57,7 +62,7 @@ const STAGE_OPTIONS: { id: CommercializationStage; label: string; hint: string; 
 export function EligibilityWizard({ presetStream }: { presetStream?: EquipStream }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [applicantType, setApplicantType] = useState<ApplicantType | null>(null);
+  const [applicantType, setApplicantType] = useState<ApplicantRole | null>(null);
   const [institution, setInstitution] = useState<string | null>(null);
   const [institutionOther, setInstitutionOther] = useState("");
   const [stage, setStage] = useState<CommercializationStage | null>(null);

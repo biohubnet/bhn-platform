@@ -16,12 +16,12 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { EquipStream, ApplicantType, CommercializationStage } from "@/lib/equip/types";
+import type { EquipStream, ApplicantRole, CommercializationStage } from "@/lib/equip/types";
 
 export const runtime = "nodejs";
 
 const STREAMS: EquipStream[] = ["venture_connect", "venture_lift"];
-const APPLICANT_TYPES: ApplicantType[] = ["grad", "postdoc", "research_associate", "founder"];
+const APPLICANT_TYPES: ApplicantRole[] = ["master_student", "phd_student", "postdoc", "research_associate"];
 const STAGES: CommercializationStage[] = ["exploring", "building", "unsure"];
 
 export async function GET() {
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   if (!STREAMS.includes(stream as EquipStream)) {
     return NextResponse.json({ error: "Invalid stream" }, { status: 400 });
   }
-  if (applicantType && !APPLICANT_TYPES.includes(applicantType as ApplicantType)) {
+  if (applicantType && !APPLICANT_TYPES.includes(applicantType as ApplicantRole)) {
     return NextResponse.json({ error: "Invalid applicantType" }, { status: 400 });
   }
   if (commercializationStage && !STAGES.includes(commercializationStage as CommercializationStage)) {

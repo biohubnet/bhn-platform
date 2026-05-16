@@ -80,8 +80,6 @@ export default async function EquipApplicationDraftPage({
             email: app.user.email,
             organization: app.user.organization ?? null,
             jobTitle: app.user.jobTitle ?? null,
-            country: app.user.country ?? null,
-            phone: app.user.phone ?? null,
           }}
         />
       ) : (
@@ -94,8 +92,6 @@ export default async function EquipApplicationDraftPage({
             email: app.user.email,
             organization: app.user.organization ?? null,
             jobTitle: app.user.jobTitle ?? null,
-            country: app.user.country ?? null,
-            phone: app.user.phone ?? null,
           }}
         />
       )}

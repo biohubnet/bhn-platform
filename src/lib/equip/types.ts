@@ -1,12 +1,14 @@
 /**
  * Shared types for the Equip funding-application pipeline.
  *
- * Lives in its own module so the client wizard, the API routes,
- * the admin queue, and the demo seeder all agree on the wire
- * shapes — without circular imports.
+ * Aligned to the actual BHN application forms published at
+ *   https://biohubnet.ca/download/EQUIP_VentureConnect_AppForm_Mar2026.pdf
+ *   https://biohubnet.ca/download/EQUIP_VentureLift_PreScreeningForm_v3.pdf
  *
  * The DB stores per-stream form data as JSON; the typed shapes
- * here describe what the client expects to read back / write.
+ * here describe what the client expects to read back / write so
+ * the wizard, the form, the admin queue, and the demo seeder all
+ * agree on field names without an enum migration.
  */
 
 export type EquipStream = "venture_connect" | "venture_lift";
@@ -19,12 +21,24 @@ export type EquipStatus =
   | "rejected"
   | "funded";
 
-export type ApplicantType = "grad" | "postdoc" | "research_associate" | "founder";
+/** Applicant role checkboxes from the PDF forms. VC distinguishes
+ *  Master's vs. PhD; VL groups them as "Graduate Student". We
+ *  store the finer-grained value so VC has the data it needs;
+ *  the VL form just renders the two grad options together. */
+export type ApplicantRole =
+  | "master_student"
+  | "phd_student"
+  | "postdoc"
+  | "research_associate";
 
 export type CommercializationStage = "exploring" | "building" | "unsure";
 
 /** Maximum funding envelope per stream — used to validate budgets
- *  client-side and clamp on submit server-side. */
+ *  client-side and clamp on submit server-side. Per the BHN PDFs:
+ *  VentureConnect grants up to $5,000 CAD per application (and a
+ *  company may submit up to 3 separate applications, max $5K each);
+ *  VentureLift pre-screening references up to $25,000 CAD for the
+ *  full application that follows a successful pre-screen. */
 export const STREAM_BUDGETS: Record<EquipStream, number> = {
   venture_connect: 5_000,
   venture_lift:    25_000,
@@ -35,20 +49,19 @@ export const STREAM_META: Record<EquipStream, {
   name: string;
   blurb: string;
   cadence: string;
-  /** Headline use case — drives the wizard recommendation. */
   bestFor: string;
 }> = {
   venture_connect: {
     name: "VentureConnect",
-    blurb: "Up to $5,000 for conferences, pitch competitions, and networking events that move your innovation forward.",
+    blurb: "Up to $5,000 CAD per application for one conference, workshop, or pitch event. A company may submit up to three separate applications.",
     cadence: "Monthly funding cycle",
-    bestFor: "Exploring — you need to get to a conference, demo day, or pitch event.",
+    bestFor: "Attending an industry conference, customer demo, or pitch competition.",
   },
   venture_lift: {
-    name: "VentureLift",
-    blurb: "Up to $25,000 for accelerator participation, IP work, prototype builds, and commercialization roadmap execution.",
+    name: "VentureLift (pre-screening)",
+    blurb: "Pre-screening form for the full VentureLift grant (up to $25,000 CAD). Submitting this triggers a BHN-led pre-screening consultation; if eligible you're invited to submit a full application.",
     cadence: "Quarterly funding cycle",
-    bestFor: "Building — you have IP, a prototype, or an accelerator spot lined up.",
+    bestFor: "Pre-seed / seed-stage company with provisional patent, prototype, and a commercialization roadmap.",
   },
 };
 
@@ -63,67 +76,134 @@ export const STATUS_META: Record<EquipStatus, { label: string; tone: "neutral" |
   funded:       { label: "Funded",         tone: "violet"  },
 };
 
-// ── Stream-specific form bodies ────────────────────────────────
+// ── IP status shared between both forms ────────────────────────
 
-/** Shape stored under EquipApplication.formData when stream =
- *  "venture_connect". All fields optional during draft;
- *  validated at submit time. */
-export interface VentureConnectFormData {
-  /** Conference / event name (freeform — curated list in v2). */
-  eventName?: string;
-  /** Event URL — opt; we'll auto-fill suggestion blurb from it. */
-  eventUrl?: string;
-  /** Event date (ISO yyyy-mm-dd). */
-  eventDate?: string;
-  /** Why this event is the right next step — 1-2 sentences. */
-  alignmentNarrative?: string;
-  /** Budget line items (sum must be ≤ $5K).
-   *  registration / travel / lodging / other. */
-  budgetRegistration?: number;
-  budgetTravel?: number;
-  budgetLodging?: number;
-  budgetOther?: number;
-  budgetOtherNote?: string;
-  /** Single-line expected outcome ("a paid collaboration",
-   *  "investor intro", "co-author lead"). */
-  expectedOutcome?: string;
+/** The four IP-milestone checkboxes that appear on BOTH PDFs.
+ *  Each is a checkbox + date pair; the applicant ticks any that
+ *  apply. */
+export interface IpStatusBlock {
+  inventionDisclosureChecked?: boolean;
+  inventionDisclosureDate?: string;     // ISO yyyy-mm-dd
+  provisionalPatentChecked?: boolean;
+  provisionalPatentDate?: string;
+  fullPatentChecked?: boolean;
+  fullPatentDate?: string;
+  licensedTechnologyChecked?: boolean;
+  licensedTechnologyDate?: string;
 }
 
-/** Shape stored under EquipApplication.formData when stream =
- *  "venture_lift". Phase B fills these in fully; Phase A keeps
- *  the type defined so the schema is stable. */
+// ── VentureConnect form body (Mar 2026 PDF) ────────────────────
+
+/** Shape stored under EquipApplication.formData when
+ *  stream = "venture_connect". Mirrors the EQUIP VentureConnect
+ *  Grant Application Form PDF section-by-section. */
+export interface VentureConnectFormData {
+  // ── Applicant Information ────────────────────────────────
+  fullName?: string;
+  institutionAffiliation?: string;
+  departmentProgram?: string;
+  currentRole?: ApplicantRole;
+  institutionEmail?: string;
+
+  // ── Company Information ──────────────────────────────────
+  companyName?: string;
+  companyWebsite?: string;
+  /** Briefly describe your venture or innovation — overview of
+   *  technology / product / service and current development stage. */
+  ventureDescription?: string;
+
+  // ── Intellectual Property (IP) Status ────────────────────
+  ip?: IpStatusBlock;
+
+  // ── Funding Request Justification ────────────────────────
+  /** Single textarea covering: how attendance advances the
+   *  business opportunity, specific examples (Meet with investor
+   *  X from Y VC firm…), eligible activities, key outcomes. */
+  fundingJustification?: string;
+
+  // ── Budget & Supporting Documentation ────────────────────
+  /** Each line item from the PDF table. Values in CAD. */
+  budgetAirfare?: number;
+  budgetTrainFare?: number;
+  budgetRideshareTaxi?: number;
+  budgetAccommodation?: number;
+  budgetRegistration?: number;
+
+  // ── Signature ────────────────────────────────────────────
+  /** "I acknowledge that the information provided in this
+   *  application is accurate and that the requested funds will
+   *  be used for the purposes outlined in this application." */
+  acknowledged?: boolean;
+  signaturePrintedName?: string;
+  signatureDate?: string;             // ISO yyyy-mm-dd
+}
+
+// ── VentureLift pre-screening form (v3 PDF) ────────────────────
+
+/** Shape stored under EquipApplication.formData when
+ *  stream = "venture_lift". This mirrors the VentureLift
+ *  Pre-Screening Form — NOT the full application, which BHN
+ *  invites separately. */
 export interface VentureLiftFormData {
-  /** 1-paragraph innovation summary — AI can draft from a URL. */
-  innovationSummary?: string;
-  /** "provisional" | "filed" | "granted" | "owned" | "licensed"
-   *  | "in_progress" | "none". */
-  ipStatus?: string;
-  /** Country / region IP rights are held in (auto-fills CA). */
-  ipJurisdiction?: string;
-  /** Technology Readiness Level — 1 to 9. */
-  trl?: number;
-  /** Roadmap text — AI can draft. */
-  commercializationRoadmap?: string;
-  /** Accelerator participation. */
-  acceleratorName?: string;
-  acceleratorStart?: string;
-  acceleratorEnd?: string;
-  /** Budget line items (sum must be ≤ $25K). */
-  budgetIp?: number;
-  budgetPrototype?: number;
-  budgetConsulting?: number;
-  budgetMarket?: number;
-  budgetOther?: number;
-  budgetOtherNote?: string;
-  /** Project timeline (≤ 6 months from start). */
-  projectStart?: string;
-  projectEnd?: string;
-  /** What does success look like — single-line. */
-  successCriteria?: string;
+  // ── Company Information ──────────────────────────────────
+  companyName?: string;
+  companyWebsite?: string;
+
+  // ── Applicant Information ────────────────────────────────
+  fullName?: string;
+  institutionAffiliation?: string;
+  departmentProgram?: string;
+  currentRole?: "grad_student" | "postdoc" | "research_associate";
+  institutionalEmail?: string;
+  /** Title / position the applicant holds in the company. */
+  applicantTitleInCompany?: string;
+  /** Estimated time commitment to the company — accepts % or
+   *  FTE string ("20%", "0.4 FTE", etc.). */
+  applicantTimeCommitment?: string;
+
+  // ── Principal Investigator (PI) Information ─────────────
+  piFullName?: string;
+  piInstitutionAffiliation?: string;
+  piDepartmentProgram?: string;
+  piInstitutionalEmail?: string;
+  piTitleInCompany?: string;
+
+  // ── IP Status ────────────────────────────────────────────
+  ip?: IpStatusBlock;
+
+  // ── Company Overview (max 100 words) ────────────────────
+  /** Concise summary of the company — core mission, key
+   *  products / technologies, target market, competitive
+   *  advantage, biomanufacturing-sector contribution,
+   *  commercialization potential. */
+  companyOverview?: string;
+
+  // ── Project Summary (max 100 words) ─────────────────────
+  /** Funding-request summary — commercialization-enabling
+   *  activities, expected outcomes and impact, $25K allocation,
+   *  CRO / consultant / external partner identification. */
+  projectSummary?: string;
+
+  // ── Eligibility Checklist (seven self-attestations) ─────
+  eligibilityStemProfessional?: boolean;
+  eligibilityCanadianIp?: boolean;
+  eligibilityHealthOutcomesBiomanufacturing?: boolean;
+  eligibilityAcceleratorParticipated?: boolean;
+  /** Free-text list of accelerator / incubator program names. */
+  acceleratorPrograms?: string;
+  eligibilityPreseedStageReady?: boolean;
+  eligibilityNoDuplicateFunding?: boolean;
+  eligibilityPiHoldsFunds?: boolean;
+
+  // ── Signature ────────────────────────────────────────────
+  signaturePrintedName?: string;
+  signatureDate?: string;
 }
 
 /** Document attachment record stored inside
- *  EquipApplication.documents. */
+ *  EquipApplication.documents. Pitch decks are explicitly
+ *  encouraged by both PDFs ("attach a business pitch deck to
+ *  support your application"). */
 export interface EquipDocument {
   key: string;
   name: string;
@@ -153,14 +233,12 @@ export function isEditable(status: EquipStatus): boolean {
   return status === "draft";
 }
 
-/** Statuses considered "open" — counted in the admin queue.
- *  Excludes draft (only the applicant sees those). */
+/** Statuses considered "open" — counted in the admin queue. */
 export function isOpenForReview(status: EquipStatus): boolean {
   return status === "submitted" || status === "under_review";
 }
 
-/** Statuses that lock the application — no more edits, no decision
- *  changes (except funded after approved). */
+/** Statuses that lock the application. */
 export function isTerminal(status: EquipStatus): boolean {
   return status === "approved" || status === "rejected" || status === "funded";
 }
@@ -170,5 +248,20 @@ export function isTerminal(status: EquipStatus): boolean {
 export function recommendStream(stage: CommercializationStage): EquipStream | null {
   if (stage === "exploring") return "venture_connect";
   if (stage === "building")  return "venture_lift";
-  return null; // "unsure" → wizard asks the applicant to pick
+  return null;
 }
+
+/** Word counter used to enforce the PDF's 100-word limits on the
+ *  VentureLift Company Overview + Project Summary fields. */
+export function wordCount(text: string | undefined | null): number {
+  if (!text) return 0;
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/** Hard prohibition the BHN PDFs spell out: "Applicants are
+ *  strongly advised against using AI writing tools to complete the
+ *  application sections. Applications found to contain
+ *  AI-generated content will be disqualified." Surface this
+ *  prominently on every form. */
+export const NO_AI_DISCLAIMER =
+  "Applicants are strongly advised against using AI writing tools to complete the application sections. Applications found to contain AI-generated content will be disqualified.";

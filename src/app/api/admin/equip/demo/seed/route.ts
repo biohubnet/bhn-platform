@@ -62,45 +62,100 @@ function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** Build a realistic VentureConnect form body. */
-function vcForm(eventName: string, daysOut: number, budget: number): VentureConnectFormData {
+/** Build a realistic VentureConnect form body that matches the
+ *  EQUIP VentureConnect Grant Application Form PDF (Mar 2026). */
+function vcForm(applicantName: string, companyName: string, budget: number): VentureConnectFormData {
   return {
-    eventName,
-    eventDate: isoDate(daysAgo(-daysOut)),
-    eventUrl: "https://example.org/event",
-    alignmentNarrative:
-      "We're pitching the protein-purification platform at this event. Two of the panel judges have been at our last poster session and asked for a follow-up; the rest of the audience is a near-perfect ICP for our first paid pilot.",
-    budgetRegistration: Math.round(budget * 0.25),
-    budgetTravel:       Math.round(budget * 0.45),
-    budgetLodging:      Math.round(budget * 0.25),
-    budgetOther:        Math.round(budget * 0.05),
-    budgetOtherNote:    "Materials and shipping for live demo",
-    expectedOutcome:    "Two qualified intros to manufacturing partners + finalist placement",
+    // Applicant Information
+    fullName: applicantName,
+    institutionAffiliation: "University of Toronto",
+    departmentProgram: "Donnelly Centre for Cellular and Biomolecular Research",
+    currentRole: "phd_student",
+    institutionEmail: `${applicantName.split(" ")[0].toLowerCase()}@biohubnet.test`,
+
+    // Company Information
+    companyName,
+    companyWebsite: "https://example-bio.test",
+    ventureDescription:
+      "We're developing a cell-free protein purification platform that drops downstream processing time by ~40%. Current development stage: working prototype validated on three model proteins; planning a paid pilot with one biotech partner next quarter.",
+
+    // IP Status
+    ip: {
+      provisionalPatentChecked: true,
+      provisionalPatentDate: isoDate(daysAgo(120)),
+    },
+
+    // Funding Request Justification
+    fundingJustification:
+      "Attendance at this event lets us run two pre-scheduled investor meetings (one with a seed-stage VC who explicitly invited us after our last poster session) plus a paid-pilot conversation with a manufacturing partner. We expect at least one qualified term-sheet conversation and one warm intro to a CDMO out of this trip — both materially advance our seed round and our first paid pilot in parallel.",
+
+    // Budget — five line items per the PDF table
+    budgetAirfare:        Math.round(budget * 0.30),
+    budgetTrainFare:      0,
+    budgetRideshareTaxi:  Math.round(budget * 0.05),
+    budgetAccommodation:  Math.round(budget * 0.35),
+    budgetRegistration:   Math.round(budget * 0.30),
+
+    // Signature
+    acknowledged: true,
+    signaturePrintedName: applicantName,
+    signatureDate: isoDate(new Date()),
   };
 }
 
-/** Build a realistic VentureLift form body. */
-function vlForm(headline: string, trl: number, total: number): VentureLiftFormData {
+/** Build a realistic VentureLift PRE-SCREENING form body that
+ *  matches the EQUIP VentureLift Grant Pre-Screening Form (v3)
+ *  PDF — NOT the full $25K application that follows. */
+function vlForm(applicantName: string, companyName: string): VentureLiftFormData {
+  const firstName = applicantName.split(" ")[0].toLowerCase();
   return {
-    innovationSummary:
-      `${headline}\n\nWe combine a cell-free expression system with our affinity-tag platform to bring biologics manufacturing closer to the bench. The IP covers both the tag chemistry (provisional patent filed) and the purification protocol; our prototype processes one liter per run with >85% yield.`,
-    ipStatus: trl >= 5 ? "filed" : "provisional",
-    ipJurisdiction: "Canada, US (PCT)",
-    trl,
-    commercializationRoadmap:
-      "Month 1: complete pilot validation with two academic partners.\nMonth 2-3: file utility patent, finalize CMC package.\nMonth 4: secure one paid industrial pilot.\nMonth 5-6: spin-out incorporation and seed term-sheet conversations.",
-    acceleratorName: "Creative Destruction Lab — Bio Stream",
-    acceleratorStart: isoDate(daysAgo(60)),
-    acceleratorEnd: isoDate(daysAgo(-120)),
-    projectStart: isoDate(daysAgo(-7)),
-    projectEnd: isoDate(daysAgo(-170)),
-    budgetIp:         Math.round(total * 0.25),
-    budgetPrototype:  Math.round(total * 0.35),
-    budgetConsulting: Math.round(total * 0.15),
-    budgetMarket:     Math.round(total * 0.15),
-    budgetOther:      Math.round(total * 0.10),
-    budgetOtherNote:  "Conference travel + materials",
-    successCriteria:  "Working prototype validated at one paid pilot site + utility patent filed",
+    // Company Information
+    companyName,
+    companyWebsite: "https://example-bio.test",
+
+    // Applicant Information
+    fullName: applicantName,
+    institutionAffiliation: "University of Toronto",
+    departmentProgram: "Donnelly Centre for Cellular and Biomolecular Research",
+    currentRole: "grad_student",
+    institutionalEmail: `${firstName}@biohubnet.test`,
+    applicantTitleInCompany: "Co-founder + CTO",
+    applicantTimeCommitment: "30% (research) + 70% (company)",
+
+    // PI Information
+    piFullName: "Dr. Avery Park",
+    piInstitutionAffiliation: "University of Toronto",
+    piDepartmentProgram: "Donnelly Centre",
+    piInstitutionalEmail: "a.park@biohubnet.test",
+    piTitleInCompany: "Scientific Co-founder",
+
+    // IP Status
+    ip: {
+      provisionalPatentChecked: true,
+      provisionalPatentDate: isoDate(daysAgo(120)),
+    },
+
+    // Company Overview (max 100 words)
+    companyOverview:
+      "We're a Toronto-based pre-seed biotech building a cell-free protein purification platform that cuts downstream processing time roughly 40%. The target market is small-batch biologics — early-stage CDMOs and academic spinouts who lack the volume to justify traditional chromatography skids. Our competitive advantage is the proprietary affinity tag chemistry (provisional patent filed) and a single-use cartridge design that lowers cost-per-gram below incumbent column-based workflows. We contribute to Canadian biomanufacturing capacity by enabling faster scale-up for early-stage therapeutic and diagnostic candidates, with a clear commercialization path through paid pilots and IP licensing into 2027.",
+
+    // Project Summary (max 100 words)
+    projectSummary:
+      "Requested funds will support three commercialization-enabling activities over six months: (1) a paid validation pilot at one external CDMO partner (~$10K materials + access), (2) regulatory CMC consulting with an external biomanufacturing-quality advisor (~$8K), and (3) a market-validation sprint targeting five potential commercial customers (~$7K travel + materials). The applicant trainee leads pilot execution and customer-discovery interviews directly; the consultant supports the regulatory deliverables only. No duplicate funding sources for these activities.",
+
+    // Eligibility Checklist
+    eligibilityStemProfessional: true,
+    eligibilityCanadianIp: true,
+    eligibilityHealthOutcomesBiomanufacturing: true,
+    eligibilityAcceleratorParticipated: true,
+    acceleratorPrograms: "Creative Destruction Lab — Bio Stream (2025-2026 cohort), JLABS @ Toronto",
+    eligibilityPreseedStageReady: true,
+    eligibilityNoDuplicateFunding: true,
+    eligibilityPiHoldsFunds: true,
+
+    // Signature
+    signaturePrintedName: applicantName,
+    signatureDate: isoDate(new Date()),
   };
 }
 
@@ -122,40 +177,39 @@ interface DemoAppSpec {
 const DEMO_APPS: Record<string, DemoAppSpec> = {
   ayaan:  {
     stream: "venture_connect", status: "submitted",
-    formData: vcForm("BIO International Convention 2026", 50, 4900),
+    formData: vcForm("Ayaan Khan (demo)", "PuriBio Inc.", 4900),
     requestedAmount: 4900, submittedDaysAgo: 2,
   },
   lin:    {
     stream: "venture_lift", status: "under_review",
-    formData: vlForm("Cell-free biologics manufacturing platform", 5, 24000),
-    requestedAmount: 24000, submittedDaysAgo: 5,
-    aiAssisted: true,
+    formData: vlForm("Lin Wei (demo)", "CellFreeBio Inc."),
+    requestedAmount: 25000, submittedDaysAgo: 5,
   },
   rosa:   {
     stream: "venture_connect", status: "approved",
-    formData: vcForm("Synthetic Biology Canada 2026", 70, 4500),
+    formData: vcForm("Rosa Albright (demo)", "SynBio North Inc.", 4500),
     requestedAmount: 4500, approvedAmount: 4500,
     submittedDaysAgo: 14, decidedDaysAgo: 10,
     reviewerNote: "Strong fit. Approved at full requested amount.",
   },
   dev:    {
     stream: "venture_lift", status: "funded",
-    formData: vlForm("Continuous-flow protein purification", 6, 23000),
-    requestedAmount: 23000, approvedAmount: 22000,
+    formData: vlForm("Dev Singh (demo)", "Continuous Flow Bio Inc."),
+    requestedAmount: 25000, approvedAmount: 22000,
     submittedDaysAgo: 45, decidedDaysAgo: 30, fundedDaysAgo: 21,
-    reviewerNote: "Approved at $22K (trimmed Other line). Strong commercialization roadmap.",
+    reviewerNote: "Approved at $22K. Strong commercialization roadmap.",
     disbursementNote: "EFT-2026-0421 · disbursed 21 days ago",
   },
   noor:   {
     stream: "venture_lift", status: "rejected",
-    formData: vlForm("AI-assisted assay optimization", 3, 25000),
+    formData: vlForm("Noor Hassan (demo)", "AssayLab Inc."),
     requestedAmount: 25000,
     submittedDaysAgo: 25, decidedDaysAgo: 18,
-    reviewerNote: "Encourage to re-apply once TRL ≥ 5 and IP filing is in progress.",
+    reviewerNote: "Encourage to re-apply once IP filing is in progress.",
   },
   joelle: {
     stream: "venture_connect", status: "draft",
-    formData: vcForm("CardioBio Investor Day", 90, 0),
+    formData: vcForm("Joëlle Tremblay (demo)", "CardioBio Inc.", 0),
     requestedAmount: 0,
   },
 };

@@ -85,13 +85,14 @@ export function SubmittedView({ application }: Props) {
       {application.stream === "venture_connect" && (
         <div className="rounded-2xl border border-line bg-card p-4 space-y-3 surface-shadow">
           <p className="text-[10px] uppercase tracking-wider font-bold text-subtle">Your submission</p>
-          <SubmissionLine k="Event" v={(application.formData as VentureConnectFormData).eventName} />
-          <SubmissionLine k="Date" v={(application.formData as VentureConnectFormData).eventDate} />
-          <SubmissionLine k="URL" v={(application.formData as VentureConnectFormData).eventUrl} />
-          <SubmissionLine k="Why this event" v={(application.formData as VentureConnectFormData).alignmentNarrative} block />
-          <SubmissionLine k="Outcome target" v={(application.formData as VentureConnectFormData).expectedOutcome} />
+          <SubmissionLine k="Applicant"  v={(application.formData as VentureConnectFormData).fullName} />
+          <SubmissionLine k="Institution" v={(application.formData as VentureConnectFormData).institutionAffiliation} />
+          <SubmissionLine k="Company"     v={(application.formData as VentureConnectFormData).companyName} />
+          <SubmissionLine k="Website"     v={(application.formData as VentureConnectFormData).companyWebsite} />
+          <SubmissionLine k="Venture"     v={(application.formData as VentureConnectFormData).ventureDescription} block />
+          <SubmissionLine k="Funding justification" v={(application.formData as VentureConnectFormData).fundingJustification} block />
           {application.requestedAmount !== null && (
-            <SubmissionLine k="Requested" v={`$${application.requestedAmount.toLocaleString()}`} />
+            <SubmissionLine k="Requested" v={`$${application.requestedAmount.toLocaleString()} CAD`} />
           )}
         </div>
       )}

@@ -2,18 +2,26 @@
  * POST /api/equip/applications/[id]/submit
  *
  * Transitions an EquipApplication from "draft" to "submitted".
- * Enforces the budget cap for the stream + the minimum required
- * fields. Stamps submittedAt so reviewers can sort by it.
+ * Validation rules match the BHN PDF requirements:
+ *
+ *   VentureConnect (EQUIP VentureConnect Grant Application Form,
+ *   Mar 2026 PDF) — applicant info, company info, IP status,
+ *   funding justification, $5,000 CAD budget cap, signature
+ *   acknowledgement.
+ *
+ *   VentureLift pre-screening (v3 PDF) — applicant + PI info,
+ *   IP status, 100-word Company Overview, 100-word Project
+ *   Summary, all seven eligibility-checklist attestations.
  *
  * Idempotent: re-POSTing on an already-submitted app returns 200
- * with `{ ok: true, alreadySubmitted: true }` so refresh tolerance
- * is built in.
+ * with `{ ok: true, alreadySubmitted: true }`.
  */
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   STREAM_BUDGETS,
+  wordCount,
   type EquipStream,
   type VentureConnectFormData,
   type VentureLiftFormData,
@@ -21,61 +29,100 @@ import {
 
 export const runtime = "nodejs";
 
-/** Minimum fields required to submit a VentureConnect application. */
-function validateVentureConnect(formData: VentureConnectFormData): string[] {
+const VC_BUDGET_KEYS: (keyof VentureConnectFormData)[] = [
+  "budgetAirfare",
+  "budgetTrainFare",
+  "budgetRideshareTaxi",
+  "budgetAccommodation",
+  "budgetRegistration",
+];
+
+function sumVcBudget(f: VentureConnectFormData): number {
+  return VC_BUDGET_KEYS.reduce<number>((s, k) => s + ((f[k] as number | undefined) ?? 0), 0);
+}
+
+/** Required fields + budget cap for VentureConnect. */
+function validateVentureConnect(f: VentureConnectFormData): string[] {
   const errors: string[] = [];
-  if (!formData.eventName?.trim()) errors.push("Event name is required");
-  if (!formData.eventDate?.trim()) errors.push("Event date is required");
-  if (!formData.alignmentNarrative || formData.alignmentNarrative.trim().length < 20) {
-    errors.push("Alignment narrative needs at least 20 characters");
+
+  // Applicant
+  if (!f.fullName?.trim())              errors.push("Applicant: Full Name is required");
+  if (!f.institutionAffiliation?.trim()) errors.push("Applicant: Institution / Affiliation is required");
+  if (!f.departmentProgram?.trim())     errors.push("Applicant: Department / Program is required");
+  if (!f.currentRole)                   errors.push("Applicant: Current Role is required");
+  if (!f.institutionEmail?.trim())      errors.push("Applicant: Institution Email is required");
+
+  // Company
+  if (!f.companyName?.trim())           errors.push("Company: Company Name is required");
+  if (!f.ventureDescription || f.ventureDescription.trim().length < 30) {
+    errors.push("Company: Venture description needs at least 30 characters");
   }
-  const total =
-    (formData.budgetRegistration ?? 0) +
-    (formData.budgetTravel ?? 0) +
-    (formData.budgetLodging ?? 0) +
-    (formData.budgetOther ?? 0);
-  if (total <= 0) errors.push("At least one budget line must be set");
+
+  // Funding justification
+  if (!f.fundingJustification || f.fundingJustification.trim().length < 30) {
+    errors.push("Funding Request Justification needs at least 30 characters");
+  }
+
+  // Budget
+  const total = sumVcBudget(f);
+  if (total <= 0) errors.push("At least one budget line item must be set");
   if (total > STREAM_BUDGETS.venture_connect) {
-    errors.push(`Total budget exceeds $${STREAM_BUDGETS.venture_connect.toLocaleString()} cap`);
+    errors.push(`Total budget exceeds the $${STREAM_BUDGETS.venture_connect.toLocaleString()} CAD cap`);
   }
+
+  // Signature attestation
+  if (f.acknowledged !== true) errors.push("Signature: please tick the acknowledgement checkbox");
+  if (!f.signaturePrintedName?.trim()) errors.push("Signature: Print Name is required");
+  if (!f.signatureDate?.trim())        errors.push("Signature: Date is required");
+
   return errors;
 }
 
-/** Minimum fields required to submit a VentureLift application.
- *  Project window must be within 6 months per Equip program rules. */
-function validateVentureLift(formData: VentureLiftFormData): string[] {
+/** Required fields + 100-word limits + full eligibility checklist
+ *  for VentureLift pre-screening. */
+function validateVentureLift(f: VentureLiftFormData): string[] {
   const errors: string[] = [];
-  if (!formData.innovationSummary || formData.innovationSummary.trim().length < 80) {
-    errors.push("Innovation summary needs at least 80 characters");
+
+  if (!f.companyName?.trim())   errors.push("Company: Company Name is required");
+
+  // Applicant
+  if (!f.fullName?.trim())                errors.push("Applicant: Full Name is required");
+  if (!f.institutionAffiliation?.trim())  errors.push("Applicant: Institution / Affiliation is required");
+  if (!f.departmentProgram?.trim())       errors.push("Applicant: Department / Program is required");
+  if (!f.currentRole)                     errors.push("Applicant: Current Role is required");
+  if (!f.institutionalEmail?.trim())      errors.push("Applicant: Institutional Email is required");
+  if (!f.applicantTitleInCompany?.trim()) errors.push("Applicant: Title / Position in the Company is required");
+  if (!f.applicantTimeCommitment?.trim()) errors.push("Applicant: Estimated time commitment is required");
+
+  // PI
+  if (!f.piFullName?.trim())                errors.push("PI: Full Name is required");
+  if (!f.piInstitutionAffiliation?.trim())  errors.push("PI: Institution / Affiliation is required");
+  if (!f.piDepartmentProgram?.trim())       errors.push("PI: Department / Program is required");
+  if (!f.piInstitutionalEmail?.trim())      errors.push("PI: Institutional Email is required");
+
+  // Word-limited fields
+  if (!f.companyOverview?.trim()) errors.push("Company Overview is required");
+  if (wordCount(f.companyOverview) > 100) errors.push("Company Overview exceeds the 100-word limit");
+
+  if (!f.projectSummary?.trim()) errors.push("Project Summary is required");
+  if (wordCount(f.projectSummary) > 100) errors.push("Project Summary exceeds the 100-word limit");
+
+  // Eligibility checklist — all seven must be checked
+  if (!f.eligibilityStemProfessional)             errors.push("Eligibility: STEM professional + leadership role attestation required");
+  if (!f.eligibilityCanadianIp)                   errors.push("Eligibility: Canadian IP attestation required");
+  if (!f.eligibilityHealthOutcomesBiomanufacturing) errors.push("Eligibility: Human health + biomanufacturing attestation required");
+  if (!f.eligibilityAcceleratorParticipated)      errors.push("Eligibility: Accelerator participation attestation required");
+  if (f.eligibilityAcceleratorParticipated && !f.acceleratorPrograms?.trim()) {
+    errors.push("Eligibility: List the accelerator / incubator programs");
   }
-  if (!formData.ipStatus) errors.push("IP status is required");
-  if (typeof formData.trl !== "number" || formData.trl < 1 || formData.trl > 9) {
-    errors.push("TRL must be set between 1 and 9");
-  }
-  if (!formData.commercializationRoadmap || formData.commercializationRoadmap.trim().length < 60) {
-    errors.push("Commercialization roadmap needs at least 60 characters");
-  }
-  if (!formData.projectStart) errors.push("Project start date is required");
-  if (!formData.projectEnd) errors.push("Project end date is required");
-  if (formData.projectStart && formData.projectEnd) {
-    const start = new Date(formData.projectStart).getTime();
-    const end = new Date(formData.projectEnd).getTime();
-    if (end <= start) errors.push("Project end must be after start");
-    if (end - start > 1000 * 60 * 60 * 24 * 31 * 6 + 1000 * 60 * 60 * 24) {
-      errors.push("Project window cannot exceed 6 months");
-    }
-  }
-  if (!formData.successCriteria?.trim()) errors.push("Success criteria is required");
-  const total =
-    (formData.budgetIp ?? 0) +
-    (formData.budgetPrototype ?? 0) +
-    (formData.budgetConsulting ?? 0) +
-    (formData.budgetMarket ?? 0) +
-    (formData.budgetOther ?? 0);
-  if (total <= 0) errors.push("At least one budget line must be set");
-  if (total > STREAM_BUDGETS.venture_lift) {
-    errors.push(`Total budget exceeds $${STREAM_BUDGETS.venture_lift.toLocaleString()} cap`);
-  }
+  if (!f.eligibilityPreseedStageReady)            errors.push("Eligibility: Pre-seed / seed stage readiness attestation required");
+  if (!f.eligibilityNoDuplicateFunding)           errors.push("Eligibility: No-duplicate-funding attestation required");
+  if (!f.eligibilityPiHoldsFunds)                 errors.push("Eligibility: PI agrees to hold funds attestation required");
+
+  // Signature
+  if (!f.signaturePrintedName?.trim()) errors.push("Signature: Printed Name is required");
+  if (!f.signatureDate?.trim())        errors.push("Signature: Date is required");
+
   return errors;
 }
 
@@ -98,14 +145,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   if (app.status !== "draft") {
-    // Already moved past draft — return idempotent OK so the
-    // applicant doesn't get a confusing error if they hit submit
-    // twice (e.g. double-click race).
     return NextResponse.json({ ok: true, alreadySubmitted: true });
   }
 
-  // Eligibility block must be filled in (the wizard fills it
-  // earlier, but a determined user could bypass).
   if (!app.applicantType || !app.institution) {
     return NextResponse.json(
       { error: "Eligibility block incomplete — re-run the wizard" },
@@ -113,18 +155,19 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     );
   }
 
-  // Stream-specific validation.
   const formData = (app.formData ?? {}) as Record<string, unknown>;
   let errors: string[] = [];
   let total = 0;
   if (app.stream === "venture_connect") {
     errors = validateVentureConnect(formData as VentureConnectFormData);
-    const f = formData as VentureConnectFormData;
-    total = (f.budgetRegistration ?? 0) + (f.budgetTravel ?? 0) + (f.budgetLodging ?? 0) + (f.budgetOther ?? 0);
+    total = sumVcBudget(formData as VentureConnectFormData);
   } else if (app.stream === "venture_lift") {
     errors = validateVentureLift(formData as VentureLiftFormData);
-    const f = formData as VentureLiftFormData;
-    total = (f.budgetIp ?? 0) + (f.budgetPrototype ?? 0) + (f.budgetConsulting ?? 0) + (f.budgetMarket ?? 0) + (f.budgetOther ?? 0);
+    // VL pre-screening doesn't carry a per-line budget; the
+    // $25K request is described in prose. Set requestedAmount
+    // to the stream cap as the implied ask the BHN team will
+    // discuss during the pre-screening consultation.
+    total = STREAM_BUDGETS.venture_lift;
   } else {
     return NextResponse.json({ error: "Unknown stream" }, { status: 400 });
   }

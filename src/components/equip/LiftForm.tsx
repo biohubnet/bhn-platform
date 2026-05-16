@@ -1,35 +1,36 @@
 "use client";
 /**
- * VentureLift draft form — the full version.
+ * VentureLift PRE-SCREENING form — mirrors the BHN EQUIP
+ * VentureLift Grant Pre-Screening Form PDF (v3).
  *
- * Sections, top to bottom:
- *   1. Innovation summary (with AI auto-fill from URL)
- *   2. IP status (radio + conditional follow-up)
- *   3. Technology Readiness Level slider (1-9 with labels)
- *   4. Commercialization roadmap (textarea)
- *   5. Accelerator participation (optional)
- *   6. Project timeline (start + end, ≤ 6 months)
- *   7. Budget breakdown (5 line items, ≤ $25K)
- *   8. Success criteria
- *   9. Documents (pitch deck, prototype photos, recommendation
- *      letter, video pitch)
- *   10. Submit
+ * IMPORTANT: This is the pre-screening, not the full $25K
+ * application. Submitting this kicks off a BHN-led consultation;
+ * eligible applicants are invited to submit a full application
+ * separately.
  *
- * Auto-save: 800ms debounced PATCH after every edit (PrepCoach
- * pattern). The page never has a "Save" button — the chip in the
- * header tells you when the last save landed.
+ * Section order matches the PDF:
+ *   1. Company Information
+ *   2. Applicant Information
+ *   3. Principal Investigator (PI) Information
+ *   4. IP Status
+ *   5. Company Overview (max 100 words)
+ *   6. Project Summary (max 100 words)
+ *   7. Eligibility Checklist (7 attestations)
+ *   8. Signature
  *
- * AI auto-fill: paste a research / lab / publication / accelerator
- * URL into the assist panel, click Auto-fill, and the form
- * pre-populates innovation summary + success criteria. User
- * always reviews before fields are touched.
+ * No AI writing assistance is offered — the official PDF
+ * disclaimer disqualifies AI-generated content.
  */
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2, Check, AlertCircle, Rocket, Send, AlertTriangle } from "lucide-react";
 import {
-  Loader2, Check, AlertCircle, Rocket, Send, Sparkles, Beaker,
-} from "lucide-react";
-import { STREAM_BUDGETS, type VentureLiftFormData, type EquipDocument } from "@/lib/equip/types";
+  NO_AI_DISCLAIMER,
+  wordCount,
+  type VentureLiftFormData,
+  type IpStatusBlock,
+  type EquipDocument,
+} from "@/lib/equip/types";
 import { LiftDocumentTray } from "./LiftDocumentTray";
 
 interface Props {
@@ -41,46 +42,25 @@ interface Props {
     email: string;
     organization: string | null;
     jobTitle: string | null;
-    country: string | null;
-    phone: string | null;
   };
 }
 
-const CAP = STREAM_BUDGETS.venture_lift;
+const WORD_LIMIT = 100;
 
-const IP_OPTIONS: { id: string; label: string; hint: string }[] = [
-  { id: "owned",       label: "Owned",                     hint: "We own the IP outright" },
-  { id: "licensed",    label: "Licensed from Canadian entity", hint: "Licensed in, Canada-based licensor" },
-  { id: "granted",     label: "Granted patent",            hint: "Issued patent in hand" },
-  { id: "filed",       label: "Patent filed",              hint: "Filing in progress, awaiting decision" },
-  { id: "provisional", label: "Provisional filed",         hint: "Provisional application on record" },
-  { id: "in_progress", label: "Filing in progress",        hint: "Working with counsel; not yet filed" },
-  { id: "none",        label: "No IP yet",                 hint: "Trade-secret / first-mover advantage" },
+const ROLE_OPTIONS: { id: "grad_student" | "postdoc" | "research_associate"; label: string }[] = [
+  { id: "grad_student",       label: "Graduate Student (Master's or PhD)" },
+  { id: "postdoc",            label: "Postdoctoral Fellow" },
+  { id: "research_associate", label: "Research Associate" },
 ];
-
-const TRL_LABELS: Record<number, string> = {
-  1: "Concept observed",
-  2: "Concept formulated",
-  3: "Proof of concept",
-  4: "Lab validation",
-  5: "Relevant-env validation",
-  6: "Prototype demonstrated",
-  7: "Operational prototype",
-  8: "System complete",
-  9: "Proven in operations",
-};
-
-function totalBudget(f: VentureLiftFormData): number {
-  return (f.budgetIp ?? 0)
-    + (f.budgetPrototype ?? 0)
-    + (f.budgetConsulting ?? 0)
-    + (f.budgetMarket ?? 0)
-    + (f.budgetOther ?? 0);
-}
 
 export function LiftForm({ applicationId, initial, initialDocuments, profile }: Props) {
   const router = useRouter();
-  const [form, setForm] = useState<VentureLiftFormData>(initial);
+  const [form, setForm] = useState<VentureLiftFormData>(() => ({
+    fullName: initial.fullName ?? profile.name ?? "",
+    institutionAffiliation: initial.institutionAffiliation ?? profile.organization ?? "",
+    institutionalEmail: initial.institutionalEmail ?? profile.email ?? "",
+    ...initial,
+  }));
   const [documents, setDocuments] = useState<EquipDocument[]>(initialDocuments);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
@@ -89,17 +69,6 @@ export function LiftForm({ applicationId, initial, initialDocuments, profile }: 
   const [validation, setValidation] = useState<string[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // AI auto-fill state.
-  const [aiUrl, setAiUrl] = useState("");
-  const [aiBusy, setAiBusy] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [aiPreview, setAiPreview] = useState<{
-    innovationSummary: string | null;
-    suggestedSuccessCriteria: string | null;
-    keyResearchAreas: string[];
-  } | null>(null);
-
-  // Auto-save loop.
   useEffect(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
@@ -112,7 +81,7 @@ export function LiftForm({ applicationId, initial, initialDocuments, profile }: 
           });
           setSavedAt(new Date().toISOString());
           setError(null);
-        } catch { /* silent — retry next edit */ }
+        } catch { /* retry next edit */ }
       });
     }, 800);
     return () => {
@@ -125,51 +94,8 @@ export function LiftForm({ applicationId, initial, initialDocuments, profile }: 
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function autofill() {
-    if (!aiUrl.trim()) return;
-    setAiBusy(true);
-    setAiError(null);
-    setAiPreview(null);
-    try {
-      const res = await fetch("/api/equip/autofill", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: aiUrl.trim() }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error((j as { error?: string }).error ?? "AI request failed");
-      }
-      const j = (await res.json()) as {
-        result: {
-          innovationSummary: string | null;
-          suggestedSuccessCriteria: string | null;
-          keyResearchAreas: string[];
-        };
-      };
-      setAiPreview(j.result);
-    } catch (err) {
-      setAiError((err as Error).message);
-    } finally {
-      setAiBusy(false);
-    }
-  }
-
-  function applyAiPreview() {
-    if (!aiPreview) return;
-    setForm((prev) => ({
-      ...prev,
-      innovationSummary: aiPreview.innovationSummary ?? prev.innovationSummary,
-      successCriteria: prev.successCriteria || aiPreview.suggestedSuccessCriteria || undefined,
-    }));
-    // Mark aiAssisted so reviewers can see the AI was in the loop.
-    fetch(`/api/equip/applications/${applicationId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ aiAssisted: true }),
-    }).catch(() => {});
-    setAiPreview(null);
-    setAiUrl("");
+  function setIp<K extends keyof IpStatusBlock>(key: K, value: IpStatusBlock[K]) {
+    setForm((prev) => ({ ...prev, ip: { ...(prev.ip ?? {}), [key]: value } }));
   }
 
   async function submit() {
@@ -192,8 +118,8 @@ export function LiftForm({ applicationId, initial, initialDocuments, profile }: 
     }
   }
 
-  const total = totalBudget(form);
-  const overCap = total > CAP;
+  const companyOverviewWords = wordCount(form.companyOverview);
+  const projectSummaryWords = wordCount(form.projectSummary);
 
   return (
     <div className="space-y-5">
@@ -202,286 +128,222 @@ export function LiftForm({ applicationId, initial, initialDocuments, profile }: 
         <div>
           <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle inline-flex items-center gap-2">
             <Rocket size={11} className="text-brand-600" />
-            VentureLift · draft
+            EQUIP VentureLift · Pre-Screening
           </p>
-          <h1 className="text-2xl font-bold text-fg tracking-tight mt-1">Your commercialization plan</h1>
-          <p className="text-[11px] text-muted mt-1">
-            Auto-saved as you type. Up to ${CAP.toLocaleString()} over ≤ 6 months.
+          <h1 className="text-2xl font-bold text-fg tracking-tight mt-1">Your pre-screening</h1>
+          <p className="text-[11px] text-muted mt-1 leading-snug max-w-2xl">
+            This form must be completed and submitted prior to the full
+            EQUIP VentureLift application. The information provided will
+            help determine the eligibility and readiness of your project
+            for the grant (up to <strong>$25,000 CAD</strong>).
           </p>
         </div>
         <SaveIndicator saving={saving} savedAt={savedAt} />
       </header>
 
-      {/* Identity pre-fill */}
-      <section className="rounded-2xl border border-line bg-elevated/30 p-4 space-y-1.5">
-        <p className="text-[10px] uppercase tracking-wider font-bold text-subtle">From your profile</p>
-        <p className="text-sm text-fg font-semibold">{profile.name || profile.email}</p>
-        <p className="text-[11px] text-muted">
-          {profile.email}
-          {profile.jobTitle ? ` · ${profile.jobTitle}` : ""}
-          {profile.organization ? ` · ${profile.organization}` : ""}
+      <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3 flex items-start gap-2">
+        <AlertTriangle size={14} className="text-amber-700 mt-0.5 shrink-0" />
+        <p className="text-[11px] text-amber-900 leading-snug">
+          <strong>No AI writing tools.</strong> {NO_AI_DISCLAIMER}
         </p>
-      </section>
+      </div>
 
-      {/* AI auto-fill */}
-      <section className="rounded-2xl border border-line bg-brand-50/30 p-4 space-y-3">
-        <header className="flex items-center gap-2">
-          <Sparkles size={14} className="text-brand-700" />
-          <h3 className="text-sm font-bold text-fg">AI auto-fill</h3>
-          <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-100 text-brand-800 ring-1 ring-brand-200 px-1.5 py-0.5 rounded">
-            Optional
-          </span>
-        </header>
+      {/* ── 1. Company Information ─────────────────────────── */}
+      <Section title="Company Information">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Company Name" required>
+            <input value={form.companyName ?? ""} onChange={(e) => set("companyName", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Website">
+            <input type="url" value={form.companyWebsite ?? ""} onChange={(e) => set("companyWebsite", e.target.value)} placeholder="https://" className={inputCls} />
+          </Field>
+        </div>
+      </Section>
+
+      {/* ── 2. Applicant Information ───────────────────────── */}
+      <Section title="Applicant Information">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Full Name" required>
+            <input value={form.fullName ?? ""} onChange={(e) => set("fullName", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Institutional Email" required>
+            <input type="email" value={form.institutionalEmail ?? ""} onChange={(e) => set("institutionalEmail", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Institution / Affiliation" required>
+            <input value={form.institutionAffiliation ?? ""} onChange={(e) => set("institutionAffiliation", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Department / Program" required>
+            <input value={form.departmentProgram ?? ""} onChange={(e) => set("departmentProgram", e.target.value)} className={inputCls} />
+          </Field>
+        </div>
+        <Field label="Current Role" required>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {ROLE_OPTIONS.map((opt) => (
+              <RoleCheckbox
+                key={opt.id}
+                checked={form.currentRole === opt.id}
+                label={opt.label}
+                onChange={() => set("currentRole", opt.id)}
+              />
+            ))}
+          </div>
+        </Field>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Title / Position in the Company" required>
+            <input value={form.applicantTitleInCompany ?? ""} onChange={(e) => set("applicantTitleInCompany", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Estimated Time Commitment to the Company (% or FTE)" required>
+            <input value={form.applicantTimeCommitment ?? ""} onChange={(e) => set("applicantTimeCommitment", e.target.value)} placeholder="e.g. 25% or 0.5 FTE" className={inputCls} />
+          </Field>
+        </div>
+      </Section>
+
+      {/* ── 3. Principal Investigator (PI) Information ─────── */}
+      <Section
+        title="Principal Investigator (PI) Information"
+        hint="The PI agrees to take responsibility for holding the funds if the project is approved."
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Full Name" required>
+            <input value={form.piFullName ?? ""} onChange={(e) => set("piFullName", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Institutional Email" required>
+            <input type="email" value={form.piInstitutionalEmail ?? ""} onChange={(e) => set("piInstitutionalEmail", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Institution / Affiliation" required>
+            <input value={form.piInstitutionAffiliation ?? ""} onChange={(e) => set("piInstitutionAffiliation", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Department / Program" required>
+            <input value={form.piDepartmentProgram ?? ""} onChange={(e) => set("piDepartmentProgram", e.target.value)} className={inputCls} />
+          </Field>
+        </div>
+        <Field label="Title / Position in the Company (if any)">
+          <input value={form.piTitleInCompany ?? ""} onChange={(e) => set("piTitleInCompany", e.target.value)} className={inputCls} />
+        </Field>
+      </Section>
+
+      {/* ── 4. IP Status ───────────────────────────────────── */}
+      <Section title="Intellectual Property (IP) Status" hint="Check any milestones the company has achieved and add the date for each.">
+        <IpStatusFields ip={form.ip} setIp={setIp} />
+      </Section>
+
+      {/* ── 5. Company Overview (100 words) ────────────────── */}
+      <Section title="Company Overview" hint="Max 100 words.">
         <p className="text-[11px] text-muted leading-snug">
-          Paste a link to your lab page, publication, or accelerator profile.
-          We&apos;ll read it and draft your innovation summary + success
-          criteria. You preview + approve before any field is touched.
+          Concise summary of your company — core mission, key products or
+          technologies, target market, and competitive advantage. Highlight
+          how your company contributes to the biomanufacturing sector and
+          its commercialization potential.
         </p>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            value={aiUrl}
-            onChange={(e) => setAiUrl(e.target.value)}
-            placeholder="https://your-lab.uoft.ca/about/"
-            className="flex-1 min-w-[260px] bg-card-solid border border-line rounded-lg px-3 py-2 text-sm font-mono text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
+        <textarea
+          rows={6}
+          value={form.companyOverview ?? ""}
+          onChange={(e) => set("companyOverview", e.target.value)}
+          className={textareaCls}
+        />
+        <WordCounter count={companyOverviewWords} limit={WORD_LIMIT} />
+      </Section>
+
+      {/* ── 6. Project Summary (100 words) ─────────────────── */}
+      <Section title="Project Summary" hint="Max 100 words.">
+        <p className="text-[11px] text-muted leading-snug">
+          Summarize your funding request — commercialization-enabling
+          activities, expected outcomes and impact. Be specific about how
+          the requested funding (up to $25,000) will be allocated. If you
+          plan to work with a CRO, consultant, or other external partner,
+          name them. <strong>BHN prioritizes active trainee engagement</strong> in
+          the proposed use of funds.
+        </p>
+        <textarea
+          rows={6}
+          value={form.projectSummary ?? ""}
+          onChange={(e) => set("projectSummary", e.target.value)}
+          className={textareaCls}
+        />
+        <WordCounter count={projectSummaryWords} limit={WORD_LIMIT} />
+      </Section>
+
+      {/* ── 7. Eligibility Checklist ───────────────────────── */}
+      <Section
+        title="Eligibility Checklist"
+        hint="Tick each item that applies. All seven are required to be eligible."
+      >
+        <div className="space-y-2">
+          <EligibilityCheckbox
+            checked={form.eligibilityStemProfessional === true}
+            onChange={(v) => set("eligibilityStemProfessional", v)}
+            label="The applicant must be a STEM professional affiliated with an eligible institution, have a leadership role in the company, and be either a graduate student (Master's or PhD) or a postdoctoral fellow. Research associates considered case-by-case."
           />
-          <button
-            type="button"
-            disabled={!aiUrl.trim() || aiBusy}
-            onClick={autofill}
-            className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-bold px-3 py-2 rounded-lg"
-          >
-            {aiBusy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-            Auto-fill
-          </button>
-        </div>
-        {aiError && (
-          <p className="text-[11px] text-rose-700 inline-flex items-center gap-1.5">
-            <AlertCircle size={11} /> {aiError}
-          </p>
-        )}
-        {aiPreview && (
-          <div className="rounded-xl border border-brand-300 bg-card-solid p-3 space-y-2">
-            <p className="text-[10px] uppercase tracking-wider font-bold text-brand-700">Preview — review before applying</p>
-            {aiPreview.innovationSummary && (
-              <div>
-                <p className="text-[10px] uppercase tracking-wider font-bold text-subtle">Innovation summary</p>
-                <p className="text-xs text-fg leading-relaxed mt-0.5">{aiPreview.innovationSummary}</p>
-              </div>
-            )}
-            {aiPreview.suggestedSuccessCriteria && (
-              <div>
-                <p className="text-[10px] uppercase tracking-wider font-bold text-subtle">Suggested success criteria</p>
-                <p className="text-xs text-fg leading-relaxed mt-0.5">{aiPreview.suggestedSuccessCriteria}</p>
-              </div>
-            )}
-            {aiPreview.keyResearchAreas.length > 0 && (
-              <div>
-                <p className="text-[10px] uppercase tracking-wider font-bold text-subtle">Research areas detected</p>
-                <p className="text-[11px] text-muted mt-0.5">{aiPreview.keyResearchAreas.join(" · ")}</p>
-              </div>
-            )}
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <button type="button" onClick={() => setAiPreview(null)} className="text-xs font-semibold text-muted hover:text-fg px-3 py-1">
-                Discard
-              </button>
-              <button
-                type="button"
-                onClick={applyAiPreview}
-                className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
-              >
-                <Check size={11} /> Apply to form
-              </button>
+          <EligibilityCheckbox
+            checked={form.eligibilityCanadianIp === true}
+            onChange={(v) => set("eligibilityCanadianIp", v)}
+            label="The innovation must be based in Canada, with IP owned or licensed by a Canadian entity. If the company is not incorporated, the applicant must be affiliated with a Canadian academic institution."
+          />
+          <EligibilityCheckbox
+            checked={form.eligibilityHealthOutcomesBiomanufacturing === true}
+            onChange={(v) => set("eligibilityHealthOutcomesBiomanufacturing", v)}
+            label="The innovation has a direct impact on improving human health outcomes and involves a biomanufacturing component (e.g. process development, scale-up, or production of therapeutics or diagnostics)."
+          />
+          <EligibilityCheckbox
+            checked={form.eligibilityAcceleratorParticipated === true}
+            onChange={(v) => set("eligibilityAcceleratorParticipated", v)}
+            label="The applicant's early-stage company has participated in an accelerator / incubator program."
+          />
+          {form.eligibilityAcceleratorParticipated && (
+            <div className="ml-7 mt-1">
+              <Field label="List the programs" required>
+                <input
+                  value={form.acceleratorPrograms ?? ""}
+                  onChange={(e) => set("acceleratorPrograms", e.target.value)}
+                  placeholder="e.g. Creative Destruction Lab — Bio Stream, JLABS @ Toronto"
+                  className={inputCls}
+                />
+              </Field>
             </div>
-          </div>
-        )}
-      </section>
-
-      {/* Innovation summary */}
-      <Field label="Innovation summary" hint="One paragraph — the problem, your approach, and why it can work.">
-        <textarea
-          rows={7}
-          value={form.innovationSummary ?? ""}
-          onChange={(e) => set("innovationSummary", e.target.value)}
-          placeholder="e.g. We're developing a cell-free biomanufacturing platform that…"
-          className={textareaCls}
-        />
-      </Field>
-
-      {/* IP status */}
-      <Field label="IP status" hint="Required. Innovation must have IP owned or licensed by a Canadian entity.">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {IP_OPTIONS.map((opt) => (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => set("ipStatus", opt.id)}
-              className={
-                "text-left rounded-xl border px-3 py-2 transition-colors " +
-                (form.ipStatus === opt.id
-                  ? "border-brand-500 bg-brand-50/40 ring-2 ring-brand-500/30"
-                  : "border-line hover:bg-elevated/60")
-              }
-            >
-              <p className="text-xs font-bold text-fg">{opt.label}</p>
-              <p className="text-[10px] text-muted mt-0.5">{opt.hint}</p>
-            </button>
-          ))}
-        </div>
-        {form.ipStatus && form.ipStatus !== "none" && (
-          <input
-            value={form.ipJurisdiction ?? ""}
-            onChange={(e) => set("ipJurisdiction", e.target.value)}
-            placeholder="Jurisdiction (e.g. Canada, US, PCT)"
-            className={inputCls + " mt-2"}
-          />
-        )}
-      </Field>
-
-      {/* TRL slider */}
-      <Field label="Technology Readiness Level" hint="Where is your tech today? 1 = concept; 9 = proven in operations.">
-        <div className="space-y-3">
-          <input
-            type="range"
-            min={1}
-            max={9}
-            step={1}
-            value={form.trl ?? 1}
-            onChange={(e) => set("trl", Number(e.target.value))}
-            className="w-full accent-brand-600"
-          />
-          <div className="flex items-center justify-between text-[10px] text-muted">
-            <span>1</span><span>3</span><span>5</span><span>7</span><span>9</span>
-          </div>
-          {form.trl !== undefined && (
-            <p className="text-xs text-fg">
-              <span className="font-bold text-brand-700">TRL {form.trl}</span>
-              {" · "}
-              <span className="text-muted">{TRL_LABELS[form.trl ?? 1]}</span>
-            </p>
           )}
-        </div>
-      </Field>
-
-      {/* Roadmap */}
-      <Field label="Commercialization roadmap" hint="What are the next 1-6 months of milestones? Be concrete.">
-        <textarea
-          rows={5}
-          value={form.commercializationRoadmap ?? ""}
-          onChange={(e) => set("commercializationRoadmap", e.target.value)}
-          placeholder="e.g. Month 1: complete pilot validation with X; Month 2-3: file utility patent; Month 4-6: pilot with two industry partners."
-          className={textareaCls}
-        />
-      </Field>
-
-      {/* Accelerator (optional) */}
-      <section className="rounded-2xl border border-line bg-card p-4 space-y-3 surface-shadow">
-        <div className="flex items-center gap-2">
-          <Beaker size={13} className="text-brand-600" />
-          <h3 className="text-sm font-bold text-fg">Accelerator participation</h3>
-          <span className="text-[10px] font-bold uppercase tracking-wider bg-elevated text-muted ring-1 ring-line px-1.5 py-0.5 rounded">
-            Optional
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Field label="Accelerator name">
-            <input
-              value={form.acceleratorName ?? ""}
-              onChange={(e) => set("acceleratorName", e.target.value)}
-              placeholder="e.g. Creative Destruction Lab"
-              className={inputCls}
-            />
-          </Field>
-          <Field label="Start date">
-            <input
-              type="date"
-              value={form.acceleratorStart ?? ""}
-              onChange={(e) => set("acceleratorStart", e.target.value)}
-              className={inputCls}
-            />
-          </Field>
-          <Field label="End date">
-            <input
-              type="date"
-              value={form.acceleratorEnd ?? ""}
-              onChange={(e) => set("acceleratorEnd", e.target.value)}
-              className={inputCls}
-            />
-          </Field>
-        </div>
-      </section>
-
-      {/* Project timeline */}
-      <Field label="Project timeline" hint="Maximum 6 months from start to end.">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="block">
-            <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Start</span>
-            <input
-              type="date"
-              value={form.projectStart ?? ""}
-              onChange={(e) => set("projectStart", e.target.value)}
-              className={inputCls + " mt-1"}
-            />
-          </label>
-          <label className="block">
-            <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">End</span>
-            <input
-              type="date"
-              value={form.projectEnd ?? ""}
-              onChange={(e) => set("projectEnd", e.target.value)}
-              className={inputCls + " mt-1"}
-            />
-          </label>
-        </div>
-      </Field>
-
-      {/* Budget */}
-      <section className="rounded-2xl border border-line bg-card p-4 space-y-3 surface-shadow">
-        <header className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-fg">Budget breakdown</h3>
-          <span className={"text-sm font-bold tabular-nums " + (overCap ? "text-rose-700" : "text-fg")}>
-            ${total.toLocaleString()} / ${CAP.toLocaleString()}
-          </span>
-        </header>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <MoneyField label="IP filings / counsel"  value={form.budgetIp}         onChange={(v) => set("budgetIp", v)} />
-          <MoneyField label="Prototype build"       value={form.budgetPrototype}  onChange={(v) => set("budgetPrototype", v)} />
-          <MoneyField label="Consulting / contract" value={form.budgetConsulting} onChange={(v) => set("budgetConsulting", v)} />
-          <MoneyField label="Market validation"     value={form.budgetMarket}     onChange={(v) => set("budgetMarket", v)} />
-          <MoneyField label="Other"                 value={form.budgetOther}      onChange={(v) => set("budgetOther", v)} />
-        </div>
-        {(form.budgetOther ?? 0) > 0 && (
-          <input
-            value={form.budgetOtherNote ?? ""}
-            onChange={(e) => set("budgetOtherNote", e.target.value)}
-            placeholder="What's the 'Other' line for?"
-            className={inputCls}
+          <EligibilityCheckbox
+            checked={form.eligibilityPreseedStageReady === true}
+            onChange={(v) => set("eligibilityPreseedStageReady", v)}
+            label="The company is at the Pre-seed / Seed stage with at least a provisional patent, novel concept, initial prototype, and a commercialization roadmap."
           />
-        )}
-        {overCap && (
-          <p className="text-[11px] text-rose-700 inline-flex items-center gap-1.5">
-            <AlertCircle size={11} /> Total exceeds the ${CAP.toLocaleString()} cap. Trim to submit.
-          </p>
-        )}
-      </section>
+          <EligibilityCheckbox
+            checked={form.eligibilityNoDuplicateFunding === true}
+            onChange={(v) => set("eligibilityNoDuplicateFunding", v)}
+            label="The requested funding will support commercialization-enabling activities and does not duplicate other funding sources."
+          />
+          <EligibilityCheckbox
+            checked={form.eligibilityPiHoldsFunds === true}
+            onChange={(v) => set("eligibilityPiHoldsFunds", v)}
+            label="If the project is funded, the PI agrees to take responsibility for holding the funds, with all expenditures subject to audit by their institution."
+          />
+        </div>
+      </Section>
 
-      {/* Success criteria */}
-      <Field label="What does success look like in 6 months?" hint="One line. We'll check in.">
-        <input
-          value={form.successCriteria ?? ""}
-          onChange={(e) => set("successCriteria", e.target.value)}
-          placeholder="e.g. Working prototype validated at one pilot site + filed utility patent"
-          className={inputCls}
-        />
-      </Field>
-
-      {/* Document tray */}
+      {/* Document tray — pitch deck explicitly encouraged on the PDF */}
       <LiftDocumentTray
         applicationId={applicationId}
         documents={documents}
         onChange={setDocuments}
       />
 
-      {/* Submit */}
+      {/* ── 8. Signature ───────────────────────────────────── */}
+      <Section title="Signature">
+        <p className="text-[11px] text-muted leading-snug mb-2">
+          I confirm that the information provided is accurate and that I
+          fully understand the requirements of the EQUIP VentureLift
+          program.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Printed Name" required>
+            <input value={form.signaturePrintedName ?? ""} onChange={(e) => set("signaturePrintedName", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Date" required>
+            <input type="date" value={form.signatureDate ?? ""} onChange={(e) => set("signatureDate", e.target.value)} className={inputCls} />
+          </Field>
+        </div>
+      </Section>
+
+      {/* Submit row */}
       <div className="border-t border-line pt-4 flex flex-wrap items-center justify-end gap-3">
         {validation.length > 0 && (
           <ul className="text-[11px] text-rose-700 list-disc pl-5 mr-auto max-w-md">
@@ -496,47 +358,133 @@ export function LiftForm({ applicationId, initial, initialDocuments, profile }: 
         <button
           type="button"
           onClick={submit}
-          disabled={submitting || overCap}
+          disabled={submitting}
           className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-bold px-5 py-2 rounded-xl shadow-sm shadow-brand-600/25 transition-colors"
         >
           {submitting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-          Submit application
+          Submit pre-screening
         </button>
       </div>
     </div>
   );
 }
 
+// ── Atoms ─────────────────────────────────────────────────────
+
 const inputCls =
   "w-full bg-card-solid border border-line rounded-lg px-3 py-2 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500";
 const textareaCls = inputCls + " font-sans";
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-line bg-card p-4 sm:p-5 space-y-3 surface-shadow">
+      <header>
+        <h2 className="text-sm font-bold text-fg">{title}</h2>
+        {hint && <p className="text-[11px] text-muted mt-0.5">{hint}</p>}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function Field({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-bold text-fg">{label}</label>
-      {hint && <p className="text-[10px] text-subtle">{hint}</p>}
+      <label className="block text-xs font-bold text-fg">
+        {label}{required && <span className="text-rose-600 ml-0.5">*</span>}
+      </label>
+      {hint && <p className="text-[10px] text-subtle leading-snug">{hint}</p>}
       {children}
     </div>
   );
 }
 
-function MoneyField({ label, value, onChange }: { label: string; value: number | undefined; onChange: (v: number) => void }) {
+function RoleCheckbox({
+  checked, label, onChange,
+}: { checked: boolean; label: string; onChange: () => void }) {
   return (
-    <label className="block">
-      <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">{label}</span>
-      <div className="mt-1 flex items-center gap-1.5">
-        <span className="text-sm text-muted">$</span>
-        <input
-          type="number"
-          min={0}
-          step={100}
-          value={value ?? ""}
-          onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value))}
-          className={inputCls + " tabular-nums"}
-        />
-      </div>
+    <button
+      type="button"
+      onClick={onChange}
+      className={
+        "text-left rounded-xl border px-3 py-2 transition-colors flex items-start gap-2 " +
+        (checked
+          ? "border-brand-500 bg-brand-50/40 ring-2 ring-brand-500/30"
+          : "border-line hover:bg-elevated/60")
+      }
+    >
+      <span className={"w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 " + (checked ? "bg-brand-600 border-brand-600" : "border-line")}>
+        {checked && <Check size={10} className="text-white" />}
+      </span>
+      <span className="text-xs font-bold text-fg">{label}</span>
+    </button>
+  );
+}
+
+function IpStatusFields({
+  ip, setIp,
+}: {
+  ip: IpStatusBlock | undefined;
+  setIp: <K extends keyof IpStatusBlock>(key: K, value: IpStatusBlock[K]) => void;
+}) {
+  const block = ip ?? {};
+  return (
+    <div className="space-y-2">
+      <IpRow label="Invention Disclosure to Home Institution" checked={block.inventionDisclosureChecked === true} date={block.inventionDisclosureDate}
+        onToggle={(v) => setIp("inventionDisclosureChecked", v)} onDate={(d) => setIp("inventionDisclosureDate", d)} />
+      <IpRow label="Provisional Patent Application Filed" checked={block.provisionalPatentChecked === true} date={block.provisionalPatentDate}
+        onToggle={(v) => setIp("provisionalPatentChecked", v)} onDate={(d) => setIp("provisionalPatentDate", d)} />
+      <IpRow label="Full Patent Application Filed" checked={block.fullPatentChecked === true} date={block.fullPatentDate}
+        onToggle={(v) => setIp("fullPatentChecked", v)} onDate={(d) => setIp("fullPatentDate", d)} />
+      <IpRow label="Licensed Technology" checked={block.licensedTechnologyChecked === true} date={block.licensedTechnologyDate}
+        onToggle={(v) => setIp("licensedTechnologyChecked", v)} onDate={(d) => setIp("licensedTechnologyDate", d)} />
+    </div>
+  );
+}
+
+function IpRow({
+  label, checked, date, onToggle, onDate,
+}: {
+  label: string;
+  checked: boolean;
+  date: string | undefined;
+  onToggle: (v: boolean) => void;
+  onDate: (d: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      <label className="inline-flex items-center gap-2 cursor-pointer flex-1 min-w-[260px]">
+        <input type="checkbox" checked={checked} onChange={(e) => onToggle(e.target.checked)} className="shrink-0" />
+        <span className="text-xs font-bold text-fg">{label}</span>
+      </label>
+      <input type="date" value={date ?? ""} onChange={(e) => onDate(e.target.value)} disabled={!checked}
+        className={inputCls + " w-44 disabled:opacity-40"} />
+    </div>
+  );
+}
+
+function EligibilityCheckbox({
+  checked, label, onChange,
+}: { checked: boolean; label: string; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-start gap-2 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-1 shrink-0"
+      />
+      <span className="text-[12px] text-fg leading-relaxed">{label}</span>
     </label>
+  );
+}
+
+function WordCounter({ count, limit }: { count: number; limit: number }) {
+  const over = count > limit;
+  return (
+    <p className={"text-[11px] tabular-nums " + (over ? "text-rose-700" : "text-subtle")}>
+      {count} / {limit} words {over && "— over the limit, please trim"}
+    </p>
   );
 }
 

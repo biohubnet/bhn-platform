@@ -91,25 +91,25 @@ export default async function AdminEquipReviewPage({
 
       {app.stream === "venture_connect" && (
         <DSSection eyebrow="Submission body" title="The application" icon={<FileText size={14} className="text-brand-600" />}>
-          <Field label="Event">{formData.eventName ?? "—"}</Field>
-          <Field label="Event date">{formData.eventDate ?? "—"}</Field>
-          {formData.eventUrl && (
-            <Field label="Event URL">
-              <a href={formData.eventUrl} target="_blank" rel="noreferrer" className="text-brand-700 underline">{formData.eventUrl}</a>
+          <Field label="Company">{formData.companyName ?? "—"}</Field>
+          {formData.companyWebsite && (
+            <Field label="Website">
+              <a href={formData.companyWebsite} target="_blank" rel="noreferrer" className="text-brand-700 underline">{formData.companyWebsite}</a>
             </Field>
           )}
-          <FieldBlock label="Why this event, why now?">{formData.alignmentNarrative ?? "—"}</FieldBlock>
-          <FieldBlock label="Expected outcome">{formData.expectedOutcome ?? "—"}</FieldBlock>
+          <FieldBlock label="Venture description">{formData.ventureDescription ?? "—"}</FieldBlock>
+          <FieldBlock label="Funding request justification">{formData.fundingJustification ?? "—"}</FieldBlock>
           <div className="rounded-xl border border-line bg-elevated/40 p-3 mt-3">
             <p className="text-[10px] uppercase tracking-wider font-bold text-subtle mb-2">Budget breakdown</p>
             <ul className="space-y-1 text-xs">
-              <BudgetLine label="Registration" amount={formData.budgetRegistration} />
-              <BudgetLine label="Travel" amount={formData.budgetTravel} />
-              <BudgetLine label="Lodging" amount={formData.budgetLodging} />
-              <BudgetLine label={formData.budgetOtherNote ? `Other (${formData.budgetOtherNote})` : "Other"} amount={formData.budgetOther} />
+              <BudgetLine label="Airfare"                                   amount={formData.budgetAirfare} />
+              <BudgetLine label="Train Fare"                                amount={formData.budgetTrainFare} />
+              <BudgetLine label="Rideshare / Taxi"                          amount={formData.budgetRideshareTaxi} />
+              <BudgetLine label="Accommodation"                             amount={formData.budgetAccommodation} />
+              <BudgetLine label="Conference / Workshop / Pitch Registration" amount={formData.budgetRegistration} />
             </ul>
             <p className="text-sm font-bold text-fg tabular-nums mt-2">
-              Total: ${((formData.budgetRegistration ?? 0) + (formData.budgetTravel ?? 0) + (formData.budgetLodging ?? 0) + (formData.budgetOther ?? 0)).toLocaleString()}
+              Total: ${((formData.budgetAirfare ?? 0) + (formData.budgetTrainFare ?? 0) + (formData.budgetRideshareTaxi ?? 0) + (formData.budgetAccommodation ?? 0) + (formData.budgetRegistration ?? 0)).toLocaleString()} CAD
             </p>
           </div>
         </DSSection>

@@ -1,49 +1,77 @@
 "use client";
 /**
- * VentureConnect draft form. Five visible fields, profile pre-fill
- * for everything else.
+ * VentureConnect application form — mirrors the BHN EQUIP
+ * VentureConnect Grant Application Form PDF (Mar 2026).
  *
- * Auto-save
- *   The 800ms debounced PATCH pattern from PrepCoach. Every edit
- *   collapses into one network call per typing burst. A "Saved Xs
- *   ago" chip in the top-right gives the user the feedback they
- *   need without a save button.
+ * Section order matches the PDF exactly:
+ *   1. Applicant Information
+ *   2. Company Information
+ *   3. Intellectual Property (IP) Status
+ *   4. Funding Request Justification
+ *   5. Budget & Supporting Documentation
+ *   6. Signature (attestation)
  *
- * Submit
- *   Single CTA at the bottom. Validates client-side, then POSTs
- *   to /submit which validates server-side and transitions the
- *   draft to "submitted".
+ * Auto-saves every 800ms via PATCH; submit POSTs to /submit which
+ * re-validates server-side and clamps the requested amount to the
+ * $5,000 cap.
+ *
+ * IMPORTANT: AI writing assistance is intentionally NOT offered on
+ * this form. The official PDF disclaimer states applications
+ * found to contain AI-generated content will be disqualified —
+ * see NO_AI_DISCLAIMER in lib/equip/types.ts.
  */
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Check, AlertCircle, Beaker, Send } from "lucide-react";
-import { STREAM_BUDGETS, type VentureConnectFormData } from "@/lib/equip/types";
+import { Loader2, Check, AlertCircle, Beaker, Send, AlertTriangle } from "lucide-react";
+import {
+  STREAM_BUDGETS,
+  NO_AI_DISCLAIMER,
+  type VentureConnectFormData,
+  type IpStatusBlock,
+  type ApplicantRole,
+} from "@/lib/equip/types";
 
 interface Props {
   applicationId: string;
   initial: VentureConnectFormData;
+  /** Pulled from the User row to pre-fill applicant identity
+   *  fields. The applicant can still edit each one — pre-fill is
+   *  a convenience, not a constraint. */
   profile: {
     name: string;
     email: string;
     organization: string | null;
     jobTitle: string | null;
-    country: string | null;
-    phone: string | null;
   };
 }
 
 const CAP = STREAM_BUDGETS.venture_connect;
 
-function totalBudget(f: VentureConnectFormData): number {
-  return (f.budgetRegistration ?? 0)
-    + (f.budgetTravel ?? 0)
-    + (f.budgetLodging ?? 0)
-    + (f.budgetOther ?? 0);
+const ROLE_OPTIONS: { id: ApplicantRole; label: string }[] = [
+  { id: "master_student",     label: "Master's Student" },
+  { id: "phd_student",        label: "PhD Student" },
+  { id: "postdoc",            label: "Postdoctoral Fellow" },
+  { id: "research_associate", label: "Research Associate" },
+];
+
+function budgetTotal(f: VentureConnectFormData): number {
+  return (f.budgetAirfare ?? 0)
+    + (f.budgetTrainFare ?? 0)
+    + (f.budgetRideshareTaxi ?? 0)
+    + (f.budgetAccommodation ?? 0)
+    + (f.budgetRegistration ?? 0);
 }
 
 export function ConnectForm({ applicationId, initial, profile }: Props) {
   const router = useRouter();
-  const [form, setForm] = useState<VentureConnectFormData>(initial);
+  const [form, setForm] = useState<VentureConnectFormData>(() => ({
+    // Pre-fill identity fields from profile so the user doesn't
+    // re-type what we already know.
+    fullName: initial.fullName ?? profile.name ?? "",
+    institutionAffiliation: initial.institutionAffiliation ?? profile.organization ?? "",
+    institutionEmail: initial.institutionEmail ?? profile.email ?? "",
+    ...initial,
+  }));
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
   const [submitting, setSubmitting] = useState(false);
@@ -51,21 +79,19 @@ export function ConnectForm({ applicationId, initial, profile }: Props) {
   const [validation, setValidation] = useState<string[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-save: 800ms debounce after the last edit.
+  // Auto-save: 800ms debounced PATCH after every edit.
   useEffect(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       startSaving(async () => {
         try {
-          const res = await fetch(`/api/equip/applications/${applicationId}`, {
+          await fetch(`/api/equip/applications/${applicationId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ formData: form }),
           });
-          if (res.ok) {
-            setSavedAt(new Date().toISOString());
-            setError(null);
-          }
+          setSavedAt(new Date().toISOString());
+          setError(null);
         } catch { /* silent — retry on next edit */ }
       });
     }, 800);
@@ -77,6 +103,10 @@ export function ConnectForm({ applicationId, initial, profile }: Props) {
 
   function set<K extends keyof VentureConnectFormData>(key: K, value: VentureConnectFormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function setIp<K extends keyof IpStatusBlock>(key: K, value: IpStatusBlock[K]) {
+    setForm((prev) => ({ ...prev, ip: { ...(prev.ip ?? {}), [key]: value } }));
   }
 
   async function submit() {
@@ -99,132 +129,182 @@ export function ConnectForm({ applicationId, initial, profile }: Props) {
     }
   }
 
-  const total = totalBudget(form);
+  const total = budgetTotal(form);
   const overCap = total > CAP;
 
   return (
     <div className="space-y-5">
-      {/* Header chip + save indicator */}
+      {/* Header */}
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle inline-flex items-center gap-2">
             <Beaker size={11} className="text-brand-600" />
-            VentureConnect · draft
+            EQUIP VentureConnect Grant Application
           </p>
-          <h1 className="text-2xl font-bold text-fg tracking-tight mt-1">Your event funding</h1>
-          <p className="text-[11px] text-muted mt-1">
-            Five fields, auto-saved as you type. Up to ${CAP.toLocaleString()}.
+          <h1 className="text-2xl font-bold text-fg tracking-tight mt-1">Your application</h1>
+          <p className="text-[11px] text-muted mt-1 leading-snug max-w-2xl">
+            Each company may submit up to three (3) separate applications. The
+            maximum total funding available per company is <strong>$5,000 CAD</strong>.
+            Each application may support attendance at one (1) conference,
+            workshop, or pitch event.
           </p>
         </div>
         <SaveIndicator saving={saving} savedAt={savedAt} />
       </header>
 
-      {/* Identity pre-fill — read-only summary, no friction */}
-      <section className="rounded-2xl border border-line bg-elevated/30 p-4 space-y-1.5">
-        <p className="text-[10px] uppercase tracking-wider font-bold text-subtle">From your profile</p>
-        <p className="text-sm text-fg font-semibold">{profile.name || profile.email}</p>
-        <p className="text-[11px] text-muted">
-          {profile.email}
-          {profile.jobTitle ? ` · ${profile.jobTitle}` : ""}
-          {profile.organization ? ` · ${profile.organization}` : ""}
-          {profile.country ? ` · ${profile.country}` : ""}
+      {/* No-AI disclaimer — surfaced prominently so applicants
+          don't accidentally disqualify themselves. */}
+      <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3 flex items-start gap-2">
+        <AlertTriangle size={14} className="text-amber-700 mt-0.5 shrink-0" />
+        <p className="text-[11px] text-amber-900 leading-snug">
+          <strong>No AI writing tools.</strong> {NO_AI_DISCLAIMER}
         </p>
-        <p className="text-[10px] text-subtle">
-          We don&apos;t ask you to re-enter any of this. Update on your{" "}
-          <a href="/profile" className="underline">profile page</a> if anything&apos;s out of date.
-        </p>
-      </section>
-
-      {/* Event */}
-      <Field
-        label="What event are you attending?"
-        hint="Conference name, pitch competition, demo day — whatever&apos;s next."
-      >
-        <input
-          value={form.eventName ?? ""}
-          onChange={(e) => set("eventName", e.target.value)}
-          placeholder="e.g. BIO International Convention 2026"
-          className={inputCls}
-        />
-      </Field>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="When is it?" hint="Date the event starts.">
-          <input
-            type="date"
-            value={form.eventDate ?? ""}
-            onChange={(e) => set("eventDate", e.target.value)}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Event URL" hint="Optional — helps us verify.">
-          <input
-            type="url"
-            value={form.eventUrl ?? ""}
-            onChange={(e) => set("eventUrl", e.target.value)}
-            placeholder="https://"
-            className={inputCls}
-          />
-        </Field>
       </div>
 
-      {/* Narrative */}
-      <Field
-        label="Why this event, why now?"
-        hint="One or two sentences. Who you&apos;ll meet, what you&apos;ll bring back."
-      >
-        <textarea
-          rows={4}
-          value={form.alignmentNarrative ?? ""}
-          onChange={(e) => set("alignmentNarrative", e.target.value)}
-          placeholder="e.g. Pitching our prototype to the BIO BIOTECH track judges; targeting two intros to scale-up CMOs we identified last month."
-          className={inputCls + " font-sans"}
-        />
-      </Field>
+      {/* ── 1. Applicant Information ───────────────────────── */}
+      <Section title="Applicant Information">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Full Name" required>
+            <input value={form.fullName ?? ""} onChange={(e) => set("fullName", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Institution Email" required>
+            <input type="email" value={form.institutionEmail ?? ""} onChange={(e) => set("institutionEmail", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Institution / Affiliation" required>
+            <input value={form.institutionAffiliation ?? ""} onChange={(e) => set("institutionAffiliation", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Department / Program" required>
+            <input value={form.departmentProgram ?? ""} onChange={(e) => set("departmentProgram", e.target.value)} className={inputCls} />
+          </Field>
+        </div>
+        <Field label="Current Role" required>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {ROLE_OPTIONS.map((opt) => (
+              <RoleCheckbox
+                key={opt.id}
+                checked={form.currentRole === opt.id}
+                label={opt.label}
+                onChange={() => set("currentRole", opt.id)}
+              />
+            ))}
+          </div>
+        </Field>
+      </Section>
 
-      {/* Budget */}
-      <section className="rounded-2xl border border-line bg-card p-4 space-y-3 surface-shadow">
-        <header className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-fg">Budget breakdown</h3>
-          <span className={"text-sm font-bold tabular-nums " + (overCap ? "text-rose-700" : "text-fg")}>
+      {/* ── 2. Company Information ─────────────────────────── */}
+      <Section title="Company Information">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Company Name" required>
+            <input value={form.companyName ?? ""} onChange={(e) => set("companyName", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Website">
+            <input
+              type="url"
+              value={form.companyWebsite ?? ""}
+              onChange={(e) => set("companyWebsite", e.target.value)}
+              placeholder="https://"
+              className={inputCls}
+            />
+          </Field>
+        </div>
+        <Field
+          label="Briefly describe your venture or innovation"
+          hint="Overview of your technology, product, or service and its current development stage. If your company doesn't have publicly available information, attach a business pitch deck below to support your application."
+          required
+        >
+          <textarea
+            rows={5}
+            value={form.ventureDescription ?? ""}
+            onChange={(e) => set("ventureDescription", e.target.value)}
+            className={textareaCls}
+          />
+        </Field>
+      </Section>
+
+      {/* ── 3. Intellectual Property Status ────────────────── */}
+      <Section
+        title="Intellectual Property (IP) Status"
+        hint="Check any milestones the company has achieved and add the date for each."
+      >
+        <IpStatusFields ip={form.ip} setIp={setIp} />
+      </Section>
+
+      {/* ── 4. Funding Request Justification ───────────────── */}
+      <Section title="Funding Request Justification">
+        <div className="text-[11px] text-muted leading-snug space-y-1 mb-2">
+          <p>Provide a concise summary of your funding request. Cover:</p>
+          <ul className="list-disc pl-5 space-y-0.5">
+            <li>How attendance at the event will advance your company&apos;s business opportunity.</li>
+            <li><strong>Include specific examples</strong> (e.g. <em>Meet with investor X from Y VC firm on [date] to discuss potential seed-round investment</em>).</li>
+            <li>Eligible activities: industry / investor conferences, customer demos (customers must be non-academic), pitch competitions.</li>
+            <li>For entrepreneurship workshops or training programs, justify that equivalent training isn&apos;t available locally.</li>
+            <li>Key outcomes you aim to achieve (partnerships, visibility, fundraising progress, etc.).</li>
+          </ul>
+        </div>
+        <textarea
+          rows={9}
+          value={form.fundingJustification ?? ""}
+          onChange={(e) => set("fundingJustification", e.target.value)}
+          className={textareaCls}
+        />
+      </Section>
+
+      {/* ── 5. Budget & Supporting Documentation ───────────── */}
+      <Section title="Budget & Supporting Documentation">
+        <div className="flex items-baseline justify-between">
+          <p className="text-[11px] text-muted">Total amount requested (up to ${CAP.toLocaleString()} CAD):</p>
+          <span className={"text-base font-bold tabular-nums " + (overCap ? "text-rose-700" : "text-fg")}>
             ${total.toLocaleString()} / ${CAP.toLocaleString()}
           </span>
-        </header>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <MoneyField label="Registration" value={form.budgetRegistration} onChange={(v) => set("budgetRegistration", v)} />
-          <MoneyField label="Travel"       value={form.budgetTravel}       onChange={(v) => set("budgetTravel", v)} />
-          <MoneyField label="Lodging"      value={form.budgetLodging}      onChange={(v) => set("budgetLodging", v)} />
-          <MoneyField label="Other"        value={form.budgetOther}        onChange={(v) => set("budgetOther", v)} />
         </div>
-        {(form.budgetOther ?? 0) > 0 && (
-          <input
-            value={form.budgetOtherNote ?? ""}
-            onChange={(e) => set("budgetOtherNote", e.target.value)}
-            placeholder="What's the 'Other' line for?"
-            className={inputCls}
-          />
-        )}
+        <div className="rounded-xl border border-line bg-elevated/30 overflow-hidden">
+          <BudgetRow heading label="Transportation" />
+          <BudgetRow label="Airfare" value={form.budgetAirfare} onChange={(v) => set("budgetAirfare", v)} />
+          <BudgetRow label="Train Fare" value={form.budgetTrainFare} onChange={(v) => set("budgetTrainFare", v)} />
+          <BudgetRow label="Rideshare or Taxi (to / from airport)" value={form.budgetRideshareTaxi} onChange={(v) => set("budgetRideshareTaxi", v)} />
+          <BudgetRow heading label="Accommodation" value={form.budgetAccommodation} onChange={(v) => set("budgetAccommodation", v)} />
+          <BudgetRow heading label="Conference / Workshop / Pitch Registration Fees" value={form.budgetRegistration} onChange={(v) => set("budgetRegistration", v)} />
+        </div>
         {overCap && (
-          <p className="text-[11px] text-rose-700 inline-flex items-center gap-1.5">
-            <AlertCircle size={11} /> Total exceeds the ${CAP.toLocaleString()} cap. Trim to submit.
+          <p className="text-[11px] text-rose-700 inline-flex items-center gap-1.5 mt-2">
+            <AlertCircle size={11} /> Total exceeds the ${CAP.toLocaleString()} cap. Trim a line to submit.
           </p>
         )}
-      </section>
+        <p className="text-[11px] text-subtle mt-3 leading-snug">
+          Supporting documents to attach below: conference registration
+          info, cost estimates for travel and accommodation, workshop or
+          pitch-competition details, and any other documentation supporting
+          your funding request.
+        </p>
+      </Section>
 
-      {/* Outcome */}
-      <Field
-        label="What does success look like?"
-        hint="One line. We'll ask you about it in your 30-day check-in."
-      >
-        <input
-          value={form.expectedOutcome ?? ""}
-          onChange={(e) => set("expectedOutcome", e.target.value)}
-          placeholder="e.g. Two qualified intros to manufacturing partners + a poster award"
-          className={inputCls}
-        />
-      </Field>
+      {/* ── 6. Signature (attestation) ─────────────────────── */}
+      <Section title="Signature">
+        <p className="text-[11px] text-muted leading-snug mb-2">
+          I acknowledge that the information provided in this application
+          is accurate and that the requested funds will be used for the
+          purposes outlined in this application.
+        </p>
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.acknowledged === true}
+            onChange={(e) => set("acknowledged", e.target.checked)}
+            className="mt-0.5"
+          />
+          <span className="text-xs text-fg">I acknowledge and agree.</span>
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <Field label="Print Name" required>
+            <input value={form.signaturePrintedName ?? ""} onChange={(e) => set("signaturePrintedName", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Date" required>
+            <input type="date" value={form.signatureDate ?? ""} onChange={(e) => set("signatureDate", e.target.value)} className={inputCls} />
+          </Field>
+        </div>
+      </Section>
 
-      {/* Submit */}
+      {/* Submit row */}
       <div className="border-t border-line pt-4 flex flex-wrap items-center justify-end gap-3">
         {validation.length > 0 && (
           <ul className="text-[11px] text-rose-700 list-disc pl-5 mr-auto max-w-md">
@@ -250,35 +330,162 @@ export function ConnectForm({ applicationId, initial, profile }: Props) {
   );
 }
 
+// ── Reusable atoms ────────────────────────────────────────────
+
 const inputCls =
   "w-full bg-card-solid border border-line rounded-lg px-3 py-2 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500";
+const textareaCls = inputCls + " font-sans";
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-line bg-card p-4 sm:p-5 space-y-3 surface-shadow">
+      <header>
+        <h2 className="text-sm font-bold text-fg">{title}</h2>
+        {hint && <p className="text-[11px] text-muted mt-0.5">{hint}</p>}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function Field({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-bold text-fg">{label}</label>
-      {hint && <p className="text-[10px] text-subtle">{hint}</p>}
+      <label className="block text-xs font-bold text-fg">
+        {label}{required && <span className="text-rose-600 ml-0.5">*</span>}
+      </label>
+      {hint && <p className="text-[10px] text-subtle leading-snug">{hint}</p>}
       {children}
     </div>
   );
 }
 
-function MoneyField({ label, value, onChange }: { label: string; value: number | undefined; onChange: (v: number) => void }) {
+function RoleCheckbox({
+  checked, label, onChange,
+}: { checked: boolean; label: string; onChange: () => void }) {
   return (
-    <label className="block">
-      <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">{label}</span>
-      <div className="mt-1 flex items-center gap-1.5">
-        <span className="text-sm text-muted">$</span>
+    <button
+      type="button"
+      onClick={onChange}
+      className={
+        "text-left rounded-xl border px-3 py-2 transition-colors flex items-start gap-2 " +
+        (checked
+          ? "border-brand-500 bg-brand-50/40 ring-2 ring-brand-500/30"
+          : "border-line hover:bg-elevated/60")
+      }
+    >
+      <span className={"w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 " + (checked ? "bg-brand-600 border-brand-600" : "border-line")}>
+        {checked && <Check size={10} className="text-white" />}
+      </span>
+      <span className="text-xs font-bold text-fg">{label}</span>
+    </button>
+  );
+}
+
+function IpStatusFields({
+  ip, setIp,
+}: {
+  ip: IpStatusBlock | undefined;
+  setIp: <K extends keyof IpStatusBlock>(key: K, value: IpStatusBlock[K]) => void;
+}) {
+  const block = ip ?? {};
+  return (
+    <div className="space-y-2">
+      <IpRow
+        label="Invention Disclosure to Home Institution"
+        checked={block.inventionDisclosureChecked === true}
+        date={block.inventionDisclosureDate}
+        onToggle={(v) => setIp("inventionDisclosureChecked", v)}
+        onDate={(d) => setIp("inventionDisclosureDate", d)}
+      />
+      <IpRow
+        label="Provisional Patent Application Filed"
+        checked={block.provisionalPatentChecked === true}
+        date={block.provisionalPatentDate}
+        onToggle={(v) => setIp("provisionalPatentChecked", v)}
+        onDate={(d) => setIp("provisionalPatentDate", d)}
+      />
+      <IpRow
+        label="Full Patent Application Filed"
+        checked={block.fullPatentChecked === true}
+        date={block.fullPatentDate}
+        onToggle={(v) => setIp("fullPatentChecked", v)}
+        onDate={(d) => setIp("fullPatentDate", d)}
+      />
+      <IpRow
+        label="Licensed Technology"
+        checked={block.licensedTechnologyChecked === true}
+        date={block.licensedTechnologyDate}
+        onToggle={(v) => setIp("licensedTechnologyChecked", v)}
+        onDate={(d) => setIp("licensedTechnologyDate", d)}
+      />
+    </div>
+  );
+}
+
+function IpRow({
+  label, checked, date, onToggle, onDate,
+}: {
+  label: string;
+  checked: boolean;
+  date: string | undefined;
+  onToggle: (v: boolean) => void;
+  onDate: (d: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      <label className="inline-flex items-center gap-2 cursor-pointer flex-1 min-w-[260px]">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onToggle(e.target.checked)}
+          className="shrink-0"
+        />
+        <span className="text-xs font-bold text-fg">{label}</span>
+      </label>
+      <input
+        type="date"
+        value={date ?? ""}
+        onChange={(e) => onDate(e.target.value)}
+        disabled={!checked}
+        className={inputCls + " w-44 disabled:opacity-40"}
+      />
+    </div>
+  );
+}
+
+function BudgetRow({
+  label, value, onChange, heading,
+}: {
+  label: string;
+  value?: number;
+  onChange?: (v: number) => void;
+  heading?: boolean;
+}) {
+  if (heading && onChange === undefined) {
+    return (
+      <div className="px-3 py-2 bg-elevated/60 text-[10px] uppercase tracking-wider font-bold text-subtle border-b border-line">
+        {label}
+      </div>
+    );
+  }
+  return (
+    <div className={"px-3 py-2 border-b border-line last:border-b-0 flex items-center gap-3 " + (heading ? "bg-elevated/40" : "")}>
+      <span className={"flex-1 text-xs " + (heading ? "font-bold text-fg" : "text-fg")}>
+        {label}
+      </span>
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-muted">$</span>
         <input
           type="number"
           min={0}
           step={50}
           value={value ?? ""}
-          onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value))}
-          className={inputCls + " tabular-nums"}
+          onChange={(e) => onChange?.(e.target.value === "" ? 0 : Number(e.target.value))}
+          className={inputCls + " w-28 tabular-nums"}
         />
       </div>
-    </label>
+    </div>
   );
 }
 
