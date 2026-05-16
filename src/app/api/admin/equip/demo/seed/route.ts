@@ -44,10 +44,10 @@ interface DemoUser {
 const DEMO_USERS: DemoUser[] = [
   { slug: "ayaan",   name: "Ayaan Khan (demo)",   organization: "U of T — Donnelly Centre", institution: "u-of-t" },
   { slug: "lin",     name: "Lin Wei (demo)",      organization: "Queen's — Biochem",        institution: "queens" },
-  { slug: "rosa",    name: "Rosa Albright (demo)",organization: "McMaster — IIDR",          institution: "mcmaster" },
+  { slug: "rosa",    name: "Rosa Albright (demo)",organization: "Sunnybrook Research Institute",          institution: "sunnybrook" },
   { slug: "dev",     name: "Dev Singh (demo)",    organization: "Waterloo — School of Pharm",institution: "waterloo" },
   { slug: "noor",    name: "Noor Hassan (demo)",  organization: "Western — Schulich",       institution: "western" },
-  { slug: "joelle",  name: "Joëlle Tremblay (demo)", organization: "uOttawa — uOttawa Heart",institution: "ottawa" },
+  { slug: "joelle",  name: "Joëlle Tremblay (demo)", organization: "University Health Network",institution: "uhn" },
 ];
 
 function emailFor(slug: string): string {

@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Press Start 2P — pixel font for the Retro 8-bit theme. Loaded
+ * globally because Next.js doesn't lazy-load by data-theme, but
+ * only applied when [data-theme="retro8bit"] is active. */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
 /* ============================================================
  *  BHN Theme System — three faces, one design language
  *  ──────────────────────────────────────────────────────────
@@ -511,6 +516,73 @@
 [data-theme="hitech"] .text-sky-700     { color: #38bdf8; }
 [data-theme="hitech"] .text-sky-800     { color: #7dd3fc; }
 [data-theme="hitech"] .text-sky-900     { color: #bae6fd; }
+
+/* Sidebar section title chips override for Hi-tech.
+ * The default Tailwind tones (bg-sky-100, text-sky-900, …)
+ * paired with the Hi-tech text-color inversions above produce
+ * invisible labels on the inky-black background — light text on
+ * light chip bg. Re-tint each tone with a TRON-cyan-adjacent dim
+ * background + a bright tonal foreground so every section header
+ * reads cleanly without losing per-section identity. */
+[data-theme="hitech"] [data-section-tone="engage"] {
+  background: rgba(16, 185, 129, 0.16) !important;
+  color: #34d399 !important;
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.45);
+}
+[data-theme="hitech"] [data-section-tone="experience"] {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45);
+}
+[data-theme="hitech"] [data-section-tone="equip"] {
+  background: rgba(244, 63, 94, 0.16) !important;
+  color: #fb7185 !important;
+  box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.45);
+}
+[data-theme="hitech"] [data-section-tone="electric"] {
+  background: rgba(0, 212, 255, 0.16) !important;
+  color: #00d4ff !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.55);
+}
+[data-theme="hitech"] [data-section-tone="hr-preview"] {
+  background: rgba(139, 92, 246, 0.18) !important;
+  color: #c4b5fd !important;
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.55);
+}
+[data-theme="hitech"] [data-section-tone="neutral"] {
+  background: rgba(0, 212, 255, 0.08) !important;
+  color: #8ecfe8 !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.30);
+}
+
+/* Same fix for Nightfall (dark) — the bright Tailwind chip palette
+ * also reads poorly against the deep navy. Reuses each tone's
+ * brighter shade for text and a translucent matching wash for bg. */
+[data-theme="dark"] [data-section-tone="engage"] {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #6ee7b7 !important;
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.45);
+}
+[data-theme="dark"] [data-section-tone="experience"] {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #fcd34d !important;
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45);
+}
+[data-theme="dark"] [data-section-tone="equip"] {
+  background: rgba(244, 63, 94, 0.18) !important;
+  color: #fda4af !important;
+  box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.45);
+}
+[data-theme="dark"] [data-section-tone="electric"] {
+  background: rgba(56, 189, 248, 0.18) !important;
+  color: #7dd3fc !important;
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.45);
+}
+[data-theme="dark"] [data-section-tone="hr-preview"] {
+  background: rgba(139, 92, 246, 0.22) !important;
+  color: #c4b5fd !important;
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.55);
+}
 
 /* ───── Tailwind theme bindings ───── */
 @theme inline {
@@ -1297,79 +1369,133 @@ body {
 [data-theme="greenwood"] .text-sky-800     { color: #355751; }
 [data-theme="greenwood"] .text-sky-900     { color: #28433f; }
 
-/* ───── Retro 8-bit — NES boss screen meets CRT phosphor. Dark
- *  CRT-purple canvas, pure 8-bit magenta brand, sharp pixel edges
- *  (radii 0-3 px), monospace pixel font, scanline overlay across
- *  the page. CTAs are bright magenta — exactly the colour Bowser's
- *  flames are in Mario 3, exactly the colour Mega Man's projectiles
- *  flicker. Dark theme; brand ramps light-to-bright (50 darkest, 600
- *  the accent CTA) like the other dark themes. ───── */
+/* ═══════════════════════════════════════════════════════════════
+ *  Retro 8-bit — REBUILT 2026-05-16.
+ *
+ *  Goal: stop pretending. The old version was "dark purple with
+ *  faint scanlines." The new one commits to the bit: NES boss
+ *  screen + dialog box + pixel font + chunky drop shadows. Looks
+ *  like Mega Man's pause menu, reads like a Game Boy quest log.
+ *
+ *  What changed vs. before:
+ *    • All-pixel typography: Press Start 2P everywhere, with
+ *      VT323 as a more readable fallback for long body copy
+ *    • Saturated NES palette: pure magenta / cyan / yellow /
+ *      green / red — no rgba softening on accents
+ *    • Hard zero radius platform-wide — no rounded corners
+ *    • Solid card backgrounds (no translucency) so they read like
+ *      sprite tiles, not Photoshop blur
+ *    • Chunky 4px step drop-shadow on cards/buttons — the classic
+ *      NES dialog-box double-border look
+ *    • Stronger scanline overlay (3% darker, every 2px)
+ *    • image-rendering: pixelated for icons + raster images
+ *    • Larger line-height + smaller font-size since Press Start 2P
+ *      is glyph-wide and otherwise blows out layout
+ *  ═══════════════════════════════════════════════════════════════ */
 [data-theme="retro8bit"] {
-  --popover-bg: rgba(42, 24, 69, 0.96);
-  --bg:        #1a0d2e;
-  /* Background mesh: faint magenta + cyan glows like CRT phosphor
-   * decay around bright sprites. Plus a scanline gradient that
-   * tiles 4-px tall to fake CRT raster lines. */
+  --popover-bg: #1a0033;
+  --bg:        #0a0014;
+  /* Background: deep CRT-black with very faint magenta+cyan glow
+   * blobs (no soft blur — single radial steps), plus a 2-pixel
+   * scanline weave baked in. Reads as "phosphor on black tube",
+   * not "dark mode website." */
   --bg-mesh:
-    radial-gradient(at 18% 20%, rgba(255, 77, 255, 0.10) 0px, transparent 50%),
-    radial-gradient(at 84% 14%, rgba(0, 255, 255, 0.06) 0px, transparent 45%),
-    radial-gradient(at 100% 100%, rgba(255, 215, 0, 0.05) 0px, transparent 50%),
+    radial-gradient(at 12% 15%, rgba(255, 0, 255, 0.10) 0px, transparent 35%),
+    radial-gradient(at 88% 18%, rgba(0, 255, 255, 0.08) 0px, transparent 32%),
+    radial-gradient(at 50% 100%, rgba(255, 215, 0, 0.06) 0px, transparent 38%),
     repeating-linear-gradient(
       to bottom,
-      rgba(0, 0, 0, 0.06) 0px,
-      rgba(0, 0, 0, 0.06) 1px,
+      rgba(0, 0, 0, 0.18) 0px,
+      rgba(0, 0, 0, 0.18) 1px,
       transparent 1px,
-      transparent 4px
+      transparent 2px
     );
-  --card:      rgba(28, 18, 50, 0.92);
-  --card-solid: #1a0f30;
-  --elevated:  rgba(42, 24, 69, 0.92);
-  --raised:    rgba(60, 35, 96, 0.92);
+  /* Solid card surfaces — NO rgba. Cards should read like opaque
+   * sprite tiles, not floating semi-transparent rectangles. */
+  --card:       #1a0033;
+  --card-solid: #1a0033;
+  --elevated:   #2b0052;
+  --raised:     #3d0073;
   --fg:        #ffffff;
-  --fg-muted:  #b8a0d4;
-  --fg-subtle: #7a6a96;
-  --line:      rgba(255, 77, 255, 0.30);
-  --line-strong: rgba(255, 77, 255, 0.55);
-  --backdrop:  rgba(10, 5, 20, 0.90);
+  --fg-muted:  #c0a0ff;
+  --fg-subtle: #8060c0;
+  /* Lines: 2-3px chunky borders work better than hairlines on a
+   * pixel theme. The --line value is set as a SOLID rgb so chip
+   * outlines look like NES dialog-box pixels, not airbrush. */
+  --line:      #ff00ff;
+  --line-strong: #ff00ff;
+  --backdrop:  rgba(0, 0, 0, 0.92);
 
-  /* Brand: NES magenta. Inverted ramp like Nightfall + Dry Ice —
-   * brand-50 is the darkest tinted surface; brand-600 (#ff4dff) is
-   * the bright accent CTA, white-text-on-brand-600 ~5:1. Brand-700+
-   * lighten further into hot pink highlights. */
-  --brand-50:  #260f2e;
-  --brand-100: #3a1844;
-  --brand-200: #5a2466;
-  --brand-300: #803088;
-  --brand-400: #a83eaa;
-  --brand-500: #ce4ecc;
-  --brand-600: #ff4dff;
-  --brand-700: #ff80ff;
-  --brand-800: #ffb3ff;
-  --brand-900: #ffe0ff;
+  /* True NES-arcade palette. The brand ramp is anchored on pure
+   * magenta (#ff00ff) — the colour Bowser's flames flicker in
+   * Mario 3, the colour Mega Man's E-tank icon glows. */
+  --brand-50:  #1a0033;
+  --brand-100: #330066;
+  --brand-200: #4d0099;
+  --brand-300: #6600cc;
+  --brand-400: #9933ff;
+  --brand-500: #cc00ff;
+  --brand-600: #ff00ff;
+  --brand-700: #ff66ff;
+  --brand-800: #ff99ff;
+  --brand-900: #ffccff;
 
-  /* Sharp pixel edges. */
+  /* Hard zero radii. No rounded corners anywhere — every surface
+   * looks like a sprite tile or a dialog window. */
   --radius-sm: 0px;
-  --radius:    2px;
-  --radius-lg: 3px;
-  --radius-xl: 4px;
+  --radius:    0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
 
-  /* Hero — NES boss screen. Magenta + cyan + yellow on near-black. */
-  --hero-bg:     #000018;
-  --hero-mesh-1: #ff4dff;
+  /* Hero — pure NES title-screen energy. Background black with
+   * a magenta / cyan / yellow palette swatch. */
+  --hero-bg:     #000000;
+  --hero-mesh-1: #ff00ff;
   --hero-mesh-2: #00ffff;
-  --hero-mesh-3: #ffd700;
-  --hero-mesh-4: #2a004a;
+  --hero-mesh-3: #ffff00;
+  --hero-mesh-4: #1a0033;
 }
 
-/* Body bg-size for retro: radials fill the screen, scanline tiles. */
+/* Press Start 2P globally on retro8bit. EVERY text element — nav,
+ * buttons, body, code — turns into chunky pixel glyphs. VT323
+ * fallback for environments that didn't load the Google Font; both
+ * read as pixel typography. Font size knocked down a touch since
+ * each glyph is wider than the equivalent in Geist. */
+[data-theme="retro8bit"],
+[data-theme="retro8bit"] body,
+[data-theme="retro8bit"] button,
+[data-theme="retro8bit"] input,
+[data-theme="retro8bit"] textarea,
+[data-theme="retro8bit"] select {
+  font-family: 'Press Start 2P', 'VT323', 'Courier New', monospace !important;
+  letter-spacing: 0;
+  font-weight: 400 !important;
+}
 [data-theme="retro8bit"] body {
-  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 4px;
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 2px;
+  font-size: 11px;
+  line-height: 1.7;
+}
+/* Headings get a little more breathing room — Press Start 2P is
+ * intrinsically heavy, so bumping size slightly + tightening line
+ * height keeps section headers from running into each other. */
+[data-theme="retro8bit"] h1 { font-size: 18px; line-height: 1.4; }
+[data-theme="retro8bit"] h2 { font-size: 14px; line-height: 1.5; }
+[data-theme="retro8bit"] h3 { font-size: 12px; line-height: 1.6; }
+
+/* Force pixel-perfect rendering on rasters and inline icons so
+ * scaled images don't smudge into the soft-corners look the rest
+ * of the platform uses. */
+[data-theme="retro8bit"] img,
+[data-theme="retro8bit"] svg {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
 }
 
-/* CRT scanline overlay — fixed-position fine 1px lines on top of
- * everything at very low opacity. Pointer-events off so it never
- * intercepts clicks. Mix-blend-mode: overlay so it darkens the
- * canvas without dimming bright sprites disproportionately. */
+/* Stronger CRT scanline overlay — 2px instead of 3px stride, and
+ * a touch darker. The fixed overlay above stays out of click
+ * paths via pointer-events: none. */
 [data-theme="retro8bit"] body::after {
   content: "";
   position: fixed;
@@ -1378,36 +1504,119 @@ body {
   z-index: 9999;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.10) 0px,
-    rgba(0, 0, 0, 0.10) 1px,
+    rgba(0, 0, 0, 0.20) 0px,
+    rgba(0, 0, 0, 0.20) 1px,
     transparent 1px,
-    transparent 3px
+    transparent 2px
   );
   mix-blend-mode: overlay;
 }
 
-/* Tailwind tints for retro — keep them bright. NES-era colours are
- * supposed to pop. We only soften the lightest 50 / 100 tier so
- * tinted cards still show their tone against the dark canvas. */
-[data-theme="retro8bit"] {
-  --color-rose-50:    rgba(255, 70, 100, 0.14);
-  --color-rose-100:   rgba(255, 70, 100, 0.22);
-  --color-rose-200:   rgba(255, 70, 100, 0.32);
-  --color-amber-50:   rgba(255, 215, 0, 0.12);
-  --color-amber-100:  rgba(255, 215, 0, 0.20);
-  --color-emerald-50: rgba(0, 248, 88, 0.12);
-  --color-emerald-100:rgba(0, 248, 88, 0.20);
-  --color-sky-50:     rgba(0, 255, 255, 0.12);
-  --color-sky-100:    rgba(0, 255, 255, 0.20);
+/* Chunky NES-dialog-box drop-shadow on every card-like surface.
+ * 4-px black hard offset, no blur. Classic 8-bit menu box vibe.
+ * `box-shadow: 4px 4px 0 0 #000` would clip if the surface had a
+ * normal blurred shadow already, so we override `.surface-shadow`
+ * + raw `.shadow-*` Tailwind utilities directly. */
+[data-theme="retro8bit"] .surface-shadow,
+[data-theme="retro8bit"] [class*="shadow-"] {
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.85) !important;
 }
-[data-theme="retro8bit"] .text-rose-700    { color: #ff708f; }
-[data-theme="retro8bit"] .text-rose-800    { color: #ffa0b3; }
-[data-theme="retro8bit"] .text-amber-700   { color: #ffd700; }
-[data-theme="retro8bit"] .text-amber-800   { color: #ffe580; }
-[data-theme="retro8bit"] .text-emerald-700 { color: #00f858; }
-[data-theme="retro8bit"] .text-emerald-800 { color: #80fcaa; }
+
+/* Buttons get the same chunky shadow + a contrasting 2px solid
+ * border so they read as pixel-art buttons (think "press START"). */
+[data-theme="retro8bit"] button:not([disabled]),
+[data-theme="retro8bit"] [role="button"] {
+  border: 2px solid currentColor;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.85);
+  transition: transform 0.05s steps(2), box-shadow 0.05s steps(2);
+}
+[data-theme="retro8bit"] button:not([disabled]):active,
+[data-theme="retro8bit"] [role="button"]:active {
+  /* Press-down effect — shadow collapses, surface drops 4px down
+   * + right. Stepped transition so the move looks like 1-2 frames
+   * of NES animation, not a CSS easing curve. */
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+}
+
+/* Inputs: solid magenta border, no blur on focus glow either. */
+[data-theme="retro8bit"] input,
+[data-theme="retro8bit"] textarea,
+[data-theme="retro8bit"] select {
+  border: 2px solid #ff00ff !important;
+  background: #000000 !important;
+  box-shadow: none !important;
+}
+[data-theme="retro8bit"] input:focus,
+[data-theme="retro8bit"] textarea:focus,
+[data-theme="retro8bit"] select:focus {
+  outline: 2px solid #ffff00 !important;
+  outline-offset: 2px;
+}
+
+/* Tailwind tints stay saturated for retro8bit. The whole point is
+ * "let the colours blast" — every accent surface should look like
+ * a power-up sprite. */
+[data-theme="retro8bit"] {
+  --color-rose-50:    rgba(255, 0, 100, 0.20);
+  --color-rose-100:   rgba(255, 0, 100, 0.30);
+  --color-rose-200:   rgba(255, 0, 100, 0.42);
+  --color-amber-50:   rgba(255, 215, 0, 0.20);
+  --color-amber-100:  rgba(255, 215, 0, 0.30);
+  --color-amber-200:  rgba(255, 215, 0, 0.45);
+  --color-emerald-50: rgba(0, 255, 0, 0.18);
+  --color-emerald-100:rgba(0, 255, 0, 0.30);
+  --color-emerald-200:rgba(0, 255, 0, 0.42);
+  --color-sky-50:     rgba(0, 255, 255, 0.18);
+  --color-sky-100:    rgba(0, 255, 255, 0.30);
+  --color-sky-200:    rgba(0, 255, 255, 0.45);
+}
+[data-theme="retro8bit"] .text-rose-700    { color: #ff3366; }
+[data-theme="retro8bit"] .text-rose-800    { color: #ff6699; }
+[data-theme="retro8bit"] .text-rose-900    { color: #ff99cc; }
+[data-theme="retro8bit"] .text-amber-700   { color: #ffff00; }
+[data-theme="retro8bit"] .text-amber-800   { color: #ffff66; }
+[data-theme="retro8bit"] .text-amber-900   { color: #ffff99; }
+[data-theme="retro8bit"] .text-emerald-700 { color: #00ff00; }
+[data-theme="retro8bit"] .text-emerald-800 { color: #66ff66; }
+[data-theme="retro8bit"] .text-emerald-900 { color: #99ff99; }
 [data-theme="retro8bit"] .text-sky-700     { color: #00ffff; }
-[data-theme="retro8bit"] .text-sky-800     { color: #80ffff; }
+[data-theme="retro8bit"] .text-sky-800     { color: #66ffff; }
+[data-theme="retro8bit"] .text-sky-900     { color: #99ffff; }
+
+/* Section title chips on retro8bit — each pillar gets a saturated
+ * NES colour-block with 2-px solid borders, the same vocabulary
+ * the rest of the theme uses. */
+[data-theme="retro8bit"] [data-section-tone="engage"] {
+  background: #00ff00 !important;
+  color: #000000 !important;
+  box-shadow: inset 0 0 0 2px #003300;
+}
+[data-theme="retro8bit"] [data-section-tone="experience"] {
+  background: #ffff00 !important;
+  color: #000000 !important;
+  box-shadow: inset 0 0 0 2px #333300;
+}
+[data-theme="retro8bit"] [data-section-tone="equip"] {
+  background: #ff3366 !important;
+  color: #000000 !important;
+  box-shadow: inset 0 0 0 2px #330011;
+}
+[data-theme="retro8bit"] [data-section-tone="electric"] {
+  background: #00ffff !important;
+  color: #000000 !important;
+  box-shadow: inset 0 0 0 2px #003333;
+}
+[data-theme="retro8bit"] [data-section-tone="hr-preview"] {
+  background: #ff00ff !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 0 0 2px #330033;
+}
+[data-theme="retro8bit"] [data-section-tone="neutral"] {
+  background: #c0a0ff !important;
+  color: #000000 !important;
+  box-shadow: inset 0 0 0 2px #1a0033;
+}
 
 /* Tame Tailwind tints for the dark Dry Ice. Same approach as the
  * Nightfall theme — desaturate rose / amber / emerald base tints so

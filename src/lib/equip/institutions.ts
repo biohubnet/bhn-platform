@@ -1,5 +1,10 @@
 /**
- * Curated list of BHN-eligible Canadian research institutions.
+ * Curated list of BHN-eligible partner institutions.
+ *
+ * Source of truth: the "List of Eligible Institutions" section on
+ * https://biohubnet.ca/equip. Roster includes universities,
+ * polytechnics, and hospital research institutes that BHN works
+ * with on Equip funding eligibility.
  *
  * The Equip wizard renders these as a dropdown. "Other" is appended
  * by the picker UI itself — if a user picks it, the application
@@ -19,20 +24,25 @@ export interface Institution {
 }
 
 export const INSTITUTIONS: Institution[] = [
-  { slug: "u-of-t",          name: "University of Toronto",          shortName: "U of T" },
-  { slug: "queens",          name: "Queen's University",             shortName: "Queen's" },
-  { slug: "western",         name: "Western University",             shortName: "Western" },
-  { slug: "mcmaster",        name: "McMaster University",            shortName: "Mac" },
-  { slug: "waterloo",        name: "University of Waterloo",         shortName: "UW" },
-  { slug: "ottawa",          name: "University of Ottawa",           shortName: "uOttawa" },
-  { slug: "guelph",          name: "University of Guelph",           shortName: "Guelph" },
-  { slug: "ryerson-tmu",     name: "Toronto Metropolitan University", shortName: "TMU" },
-  { slug: "york",            name: "York University",                shortName: "York" },
-  { slug: "windsor",         name: "University of Windsor",          shortName: "Windsor" },
-  { slug: "laurier",         name: "Wilfrid Laurier University",     shortName: "Laurier" },
-  { slug: "trent",           name: "Trent University",               shortName: "Trent" },
-  { slug: "carleton",        name: "Carleton University",            shortName: "Carleton" },
-  { slug: "lakehead",        name: "Lakehead University",            shortName: "Lakehead" },
+  // Universities (alphabetical by full name)
+  { slug: "u-of-t",      name: "University of Toronto",            shortName: "U of T" },
+  { slug: "queens",      name: "Queen's University",               shortName: "Queen's" },
+  { slug: "western",     name: "Western University",               shortName: "Western" },
+  { slug: "waterloo",    name: "University of Waterloo",           shortName: "UW" },
+  { slug: "guelph",      name: "University of Guelph",             shortName: "Guelph" },
+  { slug: "tmu",         name: "Toronto Metropolitan University",   shortName: "TMU" },
+  { slug: "york",        name: "York University",                  shortName: "York" },
+  { slug: "windsor",     name: "University of Windsor",            shortName: "Windsor" },
+
+  // Polytechnic
+  { slug: "seneca",      name: "Seneca Polytechnic",               shortName: "Seneca" },
+
+  // Hospital research institutes / health networks
+  { slug: "sickkids",    name: "Hospital for Sick Children",       shortName: "SickKids" },
+  { slug: "sinai",       name: "Sinai Health",                     shortName: "Sinai" },
+  { slug: "sunnybrook",  name: "Sunnybrook Research Institute",    shortName: "Sunnybrook" },
+  { slug: "unity",       name: "Unity Health Toronto",             shortName: "Unity Health" },
+  { slug: "uhn",         name: "University Health Network",        shortName: "UHN" },
 ];
 
 const SLUG_MAP = new Map(INSTITUTIONS.map((i) => [i.slug, i]));

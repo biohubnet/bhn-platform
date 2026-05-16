@@ -494,14 +494,21 @@ function SectionGroup({
         <span
           ref={chipRef}
           tabIndex={hasTooltip ? 0 : -1}
+          // data-section-tone exposes the tone to CSS so dark themes
+          // (Hi-tech, Nightfall, retro8bit) can override chip
+          // bg/text/ring without rewriting the Tailwind classes —
+          // the default Tailwind palette (`bg-sky-100`, `text-sky-900`,
+          // etc.) inverts poorly on inky-black themes and leaves the
+          // chip label invisible. See [data-theme="hitech"] section
+          // tone rules in globals.css.
+          data-section-tone={tone}
           className={cn(
             // text-xs (12px) reads more confidently than the prior
-            // text-[10px] without dominating the sidebar — admins
-            // asked for slightly bigger title font. font-semibold
-            // (not bold) + tracking-[0.18em] dial down the assertive
-            // shoutiness, which paired with the soft-fill palettes
-            // gives a more "高级感" / Notion-Linear feel.
-            "px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] rounded-md inline-block",
+            // text-[10px] without dominating the sidebar. font-medium
+            // (not semibold) + tracking-[0.18em] keeps the label
+            // present without shouting — slender and editorial,
+            // closer to Notion / Linear titles.
+            "px-2.5 py-1 text-xs font-medium uppercase tracking-[0.18em] rounded-md inline-block",
             toneStyles.chip,
             hasTooltip && cn(
               "cursor-help focus:outline-none",
