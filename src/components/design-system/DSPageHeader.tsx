@@ -17,7 +17,7 @@
  *   />
  */
 import type { ComponentType } from "react";
-import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
+// import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
 import { DSCoverBanner } from "./DSCoverBanner";
 import { DSEyebrow } from "./DSEyebrow";
 
@@ -31,7 +31,12 @@ interface Props {
 }
 
 export function DSPageHeader({ eyebrow, title, description, icon: Icon }: Props) {
-  const { designSystem } = useDesignSystem();
+  // BISECTION DEBUG: temporarily hardcode the design system to
+  // "classic" instead of reading from context. If this fixes the
+  // server-render crash, the bug is in useDesignSystem / the
+  // DesignSystemProvider context wiring after the recent admin-only
+  // refactor.
+  const designSystem: "classic" | "cinematic" = "classic";
 
   if (designSystem === "cinematic") {
     return (
