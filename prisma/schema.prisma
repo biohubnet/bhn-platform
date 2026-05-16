@@ -272,6 +272,18 @@ model User {
   feedbackInvitesReceived FeedbackInvitation[] @relation("FeedbackInvitationUser")
   feedbackInvitesSent     FeedbackInvitation[] @relation("FeedbackInvitationInvitedBy")
 
+  // ── AI behaviour-assist relations ──
+  // Raw behaviour events, daily / weekly rollups, surfaced hints,
+  // per-user prefs. All cascade-delete with the user — privacy
+  // posture is "if the user leaves, their assist trail leaves
+  // with them".
+  assistEvents       AssistEvent[]
+  assistRollups      AssistDailyRollup[]
+  assistSummaries    AssistWeeklySummary[]
+  assistHints        AssistHint[]
+  assistHintFeedback AssistHintFeedback[]
+  assistPreferences  AssistPreferences?
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -2412,4 +2424,163 @@ model InterviewScore {
 
   @@unique([interviewId, scorerUserId])
   @@index([interviewId])
+}
+
+// ──────────────────────────────────────────────────────────────
+//  AI behaviour-assist
+//  ──────────────────────────────────────────────────────────────
+//  See docs in src/lib/assist/* for design. Net of it:
+//
+//   AssistEvent           — raw behaviour signals (90-day retention)
+//   AssistDailyRollup     — per-user-per-surface daily summary (12 mo)
+//   AssistWeeklySummary   — LLM-written 2–4 sentence journey (18 mo)
+//   AssistHint            — queued / shown / dismissed hint
+//   AssistHintFeedback    — implicit + explicit feedback events
+//   AssistPreferences     — per-user consent / mute / threshold
+//
+//  All cascade with User — when the user leaves, their assist
+//  trail goes with them.
+// ──────────────────────────────────────────────────────────────
+
+model AssistEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  sessionId String
+  ts        DateTime @default(now())
+  /// "click" | "rage_click" | "dead_click" | "surface.view"
+  /// | "form.focus" | "form.field_complete" | "form.abandon"
+  /// | "form.submit_attempt" | "error.client" | "dwell"
+  /// | "idle.start" | "idle.end"
+  kind      String
+  /// Surface key (route or `data-surface`), e.g. "/employer/postings".
+  surface   String?
+  /// Human-readable click target ("Save changes button"), not raw DOM.
+  target    String?
+  payload   Json?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, ts])
+  @@index([sessionId, ts])
+  /// Indexed partial for the stuck-detection pre-filter, which only
+  /// ever reads the trailing 30-day window.
+  @@index([kind, ts])
+}
+
+model AssistDailyRollup {
+  id           String   @id @default(cuid())
+  userId       String
+  surface      String
+  /// UTC-midnight of the day this row aggregates.
+  day          DateTime
+  views        Int      @default(0)
+  clicks       Int      @default(0)
+  rageClicks   Int      @default(0)
+  deadClicks   Int      @default(0)
+  formAbandons Int      @default(0)
+  errors       Int      @default(0)
+  dwellMs      Int      @default(0)
+  /// True if at least one task was completed on this surface today
+  /// (heuristic: a form.submit_attempt without a subsequent error).
+  completed    Boolean  @default(false)
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, surface, day])
+  @@index([userId, day])
+  @@index([day])
+}
+
+model AssistWeeklySummary {
+  id        String   @id @default(cuid())
+  userId    String
+  /// Monday 00:00 UTC of the week this row covers.
+  weekStart DateTime
+  /// 2–4 sentence LLM-written description of the user's week.
+  summary   String
+  /// Surface keys where the stuck-detection rule scored high.
+  stuckOn   String[]
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@index([userId, weekStart])
+  @@index([weekStart])
+}
+
+model AssistHint {
+  id           String    @id @default(cuid())
+  userId       String
+  /// Stable key into the help-card registry. Always one of the
+  /// curated keys; the AI selects, never authors prose.
+  helpKey      String
+  /// Snapshotted at queue time so registry edits don't retroactively
+  /// rewrite history.
+  title        String
+  body         String
+  ctaLabel     String?
+  ctaHref      String?
+  /// Surface the user was on when the hint was triggered.
+  surface      String?
+  /// "rule:rage-click" | "rule:form-abandon" | "ai:claude-haiku" | ...
+  triggeredBy  String
+  /// 0..1. Drives whether the hint actually shows
+  /// (per-user threshold + global floor).
+  confidence   Float     @default(0.5)
+  /// pending = queued; shown = currently visible / recently visible;
+  /// dismissed = user clicked ✕; clicked = user followed the CTA;
+  /// expired = TTL elapsed without a show; suppressed = preferences
+  /// killed it before show.
+  status       String    @default("pending")
+  shownAt      DateTime?
+  resolvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  /// Hints have a short TTL — a stuck-state from 2 days ago is no
+  /// longer the right interruption.
+  expiresAt    DateTime
+
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedback     AssistHintFeedback[]
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([helpKey, status])
+}
+
+model AssistHintFeedback {
+  id        String   @id @default(cuid())
+  userId    String
+  hintId    String
+  /// "shown" | "clicked" | "dismissed" | "ignored" | "rated"
+  kind      String
+  /// 1..5 — only set when kind = "rated"
+  rating    Int?
+  ts        DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hint      AssistHint @relation(fields: [hintId], references: [id], onDelete: Cascade)
+
+  @@index([hintId, kind])
+  @@index([userId, ts])
+}
+
+model AssistPreferences {
+  userId              String    @id
+  /// True once the user opts in to behaviour collection. Default false
+  /// — nothing is collected for users who haven't consented.
+  consented           Boolean   @default(false)
+  consentedAt         DateTime?
+  /// User flipped the kill switch — events still collected (because
+  /// consent is on), but hints are suppressed.
+  hintsDisabled       Boolean   @default(false)
+  /// Per-user calibrated confidence threshold. Starts at the
+  /// platform default (0.75), moves up if the user dismisses a lot,
+  /// down if they engage with hints.
+  confidenceThreshold Float     @default(0.75)
+  /// "Don't show me hints for 10 min" — soft mute.
+  suppressUntil       DateTime?
+  updatedAt           DateTime  @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
