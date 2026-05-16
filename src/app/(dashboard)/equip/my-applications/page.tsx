@@ -118,11 +118,17 @@ export default async function MyEquipApplicationsPage() {
               const meta = STATUS_META[a.status as EquipStatus] ?? { label: a.status, tone: "neutral" as const };
               const stream = STREAM_META[a.stream as EquipStream] ?? { name: a.stream, blurb: "", cadence: "", bestFor: "" };
               const href = `/equip/apply/${a.id}`;
+              const isStageTwoUnlocked = a.stream === "venture_lift" && a.status === "pre_screen_approved";
               return (
                 <li key={a.id}>
                   <Link
                     href={href}
-                    className="rounded-xl border border-line bg-card hover:bg-elevated p-3 flex items-start gap-3 transition-colors"
+                    className={
+                      "rounded-xl border p-3 flex items-start gap-3 transition-colors " +
+                      (isStageTwoUnlocked
+                        ? "border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50/70"
+                        : "border-line bg-card hover:bg-elevated")
+                    }
                   >
                     <span className="w-9 h-9 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center shrink-0 mt-0.5">
                       {a.stream === "venture_lift" ? <Rocket size={14} /> : <Beaker size={14} />}
@@ -140,6 +146,11 @@ export default async function MyEquipApplicationsPage() {
                         {a.fundedAt ? ` · funded ${a.fundedAt.toISOString().slice(0, 10)}` : ""}
                         {a.reviewer?.name ? ` · reviewed by ${a.reviewer.name}` : ""}
                       </span>
+                      {isStageTwoUnlocked && (
+                        <span className="text-[11px] font-bold text-emerald-800 inline-flex items-center gap-1 mt-1">
+                          Stage 2 unlocked — finish the full application →
+                        </span>
+                      )}
                     </span>
                     <StatusBadge tone={meta.tone} label={meta.label} />
                     <ArrowRight size={13} className="text-muted shrink-0 mt-2" />

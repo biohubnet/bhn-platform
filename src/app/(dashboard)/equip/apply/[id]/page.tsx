@@ -17,7 +17,17 @@ import { ArrowLeft } from "lucide-react";
 import { ConnectForm } from "@/components/equip/ConnectForm";
 import { SubmittedView } from "@/components/equip/SubmittedView";
 import { LiftForm } from "@/components/equip/LiftForm";
-import type { VentureConnectFormData, VentureLiftFormData, EquipDocument } from "@/lib/equip/types";
+import { LiftFullForm } from "@/components/equip/LiftFullForm";
+import type {
+  VentureConnectFormData,
+  VentureLiftFormData,
+  VentureLiftFullData,
+  EquipDocument,
+  EquipStatus,
+  EquipStream,
+  ApplicationStage,
+} from "@/lib/equip/types";
+import { isEditable, isInFullAppStage } from "@/lib/equip/types";
 import { institutionLabel } from "@/lib/equip/institutions";
 
 export const dynamic = "force-dynamic";
@@ -46,9 +56,29 @@ export default async function EquipApplicationDraftPage({
   });
   if (!app || app.userId !== userId) redirect("/equip");
 
-  // Once submitted, the surface flips to read-only with the
-  // comment thread surfaced.
-  if (app.status !== "draft") {
+  const status = app.status as EquipStatus;
+  const stage  = app.applicationStage as ApplicationStage;
+
+  // VL applicants whose pre-screening was approved auto-advance
+  // into Stage 2. We flip applicationStage + status here so the
+  // form switch below can rely on a single source of truth. (The
+  // PATCH endpoint enforces isEditable, which allows
+  // pre_screen_approved as editable — so this transition is
+  // visible in the URL but doesn't unlock the form until the
+  // user actually starts typing.)
+  if (app.stream === "venture_lift" && status === "pre_screen_approved" && stage !== "full_app") {
+    await prisma.equipApplication.update({
+      where: { id: app.id },
+      data: { applicationStage: "full_app" },
+    });
+    app.applicationStage = "full_app";
+  }
+
+  // Once submitted/under review/decided, the surface flips to
+  // read-only with the comment thread surfaced. Pre-screen
+  // approved is NOT terminal — the applicant still needs to fill
+  // Stage 2 — so we let it through to the form switch below.
+  if (!isEditable(status)) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         <Link
@@ -89,6 +119,19 @@ export default async function EquipApplicationDraftPage({
         <ConnectForm
           applicationId={app.id}
           initial={(app.formData as VentureConnectFormData) ?? {}}
+          profile={{
+            name: app.user.name ?? "",
+            email: app.user.email,
+            organization: resolvedOrganization,
+            jobTitle: app.user.jobTitle ?? null,
+          }}
+          isAdmin={isAdmin}
+        />
+      ) : isInFullAppStage(app.stream as EquipStream, app.applicationStage as ApplicationStage, status) ? (
+        <LiftFullForm
+          applicationId={app.id}
+          initial={(app.formData as VentureLiftFullData) ?? {}}
+          initialDocuments={(app.documents as unknown as EquipDocument[]) ?? []}
           profile={{
             name: app.user.name ?? "",
             email: app.user.email,

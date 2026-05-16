@@ -12,23 +12,49 @@
  * missing — we don't gate submit on attachments.
  */
 import { useRef, useState } from "react";
-import { Loader2, Upload, Trash2, FileText, Image as ImageIcon, FilmIcon, Mail } from "lucide-react";
+import { Loader2, Upload, Trash2, FileText, Image as ImageIcon, FilmIcon, Mail, FileCheck2, FileSignature } from "lucide-react";
 import type { EquipDocument } from "@/lib/equip/types";
 
-const KINDS: { id: EquipDocument["kind"]; label: string; hint: string; accept: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
+type KindMeta = {
+  id: EquipDocument["kind"];
+  label: string;
+  hint: string;
+  accept: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+};
+
+/** Stage-1 / pitch-style attachments — drafts of VC + VL pre-screening. */
+const STAGE_1_KINDS: KindMeta[] = [
   { id: "pitch_deck",      label: "Pitch deck",         hint: "PDF, up to 25 MB",          accept: ".pdf,application/pdf", icon: FileText },
   { id: "prototype_photo", label: "Prototype photo",    hint: "JPG / PNG, multiple OK",     accept: "image/jpeg,image/png,.jpg,.jpeg,.png", icon: ImageIcon },
   { id: "letter",          label: "Recommendation",     hint: "PDF / DOC",                  accept: ".pdf,application/pdf,.doc,.docx", icon: Mail },
   { id: "video_pitch",     label: "Video pitch",        hint: "MP4, up to 25 MB",          accept: "video/mp4,.mp4", icon: FilmIcon },
 ];
 
+/** Stage-2 appendix kinds — matches the VentureLift full
+ *  application PDF's Part 4 (Appendices 1–3). */
+export const STAGE_2_KINDS: KindMeta[] = [
+  { id: "cv",             label: "Appendix 1 — CVs",            hint: "Primary applicant + PI, single PDF, ≤ 2 pages each", accept: ".pdf,application/pdf", icon: FileSignature },
+  { id: "support_letter", label: "Appendix 2 — Support letters", hint: "Up to 3 PDFs from non-service-provider stakeholders", accept: ".pdf,application/pdf,.doc,.docx", icon: Mail },
+  { id: "ip_doc",         label: "Appendix 3 — IP documents",    hint: "Provisional patent, application receipt, license agreement", accept: ".pdf,application/pdf", icon: FileCheck2 },
+];
+
 interface Props {
   applicationId: string;
   documents: EquipDocument[];
   onChange: (next: EquipDocument[]) => void;
+  /** Optional override of which kinds the tray surfaces. Defaults
+   *  to Stage-1 (pitch deck etc.) so existing call sites are
+   *  unchanged. Pass STAGE_2_KINDS from VL Stage-2 forms. */
+  kinds?: KindMeta[];
+  /** Override header copy. */
+  title?: string;
+  /** Override sub-copy. */
+  blurb?: string;
 }
 
-export function LiftDocumentTray({ applicationId, documents, onChange }: Props) {
+export function LiftDocumentTray({ applicationId, documents, onChange, kinds, title, blurb }: Props) {
+  const KINDS = kinds ?? STAGE_1_KINDS;
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,13 +104,15 @@ export function LiftDocumentTray({ applicationId, documents, onChange }: Props) 
   return (
     <section className="rounded-2xl border border-line bg-card p-4 space-y-3 surface-shadow">
       <header className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-fg">Attachments</h3>
-        <span className="text-[10px] font-bold uppercase tracking-wider bg-elevated text-muted ring-1 ring-line px-1.5 py-0.5 rounded">
-          All optional
-        </span>
+        <h3 className="text-sm font-bold text-fg">{title ?? "Attachments"}</h3>
+        {!kinds && (
+          <span className="text-[10px] font-bold uppercase tracking-wider bg-elevated text-muted ring-1 ring-line px-1.5 py-0.5 rounded">
+            All optional
+          </span>
+        )}
       </header>
       <p className="text-[11px] text-muted leading-snug">
-        Reviewers can request more in-platform once you submit — no need to over-attach now.
+        {blurb ?? "Reviewers can request more in-platform once you submit — no need to over-attach now."}
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

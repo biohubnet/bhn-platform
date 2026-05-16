@@ -31,7 +31,14 @@ export const maxDuration = 60;
 
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MB
 
-const ALLOWED_KINDS = ["pitch_deck", "prototype_photo", "letter", "video_pitch", "other"] as const;
+const ALLOWED_KINDS = [
+  // Stage-1 / pitch material
+  "pitch_deck", "prototype_photo", "letter", "video_pitch",
+  // VL Stage-2 appendix kinds — match the lib/equip/types.ts
+  // EquipDocument["kind"] union exactly.
+  "cv", "support_letter", "ip_doc",
+  "other",
+] as const;
 type Kind = (typeof ALLOWED_KINDS)[number];
 
 async function loadOwnedOrAdmin(id: string, session: Awaited<ReturnType<typeof getSession>>): Promise<{ app: { id: string; userId: string; status: string; documents: EquipDocument[] }; isAdmin: boolean } | null> {

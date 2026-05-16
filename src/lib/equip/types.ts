@@ -70,10 +70,10 @@ export const STREAM_META: Record<EquipStream, {
     bestFor: "Attending an industry conference, customer demo, or pitch competition.",
   },
   venture_lift: {
-    name: "VentureLift (pre-screening)",
-    blurb: "Pre-screening form for the full VentureLift grant (up to $25,000 CAD). Submitting this triggers a BHN-led pre-screening consultation; if eligible you're invited to submit a full application.",
+    name: "VentureLift",
+    blurb: "Two-stage application for up to $25,000 CAD. Stage 1 is a short pre-screening form; passing it unlocks the full Stage-2 application (project team, market, plan, budget, appendices, signatures).",
     cadence: "Quarterly funding cycle",
-    bestFor: "Pre-seed / seed-stage company with provisional patent, prototype, and a commercialization roadmap.",
+    bestFor: "Pre-seed / seed-stage company with a provisional patent, prototype, and a commercialization roadmap.",
   },
 };
 

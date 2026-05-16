@@ -23,8 +23,12 @@ import {
   STREAM_BUDGETS,
   wordCount,
   type EquipStream,
+  type EquipStatus,
+  type ApplicationStage,
   type VentureConnectFormData,
   type VentureLiftFormData,
+  type VentureLiftFullData,
+  type EquipDocument,
 } from "@/lib/equip/types";
 import { nextOpenDeadline } from "@/lib/equip/deadlines";
 
@@ -127,6 +131,86 @@ function validateVentureLift(f: VentureLiftFormData): string[] {
   return errors;
 }
 
+/** Required fields for VentureLift FULL (Stage 2) application.
+ *  Mirrors the EQUIP VentureLift Grant Application Form
+ *  (Oct 2025 PDF) — every starred prompt on the PDF is required,
+ *  the budget cap is enforced, and the three signers must sign
+ *  off. Appendix 3 (IP supporting documents) is the hard
+ *  eligibility gate from the Evaluation Guide. */
+function validateVentureLiftFull(f: VentureLiftFullData, docs: EquipDocument[]): string[] {
+  const errors: string[] = [];
+
+  if (!f.projectTitle?.trim()) errors.push("Project title is required");
+
+  // Part 1.1 — Primary applicant
+  if (!f.applicantFullName?.trim())        errors.push("Primary Applicant: Full Name is required");
+  if (!f.applicantRole)                    errors.push("Primary Applicant: Current Role is required");
+  if (!f.applicantInstitution?.trim())     errors.push("Primary Applicant: Institution / Affiliation is required");
+  if (!f.applicantTitleInCompany?.trim())  errors.push("Primary Applicant: Title / Position in the Company is required");
+  if (!f.applicantTimeCommitment?.trim())  errors.push("Primary Applicant: Time commitment is required");
+
+  // Part 1.2 — PI
+  if (!f.piFullName?.trim())               errors.push("PI: Full Name is required");
+  if (!f.piInstitution?.trim())            errors.push("PI: Institution / Affiliation is required");
+  if (!f.piRoleDescription?.trim())        errors.push("PI: Role description is required");
+
+  // Part 1.3 — Company
+  if (!f.companyName?.trim())              errors.push("Company: Name is required");
+  if (!f.natureProduct && !f.natureService && !f.natureTechnologyPlatform) {
+    errors.push("Company: Pick at least one nature (Product / Service / Technology)");
+  }
+
+  // Part 2 — narrative prompts (every starred prompt is required)
+  if (!f.innovationCompanyOverview?.trim())  errors.push("2.1.1 Company overview is required");
+  if (!f.innovationProblemAndImpact?.trim()) errors.push("2.1.2 Problem / impact is required");
+  if (!f.innovationIpDescription?.trim())    errors.push("2.1.3 IP description is required");
+  if (!f.marketOverview?.trim())             errors.push("2.2.1 Target market is required");
+  if (!f.marketCompetitive?.trim())          errors.push("2.2.2 Competitive landscape is required");
+  if (!f.marketAdvancement?.trim())          errors.push("2.2.3 Advancement / Canadian alignment is required");
+  if (!f.planActivities?.trim())             errors.push("2.3.1 Commercialization-enabling activities is required");
+  if (!f.planRationale?.trim())              errors.push("2.3.3 Rationale is required");
+  if (!f.commercializationMilestones?.trim()) errors.push("2.4.1 Commercialization milestones is required");
+  if (!f.commercializationImpacts?.trim())   errors.push("2.4.2 Anticipated impacts is required");
+  if (!f.commercializationEngagement?.trim()) errors.push("2.4.3 Customer engagement mechanisms is required");
+  if (!f.impactNextSteps?.trim())            errors.push("2.5.1 Next steps is required");
+
+  // Timeline must have at least one row with a deliverable
+  if (!Array.isArray(f.planTimeline) || f.planTimeline.length === 0 || !f.planTimeline.some((r) => r.deliverables?.trim())) {
+    errors.push("2.3.2 Add at least one timeline row with a deliverable");
+  }
+
+  // Part 3 — Budget
+  const total = (f.budgetLines ?? []).reduce<number>((s, r) => s + (r.amount ?? 0), 0);
+  if (total <= 0) errors.push("Budget: at least one line item with an amount is required");
+  if (total > STREAM_BUDGETS.venture_lift) {
+    errors.push(`Budget exceeds the $${STREAM_BUDGETS.venture_lift.toLocaleString()} CAD cap (currently $${total.toLocaleString()})`);
+  }
+
+  // Part 4 — Appendices.  CV + IP doc are required; support
+  // letters are optional but capped at 3.
+  const cvCount       = docs.filter((d) => d.kind === "cv").length;
+  const ipDocCount    = docs.filter((d) => d.kind === "ip_doc").length;
+  const letterCount   = docs.filter((d) => d.kind === "support_letter").length;
+  if (cvCount === 0)     errors.push("Appendix 1: CVs are required (Applicant + PI in one PDF)");
+  if (ipDocCount === 0)  errors.push("Appendix 3: IP supporting documents are required — this is the hard eligibility gate (at least a provisional patent must be filed)");
+  if (letterCount > 3)   errors.push("Appendix 2: max 3 support letters allowed");
+
+  // Part 5 — Three signatures
+  if (!f.primarySignatureName?.trim())  errors.push("Signature: Primary Applicant print-name is required");
+  if (!f.primarySignatureDate?.trim())  errors.push("Signature: Primary Applicant date is required");
+  if (!f.piSignatureName?.trim())       errors.push("Signature: PI print-name is required");
+  if (!f.piSignatureDate?.trim())       errors.push("Signature: PI date is required");
+  if (f.acknowledged !== true)          errors.push("Signature: All signers must tick the acknowledgement");
+
+  return errors;
+}
+
+/** Total computed amount from VL Stage 2 budget lines. Reused by
+ *  the submit handler to set requestedAmount. */
+function sumVlFullBudget(f: VentureLiftFullData): number {
+  return (f.budgetLines ?? []).reduce<number>((s, r) => s + (r.amount ?? 0), 0);
+}
+
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
@@ -139,13 +223,25 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     where: { id },
     select: {
       id: true, userId: true, stream: true, status: true,
-      formData: true, applicantType: true, institution: true,
+      applicationStage: true, formData: true, documents: true,
+      applicantType: true, institution: true,
     },
   });
   if (!app || app.userId !== userId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if (app.status !== "draft") {
+
+  const status = app.status as EquipStatus;
+  const stage  = app.applicationStage as ApplicationStage;
+
+  // Submit is meaningful in two cases:
+  //   1. status = "draft"                 → first-time submit (VC + VL Stage-1)
+  //   2. status = "pre_screen_approved"   → VL applicant has filled
+  //                                         Stage-2 and is submitting it
+  //      OR  stage = "full_app" and status is back to "draft"
+  //          (post-pre-screen-approval draft of the Stage-2 form)
+  const isVlFullSubmit = app.stream === "venture_lift" && stage === "full_app";
+  if (status !== "draft" && status !== "pre_screen_approved") {
     return NextResponse.json({ ok: true, alreadySubmitted: true });
   }
 
@@ -157,17 +253,20 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }
 
   const formData = (app.formData ?? {}) as Record<string, unknown>;
+  const docs = (app.documents as unknown as EquipDocument[]) ?? [];
   let errors: string[] = [];
   let total = 0;
+
   if (app.stream === "venture_connect") {
     errors = validateVentureConnect(formData as VentureConnectFormData);
     total = sumVcBudget(formData as VentureConnectFormData);
+  } else if (app.stream === "venture_lift" && isVlFullSubmit) {
+    // VL Stage 2 — full application validation.
+    errors = validateVentureLiftFull(formData as VentureLiftFullData, docs);
+    total = sumVlFullBudget(formData as VentureLiftFullData);
   } else if (app.stream === "venture_lift") {
+    // VL Stage 1 — pre-screening validation.
     errors = validateVentureLift(formData as VentureLiftFormData);
-    // VL pre-screening doesn't carry a per-line budget; the
-    // $25K request is described in prose. Set requestedAmount
-    // to the stream cap as the implied ask the BHN team will
-    // discuss during the pre-screening consultation.
     total = STREAM_BUDGETS.venture_lift;
   } else {
     return NextResponse.json({ error: "Unknown stream" }, { status: 400 });
@@ -192,14 +291,26 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const cap = STREAM_BUDGETS[app.stream as EquipStream];
   const requestedAmount = Math.min(total, cap);
 
+  // For VL Stage-2 submits, stamp fullAppSubmittedAt instead of
+  // resetting submittedAt (which holds Stage-1's timestamp).
+  const now = new Date();
+  const data: Record<string, unknown> = {
+    status: "submitted",
+    requestedAmount,
+  };
+  if (isVlFullSubmit) {
+    data.fullAppSubmittedAt = now;
+  } else {
+    data.submittedAt = now;
+  }
+
   const updated = await prisma.equipApplication.update({
     where: { id },
-    data: {
-      status: "submitted",
-      submittedAt: new Date(),
-      requestedAmount,
+    data,
+    select: {
+      id: true, status: true, submittedAt: true, fullAppSubmittedAt: true,
+      requestedAmount: true,
     },
-    select: { id: true, status: true, submittedAt: true, requestedAmount: true },
   });
   return NextResponse.json({ ok: true, application: updated });
 }

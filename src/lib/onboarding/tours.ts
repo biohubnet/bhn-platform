@@ -85,12 +85,21 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "trainee.equip",
     title: "Equip — funding for your innovation",
-    body: "The third BHN pillar after Engage (training) and Experience (placements). Apply for VentureConnect (≤$5K, conferences + pitch events) or VentureLift (≤$25K, accelerator + IP + prototype). 3-question wizard picks your stream; everything pre-fills from your profile; auto-saves as you type.",
+    body: "The third BHN pillar after Engage (training) and Experience (placements). Apply for VentureConnect (≤$5K, conferences + pitch events) or VentureLift (≤$25K, two-stage: pre-screen → full application). 3-question wizard picks your stream; everything pre-fills from your profile; auto-saves as you type.",
     path: "/equip",
     placement: "center",
     cta: { label: "Open Equip", href: "/equip" },
     roles: ["trainee", "evaluating"],
     since: "2026.05.15h",
+  },
+  {
+    id: "trainee.equip.stageTwo",
+    title: "VentureLift Stage 2 unlocked",
+    body: "If your pre-screening was approved, the my-applications row turns green and a 'Stage 2 unlocked' CTA appears. Click in to fill the full long-form application — project team, market, plan, budget builder, three appendix trays, three-signer block. Auto-saves every 800 ms; close the tab anytime.",
+    path: "/equip/my-applications",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    since: "2026.05.16d",
   },
   {
     id: "trainee.rewards",
