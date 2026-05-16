@@ -16,13 +16,12 @@ import {
   STREAM_BUDGETS,
   type EquipStream,
   type VentureConnectFormData,
+  type VentureLiftFormData,
 } from "@/lib/equip/types";
 
 export const runtime = "nodejs";
 
-/** Minimum fields required to submit a VentureConnect application.
- *  Each must be a non-empty string or > 0 number. Phase A only —
- *  VentureLift gets its own validator in Phase B. */
+/** Minimum fields required to submit a VentureConnect application. */
 function validateVentureConnect(formData: VentureConnectFormData): string[] {
   const errors: string[] = [];
   if (!formData.eventName?.trim()) errors.push("Event name is required");
@@ -38,6 +37,44 @@ function validateVentureConnect(formData: VentureConnectFormData): string[] {
   if (total <= 0) errors.push("At least one budget line must be set");
   if (total > STREAM_BUDGETS.venture_connect) {
     errors.push(`Total budget exceeds $${STREAM_BUDGETS.venture_connect.toLocaleString()} cap`);
+  }
+  return errors;
+}
+
+/** Minimum fields required to submit a VentureLift application.
+ *  Project window must be within 6 months per Equip program rules. */
+function validateVentureLift(formData: VentureLiftFormData): string[] {
+  const errors: string[] = [];
+  if (!formData.innovationSummary || formData.innovationSummary.trim().length < 80) {
+    errors.push("Innovation summary needs at least 80 characters");
+  }
+  if (!formData.ipStatus) errors.push("IP status is required");
+  if (typeof formData.trl !== "number" || formData.trl < 1 || formData.trl > 9) {
+    errors.push("TRL must be set between 1 and 9");
+  }
+  if (!formData.commercializationRoadmap || formData.commercializationRoadmap.trim().length < 60) {
+    errors.push("Commercialization roadmap needs at least 60 characters");
+  }
+  if (!formData.projectStart) errors.push("Project start date is required");
+  if (!formData.projectEnd) errors.push("Project end date is required");
+  if (formData.projectStart && formData.projectEnd) {
+    const start = new Date(formData.projectStart).getTime();
+    const end = new Date(formData.projectEnd).getTime();
+    if (end <= start) errors.push("Project end must be after start");
+    if (end - start > 1000 * 60 * 60 * 24 * 31 * 6 + 1000 * 60 * 60 * 24) {
+      errors.push("Project window cannot exceed 6 months");
+    }
+  }
+  if (!formData.successCriteria?.trim()) errors.push("Success criteria is required");
+  const total =
+    (formData.budgetIp ?? 0) +
+    (formData.budgetPrototype ?? 0) +
+    (formData.budgetConsulting ?? 0) +
+    (formData.budgetMarket ?? 0) +
+    (formData.budgetOther ?? 0);
+  if (total <= 0) errors.push("At least one budget line must be set");
+  if (total > STREAM_BUDGETS.venture_lift) {
+    errors.push(`Total budget exceeds $${STREAM_BUDGETS.venture_lift.toLocaleString()} cap`);
   }
   return errors;
 }
@@ -85,13 +122,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const f = formData as VentureConnectFormData;
     total = (f.budgetRegistration ?? 0) + (f.budgetTravel ?? 0) + (f.budgetLodging ?? 0) + (f.budgetOther ?? 0);
   } else if (app.stream === "venture_lift") {
-    // Phase A keeps the schema; the full VentureLift validator is
-    // wired in Phase B. Until then, anything VL is rejected at
-    // submit so we don't accept malformed drafts.
-    return NextResponse.json(
-      { error: "VentureLift submissions ship in Phase B — your draft is saved" },
-      { status: 503 },
-    );
+    errors = validateVentureLift(formData as VentureLiftFormData);
+    const f = formData as VentureLiftFormData;
+    total = (f.budgetIp ?? 0) + (f.budgetPrototype ?? 0) + (f.budgetConsulting ?? 0) + (f.budgetMarket ?? 0) + (f.budgetOther ?? 0);
   } else {
     return NextResponse.json({ error: "Unknown stream" }, { status: 400 });
   }

@@ -12,6 +12,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ArrowLeft, ArrowRight, Rocket, Beaker } from "lucide-react";
 import { DSPageHeader, DSSection, DSStatGrid, DSStat } from "@/components/design-system";
+import { EquipDemoTools } from "@/components/admin/equip/EquipDemoTools";
 import {
   STREAM_META, STATUS_META,
   type EquipStatus, type EquipStream,
@@ -196,6 +197,8 @@ export default async function AdminEquipPage({
           </div>
         )}
       </DSSection>
+
+      <EquipDemoTools />
     </div>
   );
 }

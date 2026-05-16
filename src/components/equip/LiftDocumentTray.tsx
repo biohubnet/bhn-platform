@@ -1,0 +1,164 @@
+"use client";
+/**
+ * Drag-and-drop attachment tray for VentureLift drafts.
+ *
+ * Four optional kinds:
+ *   • Pitch deck         (PDF)
+ *   • Prototype photos   (JPG/PNG)
+ *   • Recommendation     (PDF/DOC)
+ *   • Video pitch        (MP4)
+ *
+ * All optional. Reviewer can request more in-platform if anything's
+ * missing — we don't gate submit on attachments.
+ */
+import { useRef, useState } from "react";
+import { Loader2, Upload, Trash2, FileText, Image as ImageIcon, FilmIcon, Mail } from "lucide-react";
+import type { EquipDocument } from "@/lib/equip/types";
+
+const KINDS: { id: EquipDocument["kind"]; label: string; hint: string; accept: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
+  { id: "pitch_deck",      label: "Pitch deck",         hint: "PDF, up to 25 MB",          accept: ".pdf,application/pdf", icon: FileText },
+  { id: "prototype_photo", label: "Prototype photo",    hint: "JPG / PNG, multiple OK",     accept: "image/jpeg,image/png,.jpg,.jpeg,.png", icon: ImageIcon },
+  { id: "letter",          label: "Recommendation",     hint: "PDF / DOC",                  accept: ".pdf,application/pdf,.doc,.docx", icon: Mail },
+  { id: "video_pitch",     label: "Video pitch",        hint: "MP4, up to 25 MB",          accept: "video/mp4,.mp4", icon: FilmIcon },
+];
+
+interface Props {
+  applicationId: string;
+  documents: EquipDocument[];
+  onChange: (next: EquipDocument[]) => void;
+}
+
+export function LiftDocumentTray({ applicationId, documents, onChange }: Props) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function upload(file: File, kind: EquipDocument["kind"]) {
+    setBusy(kind);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("kind", kind);
+      const res = await fetch(`/api/equip/applications/${applicationId}/document`, {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error((j as { error?: string }).error ?? "Upload failed");
+      }
+      const j = (await res.json()) as { document: EquipDocument };
+      onChange([...documents, j.document]);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function remove(key: string) {
+    setBusy("delete-" + key);
+    setError(null);
+    try {
+      const res = await fetch(`/api/equip/applications/${applicationId}/document?key=${encodeURIComponent(key)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error((j as { error?: string }).error ?? "Delete failed");
+      }
+      onChange(documents.filter((d) => d.key !== key));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-line bg-card p-4 space-y-3 surface-shadow">
+      <header className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-fg">Attachments</h3>
+        <span className="text-[10px] font-bold uppercase tracking-wider bg-elevated text-muted ring-1 ring-line px-1.5 py-0.5 rounded">
+          All optional
+        </span>
+      </header>
+      <p className="text-[11px] text-muted leading-snug">
+        Reviewers can request more in-platform once you submit — no need to over-attach now.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {KINDS.map((k) => (
+          <KindSlot
+            key={k.id}
+            kind={k}
+            busy={busy === k.id}
+            onUpload={(f) => upload(f, k.id)}
+          />
+        ))}
+      </div>
+
+      {documents.length > 0 && (
+        <ul className="space-y-1.5 pt-2 border-t border-line">
+          {documents.map((d) => {
+            const kindMeta = KINDS.find((k) => k.id === d.kind);
+            const Icon = kindMeta?.icon ?? FileText;
+            return (
+              <li key={d.key} className="flex items-center gap-2 text-xs">
+                <Icon size={13} className="text-muted shrink-0" />
+                <span className="text-fg font-semibold truncate flex-1">{d.name}</span>
+                <span className="text-[10px] text-subtle tabular-nums">{Math.round(d.size / 1024)} KB</span>
+                <button
+                  type="button"
+                  onClick={() => remove(d.key)}
+                  disabled={busy === "delete-" + d.key}
+                  className="text-rose-700 hover:text-rose-800 disabled:opacity-50"
+                >
+                  {busy === "delete-" + d.key ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {error && <p className="text-[11px] text-rose-700">{error}</p>}
+    </section>
+  );
+}
+
+function KindSlot({
+  kind, busy, onUpload,
+}: {
+  kind: { id: EquipDocument["kind"]; label: string; hint: string; accept: string; icon: React.ComponentType<{ size?: number; className?: string }> };
+  busy: boolean;
+  onUpload: (file: File) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const Icon = kind.icon;
+  return (
+    <label className="rounded-xl border border-dashed border-line hover:border-brand-300 bg-elevated/30 hover:bg-elevated/60 p-3 transition-colors cursor-pointer block">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={kind.accept}
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onUpload(f);
+          if (inputRef.current) inputRef.current.value = "";
+        }}
+      />
+      <div className="flex items-start gap-2">
+        <span className="w-7 h-7 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">
+          {busy ? <Loader2 size={12} className="animate-spin" /> : <Icon size={12} />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-xs font-bold text-fg">{kind.label}</span>
+          <span className="block text-[10px] text-muted">{kind.hint}</span>
+        </span>
+        <Upload size={11} className="text-muted shrink-0 mt-1" />
+      </div>
+    </label>
+  );
+}

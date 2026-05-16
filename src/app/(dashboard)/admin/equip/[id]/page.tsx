@@ -12,6 +12,8 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DSPageHeader, DSSection } from "@/components/design-system";
 import { ReviewActions } from "@/components/admin/equip/ReviewActions";
+import { TriageSummary } from "@/components/admin/equip/TriageSummary";
+import { MessageThread } from "@/components/equip/MessageThread";
 import {
   STREAM_META, STATUS_META,
   type EquipStatus, type EquipStream, type VentureConnectFormData,
@@ -27,6 +29,7 @@ export default async function AdminEquipReviewPage({
 }) {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
+  const reviewerUserId = (session.user as { id?: string })?.id ?? "";
   const { id } = await params;
 
   const app = await prisma.equipApplication.findUnique({
@@ -67,6 +70,8 @@ export default async function AdminEquipReviewPage({
         requestedAmount={app.requestedAmount}
         approvedAmount={app.approvedAmount}
       />
+
+      {app.status !== "draft" && <TriageSummary applicationId={app.id} />}
 
       <DSSection eyebrow="Applicant" title="Who's applying" icon={UserIcon}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -111,6 +116,10 @@ export default async function AdminEquipReviewPage({
         <DSSection eyebrow="Decision context" title="Reviewer note" icon={FileText}>
           <p className="text-sm text-fg leading-relaxed">{app.reviewerNote}</p>
         </DSSection>
+      )}
+
+      {app.status !== "draft" && (
+        <MessageThread applicationId={app.id} currentUserId={reviewerUserId} />
       )}
     </div>
   );

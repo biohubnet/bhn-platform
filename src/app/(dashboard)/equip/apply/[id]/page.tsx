@@ -16,8 +16,8 @@ import { prisma } from "@/lib/prisma";
 import { ArrowLeft } from "lucide-react";
 import { ConnectForm } from "@/components/equip/ConnectForm";
 import { SubmittedView } from "@/components/equip/SubmittedView";
-import { LiftFormPlaceholder } from "@/components/equip/LiftFormPlaceholder";
-import type { VentureConnectFormData, VentureLiftFormData } from "@/lib/equip/types";
+import { LiftForm } from "@/components/equip/LiftForm";
+import type { VentureConnectFormData, VentureLiftFormData, EquipDocument } from "@/lib/equip/types";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +56,7 @@ export default async function EquipApplicationDraftPage({
         >
           <ArrowLeft size={12} /> My applications
         </Link>
-        <SubmittedView application={JSON.parse(JSON.stringify(app))} />
+        <SubmittedView application={{ ...(JSON.parse(JSON.stringify(app))), userId }} />
       </div>
     );
   }
@@ -85,9 +85,18 @@ export default async function EquipApplicationDraftPage({
           }}
         />
       ) : (
-        <LiftFormPlaceholder
+        <LiftForm
           applicationId={app.id}
           initial={(app.formData as VentureLiftFormData) ?? {}}
+          initialDocuments={(app.documents as unknown as EquipDocument[]) ?? []}
+          profile={{
+            name: app.user.name ?? "",
+            email: app.user.email,
+            organization: app.user.organization ?? null,
+            jobTitle: app.user.jobTitle ?? null,
+            country: app.user.country ?? null,
+            phone: app.user.phone ?? null,
+          }}
         />
       )}
     </div>

@@ -12,6 +12,7 @@
  */
 import { CheckCircle2, FileText, Clock, Sparkles } from "lucide-react";
 import { STREAM_META, STATUS_META, type EquipStatus, type EquipStream, type VentureConnectFormData } from "@/lib/equip/types";
+import { MessageThread } from "./MessageThread";
 
 interface Props {
   application: {
@@ -26,6 +27,9 @@ interface Props {
     decidedAt: string | null;
     fundedAt: string | null;
     reviewer: { id: string; name: string | null } | null;
+    /** The applicant's user id — passed through from server so the
+     *  MessageThread can highlight "your" messages. */
+    userId: string;
   };
 }
 
@@ -88,6 +92,8 @@ export function SubmittedView({ application }: Props) {
           )}
         </div>
       )}
+
+      <MessageThread applicationId={application.id} currentUserId={application.userId} />
     </div>
   );
 }
