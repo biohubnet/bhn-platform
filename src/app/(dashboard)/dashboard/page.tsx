@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Sparkles, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
+import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
 import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { DailyThemeCard } from "@/components/ui/DailyThemeCard";
@@ -50,10 +51,13 @@ export default async function DashboardPage() {
       },
     });
     if (employer) return (
-      <>
+      // The HR overview is the canonical Studio design-system
+      // surface. Override the platform-default DS for this
+      // sub-tree only — mirrors the /employer/layout.tsx scope.
+      <DesignSystemProvider value="studio">
         <div className="px-4 sm:px-6 pt-4"><CommitteeBadgeStrip userId={userId} /></div>
         <EmployerDashboard user={employer} />
-      </>
+      </DesignSystemProvider>
     );
   }
   if (role === "admin" || role === "superadmin") {
