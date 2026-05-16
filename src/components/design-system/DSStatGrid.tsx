@@ -22,6 +22,19 @@ export type StatTone = (typeof GRADIENT_TONES)[number];
  *  happens in ONE place, not on every stat. */
 export function DSStatGrid({ children }: { children: ReactNode }) {
   const { designSystem } = useDesignSystem();
+  if (designSystem === "studio") {
+    // Studio tiles use the asymmetric blob-corner radius (organic-card /
+    // organic-card-alt) and a translucent backdrop-blur fill. The
+    // alternation between the two shapes is handled by DSStat
+    // looking at its own index — for that, we pass an `--ds-index`
+    // CSS var by cloning the children. Cheapest: just rely on
+    // nth-child in CSS via a sibling marker class.
+    return (
+      <div className="ds-studio-statgrid grid grid-cols-2 gap-3">
+        {children}
+      </div>
+    );
+  }
   if (designSystem === "cinematic") {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-line ring-1 ring-line rounded-2xl bg-card/40 overflow-hidden">
@@ -72,6 +85,23 @@ export function DSStat({
 }: StatProps) {
   const { designSystem } = useDesignSystem();
   const formatted = typeof value === "number" ? value.toLocaleString() : value;
+
+  if (designSystem === "studio") {
+    // Translucent backdrop-blur tile — designed to sit on a
+    // gradient hero. The alternating organic-card / organic-card-alt
+    // shape is applied via nth-child in globals.css under the
+    // .ds-studio-statgrid > * selectors.
+    return (
+      <div className="ds-studio-stat bg-white/10 backdrop-blur border border-white/20 px-4 py-3.5">
+        <div className="flex items-center gap-2 text-white/75 text-[11px] uppercase tracking-wider">
+          {icon}
+          {label}
+        </div>
+        <p className="text-2xl md:text-3xl font-bold mt-1 text-white">{formatted}</p>
+        {help && <p className="text-[10px] text-white/70 mt-1">{help}</p>}
+      </div>
+    );
+  }
 
   if (designSystem === "cinematic") {
     return (

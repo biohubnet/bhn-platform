@@ -55,6 +55,13 @@ export const DESIGN_SYSTEMS = [
       "Editorial brand stage. Full-bleed gradient hero, eyebrow labels, hairline dividers, gradient-text stats, no card boundaries. Best for showcase and overview pages.",
     category: "foundation",
   },
+  {
+    id: "studio",
+    name: "Studio",
+    description:
+      "Organic, kinetic, employer-portal vibe. Full-bleed gradient mesh hero with drifting blobs + a curve-down divider, asymmetric blob-cornered stat tiles (organic-card / organic-card-alt), gradient icon disks. Extracted from the HR overview; auto-applied to /employer/* and the HR-preview admin block.",
+    category: "foundation",
+  },
 ] as const;
 
 export const DESIGN_SYSTEM_CATEGORIES = {

@@ -1031,6 +1031,19 @@ body {
 .organic-card     { border-radius: var(--radius-xl) var(--radius-sm) var(--radius-xl) var(--radius-sm); }
 .organic-card-alt { border-radius: var(--radius-sm) var(--radius-xl) var(--radius-sm) var(--radius-xl); }
 
+/* ─── Studio design-system primitives ───
+ *
+ * The Studio DSStatGrid renders alternating organic-card /
+ * organic-card-alt shapes via nth-child, so callers don't have to
+ * thread index. Selector chains pair with the React variant in
+ * src/components/design-system/DSStatGrid.tsx. */
+.ds-studio-statgrid > .ds-studio-stat:nth-child(odd) {
+  border-radius: var(--radius-xl) var(--radius-sm) var(--radius-xl) var(--radius-sm);
+}
+.ds-studio-statgrid > .ds-studio-stat:nth-child(even) {
+  border-radius: var(--radius-sm) var(--radius-xl) var(--radius-sm) var(--radius-xl);
+}
+
 /* Gradient-filled headline text — for the user's name in heroes. */
 .gradient-text {
   background: linear-gradient(135deg, var(--brand-300), var(--brand-100) 60%, var(--brand-300));

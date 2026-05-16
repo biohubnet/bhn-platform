@@ -32,6 +32,29 @@ interface Props {
 export function DSSection({ title, eyebrow, icon, tint = false, children }: Props) {
   const { designSystem } = useDesignSystem();
 
+  if (designSystem === "studio") {
+    // Studio sections mirror the HR-overview list cards: rounded-2xl
+    // wrapper with a header strip (title + eyebrow + optional aside
+    // action) divided from the body by a hairline border-line. No
+    // surface-shadow — relies on the page bg contrast.
+    return (
+      <section className="bg-card border border-line rounded-2xl overflow-hidden">
+        {(title || eyebrow) && (
+          <header className="px-5 py-4 border-b border-line">
+            {eyebrow && <div className="mb-1"><DSEyebrow>{eyebrow}</DSEyebrow></div>}
+            {title && (
+              <h2 className="font-semibold text-fg inline-flex items-center gap-2 text-base">
+                {icon}
+                {title}
+              </h2>
+            )}
+          </header>
+        )}
+        <div className="p-5">{children}</div>
+      </section>
+    );
+  }
+
   if (designSystem === "cinematic") {
     return (
       <section
