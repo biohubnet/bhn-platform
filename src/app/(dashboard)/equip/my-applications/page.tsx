@@ -9,7 +9,7 @@
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, ArrowRight, ClipboardList, Beaker, Rocket } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertTriangle, ClipboardList, Beaker, Rocket } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DSPageHeader, DSSection } from "@/components/design-system";
@@ -18,24 +18,53 @@ import { institutionLabel } from "@/lib/equip/institutions";
 
 export const dynamic = "force-dynamic";
 
+type AppRow = {
+  id: string;
+  stream: string;
+  status: string;
+  requestedAmount: number | null;
+  approvedAmount: number | null;
+  institution: string | null;
+  institutionOther: string | null;
+  submittedAt: Date | null;
+  decidedAt: Date | null;
+  fundedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  reviewer: { name: string | null } | null;
+};
+
 export default async function MyEquipApplicationsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const userId = (session.user as { id?: string }).id;
   if (!userId) redirect("/login");
+  const role = (session.user as { role?: string }).role ?? "trainee";
+  const isAdmin = role === "admin" || role === "superadmin";
 
-  const apps = await prisma.equipApplication.findMany({
-    where: { userId },
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true, stream: true, status: true,
-      requestedAmount: true, approvedAmount: true,
-      institution: true, institutionOther: true,
-      submittedAt: true, decidedAt: true, fundedAt: true,
-      createdAt: true, updatedAt: true,
-      reviewer: { select: { name: true } },
-    },
-  });
+  // Resilient read — see equip/page.tsx for the same pattern. When
+  // the EquipApplication table is missing (failed migration), we
+  // still render the page with an empty list rather than crashing.
+  let apps: AppRow[] = [];
+  let tableMissing = false;
+  try {
+    apps = await prisma.equipApplication.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true, stream: true, status: true,
+        requestedAmount: true, approvedAmount: true,
+        institution: true, institutionOther: true,
+        submittedAt: true, decidedAt: true, fundedAt: true,
+        createdAt: true, updatedAt: true,
+        reviewer: { select: { name: true } },
+      },
+    });
+  } catch (err) {
+    const msg = (err as Error).message ?? "";
+    tableMissing = /does not exist|P2021|relation/i.test(msg);
+    apps = [];
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -49,6 +78,21 @@ export default async function MyEquipApplicationsPage() {
         icon={ClipboardList}
         description="Every draft and submission, with current status. Click in for the full submission body and reviewer messages."
       />
+
+      {tableMissing && isAdmin && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-amber-700 mt-0.5 shrink-0" />
+          <div className="text-[12px] text-amber-900 leading-relaxed">
+            <p className="font-bold">EquipApplication table missing.</p>
+            <p className="mt-1">
+              Migration <code className="font-mono bg-amber-100 px-1 rounded">20260620000000_equip_application_pipeline</code>{" "}
+              hasn&apos;t been provisioned. Open Neon, run{" "}
+              <code className="font-mono bg-amber-100 px-1 rounded">DELETE FROM &quot;_prisma_migrations&quot; WHERE migration_name = &apos;…&apos;</code>,
+              redeploy.
+            </p>
+          </div>
+        </section>
+      )}
 
       {apps.length === 0 ? (
         <DSSection title="Nothing here yet" eyebrow="Get started">

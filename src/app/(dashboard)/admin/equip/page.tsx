@@ -10,7 +10,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft, ArrowRight, Rocket, Beaker } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertTriangle, Rocket, Beaker } from "lucide-react";
 import { DSPageHeader, DSSection, DSStatGrid, DSStat } from "@/components/design-system";
 import { EquipDemoTools } from "@/components/admin/equip/EquipDemoTools";
 import {
@@ -51,35 +51,63 @@ export default async function AdminEquipPage({
       ? { status: { in: ["submitted", "under_review"] } }
       : { status: activeTab };
 
-  const [apps, counts] = await Promise.all([
-    prisma.equipApplication.findMany({
-      where,
-      orderBy: [{ status: "asc" }, { submittedAt: "desc" }, { updatedAt: "desc" }],
-      take: 100,
-      select: {
-        id: true, stream: true, status: true,
-        requestedAmount: true, approvedAmount: true,
-        institution: true, institutionOther: true,
-        applicantType: true,
-        submittedAt: true, decidedAt: true, fundedAt: true,
-        updatedAt: true,
-        user: { select: { id: true, name: true, email: true } },
-        reviewer: { select: { id: true, name: true } },
-      },
-    }),
-    prisma.equipApplication.groupBy({
-      by: ["status"],
-      _count: { _all: true },
-    }),
-  ]);
+  // Resilient: when the EquipApplication table is missing
+  // (migration not yet provisioned), render the queue empty with
+  // a banner instead of crashing.
+  type QueueRow = {
+    id: string;
+    stream: string;
+    status: string;
+    requestedAmount: number | null;
+    approvedAmount: number | null;
+    institution: string | null;
+    institutionOther: string | null;
+    applicantType: string | null;
+    submittedAt: Date | null;
+    decidedAt: Date | null;
+    fundedAt: Date | null;
+    updatedAt: Date;
+    user: { id: string; name: string | null; email: string };
+    reviewer: { id: string; name: string | null } | null;
+  };
+  let apps: QueueRow[] = [];
+  let counts: { status: string; _count: { _all: number } }[] = [];
+  let totalFunded: { _sum: { approvedAmount: number | null } } = { _sum: { approvedAmount: 0 } };
+  let tableMissing = false;
+  try {
+    [apps, counts] = await Promise.all([
+      prisma.equipApplication.findMany({
+        where,
+        orderBy: [{ status: "asc" }, { submittedAt: "desc" }, { updatedAt: "desc" }],
+        take: 100,
+        select: {
+          id: true, stream: true, status: true,
+          requestedAmount: true, approvedAmount: true,
+          institution: true, institutionOther: true,
+          applicantType: true,
+          submittedAt: true, decidedAt: true, fundedAt: true,
+          updatedAt: true,
+          user: { select: { id: true, name: true, email: true } },
+          reviewer: { select: { id: true, name: true } },
+        },
+      }),
+      prisma.equipApplication.groupBy({
+        by: ["status"],
+        _count: { _all: true },
+      }),
+    ]);
+    totalFunded = await prisma.equipApplication.aggregate({
+      where: { OR: [{ status: "approved" }, { status: "funded" }] },
+      _sum: { approvedAmount: true },
+    });
+  } catch (err) {
+    const msg = (err as Error).message ?? "";
+    tableMissing = /does not exist|P2021|relation/i.test(msg);
+  }
 
   const byStatus = Object.fromEntries(counts.map((c) => [c.status, c._count._all]));
   const totalOpen = (byStatus.submitted ?? 0) + (byStatus.under_review ?? 0);
   const totalApproved = (byStatus.approved ?? 0) + (byStatus.funded ?? 0);
-  const totalFunded = await prisma.equipApplication.aggregate({
-    where: { OR: [{ status: "approved" }, { status: "funded" }] },
-    _sum: { approvedAmount: true },
-  });
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -93,6 +121,25 @@ export default async function AdminEquipPage({
         icon={Rocket}
         description="VentureConnect (≤$5K, monthly) + VentureLift (≤$25K, quarterly). Click a row to review, leave a note, and decide."
       />
+
+      {tableMissing && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-amber-700 mt-0.5 shrink-0" />
+          <div className="text-[12px] text-amber-900 leading-relaxed">
+            <p className="font-bold">EquipApplication table isn&apos;t provisioned yet.</p>
+            <p className="mt-1">
+              Migration <code className="font-mono bg-amber-100 px-1 rounded">20260620000000_equip_application_pipeline</code>{" "}
+              hasn&apos;t run — likely because a prior attempt is marked failed in <code className="font-mono bg-amber-100 px-1 rounded">_prisma_migrations</code>.
+              On Neon, run:
+            </p>
+            <pre className="bg-amber-900 text-amber-50 text-[11px] font-mono p-2 rounded mt-2 overflow-x-auto">
+{`DELETE FROM "_prisma_migrations"
+WHERE migration_name = '20260620000000_equip_application_pipeline';`}
+            </pre>
+            <p className="mt-2">Then redeploy. The queue will populate on the next request.</p>
+          </div>
+        </section>
+      )}
 
       <DSStatGrid>
         <DSStat label="Open" value={totalOpen} help="submitted + under review" tone="amber" />

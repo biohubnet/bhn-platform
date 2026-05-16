@@ -12,7 +12,7 @@
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, Beaker, Microscope, Rocket, ClipboardList } from "lucide-react";
+import { ArrowRight, AlertTriangle, Beaker, Microscope, Rocket, ClipboardList } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DSPageHeader, DSSection, DSStatGrid, DSStat } from "@/components/design-system";
@@ -20,23 +20,53 @@ import { STREAM_META, STATUS_META, type EquipStatus, type EquipStream } from "@/
 
 export const dynamic = "force-dynamic";
 
+type AppRow = {
+  id: string;
+  stream: string;
+  status: string;
+  requestedAmount: number | null;
+  approvedAmount: number | null;
+  submittedAt: Date | null;
+  decidedAt: Date | null;
+  fundedAt: Date | null;
+  updatedAt: Date;
+};
+
 export default async function EquipLandingPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const userId = (session.user as { id?: string }).id;
   if (!userId) redirect("/login");
+  const role = (session.user as { role?: string }).role ?? "trainee";
+  const isAdmin = role === "admin" || role === "superadmin";
 
-  const apps = await prisma.equipApplication.findMany({
-    where: { userId },
-    orderBy: { updatedAt: "desc" },
-    take: 5,
-    select: {
-      id: true, stream: true, status: true,
-      requestedAmount: true, approvedAmount: true,
-      submittedAt: true, decidedAt: true, fundedAt: true,
-      updatedAt: true,
-    },
-  });
+  // Resilient read — if the EquipApplication table doesn't exist
+  // yet (failed migration / fresh deploy not yet provisioned), we
+  // render the landing page with an empty list rather than throwing
+  // Next's default error UI. Admins see a callout explaining what
+  // to do; regular users just see the empty-state CTA.
+  let apps: AppRow[] = [];
+  let tableMissing = false;
+  try {
+    apps = await prisma.equipApplication.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+      select: {
+        id: true, stream: true, status: true,
+        requestedAmount: true, approvedAmount: true,
+        submittedAt: true, decidedAt: true, fundedAt: true,
+        updatedAt: true,
+      },
+    });
+  } catch (err) {
+    // Prisma raises P2021 (or a generic 42P01) when the relation
+    // doesn't exist. Anything else we just treat as transient and
+    // fall back to empty too.
+    const msg = (err as Error).message ?? "";
+    tableMissing = /does not exist|P2021|relation/i.test(msg);
+    apps = [];
+  }
 
   const totalApps = apps.length;
   const totalApproved = apps.filter((a) => a.status === "approved" || a.status === "funded").length;
@@ -61,6 +91,26 @@ export default async function EquipLandingPage() {
           </>
         }
       />
+
+      {tableMissing && isAdmin && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-amber-700 mt-0.5 shrink-0" />
+          <div className="text-[12px] text-amber-900 leading-relaxed">
+            <p className="font-bold">EquipApplication table isn&apos;t provisioned yet.</p>
+            <p className="mt-1">
+              The platform migration <code className="font-mono bg-amber-100 px-1 rounded">20260620000000_equip_application_pipeline</code>{" "}
+              hasn&apos;t run against this database — most likely because a prior
+              attempt was marked failed in <code className="font-mono bg-amber-100 px-1 rounded">_prisma_migrations</code>.
+              On Neon, run:
+            </p>
+            <pre className="bg-amber-900 text-amber-50 text-[11px] font-mono p-2 rounded mt-2 overflow-x-auto">
+{`DELETE FROM "_prisma_migrations"
+WHERE migration_name = '20260620000000_equip_application_pipeline';`}
+            </pre>
+            <p className="mt-2">Then redeploy. Regular users see only the empty-state below; they don&apos;t see this banner.</p>
+          </div>
+        </section>
+      )}
 
       {totalApps > 0 && (
         <DSStatGrid>
