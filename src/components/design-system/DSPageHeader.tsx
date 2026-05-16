@@ -16,7 +16,7 @@
  *     description="Health, helpfulness, and findings for AutoPipette."
  *   />
  */
-import type { ComponentType } from "react";
+import type { ReactNode } from "react";
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
 import { DSCoverBanner } from "./DSCoverBanner";
 import { DSEyebrow } from "./DSEyebrow";
@@ -25,12 +25,20 @@ interface Props {
   eyebrow?: string;
   title: string;
   description?: React.ReactNode;
-  /** Optional lucide icon — rendered next to the title in both
-   *  designs. Sized appropriately by the renderer. */
-  icon?: ComponentType<{ size?: number; className?: string }>;
+  /** Optional icon — pass a React element (not a component
+   *  reference), e.g. `icon={<Rocket size={22} className="text-brand-600" />}`.
+   *
+   *  Why an element and not a `ComponentType`: passing a function
+   *  reference (like `icon={Rocket}`) as a prop from a server
+   *  component to a client component is rejected by Next.js 16 +
+   *  React 19 + Turbopack — only serializable values + React
+   *  elements cross the boundary. The bug showed up as a generic
+   *  "An error occurred in the Server Components render" with no
+   *  recoverable message. */
+  icon?: ReactNode;
 }
 
-export function DSPageHeader({ eyebrow, title, description, icon: Icon }: Props) {
+export function DSPageHeader({ eyebrow, title, description, icon }: Props) {
   const { designSystem } = useDesignSystem();
 
   if (designSystem === "cinematic") {
@@ -48,9 +56,9 @@ export function DSPageHeader({ eyebrow, title, description, icon: Icon }: Props)
               color: "transparent",
             }}
           >
-            {Icon && (
+            {icon && (
               <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-white/40 backdrop-blur-sm ring-1 ring-white/40 text-brand-700 shrink-0">
-                <Icon size={20} />
+                {icon}
               </span>
             )}
             {title}
@@ -76,7 +84,7 @@ export function DSPageHeader({ eyebrow, title, description, icon: Icon }: Props)
     <header>
       {eyebrow && <DSEyebrow>{eyebrow}</DSEyebrow>}
       <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-        {Icon && <Icon size={22} className="text-brand-600" />}
+        {icon}
         {title}
       </h1>
       {description && (

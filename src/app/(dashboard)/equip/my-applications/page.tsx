@@ -81,7 +81,7 @@ export default async function MyEquipApplicationsPage() {
       <DSPageHeader
         eyebrow="Equip · status tracker"
         title="My applications"
-        icon={ClipboardList}
+        icon={<ClipboardList size={22} className="text-brand-600" />}
         description="Every draft and submission, with current status. Click in for the full submission body and reviewer messages."
       />
 
@@ -111,7 +111,7 @@ export default async function MyEquipApplicationsPage() {
           </Link>
         </DSSection>
       ) : (
-        <DSSection eyebrow="Most-recent first" title="All applications" icon={ClipboardList}>
+        <DSSection eyebrow="Most-recent first" title="All applications" icon={<ClipboardList size={14} className="text-brand-600" />}>
           <ul className="space-y-2">
             {apps.map((a) => {
               // Defensive lookups — see equip/page.tsx for rationale.

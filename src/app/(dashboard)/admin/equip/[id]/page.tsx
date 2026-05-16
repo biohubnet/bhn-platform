@@ -57,7 +57,7 @@ export default async function AdminEquipReviewPage({
       <DSPageHeader
         eyebrow={`${stream.name} · ${status.label.toLowerCase()}`}
         title={`Review: ${app.user.name ?? app.user.email}`}
-        icon={FileText}
+        icon={<FileText size={22} className="text-brand-600" />}
         description={
           <>
             Submitted {app.submittedAt ? new Date(app.submittedAt).toLocaleString() : "—"}.
@@ -76,7 +76,7 @@ export default async function AdminEquipReviewPage({
 
       {app.status !== "draft" && <TriageSummary applicationId={app.id} />}
 
-      <DSSection eyebrow="Applicant" title="Who's applying" icon={UserIcon}>
+      <DSSection eyebrow="Applicant" title="Who's applying" icon={<UserIcon size={14} className="text-brand-600" />}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ApplicantField icon={UserIcon} label="Name" value={app.user.name ?? "—"} />
           <ApplicantField icon={Mail}     label="Email" value={app.user.email} />
@@ -90,7 +90,7 @@ export default async function AdminEquipReviewPage({
       </DSSection>
 
       {app.stream === "venture_connect" && (
-        <DSSection eyebrow="Submission body" title="The application" icon={FileText}>
+        <DSSection eyebrow="Submission body" title="The application" icon={<FileText size={14} className="text-brand-600" />}>
           <Field label="Event">{formData.eventName ?? "—"}</Field>
           <Field label="Event date">{formData.eventDate ?? "—"}</Field>
           {formData.eventUrl && (
@@ -116,7 +116,7 @@ export default async function AdminEquipReviewPage({
       )}
 
       {app.reviewerNote && (
-        <DSSection eyebrow="Decision context" title="Reviewer note" icon={FileText}>
+        <DSSection eyebrow="Decision context" title="Reviewer note" icon={<FileText size={14} className="text-brand-600" />}>
           <p className="text-sm text-fg leading-relaxed">{app.reviewerNote}</p>
         </DSSection>
       )}

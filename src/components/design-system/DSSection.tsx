@@ -10,7 +10,7 @@
  * styled to fit. Eyebrow is the editorial section marker —
  * required in cinematic mode for visual rhythm.
  */
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
 import { DSEyebrow } from "./DSEyebrow";
 
@@ -20,13 +20,16 @@ interface Props {
   /** Smaller uppercase label above the title. Optional in classic;
    *  recommended in cinematic for rhythm. */
   eyebrow?: string;
-  icon?: ComponentType<{ size?: number; className?: string }>;
+  /** Pass a React element, NOT a component reference. See the
+   *  matching note in DSPageHeader.tsx for the Next.js / Turbopack
+   *  function-as-prop boundary issue this avoids. */
+  icon?: ReactNode;
   /** Cinematic-only: render a subtle wash behind the section. */
   tint?: boolean;
   children: ReactNode;
 }
 
-export function DSSection({ title, eyebrow, icon: Icon, tint = false, children }: Props) {
+export function DSSection({ title, eyebrow, icon, tint = false, children }: Props) {
   const { designSystem } = useDesignSystem();
 
   if (designSystem === "cinematic") {
@@ -45,7 +48,7 @@ export function DSSection({ title, eyebrow, icon: Icon, tint = false, children }
         )}
         {title && (
           <h2 className="text-lg sm:text-xl font-bold text-fg tracking-tight inline-flex items-center gap-2 mb-4">
-            {Icon && <Icon size={16} className="text-brand-600" />}
+            {icon}
             {title}
           </h2>
         )}
@@ -60,7 +63,7 @@ export function DSSection({ title, eyebrow, icon: Icon, tint = false, children }
       {eyebrow && <DSEyebrow>{eyebrow}</DSEyebrow>}
       {title && (
         <h2 className="text-sm font-bold text-fg inline-flex items-center gap-2">
-          {Icon && <Icon size={14} className="text-brand-600" />}
+          {icon}
           {title}
         </h2>
       )}

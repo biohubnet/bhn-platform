@@ -12,7 +12,7 @@
  *
  * Same JSX in the page either way.
  */
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
 
 const GRADIENT_TONES = ["brand", "violet", "rose", "emerald", "amber"] as const;
@@ -33,7 +33,9 @@ export function DSStatGrid({ children }: { children: ReactNode }) {
 }
 
 interface StatProps {
-  icon?: ComponentType<{ size?: number; className?: string }>;
+  /** Pass a React element, NOT a component reference. See the
+   *  matching note in DSPageHeader.tsx for the boundary issue. */
+  icon?: ReactNode;
   label: string;
   value: number | string;
   help?: string;
@@ -61,7 +63,7 @@ function gradientForTone(tone: StatTone): string {
 }
 
 export function DSStat({
-  icon: Icon,
+  icon,
   label,
   value,
   help,
@@ -75,7 +77,7 @@ export function DSStat({
     return (
       <div className="px-4 py-5">
         <div className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle inline-flex items-center gap-1.5">
-          {Icon && <Icon size={11} />}
+          {icon}
           {label}
         </div>
         <p
@@ -100,7 +102,7 @@ export function DSStat({
       className={`rounded-xl border ${accent === "brand" ? "border-brand-200 bg-brand-50/40" : "border-line bg-card"} p-3`}
     >
       <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle inline-flex items-center gap-1.5">
-        {Icon && <Icon size={11} />}
+        {icon}
         {label}
       </div>
       <p className="text-2xl font-bold text-fg tabular-nums mt-1">{formatted}</p>

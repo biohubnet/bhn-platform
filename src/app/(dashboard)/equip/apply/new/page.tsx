@@ -33,7 +33,7 @@ export default async function EquipNewApplicationPage({
       <DSPageHeader
         eyebrow="Equip · 3-question wizard"
         title="Find your fit"
-        icon={Rocket}
+        icon={<Rocket size={22} className="text-brand-600" />}
         description="60 seconds. We'll route you to the right stream and pre-fill everything we already know about you."
       />
       <EligibilityWizard presetStream={presetStream} />

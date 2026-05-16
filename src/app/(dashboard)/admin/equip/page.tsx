@@ -125,7 +125,7 @@ export default async function AdminEquipPage({
       <DSPageHeader
         eyebrow="Admin · Equip pillar"
         title="Equip review queue"
-        icon={Rocket}
+        icon={<Rocket size={22} className="text-brand-600" />}
         description="VentureConnect (≤$5K, monthly) + VentureLift (≤$25K, quarterly). Click a row to review, leave a note, and decide."
       />
 
@@ -184,7 +184,7 @@ WHERE migration_name = '20260620000000_equip_application_pipeline';`}
         })}
       </div>
 
-      <DSSection eyebrow="Most-recent first" title="Applications" icon={Rocket}>
+      <DSSection eyebrow="Most-recent first" title="Applications" icon={<Rocket size={14} className="text-brand-600" />}>
         {apps.length === 0 ? (
           <p className="text-sm text-subtle">No applications in this view.</p>
         ) : (

@@ -157,7 +157,7 @@ export default async function AdminAssistDashboardPage() {
       <DSPageHeader
         eyebrow="Admin · platform"
         title="AutoPipette"
-        icon={Pipette}
+        icon={<Pipette size={22} className="text-brand-600" />}
         description={
           <>
             Health, helpfulness, and findings for AutoPipette — BHN&apos;s
@@ -176,16 +176,16 @@ export default async function AdminAssistDashboardPage() {
       {/* ── 1. Health strip ──────────────────────────────────── */}
       <DSStatGrid>
         <DSStat
-          icon={Users}
+          icon={<Users size={11} />}
           label="Opted in"
           value={totalConsented}
           help={`${(optInRate * 100).toFixed(0)}% of ${totalUsers} users`}
           tone="brand"
         />
-        <DSStat icon={Activity} label="Active 7d" value={activeLast7d} help="distinct users" tone="violet" />
-        <DSStat icon={Clock} label="Events 24h" value={eventsLast24h} help="raw signal volume" tone="emerald" />
+        <DSStat icon={<Activity size={11} />} label="Active 7d" value={activeLast7d} help="distinct users" tone="violet" />
+        <DSStat icon={<Clock size={11} />} label="Events 24h" value={eventsLast24h} help="raw signal volume" tone="emerald" />
         <DSStat
-          icon={Sparkles}
+          icon={<Sparkles size={11} />}
           label="Open hints"
           value={openHints}
           help={`${pendingHints} pending · ${aiHintsToday} AI today`}
@@ -198,7 +198,7 @@ export default async function AdminAssistDashboardPage() {
       <DSSection
         eyebrow="Last 30 days"
         title="Helpfulness by help card"
-        icon={Sparkles}
+        icon={<Sparkles size={14} className="text-brand-600" />}
       >
         {helpfulnessRows.length === 0 ? (
           <p className="text-sm text-subtle">No hints surfaced yet.</p>
@@ -253,7 +253,7 @@ export default async function AdminAssistDashboardPage() {
       <DSSection
         eyebrow="Last 7 days"
         title="Top stuck surfaces"
-        icon={AlertTriangle}
+        icon={<AlertTriangle size={14} className="text-amber-600" />}
       >
         {stuckSurfaces.length === 0 ? (
           <p className="text-sm text-subtle">No stuck-state aggregates yet — run the rollup cron once events are flowing.</p>
@@ -296,7 +296,7 @@ export default async function AdminAssistDashboardPage() {
         <DSSection
           eyebrow="LLM-written journey snapshots"
           title="Latest weekly findings"
-          icon={Share2}
+          icon={<Share2 size={14} className="text-violet-600" />}
         >
           <ul className="space-y-3">
             {recentSummaries.map((s, i) => (
@@ -320,7 +320,7 @@ export default async function AdminAssistDashboardPage() {
       <DSSection
         eyebrow="Last 50 across all users"
         title="Recent hints"
-        icon={Sparkles}
+        icon={<Sparkles size={14} className="text-brand-600" />}
       >
         {recentHints.length === 0 ? (
           <p className="text-sm text-subtle">No hints have been queued yet.</p>
