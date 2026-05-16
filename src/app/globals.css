@@ -517,42 +517,81 @@
 [data-theme="hitech"] .text-sky-800     { color: #7dd3fc; }
 [data-theme="hitech"] .text-sky-900     { color: #bae6fd; }
 
-/* Sidebar section title chips override for Hi-tech.
+/* Sidebar section title chips + container overrides for Hi-tech.
  * The default Tailwind tones (bg-sky-100, text-sky-900, …)
  * paired with the Hi-tech text-color inversions above produce
  * invisible labels on the inky-black background — light text on
- * light chip bg. Re-tint each tone with a TRON-cyan-adjacent dim
- * background + a bright tonal foreground so every section header
- * reads cleanly without losing per-section identity. */
-[data-theme="hitech"] [data-section-tone="engage"] {
-  background: rgba(16, 185, 129, 0.16) !important;
+ * light chip bg. Also the violet / sky container washes glow too
+ * bright on inky black. Re-tint each tone with a TRON-cyan-
+ * adjacent dim background + a bright tonal foreground so every
+ * section header reads cleanly without losing per-section
+ * identity, AND tone down the containers so they don't strobe.
+ *
+ * Selector pairs by element type:
+ *   span[data-section-tone] = the title chip
+ *   div[data-section-tone]  = the section container wrapping the
+ *                              chip + nav items
+ */
+[data-theme="hitech"] span[data-section-tone="engage"] {
+  background: rgba(16, 185, 129, 0.18) !important;
   color: #34d399 !important;
-  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.5);
 }
-[data-theme="hitech"] [data-section-tone="experience"] {
-  background: rgba(245, 158, 11, 0.15) !important;
+[data-theme="hitech"] div[data-section-tone="engage"] {
+  background: rgba(16, 185, 129, 0.04) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+[data-theme="hitech"] span[data-section-tone="experience"] {
+  background: rgba(245, 158, 11, 0.18) !important;
   color: #fbbf24 !important;
-  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.5);
 }
-[data-theme="hitech"] [data-section-tone="equip"] {
-  background: rgba(244, 63, 94, 0.16) !important;
+[data-theme="hitech"] div[data-section-tone="experience"] {
+  background: rgba(245, 158, 11, 0.04) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+[data-theme="hitech"] span[data-section-tone="equip"] {
+  background: rgba(244, 63, 94, 0.18) !important;
   color: #fb7185 !important;
-  box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.5);
 }
-[data-theme="hitech"] [data-section-tone="electric"] {
-  background: rgba(0, 212, 255, 0.16) !important;
+[data-theme="hitech"] div[data-section-tone="equip"] {
+  background: rgba(244, 63, 94, 0.04) !important;
+  border-color: rgba(244, 63, 94, 0.25) !important;
+}
+[data-theme="hitech"] span[data-section-tone="electric"] {
+  background: rgba(0, 212, 255, 0.18) !important;
   color: #00d4ff !important;
   box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.55);
 }
-[data-theme="hitech"] [data-section-tone="hr-preview"] {
-  background: rgba(139, 92, 246, 0.18) !important;
+[data-theme="hitech"] div[data-section-tone="electric"] {
+  background: rgba(0, 212, 255, 0.04) !important;
+  border-color: rgba(0, 212, 255, 0.28) !important;
+  box-shadow: none !important;
+}
+[data-theme="hitech"] span[data-section-tone="hr-preview"] {
+  background: rgba(139, 92, 246, 0.20) !important;
   color: #c4b5fd !important;
   box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.55);
 }
-[data-theme="hitech"] [data-section-tone="neutral"] {
+[data-theme="hitech"] div[data-section-tone="hr-preview"] {
+  background: rgba(139, 92, 246, 0.05) !important;
+  border-color: rgba(139, 92, 246, 0.28) !important;
+  box-shadow: none !important;
+}
+[data-theme="hitech"] span[data-section-tone="neutral"] {
   background: rgba(0, 212, 255, 0.08) !important;
   color: #8ecfe8 !important;
   box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.30);
+}
+
+/* Slimmer nav-item font weight on Hi-tech. The TRON aesthetic
+ * reads as more "technical" with lighter strokes; font-medium
+ * (500) feels chunky against the neon cyan. font-normal (400)
+ * gives the lab-monitor vibe the rest of the theme commits to. */
+[data-theme="hitech"] [data-sidebar-nav] a,
+[data-theme="hitech"] [data-sidebar-nav] button {
+  font-weight: 400 !important;
 }
 
 /* Same fix for Nightfall (dark) — the bright Tailwind chip palette

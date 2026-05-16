@@ -468,6 +468,13 @@ function SectionGroup({
 
   return (
     <div
+      // data-section-tone on the container too — paired with the
+      // matching attribute on the chip, this lets dark themes
+      // (Hi-tech, Nightfall) dim or re-tint the section wash
+      // without touching Tailwind class lookups. See
+      // [data-theme="hitech"] [data-section-tone="X"] rules in
+      // globals.css.
+      data-section-tone={tone}
       className={cn(
         "relative mt-5 mb-2 rounded-xl border p-1.5 pt-3 space-y-0.5",
         toneStyles.container,
@@ -906,7 +913,7 @@ export function Sidebar({
           </div>
         </Link>
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav data-sidebar-nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
 
         {isEmployer && (
@@ -999,7 +1006,7 @@ export function Sidebar({
 
         {showHrViewPreview && !isEmployer && (
           <SectionGroup
-            title="EMPLOYER PORTAL · preview"
+            title="HR PREVIEW"
             description="What an HR account sees in their menu. Click any link to preview the route; use the xx keyboard shortcut to view-as HR with the act-as cookie set."
             tone="hr-preview"
           >
