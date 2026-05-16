@@ -8,6 +8,8 @@ import { Onboarding } from "@/components/onboarding/Onboarding";
 import { PageTranslator } from "@/components/translation/PageTranslator";
 import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
 import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
+import { AssistTracker } from "@/components/assist/AssistTracker";
+import { AssistHintDock } from "@/components/assist/AssistHintDock";
 import { prisma } from "@/lib/prisma";
 import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
 import { getTraineeQueueCounts } from "@/lib/trainee/queue-counts";
@@ -92,6 +94,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Onboarding />
       <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
       <NavHighlightOverlay />
+      {/* AI behaviour-assist — telemetry + hint chip. Both are
+          no-ops for users who haven't opted in (/profile toggle). */}
+      <AssistTracker />
+      <AssistHintDock />
     </div>
   );
 }
