@@ -62,6 +62,11 @@ export default async function MyEquipApplicationsPage() {
     });
   } catch (err) {
     const msg = (err as Error).message ?? "";
+    console.error("[equip/my-applications] prisma query failed", {
+      message: msg,
+      name: (err as Error).name,
+      stack: (err as Error).stack?.split("\n").slice(0, 5).join("\n"),
+    });
     tableMissing = /does not exist|P2021|relation/i.test(msg);
     apps = [];
   }
@@ -108,11 +113,10 @@ export default async function MyEquipApplicationsPage() {
         <DSSection eyebrow="Most-recent first" title="All applications" icon={ClipboardList}>
           <ul className="space-y-2">
             {apps.map((a) => {
-              const meta = STATUS_META[a.status as EquipStatus];
-              const stream = STREAM_META[a.stream as EquipStream];
-              const href = a.status === "draft"
-                ? `/equip/apply/${a.id}`
-                : `/equip/apply/${a.id}`;
+              // Defensive lookups — see equip/page.tsx for rationale.
+              const meta = STATUS_META[a.status as EquipStatus] ?? { label: a.status, tone: "neutral" as const };
+              const stream = STREAM_META[a.stream as EquipStream] ?? { name: a.stream, blurb: "", cadence: "", bestFor: "" };
+              const href = `/equip/apply/${a.id}`;
               return (
                 <li key={a.id}>
                   <Link

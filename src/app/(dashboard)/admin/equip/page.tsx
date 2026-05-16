@@ -102,6 +102,11 @@ export default async function AdminEquipPage({
     });
   } catch (err) {
     const msg = (err as Error).message ?? "";
+    console.error("[admin/equip] prisma query failed", {
+      message: msg,
+      name: (err as Error).name,
+      stack: (err as Error).stack?.split("\n").slice(0, 5).join("\n"),
+    });
     tableMissing = /does not exist|P2021|relation/i.test(msg);
   }
 
@@ -197,8 +202,9 @@ WHERE migration_name = '20260620000000_equip_application_pipeline';`}
               </thead>
               <tbody>
                 {apps.map((a) => {
-                  const meta = STATUS_META[a.status as EquipStatus];
-                  const stream = STREAM_META[a.stream as EquipStream];
+                  // Defensive lookups — see equip/page.tsx for rationale.
+                  const meta = STATUS_META[a.status as EquipStatus] ?? { label: a.status, tone: "neutral" as const };
+                  const stream = STREAM_META[a.stream as EquipStream] ?? { name: a.stream, blurb: "", cadence: "", bestFor: "" };
                   return (
                     <tr key={a.id} className="border-t border-line">
                       <td className="px-3 py-2">

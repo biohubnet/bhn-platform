@@ -62,8 +62,14 @@ export default async function EquipLandingPage() {
   } catch (err) {
     // Prisma raises P2021 (or a generic 42P01) when the relation
     // doesn't exist. Anything else we just treat as transient and
-    // fall back to empty too.
+    // fall back to empty too. Log every error so Vercel's function
+    // logs surface the actual problem — silent catches hid bugs.
     const msg = (err as Error).message ?? "";
+    console.error("[equip/page] prisma query failed", {
+      message: msg,
+      name: (err as Error).name,
+      stack: (err as Error).stack?.split("\n").slice(0, 5).join("\n"),
+    });
     tableMissing = /does not exist|P2021|relation/i.test(msg);
     apps = [];
   }
@@ -150,8 +156,12 @@ WHERE migration_name = '20260620000000_equip_application_pipeline';`}
         >
           <ul className="space-y-2">
             {apps.map((a) => {
-              const meta = STATUS_META[a.status as EquipStatus];
-              const stream = STREAM_META[a.stream as EquipStream];
+              // Defensive lookups — if a row has an unexpected
+              // enum value (older schema, manual DB edit, etc.)
+              // we still render something readable instead of
+              // crashing on .name / .label.
+              const meta = STATUS_META[a.status as EquipStatus] ?? { label: a.status, tone: "neutral" as const };
+              const stream = STREAM_META[a.stream as EquipStream] ?? { name: a.stream, blurb: "", cadence: "", bestFor: "" };
               const href = a.status === "draft"
                 ? `/equip/apply/${a.id}`
                 : `/equip/my-applications`;
