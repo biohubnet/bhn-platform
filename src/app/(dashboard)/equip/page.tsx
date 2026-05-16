@@ -15,7 +15,9 @@ import { redirect } from "next/navigation";
 import { ArrowRight, AlertTriangle, Beaker, Microscope, Rocket, ClipboardList } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { DSPageHeader, DSSection, DSStatGrid, DSStat } from "@/components/design-system";
+import { DSPageHeader } from "@/components/design-system/DSPageHeader";
+import { DSSection } from "@/components/design-system/DSSection";
+import { DSStatGrid, DSStat } from "@/components/design-system/DSStatGrid";
 import { STREAM_META, STATUS_META, type EquipStatus, type EquipStream } from "@/lib/equip/types";
 
 export const dynamic = "force-dynamic";

@@ -1,25 +1,26 @@
-"use client";
 /**
- * Barrel export for the design-system primitives.
+ * Barrel export for the design-system primitives — **AVOID** using
+ * this from pages or other server components under Next.js 16 +
+ * Turbopack. Import directly from each component file instead:
  *
- * Page code imports from `@/components/design-system`:
+ *   import { DSPageHeader } from "@/components/design-system/DSPageHeader";
+ *   import { DSSection }    from "@/components/design-system/DSSection";
+ *   import { DSStatGrid, DSStat } from "@/components/design-system/DSStatGrid";
  *
- *   import { DSPageHeader, DSSection, DSStatGrid, DSStat } from "@/components/design-system";
+ * Why direct imports
+ *   Under Next.js 16 + Turbopack, re-exporting "use client"
+ *   components through a barrel — even one marked "use client"
+ *   itself — silently drops the client-component boundary. The
+ *   re-exported component then renders as a server component, and
+ *   useContext (used inside DSPageHeader / DSEyebrow / etc.) throws
+ *   at SSR with the generic "An error occurred in the Server
+ *   Components render" digest 1621801304.
  *
- * Each primitive reads `useDesignSystem()` and branches its render.
- * The page never has to.
+ *   Direct imports per file preserve the boundary correctly.
  *
- * Why this barrel is itself marked "use client":
- *   Under Next.js 16 + Turbopack, re-exporting from "use client"
- *   modules through a barrel that lacks the directive causes the
- *   client-boundary marker to be dropped — consumers then receive
- *   the components as if they were server components, and
- *   useContext (used inside DSPageHeader / DSEyebrow / etc.) blows
- *   up at SSR with the generic "An error occurred in the Server
- *   Components render" digest 1621801304. Marking this barrel
- *   "use client" preserves the boundary for every re-exported
- *   component in one line — no need to refactor every consumer
- *   to import directly from each file.
+ * This barrel is kept only so existing references resolve at type-
+ * check time; consumers should be converted to direct imports
+ * whenever touched.
  */
 export { DSPageHeader } from "./DSPageHeader";
 export { DSSection } from "./DSSection";

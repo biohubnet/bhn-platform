@@ -11,7 +11,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Rocket } from "lucide-react";
-import { DSPageHeader } from "@/components/design-system";
+import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { EligibilityWizard } from "@/components/equip/EligibilityWizard";
 
 export const dynamic = "force-dynamic";

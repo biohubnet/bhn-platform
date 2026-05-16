@@ -12,7 +12,8 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, AlertTriangle, ClipboardList, Beaker, Rocket } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { DSPageHeader, DSSection } from "@/components/design-system";
+import { DSPageHeader } from "@/components/design-system/DSPageHeader";
+import { DSSection } from "@/components/design-system/DSSection";
 import { STREAM_META, STATUS_META, type EquipStatus, type EquipStream } from "@/lib/equip/types";
 import { institutionLabel } from "@/lib/equip/institutions";
 

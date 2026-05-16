@@ -27,7 +27,9 @@ import { requireRole } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AssistAdminTools } from "@/components/admin/AssistAdminTools";
-import { DSPageHeader, DSSection, DSStatGrid, DSStat } from "@/components/design-system";
+import { DSPageHeader } from "@/components/design-system/DSPageHeader";
+import { DSSection } from "@/components/design-system/DSSection";
+import { DSStatGrid, DSStat } from "@/components/design-system/DSStatGrid";
 
 export const dynamic = "force-dynamic";
 

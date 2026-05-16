@@ -11,7 +11,9 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ArrowLeft, ArrowRight, AlertTriangle, Rocket, Beaker } from "lucide-react";
-import { DSPageHeader, DSSection, DSStatGrid, DSStat } from "@/components/design-system";
+import { DSPageHeader } from "@/components/design-system/DSPageHeader";
+import { DSSection } from "@/components/design-system/DSSection";
+import { DSStatGrid, DSStat } from "@/components/design-system/DSStatGrid";
 import { EquipDemoTools } from "@/components/admin/equip/EquipDemoTools";
 import {
   STREAM_META, STATUS_META,
