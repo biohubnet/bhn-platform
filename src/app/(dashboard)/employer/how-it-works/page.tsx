@@ -3,7 +3,7 @@ import {
   Calendar, ArrowDown, ArrowRight, CheckCircle2, Send,
   ClipboardList, Activity, Sparkles,
 } from "lucide-react";
-import { PageHero } from "@/components/ui/PageHero";
+import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { NavHighlight, NavHighlightZone } from "@/components/guide/NavHighlight";
 
 /**
@@ -12,7 +12,9 @@ import { NavHighlight, NavHighlightZone } from "@/components/guide/NavHighlight"
  * Mirrors the trainee-facing /experience guide but for the recruiter
  * journey end-to-end. Same conventions:
  *
- *   • PageHero at top with a brand-tinted Compass eyebrow.
+ *   • DSPageHeader at top — renders Studio's gradient hero
+ *     (drifting blobs + curve-down) via the /employer route
+ *     scope, matching the /employer overview's chrome.
  *   • Flow chart of the 7 hiring stages, rendered as CSS boxes +
  *     arrows. Each box that maps to a sidebar item is wrapped in a
  *     <NavHighlightZone> so hovering it draws the dotted curve to
@@ -29,11 +31,11 @@ import { NavHighlight, NavHighlightZone } from "@/components/guide/NavHighlight"
 export default function EmployerHowItWorksPage() {
   return (
     <div>
-      <PageHero
-        eyebrow={<><Compass size={11} /> Hiring guide</>}
+      <DSPageHeader
+        eyebrow="Hiring guide"
+        icon={<Compass size={20} />}
         title="Hiring on BHN — how it works"
         description="Profile your company once, post a role with one paste, review AI-matched applicants with the full materials inline, run the pipeline through to an e-signed offer. Hover any highlighted name in this guide to find the matching control in your sidebar."
-        tone="brand"
       />
 
       {/* ── Flow chart ────────────────────────────────────────── */}

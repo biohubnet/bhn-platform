@@ -36,7 +36,7 @@ import {
   Calendar as CalendarIcon, FilePlus, ChevronDown, ChevronRight, X,
   Briefcase, Building2, Users, Loader2,
 } from "lucide-react";
-import { PageHero } from "@/components/ui/PageHero";
+import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { ApplicantPanel } from "@/components/employer/workspace/ApplicantPanel";
 import { NewPostingInline } from "@/components/employer/workspace/NewPostingInline";
 import { cn } from "@/lib/utils";
@@ -227,9 +227,14 @@ export function HrWorkspace({
 
   return (
     <div className="space-y-8">
-      {/* ── Hero ─────────────────────────────────────────── */}
-      <PageHero
-        eyebrow={<><Building2 size={11} /> Hiring workspace</>}
+      {/* ── Hero — DSPageHeader picks the Studio variant via
+              the route-scoped DesignSystemProvider in
+              /employer/layout.tsx, so this renders the same
+              full-bleed gradient + drifting blobs + curve-down
+              treatment as the /employer overview hero. ─── */}
+      <DSPageHeader
+        eyebrow="Hiring workspace"
+        icon={<Building2 size={20} />}
         title={
           firstName
             ? `Welcome back, ${firstName}.`
@@ -242,7 +247,6 @@ export function HrWorkspace({
               ? `${actionQueue.length} item${actionQueue.length === 1 ? "" : "s"} need your attention. Tap any of them below to jump straight to the candidate.`
               : "Everything's caught up. Postings expand below — click any to review applicants inline."
         }
-        tone="brand"
       />
 
       {/* ── Stats strip ───────────────────────────────────── */}
