@@ -6,7 +6,7 @@
  * admin can verify what happened.
  */
 import { useState } from "react";
-import { Loader2, Play, FileText, Sparkles, Share2 } from "lucide-react";
+import { Loader2, Play, FileText, Sparkles, Share2, Beaker, Trash2 } from "lucide-react";
 
 export function AssistAdminTools() {
   const [busy, setBusy] = useState<string | null>(null);
@@ -105,6 +105,43 @@ export function AssistAdminTools() {
           the best help card, queues an AssistHint if confidence is
           high enough. Respects the user's consent + threshold.
         </p>
+      </div>
+
+      <div className="rounded-xl border border-dashed border-line bg-elevated/30 p-4">
+        <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-1 inline-flex items-center gap-1.5">
+          <Beaker size={11} className="text-amber-600" />
+          Demo data — only for this page
+        </p>
+        <p className="text-[11px] text-muted leading-snug mb-3">
+          Spins up six throwaway trainees with a week of behavior
+          covering every stuck-pattern (rage clicks, form abandons,
+          error loops, long dwell, healthy path). Lets you see what
+          the dashboard above looks like with realistic data. Wipes
+          cleanly — these users only exist so this page has examples.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={busy === "seed-demo"}
+            onClick={() => run("seed-demo", () => fetch("/api/admin/assist/demo/seed", { method: "POST" }))}
+            className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm shadow-amber-600/25 transition-colors"
+          >
+            {busy === "seed-demo" ? <Loader2 size={11} className="animate-spin" /> : <Beaker size={11} />}
+            Seed demo data
+          </button>
+          <button
+            type="button"
+            disabled={busy === "clear-demo"}
+            onClick={() => {
+              if (!confirm("Delete every demo trainee (assist-demo-*@bhn.test) and the assist data they own? Real users are untouched.")) return;
+              run("clear-demo", () => fetch("/api/admin/assist/demo/seed", { method: "DELETE" }));
+            }}
+            className="inline-flex items-center gap-1.5 bg-card-solid hover:bg-elevated border border-line text-fg text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            {busy === "clear-demo" ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+            Clear demo data
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-line">
