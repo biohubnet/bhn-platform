@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.15g";
+export const TOUR_VERSION = "2026.05.15h";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -81,6 +81,16 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "View credits", href: "/credits" },
     roles: ["trainee", "evaluating"],
     since: "2025.04",
+  },
+  {
+    id: "trainee.equip",
+    title: "Equip — funding for your innovation",
+    body: "The third BHN pillar after Engage (training) and Experience (placements). Apply for VentureConnect (≤$5K, conferences + pitch events) or VentureLift (≤$25K, accelerator + IP + prototype). 3-question wizard picks your stream; everything pre-fills from your profile; auto-saves as you type.",
+    path: "/equip",
+    placement: "center",
+    cta: { label: "Open Equip", href: "/equip" },
+    roles: ["trainee", "evaluating"],
+    since: "2026.05.15h",
   },
   {
     id: "trainee.rewards",

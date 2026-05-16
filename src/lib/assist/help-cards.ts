@@ -173,6 +173,44 @@ export const HELP_CARDS: HelpCard[] = [
     ctaLabel: "Open audit",
     ctaHref: "/profile/assist-history",
   },
+
+  // ── Equip — funding pillar (#3 after Engage / Experience) ──
+  {
+    key: "equip.start",
+    title: "Funding for your innovation?",
+    body: "Equip backs trainee-entrepreneurs with up to $5K (events) or $25K (commercialization). 3-question wizard picks your stream.",
+    ctaLabel: "Start an application",
+    ctaHref: "/equip",
+    surfaces: ["/dashboard", "/courses", "/profile"],
+    roles: ["trainee", "evaluating"],
+  },
+  {
+    key: "equip.draft-resume",
+    title: "You have a saved Equip draft",
+    body: "Pick up exactly where you left off — every field auto-saved as you typed.",
+    ctaLabel: "Open my draft",
+    ctaHref: "/equip/my-applications",
+    surfaces: ["/dashboard", "/equip"],
+    roles: ["trainee", "evaluating"],
+  },
+  {
+    key: "equip.under-review",
+    title: "Your Equip application is under review",
+    body: "Track status, see reviewer notes, and respond to any clarification asks at /equip/my-applications.",
+    ctaLabel: "Open tracker",
+    ctaHref: "/equip/my-applications",
+    roles: ["trainee", "evaluating"],
+  },
+  {
+    key: "equip.admin.triage",
+    title: "Equip applications waiting on you",
+    body: "Submitted apps queue for review. Click in, claim it, leave a note, and decide.",
+    ctaLabel: "Open review queue",
+    ctaHref: "/admin/equip",
+    surfaces: ["/admin"],
+    roles: ["admin", "superadmin"],
+    defaultTrigger: "rule:pending-approvals",
+  },
 ];
 
 const KEY_MAP: Map<string, HelpCard> = new Map(HELP_CARDS.map((c) => [c.key, c]));

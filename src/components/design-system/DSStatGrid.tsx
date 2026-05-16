@@ -15,7 +15,7 @@
 import type { ComponentType, ReactNode } from "react";
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
 
-const GRADIENT_TONES = ["brand", "violet", "rose", "emerald"] as const;
+const GRADIENT_TONES = ["brand", "violet", "rose", "emerald", "amber"] as const;
 export type StatTone = (typeof GRADIENT_TONES)[number];
 
 /** Wraps a row of <DSStat> children. Use this so the layout switch
@@ -52,6 +52,8 @@ function gradientForTone(tone: StatTone): string {
       return "linear-gradient(120deg, #f43f5e 0%, #ec4899 100%)";
     case "emerald":
       return "linear-gradient(120deg, #10b981 0%, #14b8a6 100%)";
+    case "amber":
+      return "linear-gradient(120deg, #f59e0b 0%, #d97706 100%)";
     case "brand":
     default:
       return "linear-gradient(120deg, var(--brand-600) 0%, var(--brand-800) 100%)";

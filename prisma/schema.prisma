@@ -284,6 +284,15 @@ model User {
   assistHintFeedback AssistHintFeedback[]
   assistPreferences  AssistPreferences?
 
+  // Equip — funding-application pipeline (third pillar after
+  // Engage / Experience). One user can hold multiple applications
+  // across the two streams (VentureConnect ≤ $5K, VentureLift
+  // ≤ $25K), and the same admin user can also be the reviewer on
+  // other people's apps — hence two named relations.
+  equipApplications  EquipApplication[] @relation("EquipApplicant")
+  equipReviewed      EquipApplication[] @relation("EquipReviewer")
+  equipMessages      EquipApplicationMessage[]
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -2587,4 +2596,72 @@ model AssistPreferences {
   updatedAt           DateTime  @updatedAt
 
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Equip pillar ────────────────────────────────────────────────
+// Funding-application pipeline. One row per draft / submission;
+// state machine flows draft → submitted → under_review →
+// approved | rejected → (if approved) funded. JSONB columns hold
+// the stream-specific form body so we can iterate questions
+// without per-field migrations.
+
+model EquipApplication {
+  id                       String    @id @default(cuid())
+  userId                   String
+  /// "venture_connect" | "venture_lift"
+  stream                   String
+  /// "draft" | "submitted" | "under_review" | "approved"
+  /// | "rejected" | "funded"
+  status                   String    @default("draft")
+  requestedAmount          Float?
+  approvedAmount           Float?
+  /// "grad" | "postdoc" | "research_associate" | "founder"
+  applicantType            String?
+  /// Slug from the curated 14-institution list (see
+  /// lib/equip/institutions.ts).
+  institution              String?
+  institutionOther         String?
+  /// "exploring" | "building" | "unsure" — routes stream pick.
+  commercializationStage   String?
+  /// Stream-specific form fields. Typed shape lives in
+  /// lib/equip/types.ts.
+  formData                 Json      @default("{}")
+  /// Attachments. Shape: [{ key, name, size, contentType, kind }]
+  /// where kind is "pitch_deck" | "prototype_photo" | "letter" |
+  /// "video_pitch" | "other".
+  documents                Json      @default("[]")
+  reviewerId               String?
+  reviewerNote             String?
+  reviewedAt               DateTime?
+  submittedAt              DateTime?
+  decidedAt                DateTime?
+  fundedAt                 DateTime?
+  disbursementNote         String?
+  aiAssisted               Boolean   @default(false)
+  /// Post-approval check-in templates. Shape: [{ id, title, dueOn,
+  /// status, note, updatedAt }].
+  milestones               Json      @default("[]")
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  user      User                       @relation("EquipApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer  User?                      @relation("EquipReviewer",  fields: [reviewerId], references: [id], onDelete: SetNull)
+  messages  EquipApplicationMessage[]
+
+  @@index([userId, status])
+  @@index([status, submittedAt])
+  @@index([reviewerId])
+}
+
+model EquipApplicationMessage {
+  id            String   @id @default(cuid())
+  applicationId String
+  userId        String
+  body          String
+  createdAt     DateTime @default(now())
+
+  application   EquipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, createdAt])
 }

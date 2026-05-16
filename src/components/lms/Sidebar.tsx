@@ -149,6 +149,18 @@ const miscItems: (NavItem & { labelKey: string })[] = [
     description: "Internal planning surface — Now / Next / Later horizons for the platform. Superadmin only; the public-facing 'what shipped' view is /changelog." },
 ];
 
+// EQUIP — the funding loop: pillar #3 alongside Engage / Experience.
+// Trainee-entrepreneurs apply for VentureConnect ($5K, conferences /
+// pitch / networking) or VentureLift ($25K, accelerator / IP / proto)
+// fully in-platform. No PDFs, profile pre-fill, auto-save, status
+// tracking visible to the applicant.
+const equipItems: (NavItem & { labelKey: string })[] = [
+  { label: "Equip · funding",            labelKey: "nav.equip",            href: "/equip", icon: Rocket, exact: true,
+    description: "BHN's commercialization-funding pillar. Start a new VentureConnect (≤$5K) or VentureLift (≤$25K) application; the 3-question wizard routes you to the right stream and pre-fills everything from your profile." },
+  { label: "My applications",            labelKey: "nav.equip.tracker",    href: "/equip/my-applications", icon: ClipboardList,
+    description: "Status of every Equip application you've submitted — draft, submitted, under review, approved, funded. Click any row for the full submission body and reviewer notes." },
+];
+
 // EMPLOYER PORTAL — visible only when role === "employer".
 const employerItems: (NavItem & { labelKey: string })[] = [
   { label: "Overview",          labelKey: "nav.employerHome",       href: "/employer",            icon: Building2, exact: true,
@@ -267,6 +279,8 @@ const adminPlatformItems: NavItem[] = [
     description: "Hiring-pipeline health — stage distribution, median time-in-stage, stalled (≥14d) applications, conversion-to-offer rate across the platform." },
   { label: "AutoPipette",          href: "/admin/assist",              icon: Pipette,     minRole: "admin",
     description: "Health, helpfulness, and findings for AutoPipette — BHN's AI lab partner that dispenses precise, single-dose help when learners look stuck. Per-card helpful rate, top stuck surfaces, latest weekly journey summaries, operator actions (run rollup / weekly summary / ad-hoc AI inference)." },
+  { label: "Equip review",         href: "/admin/equip",               icon: Rocket,      minRole: "admin",
+    description: "Review queue for the Equip funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
   { label: "Reports",             href: "/admin/reports",             icon: FileText,    minRole: "admin",
     description: "Generated reports for compliance, billing, and exec views." },
   { label: "Compliance",          href: "/compliance",                icon: ShieldCheck, minRole: "admin",
@@ -335,7 +349,7 @@ interface ProgramHint {
  *  uses a fixed Tailwind palette (NOT theme-driven brand vars) so the
  *  ENGAGE / EXPERIENCE / ADMINISTRATION blocks read with the same
  *  identity colour on every theme. */
-type SectionTone = "neutral" | "engage" | "experience" | "electric" | "hr-preview";
+type SectionTone = "neutral" | "engage" | "experience" | "equip" | "electric" | "hr-preview";
 
 interface ToneStyles {
   /** Outer container: border colour + faint wash + soft outer ring. */
@@ -370,6 +384,15 @@ const TONE_STYLES: Record<SectionTone, ToneStyles> = {
     container: "border-amber-200/70 bg-amber-50/25",
     chip:      "text-amber-800 bg-amber-100 ring-1 ring-inset ring-amber-200/70 shadow-sm",
     hover:     "focus:bg-amber-200 group-hover/section:bg-amber-200 transition-colors",
+  },
+  equip: {
+    // Rose / berry — Equip = commercialization funding. Sits as the
+    // third pillar alongside Engage (emerald) and Experience (amber),
+    // with a warmer, slightly aspirational hue that reads "funding
+    // for what comes next" without competing for attention.
+    container: "border-rose-200/70 bg-rose-50/25",
+    chip:      "text-rose-800 bg-rose-100 ring-1 ring-inset ring-rose-200/70 shadow-sm",
+    hover:     "focus:bg-rose-200 group-hover/section:bg-rose-200 transition-colors",
   },
   electric: {
     // Soft sky — Administration. Tinted just-enough-stronger than the
@@ -939,6 +962,29 @@ export function Sidebar({
             ]}
           >
             {experienceItems.map((item) => {
+              const labeled = { ...item, label: t(item.labelKey) };
+              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
+            })}
+          </SectionGroup>
+        )}
+
+        {showLearnerNav && equipItems.length > 0 && (
+          <SectionGroup
+            title="EQUIP"
+            tone="equip"
+            description="Funding for trainee-entrepreneurs commercializing biomanufacturing innovations."
+            programs={[
+              {
+                title: "VentureConnect — up to $5,000",
+                body: "Conferences, demo days, pitch competitions. Monthly funding cycle.",
+              },
+              {
+                title: "VentureLift — up to $25,000",
+                body: "Accelerator participation, IP filings, prototype builds, commercialization roadmap. Quarterly cycle.",
+              },
+            ]}
+          >
+            {equipItems.map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
             })}
