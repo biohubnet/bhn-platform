@@ -6,7 +6,6 @@ import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/ui/Logo";
 import { ThemePicker } from "@/components/ui/ThemePicker";
-import { DesignSystemPicker } from "@/components/ui/DesignSystemPicker";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
 import { useT } from "@/lib/i18n/I18nProvider";
 import {
@@ -241,7 +240,7 @@ const adminExperienceItems: NavItem[] = [
 // the charter outcomes are first-class.
 const adminDesignResearchItems: NavItem[] = [
   { label: "Design system",       href: "/admin/design-system",       icon: Palette,    minRole: "admin",
-    description: "Live mirror of the design tokens, type scale, radius scale, motion primitives, component patterns, and accessibility checklist. The doc at docs/design-system.md is the canonical source; this page renders it." },
+    description: "Pick the platform-wide layout vocabulary (Classic / Cinematic) — admin-only, applies to every user. Plus the live tokens reference: surfaces, type scale, radius scale, motion primitives, component patterns, accessibility checklist. Canonical doc at docs/design-system.md." },
   { label: "Insights",            href: "/admin/insights",            icon: Lightbulb,  minRole: "admin",
     description: "Per-period 'what users told us' synthesis. Read the signal feeds (theme votes, exit-survey responses, access requests, pending-queue heat), write the synthesis note, publish to /changelog so the loop closes back to users." },
   { label: "Experience metrics",  href: "/admin/experience-metrics",  icon: Gauge,      minRole: "admin",
@@ -1175,7 +1174,6 @@ export function Sidebar({
           <span className="truncate">{t("nav.tour")}</span>
         </button>
         <ThemePicker compact />
-        <DesignSystemPicker compact />
         {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
           <code
             className="font-mono text-[11px] font-semibold text-brand-700 bg-brand-50 ring-1 ring-inset ring-brand-200 px-1.5 py-1 rounded select-all leading-none shrink-0"

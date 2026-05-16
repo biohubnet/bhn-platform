@@ -1,15 +1,15 @@
 # Design System
 
-Adaptive UI primitives that switch their rendering based on the user's chosen **design system**.
+Adaptive UI primitives that switch their rendering based on the **platform-wide design system** an admin selected.
 
-## Two axes, both orthogonal
+## Two axes — one per-user, one admin-managed
 
-| Axis              | Controls                          | Picker                                 | Storage                      |
-|-------------------|-----------------------------------|----------------------------------------|------------------------------|
-| **Color theme**   | Hues, surfaces, typography, radius| `<ThemePicker />` in sidebar footer    | `localStorage: bhn-theme`    |
-| **Design system** | Layout vocabulary, chrome, hero   | `<DesignSystemPicker />` in same footer| `localStorage: bhn-design-system` |
+| Axis              | Controls                          | Picker                                       | Storage                                                |
+|-------------------|-----------------------------------|----------------------------------------------|--------------------------------------------------------|
+| **Color theme**   | Hues, surfaces, typography, radius| `<ThemePicker />` in sidebar footer (any user)| `localStorage: bhn-theme` — **per-user preference**   |
+| **Design system** | Layout vocabulary, chrome, hero   | `/admin/design-system` page (admin only)     | `PlatformSetting.activeDesignSystem` — **platform-wide** |
 
-A user can run **Dark + Cinematic** or **Light + Classic** — both pickers are independent.
+The platform picks **one** design system; every user sees the same layout vocabulary. Color theme stays a per-user preference, so users can run **Dark + Cinematic** or **Light + Cinematic** independently — but they don't get to pick between Classic and Cinematic themselves.
 
 ## Current registry
 
@@ -70,9 +70,17 @@ No conditional rendering in page code. The branching lives inside each primitive
    if (designSystem === "cinematic") return /* cinematic JSX */;
    return /* classic JSX — the fallback */;
    ```
-   Anything you don't override falls through to Classic — the picker stays usable while you build out the new system incrementally.
+   Anything you don't override falls through to Classic — the admin picker stays usable while you build out the new system incrementally.
 3. **(Optional)** Add CSS hooks in `globals.css` keyed on `[data-design-system="minimal"]` if you need raw selectors.
 4. **Document** the new entry in this file's "Current registry" section above.
+5. The admin picker at `/admin/design-system` will surface the new option automatically — no UI changes needed.
+
+## How activation works
+
+- Server: the root layout calls `getActiveDesignSystem()` from `src/lib/settings.ts`, which reads `PlatformSetting` keyed by `activeDesignSystem`. Falls back to `classic` if the row is missing or invalid.
+- The id is stamped on `<html data-design-system="…">` server-side — no client roundtrip, no flash.
+- `<DesignSystemProvider value={...}>` mounts inside `<Providers>` with the same id, so `useDesignSystem()` returns it everywhere.
+- When an admin commits a change on `/admin/design-system`, the API upserts the `PlatformSetting` row and `router.refresh()` re-renders with the new attribute. All other users pick up the change on their next navigation.
 
 ## Adding a new primitive
 

@@ -5,6 +5,8 @@ import {
   CheckCircle2, AlertTriangle, Info, XCircle, Plus, Loader2, ArrowRight, Check, Hourglass, ExternalLink,
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
+import { getActiveDesignSystem } from "@/lib/settings";
+import { DesignSystemAdminPicker } from "@/components/admin/DesignSystemAdminPicker";
 
 /**
  * /admin/design-system — live mirror of docs/design-system.md.
@@ -34,6 +36,12 @@ import { requireRole } from "@/lib/auth";
 export default async function AdminDesignSystemPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
+
+  // Active design system id — drives the platform-wide layout
+  // vocabulary picker at the top of this page (the rest of the
+  // page is a tokens reference and doesn't depend on which DS is
+  // active).
+  const activeDesignSystem = await getActiveDesignSystem();
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-10">
@@ -72,6 +80,23 @@ export default async function AdminDesignSystemPage() {
           </Link>
         </p>
       </header>
+
+      {/* ── 0. Platform-wide active design system ─────────────── */}
+      <Section icon={Layers} title="Active design system" eyebrow="00">
+        <p className="text-sm text-muted leading-relaxed mb-2">
+          Layout vocabulary applied to <strong>every user of the platform</strong>.
+          Color theme stays a per-user preference (picker in the sidebar
+          footer); design system is a platform decision and lives here.
+        </p>
+        <p className="text-[11px] text-subtle mb-4 leading-snug">
+          Stored as <code className="font-mono text-fg bg-elevated px-1 rounded">PlatformSetting.activeDesignSystem</code>.
+          The root layout reads it server-side and stamps it onto
+          <code className="font-mono text-fg bg-elevated px-1 rounded ml-1">&lt;html data-design-system=&quot;…&quot;&gt;</code>
+          — no flash, no per-user override. Users see the new look on
+          their next navigation after you apply.
+        </p>
+        <DesignSystemAdminPicker initial={activeDesignSystem} />
+      </Section>
 
       {/* ── 1. Surfaces ───────────────────────────────────────── */}
       <Section icon={Layers} title="Surfaces" eyebrow="01">
