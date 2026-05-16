@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ProfileClient } from "@/components/lms/ProfileClient";
+import { AssistConsentPanel } from "@/components/assist/AssistConsentPanel";
 
 export default async function ProfilePage() {
   const session = await requireSession().catch(() => null);
@@ -27,12 +28,13 @@ export default async function ProfilePage() {
   if (!user) redirect("/login");
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl space-y-6">
       <PageHeader
         title="My profile"
         description="Update your information, change your password, or request a role change."
       />
       <ProfileClient user={user} latestRoleRequest={latestRoleRequest} />
+      <AssistConsentPanel />
     </div>
   );
 }
