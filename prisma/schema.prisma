@@ -2567,9 +2567,13 @@ model AssistHintFeedback {
 
 model AssistPreferences {
   userId              String    @id
-  /// True once the user opts in to behaviour collection. Default false
-  /// — nothing is collected for users who haven't consented.
-  consented           Boolean   @default(false)
+  /// True once the user has consented to behaviour collection.
+  /// Default `true` — the "Help nudges" feature opts new users in
+  /// at row-creation time and surfaces a first-run notice banner
+  /// (with a one-click opt-out) so they're aware. Existing users
+  /// who actively turned it OFF keep their choice — the migration
+  /// only flips the column default, not stored values.
+  consented           Boolean   @default(true)
   consentedAt         DateTime?
   /// User flipped the kill switch — events still collected (because
   /// consent is on), but hints are suppressed.

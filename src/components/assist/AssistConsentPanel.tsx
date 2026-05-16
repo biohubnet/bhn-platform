@@ -1,9 +1,13 @@
 "use client";
 /**
- * Consent + preferences panel for the AI behaviour-assist feature.
+ * Consent + preferences panel for the Help-nudges feature.
  * Lives on /profile and on /profile/assist-history. Self-contained
  * client component — reads the GET /preferences endpoint on mount
  * and PATCHes on toggle.
+ *
+ * Default state is ON (the schema default for AssistPreferences
+ * `consented` is true; a first-run notice banner in the dashboard
+ * layout informs the user and offers one-click opt-out).
  */
 import { useEffect, useState } from "react";
 import { Loader2, Shield, AlertCircle, CheckCircle2 } from "lucide-react";
@@ -66,7 +70,7 @@ export function AssistConsentPanel({
     return (
       <section className="rounded-2xl border border-line bg-card p-5 surface-shadow">
         <div className="inline-flex items-center gap-2 text-sm text-muted">
-          <Loader2 size={14} className="animate-spin" /> Loading assist preferences…
+          <Loader2 size={14} className="animate-spin" /> Loading Help-nudges preferences…
         </div>
       </section>
     );
@@ -76,7 +80,7 @@ export function AssistConsentPanel({
     return (
       <section className="rounded-2xl border border-rose-200 bg-rose-50 p-5">
         <p className="text-sm text-rose-800 inline-flex items-center gap-1.5">
-          <AlertCircle size={14} /> Couldn't load assist preferences. {error}
+          <AlertCircle size={14} /> Couldn't load Help-nudges preferences. {error}
         </p>
       </section>
     );
@@ -89,11 +93,12 @@ export function AssistConsentPanel({
           <Shield size={15} />
         </span>
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-bold text-fg">AI behaviour assist</h2>
+          <h2 className="text-base font-bold text-fg">Help nudges</h2>
           <p className="text-xs text-muted leading-snug mt-0.5">
-            BHN can quietly watch how you use the platform and offer a
-            single chip-style hint when you look stuck. Default is OFF;
-            you can opt in here and turn it off again any time.
+            BHN quietly watches how you use the platform and offers a
+            single chip-style hint when you look stuck. Default is ON
+            so you don't have to discover the feature to benefit from
+            it — turn it off here any time.
           </p>
         </div>
       </header>
@@ -123,11 +128,11 @@ export function AssistConsentPanel({
 
       {/* Consent master switch */}
       <Toggle
-        label="Allow assist to collect behaviour signals"
+        label="Help nudges — collect behaviour signals"
         help={
           prefs.consented
-            ? "Telemetry is on. Turn it off to stop new signals; your existing history stays available for review + delete."
-            : "Telemetry is off. Nothing is being collected."
+            ? "On. New clicks / dwell / errors / form events are being recorded; turn it off to stop new collection. Your existing history stays available for review + delete on the audit page."
+            : "Off. Nothing new is being collected. Turn it back on whenever — the first-run notice won't re-appear."
         }
         checked={prefs.consented}
         busy={saving === "consented"}

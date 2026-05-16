@@ -157,12 +157,14 @@ export default async function AdminAssistDashboardPage() {
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
           <BarChart3 size={22} className="text-brand-600" />
-          AI behaviour assist
+          Help nudges
         </h1>
         <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
-          Health, helpfulness, and findings for the assist pipeline.
-          Per-user data on this page is aggregated — for individual
-          drill-down, take a user id and visit{" "}
+          Health, helpfulness, and findings for the Help-nudges
+          pipeline — the AI behaviour-watcher that surfaces a
+          single chip-style hint when a user looks stuck. Per-user
+          data on this page is aggregated; for individual drill-down,
+          take a user id and visit{" "}
           <code className="font-mono text-fg bg-elevated px-1 rounded">
             /profile/assist-history
           </code>{" "}

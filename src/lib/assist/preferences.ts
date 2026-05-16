@@ -1,9 +1,10 @@
 /**
- * Helpers for the per-user assist preferences row.
+ * Helpers for the per-user help-nudges preferences row.
  *
- * Reads have a permissive default (everything off) so a user who's
- * never touched the toggle simply gets no telemetry collected and
- * no hints surfaced. Writes are explicit upserts.
+ * Reads return an OPT-IN default when no row exists yet — the
+ * Help-nudges feature is on-by-default platform-wide, and a
+ * first-run notice banner in the dashboard layout informs the
+ * user with a one-click opt-out. Writes are explicit upserts.
  */
 import { prisma } from "@/lib/prisma";
 
@@ -16,20 +17,23 @@ export interface AssistPrefs {
   suppressUntil: Date | null;
 }
 
-const PERMISSIVE: AssistPrefs = {
-  consented: false,
+/** What a user who's never touched the toggle gets back. Mirrors the
+ *  schema-level default on AssistPreferences so the in-memory
+ *  fallback and the DB-side row agree. */
+const OPT_IN_DEFAULT: AssistPrefs = {
+  consented: true,
   hintsDisabled: false,
   confidenceThreshold: DEFAULT_THRESHOLD,
   suppressUntil: null,
 };
 
-/** Read prefs. Returns the permissive default if the row doesn't
- *  exist yet — that's the "never opted in" state. */
+/** Read prefs. Returns the opt-in default if the row doesn't
+ *  exist yet — same shape new rows get from the schema default. */
 export async function getAssistPrefs(userId: string): Promise<AssistPrefs> {
   const row = await prisma.assistPreferences.findUnique({
     where: { userId },
   }).catch(() => null);
-  if (!row) return PERMISSIVE;
+  if (!row) return OPT_IN_DEFAULT;
   return {
     consented: row.consented,
     hintsDisabled: row.hintsDisabled,
@@ -53,7 +57,10 @@ export async function updateAssistPrefs(
     where: { userId },
     create: {
       userId,
-      consented: patch.consented ?? false,
+      // On-by-default: matches the schema-level column default. A
+      // first-time opt-out via the toggle still works — the caller
+      // would pass `consented: false` and we'd honour it here.
+      consented: patch.consented ?? true,
       hintsDisabled: patch.hintsDisabled ?? false,
       confidenceThreshold: patch.confidenceThreshold ?? DEFAULT_THRESHOLD,
       suppressUntil: patch.suppressUntil ?? null,

@@ -10,6 +10,7 @@ import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
 import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
 import { AssistTracker } from "@/components/assist/AssistTracker";
 import { AssistHintDock } from "@/components/assist/AssistHintDock";
+import { HelpNudgesFirstRunNotice } from "@/components/assist/HelpNudgesFirstRunNotice";
 import { prisma } from "@/lib/prisma";
 import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
 import { getTraineeQueueCounts } from "@/lib/trainee/queue-counts";
@@ -82,7 +83,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {showUnverifiedBanner && userRow?.email && (
           <UnverifiedEmailBanner email={userRow.email} />
         )}
-        <div className="max-w-7xl mx-auto px-6 py-8 pt-16">{children}</div>
+        <div className="max-w-7xl mx-auto px-6 py-8 pt-16">
+          <HelpNudgesFirstRunNotice />
+          {children}
+        </div>
       </main>
       {/* Floating page-translator dock — fixed to viewport so it stays
           clickable above all page content (modals at z-50 still win). */}
@@ -94,8 +98,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Onboarding />
       <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
       <NavHighlightOverlay />
-      {/* AI behaviour-assist — telemetry + hint chip. Both are
-          no-ops for users who haven't opted in (/profile toggle). */}
+      {/* Help nudges (AI behaviour-watcher) — telemetry + hint chip.
+          Both are no-ops for users who have opted out via the /profile
+          toggle or the first-run notice. */}
       <AssistTracker />
       <AssistHintDock />
     </div>
