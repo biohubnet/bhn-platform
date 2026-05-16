@@ -320,6 +320,13 @@ model User {
   hqpRoundsCreated      HqpFeedbackRound[]    @relation("HqpRoundCreator")
   hqpResponses          HqpFeedbackResponse[] @relation("HqpResponder")
 
+  // HQP meetings / action items / COI relations
+  hqpMeetingsCreated    HqpMeeting[]          @relation("HqpMeetingCreator")
+  hqpAttendance         HqpMeetingAttendance[] @relation("HqpAttendee")
+  hqpActionsCreated     HqpActionItem[]       @relation("HqpActionCreator")
+  hqpActionsAssigned    HqpActionItem[]       @relation("HqpActionAssignee")
+  hqpCoiDisclosures     HqpCoiDisclosure[]    @relation("HqpCoiDeclarer")
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -2920,4 +2927,96 @@ model HqpFeedbackResponse {
   @@unique([roundId, userId])
   @@index([roundId, status])
   @@index([userId])
+}
+
+// ─── HQP Meetings + Action Items + COI ──────────────────────────
+// Monthly virtual meetings, per Charter §6. Each meeting carries
+// an agenda (markdown), attendance per member, notes (markdown,
+// posted after the meeting), and any action items captured.
+
+model HqpMeeting {
+  id          String   @id @default(cuid())
+  title       String
+  scheduledAt DateTime
+  durationMin Int      @default(60)
+  /// Markdown — pre-meeting agenda.
+  agenda      String?
+  /// Markdown — post-meeting notes / summary.
+  notes       String?
+  /// "scheduled" | "held" | "cancelled"
+  status      String   @default("scheduled")
+  /// Optional virtual-meeting link.
+  meetingUrl  String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User                   @relation("HqpMeetingCreator", fields: [createdById], references: [id])
+  attendance  HqpMeetingAttendance[]
+  actionItems HqpActionItem[]
+
+  @@index([scheduledAt])
+  @@index([status, scheduledAt])
+}
+
+model HqpMeetingAttendance {
+  id        String   @id @default(cuid())
+  meetingId String
+  userId    String
+  /// "invited" | "attending" | "attended" | "declined" | "absent"
+  status    String   @default("invited")
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  meeting HqpMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User       @relation("HqpAttendee", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
+  @@index([meetingId, status])
+}
+
+model HqpActionItem {
+  id           String    @id @default(cuid())
+  meetingId    String?
+  title        String
+  description  String?
+  assignedToId String?
+  dueOn        DateTime?
+  /// "open" | "in_progress" | "done" | "cancelled"
+  status       String    @default("open")
+  createdById  String
+  resolvedAt   DateTime?
+  resolutionNote String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  meeting    HqpMeeting? @relation(fields: [meetingId],    references: [id], onDelete: SetNull)
+  assignedTo User?       @relation("HqpActionAssignee",    fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy  User        @relation("HqpActionCreator",     fields: [createdById],  references: [id])
+
+  @@index([status, dueOn])
+  @@index([assignedToId, status])
+  @@index([meetingId])
+}
+
+model HqpCoiDisclosure {
+  id          String    @id @default(cuid())
+  userId      String
+  /// Free-text scope — what topic / program / company the COI
+  /// applies to. Searched by admins when filtering recusals.
+  scope       String
+  description String
+  /// True while the COI is current. Members flip this off when
+  /// the underlying relationship ends.
+  active      Boolean   @default(true)
+  declaredAt  DateTime  @default(now())
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation("HqpCoiDeclarer", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, active])
+  @@index([active, declaredAt])
 }

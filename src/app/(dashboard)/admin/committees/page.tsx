@@ -11,7 +11,7 @@
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users2, CalendarClock, ArrowRight, MessageSquare } from "lucide-react";
+import { Users2, CalendarClock, ArrowRight, MessageSquare, Users } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -41,7 +41,7 @@ export default async function AdminCommitteesPage() {
 
   // HQP-specific surfaces (queue counts) so the admin spots the
   // workflow shortcuts on first paint.
-  const [pendingHqpApps, hqpOpenWindow, openHqpRound] = await Promise.all([
+  const [pendingHqpApps, hqpOpenWindow, openHqpRound, nextMeeting] = await Promise.all([
     prisma.hqpMemberApplication.count({ where: { status: "submitted" } }),
     prisma.hqpApplicationWindow.findFirst({
       where: { status: "open", opensAt: { lte: new Date() }, closesAt: { gte: new Date() } },
@@ -50,6 +50,11 @@ export default async function AdminCommitteesPage() {
     prisma.hqpFeedbackRound.findFirst({
       where: { status: "open", opensAt: { lte: new Date() }, closesAt: { gte: new Date() } },
       select: { id: true, title: true, closesAt: true, _count: { select: { responses: true } } },
+    }),
+    prisma.hqpMeeting.findFirst({
+      where: { scheduledAt: { gte: new Date() }, status: "scheduled" },
+      orderBy: { scheduledAt: "asc" },
+      select: { id: true, title: true, scheduledAt: true },
     }),
   ]);
 
@@ -60,11 +65,10 @@ export default async function AdminCommitteesPage() {
         description="Manage Equip Review + HQP committee membership. Members get sidebar shortcuts, a welcome-screen badge, and (for the Equip Review committee) access to the funding review queue without needing an admin role."
       />
 
-      {/* HQP workflow shortcuts — the committee runs an annual
-          open call + ongoing review queue + ongoing feedback
-          rounds. Surfaced here so an admin lands in the right
-          spot without hunting. */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* HQP workflow shortcuts — applications + windows +
+          feedback rounds + meetings, surfaced so an admin lands
+          in the right spot without hunting. */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <Link href="/admin/committees/hqp/applications" className="rounded-2xl border border-line bg-card hover:bg-elevated p-4 surface-shadow transition-colors">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
@@ -100,6 +104,20 @@ export default async function AdminCommitteesPage() {
               <p className="font-semibold text-fg">HQP feedback rounds{openHqpRound && <span className="ml-2 text-[10px] uppercase tracking-wider font-bold bg-amber-100 text-amber-800 ring-1 ring-amber-200 px-1.5 py-0.5 rounded">Open now</span>}</p>
               <p className="text-xs text-muted mt-0.5">
                 {openHqpRound ? `${openHqpRound.title} — ${openHqpRound._count.responses} response${openHqpRound._count.responses === 1 ? "" : "s"} so far` : "Replace docx-by-email feedback with structured rounds."}
+              </p>
+            </div>
+            <ArrowRight size={14} className="text-muted shrink-0 mt-1" />
+          </div>
+        </Link>
+        <Link href="/admin/committees/hqp/meetings" className="rounded-2xl border border-line bg-card hover:bg-elevated p-4 surface-shadow transition-colors">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+              <Users size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-fg">HQP meetings{nextMeeting && <span className="ml-2 text-[10px] uppercase tracking-wider font-bold bg-sky-100 text-sky-800 ring-1 ring-sky-200 px-1.5 py-0.5 rounded">Next scheduled</span>}</p>
+              <p className="text-xs text-muted mt-0.5">
+                {nextMeeting ? `${nextMeeting.title} — ${new Date(nextMeeting.scheduledAt).toLocaleDateString()}` : "Schedule monthly meetings, capture notes + action items."}
               </p>
             </div>
             <ArrowRight size={14} className="text-muted shrink-0 mt-1" />
