@@ -875,9 +875,19 @@ export function Sidebar({
   // routes the EMPLOYER PORTAL section would render at the top of
   // the sidebar for a real employer) inside the Administration
   // section so superadmins can peek at the HR mental model without
-  // role-switching first. Gated to superadmin only — admins see
-  // less than full HR, so they shouldn't claim the preview either.
-  const showHrViewPreview = realRole === "superadmin";
+  // role-switching first.
+  //
+  // Gating:
+  //   • realRole === "superadmin"  — only actual superadmins.
+  //     Admins see less than full HR, so they shouldn't claim the
+  //     preview either.
+  //   • !actingAs                  — when the superadmin uses the
+  //     RoleSwitcher to "view as" a lower role, the whole point is
+  //     to see what that role sees. The HR PREVIEW block isn't part
+  //     of any lower role's sidebar, so it must hide too — otherwise
+  //     a superadmin acting-as-trainee sees an HR menu the actual
+  //     trainee never would.
+  const showHrViewPreview = realRole === "superadmin" && !actingAs;
 
   return (
     <>
