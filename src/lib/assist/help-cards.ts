@@ -168,7 +168,7 @@ export const HELP_CARDS: HelpCard[] = [
   // ── Privacy / settings ─────────────────────────────────────
   {
     key: "assist.audit-history",
-    title: "Want to see what Help nudges has noted about you?",
+    title: "Want to see what AutoPipette has noted about you?",
     body: "Your full behaviour summary, every hint shown, and a delete button live at /profile/assist-history.",
     ctaLabel: "Open audit",
     ctaHref: "/profile/assist-history",

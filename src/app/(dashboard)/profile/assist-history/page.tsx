@@ -82,12 +82,12 @@ export default async function AssistHistoryPage() {
           Profile · privacy
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight">
-          Help nudges · my history
+          AutoPipette · my history
         </h1>
         <p className="text-sm text-muted mt-2 max-w-2xl leading-relaxed">
-          Every behaviour signal the Help-nudges feature has on file
-          for you. Use the controls to toggle data collection, adjust
-          hint sensitivity, or wipe everything in one click.
+          Every behaviour signal AutoPipette has on file for you.
+          Use the controls to toggle data collection, adjust hint
+          sensitivity, or wipe everything in one click.
         </p>
       </header>
 

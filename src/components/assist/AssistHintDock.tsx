@@ -123,7 +123,7 @@ export function AssistHintDock() {
       </div>
       <div className="px-4 pb-3">
         <p className="text-[10px] text-subtle leading-snug">
-          Help nudges ·{" "}
+          AutoPipette ·{" "}
           <Link href="/profile/assist-history" className="underline hover:text-fg">
             why am I seeing this?
           </Link>

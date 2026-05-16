@@ -1,10 +1,10 @@
 /**
- * Helpers for the per-user help-nudges preferences row.
+ * Helpers for the per-user AutoPipette preferences row.
  *
- * Reads return an OPT-IN default when no row exists yet — the
- * Help-nudges feature is on-by-default platform-wide, and a
- * first-run notice banner in the dashboard layout informs the
- * user with a one-click opt-out. Writes are explicit upserts.
+ * Reads return an OPT-IN default when no row exists yet —
+ * AutoPipette is on-by-default platform-wide, and a first-run
+ * notice banner in the dashboard layout informs the user with
+ * a one-click opt-out. Writes are explicit upserts.
  */
 import { prisma } from "@/lib/prisma";
 

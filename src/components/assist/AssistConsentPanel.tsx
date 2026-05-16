@@ -1,6 +1,6 @@
 "use client";
 /**
- * Consent + preferences panel for the Help-nudges feature.
+ * Consent + preferences panel for the AutoPipette feature.
  * Lives on /profile and on /profile/assist-history. Self-contained
  * client component — reads the GET /preferences endpoint on mount
  * and PATCHes on toggle.
@@ -70,7 +70,7 @@ export function AssistConsentPanel({
     return (
       <section className="rounded-2xl border border-line bg-card p-5 surface-shadow">
         <div className="inline-flex items-center gap-2 text-sm text-muted">
-          <Loader2 size={14} className="animate-spin" /> Loading Help-nudges preferences…
+          <Loader2 size={14} className="animate-spin" /> Loading AutoPipette preferences…
         </div>
       </section>
     );
@@ -80,7 +80,7 @@ export function AssistConsentPanel({
     return (
       <section className="rounded-2xl border border-rose-200 bg-rose-50 p-5">
         <p className="text-sm text-rose-800 inline-flex items-center gap-1.5">
-          <AlertCircle size={14} /> Couldn't load Help-nudges preferences. {error}
+          <AlertCircle size={14} /> Couldn't load AutoPipette preferences. {error}
         </p>
       </section>
     );
@@ -93,12 +93,13 @@ export function AssistConsentPanel({
           <Shield size={15} />
         </span>
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-bold text-fg">Help nudges</h2>
+          <h2 className="text-base font-bold text-fg">AutoPipette</h2>
           <p className="text-xs text-muted leading-snug mt-0.5">
-            BHN quietly watches how you use the platform and offers a
-            single chip-style hint when you look stuck. Default is ON
-            so you don't have to discover the feature to benefit from
-            it — turn it off here any time.
+            BHN's AI lab partner. AutoPipette quietly watches how
+            you use the platform and dispenses a single, precise
+            hint when you look stuck. Default is ON so you don't
+            have to discover the feature to benefit from it —
+            turn it off here any time.
           </p>
         </div>
       </header>
@@ -128,7 +129,7 @@ export function AssistConsentPanel({
 
       {/* Consent master switch */}
       <Toggle
-        label="Help nudges — collect behaviour signals"
+        label="AutoPipette — collect behaviour signals"
         help={
           prefs.consented
             ? "On. New clicks / dwell / errors / form events are being recorded; turn it off to stop new collection. Your existing history stays available for review + delete on the audit page."

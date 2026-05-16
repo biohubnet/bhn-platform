@@ -1,15 +1,17 @@
 "use client";
 /**
- * First-run notice banner for the Help-nudges feature.
+ * First-run notice banner for the AutoPipette feature.
  *
- * The Help-nudges pipeline is on-by-default (schema default for
- * AssistPreferences.consented is true). That removes the "discover
- * the toggle" hurdle but means we owe users a clear, dismissable
- * notice the first time they see a dashboard surface — so consent
- * is informed even when it's pre-checked.
+ * AutoPipette (the AI behaviour-watcher that dispenses precise,
+ * single-dose help when a user looks stuck — named after the wet-
+ * lab tool every BHN learner already knows) is on-by-default
+ * (schema default for AssistPreferences.consented is true). That
+ * removes the "discover the toggle" hurdle but means we owe users
+ * a clear, dismissable notice the first time they land in the
+ * dashboard, so consent is informed even when it's pre-checked.
  *
  * Contract
- *   • Renders only when localStorage flag `bhn-help-nudges-notice-v1`
+ *   • Renders only when localStorage flag `bhn-autopipette-notice-v1`
  *     is missing AND the user is logged in (mounted inside the
  *     `(dashboard)` layout, which is already auth-gated).
  *   • "Got it" sets the flag and dismisses. Telemetry continues.
@@ -26,11 +28,14 @@
  */
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles, X, Loader2 } from "lucide-react";
+import { Pipette, X, Loader2 } from "lucide-react";
 
-const FLAG_KEY = "bhn-help-nudges-notice-v1";
+// Bumped from `bhn-help-nudges-notice-v1` so the banner re-surfaces
+// once with the new AutoPipette branding for anyone who dismissed
+// the original "Help nudges" version.
+const FLAG_KEY = "bhn-autopipette-notice-v1";
 
-export function HelpNudgesFirstRunNotice() {
+export function AutoPipetteFirstRunNotice() {
   // Tri-state: "loading" while we check localStorage + prefs,
   // "show" if we should render, "hidden" once the user dismisses.
   const [state, setState] = useState<"loading" | "show" | "hidden">("loading");
@@ -100,17 +105,18 @@ export function HelpNudgesFirstRunNotice() {
       className="mb-4 rounded-2xl border border-brand-200 bg-brand-50/70 text-brand-900 p-3 sm:p-4 flex items-start gap-3 surface-shadow"
     >
       <span className="w-8 h-8 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
-        <Sparkles size={14} />
+        <Pipette size={14} />
       </span>
       <div className="flex-1 min-w-0 text-[12px] leading-relaxed">
         <p className="font-bold text-brand-900">
-          Help nudges are on for you
+          AutoPipette is on for you
         </p>
         <p className="text-brand-800 mt-0.5">
-          BHN watches your click intent (no keystrokes, no field
-          values, no screen recordings) so it can offer a single
-          dismissable hint when you look stuck — wrong button,
-          repeated error, abandoned form. You can turn it off
+          AutoPipette is BHN's AI lab partner — it watches your
+          click intent (no keystrokes, no field values, no screen
+          recordings) and dispenses a single, dismissable hint
+          when you look stuck: wrong button, repeated error,
+          abandoned form. Precise dose, right moment. Turn it off
           anytime from{" "}
           <Link href="/profile" className="underline font-semibold">
             your profile

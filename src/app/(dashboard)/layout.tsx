@@ -10,7 +10,7 @@ import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
 import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
 import { AssistTracker } from "@/components/assist/AssistTracker";
 import { AssistHintDock } from "@/components/assist/AssistHintDock";
-import { HelpNudgesFirstRunNotice } from "@/components/assist/HelpNudgesFirstRunNotice";
+import { AutoPipetteFirstRunNotice } from "@/components/assist/AutoPipetteFirstRunNotice";
 import { prisma } from "@/lib/prisma";
 import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
 import { getTraineeQueueCounts } from "@/lib/trainee/queue-counts";
@@ -84,7 +84,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <UnverifiedEmailBanner email={userRow.email} />
         )}
         <div className="max-w-7xl mx-auto px-6 py-8 pt-16">
-          <HelpNudgesFirstRunNotice />
+          <AutoPipetteFirstRunNotice />
           {children}
         </div>
       </main>
@@ -98,7 +98,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Onboarding />
       <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
       <NavHighlightOverlay />
-      {/* Help nudges (AI behaviour-watcher) — telemetry + hint chip.
+      {/* AutoPipette (AI behaviour-watcher) — telemetry + hint chip.
           Both are no-ops for users who have opted out via the /profile
           toggle or the first-run notice. */}
       <AssistTracker />
