@@ -95,7 +95,17 @@ export default async function AdminDesignSystemPage() {
           — no flash, no per-user override. Users see the new look on
           their next navigation after you apply.
         </p>
+        <p className="text-[11px] text-emerald-700 mb-4 inline-flex items-center gap-1.5">
+          <Sparkles size={11} />
+          Route-scoped exception: <code className="font-mono text-fg bg-elevated px-1 rounded">/employer/*</code> + the HR-preview block always render the <strong>Studio</strong> system, regardless of the platform default.
+        </p>
         <DesignSystemAdminPicker initial={activeDesignSystem} />
+        <Link
+          href="/admin/design-system/lab"
+          className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-900"
+        >
+          Open the Design-system Lab — showroom + composer →
+        </Link>
       </Section>
 
       {/* ── 1. Surfaces ───────────────────────────────────────── */}
