@@ -13,7 +13,7 @@
  * unnecessary — reviewers usually look once and the call is cheap.
  */
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
 import { AI_CONFIGURED, chat } from "@/lib/ai";
 
@@ -59,7 +59,7 @@ function extractJsonBlock(text: string): string {
 }
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  await requireRole("admin");
+  await requireCommitteeOrAdmin(["equip_review"]);
   if (!AI_CONFIGURED.chat) {
     return NextResponse.json({ error: "AI not configured" }, { status: 503 });
   }

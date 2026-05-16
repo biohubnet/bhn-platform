@@ -8,7 +8,7 @@
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
 import { ArrowLeft, ArrowRight, AlertTriangle, Rocket, Beaker } from "lucide-react";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
@@ -38,7 +38,7 @@ export default async function AdminEquipPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  const session = await requireRole("admin").catch(() => null);
+  const session = await requireCommitteeOrAdmin(["equip_review"]).catch(() => null);
   if (!session) redirect("/dashboard");
 
   const params = await searchParams;

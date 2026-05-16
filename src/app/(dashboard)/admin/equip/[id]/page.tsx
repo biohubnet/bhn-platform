@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { ArrowLeft, FileText, User as UserIcon, MapPin, Briefcase, Mail } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { DSSection } from "@/components/design-system/DSSection";
@@ -30,7 +30,7 @@ export default async function AdminEquipReviewPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await requireRole("admin").catch(() => null);
+  const session = await requireCommitteeOrAdmin(["equip_review"]).catch(() => null);
   if (!session) redirect("/dashboard");
   const reviewerUserId = (session.user as { id?: string })?.id ?? "";
   const { id } = await params;

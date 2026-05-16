@@ -201,6 +201,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2025.05",
   },
+  {
+    id: "admin.committees",
+    title: "Committees — Equip Review + HQP",
+    body: "Manage two committee rosters from one page. Equip Review members get access to the /admin/equip funding queue without holding an admin role — useful for invited external reviewers. HQP members get a sidebar shortcut + welcome-screen badge. Add by email, optional one-line note, soft-revoke (audit trail survives). Adding a third committee is a code change in lib/committees/registry.ts, not a schema migration.",
+    path: "/admin/committees",
+    placement: "center",
+    cta: { label: "Open committees", href: "/admin/committees" },
+    roles: ["admin", "superadmin"],
+    since: "2026.05.16a",
+  },
 
   // ─── Superadmin only ─────────────────────────────────────────────
   {

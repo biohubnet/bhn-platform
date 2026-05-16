@@ -293,6 +293,14 @@ model User {
   equipReviewed      EquipApplication[] @relation("EquipReviewer")
   equipMessages      EquipApplicationMessage[]
 
+  // Committee memberships — see CommitteeMembership model. A user
+  // can belong to zero or more committees (Equip review, HQP, …).
+  // Each membership unlocks a sidebar section + welcome-screen
+  // badge for that user, and (for the equip_review committee)
+  // grants /admin/equip review access without needing the admin
+  // primary role.
+  committees         CommitteeMembership[]
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -2664,4 +2672,34 @@ model EquipApplicationMessage {
   user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([applicationId, createdAt])
+}
+
+// ─── Committee memberships ──────────────────────────────────────
+// Per-user, per-committee side relationship. Two committees ship
+// initially (see lib/committees/registry.ts): equip_review and
+// hqp. Adding a third is a code change to the registry, not a
+// schema migration. The unique index on (userId, committee) means
+// a user can only join each committee once.
+
+model CommitteeMembership {
+  id        String    @id @default(cuid())
+  userId    String
+  /// One of the slugs in COMMITTEES (lib/committees/registry.ts):
+  /// "equip_review" | "hqp" | future. Stored as plain text so
+  /// adding a new committee doesn't require a migration.
+  committee String
+  /// Soft-delete style — admins flip this off rather than deleting
+  /// the row, so the audit trail (joinedAt, leftAt) survives.
+  active    Boolean   @default(true)
+  joinedAt  DateTime  @default(now())
+  leftAt    DateTime?
+  /// Optional context the admin adds when granting / revoking.
+  note      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, committee])
+  @@index([committee, active])
 }

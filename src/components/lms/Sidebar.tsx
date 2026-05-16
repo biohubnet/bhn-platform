@@ -268,6 +268,8 @@ const adminPlatformItems: NavItem[] = [
   { label: "Role requests",       href: "/admin/role-requests",       icon: UserCog,     minRole: "admin",
     description: "Trainees asking to upgrade their role (e.g. evaluating → trainee). Review and approve.",
     badgeKey: "role-requests" },
+  { label: "Committees",          href: "/admin/committees",          icon: Users2,      minRole: "admin",
+    description: "Manage Equip Review + HQP committee membership. Members get a welcome-screen badge, a sidebar shortcut, and (for the Equip Review committee) access to the funding review queue without holding an admin role." },
   { label: "Announcements",       href: "/admin/announcements",       icon: Megaphone,   minRole: "admin",
     description: "Banner announcements shown across the platform. Schedule, target by role, set expiry." },
   { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,        minRole: "admin",

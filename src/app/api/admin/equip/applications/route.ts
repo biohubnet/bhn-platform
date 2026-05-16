@@ -8,7 +8,7 @@
  * optional; omit it to see everything.
  */
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ const VALID_STATUSES = new Set([
 ]);
 
 export async function GET(req: Request) {
-  await requireRole("admin");
+  await requireCommitteeOrAdmin(["equip_review"]);
 
   const url = new URL(req.url);
   const statusFilter = url.searchParams.get("status");

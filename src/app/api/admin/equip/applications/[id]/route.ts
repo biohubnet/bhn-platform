@@ -17,7 +17,7 @@
  * credit apps before.
  */
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
 import { isTerminal, STREAM_BUDGETS, type EquipStatus, type EquipStream } from "@/lib/equip/types";
 import { templateMilestones } from "@/lib/equip/milestones";
@@ -29,7 +29,7 @@ const TARGET_STATUSES = new Set<EquipStatus>([
 ]);
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  await requireRole("admin");
+  await requireCommitteeOrAdmin(["equip_review"]);
   const { id } = await params;
   const app = await prisma.equipApplication.findUnique({
     where: { id },
@@ -85,7 +85,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole("admin");
+  const session = await requireCommitteeOrAdmin(["equip_review"]);
   const reviewerId = (session?.user as { id?: string })?.id;
   if (!reviewerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
