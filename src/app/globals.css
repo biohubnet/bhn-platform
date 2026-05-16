@@ -826,6 +826,41 @@ body {
   }
 }
 
+/* Stops a "page shakes at the scroll-bottom" oscillation that
+ * shows up on long pages with a `.full-bleed` hero.
+ *
+ * Symptom: scrolling to the very bottom makes the whole page
+ * jitter; the wider it sits, the worse the wobble.
+ *
+ * Root cause: `.full-bleed` uses `100vw` math to escape the
+ * centered `max-w-7xl` column. `100vw` does NOT subtract the
+ * vertical scrollbar width — so when the page is exactly tall
+ * enough that the scrollbar appears, the hero stretches one
+ * scrollbar-width past the visible viewport. That horizontal
+ * overflow can flip the layout into the no-scrollbar branch,
+ * which un-extends the hero, which restores the scrollbar — a
+ * tight oscillation. Browsers exacerbate this at the scroll
+ * bottom because the rubber-band end-of-scroll bounces also
+ * change the reported viewport size momentarily.
+ *
+ * Two fixes:
+ *   (1) `overflow-x: hidden` on the dashboard layout — clamps
+ *       any horizontal overflow from `.full-bleed` so the
+ *       vertical-scrollbar feedback loop never starts.
+ *   (2) `overscroll-behavior: contain` on the main scroll
+ *       container — kills the bounce-out propagation so the
+ *       browser doesn't try to scroll body / iframe when the
+ *       main hits its bottom.
+ *
+ * These are safe defaults; modal portals attach to <body>
+ * so they're unaffected by the clip. */
+.dashboard-layout {
+  overflow-x: hidden;
+}
+.dashboard-layout > main {
+  overscroll-behavior: contain;
+}
+
 /* Hero mesh gradients — saturated multi-stop fills for full-bleed
  * hero bands. Driven by per-theme CSS variables (--hero-bg + four
  * --hero-mesh-{1..4} stops + --hero-fg for the text colour) so the
