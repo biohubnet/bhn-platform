@@ -11,8 +11,9 @@
  * also from /equip/my-applications.
  */
 import { CheckCircle2, FileText, Clock, Sparkles } from "lucide-react";
-import { STREAM_META, STATUS_META, type EquipStatus, type EquipStream, type VentureConnectFormData } from "@/lib/equip/types";
+import { STREAM_META, STATUS_META, type EquipStatus, type EquipStream, type VentureConnectFormData, type EquipMilestone } from "@/lib/equip/types";
 import { MessageThread } from "./MessageThread";
+import { MilestoneTracker } from "./MilestoneTracker";
 
 interface Props {
   application: {
@@ -30,6 +31,8 @@ interface Props {
     /** The applicant's user id — passed through from server so the
      *  MessageThread can highlight "your" messages. */
     userId: string;
+    /** Templated when status transitions to "funded". */
+    milestones?: EquipMilestone[];
   };
 }
 
@@ -91,6 +94,14 @@ export function SubmittedView({ application }: Props) {
             <SubmissionLine k="Requested" v={`$${application.requestedAmount.toLocaleString()}`} />
           )}
         </div>
+      )}
+
+      {application.status === "funded" && application.milestones && application.milestones.length > 0 && (
+        <MilestoneTracker
+          applicationId={application.id}
+          initial={application.milestones}
+          canEdit
+        />
       )}
 
       <MessageThread applicationId={application.id} currentUserId={application.userId} />

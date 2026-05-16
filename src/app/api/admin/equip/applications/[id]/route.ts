@@ -19,7 +19,8 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isTerminal, type EquipStatus } from "@/lib/equip/types";
+import { isTerminal, type EquipStatus, type EquipStream } from "@/lib/equip/types";
+import { templateMilestones } from "@/lib/equip/milestones";
 
 export const runtime = "nodejs";
 
@@ -63,7 +64,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const app = await prisma.equipApplication.findUnique({
     where: { id },
-    select: { id: true, status: true, requestedAmount: true, stream: true },
+    select: { id: true, status: true, requestedAmount: true, stream: true, milestones: true },
   });
   if (!app) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -105,6 +106,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (target === "funded") {
     data.fundedAt = now;
     if (disbursementNote) data.disbursementNote = disbursementNote;
+    // Template the post-funding milestones if there aren't any yet.
+    // (Re-funding an already-funded app is gated above, so this is
+    // strictly first-time-funded territory.)
+    const existing = Array.isArray(app.milestones) ? (app.milestones as unknown[]) : [];
+    if (existing.length === 0) {
+      data.milestones = templateMilestones(app.stream as EquipStream, now) as unknown as object;
+    }
   }
 
   const updated = await prisma.equipApplication.update({

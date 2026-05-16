@@ -14,6 +14,8 @@ import { DSPageHeader, DSSection } from "@/components/design-system";
 import { ReviewActions } from "@/components/admin/equip/ReviewActions";
 import { TriageSummary } from "@/components/admin/equip/TriageSummary";
 import { MessageThread } from "@/components/equip/MessageThread";
+import { MilestoneTracker } from "@/components/equip/MilestoneTracker";
+import type { EquipMilestone } from "@/lib/equip/types";
 import {
   STREAM_META, STATUS_META,
   type EquipStatus, type EquipStream, type VentureConnectFormData,
@@ -116,6 +118,14 @@ export default async function AdminEquipReviewPage({
         <DSSection eyebrow="Decision context" title="Reviewer note" icon={FileText}>
           <p className="text-sm text-fg leading-relaxed">{app.reviewerNote}</p>
         </DSSection>
+      )}
+
+      {app.status === "funded" && (app.milestones as unknown as EquipMilestone[])?.length > 0 && (
+        <MilestoneTracker
+          applicationId={app.id}
+          initial={app.milestones as unknown as EquipMilestone[]}
+          canEdit
+        />
       )}
 
       {app.status !== "draft" && (

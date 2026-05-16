@@ -20,6 +20,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { templateMilestones } from "@/lib/equip/milestones";
 import type {
   VentureConnectFormData,
   VentureLiftFormData,
@@ -191,6 +192,23 @@ export async function POST() {
     const spec = DEMO_APPS[demo.slug];
     if (!spec) continue;
 
+    // Funded demo gets a templated set of milestones, with a couple
+    // already nudged forward so the tracker shows progress, not a
+    // blank slate.
+    const milestones = spec.status === "funded" && spec.fundedDaysAgo !== undefined
+      ? (() => {
+          const fundedOn = daysAgo(spec.fundedDaysAgo!);
+          const stamped = templateMilestones(spec.stream, fundedOn);
+          if (stamped[0]) {
+            stamped[0] = { ...stamped[0], status: "complete", note: "Confirmed registration last week." };
+          }
+          if (stamped[1]) {
+            stamped[1] = { ...stamped[1], status: "in_progress", note: "Mid-project review scheduled for next Friday." };
+          }
+          return stamped;
+        })()
+      : [];
+
     const data: Prisma.EquipApplicationCreateInput = {
       user: { connect: { id: user.id } },
       stream: spec.stream,
@@ -205,6 +223,7 @@ export async function POST() {
       reviewerNote: spec.reviewerNote ?? null,
       disbursementNote: spec.disbursementNote ?? null,
       aiAssisted: spec.aiAssisted ?? false,
+      milestones: milestones as unknown as Prisma.InputJsonValue,
       submittedAt: spec.submittedDaysAgo !== undefined ? daysAgo(spec.submittedDaysAgo) : null,
       reviewedAt: spec.decidedDaysAgo !== undefined ? daysAgo(spec.decidedDaysAgo) : null,
       decidedAt: spec.decidedDaysAgo !== undefined ? daysAgo(spec.decidedDaysAgo) : null,
