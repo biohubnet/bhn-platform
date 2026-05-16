@@ -36,7 +36,7 @@ export function DSPageHeader({ eyebrow, title, description, icon: Icon }: Props)
   // server-render crash, the bug is in useDesignSystem / the
   // DesignSystemProvider context wiring after the recent admin-only
   // refactor.
-  const designSystem: "classic" | "cinematic" = "classic";
+  const designSystem: string = "classic";
 
   if (designSystem === "cinematic") {
     return (
