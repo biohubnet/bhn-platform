@@ -10,6 +10,7 @@ import { DailyThemeCard } from "@/components/ui/DailyThemeCard";
 import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
 import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
 import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanner";
+import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -48,13 +49,28 @@ export default async function DashboardPage() {
         companyDescription: true, companyFounded: true,
       },
     });
-    if (employer) return <EmployerDashboard user={employer} />;
+    if (employer) return (
+      <>
+        <div className="px-4 sm:px-6 pt-4"><CommitteeBadgeStrip userId={userId} /></div>
+        <EmployerDashboard user={employer} />
+      </>
+    );
   }
   if (role === "admin" || role === "superadmin") {
-    return <AdminDashboard user={{ id: userId, name: session!.user?.name ?? null }} role={role} />;
+    return (
+      <>
+        <div className="pt-1"><CommitteeBadgeStrip userId={userId} /></div>
+        <AdminDashboard user={{ id: userId, name: session!.user?.name ?? null }} role={role} />
+      </>
+    );
   }
   if (role === "instructor") {
-    return <InstructorDashboard user={{ id: userId, name: session!.user?.name ?? null }} />;
+    return (
+      <>
+        <div className="pt-1"><CommitteeBadgeStrip userId={userId} /></div>
+        <InstructorDashboard user={{ id: userId, name: session!.user?.name ?? null }} />
+      </>
+    );
   }
 
   // Minimal data for the stripped trainee home. We only need:
@@ -151,6 +167,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Committee badge — auto-hides unless the user holds a
+          committee membership. Mounted above the credit nudge so
+          recognition-level badges sit at the very top of the
+          welcome page when present. */}
+      <CommitteeBadgeStrip userId={userId} />
+
       {/* Credit-expiry nudge — auto-hides unless a grant is within 90
           days of expiry; ramps urgency at 30 and 7 days. Stays above
           the hero because time-sensitive credit warnings are the one

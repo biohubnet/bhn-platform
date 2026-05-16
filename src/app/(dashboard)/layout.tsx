@@ -14,6 +14,7 @@ import { AutoPipetteFirstRunNotice } from "@/components/assist/AutoPipetteFirstR
 import { prisma } from "@/lib/prisma";
 import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
 import { getTraineeQueueCounts } from "@/lib/trainee/queue-counts";
+import { getCommitteesForUser } from "@/lib/committees/membership";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -57,9 +58,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // badgeKey. The two key namespaces ("interview-requests" vs.
   // "credit-applications") never collide.
   const canSeeAdminQueues = ROLE_RANK[realRole ?? role] >= ROLE_RANK.admin;
-  const [adminCounts, traineeCounts] = await Promise.all([
+  const [adminCounts, traineeCounts, committeeSlugs] = await Promise.all([
     canSeeAdminQueues ? getAdminQueueCounts() : Promise.resolve(undefined),
     userId ? getTraineeQueueCounts(userId) : Promise.resolve(undefined),
+    userId ? getCommitteesForUser(userId) : Promise.resolve([]),
   ]);
   const queueCounts: QueueCounts | undefined =
     adminCounts || traineeCounts ? { ...traineeCounts, ...adminCounts } : undefined;
@@ -74,6 +76,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         credits={userRow?.credits ?? undefined}
         allowPlatformContent={userRow?.allowPlatformContent ?? false}
         queueCounts={queueCounts}
+        committees={committeeSlugs}
       />
       <main className="flex-1 overflow-y-auto relative">
         {actingAs && <ImpersonationBanner actingAs={actingAs} />}

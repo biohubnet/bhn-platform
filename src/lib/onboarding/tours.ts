@@ -211,6 +211,14 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.16a",
   },
+  {
+    id: "committee.badge",
+    title: "You're on a committee",
+    body: "If you've been added to Equip Review or HQP, look at the very top of your /dashboard for the committee badge. The new COMMITTEES section in your sidebar also surfaces shortcuts to your committee's primary page. Both auto-hide when you're not on any committee.",
+    path: "/dashboard",
+    placement: "center",
+    since: "2026.05.16b",
+  },
 
   // ─── Superadmin only ─────────────────────────────────────────────
   {

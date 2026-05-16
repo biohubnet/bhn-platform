@@ -8,6 +8,7 @@ import { LogoMark } from "@/components/ui/Logo";
 import { ThemePicker } from "@/components/ui/ThemePicker";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { COMMITTEES, type CommitteeSidebarItem } from "@/lib/committees/registry";
 import {
   LayoutDashboard,
   BookOpen,
@@ -306,6 +307,18 @@ const adminPlatformItems: NavItem[] = [
  *  there's ≥1 pending — used for trainee-facing "someone's waiting on
  *  you" items where even one item shouldn't sit quietly in a brand-
  *  tone informational chip. */
+/** Icon-name → component map for committee sidebar items. The
+ *  registry stores icon names as plain strings so the registry
+ *  itself stays tree-shakable; the actual lucide imports happen
+ *  here in the Sidebar where they're already in the bundle. */
+const COMMITTEE_ICONS: Record<CommitteeSidebarItem["icon"], typeof Rocket> = {
+  Rocket,
+  Users,
+  Award,
+  ClipboardList,
+  Sparkles,
+};
+
 const URGENT_FROM_ONE = new Set<string>([
   "interview-requests",
   "offer-requests",
@@ -333,6 +346,11 @@ interface SidebarProps {
    *  `badgeKey` render a small count chip. Absent / 0 → no badge.
    *  See src/lib/admin/queue-counts.ts for the canonical key set. */
   queueCounts?: Record<string, number>;
+  /** Active committee slugs the signed-in user belongs to. Resolved
+   *  server-side in (dashboard)/layout.tsx so the sidebar can render
+   *  a COMMITTEES section without an additional fetch. Empty array →
+   *  no section rendered. */
+  committees?: string[];
 }
 
 /**
@@ -782,6 +800,7 @@ function NavLink({ item, pathname, onNavigate, queueCounts }: {
 export function Sidebar({
   role, realRole, actingAs, user, credits, allowPlatformContent = false,
   queueCounts,
+  committees = [],
 }: SidebarProps) {
   const pathname = usePathname();
   const t = useT();
@@ -846,6 +865,10 @@ export function Sidebar({
   const visibleExperienceAdmin     = adminExperienceItems.filter(filterByRole);
   const visibleDesignResearchAdmin = adminDesignResearchItems.filter(filterByRole);
   const visiblePlatformAdmin       = adminPlatformItems.filter(filterByRole);
+  // Committee memberships → registry meta. Drops slugs the registry
+  // no longer knows about (e.g. a column value left over from a
+  // retired committee). Empty list → no COMMITTEES section rendered.
+  const visibleCommittees = COMMITTEES.filter((c) => committees.includes(c.slug));
   // HR-view preview — surfaces the exact employer-portal nav (same
   // routes the EMPLOYER PORTAL section would render at the top of
   // the sidebar for a real employer) inside the Administration
@@ -1003,6 +1026,43 @@ export function Sidebar({
               const labeled = { ...item, label: t(item.labelKey) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
             })}
+          </SectionGroup>
+        )}
+
+        {/* COMMITTEES — only rendered when the user belongs to ≥1
+            committee. Listed under their own section so committee
+            members spot the shortcut immediately on first paint;
+            primary roles still see ENGAGE / EXPERIENCE / EQUIP /
+            ADMINISTRATION as before. */}
+        {visibleCommittees.length > 0 && (
+          <SectionGroup
+            title="COMMITTEES"
+            description="Your committee surfaces. Equip Review members can claim + decide on funding apps; HQP members coordinate via the HQP dashboard."
+          >
+            {visibleCommittees.flatMap((c) =>
+              c.sidebarItems.map((s: CommitteeSidebarItem) => {
+                const Icon = COMMITTEE_ICONS[s.icon] ?? Sparkles;
+                // No minRole — visibility is gated by the
+                // visibleCommittees filter above (only renders when
+                // the user belongs to ≥1 committee), so the per-
+                // link role check would be redundant.
+                const item: NavItem = {
+                  label: s.label,
+                  href: s.href,
+                  icon: Icon,
+                  description: c.description,
+                };
+                return (
+                  <NavLink
+                    key={`${c.slug}-${s.href}`}
+                    item={item}
+                    pathname={pathname}
+                    onNavigate={() => setMobileOpen(false)}
+                    queueCounts={queueCounts}
+                  />
+                );
+              }),
+            )}
           </SectionGroup>
         )}
 
