@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { LOCALES } from "@/lib/i18n/dictionaries";
+import { INSTITUTIONS } from "@/lib/equip/institutions";
 
 // Cloudflare Turnstile site key (public). When unset, no CAPTCHA is
 // rendered and the server skips verification — this keeps preview /
@@ -57,6 +58,13 @@ export default function RegisterPage() {
     passwordConfirm: "",
     jobTitle: "",
     locale: defaultLocale(),
+    // Institution capture — one of the 14 BHN-partner slugs from
+    // lib/equip/institutions.ts, plus an "other" branch. Stored
+    // into User.organization on the server so Equip applications
+    // (and any other form that pre-fills from user.organization)
+    // get the value without re-asking.
+    institution: "",
+    institutionOther: "",
   }));
   // Default to "no" — under CASL + GDPR a pre-selected opt-in isn't
   // legally valid consent (Planet49 / CRTC guidance). We require an
@@ -134,6 +142,8 @@ export default function RegisterPage() {
         newsletter,
         jobTitle: form.jobTitle || undefined,
         locale: form.locale,
+        institution: form.institution || undefined,
+        institutionOther: form.institutionOther || undefined,
         turnstileToken,
       }),
     });
@@ -333,6 +343,40 @@ export default function RegisterPage() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Institution — pre-fills Equip applications + every
+                other form on the platform that reads from
+                user.organization. Stored as the official partner
+                name (or free-text "Other"). */}
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1.5">
+                Institution / Affiliation <span className="text-subtle">(optional)</span>
+              </label>
+              <select
+                value={form.institution}
+                onChange={(e) => setForm({ ...form, institution: e.target.value, institutionOther: e.target.value === "other" ? form.institutionOther : "" })}
+                className={inputCls}
+              >
+                <option value="">Pick later in profile</option>
+                {INSTITUTIONS.map((i) => (
+                  <option key={i.slug} value={i.slug}>{i.name}</option>
+                ))}
+                <option value="other">Other / not listed</option>
+              </select>
+              {form.institution === "other" && (
+                <input
+                  type="text"
+                  value={form.institutionOther}
+                  onChange={(e) => setForm({ ...form, institutionOther: e.target.value })}
+                  maxLength={200}
+                  placeholder="Name of your institution"
+                  className={inputCls + " mt-2"}
+                />
+              )}
+              <p className="text-[10px] text-subtle mt-1">
+                One of the 14 BHN partner institutions, or pick &quot;Other&quot; for a free-text entry. Used to pre-fill funding-application forms automatically.
+              </p>
             </div>
 
             {/* Newsletter — three-state opt-in */}

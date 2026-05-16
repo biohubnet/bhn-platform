@@ -59,12 +59,23 @@ const STAGE_OPTIONS: { id: CommercializationStage; label: string; hint: string; 
   },
 ];
 
-export function EligibilityWizard({ presetStream }: { presetStream?: EquipStream }) {
+export function EligibilityWizard({
+  presetStream,
+  presetInstitution,
+  presetInstitutionOther,
+}: {
+  presetStream?: EquipStream;
+  /** Pre-pick the institution step from the user's stored
+   *  organization (set at registration). The user can still
+   *  change it inside the wizard. */
+  presetInstitution?: string;
+  presetInstitutionOther?: string;
+}) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [applicantType, setApplicantType] = useState<ApplicantRole | null>(null);
-  const [institution, setInstitution] = useState<string | null>(null);
-  const [institutionOther, setInstitutionOther] = useState("");
+  const [institution, setInstitution] = useState<string | null>(presetInstitution ?? null);
+  const [institutionOther, setInstitutionOther] = useState(presetInstitutionOther ?? "");
   const [stage, setStage] = useState<CommercializationStage | null>(null);
   const [pickedStream, setPickedStream] = useState<EquipStream | null>(presetStream ?? null);
   const [submitting, setSubmitting] = useState(false);

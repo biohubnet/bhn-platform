@@ -18,6 +18,7 @@ import { ConnectForm } from "@/components/equip/ConnectForm";
 import { SubmittedView } from "@/components/equip/SubmittedView";
 import { LiftForm } from "@/components/equip/LiftForm";
 import type { VentureConnectFormData, VentureLiftFormData, EquipDocument } from "@/lib/equip/types";
+import { institutionLabel } from "@/lib/equip/institutions";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,19 @@ export default async function EquipApplicationDraftPage({
     );
   }
 
+  // Institution pre-fill priority:
+  //   1. Wizard's choice on this application (one of the 14
+  //      partner slugs OR the "Other" free-text)
+  //   2. User.organization captured at registration
+  //   3. Blank, applicant types it
+  const wizardInstitution = institutionLabel(app.institution, app.institutionOther);
+  const resolvedOrganization =
+    (wizardInstitution && wizardInstitution !== "—" ? wizardInstitution : null)
+    ?? app.user.organization
+    ?? null;
+  const role = ((session.user as { role?: string }).role ?? "trainee");
+  const isAdmin = role === "admin" || role === "superadmin";
+
   // Editable — render the stream-specific form.
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -78,9 +92,10 @@ export default async function EquipApplicationDraftPage({
           profile={{
             name: app.user.name ?? "",
             email: app.user.email,
-            organization: app.user.organization ?? null,
+            organization: resolvedOrganization,
             jobTitle: app.user.jobTitle ?? null,
           }}
+          isAdmin={isAdmin}
         />
       ) : (
         <LiftForm
@@ -90,9 +105,10 @@ export default async function EquipApplicationDraftPage({
           profile={{
             name: app.user.name ?? "",
             email: app.user.email,
-            organization: app.user.organization ?? null,
+            organization: resolvedOrganization,
             jobTitle: app.user.jobTitle ?? null,
           }}
+          isAdmin={isAdmin}
         />
       )}
     </div>

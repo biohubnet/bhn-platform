@@ -22,7 +22,7 @@
  */
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Check, AlertCircle, Beaker, Send, AlertTriangle } from "lucide-react";
+import { Loader2, Check, AlertCircle, Beaker, Send, AlertTriangle, FlaskConical, Eraser } from "lucide-react";
 import {
   STREAM_BUDGETS,
   NO_AI_DISCLAIMER,
@@ -43,7 +43,39 @@ interface Props {
     organization: string | null;
     jobTitle: string | null;
   };
+  /** Admin-only — when true, renders a "Fill with sample" /
+   *  "Clear" testing strip so admins can populate or empty the
+   *  draft in one click while iterating on the UX. */
+  isAdmin?: boolean;
 }
+
+/** Sample-fill body for admin testing. Mirrors what a realistic
+ *  draft would look like — passes server-side validation. */
+const SAMPLE_VC: VentureConnectFormData = {
+  fullName: "Alex Chen (test)",
+  institutionAffiliation: "University of Toronto",
+  departmentProgram: "Donnelly Centre for Cellular and Biomolecular Research",
+  currentRole: "phd_student",
+  institutionEmail: "alex.chen@example.test",
+  companyName: "PuriBio Inc.",
+  companyWebsite: "https://example-bio.test",
+  ventureDescription:
+    "Sample test data. We're developing a cell-free protein purification platform that reduces downstream processing time by ~40%. Current stage: working prototype validated on three model proteins; planning a paid pilot with one biotech partner next quarter.",
+  ip: {
+    provisionalPatentChecked: true,
+    provisionalPatentDate: new Date().toISOString().slice(0, 10),
+  },
+  fundingJustification:
+    "Sample test data. Attendance at this event lets us run two pre-scheduled investor meetings plus a paid-pilot conversation with a manufacturing partner. We expect at least one qualified term-sheet conversation and one warm intro to a CDMO out of this trip — both materially advance our seed round and our first paid pilot.",
+  budgetAirfare: 1200,
+  budgetTrainFare: 0,
+  budgetRideshareTaxi: 150,
+  budgetAccommodation: 1500,
+  budgetRegistration: 1500,
+  acknowledged: true,
+  signaturePrintedName: "Alex Chen (test)",
+  signatureDate: new Date().toISOString().slice(0, 10),
+};
 
 const CAP = STREAM_BUDGETS.venture_connect;
 
@@ -62,7 +94,7 @@ function budgetTotal(f: VentureConnectFormData): number {
     + (f.budgetRegistration ?? 0);
 }
 
-export function ConnectForm({ applicationId, initial, profile }: Props) {
+export function ConnectForm({ applicationId, initial, profile, isAdmin = false }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<VentureConnectFormData>(() => ({
     // Pre-fill identity fields from profile so the user doesn't
@@ -160,6 +192,36 @@ export function ConnectForm({ applicationId, initial, profile }: Props) {
           <strong>No AI writing tools.</strong> {NO_AI_DISCLAIMER}
         </p>
       </div>
+
+      {/* Admin-only test strip — populate the draft with a known-
+          valid sample body, or wipe it clean. Renders only when
+          isAdmin (admin / superadmin role); regular applicants
+          never see this. */}
+      {isAdmin && (
+        <div className="rounded-2xl border border-dashed border-line bg-elevated/30 p-3 flex flex-wrap items-center gap-2">
+          <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle inline-flex items-center gap-1.5 mr-auto">
+            <FlaskConical size={11} className="text-amber-600" />
+            Admin · form testing
+          </span>
+          <button
+            type="button"
+            onClick={() => setForm({ ...SAMPLE_VC, institutionAffiliation: profile.organization || SAMPLE_VC.institutionAffiliation })}
+            className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm shadow-amber-600/25 transition-colors"
+          >
+            <FlaskConical size={11} /> Fill with sample
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!confirm("Clear every field in this draft?")) return;
+              setForm({});
+            }}
+            className="inline-flex items-center gap-1.5 bg-card-solid hover:bg-elevated border border-line text-fg text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Eraser size={11} /> Clear form
+          </button>
+        </div>
+      )}
 
       {/* ── 1. Applicant Information ───────────────────────── */}
       <Section title="Applicant Information">

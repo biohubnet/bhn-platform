@@ -6,6 +6,7 @@ import { verifyTurnstile, clientIpFromHeaders, TURNSTILE_ENABLED } from "@/lib/s
 import { issueAndSendEmailVerification } from "@/lib/security/email-verify";
 import { checkPassword } from "@/lib/security/password-policy";
 import { subscribeMember, mailchimpEnabled } from "@/lib/mailchimp/client";
+import { findInstitution } from "@/lib/equip/institutions";
 
 /**
  * Newsletter intent at signup. Tri-state:
@@ -42,7 +43,7 @@ const VALID_JOB_TITLES = [
 ] as const;
 
 export async function POST(req: NextRequest) {
-  const { name, email, password, newsletter, jobTitle, locale, turnstileToken } = await req.json();
+  const { name, email, password, newsletter, jobTitle, locale, institution, institutionOther, turnstileToken } = await req.json();
 
   // ── Validation ──────────────────────────────────────────────────
   const cleanName = typeof name === "string" ? name.trim() : "";
@@ -95,6 +96,26 @@ export async function POST(req: NextRequest) {
     ? jobTitle
     : null;
 
+  // Institution capture at registration. Two paths:
+  //   • The caller posts a known BHN-partner slug (one of the
+  //     14 from lib/equip/institutions.ts) — we resolve to the
+  //     official full name and store as User.organization.
+  //   • The caller picks "Other" and posts `institutionOther`
+  //     as free text — we store that verbatim.
+  // Either way we save into the existing User.organization
+  // column so every form on the platform that pre-fills from
+  // user.organization (Equip applications, talent profile, HR
+  // posting fillers) Just Works.
+  let cleanOrganization: string | null = null;
+  if (typeof institution === "string" && institution.trim()) {
+    if (institution === "other" && typeof institutionOther === "string" && institutionOther.trim()) {
+      cleanOrganization = institutionOther.trim().slice(0, 200);
+    } else {
+      const known = findInstitution(institution);
+      if (known) cleanOrganization = known.name;
+    }
+  }
+
   const user = await prisma.user.create({
     data: {
       name: cleanName,
@@ -106,6 +127,7 @@ export async function POST(req: NextRequest) {
       newsletterStatus,
       locale: cleanLocale,
       jobTitle: cleanJobTitle,
+      organization: cleanOrganization,
     },
   });
 

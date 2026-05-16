@@ -23,7 +23,7 @@
  */
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Check, AlertCircle, Rocket, Send, AlertTriangle } from "lucide-react";
+import { Loader2, Check, AlertCircle, Rocket, Send, AlertTriangle, FlaskConical, Eraser } from "lucide-react";
 import {
   NO_AI_DISCLAIMER,
   wordCount,
@@ -43,7 +43,46 @@ interface Props {
     organization: string | null;
     jobTitle: string | null;
   };
+  /** Admin-only fill-sample / clear-form testing strip. */
+  isAdmin?: boolean;
 }
+
+/** Admin sample-fill body — passes the full pre-screening
+ *  validation including all seven eligibility attestations. */
+const SAMPLE_VL: VentureLiftFormData = {
+  companyName: "CellFreeBio Inc.",
+  companyWebsite: "https://example-bio.test",
+  fullName: "Lin Wei (test)",
+  institutionAffiliation: "University of Toronto",
+  departmentProgram: "Donnelly Centre",
+  currentRole: "grad_student",
+  institutionalEmail: "lin.wei@example.test",
+  applicantTitleInCompany: "Co-founder + CTO",
+  applicantTimeCommitment: "30% (research) + 70% (company)",
+  piFullName: "Dr. Avery Park",
+  piInstitutionAffiliation: "University of Toronto",
+  piDepartmentProgram: "Donnelly Centre",
+  piInstitutionalEmail: "a.park@example.test",
+  piTitleInCompany: "Scientific Co-founder",
+  ip: {
+    provisionalPatentChecked: true,
+    provisionalPatentDate: new Date().toISOString().slice(0, 10),
+  },
+  companyOverview:
+    "Sample test data. We're a Toronto-based pre-seed biotech building a cell-free protein purification platform that cuts downstream processing time roughly 40%. The target market is small-batch biologics — early-stage CDMOs and academic spinouts who lack the volume to justify traditional chromatography skids. Competitive advantage: proprietary affinity tag chemistry (provisional patent filed) and a single-use cartridge design that lowers cost-per-gram below incumbent workflows. We contribute to Canadian biomanufacturing capacity by enabling faster scale-up for early-stage therapeutic candidates.",
+  projectSummary:
+    "Sample test data. Requested funds support three commercialization-enabling activities over six months: a paid validation pilot at one external CDMO partner (~$10K materials + access), regulatory CMC consulting with an external biomanufacturing-quality advisor (~$8K), and a market-validation sprint targeting five potential commercial customers (~$7K travel + materials). The applicant trainee leads pilot execution and customer-discovery interviews directly; the consultant supports the regulatory deliverables only.",
+  eligibilityStemProfessional: true,
+  eligibilityCanadianIp: true,
+  eligibilityHealthOutcomesBiomanufacturing: true,
+  eligibilityAcceleratorParticipated: true,
+  acceleratorPrograms: "Creative Destruction Lab — Bio Stream (2025-2026 cohort), JLABS @ Toronto",
+  eligibilityPreseedStageReady: true,
+  eligibilityNoDuplicateFunding: true,
+  eligibilityPiHoldsFunds: true,
+  signaturePrintedName: "Lin Wei (test)",
+  signatureDate: new Date().toISOString().slice(0, 10),
+};
 
 const WORD_LIMIT = 100;
 
@@ -53,7 +92,7 @@ const ROLE_OPTIONS: { id: "grad_student" | "postdoc" | "research_associate"; lab
   { id: "research_associate", label: "Research Associate" },
 ];
 
-export function LiftForm({ applicationId, initial, initialDocuments, profile }: Props) {
+export function LiftForm({ applicationId, initial, initialDocuments, profile, isAdmin = false }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<VentureLiftFormData>(() => ({
     fullName: initial.fullName ?? profile.name ?? "",
@@ -147,6 +186,32 @@ export function LiftForm({ applicationId, initial, initialDocuments, profile }: 
           <strong>No AI writing tools.</strong> {NO_AI_DISCLAIMER}
         </p>
       </div>
+
+      {isAdmin && (
+        <div className="rounded-2xl border border-dashed border-line bg-elevated/30 p-3 flex flex-wrap items-center gap-2">
+          <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle inline-flex items-center gap-1.5 mr-auto">
+            <FlaskConical size={11} className="text-amber-600" />
+            Admin · form testing
+          </span>
+          <button
+            type="button"
+            onClick={() => setForm({ ...SAMPLE_VL, institutionAffiliation: profile.organization || SAMPLE_VL.institutionAffiliation })}
+            className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm shadow-amber-600/25 transition-colors"
+          >
+            <FlaskConical size={11} /> Fill with sample
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!confirm("Clear every field in this draft?")) return;
+              setForm({});
+            }}
+            className="inline-flex items-center gap-1.5 bg-card-solid hover:bg-elevated border border-line text-fg text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Eraser size={11} /> Clear form
+          </button>
+        </div>
+      )}
 
       {/* ── 1. Company Information ─────────────────────────── */}
       <Section title="Company Information">
