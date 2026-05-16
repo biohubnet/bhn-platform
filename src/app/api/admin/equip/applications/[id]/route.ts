@@ -19,13 +19,24 @@
 import { NextResponse } from "next/server";
 import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
-import { isTerminal, STREAM_BUDGETS, type EquipStatus, type EquipStream } from "@/lib/equip/types";
+import {
+  isTerminal,
+  STREAM_BUDGETS,
+  type EquipStatus,
+  type EquipStream,
+  type ApplicationStage,
+  type EquipDocument,
+  type VentureLiftReviewerScores,
+} from "@/lib/equip/types";
 import { templateMilestones } from "@/lib/equip/milestones";
 
 export const runtime = "nodejs";
 
 const TARGET_STATUSES = new Set<EquipStatus>([
-  "under_review", "approved", "rejected", "funded",
+  "under_review",
+  "approved", "rejected", "funded",
+  // VL pre-screening outcomes
+  "pre_screen_approved", "pre_screen_rejected",
 ]);
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -95,6 +106,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const reviewerNote = (body.reviewerNote as string | undefined)?.slice(0, 4000);
   const approvedAmount = typeof body.approvedAmount === "number" ? body.approvedAmount : undefined;
   const disbursementNote = (body.disbursementNote as string | undefined)?.slice(0, 2000);
+  const reviewerScores = body.reviewerScores as VentureLiftReviewerScores | undefined;
 
   if (!target || !TARGET_STATUSES.has(target)) {
     return NextResponse.json({ error: "Invalid target status" }, { status: 400 });
@@ -102,9 +114,33 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const app = await prisma.equipApplication.findUnique({
     where: { id },
-    select: { id: true, userId: true, status: true, requestedAmount: true, stream: true, milestones: true },
+    select: {
+      id: true, userId: true, status: true, requestedAmount: true,
+      stream: true, applicationStage: true, documents: true, milestones: true,
+    },
   });
   if (!app) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // VL Stage-2 eligibility gate. Approving a VentureLift full
+  // application requires Appendix 3 (IP supporting documents) —
+  // per the Reviewer Guide, a filed provisional patent is the
+  // minimum. The client disables the approve button when this
+  // isn't satisfied; this is the server-side safety net so an
+  // out-of-date page can't slip past the rule.
+  if (
+    target === "approved" &&
+    app.stream === "venture_lift" &&
+    (app.applicationStage as ApplicationStage) === "full_app"
+  ) {
+    const docs = (app.documents as unknown as EquipDocument[]) ?? [];
+    const hasIpAppendix = docs.some((d) => d.kind === "ip_doc");
+    if (!hasIpAppendix) {
+      return NextResponse.json(
+        { error: "Eligibility gate: Appendix 3 (IP supporting documents) is missing. The Reviewer Guide requires a provisional patent or stronger IP evidence before approval." },
+        { status: 400 },
+      );
+    }
+  }
 
   // Per-applicant cumulative VC cap enforcement.
   if (target === "approved" && app.stream === "venture_connect" && typeof approvedAmount === "number") {
@@ -157,12 +193,33 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       data.approvedAmount = app.requestedAmount;
     }
     if (reviewerNote) data.reviewerNote = reviewerNote;
+    // VL Stage-2 carries a 6-criterion rubric. Save it on the
+    // reviewerScores JSON column for later display + analytics.
+    if (reviewerScores && typeof reviewerScores === "object") {
+      data.reviewerScores = reviewerScores;
+    }
   }
   if (target === "rejected") {
     data.decidedAt = now;
     data.reviewedAt = now;
     data.approvedAmount = null;
     if (reviewerNote) data.reviewerNote = reviewerNote;
+  }
+  // VL Stage-1 outcomes — pre-screening decisions. We stamp
+  // preScreenDecidedAt + preScreenReviewerNote and leave the
+  // Stage-2 columns (decidedAt, approvedAmount, reviewerScores)
+  // untouched. The applicant page auto-advances applicationStage
+  // to "full_app" once they open the editor after approval.
+  if (target === "pre_screen_approved") {
+    data.reviewedAt = now;
+    data.preScreenDecidedAt = now;
+    if (reviewerNote) data.preScreenReviewerNote = reviewerNote;
+  }
+  if (target === "pre_screen_rejected") {
+    data.reviewedAt = now;
+    data.preScreenDecidedAt = now;
+    data.decidedAt = now;
+    if (reviewerNote) data.preScreenReviewerNote = reviewerNote;
   }
   if (target === "funded") {
     data.fundedAt = now;

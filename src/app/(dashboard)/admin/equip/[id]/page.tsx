@@ -19,7 +19,9 @@ import { MilestoneTracker } from "@/components/equip/MilestoneTracker";
 import { STREAM_BUDGETS, type EquipMilestone } from "@/lib/equip/types";
 import {
   STREAM_META, STATUS_META,
-  type EquipStatus, type EquipStream, type VentureConnectFormData,
+  type EquipStatus, type EquipStream, type ApplicationStage,
+  type VentureConnectFormData, type VentureLiftFormData, type VentureLiftFullData,
+  type VentureLiftReviewerScores, type EquipDocument,
 } from "@/lib/equip/types";
 import { institutionLabel } from "@/lib/equip/institutions";
 
@@ -94,10 +96,14 @@ export default async function AdminEquipReviewPage({
 
       <ReviewActions
         applicationId={app.id}
+        stream={app.stream as EquipStream}
+        stage={app.applicationStage as ApplicationStage}
         currentStatus={app.status as EquipStatus}
         requestedAmount={app.requestedAmount}
         approvedAmount={app.approvedAmount}
         remainingCap={vcHistory?.remaining ?? null}
+        hasIpAppendix={((app.documents as unknown as EquipDocument[]) ?? []).some((d) => d.kind === "ip_doc")}
+        existingScores={app.reviewerScores as VentureLiftReviewerScores | null}
       />
 
       {vcHistory && (
@@ -183,6 +189,28 @@ export default async function AdminEquipReviewPage({
         </DSSection>
       )}
 
+      {app.stream === "venture_lift" && (
+        <VlStage1Panel data={app.formData as VentureLiftFormData} preScreenNote={app.preScreenReviewerNote} preScreenDecidedAt={app.preScreenDecidedAt} />
+      )}
+
+      {app.stream === "venture_lift" && (app.applicationStage as ApplicationStage) === "full_app" && (
+        <VlStage2Panel
+          data={app.formData as unknown as VentureLiftFullData}
+          documents={(app.documents as unknown as EquipDocument[]) ?? []}
+          fullAppSubmittedAt={app.fullAppSubmittedAt}
+        />
+      )}
+
+      {app.reviewerScores && Object.keys(app.reviewerScores).length > 0 && (
+        <ReviewerScoresPanel scores={app.reviewerScores as VentureLiftReviewerScores} />
+      )}
+
+      {app.preScreenReviewerNote && (
+        <DSSection eyebrow="Decision context" title="Pre-screen reviewer note" icon={<FileText size={14} className="text-brand-600" />}>
+          <p className="text-sm text-fg leading-relaxed">{app.preScreenReviewerNote}</p>
+        </DSSection>
+      )}
+
       {app.reviewerNote && (
         <DSSection eyebrow="Decision context" title="Reviewer note" icon={<FileText size={14} className="text-brand-600" />}>
           <p className="text-sm text-fg leading-relaxed">{app.reviewerNote}</p>
@@ -246,5 +274,200 @@ function BudgetLine({ label, amount }: { label: string; amount: number | undefin
       <span className="text-muted">{label}</span>
       <span className="font-mono tabular-nums text-fg">${amount.toLocaleString()}</span>
     </li>
+  );
+}
+
+// ─── VL Stage 1 read-only panel (pre-screening) ────────────────
+
+function VlStage1Panel({ data, preScreenNote, preScreenDecidedAt }: { data: VentureLiftFormData; preScreenNote: string | null; preScreenDecidedAt: Date | null }) {
+  return (
+    <DSSection eyebrow="VL · Stage 1" title="Pre-screening" icon={<FileText size={14} className="text-emerald-700" />}>
+      <Field label="Company">{data.companyName ?? "—"}</Field>
+      <Field label="Applicant">{data.fullName ?? "—"}</Field>
+      <Field label="PI">{data.piFullName ?? "—"}</Field>
+      <FieldBlock label="Company overview (≤100w)">{data.companyOverview ?? "—"}</FieldBlock>
+      <FieldBlock label="Project summary (≤100w)">{data.projectSummary ?? "—"}</FieldBlock>
+      <div className="rounded-xl bg-elevated/40 border border-line p-3 mt-3">
+        <p className="text-[10px] uppercase tracking-wider font-bold text-subtle mb-2">Eligibility checklist (Stage 1)</p>
+        <ul className="text-xs space-y-1">
+          <Eligibility label="STEM professional + leadership role"               on={!!data.eligibilityStemProfessional} />
+          <Eligibility label="Canadian IP"                                       on={!!data.eligibilityCanadianIp} />
+          <Eligibility label="Human health / biomanufacturing impact"            on={!!data.eligibilityHealthOutcomesBiomanufacturing} />
+          <Eligibility label="Prior accelerator / incubator"                     on={!!data.eligibilityAcceleratorParticipated} />
+          <Eligibility label="Pre-seed / seed stage ready"                       on={!!data.eligibilityPreseedStageReady} />
+          <Eligibility label="No duplicate funding"                              on={!!data.eligibilityNoDuplicateFunding} />
+          <Eligibility label="PI agrees to hold funds"                           on={!!data.eligibilityPiHoldsFunds} />
+        </ul>
+      </div>
+      {preScreenDecidedAt && (
+        <p className="text-[11px] text-emerald-700 mt-3">
+          Pre-screen decided {new Date(preScreenDecidedAt).toLocaleDateString()}{preScreenNote ? ` — “${preScreenNote.slice(0, 80)}${preScreenNote.length > 80 ? "…" : ""}”` : ""}.
+        </p>
+      )}
+    </DSSection>
+  );
+}
+
+function Eligibility({ label, on }: { label: string; on: boolean }) {
+  return (
+    <li className="inline-flex items-center gap-1.5">
+      <span className={"text-[10px] " + (on ? "text-emerald-700" : "text-rose-700")}>{on ? "✓" : "✗"}</span>
+      <span className={on ? "text-fg" : "text-muted line-through"}>{label}</span>
+    </li>
+  );
+}
+
+// ─── VL Stage 2 read-only panel ────────────────────────────────
+
+function VlStage2Panel({ data, documents, fullAppSubmittedAt }: { data: VentureLiftFullData; documents: EquipDocument[]; fullAppSubmittedAt: Date | null }) {
+  const total = (data.budgetLines ?? []).reduce<number>((s, r) => s + (r.amount ?? 0), 0);
+  const cvCount      = documents.filter((d) => d.kind === "cv").length;
+  const letterCount  = documents.filter((d) => d.kind === "support_letter").length;
+  const ipDocCount   = documents.filter((d) => d.kind === "ip_doc").length;
+  return (
+    <DSSection eyebrow="VL · Stage 2" title={data.projectTitle ?? "Full application"} icon={<FileText size={14} className="text-emerald-700" />}>
+      {fullAppSubmittedAt && (
+        <p className="text-[11px] text-subtle mb-2">Stage 2 submitted {new Date(fullAppSubmittedAt).toLocaleString()}.</p>
+      )}
+
+      <h3 className="text-[11px] uppercase tracking-wider font-bold text-fg mt-2">Part 1 · Team</h3>
+      <Field label="Primary applicant">{data.applicantFullName ?? "—"} ({data.applicantRole ?? "—"})</Field>
+      <Field label="Time commitment">{data.applicantTimeCommitment ?? "—"}</Field>
+      <Field label="PI">{data.piFullName ?? "—"} — {data.piTitleInCompany ?? "—"}</Field>
+      <FieldBlock label="PI role">{data.piRoleDescription ?? "—"}</FieldBlock>
+      <Field label="Company">{data.companyName ?? "—"}{data.companyIncorporationDate ? ` · inc. ${data.companyIncorporationDate}` : ""}</Field>
+      {(data.teamMembers ?? []).length > 0 && (
+        <div className="mt-2">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-subtle mb-1">Other team members</p>
+          <ul className="text-xs space-y-0.5">
+            {(data.teamMembers ?? []).map((m) => (
+              <li key={m.id}>
+                <strong>{m.name ?? "—"}</strong> — {m.role ?? "—"} ({m.areaOfExpertise ?? "—"}, {m.institution ?? "—"})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <h3 className="text-[11px] uppercase tracking-wider font-bold text-fg mt-4">Part 2 · Innovation & project</h3>
+      <FieldBlock label="2.1.1 Company overview">{data.innovationCompanyOverview ?? "—"}</FieldBlock>
+      <FieldBlock label="2.1.2 Problem + human-health impact">{data.innovationProblemAndImpact ?? "—"}</FieldBlock>
+      <FieldBlock label="2.1.3 IP description">{data.innovationIpDescription ?? "—"}</FieldBlock>
+      <FieldBlock label="2.2.1 Target market">{data.marketOverview ?? "—"}</FieldBlock>
+      <FieldBlock label="2.2.2 Competitive landscape">{data.marketCompetitive ?? "—"}</FieldBlock>
+      <FieldBlock label="2.2.3 Advancement / Canadian alignment">{data.marketAdvancement ?? "—"}</FieldBlock>
+      <FieldBlock label="2.3.1 Activities">{data.planActivities ?? "—"}</FieldBlock>
+      <FieldBlock label="2.3.3 Rationale">{data.planRationale ?? "—"}</FieldBlock>
+      <FieldBlock label="2.4.1 Commercialization milestones">{data.commercializationMilestones ?? "—"}</FieldBlock>
+      <FieldBlock label="2.4.2 Anticipated impacts">{data.commercializationImpacts ?? "—"}</FieldBlock>
+      <FieldBlock label="2.4.3 Customer engagement">{data.commercializationEngagement ?? "—"}</FieldBlock>
+      <FieldBlock label="2.5.1 Next steps">{data.impactNextSteps ?? "—"}</FieldBlock>
+      <FieldBlock label="2.5.2 Incubator participation">{data.impactIncubatorParticipation ?? "—"}</FieldBlock>
+
+      {(data.planTimeline ?? []).length > 0 && (
+        <div className="mt-3">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-subtle mb-1">2.3.2 Timeline</p>
+          <ul className="text-xs space-y-0.5">
+            {(data.planTimeline ?? []).map((r) => (
+              <li key={r.id}>
+                <span className="font-mono text-[10px] text-subtle">[{r.activityNumber ?? "—"}]</span>{" "}
+                <strong>{r.deliverables ?? "—"}</strong>
+                <span className="text-muted"> — {r.primaryPlaceOfWork ?? "—"}, due {r.completionDate ?? "—"}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <h3 className="text-[11px] uppercase tracking-wider font-bold text-fg mt-4">Part 3 · Budget — ${total.toLocaleString()}</h3>
+      {(data.budgetLines ?? []).length > 0 && (
+        <div className="rounded-xl border border-line overflow-hidden mt-1">
+          <table className="w-full text-xs">
+            <thead className="bg-elevated/40 text-subtle">
+              <tr>
+                <th className="px-2 py-1.5 text-left font-semibold uppercase tracking-wider">Cat.</th>
+                <th className="px-2 py-1.5 text-left font-semibold uppercase tracking-wider">Activity</th>
+                <th className="px-2 py-1.5 text-left font-semibold uppercase tracking-wider">Description</th>
+                <th className="px-2 py-1.5 text-right font-semibold uppercase tracking-wider">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {(data.budgetLines ?? []).map((r) => (
+                <tr key={r.id}>
+                  <td className="px-2 py-1 text-muted">{r.category}</td>
+                  <td className="px-2 py-1 font-mono text-[10px]">{r.activityNumber ?? "—"}</td>
+                  <td className="px-2 py-1 text-fg">{r.itemDescription ?? "—"}</td>
+                  <td className="px-2 py-1 text-right font-mono tabular-nums text-fg">${(r.amount ?? 0).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-line bg-elevated/30">
+                <td colSpan={3} className="px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-subtle">Total</td>
+                <td className="px-2 py-2 text-right font-mono tabular-nums font-bold">${total.toLocaleString()}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+      {(data.partnerContributions ?? []).length > 0 && (
+        <div className="mt-2">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-subtle mb-1">Partner contributions</p>
+          <ul className="text-xs space-y-0.5">
+            {(data.partnerContributions ?? []).map((p) => (
+              <li key={p.id}>
+                <strong>{p.partnerName ?? "—"}</strong> ({p.kind ?? "—"}) — {p.description ?? "—"}
+                {p.amountOrUnitCount && <span className="font-mono text-[10px] ml-1">[{p.amountOrUnitCount}]</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {data.budgetNotes && <FieldBlock label="Budget notes">{data.budgetNotes}</FieldBlock>}
+
+      <h3 className="text-[11px] uppercase tracking-wider font-bold text-fg mt-4">Part 4 · Appendices</h3>
+      <p className="text-xs text-muted">
+        CVs: {cvCount} · Support letters: {letterCount}/3 · IP documents: {ipDocCount}{" "}
+        {ipDocCount === 0 && <span className="text-rose-700 font-bold">(eligibility gate not satisfied)</span>}
+      </p>
+
+      <h3 className="text-[11px] uppercase tracking-wider font-bold text-fg mt-4">Part 5 · Signatures</h3>
+      <Field label="Primary applicant">{data.primarySignatureName ?? "—"} — {data.primarySignatureDate ?? "—"}</Field>
+      <Field label="Founder / co-founder">{data.founderSignatureName ?? "—"} — {data.founderSignatureDate ?? "—"}</Field>
+      <Field label="PI">{data.piSignatureName ?? "—"} — {data.piSignatureDate ?? "—"}</Field>
+      <Field label="Acknowledged"><span className={data.acknowledged ? "text-emerald-700" : "text-rose-700"}>{data.acknowledged ? "✓" : "✗"}</span></Field>
+    </DSSection>
+  );
+}
+
+// ─── Reviewer scores read-only panel ───────────────────────────
+
+function ReviewerScoresPanel({ scores }: { scores: VentureLiftReviewerScores }) {
+  const entries: Array<[keyof VentureLiftReviewerScores, string]> = [
+    ["innovation",         "Innovation & technical merit"],
+    ["market",             "Market potential & relevance"],
+    ["plan",               "Project plan & deliverables"],
+    ["commercialization",  "Commercialization potential"],
+    ["impact",             "Impact & follow-on potential"],
+    ["budget",             "Budget & use of funds"],
+  ];
+  const filled = entries
+    .map(([k]) => scores[k])
+    .filter((v): v is number => typeof v === "number");
+  const mean = filled.length > 0 ? (filled.reduce((s, v) => s + v, 0) / filled.length).toFixed(1) : "—";
+  return (
+    <DSSection eyebrow="Reviewer rubric" title={`Mean score ${mean} / 5`} icon={<FileText size={14} className="text-emerald-700" />}>
+      <ul className="text-xs space-y-1">
+        {entries.map(([key, label]) => (
+          <li key={key} className="flex items-center justify-between">
+            <span className="text-fg">{label}</span>
+            <span className="font-mono text-emerald-700 font-bold">{scores[key] != null ? `${scores[key]} / 5` : "—"}</span>
+          </li>
+        ))}
+      </ul>
+      {scores.comment && (
+        <FieldBlock label="Comment">{scores.comment}</FieldBlock>
+      )}
+    </DSSection>
   );
 }
