@@ -134,12 +134,17 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
         <div
           className="relative -mt-24 sm:-mt-28"
           style={{
-            // Two stacked gradients: a brand-blue → pink wash fading
-            // out by 35% from the top (so the cover's bottom edge
-            // bleeds into a tinted body), and an opaque card base
-            // underneath. Same recipe as HR overview.
+            // Single soft gradient that carries the cover's editorial
+            // palette (rose → purple → indigo) down into the body
+            // before settling into the opaque card around 45% down.
+            // Was previously a two-layer recipe with a hard `--card`
+            // base underneath; that opaque layer is what created the
+            // hard cut between the cover and the body. The single
+            // gradient lets the cover bleed through the top of the
+            // body so the two read as one continuous stage instead
+            // of "deep cover panel + paper card panel".
             background:
-              "linear-gradient(180deg, rgba(59,130,246,0.07) 0%, rgba(244,114,182,0.04) 18%, rgba(255,255,255,0) 35%), linear-gradient(180deg, var(--card) 0%, var(--card) 100%)",
+              "linear-gradient(180deg, rgba(131,24,67,0.20) 0%, rgba(107,33,168,0.14) 8%, rgba(49,46,129,0.07) 20%, var(--card) 45%, var(--card) 100%)",
           }}
         >
           {/* Decorative brand-wash blob — adds a soft accent in the

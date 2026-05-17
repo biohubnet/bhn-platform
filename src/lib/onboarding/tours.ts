@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.17b";
+export const TOUR_VERSION = "2026.05.17c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -461,6 +461,13 @@ export const TOUR_STEPS: TourStep[] = [
     selector: "[aria-label=\"Change theme\"]",
     placement: "right",
     since: "2026.05.17b",
+  },
+  {
+    id: "cinematic-hero-bleed",
+    title: "Hero & body now read as one stage",
+    body: "Yesterday's cinematic hero rolled out platform-wide put a deep editorial cover on top of every page — but the body underneath cut to clean paper at a hard line, which read as two stacked panels. Softened: the body's top now carries the cover's rose / purple / indigo hues down past the seam, fading into the page card around the halfway mark. Cover and body now read as one continuous stage. Visible on the dashboard, EQUIP surfaces, /experience, /pathways, /courses, and the other cinematic-DS pages.",
+    placement: "center",
+    since: "2026.05.17c",
   },
   {
     id: "system-status-superadmin",
