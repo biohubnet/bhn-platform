@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.17e";
+export const TOUR_VERSION = "2026.05.17f";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -461,6 +461,14 @@ export const TOUR_STEPS: TourStep[] = [
     selector: "[aria-label=\"Change theme\"]",
     placement: "right",
     since: "2026.05.17b",
+  },
+  {
+    id: "aurora-theme",
+    title: "Aurora — the original cinematic gradient as a theme",
+    body: "New flavour in the theme picker: Aurora. Deep near-black-navy stage with the four signature cinematic auroras (cyan, pink, canary, green) and a royal-purple brand ramp. The exact gradient that was previously hardcoded into every cinematic hero, now available as a switchable theme. Magazine-cover-at-midnight feel.",
+    selector: "[aria-label=\"Change theme\"]",
+    placement: "right",
+    since: "2026.05.17f",
   },
   {
     id: "cinematic-hero-theme-driven",

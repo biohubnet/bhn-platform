@@ -1595,6 +1595,96 @@ body {
 [data-theme="atompunk"] .text-sky-800     { color: #084949; }
 [data-theme="atompunk"] .text-sky-900     { color: #053535; }
 
+/* ───── Aurora — the original cinematic gradient as a real theme.
+ *  Deep near-black-navy page surfaces; the hero is the exact
+ *  `#0b0f24 → #142046 → #312e81 → #6b21a8 → #831843` gradient that
+ *  was previously hardcoded into DSCoverBanner, with the four
+ *  signature cinematic auroras (cyan, pink, canary, green) on top.
+ *  Royal-purple brand ramp; magazine-cover-at-midnight feel. ───── */
+[data-theme="aurora"] {
+  --popover-bg: #1a1e3c;
+  --bg:        #0d1126;          /* deep near-black-navy */
+  --bg-mesh:
+    /* Cyan haze upper-left */
+    radial-gradient(at 14% 18%, rgba(86, 189, 248, 0.07) 0px, transparent 60%),
+    /* Pink haze lower-right */
+    radial-gradient(at 86% 78%, rgba(244, 114, 182, 0.06) 0px, transparent 55%),
+    /* Royal-purple wash bottom */
+    radial-gradient(at 50% 100%, rgba(107, 33, 168, 0.08) 0px, transparent 55%);
+  --card:      rgba(26, 30, 60, 0.85);
+  --card-solid: #1a1e3c;
+  --elevated:  rgba(36, 42, 76, 0.85);
+  --raised:    rgba(50, 56, 96, 0.85);
+  --fg:        #e8ebf2;          /* near-white */
+  --fg-muted:  #b1b6c8;
+  --fg-subtle: #7a8098;
+  --line:      rgba(180, 190, 220, 0.10);
+  --line-strong: rgba(180, 190, 220, 0.20);
+  --backdrop:  rgba(0, 0, 0, 0.72);
+
+  /* Royal-purple brand ramp anchored on #6b21a8 — the same stop
+   * that sat in the original cinematic gradient. Dark-theme
+   * convention applies: 50 is a deep tint for active button bgs,
+   * 500 is the lighter variant for use as text on dark, 600 is
+   * the saturated CTA where white text reads (~5.5:1), 700+
+   * darken further for hover/pressed states. */
+  --brand-50:  #261241;
+  --brand-100: #321858;
+  --brand-200: #401e72;
+  --brand-300: #4f238d;
+  --brand-400: #5d27a8;
+  --brand-500: #ad7ce0;
+  --brand-600: #6b21a8;
+  --brand-700: #561888;
+  --brand-800: #421267;
+  --brand-900: #2e0d49;
+
+  --radius-sm: 10px;
+  --radius:    14px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+
+  /* Hero — the original cinematic palette restored. Near-black-
+   * navy stage with the four signature auroras (cyan top-left,
+   * pink bottom-right, canary top-right, green bottom-left). */
+  --hero-bg:     #0b0f24;        /* near-black with navy hint */
+  --hero-mesh-1: #56bdf8;        /* cyan aurora — top-left */
+  --hero-mesh-2: #f472b6;        /* pink aurora — bottom-right */
+  --hero-mesh-3: #4ade80;        /* green aurora — bottom-left */
+  --hero-mesh-4: #facc15;        /* canary aurora — top-right */
+}
+
+/* Tame Tailwind's saturated state tints for Aurora's dark canvas —
+ * same approach as Dark theme. The 500-700 saturated mids stay
+ * untouched (so danger/approve CTAs with white text still pass
+ * contrast); we soften 50/100/200 so bg-rose-50, bg-amber-100, etc.
+ * don't blast against the near-black-navy surfaces. */
+[data-theme="aurora"] {
+  --color-rose-50:    rgba(244, 63, 94, 0.12);
+  --color-rose-100:   rgba(244, 63, 94, 0.18);
+  --color-rose-200:   rgba(244, 63, 94, 0.28);
+  --color-amber-50:   rgba(245, 158, 11, 0.10);
+  --color-amber-100:  rgba(245, 158, 11, 0.16);
+  --color-amber-200:  rgba(245, 158, 11, 0.26);
+  --color-emerald-50: rgba(16, 185, 129, 0.12);
+  --color-emerald-100:rgba(16, 185, 129, 0.18);
+  --color-emerald-200:rgba(16, 185, 129, 0.26);
+  --color-sky-50:     rgba(14, 165, 233, 0.12);
+  --color-sky-100:    rgba(14, 165, 233, 0.18);
+}
+[data-theme="aurora"] .text-rose-700    { color: #fb7185; }
+[data-theme="aurora"] .text-rose-800    { color: #f87171; }
+[data-theme="aurora"] .text-rose-900    { color: #fca5a5; }
+[data-theme="aurora"] .text-amber-700   { color: #fbbf24; }
+[data-theme="aurora"] .text-amber-800   { color: #fcd34d; }
+[data-theme="aurora"] .text-amber-900   { color: #fde68a; }
+[data-theme="aurora"] .text-emerald-700 { color: #34d399; }
+[data-theme="aurora"] .text-emerald-800 { color: #6ee7b7; }
+[data-theme="aurora"] .text-emerald-900 { color: #a7f3d0; }
+[data-theme="aurora"] .text-sky-700     { color: #38bdf8; }
+[data-theme="aurora"] .text-sky-800     { color: #7dd3fc; }
+[data-theme="aurora"] .text-sky-900     { color: #bae6fd; }
+
 /* ═════════════════════════════════════════════════════════════════
  *  Greenwood — ATMOSPHERE LAYER
  *

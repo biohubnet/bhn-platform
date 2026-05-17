@@ -17,6 +17,7 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
   icecream:   ["#fff8f3", "#c5234a", "#b8e0d2"],
   greenwood:  ["#f7faf2", "#456224", "#c6a449"],
   atompunk:   ["#f3ead8", "#1a8a8a", "#0e1a3a"],
+  aurora:     ["#0b0f24", "#6b21a8", "#f472b6"],
 };
 
 // Each theme picks its own corner-roundness for the swatch, mirroring
@@ -30,6 +31,7 @@ const SWATCH_RADIUS: Record<ThemeId, string> = {
   icecream:   "20px",
   greenwood:  "14px",
   atompunk:   "2px",
+  aurora:     "14px",
 };
 
 function Swatch({ id, size = 24 }: { id: ThemeId; size?: number }) {
