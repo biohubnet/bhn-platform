@@ -76,7 +76,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             been moved into PageHero so the banners render
             immediately AFTER the hero on every page that uses it.
             See src/components/layout/LayoutBanners.tsx. */}
-        <div className="max-w-7xl mx-auto px-6 py-8 pt-16">
+        <div className="max-w-screen-2xl mx-auto px-6 py-8 pt-16">
           {children}
         </div>
       </main>

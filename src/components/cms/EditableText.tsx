@@ -116,32 +116,22 @@ export function EditableText({
   }
 
   // Render the text. If empty and not staff, render nothing at all
-  // (no orphan zero-width wrapper). If empty and staff, render a
-  // muted placeholder so the pencil has something to anchor to.
-  const visibleText = text || (isStaff ? "(empty — click pencil to set)" : "");
-  const isPlaceholder = !text && isStaff;
+  // (no orphan zero-width wrapper). For staff, render the resolved
+  // text (or empty). The inline-pencil affordance was removed on
+  // user feedback — staff edit copy from /admin/copy instead, which
+  // shows every override in one place. EditableText still exists as
+  // the rendering primitive so the override pipeline keeps working.
+  const visibleText = text;
 
   return (
     <>
       <span
         className={cn(
           "group/copy relative inline align-baseline",
-          isPlaceholder && "italic opacity-60",
           className,
         )}
       >
         {(text || allowEmpty || isStaff) && visibleText}
-        {isStaff && (
-          <button
-            type="button"
-            onClick={openEditor}
-            title={`Edit "${copyKey}"`}
-            aria-label={`Edit copy: ${copyKey}`}
-            className="admin-glow opacity-0 group-hover/copy:opacity-100 focus:opacity-100 transition-opacity inline-flex items-center justify-center w-5 h-5 ml-1 align-baseline rounded text-current/70 hover:text-current bg-current/10 hover:bg-current/20"
-          >
-            <Pencil size={10} />
-          </button>
-        )}
       </span>
 
       {editing && isStaff && (

@@ -32,7 +32,6 @@ import { cn } from "@/lib/utils";
 // If a third surface needs swatches, hoist to a shared module.
 const SWATCH: Record<ThemeId, [string, string, string]> = {
   light:      ["#ffffff", "#3b6cef", "#0b1b3b"],
-  dark:       ["#0f1d3d", "#5e8ff7", "#eaf0fb"],
   rosalind:   ["#fbf6ec", "#485940", "#a8625a"],
   hitech:     ["#06121f", "#00d4ff", "#e3f7ff"],
   sakura:     ["#fffaf9", "#d04c61", "#3a1f24"],

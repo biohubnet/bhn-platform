@@ -12,7 +12,6 @@
 export const VALID_THEME_IDS = [
   // Classic
   "light",
-  "dark",
   "rosalind",
   "mist",
   "hitech",

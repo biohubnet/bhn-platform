@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BHN Platform · Operational Plan</title>
+<style>
+  :root {
+    --brand-700: #1d4ed8;
+    --brand-600: #2563eb;
+    --brand-100: #dbeafe;
+    --brand-50:  #eff6ff;
+    --emerald-600: #059669;
+    --emerald-50:  #ecfdf5;
+    --rose-600:    #e11d48;
+    --rose-50:     #fff1f2;
+    --amber-600:   #d97706;
+    --amber-50:    #fffbeb;
+    --slate-900: #0f172a;
+    --slate-700: #334155;
+    --slate-500: #64748b;
+    --slate-300: #cbd5e1;
+    --slate-200: #e2e8f0;
+    --slate-100: #f1f5f9;
+    --slate-50:  #f8fafc;
+    --card:      #ffffff;
+    --page:      #f8fafc;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--page);
+    color: var(--slate-900);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+  /* ── Hero ───────────────────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg, #0b1b3b 0%, #1d4ed8 60%, #06b6d4 100%);
+    color: white;
+    border-radius: 24px;
+    padding: 44px 44px 40px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 36px;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    top: -120px;
+    right: -100px;
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%);
+    border-radius: 50%;
+  }
+  .hero .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 11px;
+    font-weight: 700;
+    opacity: 0.85;
+  }
+  .hero h1 {
+    font-size: 40px;
+    line-height: 1.1;
+    margin: 8px 0 12px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .hero p {
+    max-width: 680px;
+    font-size: 16px;
+    margin: 0;
+    color: rgba(255,255,255,0.92);
+  }
+  /* ── Section heading ────────────────────────────────────────── */
+  h2.section {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--slate-500);
+    margin: 36px 0 14px;
+    font-weight: 800;
+  }
+  /* ── Cost comparison ────────────────────────────────────────── */
+  .cost {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 720px) { .cost { grid-template-columns: 1fr; } }
+  .cost-card {
+    border-radius: 16px;
+    padding: 24px;
+    border: 2px solid;
+    position: relative;
+  }
+  .cost-card.recommended {
+    border-color: var(--emerald-600);
+    background: var(--emerald-50);
+  }
+  .cost-card.alt {
+    border-color: var(--slate-200);
+    background: var(--card);
+  }
+  .cost-card .tag {
+    display: inline-block;
+    background: var(--emerald-600);
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .cost-card.alt .tag {
+    background: var(--slate-300);
+    color: var(--slate-700);
+  }
+  .cost-card h3 {
+    font-size: 17px;
+    margin: 0 0 6px;
+    font-weight: 700;
+  }
+  .cost-card .price {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--slate-900);
+    margin: 8px 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .cost-card .price small {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--slate-500);
+  }
+  .cost-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 14px 0 0;
+    font-size: 14px;
+    color: var(--slate-700);
+  }
+  .cost-card li {
+    padding: 4px 0 4px 22px;
+    position: relative;
+  }
+  .cost-card.recommended li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--emerald-600);
+    font-weight: 800;
+  }
+  .cost-card.alt li::before {
+    content: "·";
+    position: absolute;
+    left: 6px;
+    color: var(--slate-300);
+    font-weight: 800;
+  }
+  /* ── What AI does / doesn't do ──────────────────────────────── */
+  .ai-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 720px) { .ai-grid { grid-template-columns: 1fr; } }
+  .ai-col {
+    background: var(--card);
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .ai-col h3 {
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ai-col.yes { border-top: 4px solid var(--emerald-600); }
+  .ai-col.no  { border-top: 4px solid var(--amber-600); }
+  .ai-col .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .ai-col.yes .dot { background: var(--emerald-600); }
+  .ai-col.no .dot  { background: var(--amber-600); }
+  .ai-col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--slate-700);
+    line-height: 1.55;
+  }
+  .ai-col li {
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--slate-200);
+  }
+  .ai-col li:last-child { border-bottom: none; }
+  /* ── 6-point plan ───────────────────────────────────────────── */
+  .plan {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 720px) { .plan { grid-template-columns: 1fr; } }
+  .plan-card {
+    background: var(--card);
+    border: 1px solid var(--slate-200);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .plan-card .n {
+    width: 32px; height: 32px;
+    background: var(--brand-600);
+    color: white;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .plan-card .body h4 {
+    margin: 2px 0 4px;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--slate-900);
+  }
+  .plan-card .body p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--slate-700);
+    line-height: 1.55;
+  }
+  .plan-card .body .cost {
+    display: inline-block;
+    font-size: 11px;
+    background: var(--brand-50);
+    color: var(--brand-700);
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-top: 6px;
+  }
+  /* ── Escalation ladder ──────────────────────────────────────── */
+  .ladder {
+    background: var(--card);
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px 0;
+    border-left: 3px solid var(--slate-200);
+    padding-left: 20px;
+    margin-left: 16px;
+    position: relative;
+  }
+  .step::before {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 18px;
+    width: 13px; height: 13px;
+    background: white;
+    border: 3px solid var(--brand-600);
+    border-radius: 50%;
+  }
+  .step.escalate::before { border-color: var(--amber-600); }
+  .step.last::before { border-color: var(--rose-600); }
+  .step .time {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--slate-500);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    min-width: 88px;
+  }
+  .step .action {
+    font-size: 14px;
+    color: var(--slate-900);
+  }
+  .step .action strong { color: var(--brand-700); font-weight: 700; }
+  /* ── Bottom line ────────────────────────────────────────────── */
+  .bottomline {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white;
+    border-radius: 18px;
+    padding: 30px 34px;
+    margin-top: 36px;
+  }
+  .bottomline h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .bottomline p {
+    margin: 6px 0;
+    color: rgba(255,255,255,0.88);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .bottomline .punch {
+    background: rgba(255,255,255,0.08);
+    border-left: 3px solid #06b6d4;
+    padding: 14px 18px;
+    margin-top: 18px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  /* ── Footer credibility checklist ───────────────────────────── */
+  .checklist {
+    background: var(--card);
+    border: 1px solid var(--slate-200);
+    border-radius: 16px;
+    padding: 22px 26px;
+    margin-top: 24px;
+  }
+  .checklist h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .checklist ul {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 24px;
+  }
+  @media (max-width: 720px) { .checklist ul { grid-template-columns: 1fr; } }
+  .checklist li {
+    padding: 4px 0 4px 22px;
+    position: relative;
+    font-size: 13.5px;
+    color: var(--slate-700);
+  }
+  .checklist li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--emerald-600);
+    font-weight: 800;
+  }
+  /* ── Print niceties ─────────────────────────────────────────── */
+  @media print {
+    body { background: white; }
+    .page { padding: 24px 16px; }
+    .hero, .bottomline { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Hero ─────────────────────────────────────────────────── -->
+  <header class="hero">
+    <p class="eyebrow">For senior management · BHN Training Platform</p>
+    <h1>Going live — and what happens if something breaks.</h1>
+    <p>
+      The question your colleagues are asking is fair: <em>can one person + AI cover production?</em>
+      The answer isn't "trust the AI" — it's a concrete operations plan that costs roughly
+      one tenth of a dev team and addresses every realistic failure mode.
+    </p>
+  </header>
+
+  <!-- ── Cost comparison ─────────────────────────────────────── -->
+  <h2 class="section">The choice in dollar terms</h2>
+  <div class="cost">
+    <div class="cost-card recommended">
+      <span class="tag">Recommended</span>
+      <h3>Solo + AI + safeguards</h3>
+      <p class="price">$30k – $60k <small>/ year</small></p>
+      <p style="color: var(--slate-700); font-size: 13.5px; margin: 4px 0 0;">All-in operating cost</p>
+      <ul>
+        <li>Contractor on retainer (~$2-5k/mo for response coverage)</li>
+        <li>Vendor support tiers (Neon, Vercel, email)</li>
+        <li>Quarterly DR drill + dependency audit</li>
+        <li>Existing audit log + compliance posture</li>
+        <li>Same iteration speed as today</li>
+      </ul>
+    </div>
+    <div class="cost-card alt">
+      <span class="tag">Alternative</span>
+      <h3>Hire 2-person dev team</h3>
+      <p class="price">$300k+ <small>/ year</small></p>
+      <p style="color: var(--slate-700); font-size: 13.5px; margin: 4px 0 0;">Salaries + benefits + recruiting</p>
+      <ul>
+        <li>Two full-time engineers, fully loaded</li>
+        <li>3-6 months ramp-up before they know the codebase</li>
+        <li>Process overhead (PRs, standups, planning)</li>
+        <li>Same compliance + vendor work still needed</li>
+        <li>Most time idle relative to actual incident volume</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── What AI does well / doesn't do ───────────────────────── -->
+  <h2 class="section">An honest read on AI in the loop</h2>
+  <div class="ai-grid">
+    <div class="ai-col yes">
+      <h3><span class="dot"></span> What AI handles well</h3>
+      <ul>
+        <li><strong>Debugging.</strong> Reads stack traces, locates the bug, proposes a fix that compiles.</li>
+        <li><strong>Codebase orientation.</strong> Every architectural decision is already documented inline in comments.</li>
+        <li><strong>Boring bugs caught early.</strong> TypeScript + Prisma refuse to compile if types or schema drift.</li>
+        <li><strong>Iteration speed.</strong> Features that would take a sprint with a dev land in an afternoon.</li>
+        <li><strong>Documentation.</strong> Audit log, compliance page, changelog — already populated and current.</li>
+      </ul>
+    </div>
+    <div class="ai-col no">
+      <h3><span class="dot"></span> What AI does not handle</h3>
+      <ul>
+        <li><strong>Being on-call at 2 a.m.</strong> A human still has to be the one in the loop when prod alerts fire.</li>
+        <li><strong>Continuity if I step away.</strong> Sick, vacation, or departure — someone else needs to know the system.</li>
+        <li><strong>Auditor + insurer conversations.</strong> SOC 2 attestations, vendor security questionnaires need a human signature.</li>
+        <li><strong>Final architectural calls.</strong> AI advises and implements; "should we even do this" stays with a person.</li>
+        <li><strong>Vendor relationships.</strong> Contract negotiations, incident escalations.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── 6-point operational plan ─────────────────────────────── -->
+  <h2 class="section">The operational plan, in six concrete pieces</h2>
+  <div class="plan">
+    <div class="plan-card">
+      <span class="n">1</span>
+      <div class="body">
+        <h4>Runbook in the repo</h4>
+        <p>One <code>RUNBOOK.md</code> with rollback, DB restore, audit-log reading, vendor contacts. The on-call playbook.</p>
+        <span class="cost">½ day to write</span>
+      </div>
+    </div>
+    <div class="plan-card">
+      <span class="n">2</span>
+      <div class="body">
+        <h4>Backup human on retainer</h4>
+        <p>Contractor onboarded onto the codebase, available for emergencies. Insurance, not a teammate.</p>
+        <span class="cost">$2–5k / month</span>
+      </div>
+    </div>
+    <div class="plan-card">
+      <span class="n">3</span>
+      <div class="body">
+        <h4>Documented escalation ladder</h4>
+        <p>Time-boxed steps: try first, escalate at 30 min, surface to users at 2 hours. Predictable response posture.</p>
+        <span class="cost">Free · in repo</span>
+      </div>
+    </div>
+    <div class="plan-card">
+      <span class="n">4</span>
+      <div class="body">
+        <h4>Quarterly disaster-recovery drill</h4>
+        <p>Restore a DB snapshot to staging, verify boot, document time-to-restore. Proves the recovery story is real.</p>
+        <span class="cost">½ day / quarter</span>
+      </div>
+    </div>
+    <div class="plan-card">
+      <span class="n">5</span>
+      <div class="body">
+        <h4>Vendor support contracts</h4>
+        <p>Paid tiers with SLAs on Neon, Vercel, mail provider. Cheaper than a dev, addresses 80% of "what if infra fails."</p>
+        <span class="cost">$300–800 / month total</span>
+      </div>
+    </div>
+    <div class="plan-card">
+      <span class="n">6</span>
+      <div class="body">
+        <h4>Quarterly upgrade + audit cadence</h4>
+        <p>Dependency updates, security scan, code review of new paths. Documented. The thing auditors actually want.</p>
+        <span class="cost">1 day / quarter</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Escalation ladder ──────────────────────────────────── -->
+  <h2 class="section">If something breaks · the escalation ladder</h2>
+  <div class="ladder">
+    <div class="step">
+      <span class="time">T+0</span>
+      <span class="action">
+        Alert fires. Open Vercel dashboard, read recent deploy, check audit log. Most issues resolve here in
+        <strong>10 minutes</strong> — usually a deploy rollback.
+      </span>
+    </div>
+    <div class="step escalate">
+      <span class="time">T+30 min</span>
+      <span class="action">
+        If unresolved, page the contractor. They have the runbook + codebase context already. Together we're a
+        <strong>two-person team for the duration of the incident</strong>.
+      </span>
+    </div>
+    <div class="step escalate">
+      <span class="time">T+1 hour</span>
+      <span class="action">
+        If vendor outage (DB / hosting / email), open a paid-tier support ticket. Most vendors have a
+        <strong>15-minute SLA on paid plans</strong>.
+      </span>
+    </div>
+    <div class="step last">
+      <span class="time">T+2 hours</span>
+      <span class="action">
+        If user-facing, post a status banner via the editable-copy CMS already in place. Users see the situation,
+        not a blank page.
+      </span>
+    </div>
+  </div>
+
+  <!-- ── Bottom line ─────────────────────────────────────────── -->
+  <div class="bottomline">
+    <h2>The argument, in one sentence.</h2>
+    <p>
+      The question isn't <em>"can AI replace programmers."</em> The question is
+      <strong style="color: white">"what's the cheapest credible coverage plan that addresses each risk?"</strong>
+    </p>
+    <p>
+      A six-figure dev team and a five-figure operations plan both reach the same coverage. One spends ten times
+      what the other does, and the codebase you'd hand over to that dev team — the documentation, the audit
+      log, the compliance posture — already exists.
+    </p>
+    <div class="punch">
+      The one thing the operations plan does require: <strong>I have to be willing to be on call.</strong>
+      That's the part no contract or AI removes — and it's the part the platform already needs from me regardless.
+    </div>
+  </div>
+
+  <!-- ── Credibility footer ─────────────────────────────────── -->
+  <div class="checklist">
+    <h3>Already in place — what management can verify today</h3>
+    <ul>
+      <li>Audit log of every privileged action (visible at <code>/admin/audit</code>)</li>
+      <li>Compliance overview page with honest status flags</li>
+      <li>Security vitals dashboard (MFA coverage, lockouts, recent activity)</li>
+      <li>Versioned schema migrations + automated deploys</li>
+      <li>TypeScript-strict + Prisma-validated build</li>
+      <li>Inline rationale comments on every architectural decision</li>
+      <li>Editable copy CMS for runtime banners + status messages</li>
+      <li>Changelog of every shipped feature</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

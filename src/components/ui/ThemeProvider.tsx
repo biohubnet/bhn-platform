@@ -15,9 +15,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 export const THEMES = [
   // Classic — foundational themes, always present.
   { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces", category: "classic" },
-  { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents", category: "classic" },
+  { id: "hitech",     name: "Voltage",    description: "Neon cyan on near-black. Editorial dark mode for late-night focus — the platform's default for users on a system dark preference.", category: "classic" },
   { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic", category: "classic" },
-  { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black", category: "classic" },
 
   // Flavours — sensory / atmospheric themes.
   { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright", category: "flavour" },
@@ -99,7 +98,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         try { localStorage.removeItem(STORAGE_KEY); } catch {}
       }
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const initial: ThemeId = prefersDark ? "dark" : "light";
+      // Voltage (formerly Hi-Tech / id stays "hitech" for back-compat
+      // with existing localStorage values) is the new dark-mode
+      // default — Nightfall was removed from the registry.
+      const initial: ThemeId = prefersDark ? "hitech" : "light";
       setThemeState(initial);
       setSavedTheme(null);
       document.documentElement.dataset.theme = initial;
@@ -155,7 +157,10 @@ export function ThemeScript() {
   // whose endsOn ISO date has passed).
   const activeIds = activeThemes().map((t) => t.id);
   const allowedJson = JSON.stringify(activeIds);
-  const code = `(function(){try{var allow=${allowedJson};var s=localStorage.getItem('${STORAGE_KEY}');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var t=(s&&allow.indexOf(s)>=0)?s:(d?'dark':'light');if(s&&allow.indexOf(s)<0){try{localStorage.removeItem('${STORAGE_KEY}');}catch(_){}}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
+  // Migration: users who had the retired "dark" theme saved are
+  // mapped to "hitech" (Voltage) so they keep their dark-mode look
+  // instead of being kicked back to light.
+  const code = `(function(){try{var allow=${allowedJson};var s=localStorage.getItem('${STORAGE_KEY}');if(s==='dark'){s='hitech';try{localStorage.setItem('${STORAGE_KEY}','hitech');}catch(_){}}var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var t=(s&&allow.indexOf(s)>=0)?s:(d?'hitech':'light');if(s&&allow.indexOf(s)<0){try{localStorage.removeItem('${STORAGE_KEY}');}catch(_){}}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
   return <script dangerouslySetInnerHTML={{ __html: code }} />;
 }
 

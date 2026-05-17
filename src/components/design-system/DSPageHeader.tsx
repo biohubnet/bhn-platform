@@ -75,7 +75,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
           <div className="blob-shape blob-soft drift-slow" style={{ width: 660, height: 660, bottom: -260, right: -180, opacity: 0.55 }} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 pt-14 pb-16">
+        <div className="relative max-w-screen-2xl mx-auto px-6 pt-14 pb-16">
           <div className={"grid gap-10 items-end " + (aside ? "md:grid-cols-[2fr_1fr]" : "")}>
             <div className="min-w-0">
               {eyebrow && (
@@ -214,7 +214,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
             contrast under text on dark stages. */}
         <section
           aria-label="Page header"
-          className="relative max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 py-6 sm:py-8 lg:py-10 min-h-[10rem] sm:min-h-[11rem] lg:min-h-[12rem] flex flex-col justify-end"
+          className="relative max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 py-6 sm:py-8 lg:py-10 min-h-[10rem] sm:min-h-[11rem] lg:min-h-[12rem] flex flex-col justify-end"
         >
           <div className={`grid gap-6 sm:gap-8 items-end grid-cols-1 ${hasIcon ? "sm:grid-cols-[auto_1fr]" : ""}`}>
             {/* Icon disc — white tile with conic-gradient glow ring */}
@@ -279,7 +279,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
             aria-label="Page header aside"
             className="relative border-t border-white/10"
           >
-            <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 py-8 sm:py-10">
+            <div className="max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 py-8 sm:py-10">
               {aside}
             </div>
           </section>

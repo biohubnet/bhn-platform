@@ -54,86 +54,12 @@
   --hero-mesh-4: #0e7490;
 }
 
-/* ───── Nightfall (dark) — refined, less saturated, warmer ───── */
-[data-theme="dark"] {
-  --popover-bg: #1a1d28;
-  --bg:        #0c0d12;        /* warmer near-black (was harsher cool #060a16) */
-  --bg-mesh:
-    radial-gradient(at 18% 28%, rgba(71,86,112,0.18) 0px, transparent 60%),
-    radial-gradient(at 82% 8%,  rgba(92,108,138,0.10) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(58,70,89,0.16) 0px, transparent 55%);
-  --card:      rgba(28,30,40,0.82);
-  --card-solid: #181b25;        /* desaturated near-charcoal (was navy #112149) */
-  --elevated:  rgba(38,42,55,0.78);
-  --raised:    rgba(52,58,75,0.85);
-  --fg:        #e3e4e9;
-  --fg-muted:  #b1b3bd;
-  --fg-subtle: #7a7d88;
-  --line:      rgba(180,190,210,0.10);
-  --line-strong: rgba(180,190,210,0.20);
-  --backdrop:  rgba(0,0,0,0.72);
-
-  /* Dark-mode brand — same teal-navy hue as Daylight, shifted darker.
-   * 50 is a deep tint for active button bgs; 600 is the CTA where
-   * white text reads (≈ 6:1); 700 darkens further for hover. */
-  --brand-50:  #182a31;
-  --brand-100: #213c46;
-  --brand-200: #2c4f5a;
-  --brand-300: #3b6471;
-  --brand-400: #517986;
-  --brand-500: #7398a4;
-  --brand-600: #3b6471;
-  --brand-700: #2c4f5a;
-  --brand-800: #213c46;
-  --brand-900: #182d35;
-
-  /* Dashboard hero gradient — Nightfall: deep navy + indigo + electric blue. */
-  --hero-bg:     #0a1628;
-  --hero-mesh-1: #3b82f6;
-  --hero-mesh-2: #6366f1;
-  --hero-mesh-3: #1e3a8a;
-  --hero-mesh-4: #1e1b4b;
-
-  /* Tame Tailwind's hard-coded state tints so cards / banners using
-   * bg-rose-50, bg-amber-100, bg-emerald-50 etc. don't blast in dark
-   * mode. We override the CSS variables Tailwind generates, so any
-   * usage (background, border, gradient stop) adapts automatically.
-   * Saturated mids (500–700) are left alone so danger/approve CTAs
-   * with white text still pass contrast. */
-  --color-rose-50:    rgba(244, 63, 94, 0.12);
-  --color-rose-100:   rgba(244, 63, 94, 0.18);
-  --color-rose-200:   rgba(244, 63, 94, 0.28);
-  --color-amber-50:   rgba(245, 158, 11, 0.10);
-  --color-amber-100:  rgba(245, 158, 11, 0.16);
-  --color-amber-200:  rgba(245, 158, 11, 0.26);
-  --color-emerald-50: rgba(16, 185, 129, 0.12);
-  --color-emerald-100:rgba(16, 185, 129, 0.18);
-  --color-emerald-200:rgba(16, 185, 129, 0.26);
-  --color-sky-50:     rgba(14, 165, 233, 0.12);
-  --color-sky-100:    rgba(14, 165, 233, 0.18);
-
-  --radius-sm: 10px;
-  --radius:    14px;
-  --radius-lg: 22px;
-  --radius-xl: 28px;
-}
-
-/* Lift deep state text so it reads on the muted tint bgs above. We use
- * class selectors here (not the --color-rose-700 variable) because the
- * 600/700 tokens are also legitimately used as saturated CTA bgs with
- * white text — those pairs must stay untouched. */
-[data-theme="dark"] .text-rose-700    { color: #fb7185; }
-[data-theme="dark"] .text-rose-800    { color: #f87171; }
-[data-theme="dark"] .text-rose-900    { color: #fca5a5; }
-[data-theme="dark"] .text-amber-700   { color: #fbbf24; }
-[data-theme="dark"] .text-amber-800   { color: #fcd34d; }
-[data-theme="dark"] .text-amber-900   { color: #fde68a; }
-[data-theme="dark"] .text-emerald-700 { color: #34d399; }
-[data-theme="dark"] .text-emerald-800 { color: #6ee7b7; }
-[data-theme="dark"] .text-emerald-900 { color: #a7f3d0; }
-[data-theme="dark"] .text-sky-700     { color: #38bdf8; }
-[data-theme="dark"] .text-sky-800     { color: #7dd3fc; }
-[data-theme="dark"] .text-sky-900     { color: #bae6fd; }
+/* Nightfall (id "dark") was retired 2026-05-17. Voltage (id
+ * "hitech", formerly Hi-Tech) is the new dark-mode default; users
+ * who had localStorage = "dark" get auto-migrated to "hitech" by the
+ * ThemeScript init code. The CSS that used to live here was removed
+ * to keep the registry honest — there's no theme that maps to
+ * [data-theme="dark"] anymore. */
 
 /* ───── Rosalind — warm parchment, botanical sage, dusty-rose accent.
  *  Named after Rosalind Franklin (X-ray crystallographer who imaged DNA).
@@ -545,34 +471,8 @@
   font-weight: 400 !important;
 }
 
-/* Same fix for Nightfall (dark) — the bright Tailwind chip palette
- * also reads poorly against the deep navy. Reuses each tone's
- * brighter shade for text and a translucent matching wash for bg. */
-[data-theme="dark"] [data-section-tone="engage"] {
-  background: rgba(16, 185, 129, 0.18) !important;
-  color: #6ee7b7 !important;
-  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.45);
-}
-[data-theme="dark"] [data-section-tone="experience"] {
-  background: rgba(245, 158, 11, 0.18) !important;
-  color: #fcd34d !important;
-  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45);
-}
-[data-theme="dark"] [data-section-tone="equip"] {
-  background: rgba(244, 63, 94, 0.18) !important;
-  color: #fda4af !important;
-  box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.45);
-}
-[data-theme="dark"] [data-section-tone="electric"] {
-  background: rgba(56, 189, 248, 0.18) !important;
-  color: #7dd3fc !important;
-  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.45);
-}
-[data-theme="dark"] [data-section-tone="hr-preview"] {
-  background: rgba(139, 92, 246, 0.22) !important;
-  color: #c4b5fd !important;
-  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.55);
-}
+/* Nightfall-specific section-tone overrides removed when the theme
+ * was retired. Voltage (id "hitech") has its own equivalents below. */
 
 /* ───── Tailwind theme bindings ───── */
 @theme inline {
@@ -1964,17 +1864,9 @@ body {
   --popover-shadow: 0 12px 32px rgba(15,23,42,0.14), 0 1px 3px rgba(15,23,42,0.06);
 }
 
-[data-theme="dark"] {
-  --font-sans-theme: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display-theme: var(--font-sans-theme);
-  --body-features: "ss01", "cv11", "cv09";
-  --surface-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.45);
-  --surface-border: 1px solid var(--line);
-  --heading-tracking: -0.01em;
-  --heading-weight: 600;
-  --heading-transform: none;
-  --popover-shadow: 0 12px 36px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.35);
-}
+/* Retired theme: Nightfall (data-theme="dark"). Removed 2026-05-17.
+ * Users migrate to Voltage (data-theme="hitech") automatically via
+ * the ThemeScript init code in ThemeProvider.tsx. */
 
 /* Rosalind — humanist sans body, italic serif display headings.
  * Soft warm shadow tinted with the brand sage so cards feel like
