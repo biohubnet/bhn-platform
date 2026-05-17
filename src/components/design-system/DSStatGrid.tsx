@@ -36,8 +36,13 @@ export function DSStatGrid({ children }: { children: ReactNode }) {
     );
   }
   if (designSystem === "cinematic") {
+    // Hairline-divided row, no card chrome — designed to sit either
+    // inside the DSPageHeader cinematic body (as the `aside`) or
+    // inside a DSSection wash. Same vocabulary as the HR-overview
+    // stat triplet: divide-x + tabular gradient numbers + uppercase
+    // tracked labels. 2-col on phones so labels don't truncate.
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-line ring-1 ring-line rounded-2xl bg-card/40 overflow-hidden">
+      <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-line">
         {children}
       </div>
     );
@@ -104,14 +109,19 @@ export function DSStat({
   }
 
   if (designSystem === "cinematic") {
+    // Editorial stat tile — uppercase tracked label up top, huge
+    // gradient-text number, optional help underneath. Sits inside
+    // a hairline-divided row (see DSStatGrid). first:pl-0 / last:pr-0
+    // keeps the gradient text aligned with the section gutter when
+    // used as the leftmost / rightmost stat.
     return (
-      <div className="px-4 py-5">
+      <div className="px-4 sm:px-6 py-3 first:pl-0 last:pr-0">
         <div className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle inline-flex items-center gap-1.5">
           {icon}
           {label}
         </div>
         <p
-          className="text-3xl sm:text-4xl font-bold tabular-nums mt-2"
+          className="text-3xl sm:text-4xl lg:text-5xl font-bold tabular-nums tracking-tight leading-none mt-2"
           style={{
             backgroundImage: gradientForTone(tone),
             WebkitBackgroundClip: "text",
@@ -121,7 +131,7 @@ export function DSStat({
         >
           {formatted}
         </p>
-        {help && <p className="text-[10px] text-subtle mt-1">{help}</p>}
+        {help && <p className="text-[10px] text-subtle mt-1.5">{help}</p>}
       </div>
     );
   }

@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.15i";
+export const TOUR_VERSION = "2026.05.17a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -263,7 +263,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "themes",
     title: "Pick your theme",
-    body: "Ten elegant themes, light and dark. Find the picker at the bottom of the sidebar — your choice persists across sessions.",
+    body: "Seven curated themes, light and dark. Find the picker at the bottom of the sidebar — your choice persists across sessions.",
     placement: "center",
     since: "2025.05",
   },
@@ -290,6 +290,17 @@ export const TOUR_STEPS: TourStep[] = [
     path: "/dashboard",
     placement: "center",
     since: "2026.05.07b",
+  },
+  {
+    id: "cinematic-redesign",
+    title: "Cinematic, rebuilt to match HR Overview",
+    body: "The Cinematic design system now wraps the page header in one rounded panel — deep editorial cover banner up top, identity row overlapping it with a tinted body, eyebrow + giant gradient title + description sitting on the same canvas. Same vocabulary as the HR overview at /employer. Pages that opt into the cinematic DS now read as one cohesive brand stage instead of a cover plus a separate description card.",
+    path: "/admin/design-system",
+    selector: "[data-design-system-showroom]",
+    placement: "center",
+    since: "2026.05.17a",
+    roles: ["admin", "superadmin"],
+    cta: { label: "See the showroom", href: "/admin/design-system" },
   },
   {
     id: "auto-thumbnails",
@@ -414,8 +425,8 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "trimmed-themes",
-    title: "Four themes, all distinct",
-    body: "Open the Theme picker — Daylight, Nightfall, Scientific (Charter serif on cool slate), and Hi-Tech (JetBrains Mono on near-black with neon edges). Each one ships its own typography, surface treatment, and corner radii — switching themes changes the whole design language, not just colour.",
+    title: "Three core themes, all distinct",
+    body: "Open the Theme picker — Daylight, Nightfall, and Hi-Tech (JetBrains Mono on near-black with neon edges). Each one ships its own typography, surface treatment, and corner radii — switching themes changes the whole design language, not just colour.",
     selector: "[aria-label=\"Change theme\"]",
     placement: "right",
     since: "2026.05.07c",

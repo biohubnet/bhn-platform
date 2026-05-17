@@ -107,39 +107,125 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
   }
 
   if (designSystem === "cinematic") {
+    // Cinematic renders as ONE rounded panel containing the deep
+    // cover banner + a body that overlaps the cover by -mt-24. The
+    // body holds the eyebrow + giant gradient title + description.
+    // Lifted from the /employer HR-overview shape so cinematic
+    // pages all share the same editorial vocabulary instead of the
+    // older "banner with title inside + separate description card"
+    // which read as two disconnected pieces.
+    const hasIcon = Boolean(icon);
+    const hasAside = Boolean(aside);
+
     return (
-      <header className="space-y-4">
-        <DSCoverBanner>
-          {eyebrow && <DSEyebrow>{eyebrow}</DSEyebrow>}
-          <h1
-            className="mt-2 text-3xl sm:text-5xl font-bold tracking-tight inline-flex items-center gap-3"
-            style={{
-              backgroundImage:
-                "linear-gradient(120deg, var(--fg) 0%, var(--brand-700) 55%, var(--fg) 100%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-            }}
-          >
-            {icon && (
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-white/40 backdrop-blur-sm ring-1 ring-white/40 text-brand-700 shrink-0">
-                {icon}
-              </span>
-            )}
-            {title}
-          </h1>
-        </DSCoverBanner>
-        {description && (
+      <header className="rounded-3xl overflow-hidden shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)]">
+        <DSCoverBanner />
+
+        <div
+          className="relative -mt-24 sm:-mt-28"
+          style={{
+            // Two stacked gradients: a brand-blue → pink wash fading
+            // out by 35% from the top (so the cover's bottom edge
+            // bleeds into a tinted body), and an opaque card base
+            // underneath. Same recipe as HR overview.
+            background:
+              "linear-gradient(180deg, rgba(59,130,246,0.07) 0%, rgba(244,114,182,0.04) 18%, rgba(255,255,255,0) 35%), linear-gradient(180deg, var(--card) 0%, var(--card) 100%)",
+          }}
+        >
+          {/* Decorative brand-wash blob — adds a soft accent in the
+              upper-left of the body without competing with the cover */}
           <div
-            className="rounded-2xl px-5 py-4 ring-1 ring-line"
+            aria-hidden
+            className="absolute top-10 left-1/4 w-[40rem] h-[40rem] rounded-full opacity-30 blur-3xl pointer-events-none"
             style={{
-              backgroundImage:
-                "linear-gradient(180deg, color-mix(in srgb, var(--brand-50) 60%, transparent) 0%, transparent 100%)",
+              background:
+                "radial-gradient(closest-side, rgba(59,130,246,0.5), rgba(59,130,246,0) 70%)",
             }}
+          />
+
+          {/* IDENTITY ROW — icon + title block side-by-side */}
+          <section
+            aria-label="Page header"
+            className="relative px-6 sm:px-10 lg:px-14 pt-8 sm:pt-10 pb-10"
           >
-            <p className="text-sm text-fg/85 leading-relaxed max-w-3xl">{description}</p>
-          </div>
-        )}
+            <div className={`grid gap-6 sm:gap-10 items-start grid-cols-1 ${hasIcon ? "sm:grid-cols-[auto_1fr]" : ""}`}>
+              {/* Icon disc — left column. Smaller cousin of the HR-
+                  overview logo disc: conic glow ring + white tile +
+                  centred icon. Drops out cleanly when no icon. */}
+              {hasIcon && (
+                <div className="relative shrink-0">
+                  <div
+                    aria-hidden
+                    className="absolute -inset-4 rounded-full opacity-60 blur-2xl"
+                    style={{
+                      background:
+                        "conic-gradient(from 0deg, rgba(56,189,248,0.5), rgba(244,114,182,0.5), rgba(250,204,21,0.4), rgba(74,222,128,0.4), rgba(56,189,248,0.5))",
+                    }}
+                  />
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white ring-4 ring-white shadow-[0_18px_40px_-10px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center text-brand-700">
+                    {icon}
+                  </div>
+                </div>
+              )}
+
+              {/* Title block — main column */}
+              <div className="min-w-0">
+                {eyebrow && (
+                  <p className="text-[10px] uppercase tracking-[0.28em] font-bold text-brand-700 mb-3 inline-flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className="block h-px w-6"
+                      style={{
+                        background:
+                          "linear-gradient(90deg, var(--brand-500), transparent)",
+                      }}
+                    />
+                    {eyebrow}
+                  </p>
+                )}
+                <h1
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(135deg, var(--fg) 0%, var(--fg) 60%, rgb(59,130,246) 100%)",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                  }}
+                >
+                  {title}
+                </h1>
+                {description && (
+                  <p className="mt-5 text-sm sm:text-base text-fg/85 leading-relaxed max-w-3xl">
+                    {description}
+                  </p>
+                )}
+                {actions && (
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    {actions}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* ASIDE — rendered as a separate row beneath the identity,
+              divided by a hairline + its own subtle wash. Gives stats
+              (the common aside payload) the full width to breathe and
+              mirrors HR overview's separate STATS section. */}
+          {hasAside && (
+            <section
+              aria-label="Page header aside"
+              className="relative px-6 sm:px-10 lg:px-14 py-8 sm:py-10 border-t border-line"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, rgba(56,189,248,0.05) 0%, rgba(124,58,237,0.03) 50%, rgba(244,114,182,0.04) 100%)",
+              }}
+            >
+              {aside}
+            </section>
+          )}
+        </div>
       </header>
     );
   }
