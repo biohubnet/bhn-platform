@@ -6,8 +6,9 @@ import { TALENT_APPLICATION_PRESETS } from "@/lib/demo/presets";
 import {
   Pencil, Save, X, Plus, Trash2, Check, AlertCircle, Loader2, ListChecks,
   ChevronUp, ChevronDown, Type, Mail, Link as LinkIcon, AlignLeft, ListChecks as RadioIcon, Heading,
-  Upload, Paperclip, Eraser,
+  Upload, Paperclip, Eraser, FileText,
 } from "lucide-react";
+import { PageHero } from "@/components/ui/PageHero";
 import {
   type FormField,
   type ChoiceField,
@@ -232,13 +233,15 @@ export function EventFormView({
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div>
+      <PageHero
+        eyebrow={<><FileText size={11} /> BHN form</>}
+        title={title}
+        description={description}
+      />
+      <div className="max-w-2xl mx-auto">
       <div className="flex items-start justify-between gap-3 mb-6">
-        <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-fg">{title}</h1>
-          {description && (
-            <p className="text-sm text-muted mt-1.5 leading-relaxed">{description}</p>
-          )}
+        <div className="flex-1 min-w-0">{/* PageHero now carries the title/description; the small slug-specific DemoFiller stays in this column.  */}
           {slug === "talent-application" && (
             <DemoFiller
               visible={isStaff}
@@ -478,6 +481,7 @@ export function EventFormView({
             </div>
           </form>
         )}
+      </div>
       </div>
     </div>
   );

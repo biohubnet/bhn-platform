@@ -5,6 +5,7 @@ import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { StoryBankClient } from "@/components/prep/StoryBankClient";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /profile/stories — reusable STAR Story Bank.
@@ -68,35 +69,31 @@ export default async function StoryBankPage() {
   const isStaff = checkIsStaff(role);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <div>
+      {/* Cinematic full-bleed hero replaces the previous custom
+          rounded-3xl outer panel + inline title block. The inner
+          hairline-divided sections (admin demo tray, stories list,
+          help footer) live below in a max-w-4xl column. */}
+      <PageHero
+        eyebrow={<><BookOpen size={11} /> Profile · Story Bank</>}
+        title="Your STAR stories"
+        description={(
+          <>
+            STAR-format stories you&apos;ve drafted. Reusable across postings — a story tagged with &quot;cell culture&quot; works for any role that needs it. New stories land here when you click <em>Save to Story Bank</em> in the prep flow.
+          </>
+        )}
+      />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
       <div
         className="rounded-3xl border border-line overflow-hidden surface-shadow"
         style={{ background: OUTER_BG }}
       >
-        {/* ── HEADER ───────────────────────────────────────────── */}
-        <header className="px-6 sm:px-10 lg:px-14 pt-10 sm:pt-12 pb-8 border-b border-line">
-          <SectionEyebrow>Profile · Story Bank</SectionEyebrow>
-          {/* Icon disc sits on its own line above the title text so
-              the disc + the title don't compete for horizontal room
-              at the wider viewport widths and the headline reads as
-              a two-line composition: marker, then statement. */}
-          <span className="mt-3 inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-brand-200">
-            <BookOpen size={22} />
-          </span>
-          <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight leading-[1.05]">
-            <span
-              style={{
-                backgroundImage:
-                  "linear-gradient(135deg, var(--fg) 0%, var(--fg) 60%, rgb(59,130,246) 100%)",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                color: "transparent",
-              }}
-            >
-              Your STAR stories
-            </span>
-          </h1>
-          <p className="mt-4 text-sm sm:text-base text-fg/80 leading-relaxed max-w-2xl">
+        {/* (Header section deleted — PageHero above carries the
+            eyebrow / title / description. The story-list / admin-tray
+            / help sections below still live in this rounded inner
+            panel so they retain the hairline-divided layout.) */}
+        <header className="hidden">
+          <p>
             STAR-format stories you&apos;ve drafted. Reusable across postings — a story
             tagged with &quot;cell culture&quot; works for any role that needs it. New
             stories land here when you click <em>Save to Story Bank</em> in the
@@ -201,6 +198,7 @@ export default async function StoryBankPage() {
             </span>
           </p>
         </section>
+      </div>
       </div>
     </div>
   );
