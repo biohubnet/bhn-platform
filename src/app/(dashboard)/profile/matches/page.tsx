@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { rankPostingsForTrainee } from "@/lib/matching/fit";
 import { FitExplain } from "@/components/matching/FitExplain";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /profile/matches — trainee's personalised posting recommendations.
@@ -252,21 +253,19 @@ export default async function MatchesPage() {
 }
 
 function PageHeader() {
+  // Renders the canonical PageHero so /profile/matches matches the
+  // rest of the cinematic-DS surfaces. Local component kept (rather
+  // than inlining PageHero at the call sites) because the page calls
+  // PageHeader from both the empty-state and the populated branch.
   return (
-    <header>
-      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-        Profile · AI matches
-      </p>
-      <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-        <Compass size={22} className="text-brand-600" />
-        Postings recommended for you
-      </h1>
-      <p className="text-sm text-muted mt-2 max-w-2xl leading-relaxed">
-        Ranked by how well your skill profile + completed pathways fit each
-        posting. Tap <em>Why this score?</em> on any row to see the
-        receipts — which of your skills counted, which adjacent skills
-        bridged the gap, and what required skills you're missing.
-      </p>
-    </header>
+    <PageHero
+      eyebrow={<><Compass size={11} /> Profile · AI matches</>}
+      title="Postings recommended for you"
+      description={(
+        <>
+          Ranked by how well your skill profile + completed pathways fit each posting. Tap <em>Why this score?</em> on any row to see the receipts — which of your skills counted, which adjacent skills bridged the gap, and what required skills you&apos;re missing.
+        </>
+      )}
+    />
   );
 }

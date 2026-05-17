@@ -1,9 +1,10 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Sparkles, BookOpen, Pencil } from "lucide-react";
+import { Sparkles, BookOpen, Pencil, Lightbulb } from "lucide-react";
 import { SkillProfileClient } from "@/components/lms/SkillProfileClient";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
+import { PageHero } from "@/components/ui/PageHero";
 
 export const dynamic = "force-dynamic";
 
@@ -43,8 +44,14 @@ export default async function MySkillsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <header>
+    <div>
+      <PageHero
+        eyebrow={<><Lightbulb size={11} /> Profile · Skills</>}
+        title="My Skills"
+        description="Skills you've earned through training, mapped against postings so the platform can surface ones you'd be strong for."
+      />
+      <div className="space-y-6 max-w-4xl mx-auto">
+      <header className="hidden">
         <h1 className="text-2xl font-bold text-fg flex items-center gap-2">
           <Sparkles size={20} className="text-brand-600" />
           My skill profile
@@ -88,6 +95,7 @@ export default async function MySkillsPage() {
           }))}
         suggestions={top}
       />
+      </div>
     </div>
   );
 }

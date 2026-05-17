@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Calendar } from "lucide-react";
 import { InterviewResponseList } from "@/components/lms/InterviewResponseList";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
+import { PageHero } from "@/components/ui/PageHero";
 
 export const dynamic = "force-dynamic";
 
@@ -28,16 +29,13 @@ export default async function MyInterviewsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <header>
-        <h1 className="text-2xl font-bold text-fg flex items-center gap-2">
-          <Calendar size={20} className="text-brand-600" />
-          My interviews
-        </h1>
-        <p className="text-sm text-muted mt-1">
-          When an employer proposes interview times, they appear here. Pick the one that works, or decline.
-        </p>
-      </header>
+    <div>
+      <PageHero
+        eyebrow={<><Calendar size={11} /> Schedule</>}
+        title="My interviews"
+        description="When an employer proposes interview times, they appear here. Pick the one that works, or decline."
+      />
+      <div className="space-y-6 max-w-3xl mx-auto">
 
       {/* Admin-only demo seed/clear. Writes Interview rows on the
           viewing admin's own user (applicantId = self), marked with
@@ -65,6 +63,7 @@ export default async function MyInterviewsPage() {
           createdAt: i.createdAt.toISOString(),
         }))}
       />
+      </div>
     </div>
   );
 }
