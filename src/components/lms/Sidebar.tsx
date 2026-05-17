@@ -621,55 +621,65 @@ function SectionGroup({
   );
 }
 
-/**
- * Tiny subheading inside the Administration group. Same vocabulary
- * as the user-facing ENGAGE / EXPERIENCE pattern so admins map their
- * mental model to what learners see.
- */
-function AdminSubheading({ label }: { label: string }) {
-  return (
-    <p className="px-3 pt-3 pb-1 text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle select-none">
-      {label}
-    </p>
-  );
-}
-
-/** Tone colours for each admin sub-group's left accent bar.
- *  Kept thin (1 px) so the bar reads as a quiet anchor for the
- *  eye when scanning, not a heavy visual border. Colours intentionally
- *  match the canonical signal palette across the platform —
- *  Engage = emerald, Experience = amber, Equip = sky,
- *  Insights = violet, Platform = cyan, Security = rose,
- *  System = slate. */
+/** Tone for an admin sub-group — paired colours for the accent bar
+ *  and the section heading text. Heading colour is the bar colour
+ *  pushed two ramp-steps darker for better contrast on cream/white
+ *  surfaces; the bar stays at signal-palette brightness so it reads
+ *  as a coloured anchor.
+ *
+ *  Pillars map to the canonical platform signal palette: Engage =
+ *  emerald, Experience = amber, Equip = sky, Insights = violet,
+ *  Platform = cyan, Security = rose, System = slate. */
 const ADMIN_SUBGROUP_TONES = {
-  engage:     "#10b981",
-  experience: "#f59e0b",
-  equip:      "#0ea5e9",
-  insights:   "#8b5cf6",
-  platform:   "#0891b2",
-  security:   "#f43f5e",
-  system:     "#6b7280",
+  engage:     { bar: "#10b981", text: "#065f46" }, // emerald-500 / 800
+  experience: { bar: "#f59e0b", text: "#92400e" }, // amber-500 / 800
+  equip:      { bar: "#0ea5e9", text: "#075985" }, // sky-500 / 800
+  insights:   { bar: "#8b5cf6", text: "#5b21b6" }, // violet-500 / 800
+  platform:   { bar: "#0891b2", text: "#155e75" }, // cyan-600 / 800
+  security:   { bar: "#f43f5e", text: "#9f1239" }, // rose-500 / 800
+  system:     { bar: "#6b7280", text: "#374151" }, // slate-500 / 700
 } as const;
 
-/** Wrapper around an admin sub-group's heading + items. Adds a
- *  1 px coloured accent bar so scanning the Administration block by
- *  group becomes immediate — pick the colour, find the section.
+type AdminSubgroupTone = (typeof ADMIN_SUBGROUP_TONES)[keyof typeof ADMIN_SUBGROUP_TONES];
+
+/** Wrapper around an admin sub-group's heading + items. Renders a
+ *  bolder, tone-coloured subheading on top followed by a thin
+ *  coloured accent bar down the LABEL column of the items beneath.
  *
- *  Placement (rev 2026-05-17):
- *    • Bar sits at `left-3` so it nuzzles up against the menu items
- *      (which start at px-3 = 12 px from the wrapper edge) instead
- *      of floating out at the wrapper's outer edge. Reads as an
- *      anchor on the items, not on the sidebar wall.
- *    • Bar starts at `top-7` (28 px) so it begins BELOW the
- *      AdminSubheading (pt-3 + 10 px text + pb-1 ≈ 26 px). Previously
- *      `top-2` had the bar crashing through the section title. */
-function AdminSubgroup({ tone, children }: { tone: string; children: React.ReactNode }) {
+ *  Geometry (rev 2026-05-17b):
+ *    • Heading is now 12 px / bold / 0.18 em tracking / tone-coloured
+ *      so each pillar's name reads as a proper section anchor instead
+ *      of a tiny grey ID tag. (Was 10 px / semibold / subtle grey.)
+ *    • Bar sits at `left-9` (≈ 36 px) so it lands in the gap between
+ *      a NavLink's icon (x = 12–28) and its label (x = 40+). At the
+ *      previous `left-3` the bar overlapped the icon column and was
+ *      visually obscured. The new position visually extends the
+ *      heading's right half straight down through the label column.
+ *    • Bar starts at `top-9` (36 px) — clearly BELOW the new bigger
+ *      heading (pt-3 + 12 px line + pb-1.5 ≈ 32 px) with ~4 px gap.
+ *    • Bar is `w-0.5` (2 px) instead of 1 px so it holds its weight
+ *      under the bigger heading without feeling fussy. */
+function AdminSubgroup({
+  tone,
+  label,
+  children,
+}: {
+  tone: AdminSubgroupTone;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="relative mt-1 first:mt-0">
+      <p
+        className="px-3 pt-3 pb-1.5 text-[12px] uppercase tracking-[0.18em] font-bold select-none"
+        style={{ color: tone.text }}
+      >
+        {label}
+      </p>
       <span
         aria-hidden
-        className="absolute left-3 top-7 bottom-1 w-px rounded-full"
-        style={{ background: tone }}
+        className="absolute left-9 top-9 bottom-1 w-0.5 rounded-full"
+        style={{ background: tone.bar }}
       />
       {children}
     </div>
@@ -1209,8 +1219,7 @@ export function Sidebar({
             <NavLink item={adminOverview} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
 
             {visibleEngageAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.engage}>
-                <AdminSubheading label="Engage" />
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.engage} label="Engage">
                 {visibleEngageAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
@@ -1218,8 +1227,7 @@ export function Sidebar({
             )}
 
             {visibleExperienceAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience}>
-                <AdminSubheading label="Experience" />
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Experience">
                 {visibleExperienceAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
@@ -1227,8 +1235,7 @@ export function Sidebar({
             )}
 
             {visibleEquipAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.equip}>
-                <AdminSubheading label="Equip" />
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.equip} label="Equip">
                 {visibleEquipAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
@@ -1236,8 +1243,7 @@ export function Sidebar({
             )}
 
             {visibleInsightsAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights}>
-                <AdminSubheading label="Insights" />
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Insights">
                 {visibleInsightsAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
@@ -1251,13 +1257,12 @@ export function Sidebar({
                 Administration. */}
 
             {visiblePlatformAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.platform}>
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.platform} label="Platform">
                 {/* Platform is 11 items (was 24) — flat list
                     like Engage / Experience. The collapsible UI
                     that gated 24 items behind a click is removed
                     in favour of consistent visual treatment
                     across the sub-groups. */}
-                <AdminSubheading label="Platform" />
                 {visiblePlatformAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
@@ -1265,8 +1270,7 @@ export function Sidebar({
             )}
 
             {visibleSecurityAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.security}>
-                <AdminSubheading label="Security & compliance" />
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.security} label="Security & compliance">
                 {visibleSecurityAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
@@ -1274,8 +1278,7 @@ export function Sidebar({
             )}
 
             {visibleSystemAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.system}>
-                <AdminSubheading label="System (superadmin)" />
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.system} label="System (superadmin)">
                 {visibleSystemAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}

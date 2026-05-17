@@ -30,8 +30,8 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     daysAgo: 0,
   },
   {
-    title: "Sidebar — admin sub-group bars nuzzle the items, start below the title",
-    body: "Small one. The 1-px coloured accent bars inside each Administration sub-group (Engage emerald, Experience amber, Equip sky, Insights violet, Platform cyan, Security rose, System slate) used to sit at the wrapper's outer edge and start ~8 px down — which meant they punched up through the section title text. Now each bar sits at `left-3` (right against the menu-item gutter so it reads as an anchor on the items, not on the sidebar wall) and starts at `top-7` (~28 px down, just below the title's baseline).",
+    title: "Sidebar — admin sub-group titles are now proper anchors, bars sit under the labels",
+    body: "Two-step tweak to the Administration sub-group treatment.\n\n**The group titles** (Engage / Experience / Equip / Insights / Platform / Security & compliance / System) used to be tiny 10-px grey IDs that read as machine labels, not section markers. They're now 12-px bold with the section's own tone colour — emerald for Engage, amber for Experience, sky for Equip, violet for Insights, cyan for Platform, rose for Security, slate for System — so each group reads as a proper anchor and you can pick a pillar out of the menu at a glance.\n\n**The 1-px coloured accent bars** moved out of the icon column (where they were getting visually clobbered by the lucide icons at `left-3` / x = 12 px) and into the icon-label gap at `left-9` / x = 36 px — so each bar now lands squarely under the right half of the title text AND aligns with the column where the menu item labels begin. Bar starts at `top-9` so it begins clearly below the new bigger title (the old `top-7` was too close once the title grew), and went from 1 px to 2 px wide to hold its weight under the bolder heading.",
     kind: "fix",
     visibleTo: ADMINS,
     daysAgo: 0,
