@@ -7,6 +7,7 @@ import {
   DEFAULT_MATCHING_CONFIG,
 } from "@/lib/matching/config";
 import { MatchingConfigShell } from "@/components/admin/MatchingConfigShell";
+import { PageHero } from "@/components/ui/PageHero";
 
 export const dynamic = "force-dynamic";
 
@@ -52,25 +53,15 @@ export default async function MatchingConfigPage() {
   ]);
 
   const pageHeader = (
-    <header>
-      <Link
-        href="/admin"
-        className="text-xs text-muted hover:text-fg inline-flex items-center gap-1 mb-2"
-      >
-        <ArrowLeft size={12} /> Admin overview
-      </Link>
-      <h1 className="text-2xl font-bold text-fg tracking-tight inline-flex items-center gap-2">
-        <Settings2 size={20} className="text-brand-600" />
-        AI matching — engine settings
-      </h1>
-      <p className="text-sm text-muted mt-1 max-w-2xl leading-relaxed">
-        Tune the weights, bands, and thresholds that drive the fit
-        scorer at <code className="font-mono text-[11px] bg-elevated px-1 rounded">src/lib/matching/fit.ts</code>.
-        Every change saves to <code className="font-mono text-[11px] bg-elevated px-1 rounded">PlatformSetting[key=matching]</code> and
-        writes an AuditLog row. Use the live tester to preview
-        impact on a real (trainee × posting) pair before you save.
-      </p>
-    </header>
+    <PageHero
+      eyebrow={<><Settings2 size={11} /> Admin · Platform</>}
+      title="AI matching — engine settings"
+      description={(
+        <>
+          Tune the weights, bands, and thresholds that drive the fit scorer at <code className="font-mono text-[11px] bg-elevated px-1 rounded">src/lib/matching/fit.ts</code>. Every change saves to <code className="font-mono text-[11px] bg-elevated px-1 rounded">PlatformSetting[key=matching]</code> and writes an AuditLog row. Use the live tester to preview impact on a real (trainee × posting) pair before you save.
+        </>
+      )}
+    />
   );
 
   const explainer = (

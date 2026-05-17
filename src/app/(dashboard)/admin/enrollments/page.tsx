@@ -8,6 +8,8 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PendingEnrollmentRequests, type PendingRequest } from "@/components/admin/PendingEnrollmentRequests";
 import { DemoPhantomTray, type DemoScenario } from "@/components/admin/DemoPhantomTray";
+import { GraduationCap } from "lucide-react";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /admin/enrollments — overview dashboard for ALL enrollment activity.
@@ -165,20 +167,13 @@ export default async function AdminEnrollmentsOverviewPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          Admin · Engage
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight">
-          Enrollment Management
-        </h1>
-        <p className="text-sm text-muted mt-2 leading-snug max-w-3xl">
-          Overview of course and pathway enrollment health. Use the panel
-          links to drill into the full per-row lists, or work through the
-          pending-request pool below to approve / reject incoming requests.
-        </p>
-      </header>
+    <div>
+      <PageHero
+        eyebrow={<><GraduationCap size={11} /> Admin · ENGAGE</>}
+        title="Enrollment Management"
+        description="Overview of course and pathway enrollment health. Use the panel links to drill into the full per-row lists, or work through the pending-request pool below to approve / reject incoming requests."
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
 
       {/* Two equally-weighted panels */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -290,6 +285,7 @@ export default async function AdminEnrollmentsOverviewPage() {
         scenarios={demoScenarios}
         contextLabel="enrollment requests"
       />
+      </div>
     </div>
   );
 }

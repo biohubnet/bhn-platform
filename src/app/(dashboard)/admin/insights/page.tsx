@@ -6,6 +6,7 @@ import {
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { InsightEditor } from "@/components/admin/insights/InsightEditor";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /admin/insights — research synthesis surface.
@@ -106,24 +107,17 @@ export default async function AdminInsightsPage() {
   ]);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          Admin · Design &amp; Research
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-          <Lightbulb size={22} className="text-brand-600" />
-          Insights
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-2xl leading-relaxed">
-          Read the period's signals on the right, write a 1–3 paragraph
-          "what users told us" note on the left, optionally publish to
-          the changelog so the loop closes back to users. This is how
-          we keep the research signal honest — see the UX charter,
-          outcome 3.
-        </p>
-      </header>
-
+    <div>
+      <PageHero
+        eyebrow={<><Lightbulb size={11} /> Admin · Design &amp; Research</>}
+        title="Insights"
+        description={(
+          <>
+          Read the period&apos;s signals on the right, write a 1–3 paragraph &quot;what users told us&quot; note on the left, optionally publish to the changelog so the loop closes back to users. This is how we keep the research signal honest — see the UX charter, outcome 3.
+        </>
+        )}
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── Left column: editor + history ── */}
         <div className="lg:col-span-2 space-y-6">
@@ -281,6 +275,7 @@ export default async function AdminInsightsPage() {
             </ul>
           </SignalCard>
         </aside>
+      </div>
       </div>
     </div>
   );

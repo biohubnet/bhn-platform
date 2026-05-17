@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EventCalendar, type EventDot } from "@/components/events/EventCalendar";
 import { DemoEventsControls } from "@/components/events/DemoEventsControls";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /admin/events — list of every BhnEvent on the platform.
@@ -61,20 +62,16 @@ export default async function AdminEventsListPage() {
   }));
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div>
+      <PageHero
+        eyebrow={<><Calendar size={11} /> Admin · ENGAGE</>}
+        title="Events"
+        description="Manage BHN Annual Symposium & Training Week editions. Click any event to edit basics, see registrations, and run check-in. Workshops, sessions, speakers, and sponsors are managed via the seed file (prisma/seed-events.ts) until a future phase brings dedicated CRUD UI."
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
       <header className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Admin · Engage</p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-            <Calendar size={22} className="text-brand-600" />
-            Events
-          </h1>
-          <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
-            Manage BHN Annual Symposium &amp; Training Week editions. Click any
-            event to edit basics, see registrations, and run check-in.
-            Workshops, sessions, speakers, and sponsors are managed via the
-            seed file (prisma/seed-events.ts) until a future phase brings
-            dedicated CRUD UI.
+        <div className="hidden">
+          <p>
           </p>
         </div>
         <DemoEventsControls />
@@ -167,6 +164,7 @@ export default async function AdminEventsListPage() {
           phase.
         </p>
       </section>
+      </div>
     </div>
   );
 }

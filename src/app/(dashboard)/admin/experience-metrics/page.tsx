@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Gauge, ExternalLink, Clock, Inbox, Megaphone, Activity, ArrowUpRight } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /admin/experience-metrics — UX KPI dashboard.
@@ -112,18 +113,13 @@ export default async function AdminExperienceMetricsPage() {
     : null;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          Admin · Design &amp; Research
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-          <Gauge size={22} className="text-brand-600" />
-          Experience metrics
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-2xl leading-relaxed">
-          The measurable side of the three UX-charter outcomes. Targets
-          come from{" "}
+    <div>
+      <PageHero
+        eyebrow={<><Gauge size={11} /> Admin · Design &amp; Research</>}
+        title="EXPERIENCE metrics"
+        description={(
+          <>
+          The measurable side of the three UX-charter outcomes. Targets come from{" "}
           <Link
             href="https://github.com/sesamemua/bhn-training-platform/blob/main/docs/ux/charter.md"
             target="_blank"
@@ -132,12 +128,11 @@ export default async function AdminExperienceMetricsPage() {
           >
             docs/ux/charter.md <ExternalLink size={11} />
           </Link>
-          . Values reflect the last 30 days unless noted; "not yet
-          measured" means the signal exists in the schema but the
-          instrumentation hasn't been wired yet.
-        </p>
-      </header>
-
+          . Values reflect the last 30 days unless noted; &quot;not yet measured&quot; means the signal exists in the schema but the instrumentation hasn&apos;t been wired yet.
+        </>
+        )}
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
       {/* Outcome 1 ─────────────────────────────────────────────── */}
       <section className="rounded-2xl border border-line bg-card p-6 surface-shadow">
         <header className="mb-4">
@@ -335,6 +330,7 @@ export default async function AdminExperienceMetricsPage() {
           </li>
         </ul>
       </section>
+      </div>
     </div>
   );
 }
