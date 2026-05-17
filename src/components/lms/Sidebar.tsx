@@ -232,35 +232,86 @@ const adminExperienceItems: NavItem[] = [
     description: "Approved talent-application members — same surface employers see, with full submission data + comment threads. Use this to coordinate with employer reviewers." },
 ];
 
-// DESIGN & RESEARCH — the ER&D maturity surface. Where the
-// platform's UX practice lives in code: the canonical design
-// system, the synthesis of user signals into a periodic "what
-// users told us" note, the experience-metrics KPI dashboard that
-// scores us against the UX-charter outcomes. Treated as a
-// distinct sub-group rather than buried under Platform because
-// the charter outcomes are first-class.
-const adminDesignResearchItems: NavItem[] = [
+// EQUIP — the third pillar surface on the admin side. Was buried
+// in Platform initially but it deserves its own group: three
+// dedicated pages (overview / review queue / deadlines) that all
+// belong to the funding workflow rather than platform plumbing.
+const adminEquipItems: NavItem[] = [
+  { label: "Equip overview",       href: "/admin/equip/overview",      icon: Activity,      minRole: "admin",
+    description: "Program-management dashboard for the Equip pillar — apps in flight, approved this quarter, $ funded YTD, stalled-app alerts, per-stream funnel, open windows, recent activity. Renders in Studio." },
+  { label: "Equip review",         href: "/admin/equip",               icon: Rocket,        minRole: "admin",
+    description: "Review queue for the Equip funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
+  { label: "Equip deadlines",      href: "/admin/equip/deadlines",     icon: ClipboardList, minRole: "admin",
+    description: "Schedule + manage the funding-window deadlines for VentureConnect (monthly) and VentureLift (quarterly). List + calendar views. Open / close / extend any window. Late submissions are blocked automatically." },
+];
+
+// INSIGHTS — was DESIGN & RESEARCH. Expanded with the analytics
+// surfaces that previously lived in Platform (Analytics,
+// Pipeline analytics, AutoPipette). The unifying lens: anything
+// that *measures* the platform — UX charter outcomes, product
+// engagement metrics, AI-assist effectiveness, generated
+// reports. Design system is here too because picking it is a
+// UX-research decision, not platform plumbing.
+const adminInsightsItems: NavItem[] = [
   { label: "Design system",       href: "/admin/design-system",       icon: Palette,    minRole: "admin",
-    description: "Pick the platform-wide layout vocabulary (Classic / Cinematic) — admin-only, applies to every user. Plus the live tokens reference: surfaces, type scale, radius scale, motion primitives, component patterns, accessibility checklist. Canonical doc at docs/design-system.md." },
+    description: "Pick the platform-wide layout vocabulary (Classic / Cinematic / Studio) — admin-only, applies to every user. Plus the live tokens reference: surfaces, type scale, radius scale, motion primitives, component patterns, accessibility checklist. Canonical doc at docs/design-system.md." },
   { label: "Insights",            href: "/admin/insights",            icon: Lightbulb,  minRole: "admin",
     description: "Per-period 'what users told us' synthesis. Read the signal feeds (theme votes, exit-survey responses, access requests, pending-queue heat), write the synthesis note, publish to /changelog so the loop closes back to users." },
   { label: "Experience metrics",  href: "/admin/experience-metrics",  icon: Gauge,      minRole: "admin",
     description: "UX-charter KPI dashboard. Tracks the three named user outcomes — trainee arrival latency, admin queue depth, transparency cadence — against the targets named in docs/ux/charter.md." },
+  { label: "Analytics",           href: "/admin/analytics",           icon: LineChart,  minRole: "admin",
+    description: "Engagement, learning, and conversion metrics across the platform." },
+  { label: "Pipeline analytics",  href: "/admin/pipeline-analytics",  icon: Activity,   minRole: "admin",
+    description: "Hiring-pipeline health — stage distribution, median time-in-stage, stalled (≥14d) applications, conversion-to-offer rate across the platform." },
+  { label: "AutoPipette",         href: "/admin/assist",              icon: Pipette,    minRole: "admin",
+    description: "Health, helpfulness, and findings for AutoPipette — BHN's AI lab partner that dispenses precise, single-dose help when learners look stuck. Per-card helpful rate, top stuck surfaces, latest weekly journey summaries, operator actions (run rollup / weekly summary / ad-hoc AI inference)." },
+  { label: "Reports",             href: "/admin/reports",             icon: FileText,   minRole: "admin",
+    description: "Generated reports for compliance, billing, and exec views." },
 ];
 
-// PLATFORM — operating the platform itself: who has access, what
-// they're told, what reports admins read, the Inbox/letter-box that
-// gathers every pending request, plus superadmin-only ops.
+// SECURITY & COMPLIANCE — pulled out of Platform into its own
+// dedicated group. The four items here all answer "is the
+// platform safe + auditable + compliant?" — audit log for
+// per-action history, Security for MFA + lockouts + e-sig
+// config, Security policies for the governance docs, Compliance
+// for the management overview against PIPEDA / AODA / etc.
+const adminSecurityItems: NavItem[] = [
+  { label: "Compliance",          href: "/compliance",                icon: ShieldCheck, minRole: "admin",
+    description: "Management overview — every framework BHN follows (PIPEDA, AODA, CASL, encryption, MFA, audit, RBAC, backups), what we actually do for each, and honest status. Five-minute readable." },
+  { label: "Audit Log",           href: "/admin/audit",               icon: ShieldCheck, minRole: "admin",
+    description: "Append-only log of admin actions. Required for SOC 2 and 21 CFR Part 11 attestation." },
+  { label: "Security",            href: "/admin/security",            icon: ShieldCheck, minRole: "admin",
+    description: "MFA enrollment, password policy, lockouts, e-signature configuration." },
+  { label: "Security policies",   href: "/admin/security/policies",   icon: FileText,    minRole: "admin",
+    description: "Every governance doc in one place — encryption posture, incident response, breach notification, sub-processors, ROPA, AUP, retention, pentest playbook. Reads from docs/security/ markdown so source-of-truth + rendered page can't drift." },
+];
+
+// SYSTEM — superadmin-only surfaces. Was bottom-of-Platform;
+// pulled out so the gate is visually clear (these are the
+// "tighten the screws on the whole platform" items, not
+// day-to-day operations).
+const adminSystemItems: NavItem[] = [
+  { label: "LTI Config",          href: "/admin/lti",                 icon: Link2,       minRole: "superadmin",
+    description: "LTI 1.3 launch configuration for external LMS integrations." },
+  { label: "System status",       href: "/admin/system-status",       icon: Activity,    minRole: "superadmin",
+    description: "Live system health — DB latency, queue depth, third-party API status." },
+  { label: "Settings",            href: "/admin/settings",            icon: Settings,    minRole: "superadmin",
+    description: "Platform-wide settings only superadmins can change." },
+];
+
+// PLATFORM — operating the platform itself: people, the inbox
+// queue, comms / content, and feedback loops. Trimmed from the
+// previous 24-item dumping ground. EQUIP / INSIGHTS / SECURITY /
+// SYSTEM live in their own groups (above + below).
+//
+// Order intent — most-frequent first:
+//   1. Inbox (catch-all queue, top of every admin shift)
+//   2. People (Users, Role requests, Committees)
+//   3. Comms / content (Announcements, Newsletter exports,
+//      Editable copy)
+//   4. Feedback loops (Theme proposals, Feedback)
+//   5. Operations (Launch Readiness, Phantom users)
 const adminPlatformItems: NavItem[] = [
-  { label: "Launch Readiness",    href: "/admin/launch-readiness",    icon: Rocket,      minRole: "admin",
-    description: "Executive dashboard tracking go-live status — % ready, days to launch, decisions needed, top risks, detailed checklist by phase. Auto-detects what's done." },
-  { label: "Phantom users",       href: "/admin/phantom-users",       icon: Ghost,       minRole: "admin",
-    description: "Spawn throwaway test accounts for a day. Enroll them in courses, register them for events, exercise admin queues — they auto-delete when their TTL expires (hourly sweep)." },
-  { label: "Feedback",            href: "/admin/feedback",            icon: MessageSquare, minRole: "admin",
-    description: "Aggregated exit-survey responses from trainees leaving the talent pool — NPS, per-dimension ratings, reason breakdown, individual responses. Plus mint feedback-invitation links to send out of band." },
-  { label: "Theme proposals",     href: "/admin/theme-proposals",     icon: Palette,     minRole: "admin",
-    description: "Trainee-submitted theme ideas + aggregated vote totals. Review queue with one-click actions for review / build / ship / decline. Ship+bounty issues a tier-3 MerchReward.",
-    badgeKey: "theme-proposals" },
   { label: "Inbox",               href: "/admin/inbox",               icon: Inbox,       minRole: "admin",
     description: "Every pending admin request in one queue — credit apps, role changes, employer invites, mailing requests.",
     badgeKey: "inbox-total" },
@@ -275,36 +326,17 @@ const adminPlatformItems: NavItem[] = [
     description: "Banner announcements shown across the platform. Schedule, target by role, set expiry." },
   { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,        minRole: "admin",
     description: "New newsletter opt-ins ready to export to BioHubNet's mailing list." },
-  { label: "Analytics",           href: "/admin/analytics",           icon: LineChart,   minRole: "admin",
-    description: "Engagement, learning, and conversion metrics across the platform." },
-  { label: "Pipeline analytics",  href: "/admin/pipeline-analytics",  icon: Activity,    minRole: "admin",
-    description: "Hiring-pipeline health — stage distribution, median time-in-stage, stalled (≥14d) applications, conversion-to-offer rate across the platform." },
-  { label: "AutoPipette",          href: "/admin/assist",              icon: Pipette,     minRole: "admin",
-    description: "Health, helpfulness, and findings for AutoPipette — BHN's AI lab partner that dispenses precise, single-dose help when learners look stuck. Per-card helpful rate, top stuck surfaces, latest weekly journey summaries, operator actions (run rollup / weekly summary / ad-hoc AI inference)." },
-  { label: "Equip overview",       href: "/admin/equip/overview",      icon: Activity,    minRole: "admin",
-    description: "Program-management dashboard for the Equip pillar — apps in flight, approved this quarter, $ funded YTD, stalled-app alerts, per-stream funnel, open windows, recent activity. Renders in Studio." },
-  { label: "Equip review",         href: "/admin/equip",               icon: Rocket,      minRole: "admin",
-    description: "Review queue for the Equip funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
-  { label: "Equip deadlines",      href: "/admin/equip/deadlines",     icon: ClipboardList, minRole: "admin",
-    description: "Schedule + manage the funding-window deadlines for VentureConnect (monthly) and VentureLift (quarterly). List + calendar views. Open / close / extend any window. Late submissions are blocked automatically." },
-  { label: "Reports",             href: "/admin/reports",             icon: FileText,    minRole: "admin",
-    description: "Generated reports for compliance, billing, and exec views." },
-  { label: "Compliance",          href: "/compliance",                icon: ShieldCheck, minRole: "admin",
-    description: "Management overview — every framework BHN follows (PIPEDA, AODA, CASL, encryption, MFA, audit, RBAC, backups), what we actually do for each, and honest status. Five-minute readable." },
-  { label: "Audit Log",           href: "/admin/audit",               icon: ShieldCheck, minRole: "admin",
-    description: "Append-only log of admin actions. Required for SOC 2 and 21 CFR Part 11 attestation." },
-  { label: "Security",            href: "/admin/security",            icon: ShieldCheck, minRole: "admin",
-    description: "MFA enrollment, password policy, lockouts, e-signature configuration." },
-  { label: "Security policies",   href: "/admin/security/policies",   icon: FileText,    minRole: "admin",
-    description: "Every governance doc in one place — encryption posture, incident response, breach notification, sub-processors, ROPA, AUP, retention, pentest playbook. Reads from docs/security/ markdown so source-of-truth + rendered page can't drift." },
-  { label: "LTI Config",          href: "/admin/lti",                 icon: Link2,       minRole: "superadmin",
-    description: "LTI 1.3 launch configuration for external LMS integrations." },
-  { label: "System status",       href: "/admin/system-status",       icon: Activity,    minRole: "superadmin",
-    description: "Live system health — DB latency, queue depth, third-party API status." },
   { label: "Editable copy",       href: "/admin/copy",                icon: FileText,    minRole: "admin",
     description: "Every editable page string in one place — change headlines, subtitles, hero copy. Live pages also have inline pencils." },
-  { label: "Settings",            href: "/admin/settings",            icon: Settings,    minRole: "superadmin",
-    description: "Platform-wide settings only superadmins can change." },
+  { label: "Theme proposals",     href: "/admin/theme-proposals",     icon: Palette,     minRole: "admin",
+    description: "Trainee-submitted theme ideas + aggregated vote totals. Review queue with one-click actions for review / build / ship / decline. Ship+bounty issues a tier-3 MerchReward.",
+    badgeKey: "theme-proposals" },
+  { label: "Feedback",            href: "/admin/feedback",            icon: MessageSquare, minRole: "admin",
+    description: "Aggregated exit-survey responses from trainees leaving the talent pool — NPS, per-dimension ratings, reason breakdown, individual responses. Plus mint feedback-invitation links to send out of band." },
+  { label: "Launch Readiness",    href: "/admin/launch-readiness",    icon: Rocket,      minRole: "admin",
+    description: "Executive dashboard tracking go-live status — % ready, days to launch, decisions needed, top risks, detailed checklist by phase. Auto-detects what's done." },
+  { label: "Phantom users",       href: "/admin/phantom-users",       icon: Ghost,       minRole: "admin",
+    description: "Spawn throwaway test accounts for a day. Enroll them in courses, register them for events, exercise admin queues — they auto-delete when their TTL expires (hourly sweep)." },
 ];
 
 /** Nav badgeKeys that should flip to the urgent rose chip the moment
@@ -844,31 +876,17 @@ export function Sidebar({
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
 
-  // Persisted collapse state for the admin Platform sub-group. Long
-  // (12 items), low-frequency: collapsed by default to take pressure
-  // off the admin's vertical scroll.
-  const [platformOpen, setPlatformOpen] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const v = localStorage.getItem("bhn-sidebar-platform-open");
-    if (v != null) setPlatformOpen(v === "1");
-  }, []);
-  function togglePlatform() {
-    setPlatformOpen((cur) => {
-      const next = !cur;
-      try { localStorage.setItem("bhn-sidebar-platform-open", next ? "1" : "0"); } catch {}
-      return next;
-    });
-  }
-
   const filterByRole = (item: NavItem) => {
     const required = ROLE_RANK[item.minRole ?? "admin"] ?? ROLE_RANK.admin;
     return userRank >= required;
   };
-  const visibleEngageAdmin         = adminEngageItems.filter(filterByRole);
-  const visibleExperienceAdmin     = adminExperienceItems.filter(filterByRole);
-  const visibleDesignResearchAdmin = adminDesignResearchItems.filter(filterByRole);
-  const visiblePlatformAdmin       = adminPlatformItems.filter(filterByRole);
+  const visibleEngageAdmin     = adminEngageItems.filter(filterByRole);
+  const visibleExperienceAdmin = adminExperienceItems.filter(filterByRole);
+  const visibleEquipAdmin      = adminEquipItems.filter(filterByRole);
+  const visibleInsightsAdmin   = adminInsightsItems.filter(filterByRole);
+  const visiblePlatformAdmin   = adminPlatformItems.filter(filterByRole);
+  const visibleSecurityAdmin   = adminSecurityItems.filter(filterByRole);
+  const visibleSystemAdmin     = adminSystemItems.filter(filterByRole);
   // Committee memberships → registry meta. Drops slugs the registry
   // no longer knows about (e.g. a column value left over from a
   // retired committee). Empty list → no COMMITTEES section rendered.
@@ -1143,7 +1161,7 @@ export function Sidebar({
           <SectionGroup
             title={t("nav.administration").toUpperCase()}
             tone="electric"
-            description="Privileged territory — manage learners, employers, and the platform itself. Sub-grouped into Engage / Experience / Platform so the long list stays scannable."
+            description="Privileged territory — manage learners, employers, the Equip pillar, the platform itself, and security. Sub-grouped into Engage / Experience / Equip / Insights / Platform / Security & compliance / System so each list stays scannable."
           >
             {/* Overview sits at the top, ungrouped — single canonical link. */}
             <NavLink item={adminOverview} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
@@ -1166,10 +1184,19 @@ export function Sidebar({
               </>
             )}
 
-            {visibleDesignResearchAdmin.length > 0 && (
+            {visibleEquipAdmin.length > 0 && (
               <>
-                <AdminSubheading label="Design & Research" />
-                {visibleDesignResearchAdmin.map((item) => (
+                <AdminSubheading label="Equip" />
+                {visibleEquipAdmin.map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+                ))}
+              </>
+            )}
+
+            {visibleInsightsAdmin.length > 0 && (
+              <>
+                <AdminSubheading label="Insights" />
+                {visibleInsightsAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
               </>
@@ -1183,25 +1210,31 @@ export function Sidebar({
 
             {visiblePlatformAdmin.length > 0 && (
               <>
-                {/* Platform sub-group is collapsible — it's 12 items
-                    deep and dominated by occasional-use admin tools
-                    (LTI, Newsletter, etc.). Default closed; open
-                    state persisted to localStorage so an admin who
-                    expands it once doesn't have to expand every
-                    time they reload. */}
-                <button
-                  type="button"
-                  onClick={togglePlatform}
-                  aria-expanded={platformOpen}
-                  className="w-full flex items-center justify-between px-3 pt-3 pb-1 text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle hover:text-fg transition-colors"
-                >
-                  <span>Platform</span>
-                  <ChevronRight
-                    size={11}
-                    className={cn("transition-transform", platformOpen && "rotate-90")}
-                  />
-                </button>
-                {platformOpen && visiblePlatformAdmin.map((item) => (
+                {/* Platform is now 11 items (was 24) — flat list
+                    like Engage / Experience. The collapsible UI
+                    that gated 24 items behind a click is removed
+                    in favour of consistent visual treatment
+                    across the sub-groups. */}
+                <AdminSubheading label="Platform" />
+                {visiblePlatformAdmin.map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+                ))}
+              </>
+            )}
+
+            {visibleSecurityAdmin.length > 0 && (
+              <>
+                <AdminSubheading label="Security & compliance" />
+                {visibleSecurityAdmin.map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+                ))}
+              </>
+            )}
+
+            {visibleSystemAdmin.length > 0 && (
+              <>
+                <AdminSubheading label="System (superadmin)" />
+                {visibleSystemAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
               </>
