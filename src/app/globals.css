@@ -864,6 +864,55 @@ body {
   .drift, .drift-slow { animation: none; }
 }
 
+/* ──── /rewards page — loot-vault animations ────
+ * A small motion vocabulary for the playful merch page: floating
+ * gift-box icons, holographic-foil shimmer on collectible cards,
+ * a soft pulse on the "claim now" CTAs, and a tilt-wiggle for
+ * tier cards on hover. All respect prefers-reduced-motion. */
+@keyframes loot-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33%      { transform: translateY(-8px) rotate(-4deg); }
+  66%      { transform: translateY(-4px) rotate(3deg); }
+}
+.loot-float       { animation: loot-float 5s ease-in-out infinite; }
+.loot-float-slow  { animation: loot-float 8s ease-in-out infinite; }
+
+@keyframes loot-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.loot-shimmer {
+  background-image: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.55) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: loot-shimmer 3.5s linear infinite;
+}
+
+@keyframes loot-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
+  50%      { transform: scale(1.04); box-shadow: 0 0 0 6px transparent; }
+}
+.loot-pulse { animation: loot-pulse 1.6s ease-in-out infinite; }
+
+@keyframes loot-glow {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6)); }
+  50%      { filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.95)); }
+}
+.loot-glow { animation: loot-glow 2s ease-in-out infinite; }
+
+@keyframes loot-wiggle {
+  0%, 100% { transform: rotate(0); }
+  20%      { transform: rotate(-2.5deg); }
+  60%      { transform: rotate(2deg); }
+  80%      { transform: rotate(-1deg); }
+}
+.loot-card { transition: transform 0.25s ease; }
+.loot-card:hover { transform: translateY(-4px) scale(1.01); animation: loot-wiggle 0.6s ease-in-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .loot-float, .loot-float-slow, .loot-shimmer, .loot-pulse, .loot-glow { animation: none; }
+  .loot-card:hover { animation: none; transform: none; }
+}
+
 /* Wavy bottom edge for hero bands — masks a strip of the page bg
  * over the hero so the transition reads as an organic curve.
  *
