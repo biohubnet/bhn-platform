@@ -141,13 +141,13 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
 
     return (
       <header className="full-bleed relative overflow-hidden -mt-8 mb-10 hero-mesh-brand">
-        {/* Four dreamy blurred auroras, sized for the shorter stage
-            (~20rem tall on lg). Theme-driven via `--hero-mesh-{1..4}`.
+        {/* Four dreamy blurred auroras, sized for the compact banner
+            (~12rem tall on lg). Theme-driven via `--hero-mesh-{1..4}`.
             Sit on top of `.hero-mesh-brand`'s built-in radial auroras
             (smaller + sharper) for layered depth. */}
         <div
           aria-hidden
-          className="absolute -top-20 -left-16 w-[30rem] h-[30rem] rounded-full blur-3xl opacity-70 pointer-events-none"
+          className="absolute -top-12 -left-10 w-[22rem] h-[22rem] rounded-full blur-3xl opacity-70 pointer-events-none"
           style={{
             background:
               "radial-gradient(closest-side, var(--hero-mesh-1, #56bdf8), transparent 70%)",
@@ -155,7 +155,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
         />
         <div
           aria-hidden
-          className="absolute -bottom-16 right-1/4 w-[26rem] h-[26rem] rounded-full blur-3xl opacity-65 pointer-events-none"
+          className="absolute -bottom-12 right-1/4 w-[20rem] h-[20rem] rounded-full blur-3xl opacity-65 pointer-events-none"
           style={{
             background:
               "radial-gradient(closest-side, var(--hero-mesh-2, #f472b6), transparent 70%)",
@@ -163,7 +163,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
         />
         <div
           aria-hidden
-          className="absolute -top-8 right-0 w-[20rem] h-[20rem] rounded-full blur-3xl opacity-50 pointer-events-none"
+          className="absolute -top-6 right-0 w-[16rem] h-[16rem] rounded-full blur-3xl opacity-50 pointer-events-none"
           style={{
             background:
               "radial-gradient(closest-side, var(--hero-mesh-4, #facc15), transparent 70%)",
@@ -171,7 +171,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
         />
         <div
           aria-hidden
-          className="absolute -bottom-8 left-1/3 w-[18rem] h-[18rem] rounded-full blur-3xl opacity-50 pointer-events-none"
+          className="absolute -bottom-6 left-1/3 w-[14rem] h-[14rem] rounded-full blur-3xl opacity-50 pointer-events-none"
           style={{
             background:
               "radial-gradient(closest-side, var(--hero-mesh-3, #4ade80), transparent 70%)",
@@ -197,16 +197,15 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
           <rect width="100%" height="100%" filter="url(#ds-cinematic-noise)" />
         </svg>
 
-        {/* CONTENT — `min-h` gives the stage a defined height (so the
-            gradient doesn't take over the viewport), `flex flex-col
-            justify-end` anchors the title block to the bottom so the
-            auroras have visual real estate above. Magazine-cover
-            composition without going full-screen. The
-            `.hero-mesh-brand::before` scrim darkens the lower portion
-            as a contrast cushion on dark stages. */}
+        {/* CONTENT — compact banner. `min-h` is small (10/11/12rem)
+            so the gradient never eats the viewport; content takes
+            the natural space inside, with `justify-end` keeping the
+            magazine-cover bottom-anchor when there's empty room
+            above. The `.hero-mesh-brand::before` scrim handles
+            contrast under text on dark stages. */}
         <section
           aria-label="Page header"
-          className="relative max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 py-10 sm:py-12 lg:py-14 min-h-[16rem] sm:min-h-[18rem] lg:min-h-[20rem] flex flex-col justify-end"
+          className="relative max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 py-6 sm:py-8 lg:py-10 min-h-[10rem] sm:min-h-[11rem] lg:min-h-[12rem] flex flex-col justify-end"
         >
           <div className={`grid gap-6 sm:gap-8 items-end grid-cols-1 ${hasIcon ? "sm:grid-cols-[auto_1fr]" : ""}`}>
             {/* Icon disc — white tile with conic-gradient glow ring */}
