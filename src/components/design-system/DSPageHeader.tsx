@@ -28,8 +28,13 @@ import { DSCoverBanner } from "./DSCoverBanner";
 import { DSEyebrow } from "./DSEyebrow";
 
 interface Props {
-  eyebrow?: string;
-  title: string;
+  /** Small uppercase label above the title. Accepts a ReactNode so
+   *  callers can include icons inline (e.g. `<><Compass size={11} />
+   *  Program guide</>`). */
+  eyebrow?: ReactNode;
+  /** Page title — string or ReactNode. Some surfaces render dynamic
+   *  fragments (e.g. `<>Hi, {firstName}.</>` on the dashboard). */
+  title: ReactNode;
   description?: React.ReactNode;
   /** Optional icon — pass a React element (not a component
    *  reference), e.g. `icon={<Rocket size={22} className="text-brand-600" />}`.

@@ -1,7 +1,9 @@
+import { ListChecks } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureCourseFilterOptions } from "@/lib/courses/filter-options";
 import { CourseFilterOptionsAdmin } from "@/components/admin/CourseFilterOptionsAdmin";
+import { PageHero } from "@/components/ui/PageHero";
 
 export default async function CourseFiltersAdminPage() {
   await requireRole("admin");
@@ -13,10 +15,11 @@ export default async function CourseFiltersAdminPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-fg mb-1">Course catalog filters</h1>
-      <p className="text-sm text-muted mb-6 max-w-2xl leading-relaxed">
-        Add, rename, hide, or reorder the topic / delivery / provider options that drive the catalog filter rail. Existing courses keep their assigned values even if you hide an option from the picker.
-      </p>
+      <PageHero
+        eyebrow={<><ListChecks size={11} /> Admin · ENGAGE</>}
+        title="Course catalog filters"
+        description="Add, rename, hide, or reorder the topic / delivery / provider options that drive the catalog filter rail. Existing courses keep their assigned values even if you hide an option from the picker."
+      />
       <CourseFilterOptionsAdmin
         initial={options.map((o) => ({
           id: o.id,
