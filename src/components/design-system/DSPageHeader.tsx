@@ -141,61 +141,70 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
 
     return (
       <header className="full-bleed relative overflow-hidden -mt-8 mb-10 hero-mesh-brand">
-        {/* Four dreamy blurred auroras, sized for the compact banner
-            (~12rem tall on lg). Theme-driven via `--hero-mesh-{1..4}`.
-            Sit on top of `.hero-mesh-brand`'s built-in radial auroras
-            (smaller + sharper) for layered depth. */}
-        <div
-          aria-hidden
-          className="absolute -top-12 -left-10 w-[22rem] h-[22rem] rounded-full blur-3xl opacity-70 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(closest-side, var(--hero-mesh-1, #56bdf8), transparent 70%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute -bottom-12 right-1/4 w-[20rem] h-[20rem] rounded-full blur-3xl opacity-65 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(closest-side, var(--hero-mesh-2, #f472b6), transparent 70%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute -top-6 right-0 w-[16rem] h-[16rem] rounded-full blur-3xl opacity-50 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(closest-side, var(--hero-mesh-4, #facc15), transparent 70%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute -bottom-6 left-1/3 w-[14rem] h-[14rem] rounded-full blur-3xl opacity-50 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(closest-side, var(--hero-mesh-3, #4ade80), transparent 70%)",
-          }}
-        />
+        {/* Decoration layer — wraps the auroras + noise inside ONE
+            absolute container. This is load-bearing: globals.css has
+            `.hero-mesh-brand > * { position: relative }` which forces
+            every direct child into the flow. If the four aurora divs
+            sat directly under `<header>`, that rule would turn them
+            into 14–22 rem tall block elements stacked vertically,
+            and the hero would balloon to ~1500 px tall. Wrapping them
+            in an absolutely-positioned div takes the children out of
+            the in-flow path — only the wrapper itself is the direct
+            child of `.hero-mesh-brand`, and it's flattened to inset:0. */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none">
+          {/* Four dreamy blurred auroras, sized for the compact
+              banner (~12rem tall on lg). Theme-driven via
+              `--hero-mesh-{1..4}`. Layer on top of `.hero-mesh-brand`'s
+              built-in radial auroras for extra depth. */}
+          <div
+            className="absolute -top-12 -left-10 w-[22rem] h-[22rem] rounded-full blur-3xl opacity-70"
+            style={{
+              background:
+                "radial-gradient(closest-side, var(--hero-mesh-1, #56bdf8), transparent 70%)",
+            }}
+          />
+          <div
+            className="absolute -bottom-12 right-1/4 w-[20rem] h-[20rem] rounded-full blur-3xl opacity-65"
+            style={{
+              background:
+                "radial-gradient(closest-side, var(--hero-mesh-2, #f472b6), transparent 70%)",
+            }}
+          />
+          <div
+            className="absolute -top-6 right-0 w-[16rem] h-[16rem] rounded-full blur-3xl opacity-50"
+            style={{
+              background:
+                "radial-gradient(closest-side, var(--hero-mesh-4, #facc15), transparent 70%)",
+            }}
+          />
+          <div
+            className="absolute -bottom-6 left-1/3 w-[14rem] h-[14rem] rounded-full blur-3xl opacity-50"
+            style={{
+              background:
+                "radial-gradient(closest-side, var(--hero-mesh-3, #4ade80), transparent 70%)",
+            }}
+          />
 
-        {/* Fine SVG noise overlay — grain to break up gradient banding */}
-        <svg
-          aria-hidden
-          className="absolute inset-0 w-full h-full opacity-[0.18] mix-blend-overlay pointer-events-none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <filter id="ds-cinematic-noise">
-            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" />
-            <feColorMatrix
-              type="matrix"
-              values="0 0 0 0 1
-                      0 0 0 0 1
-                      0 0 0 0 1
-                      0 0 0 0.4 0"
-            />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#ds-cinematic-noise)" />
-        </svg>
+          {/* Fine SVG noise overlay — grain to break up gradient
+              banding. Also lives inside the decoration wrapper so the
+              `.hero-mesh-brand > *` rule doesn't pull it into flow. */}
+          <svg
+            className="absolute inset-0 w-full h-full opacity-[0.18] mix-blend-overlay"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <filter id="ds-cinematic-noise">
+              <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" />
+              <feColorMatrix
+                type="matrix"
+                values="0 0 0 0 1
+                        0 0 0 0 1
+                        0 0 0 0 1
+                        0 0 0 0.4 0"
+              />
+            </filter>
+            <rect width="100%" height="100%" filter="url(#ds-cinematic-noise)" />
+          </svg>
+        </div>
 
         {/* CONTENT — compact banner. `min-h` is small (10/11/12rem)
             so the gradient never eats the viewport; content takes
