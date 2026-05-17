@@ -95,7 +95,7 @@ export default async function MyApplicationsPage() {
   );
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-4xl mx-auto">
       <PageHeader
         title="My applications"
         description="Postings you've applied to (with current stage) and the ones you've saved for later. Stages mirror what the employer sees on their side."

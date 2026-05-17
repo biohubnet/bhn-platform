@@ -35,7 +35,7 @@ export default async function MyApplicationPage() {
   if (!user) redirect("/login");
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <PageHeader
         title="My application"
         description="Build your resume, 1-minute video, and elevator pitch once — every form you submit pulls from here."

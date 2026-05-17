@@ -218,7 +218,7 @@ export default async function AdminSecurityPage() {
     : null;
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-4xl mx-auto">
       <PageHeader
         title={
           <span className="inline-flex items-center gap-2">

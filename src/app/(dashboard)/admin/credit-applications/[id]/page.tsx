@@ -29,7 +29,7 @@ export default async function AdminCreditApplicationDetailPage({ params }: { par
   const docs = (app.documents as unknown as DocEntry[]) ?? [];
 
   return (
-    <div className="max-w-4xl space-y-5">
+    <div className="max-w-4xl mx-auto space-y-5">
       <Link
         href="/admin/credit-applications"
         className="text-xs text-muted hover:text-fg inline-flex items-center gap-1"

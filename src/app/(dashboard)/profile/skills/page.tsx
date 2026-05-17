@@ -43,7 +43,7 @@ export default async function MySkillsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <header>
         <h1 className="text-2xl font-bold text-fg flex items-center gap-2">
           <Sparkles size={20} className="text-brand-600" />

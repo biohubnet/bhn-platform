@@ -18,7 +18,7 @@ export default async function CreditApplyPage() {
   const userName = session.user?.name ?? "";
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <PageHeader
         title="Apply for additional credits"
         description="Tell us a bit about how you'll use BHN Training and attach supporting documents. An admin reviews each application personally."

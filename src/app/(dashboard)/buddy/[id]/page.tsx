@@ -96,7 +96,7 @@ export default async function BuddyDetailPage({ params }: { params: Promise<{ id
   });
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <Link href="/buddy" className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
         <ArrowLeft size={12} /> Back to learning buddies
       </Link>

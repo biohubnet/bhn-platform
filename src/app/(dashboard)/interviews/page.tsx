@@ -28,7 +28,7 @@ export default async function MyInterviewsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-3xl mx-auto">
       <header>
         <h1 className="text-2xl font-bold text-fg flex items-center gap-2">
           <Calendar size={20} className="text-brand-600" />

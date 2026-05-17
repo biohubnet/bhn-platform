@@ -53,7 +53,7 @@ export default async function CreditsPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-2xl">
+    <div className="space-y-8 max-w-2xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-fg">My BHN Credits</h1>
         <p className="text-muted text-sm mt-1 leading-relaxed">

@@ -81,7 +81,7 @@ export default async function CourseDetailPage({
     userCredits < course.creditCost;
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Archived banner — explains why enrolment is closed. */}
       {isArchived && !isStaff && (
         <div className="rounded-2xl bg-slate-100 ring-1 ring-inset ring-slate-300 px-4 py-3 flex items-start gap-2">

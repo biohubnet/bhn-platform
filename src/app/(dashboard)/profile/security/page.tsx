@@ -31,7 +31,7 @@ export default async function SecurityPage() {
   if (!user) redirect("/login");
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <PageHeader
         title="Security"
         description="Sign-in and account-protection settings. Multi-factor authentication is recommended for every account."

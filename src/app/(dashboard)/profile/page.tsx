@@ -28,7 +28,7 @@ export default async function ProfilePage() {
   if (!user) redirect("/login");
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       <PageHeader
         title="My profile"
         description="Update your information, change your password, or request a role change."
