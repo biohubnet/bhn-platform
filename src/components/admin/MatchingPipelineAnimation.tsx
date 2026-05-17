@@ -79,7 +79,7 @@ const SKILL_POOL = [
   "purification", "scale-up", "validation", "CMC", "stability",
   "PAT", "USP", "DSP", "qPCR", "ELISA",
   "viral clearance", "lyophilization", "buffer prep", "media prep",
-  "in-process testing", "release testing", "audit trail", "deviation",
+  "in-process", "release test", "audit trail", "deviation",
 ] as const;
 
 /** Per-subscore rotating "now matching" caption pool. Each subscore
@@ -143,6 +143,10 @@ interface InputRow {
   visible: number;
   /** Y position in the SVG viewBox. */
   y: number;
+  /** Increments every time this row's label is swapped — used as
+   *  the React key on the inline "glow flash" circle so each
+   *  pulse mounts fresh and the CSS keyframe replays from 0. */
+  pulseSeq: number;
 }
 
 function pickRandomSkill(): string {
@@ -155,22 +159,26 @@ function makeRow(y: number): InputRow {
     fullLabel: pickRandomSkill(),
     visible: 0,
     y,
+    pulseSeq: 1,
   };
 }
 
 /** Custom hook: owns the live-feed state for the left column.
  *  Handles three concurrent timers:
- *    • TYPE — every 28 ms, advance visible chars on any row that
+ *    • TYPE — every 18 ms, advance visible chars on any row that
  *      hasn't fully typed yet.
- *    • ROTATE — every 1600 ms, pick a random row and swap its
- *      label for a new one from the pool (resets visible to 0).
+ *    • ROTATE — every 700 ms, swap 1–3 random rows simultaneously.
+ *      Each row that swaps also gets its pulseSeq bumped, which
+ *      fires a one-shot glow flash on the input core.
  *    • RESIZE — every 9000 ms, change the row count to a new
  *      value in [MIN_INPUTS, MAX_INPUTS] (smoothly preserves
  *      existing rows where possible). */
 function useInputStream(reducedMotion: boolean) {
   const [rows, setRows] = useState<InputRow[]>(() => spreadY(5).map(makeRow));
 
-  // TYPE — character reveal.
+  // TYPE — character reveal. Fast enough that the longest label
+  // (~24 chars) types in under 450 ms, so the next ROTATE doesn't
+  // catch a row mid-type for the same row.
   useEffect(() => {
     if (reducedMotion) {
       // Snap every label to its full length, no animation.
@@ -189,27 +197,45 @@ function useInputStream(reducedMotion: boolean) {
         });
         return anyChanged ? next : cur;
       });
-    }, 28);
+    }, 18);
     return () => clearInterval(id);
   }, [reducedMotion]);
 
-  // ROTATE — randomly swap one row's label.
+  // ROTATE — swap 1-3 random rows simultaneously. Each swap
+  // bumps pulseSeq so the input core glows briefly.
   useEffect(() => {
     if (reducedMotion) return;
     const id = setInterval(() => {
       setRows((cur) => {
         if (cur.length === 0) return cur;
-        const idx = Math.floor(Math.random() * cur.length);
-        const next = cur.slice();
-        // Pick a new label that isn't already showing.
+        // Choose how many rows to swap this tick — biased toward
+        // 1-2 (most common) with the occasional 3-row burst.
+        const swapCount = Math.min(
+          cur.length,
+          Math.random() < 0.45 ? 1 : Math.random() < 0.75 ? 2 : 3,
+        );
+        const indices = new Set<number>();
+        while (indices.size < swapCount) {
+          indices.add(Math.floor(Math.random() * cur.length));
+        }
         const shown = new Set(cur.map((r) => r.fullLabel));
-        let candidate = pickRandomSkill();
-        let tries = 0;
-        while (shown.has(candidate) && tries++ < 6) candidate = pickRandomSkill();
-        next[idx] = { ...next[idx], fullLabel: candidate, visible: 0, key: Math.random().toString(36).slice(2, 10) };
+        const next = cur.slice();
+        for (const idx of indices) {
+          let candidate = pickRandomSkill();
+          let tries = 0;
+          while (shown.has(candidate) && tries++ < 6) candidate = pickRandomSkill();
+          shown.add(candidate);
+          next[idx] = {
+            ...next[idx],
+            fullLabel: candidate,
+            visible: 0,
+            key: Math.random().toString(36).slice(2, 10),
+            pulseSeq: next[idx].pulseSeq + 1,
+          };
+        }
         return next;
       });
-    }, 1600);
+    }, 700);
     return () => clearInterval(id);
   }, [reducedMotion]);
 
@@ -356,7 +382,20 @@ export function MatchingPipelineAnimation({ config }: Props) {
   }
 
   return (
-    <section className="relative overflow-hidden rounded-2xl ring-1 ring-inset ring-cyan-900/40 bg-[#0a0a14] mx-auto w-full">
+    <section
+      className="relative overflow-hidden rounded-2xl ring-1 ring-inset ring-cyan-900/40 mx-auto w-full"
+      style={{
+        // Halo glows live on the SECTION background — not inside the
+        // SVG — so they extend the full panel height. (When they lived
+        // in <svg> land the 200-unit viewBox clipped them top/bottom
+        // and the user saw hard cut-off edges.) Three layers:
+        //   1. amethyst upper-left
+        //   2. score-tinted right (tied to `tone` so the glow shifts
+        //      between rose / amber / emerald as the score band moves)
+        //   3. solid base for everything else to sit on
+        background: `radial-gradient(circle at 10% 30%, rgba(168, 85, 247, 0.32), transparent 45%), radial-gradient(circle at 90% 50%, ${tone}55, transparent 45%), #0a0a14`,
+      }}
+    >
       {/* Faint scan line top edge */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent animate-mpa-scan" aria-hidden />
 
@@ -424,24 +463,19 @@ export function MatchingPipelineAnimation({ config }: Props) {
               <stop offset="100%" stopColor={`${tone}11`} />
             </radialGradient>
 
-            {/* Soft halo gradients (output + upper-left vignette). */}
-            <radialGradient id="mpa-halo-output">
-              <stop offset="0%"  stopColor={tone}    stopOpacity="0.45" />
-              <stop offset="100%" stopColor={tone}    stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="mpa-halo-vignette">
-              <stop offset="0%"  stopColor="#a855f7" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
-            </radialGradient>
+            {/* (Halo gradients used to live here as <radialGradient>
+                defs feeding two <rect> overlays. They now live in CSS
+                on the <section> background — see the opening <section>
+                style — so they can fill the full panel height instead
+                of being clipped at the SVG viewBox top/bottom.) */}
           </defs>
 
-          {/* ── Background passes ──────────────────────────── */}
-          <rect width={W} height={H} fill="#0a0a14" />
-          {/* Upper-left amethyst halo */}
-          <rect width="320" height="320" x="-80" y="-100" fill="url(#mpa-halo-vignette)" />
-          {/* Output halo behind the right side */}
-          <rect width="320" height="320" x={OUTPUT_X - 160} y={OUTPUT_Y - 160} fill="url(#mpa-halo-output)" />
-          {/* Organic noise overlay */}
+          {/* ── Background passes ────────────────────────────
+              The opaque base + halos are painted by the section's CSS
+              background — see the <section style={…}> above. Only the
+              organic noise lives in SVG-land now (it needs feTurbulence
+              which is SVG-only). The noise renders transparent except
+              for the speckle, so the CSS halos show through it. */}
           <rect width={W} height={H} filter="url(#mpa-noise)" />
 
           {/* ── Axons (input → hidden) ────────────────────── */}
@@ -525,11 +559,25 @@ export function MatchingPipelineAnimation({ config }: Props) {
                 {/* Core */}
                 <circle cx={PAD_X} cy={inp.y} r={3.5} fill="#67e8f9" filter="url(#mpa-glow)" />
                 <circle cx={PAD_X} cy={inp.y} r={1.6} fill="#ffffff" />
+                {/* Pulse flash — fires every time this row's label
+                    swaps. The React key on pulseSeq forces a remount
+                    so the CSS keyframe replays from frame 0; without
+                    that, the animation would only run on the first
+                    mount and never again. */}
+                <circle
+                  key={`flash-${inp.pulseSeq}`}
+                  cx={PAD_X}
+                  cy={inp.y}
+                  r={3.5}
+                  fill="#67e8f9"
+                  filter="url(#mpa-glow)"
+                  className="mpa-pulse-flash"
+                />
                 {/* Label + blinking caret while typing */}
                 <text
-                  x={PAD_X - 14} y={inp.y + 3}
-                  fill="rgba(165, 243, 252, 0.62)"
-                  fontSize="9"
+                  x={PAD_X - 14} y={inp.y + 4}
+                  fill="rgba(165, 243, 252, 0.72)"
+                  fontSize="11"
                   fontFamily="ui-monospace, monospace"
                   textAnchor="end"
                 >
@@ -557,13 +605,13 @@ export function MatchingPipelineAnimation({ config }: Props) {
                 <circle cx={HIDDEN_X} cy={y} r={8} fill="#10101e" stroke={h.hue} strokeWidth="1.4" />
                 <circle cx={HIDDEN_X} cy={y} r={3} fill={h.hue} filter="url(#mpa-glow)" />
                 <text
-                  x={HIDDEN_X} y={y + 3}
+                  x={HIDDEN_X} y={y + 4}
                   fill="#ffffff"
-                  fontSize="8"
+                  fontSize="11"
                   fontWeight="900"
                   fontFamily="ui-monospace, monospace"
                   textAnchor="middle"
-                  opacity="0.85"
+                  opacity="0.95"
                 >
                   {h.weight}
                 </text>
@@ -571,14 +619,14 @@ export function MatchingPipelineAnimation({ config }: Props) {
                     in the wide canvas, not below, because vertical
                     space is tight in the new shorter strip. */}
                 <text
-                  x={HIDDEN_X + 22} y={y + 3}
+                  x={HIDDEN_X + 24} y={y + 3}
                   fill={h.hue}
-                  fontSize="8"
-                  letterSpacing="2.5"
+                  fontSize="10"
+                  letterSpacing="2"
                   fontWeight="700"
                   fontFamily="ui-monospace, monospace"
                   textAnchor="start"
-                  opacity="0.85"
+                  opacity="0.95"
                 >
                   {h.label}
                 </text>
@@ -594,9 +642,9 @@ export function MatchingPipelineAnimation({ config }: Props) {
                   const stillTyping = cap.visible < cap.full.length;
                   return (
                     <text
-                      x={HIDDEN_X + 22} y={y + 13}
-                      fill="rgba(226, 232, 240, 0.60)"
-                      fontSize="7"
+                      x={HIDDEN_X + 24} y={y + 16}
+                      fill="rgba(226, 232, 240, 0.70)"
+                      fontSize="9"
                       fontFamily="ui-monospace, monospace"
                       textAnchor="start"
                     >
@@ -622,9 +670,9 @@ export function MatchingPipelineAnimation({ config }: Props) {
             {/* Core */}
             <circle cx={OUTPUT_X} cy={OUTPUT_Y} r={16} fill="url(#mpa-output-fill)" stroke={tone} strokeWidth="1.5" filter="url(#mpa-glow)" />
             <text
-              x={OUTPUT_X} y={OUTPUT_Y + 5}
+              x={OUTPUT_X} y={OUTPUT_Y + 6}
               fill="#0a0a14"
-              fontSize="13"
+              fontSize="16"
               fontWeight="900"
               fontFamily="ui-monospace, monospace"
               textAnchor="middle"
@@ -683,6 +731,17 @@ export function MatchingPipelineAnimation({ config }: Props) {
             });
           })}
         </svg>
+
+        {/* Plain-English caption — tells you what the picture is
+            doing without forcing you to read the legend first. Sits
+            tucked between the SVG and the colour legend so the
+            colour mapping is right there to refer to. */}
+        <p className="mt-2 px-1 text-[10.5px] leading-snug text-slate-400">
+          Live feed of skills parsed off a candidate (left) flows through three weighted subscore models —
+          <span className="text-cyan-300"> direct</span> vocabulary match,
+          <span className="text-fuchsia-300"> semantic</span> similarity, and
+          <span className="text-amber-300"> pathway</span> walks — into a single match score (right).
+        </p>
 
         {/* Footer legend — compact mono line */}
         <div className="mt-1 px-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[9.5px] font-mono text-slate-500">
@@ -747,11 +806,29 @@ export function MatchingPipelineAnimation({ config }: Props) {
         :global(.mpa-caret) {
           animation: mpa-caret-blink 0.9s steps(2) infinite;
         }
+        /* One-shot flash fired every time a row's label swaps. The
+           SVG circle gets a fresh React key on each swap (keyed off
+           pulseSeq) which remounts the element — that is what makes
+           the keyframe replay from frame 0 instead of staying at its
+           end state forever. The "forwards" fill keeps the circle
+           invisible once the flash finishes so it does not sit on
+           top of the input core. */
+        @keyframes mpa-pulse-flash {
+          0%   { transform: scale(1);    opacity: 0.9; }
+          100% { transform: scale(4.6);  opacity: 0;   }
+        }
+        :global(.mpa-pulse-flash) {
+          animation: mpa-pulse-flash 0.75s ease-out forwards;
+          transform-box: fill-box;
+          transform-origin: center;
+          pointer-events: none;
+        }
         @media (prefers-reduced-motion: reduce) {
           .animate-mpa-scan,
           :global(.mpa-ring),
           :global(.mpa-output-breathe),
-          :global(.mpa-caret) { animation: none; }
+          :global(.mpa-caret),
+          :global(.mpa-pulse-flash) { animation: none; }
         }
       `}</style>
     </section>
