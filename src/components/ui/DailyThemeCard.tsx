@@ -33,12 +33,10 @@ import { cn } from "@/lib/utils";
 const SWATCH: Record<ThemeId, [string, string, string]> = {
   light:      ["#ffffff", "#3b6cef", "#0b1b3b"],
   dark:       ["#0f1d3d", "#5e8ff7", "#eaf0fb"],
-  scientific: ["#ffffff", "#0ea5e9", "#1e293b"],
   rosalind:   ["#fbf6ec", "#485940", "#a8625a"],
   hitech:     ["#06121f", "#00d4ff", "#e3f7ff"],
   sakura:     ["#fffaf9", "#d04c61", "#3a1f24"],
   icecream:   ["#fff8f3", "#c5234a", "#b8e0d2"],
-  retro8bit:  ["#1a0d2e", "#ff4dff", "#00ffff"],
   greenwood:  ["#f7faf2", "#456224", "#c6a449"],
 };
 

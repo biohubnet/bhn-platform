@@ -68,12 +68,10 @@ def verdict(ratio: float) -> str:
 THEMES: dict[str, tuple[str, tuple[int, int, int, float], str, str]] = {
     "light":      ("#ecedea", (252, 252, 250, 0.88), "#1c1c20", "#3b6cef"),
     "dark":       ("#0c0d12", (28, 30, 40, 0.82),   "#e3e4e9", "#5e8ff7"),
-    "scientific": ("#e8ebef", (252, 253, 254, 0.94), "#1e2733", "#0ea5e9"),
     "rosalind":   ("#f4ede0", (251, 246, 236, 0.92), "#2e261f", "#485940"),
     "hitech":     ("#02060d", (8, 22, 38, 0.84),     "#e3f7ff", "#00d4ff"),
     "sakura":     ("#fdf2f4", (255, 250, 249, 0.92), "#3a1f24", "#d04c61"),
     "icecream":   ("#fff8f3", (255, 255, 255, 0.92), "#3d2a3b", "#c5234a"),
-    "retro8bit":  ("#1a0d2e", (28, 18, 50, 0.92),    "#ffffff", "#ff4dff"),
     "greenwood":  ("#eef1ea", (248, 251, 240, 0.92), "#1f2a1a", "#456224"),
 }
 

@@ -558,7 +558,7 @@ function SectionGroup({
           ref={chipRef}
           tabIndex={hasTooltip ? 0 : -1}
           // data-section-tone exposes the tone to CSS so dark themes
-          // (Hi-tech, Nightfall, retro8bit) can override chip
+          // (Hi-tech, Nightfall) can override chip
           // bg/text/ring without rewriting the Tailwind classes —
           // the default Tailwind palette (`bg-sky-100`, `text-sky-900`,
           // etc.) inverts poorly on inky-black themes and leaves the

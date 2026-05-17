@@ -16,13 +16,11 @@ export const THEMES = [
   // Classic — foundational themes, always present.
   { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces", category: "classic" },
   { id: "dark",       name: "Nightfall",  description: "Deep navy with electric accents", category: "classic" },
-  { id: "scientific", name: "Scientific", description: "Cool sky-blue, paper-like surfaces", category: "classic" },
   { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic", category: "classic" },
   { id: "hitech",     name: "Hi-Tech",    description: "Neon cyan on near-black", category: "classic" },
 
   // Flavours — sensory / atmospheric themes.
   { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright", category: "flavour" },
-  { id: "retro8bit",  name: "Retro 8-bit", description: "NES boss screen — magenta + cyan on CRT-purple, scanlines, pixel font", category: "flavour" },
   { id: "greenwood",  name: "Greenwood",  description: "A walk through deep forest — mossy parchment, fern-green CTAs, canopy-and-sunlight hero", category: "flavour" },
 
   // Limited-time / seasonal.

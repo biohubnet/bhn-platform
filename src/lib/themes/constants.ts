@@ -13,7 +13,6 @@ export const VALID_THEME_IDS = [
   // Classic
   "light",
   "dark",
-  "scientific",
   "rosalind",
   "mist",
   "hitech",
@@ -21,7 +20,6 @@ export const VALID_THEME_IDS = [
   "coldbrew",
   "icecream",
   "dryice",
-  "retro8bit",
   "salty",
   "chilli",
   "greenwood",
