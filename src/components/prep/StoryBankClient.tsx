@@ -40,7 +40,10 @@ export function StoryBankClient({ initialStories }: { initialStories: Story[] })
   }
 
   return (
-    <ul className="space-y-3">
+    // Hairline-divided list, no rounded card chrome on each row.
+    // The whole bank reads as one column; sections + dividers come
+    // from the page-level layout instead of from per-row boxes.
+    <ul className="divide-y divide-line border-y border-line">
       {stories.map((s) => (
         <StoryCard
           key={s.id}
@@ -114,11 +117,14 @@ function StoryCard({
   }[feedback.readiness];
 
   return (
-    <li className="rounded-2xl border border-line bg-card surface-shadow overflow-hidden">
+    // No card chrome — the surrounding <ul> provides the hairline
+    // dividers. Hover/open state uses a subtle elevated wash so the
+    // active row stands out without a rounded box around it.
+    <li className={open ? "bg-elevated/30" : ""}>
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-start justify-between gap-3 p-5 text-left hover:bg-elevated/40"
+        className="w-full flex items-start justify-between gap-3 px-4 sm:px-5 py-4 text-left hover:bg-elevated/40 transition-colors"
       >
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -150,7 +156,7 @@ function StoryCard({
       </button>
 
       {open && (
-        <div className="px-5 pb-5 border-t border-line space-y-3">
+        <div className="px-4 sm:px-5 pb-5 border-t border-line space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <Field label="Title" value={story.title} onChange={(v) => onChange({ title: v })} type="input" />
           </div>

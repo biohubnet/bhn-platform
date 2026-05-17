@@ -19,8 +19,20 @@ import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
  * the contents of a trainee's Story Bank. (Admin can see metadata
  * via /admin/audit for moderation purposes, but the body text isn't
  * surfaced anywhere outside this page.)
+ *
+ * Layout (rev 2026-05-17):
+ *   One outer rounded-3xl panel with a gentle top-to-bottom brand
+ *   wash. Inside, four sections (header / admin demo / content /
+ *   help) are separated by hairline `border-b border-line` rules
+ *   rather than nested card boxes. Each section gets a faint
+ *   gradient tint of its own so the eye can pick out the boundaries
+ *   without the chrome of stacked rounded cards. Pattern lifted
+ *   from the /employer HR-overview brand stage.
  */
 export const dynamic = "force-dynamic";
+
+const OUTER_BG =
+  "linear-gradient(180deg, color-mix(in srgb, var(--brand-50) 55%, var(--card)) 0%, var(--card) 22%, var(--card) 78%, color-mix(in srgb, var(--brand-50) 40%, var(--card)) 100%)";
 
 export default async function StoryBankPage() {
   const session = await getSession();
@@ -37,7 +49,7 @@ export default async function StoryBankPage() {
           <h1 className="text-xl font-bold text-fg">Not for your role</h1>
           <p className="text-sm text-muted mt-2 max-w-md mx-auto leading-relaxed">
             The Story Bank is for trainees — a private library of STAR-format
-            stories you've authored during application prep.
+            stories you&apos;ve authored during application prep.
           </p>
         </div>
       </div>
@@ -56,77 +68,161 @@ export default async function StoryBankPage() {
   const isStaff = checkIsStaff(role);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          Profile · Story Bank
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg tracking-tight mt-1 inline-flex items-center gap-2">
-          <BookOpen size={22} className="text-brand-600" />
-          Your STAR stories
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-2xl leading-relaxed">
-          STAR-format stories you've drafted. Reusable across postings — a
-          story tagged with "cell culture" works for any role that needs it.
-          New stories land here when you click <em>Save to Story Bank</em>{" "}
-          in the prep flow.
-        </p>
-      </header>
-
-      {/* Admin-only seed/clear. Demo stories land on the calling
-          admin's own user (Story Bank is user-private), titled with
-          a [demo] prefix so the Clear pass can find them exactly. */}
-      {isStaff && (
-        <DemoSeedAndClearTray
-          entity="user_star_story"
-          noun="demo STAR stories"
-          clearHelp="Delete StarStory rows on your user where the title starts with [demo]. Real stories you've authored are not touched."
-        />
-      )}
-
-      {stories.length === 0 ? (
-        <div className="rounded-2xl border border-line bg-card p-8 text-center surface-shadow">
-          <Sparkles size={20} className="text-brand-600 mx-auto" />
-          <p className="text-sm font-semibold text-fg mt-2">No stories yet</p>
-          <p className="text-xs text-muted mt-1 max-w-md mx-auto leading-snug">
-            Find a posting you'd like to apply to, click <strong>Prepare for
-            this posting</strong>, walk through to Step 4, and save your first
-            STAR story here.
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <div
+        className="rounded-3xl border border-line overflow-hidden surface-shadow"
+        style={{ background: OUTER_BG }}
+      >
+        {/* ── HEADER ───────────────────────────────────────────── */}
+        <header className="px-6 sm:px-10 lg:px-14 pt-10 sm:pt-12 pb-8 border-b border-line">
+          <SectionEyebrow>Profile · Story Bank</SectionEyebrow>
+          <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight leading-[1.05] inline-flex items-center gap-3">
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-200 shrink-0">
+              <BookOpen size={20} />
+            </span>
+            <span
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, var(--fg) 0%, var(--fg) 60%, rgb(59,130,246) 100%)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              Your STAR stories
+            </span>
+          </h1>
+          <p className="mt-4 text-sm sm:text-base text-fg/80 leading-relaxed max-w-2xl">
+            STAR-format stories you&apos;ve drafted. Reusable across postings — a story
+            tagged with &quot;cell culture&quot; works for any role that needs it. New
+            stories land here when you click <em>Save to Story Bank</em> in the
+            prep flow.
           </p>
-          <Link
-            href="/internships"
-            className="inline-flex items-center gap-2 mt-5 rounded-xl bg-brand-600 text-white px-4 py-2 text-sm font-bold hover:bg-brand-700"
-          >
-            Browse internships <ArrowRight size={13} />
-          </Link>
-        </div>
-      ) : (
-        <StoryBankClient
-          initialStories={stories.map((s) => ({
-            id: s.id,
-            title: s.title,
-            situation: s.situation,
-            task: s.task,
-            action: s.action,
-            result: s.result,
-            tags: s.tags,
-            skills: s.skills.map((ss) => ({ id: ss.skill.id, name: ss.skill.name })),
-            source: s.source
-              ? { id: s.source.id, title: s.source.title, companyName: s.source.companyName }
-              : null,
-            updatedAt: s.updatedAt.toISOString(),
-          }))}
-        />
-      )}
+        </header>
 
-      <div className="rounded-2xl border border-dashed border-line bg-card p-4 text-xs text-muted leading-relaxed">
-        <p className="font-bold text-fg mb-1 inline-flex items-center gap-1.5">
-          <Plus size={12} /> Add more stories
-        </p>
-        STAR stories live in the prep flow at <code className="font-mono bg-elevated px-1 rounded">/internships/[id]/prepare</code> → Step 4. Open a
-        posting, scaffold a story for a skill, save it, and it'll appear
-        here. Stories are private to you — no employer or admin sees the body.
+        {/* ── ADMIN DEMO TRAY (staff only) ─────────────────────── */}
+        {/* Tinted amber wash so the section reads as the admin-only
+            chrome it is — distinct from the trainee-facing content
+            below, without being its own card. */}
+        {isStaff && (
+          <section
+            aria-label="Admin demo controls"
+            className="px-6 sm:px-10 lg:px-14 py-7 border-b border-line"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0) 90%)",
+            }}
+          >
+            <SectionEyebrow tone="amber">Admin · demo seed</SectionEyebrow>
+            <div className="mt-4">
+              <DemoSeedAndClearTray
+                entity="user_star_story"
+                noun="demo STAR stories"
+                clearHelp="Delete StarStory rows on your user where the title starts with [demo]. Real stories you've authored are not touched."
+              />
+            </div>
+          </section>
+        )}
+
+        {/* ── CONTENT ──────────────────────────────────────────── */}
+        <section
+          aria-label="Stories"
+          className="px-6 sm:px-10 lg:px-14 py-8 sm:py-10"
+        >
+          <SectionEyebrow>
+            {stories.length === 0
+              ? "Get started"
+              : `${stories.length} ${stories.length === 1 ? "story" : "stories"} on file`}
+          </SectionEyebrow>
+          <div className="mt-5">
+            {stories.length === 0 ? (
+              <div className="flex flex-col items-center text-center py-6 sm:py-10">
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-brand-200">
+                  <Sparkles size={20} />
+                </span>
+                <p className="text-base font-semibold text-fg mt-3">No stories yet</p>
+                <p className="text-sm text-muted mt-1.5 max-w-md leading-relaxed">
+                  Find a posting you&apos;d like to apply to, click{" "}
+                  <strong>Prepare for this posting</strong>, walk through to Step 4,
+                  and save your first STAR story here.
+                </p>
+                <Link
+                  href="/internships"
+                  className="inline-flex items-center gap-2 mt-6 rounded-xl bg-brand-600 text-white px-4 py-2 text-sm font-bold hover:bg-brand-700"
+                >
+                  Browse internships <ArrowRight size={13} />
+                </Link>
+              </div>
+            ) : (
+              <StoryBankClient
+                initialStories={stories.map((s) => ({
+                  id: s.id,
+                  title: s.title,
+                  situation: s.situation,
+                  task: s.task,
+                  action: s.action,
+                  result: s.result,
+                  tags: s.tags,
+                  skills: s.skills.map((ss) => ({ id: ss.skill.id, name: ss.skill.name })),
+                  source: s.source
+                    ? { id: s.source.id, title: s.source.title, companyName: s.source.companyName }
+                    : null,
+                  updatedAt: s.updatedAt.toISOString(),
+                }))}
+              />
+            )}
+          </div>
+        </section>
+
+        {/* ── HELP / WHERE-DO-STORIES-COME-FROM ────────────────── */}
+        <section
+          aria-label="How to add more stories"
+          className="px-6 sm:px-10 lg:px-14 py-7 border-t border-line"
+          style={{
+            background:
+              "linear-gradient(0deg, color-mix(in srgb, var(--brand-50) 45%, transparent) 0%, transparent 95%)",
+          }}
+        >
+          <SectionEyebrow>Add more stories</SectionEyebrow>
+          <p className="mt-3 text-xs sm:text-sm text-muted leading-relaxed max-w-2xl inline-flex items-start gap-2">
+            <Plus size={14} className="text-brand-600 shrink-0 mt-0.5" />
+            <span>
+              STAR stories live in the prep flow at{" "}
+              <code className="font-mono bg-elevated px-1.5 py-0.5 rounded text-fg/90">
+                /internships/[id]/prepare
+              </code>{" "}
+              → Step 4. Open a posting, scaffold a story for a skill, save it, and
+              it&apos;ll appear here. Stories are private to you — no employer or
+              admin sees the body.
+            </span>
+          </p>
+        </section>
       </div>
     </div>
+  );
+}
+
+/** Small eyebrow marker used at the top of each section. Sky → violet
+ *  gradient hairline prefix + uppercase tracked text — same vocabulary
+ *  the HR-overview sections use for visual rhyme across the platform. */
+function SectionEyebrow({
+  children,
+  tone = "default",
+}: {
+  children: React.ReactNode;
+  tone?: "default" | "amber";
+}) {
+  const textClass = tone === "amber" ? "text-amber-800" : "text-subtle";
+  const gradient =
+    tone === "amber"
+      ? "linear-gradient(90deg, rgb(245,158,11), transparent)"
+      : "linear-gradient(90deg, rgb(56,189,248), rgb(124,58,237))";
+  return (
+    <p
+      className={`text-[10px] uppercase tracking-[0.28em] font-bold inline-flex items-center gap-2 ${textClass}`}
+    >
+      <span aria-hidden className="block h-px w-6" style={{ background: gradient }} />
+      {children}
+    </p>
   );
 }
