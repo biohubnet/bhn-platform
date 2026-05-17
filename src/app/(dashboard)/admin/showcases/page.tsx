@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/auth";
 import { getShowcase } from "@/lib/showcase/seed";
 import { ShowcasePanel } from "@/components/admin/ShowcasePanel";
 import { Sparkles } from "lucide-react";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /admin/showcases — manage the single global Showcase Trainee demo
@@ -26,24 +27,15 @@ export default async function ShowcasesPage() {
   const summary = await getShowcase();
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Admin · Experience</p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-          <Sparkles size={22} className="text-brand-600" />
-          Showcase Trainee
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
-          A single global trainee account that's already lived through
-          the full BHN journey — completed courses, finished pathway,
-          earned certificates, hit both merch tiers, has a full
-          application profile (resume / 1-min video / elevator pitch),
-          and has interviews scheduled. Use it for sales calls and
-          training-team walkthroughs so visitors see the platform in
-          its lived-in state, not an empty new-trainee shell.
-        </p>
-      </header>
-
+    <div>
+      <PageHero
+        eyebrow={<><Sparkles size={11} /> Admin · EXPERIENCE</>}
+        title="Showcase Trainee"
+        description={(<>
+          A single global trainee account that&apos;s already lived through the full BHN journey — completed courses, finished pathway, earned certificates, hit both merch tiers, has a full application profile (resume / 1-min video / elevator pitch), and has interviews scheduled. Use it for sales calls and training-team walkthroughs so visitors see the platform in its lived-in state, not an empty new-trainee shell.
+        </>)}
+      />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
       <ShowcasePanel
         initial={
           summary && summary.user.magicToken
@@ -81,6 +73,7 @@ export default async function ShowcasesPage() {
           </div>
         </dl>
       </section>
+      </div>
     </div>
   );
 }

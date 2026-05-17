@@ -7,6 +7,7 @@ import {
   type ThumbnailItem,
 } from "@/components/admin/CourseThumbnailRegenerator";
 import { getDefaultThumbnailOverlay } from "@/lib/courses/thumbnail-overlay-default";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /admin/cover-art — bulk-manage AI thumbnails + colour overlays
@@ -69,25 +70,17 @@ export default async function CoverArtAdminPage() {
   const withOverlays = items.filter((c) => c.thumbnailOverlay !== null && c.thumbnailOverlay !== undefined).length;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Admin · Engage</p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-          <Sparkles size={22} className="text-brand-600" />
-          Cover art
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
-          AI-generated cover art and non-destructive colour overlays for every
-          course <em>and</em> pathway. The generator extracts visual motifs
-          from each item&apos;s title + category + description (via LLM), then
-          asks SDXL Lightning to paint a clean editorial illustration anchored
-          on those motifs. After regeneration you can also stamp a shared
-          colour / gradient overlay across any subset of items — handy for
-          giving a series of cards a unified visual treatment without
-          re-rendering each thumbnail.
-        </p>
-      </header>
-
+    <div>
+      <PageHero
+        eyebrow={<><Sparkles size={11} /> Admin · ENGAGE</>}
+        title="Cover art"
+        description={(
+          <>
+            AI-generated cover art and non-destructive colour overlays for every course <em>and</em> pathway. The generator extracts visual motifs from each item&apos;s title + category + description (via LLM), then asks SDXL Lightning to paint a clean editorial illustration anchored on those motifs. After regeneration you can also stamp a shared colour / gradient overlay across any subset of items — handy for giving a series of cards a unified visual treatment without re-rendering each thumbnail.
+          </>
+        )}
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
       {/* Counts */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Courses"        value={courses.length} />
@@ -125,6 +118,7 @@ npx tsx scripts/auto-thumbnail-courses.ts --missing-only
 npx tsx scripts/auto-thumbnail-courses.ts --limit 20`}
         </pre>
       </section>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Mail, Sparkles, History, Users, Ban, Webhook, AlertCircle } from "lucide-react";
 import { NewsletterExportClient } from "@/components/admin/NewsletterExportClient";
 import { mailchimpEnabled } from "@/lib/mailchimp/client";
+import { PageHero } from "@/components/ui/PageHero";
 
 export const dynamic = "force-dynamic";
 
@@ -69,17 +70,15 @@ export default async function NewsletterAdminPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-fg flex items-center gap-2">
-          <Mail size={20} className="text-brand-600" />
-          Newsletter exports
-        </h1>
-        <p className="text-sm text-muted mt-1">
-          {integrationLive
+      <PageHero
+        eyebrow={<><Mail size={11} /> Admin · ENGAGE</>}
+        title="Newsletter exports"
+        description={
+          integrationLive
             ? "Mailchimp auto-sync is live: new opt-ins are pushed straight to your audience in 'pending' status — Mailchimp emails them a confirmation link, and only the click flips them to subscribed. Use the manual export tools below for backfill or when push failed."
-            : "Mailchimp auto-sync isn't configured. The manual export workflow is the fallback: copy opt-ins, paste into Mailchimp, then mark them as exported here."}
-        </p>
-      </header>
+            : "Mailchimp auto-sync isn't configured. The manual export workflow is the fallback: copy opt-ins, paste into Mailchimp, then mark them as exported here."
+        }
+      />
 
       {/* Integration status — green when env is wired up, amber when
           the legacy manual workflow is the only option. */}

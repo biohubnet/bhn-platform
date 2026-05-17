@@ -8,6 +8,7 @@ import {
   VALID_THEME_IDS,
 } from "@/lib/themes/constants";
 import { AdminProposalQueue } from "@/components/admin/AdminProposalQueue";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /admin/theme-proposals — admin review surface.
@@ -65,20 +66,13 @@ export default async function AdminThemeProposalsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Admin · Engage</p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
-          <Sparkles size={22} className="text-brand-600" />
-          Theme proposals
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">
-          Trainee-submitted theme ideas + aggregated vote totals. Shipping a
-          proposal can issue a tier-3 MerchReward bounty (Theme Designer
-          Bundle) — idempotent: one bundle per user even if they have
-          multiple shipped ideas.
-        </p>
-      </header>
+    <div>
+      <PageHero
+        eyebrow={<><Sparkles size={11} /> Admin · ENGAGE</>}
+        title="Theme proposals"
+        description="Trainee-submitted theme ideas + aggregated vote totals. Shipping a proposal can issue a tier-3 MerchReward bounty (Theme Designer Bundle) — idempotent: one bundle per user even if they have multiple shipped ideas."
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
 
       {/* Headline counts */}
       <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -166,6 +160,7 @@ export default async function AdminThemeProposalsPage() {
           ))}
         </dl>
       </section>
+      </div>
     </div>
   );
 }
