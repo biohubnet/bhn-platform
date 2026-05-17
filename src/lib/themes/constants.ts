@@ -23,6 +23,7 @@ export const VALID_THEME_IDS = [
   "salty",
   "chilli",
   "greenwood",
+  "atompunk",
   // Limited-time
   "sakura",
 ] as const;

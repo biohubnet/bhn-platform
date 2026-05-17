@@ -38,6 +38,7 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
   sakura:     ["#fffaf9", "#d04c61", "#3a1f24"],
   icecream:   ["#fff8f3", "#c5234a", "#b8e0d2"],
   greenwood:  ["#f7faf2", "#456224", "#c6a449"],
+  atompunk:   ["#f3ead8", "#1a8a8a", "#0e1a3a"],
 };
 
 function Swatch({ id, size = 36 }: { id: ThemeId; size?: number }) {

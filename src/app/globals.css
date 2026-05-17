@@ -1493,6 +1493,109 @@ body {
 [data-theme="greenwood"] .text-sky-900     { color: #28433f; }
 
 /* ═════════════════════════════════════════════════════════════════
+ *  Atom Punk — 1950s atomic age. Googie diner aesthetic. Aged paper
+ *  cream + atomic teal + tangerine sunset + canary pop. Feels like
+ *  a vintage Tomorrowland brochure or a Fallout Vault-Tec pamphlet.
+ *
+ *  Visual signatures
+ *    • Aged-paper cream base with faint half-tone print noise
+ *    • Atomic teal for the brand ramp (mid-century kitchen turquoise)
+ *    • Tangerine sunset accents (atomic orange — bg-mesh + alerts)
+ *    • Deep navy text (#0e1a3a) — "Tomorrowland blueprint" ink
+ *    • Decorative electron-orbit rings in the bg-mesh corners
+ *    • Slab-serif headlines, geometric sans body — mid-century print
+ *    • Sharp 2-4 px radii — atomic-age geometry, not playful
+ *  ═════════════════════════════════════════════════════════════════ */
+[data-theme="atompunk"] {
+  --popover-bg: #ede1c8;
+  --bg:        #f3ead8;          /* aged paper cream */
+  --bg-mesh:
+    /* Sunset glow over the test site — tangerine top-right */
+    radial-gradient(at 88% 8%, rgba(232, 90, 60, 0.10) 0px, transparent 50%),
+    /* Atomic-teal upper-left — kitchen turquoise wash */
+    radial-gradient(at 12% 15%, rgba(26, 138, 138, 0.12) 0px, transparent 55%),
+    /* Canary spark lower-right */
+    radial-gradient(at 92% 90%, rgba(245, 200, 31, 0.10) 0px, transparent 50%),
+    /* Half-tone print grain (very faint) */
+    radial-gradient(circle at 12% 24%, rgba(14, 26, 58, 0.04) 0.5px, transparent 1px),
+    radial-gradient(circle at 38% 76%, rgba(14, 26, 58, 0.03) 0.5px, transparent 1px);
+  background-size: auto, auto, auto, 8px 8px, 12px 12px;
+  --card:      rgba(254, 250, 240, 0.94);   /* fresh paper */
+  --card-solid: #fefaf0;
+  --elevated:  #ede1c8;                     /* aged paper edge */
+  --raised:    #ddd0b3;                     /* darker paper */
+  --fg:        #0e1a3a;                     /* blueprint navy */
+  --fg-muted:  #3d4a6b;
+  --fg-subtle: #6b7388;
+  --line:      rgba(14, 26, 58, 0.14);
+  --line-strong: rgba(14, 26, 58, 0.24);
+  --backdrop:  rgba(14, 26, 58, 0.55);
+
+  /* Brand: atomic-teal kitchen ramp. Anchored on #1a8a8a — the
+   * specific turquoise that hit mid-century fridges, Cadillac
+   * dashboards, and roadside diner signage everywhere from
+   * 1955 to 1965. */
+  --brand-50:  #d8eded;
+  --brand-100: #b3dbdb;
+  --brand-200: #84c4c4;
+  --brand-300: #4faaaa;
+  --brand-400: #2a9595;
+  --brand-500: #1a8a8a;
+  --brand-600: #137575;
+  --brand-700: #0e5f5f;
+  --brand-800: #084949;
+  --brand-900: #053535;
+
+  /* Sharp atomic-age corners. Not zero (that's 8-bit territory),
+   * not soft (that's modern web). 2-4 px — just enough to suggest
+   * stamped chrome trim. */
+  --radius-sm: 2px;
+  --radius:    4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+
+  /* Hero — "sunset over the test site". Deep blueprint navy at top
+   * fades through atomic teal into tangerine + canary at the
+   * horizon. Same gradient you'd see on a 1957 vacation brochure
+   * for Las Vegas. */
+  --hero-bg:     #0e1a3a;
+  --hero-mesh-1: #1a8a8a;          /* atomic teal */
+  --hero-mesh-2: #e85a3c;          /* tangerine */
+  --hero-mesh-3: #07484a;          /* deep teal shadow */
+  --hero-mesh-4: #f5c81f;          /* canary spark */
+}
+
+/* Tame Tailwind tints for Atom Punk. Push the standard rose / amber
+ * / emerald / sky toward the period palette so cards using
+ * `bg-amber-50` don't blast modern saturation into the paper canvas. */
+[data-theme="atompunk"] {
+  --color-rose-50:    rgba(232, 90, 60, 0.10);   /* tangerine cast */
+  --color-rose-100:   rgba(232, 90, 60, 0.18);
+  --color-rose-200:   rgba(232, 90, 60, 0.28);
+  --color-amber-50:   rgba(245, 200, 31, 0.14);  /* canary cast */
+  --color-amber-100:  rgba(245, 200, 31, 0.24);
+  --color-amber-200:  rgba(245, 200, 31, 0.36);
+  --color-emerald-50: rgba(26, 138, 138, 0.10);  /* teal cast — pulls "success" toward the brand */
+  --color-emerald-100:rgba(26, 138, 138, 0.18);
+  --color-emerald-200:rgba(26, 138, 138, 0.30);
+  --color-sky-50:     rgba(26, 138, 138, 0.10);
+  --color-sky-100:    rgba(26, 138, 138, 0.18);
+  --color-sky-200:    rgba(26, 138, 138, 0.30);
+}
+[data-theme="atompunk"] .text-rose-700    { color: #c0421f; }
+[data-theme="atompunk"] .text-rose-800    { color: #9a3418; }
+[data-theme="atompunk"] .text-rose-900    { color: #732613; }
+[data-theme="atompunk"] .text-amber-700   { color: #b78a0e; }
+[data-theme="atompunk"] .text-amber-800   { color: #8e6a0a; }
+[data-theme="atompunk"] .text-amber-900   { color: #6c5008; }
+[data-theme="atompunk"] .text-emerald-700 { color: #0e5f5f; }
+[data-theme="atompunk"] .text-emerald-800 { color: #084949; }
+[data-theme="atompunk"] .text-emerald-900 { color: #053535; }
+[data-theme="atompunk"] .text-sky-700     { color: #0e5f5f; }
+[data-theme="atompunk"] .text-sky-800     { color: #084949; }
+[data-theme="atompunk"] .text-sky-900     { color: #053535; }
+
+/* ═════════════════════════════════════════════════════════════════
  *  Greenwood — ATMOSPHERE LAYER
  *
  *  Companion CSS to <GreenwoodAtmosphere> in
@@ -1935,6 +2038,24 @@ body {
   --heading-weight: 550;
   --heading-transform: none;
   --popover-shadow: 0 16px 40px rgba(50, 80, 30, 0.18), 0 2px 6px rgba(50, 80, 30, 0.08);
+}
+
+/* Atom Punk — geometric sans body, slab-serif display. Surface treatment
+ * borrows from mid-century printed materials: hairline rule + a soft
+ * teal cast on the shadow so cards feel like inset blueprint pockets
+ * rather than floating modern panels. Headings get a SMALL caps-style
+ * uppercase transform + wide tracking, the look every 1950s Tomorrowland
+ * brochure used for its display type. */
+[data-theme="atompunk"] {
+  --font-sans-theme: "Work Sans", "Inter", system-ui, sans-serif;
+  --font-display-theme: "Roboto Slab", "Source Serif Pro", "Charter", "Georgia", serif;
+  --body-features: "ss01";
+  --surface-shadow: 0 1px 0 rgba(14, 26, 58, 0.06), 0 8px 24px rgba(26, 138, 138, 0.10);
+  --surface-border: 1px solid rgba(14, 26, 58, 0.10);
+  --heading-tracking: 0.02em;
+  --heading-weight: 700;
+  --heading-transform: none;
+  --popover-shadow: 0 1px 0 rgba(14, 26, 58, 0.08), 0 16px 40px rgba(14, 26, 58, 0.18);
 }
 
 /* Wire the body + headings to the active theme's tokens. */

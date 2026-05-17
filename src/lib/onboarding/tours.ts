@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.17a";
+export const TOUR_VERSION = "2026.05.17b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -453,6 +453,14 @@ export const TOUR_STEPS: TourStep[] = [
     selector: "[aria-label=\"Change theme\"]",
     placement: "right",
     since: "2026.05.17a",
+  },
+  {
+    id: "atompunk-theme",
+    title: "Atom Punk — 1950s atomic age",
+    body: "New flavour in the theme picker: Atom Punk. Aged paper cream + atomic teal + tangerine sunset + canary pop. Slab-serif headlines on a geometric sans body, 2-4 px corner radii (atomic-age geometry, not playful), sunset-over-the-test-site hero gradient. Reads like a vintage Tomorrowland brochure or a Vault-Tec pamphlet. Open the theme picker to try it.",
+    selector: "[aria-label=\"Change theme\"]",
+    placement: "right",
+    since: "2026.05.17b",
   },
   {
     id: "system-status-superadmin",
