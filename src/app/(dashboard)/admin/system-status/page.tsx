@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PageHero } from "@/components/ui/PageHero";
 
 export const dynamic = "force-dynamic";
 
@@ -187,15 +188,11 @@ export default async function SystemStatusPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-fg flex items-center gap-2">
-          <ShieldCheck size={20} className="text-brand-600" />
-          System status
-        </h1>
-        <p className="text-sm text-muted mt-1">
-          Read-only diagnostics for the platform — DB health, AI usage, and security signals at a glance.
-        </p>
-      </header>
+      <PageHero
+        eyebrow={<><ShieldCheck size={11} /> Admin · System</>}
+        title="System status"
+        description="Read-only diagnostics for the platform — DB health, AI usage, and security signals at a glance."
+      />
 
       {/* Overall health summary */}
       <section className={`rounded-2xl p-5 border ${

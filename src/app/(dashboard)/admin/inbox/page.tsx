@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PageHero } from "@/components/ui/PageHero";
 
 export const dynamic = "force-dynamic";
 
@@ -111,15 +112,11 @@ export default async function AdminInboxPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-fg flex items-center gap-2">
-          <Inbox size={20} className="text-brand-600" />
-          Admin inbox
-        </h1>
-        <p className="text-sm text-muted mt-1 max-w-3xl">
-          Everything waiting on admin review, in one place. Each stream still has its own dedicated page in the sidebar — this is the hub for &quot;what needs my attention&quot;.
-        </p>
-      </header>
+      <PageHero
+        eyebrow={<><Inbox size={11} /> Admin</>}
+        title="Admin inbox"
+        description="Everything waiting on admin review, in one place. Each stream still has its own dedicated page in the sidebar — this is the hub for what needs my attention."
+      />
 
       {total === 0 ? (
         <section className="bg-card border border-line rounded-2xl p-16 text-center">

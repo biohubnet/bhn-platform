@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Inbox } from "lucide-react";
+import { PageHero } from "@/components/ui/PageHero";
 import { AccessRequestsClient } from "@/components/admin/AccessRequestsClient";
 
 export const dynamic = "force-dynamic";
@@ -15,15 +16,11 @@ export default async function AccessRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-fg flex items-center gap-2">
-          <Inbox size={20} className="text-brand-600" />
-          Access requests
-        </h1>
-        <p className="text-sm text-muted mt-1">
-          Submissions from the public /for-employers and /for-trainees pages. Approve to mint an invite, or reject if it&apos;s not a fit.
-        </p>
-      </header>
+      <PageHero
+        eyebrow={<><Inbox size={11} /> Admin · Platform</>}
+        title="Access requests"
+        description="Submissions from the public /for-employers and /for-trainees pages. Approve to mint an invite, or reject if it's not a fit."
+      />
 
       <AccessRequestsClient
         initial={requests.map((r) => ({

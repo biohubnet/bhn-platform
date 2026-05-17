@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { InternshipEditor } from "@/components/internships/InternshipEditor";
+import { PageHero } from "@/components/ui/PageHero";
 
 export default async function EditInternshipPage({
   params,
@@ -17,13 +18,17 @@ export default async function EditInternshipPage({
 
   return (
     <div>
+      <PageHero
+        eyebrow={<><Pencil size={11} /> Admin · EXPERIENCE</>}
+        title="Edit posting"
+        description={p.title}
+      />
       <Link
         href={`/internships/${p.id}`}
         className="text-xs text-muted hover:text-fg inline-flex items-center gap-1 mb-3"
       >
         <ArrowLeft size={12} /> Back to posting
       </Link>
-      <h1 className="text-2xl font-bold text-fg mb-6">Edit posting</h1>
       <InternshipEditor
         mode="edit"
         postingId={p.id}

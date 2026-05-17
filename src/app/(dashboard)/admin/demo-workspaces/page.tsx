@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Sparkles } from "lucide-react";
+import { PageHero } from "@/components/ui/PageHero";
 import { DemoWorkspacesClient } from "@/components/admin/DemoWorkspacesClient";
 import { sweepExpiredDemos } from "@/lib/demo/workspace";
 
@@ -60,15 +61,11 @@ export default async function DemoWorkspacesPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-fg flex items-center gap-2">
-          <Sparkles size={20} className="text-brand-600" />
-          Demo workspaces
-        </h1>
-        <p className="text-sm text-muted mt-1 max-w-3xl">
-          Mint a time-limited link for a prospective employer. They get a populated workspace — 3 sample postings, 10 applicants spread across the funnel, scheduled interviews — to click around without setup.
-        </p>
-      </header>
+      <PageHero
+        eyebrow={<><Sparkles size={11} /> Admin · EXPERIENCE</>}
+        title="Demo workspaces"
+        description="Mint a time-limited link for a prospective employer. They get a populated workspace — 3 sample postings, 10 applicants spread across the funnel, scheduled interviews — to click around without setup."
+      />
 
       <DemoWorkspacesClient
         initialInvites={invites.map((i) => ({

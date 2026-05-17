@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Download, ArrowLeft, FileText } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PageHero } from "@/components/ui/PageHero";
 import { answerFields, type FormField } from "@/lib/forms/types";
 import { FormReseedButton } from "@/components/admin/FormReseedButton";
 import {
@@ -44,17 +45,12 @@ export default async function AdminFormSubmissionsPage({
     : 0;
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <Link
-            href={`/forms/${slug}`}
-            className="text-xs text-muted hover:text-fg inline-flex items-center gap-1 mb-2"
-          >
-            <ArrowLeft size={12} /> Back to form
-          </Link>
-          <h1 className="text-2xl font-bold text-fg">{form.title}</h1>
-          <p className="text-sm text-muted mt-0.5">
+    <div>
+      <PageHero
+        eyebrow={<><FileText size={11} /> Admin · Form submissions</>}
+        title={form.title}
+        description={(
+          <>
             {form._count.submissions}{" "}
             {form._count.submissions === 1 ? "submission" : "submissions"}
             {form._count.submissions > 200 && " — showing latest 200"}
@@ -63,7 +59,18 @@ export default async function AdminFormSubmissionsPage({
                 {pendingCount} pending review
               </span>
             )}
-          </p>
+          </>
+        )}
+      />
+      <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <Link
+            href={`/forms/${slug}`}
+            className="text-xs text-muted hover:text-fg inline-flex items-center gap-1 mb-2"
+          >
+            <ArrowLeft size={12} /> Back to form
+          </Link>
           {isTalentApp && (
             <p className="text-xs text-muted mt-1.5 leading-snug max-w-2xl">
               New submissions are <strong>pending</strong> until an admin
@@ -194,6 +201,7 @@ export default async function AdminFormSubmissionsPage({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
