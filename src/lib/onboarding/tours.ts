@@ -447,6 +447,14 @@ export const TOUR_STEPS: TourStep[] = [
     since: "2026.05.07k",
   },
   {
+    id: "greenwood-immersive",
+    title: "Greenwood is now a forest you can walk into",
+    body: "Switch to Greenwood (Flavours → Greenwood) and the platform turns into a forest scene that shifts with your local hour — mist at dawn, dappled sunlight at noon, golden dusk, fireflies after dark. Leaves drift across the page all day, and a small caption at the bottom-right reports what the forest is doing right now (\"a cardinal calls from the cedar\", \"fireflies hover near the brook\"). Reduced-motion users get the time-of-day tint without the animation.",
+    selector: "[aria-label=\"Change theme\"]",
+    placement: "right",
+    since: "2026.05.17a",
+  },
+  {
     id: "system-status-superadmin",
     title: "System status — for superadmins",
     body: "If you're superadmin, Administration → System status now shows DB ping, AI usage, security signals, and a one-click panel to seed or remove the test employer + trainee + posting + submission set.",

@@ -21,7 +21,7 @@ export const THEMES = [
 
   // Flavours — sensory / atmospheric themes.
   { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright", category: "flavour" },
-  { id: "greenwood",  name: "Greenwood",  description: "A walk through deep forest — mossy parchment, fern-green CTAs, canopy-and-sunlight hero", category: "flavour" },
+  { id: "greenwood",  name: "Greenwood",  description: "A forest that shifts with your local hour — mist at dawn, dappled noon, golden dusk, fireflies after dark. Leaves drift across the page all day; a quiet scene caption reports what the forest is doing right now.", category: "flavour" },
 
   // Limited-time / seasonal.
   {
