@@ -951,7 +951,36 @@ export function Sidebar({
   // Committee memberships → registry meta. Drops slugs the registry
   // no longer knows about (e.g. a column value left over from a
   // retired committee). Empty list → no COMMITTEES section rendered.
-  const visibleCommittees = COMMITTEES.filter((c) => committees.includes(c.slug));
+  const rawVisibleCommittees = COMMITTEES.filter((c) => committees.includes(c.slug));
+
+  // When the user is an admin AND a committee member (e.g. an admin
+  // who's also on the EQUIP Review committee), the committee
+  // sidebar items would otherwise duplicate routes the admin
+  // already sees under Administration → EQUIP. Build a set of
+  // admin hrefs the user can see and filter committee items by it
+  // — so the admin only sees each Equip route once, under
+  // Administration, while non-admin committee members keep their
+  // COMMITTEES shortcuts.
+  const adminHrefsForUser = new Set<string>(
+    isAdmin
+      ? [
+          adminOverview.href,
+          ...visibleEngageAdmin.map((i) => i.href),
+          ...visibleExperienceAdmin.map((i) => i.href),
+          ...visibleEquipAdmin.map((i) => i.href),
+          ...visibleInsightsAdmin.map((i) => i.href),
+          ...visiblePlatformAdmin.map((i) => i.href),
+          ...visibleSecurityAdmin.map((i) => i.href),
+          ...visibleSystemAdmin.map((i) => i.href),
+        ]
+      : [],
+  );
+  const visibleCommittees = rawVisibleCommittees
+    .map((c) => ({
+      ...c,
+      sidebarItems: c.sidebarItems.filter((s) => !adminHrefsForUser.has(s.href)),
+    }))
+    .filter((c) => c.sidebarItems.length > 0);
   // HR-view preview — surfaces the exact employer-portal nav (same
   // routes the EMPLOYER PORTAL section would render at the top of
   // the sidebar for a real employer) inside the Administration

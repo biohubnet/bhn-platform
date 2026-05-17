@@ -49,7 +49,13 @@ export function UnverifiedEmailBanner({ email }: { email: string }) {
 
   return (
     <div className="sticky top-0 z-30 bg-amber-50 border-b border-amber-200 text-amber-900 text-sm">
-      <div className="max-w-7xl mx-auto px-6 py-2.5 flex items-center gap-3">
+      {/* Right padding is intentionally large (pr-24 ≈ 96 px) on the
+          inside container so the Resend + dismiss buttons stay clear
+          of Chrome's translate-floater (the "文A Translate" pill that
+          floats in the top-right of the viewport on pages where the
+          browser detects a non-default language). Without it, the
+          floater overlaps the Resend control and steals clicks. */}
+      <div className="max-w-7xl mx-auto pl-6 pr-6 sm:pr-24 py-2.5 flex items-center gap-3">
         <Mail size={14} className="shrink-0 text-amber-700" />
         <span className="flex-1 min-w-0">
           {status === "sent" ? (

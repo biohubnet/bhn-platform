@@ -165,6 +165,75 @@ export function deadlineStagesFromRound(r: EquipRound): EquipRoundStage[] {
   );
 }
 
+// ── VentureConnect monthly deadlines ────────────────────────────
+//
+// VC is the small-ticket monthly grant (≤$5K). The published cadence
+// is "deadline on the Monday of the last week of every month". We
+// don't have a per-round spreadsheet for VC the way VL has — the
+// schedule is just a recurring rule — so the dates are generated
+// here and synced into EquipDeadline alongside VL deadlines.
+//
+// "Last Monday of the month" = the latest Monday whose date still
+// falls inside the month. (E.g. Jan 2026's last Monday is 2026-01-26.)
+//
+// Generation window: from `VC_DEADLINES_START_YYYYMM` through
+// December 2028 inclusive. Bump VC_DEADLINES_THROUGH_YEAR when we
+// need to extend; the deadlines page re-syncs on every load so
+// new entries land as soon as the value changes.
+
+/** Year-month (yyyy-mm) the generator starts at. Set to the first
+ *  month for which VC deadlines should exist in the DB; earlier
+ *  months are left alone (avoids back-dating deadlines into already-
+ *  closed windows on a new deploy). */
+const VC_DEADLINES_START_YYYYMM = "2026-05";
+
+/** Inclusive end year for VC deadline generation. */
+const VC_DEADLINES_THROUGH_YEAR = 2028;
+
+/** Last Monday-on-or-before the given day-of-month. Walks back from
+ *  the last day until we land on a Monday (getDay() === 1). All in
+ *  local-time terms — caller wraps in noonEasternOn() to get the
+ *  canonical UTC instant. */
+function lastMondayOfMonth(year: number, month0: number): Date {
+  const last = new Date(year, month0 + 1, 0); // day 0 of next month = last day of this month
+  while (last.getDay() !== 1) {
+    last.setDate(last.getDate() - 1);
+  }
+  return last;
+}
+
+/** Format a Date (local-time) as yyyy-mm-dd. */
+function ymdLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** Returns one DerivedDeadlineSpec per VC monthly window from
+ *  VC_DEADLINES_START_YYYYMM through end of VC_DEADLINES_THROUGH_YEAR.
+ *  Idempotent — call it repeatedly and you'll get the same set. */
+export function venturConnectMonthlyDeadlines(): DerivedDeadlineSpec[] {
+  const [startY, startM] = VC_DEADLINES_START_YYYYMM.split("-").map((s) => parseInt(s, 10));
+  const out: DerivedDeadlineSpec[] = [];
+  for (let y = startY; y <= VC_DEADLINES_THROUGH_YEAR; y++) {
+    const firstMonth = y === startY ? startM - 1 : 0; // 0-indexed
+    for (let m0 = firstMonth; m0 < 12; m0++) {
+      const monday = lastMondayOfMonth(y, m0);
+      const iso = ymdLocal(monday);
+      const monthName = monday.toLocaleString("en-CA", { month: "long" });
+      out.push({
+        stream: "venture_connect",
+        deadlineAt: noonEasternOn(iso),
+        cycleLabel: `${monthName} ${y}`,
+        stageKey: "pre_screening_deadline",
+        stageLabel: `${monthName} ${y} VC deadline`,
+      });
+    }
+  }
+  return out;
+}
+
 /** Convert a stage's ISO yyyy-mm-dd date string into a UTC Date
  *  representing noon Eastern on that calendar day, accounting
  *  for DST. Mirrors the noonEastern helper that used to live in
@@ -199,9 +268,11 @@ export interface DerivedDeadlineSpec {
   stageLabel: string;
 }
 
-/** Compute the full set of derived EquipDeadline specs for every
- *  round in VL_ROUNDS. The deadlines page calls this on render
- *  and inserts any missing rows. */
+/** Compute the full set of derived EquipDeadline specs the platform
+ *  cares about: every VentureLift round's pre-screening + full-app
+ *  deadlines PLUS the monthly VentureConnect window (last Monday of
+ *  every month through VC_DEADLINES_THROUGH_YEAR). The deadlines
+ *  page calls this on render and inserts any missing rows. */
 export function derivedDeadlineSpecs(): DerivedDeadlineSpec[] {
   const out: DerivedDeadlineSpec[] = [];
   for (const r of VL_ROUNDS) {
@@ -214,6 +285,12 @@ export function derivedDeadlineSpecs(): DerivedDeadlineSpec[] {
         stageLabel: s.label,
       });
     }
+  }
+  // Append every monthly VC deadline through end of 2028. Order
+  // doesn't matter — the sync layer dedupes by (stream, calendar
+  // date) before inserting.
+  for (const vc of venturConnectMonthlyDeadlines()) {
+    out.push(vc);
   }
   return out;
 }
