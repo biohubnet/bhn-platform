@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.17d";
+export const TOUR_VERSION = "2026.05.17e";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -464,11 +464,11 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "cinematic-hero-theme-driven",
-    title: "Cinematic hero now matches your theme",
-    body: "Rebuilt today: the cinematic page hero is now a single full-bleed gradient stage with the title sitting directly on the gradient (not on a paper card underneath). The gradient itself is theme-driven — Light gets deep teal with cyan auroras, Dark gets near-black with cobalt, Rosalind gets sage with rose, Sakura gets wine with blossom, Atom Punk gets blueprint navy with atomic teal + tangerine, and so on. Each theme paints its own stage with its own contrast handling. Switch themes (theme picker, bottom-left of the sidebar) and the dashboard hero recolours immediately.",
+    title: "Cinematic hero — editorial drama, theme-driven",
+    body: "Page heroes across the dashboard now render as a deep editorial cover (theme-flavored gradient + four dreamy blurred auroras + fine SVG noise + horizon hairline) with a paper body popping out from underneath, holding the icon disc, eyebrow, big gradient-text title, and description on the card. The gradient + every aurora colour come from each theme's hero tokens — Light gets cyan/mint/blue auroras on deep teal, Atom Punk gets atomic teal + tangerine + canary on blueprint navy, Sakura gets blossom on wine, Greenwood gets sage + canary on forest. Switch themes (theme picker, bottom-left of the sidebar) and every hero recolours immediately.",
     selector: "[aria-label=\"Change theme\"]",
     placement: "right",
-    since: "2026.05.17d",
+    since: "2026.05.17e",
   },
   {
     id: "system-status-superadmin",

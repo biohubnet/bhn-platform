@@ -117,133 +117,207 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
   }
 
   if (designSystem === "cinematic") {
-    // Cinematic renders as ONE full-bleed stage. Eyebrow + title +
-    // description + actions live DIRECTLY on the gradient (no paper
-    // body underneath). Each theme paints its own colour story via
-    // the `.hero-mesh-brand` utility, which reads the theme's
-    // `--hero-bg` + `--hero-mesh-{1..4}` + `--hero-fg` tokens:
+    // Cinematic renders as a TWO-TIER editorial stage:
     //
-    //   • Light theme    → deep teal stage with cyan/mint/blue auroras
-    //   • Dark           → near-black with cobalt/indigo auroras
-    //   • Rosalind       → deep sage with rose accent
-    //   • Sakura         → deep wine with blossom pink
-    //   • Hitech         → near-black with electric cyan
-    //   • Greenwood      → deep forest with sage + canary
-    //   • Atompunk       → blueprint navy with atomic teal + tangerine
-    //   • Icecream       → light pink with deep berry text (CSS scope-
-    //                      override flips text-white → dark berry)
+    //   (1) Deep cover banner with dreamy blurred auroras, fine SVG
+    //       noise, and a mid-line horizon hairline. The base colour +
+    //       all four aurora tints are driven by each theme's
+    //       `--hero-bg` + `--hero-mesh-{1..4}` tokens, so each theme
+    //       paints its own stage — Atom Punk gets atomic teal +
+    //       tangerine + canary on blueprint navy, Greenwood gets sage
+    //       + canary on deep forest, Sakura gets blossom pink on deep
+    //       wine, Light gets cyan + mint + blue on deep teal, etc.
     //
-    // The bottom scrim (defined on `.hero-mesh-brand::before`) is a
-    // universal contrast fail-safe; the per-theme `--hero-fg` is the
-    // primary text colour.
+    //   (2) Paper body that overlaps the cover by `-mt-24`. Body top
+    //       carries a soft wash of the theme's hero accent colours
+    //       (mesh-1 + mesh-2 mixed into transparent) so the cover
+    //       bleeds into the card rather than cutting hard. Inside the
+    //       body sits the icon disc + eyebrow + giant gradient-text
+    //       title + description — all in dark `--fg` text on the
+    //       light `--card`, which is the highest-contrast surface in
+    //       the system on every theme.
+    //
+    // The title gradient runs `--fg → --brand-600`, so it stays in
+    // each theme's family (Rosalind sage, Atompunk navy, Hitech cyan,
+    // etc) while always reading as dark editorial text on paper.
     const hasIcon = Boolean(icon);
     const hasAside = Boolean(aside);
 
     return (
-      <header className="full-bleed relative overflow-hidden -mt-8 mb-10 text-white hero-mesh-brand">
-        {/* Editorial noise overlay — fine SVG noise at 16% on top of
-            the theme mesh so the gradient doesn't read as flat.
-            mix-blend-overlay so it works on both light + dark heroes. */}
-        <svg
-          aria-hidden
-          className="absolute inset-0 w-full h-full opacity-[0.16] mix-blend-overlay pointer-events-none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <filter id="ds-cinematic-noise">
-            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" />
-            <feColorMatrix
-              type="matrix"
-              values="0 0 0 0 1
-                      0 0 0 0 1
-                      0 0 0 0 1
-                      0 0 0 0.4 0"
-            />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#ds-cinematic-noise)" />
-        </svg>
-
-        {/* Subtle horizon hairline at mid-line — fades in/out via
-            transparent → white/15 → transparent; works on dark stages
-            and barely-visible on light ones (where the scrim layer
-            handles contrast anyway). */}
+      <header className="full-bleed relative overflow-hidden -mt-8 mb-10">
+        {/* COVER — theme-driven deep stage. Base colour via inline
+            backgroundColor (not `.hero-mesh-brand` so we don't pull
+            in the universal-contrast scrim; the body sits on top so
+            no text needs scrim protection here). */}
         <div
-          aria-hidden
-          className="absolute left-0 right-0 top-1/2 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
-        />
-
-        {/* IDENTITY ROW — icon + title block side-by-side, centered in
-            the dashboard's max-w-7xl column. The hero stage continues
-            edge-to-edge behind it (full-bleed). */}
-        <section
-          aria-label="Page header"
-          className="relative max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 py-14 sm:py-16 lg:py-20"
+          className="relative h-56 sm:h-72 lg:h-[22rem] w-full overflow-hidden"
+          style={{ backgroundColor: "var(--hero-bg, #0d3a51)" }}
         >
-          <div className={`grid gap-6 sm:gap-10 items-center grid-cols-1 ${hasIcon ? "sm:grid-cols-[auto_1fr]" : ""}`}>
-            {/* Icon disc — white tile with a conic glow ring. Conic
-                stays cinematic-flavored (cyan/pink/yellow/green) on
-                every theme so the icon plate reads as a brand object
-                regardless of the stage colour behind it. */}
-            {hasIcon && (
-              <div className="relative shrink-0">
-                <div
-                  aria-hidden
-                  className="absolute -inset-4 rounded-full opacity-60 blur-2xl"
-                  style={{
-                    background:
-                      "conic-gradient(from 0deg, rgba(56,189,248,0.5), rgba(244,114,182,0.5), rgba(250,204,21,0.4), rgba(74,222,128,0.4), rgba(56,189,248,0.5))",
-                  }}
-                />
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white ring-4 ring-white shadow-[0_18px_40px_-10px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center text-brand-700">
-                  {icon}
-                </div>
-              </div>
-            )}
+          {/* Four large dreamy auroras using the theme's mesh tokens.
+              Blurred + positioned around the stage so visual weight
+              rotates rather than clumps. Each theme's palette comes
+              through here — Atompunk's atomic teal + tangerine +
+              canary, Sakura's blossom + wine, etc. */}
+          <div
+            aria-hidden
+            className="absolute -top-40 -left-32 w-[36rem] h-[36rem] rounded-full blur-3xl opacity-70"
+            style={{
+              background:
+                "radial-gradient(closest-side, var(--hero-mesh-1, #56bdf8), transparent 70%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="absolute -bottom-32 right-1/3 w-[34rem] h-[34rem] rounded-full blur-3xl opacity-60"
+            style={{
+              background:
+                "radial-gradient(closest-side, var(--hero-mesh-2, #f472b6), transparent 70%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="absolute top-0 right-0 w-[24rem] h-[24rem] rounded-full blur-3xl opacity-45"
+            style={{
+              background:
+                "radial-gradient(closest-side, var(--hero-mesh-4, #facc15), transparent 70%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="absolute bottom-0 left-1/3 w-[22rem] h-[22rem] rounded-full blur-3xl opacity-45"
+            style={{
+              background:
+                "radial-gradient(closest-side, var(--hero-mesh-3, #4ade80), transparent 70%)",
+            }}
+          />
 
-            {/* Title block — main column */}
-            <div className="min-w-0">
-              {eyebrow && (
-                <DSEyebrow tone="onDark">
-                  {eyebrow}
-                </DSEyebrow>
-              )}
-              {/* Title — solid `--hero-fg` (white on dark stages, deep
-                  berry on icecream's light stage via the per-theme
-                  override). No bg-clip:text gradient here; we
-                  intentionally trade the shimmer for bullet-proof
-                  contrast on every theme, since the hero stage colour
-                  varies wildly (deep navy on Dark, light pink on
-                  Icecream, atomic blueprint on Atompunk, etc.). */}
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05] mt-3 text-white">
-                {title}
-              </h1>
-              {description && (
-                <p className="mt-5 text-sm sm:text-base text-white/85 leading-relaxed max-w-3xl">
-                  {description}
-                </p>
-              )}
-              {actions && (
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  {actions}
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* ASIDE — separate row below the identity row, divided by a
-            soft white-on-mesh hairline. Common payload is a stat grid
-            (DSStatGrid); the divider keeps it visually grouped with
-            the title above while giving it room to breathe. */}
-        {hasAside && (
-          <section
-            aria-label="Page header aside"
-            className="relative border-t border-white/10"
+          {/* SVG noise overlay — fine grain that breaks up the gradient
+              banding and adds editorial texture. */}
+          <svg
+            aria-hidden
+            className="absolute inset-0 w-full h-full opacity-[0.22] mix-blend-overlay pointer-events-none"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 py-8 sm:py-10">
-              {aside}
+            <filter id="ds-cinematic-noise">
+              <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" />
+              <feColorMatrix
+                type="matrix"
+                values="0 0 0 0 1
+                        0 0 0 0 1
+                        0 0 0 0 1
+                        0 0 0 0.4 0"
+              />
+            </filter>
+            <rect width="100%" height="100%" filter="url(#ds-cinematic-noise)" />
+          </svg>
+
+          {/* Horizon hairline — subtle scene boundary at the mid-line */}
+          <div
+            aria-hidden
+            className="absolute left-0 right-0 top-1/2 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          />
+        </div>
+
+        {/* PAPER BODY — overlaps the cover so the two read as one
+            editorial composition. Top wash uses `color-mix` on the
+            theme's mesh-1 + mesh-2 tokens so the body picks up the
+            cover's palette before settling into `--card`. */}
+        <div
+          className="relative -mt-24 sm:-mt-28"
+          style={{
+            background:
+              "linear-gradient(180deg, color-mix(in srgb, var(--hero-mesh-1, #3b82f6) 14%, transparent) 0%, color-mix(in srgb, var(--hero-mesh-2, #f472b6) 8%, transparent) 18%, transparent 36%), var(--card)",
+          }}
+        >
+          {/* Decorative brand blob — soft accent in the upper-left */}
+          <div
+            aria-hidden
+            className="absolute top-10 left-1/4 w-[40rem] h-[40rem] rounded-full opacity-25 blur-3xl pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(closest-side, var(--brand-300, #7398a4), transparent 70%)",
+            }}
+          />
+
+          {/* IDENTITY ROW — icon + title block side-by-side */}
+          <section
+            aria-label="Page header"
+            className="relative max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 pt-8 sm:pt-10 pb-10"
+          >
+            <div className={`grid gap-6 sm:gap-10 items-start grid-cols-1 ${hasIcon ? "sm:grid-cols-[auto_1fr]" : ""}`}>
+              {/* Icon disc — white tile with conic-gradient glow ring.
+                  Conic colours stay cinematic-flavored (cyan/pink/
+                  yellow/green) so the icon plate reads as a consistent
+                  brand object regardless of the stage colour above. */}
+              {hasIcon && (
+                <div className="relative shrink-0">
+                  <div
+                    aria-hidden
+                    className="absolute -inset-4 rounded-full opacity-60 blur-2xl"
+                    style={{
+                      background:
+                        "conic-gradient(from 0deg, rgba(56,189,248,0.5), rgba(244,114,182,0.5), rgba(250,204,21,0.4), rgba(74,222,128,0.4), rgba(56,189,248,0.5))",
+                    }}
+                  />
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white ring-4 ring-white shadow-[0_18px_40px_-10px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center text-brand-700">
+                    {icon}
+                  </div>
+                </div>
+              )}
+
+              {/* Title block — main column. Dark editorial text on
+                  the paper card → maximum contrast on every theme. */}
+              <div className="min-w-0">
+                {eyebrow && <DSEyebrow>{eyebrow}</DSEyebrow>}
+                <h1
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05] mt-3"
+                  style={{
+                    // `--fg → --fg → --brand-600` so the title stays
+                    // in each theme's family (Rosalind sage, Atompunk
+                    // navy, Sakura wine, etc) while reading as dark
+                    // editorial text on the light card.
+                    backgroundImage:
+                      "linear-gradient(135deg, var(--fg) 0%, var(--fg) 55%, var(--brand-600) 100%)",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                  }}
+                >
+                  {title}
+                </h1>
+                {description && (
+                  <p className="mt-5 text-sm sm:text-base text-fg/85 leading-relaxed max-w-3xl">
+                    {description}
+                  </p>
+                )}
+                {actions && (
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    {actions}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
-        )}
+
+          {/* ASIDE — separate row below the identity. Theme-tinted
+              wash (mesh-1 → mesh-4 → mesh-2 at low alpha) gives stats
+              + secondary content their own visual zone while staying
+              in family with the cover above. */}
+          {hasAside && (
+            <section
+              aria-label="Page header aside"
+              className="relative border-t border-line"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, color-mix(in srgb, var(--hero-mesh-1, #56bdf8) 6%, transparent) 0%, color-mix(in srgb, var(--hero-mesh-4, #facc15) 4%, transparent) 50%, color-mix(in srgb, var(--hero-mesh-2, #f472b6) 5%, transparent) 100%)",
+              }}
+            >
+              <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 py-8 sm:py-10">
+                {aside}
+              </div>
+            </section>
+          )}
+        </div>
       </header>
     );
   }
