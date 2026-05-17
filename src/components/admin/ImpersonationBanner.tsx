@@ -8,11 +8,22 @@ interface Props {
 }
 
 /**
- * Top-of-page banner shown only when a superadmin is "viewing as" a
- * less-privileged role. Designed to be UNMISSABLE: pulsing eye icon,
- * a hard-edge solid CTA with a very high-contrast colour pair, and
- * subtle stripe pattern in the bar background so it never disappears
- * into a similarly-amber page.
+ * Floating "view-as" pill — shown only when a superadmin is acting as
+ * a less-privileged role. Previously this rendered as a full-width
+ * striped banner at the top of every page (eats vertical space, hides
+ * the editorial hero). Reworked as a fixed bottom-right pill that
+ * stays unmissable (amber + soft pulse) but doesn't compete with the
+ * page content.
+ *
+ * Layout notes:
+ *   • `fixed bottom-4 right-4` lives outside any column.
+ *   • `z-40` matches the PageTranslator dock (top-right at the same
+ *     z-index) — both stay above page content but below modals at z-50.
+ *   • The pulse ring is a pure CSS animation; the icon stays static
+ *     so the moving target isn't the click target.
+ *   • Collapses on small viewports — the descriptive text drops to a
+ *     tooltip and only the icon + "Stop" remain, so the pill never
+ *     wraps off-screen.
  */
 export function ImpersonationBanner({ actingAs }: Props) {
   const router = useRouter();
@@ -23,7 +34,8 @@ export function ImpersonationBanner({ actingAs }: Props) {
     try {
       await fetch("/api/admin/act-as", { method: "DELETE" });
       router.refresh();
-      // Force a fresh hard-nav to /admin so server-rendered gates re-evaluate
+      // Force a fresh hard-nav to /admin so server-rendered gates
+      // re-evaluate against the restored real-role session.
       setTimeout(() => router.push("/admin"), 50);
     } finally {
       setBusy(false);
@@ -32,47 +44,49 @@ export function ImpersonationBanner({ actingAs }: Props) {
 
   return (
     <div
-      className="sticky top-0 z-40 text-amber-50 shadow-lg shadow-amber-900/30 border-b-2 border-amber-900/40"
-      style={{
-        backgroundImage:
-          "repeating-linear-gradient(45deg, #b45309 0 12px, #c2410c 12px 24px)",
-      }}
+      className="fixed bottom-4 right-4 z-40 pointer-events-none"
+      role="status"
+      aria-live="polite"
+      aria-label={`Viewing as ${actingAs}. Admin permissions are paused while in this mode.`}
     >
-      <div className="max-w-7xl mx-auto px-6 py-2.5 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 text-sm min-w-0">
-          <span className="relative inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-amber-900 shrink-0">
-            <Eye size={16} />
-            <span className="absolute inset-0 rounded-full ring-2 ring-amber-100 animate-ping opacity-60 pointer-events-none" />
-          </span>
-          <p className="truncate">
-            <span className="font-bold uppercase tracking-wider text-[11px] bg-amber-900/40 border border-amber-200/40 px-1.5 py-0.5 rounded mr-2">
-              View-as
-            </span>
-            <span className="font-semibold">Viewing as {actingAs}</span>
-            <span className="hidden md:inline text-amber-100/90"> — admin permissions are paused while in this mode.</span>
-          </p>
-        </div>
+      <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-amber-50 text-amber-900 border-2 border-amber-800/60 shadow-[0_8px_24px_-6px_rgba(120,53,15,0.45),0_2px_6px_rgba(120,53,15,0.25)] pl-1.5 pr-1 py-1">
+        {/* Pulsing eye disc — soft amber ring loops to draw attention
+            without animating the icon itself. */}
+        <span className="relative inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-200 text-amber-900 shrink-0">
+          <Eye size={14} />
+          <span
+            aria-hidden
+            className="absolute inset-0 rounded-full ring-2 ring-amber-400 animate-ping opacity-60 pointer-events-none"
+          />
+        </span>
 
-        {/* High-contrast CTA. Cream background, espresso text, hard
-            shadow, and a coloured chevron that pings on hover so the
-            cursor is drawn to it. Min-height matches the icon ring so
-            visually anchors the right side of the bar. */}
+        {/* Compact status — "VIEW-AS · trainee". Hidden on the tightest
+            viewports so the pill stays short. */}
+        <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold leading-none">
+          <span className="font-bold uppercase tracking-[0.14em] text-[10px] bg-amber-200/70 border border-amber-700/30 px-1.5 py-0.5 rounded">
+            View-as
+          </span>
+          <span className="lowercase">{actingAs}</span>
+        </span>
+
+        {/* CTA — espresso outline button. Always visible (this is the
+            only way out of impersonation mode). */}
         <button
           onClick={stop}
           disabled={busy}
+          title="Stop viewing as · Restore superadmin"
           className={[
-            "group inline-flex items-center gap-2 shrink-0",
-            "bg-white text-amber-900 hover:bg-amber-50",
-            "font-bold text-sm px-4 py-2 rounded-lg",
-            "border-2 border-amber-900/60 shadow-[0_2px_0_0_rgba(120,53,15,0.55)]",
-            "hover:shadow-[0_3px_0_0_rgba(120,53,15,0.55)] hover:-translate-y-px",
-            "active:translate-y-px active:shadow-[0_1px_0_0_rgba(120,53,15,0.55)]",
-            "disabled:opacity-60 disabled:cursor-not-allowed transition-all",
+            "group inline-flex items-center gap-1.5 shrink-0",
+            "bg-amber-900 hover:bg-amber-800 text-amber-50",
+            "font-bold text-xs px-3 py-1.5 rounded-full",
+            "border border-amber-950/50",
+            "disabled:opacity-60 disabled:cursor-not-allowed transition-colors",
           ].join(" ")}
         >
-          <ShieldCheck size={15} className="text-amber-700 group-hover:text-amber-900 transition-colors" />
-          <span>Stop viewing as · Restore superadmin</span>
-          <X size={13} className="opacity-70 group-hover:opacity-100 transition-opacity" />
+          <ShieldCheck size={12} />
+          <span className="hidden md:inline">Stop · restore admin</span>
+          <span className="md:hidden">Stop</span>
+          <X size={11} className="opacity-80" />
         </button>
       </div>
     </div>

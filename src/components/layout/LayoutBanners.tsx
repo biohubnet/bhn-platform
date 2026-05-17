@@ -61,21 +61,25 @@ export function LayoutBannersSlot() {
   // absent — render nothing and let the page own its own header.
   if (!data) return null;
 
-  const hasBanner =
-    Boolean(data.actingAs) ||
-    data.isDemo ||
-    (data.showUnverifiedBanner && !!data.email);
+  // ImpersonationBanner is `position: fixed` (floating pill in the
+  // bottom-right), so it doesn't participate in this in-flow stack —
+  // it renders here for proximity to its data but doesn't contribute
+  // to `hasInFlowBanner` or the wrapper's margin.
+  const hasInFlowBanner =
+    data.isDemo || (data.showUnverifiedBanner && !!data.email);
 
   return (
-    <div className={hasBanner ? "mb-6 space-y-3" : ""}>
+    <>
       {data.actingAs && <ImpersonationBanner actingAs={data.actingAs} />}
-      {data.isDemo && (
-        <DemoBanner kind="demo" expiresAt={data.demoExpiresAt} />
-      )}
-      {data.showUnverifiedBanner && data.email && (
-        <UnverifiedEmailBanner email={data.email} />
-      )}
-      <AutoPipetteFirstRunNotice />
-    </div>
+      <div className={hasInFlowBanner ? "mb-6 space-y-3" : ""}>
+        {data.isDemo && (
+          <DemoBanner kind="demo" expiresAt={data.demoExpiresAt} />
+        )}
+        {data.showUnverifiedBanner && data.email && (
+          <UnverifiedEmailBanner email={data.email} />
+        )}
+        <AutoPipetteFirstRunNotice />
+      </div>
+    </>
   );
 }
