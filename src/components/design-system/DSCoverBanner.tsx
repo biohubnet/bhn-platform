@@ -1,19 +1,31 @@
 "use client";
 /**
- * Full-bleed cinematic cover banner — deep editorial gradient, four
- * auroras, mid-line horizon, bottom vignette, and an SVG-noise
- * overlay.
+ * Full-bleed cinematic cover banner — THEME-DRIVEN gradient mesh
+ * stage with an editorial noise overlay and a mid-line horizon.
  *
- * Extracted verbatim from the `/employer` HR-overview cover so any
- * surface using the Cinematic DS gets the same brand-stage visual.
- * Previously this used soft pastels from CSS variables; the new
- * version commits to the editorial deep-gradient look the user
- * pointed at (#0b0f24 → #142046 → #312e81 → #6b21a8 → #831843).
+ * Each theme owns the colour story. The banner uses the
+ * `.hero-mesh-brand` utility (defined in globals.css) which reads
+ * the theme's `--hero-bg` + `--hero-mesh-{1..4}` + `--hero-fg`
+ * tokens:
  *
- * Pure presentational — no design-system branching; the wrapper
- * primitives (DSPageHeader) gate on `designSystem === "cinematic"`
- * before rendering this. The wrapper also owns the rounded-3xl /
- * shadow chrome so this banner is bare on the inside of a panel.
+ *   • Light      → deep teal stage with cyan/mint/blue auroras
+ *   • Dark       → near-black with cobalt/indigo auroras
+ *   • Rosalind   → deep sage with rose accent
+ *   • Sakura     → deep wine with blossom pink
+ *   • Hitech     → near-black with electric cyan
+ *   • Greenwood  → deep forest with sage + canary
+ *   • Atompunk   → blueprint navy with atomic teal + tangerine
+ *   • Icecream   → light pink (the only light-hero theme; CSS
+ *                  scope-override flips white text → deep berry)
+ *
+ * The bottom scrim on `.hero-mesh-brand::before` is a universal
+ * contrast fail-safe.
+ *
+ * Standalone — DSPageHeader's cinematic branch no longer composes
+ * this banner; it draws the same mesh inline so eyebrow/title can
+ * sit directly on the stage with no paper body underneath. This
+ * primitive remains for surfaces that want a bare cover (no copy
+ * inside) or want to render their own content via `children`.
  */
 import type { ReactNode } from "react";
 
@@ -22,65 +34,20 @@ export function DSCoverBanner({
   height = "h-56 sm:h-72 lg:h-[22rem]",
 }: {
   children?: ReactNode;
-  /** Tailwind height classes. Default matches the HR-overview
-   *  cover; pass a smaller `h-44 sm:h-56` etc. when the surface
-   *  doesn't have room for a full editorial stage. */
+  /** Tailwind height classes. Default matches the previous HR-
+   *  overview cover; pass a smaller `h-44 sm:h-56` etc. when the
+   *  surface doesn't have room for a full editorial stage. */
   height?: string;
 }) {
   return (
-    <div className={`relative ${height} w-full overflow-hidden`}>
-      {/* Deep editorial base — 5-stop linear from near-black through
-          midnight blue, indigo, royal purple, into rose. Matches the
-          HR-overview cover one-for-one so themes look consistent. */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(135deg, #0b0f24 0%, #142046 25%, #312e81 50%, #6b21a8 75%, #831843 100%)",
-        }}
-      />
-
-      {/* Four large auroras — radial blur blobs in cyan / pink /
-          yellow / green. Positioned so the visual weight rotates
-          around the stage rather than clumping in one corner. */}
-      <div
-        aria-hidden
-        className="absolute -top-40 -left-32 w-[36rem] h-[36rem] rounded-full blur-3xl opacity-70"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(56,189,248,0.7), rgba(56,189,248,0) 70%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute -bottom-32 right-1/3 w-[34rem] h-[34rem] rounded-full blur-3xl opacity-60"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(244,114,182,0.7), rgba(244,114,182,0) 70%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute top-0 right-0 w-[24rem] h-[24rem] rounded-full blur-3xl opacity-40"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(250,204,21,0.5), rgba(250,204,21,0) 70%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute bottom-0 left-1/3 w-[22rem] h-[22rem] rounded-full blur-3xl opacity-40"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(74,222,128,0.5), rgba(74,222,128,0) 70%)",
-        }}
-      />
-
-      {/* SVG noise overlay — 22% opacity, screen-blended white-noise
-          texture that breaks up the gradient banding. */}
+    <div
+      className={`relative ${height} w-full overflow-hidden text-white hero-mesh-brand`}
+    >
+      {/* Editorial noise overlay — fine SVG noise on top of the
+          theme mesh so the gradient doesn't read as flat. */}
       <svg
         aria-hidden
-        className="absolute inset-0 w-full h-full opacity-[0.22] mix-blend-overlay pointer-events-none"
+        className="absolute inset-0 w-full h-full opacity-[0.18] mix-blend-overlay pointer-events-none"
         xmlns="http://www.w3.org/2000/svg"
       >
         <filter id="ds-cover-noise">
@@ -101,24 +68,10 @@ export function DSCoverBanner({
         aria-hidden
         className="absolute left-0 right-0 top-1/2 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
       />
-      {/* Bottom vignette — pushes content forward, anchors the body
-          wash beneath the cover when used inside a panel */}
-      <div
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-transparent to-black/40"
-      />
-
-      {/* (Previously rendered a small "Brand stage" editorial marker
-          here. Removed 2026-05-17 — that label is specific to the HR
-          Overview / employer surface and shouldn't appear on every
-          page that uses the cinematic DS. /employer keeps its own
-          hardcoded copy in its custom cover.) */}
 
       {/* Optional slot — caller renders title / eyebrow / etc here.
-          Positioned inside the relative parent so it lands above all
-          decoration. Note: when wrapped by DSPageHeader, content
-          lives in the BODY beneath the cover (not in this slot),
-          mirroring the HR-overview identity-row placement. */}
+          Positioned inside the relative parent so it lands above
+          all decoration. */}
       {children && (
         <div className="relative h-full w-full flex flex-col justify-end p-6 sm:p-8">
           {children}

@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.17c";
+export const TOUR_VERSION = "2026.05.17d";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -463,11 +463,12 @@ export const TOUR_STEPS: TourStep[] = [
     since: "2026.05.17b",
   },
   {
-    id: "cinematic-hero-bleed",
-    title: "Hero & body now read as one stage",
-    body: "Yesterday's cinematic hero rolled out platform-wide put a deep editorial cover on top of every page — but the body underneath cut to clean paper at a hard line, which read as two stacked panels. Softened: the body's top now carries the cover's rose / purple / indigo hues down past the seam, fading into the page card around the halfway mark. Cover and body now read as one continuous stage. Visible on the dashboard, EQUIP surfaces, /experience, /pathways, /courses, and the other cinematic-DS pages.",
-    placement: "center",
-    since: "2026.05.17c",
+    id: "cinematic-hero-theme-driven",
+    title: "Cinematic hero now matches your theme",
+    body: "Rebuilt today: the cinematic page hero is now a single full-bleed gradient stage with the title sitting directly on the gradient (not on a paper card underneath). The gradient itself is theme-driven — Light gets deep teal with cyan auroras, Dark gets near-black with cobalt, Rosalind gets sage with rose, Sakura gets wine with blossom, Atom Punk gets blueprint navy with atomic teal + tangerine, and so on. Each theme paints its own stage with its own contrast handling. Switch themes (theme picker, bottom-left of the sidebar) and the dashboard hero recolours immediately.",
+    selector: "[aria-label=\"Change theme\"]",
+    placement: "right",
+    since: "2026.05.17d",
   },
   {
     id: "system-status-superadmin",
