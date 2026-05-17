@@ -31,6 +31,7 @@
 import type { ReactNode } from "react";
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
 import { DSEyebrow } from "./DSEyebrow";
+import { LayoutBannersSlot } from "@/components/layout/LayoutBanners";
 
 interface Props {
   /** Small uppercase label above the title. Accepts a ReactNode so
@@ -66,6 +67,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
 
   if (designSystem === "studio") {
     return (
+      <>
       <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-2 hero-mesh-brand">
         {/* Drifting blob shapes — purely decorative, masked by
             the parent overflow-hidden. Drift animation respects
@@ -113,6 +115,10 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
         </div>
         <div className="curve-down" />
       </section>
+      {/* Platform rule: hero is the absolute top. Layout-level
+          banners render immediately after via the context slot. */}
+      <LayoutBannersSlot />
+      </>
     );
   }
 
@@ -140,6 +146,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
     const hasAside = Boolean(aside);
 
     return (
+      <>
       <header className="full-bleed relative overflow-hidden -mt-8 mb-10 hero-mesh-brand">
         {/* Decoration layer — wraps the auroras + noise inside ONE
             absolute container. This is load-bearing: globals.css has
@@ -285,11 +292,16 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
           </section>
         )}
       </header>
+      {/* Platform rule: hero is the absolute top. Layout-level
+          banners render immediately after via the context slot. */}
+      <LayoutBannersSlot />
+      </>
     );
   }
 
   // Classic — calm, structured, the original BHN look.
   return (
+    <>
     <header>
       {eyebrow && <DSEyebrow>{eyebrow}</DSEyebrow>}
       <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight inline-flex items-center gap-2">
@@ -300,5 +312,9 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
         <p className="text-sm text-muted mt-2 max-w-3xl leading-snug">{description}</p>
       )}
     </header>
+    {/* Platform rule: hero is the absolute top. Layout-level
+        banners render immediately after via the context slot. */}
+    <LayoutBannersSlot />
+    </>
   );
 }

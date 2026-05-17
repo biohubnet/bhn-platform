@@ -11,6 +11,10 @@ import { prisma } from "@/lib/prisma";
 import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
 import { getTraineeQueueCounts } from "@/lib/trainee/queue-counts";
 import { getCommitteesForUser } from "@/lib/committees/membership";
+import {
+  LayoutBannerProvider,
+  type LayoutBannerData,
+} from "@/components/layout/LayoutBanners";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -20,21 +24,37 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const realRole = (session.user as { realRole?: string }).realRole;
   const actingAs = (session.user as { actingAs?: string }).actingAs;
   const userId = (session.user as { id?: string }).id;
-  // Sidebar-only state. Banner-relevant fields (accountKind,
-  // demoExpiresAt, email, emailVerified) are re-fetched inside
-  // `<LayoutBanners />`, which now owns the platform banner stack
-  // and renders immediately after the hero via PageHero. The two
-  // queries dedupe at Prisma's prepared-statement level, so the
-  // duplicate fetch is cheap.
+  // Single user fetch — used by both the Sidebar (credits,
+  // allowPlatformContent) and the LayoutBannerProvider (banner
+  // state: accountKind, demoExpiresAt, email, emailVerified).
   const userRow = userId
     ? await prisma.user.findUnique({
         where: { id: userId },
         select: {
           credits: true,
           allowPlatformContent: true,
+          accountKind: true,
+          demoExpiresAt: true,
+          email: true,
+          emailVerified: true,
         },
       })
     : null;
+
+  // Compute banner state for the LayoutBannerProvider.
+  // "Verify your email" only shows for real accounts — demo / sandbox
+  // accounts deliberately bypass email verification.
+  const showUnverifiedBanner =
+    !!userRow &&
+    !userRow.emailVerified &&
+    (userRow.accountKind === "real" || userRow.accountKind == null);
+  const bannerData: LayoutBannerData = {
+    actingAs: actingAs ?? null,
+    isDemo: userRow?.accountKind === "demo",
+    demoExpiresAt: userRow?.demoExpiresAt?.toISOString() ?? null,
+    showUnverifiedBanner,
+    email: userRow?.email ?? null,
+  };
 
   // Queue badges — two layers stitched into one map:
   //   • Admin badges (credit apps, role requests, pathway enrolments,
@@ -72,13 +92,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {/* Platform rule: the editorial hero (DSPageHeader) is the
             absolute top of every page. Layout-level banners
             (impersonation, demo expiry, unverified email, AutoPipette
-            first-run) used to render here ABOVE {children} — that's
-            been moved into PageHero so the banners render
-            immediately AFTER the hero on every page that uses it.
-            See src/components/layout/LayoutBanners.tsx. */}
-        <div className="max-w-screen-2xl mx-auto px-6 py-8 pt-16">
-          {children}
-        </div>
+            first-run) used to render here ABOVE {children}; they now
+            render IMMEDIATELY AFTER the hero via the
+            <LayoutBannersSlot /> inside DSPageHeader, fed by
+            <LayoutBannerProvider> wrapping the page content below. */}
+        <LayoutBannerProvider data={bannerData}>
+          <div className="max-w-screen-2xl mx-auto px-6 py-8 pt-16">
+            {children}
+          </div>
+        </LayoutBannerProvider>
       </main>
       {/* Floating page-translator dock — fixed to viewport so it stays
           clickable above all page content (modals at z-50 still win). */}
