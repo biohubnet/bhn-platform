@@ -72,6 +72,13 @@ model User {
   companyLocation        String?
   companyDescription     String?
   companyFounded         String? // year as string (free-form)
+  // Main business + flagship products, one-line. Surfaced beside the
+  // company About-quote on /employer. Optional — auto-filled from the
+  // website's homepage when the operator runs URL auto-fill.
+  companyMainBusiness    String?
+  // Stock ticker, e.g. "BAYN.DE", "MRK", "NVDA". Optional — only
+  // present for publicly-listed employers. Surfaced as a small badge.
+  companyTicker          String?
   lastLoginAt            DateTime?
   newsletterSubscribed   Boolean   @default(false)
   newsletterSubscribedAt DateTime?

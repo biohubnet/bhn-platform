@@ -33,6 +33,12 @@ interface Profile {
   companyLocation: string | null;
   companyDescription: string | null;
   companyFounded: string | null;
+  /** One-line summary of the company's lines of business + flagship
+   *  products. Surfaced beside the About-quote on /employer. */
+  companyMainBusiness: string | null;
+  /** Stock ticker with exchange prefix (e.g. "BAYN.DE", "NYSE:MRK")
+   *  when the company is public; null / empty for private. */
+  companyTicker: string | null;
 }
 
 export type LogoShape = "natural" | "circle" | "rounded" | "square";
@@ -127,6 +133,8 @@ function EditProfileModal({
     companyLocation:      initial.companyLocation    ?? "",
     companyDescription:   initial.companyDescription ?? "",
     companyFounded:       initial.companyFounded     ?? "",
+    companyMainBusiness:  initial.companyMainBusiness ?? "",
+    companyTicker:        initial.companyTicker       ?? "",
   });
   function set<K extends keyof Profile>(k: K, v: Profile[K]) {
     setValues((cur) => ({ ...cur, [k]: v }));
@@ -373,9 +381,11 @@ function EditProfileModal({
           companyIndustry:    pick(cur.companyIndustry,    j.profile!.companyIndustry),
           companySize:        pick(cur.companySize,        j.profile!.companySize),
           companyLocation:    pick(cur.companyLocation,    j.profile!.companyLocation),
-          companyDescription: pick(cur.companyDescription, j.profile!.companyDescription),
-          companyFounded:     pick(cur.companyFounded,     j.profile!.companyFounded),
-          companyWebsite:     j.profile!.companyWebsite || cur.companyWebsite,
+          companyDescription:  pick(cur.companyDescription,  j.profile!.companyDescription),
+          companyFounded:      pick(cur.companyFounded,      j.profile!.companyFounded),
+          companyMainBusiness: pick(cur.companyMainBusiness, j.profile!.companyMainBusiness),
+          companyTicker:       pick(cur.companyTicker,       j.profile!.companyTicker),
+          companyWebsite:      j.profile!.companyWebsite || cur.companyWebsite,
         };
       });
       setAutoFilled(true);
@@ -632,6 +642,28 @@ function EditProfileModal({
                     rows={3}
                     placeholder="2-4 sentences. What you make, who it's for, what stage you're at."
                     className={`${inputCls} resize-y`}
+                  />
+                </Field>
+                <Field
+                  label="Main business & flagship products"
+                  hint="One short line — main lines of business + headline products. Surfaced beside the company description on your profile."
+                >
+                  <input
+                    value={values.companyMainBusiness ?? ""}
+                    onChange={(e) => set("companyMainBusiness", e.target.value)}
+                    placeholder="Pharmaceuticals, crop science, consumer health — Aspirin, Yaz, Xarelto"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field
+                  label="Stock ticker"
+                  hint="Public companies only. Include the exchange prefix (e.g. BAYN.DE, NYSE:MRK). Leave empty if private."
+                >
+                  <input
+                    value={values.companyTicker ?? ""}
+                    onChange={(e) => set("companyTicker", e.target.value)}
+                    placeholder="BAYN.DE"
+                    className={`${inputCls} font-mono`}
                   />
                 </Field>
                 <Field label="Logo">
@@ -995,10 +1027,15 @@ function EditProfileModal({
 }
 
 function Field({
-  label, required, children,
+  label, required, hint, children,
 }: {
   label: string;
   required?: boolean;
+  /** Optional helper text rendered between the label and the input.
+   *  Use to clarify what the operator should put in the field — e.g.
+   *  format hints, audience guidance. Stays subtle (text-[11px]
+   *  text-muted) so it doesn't compete with the field value. */
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -1007,6 +1044,7 @@ function Field({
         {label}
         {required && <span className="text-rose-600 ml-0.5 normal-case">*</span>}
       </span>
+      {hint && <p className="text-[11px] text-muted leading-snug mb-1.5">{hint}</p>}
       {children}
     </label>
   );

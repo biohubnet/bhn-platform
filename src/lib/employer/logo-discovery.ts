@@ -174,9 +174,36 @@ export function pickBestLogo(html: string, pageUrl: URL): string | null {
   return candidates[0]?.url ?? null;
 }
 
-/** Last-resort fallback. Google's free favicons service returns a
- *  128px PNG for any registered domain — used when the discoverer
- *  finds nothing usable. */
+/** High-res fallback. Clearbit's free logo service returns a clean
+ *  PNG (usually 256×256 or larger, often the brand's actual mark
+ *  rather than the favicon) for any registered domain. Used in
+ *  preference to the Google-favicons fallback because favicons are
+ *  almost always 16–128 px — too small for the disc on /employer.
+ *
+ *  Source: https://clearbit.com/logo — free public endpoint, no key
+ *  required for unauthenticated reads.*/
+export function clearbitLogo(hostname: string): string {
+  return `https://logo.clearbit.com/${hostname}?size=400`;
+}
+
+/** Absolute last-resort fallback when even Clearbit doesn't have the
+ *  domain. Returns a 128 px PNG from Google's favicon service. Kept
+ *  separate from clearbitLogo() so the auto-fill flow can prefer
+ *  Clearbit and only fall through here if everything else fails. */
 export function faviconFallback(hostname: string): string {
   return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
+}
+
+/** Synchronous "best logo" picker with high-res fallback chain:
+ *    1. Best candidate from homepage HTML (og:logo, JSON-LD, apple-
+ *       touch-icon, etc.)
+ *    2. Clearbit's hosted logo (256 px+, usually the brand mark)
+ *    3. Nothing — caller can decide to render a placeholder
+ *  Deliberately skips Google's 128 px favicon fallback here; favicons
+ *  read as low-res chrome on the /employer disc. Callers who want
+ *  the favicon-of-last-resort can call faviconFallback() explicitly. */
+export function pickBestLogoWithFallback(html: string, pageUrl: URL): string {
+  const fromHtml = pickBestLogo(html, pageUrl);
+  if (fromHtml) return fromHtml;
+  return clearbitLogo(pageUrl.hostname);
 }

@@ -20,6 +20,8 @@ interface Body {
   companyBrand?: unknown;
   companyIndustry?: string | null;
   companySize?: string | null;
+  companyMainBusiness?: string | null;
+  companyTicker?: string | null;
   companyLocation?: string | null;
   companyDescription?: string | null;
   companyFounded?: string | null;
@@ -64,7 +66,7 @@ export async function PATCH(req: NextRequest) {
   const fields: Exclude<keyof Body, "companyLogoTransform">[] = [
     "employerCompany", "companyWebsite", "companyLogo", "companyLogoShape",
     "companyIndustry", "companySize", "companyLocation", "companyDescription",
-    "companyFounded",
+    "companyFounded", "companyMainBusiness", "companyTicker",
   ];
   for (const f of fields) {
     if (body[f] !== undefined) {
@@ -138,6 +140,8 @@ export async function PATCH(req: NextRequest) {
       companyLocation: user.companyLocation,
       companyDescription: user.companyDescription,
       companyFounded: user.companyFounded,
+      companyMainBusiness: user.companyMainBusiness,
+      companyTicker: user.companyTicker,
     },
   });
 }

@@ -97,6 +97,8 @@ export default async function EmployerHomePage() {
           companyLocation: true,
           companyDescription: true,
           companyFounded: true,
+          companyMainBusiness: true,
+          companyTicker: true,
         },
       }).catch(() => null)
     : null;
@@ -225,6 +227,8 @@ export default async function EmployerHomePage() {
     companyLocation: user?.companyLocation ?? null,
     companyDescription: user?.companyDescription ?? null,
     companyFounded: user?.companyFounded ?? null,
+    companyMainBusiness: user?.companyMainBusiness ?? null,
+    companyTicker: user?.companyTicker ?? null,
   };
 
   return (
@@ -384,8 +388,20 @@ export default async function EmployerHomePage() {
             </div>
           </section>
 
-          {/* ── ABOUT QUOTE ──────────────────────────────────── */}
-          {user?.companyDescription?.trim() && (
+          {/* ── ABOUT QUOTE + business/ticker aside ─────────────
+              Two-column on md+. The pull-quote sits in the left
+              column with the brand-gradient rule on its left; main
+              business + stock ticker live in the right column as a
+              quiet metadata block. On small screens the columns
+              stack — quote first, metadata below.
+              The giant opening-quote glyph used to be absolutely
+              positioned ABOVE the first word; it overlapped the
+              prose at smaller sizes. It's now anchored to the
+              far-right margin of the quote column so it acts as a
+              decorative gutter mark and never collides with text. */}
+          {(user?.companyDescription?.trim() ||
+            user?.companyMainBusiness?.trim() ||
+            user?.companyTicker?.trim()) && (
             <section
               aria-label="About"
               className="relative px-6 sm:px-10 lg:px-14 py-10 sm:py-12 border-t border-line"
@@ -395,33 +411,79 @@ export default async function EmployerHomePage() {
               }}
             >
               <SectionEyebrow>About {user?.employerCompany?.trim() || "us"}</SectionEyebrow>
-              <div className="relative pl-8 sm:pl-12 max-w-3xl">
-                <div
-                  aria-hidden
-                  className="absolute left-0 top-1 bottom-1 w-1 rounded-full"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, rgb(56,189,248), rgb(124,58,237), rgb(244,114,182))",
-                  }}
-                />
-                {/* Decorative opening quote — use the actual “
-                    (U+201C) glyph at large size so the shape is the
-                    correct opening orientation (the lucide `Quote`
-                    icon is a closing 99-style mark that looked wrong
-                    at the START of the quote). Inset past the brand
-                    rule + given negative top so the giant glyph
-                    hangs above the first word instead of overlapping
-                    the rule. */}
-                <span
-                  aria-hidden
-                  className="absolute -top-10 left-7 sm:left-11 text-[8rem] sm:text-[10rem] leading-none font-serif text-brand-100/70 pointer-events-none select-none"
-                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                >
-                  &ldquo;
-                </span>
-                <blockquote className="relative text-lg sm:text-xl lg:text-2xl text-fg leading-relaxed font-medium">
-                  {user.companyDescription}
-                </blockquote>
+              <div
+                className={
+                  "grid grid-cols-1 gap-8 lg:gap-12 items-start " +
+                  ((user?.companyMainBusiness?.trim() || user?.companyTicker?.trim())
+                    ? "md:grid-cols-[1fr_minmax(220px,320px)]"
+                    : "")
+                }
+              >
+                {/* Left column — pull-quote */}
+                {user?.companyDescription?.trim() && (
+                  <div className="relative pl-8 sm:pl-12 pr-12 sm:pr-16">
+                    <div
+                      aria-hidden
+                      className="absolute left-0 top-1 bottom-1 w-1 rounded-full"
+                      style={{
+                        background:
+                          "linear-gradient(180deg, rgb(56,189,248), rgb(124,58,237), rgb(244,114,182))",
+                      }}
+                    />
+                    {/* Decorative “ — anchored to the right gutter
+                        of the quote column so the glyph reads as a
+                        margin mark rather than competing with the
+                        first word of the prose. */}
+                    <span
+                      aria-hidden
+                      className="absolute -top-6 right-0 text-[6rem] sm:text-[8rem] leading-none font-serif text-brand-100/70 pointer-events-none select-none"
+                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                    >
+                      &rdquo;
+                    </span>
+                    <blockquote className="relative text-lg sm:text-xl lg:text-2xl text-fg leading-relaxed font-medium">
+                      {user.companyDescription}
+                    </blockquote>
+                  </div>
+                )}
+
+                {/* Right column — main business + ticker, only
+                    rendered when at least one is populated. Acts as
+                    a metadata sidecar to the prose. */}
+                {(user?.companyMainBusiness?.trim() || user?.companyTicker?.trim()) && (
+                  <aside aria-label="Business overview" className="space-y-5">
+                    {user?.companyTicker?.trim() && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                          Listed as
+                        </p>
+                        <p
+                          className="mt-1 inline-flex items-center gap-2 text-2xl font-bold tabular-nums tracking-tight font-mono"
+                          style={{
+                            backgroundImage:
+                              "linear-gradient(135deg, rgb(29,78,216) 0%, rgb(124,58,237) 100%)",
+                            WebkitBackgroundClip: "text",
+                            backgroundClip: "text",
+                            color: "transparent",
+                          }}
+                          title="Stock ticker"
+                        >
+                          {user.companyTicker.trim()}
+                        </p>
+                      </div>
+                    )}
+                    {user?.companyMainBusiness?.trim() && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                          Main business &amp; products
+                        </p>
+                        <p className="mt-1.5 text-sm sm:text-base text-fg leading-relaxed">
+                          {user.companyMainBusiness.trim()}
+                        </p>
+                      </div>
+                    )}
+                  </aside>
+                )}
               </div>
             </section>
           )}
@@ -680,17 +742,23 @@ function LogoDisc({
           containerMask
         }
       >
-        {/* Glyph fallback rendered first (sits under the img). When
-            the img loads, it covers the glyph; when it 404s, the
-            glyph shows through. */}
-        <Briefcase size={40} className="absolute text-slate-300" />
-        {src && (
+        {/* Glyph fallback — only rendered when there's NO src. Earlier
+            versions left it absolutely-positioned underneath the img,
+            assuming the img would cover it. Logos with internal
+            transparency (Bayer's white-on-cross mark, etc.) let the
+            briefcase show THROUGH the logo, which read as an icon
+            stacked on the brand mark. Mutually-exclusive render is
+            cleaner — broken-image still shows the briefcase because
+            the <img> simply isn't rendered when `src` is empty. */}
+        {!src ? (
+          <Briefcase size={40} className="text-slate-300" />
+        ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
             alt={alt}
             className={
-              "relative " + imageFit + " " +
+              imageFit + " " +
               (imageFit === "object-contain"
                 // Natural: contain the logo inside the disc, with breathing room.
                 ? "w-24 h-24 sm:w-28 sm:h-28"

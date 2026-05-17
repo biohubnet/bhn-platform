@@ -3,8 +3,7 @@ import { getSession } from "@/lib/auth";
 import { chat, AI_CONFIGURED } from "@/lib/ai";
 import {
   fetchHomepageHtml,
-  pickBestLogo,
-  faviconFallback,
+  pickBestLogoWithFallback,
 } from "@/lib/employer/logo-discovery";
 
 export const runtime = "nodejs";
@@ -15,17 +14,20 @@ const SYSTEM = `You research a company's website and produce structured profile 
 Return ONLY a JSON object with these keys (empty string / null when unknown):
 
 {
-  "companyName":        string,
-  "companyIndustry":    string,   // e.g. "Cell & gene therapy", "Diagnostics"
-  "companySize":        string,   // "1-10" | "11-50" | "51-200" | "201-500" | "501-1000" | "1000+"
-  "companyLocation":    string,   // HQ city + region/country
-  "companyDescription": string,   // 2-4 sentences, plain prose, no marketing fluff
-  "companyFounded":     string    // year, e.g. "2018", or "" if unknown
+  "companyName":         string,
+  "companyIndustry":     string,   // e.g. "Cell & gene therapy", "Diagnostics"
+  "companySize":         string,   // "1-10" | "11-50" | "51-200" | "201-500" | "501-1000" | "1000+"
+  "companyLocation":     string,   // HQ city + region/country
+  "companyDescription":  string,   // 2-4 sentences, plain prose, no marketing fluff. Always extract this when the homepage has an about/intro section.
+  "companyFounded":      string,   // year, e.g. "2018", or "" if unknown
+  "companyMainBusiness": string,   // one short line: main lines of business + flagship products, comma-separated. e.g. "Pharmaceuticals, crop science, consumer health — Aspirin, Yaz, Xarelto"
+  "companyTicker":       string    // stock ticker WITH exchange prefix if public, e.g. "BAYN.DE", "NYSE:MRK", "NASDAQ:NVDA". Empty if private.
 }
 
 Rules:
 - Output ONLY the JSON. No prose, no markdown fences.
-- Don't invent facts. Leave a field empty rather than guess.`;
+- Don't invent facts. Leave a field empty rather than guess.
+- companyDescription is required when the page has ANY about-section text — pick a 2-4 sentence excerpt rather than returning empty.`;
 
 interface Body {
   website?: string;
@@ -39,6 +41,8 @@ interface Parsed {
   companyLocation: string;
   companyDescription: string;
   companyFounded: string;
+  companyMainBusiness: string;
+  companyTicker: string;
 }
 
 function normalizeUrl(input: string) {
@@ -151,11 +155,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Pick the highest-scored logo candidate from the homepage. Same
-  // discoverer the /logo-search endpoint uses, just returning only
-  // the top one. Favicon stays as the last-resort safety net.
-  const discovered = rawHtml ? pickBestLogo(rawHtml, url) : null;
-  const logo = discovered ?? faviconFallback(url.hostname);
+  // Pick the highest-scored logo candidate from the homepage. Falls
+  // through to Clearbit's 256-px+ hosted logo when the HTML has no
+  // usable mark — preferred over Google's 128 px favicon because
+  // favicons read as low-res chrome on the /employer disc.
+  const logo = rawHtml
+    ? pickBestLogoWithFallback(rawHtml, url)
+    : pickBestLogoWithFallback("", url);
 
   return NextResponse.json({
     ok: true,
@@ -166,6 +172,8 @@ export async function POST(req: NextRequest) {
       companyLocation: String(parsed.companyLocation ?? "").trim(),
       companyDescription: String(parsed.companyDescription ?? "").trim(),
       companyFounded: String(parsed.companyFounded ?? "").trim(),
+      companyMainBusiness: String(parsed.companyMainBusiness ?? "").trim(),
+      companyTicker: String(parsed.companyTicker ?? "").trim(),
       companyLogo: logo,
       companyWebsite: url.toString(),
     },
