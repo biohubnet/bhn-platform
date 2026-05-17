@@ -634,6 +634,41 @@ function AdminSubheading({ label }: { label: string }) {
   );
 }
 
+/** Tone colours for each admin sub-group's left accent bar.
+ *  Kept thin (1 px) so the bar reads as a quiet anchor for the
+ *  eye when scanning, not a heavy visual border. Colours intentionally
+ *  match the canonical signal palette across the platform —
+ *  Engage = emerald, Experience = amber, Equip = sky,
+ *  Insights = violet, Platform = cyan, Security = rose,
+ *  System = slate. */
+const ADMIN_SUBGROUP_TONES = {
+  engage:     "#10b981",
+  experience: "#f59e0b",
+  equip:      "#0ea5e9",
+  insights:   "#8b5cf6",
+  platform:   "#0891b2",
+  security:   "#f43f5e",
+  system:     "#6b7280",
+} as const;
+
+/** Wrapper around an admin sub-group's heading + items. Adds a
+ *  1 px coloured accent bar down the left edge so scanning the
+ *  Administration block by group becomes immediate — pick the
+ *  colour, find the section. The bar spans the entire group from
+ *  the top of the heading to the bottom of the last item. */
+function AdminSubgroup({ tone, children }: { tone: string; children: React.ReactNode }) {
+  return (
+    <div className="relative pl-2 mt-1 first:mt-0">
+      <span
+        aria-hidden
+        className="absolute left-0 top-2 bottom-1 w-px rounded-full"
+        style={{ background: tone }}
+      />
+      {children}
+    </div>
+  );
+}
+
 function NavLink({ item, pathname, onNavigate, queueCounts }: {
   item: NavItem;
   pathname: string;
@@ -1167,39 +1202,39 @@ export function Sidebar({
             <NavLink item={adminOverview} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
 
             {visibleEngageAdmin.length > 0 && (
-              <>
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.engage}>
                 <AdminSubheading label="Engage" />
                 {visibleEngageAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
-              </>
+              </AdminSubgroup>
             )}
 
             {visibleExperienceAdmin.length > 0 && (
-              <>
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience}>
                 <AdminSubheading label="Experience" />
                 {visibleExperienceAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
-              </>
+              </AdminSubgroup>
             )}
 
             {visibleEquipAdmin.length > 0 && (
-              <>
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.equip}>
                 <AdminSubheading label="Equip" />
                 {visibleEquipAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
-              </>
+              </AdminSubgroup>
             )}
 
             {visibleInsightsAdmin.length > 0 && (
-              <>
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights}>
                 <AdminSubheading label="Insights" />
                 {visibleInsightsAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
-              </>
+              </AdminSubgroup>
             )}
 
             {/* HR-view preview was here; moved out of Admin into
@@ -1209,8 +1244,8 @@ export function Sidebar({
                 Administration. */}
 
             {visiblePlatformAdmin.length > 0 && (
-              <>
-                {/* Platform is now 11 items (was 24) — flat list
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.platform}>
+                {/* Platform is 11 items (was 24) — flat list
                     like Engage / Experience. The collapsible UI
                     that gated 24 items behind a click is removed
                     in favour of consistent visual treatment
@@ -1219,25 +1254,25 @@ export function Sidebar({
                 {visiblePlatformAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
-              </>
+              </AdminSubgroup>
             )}
 
             {visibleSecurityAdmin.length > 0 && (
-              <>
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.security}>
                 <AdminSubheading label="Security & compliance" />
                 {visibleSecurityAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
-              </>
+              </AdminSubgroup>
             )}
 
             {visibleSystemAdmin.length > 0 && (
-              <>
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.system}>
                 <AdminSubheading label="System (superadmin)" />
                 {visibleSystemAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
-              </>
+              </AdminSubgroup>
             )}
           </SectionGroup>
         )}
