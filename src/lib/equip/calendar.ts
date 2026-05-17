@@ -235,25 +235,29 @@ export interface UofTHoliday {
 /** Source: https://people.utoronto.ca/memos/holiday-schedule-2025-26-and-2026-27/
  *  Combined for both fiscal years. */
 export const UOFT_HOLIDAYS: UofTHoliday[] = [
-  // FY 2025-26
+  // FY 2025-26 — verified against the official memo
+  // https://people.utoronto.ca/memos/holiday-schedule-2025-26-and-2026-27/
   { name: "Presidential Day",      date: "2025-06-30", presidential: true },
   { name: "Canada Day",            date: "2025-07-01" },
   { name: "Presidential Day",      date: "2025-08-01", presidential: true },
   { name: "Civic Holiday",         date: "2025-08-04" },
   { name: "Labour Day",            date: "2025-09-01" },
   { name: "Thanksgiving Day",      date: "2025-10-13" },
-  { name: "Winter holiday break",  date: "2025-12-24", endDate: "2026-01-02" },
+  { name: "December Holiday Break", date: "2025-12-24", endDate: "2026-01-02" },
   { name: "Family Day",            date: "2026-02-16" },
   { name: "Good Friday",           date: "2026-04-03" },
-  { name: "Presidential Day",      date: "2026-05-15", presidential: true },
+  { name: "Presidential Day",      date: "2026-05-15", presidential: true }, // Friday May 15 2026 — verified
   { name: "Victoria Day",          date: "2026-05-18" },
-  // FY 2026-27
-  { name: "Presidential Days",     date: "2026-06-29", endDate: "2026-06-30", presidential: true },
+  // FY 2026-27 — verified against the official memo
+  // Split into two entries (Mon 6/29 + Tue 6/30) to match the memo's
+  // own treatment rather than collapsing into a single multi-day range.
+  { name: "Presidential Day",      date: "2026-06-29", presidential: true },
+  { name: "Presidential Day",      date: "2026-06-30", presidential: true },
   { name: "Canada Day",            date: "2026-07-01" },
   { name: "Civic Holiday",         date: "2026-08-03" },
   { name: "Labour Day",            date: "2026-09-07" },
   { name: "Thanksgiving Day",      date: "2026-10-12" },
-  { name: "Winter holiday break",  date: "2026-12-24", endDate: "2027-01-05" },
+  { name: "December Holiday Break", date: "2026-12-24", endDate: "2027-01-05" },
   { name: "Family Day",            date: "2027-02-15" },
   { name: "Good Friday",           date: "2027-03-26" },
   { name: "Victoria Day",          date: "2027-05-24" },

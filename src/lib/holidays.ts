@@ -11,7 +11,17 @@
  * static table would have to be maintained year-over-year. The
  * functions here are well under a hundred lines and survive
  * indefinitely without edits.
+ *
+ * EXCEPTION — Presidential Days and the official December Holiday
+ * Break can't be computed. Both are declared each year by the U of T
+ * President and don't follow a pattern. For those, we OVERLAY the
+ * canonical list from `UOFT_HOLIDAYS` in `lib/equip/calendar.ts`
+ * (which mirrors https://people.utoronto.ca/memos/holiday-schedule-
+ * 2025-26-and-2026-27/). Statutory entries take precedence over the
+ * overlay so Canada Day stays classified as "fed" rather than
+ * being relabelled as the same U of T closure.
  */
+import { UOFT_HOLIDAYS } from "@/lib/equip/calendar";
 
 export type HolidayKind =
   | "fed"   // Canadian federal statutory
@@ -124,7 +134,46 @@ function buildHolidayMap(year: number): Map<string, HolidayInfo> {
   m.set(ymd(fallBreakMon),     { name: "U of T Fall Break", kind: "uoft" });
   m.set(ymd(offset(fallBreakMon, 1)), { name: "U of T Fall Break", kind: "uoft" });
 
+  // ── Overlay: canonical U of T memo dates ────────────────────────
+  // Source: UOFT_HOLIDAYS in lib/equip/calendar.ts, which mirrors the
+  // official 2025-26 + 2026-27 holiday memo. Picks up the entries
+  // that can't be computed:
+  //   • Presidential Days (admin-declared each year — e.g. 2025-06-30,
+  //     2025-08-01, 2026-05-15, 2026-06-29, 2026-06-30)
+  //   • The full December Holiday Break (Dec 24 → early Jan, longer
+  //     than just Christmas + Boxing Day)
+  // We DON'T overwrite existing fed/prov entries — Canada Day, Family
+  // Day, Victoria Day etc. keep their statutory classification (the
+  // calendar tints them red/amber, not violet) even though U of T is
+  // also closed those days.
+  for (const h of UOFT_HOLIDAYS) {
+    const dates = h.endDate ? expandIsoRange(h.date, h.endDate) : [h.date];
+    for (const date of dates) {
+      // Only paint entries that fall in the year we're building.
+      if (!date.startsWith(`${year}-`)) continue;
+      if (m.has(date)) continue; // statutory entries win
+      m.set(date, { name: h.name, kind: "uoft" });
+    }
+  }
+
   return m;
+}
+
+/** Expand an inclusive yyyy-mm-dd date range into the list of every
+ *  calendar day in between (used to fan multi-day U of T closures —
+ *  the December Holiday Break, paired Presidential Days — across each
+ *  date the events calendar might paint). */
+function expandIsoRange(startIso: string, endIso: string): string[] {
+  const out: string[] = [];
+  const [sy, sm, sd] = startIso.split("-").map((s) => parseInt(s, 10));
+  const [ey, em, ed] = endIso.split("-").map((s) => parseInt(s, 10));
+  const cur = new Date(sy, sm - 1, sd);
+  const end = new Date(ey, em - 1, ed);
+  while (cur.getTime() <= end.getTime()) {
+    out.push(ymd(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return out;
 }
 
 // ── Public API ──────────────────────────────────────────────────

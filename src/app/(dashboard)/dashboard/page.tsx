@@ -239,33 +239,31 @@ export default async function DashboardPage() {
       )}
 
       {/* ─── HERO ────────────────────────────────────────────────────
-          Compact identity strip — ~1/3 of the previous height.
-          Single-line greeting + the BHN one-liner + CTAs all share
-          one row on desktop. The point is to remind a returning
-          user what BHN is without eating half the screen above the
-          fold. GreetingTagline + the per-state status copy got
-          folded into the body line so the hero is one short
-          paragraph plus actions. */}
-      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-5 hero-mesh-brand">
+          Sized to match the canonical PageHero on /pathways and
+          friends: pt-20 pb-16 padding, 4xl→5xl title, base→lg body,
+          mb-10 bottom margin. Earlier version was a deliberately
+          compact identity strip; user asked for it to read at the
+          same scale as /pathways. */}
+      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-10 hero-mesh-brand">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="blob-shape blob-soft drift" style={{ width: 360, height: 360, top: -120, left: -100 }} />
-          <div className="blob-shape blob-soft drift-slow" style={{ width: 420, height: 420, bottom: -200, right: -140, opacity: 0.55 }} />
+          <div className="blob-shape blob-soft drift" style={{ width: 520, height: 520, top: -160, left: -120 }} />
+          <div className="blob-shape blob-soft drift-slow" style={{ width: 640, height: 640, bottom: -260, right: -180, opacity: 0.55 }} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 pt-7 pb-20">
-          <div className="flex items-end justify-between gap-5 flex-wrap">
-            <div className="min-w-0">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white drop-shadow-sm">
+        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-16">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+            <div className="min-w-0 max-w-3xl">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/85">
                 <Sparkles size={11} />
                 {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
               </span>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight leading-[1.1] mt-1 drop-shadow-sm">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mt-3 drop-shadow-sm">
                 Hi, <span className="gradient-text">{firstName}</span>.
               </h1>
               {/* Solid white + drop-shadow so the body line stays
                   readable across the lighter cyan portion of the
                   gradient. */}
-              <p className="mt-1.5 text-white text-sm max-w-3xl leading-snug drop-shadow">
+              <p className="mt-4 text-white/90 text-base md:text-lg max-w-3xl leading-relaxed drop-shadow">
                 <strong className="text-white">BioHubNet</strong> wires Ontario biomanufacturing HQP
                 from their first course to their first industry placement.{" "}
                 <span className="text-white/90">

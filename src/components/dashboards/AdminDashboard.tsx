@@ -228,22 +228,28 @@ export async function AdminDashboard({
 
   return (
     <div className="space-y-6">
-      {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-2 hero-mesh-brand">
+      {/* ── Hero ───────────────────────────────────────────────────
+          Sized to match the canonical PageHero used on /pathways and
+          friends: pt-20 pb-16 padding, 4xl→5xl title, base→lg body,
+          mb-10 bottom margin, blob radii bumped to match the bigger
+          canvas. Earlier version was a "compact identity strip"
+          (pt-7 pb-20, 2xl→3xl title); user asked for it to match the
+          /pathways scale instead. */}
+      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-10 hero-mesh-brand">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="blob-shape blob-soft drift" style={{ width: 360, height: 360, top: -120, left: -100 }} />
-          <div className="blob-shape blob-soft drift-slow" style={{ width: 420, height: 420, bottom: -200, right: -140, opacity: 0.55 }} />
+          <div className="blob-shape blob-soft drift" style={{ width: 520, height: 520, top: -160, left: -120 }} />
+          <div className="blob-shape blob-soft drift-slow" style={{ width: 640, height: 640, bottom: -260, right: -180, opacity: 0.55 }} />
         </div>
-        <div className="relative max-w-7xl mx-auto px-6 pt-7 pb-20">
-          <div className="flex items-end justify-between gap-5 flex-wrap">
-            <div className="min-w-0">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white drop-shadow-sm">
+        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-16">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+            <div className="min-w-0 max-w-3xl">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/85">
                 <ShieldCheck size={11} /> {isSuperAdmin ? "Superadmin" : "Admin"} desk
               </span>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight leading-[1.1] mt-1 drop-shadow-sm">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mt-3 drop-shadow-sm">
                 Hi, <span className="gradient-text">{firstName}</span>.
               </h1>
-              <p className="mt-1.5 text-white text-sm max-w-2xl leading-snug drop-shadow">
+              <p className="mt-4 text-white/90 text-base md:text-lg max-w-2xl leading-relaxed drop-shadow">
                 {totalPending > 0 ? (
                   <>{totalPending} item{totalPending === 1 ? "" : "s"} waiting on you across credits, role requests, and pathway approvals.</>
                 ) : showChecklist ? (
