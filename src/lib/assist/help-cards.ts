@@ -174,11 +174,11 @@ export const HELP_CARDS: HelpCard[] = [
     ctaHref: "/profile/assist-history",
   },
 
-  // ── Equip — funding pillar (#3 after Engage / Experience) ──
+  // ── EQUIP — funding pillar (#3 after ENGAGE / EXPERIENCE) ──
   {
     key: "equip.start",
     title: "Funding for your innovation?",
-    body: "Equip backs trainee-entrepreneurs with up to $5K (events) or $25K (commercialization). 3-question wizard picks your stream.",
+    body: "EQUIP backs trainee-entrepreneurs with up to $5K (events) or $25K (commercialization). 3-question wizard picks your stream.",
     ctaLabel: "Start an application",
     ctaHref: "/equip",
     surfaces: ["/dashboard", "/courses", "/profile"],
@@ -186,7 +186,7 @@ export const HELP_CARDS: HelpCard[] = [
   },
   {
     key: "equip.draft-resume",
-    title: "You have a saved Equip draft",
+    title: "You have a saved EQUIP draft",
     body: "Pick up exactly where you left off — every field auto-saved as you typed.",
     ctaLabel: "Open my draft",
     ctaHref: "/equip/my-applications",
@@ -195,7 +195,7 @@ export const HELP_CARDS: HelpCard[] = [
   },
   {
     key: "equip.under-review",
-    title: "Your Equip application is under review",
+    title: "Your EQUIP application is under review",
     body: "Track status, see reviewer notes, and respond to any clarification asks at /equip/my-applications.",
     ctaLabel: "Open tracker",
     ctaHref: "/equip/my-applications",
@@ -203,7 +203,7 @@ export const HELP_CARDS: HelpCard[] = [
   },
   {
     key: "equip.admin.triage",
-    title: "Equip applications waiting on you",
+    title: "EQUIP applications waiting on you",
     body: "Submitted apps queue for review. Click in, claim it, leave a note, and decide.",
     ctaLabel: "Open review queue",
     ctaHref: "/admin/equip",

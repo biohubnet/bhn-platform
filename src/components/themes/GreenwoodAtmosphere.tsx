@@ -47,8 +47,16 @@ type LeafShape = "oak" | "maple" | "elm" | "birch";
 
 /** Map clock hour → time-of-day bucket. Tuned for a temperate
  *  Toronto-ish climate; not seasonal-aware (would over-complicate
- *  for a theme decoration). */
-function computeTimeOfDay(now: Date = new Date()): TimeOfDay {
+ *  for a theme decoration).
+ *
+ *  `prefersDark` short-circuits the clock entirely. When the OS is
+ *  in dark mode the whole scene snaps to "night" regardless of the
+ *  hour — moonlit canvas, cool mist, fireflies — because the user
+ *  asked for Greenwood to auto-adjust to dark mode and have
+ *  fireflies flying around. The hour-of-day mapping only kicks in
+ *  when the OS prefers light. */
+function computeTimeOfDay(now: Date = new Date(), prefersDark = false): TimeOfDay {
+  if (prefersDark) return "night";
   const h = now.getHours();
   if (h >= 5 && h < 8) return "dawn";
   if (h >= 8 && h < 17) return "day";
@@ -150,6 +158,11 @@ export function GreenwoodAtmosphere() {
   // below overwrites with the real local clock right after mount.
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("day");
   const [reducedMotion, setReducedMotion] = useState(false);
+  /** Tracks `prefers-color-scheme: dark`. When true, the scene
+   *  forces itself to night (moonlit canvas + fireflies) regardless
+   *  of the local hour. Hydration-safe: false on SSR, flips after
+   *  mount if the OS is in dark mode. */
+  const [prefersDark, setPrefersDark] = useState(false);
   const [captionIdx, setCaptionIdx] = useState(0);
   /** captionEpoch flips on every rotation; used as the React key on
    *  the caption span so the CSS fade-in keyframe restarts. */
@@ -166,14 +179,32 @@ export function GreenwoodAtmosphere() {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
+  // Detect prefers-color-scheme: dark. When the OS is in dark mode,
+  // Greenwood snaps to the night palette + fireflies regardless of
+  // the local hour. Listens for live changes so flipping the OS
+  // theme retints the canvas immediately.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setPrefersDark(mq.matches);
+    const onChange = () => setPrefersDark(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   // Recompute time-of-day every 5 minutes so users who keep a tab
-  // open for hours see the canvas slowly shift through the day.
+  // open for hours see the canvas slowly shift through the day. Also
+  // re-runs whenever `prefersDark` flips so toggling OS dark mode
+  // snaps the scene to night (or back to clock-based).
   useEffect(() => {
     if (!isActive) return;
-    setTimeOfDay(computeTimeOfDay());
-    const id = setInterval(() => setTimeOfDay(computeTimeOfDay()), 5 * 60 * 1000);
+    setTimeOfDay(computeTimeOfDay(new Date(), prefersDark));
+    const id = setInterval(
+      () => setTimeOfDay(computeTimeOfDay(new Date(), prefersDark)),
+      5 * 60 * 1000,
+    );
     return () => clearInterval(id);
-  }, [isActive]);
+  }, [isActive, prefersDark]);
 
   // Push time-of-day onto <html> for CSS to consume. Cleaned up
   // whenever the theme switches away so leftover attributes don't

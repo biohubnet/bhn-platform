@@ -108,22 +108,11 @@ export function DSCoverBanner({
         className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-transparent to-black/40"
       />
 
-      {/* Top-left "Brand stage" label — small editorial marker, only
-          rendered when no `children` slot is in use (avoids colliding
-          with caller content). */}
-      {!children && (
-        <div className="absolute top-5 left-6 sm:left-10 flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] font-bold text-white/70">
-          <span
-            aria-hidden
-            className="w-6 h-px"
-            style={{
-              background:
-                "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.7))",
-            }}
-          />
-          Brand stage
-        </div>
-      )}
+      {/* (Previously rendered a small "Brand stage" editorial marker
+          here. Removed 2026-05-17 — that label is specific to the HR
+          Overview / employer surface and shouldn't appear on every
+          page that uses the cinematic DS. /employer keeps its own
+          hardcoded copy in its custom cover.) */}
 
       {/* Optional slot — caller renders title / eyebrow / etc here.
           Positioned inside the relative parent so it lands above all

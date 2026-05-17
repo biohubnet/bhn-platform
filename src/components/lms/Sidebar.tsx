@@ -158,7 +158,7 @@ const equipItems: (NavItem & { labelKey: string })[] = [
   { label: "Funding",                    labelKey: "nav.equip.funding",    href: "/equip", icon: Rocket, exact: true,
     description: "BHN's commercialization-funding pillar. Start a new VentureConnect (≤$5K) or VentureLift (≤$25K) application; the 3-question wizard routes you to the right stream and pre-fills everything from your profile." },
   { label: "My applications",            labelKey: "nav.equip.tracker",    href: "/equip/my-applications", icon: ClipboardList,
-    description: "Status of every Equip application you've submitted — draft, submitted, under review, approved, funded. Click any row for the full submission body and reviewer notes." },
+    description: "Status of every EQUIP application you've submitted — draft, submitted, under review, approved, funded. Click any row for the full submission body and reviewer notes." },
 ];
 
 // EMPLOYER PORTAL — visible only when role === "employer".
@@ -237,11 +237,11 @@ const adminExperienceItems: NavItem[] = [
 // dedicated pages (overview / review queue / deadlines) that all
 // belong to the funding workflow rather than platform plumbing.
 const adminEquipItems: NavItem[] = [
-  { label: "Equip overview",       href: "/admin/equip/overview",      icon: Activity,      minRole: "admin",
-    description: "Program-management dashboard for the Equip pillar — apps in flight, approved this quarter, $ funded YTD, stalled-app alerts, per-stream funnel, open windows, recent activity. Renders in Studio." },
-  { label: "Equip review",         href: "/admin/equip",               icon: Rocket,        minRole: "admin",
-    description: "Review queue for the Equip funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
-  { label: "Equip deadlines",      href: "/admin/equip/deadlines",     icon: ClipboardList, minRole: "admin",
+  { label: "EQUIP overview",       href: "/admin/equip/overview",      icon: Activity,      minRole: "admin",
+    description: "Program-management dashboard for the EQUIP pillar — apps in flight, approved this quarter, $ funded YTD, stalled-app alerts, per-stream funnel, open windows, recent activity. Renders in Studio." },
+  { label: "EQUIP review",         href: "/admin/equip",               icon: Rocket,        minRole: "admin",
+    description: "Review queue for the EQUIP funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
+  { label: "EQUIP deadlines",      href: "/admin/equip/deadlines",     icon: ClipboardList, minRole: "admin",
     description: "Schedule + manage the funding-window deadlines for VentureConnect (monthly) and VentureLift (quarterly). List + calendar views. Open / close / extend any window. Late submissions are blocked automatically." },
 ];
 
@@ -644,21 +644,30 @@ type AdminSubgroupTone = (typeof ADMIN_SUBGROUP_TONES)[keyof typeof ADMIN_SUBGRO
 
 /** Wrapper around an admin sub-group's heading + items. Renders a
  *  bolder, tone-coloured subheading on top followed by a thin
- *  coloured accent bar down the LABEL column of the items beneath.
+ *  coloured accent bar in the LEFT GUTTER of the sidebar (between
+ *  the menu's left border and the NavLink icons).
  *
- *  Geometry (rev 2026-05-17b):
- *    • Heading is now 12 px / bold / 0.18 em tracking / tone-coloured
- *      so each pillar's name reads as a proper section anchor instead
- *      of a tiny grey ID tag. (Was 10 px / semibold / subtle grey.)
- *    • Bar sits at `left-9` (≈ 36 px) so it lands in the gap between
- *      a NavLink's icon (x = 12–28) and its label (x = 40+). At the
- *      previous `left-3` the bar overlapped the icon column and was
- *      visually obscured. The new position visually extends the
- *      heading's right half straight down through the label column.
- *    • Bar starts at `top-9` (36 px) — clearly BELOW the new bigger
- *      heading (pt-3 + 12 px line + pb-1.5 ≈ 32 px) with ~4 px gap.
- *    • Bar is `w-0.5` (2 px) instead of 1 px so it holds its weight
- *      under the bigger heading without feeling fussy. */
+ *  Geometry (rev 2026-05-17c):
+ *    • Heading: 12 px / bold / 0.18 em tracking / tone-coloured.
+ *    • Bar sits at `left-0` of the wrapper. Sidebar geometry from
+ *      the visible left edge:
+ *          x =  0      — aside left wall
+ *          x =  0–12   — nav px-3 padding
+ *          x = 12      — AdminSubgroup wrapper edge (= bar position)
+ *          x = 12–24   — NavLink px-3 (left padding inside the link)
+ *          x = 24+     — icon → gap → label
+ *      So at left-0 the bar sits at sidebar-x = 12 px — right in the
+ *      middle of the 24 px visual gutter between the sidebar wall and
+ *      where icons render. Previous positions (left-3, left-9) kept
+ *      landing INSIDE the icon column or the icon-label gap; this is
+ *      what the user actually asked for.
+ *    • `z-10` lifts the bar above the NavLink's hover / active
+ *      background so it stays visible while a row is hovered.
+ *    • Bar starts at `top-[34px]` — middle of the visible gap between
+ *      the heading text bottom and the first NavLink's icon top
+ *      (text bottom ≈ 30 px, icon top ≈ 38 px → mid-gap = 34 px).
+ *    • Bar is `w-0.5` (2 px) so it holds its weight against the
+ *      bolder heading without feeling fussy. */
 function AdminSubgroup({
   tone,
   label,
@@ -678,7 +687,7 @@ function AdminSubgroup({
       </p>
       <span
         aria-hidden
-        className="absolute left-9 top-9 bottom-1 w-0.5 rounded-full"
+        className="absolute left-0 top-[34px] bottom-1 w-0.5 rounded-full z-10 pointer-events-none"
         style={{ background: tone.bar }}
       />
       {children}
@@ -1213,7 +1222,7 @@ export function Sidebar({
           <SectionGroup
             title={t("nav.administration").toUpperCase()}
             tone="electric"
-            description="Privileged territory — manage learners, employers, the Equip pillar, the platform itself, and security. Sub-grouped into Engage / Experience / Equip / Insights / Platform / Security & compliance / System so each list stays scannable."
+            description="Privileged territory — manage learners, employers, the EQUIP pillar, the platform itself, and security. Sub-grouped into ENGAGE / EXPERIENCE / EQUIP / Insights / Platform / Security & compliance / System so each list stays scannable."
           >
             {/* Overview sits at the top, ungrouped — single canonical link. */}
             <NavLink item={adminOverview} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />

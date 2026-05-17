@@ -83,16 +83,15 @@ export default async function EquipLandingPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <DSPageHeader
-        eyebrow="Equip · BHN funding pillar"
+        eyebrow="EQUIP · BHN funding pillar"
         title="Funding for your innovation"
         icon={<Rocket size={22} className="text-brand-600" />}
         description={
           <>
-            The third BHN pillar after <strong>Engage</strong> (training) and{" "}
-            <strong>Experience</strong> (placements). <strong>Equip</strong> backs
-            trainee-entrepreneurs with strategic funding to move biomanufacturing
-            innovations toward market readiness. Pick the stream that fits where
-            you are — we&apos;ll pre-fill what we already know about you.
+            <strong>EQUIP</strong> backs trainee-entrepreneurs with strategic
+            funding to move biomanufacturing innovations toward market readiness.
+            Pick the stream that fits where you are — we&apos;ll pre-fill what we
+            already know about you.
           </>
         }
       />
