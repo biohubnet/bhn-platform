@@ -76,10 +76,14 @@ export default async function StoryBankPage() {
         {/* ── HEADER ───────────────────────────────────────────── */}
         <header className="px-6 sm:px-10 lg:px-14 pt-10 sm:pt-12 pb-8 border-b border-line">
           <SectionEyebrow>Profile · Story Bank</SectionEyebrow>
-          <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight leading-[1.05] inline-flex items-center gap-3">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-200 shrink-0">
-              <BookOpen size={20} />
-            </span>
+          {/* Icon disc sits on its own line above the title text so
+              the disc + the title don't compete for horizontal room
+              at the wider viewport widths and the headline reads as
+              a two-line composition: marker, then statement. */}
+          <span className="mt-3 inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-brand-200">
+            <BookOpen size={22} />
+          </span>
+          <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight leading-[1.05]">
             <span
               style={{
                 backgroundImage:
