@@ -16,9 +16,9 @@ import { useRouter } from "next/navigation";
 import {
   Loader2, Plus, Trash2, Lock, Unlock, FastForward, Pencil, X,
   Calendar, List, AlertCircle, ChevronLeft, ChevronRight,
-  Sparkles, Check,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { holidayDateSet } from "@/lib/equip/calendar";
 
 interface Deadline {
   id: string;
@@ -46,6 +46,20 @@ const STREAM_META: Record<string, { label: string; cap: string; tone: "brand" | 
  *  Toronto is UTC-5 EST / UTC-4 EDT — we ask the browser to compute
  *  this so DST is handled automatically. The result is the same
  *  absolute UTC instant whether we ship it locally or on Vercel. */
+/** Flatten the UOFT_HOLIDAYS list into a Record keyed by Toronto
+ *  yyyy-mm-dd so the calendar's per-cell lookup is O(1).
+ *  Memoised at module level — the holiday schedule is static
+ *  data, no need to recompute per render. */
+const _HOLIDAYS_BY_DATE: Record<string, { name: string; presidential?: boolean }> = (() => {
+  const out: Record<string, { name: string; presidential?: boolean }> = {};
+  const m = holidayDateSet();
+  m.forEach((h, key) => {
+    out[key] = { name: h.name, presidential: h.presidential };
+  });
+  return out;
+})();
+function holidaysByDateRecord() { return _HOLIDAYS_BY_DATE; }
+
 function noonEasternIso(yyyymmdd: string): string {
   // Strategy: build a Date by interpreting "yyyy-mm-ddT12:00:00" in
   // the America/Toronto zone. We do this by:
@@ -111,11 +125,10 @@ export function DeadlineManager({ initial }: Props) {
         })}
       </div>
 
-      <BulkSeedBar />
       <NewDeadlineForm />
 
       {tab === "list"     ? <ListView     deadlines={initial} /> : null}
-      {tab === "calendar" ? <CalendarView deadlines={initial} /> : null}
+      {tab === "calendar" ? <CalendarView deadlines={initial} holidaysByDate={holidaysByDateRecord()} /> : null}
     </div>
   );
 }
@@ -534,7 +547,7 @@ function DeadlineRow({ d }: { d: Deadline }) {
   );
 }
 
-function CalendarView({ deadlines }: { deadlines: Deadline[] }) {
+function CalendarView({ deadlines, holidaysByDate }: { deadlines: Deadline[]; holidaysByDate: Record<string, { name: string; presidential?: boolean }> }) {
   const [month, setMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -603,17 +616,37 @@ function CalendarView({ deadlines }: { deadlines: Deadline[] }) {
           const key = c.date.toLocaleDateString("en-CA", { timeZone: "America/Toronto" });
           const rows = byDay[key] ?? [];
           const isToday = c.date.toDateString() === new Date().toDateString();
+          const holiday = holidaysByDate[key];
+          // Holiday cells get a soft rose/sky wash so they're
+          // visually distinct from working days. Presidential
+          // closures use sky (university-internal); statutory
+          // holidays use rose.
+          const holidayBg = holiday
+            ? (holiday.presidential
+              ? "border-sky-200 bg-sky-50/40"
+              : "border-rose-200 bg-rose-50/40")
+            : "";
           return (
             <div
               key={c.key}
               className={
                 "aspect-square rounded-lg border p-1.5 flex flex-col gap-0.5 " +
-                (isToday ? "border-brand-500 bg-brand-50/40" : "border-line bg-card-solid")
+                (isToday
+                  ? "border-brand-500 bg-brand-50/40"
+                  : holiday
+                    ? holidayBg
+                    : "border-line bg-card-solid")
               }
+              title={holiday ? holiday.name : undefined}
             >
-              <span className={"text-[11px] font-bold " + (isToday ? "text-brand-700" : "text-fg")}>
+              <span className={"text-[11px] font-bold " + (isToday ? "text-brand-700" : holiday ? (holiday.presidential ? "text-sky-700" : "text-rose-700") : "text-fg")}>
                 {c.date.getDate()}
               </span>
+              {holiday && (
+                <span className={"text-[9px] uppercase tracking-wider font-bold truncate " + (holiday.presidential ? "text-sky-700/70" : "text-rose-700/70")}>
+                  {holiday.name}
+                </span>
+              )}
               {rows.slice(0, 2).map((r) => {
                 const meta = STREAM_META[r.stream] ?? { label: r.stream, tone: "brand" as const, cap: "" };
                 return (
@@ -647,86 +680,3 @@ function CalendarView({ deadlines }: { deadlines: Deadline[] }) {
   );
 }
 
-/**
- * One-click bulk seeder for the standard BHN cadence —
- * VentureConnect monthly on the 25th, VentureLift quarterly on
- * the 22nd of Feb / May / Aug / Nov. Pre-fills deadlines from
- * now through end of `endYear`, defaulting to current year + 2.
- * Idempotent: skips dates that already have a deadline for the
- * same stream.
- */
-function BulkSeedBar() {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [endYear, setEndYear] = useState<number>(2028);
-  const [result, setResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  function seed() {
-    setResult(null);
-    setError(null);
-    if (!confirm(
-      `Create the standard BHN cadence through end of ${endYear}?\n\n` +
-      "  VentureConnect — 25th of every month, 12:00 PM ET\n" +
-      "  VentureLift     — 22nd of Feb / May / Aug / Nov, 12:00 PM ET\n\n" +
-      "Existing deadlines on the same dates are kept (idempotent)."
-    )) return;
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/admin/equip/deadlines/bulk-seed?endYear=${endYear}`, { method: "POST" });
-        const j = await res.json().catch(() => ({} as { ok?: boolean; created?: number; skipped?: number; message?: string; error?: string }));
-        if (!res.ok) throw new Error(j.error ?? "Bulk seed failed");
-        setResult(j.message ?? `Created ${j.created ?? 0} deadlines.`);
-        router.refresh();
-      } catch (e) {
-        setError((e as Error).message);
-      }
-    });
-  }
-
-  return (
-    <section className="rounded-2xl border border-violet-200 bg-violet-50/40 p-4 flex items-start gap-3 surface-shadow">
-      <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
-        <Sparkles size={16} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-fg">Pre-populate the standard cadence</p>
-        <p className="text-[11px] text-muted mt-0.5 leading-snug max-w-prose">
-          One-click seed the published BHN schedule: <strong>VC</strong> monthly on the 25th + <strong>VL</strong> quarterly on the 22nd of Feb / May / Aug / Nov, all at noon Eastern. Dates already on the calendar are kept (idempotent). Cycle labels auto-fill — &quot;<em>May 2026 cycle</em>&quot; for VC, &quot;<em>Round 5</em>&quot; for VL starting from May 2026.
-        </p>
-        <div className="flex flex-wrap items-center gap-2 mt-3">
-          <label className="inline-flex items-center gap-2 text-xs text-fg">
-            Through end of
-            <input
-              type="number"
-              min={new Date().getFullYear()}
-              max={2035}
-              value={endYear}
-              onChange={(e) => setEndYear(Math.max(new Date().getFullYear(), Number(e.target.value) || 2028))}
-              className="w-20 bg-card-solid border border-line rounded-lg px-2 py-1 text-xs font-mono tabular-nums"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={seed}
-            disabled={pending}
-            className="inline-flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
-          >
-            {pending ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
-            Seed standard cadence
-          </button>
-          {result && (
-            <span className="text-[11px] text-emerald-700 inline-flex items-center gap-1.5">
-              <Check size={11} /> {result}
-            </span>
-          )}
-          {error && (
-            <span className="text-[11px] text-rose-700 inline-flex items-center gap-1.5">
-              <AlertCircle size={11} /> {error}
-            </span>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}

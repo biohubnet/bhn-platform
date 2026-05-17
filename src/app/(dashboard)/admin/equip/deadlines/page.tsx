@@ -13,15 +13,73 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CalendarClock } from "lucide-react";
 import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
+import { prisma } from "@/lib/prisma";
 import { listDeadlines } from "@/lib/equip/deadlines";
+import { derivedDeadlineSpecs } from "@/lib/equip/calendar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DeadlineManager } from "@/components/admin/equip/DeadlineManager";
+import { RoundTimeline } from "@/components/admin/equip/RoundTimeline";
 
 export const dynamic = "force-dynamic";
+
+/** Idempotent sync: insert any EquipDeadline rows from
+ *  derivedDeadlineSpecs() that don't already exist. Match by
+ *  (stream, Toronto calendar date). Hand-scheduled rows or
+ *  status="closed" rows on the same date are kept; we only
+ *  fill in the gaps. Runs on every page load — cheap, two
+ *  queries (findMany + createMany). */
+async function syncRoundsToDeadlines(actorId: string): Promise<number> {
+  const specs = derivedDeadlineSpecs();
+  if (specs.length === 0) return 0;
+
+  // Snapshot existing rows over the relevant date range so we
+  // can dedupe by Toronto-local calendar date.
+  const earliest = specs.reduce(
+    (min, s) => (s.deadlineAt < min ? s.deadlineAt : min),
+    specs[0].deadlineAt,
+  );
+  const latest = specs.reduce(
+    (max, s) => (s.deadlineAt > max ? s.deadlineAt : max),
+    specs[0].deadlineAt,
+  );
+  const existing = await prisma.equipDeadline.findMany({
+    where: { deadlineAt: { gte: earliest, lte: new Date(latest.getTime() + 24 * 60 * 60 * 1000) } },
+    select: { stream: true, deadlineAt: true },
+  });
+  const seen = new Set(
+    existing.map((d) => `${d.stream}|${d.deadlineAt.toLocaleDateString("en-CA", { timeZone: "America/Toronto" })}`),
+  );
+
+  const toCreate = specs.filter((s) => {
+    const key = `${s.stream}|${s.deadlineAt.toLocaleDateString("en-CA", { timeZone: "America/Toronto" })}`;
+    return !seen.has(key);
+  });
+  if (toCreate.length === 0) return 0;
+
+  await prisma.equipDeadline.createMany({
+    data: toCreate.map((s) => ({
+      stream: s.stream,
+      deadlineAt: s.deadlineAt,
+      originalDeadlineAt: s.deadlineAt,
+      status: "open",
+      cycleLabel: s.cycleLabel,
+      note: `Auto-synced from VL round schedule (${s.stageLabel})`,
+      createdById: actorId,
+    })),
+  });
+  return toCreate.length;
+}
 
 export default async function AdminEquipDeadlinesPage() {
   const session = await requireCommitteeOrAdmin(["equip_review"]).catch(() => null);
   if (!session) redirect("/dashboard");
+  const userId = (session.user as { id?: string }).id ?? "";
+
+  // Sync the canonical VL round dates from lib/equip/calendar.ts
+  // into EquipDeadline rows so the submit-gate stays in sync
+  // with the published schedule. Idempotent — only inserts what's
+  // missing on each page load.
+  await syncRoundsToDeadlines(userId);
 
   const deadlines = await listDeadlines();
 
@@ -49,8 +107,10 @@ export default async function AdminEquipDeadlinesPage() {
 
       <PageHeader
         title={<span className="inline-flex items-center gap-2"><CalendarClock size={22} className="text-brand-600" /> Equip deadlines</span>}
-        description="Funding windows for VentureConnect (monthly, $5K cap) and VentureLift (quarterly, $25K cap). Default time is 12:00 PM Eastern on the chosen date — adjust the time field if you need an off-hours cut-off. Submissions are blocked automatically once a window closes or its deadline passes; applicants see a clear 'next deadline' card on /equip."
+        description="Funding windows for VentureConnect (monthly, $5K cap) and VentureLift (quarterly, $25K cap). The VentureLift round schedule below is the canonical published timeline — its pre-screening + full-application dates auto-sync into the deadlines table for the submit-gate. Use the New-deadline form for one-off VentureConnect windows and ad-hoc overrides."
       />
+
+      <RoundTimeline />
 
       <DeadlineManager initial={initial} />
     </div>
