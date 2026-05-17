@@ -276,16 +276,34 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
   }
 
-  // Deadline gating. Block the submit if there's no open window
-  // for this stream. The /equip landing page already nudges the
-  // applicant about open / closed status; this is the server-side
-  // safety net so a stale tab can't slip past a closed window.
-  const upcoming = await nextOpenDeadline(app.stream as EquipStream);
-  if (!upcoming) {
-    return NextResponse.json(
-      { error: "There's no open funding window for this stream right now. Watch /equip for the next deadline." },
-      { status: 400 },
-    );
+  // Deadline gating. The /equip landing page already nudges
+  // applicants about open / closed status; this is the server-
+  // side safety net so a stale tab can't slip past a closed
+  // window. We bypass the gate for admins + superadmins +
+  // equip_review committee members — they manage the windows
+  // and routinely test the platform end-to-end, so blocking
+  // their own submits because they haven't scheduled a window
+  // first is friction without benefit.
+  const role = (session.user as { role?: string }).role ?? "";
+  const isPlatformReviewer = role === "admin" || role === "superadmin";
+  let bypassDeadlineGate = isPlatformReviewer;
+  if (!bypassDeadlineGate) {
+    // Cheap committee check — only runs when the user isn't
+    // already admin/superadmin, so we don't pay the query on
+    // the hot path for platform staff.
+    const onEquipReview = await prisma.committeeMembership.count({
+      where: { userId, committee: "equip_review", active: true },
+    });
+    bypassDeadlineGate = onEquipReview > 0;
+  }
+  if (!bypassDeadlineGate) {
+    const upcoming = await nextOpenDeadline(app.stream as EquipStream);
+    if (!upcoming) {
+      return NextResponse.json(
+        { error: "There's no open funding window for this stream right now. Watch /equip for the next deadline." },
+        { status: 400 },
+      );
+    }
   }
 
   const cap = STREAM_BUDGETS[app.stream as EquipStream];
