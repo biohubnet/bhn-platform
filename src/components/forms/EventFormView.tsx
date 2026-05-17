@@ -41,6 +41,14 @@ interface Props {
    * from — different mental model than "you submitted this before".
    */
   applicationDefaultsApplied?: boolean;
+  /**
+   * Optional banner rendered immediately AFTER the hero (PageHero)
+   * and BEFORE the form fields. The platform rule is that nothing
+   * may sit above the editorial hero, so per-page notices live here
+   * instead of above the EventFormView call. Used by the talent-
+   * application surface to surface the admin-review notice.
+   */
+  topBanner?: React.ReactNode;
 }
 
 type Mode = "view" | "edit";
@@ -56,6 +64,7 @@ export function EventFormView({
   previousData,
   previousAt,
   applicationDefaultsApplied,
+  topBanner,
 }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("view");
@@ -239,6 +248,9 @@ export function EventFormView({
         title={title}
         description={description}
       />
+      {/* Per-page banner renders AFTER the hero (platform rule:
+          nothing sits above the hero). */}
+      {topBanner}
       <div className="max-w-2xl mx-auto">
       <div className="flex items-start justify-between gap-3 mb-6">
         <div className="flex-1 min-w-0">{/* PageHero now carries the title/description; the small slug-specific DemoFiller stays in this column.  */}

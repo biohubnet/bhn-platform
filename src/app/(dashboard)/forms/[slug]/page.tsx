@@ -145,31 +145,11 @@ export default async function FormPage({
 
   return (
     <>
+      {/* PageHero owns the editorial top — keep it visually first.
+          EventFormView renders its own DSPageHeader hero inside, so
+          we place the page-specific admin-review banner AFTER that
+          hero (between the hero and the form fields), never above. */}
       {ExtraContent && <ExtraContent />}
-
-      {slug === "talent-application" && (
-        <div className="rounded-2xl bg-sky-50 ring-1 ring-inset ring-sky-200 px-4 py-3 mb-5 flex items-start gap-2">
-          <span className="text-sky-600 text-sm mt-0.5">ⓘ</span>
-          <div className="flex-1 text-sm text-sky-900 leading-snug">
-            <p className="font-bold">New applications go through admin review.</p>
-            <p className="text-xs mt-1">
-              We review every new talent-pool submission before it becomes
-              visible to vetted industry partners. You'll be notified by email
-              when a decision is made; resubmitting before review just updates
-              the same submission.
-            </p>
-            {myReviewState && (
-              <p className="text-xs mt-2 font-semibold inline-flex items-center gap-1.5">
-                Your status:
-                <ReviewBadge status={myReviewState.status} />
-                {myReviewState.note && (
-                  <span className="font-normal italic">— "{myReviewState.note}"</span>
-                )}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
 
       <EventFormView
         slug={form.slug}
@@ -182,6 +162,31 @@ export default async function FormPage({
         previousData={Object.keys(merged).length > 0 ? merged : null}
         previousAt={mySubmission?.createdAt.toISOString() ?? null}
         applicationDefaultsApplied={applicationDefaultsApplied}
+        topBanner={
+          slug === "talent-application" ? (
+            <div className="rounded-2xl bg-sky-50 ring-1 ring-inset ring-sky-200 px-4 py-3 mb-5 flex items-start gap-2">
+              <span className="text-sky-600 text-sm mt-0.5">ⓘ</span>
+              <div className="flex-1 text-sm text-sky-900 leading-snug">
+                <p className="font-bold">New applications go through admin review.</p>
+                <p className="text-xs mt-1">
+                  We review every new talent-pool submission before it becomes
+                  visible to vetted industry partners. You&apos;ll be notified by email
+                  when a decision is made; resubmitting before review just updates
+                  the same submission.
+                </p>
+                {myReviewState && (
+                  <p className="text-xs mt-2 font-semibold inline-flex items-center gap-1.5">
+                    Your status:
+                    <ReviewBadge status={myReviewState.status} />
+                    {myReviewState.note && (
+                      <span className="font-normal italic">— &quot;{myReviewState.note}&quot;</span>
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : null
+        }
       />
 
       {slug === "talent-application" && myReviewState && (

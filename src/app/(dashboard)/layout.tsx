@@ -1,16 +1,12 @@
 import { redirect } from "next/navigation";
 import { getSession, ROLE_RANK } from "@/lib/auth";
 import { Sidebar } from "@/components/lms/Sidebar";
-import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
-import { DemoBanner } from "@/components/admin/DemoBanner";
-import { UnverifiedEmailBanner } from "@/components/auth/UnverifiedEmailBanner";
 import { Onboarding } from "@/components/onboarding/Onboarding";
 import { PageTranslator } from "@/components/translation/PageTranslator";
 import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
 import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
 import { AssistTracker } from "@/components/assist/AssistTracker";
 import { AssistHintDock } from "@/components/assist/AssistHintDock";
-import { AutoPipetteFirstRunNotice } from "@/components/assist/AutoPipetteFirstRunNotice";
 import { prisma } from "@/lib/prisma";
 import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
 import { getTraineeQueueCounts } from "@/lib/trainee/queue-counts";
@@ -24,27 +20,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const realRole = (session.user as { realRole?: string }).realRole;
   const actingAs = (session.user as { actingAs?: string }).actingAs;
   const userId = (session.user as { id?: string }).id;
+  // Sidebar-only state. Banner-relevant fields (accountKind,
+  // demoExpiresAt, email, emailVerified) are re-fetched inside
+  // `<LayoutBanners />`, which now owns the platform banner stack
+  // and renders immediately after the hero via PageHero. The two
+  // queries dedupe at Prisma's prepared-statement level, so the
+  // duplicate fetch is cheap.
   const userRow = userId
     ? await prisma.user.findUnique({
         where: { id: userId },
         select: {
           credits: true,
           allowPlatformContent: true,
-          accountKind: true,
-          demoExpiresAt: true,
-          email: true,
-          emailVerified: true,
         },
       })
     : null;
-
-  // Show the "verify your email" banner only for real accounts —
-  // demo / sandbox accounts deliberately bypass email verification
-  // and the first superadmin (set during install) is auto-verified.
-  const showUnverifiedBanner =
-    !!userRow &&
-    !userRow.emailVerified &&
-    (userRow.accountKind === "real" || userRow.accountKind == null);
 
   // Queue badges — two layers stitched into one map:
   //   • Admin badges (credit apps, role requests, pathway enrolments,
@@ -79,15 +69,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
         committees={committeeSlugs}
       />
       <main className="flex-1 overflow-y-auto relative">
-        {actingAs && <ImpersonationBanner actingAs={actingAs} />}
-        {userRow?.accountKind === "demo" && (
-          <DemoBanner kind="demo" expiresAt={userRow.demoExpiresAt?.toISOString() ?? null} />
-        )}
-        {showUnverifiedBanner && userRow?.email && (
-          <UnverifiedEmailBanner email={userRow.email} />
-        )}
+        {/* Platform rule: the editorial hero (DSPageHeader) is the
+            absolute top of every page. Layout-level banners
+            (impersonation, demo expiry, unverified email, AutoPipette
+            first-run) used to render here ABOVE {children} — that's
+            been moved into PageHero so the banners render
+            immediately AFTER the hero on every page that uses it.
+            See src/components/layout/LayoutBanners.tsx. */}
         <div className="max-w-7xl mx-auto px-6 py-8 pt-16">
-          <AutoPipetteFirstRunNotice />
           {children}
         </div>
       </main>

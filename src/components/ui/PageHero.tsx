@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
+import { LayoutBanners } from "@/components/layout/LayoutBanners";
 
 interface Props {
   /** Small label above the title (uppercase, e.g. "Training Programmes"). */
@@ -58,12 +59,20 @@ export function PageHero({
   );
 
   return (
-    <DSPageHeader
-      eyebrow={eyebrow}
-      title={title}
-      description={description}
-      icon={icon}
-      actions={composedActions}
-    />
+    <>
+      <DSPageHeader
+        eyebrow={eyebrow}
+        title={title}
+        description={description}
+        icon={icon}
+        actions={composedActions}
+      />
+      {/* Platform rule: the hero is the absolute top; any layout
+          banners (impersonation, demo expiry, unverified email,
+          first-run notices) live IMMEDIATELY AFTER it, never above.
+          LayoutBanners is an async server component, rendered as
+          a child of this server-component wrapper. */}
+      <LayoutBanners />
+    </>
   );
 }
