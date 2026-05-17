@@ -1,7 +1,9 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
 import { ComplianceReport } from "@/components/admin/ComplianceReport";
+import { PageHero } from "@/components/ui/PageHero";
 
 export default async function AdminReportsPage() {
   const session = await requireRole("admin").catch(() => null);
@@ -15,12 +17,11 @@ export default async function AdminReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-fg">Compliance Reports</h1>
-        <p className="text-muted text-sm mt-1">
-          Per-course completion tracking. Export to CSV for audits.
-        </p>
-      </div>
+      <PageHero
+        eyebrow={<><ShieldCheck size={11} /> Admin · Security &amp; compliance</>}
+        title="Compliance Reports"
+        description="Per-course completion tracking. Export to CSV for audits."
+      />
       <ComplianceReport courses={courses} />
     </div>
   );

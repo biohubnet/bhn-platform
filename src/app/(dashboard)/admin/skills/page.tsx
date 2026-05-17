@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ensureSkillSeed, embedMissingSkills } from "@/lib/skills/ontology";
 import { Sparkles } from "lucide-react";
 import { SkillsAdminClient } from "@/components/admin/SkillsAdminClient";
+import { PageHero } from "@/components/ui/PageHero";
 
 export const dynamic = "force-dynamic";
 
@@ -25,15 +26,11 @@ export default async function SkillsAdminPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-fg flex items-center gap-2">
-          <Sparkles size={20} className="text-brand-600" />
-          Skill ontology
-        </h1>
-        <p className="text-sm text-muted mt-1">
-          The shared vocabulary that wires courses, postings, and trainee profiles together. AI proposes new skills as content flows in; you keep them tidy here.
-        </p>
-      </header>
+      <PageHero
+        eyebrow={<><Sparkles size={11} /> Admin · EXPERIENCE</>}
+        title="Skill ontology"
+        description="The shared vocabulary that wires courses, postings, and trainee profiles together. AI proposes new skills as content flows in; you keep them tidy here."
+      />
 
       <SkillsAdminClient
         initialSkills={skills.map((s) => ({

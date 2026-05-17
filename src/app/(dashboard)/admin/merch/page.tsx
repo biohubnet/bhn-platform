@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Package, Truck, CheckCircle2, XCircle, Inbox, MapPin } from "lucide-react";
 import { getTier, PICKUP_LOCATION } from "@/lib/rewards/merch";
 import { MerchActionBar } from "@/components/rewards/MerchActionBar";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /admin/merch — fulfillment queue.
@@ -43,21 +44,17 @@ export default async function AdminMerchPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Admin · Engage</p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-fg mt-1 tracking-tight">
-          Merch fulfillment
-        </h1>
-        <p className="text-sm text-muted mt-2 max-w-3xl">
-          Rewards claimed by trainees who've crossed a credit milestone. Two
-          paths land here: <span className="font-semibold text-fg">Pickup</span> (default — pack
-          the bundle, mark ready, hand it off when they swing by {PICKUP_LOCATION.short})
-          and <span className="font-semibold text-fg">Mail request</span> (out-of-GTA trainees;
-          confirm postage before committing). Cancel only if a request can't be
-          honoured.
-        </p>
-      </header>
+    <div>
+      <PageHero
+        eyebrow={<><Package size={11} /> Admin · ENGAGE</>}
+        title="Merch fulfillment"
+        description={(
+          <>
+            Rewards claimed by trainees who&apos;ve crossed a credit milestone. Two paths land here: <strong>Pickup</strong> (default — pack the bundle, mark ready, hand it off when they swing by {PICKUP_LOCATION.short}) and <strong>Mail request</strong> (out-of-GTA trainees; confirm postage before committing). Cancel only if a request can&apos;t be honoured.
+          </>
+        )}
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
 
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Awaiting fulfillment" value={open.length} accent="amber" icon={Package} />
@@ -103,6 +100,7 @@ export default async function AdminMerchPage() {
         items={closed}
         renderActions={() => null}
       />
+      </div>
     </div>
   );
 }

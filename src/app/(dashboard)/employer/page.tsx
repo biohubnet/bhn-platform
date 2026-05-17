@@ -57,6 +57,7 @@ import {
   logoTransformCss,
   type LogoTransform,
 } from "@/lib/employer/logo-transform";
+import { upgradeLogoForDisplay } from "@/lib/employer/logo-discovery";
 
 export const dynamic = "force-dynamic";
 
@@ -273,7 +274,12 @@ export default async function EmployerHomePage() {
           >
             <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-6 sm:gap-10 items-start">
               <LogoDisc
-                src={user?.companyLogo}
+                // upgradeLogoForDisplay swaps Google s2/favicons URLs
+                // (128 px max, persisted by older auto-fills) for the
+                // equivalent Clearbit 400 px URL at render time, so
+                // existing low-res profiles render high-res without
+                // forcing the operator to re-fetch.
+                src={upgradeLogoForDisplay(user?.companyLogo)}
                 alt={user?.employerCompany ?? ""}
                 shape={normalizeLogoShape(user?.companyLogoShape)}
                 transform={parseLogoTransform(user?.companyLogoTransform)}

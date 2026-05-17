@@ -100,11 +100,13 @@ export default async function RewardsPage() {
           existing dark brand-gradient credits + journey panel stays
           beneath it (it's a complete visualization on its own and a
           full conversion to light-mode would be a separate redesign). */}
+      {/* Title rendered as a plain string — the PageHero h1 applies a
+          bg-clip:text gradient that makes an EditableText wrapper's
+          pencil button invisible. Staff can still edit the body copy
+          via the pencil on the description below. */}
       <PageHero
         eyebrow={<><Trophy size={12} /> Loyalty rewards</>}
-        title={
-          <EditableText copyKey="rewards.heroTitle" defaultText={heroTitle} isStaff={editableIsStaff} multiline={false} />
-        }
+        title={heroTitle}
         description={
           <EditableText copyKey="rewards.heroBody" defaultText={heroBody} isStaff={editableIsStaff} />
         }

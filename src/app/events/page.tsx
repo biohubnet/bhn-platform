@@ -66,11 +66,15 @@ export default async function EventsIndexPage() {
 
   return (
     <div>
+      {/* Title rendered as a plain string — earlier the title slot
+          carried an <EditableText> wrapper, but the bg-clip:text
+          gradient that PageHero applies to its h1 makes the
+          EditableText's edit-pencil button visually disappear and
+          left the title empty in some renders. Staff can still edit
+          the intro via the pencil below. */}
       <PageHero
         eyebrow={<><Calendar size={11} /> BHN Events</>}
-        title={
-          <EditableText copyKey="events.indexHeader.title" defaultText={headerTitle} isStaff={isStaff} multiline={false} />
-        }
+        title={headerTitle}
         description={
           <EditableText copyKey="events.indexHeader.intro" defaultText={headerIntro} isStaff={isStaff} />
         }

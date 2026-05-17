@@ -85,7 +85,6 @@ export default async function EquipLandingPage() {
       <DSPageHeader
         eyebrow="EQUIP · BHN funding pillar"
         title="Funding for your innovation"
-        icon={<Rocket size={22} className="text-brand-600" />}
         description={
           <>
             <strong>EQUIP</strong> backs trainee-entrepreneurs with strategic

@@ -194,6 +194,32 @@ export function faviconFallback(hostname: string): string {
   return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
 }
 
+/** Display-time upgrade for an existing companyLogo URL.
+ *
+ *  Profiles created before the high-res fallback chain landed (i.e.
+ *  before commit 2362d4a) stored Google's `s2/favicons` URL when the
+ *  homepage scrape missed the brand mark — which capped logos at
+ *  128 px. Detect those URLs at render time and swap in the equivalent
+ *  Clearbit URL (256 px+ for any registered domain).
+ *
+ *  Returns the original URL unchanged when it doesn't look like a
+ *  Google-favicon fallback (real logo URLs from CDNs, uploaded
+ *  R2 assets, etc.). Returns null when the input is null/undefined so
+ *  callers can pass through to the briefcase placeholder.
+ */
+export function upgradeLogoForDisplay(url: string | null | undefined): string | null {
+  if (!url) return null;
+  // Google's free favicon service. We sniff the host because the
+  // query string varies (sz=64 / sz=128 / no size). Extract the
+  // `domain=...` param and forward it to Clearbit.
+  const match = /^https?:\/\/(?:www\.)?google\.com\/s2\/favicons\?(.*)$/i.exec(url);
+  if (!match) return url;
+  const params = new URLSearchParams(match[1]);
+  const domain = params.get("domain");
+  if (!domain) return url;
+  return clearbitLogo(domain);
+}
+
 /** Synchronous "best logo" picker with high-res fallback chain:
  *    1. Best candidate from homepage HTML (og:logo, JSON-LD, apple-
  *       touch-icon, etc.)
