@@ -810,8 +810,21 @@ body {
  * sets it to the sidebar's width at md+). Pages without a sidebar
  * still get the original edge-to-edge bleed. */
 .full-bleed {
-  margin-left: calc(50% - 50vw + var(--full-bleed-inset, 0px));
-  margin-right: calc(50% - 50vw);
+  /* The standard `50% - 50vw` full-bleed trick assumes the parent
+   * is centered in the VIEWPORT. Our parent (a max-w-7xl mx-auto
+   * inside <main>) is centered in MAIN, which is itself offset to
+   * the right by the sidebar width — so the parent's centre is
+   * shifted right of the viewport's centre by exactly
+   * `inset / 2`. To compensate, add `inset / 2` (NOT the full
+   * `inset`, which was the long-standing bug — left a constant
+   * 128 px gap between the sidebar's right edge and the hero on
+   * every page).
+   *
+   * The previous CSS set both margin-left + margin-right + width;
+   * that's over-constrained, and the browser silently ignored
+   * margin-right in LTR. Dropping margin-right keeps the rule
+   * honest. */
+  margin-left: calc(50% - 50vw + var(--full-bleed-inset, 0px) / 2);
   width: calc(100vw - var(--full-bleed-inset, 0px));
   max-width: calc(100vw - var(--full-bleed-inset, 0px));
 }
