@@ -62,22 +62,22 @@ export interface CommitteeMeta {
 export const COMMITTEES: readonly CommitteeMeta[] = [
   {
     slug: "equip_review",
-    name: "Equip Review Committee",
+    name: "EQUIP Review Committee",
     description:
       "Reviews EQUIP funding applications (VentureConnect + VentureLift). Members can claim, approve, and fund applications.",
     badgeTone: "emerald",
     grantsEquipReview: true,
     sidebarItems: [
-      { label: "Equip overview",     href: "/admin/equip/overview",  icon: "Sparkles" },
-      { label: "Equip review queue", href: "/admin/equip",           icon: "Rocket" },
-      { label: "Equip deadlines",    href: "/admin/equip/deadlines", icon: "ClipboardList" },
+      { label: "EQUIP overview",     href: "/admin/equip/overview",  icon: "Sparkles" },
+      { label: "EQUIP review queue", href: "/admin/equip",           icon: "Rocket" },
+      { label: "EQUIP deadlines",    href: "/admin/equip/deadlines", icon: "ClipboardList" },
     ],
   },
   {
     slug: "hqp",
-    name: "HQP Committee",
+    name: "HQP Advisory Committee",
     description:
-      "Highly Qualified Personnel committee. Oversees trainee quality + reports across the partner network.",
+      "Highly Qualified Personnel Advisory Committee. Oversees trainee quality, perspectives, and feedback across the partner network. Open to trainees and partners alike.",
     badgeTone: "violet",
     sidebarItems: [
       { label: "HQP dashboard", href: "/committee/hqp", icon: "Award" },

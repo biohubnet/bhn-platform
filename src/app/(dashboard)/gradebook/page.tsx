@@ -1,6 +1,8 @@
+import { GraduationCap } from "lucide-react";
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn, statusColor, formatScore } from "@/lib/utils";
+import { PageHero } from "@/components/ui/PageHero";
 
 interface EnrollmentGrade {
   id: string;
@@ -72,14 +74,13 @@ export default async function GradebookPage() {
       : null;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-fg">Gradebook</h1>
-        <p className="text-muted text-sm mt-1">
-          {enrollments.filter((e) => e.score != null).length} scored ·{" "}
-          {avg != null ? `Avg: ${Math.round(avg)}%` : "No scores yet"}
-        </p>
-      </div>
+    <div>
+      <PageHero
+        eyebrow={<><GraduationCap size={11} /> Your performance</>}
+        title="Gradebook"
+        description={`${enrollments.filter((e) => e.score != null).length} scored · ${avg != null ? `${Math.round(avg)}% average` : "No scores yet"}`}
+      />
+      <div className="space-y-8">
 
       {/* Course summary */}
       <div className="bg-card rounded-xl border border-line overflow-hidden">
@@ -222,6 +223,7 @@ export default async function GradebookPage() {
           </table>
         </div>
       )}
+      </div>
     </div>
   );
 }

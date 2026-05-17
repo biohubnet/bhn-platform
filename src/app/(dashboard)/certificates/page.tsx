@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Award, Download } from "lucide-react";
+import { PageHero } from "@/components/ui/PageHero";
 
 export default async function CertificatesPage() {
   const session = await getSession();
@@ -19,13 +20,13 @@ export default async function CertificatesPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-fg">My Certificates</h1>
-        <p className="text-muted text-sm mt-1">
-          {certificates.length} certificate{certificates.length !== 1 ? "s" : ""} earned
-        </p>
-      </div>
+    <div>
+      <PageHero
+        eyebrow={<><Award size={11} /> Earned credentials</>}
+        title="My Certificates"
+        description={`${certificates.length} certificate${certificates.length !== 1 ? "s" : ""} earned — each one is a signed PDF you can download and share.`}
+      />
+      <div className="space-y-6">
 
       {certificates.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-xl border border-line">
@@ -101,6 +102,7 @@ export default async function CertificatesPage() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

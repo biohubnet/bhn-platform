@@ -5,10 +5,11 @@
  */
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
 import { HqpMeetingClient } from "@/components/committee/HqpMeetingClient";
+import { PageHero } from "@/components/ui/PageHero";
 
 export const dynamic = "force-dynamic";
 
@@ -45,12 +46,25 @@ export default async function HqpMeetingPage({
     orderBy: { user: { name: "asc" } },
   });
 
+  const meetingDate = meeting.scheduledAt.toLocaleDateString("en-CA", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-5">
-      <Link href="/committee/hqp" className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
-        <ArrowLeft size={12} /> HQP committee
-      </Link>
-      <HqpMeetingClient
+    <div>
+      <PageHero
+        eyebrow={<><Users size={11} /> HQP Advisory Committee · meeting</>}
+        title={meeting.title}
+        description={`Scheduled for ${meetingDate}.`}
+      />
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-5">
+        <Link href="/committee/hqp" className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
+          <ArrowLeft size={12} /> Back to HQP committee
+        </Link>
+        <HqpMeetingClient
         meeting={{
           id: meeting.id,
           title: meeting.title,
@@ -82,6 +96,7 @@ export default async function HqpMeetingPage({
         currentUserId={userId}
         isAdmin={isAdmin}
       />
+      </div>
     </div>
   );
 }

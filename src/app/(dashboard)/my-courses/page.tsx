@@ -2,8 +2,8 @@ import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { cn, formatDuration } from "@/lib/utils";
-import { Play, CheckCircle, Clock, XCircle } from "lucide-react";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { Play, CheckCircle, Clock, XCircle, GraduationCap } from "lucide-react";
+import { PageHero } from "@/components/ui/PageHero";
 import { Badge } from "@/components/ui/Badge";
 import { LeaveCourseButton } from "@/components/lms/LeaveCourseButton";
 
@@ -65,8 +65,9 @@ export default async function MyCoursesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div>
+      <PageHero
+        eyebrow={<><GraduationCap size={11} /> Your enrollments</>}
         title="My Courses"
         description={
           enrollments.length === 0
@@ -74,6 +75,7 @@ export default async function MyCoursesPage() {
             : `${enrollments.length} enrolled · ${buckets.in_progress.length} in progress · ${buckets.completed.length} completed${buckets.failed.length ? ` · ${buckets.failed.length} failed` : ""}`
         }
       />
+      <div className="space-y-6">
 
       {enrollments.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-xl border border-line">
@@ -95,6 +97,7 @@ export default async function MyCoursesPage() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Coins, ArrowUpCircle, ArrowDownCircle, FileText, ArrowRight, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
+import { PageHero } from "@/components/ui/PageHero";
 import { nextExpiringGrant, CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
 
 export default async function CreditsPage() {
@@ -53,16 +54,17 @@ export default async function CreditsPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-2xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-fg">My BHN Credits</h1>
-        <p className="text-muted text-sm mt-1 leading-relaxed">
-          Credits are used to enroll in paid courses. Per the BioHubNet
-          ENGAGE program, awarded credits expire <strong className="text-fg">{CREDIT_GRANT_TTL_DAYS} days</strong> from their grant
-          date. We'll email you 90, 30, and 7 days before any expiry so you have
-          time to enroll in courses you want to take.
-        </p>
-      </div>
+    <div>
+      <PageHero
+        eyebrow={<><Coins size={11} /> ENGAGE credits</>}
+        title="My BHN Credits"
+        description={
+          <>
+            Credits are used to enroll in paid courses. Per the BioHubNet ENGAGE program, awarded credits expire <strong className="text-white">{CREDIT_GRANT_TTL_DAYS} days</strong> from their grant date. We&apos;ll email you 90, 30, and 7 days before any expiry so you have time to enroll in courses you want to take.
+          </>
+        }
+      />
+      <div className="space-y-8 max-w-2xl mx-auto">
 
       {/* Balance card */}
       <div className="bg-gradient-to-br from-amber-400 to-amber-500 rounded-2xl p-6 text-white shadow-lg">
@@ -131,6 +133,7 @@ export default async function CreditsPage() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
