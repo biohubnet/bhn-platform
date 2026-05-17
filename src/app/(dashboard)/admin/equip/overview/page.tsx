@@ -170,9 +170,14 @@ export default async function EquipOverviewPage() {
     : null;
 
   return (
-    <DesignSystemProvider value="studio">
+    // Previously route-scoped to Studio; reverted to platform default
+    // (Cinematic as of 2026-05-17) so admin tools share the same
+    // editorial look as the rest of the platform. HR Overview at
+    // /employer keeps its Studio override; admin Equip overview is a
+    // workspace surface, not a brand stage.
+    <DesignSystemProvider value="cinematic">
       <div className="space-y-6">
-        <Link href="/admin/equip" className="text-xs text-white/85 hover:text-white inline-flex items-center gap-1">
+        <Link href="/admin/equip" className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
           <ArrowLeft size={12} /> Review queue
         </Link>
 

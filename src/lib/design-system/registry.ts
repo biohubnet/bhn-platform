@@ -84,7 +84,9 @@ export function isValidDesignSystem(id: string | null | undefined): id is Design
   return DESIGN_SYSTEMS.some((d) => d.id === id);
 }
 
-/** Default for any user who hasn't picked one yet. Keeps the
- *  existing "Classic" look the platform shipped with — opt-in to
- *  Cinematic. */
-export const DEFAULT_DESIGN_SYSTEM: DesignSystemId = "classic";
+/** Platform-wide fallback design system when the admin hasn't picked
+ *  one yet (or the DB lookup misses). As of 2026-05-17, Cinematic is
+ *  the canonical "everywhere except HR Overview" look — `/employer/*`
+ *  route-scopes itself to Studio via its own layout, and every other
+ *  surface inherits this default. */
+export const DEFAULT_DESIGN_SYSTEM: DesignSystemId = "cinematic";

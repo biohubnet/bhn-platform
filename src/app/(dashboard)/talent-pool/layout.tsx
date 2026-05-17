@@ -1,26 +1,17 @@
 /**
- * /talent-pool layout — route-scopes the talent-pool surface to
- * the Studio design system.
+ * /talent-pool layout.
  *
- * The talent pool sits in the HR menu (sidebar `employerItems`)
- * alongside `/employer/*`, even though its URL lives outside the
- * /employer route segment. The user-facing intent is "every page
- * on the HR menu looks the same" — so we nest another
- * <DesignSystemProvider value="studio"> here, mirroring what
- * /employer/layout.tsx does for the rest of the menu.
+ * Previously route-scoped the talent-pool surface to the Studio
+ * design system (mirroring `/employer/*` so every page on the HR
+ * menu looked the same). After the 2026-05-17 Option-B unification
+ * the talent pool now inherits the platform-default DS (Cinematic),
+ * matching the rest of the admin/employer workspace. The /employer
+ * HR Overview keeps its Studio override on its own layout; the
+ * talent-pool surface is a workspace, not a brand stage.
  *
- * Effect: DS primitives rendered under /talent-pool read
- * "studio" via useDesignSystem() and switch to the Studio
- * variant. The page-level DSPageHeader then renders the
- * gradient-mesh hero with drifting blobs + curve-down, matching
- * /employer's chrome.
+ * Layout file kept (rather than deleted) so future overrides have a
+ * place to land without restructuring the routing tree.
  */
-import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
-
 export default function TalentPoolLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <DesignSystemProvider value="studio">
-      {children}
-    </DesignSystemProvider>
-  );
+  return <>{children}</>;
 }

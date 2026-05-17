@@ -644,30 +644,27 @@ type AdminSubgroupTone = (typeof ADMIN_SUBGROUP_TONES)[keyof typeof ADMIN_SUBGRO
 
 /** Wrapper around an admin sub-group's heading + items. Renders a
  *  bolder, tone-coloured subheading on top followed by a thin
- *  coloured accent bar in the LEFT GUTTER of the sidebar (between
- *  the menu's left border and the NavLink icons).
+ *  coloured accent bar in the LEFT GUTTER of the sidebar (alongside
+ *  the menu items — never alongside the heading).
  *
- *  Geometry (rev 2026-05-17c):
+ *  Geometry (rev 2026-05-17d — multiline-safe):
  *    • Heading: 12 px / bold / 0.18 em tracking / tone-coloured.
- *    • Bar sits at `left-0` of the wrapper. Sidebar geometry from
- *      the visible left edge:
- *          x =  0      — aside left wall
- *          x =  0–12   — nav px-3 padding
- *          x = 12      — AdminSubgroup wrapper edge (= bar position)
- *          x = 12–24   — NavLink px-3 (left padding inside the link)
- *          x = 24+     — icon → gap → label
- *      So at left-0 the bar sits at sidebar-x = 12 px — right in the
- *      middle of the 24 px visual gutter between the sidebar wall and
- *      where icons render. Previous positions (left-3, left-9) kept
- *      landing INSIDE the icon column or the icon-label gap; this is
- *      what the user actually asked for.
- *    • `z-10` lifts the bar above the NavLink's hover / active
- *      background so it stays visible while a row is hovered.
- *    • Bar starts at `top-[34px]` — middle of the visible gap between
- *      the heading text bottom and the first NavLink's icon top
- *      (text bottom ≈ 30 px, icon top ≈ 38 px → mid-gap = 34 px).
- *    • Bar is `w-0.5` (2 px) so it holds its weight against the
- *      bolder heading without feeling fussy. */
+ *    • Heading + bar are SIBLINGS inside the wrapper. The bar lives
+ *      inside an inner `<div class="relative">` that starts AFTER
+ *      the heading's box, so the bar's `top: 0` naturally lands at
+ *      the first NavLink's top edge regardless of whether the
+ *      heading wrapped onto one line ("Engage") or two lines
+ *      ("Security & compliance"). Previous implementation used a
+ *      fixed `top-[34px]` tuned for single-line headings — two-line
+ *      headings shifted the items down but the bar stayed at 34 px
+ *      and ended up alongside the heading text.
+ *    • Bar sits at `left-0` of the inner container, which has no
+ *      padding — so the bar lands at sidebar-x = 12 px, right in
+ *      the middle of the visual gutter between the sidebar wall and
+ *      the NavLink icons.
+ *    • `z-10` keeps the bar above NavLink hover / active backgrounds.
+ *    • Bar is `w-0.5` (2 px) to hold its weight against the bolder
+ *      heading without feeling fussy. */
 function AdminSubgroup({
   tone,
   label,
@@ -678,19 +675,21 @@ function AdminSubgroup({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative mt-1 first:mt-0">
+    <div className="mt-1 first:mt-0">
       <p
         className="px-3 pt-3 pb-1.5 text-[12px] uppercase tracking-[0.18em] font-bold select-none"
         style={{ color: tone.text }}
       >
         {label}
       </p>
-      <span
-        aria-hidden
-        className="absolute left-0 top-[34px] bottom-1 w-0.5 rounded-full z-10 pointer-events-none"
-        style={{ background: tone.bar }}
-      />
-      {children}
+      <div className="relative">
+        <span
+          aria-hidden
+          className="absolute left-0 top-0 bottom-1 w-0.5 rounded-full z-10 pointer-events-none"
+          style={{ background: tone.bar }}
+        />
+        {children}
+      </div>
     </div>
   );
 }
