@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { GreetingTagline } from "@/components/lms/GreetingTagline";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * Instructor dashboard — what someone authoring courses actually wants
@@ -62,65 +63,59 @@ export async function InstructorDashboard({
 
   return (
     <div className="space-y-8">
-      {/* Hero */}
-      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-2 hero-mesh-brand">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="blob-shape blob-soft drift" style={{ width: 540, height: 540, top: -180, left: -160 }} />
-          <div className="blob-shape blob-soft drift-slow" style={{ width: 660, height: 660, bottom: -260, right: -180, opacity: 0.55 }} />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-20">
-          <div className="grid md:grid-cols-[2fr_1fr] gap-10 items-end">
-            <div>
-              <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
-                <BookOpen size={12} /> Instructor desk
-              </span>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mt-3">
-                Hi, <span className="gradient-text">{firstName}</span>.
-              </h1>
-              <GreetingTagline tone="dark" />
-              <p className="mt-4 text-white/85 leading-relaxed text-base md:text-lg max-w-2xl">
-                {myCoursesCount > 0
-                  ? `You're authoring ${myCoursesCount} course${myCoursesCount === 1 ? "" : "s"} (${publishedCount} published) with ${enrollmentsCount} enrolment${enrollmentsCount === 1 ? "" : "s"} between them.`
-                  : "Create your first course to start authoring on BHN."}
-              </p>
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link
-                  href="/courses?from=instructor"
-                  className="inline-flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-6 py-3 organic-card shadow-lg shadow-brand-900/30 transition-all hover:-translate-y-0.5"
-                >
-                  <Plus size={16} /> New course
-                </Link>
-                <Link
-                  href="/gradebook"
-                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/25 text-white hover:bg-white/20 text-sm font-semibold px-6 py-3 organic-card-alt transition-colors"
-                >
-                  <ClipboardList size={16} /> Gradebook
-                </Link>
-              </div>
-            </div>
+      {/* Hero — converted to canonical PageHero so every dashboard
+          surface uses the same cinematic shape. Stat tiles + greeting
+          tagline that used to live IN the hero now live as their own
+          card row beneath (see below). */}
+      <PageHero
+        eyebrow={<><BookOpen size={11} /> Instructor desk</>}
+        title={<>Hi, {firstName}.</>}
+        description={
+          myCoursesCount > 0
+            ? `You're authoring ${myCoursesCount} course${myCoursesCount === 1 ? "" : "s"} (${publishedCount} published) with ${enrollmentsCount} enrolment${enrollmentsCount === 1 ? "" : "s"} between them.`
+            : "Create your first course to start authoring on BHN."
+        }
+        actions={(
+          <>
+            <Link
+              href="/courses?from=instructor"
+              className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow-sm transition-colors"
+            >
+              <Plus size={12} /> New course
+            </Link>
+            <Link
+              href="/gradebook"
+              className="inline-flex items-center gap-1.5 bg-card hover:bg-elevated border border-line text-fg text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
+              <ClipboardList size={12} /> Gradebook
+            </Link>
+          </>
+        )}
+      />
 
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { icon: BookOpen,      label: "My courses",   value: myCoursesCount,    alt: false },
-                { icon: GraduationCap, label: "Enrolments",   value: enrollmentsCount,  alt: true  },
-                { icon: TrendingUp,    label: "Published",    value: publishedCount,    alt: true  },
-                { icon: ClipboardList, label: "Certificates", value: certsCount,        alt: false },
-              ].map((s, i) => {
-                const Icon = s.icon;
-                return (
-                  <div key={s.label} className={`bg-white/10 backdrop-blur border border-white/20 px-4 py-3.5 ${(i % 2 === 0) ? "organic-card" : "organic-card-alt"}`}>
-                    <div className="flex items-center gap-2 text-white/75 text-[11px] uppercase tracking-wider">
-                      <Icon size={12} /> {s.label}
-                    </div>
-                    <p className="text-3xl font-bold mt-1">{s.value}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+      {/* Stat tiles + greeting tagline pulled OUT of the previous hero
+          so the new PageHero stays clean. Rendered as a peer row. */}
+      <div className="space-y-4">
+        <GreetingTagline tone="light" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { icon: BookOpen,      label: "My courses",   value: myCoursesCount   },
+            { icon: GraduationCap, label: "Enrolments",   value: enrollmentsCount },
+            { icon: TrendingUp,    label: "Published",    value: publishedCount   },
+            { icon: ClipboardList, label: "Certificates", value: certsCount       },
+          ].map((s) => {
+            const Icon = s.icon;
+            return (
+              <div key={s.label} className="bg-card border border-line rounded-xl px-4 py-3.5">
+                <div className="flex items-center gap-2 text-subtle text-[11px] uppercase tracking-wider">
+                  <Icon size={12} /> {s.label}
+                </div>
+                <p className="text-3xl font-bold text-fg mt-1">{s.value}</p>
+              </div>
+            );
+          })}
         </div>
-        <div className="curve-down" />
-      </section>
+      </div>
 
       {/* Quick actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

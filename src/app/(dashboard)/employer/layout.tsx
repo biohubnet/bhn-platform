@@ -1,31 +1,18 @@
 /**
- * /employer layout — route-scopes every page under this segment
- * to the Studio design system regardless of the platform-wide
- * default an admin has chosen.
+ * /employer layout.
  *
- * How it works
- *   The root dashboard layout (sibling level) mounts a top-level
- *   <DesignSystemProvider value={platformDefault}>. This nested
- *   layout overrides that context with `value="studio"`, so DS
- *   primitives rendered inside /employer/* read "studio" via
- *   useDesignSystem() and switch their visual treatment.
+ * Previously route-scoped every page under this segment to Studio.
+ * After the 2026-05-17 unification, only the HR Overview home page
+ * (`/employer/page.tsx`) keeps the Studio brand-stage look — its
+ * page file wraps its own content in `<DesignSystemProvider
+ * value="studio">`. Every other employer sub-page (how-it-works,
+ * postings, applicants pipeline, etc.) is a workspace surface, not
+ * a brand stage, so it inherits the platform-default Cinematic look
+ * via the root dashboard layout.
  *
- * Why this approach
- *   The DS context is a single value — nesting another provider
- *   with a different value gives us route-scoped overrides for
- *   free without any extra plumbing or route-aware logic in the
- *   primitives themselves. Other routes are unaffected.
- *
- * The same pattern lets us flip /employer to Classic + Cinematic
- * later by passing a different value here — or to a future
- * route-managed picker if we let users opt out.
+ * Layout file kept (rather than deleted) so future overrides have a
+ * place to land without restructuring the routing tree.
  */
-import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
-
 export default function EmployerLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <DesignSystemProvider value="studio">
-      {children}
-    </DesignSystemProvider>
-  );
+  return <>{children}</>;
 }

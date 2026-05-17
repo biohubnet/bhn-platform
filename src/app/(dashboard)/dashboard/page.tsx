@@ -12,6 +12,7 @@ import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/To
 import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
 import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanner";
 import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
+import { PageHero } from "@/components/ui/PageHero";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -238,64 +239,45 @@ export default async function DashboardPage() {
         </Link>
       )}
 
-      {/* ─── HERO ────────────────────────────────────────────────────
-          Sized to match the canonical PageHero on /pathways and
-          friends: pt-20 pb-16 padding, 4xl→5xl title, base→lg body,
-          mb-10 bottom margin. Earlier version was a deliberately
-          compact identity strip; user asked for it to read at the
-          same scale as /pathways. */}
-      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-10 hero-mesh-brand">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="blob-shape blob-soft drift" style={{ width: 520, height: 520, top: -160, left: -120 }} />
-          <div className="blob-shape blob-soft drift-slow" style={{ width: 640, height: 640, bottom: -260, right: -180, opacity: 0.55 }} />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-16">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-            <div className="min-w-0 max-w-3xl">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/85">
-                <Sparkles size={11} />
-                {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-              </span>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mt-3 drop-shadow-sm">
-                Hi, <span className="gradient-text">{firstName}</span>.
-              </h1>
-              {/* Solid white + drop-shadow so the body line stays
-                  readable across the lighter cyan portion of the
-                  gradient. */}
-              <p className="mt-4 text-white/90 text-base md:text-lg max-w-3xl leading-relaxed drop-shadow">
-                <strong className="text-white">BioHubNet</strong> wires Ontario biomanufacturing HQP
-                from their first course to their first industry placement.{" "}
-                <span className="text-white/90">
-                  {inProgress > 0
-                    ? `${inProgress} in progress.`
-                    : completed > 0
-                      ? `${completed} completed so far.`
-                      : "Start with a course, or skip ahead to the talent pool."}
-                </span>
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <Link
-                href={inProgress > 0 ? "/my-courses" : "/courses"}
-                className="inline-flex items-center gap-1.5 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-xs px-4 py-2 organic-card shadow-md shadow-brand-900/30 transition-all hover:-translate-y-0.5"
-              >
-                {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={12} />
-              </Link>
-              {/* Secondary CTA — bumped from /10 to /25 with a
-                  brighter ring so the silhouette holds on the
-                  lighter end of the gradient. */}
-              <Link
-                href="/experience"
-                className="inline-flex items-center gap-1.5 bg-white/25 backdrop-blur ring-1 ring-inset ring-white/60 text-white hover:bg-white/35 text-xs font-semibold px-4 py-2 organic-card-alt transition-colors shadow-sm shadow-brand-900/20"
-              >
-                <Compass size={12} /> How it works
-              </Link>
-            </div>
-          </div>
-        </div>
-        <div className="curve-down" />
-      </section>
+      {/* HERO — canonical cinematic full-bleed via PageHero. Used to
+          be a bespoke `hero-mesh-brand` band; converted 2026-05-17 so
+          every PageHero / PageHeader / DSPageHeader-using surface
+          looks the same. */}
+      <PageHero
+        eyebrow={(
+          <>
+            <Sparkles size={11} />
+            {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+          </>
+        )}
+        title={<>Hi, {firstName}.</>}
+        description={(
+          <>
+            <strong className="text-fg">BioHubNet</strong> wires Ontario biomanufacturing HQP from their first course to their first industry placement.{" "}
+            {inProgress > 0
+              ? `${inProgress} in progress.`
+              : completed > 0
+                ? `${completed} completed so far.`
+                : "Start with a course, or skip ahead to the talent pool."}
+          </>
+        )}
+        actions={(
+          <>
+            <Link
+              href={inProgress > 0 ? "/my-courses" : "/courses"}
+              className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow-sm transition-colors"
+            >
+              {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={12} />
+            </Link>
+            <Link
+              href="/experience"
+              className="inline-flex items-center gap-1.5 bg-card hover:bg-elevated border border-line text-fg text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
+              <Compass size={12} /> How it works
+            </Link>
+          </>
+        )}
+      />
 
       {/* Below-the-hero soft banners (moved here so they don't push
           the hero down the page). Both auto-hide when not relevant. */}

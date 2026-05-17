@@ -6,6 +6,7 @@ import { EventCalendar, type EventDot } from "@/components/events/EventCalendar"
 import { DemoEventsControls } from "@/components/events/DemoEventsControls";
 import { EditableText } from "@/components/cms/EditableText";
 import { getCopyMap } from "@/lib/copy";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /events — public landing for all currently-published BHN events.
@@ -64,18 +65,17 @@ export default async function EventsIndexPage() {
   const headerIntro = copy["events.indexHeader.intro"] ?? introDefault;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16 space-y-10">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-brand-600">
-          BHN Events
-        </p>
-        <h1 className="text-3xl sm:text-4xl font-bold text-fg mt-2 tracking-tight">
+    <div>
+      <PageHero
+        eyebrow={<><Calendar size={11} /> BHN Events</>}
+        title={
           <EditableText copyKey="events.indexHeader.title" defaultText={headerTitle} isStaff={isStaff} multiline={false} />
-        </h1>
-        <p className="text-base text-muted mt-3 max-w-2xl leading-relaxed">
+        }
+        description={
           <EditableText copyKey="events.indexHeader.intro" defaultText={headerIntro} isStaff={isStaff} />
-        </p>
-      </header>
+        }
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
 
       {/* Upcoming — split into a calendar view (visual scan of when)
           + a list view (everything else: tagline, venue, registration
@@ -165,6 +165,7 @@ export default async function EventsIndexPage() {
           </ul>
         </section>
       )}
+      </div>
     </div>
   );
 }

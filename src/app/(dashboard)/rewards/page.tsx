@@ -13,6 +13,7 @@ import {
 import { MerchClaimDialog } from "@/components/rewards/MerchClaimDialog";
 import { EditableText } from "@/components/cms/EditableText";
 import { getCopyMap } from "@/lib/copy";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /rewards — trainee-facing loyalty page.
@@ -93,13 +94,27 @@ export default async function RewardsPage() {
   const editableIsStaff = checkIsStaff(realRole);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Hero — full-bleed brand-gradient surface with the lifetime
-          credits count as the dramatic headline figure. Built with
-          stacked decorative blur blobs for depth, an outer ring of
-          glowing sparkle hints, and a generous typography scale so
-          it reads as a "wall display" of progress rather than yet
-          another card. */}
+    <div>
+      {/* Hero — added 2026-05-17 so /rewards opens with the same
+          cinematic full-bleed band as every other surface. The
+          existing dark brand-gradient credits + journey panel stays
+          beneath it (it's a complete visualization on its own and a
+          full conversion to light-mode would be a separate redesign). */}
+      <PageHero
+        eyebrow={<><Trophy size={12} /> Loyalty rewards</>}
+        title={
+          <EditableText copyKey="rewards.heroTitle" defaultText={heroTitle} isStaff={editableIsStaff} multiline={false} />
+        }
+        description={
+          <EditableText copyKey="rewards.heroBody" defaultText={heroBody} isStaff={editableIsStaff} />
+        }
+      />
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
+      {/* Credits + journey panel — full lifetime-credits headline,
+          stat tiles, progress bar with tier markers. Kept on its own
+          dark brand-gradient surface (the "wall display" treatment)
+          beneath the cinematic hero. */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 text-white px-6 sm:px-10 py-9 sm:py-12 surface-shadow">
         {/* Decorative blobs */}
         <div className="pointer-events-none absolute -top-20 -right-16 w-64 h-64 rounded-full bg-amber-400/25 blur-3xl" aria-hidden />
@@ -109,19 +124,8 @@ export default async function RewardsPage() {
         </div>
 
         <div className="relative">
-          <p className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] font-bold text-white/85">
-            <Trophy size={12} />
-            Loyalty rewards
-          </p>
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mt-3 leading-[1.05]">
-            <EditableText copyKey="rewards.heroTitle" defaultText={heroTitle} isStaff={editableIsStaff} multiline={false} />
-          </h1>
-          <p className="text-base text-white/85 mt-3 max-w-2xl leading-relaxed">
-            <EditableText copyKey="rewards.heroBody" defaultText={heroBody} isStaff={editableIsStaff} />
-          </p>
-
           {/* Big lifetime-credits headline */}
-          <div className="mt-7 flex flex-wrap items-end gap-x-8 gap-y-4">
+          <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
             <div>
               <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-white/70">Credits trained</p>
               <p className="text-5xl sm:text-6xl font-bold leading-none font-mono tabular-nums mt-1">
@@ -387,6 +391,7 @@ export default async function RewardsPage() {
           </p>
         </div>
       </section>
+      </div>
     </div>
   );
 }

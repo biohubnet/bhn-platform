@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * Admin / superadmin dashboard.
@@ -228,59 +229,44 @@ export async function AdminDashboard({
 
   return (
     <div className="space-y-6">
-      {/* ── Hero ───────────────────────────────────────────────────
-          Sized to match the canonical PageHero used on /pathways and
-          friends: pt-20 pb-16 padding, 4xl→5xl title, base→lg body,
-          mb-10 bottom margin, blob radii bumped to match the bigger
-          canvas. Earlier version was a "compact identity strip"
-          (pt-7 pb-20, 2xl→3xl title); user asked for it to match the
-          /pathways scale instead. */}
-      <section className="full-bleed relative overflow-hidden text-white -mt-8 mb-10 hero-mesh-brand">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="blob-shape blob-soft drift" style={{ width: 520, height: 520, top: -160, left: -120 }} />
-          <div className="blob-shape blob-soft drift-slow" style={{ width: 640, height: 640, bottom: -260, right: -180, opacity: 0.55 }} />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-16">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-            <div className="min-w-0 max-w-3xl">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/85">
-                <ShieldCheck size={11} /> {isSuperAdmin ? "Superadmin" : "Admin"} desk
-              </span>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mt-3 drop-shadow-sm">
-                Hi, <span className="gradient-text">{firstName}</span>.
-              </h1>
-              <p className="mt-4 text-white/90 text-base md:text-lg max-w-2xl leading-relaxed drop-shadow">
-                {totalPending > 0 ? (
-                  <>{totalPending} item{totalPending === 1 ? "" : "s"} waiting on you across credits, role requests, and pathway approvals.</>
-                ) : showChecklist ? (
-                  <>{checklistOpen} setup step{checklistOpen === 1 ? "" : "s"} left to get the platform humming.</>
-                ) : (
-                  "Nothing in the action queue. Platform is humming."
-                )}
-                {" "}
-                {new7dUsers > 0 && (
-                  <span className="text-white/90">{new7dUsers} new sign-up{new7dUsers === 1 ? "" : "s"} this week.</span>
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <Link
-                href={totalPending > 0 ? "/admin/credit-applications" : showChecklist && nextChecklistItem ? nextChecklistItem.href : "/admin"}
-                className="inline-flex items-center gap-1.5 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-xs px-4 py-2 organic-card shadow-md shadow-brand-900/30 transition-all hover:-translate-y-0.5"
-              >
-                {totalPending > 0 ? "Review queue" : showChecklist ? "Continue setup" : "Admin overview"} <ArrowRight size={12} />
-              </Link>
-              <Link
-                href="/admin/split-view"
-                className="inline-flex items-center gap-1.5 bg-white/25 backdrop-blur ring-1 ring-inset ring-white/60 text-white hover:bg-white/35 text-xs font-semibold px-4 py-2 organic-card-alt transition-colors shadow-sm shadow-brand-900/20"
-              >
-                <Eye size={12} /> View as
-              </Link>
-            </div>
-          </div>
-        </div>
-        <div className="curve-down" />
-      </section>
+      {/* HERO — converted 2026-05-17 from a bespoke hero-mesh-brand
+          band to the canonical PageHero so every dashboard surface
+          uses one cinematic-DS shape. */}
+      <PageHero
+        eyebrow={<><ShieldCheck size={11} /> {isSuperAdmin ? "Superadmin" : "Admin"} desk</>}
+        title={<>Hi, {firstName}.</>}
+        description={(
+          <>
+            {totalPending > 0 ? (
+              <>{totalPending} item{totalPending === 1 ? "" : "s"} waiting on you across credits, role requests, and pathway approvals.</>
+            ) : showChecklist ? (
+              <>{checklistOpen} setup step{checklistOpen === 1 ? "" : "s"} left to get the platform humming.</>
+            ) : (
+              "Nothing in the action queue. Platform is humming."
+            )}
+            {" "}
+            {new7dUsers > 0 && (
+              <span className="text-fg/70">{new7dUsers} new sign-up{new7dUsers === 1 ? "" : "s"} this week.</span>
+            )}
+          </>
+        )}
+        actions={(
+          <>
+            <Link
+              href={totalPending > 0 ? "/admin/credit-applications" : showChecklist && nextChecklistItem ? nextChecklistItem.href : "/admin"}
+              className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow-sm transition-colors"
+            >
+              {totalPending > 0 ? "Review queue" : showChecklist ? "Continue setup" : "Admin overview"} <ArrowRight size={12} />
+            </Link>
+            <Link
+              href="/admin/split-view"
+              className="inline-flex items-center gap-1.5 bg-card hover:bg-elevated border border-line text-fg text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
+              <Eye size={12} /> View as
+            </Link>
+          </>
+        )}
+      />
 
       {/* ── Spotlight ────────────────────────────────────────────────
           The page's focal element. Heavy ambient shadow + a radial-

@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * /roadmap — internal planning surface, SUPERADMIN ONLY.
@@ -177,30 +178,18 @@ export default async function RoadmapPage() {
   });
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10">
+    <div>
+      <PageHero
+        eyebrow={<><Compass size={11} /> Internal planning · superadmin only</>}
+        title="Roadmap"
+        description={(
+          <>
+            What we&apos;re building now, what&apos;s next, and what we&apos;ve parked for later. No exact dates — those slip — but every item here is committed enough to plan around. This view is restricted to superadmin: it doubles as internal planning, and tentative commitments shouldn&apos;t be telegraphed to trainees or employers before they ship. The public surface is <Link href="/changelog" className="text-brand-700 font-semibold hover:underline">/changelog</Link> — that&apos;s what users see once something lands.
+          </>
+        )}
+      />
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-10">
       <header>
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-            BHN Training Platform · Internal planning
-          </p>
-          <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ring-1 ring-inset bg-violet-100 text-violet-800 ring-violet-200">
-            Superadmin only
-          </span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-fg tracking-tight mt-1 inline-flex items-center gap-3">
-          <Compass size={28} className="text-brand-600" />
-          Roadmap
-        </h1>
-        <p className="text-sm text-muted mt-3 max-w-2xl leading-relaxed">
-          What we're building now, what's next, and what we've parked
-          for later. No exact dates — those slip — but every item
-          here is committed enough to plan around. <strong className="text-fg">
-          This view is restricted to superadmin</strong>: it doubles as
-          internal planning, and tentative commitments shouldn't be
-          telegraphed to trainees or employers before they ship. The
-          public surface is <Link href="/changelog" className="text-brand-700 font-semibold hover:underline">/changelog</Link> — that's
-          what users see once something lands.
-        </p>
         <p className="text-xs text-muted mt-3">
           For the UX charter that frames how we choose what's worth doing,{" "}
           <Link
@@ -311,6 +300,7 @@ export default async function RoadmapPage() {
           . Reorder this list when synthesis says the bet has shifted.
         </p>
       </section>
+      </div>
     </div>
   );
 }
