@@ -44,49 +44,38 @@ export function ImpersonationBanner({ actingAs }: Props) {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-40 pointer-events-none"
+      className="fixed bottom-3 right-3 z-40 pointer-events-none"
       role="status"
       aria-live="polite"
       aria-label={`Viewing as ${actingAs}. Admin permissions are paused while in this mode.`}
     >
-      <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-amber-50 text-amber-900 border-2 border-amber-800/60 shadow-[0_8px_24px_-6px_rgba(120,53,15,0.45),0_2px_6px_rgba(120,53,15,0.25)] pl-1.5 pr-1 py-1">
-        {/* Pulsing eye disc — soft amber ring loops to draw attention
-            without animating the icon itself. */}
-        <span className="relative inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-200 text-amber-900 shrink-0">
-          <Eye size={14} />
+      <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-900 border border-amber-800/60 shadow-[0_4px_12px_-3px_rgba(120,53,15,0.35)] pl-1 pr-0.5 py-0.5">
+        {/* Pulsing eye disc, compact. */}
+        <span className="relative inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-200 text-amber-900 shrink-0">
+          <Eye size={11} />
           <span
             aria-hidden
             className="absolute inset-0 rounded-full ring-2 ring-amber-400 animate-ping opacity-60 pointer-events-none"
           />
         </span>
 
-        {/* Compact status — "VIEW-AS · trainee". Hidden on the tightest
-            viewports so the pill stays short. */}
-        <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold leading-none">
-          <span className="font-bold uppercase tracking-[0.14em] text-[10px] bg-amber-200/70 border border-amber-700/30 px-1.5 py-0.5 rounded">
-            View-as
-          </span>
-          <span className="lowercase">{actingAs}</span>
+        {/* "as trainee" — lowercase tag, no VIEW-AS chip needed
+            (the eye + the espresso Stop button already telegraph the
+            mode). Hidden on the tightest viewports. */}
+        <span className="hidden sm:inline text-[11px] font-semibold leading-none lowercase">
+          as {actingAs}
         </span>
 
-        {/* CTA — espresso outline button. Always visible (this is the
-            only way out of impersonation mode). */}
+        {/* CTA — single Stop pill. The eye + amber colour already say
+            "view-as"; the button just has to offer the exit. */}
         <button
           onClick={stop}
           disabled={busy}
           title="Stop viewing as · Restore superadmin"
-          className={[
-            "group inline-flex items-center gap-1.5 shrink-0",
-            "bg-amber-900 hover:bg-amber-800 text-amber-50",
-            "font-bold text-xs px-3 py-1.5 rounded-full",
-            "border border-amber-950/50",
-            "disabled:opacity-60 disabled:cursor-not-allowed transition-colors",
-          ].join(" ")}
+          className="inline-flex items-center gap-1 shrink-0 bg-amber-900 hover:bg-amber-800 text-amber-50 font-bold text-[11px] px-2.5 py-1 rounded-full border border-amber-950/50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
-          <ShieldCheck size={12} />
-          <span className="hidden md:inline">Stop · restore admin</span>
-          <span className="md:hidden">Stop</span>
-          <X size={11} className="opacity-80" />
+          <ShieldCheck size={10} />
+          Stop
         </button>
       </div>
     </div>

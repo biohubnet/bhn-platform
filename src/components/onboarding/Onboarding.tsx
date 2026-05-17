@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Sparkles, X, Minimize2, ArrowRight, ArrowLeft, Check, HelpCircle } from "lucide-react";
+import { Sparkles, X, Minimize2, ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { TOUR_STEPS, TOUR_VERSION, type StepRole, type TourStep } from "@/lib/onboarding/tours";
 import { cn } from "@/lib/utils";
 
@@ -196,20 +196,20 @@ export function Onboarding() {
   // ── Renders ──────────────────────────────────────────────────────
   if (status !== "authenticated" || !state) return null;
 
-  // Help icon — always available even after dismissal
-  const helpIcon = <HelpFloater onClick={relaunch} />;
+  // The bottom-left "?" tour-restart button was removed on user
+  // feedback — the relaunch helper still exists for the minimised
+  // chip ("Resume tour"), and admins can always replay the tour via
+  // Administration → Platform → System status. Skipping the floater
+  // here keeps the lower-left corner clear of stray UI.
 
   // Minimized chip
   if (state.minimized && !step) {
     return (
-      <>
-        <MinimizedChip onResume={resume} onDismiss={dismiss} stepCount={eligibleSteps.length - state.seenStepIds.length} />
-        {helpIcon}
-      </>
+      <MinimizedChip onResume={resume} onDismiss={dismiss} stepCount={eligibleSteps.length - state.seenStepIds.length} />
     );
   }
 
-  if (!step) return helpIcon;
+  if (!step) return null;
 
   // If the step has a path and we're not on it, show centered card with navigate CTA
   const onCorrectPath = !step.path || pathname === step.path || pathname.startsWith(step.path + "/");
@@ -263,8 +263,6 @@ export function Onboarding() {
           showNavHint={!onCorrectPath}
         />
       )}
-
-      {helpIcon}
     </>
   );
 }
@@ -295,19 +293,6 @@ function MinimizedChip({ onResume, onDismiss, stepCount }: { onResume: () => voi
       >
         <X size={12} />
       </span>
-    </button>
-  );
-}
-
-function HelpFloater({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="fixed bottom-4 left-72 z-20 w-9 h-9 rounded-full bg-card border border-line text-muted hover:text-brand-600 hover:border-brand-200 shadow-sm hover:shadow-md transition-all flex items-center justify-center"
-      title="Restart tour"
-      aria-label="Restart onboarding tour"
-    >
-      <HelpCircle size={16} />
     </button>
   );
 }

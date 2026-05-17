@@ -12,6 +12,9 @@ import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/To
 import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
 import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanner";
 import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
+import { CreditUsageScoreboard } from "@/components/dashboards/CreditUsageScoreboard";
+import { RewardsDistanceCard } from "@/components/dashboards/RewardsDistanceCard";
+import { LatestNewsCard } from "@/components/dashboards/LatestNewsCard";
 import { PageHero } from "@/components/ui/PageHero";
 
 interface EnrollmentWithCourse {
@@ -321,6 +324,24 @@ export default async function DashboardPage() {
           </ul>
         </section>
       )}
+      {/* ─── FOR YOU ─────────────────────────────────────────────────
+          User-requested goodies surface: how far the trainee is from
+          their next merch unlock (full-width prominent card), an
+          anonymised top-10 leaderboard of real-account trainees by
+          credits trained, and a feed of the latest platform updates
+          from the changelog registry. All three components auto-hide
+          when there's nothing meaningful to show. */}
+      <section className="pt-2 space-y-5">
+        <h2 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+          For you
+        </h2>
+        <RewardsDistanceCard userId={userId} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <CreditUsageScoreboard userId={userId} />
+          <LatestNewsCard />
+        </div>
+      </section>
+
       <ExploreLinks credits={user?.credits ?? 0} />
     </div>
   );
