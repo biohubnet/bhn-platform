@@ -119,6 +119,7 @@ export default async function EquipApplicationDraftPage({
         <ConnectForm
           applicationId={app.id}
           initial={(app.formData as VentureConnectFormData) ?? {}}
+          initialDocuments={(app.documents as unknown as EquipDocument[]) ?? []}
           profile={{
             name: app.user.name ?? "",
             email: app.user.email,

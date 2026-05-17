@@ -29,11 +29,19 @@ import {
   type VentureConnectFormData,
   type IpStatusBlock,
   type ApplicantRole,
+  type EquipDocument,
 } from "@/lib/equip/types";
+import { LiftDocumentTray } from "./LiftDocumentTray";
 
 interface Props {
   applicationId: string;
   initial: VentureConnectFormData;
+  /** Existing attachments on the draft. The VentureConnect PDF
+   *  asks applicants to attach a pitch deck + supporting docs
+   *  (conference registration, cost estimates, workshop details)
+   *  alongside the form body, so we mount the same document tray
+   *  LiftForm uses with its Stage-1 kinds. */
+  initialDocuments: EquipDocument[];
   /** Pulled from the User row to pre-fill applicant identity
    *  fields. The applicant can still edit each one — pre-fill is
    *  a convenience, not a constraint. */
@@ -94,7 +102,7 @@ function budgetTotal(f: VentureConnectFormData): number {
     + (f.budgetRegistration ?? 0);
 }
 
-export function ConnectForm({ applicationId, initial, profile, isAdmin = false }: Props) {
+export function ConnectForm({ applicationId, initial, initialDocuments, profile, isAdmin = false }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<VentureConnectFormData>(() => ({
     // Pre-fill identity fields from profile so the user doesn't
@@ -104,6 +112,7 @@ export function ConnectForm({ applicationId, initial, profile, isAdmin = false }
     institutionEmail: initial.institutionEmail ?? profile.email ?? "",
     ...initial,
   }));
+  const [documents, setDocuments] = useState<EquipDocument[]>(initialDocuments);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
   const [submitting, setSubmitting] = useState(false);
@@ -339,6 +348,16 @@ export function ConnectForm({ applicationId, initial, profile, isAdmin = false }
           your funding request.
         </p>
       </Section>
+
+      {/* Document tray — matches the PDF's "Supporting Documents
+          Required" guidance + the pitch-deck callout in section
+          2. Same trays LiftForm uses; reviewers can request more
+          in-platform after submit. */}
+      <LiftDocumentTray
+        applicationId={applicationId}
+        documents={documents}
+        onChange={setDocuments}
+      />
 
       {/* ── 6. Signature (attestation) ─────────────────────── */}
       <Section title="Signature">
