@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.17f";
+export const TOUR_VERSION = "2026.05.17g";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -461,6 +461,13 @@ export const TOUR_STEPS: TourStep[] = [
     selector: "[aria-label=\"Change theme\"]",
     placement: "right",
     since: "2026.05.17b",
+  },
+  {
+    id: "cinematic-hero-single-stage",
+    title: "Page heroes are now one continuous editorial stage",
+    body: "The cinematic page hero is now a single full-bleed gradient stage instead of a cover-banner + paper-body two-tier composition. The title block sits at the bottom of the stage (magazine-cover composition); the auroras + noise + bottom scrim live in the visual real estate above. Theme-driven palette throughout, with per-theme title-shimmer overrides so contrast stays correct on every theme — including Icecream's light pink hero, which swaps the title to a deep berry ramp.",
+    placement: "center",
+    since: "2026.05.17g",
   },
   {
     id: "aurora-theme",

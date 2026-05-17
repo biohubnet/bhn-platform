@@ -899,6 +899,7 @@ body {
   color: #3d2a3b;
 }
 [data-theme="icecream"] .hero-mesh-brand .text-white\/80   { color: rgba(61, 42, 59, 0.80); }
+[data-theme="icecream"] .hero-mesh-brand .text-white\/85   { color: rgba(61, 42, 59, 0.85); }
 [data-theme="icecream"] .hero-mesh-brand .text-white\/90   { color: rgba(61, 42, 59, 0.90); }
 [data-theme="icecream"] .hero-mesh-brand .text-white\/75   { color: rgba(61, 42, 59, 0.75); }
 [data-theme="icecream"] .hero-mesh-brand .text-white\/70   { color: rgba(61, 42, 59, 0.70); }
@@ -1148,6 +1149,10 @@ body {
   --hero-mesh-4: #c8b6e8;
   --hero-fg:     #3d2a3b;
   --hero-scrim:  0;
+  /* Title gradient on Icecream's light pink hero — the default
+   * white-to-brand-light shimmer would be invisible. Swap to a
+   * deep berry ramp from the brand family that pops on pink. */
+  --hero-title-gradient: linear-gradient(120deg, var(--brand-800, #3d2a3b) 0%, var(--brand-900, #2a1d28) 55%, var(--brand-800, #3d2a3b) 100%);
 }
 
 /* ───── Dry Ice — frosty fog over near-black. Cold, mysterious, a
@@ -1652,6 +1657,11 @@ body {
   --hero-mesh-2: #f472b6;        /* pink aurora — bottom-right */
   --hero-mesh-3: #4ade80;        /* green aurora — bottom-left */
   --hero-mesh-4: #facc15;        /* canary aurora — top-right */
+  /* Title gradient — white → light-purple-lavender → white shimmer.
+   * brand-500 (#ad7ce0) is Aurora's bright lavender that pops
+   * against the near-black-navy hero; the default fallback uses
+   * brand-200 (dark purple) which would create a dim middle. */
+  --hero-title-gradient: linear-gradient(120deg, rgba(255,255,255,0.98) 0%, var(--brand-500, #ad7ce0) 55%, rgba(255,255,255,0.98) 100%);
 }
 
 /* Tame Tailwind's saturated state tints for Aurora's dark canvas —
