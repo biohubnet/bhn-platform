@@ -60,7 +60,12 @@ export function PageHero({
   );
 
   return (
-    <header className="rounded-3xl overflow-hidden shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)] mb-10">
+    // `full-bleed` + `-mt-8` escape the dashboard's max-w-7xl
+    // centered column so the hero spans the viewport edge to edge
+    // (matches the Studio hero). No rounded corners and no shadow
+    // at this scale; body content below resumes the centered
+    // column.
+    <header className="full-bleed relative overflow-hidden -mt-8 mb-10">
       <DSCoverBanner />
 
       <div
@@ -84,9 +89,13 @@ export function PageHero({
           }}
         />
 
+        {/* max-w-7xl + mx-auto re-centers the title column now
+            that the outer header is full-bleed; the wash + blob
+            behind it still span edge-to-edge. The inner max-w-3xl
+            keeps the prose to comfortable reading width. */}
         <section
           aria-label="Page header"
-          className="relative px-6 sm:px-10 lg:px-14 pt-8 sm:pt-10 pb-10"
+          className="relative max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 pt-8 sm:pt-10 pb-10"
         >
           <div className="max-w-3xl">
             {eyebrow && (

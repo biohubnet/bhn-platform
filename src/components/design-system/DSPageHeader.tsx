@@ -118,7 +118,12 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
     const hasAside = Boolean(aside);
 
     return (
-      <header className="rounded-3xl overflow-hidden shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)]">
+      // `full-bleed` + `-mt-8` escape the dashboard's max-w-7xl
+      // centered column so the hero spans the viewport edge to
+      // edge — same trick the Studio hero uses. No rounded corners
+      // and no shadow at this scale; the wash + cover stand on
+      // their own. Body content below resumes the centered column.
+      <header className="full-bleed relative overflow-hidden -mt-8 mb-10">
         <DSCoverBanner />
 
         <div
@@ -143,10 +148,13 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
             }}
           />
 
-          {/* IDENTITY ROW — icon + title block side-by-side */}
+          {/* IDENTITY ROW — icon + title block side-by-side.
+              max-w-7xl + mx-auto re-centers the content column now
+              that the outer header is full-bleed; the wash + blob
+              still span edge-to-edge behind it. */}
           <section
             aria-label="Page header"
-            className="relative px-6 sm:px-10 lg:px-14 pt-8 sm:pt-10 pb-10"
+            className="relative max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 pt-8 sm:pt-10 pb-10"
           >
             <div className={`grid gap-6 sm:gap-10 items-start grid-cols-1 ${hasIcon ? "sm:grid-cols-[auto_1fr]" : ""}`}>
               {/* Icon disc — left column. Smaller cousin of the HR-
@@ -216,13 +224,15 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
           {hasAside && (
             <section
               aria-label="Page header aside"
-              className="relative px-6 sm:px-10 lg:px-14 py-8 sm:py-10 border-t border-line"
+              className="relative border-t border-line"
               style={{
                 backgroundImage:
                   "linear-gradient(135deg, rgba(56,189,248,0.05) 0%, rgba(124,58,237,0.03) 50%, rgba(244,114,182,0.04) 100%)",
               }}
             >
-              {aside}
+              <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 py-8 sm:py-10">
+                {aside}
+              </div>
             </section>
           )}
         </div>
