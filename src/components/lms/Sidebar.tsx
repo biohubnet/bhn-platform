@@ -652,16 +652,23 @@ const ADMIN_SUBGROUP_TONES = {
 } as const;
 
 /** Wrapper around an admin sub-group's heading + items. Adds a
- *  1 px coloured accent bar down the left edge so scanning the
- *  Administration block by group becomes immediate — pick the
- *  colour, find the section. The bar spans the entire group from
- *  the top of the heading to the bottom of the last item. */
+ *  1 px coloured accent bar so scanning the Administration block by
+ *  group becomes immediate — pick the colour, find the section.
+ *
+ *  Placement (rev 2026-05-17):
+ *    • Bar sits at `left-3` so it nuzzles up against the menu items
+ *      (which start at px-3 = 12 px from the wrapper edge) instead
+ *      of floating out at the wrapper's outer edge. Reads as an
+ *      anchor on the items, not on the sidebar wall.
+ *    • Bar starts at `top-7` (28 px) so it begins BELOW the
+ *      AdminSubheading (pt-3 + 10 px text + pb-1 ≈ 26 px). Previously
+ *      `top-2` had the bar crashing through the section title. */
 function AdminSubgroup({ tone, children }: { tone: string; children: React.ReactNode }) {
   return (
-    <div className="relative pl-2 mt-1 first:mt-0">
+    <div className="relative mt-1 first:mt-0">
       <span
         aria-hidden
-        className="absolute left-0 top-2 bottom-1 w-px rounded-full"
+        className="absolute left-3 top-7 bottom-1 w-px rounded-full"
         style={{ background: tone }}
       />
       {children}
