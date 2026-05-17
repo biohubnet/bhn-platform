@@ -36,7 +36,7 @@ export function CourseCard({ course, role }: CourseCardProps) {
     <Link
       href={`/courses/${course.id}`}
       className={cn(
-        "bg-card backdrop-blur-md rounded-[var(--radius-lg)] border transition-all overflow-hidden group flex flex-col shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_16px_40px_rgba(15,23,42,0.10)] hover:-translate-y-0.5",
+        "bg-card backdrop-blur-md rounded-[var(--radius-lg)] border transition-all overflow-hidden group flex flex-col flex-1 h-full shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_16px_40px_rgba(15,23,42,0.10)] hover:-translate-y-0.5",
         isArchived ? "border-line opacity-75 hover:opacity-100" : "border-line hover:border-brand-300",
       )}
     >

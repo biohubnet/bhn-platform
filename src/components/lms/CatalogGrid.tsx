@@ -171,7 +171,7 @@ export function CatalogGrid({
           return (
             <div
               key={c.id}
-              className={`relative group transition-all ${
+              className={`relative group transition-all h-full flex flex-col ${
                 isDragging ? "opacity-40" : ""
               } ${
                 isDropTarget ? "ring-2 ring-brand-400 ring-offset-2 ring-offset-bg rounded-[var(--radius-lg)]" : ""
