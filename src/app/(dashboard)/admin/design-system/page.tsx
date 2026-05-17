@@ -7,6 +7,7 @@ import {
 import { requireRole } from "@/lib/auth";
 import { getActiveDesignSystem } from "@/lib/settings";
 import { DesignSystemAdminPicker } from "@/components/admin/DesignSystemAdminPicker";
+import { DesignSystemShowroom } from "@/components/admin/DesignSystemShowroom";
 
 /**
  * /admin/design-system — live mirror of docs/design-system.md.
@@ -104,9 +105,21 @@ export default async function AdminDesignSystemPage() {
           href="/admin/design-system/lab"
           className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-900"
         >
-          Open the Design-system Lab — showroom + composer →
+          Open the Design-system Lab — composer + token tweaker →
         </Link>
       </Section>
+
+      {/* ── 00b. Showroom — live previews ─────────────────────── */}
+      {/* The picker above is the *decision* surface; this is the
+          *evidence* surface. Same sample JSX rendered once per
+          registered DS so admins can see what they're picking
+          before they commit. New design systems auto-appear here
+          on the next deploy — driven entirely by DESIGN_SYSTEMS
+          in src/lib/design-system/registry.ts. */}
+      <DesignSystemShowroom
+        title="Live preview of every design system"
+        blurb="Each panel below renders the same DSPageHeader + DSStatGrid + DSSection content under one design system. Use this to compare hero treatment, density, and chrome before applying the picker above. The Lab page lets you tweak Studio tokens live."
+      />
 
       {/* ── 1. Surfaces ───────────────────────────────────────── */}
       <Section icon={Layers} title="Surfaces" eyebrow="01">

@@ -20,12 +20,9 @@
  *   save path in a follow-up commit.
  */
 import { useState } from "react";
-import { Copy, Download, RotateCcw, Sparkles } from "lucide-react";
+import { Copy, Download, RotateCcw } from "lucide-react";
 import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
-import { DSPageHeader } from "@/components/design-system/DSPageHeader";
-import { DSSection } from "@/components/design-system/DSSection";
-import { DSStatGrid, DSStat } from "@/components/design-system/DSStatGrid";
-import { DESIGN_SYSTEMS, type DesignSystemId } from "@/lib/design-system/registry";
+import { DesignSystemShowroom, DesignSystemSamplePrimitives } from "@/components/admin/DesignSystemShowroom";
 
 /** Default Studio token values — mirrors what the daylight-theme
  *  `--hero-*` CSS variables resolve to. The composer starts from
@@ -60,94 +57,8 @@ function tokenStyleVars(tokens: StudioTokens): React.CSSProperties {
 export function DesignSystemLab() {
   return (
     <div className="space-y-8">
-      <Showroom />
+      <DesignSystemShowroom />
       <Composer />
-    </div>
-  );
-}
-
-function Showroom() {
-  return (
-    <section className="rounded-2xl border border-line bg-card p-6 surface-shadow">
-      <header className="mb-5">
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Showroom</p>
-        <h2 className="text-lg font-bold text-fg tracking-tight mt-1">Same content, every design system</h2>
-        <p className="text-sm text-muted mt-2 leading-relaxed max-w-2xl">
-          The exact same DS-primitive JSX is rendered three times here, once per design system. Use this to spot the
-          differences in layout vocabulary, density, and hero treatment.
-        </p>
-      </header>
-
-      <div className="space-y-8">
-        {DESIGN_SYSTEMS.map((ds) => (
-          <ShowroomPanel key={ds.id} id={ds.id} name={ds.name} description={ds.description} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ShowroomPanel({ id, name, description }: { id: DesignSystemId; name: string; description: string }) {
-  return (
-    <div className="space-y-3">
-      <header className="flex items-center gap-3 flex-wrap">
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle bg-elevated rounded px-2 py-1 inline-flex items-center gap-1.5">
-          {name}
-          <code className="font-mono text-[9px] text-fg">{id}</code>
-        </p>
-        <p className="text-[11px] text-muted max-w-prose">{description}</p>
-      </header>
-      <div className="rounded-2xl ring-1 ring-line bg-bg overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 py-8 pt-8 pb-8 dashboard-layout">
-          <DesignSystemProvider value={id}>
-            <SamplePrimitives />
-          </DesignSystemProvider>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SamplePrimitives() {
-  return (
-    <div className="space-y-6">
-      <DSPageHeader
-        eyebrow="Admin · sample content"
-        title="Hi, Sandra at Aurum Bio."
-        description={
-          <>This is the same page header rendered across every design system. Use the surrounding chrome of each panel to compare vocabulary.</>
-        }
-        icon={<Sparkles size={20} />}
-        aside={
-          <DSStatGrid>
-            <DSStat label="Active postings" value={4}    help="↑ 2 vs last week" tone="brand"   />
-            <DSStat label="Applicants"       value={28}   help="3 new this week" tone="violet"  />
-            <DSStat label="New this week"    value={3}    help=""                tone="emerald" />
-            <DSStat label="Profile"          value="92%"  help="2 fields left"   tone="amber"   />
-          </DSStatGrid>
-        }
-      />
-
-      <DSSection eyebrow="Latest" title="Recent applicants">
-        <ul className="space-y-2">
-          {[
-            { name: "Maya R.",  role: "Postdoc, formulation",     when: "2 d ago" },
-            { name: "Tariq A.", role: "Grad, downstream",         when: "5 d ago" },
-            { name: "Jin K.",   role: "Research associate, QA",    when: "1 wk ago" },
-          ].map((p) => (
-            <li key={p.name} className="rounded-xl bg-elevated/40 border border-line p-3 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold">
-                {p.name.split(" ").map((s) => s[0]).join("")}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-fg truncate">{p.name}</p>
-                <p className="text-[11px] text-muted truncate">{p.role}</p>
-              </div>
-              <span className="text-[11px] text-subtle">{p.when}</span>
-            </li>
-          ))}
-        </ul>
-      </DSSection>
     </div>
   );
 }
@@ -242,7 +153,7 @@ function Composer() {
         >
           <div className="max-w-7xl mx-auto px-6 py-8 dashboard-layout">
             <DesignSystemProvider value="studio">
-              <SamplePrimitives />
+              <DesignSystemSamplePrimitives />
             </DesignSystemProvider>
           </div>
         </div>
