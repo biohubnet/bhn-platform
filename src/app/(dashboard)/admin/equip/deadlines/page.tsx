@@ -101,10 +101,8 @@ export default async function AdminEquipDeadlinesPage() {
 
   return (
     <div className="space-y-5">
-      <Link href="/admin/equip" className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
-        <ArrowLeft size={12} /> Review queue
-      </Link>
-
+      {/* Back-link removed — the editorial hero owns the top of the
+          page; sidebar handles cross-page navigation. */}
       <PageHeader
         title={<span className="inline-flex items-center gap-2"><CalendarClock size={22} className="text-brand-600" /> Equip deadlines</span>}
         description="Funding windows for VentureConnect (monthly, $5K cap) and VentureLift (quarterly, $25K cap). The VentureLift round schedule below is the canonical published timeline — its pre-screening + full-application dates auto-sync into the deadlines table for the submit-gate. Use the New-deadline form for one-off VentureConnect windows and ad-hoc overrides."

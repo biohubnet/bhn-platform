@@ -952,32 +952,30 @@ export function Sidebar({
   // retired committee). Empty list → no COMMITTEES section rendered.
   const rawVisibleCommittees = COMMITTEES.filter((c) => committees.includes(c.slug));
 
-  // When the user is an admin AND a committee member (e.g. an admin
-  // who's also on the EQUIP Review committee), the committee
-  // sidebar items would otherwise duplicate routes the admin
-  // already sees under Administration → EQUIP. Build a set of
-  // admin hrefs the user can see and filter committee items by it
-  // — so the admin only sees each Equip route once, under
-  // Administration, while non-admin committee members keep their
-  // COMMITTEES shortcuts.
-  const adminHrefsForUser = new Set<string>(
-    isAdmin
-      ? [
-          adminOverview.href,
-          ...visibleEngageAdmin.map((i) => i.href),
-          ...visibleExperienceAdmin.map((i) => i.href),
-          ...visibleEquipAdmin.map((i) => i.href),
-          ...visibleInsightsAdmin.map((i) => i.href),
-          ...visiblePlatformAdmin.map((i) => i.href),
-          ...visibleSecurityAdmin.map((i) => i.href),
-          ...visibleSystemAdmin.map((i) => i.href),
-        ]
-      : [],
-  );
+  // COMMITTEES sidebar items pointing at admin routes (e.g. the
+  // EQUIP Review committee's shortcuts at /admin/equip/*) should
+  // never render in this section, regardless of who's viewing:
+  //   • Admins already see those routes under Administration → EQUIP,
+  //     so showing them again under COMMITTEES is a duplicate.
+  //   • Non-admins can't access admin routes anyway — surfacing a
+  //     link they'll 403 on is worse than hiding it.
+  // We build the deduplication set from EVERY admin item (not just
+  // the ones the current user can see), so the filter applies
+  // identically to admins and non-admins.
+  const allAdminHrefs = new Set<string>([
+    adminOverview.href,
+    ...adminEngageItems.map((i) => i.href),
+    ...adminExperienceItems.map((i) => i.href),
+    ...adminEquipItems.map((i) => i.href),
+    ...adminInsightsItems.map((i) => i.href),
+    ...adminPlatformItems.map((i) => i.href),
+    ...adminSecurityItems.map((i) => i.href),
+    ...adminSystemItems.map((i) => i.href),
+  ]);
   const visibleCommittees = rawVisibleCommittees
     .map((c) => ({
       ...c,
-      sidebarItems: c.sidebarItems.filter((s) => !adminHrefsForUser.has(s.href)),
+      sidebarItems: c.sidebarItems.filter((s) => !allAdminHrefs.has(s.href)),
     }))
     .filter((c) => c.sidebarItems.length > 0);
   // HR-view preview — surfaces the exact employer-portal nav (same

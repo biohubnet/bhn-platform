@@ -177,10 +177,9 @@ export default async function EquipOverviewPage() {
     // workspace surface, not a brand stage.
     <DesignSystemProvider value="cinematic">
       <div className="space-y-6">
-        <Link href="/admin/equip" className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
-          <ArrowLeft size={12} /> Review queue
-        </Link>
-
+        {/* Back-link removed — the editorial hero is the absolute top
+            of the page; the sidebar's EQUIP entry handles navigation
+            back to the review queue. */}
         <DSPageHeader
           eyebrow="Equip · program overview"
           title="How the funding pillar is doing"

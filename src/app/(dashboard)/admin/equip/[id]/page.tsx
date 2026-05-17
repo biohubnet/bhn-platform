@@ -77,10 +77,8 @@ export default async function AdminEquipReviewPage({
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <Link href="/admin/equip" className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
-        <ArrowLeft size={12} /> Review queue
-      </Link>
-
+      {/* Back-link removed — the editorial hero owns the top of the
+          page; sidebar handles cross-page navigation. */}
       <DSPageHeader
         eyebrow={`${stream.name} · ${status.label.toLowerCase()}`}
         title={`Review: ${app.user.name ?? app.user.email}`}

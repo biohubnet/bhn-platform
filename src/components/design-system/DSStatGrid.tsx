@@ -65,18 +65,22 @@ interface StatProps {
 }
 
 function gradientForTone(tone: StatTone): string {
+  // Cinematic DSStat sits inside the dark theme-driven hero — values
+  // need LIGHT gradients to read against the gradient stage. Each
+  // tone uses bright variants of its hue so the bg-clip:text values
+  // pop on every theme's hero.
   switch (tone) {
     case "violet":
-      return "linear-gradient(120deg, #8b5cf6 0%, #6366f1 100%)";
+      return "linear-gradient(120deg, #c4b5fd 0%, #ddd6fe 100%)";
     case "rose":
-      return "linear-gradient(120deg, #f43f5e 0%, #ec4899 100%)";
+      return "linear-gradient(120deg, #fda4af 0%, #fecdd3 100%)";
     case "emerald":
-      return "linear-gradient(120deg, #10b981 0%, #14b8a6 100%)";
+      return "linear-gradient(120deg, #6ee7b7 0%, #a7f3d0 100%)";
     case "amber":
-      return "linear-gradient(120deg, #f59e0b 0%, #d97706 100%)";
+      return "linear-gradient(120deg, #fcd34d 0%, #fde68a 100%)";
     case "brand":
     default:
-      return "linear-gradient(120deg, var(--brand-600) 0%, var(--brand-800) 100%)";
+      return "linear-gradient(120deg, #ffffff 0%, var(--brand-200, #bae6fd) 100%)";
   }
 }
 
@@ -116,12 +120,12 @@ export function DSStat({
     // used as the leftmost / rightmost stat.
     return (
       <div className="px-4 sm:px-6 py-3 first:pl-0 last:pr-0">
-        <div className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle inline-flex items-center gap-1.5">
+        <div className="text-[10px] uppercase tracking-[0.22em] font-bold text-white/85 inline-flex items-center gap-1.5">
           {icon}
           {label}
         </div>
         <p
-          className="text-3xl sm:text-4xl lg:text-5xl font-bold tabular-nums tracking-tight leading-none mt-2"
+          className="text-3xl sm:text-4xl lg:text-5xl font-black tabular-nums tracking-tight leading-none mt-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
           style={{
             backgroundImage: gradientForTone(tone),
             WebkitBackgroundClip: "text",
@@ -131,7 +135,7 @@ export function DSStat({
         >
           {formatted}
         </p>
-        {help && <p className="text-[10px] text-subtle mt-1.5">{help}</p>}
+        {help && <p className="text-[10px] text-white/70 mt-1.5">{help}</p>}
       </div>
     );
   }

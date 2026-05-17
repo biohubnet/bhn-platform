@@ -221,7 +221,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
             contrast under text on dark stages. */}
         <section
           aria-label="Page header"
-          className="relative max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 py-6 sm:py-8 lg:py-10 min-h-[10rem] sm:min-h-[11rem] lg:min-h-[12rem] flex flex-col justify-end"
+          className="relative max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 py-5 sm:py-6 lg:py-8 min-h-[7rem] sm:min-h-[8rem] lg:min-h-[9rem] flex flex-col justify-end"
         >
           <div className={`grid gap-6 sm:gap-8 items-end grid-cols-1 ${hasIcon ? "sm:grid-cols-[auto_1fr]" : ""}`}>
             {/* Icon disc — white tile with conic-gradient glow ring */}
