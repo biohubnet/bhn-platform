@@ -240,7 +240,7 @@ export default async function DashboardPage() {
         title={<>Hi, {firstName}.</>}
         description={(
           <>
-            <strong className="text-fg">BioHubNet</strong> wires Ontario biomanufacturing HQP from their first course to their first industry placement.{" "}
+            <strong className="text-fg">BioHubNet</strong> wires biomanufacturing HQP from their first course to their first industry placement.{" "}
             {inProgress > 0
               ? `${inProgress} in progress.`
               : completed > 0
