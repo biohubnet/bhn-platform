@@ -207,6 +207,8 @@ const adminEngageItems: NavItem[] = [
     description: "Every issued certificate. Revoke a credential or look it up by SHA hash." },
   { label: "Cover art",                 href: "/admin/cover-art",           icon: Sparkles,     minRole: "admin",
     description: "AI-rendered cover art and colour overlays for every course and pathway. Bulk regenerate topic-specific thumbnails or stamp a shared gradient treatment across a series." },
+  { label: "HQP Advisory committee",    href: "/admin/committees/hqp",      icon: Users2,       minRole: "admin",
+    description: "HQP Advisory Committee hub — applications, open-call windows, feedback rounds, meetings, and roster. ENGAGE-pillar committee that oversees trainee perspectives + course feedback." },
 ];
 
 // OPERATIONS — running the day-to-day platform: fulfillment + the
@@ -250,6 +252,8 @@ const adminEquipItems: NavItem[] = [
     description: "Review queue for the EQUIP funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
   { label: "EQUIP deadlines",      href: "/admin/equip/deadlines",     icon: ClipboardList, minRole: "admin",
     description: "Schedule + manage the funding-window deadlines for VentureConnect (monthly) and VentureLift (quarterly). List + calendar views. Open / close / extend any window. Late submissions are blocked automatically." },
+  { label: "EQUIP Review committee", href: "/admin/committees/equip-review", icon: Users2, minRole: "admin",
+    description: "Manage EQUIP Review Committee membership. Members get queue access without holding an admin role. Roster + a shortcut into the funding review queue." },
 ];
 
 // INSIGHTS — was DESIGN & RESEARCH. Expanded with the analytics
@@ -327,8 +331,11 @@ const adminPlatformItems: NavItem[] = [
   { label: "Role requests",       href: "/admin/role-requests",       icon: UserCog,     minRole: "admin",
     description: "Trainees asking to upgrade their role (e.g. evaluating → trainee). Review and approve.",
     badgeKey: "role-requests" },
-  { label: "Committees",          href: "/admin/committees",          icon: Users2,      minRole: "admin",
-    description: "Manage Equip Review + HQP committee membership. Members get a welcome-screen badge, a sidebar shortcut, and (for the Equip Review committee) access to the funding review queue without holding an admin role." },
+  // "Committees" used to live here as a single Platform entry that
+  // mixed HQP + EQUIP Review management. Split out into pillar-
+  // specific entries on user request — "HQP Advisory committee"
+  // now sits under ENGAGE admin, "EQUIP Review committee" sits
+  // under EQUIP admin, and the combined surface is gone.
   { label: "Announcements",       href: "/admin/announcements",       icon: Megaphone,   minRole: "admin",
     description: "Banner announcements shown across the platform. Schedule, target by role, set expiry." },
   { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,        minRole: "admin",
