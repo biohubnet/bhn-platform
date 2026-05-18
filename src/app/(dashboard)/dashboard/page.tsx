@@ -11,6 +11,7 @@ import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/To
 import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
 import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanner";
 import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
+import { LogoMark } from "@/components/ui/Logo";
 import { CreditUsageScoreboard } from "@/components/dashboards/CreditUsageScoreboard";
 import { RewardsDistanceCard } from "@/components/dashboards/RewardsDistanceCard";
 import { LatestNewsCard } from "@/components/dashboards/LatestNewsCard";
@@ -368,6 +369,40 @@ export default async function DashboardPage() {
       {/* Committee badge — recognition surface. Auto-hides for
           non-members. */}
       <CommitteeBadgeStrip userId={userId} />
+
+      {/* ── A NOTE FROM THE TEAM ────────────────────────────────────
+            Hand-set editorial blurb from the BHN founders to the
+            trainee, sitting just under the hero. Italic serif body
+            on a faint brand-tone wash, signed off with the four-
+            petal LogoMark + uppercase team attribution. Standard
+            section padding so it pairs with the rest of the page;
+            extra `max-w-2xl mx-auto` centres the body for an
+            editorial line-length that's comfortable to read. */}
+      <section
+        className="border-t border-line py-5 sm:py-7 px-5 sm:px-8 relative overflow-hidden"
+        style={{
+          backgroundImage:
+            "linear-gradient(120deg, rgba(56,189,248,0.045) 0%, rgba(99,102,241,0.03) 55%, rgba(244,114,182,0.045) 100%)",
+        }}
+      >
+        <div className="relative max-w-2xl mx-auto">
+          <SectionEyebrow tone="brand">A note from the team</SectionEyebrow>
+          <p className="mt-3 font-serif italic text-base sm:text-lg text-fg leading-relaxed">
+            Welcome, <span className="not-italic font-bold">{firstName}</span>. We hope
+            BHN does what we built it for — keeps the next move within reach. We hope you
+            find a course that surprises you, a placement that opens a door, a funding
+            round that gets your idea moving, and a few people whose company you&apos;d
+            keep beyond the platform.{" "}
+            <span className="not-italic font-bold">We&apos;re rooting for you.</span>
+          </p>
+          <div className="mt-4 flex items-center gap-2.5">
+            <LogoMark size={20} className="shrink-0" />
+            <span className="text-[10px] uppercase tracking-[0.28em] font-bold text-fg-muted">
+              — The BioHubNet team
+            </span>
+          </div>
+        </div>
+      </section>
 
       {/* ─── DASHBOARD SECTIONS ──────────────────────────────────────
           No outer panel, no rounded inner boxes. Each section is a

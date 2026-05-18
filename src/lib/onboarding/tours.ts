@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18h";
+export const TOUR_VERSION = "2026.05.18i";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -527,6 +527,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: "The four-pillar opportunities board no longer wears the navy banner + rounded panel chrome from the biohubnet.ca mimicry. Rebuilt to match the platform's flat-section + theme-token design system: standard SectionEyebrow header + gradient hairline, italic audience subtitle, hairline-divided columns, theme-aware item titles + descriptions, light status pills (bg-rose-50 / bg-sky-50 / bg-amber-50 with ring outlines) matching the platform's existing status-badge family. The section now sits rhythmically alongside For You / Reminders / Loot Vault — same wash pattern, same chrome — instead of barging in as a marketing-card outlier.",
     placement: "center",
     since: "2026.05.18h",
+  },
+  {
+    id: "dash-team-note",
+    title: "A note from the team — under the hero",
+    body: "There's a short editorial blurb from the BHN founders sitting just under the trainee hero now — italic serif body addressing you by name, with hopes for each pillar (a course that surprises, a placement that opens a door, a funding round that gets your idea moving, a few people whose company you'd keep beyond the platform). Closes with `We're rooting for you`. Designed flat and native to the DS — same section chrome as the rest of the page, with a four-petal LogoMark + uppercase tracked team attribution at the bottom.",
+    placement: "center",
+    since: "2026.05.18i",
   },
   {
     id: "aurora-theme",
