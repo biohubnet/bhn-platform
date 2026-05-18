@@ -364,96 +364,109 @@ export default async function DashboardPage() {
             its inner absolute children sit free in its bounding
             box. Same pattern as DSPageHeader's decoration wrapper. */}
         <div aria-hidden className="absolute inset-0 pointer-events-none">
-          {/* Extra blurred mesh accents amplify the "wash" feeling,
-              theme-aware via hero-mesh tokens. */}
-          <div
-            className="absolute -top-32 -left-24 w-[28rem] h-[28rem] rounded-full opacity-25 blur-3xl"
-            style={{ background: "var(--hero-mesh-1, rgba(56,189,248,0.6))" }}
-          />
-          <div
-            className="absolute -bottom-40 -right-20 w-[32rem] h-[32rem] rounded-full opacity-20 blur-3xl"
-            style={{ background: "var(--hero-mesh-2, rgba(244,114,182,0.6))" }}
-          />
-          {/* Faint constellation grid — depth without obvious noise. */}
-          <div
-            className="absolute inset-0 opacity-[0.18] mix-blend-overlay"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.35) 1px, transparent 0)",
-              backgroundSize: "28px 28px",
-            }}
-          />
+          {/* ── REEDED / FLUTED GLASS LAYER ──────────────────────────
+                Mesh blobs rendered as SVG ellipses, then sliced into
+                vertical bands by a `feTurbulence + feDisplacementMap`
+                filter — `baseFrequency` is heavily biased horizontal
+                (`2.6 0.004`) so the noise varies rapidly across X
+                but stays nearly constant down Y, producing vertical
+                "streaks" of displacement. With `scale=42`, each
+                vertical strip of the mesh is offset by a different
+                amount horizontally — exactly the way real reeded /
+                fluted glass refracts what's behind it.
 
-          {/* ── FRACTAL GLASS SHARDS ─────────────────────────────────
-                Three translucent angular panels that catch the
-                underlying mesh through `backdrop-filter: blur +
-                saturate` (glassmorphism), then layered with an
-                SVG `feTurbulence` fractal-noise filter inside each
-                for a "frosted glass" texture that reads richer than
-                a plain blur. Edges + inner highlights mimic glass
-                catching light. All sit in the decoration layer so
-                they sit behind the title content. Hidden below
-                `md` to keep mobile lean. */}
-          <svg width="0" height="0" className="absolute" aria-hidden>
+                Theme tokens (`--hero-mesh-1..4`) drive the ellipse
+                fills, so every theme picks up its own palette through
+                the same glass effect. */}
+          <svg
+            className="absolute inset-0 w-full h-full"
+            viewBox="0 0 1920 700"
+            preserveAspectRatio="xMidYMid slice"
+          >
             <defs>
-              <filter id="hero-glass-fractal-a" x="0" y="0" width="100%" height="100%">
-                <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="3" seed="7" />
-                <feColorMatrix type="matrix"
-                  values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1   0 0 0 0.55 0" />
-              </filter>
-              <filter id="hero-glass-fractal-b" x="0" y="0" width="100%" height="100%">
-                <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="11" />
-                <feColorMatrix type="matrix"
-                  values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1   0 0 0 0.55 0" />
+              <filter id="hero-reeded-glass" x="-10%" y="-10%" width="120%" height="120%">
+                <feTurbulence
+                  type="fractalNoise"
+                  baseFrequency="2.6 0.004"
+                  numOctaves="1"
+                  seed="4"
+                  stitchTiles="stitch"
+                  result="turbulence"
+                />
+                <feDisplacementMap
+                  in="SourceGraphic"
+                  in2="turbulence"
+                  scale="42"
+                  xChannelSelector="R"
+                  yChannelSelector="G"
+                />
               </filter>
             </defs>
+
+            {/* Theme-tinted mesh blobs, filtered through the reeded-
+                glass displacement so they appear as vertically banded
+                shadows behind the glass. */}
+            <g filter="url(#hero-reeded-glass)">
+              <ellipse cx="260" cy="180" rx="440" ry="280" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.55" />
+              <ellipse cx="1480" cy="540" rx="520" ry="320" fill="var(--hero-mesh-2, #f472b6)" opacity="0.45" />
+              <ellipse cx="1720" cy="120" rx="340" ry="220" fill="var(--hero-mesh-4, #facc15)" opacity="0.4" />
+              <ellipse cx="640" cy="620" rx="320" ry="220" fill="var(--hero-mesh-3, #4ade80)" opacity="0.35" />
+              <ellipse cx="1100" cy="380" rx="380" ry="260" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.25" />
+            </g>
           </svg>
 
-          {/* Shard 1 — large diagonal pane, mid-left, sits behind
-              the title block. Rotated −12° for a "leaning pane"
-              feel; backdrop-blur saturates the mesh behind. */}
+          {/* Vertical rib pattern — narrow alternating light + shadow
+              stripes on top of the displaced mesh, mimicking the
+              physical ridges of fluted glass catching light. The
+              ribs are 8 px apart at a normal viewport — visible
+              enough to read as glass, narrow enough to feel like
+              "glass texture" not "wallpaper". */}
           <div
-            className="hidden md:block absolute left-[3%] top-[38%] w-[28rem] h-[12rem] -rotate-[12deg] origin-center rounded-2xl border border-white/15 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_22px_60px_-14px_rgba(0,0,0,0.4)]"
+            className="absolute inset-0"
             style={{
-              background: "rgba(255,255,255,0.06)",
-              backdropFilter: "blur(22px) saturate(160%)",
-              WebkitBackdropFilter: "blur(22px) saturate(160%)",
+              backgroundImage: `
+                repeating-linear-gradient(
+                  90deg,
+                  rgba(255,255,255,0.08) 0px,
+                  rgba(255,255,255,0.08) 1px,
+                  rgba(255,255,255,0) 1px,
+                  rgba(255,255,255,0) 4px,
+                  rgba(0,0,0,0.08) 7px,
+                  rgba(0,0,0,0.08) 8px,
+                  rgba(0,0,0,0) 8px
+                )
+              `,
+              mixBlendMode: "soft-light",
             }}
-          >
-            <svg className="absolute inset-0 w-full h-full opacity-[0.28] mix-blend-overlay">
-              <rect width="100%" height="100%" filter="url(#hero-glass-fractal-a)" />
-            </svg>
-          </div>
+          />
 
-          {/* Shard 2 — small accent pane, upper-right corner, near
-              the LogoMark. Rotated +8° to lean opposite to Shard 1. */}
+          {/* A second much-fainter rib pattern at a finer scale to
+              add the "polished glass" micro-texture you see on
+              real fluted glass between the main grooves. */}
           <div
-            className="hidden md:block absolute right-[6%] top-[14%] w-[16rem] h-[8rem] rotate-[8deg] origin-center rounded-2xl border border-white/15 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_16px_44px_-12px_rgba(0,0,0,0.35)]"
+            className="absolute inset-0 opacity-60"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(18px) saturate(150%)",
-              WebkitBackdropFilter: "blur(18px) saturate(150%)",
+              backgroundImage: `
+                repeating-linear-gradient(
+                  90deg,
+                  rgba(255,255,255,0.04) 0px,
+                  rgba(255,255,255,0.04) 1px,
+                  rgba(255,255,255,0) 1px,
+                  rgba(255,255,255,0) 3px
+                )
+              `,
+              mixBlendMode: "overlay",
             }}
-          >
-            <svg className="absolute inset-0 w-full h-full opacity-[0.24] mix-blend-overlay">
-              <rect width="100%" height="100%" filter="url(#hero-glass-fractal-b)" />
-            </svg>
-          </div>
+          />
 
-          {/* Shard 3 — medium pane near the bottom, lower-right.
-              Anchors the lower edge of the hero composition. */}
+          {/* Subtle frost wash — the cool misty haze of fluted glass */}
           <div
-            className="hidden lg:block absolute right-[22%] bottom-[10%] w-[20rem] h-[9rem] -rotate-[6deg] origin-center rounded-2xl border border-white/12 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_18px_48px_-14px_rgba(0,0,0,0.32)]"
+            className="absolute inset-0"
             style={{
-              background: "rgba(255,255,255,0.045)",
-              backdropFilter: "blur(20px) saturate(160%)",
-              WebkitBackdropFilter: "blur(20px) saturate(160%)",
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%)",
             }}
-          >
-            <svg className="absolute inset-0 w-full h-full opacity-[0.22] mix-blend-overlay">
-              <rect width="100%" height="100%" filter="url(#hero-glass-fractal-a)" />
-            </svg>
-          </div>
+          />
         </div>
 
         {/* CONTENT — direct child of .hero-mesh-brand, which forces

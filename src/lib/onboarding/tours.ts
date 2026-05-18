@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18k";
+export const TOUR_VERSION = "2026.05.18l";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -548,6 +548,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Three angular glass panels are floating in the trainee hero's background now — translucent rounded shards that catch the underlying mesh through backdrop-blur + saturate (glassmorphism), with an SVG fractal-noise filter inside each at low opacity for a richer 'frosted' texture than a plain blur. Large diagonal pane mid-left (rotated −12°), small accent upper-right near the LogoMark (+8°), medium pane lower-right (−6°). Glass edges + inner highlights mimic real glass catching light. Hidden below md to keep mobile lean.",
     placement: "center",
     since: "2026.05.18k",
+  },
+  {
+    id: "dash-hero-reeded-glass",
+    title: "Hero — reeded / fluted glass (real refraction)",
+    body: "The hero now reads as one panel of theme-tinted reeded glass — vertical-rib texture across the whole background with the mesh blobs visibly sliced into vertical bands behind it. Built with SVG feTurbulence (horizontal-streaked noise) + feDisplacementMap (real per-vertical-band horizontal offset), so each rib actually refracts what's behind it the way real fluted glass does. Plus a pair of layered repeating-linear-gradients drawing the physical ridge highlights + a fine micro-texture between grooves. Theme-aware via the same --hero-mesh-1..4 tokens, so every theme paints its own palette through the same glass.",
+    placement: "center",
+    since: "2026.05.18l",
   },
   {
     id: "aurora-theme",
