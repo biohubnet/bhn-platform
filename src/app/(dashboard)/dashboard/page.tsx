@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Compass } from "lucide-react";
+import { ArrowRight, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
 import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
@@ -15,7 +15,6 @@ import { LogoMark } from "@/components/ui/Logo";
 import { CreditUsageScoreboard } from "@/components/dashboards/CreditUsageScoreboard";
 import { RewardsDistanceCard } from "@/components/dashboards/RewardsDistanceCard";
 import { LatestNewsCard } from "@/components/dashboards/LatestNewsCard";
-import { PageHero } from "@/components/ui/PageHero";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -126,7 +125,6 @@ export default async function DashboardPage() {
   // .length checks in the hero copy.
   const activeContinue = enrollments;
   const inProgress = enrollments.length;
-  const completed = 0; // No longer surfaced anywhere — keep symbol for the hero copy fallback path below.
 
   // Pending buddy invites (incoming) — surfaced as a top banner
   const pendingBuddyInvites = await prisma.buddyPair.findMany({
@@ -327,44 +325,139 @@ export default async function DashboardPage() {
     pendingBuddyInvites.length > 0 ||
     (reviewQueue?.length ?? 0) > 0;
 
+  // ─── HERO COPY VARIANTS ────────────────────────────────────────
+  // Slightly different state-aware lead lines so a returning
+  // trainee, a brand-new trainee, and a finished-some trainee each
+  // get a fitted sentence under their name instead of one generic
+  // line trying to cover every state.
+  const heroLead =
+    inProgress > 0
+      ? `${inProgress} course${inProgress === 1 ? "" : "s"} in flight. Today's the day to make a stitch.`
+      : completedCourseCount > 0
+        ? `${completedCourseCount} course${completedCourseCount === 1 ? "" : "s"} done. The path keeps unfolding.`
+        : "The path lives here. Pick one up.";
+
   return (
     <div>
-      {/* HERO — platform rule: editorial hero is the absolute top. */}
-      <PageHero
-        eyebrow={(
-          <>
-            <Sparkles size={11} />
-            {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-          </>
-        )}
-        title={<>Hi, {firstName}.</>}
-        description={(
-          <>
-            <strong className="text-fg">BioHubNet</strong> wires biomanufacturing HQP from their first course to their first industry placement.{" "}
-            {inProgress > 0
-              ? `${inProgress} in progress.`
-              : completed > 0
-                ? `${completed} completed so far.`
-                : "Start with a course, or skip ahead to the talent pool."}
-          </>
-        )}
-        actions={(
-          <>
-            <Link
-              href={inProgress > 0 ? "/my-courses" : "/courses"}
-              className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow-sm transition-colors"
-            >
-              {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={12} />
-            </Link>
-            <Link
-              href="/experience"
-              className="inline-flex items-center gap-1.5 bg-card hover:bg-elevated border border-line text-fg text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
-            >
-              <Compass size={12} /> How it works
-            </Link>
-          </>
-        )}
-      />
+      {/* HERO — bespoke editorial composition for the trainee
+            dashboard. Deeper, more designerly than the stock
+            PageHero/DSPageHeader: theme-aware `.hero-mesh-brand`
+            base for theme adaptation, layered with extra
+            blurred mesh blobs + a faint constellation grid for
+            depth, an editorial top rail (mono date + decorative
+            hairlines + four-petal mark), and a magazine-style
+            title block that mixes a small italic-serif greeting
+            with a huge italic-serif name set on the cinematic
+            gradient. Optional right-column stats stack on lg+
+            adds quantitative presence. Bottom scrim from
+            .hero-mesh-brand provides contrast under the body
+            copy on every theme. */}
+      <section className="relative overflow-hidden hero-mesh-brand">
+        {/* Extra blurred mesh accents — beyond what
+            .hero-mesh-brand draws — give the panel more atmospheric
+            depth. Theme-aware via mesh tokens, but the radii +
+            opacities here amplify the "wash" feeling. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-32 -left-24 w-[28rem] h-[28rem] rounded-full opacity-25 blur-3xl"
+          style={{ background: "var(--hero-mesh-1, rgba(56,189,248,0.6))" }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-40 -right-20 w-[32rem] h-[32rem] rounded-full opacity-20 blur-3xl"
+          style={{ background: "var(--hero-mesh-2, rgba(244,114,182,0.6))" }}
+        />
+
+        {/* Faint constellation grid — gives "depth" without screaming.
+            Single repeating dot pattern at very low opacity, mix-blend-
+            overlay so it interacts with the underlying mesh instead of
+            sitting on top as obvious noise. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.18] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.35) 1px, transparent 0)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+
+        <div className="relative px-5 sm:px-8 lg:px-12 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 lg:pb-24 max-w-6xl mx-auto">
+          {/* Top rail — left: small "DASHBOARD · weekday, date"
+              in mono, then a decorative hairline runner, right:
+              the four-petal mark. Editorial / brand mark detail. */}
+          <div className="flex items-center gap-4 mb-10 sm:mb-12">
+            <span className="text-[10px] uppercase tracking-[0.32em] font-bold text-white/60 font-mono whitespace-nowrap">
+              Dashboard · {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+            </span>
+            <span aria-hidden className="flex-1 h-px bg-gradient-to-r from-white/25 via-white/10 to-transparent" />
+            <LogoMark size={22} className="shrink-0 opacity-85 drop-shadow-[0_2px_12px_rgba(56,189,248,0.45)]" />
+          </div>
+
+          {/* Title block — two-column on lg (title left, stats
+              right), single column otherwise. Italic-serif "Welcome
+              back," + giant italic-serif name in the cinematic
+              gradient. Pulls every theme's accent into the title
+              treatment. */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 items-end">
+            <div className="min-w-0">
+              <p className="text-sm sm:text-base font-serif italic text-white/70 leading-none">
+                Welcome back,
+              </p>
+              <h1
+                className="mt-2 sm:mt-3 font-serif italic text-6xl sm:text-7xl lg:text-8xl leading-[0.92] tracking-tight"
+                style={{
+                  backgroundImage: "var(--hero-title-gradient, linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.85) 55%, var(--brand-600, #1d4f8b) 100%))",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  // Solid colour fallback in case the gradient doesn't
+                  // paint (older browsers, SSR pre-paint).
+                  color: "#ffffff",
+                }}
+              >
+                {firstName}.
+              </h1>
+
+              {/* Mid-rule + lead sentence */}
+              <div className="mt-7 max-w-xl">
+                <span aria-hidden className="block h-px w-12 bg-white/30 mb-4" />
+                <p className="text-base sm:text-lg text-white/85 leading-relaxed">
+                  {heroLead}
+                </p>
+              </div>
+
+              {/* Actions — primary brand pill + ghost secondary */}
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  href={inProgress > 0 ? "/my-courses" : "/courses"}
+                  className="inline-flex items-center gap-1.5 bg-white text-slate-900 hover:bg-white/90 font-bold text-xs px-4 py-2.5 rounded-full shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                >
+                  {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={13} />
+                </Link>
+                <Link
+                  href="/experience"
+                  className="inline-flex items-center gap-1.5 bg-white/8 hover:bg-white/14 border border-white/25 text-white text-xs font-semibold px-4 py-2.5 rounded-full transition-colors backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                >
+                  <Compass size={13} /> How it works
+                </Link>
+              </div>
+            </div>
+
+            {/* Right-column stats stack — only on lg+. Hairline-
+                separated from the title block. Each row carries a
+                mono number + uppercase label, evoking a printer's
+                colophon or a designer's spec sheet. */}
+            <aside className="hidden lg:block self-stretch pl-10 border-l border-white/15">
+              <div className="space-y-5">
+                <HeroStat label="In progress" value={inProgress.toLocaleString()} />
+                <HeroStat label="Credits" value={(user?.credits ?? 0).toLocaleString()} />
+                <HeroStat label="Certificates" value={certsCount.toLocaleString()} />
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
 
       {/* Committee badge — recognition surface. Auto-hides for
           non-members. */}
@@ -694,6 +787,23 @@ export default async function DashboardPage() {
       </section>
 
       <ExploreLinks credits={user?.credits ?? 0} />
+    </div>
+  );
+}
+
+/** HeroStat — right-column stat tile inside the trainee dashboard
+ *  hero. Big mono number on top, tiny uppercase tracked label
+ *  underneath. White-on-dark only — sits in the cinematic hero
+ *  where text is always white. */
+function HeroStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-3xl xl:text-4xl font-black font-mono tabular-nums leading-none text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
+        {value}
+      </p>
+      <p className="mt-1.5 text-[10px] uppercase tracking-[0.28em] font-bold text-white/65">
+        {label}
+      </p>
     </div>
   );
 }
