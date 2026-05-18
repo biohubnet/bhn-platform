@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18c";
+export const TOUR_VERSION = "2026.05.18d";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -492,6 +492,13 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     cta: { label: "Open /login in a new tab", href: "/login" },
     since: "2026.05.18c",
+  },
+  {
+    id: "dash-equip-deadlines-loot-vault-sakura",
+    title: "Dashboard — real EQUIP deadlines, playful Loot Vault, Sakura promo in the picker",
+    body: "Three updates to the trainee dashboard. (1) EQUIP pillar column now LISTS the next VC + VL funding windows (with extended pips) instead of a bare \"X windows open\" count — a planning surface, not just a pulse. (2) The Loot Vault at the bottom is back to its full playful style — rainbow gradient panel, floating gift/sparkle glyphs, big mono credits scoreboard with a frosted 3-stat row, glowing milestone bar with circular tier markers. Whole panel links into /rewards. (3) The Sakura promo card that used to sit on the dashboard has moved into the theme picker: open the palette (bottom-left of the sidebar) and a featured \"Try Sakura · X d left\" card sits at the very top of the dropdown for any active limited-time theme. Discovery is now beside the action.",
+    placement: "center",
+    since: "2026.05.18d",
   },
   {
     id: "aurora-theme",

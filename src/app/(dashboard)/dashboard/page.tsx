@@ -7,7 +7,6 @@ import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
 import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
 import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
-import { DailyThemeCard } from "@/components/ui/DailyThemeCard";
 import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
 import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
 import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanner";
@@ -190,7 +189,7 @@ export default async function DashboardPage() {
     openPostingsCount,
     savedPostingsCount,
     myEquipApps,
-    openEquipWindowsCount,
+    openEquipDeadlines,
   ] = await Promise.all([
     prisma.certificate.count({ where: { userId, revokedAt: null } }),
     prisma.enrollment.count({ where: { userId, status: "completed" } }),
@@ -207,8 +206,16 @@ export default async function DashboardPage() {
       take: 3,
       select: { id: true, stream: true, status: true, requestedAmount: true, approvedAmount: true },
     }),
-    prisma.equipDeadline.count({
+    // Upcoming VC / VL windows — render as a LIST in the EQUIP
+    // pillar column (replacing the older "X windows open" count).
+    // Capped at 4 so the column stays scannable on a busy cycle
+    // calendar; trainees can click through to /equip for the full
+    // schedule.
+    prisma.equipDeadline.findMany({
       where: { status: { in: ["open", "extended"] }, deadlineAt: { gte: now } },
+      orderBy: { deadlineAt: "asc" },
+      take: 4,
+      select: { id: true, stream: true, deadlineAt: true, status: true, cycleLabel: true },
     }),
   ]);
 
@@ -356,8 +363,7 @@ export default async function DashboardPage() {
           <PillarColumn
             tone="sky"
             eyebrow="Equip · Funding"
-            metric={openEquipWindowsCount.toLocaleString()}
-            metricLabel={openEquipWindowsCount === 1 ? "window open" : "windows open"}
+            metricSlot={<EquipDeadlinesList deadlines={openEquipDeadlines} />}
             stats={
               fundedEquipApp
                 ? [
@@ -501,12 +507,15 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* ── BOTTOM: LOOT VAULT + DAILY THEME ───────────────────────
-            Two narrow columns at the bottom of the page — the loot
-            vault (progress toward the next merch tier) and the
-            daily theme suggestion. Both are recognition / discovery
-            extras; pairing them keeps the page sequence ending on a
-            playful note without devoting a full band to either. */}
+      {/* ── BOTTOM: LOOT VAULT ─────────────────────────────────────
+            The Loot Vault wears its full playful chrome here —
+            rainbow gradient panel, floating gift glyphs, big credits
+            scoreboard, glowing milestone bar with tier markers —
+            mirroring the /rewards page style at dashboard scale.
+            Sits alone in the bottom band; the previous "Today's
+            theme" companion has migrated into the theme picker
+            itself as a limited-time featured promo, so theme
+            discovery lives where the action does. */}
       <section
         className="border-t border-line py-9 sm:py-12 px-5 sm:px-8"
         style={{
@@ -514,18 +523,10 @@ export default async function DashboardPage() {
             "linear-gradient(135deg, rgba(30,58,138,0.07) 0%, rgba(109,40,217,0.06) 40%, rgba(190,24,93,0.05) 75%, rgba(249,115,22,0.04) 100%)",
         }}
       >
-        <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8">
-          <div>
-            <SectionEyebrow tone="brand">Loot vault</SectionEyebrow>
-            <div className="mt-5">
-              <RewardsDistanceCard userId={userId} />
-            </div>
-          </div>
-          <div>
-            <SectionEyebrow tone="emerald">Today&apos;s theme</SectionEyebrow>
-            <div className="mt-5">
-              <DailyThemeCard />
-            </div>
+        <div className="max-w-4xl mx-auto">
+          <SectionEyebrow tone="brand">Loot vault</SectionEyebrow>
+          <div className="mt-5">
+            <RewardsDistanceCard userId={userId} />
           </div>
         </div>
       </section>
@@ -567,21 +568,29 @@ function SectionEyebrow({
 
 /** One pillar column inside the Pillar Trinity. Uniform structure
  *  across ENGAGE / EXPERIENCE / EQUIP so the trainee can scan all
- *  three pillars the same way: eyebrow → big metric → status lines
- *  → CTAs. Tone differentiates them visually (emerald / amber / sky)
- *  but the rhythm stays consistent. */
+ *  three pillars the same way: eyebrow → headline metric (or
+ *  custom slot) → status lines → CTAs. Tone differentiates them
+ *  visually (emerald / amber / sky) but the rhythm stays
+ *  consistent.
+ *
+ *  Either pass `metric` + `metricLabel` for the standard big-
+ *  number presentation, OR pass `metricSlot` to render something
+ *  bespoke in that real estate — the EQUIP column uses the slot
+ *  to list the next VC / VL deadlines instead of a bare count. */
 function PillarColumn({
   tone,
   eyebrow,
   metric,
   metricLabel,
+  metricSlot,
   stats,
   ctas,
 }: {
   tone: EyebrowTone;
   eyebrow: string;
-  metric: string;
-  metricLabel: string;
+  metric?: string;
+  metricLabel?: string;
+  metricSlot?: React.ReactNode;
   stats: string[];
   ctas: { label: string; href: string; muted?: boolean }[];
 }) {
@@ -608,18 +617,24 @@ function PillarColumn({
     <div className="px-5 sm:px-8 py-7 sm:py-9">
       <SectionEyebrow tone={tone}>{eyebrow}</SectionEyebrow>
 
-      <p
-        className="text-5xl font-black tabular-nums leading-none mt-4"
-        style={{
-          backgroundImage: metricGradient,
-          WebkitBackgroundClip: "text",
-          backgroundClip: "text",
-          color: "transparent",
-        }}
-      >
-        {metric}
-      </p>
-      <p className="text-xs text-fg-muted mt-1">{metricLabel}</p>
+      {metricSlot ? (
+        <div className="mt-4">{metricSlot}</div>
+      ) : (
+        <>
+          <p
+            className="text-5xl font-black tabular-nums leading-none mt-4"
+            style={{
+              backgroundImage: metricGradient,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            {metric}
+          </p>
+          <p className="text-xs text-fg-muted mt-1">{metricLabel}</p>
+        </>
+      )}
 
       <ul className="mt-5 space-y-1.5 text-sm text-fg-muted leading-snug">
         {stats.map((s, i) => (
@@ -644,6 +659,78 @@ function PillarColumn({
           </Link>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** EquipDeadlinesList — replaces the bare "X windows open" count
+ *  in the EQUIP pillar column with the actual upcoming VC + VL
+ *  funding windows. Each row carries a colour-dot stream tag, the
+ *  deadline date, and an "Extended" pip when the admin shifted
+ *  the window post-creation. Empty state stays useful: it says
+ *  what's coming rather than "0 windows". */
+function EquipDeadlinesList({
+  deadlines,
+}: {
+  deadlines: Array<{
+    id: string;
+    stream: string;
+    deadlineAt: Date;
+    status: string;
+    cycleLabel: string | null;
+  }>;
+}) {
+  if (deadlines.length === 0) {
+    return (
+      <div className="space-y-1">
+        <p className="text-2xl font-black text-fg tabular-nums leading-none">—</p>
+        <p className="text-xs text-fg-muted leading-snug">
+          No open funding windows right now. New VC + VL cycles drop most months.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted mb-2">
+        Next funding windows
+      </p>
+      <ul className="divide-y divide-line border-y border-line">
+        {deadlines.map((d) => {
+          const isVL = d.stream === "venture_lift";
+          const date = new Date(d.deadlineAt).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+          return (
+            <li key={d.id} className="flex items-baseline gap-3 py-2 text-sm">
+              <span
+                className={
+                  "inline-flex items-center gap-1.5 font-black tabular-nums w-9 " +
+                  (isVL ? "text-indigo-700" : "text-sky-700")
+                }
+              >
+                <span
+                  aria-hidden
+                  className={
+                    "inline-block w-1.5 h-1.5 rounded-full " +
+                    (isVL ? "bg-indigo-500" : "bg-sky-500")
+                  }
+                />
+                {isVL ? "VL" : "VC"}
+              </span>
+              <span className="text-fg font-semibold tabular-nums flex-1">{date}</span>
+              {d.status === "extended" && (
+                <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-amber-700">
+                  Extended
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

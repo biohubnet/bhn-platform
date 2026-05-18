@@ -138,11 +138,23 @@ function ThemeMenu({
     return out;
   }, []);
 
+  // Pick the FIRST limited-time theme the user hasn't already
+  // selected — that's the candidate for the featured "try this
+  // limited-time theme" promo at the top of the menu. (Currently
+  // Sakura through 31 May 2026.)
+  const featured = grouped.limited.find((t) => t.id !== theme) ?? null;
+
   // Categories rendered in this fixed order.
   const order: ThemeCategory[] = ["classic", "flavour", "limited"];
 
   return (
-    <div className="absolute bottom-full left-0 right-0 mb-2 popover p-1.5 z-30 min-w-[260px] max-h-[70vh] overflow-y-auto animate-fade-in">
+    <div className="absolute bottom-full left-0 right-0 mb-2 popover p-1.5 z-30 min-w-[280px] max-h-[70vh] overflow-y-auto animate-fade-in">
+      {featured && (
+        <FeaturedLimitedPromo
+          theme={featured}
+          onPick={onPick}
+        />
+      )}
       {order.map((cat) => {
         const items = grouped[cat];
         if (items.length === 0) return null;
@@ -222,6 +234,104 @@ function ThemeMenu({
           <span className="flex-1">Vote on themes &amp; suggest a new one</span>
           <ArrowRight size={12} className="text-subtle shrink-0" />
         </Link>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Featured promo card at the top of the picker dropdown for the
+ * current limited-time theme. Replaces the dashboard's old
+ * DailyThemeCard — discovery happens where the action does, so a
+ * trainee who opens the palette sees the "try Sakura" CTA front-
+ * and-centre instead of scrolling past it into the Limited
+ * section. The card carries its own theme-coloured wash so it
+ * pops on every base palette.
+ */
+function FeaturedLimitedPromo({
+  theme: t,
+  onPick,
+}: {
+  theme: typeof THEMES[number];
+  onPick: (id: ThemeId) => void;
+}) {
+  const [card, accent, fg] = SWATCH[t.id];
+  const endsOn = "endsOn" in t && t.endsOn ? t.endsOn : null;
+
+  // "X days left" countdown — computed client-side from today's
+  // calendar date so it stays accurate without a server round-trip.
+  // Only renders inside the Try button (never as the headline copy)
+  // so a stale value never becomes the focal text.
+  let daysLeft: number | null = null;
+  if (endsOn) {
+    const end = new Date(endsOn + "T23:59:59").getTime();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffMs = end - today.getTime();
+    daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  }
+
+  return (
+    <div
+      className="relative mb-2 overflow-hidden rounded-2xl ring-1 ring-rose-200 bg-card"
+      role="region"
+      aria-label={`Featured limited-time theme: ${t.name}`}
+    >
+      {/* Theme-coloured corner washes — pop the card on any base */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-50"
+        style={{ background: accent }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-10 -left-10 w-28 h-28 rounded-full blur-2xl opacity-30"
+        style={{ background: fg }}
+      />
+
+      <div className="relative p-3.5">
+        <div className="flex items-start gap-3">
+          {/* Bigger swatch — the visual hero of the card */}
+          <span
+            className="relative shrink-0 inline-block overflow-hidden border border-line shadow-sm"
+            style={{
+              width: 52, height: 52,
+              background: card,
+              borderRadius: SWATCH_RADIUS[t.id],
+            }}
+            aria-hidden
+          >
+            <span className="absolute inset-y-0 left-0" style={{ width: "45%", background: accent }} />
+            <span className="absolute right-2 top-2 w-2 h-2 rounded-full" style={{ background: fg }} />
+          </span>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase tracking-[0.22em] font-black text-rose-600 inline-flex items-center gap-1">
+              <Sparkles size={10} />
+              Limited time
+            </p>
+            <h3 className="text-sm font-bold text-fg leading-tight mt-0.5">
+              Try {t.name}
+            </h3>
+            <p className="text-[11px] text-muted leading-snug mt-0.5 line-clamp-2">
+              {t.description}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onPick(t.id)}
+          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition-colors"
+        >
+          <Sparkles size={11} />
+          <span>Try {t.name}</span>
+          {daysLeft != null && (
+            <span className="font-mono font-normal opacity-80">
+              · {daysLeft === 0 ? "last day" : `${daysLeft}d left`}
+            </span>
+          )}
+        </button>
       </div>
     </div>
   );
