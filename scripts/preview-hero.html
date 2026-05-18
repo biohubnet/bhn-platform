@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BHN — Trainee Hero Preview (reeded glass)</title>
+  <style>
+    /* Standalone preview — no framework, just the EXACT same layers
+       the React hero composes, so you can see what should be rendering
+       on /dashboard. Open this file directly in a browser. */
+    :root {
+      --hero-bg: #0d3a51;
+      --hero-mesh-1: #0891b2;   /* teal */
+      --hero-mesh-2: #f472b6;   /* pink */
+      --hero-mesh-3: #4ade80;   /* green */
+      --hero-mesh-4: #facc15;   /* yellow */
+      --hero-fg: #ffffff;
+      --hero-title-gradient: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.85) 55%, #bae6fd 100%);
+    }
+    /* Theme switcher — flip these via the buttons below */
+    body[data-theme="greenwood"] {
+      --hero-bg: #1d3318;
+      --hero-mesh-1: #4f6b48; --hero-mesh-2: #7d6432; --hero-mesh-3: #c6a449; --hero-mesh-4: #fff7e0;
+    }
+    body[data-theme="sakura"] {
+      --hero-bg: #5a1e2c;
+      --hero-mesh-1: #d04c61; --hero-mesh-2: #f0a3ad; --hero-mesh-3: #fff6f3; --hero-mesh-4: #c4798b;
+    }
+    body[data-theme="aurora"] {
+      --hero-bg: #0b0f24;
+      --hero-mesh-1: #56bdf8; --hero-mesh-2: #f472b6; --hero-mesh-3: #4ade80; --hero-mesh-4: #facc15;
+    }
+    body[data-theme="atompunk"] {
+      --hero-bg: #0e1a3a;
+      --hero-mesh-1: #1a8a8a; --hero-mesh-2: #e85a3c; --hero-mesh-3: #f5c81f; --hero-mesh-4: #ffffff;
+    }
+    body[data-theme="hitech"] {
+      --hero-bg: #001017;
+      --hero-mesh-1: #00d4ff; --hero-mesh-2: #56e8e8; --hero-mesh-3: #5ef0c9; --hero-mesh-4: #e3f7ff;
+    }
+    body[data-theme="icecream"] {
+      --hero-bg: #ffb1c1;
+      --hero-mesh-1: #c5234a; --hero-mesh-2: #b8e0d2; --hero-mesh-3: #fff8f3; --hero-mesh-4: #f7c59f;
+      --hero-fg: #3d2a3b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #ddd;
+      padding: 0;
+    }
+    .controls {
+      position: sticky; top: 0; z-index: 10;
+      background: #111;
+      border-bottom: 1px solid #222;
+      padding: 12px 20px;
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    }
+    .controls strong { color: #fff; margin-right: 8px; font-size: 13px; }
+    .controls button {
+      background: #1a1a1a; color: #ccc; border: 1px solid #333;
+      padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;
+      font-family: inherit;
+    }
+    .controls button:hover { background: #222; color: #fff; }
+    .controls button.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background: var(--hero-bg);
+      color: var(--hero-fg);
+      width: 100%;
+      min-height: 520px;
+    }
+    .hero-deco {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .layer { position: absolute; inset: 0; }
+
+    /* (1) Base wash */
+    .l-base {
+      background:
+        radial-gradient(ellipse 40% 35% at 50% 18%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 45%, transparent 75%),
+        linear-gradient(180deg,
+          color-mix(in srgb, var(--hero-mesh-1) 22%, var(--hero-bg)) 0%,
+          color-mix(in srgb, var(--hero-mesh-3) 14%, var(--hero-bg)) 100%
+        );
+    }
+
+    /* (3) Reeded ridge highlights — primary stripe */
+    .l-ridges {
+      mix-blend-mode: overlay;
+      background-image: repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0.16) 0px,
+        rgba(255,255,255,0.16) 1.5px,
+        transparent 1.5px,
+        transparent 5px,
+        rgba(0,0,0,0.18) 6px,
+        rgba(0,0,0,0.18) 7.5px,
+        transparent 7.5px,
+        transparent 9px
+      );
+    }
+    /* Finer 3 px micro-texture */
+    .l-microridges {
+      mix-blend-mode: soft-light;
+      opacity: 0.55;
+      background-image: repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0.06) 0px,
+        rgba(255,255,255,0.06) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+    }
+
+    /* (4) Frost wash */
+    .l-frost {
+      background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 100%);
+    }
+    /* (5) Edge vignette */
+    .l-vignette {
+      background: radial-gradient(ellipse 115% 130% at 50% 50%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.28) 100%);
+    }
+
+    /* Content layer */
+    .hero-content {
+      position: relative;
+      max-width: 1536px;
+      margin: 0 auto;
+      padding: 56px 48px 80px;
+    }
+    .toprail { display: flex; align-items: center; gap: 16px; margin-bottom: 44px; }
+    .toprail .mast {
+      font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase;
+      font-weight: 700; color: rgba(255,255,255,0.6);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: nowrap;
+    }
+    .toprail .rail {
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.25), rgba(255,255,255,0.10), transparent);
+    }
+    .title-block .welcome {
+      font-family: ui-serif, Georgia, serif; font-style: italic;
+      font-size: 16px; color: rgba(255,255,255,0.7); margin: 0;
+    }
+    .title-block h1 {
+      font-family: ui-serif, Georgia, serif; font-style: italic;
+      font-size: clamp(56px, 8vw, 112px); line-height: 0.92;
+      letter-spacing: -0.02em; margin: 6px 0 0;
+      background-image: var(--hero-title-gradient);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: #fff;
+    }
+    .title-block .hair {
+      display: block; height: 1px; width: 48px;
+      background: rgba(255,255,255,0.3); margin: 26px 0 16px;
+    }
+    .title-block .lead { font-size: 17px; color: rgba(255,255,255,0.85); max-width: 36em; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 700; padding: 10px 16px;
+      border-radius: 999px; text-decoration: none; cursor: pointer;
+      transition: transform 0.12s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-white { background: #fff; color: #0f172a; }
+    .btn-ghost {
+      background: rgba(255,255,255,0.08); color: #fff;
+      border: 1px solid rgba(255,255,255,0.25);
+      backdrop-filter: blur(4px);
+    }
+
+    .preview-info {
+      max-width: 800px; margin: 24px auto; padding: 16px 20px;
+      background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+      font-size: 14px; line-height: 1.5; color: #aaa;
+    }
+    .preview-info h3 { color: #fff; margin: 0 0 8px; font-size: 14px; }
+    .preview-info ul { margin: 8px 0 0; padding-left: 20px; }
+    .preview-info code { background: #0a0a0a; padding: 2px 5px; border-radius: 3px; color: #fbbf24; font-size: 12px; }
+  </style>
+</head>
+<body data-theme="light">
+  <div class="controls">
+    <strong>Theme:</strong>
+    <button data-t="light" class="active">Light</button>
+    <button data-t="greenwood">Greenwood</button>
+    <button data-t="sakura">Sakura</button>
+    <button data-t="aurora">Aurora</button>
+    <button data-t="atompunk">Atom Punk</button>
+    <button data-t="hitech">Hitech</button>
+    <button data-t="icecream">Icecream</button>
+  </div>
+
+  <section class="hero">
+    <div class="hero-deco">
+      <!-- (1) Base wash -->
+      <div class="layer l-base"></div>
+
+      <!-- (2) Art layer + reeded glass displacement.
+           This is the EXACT same SVG layout the React component
+           renders. If you don't see fronds on the live site,
+           the displacement filter is doing its job (and feedback
+           below confirms it works in this isolated preview). -->
+      <svg class="layer" viewBox="0 0 1920 700" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <filter id="hero-art-blur" x="-10%" y="-10%" width="120%" height="120%">
+            <feGaussianBlur stdDeviation="9" />
+          </filter>
+          <filter id="hero-reeded-displace" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="3 0.005"
+              numOctaves="1"
+              seed="9"
+              stitchTiles="stitch"
+              result="turbulence" />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="turbulence"
+              scale="60"
+              xChannelSelector="R"
+              yChannelSelector="G" />
+          </filter>
+        </defs>
+        <g filter="url(#hero-reeded-displace)">
+          <g filter="url(#hero-art-blur)" opacity="0.85">
+            <!-- Atmospheric blobs -->
+            <ellipse cx="350" cy="200" rx="500" ry="320" fill="var(--hero-mesh-1)" opacity="0.45" />
+            <ellipse cx="1500" cy="420" rx="560" ry="340" fill="var(--hero-mesh-3)" opacity="0.4" />
+            <ellipse cx="1750" cy="160" rx="320" ry="220" fill="var(--hero-mesh-4)" opacity="0.28" />
+            <ellipse cx="180" cy="560" rx="320" ry="220" fill="var(--hero-mesh-2)" opacity="0.22" />
+
+            <!-- Palm fronds — 5 of them, theme-coloured -->
+            <g transform="translate(450 380) rotate(-15)">
+              <ellipse cx="0" cy="0" rx="55" ry="260" fill="var(--hero-mesh-3)" opacity="0.65" />
+              <ellipse cx="0" cy="-90" rx="40" ry="200" transform="rotate(-22)" fill="var(--hero-mesh-3)" opacity="0.55" />
+              <ellipse cx="0" cy="-90" rx="40" ry="200" transform="rotate(22)" fill="var(--hero-mesh-3)" opacity="0.55" />
+              <ellipse cx="0" cy="-200" rx="28" ry="150" transform="rotate(-42)" fill="var(--hero-mesh-3)" opacity="0.45" />
+              <ellipse cx="0" cy="-200" rx="28" ry="150" transform="rotate(42)" fill="var(--hero-mesh-3)" opacity="0.45" />
+            </g>
+            <g transform="translate(1480 240) rotate(22)">
+              <ellipse cx="0" cy="0" rx="42" ry="200" fill="var(--hero-mesh-1)" opacity="0.55" />
+              <ellipse cx="0" cy="-70" rx="32" ry="160" transform="rotate(-25)" fill="var(--hero-mesh-1)" opacity="0.5" />
+              <ellipse cx="0" cy="-70" rx="32" ry="160" transform="rotate(25)" fill="var(--hero-mesh-1)" opacity="0.5" />
+              <ellipse cx="0" cy="-170" rx="22" ry="115" transform="rotate(-44)" fill="var(--hero-mesh-1)" opacity="0.4" />
+              <ellipse cx="0" cy="-170" rx="22" ry="115" transform="rotate(44)" fill="var(--hero-mesh-1)" opacity="0.4" />
+            </g>
+            <g transform="translate(1180 540) rotate(8)">
+              <ellipse cx="0" cy="0" rx="38" ry="180" fill="var(--hero-mesh-3)" opacity="0.5" />
+              <ellipse cx="0" cy="-60" rx="28" ry="140" transform="rotate(-22)" fill="var(--hero-mesh-3)" opacity="0.45" />
+              <ellipse cx="0" cy="-60" rx="28" ry="140" transform="rotate(22)" fill="var(--hero-mesh-3)" opacity="0.45" />
+            </g>
+            <g transform="translate(60 320) rotate(-32)">
+              <ellipse cx="0" cy="0" rx="32" ry="180" fill="var(--hero-mesh-3)" opacity="0.4" />
+              <ellipse cx="0" cy="-60" rx="22" ry="120" transform="rotate(-28)" fill="var(--hero-mesh-3)" opacity="0.35" />
+              <ellipse cx="0" cy="-60" rx="22" ry="120" transform="rotate(28)" fill="var(--hero-mesh-3)" opacity="0.35" />
+            </g>
+            <g transform="translate(900 280) rotate(-3)">
+              <ellipse cx="0" cy="0" rx="48" ry="240" fill="var(--hero-mesh-1)" opacity="0.32" />
+              <ellipse cx="0" cy="-80" rx="36" ry="180" transform="rotate(-20)" fill="var(--hero-mesh-1)" opacity="0.28" />
+              <ellipse cx="0" cy="-80" rx="36" ry="180" transform="rotate(20)" fill="var(--hero-mesh-1)" opacity="0.28" />
+            </g>
+            <!-- Warm accent -->
+            <ellipse cx="1620" cy="600" rx="120" ry="80" fill="var(--hero-mesh-4)" opacity="0.3" />
+          </g>
+        </g>
+      </svg>
+
+      <!-- (3) Reeded ridges -->
+      <div class="layer l-ridges"></div>
+      <div class="layer l-microridges"></div>
+      <!-- (4) Frost wash -->
+      <div class="layer l-frost"></div>
+      <!-- (5) Vignette -->
+      <div class="layer l-vignette"></div>
+    </div>
+
+    <div class="hero-content">
+      <div class="toprail">
+        <span class="mast" id="mastDate">Dashboard · Monday, May 18</span>
+        <span class="rail"></span>
+      </div>
+      <div class="title-block">
+        <p class="welcome">Welcome back,</p>
+        <h1>Ruilin.</h1>
+        <span class="hair"></span>
+        <p class="lead">1 course in flight. Today's the day to make a stitch.</p>
+        <div class="actions">
+          <a class="btn btn-white" href="#">Continue →</a>
+          <a class="btn btn-ghost" href="#">How it works</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="preview-info">
+    <h3>What you're looking at</h3>
+    <p>
+      This is a standalone preview of the trainee dashboard hero — the SAME
+      atmospheric layers the React component composes on the live site
+      (<code>/dashboard</code> at <code>bhn-training-platform.vercel.app</code>).
+      Open this file directly in any modern browser; cycle themes via the buttons up top.
+    </p>
+    <p>If you don't see the same effect on the live site, possible reasons:</p>
+    <ul>
+      <li>Browser cache — hard-refresh (<code>⌘⇧R</code> / <code>Ctrl⇧R</code>) on <code>/dashboard</code>.</li>
+      <li>Vercel deploy still in flight — check the deploy page; the latest commit needs to be live.</li>
+      <li>You're seeing an older trainee hero because you're not signed in as a trainee role.</li>
+      <li>Adblock / privacy extension blocking inline SVG <code>&lt;filter&gt;</code> nodes (rare; try a private window).</li>
+    </ul>
+    <p style="margin-top: 12px;">
+      Filed under: this file lives at <code>scripts/preview-hero.html</code>. Not deployed to Vercel.
+    </p>
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll('.controls button[data-t]');
+    buttons.forEach((b) => b.addEventListener('click', () => {
+      buttons.forEach((bb) => bb.classList.remove('active'));
+      b.classList.add('active');
+      const t = b.getAttribute('data-t');
+      document.body.dataset.theme = t === 'light' ? '' : t;
+    }));
+    // Live date string in the masthead, matching what the React hero shows
+    const today = new Date();
+    document.getElementById('mastDate').textContent =
+      'Dashboard · ' + today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  </script>
+</body>
+</html>

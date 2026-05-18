@@ -587,14 +587,14 @@ export default async function DashboardPage() {
             background spans full viewport edge-to-edge. */}
         <div className="max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 lg:pb-24">
           {/* Top rail — left: small "DASHBOARD · weekday, date"
-              in mono, then a decorative hairline runner, right:
-              the four-petal mark. Editorial / brand mark detail. */}
+              in mono, then a decorative hairline runner running
+              the rest of the way. The four-petal LogoMark that
+              used to live on the right is gone per user request. */}
           <div className="flex items-center gap-4 mb-10 sm:mb-12">
             <span className="text-[10px] uppercase tracking-[0.32em] font-bold text-white/60 font-mono whitespace-nowrap">
               Dashboard · {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
             </span>
             <span aria-hidden className="flex-1 h-px bg-gradient-to-r from-white/25 via-white/10 to-transparent" />
-            <LogoMark size={22} className="shrink-0 opacity-85 drop-shadow-[0_2px_12px_rgba(56,189,248,0.45)]" />
           </div>
 
           {/* Title block — two-column on lg (title left, stats
