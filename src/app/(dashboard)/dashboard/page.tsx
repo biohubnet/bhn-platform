@@ -353,40 +353,45 @@ export default async function DashboardPage() {
             .hero-mesh-brand provides contrast under the body
             copy on every theme. */}
       <section className="full-bleed relative overflow-hidden -mt-8 mb-2 hero-mesh-brand">
-        {/* Extra blurred mesh accents — beyond what
-            .hero-mesh-brand draws — give the panel more atmospheric
-            depth. Theme-aware via mesh tokens, but the radii +
-            opacities here amplify the "wash" feeling. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-32 -left-24 w-[28rem] h-[28rem] rounded-full opacity-25 blur-3xl"
-          style={{ background: "var(--hero-mesh-1, rgba(56,189,248,0.6))" }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-40 -right-20 w-[32rem] h-[32rem] rounded-full opacity-20 blur-3xl"
-          style={{ background: "var(--hero-mesh-2, rgba(244,114,182,0.6))" }}
-        />
+        {/* DECORATION LAYER — every decorative element is wrapped in
+            ONE absolutely-positioned container. This sidesteps the
+            `.hero-mesh-brand > * { position: relative }` rule in
+            globals.css (added so the cinematic mesh sits in the
+            stacking context). Without this wrapper, the blobs +
+            constellation grid would get forced into the layout
+            flow and balloon the hero to ~1500 px tall. Only the
+            wrapper itself is a direct child of .hero-mesh-brand;
+            its inner absolute children sit free in its bounding
+            box. Same pattern as DSPageHeader's decoration wrapper. */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none">
+          {/* Extra blurred mesh accents amplify the "wash" feeling,
+              theme-aware via hero-mesh tokens. */}
+          <div
+            className="absolute -top-32 -left-24 w-[28rem] h-[28rem] rounded-full opacity-25 blur-3xl"
+            style={{ background: "var(--hero-mesh-1, rgba(56,189,248,0.6))" }}
+          />
+          <div
+            className="absolute -bottom-40 -right-20 w-[32rem] h-[32rem] rounded-full opacity-20 blur-3xl"
+            style={{ background: "var(--hero-mesh-2, rgba(244,114,182,0.6))" }}
+          />
+          {/* Faint constellation grid — depth without obvious noise. */}
+          <div
+            className="absolute inset-0 opacity-[0.18] mix-blend-overlay"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.35) 1px, transparent 0)",
+              backgroundSize: "28px 28px",
+            }}
+          />
+        </div>
 
-        {/* Faint constellation grid — gives "depth" without screaming.
-            Single repeating dot pattern at very low opacity, mix-blend-
-            overlay so it interacts with the underlying mesh instead of
-            sitting on top as obvious noise. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.18] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.35) 1px, transparent 0)",
-            backgroundSize: "28px 28px",
-          }}
-        />
-
-        {/* Inner content uses the same `max-w-screen-2xl mx-auto px-6`
-            container as the rest of the dashboard so text + actions
-            line up with the body sections below, while the background
-            spans full viewport edge-to-edge. */}
-        <div className="relative max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 lg:pb-24">
+        {/* CONTENT — direct child of .hero-mesh-brand, which forces
+            position:relative (intentional here — content sits in
+            the natural flow). Uses the same `max-w-screen-2xl mx-auto
+            px-6` container as the rest of the dashboard so text +
+            actions line up with the body sections below, while the
+            background spans full viewport edge-to-edge. */}
+        <div className="max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 lg:pb-24">
           {/* Top rail — left: small "DASHBOARD · weekday, date"
               in mono, then a decorative hairline runner, right:
               the four-petal mark. Editorial / brand mark detail. */}
