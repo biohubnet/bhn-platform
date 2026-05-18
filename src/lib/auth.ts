@@ -259,21 +259,42 @@ export async function requireSession() {
 /**
  * Roles, ordered:
  *   trainee / evaluating → learner (0)        [legacy alias: 'user']
+ *   employer             → HR partner posting jobs (0, gated separately)
+ *   engage_hqp_advisor   → trainee-side HQP advisor seat (1)
+ *   equip_grant_reviewer → EQUIP grant review committee seat (1)
  *   instructor           → authors courses (1)
  *   admin                → manages users, audit, settings (2)
  *   superadmin           → admin + LTI, platform settings (3)
+ *
+ * The two specialised reviewer / advisor seats live at rank 1 — they
+ * sit alongside instructors in the staff tier. They're NOT auto-
+ * granted admin permissions; routes that gate on a specific role
+ * (e.g. /admin/equip) check the role explicitly, while routes that
+ * gate on a rank (e.g. requireRole("admin")) still treat them as
+ * non-admin staff. Use them to mark someone as "this is the
+ * committee seat for X" without granting platform-wide admin access.
  */
 export const ROLE_RANK: Record<string, number> = {
-  user: 0,        // legacy
+  user: 0,                  // legacy
   trainee: 0,
   evaluating: 0,
-  employer: 0,    // outside the learner-staff progression — gated separately
+  employer: 0,              // outside the learner-staff progression — gated separately
+  engage_hqp_advisor: 1,    // ENGAGE HQP Advisory committee seat
+  equip_grant_reviewer: 1,  // EQUIP Grant Review committee seat
   instructor: 1,
   admin: 2,
   superadmin: 3,
 };
 
-export type Role = "trainee" | "evaluating" | "employer" | "instructor" | "admin" | "superadmin";
+export type Role =
+  | "trainee"
+  | "evaluating"
+  | "employer"
+  | "engage_hqp_advisor"
+  | "equip_grant_reviewer"
+  | "instructor"
+  | "admin"
+  | "superadmin";
 
 /** Is this account an employer (HR partner who posts jobs / reviews applicants)? */
 export function isEmployer(role: string) {

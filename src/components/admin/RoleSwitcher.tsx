@@ -5,11 +5,13 @@ import { Eye, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TARGETS: { id: string; label: string; description: string }[] = [
-  { id: "trainee",    label: "Trainee",     description: "Default learner experience" },
-  { id: "evaluating", label: "Evaluating",  description: "Trial-tier learner" },
-  { id: "employer",   label: "Employer HR", description: "Industry partner posting jobs" },
-  { id: "instructor", label: "Instructor",  description: "Course author tools" },
-  { id: "admin",      label: "Admin",       description: "Full admin minus superadmin" },
+  { id: "trainee",              label: "Trainee",              description: "Default learner experience" },
+  { id: "evaluating",           label: "Evaluating",           description: "Trial-tier learner" },
+  { id: "employer",             label: "Employer HR",          description: "Industry partner posting jobs" },
+  { id: "engage_hqp_advisor",   label: "ENGAGE HQP Advisor",   description: "Trainee-side HQP advisor seat (ENGAGE pillar)" },
+  { id: "equip_grant_reviewer", label: "EQUIP Grant Reviewer", description: "EQUIP Grant Review committee seat" },
+  { id: "instructor",           label: "Instructor",           description: "Course author tools" },
+  { id: "admin",                label: "Admin",                description: "Full admin minus superadmin" },
 ];
 
 // Inline quick-toggle icons (T / HR) used to sit beside the main "View

@@ -17,7 +17,15 @@ import { prisma } from "@/lib/prisma";
  * letting admins flip into instructor or employer roles would surface
  * data they aren't supposed to see in their own seat.
  */
-const SUPERADMIN_TARGETS = new Set(["trainee", "evaluating", "employer", "instructor", "admin"]);
+const SUPERADMIN_TARGETS = new Set([
+  "trainee",
+  "evaluating",
+  "employer",
+  "engage_hqp_advisor",
+  "equip_grant_reviewer",
+  "instructor",
+  "admin",
+]);
 // Admins can also flip into the employer / HR seat — it's the
 // portal they help manage anyway and the keyboard shortcut for HR
 // view (xx) needs to work for admins, not only superadmins.
