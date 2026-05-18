@@ -81,11 +81,25 @@ async function main() {
   let updated = 0;
 
   for (const [i, c] of courses.entries()) {
+    // Normalize empty strings to null — Postgres stored some test
+    // courses with delivery=""/provider="" rather than null, and
+    // `??` doesn't catch those (it only handles undefined / null).
+    // Without this, the cycle below never fires for those rows.
+    const existingDelivery = c.delivery && c.delivery.trim() !== "" ? c.delivery : null;
+    const existingProvider = c.provider && c.provider.trim() !== "" ? c.provider : null;
+
     // Pick a delivery mode either from the existing value or by
     // cycling through DELIVERIES. The "isCohort" decision below
     // hangs off this final value.
-    const delivery = c.delivery ?? DELIVERIES[i % DELIVERIES.length];
+    const delivery = existingDelivery ?? DELIVERIES[i % DELIVERIES.length];
     const isCohort = delivery === "In-Person" || delivery === "Hybrid";
+
+    // True when delivery was missing on the row and we're SETTING
+    // it in this run. When that happens any cascading fields a
+    // previous (buggy) run wrote out of an empty-delivery branch
+    // need re-deriving from the now-correct delivery mode — that's
+    // why several blocks below also fire on this flag.
+    const justSetDelivery = !existingDelivery;
 
     // Build the patch — only set fields the admin hasn't already
     // touched. `code === null` is the signal "this course hasn't
@@ -101,14 +115,14 @@ async function main() {
       const num = 100 + ((i * 11) % 500);
       data.code = `${prefix}${num}`;
     }
-    if (!c.delivery) data.delivery = delivery;
-    if (!c.provider) data.provider = PROVIDERS[i % PROVIDERS.length];
+    if (!existingDelivery) data.delivery = delivery;
+    if (!existingProvider) data.provider = PROVIDERS[i % PROVIDERS.length];
 
-    // Credit cost variety — only adjust when the card is fresh
-    // (no code yet) AND the value is still the default 0. Cohort
-    // courses get 1000, online async courses get 500, on-demand
-    // stays free — same vocabulary the reference image showed.
-    if (!c.code && c.creditCost === 0) {
+    // Credit cost variety — adjust when the card is fresh (no code
+    // yet) AND the value is still default 0, OR when we're fixing
+    // a row where a previous buggy run set creditCost=1000 via
+    // the empty-delivery fallback branch.
+    if ((!c.code && c.creditCost === 0) || (justSetDelivery && c.creditCost === 1000)) {
       data.creditCost =
         delivery === "On-Demand" ? 0 :
         delivery === "Online"    ? 500 :
@@ -116,13 +130,13 @@ async function main() {
     }
 
     // Cohort window — only for In-Person / Hybrid courses without
-    // an existing cohort start. Pulls from COHORT_WINDOWS by
-    // course index so the spread is deterministic.
-    if (isCohort && !c.cohortStartDate) {
+    // an existing cohort start (OR where delivery was just set —
+    // a row that's freshly Hybrid needs its window populated).
+    if (isCohort && (!c.cohortStartDate || justSetDelivery)) {
       const win = COHORT_WINDOWS[i % COHORT_WINDOWS.length];
-      data.cohortStartDate = new Date(win.start);
-      data.cohortEndDate = new Date(win.end);
-      if (!c.enrollByDate) data.enrollByDate = new Date(win.enrollBy);
+      if (!c.cohortStartDate) data.cohortStartDate = new Date(win.start);
+      if (!c.cohortEndDate)   data.cohortEndDate   = new Date(win.end);
+      if (!c.enrollByDate)    data.enrollByDate    = new Date(win.enrollBy);
       // Cohort = requires-approval by convention (admins curate
       // the cohort roster). Self-serve modes leave the flag alone.
       if (!c.requiresApproval) data.requiresApproval = true;
