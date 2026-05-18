@@ -62,25 +62,47 @@ interface StatProps {
   tone?: StatTone;
   /** Classic-only accent. */
   accent?: "brand";
+  /** Cinematic-only: when true, render values + labels in light
+   *  tones suitable for a dark surface (i.e. when this DSStat sits
+   *  INSIDE a hero's `aside` slot on top of the gradient stage).
+   *  Default false → dark gradient values + subtle labels, suitable
+   *  for sitting on the page's light `--card` surface. */
+  onDark?: boolean;
 }
 
-function gradientForTone(tone: StatTone): string {
-  // Cinematic DSStat sits inside the dark theme-driven hero — values
-  // need LIGHT gradients to read against the gradient stage. Each
-  // tone uses bright variants of its hue so the bg-clip:text values
-  // pop on every theme's hero.
+function gradientForTone(tone: StatTone, onDark: boolean): string {
+  // Two palettes per tone — one for dark surfaces (hero aside),
+  // one for light page surfaces. Callers opt into the dark palette
+  // via the `onDark` prop on DSStat. Default is light surface.
+  if (onDark) {
+    switch (tone) {
+      case "violet":
+        return "linear-gradient(120deg, #c4b5fd 0%, #ddd6fe 100%)";
+      case "rose":
+        return "linear-gradient(120deg, #fda4af 0%, #fecdd3 100%)";
+      case "emerald":
+        return "linear-gradient(120deg, #6ee7b7 0%, #a7f3d0 100%)";
+      case "amber":
+        return "linear-gradient(120deg, #fcd34d 0%, #fde68a 100%)";
+      case "brand":
+      default:
+        return "linear-gradient(120deg, #ffffff 0%, var(--brand-200, #bae6fd) 100%)";
+    }
+  }
+  // Light surface — use saturated mids so values read as dark
+  // editorial numbers on the bright `--card` page bg.
   switch (tone) {
     case "violet":
-      return "linear-gradient(120deg, #c4b5fd 0%, #ddd6fe 100%)";
+      return "linear-gradient(120deg, #6d28d9 0%, #4338ca 100%)";
     case "rose":
-      return "linear-gradient(120deg, #fda4af 0%, #fecdd3 100%)";
+      return "linear-gradient(120deg, #be123c 0%, #9f1239 100%)";
     case "emerald":
-      return "linear-gradient(120deg, #6ee7b7 0%, #a7f3d0 100%)";
+      return "linear-gradient(120deg, #047857 0%, #065f46 100%)";
     case "amber":
-      return "linear-gradient(120deg, #fcd34d 0%, #fde68a 100%)";
+      return "linear-gradient(120deg, #b45309 0%, #92400e 100%)";
     case "brand":
     default:
-      return "linear-gradient(120deg, #ffffff 0%, var(--brand-200, #bae6fd) 100%)";
+      return "linear-gradient(120deg, var(--brand-700, #1d4f8b) 0%, var(--brand-900, #0e1a3a) 100%)";
   }
 }
 
@@ -91,6 +113,7 @@ export function DSStat({
   help,
   tone = "brand",
   accent,
+  onDark = false,
 }: StatProps) {
   const { designSystem } = useDesignSystem();
   const formatted = typeof value === "number" ? value.toLocaleString() : value;
@@ -118,16 +141,24 @@ export function DSStat({
     // a hairline-divided row (see DSStatGrid). first:pl-0 / last:pr-0
     // keeps the gradient text aligned with the section gutter when
     // used as the leftmost / rightmost stat.
+    //
+    // Surface awareness — `onDark` flips both the value gradient
+    // and the label / help text colours. Light-surface DSStats use
+    // dark editorial gradients + `text-subtle` labels; dark-surface
+    // ones use bright gradients + `text-white/85` labels.
+    const labelCls = onDark ? "text-white/85" : "text-subtle";
+    const helpCls  = onDark ? "text-white/70" : "text-subtle";
+    const valueShadow = onDark ? "drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]" : "";
     return (
       <div className="px-4 sm:px-6 py-3 first:pl-0 last:pr-0">
-        <div className="text-[10px] uppercase tracking-[0.22em] font-bold text-white/85 inline-flex items-center gap-1.5">
+        <div className={`text-[10px] uppercase tracking-[0.22em] font-bold ${labelCls} inline-flex items-center gap-1.5`}>
           {icon}
           {label}
         </div>
         <p
-          className="text-3xl sm:text-4xl lg:text-5xl font-black tabular-nums tracking-tight leading-none mt-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
+          className={`text-3xl sm:text-4xl lg:text-5xl font-black tabular-nums tracking-tight leading-none mt-2 ${valueShadow}`}
           style={{
-            backgroundImage: gradientForTone(tone),
+            backgroundImage: gradientForTone(tone, onDark),
             WebkitBackgroundClip: "text",
             backgroundClip: "text",
             color: "transparent",
@@ -135,7 +166,7 @@ export function DSStat({
         >
           {formatted}
         </p>
-        {help && <p className="text-[10px] text-white/70 mt-1.5">{help}</p>}
+        {help && <p className={`text-[10px] ${helpCls} mt-1.5`}>{help}</p>}
       </div>
     );
   }

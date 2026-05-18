@@ -192,10 +192,10 @@ export default async function EquipOverviewPage() {
           }
           aside={
             <DSStatGrid>
-              <DSStat icon={<Activity size={12} />}     label="Apps in flight"    value={inFlightCount} help="submitted + under review" />
-              <DSStat icon={<Sparkles size={12} />}     label="Approved this Q"   value={approvedThisQuarterCount} help={rejectedThisQuarterCount > 0 ? `${rejectedThisQuarterCount} not selected` : undefined} />
-              <DSStat icon={<DollarSign size={12} />}   label="$ approved YTD"    value={`$${fundedYtd.toLocaleString()}`} help="across both streams" />
-              <DSStat icon={<CalendarClock size={12} />} label="Open windows"     value={openWindowsCount} help="future-dated cycles" />
+              <DSStat onDark icon={<Activity size={12} />}     label="Apps in flight"    value={inFlightCount} help="submitted + under review" />
+              <DSStat onDark icon={<Sparkles size={12} />}     label="Approved this Q"   value={approvedThisQuarterCount} help={rejectedThisQuarterCount > 0 ? `${rejectedThisQuarterCount} not selected` : undefined} />
+              <DSStat onDark icon={<DollarSign size={12} />}   label="$ approved YTD"    value={`$${fundedYtd.toLocaleString()}`} help="across both streams" />
+              <DSStat onDark icon={<CalendarClock size={12} />} label="Open windows"     value={openWindowsCount} help="future-dated cycles" />
             </DSStatGrid>
           }
         />

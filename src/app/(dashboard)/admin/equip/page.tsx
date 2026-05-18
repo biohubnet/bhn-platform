@@ -118,19 +118,16 @@ export default async function AdminEquipPage({
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <Link href="/admin" className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
-        <ArrowLeft size={12} /> Admin overview
-      </Link>
-
+      {/* Back-link removed — the editorial hero owns the top of the
+          page; the sidebar handles cross-page navigation. */}
       <DSPageHeader
         eyebrow="Admin · Equip pillar"
         title="Equip review queue"
-        icon={<Rocket size={22} className="text-brand-600" />}
         description={
           <>
             VentureConnect (≤$5K, monthly) + VentureLift (≤$25K, quarterly). Click a row to review, leave a note, and decide.
             {" "}For the program-management dashboard (apps in flight, stalled-app alerts, per-stream funnel),{" "}
-            <Link href="/admin/equip/overview" className="text-brand-700 font-bold hover:underline">open the Equip overview →</Link>
+            <Link href="/admin/equip/overview" className="text-amber-200 font-bold underline decoration-amber-200/60 underline-offset-2 hover:text-amber-100 transition-colors">open the Equip overview →</Link>
           </>
         }
       />
