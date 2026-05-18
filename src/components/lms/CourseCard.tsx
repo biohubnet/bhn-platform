@@ -160,27 +160,13 @@ export function CourseCard({ course }: CourseCardProps) {
               {course.description}
             </p>
           )}
-
-          {/* CTA — pinned at the bottom of the LEFT column.
-              Orange amber-500 fill, matches the reference exactly. */}
-          <div className="mt-4 sm:mt-5">
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5",
-                "text-[11.5px] font-semibold",
-                "px-3 py-2 rounded-md transition-colors",
-                "bg-orange-500 text-white group-hover:bg-orange-600",
-              )}
-            >
-              {ctaLabel}
-              <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
-            </span>
-          </div>
         </div>
 
         {/* RIGHT — WHITE sidebar, slate text */}
         <aside className="p-3 sm:p-4 flex flex-col gap-2 bg-white text-slate-900">
-          {/* Chip stack */}
+          {/* Chip stack — capsule shape (rounded-full), solid fills,
+              left-aligned white text. Matches the reference's pill
+              palette exactly. */}
           <Chip tone="credit" label={isFree ? "Free" : `Credit ${course.creditCost.toLocaleString()}`} />
           {course.delivery && <Chip tone={deliveryTone(course.delivery)} label={course.delivery} />}
           {course.provider && <Chip tone="provider" label={course.provider} />}
@@ -232,12 +218,34 @@ export function CourseCard({ course }: CourseCardProps) {
           )}
         </aside>
       </div>
+
+      {/* ── CTA BAR — full-width bottom band, spans across both
+            content + sidebar columns. Slate-800 surface so it
+            visually separates from the body above without breaking
+            the dark identity. */}
+      <div className="bg-slate-800 border-t border-slate-700 p-3 sm:p-3.5">
+        <span
+          className={cn(
+            "w-full inline-flex items-center justify-center gap-1.5",
+            "text-[12px] font-semibold",
+            "px-4 py-2.5 rounded-md transition-colors",
+            "bg-orange-500 text-white group-hover:bg-orange-600",
+          )}
+        >
+          {ctaLabel}
+          <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+        </span>
+      </div>
     </Link>
   );
 }
 
-/** One sidebar chip — solid filled background with white text,
- *  matching the reference card's bold chip vocabulary. */
+/** One sidebar chip — capsule-shaped (rounded-full) solid pill
+ *  with white text, left-aligned. Matches the reference card's
+ *  pill vocabulary exactly: bright teal Credit / Free, vivid
+ *  blues for delivery modes (mid-blue for In-Person, indigo for
+ *  Hybrid, light cyan for On-Demand, sky for Online), dark
+ *  maroon for Provider. */
 function Chip({
   tone, label,
 }: {
@@ -248,8 +256,8 @@ function Chip({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center text-[12px] font-semibold tracking-tight",
-        "px-2.5 py-1.5 rounded-md w-full truncate",
+        "inline-flex items-center justify-start text-[12.5px] font-semibold tracking-tight",
+        "px-3.5 py-1.5 rounded-full w-full truncate leading-tight",
         cls,
       )}
     >
@@ -260,12 +268,21 @@ function Chip({
 
 type ChipTone = "credit" | "in-person" | "online" | "hybrid" | "on-demand" | "provider" | "default";
 
+/** Reference image colour read (best-effort from compressed JPG):
+ *    Credit/Free  — bright teal, ~teal-500
+ *    In-Person    — vivid mid-blue, ~blue-700
+ *    Online       — sky blue (medium light), ~sky-500
+ *    Hybrid       — slightly purpler than In-Person, ~indigo-600
+ *    On-Demand    — clearly LIGHTER + cooler than In-Person,
+ *                   ~cyan-400
+ *    Provider     — dark maroon, ~red-900
+ *  White text on every chip. */
 const CHIP_CLASSES: Record<ChipTone, string> = {
   credit:      "bg-teal-500 text-white",
-  "in-person": "bg-blue-800 text-white",
+  "in-person": "bg-blue-700 text-white",
   online:      "bg-sky-500 text-white",
-  hybrid:      "bg-blue-700 text-white",
-  "on-demand": "bg-cyan-500 text-white",
+  hybrid:      "bg-indigo-600 text-white",
+  "on-demand": "bg-cyan-400 text-white",
   provider:    "bg-red-900 text-white",
   default:     "bg-slate-600 text-white",
 };
