@@ -982,23 +982,21 @@ export function Sidebar({
     ...adminSecurityItems.map((i) => i.href),
     ...adminSystemItems.map((i) => i.href),
   ]);
-  // Slugs that render inline under a pillar section (ENGAGE / EQUIP /
-  // EXPERIENCE) instead of in the standalone COMMITTEES section.
-  // Today only the ENGAGE HQP Advisory routes this way — user
-  // requested it sit alongside the other ENGAGE pillar links rather
-  // than buried under a generic committees header.
-  const PILLAR_INLINE_COMMITTEES = new Set<string>(["engage_hqp_advisory"]);
   const visibleCommittees = rawVisibleCommittees
     .map((c) => ({
       ...c,
       sidebarItems: c.sidebarItems.filter((s) => !allAdminHrefs.has(s.href)),
     }))
-    .filter((c) => c.sidebarItems.length > 0)
-    .filter((c) => !PILLAR_INLINE_COMMITTEES.has(c.slug));
+    .filter((c) => c.sidebarItems.length > 0);
 
-  // Pillar-inline committees the user is actually a member of —
-  // rendered inline inside their pillar's SectionGroup below.
-  const isEngageHqpMember = committees.includes("engage_hqp_advisory");
+  // Role-based inline pillar links. The `engage_hqp_advisor` role
+  // (rank-1 reviewer seat) gets an "ENGAGE HQP advisory" shortcut
+  // rendered inline at the bottom of the ENGAGE pillar section
+  // below, instead of in the standalone COMMITTEES block. Role-
+  // based rather than committee-based because the committee entry
+  // was collapsed into a first-class role on user request.
+  const isEngageHqpAdvisor =
+    role === "engage_hqp_advisor" || realRole === "engage_hqp_advisor";
   // HR-view preview — surfaces the exact employer-portal nav (same
   // routes the EMPLOYER PORTAL section would render at the top of
   // the sidebar for a real employer) inside the Administration
@@ -1112,17 +1110,17 @@ export function Sidebar({
               const labeled = { ...item, label: t(item.labelKey) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
             })}
-            {/* ENGAGE HQP Advisory committee shortcut — renders
-                inline inside the ENGAGE pillar section instead of
-                under the standalone COMMITTEES section, per user
-                request. Auto-hides for non-members. */}
-            {isEngageHqpMember && (
+            {/* ENGAGE HQP Advisory shortcut — renders inline under
+                the ENGAGE pillar section instead of in a standalone
+                COMMITTEES block, per user request. Visible only for
+                users in the `engage_hqp_advisor` role seat. */}
+            {isEngageHqpAdvisor && (
               <NavLink
                 item={{
                   label: "ENGAGE HQP advisory",
                   href: "/committee/hqp",
                   icon: Award,
-                  description: "ENGAGE-pillar HQP advisory committee dashboard — training-side perspectives, course quality, learner feedback.",
+                  description: "ENGAGE-pillar HQP advisory dashboard — training-side perspectives, course quality, learner feedback.",
                 }}
                 pathname={pathname}
                 onNavigate={() => setMobileOpen(false)}

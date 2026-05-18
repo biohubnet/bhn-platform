@@ -21,7 +21,7 @@ import { HqpCoiPanel } from "@/components/committee/HqpCoiPanel";
 export const dynamic = "force-dynamic";
 
 export default async function HqpCommitteePage() {
-  const session = await requireCommitteeOrAdmin(["hqp"]).catch(() => null);
+  const session = await requireCommitteeOrAdmin(["hqp"], ["engage_hqp_advisor"]).catch(() => null);
   if (!session) redirect("/dashboard");
   const userId = (session.user as { id?: string }).id ?? "";
 

@@ -26,11 +26,7 @@
  *    strings / form bodies / migrated rows.
  */
 
-export type CommitteeSlug =
-  | "equip_review"
-  | "equip_grant_review"
-  | "hqp"
-  | "engage_hqp_advisory";
+export type CommitteeSlug = "equip_review" | "hqp";
 
 export interface CommitteeSidebarItem {
   /** Label shown in the sidebar nav. */
@@ -78,19 +74,6 @@ export const COMMITTEES: readonly CommitteeMeta[] = [
     ],
   },
   {
-    slug: "equip_grant_review",
-    name: "EQUIP Grant Review Committee",
-    description:
-      "Sister track to EQUIP Review focused specifically on grant-stage applications — larger awards, multi-stage evaluation. Members claim, evaluate, and recommend grant awards. Same admin queue + same overrides as the broader EQUIP Review committee.",
-    badgeTone: "amber",
-    grantsEquipReview: true,
-    sidebarItems: [
-      { label: "EQUIP overview",     href: "/admin/equip/overview",  icon: "Sparkles" },
-      { label: "EQUIP review queue", href: "/admin/equip",           icon: "Rocket" },
-      { label: "EQUIP deadlines",    href: "/admin/equip/deadlines", icon: "ClipboardList" },
-    ],
-  },
-  {
     slug: "hqp",
     name: "HQP Advisory Committee",
     description:
@@ -100,16 +83,12 @@ export const COMMITTEES: readonly CommitteeMeta[] = [
       { label: "HQP dashboard", href: "/committee/hqp", icon: "Award" },
     ],
   },
-  {
-    slug: "engage_hqp_advisory",
-    name: "ENGAGE HQP Advisory Committee",
-    description:
-      "ENGAGE-pillar HQP advisory — focuses on training-side perspectives, course quality, and learner feedback. Sister to the platform-wide HQP Advisory Committee. Open to trainees and partners alike.",
-    badgeTone: "sky",
-    sidebarItems: [
-      { label: "ENGAGE HQP dashboard", href: "/committee/hqp", icon: "Award" },
-    ],
-  },
+  // NOTE: `equip_grant_review` and `engage_hqp_advisory` used to live
+  // here as committees. Both were collapsed into first-class roles
+  // (`equip_grant_reviewer` + `engage_hqp_advisor`) in
+  // src/lib/auth.ts on user request — one concept per user-type
+  // instead of role + committee membership. The role itself is the
+  // seat; route guards check `role === "..."` directly.
 ] as const;
 
 const SLUGS = new Set<string>(COMMITTEES.map((c) => c.slug));

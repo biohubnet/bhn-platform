@@ -55,9 +55,17 @@ export async function canReviewEquip(userId: string): Promise<boolean> {
 
 /**
  * Auth shim for endpoints / pages that are open to either a
- * platform admin **or** a member of one of the listed committees.
+ * platform admin **or** a member of one of the listed committees
+ * **or** a user in one of the listed role-seats. Used to widen
+ * gates that originally only accepted committee membership now
+ * that some user-types are first-class roles (e.g.
+ * `equip_grant_reviewer`) instead of committee memberships.
  *
  *   const session = await requireCommitteeOrAdmin(["equip_review"]);
+ *   const session = await requireCommitteeOrAdmin(
+ *     ["equip_review"],
+ *     ["equip_grant_reviewer"],
+ *   );
  *
  * Returns the session on success, throws "Forbidden" otherwise.
  * Mirrors the throw-style of `requireRole` so it composes the
@@ -65,11 +73,13 @@ export async function canReviewEquip(userId: string): Promise<boolean> {
  */
 export async function requireCommitteeOrAdmin(
   allowedCommittees: CommitteeSlug[],
+  allowedRoles: string[] = [],
 ) {
   const session = await getSession();
   if (!session) throw new Error("Unauthorized");
   const role = (session.user as { role?: string }).role ?? "user";
   if (role === "admin" || role === "superadmin") return session;
+  if (allowedRoles.includes(role)) return session;
 
   const userId = (session.user as { id?: string }).id;
   if (!userId) throw new Error("Forbidden");
