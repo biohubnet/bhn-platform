@@ -334,6 +334,10 @@ model User {
   hqpActionsAssigned    HqpActionItem[]       @relation("HqpActionAssignee")
   hqpCoiDisclosures     HqpCoiDisclosure[]    @relation("HqpCoiDeclarer")
 
+  // CMS-authored pages — author + last-editor relations.
+  pagesCreated          Page[]                @relation("PageCreatedBy")
+  pagesUpdated          Page[]                @relation("PageUpdatedBy")
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -3026,4 +3030,45 @@ model HqpCoiDisclosure {
 
   @@index([userId, active])
   @@index([active, declaredAt])
+}
+
+/// CMS-authored standalone pages — for non-admin colleagues to
+/// publish announcements, policy pages, and lightweight content
+/// without a deploy.
+///
+///   • slug      — URL slug, unique; used at /p/{slug}.
+///   • title     — top-of-page headline.
+///   • body      — markdown body. Rendered by react-markdown +
+///                 remark-gfm, same renderer the changelog uses.
+///   • excerpt   — optional short preview (~140 chars) shown on
+///                 listing surfaces.
+///   • status    — "draft" hides from the public route; "published"
+///                 surfaces it. Allows in-progress drafts that
+///                 reviewers can preview at /p/{slug}?preview=1.
+///   • audience  — who can see it:
+///                   "public"    — anyone (signed-in or not)
+///                   "learners"  — trainees + evaluating
+///                   "staff"     — instructor+
+///                   "admins"    — admin+
+model Page {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  body        String
+  excerpt     String?
+  status      String   @default("draft")
+  audience    String   @default("public")
+
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdById String
+  updatedById String?
+
+  createdBy User  @relation("PageCreatedBy", fields: [createdById], references: [id])
+  updatedBy User? @relation("PageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([status, audience])
+  @@index([updatedAt])
 }

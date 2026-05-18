@@ -338,6 +338,8 @@ const adminPlatformItems: NavItem[] = [
   // under EQUIP admin, and the combined surface is gone.
   { label: "Announcements",       href: "/admin/announcements",       icon: Megaphone,   minRole: "admin",
     description: "Banner announcements shown across the platform. Schedule, target by role, set expiry." },
+  { label: "Pages",               href: "/admin/pages",               icon: FileText,    minRole: "admin",
+    description: "Lightweight CMS — publish announcements, policy pages, and standalone content to /p/[slug] without a code deploy. Markdown body, draft / publish status, audience gating." },
   { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,        minRole: "admin",
     description: "New newsletter opt-ins ready to export to BioHubNet's mailing list." },
   { label: "Editable copy",       href: "/admin/copy",                icon: FileText,    minRole: "admin",
