@@ -26,7 +26,11 @@
  *    strings / form bodies / migrated rows.
  */
 
-export type CommitteeSlug = "equip_review" | "hqp";
+export type CommitteeSlug =
+  | "equip_review"
+  | "equip_grant_review"
+  | "hqp"
+  | "engage_hqp_advisory";
 
 export interface CommitteeSidebarItem {
   /** Label shown in the sidebar nav. */
@@ -74,6 +78,19 @@ export const COMMITTEES: readonly CommitteeMeta[] = [
     ],
   },
   {
+    slug: "equip_grant_review",
+    name: "EQUIP Grant Review Committee",
+    description:
+      "Sister track to EQUIP Review focused specifically on grant-stage applications — larger awards, multi-stage evaluation. Members claim, evaluate, and recommend grant awards. Same admin queue + same overrides as the broader EQUIP Review committee.",
+    badgeTone: "amber",
+    grantsEquipReview: true,
+    sidebarItems: [
+      { label: "EQUIP overview",     href: "/admin/equip/overview",  icon: "Sparkles" },
+      { label: "EQUIP review queue", href: "/admin/equip",           icon: "Rocket" },
+      { label: "EQUIP deadlines",    href: "/admin/equip/deadlines", icon: "ClipboardList" },
+    ],
+  },
+  {
     slug: "hqp",
     name: "HQP Advisory Committee",
     description:
@@ -81,6 +98,16 @@ export const COMMITTEES: readonly CommitteeMeta[] = [
     badgeTone: "violet",
     sidebarItems: [
       { label: "HQP dashboard", href: "/committee/hqp", icon: "Award" },
+    ],
+  },
+  {
+    slug: "engage_hqp_advisory",
+    name: "ENGAGE HQP Advisory Committee",
+    description:
+      "ENGAGE-pillar HQP advisory — focuses on training-side perspectives, course quality, and learner feedback. Sister to the platform-wide HQP Advisory Committee. Open to trainees and partners alike.",
+    badgeTone: "sky",
+    sidebarItems: [
+      { label: "ENGAGE HQP dashboard", href: "/committee/hqp", icon: "Award" },
     ],
   },
 ] as const;
