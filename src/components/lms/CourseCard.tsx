@@ -1,37 +1,29 @@
 "use client";
 
 /**
- * CourseCard — the catalog tile. Three-zone layout:
+ * CourseCard — catalog tile, matched EXACTLY to the legacy BHN
+ * course-card reference plus a cover-art banner on top.
  *
  *   ┌────────────────────────────────────────────────┐
- *   │  [ COVER ART — full-width thumbnail + overlay ]│
- *   ├────────────────────────────────┬───────────────┤
- *   │ BIOP210                ♡       │ ◆ Credit 500  │  bg-card-solid
- *   │ Title here…                    │ ◆ Hybrid      │  vs
- *   │ Description copy …             │ ◆ OBIO        │  bg-elevated
- *   │ (1fr, lighter bg)              │ ──────────    │  (darker,
- *   │                                │ Enroll by:    │  tinted)
- *   │                                │ Jun 30, 2025  │
+ *   │  [   COVER ART — full-width thumbnail   ]      │  ← inherits
+ *   ├────────────────────────────────┬───────────────┤   admin-stamped
+ *   │ ACRTM101                ♡     │ ◆ Credit 1000 │   overlay
+ *   │ Autologous CAR T               │ ◆ In-Person   │
+ *   │ Manufacturing Part 1           │ ◆ Seneca      │
+ *   │ (dark slate bg, white text)    │               │
+ *   │                                │ ─────────     │   (white bg,
+ *   │ This course introduces …       │ Enroll by:    │    slate text)
+ *   │ […]                            │ June 30, 2025 │
+ *   │                                │               │
  *   │                                │ Duration:     │
- *   │                                │ Jul 23–Aug 15 │
- *   ├────────────────────────────────┴───────────────┤
- *   │      [ Request to Enroll → ] full-width        │  CTA bar
- *   └────────────────────────────────────────────────┘
+ *   │ [ Request to Enroll → ]        │ July 23, 2025 │
+ *   │                                │ Aug. 15, 2025 │
+ *   └────────────────────────────────┴───────────────┘
  *
- * Three zones top-to-bottom:
- *   • COVER  — full-width thumbnail (or fallback gradient + BookOpen
- *              icon when no thumbnail). Inherits the admin-stamped
- *              `thumbnailOverlay` colour/gradient wash.
- *   • BODY   — 2-column grid with HIGH CONTRAST between halves:
- *              LEFT  = `bg-card-solid` (the lighter, "paper" surface
- *                      where content reads)
- *              RIGHT = `bg-elevated` with a left border-line (the
- *                      darker, "raised" metadata panel)
- *              Both surfaces are theme tokens so the contrast works
- *              on every theme.
- *   • CTA    — full-width amber button bar at the bottom. Copy is
- *              "Request to Enroll" when `requiresApproval`, else
- *              just "Enroll".
+ * Theme-independent — the card has its own dark+white identity
+ * (collectible aesthetic, like trading cards) regardless of the
+ * platform's active theme. Same look across Light / Dark /
+ * Aurora / Sakura / etc.
  */
 
 import Link from "next/link";
@@ -62,10 +54,10 @@ interface CourseCardProps {
   role: string;
 }
 
-function fmtShortDate(iso: string | null): string {
+function fmtLongDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
+    month: "long",
     day: "numeric",
     year: "numeric",
   });
@@ -90,29 +82,23 @@ export function CourseCard({ course }: CourseCardProps) {
   // "not active" work and we don't want two filters competing.
   const overlay = isArchived ? null : parseOverlay(course.thumbnailOverlay);
 
-  // Duration text — date range for cohorts, minutes for self-serve,
-  // single date when only a cohort start is set.
-  const durationText = hasCohort
-    ? `${fmtShortDate(course.cohortStartDate)} – ${fmtShortDate(course.cohortEndDate)}`
-    : course.cohortStartDate
-      ? fmtShortDate(course.cohortStartDate)
-      : fmtMinutes(course.duration);
-
   return (
     <Link
       href={`/courses/${course.id}`}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card-solid transition-all h-full",
-        "shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_rgba(15,23,42,0.06)]",
-        "hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_16px_40px_rgba(15,23,42,0.10)]",
-        "hover:-translate-y-0.5 hover:border-brand-300",
+        "group relative flex flex-col overflow-hidden rounded-2xl transition-all h-full",
+        // Theme-independent dark-slate identity — same look on every theme
+        "bg-slate-900 text-white border border-slate-800",
+        "shadow-[0_1px_2px_rgba(15,23,42,0.08),0_8px_30px_rgba(15,23,42,0.12)]",
+        "hover:shadow-[0_4px_8px_rgba(15,23,42,0.12),0_20px_50px_rgba(15,23,42,0.2)]",
+        "hover:-translate-y-0.5",
         isArchived && "opacity-75 hover:opacity-100",
       )}
     >
-      {/* ── COVER ART — full-width thumbnail at the top ───────── */}
+      {/* ── COVER ART — full-width banner at the top ──────────── */}
       <div
         className={cn(
-          "relative h-32 sm:h-36 overflow-hidden shrink-0",
+          "relative h-24 sm:h-28 overflow-hidden shrink-0",
           isArchived
             ? "bg-gradient-to-br from-slate-400 to-slate-600"
             : "bg-gradient-to-br from-brand-500 to-indigo-600",
@@ -130,130 +116,140 @@ export function CourseCard({ course }: CourseCardProps) {
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <BookOpen size={38} strokeWidth={1.5} className="text-white/55" />
+            <BookOpen size={32} strokeWidth={1.5} className="text-white/55" />
           </div>
         )}
         {overlay && (
           <div className="absolute inset-0" style={overlayStyle(overlay)} />
         )}
         {isArchived && (
-          <span className="absolute top-3 right-3 inline-flex items-center text-[10px] uppercase tracking-[0.18em] font-bold px-2 py-0.5 rounded-full bg-slate-900/80 text-white ring-1 ring-inset ring-white/20">
+          <span className="absolute top-2 right-2 inline-flex items-center text-[10px] uppercase tracking-[0.18em] font-bold px-2 py-0.5 rounded-full bg-slate-900/85 text-white ring-1 ring-inset ring-white/20">
             Not active
           </span>
         )}
       </div>
 
-      {/* ── BODY — 2-column, strong LEFT/RIGHT contrast ───────── */}
-      <div className="grid grid-cols-[1fr_148px] sm:grid-cols-[1fr_168px] flex-1">
-        {/* LEFT: content area, lighter "paper" surface */}
-        <div className="p-4 sm:p-5 bg-card-solid flex flex-col min-w-0">
-          {/* Code + heart row */}
-          <div className="flex items-start justify-between gap-3 mb-2">
-            {course.code ? (
-              <span className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted font-mono">
-                {course.code}
-              </span>
-            ) : (
-              <span aria-hidden />
-            )}
-            <Heart
-              size={15}
-              strokeWidth={1.5}
-              aria-hidden
-              className="text-fg-subtle group-hover:text-rose-400 transition-colors shrink-0"
-            />
-          </div>
+      {/* ── BODY — 2-column dark/white split ──────────────────── */}
+      <div className="grid grid-cols-[1fr_150px] sm:grid-cols-[1fr_170px] flex-1">
+        {/* LEFT — dark slate content area (inherits bg-slate-900) */}
+        <div className="p-5 sm:p-6 flex flex-col min-w-0 relative">
+          {/* Heart — top-right of left column, sized + positioned
+              to match the reference exactly. */}
+          <Heart
+            size={18}
+            strokeWidth={1.6}
+            aria-hidden
+            className="absolute top-4 right-4 text-rose-500 fill-rose-500 group-hover:scale-110 transition-transform"
+          />
+
+          {/* Code (e.g. ACRTM101) */}
+          {course.code && (
+            <p className="text-[15px] font-semibold leading-snug text-white pr-7">
+              {course.code}
+            </p>
+          )}
 
           {/* Title */}
-          <h3 className="text-base sm:text-[17px] font-bold leading-snug text-fg group-hover:text-brand-700 transition-colors line-clamp-2">
+          <h3 className="text-[17px] sm:text-[18px] font-bold leading-tight text-white mt-1 line-clamp-3 pr-7">
             {course.title}
           </h3>
 
           {/* Description */}
           {course.description && (
-            <p className="mt-2 text-[12px] leading-relaxed text-fg-muted line-clamp-4 flex-1">
+            <p className="mt-4 text-[12.5px] leading-relaxed text-slate-300 line-clamp-5 flex-1">
               {course.description}
             </p>
           )}
+
+          {/* CTA — pinned at the bottom of the LEFT column.
+              Orange amber-500 fill, matches the reference exactly. */}
+          <div className="mt-4 sm:mt-5">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5",
+                "text-[11.5px] font-semibold",
+                "px-3 py-2 rounded-md transition-colors",
+                "bg-orange-500 text-white group-hover:bg-orange-600",
+              )}
+            >
+              {ctaLabel}
+              <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
+            </span>
+          </div>
         </div>
 
-        {/* RIGHT: sidebar — darker tinted surface for contrast */}
-        <aside className="p-3 sm:p-3.5 flex flex-col gap-1.5 bg-elevated border-l border-line">
-          <ChipRow
-            tone="emerald"
-            label={isFree ? "Free" : `Credit ${course.creditCost.toLocaleString()}`}
-          />
-          {course.delivery && (
-            <ChipRow tone={deliveryTone(course.delivery)} label={course.delivery} />
-          )}
-          {course.provider && <ChipRow tone="rose" label={course.provider} />}
+        {/* RIGHT — WHITE sidebar, slate text */}
+        <aside className="p-3 sm:p-4 flex flex-col gap-2 bg-white text-slate-900">
+          {/* Chip stack */}
+          <Chip tone="credit" label={isFree ? "Free" : `Credit ${course.creditCost.toLocaleString()}`} />
+          {course.delivery && <Chip tone={deliveryTone(course.delivery)} label={course.delivery} />}
+          {course.provider && <Chip tone="provider" label={course.provider} />}
 
-          {(course.enrollByDate || durationText) && (
-            <span aria-hidden className="block h-px bg-line my-1.5" />
-          )}
-
+          {/* Enroll-by — separated by a thin slate divider */}
           {course.enrollByDate && (
-            <div>
-              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-fg-muted">
+            <div className="mt-4 pt-3 border-t border-slate-200">
+              <p className="text-[11.5px] font-semibold text-slate-700 leading-snug">
                 Enroll by:
               </p>
-              <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
-                {fmtShortDate(course.enrollByDate)}
+              <p className="text-[12px] font-semibold text-slate-900 leading-snug mt-0.5">
+                {fmtLongDate(course.enrollByDate)}
               </p>
             </div>
           )}
 
-          {durationText && (
-            <div className="mt-auto">
-              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-fg-muted">
+          {/* Duration — cohort dates stack on two lines (matches
+              the reference image's "Jul 23, 2025 / Aug 15, 2025"),
+              fall back to minutes for self-serve modes. */}
+          {(hasCohort || course.cohortStartDate || course.duration) && (
+            <div
+              className={cn(
+                "mt-auto pt-3",
+                !course.enrollByDate && "border-t border-slate-200",
+              )}
+            >
+              <p className="text-[11.5px] font-semibold text-slate-700 leading-snug">
                 Duration:
               </p>
-              <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
-                {durationText}
-              </p>
+              {hasCohort ? (
+                <>
+                  <p className="text-[12px] font-semibold text-slate-900 leading-snug mt-0.5">
+                    {fmtLongDate(course.cohortStartDate)}
+                  </p>
+                  <p className="text-[12px] font-semibold text-slate-900 leading-snug">
+                    {fmtLongDate(course.cohortEndDate)}
+                  </p>
+                </>
+              ) : course.cohortStartDate ? (
+                <p className="text-[12px] font-semibold text-slate-900 leading-snug mt-0.5">
+                  {fmtLongDate(course.cohortStartDate)}
+                </p>
+              ) : (
+                <p className="text-[12px] font-semibold text-slate-900 leading-snug mt-0.5">
+                  {fmtMinutes(course.duration)}
+                </p>
+              )}
             </div>
           )}
         </aside>
-      </div>
-
-      {/* ── CTA BAR — full-width amber action button at the bottom ─ */}
-      <div className="border-t border-line bg-card-solid p-3 sm:p-3.5">
-        <span
-          className={cn(
-            "w-full inline-flex items-center justify-center gap-1.5",
-            "text-[11px] font-bold uppercase tracking-[0.14em]",
-            "px-4 py-2.5 rounded-md transition-colors",
-            course.requiresApproval
-              ? "bg-amber-600 text-white group-hover:bg-amber-700"
-              : "bg-amber-500 text-white group-hover:bg-amber-600",
-          )}
-        >
-          {ctaLabel}
-          <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
-        </span>
       </div>
     </Link>
   );
 }
 
-/** One chip row in the right sidebar. Theme-aware colours through
- *  the standard light + ring status-pill family. */
-function ChipRow({
+/** One sidebar chip — solid filled background with white text,
+ *  matching the reference card's bold chip vocabulary. */
+function Chip({
   tone, label,
 }: {
-  tone: "emerald" | "sky" | "indigo" | "rose" | "amber";
+  tone: ChipTone;
   label: string;
 }) {
-  const cls =
-    tone === "emerald" ? "bg-emerald-50 text-emerald-800 ring-emerald-200" :
-    tone === "sky"     ? "bg-sky-50 text-sky-800 ring-sky-200" :
-    tone === "indigo"  ? "bg-indigo-50 text-indigo-800 ring-indigo-200" :
-    tone === "amber"   ? "bg-amber-50 text-amber-800 ring-amber-200" :
-                          "bg-rose-50 text-rose-800 ring-rose-200";
+  const cls = CHIP_CLASSES[tone];
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center text-[10px] font-bold uppercase tracking-[0.06em] px-2 py-1 rounded-md ring-1 ring-inset w-full truncate",
+        "inline-flex items-center justify-center text-[12px] font-semibold tracking-tight",
+        "px-2.5 py-1.5 rounded-md w-full truncate",
         cls,
       )}
     >
@@ -262,11 +258,24 @@ function ChipRow({
   );
 }
 
+type ChipTone = "credit" | "in-person" | "online" | "hybrid" | "on-demand" | "provider" | "default";
+
+const CHIP_CLASSES: Record<ChipTone, string> = {
+  credit:      "bg-teal-500 text-white",
+  "in-person": "bg-blue-800 text-white",
+  online:      "bg-sky-500 text-white",
+  hybrid:      "bg-blue-700 text-white",
+  "on-demand": "bg-cyan-500 text-white",
+  provider:    "bg-red-900 text-white",
+  default:     "bg-slate-600 text-white",
+};
+
 /** Map delivery-mode text to a chip tone. */
-function deliveryTone(delivery: string): "sky" | "indigo" | "amber" | "emerald" {
+function deliveryTone(delivery: string): ChipTone {
   const d = delivery.toLowerCase();
-  if (d.includes("in-person") || d.includes("in person")) return "sky";
-  if (d.includes("hybrid") || d.includes("blended")) return "indigo";
-  if (d.includes("on-demand") || d.includes("on demand") || d.includes("asynchronous")) return "amber";
-  return "emerald";
+  if (d.includes("in-person") || d.includes("in person")) return "in-person";
+  if (d.includes("hybrid") || d.includes("blended")) return "hybrid";
+  if (d.includes("on-demand") || d.includes("on demand") || d.includes("asynchronous")) return "on-demand";
+  if (d === "online") return "online";
+  return "default";
 }
