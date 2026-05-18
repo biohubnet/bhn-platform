@@ -63,6 +63,7 @@ export default async function CoursesPage({
 
   const catalogCourses: CatalogCourse[] = courses.map((c) => ({
     id: c.id,
+    code: c.code,
     title: c.title,
     description: c.description,
     category: c.category,
@@ -77,6 +78,10 @@ export default async function CoursesPage({
     delivery: c.delivery,
     provider: c.provider,
     isSpecial: c.isSpecial,
+    requiresApproval: c.requiresApproval,
+    enrollByDate: c.enrollByDate?.toISOString() ?? null,
+    cohortStartDate: c.cohortStartDate?.toISOString() ?? null,
+    cohortEndDate: c.cohortEndDate?.toISOString() ?? null,
     instructor: c.instructor,
     _count: c._count,
     scormPackage: c.scormPackage,

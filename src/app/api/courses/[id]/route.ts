@@ -58,6 +58,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(data.provider !== undefined ? { provider: data.provider || null } : {}),
       ...(data.isSpecial !== undefined ? { isSpecial: !!data.isSpecial } : {}),
       ...(data.requiresApproval !== undefined ? { requiresApproval: !!data.requiresApproval } : {}),
+      // Catalog-card fields — short code + cohort window dates.
+      // Each accepts either a string (parsed to Date / null) or an
+      // explicit null to clear. Empty strings clear the field too.
+      ...(data.code !== undefined ? { code: data.code || null } : {}),
+      ...(data.enrollByDate !== undefined
+        ? { enrollByDate: data.enrollByDate ? new Date(data.enrollByDate) : null }
+        : {}),
+      ...(data.cohortStartDate !== undefined
+        ? { cohortStartDate: data.cohortStartDate ? new Date(data.cohortStartDate) : null }
+        : {}),
+      ...(data.cohortEndDate !== undefined
+        ? { cohortEndDate: data.cohortEndDate ? new Date(data.cohortEndDate) : null }
+        : {}),
     },
   });
 

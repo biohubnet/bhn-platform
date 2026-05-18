@@ -875,8 +875,22 @@ model FeedbackInvitation {
 
 model Course {
   id               String   @id @default(cuid())
+  /// Short course code shown on the catalog card (e.g. "BIOP210",
+  /// "ACRTM101"). Optional — courses without a code render without
+  /// the eyebrow on the card.
+  code             String?
   title            String
   description      String?
+  /// Optional enrollment-deadline date — for cohort-based courses
+  /// where the application window closes before the cohort begins.
+  /// Used on the catalog card's "Enroll by:" line.
+  enrollByDate     DateTime?
+  /// Cohort start + end dates for In-Person / Hybrid / Blended
+  /// courses. When both are set, the card shows "Duration: {start}
+  /// – {end}". For On-Demand / Asynchronous courses these stay
+  /// null and the card falls back to `duration` (minutes).
+  cohortStartDate  DateTime?
+  cohortEndDate    DateTime?
   thumbnail        String?
   /// Non-destructive colour / gradient overlay rendered on top of
   /// `thumbnail` in the catalog. Admins set it from

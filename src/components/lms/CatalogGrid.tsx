@@ -10,6 +10,7 @@ import type { CourseFilterOptions } from "./CourseFilters";
 
 export interface CatalogCourse {
   id: string;
+  code: string | null;
   title: string;
   description: string | null;
   category: string | null;
@@ -25,6 +26,14 @@ export interface CatalogCourse {
   delivery: string | null;
   provider: string | null;
   isSpecial: boolean;
+  requiresApproval: boolean;
+  /** Cohort enrollment-deadline date (ISO string) — for In-Person /
+   *  Hybrid courses with an application window. */
+  enrollByDate: string | null;
+  /** Cohort start / end dates (ISO strings) — for In-Person / Hybrid
+   *  courses. When both set, the card renders a duration range. */
+  cohortStartDate: string | null;
+  cohortEndDate: string | null;
   instructor: { name: string | null } | null;
   _count: { enrollments: number; modules: number };
   scormPackage: { version: string } | null;
@@ -324,6 +333,13 @@ function QuickEditDialog({
   const [delivery, setDelivery] = useState(course.delivery ?? "");
   const [provider, setProvider] = useState(course.provider ?? "");
   const [isSpecial, setIsSpecial] = useState(course.isSpecial);
+  // ── Catalog-card fields ──────────────────────────────────────
+  const [code, setCode] = useState(course.code ?? "");
+  const [creditCost, setCreditCost] = useState<number>(course.creditCost ?? 0);
+  const [requiresApproval, setRequiresApproval] = useState(course.requiresApproval);
+  const [enrollByDate, setEnrollByDate] = useState(toDateInput(course.enrollByDate));
+  const [cohortStartDate, setCohortStartDate] = useState(toDateInput(course.cohortStartDate));
+  const [cohortEndDate, setCohortEndDate] = useState(toDateInput(course.cohortEndDate));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -339,6 +355,12 @@ function QuickEditDialog({
           delivery: delivery || null,
           provider: provider || null,
           isSpecial,
+          code: code || null,
+          creditCost,
+          requiresApproval,
+          enrollByDate: enrollByDate || null,
+          cohortStartDate: cohortStartDate || null,
+          cohortEndDate: cohortEndDate || null,
         }),
       });
       if (!res.ok) {
@@ -353,7 +375,16 @@ function QuickEditDialog({
   }
 
   return (
-    <DialogShell title={course.title} subtitle="Quick-edit filters" onClose={onClose}>
+    <DialogShell title={course.title} subtitle="Quick-edit catalog card" onClose={onClose}>
+      <CatalogCardFields
+        code={code} setCode={setCode}
+        creditCost={creditCost} setCreditCost={setCreditCost}
+        requiresApproval={requiresApproval} setRequiresApproval={setRequiresApproval}
+        enrollByDate={enrollByDate} setEnrollByDate={setEnrollByDate}
+        cohortStartDate={cohortStartDate} setCohortStartDate={setCohortStartDate}
+        cohortEndDate={cohortEndDate} setCohortEndDate={setCohortEndDate}
+      />
+      <div className="my-4 border-t border-line" />
       <FilterFields
         options={options}
         topic={topic} setTopic={setTopic}
@@ -376,6 +407,96 @@ function QuickEditDialog({
         </button>
       </DialogActions>
     </DialogShell>
+  );
+}
+
+/** Format an ISO timestamp for the value of a `<input type="date">`.
+ *  Returns "" if the input is null so the field is clearable. */
+function toDateInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return new Date(iso).toISOString().slice(0, 10);
+}
+
+/** Catalog-card fields shown above the catalog filter fields in
+ *  the QuickEdit dialog. Covers the four columns added in the
+ *  2026-06-30 migration plus credit-cost + requires-approval
+ *  (already present, but surfaced here for one-stop card editing). */
+function CatalogCardFields({
+  code, setCode,
+  creditCost, setCreditCost,
+  requiresApproval, setRequiresApproval,
+  enrollByDate, setEnrollByDate,
+  cohortStartDate, setCohortStartDate,
+  cohortEndDate, setCohortEndDate,
+}: {
+  code: string;            setCode: (v: string) => void;
+  creditCost: number;      setCreditCost: (v: number) => void;
+  requiresApproval: boolean; setRequiresApproval: (v: boolean) => void;
+  enrollByDate: string;    setEnrollByDate: (v: string) => void;
+  cohortStartDate: string; setCohortStartDate: (v: string) => void;
+  cohortEndDate: string;   setCohortEndDate: (v: string) => void;
+}) {
+  const cls = "w-full bg-card-solid text-fg placeholder:text-subtle border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30";
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Code">
+          <input
+            className={cls}
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="e.g. BIOP210"
+            maxLength={16}
+          />
+        </Field>
+        <Field label="Credit cost (0 = Free)">
+          <input
+            type="number"
+            min={0}
+            step={50}
+            className={cls}
+            value={creditCost}
+            onChange={(e) => setCreditCost(Number(e.target.value) || 0)}
+            placeholder="0"
+          />
+        </Field>
+      </div>
+      <Field label="Enroll by (deadline)">
+        <input
+          type="date"
+          className={cls}
+          value={enrollByDate}
+          onChange={(e) => setEnrollByDate(e.target.value)}
+        />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Cohort start">
+          <input
+            type="date"
+            className={cls}
+            value={cohortStartDate}
+            onChange={(e) => setCohortStartDate(e.target.value)}
+          />
+        </Field>
+        <Field label="Cohort end">
+          <input
+            type="date"
+            className={cls}
+            value={cohortEndDate}
+            onChange={(e) => setCohortEndDate(e.target.value)}
+          />
+        </Field>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-muted cursor-pointer">
+        <input
+          type="checkbox"
+          checked={requiresApproval}
+          onChange={(e) => setRequiresApproval(e.target.checked)}
+          className="accent-brand-600"
+        />
+        Requires approval — card button reads &quot;Request to Enroll&quot;
+      </label>
+    </div>
   );
 }
 

@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18m";
+export const TOUR_VERSION = "2026.05.18n";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -562,6 +562,14 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Every cinematic page header on the platform now wears the /login spotlight stage as its backdrop — deep radial dome from the theme's hero-mesh-1, aurora wash + warm spotlight cone (mirroring the /login centre pool), visible reeded-glass vertical ribs at strong contrast (the 'fractal glass' effect the user was after — actual lines you can see, not subtle), a StylizedMark backdrop peeking from the bottom-right corner, edge vignette, and SVG noise grain. NO floating glyphs. The trainee dashboard hero keeps its bespoke editorial layout but its atmospheric layers were refactored to the same recipe so the platform reads as one design language. Also cleaned up /equip/my-applications — stray back-link + hero icon removed.",
     placement: "center",
     since: "2026.05.18m",
+  },
+  {
+    id: "course-card-redesign-2col",
+    title: "Course catalog cards — new two-column layout with all the metadata",
+    body: "Course cards on /courses have been rebuilt to mirror the legacy BHN course-card design. Each tile now shows: short course code eyebrow (BIOP210 etc.) + bold title + 4-line description + orange Request-to-Enroll / Enroll CTA on the LEFT, and a colour-coded chip stack (credit/free, delivery mode, provider) + Enroll-by date + Duration (cohort window or minutes) on the RIGHT. Admin quick-edit dialog grew a Catalog Card Fields section covering Code / Credit cost / Enroll-by / Cohort start / Cohort end / Requires approval — everything on the card is editable from the pencil that pops on hover.",
+    placement: "center",
+    cta: { label: "Open /courses", href: "/courses" },
+    since: "2026.05.18n",
   },
   {
     id: "aurora-theme",
