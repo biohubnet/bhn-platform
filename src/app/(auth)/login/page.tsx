@@ -98,70 +98,98 @@ function LoginPageInner() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-brand-50 via-card to-brand-100 px-4 py-8">
-      {/* ─── BACKDROP — huge cropped four-petal mark. Scaled big
-           enough that the SVG's edges always sit OFF-screen on the
-           upper-right so the visible region reads as a continuous
-           bleed instead of "a logo over there with a hard edge".
-           A radial soft-fade mask on the same layer feathers it
-           further into the page background. Bold opacity (28%) per
-           user request. ─── */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.28]"
-        style={{
-          backgroundImage: "url('/biohubnet-logo.svg')",
-          backgroundSize: "min(2400px, 360%) auto",
-          backgroundPosition: "calc(100% + 540px) calc(0% - 360px)",
-          backgroundRepeat: "no-repeat",
-          // Soft radial fade so the petal feathers into the page
-          // gradient instead of presenting a circular outline.
-          WebkitMaskImage:
-            "radial-gradient(ellipse 90% 80% at 100% 0%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 95%)",
-          maskImage:
-            "radial-gradient(ellipse 90% 80% at 100% 0%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 95%)",
-        }}
-      />
-      {/* Soft radial white wash on top to keep the form column
-          legible against the bolder backdrop. Anchored to the
-          lower-left where the cards sit. */}
+    <div
+      className="min-h-screen relative overflow-hidden px-4 py-8 text-slate-100"
+      style={{
+        backgroundImage:
+          "radial-gradient(ellipse 80% 60% at 50% -10%, #1e3a8a 0%, #0b0f24 55%, #050614 100%)",
+      }}
+    >
+      {/* Aurora wash — gentle cyan/teal glow behind the petal so
+          the brand colours register in the spotlight pool. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 20% 65%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 55%)",
+            "radial-gradient(circle 600px at 50% 22%, rgba(56,189,248,0.22) 0%, rgba(56,189,248,0) 65%), radial-gradient(circle 500px at 50% 30%, rgba(63,168,106,0.18) 0%, rgba(63,168,106,0) 70%)",
+        }}
+      />
+      {/* Spotlight cone — a tighter ellipse of warm-white over the
+          aurora wash so the petal reads as the lit subject of a
+          theatre stage. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 30% 22% at 50% 22%, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 75%)",
+        }}
+      />
+
+      {/* ─── BACKDROP PETAL ─── compact, bold, top-centred under
+           the spotlight. Drop-shadow glow gives it a soft halo so
+           the mark reads as suspended in light, not pasted on. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2"
+        style={{
+          top: "-180px",
+          width: "min(720px, 95vw)",
+          height: "min(720px, 95vw)",
+          backgroundImage: "url('/biohubnet-logo.svg')",
+          // Zoom into the emblem area only (the wordmark sits in the
+          // lower portion of the SVG; we don't want it in the
+          // backdrop). Scale ~250% and pull up so the four-petal
+          // cluster fills the frame.
+          backgroundSize: "230% auto",
+          backgroundPosition: "center -50%",
+          backgroundRepeat: "no-repeat",
+          opacity: 0.95,
+          filter:
+            "drop-shadow(0 0 60px rgba(56,189,248,0.55)) drop-shadow(0 0 24px rgba(63,168,106,0.35)) saturate(1.25)",
+        }}
+      />
+
+      {/* Vignette — gentle darken at the page edges so the
+          spotlight pool reads as the focal area. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 110% 90% at 50% 50%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.4) 100%)",
         }}
       />
 
       {/* Top bar — small mark + theme cycler */}
       <div className="relative max-w-6xl mx-auto flex items-center justify-between mb-10 sm:mb-14">
         <Link href="/" className="inline-flex items-center gap-2.5 group">
-          <LogoMark size={32} className="drop-shadow-[0_3px_8px_rgba(28,47,122,0.18)]" />
-          <span className="text-sm font-bold tracking-tight text-fg">
-            Bio<span className="text-brand-600">Hub</span><span className="text-emerald-600">Net</span>
+          <LogoMark size={32} className="drop-shadow-[0_3px_12px_rgba(56,189,248,0.45)]" />
+          <span className="text-sm font-bold tracking-tight text-white">
+            Bio<span className="text-sky-300">Hub</span><span className="text-emerald-300">Net</span>
           </span>
         </Link>
         <ThemeCycler />
       </div>
 
       {/* ─── TEASER HEADER ─────────────────────────────────────────
-           Lab-coat tone, biotech wordplay. A small "incubating"
-           badge, a bold headline, a sub. Drops in just above the
-           sign-in / register dual card so the page reads as a
-           campaign first and a form second. */}
-      <div className="relative max-w-6xl mx-auto mb-8 sm:mb-12">
-        <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 ring-1 ring-inset ring-amber-200 px-3 py-1 text-[10px] uppercase tracking-[0.22em] font-black text-amber-800">
+           Lab-coat tone, biotech wordplay. Sits in the lit pool of
+           the spotlight, with the petal glowing above. Text colours
+           hardcoded against the dark stage so they're readable
+           regardless of the viewer's theme. */}
+      <div className="relative max-w-6xl mx-auto mb-8 sm:mb-12 text-center">
+        <span className="inline-flex items-center gap-2 rounded-full bg-amber-300/15 ring-1 ring-inset ring-amber-300/40 px-3 py-1 text-[10px] uppercase tracking-[0.22em] font-black text-amber-200 backdrop-blur-sm">
           <FlaskConical size={11} className="animate-pulse" />
           Phase II · Incubating
         </span>
-        <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-fg leading-[1.05] max-w-3xl">
+        <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.05] max-w-3xl mx-auto drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)]">
           Something big is{" "}
           <span
             className="inline-block"
             style={{
               backgroundImage:
-                "linear-gradient(120deg, #1d4f8b 0%, #2c8aa3 50%, #3fa86a 100%)",
+                "linear-gradient(120deg, #7dd3fc 0%, #5eead4 50%, #86efac 100%)",
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
               color: "transparent",
@@ -170,11 +198,11 @@ function LoginPageInner() {
             culturing.
           </span>
         </h1>
-        <p className="mt-4 text-base sm:text-lg text-fg-muted max-w-2xl leading-relaxed">
+        <p className="mt-4 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
           BioHubNet is amplifying. New pathways, new partner labs, the EQUIP funding
           pillar going live. Sign in to watch the cohort grow — or pull up a pipette
           and join the next round.{" "}
-          <span className="font-mono text-xs text-fg-subtle">// p &lt; 0.05, results pending</span>
+          <span className="font-mono text-xs text-slate-400">// p &lt; 0.05, results pending</span>
         </p>
       </div>
 
@@ -337,7 +365,7 @@ function LoginPageInner() {
           </section>
         </div>
 
-        <p className="text-center text-xs text-subtle mt-8">
+        <p className="text-center text-xs text-slate-400 mt-8">
           By signing in you agree to our terms of service.
         </p>
       </div>
