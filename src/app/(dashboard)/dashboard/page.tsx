@@ -363,7 +363,17 @@ export default async function DashboardPage() {
             wrapper itself is a direct child of .hero-mesh-brand;
             its inner absolute children sit free in its bounding
             box. Same pattern as DSPageHeader's decoration wrapper. */}
-        <div aria-hidden className="absolute inset-0 pointer-events-none">
+        <div
+          aria-hidden
+          className="inset-0 pointer-events-none"
+          // Inline style — load-bearing. The `.hero-mesh-brand > *`
+          // rule in globals.css has higher CSS specificity than
+          // Tailwind's `.absolute` utility, so it would force this
+          // wrapper to `position: relative` (collapsing every
+          // child's `inset-0` to a 0 × 0 box and killing the glass
+          // effect entirely). Inline style wins the cascade.
+          style={{ position: "absolute", inset: 0 }}
+        >
           {/* ── REEDED-GLASS HOTHOUSE — MATCHED TO THE REFERENCE
                 IMAGE. The previous build was too dense (ribs too
                 close together, palette too dark, theme-tinted
