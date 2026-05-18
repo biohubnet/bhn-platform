@@ -189,7 +189,8 @@ export default async function DashboardPage() {
     openPostingsCount,
     savedPostingsCount,
     myEquipApps,
-    openEquipDeadlines,
+    openEquipVc,
+    openEquipVl,
   ] = await Promise.all([
     prisma.certificate.count({ where: { userId, revokedAt: null } }),
     prisma.enrollment.count({ where: { userId, status: "completed" } }),
@@ -206,18 +207,25 @@ export default async function DashboardPage() {
       take: 3,
       select: { id: true, stream: true, status: true, requestedAmount: true, approvedAmount: true },
     }),
-    // Upcoming VC / VL windows — render as a LIST in the EQUIP
-    // pillar column (replacing the older "X windows open" count).
-    // We fetch 5 so we can show the next 3 plus a "+N more" link
-    // when more are queued, keeping the column height comparable
-    // to the other two pillars even on a busy cycle calendar.
-    prisma.equipDeadline.findMany({
-      where: { status: { in: ["open", "extended"] }, deadlineAt: { gte: now } },
+    // Currently-open VC + VL windows — one card per stream, the
+    // SOONEST upcoming open or extended cycle. Trainees see at most
+    // two EQUIP rows (one VC, one VL); if a stream has nothing
+    // open, that row simply doesn't render. Skips closed / passed
+    // windows by definition.
+    prisma.equipDeadline.findFirst({
+      where: { stream: "venture_connect", status: { in: ["open", "extended"] }, deadlineAt: { gte: now } },
       orderBy: { deadlineAt: "asc" },
-      take: 5,
+      select: { id: true, stream: true, deadlineAt: true, status: true, cycleLabel: true },
+    }),
+    prisma.equipDeadline.findFirst({
+      where: { stream: "venture_lift", status: { in: ["open", "extended"] }, deadlineAt: { gte: now } },
+      orderBy: { deadlineAt: "asc" },
       select: { id: true, stream: true, deadlineAt: true, status: true, cycleLabel: true },
     }),
   ]);
+  const openEquipDeadlines = [openEquipVc, openEquipVl].filter(
+    (d): d is NonNullable<typeof d> => d !== null,
+  );
 
   // ─── WE ARE DEADLINE-DRIVEN data ───────────────────────────────
   // Powers the 4-column ENGAGE / EXPERIENCE / EQUIP / EVENTS pillar
@@ -228,7 +236,7 @@ export default async function DashboardPage() {
     engageOpportunities,
     experienceInternships,
     experienceOpportunities,
-    upcomingWorkshops,
+    upcomingEvents,
   ] = await Promise.all([
     // ENGAGE — published pathways with enrollment open (or no close
     // date). Pathways are the most "deadline-driven" engage items
@@ -281,26 +289,25 @@ export default async function DashboardPage() {
       orderBy: [{ displayOrder: "asc" }, { deadlineAt: "asc" }],
       take: 3,
     }),
-    // EVENTS — upcoming workshops + tours from published BHN events.
-    prisma.workshop.findMany({
-      where: {
-        isActive: true,
-        startDateTime: { gte: now },
-        event: { status: "published" },
-      },
+    // EVENTS — pulls from the SAME event calendar source that the
+    // public /events page renders (BhnEvent, not individual
+    // Workshops). Trainees see the parent symposium / training-week
+    // editions here; the per-event page handles drilling into the
+    // workshop schedule. Filter mirrors /events: published + not
+    // yet ended.
+    prisma.bhnEvent.findMany({
+      where: { status: "published", endDate: { gte: now } },
+      orderBy: { startDate: "asc" },
+      take: 3,
       select: {
         id: true,
-        title: true,
         slug: true,
-        shortDescription: true,
-        startDateTime: true,
-        endDateTime: true,
-        locationName: true,
-        kind: true,
-        event: { select: { slug: true, title: true } },
+        title: true,
+        tagline: true,
+        startDate: true,
+        endDate: true,
+        mainVenueName: true,
       },
-      orderBy: { startDateTime: "asc" },
-      take: 3,
     }),
   ]);
 
@@ -419,7 +426,7 @@ export default async function DashboardPage() {
             href: o.ctaUrl ?? undefined,
           })),
         ]}
-        equipItems={openEquipDeadlines.slice(0, 4).map((d) => {
+        equipItems={openEquipDeadlines.map((d) => {
           const isVL = d.stream === "venture_lift";
           return {
             title: isVL
@@ -433,14 +440,12 @@ export default async function DashboardPage() {
             href: "/equip",
           };
         })}
-        eventItems={upcomingWorkshops.map((w) => ({
-          title: w.title,
-          description: w.shortDescription?.trim()
-            ? w.shortDescription
-            : w.locationName ?? "BioHubNet in-person event",
-          pill: formatEventPill(w.startDateTime, w.endDateTime),
+        eventItems={upcomingEvents.map((e) => ({
+          title: e.title,
+          description: (e.tagline?.trim() || e.mainVenueName) ?? "BioHubNet in-person event",
+          pill: formatEventPill(e.startDate, e.endDate),
           pillTone: "info" as const,
-          href: `/events/${w.event.slug}/workshops/${w.slug}`,
+          href: `/events/${e.slug}`,
         }))}
       />
 
@@ -529,11 +534,9 @@ export default async function DashboardPage() {
       {/* Recent activity — small ledger of latest course sessions.
           Optional, drops out when nothing's logged yet. */}
       {recentActivity.length > 0 && (
-        <section className="border-t border-line py-4 px-5 sm:px-8">
-          <div className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
-            Recent
-          </div>
-          <ul className="divide-y divide-line border-y border-line">
+        <section className="border-t border-line py-4 sm:py-6 px-5 sm:px-8">
+          <SectionEyebrow>Recent</SectionEyebrow>
+          <ul className="mt-3 divide-y divide-line border-y border-line">
             {recentActivity.slice(0, 3).map((s) => {
               const done = s.status === "passed" || s.status === "completed";
               return (
@@ -763,7 +766,7 @@ function DeadlineDrivenBoard({
   eventItems: PillarItem[];
 }) {
   return (
-    <section className="border-t border-line px-4 sm:px-6 py-5 sm:py-7">
+    <section className="border-t border-line px-5 sm:px-8 py-4 sm:py-6">
       <div className="max-w-6xl mx-auto rounded-2xl overflow-hidden border border-line bg-card-solid shadow-sm">
         {/* Navy banner — same gradient family as the brand mark.
             Sits on top of the 4-column body. */}
@@ -930,20 +933,26 @@ function PersonalStatusColumn({
     tone === "sky"     ? "text-sky-700 hover:text-sky-900" :
                           "text-brand-700 hover:text-brand-900";
 
+  // Padding matches the DEADLINE-DRIVEN board's PillarColumn so
+  // the two stacked sections (the board + this status strip)
+  // read as one rhythmic surface — same column horizontal spacing,
+  // same vertical breathing room. Eyebrow + primary line tightened
+  // (mt-1.5, leading-snug, smaller secondary text) to keep the
+  // strip compact.
   return (
-    <div className="px-5 sm:px-7 py-4 sm:py-5">
+    <div className="px-4 sm:px-5 py-4 sm:py-5">
       <SectionEyebrow tone={tone}>{eyebrow}</SectionEyebrow>
-      <p className="mt-2 text-base sm:text-lg font-black text-fg leading-tight">
+      <p className="mt-1.5 text-base font-black text-fg leading-snug">
         {primary}
       </p>
-      <ul className="mt-1.5 space-y-0.5 text-xs text-fg-muted leading-snug">
+      <ul className="mt-1 space-y-0.5 text-[11.5px] text-fg-muted leading-snug">
         {secondary.map((s, i) => (
           <li key={i}>{s}</li>
         ))}
       </ul>
       <Link
         href={cta.href}
-        className={`mt-2 inline-flex items-center gap-1 text-xs font-bold ${ctaCls}`}
+        className={`mt-2 inline-flex items-center gap-1 text-[11px] font-bold ${ctaCls}`}
       >
         {cta.label} <ArrowRight size={11} />
       </Link>

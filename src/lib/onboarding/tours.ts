@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18f";
+export const TOUR_VERSION = "2026.05.18g";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -513,6 +513,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Trainee dashboard now leads with a four-column DEADLINE-DRIVEN board mirroring the biohubnet.ca card. Each column lists deadline-driven items pulled from real data — ENGAGE (pathways + admin-curated highlights), EXPERIENCE (active internships + Knowledge Exchange + Mobility Award), EQUIP (VentureLift / VentureConnect with their amount + audience spelled out), EVENTS (upcoming workshops with location + time). VC and VL are no longer acronyms-only — every card spells them out and explains who they're for. A compact three-column 'your training / placement / funding' status strip sits below the board for personal state. Loot Vault is now a single-row strip (about half its previous height). Whole page got tighter — section padding reduced, gaps trimmed.",
     placement: "center",
     since: "2026.05.18f",
+  },
+  {
+    id: "dash-equip-events-consistency",
+    title: "Dashboard polish — EQUIP shows one VC + one VL, EVENTS reads the calendar",
+    body: "Three refinements on the trainee DEADLINE-DRIVEN board. (1) EQUIP now shows ONE next-open round per stream (one VentureConnect card + one VentureLift card) instead of the next 5 in date order — guarantees both streams appear; closed/passed windows never show. (2) EVENTS now reads from the same `BhnEvent` calendar source the public `/events` page uses, so the dashboard event cards match what trainees see on the calendar. (3) Section padding, eyebrows, and column rhythm normalised across the page so the dashboard reads as one designed surface.",
+    placement: "center",
+    since: "2026.05.18g",
   },
   {
     id: "aurora-theme",
