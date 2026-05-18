@@ -34,6 +34,9 @@ export interface CatalogCourse {
    *  courses. When both set, the card renders a duration range. */
   cohortStartDate: string | null;
   cohortEndDate: string | null;
+  /** Whether the signed-in user has hearted this course. Drives
+   *  the filled-vs-outline state of the heart icon on the card. */
+  isFavorite: boolean;
   instructor: { name: string | null } | null;
   _count: { enrollments: number; modules: number };
   scormPackage: { version: string } | null;

@@ -27,6 +27,7 @@
  */
 
 import Link from "next/link";
+import { useState } from "react";
 import { ArrowRight, BookOpen, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
@@ -49,6 +50,8 @@ interface CourseCardProps {
     enrollByDate: string | null;
     cohortStartDate: string | null;
     cohortEndDate: string | null;
+    /** Whether the SIGNED-IN user has hearted this course. */
+    isFavorite: boolean;
     _count: { enrollments: number; modules: number };
   };
   role: string;
@@ -81,6 +84,42 @@ export function CourseCard({ course }: CourseCardProps) {
   // cards skip it — the grayscale treatment already does the visual
   // "not active" work and we don't want two filters competing.
   const overlay = isArchived ? null : parseOverlay(course.thumbnailOverlay);
+
+  // Optimistic favorite state — initialised from the server-passed
+  // prop. The heart-icon button below flips this immediately on
+  // click, then fires the API; on error we revert.
+  const [isFavorite, setIsFavorite] = useState(course.isFavorite);
+  const [pending, setPending] = useState(false);
+
+  async function toggleFavorite(e: React.MouseEvent<HTMLButtonElement>) {
+    // The whole card is a Link → block both nav (preventDefault) and
+    // event bubbling (stopPropagation) so the heart click stays in
+    // place instead of opening the course.
+    e.preventDefault();
+    e.stopPropagation();
+    if (pending) return;
+    const next = !isFavorite;
+    setIsFavorite(next);
+    setPending(true);
+    try {
+      const res = await fetch(`/api/courses/${course.id}/favorite`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        // Revert on failure
+        setIsFavorite(!next);
+      } else {
+        // Trust server state in case the user's existing-state went
+        // stale (e.g. another tab toggled it).
+        const j = (await res.json().catch(() => null)) as { favorited?: boolean } | null;
+        if (j && typeof j.favorited === "boolean") setIsFavorite(j.favorited);
+      }
+    } catch {
+      setIsFavorite(!next);
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <Link
@@ -133,14 +172,35 @@ export function CourseCard({ course }: CourseCardProps) {
       <div className="grid grid-cols-[1fr_150px] sm:grid-cols-[1fr_170px] flex-1">
         {/* LEFT — dark slate content area (inherits bg-slate-900) */}
         <div className="p-5 sm:p-6 flex flex-col min-w-0 relative">
-          {/* Heart — top-right of left column, sized + positioned
-              to match the reference exactly. */}
-          <Heart
-            size={18}
-            strokeWidth={1.6}
-            aria-hidden
-            className="absolute top-4 right-4 text-rose-500 fill-rose-500 group-hover:scale-110 transition-transform"
-          />
+          {/* Heart toggle — top-right of LEFT column. Tap to add /
+              remove from favorites. Stops propagation + prevents
+              default so the surrounding Link doesn't navigate to
+              the course detail page. Filled red when favorited,
+              outline when not; scales gently on hover. */}
+          <button
+            type="button"
+            onClick={toggleFavorite}
+            disabled={pending}
+            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            aria-pressed={isFavorite}
+            className={cn(
+              "absolute top-3.5 right-3.5 p-1.5 rounded-full",
+              "transition-all hover:bg-white/10 active:bg-white/15",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70",
+              pending && "opacity-60 cursor-wait",
+            )}
+          >
+            <Heart
+              size={18}
+              strokeWidth={1.8}
+              className={cn(
+                "transition-all",
+                isFavorite
+                  ? "text-rose-500 fill-rose-500 scale-100 group-hover:scale-110"
+                  : "text-rose-300/80 fill-transparent group-hover:text-rose-400 group-hover:scale-110",
+              )}
+            />
+          </button>
 
           {/* Code (e.g. ACRTM101) */}
           {course.code && (

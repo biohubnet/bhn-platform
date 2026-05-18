@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { getSession, isStaff as checkIsStaff, isAdmin as checkIsAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Heart } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { NewCourseButton } from "@/components/lms/NewCourseButton";
 import { CourseSearchBar } from "@/components/lms/CourseSearchBar";
 import { CourseFilters } from "@/components/lms/CourseFilters";
@@ -22,19 +24,39 @@ export default async function CoursesPage({
     delivery?: string;
     provider?: string;
     special?: string;
+    /** `1` to restrict the catalog to courses the signed-in user
+     *  has hearted (the "Favorites only" filter chip on the page). */
+    fav?: string;
   }>;
 }) {
   const session = await getSession();
   const sp = await searchParams;
   const role = (session!.user as { role?: string }).role ?? "learner";
+  const userId = (session!.user as { id?: string }).id ?? null;
   const isStaff = checkIsStaff(role);
   const isAdmin = checkIsAdmin(role);
 
   const filters = parseFilters(sp);
+  const favOnly = sp.fav === "1";
 
   // Idempotent first-deploy seed of the option lists.
   await ensureCourseFilterOptions();
   const options = await getCourseFilterOptions();
+
+  // Signed-in user's favorite course IDs — fetched first so we
+  // can both (a) restrict the catalog query when the user has
+  // toggled `?fav=1`, and (b) tag every card with `isFavorite`
+  // so the heart icon renders in the right state.
+  const favoriteIds = userId
+    ? new Set(
+        (
+          await prisma.courseFavorite.findMany({
+            where: { userId },
+            select: { courseId: true },
+          })
+        ).map((f) => f.courseId),
+      )
+    : new Set<string>();
 
   // Non-staff see published AND archived courses (archived stay in
   // the catalog so trainees can read about courses that ran in the
@@ -48,6 +70,10 @@ export default async function CoursesPage({
       ...(filters.provider.length && { provider: { in: filters.provider } }),
       ...(filters.special         && { isSpecial: true }),
       ...(sp.q ? { title: { contains: sp.q, mode: "insensitive" as const } } : {}),
+      // Favorites-only filter — empty set ⇒ matches nothing
+      // (intentional: an unauthenticated user with `?fav=1` sees
+      // an empty catalog, not the full list).
+      ...(favOnly ? { id: { in: Array.from(favoriteIds) } } : {}),
     },
     include: {
       instructor: { select: { name: true } },
@@ -82,10 +108,15 @@ export default async function CoursesPage({
     enrollByDate: c.enrollByDate?.toISOString() ?? null,
     cohortStartDate: c.cohortStartDate?.toISOString() ?? null,
     cohortEndDate: c.cohortEndDate?.toISOString() ?? null,
+    isFavorite: favoriteIds.has(c.id),
     instructor: c.instructor,
     _count: c._count,
     scormPackage: c.scormPackage,
   }));
+
+  // Total count of favorites — used by the favorites-filter chip
+  // so users can see "Favorites · 12" without scrolling.
+  const favoriteCount = favoriteIds.size;
 
   const subtitleDefault = "Self-paced modules, SCORM-backed simulations, and instructor-led series — all in one library. Filter by topic, delivery, provider, or run a search.";
   const subtitle = await getCopy("courses.subtitle", subtitleDefault);
@@ -112,6 +143,44 @@ export default async function CoursesPage({
       <div className="mb-4">
         <CourseSearchBar />
       </div>
+
+      {/* Favorites filter chip — toggles `?fav=1` on the URL.
+          Shows the user's total favorite count so they know how
+          many cards they'll see when toggled on. Hidden for users
+          who have nothing favorited yet to avoid a noisy 0-count
+          chip on first visit. */}
+      {(favoriteCount > 0 || favOnly) && (
+        <div className="mb-3 flex items-center gap-2 flex-wrap">
+          <Link
+            href={favOnly ? "/courses" : "/courses?fav=1"}
+            className={cn(
+              "inline-flex items-center gap-1.5 text-[12px] font-semibold",
+              "px-3 py-1.5 rounded-full ring-1 ring-inset transition-colors",
+              favOnly
+                ? "bg-rose-500 text-white ring-rose-500"
+                : "bg-card text-fg-muted ring-line hover:ring-rose-300 hover:text-rose-600",
+            )}
+          >
+            <Heart
+              size={13}
+              strokeWidth={1.8}
+              className={favOnly ? "fill-white text-white" : "text-rose-500 fill-rose-500"}
+            />
+            Favorites
+            <span className={cn("text-[11px] font-bold", favOnly ? "text-white/85" : "text-fg-subtle")}>
+              · {favoriteCount}
+            </span>
+          </Link>
+          {favOnly && (
+            <Link
+              href="/courses"
+              className="text-[11px] text-muted hover:text-fg underline-offset-2 hover:underline"
+            >
+              Show all courses
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* Filter panel — full-width, prominent, expanded by default. */}
       <CourseFilters options={options} />

@@ -191,6 +191,7 @@ model User {
   accounts             Account[]
   sessions             Session[]
   enrollments          Enrollment[]
+  courseFavorites      CourseFavorite[]
   scormSessions        ScormSession[]
   xapiStatements       XapiStatement[]
   certificates         Certificate[]
@@ -941,6 +942,26 @@ model Course {
   groupCourses GroupCourse[]
   pathways     PathwayCourse[]
   skills       CourseSkill[]
+  favorites    CourseFavorite[]
+}
+
+/// User → Course favorite join. Trainees tap the heart icon on a
+/// catalog card to bookmark a course for later; the same heart
+/// flips back to remove the favorite. A future surface (a
+/// "Favorites" filter on /courses or a dedicated /my-favorites
+/// page) reads from this table.
+model CourseFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
 }
 
 model ScormPackage {

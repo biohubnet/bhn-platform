@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18n";
+export const TOUR_VERSION = "2026.05.18o";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -570,6 +570,14 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     cta: { label: "Open /courses", href: "/courses" },
     since: "2026.05.18n",
+  },
+  {
+    id: "course-favorites",
+    title: "Course favorites — heart any card to bookmark it",
+    body: "The heart icon on the top-right of each catalog card is now interactive — tap to add the course to your favorites, tap again to remove it. Filled rose when favorited, outline when not. A new 'Favorites · {N}' filter chip appears at the top of /courses once you've hearted at least one course; toggling it narrows the catalog to just your favorites. The state is per-user and persists across sessions.",
+    placement: "center",
+    cta: { label: "Open /courses", href: "/courses" },
+    since: "2026.05.18o",
   },
   {
     id: "aurora-theme",
