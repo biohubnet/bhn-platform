@@ -219,6 +219,91 @@ export default async function DashboardPage() {
     }),
   ]);
 
+  // ─── WE ARE DEADLINE-DRIVEN data ───────────────────────────────
+  // Powers the 4-column ENGAGE / EXPERIENCE / EQUIP / EVENTS pillar
+  // card that mirrors the biohubnet.ca marketing pattern. Each query
+  // is capped to keep the columns vertically balanced.
+  const [
+    engagePathways,
+    engageOpportunities,
+    experienceInternships,
+    experienceOpportunities,
+    upcomingWorkshops,
+  ] = await Promise.all([
+    // ENGAGE — published pathways with enrollment open (or no close
+    // date). Pathways are the most "deadline-driven" engage items
+    // (Med Affairs, Entrepreneurship, …) so they go first.
+    prisma.pathway.findMany({
+      where: {
+        status: "published",
+        enrollmentStatus: "open",
+        OR: [
+          { enrollmentClosesAt: null },
+          { enrollmentClosesAt: { gte: now } },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        enrollmentClosesAt: true,
+        enrollmentStatus: true,
+      },
+      orderBy: [{ enrollmentClosesAt: "asc" }, { createdAt: "desc" }],
+      take: 2,
+    }),
+    // Admin-curated engage highlights (special workshops, featured
+    // pathways the admin wants to push). Sits below pathways.
+    prisma.opportunityDeadline.findMany({
+      where: { pillar: "engage", status: { in: ["active", "full"] } },
+      orderBy: [{ displayOrder: "asc" }, { deadlineAt: "asc" }],
+      take: 2,
+    }),
+    // EXPERIENCE — active internships with a future deadline.
+    prisma.internshipPosting.findMany({
+      where: { status: "active", deadline: { gte: now } },
+      select: {
+        id: true,
+        title: true,
+        companyName: true,
+        deadline: true,
+        keySkills: true,
+      },
+      orderBy: { deadline: "asc" },
+      take: 2,
+    }),
+    // Knowledge Exchange + Mobility Award opportunities. The
+    // OpportunityDeadline table is the generic home for "deadline
+    // cards without their own dedicated model" — admins curate it
+    // and the dashboard reads it back.
+    prisma.opportunityDeadline.findMany({
+      where: { pillar: "experience", status: { in: ["active", "full"] } },
+      orderBy: [{ displayOrder: "asc" }, { deadlineAt: "asc" }],
+      take: 3,
+    }),
+    // EVENTS — upcoming workshops + tours from published BHN events.
+    prisma.workshop.findMany({
+      where: {
+        isActive: true,
+        startDateTime: { gte: now },
+        event: { status: "published" },
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        shortDescription: true,
+        startDateTime: true,
+        endDateTime: true,
+        locationName: true,
+        kind: true,
+        event: { select: { slug: true, title: true } },
+      },
+      orderBy: { startDateTime: "asc" },
+      take: 3,
+    }),
+  ]);
+
   // Pillar-level summaries computed once for the JSX.
   const liveEquipApp = myEquipApps.find((a) =>
     ["draft", "submitted", "under_review", "pre_screen_approved"].includes(a.status),
@@ -285,120 +370,157 @@ export default async function DashboardPage() {
           (RewardsDistanceCard) lives at the bottom now, narrower,
           per user request. */}
 
-      {/* ── PILLAR TRINITY ─────────────────────────────────────────
-            Three columns, one per BHN pillar, hairline-divided.
-            Each column reads as the trainee's status in that pillar
-            plus the next action. Designed so a trainee lands and
-            understands their position across ENGAGE / EXPERIENCE /
-            EQUIP at a glance instead of treating the dashboard as
-            an ENGAGE-only surface. Stacks on mobile. */}
+      {/* ── WE ARE DEADLINE-DRIVEN ─────────────────────────────────
+            Four-column action card mirroring the biohubnet.ca
+            marketing pattern: navy banner header + ENGAGE /
+            EXPERIENCE / EQUIP / EVENTS columns, each listing
+            upcoming deadline-driven items. Replaces the earlier
+            Pillar Trinity (which mixed status + actions across 3
+            columns) with a tighter, action-first board. Stacks
+            2-up on md, 4-up on lg. */}
+      <DeadlineDrivenBoard
+        engageItems={[
+          ...engagePathways.map((p) => ({
+            title: p.title,
+            description: p.description?.trim()
+              ? p.description.slice(0, 110).trim() + (p.description.length > 110 ? "…" : "")
+              : "Multi-week cohort pathway with industry mentors.",
+            pill: p.enrollmentClosesAt
+              ? `APPLY BY ${shortDate(p.enrollmentClosesAt)}`
+              : "ENROLLMENT OPEN",
+            pillTone: "danger" as const,
+            href: `/pathways/${p.id}`,
+          })),
+          ...engageOpportunities.map((o) => ({
+            title: o.title,
+            description: o.blurb ?? "",
+            pill: o.pillText ?? deadlinePill(o.deadlineAt, o.status),
+            pillTone: o.status === "full" ? ("danger" as const) : ("danger" as const),
+            href: o.ctaUrl ?? undefined,
+          })),
+        ]}
+        experienceItems={[
+          ...experienceInternships.map((i) => ({
+            title: i.title,
+            description: i.companyName
+              ? `${i.companyName} — ${(i.keySkills as string[] | null)?.slice(0, 3).join(" · ") ?? "internship placement"}`
+              : ((i.keySkills as string[] | null)?.slice(0, 3).join(" · ") ?? "Internship placement"),
+            pill: i.deadline
+              ? `APPLY BY ${shortDate(i.deadline)}`
+              : "APPLY NOW",
+            pillTone: "danger" as const,
+            href: `/internships/${i.id}`,
+          })),
+          ...experienceOpportunities.map((o) => ({
+            title: o.title,
+            description: o.blurb ?? "",
+            pill: o.pillText ?? deadlinePill(o.deadlineAt, o.status),
+            pillTone: o.status === "full" ? ("danger" as const) : ("danger" as const),
+            href: o.ctaUrl ?? undefined,
+          })),
+        ]}
+        equipItems={openEquipDeadlines.slice(0, 4).map((d) => {
+          const isVL = d.stream === "venture_lift";
+          return {
+            title: isVL
+              ? `VentureLift · ${d.cycleLabel ?? shortDate(d.deadlineAt)}`
+              : `VentureConnect · ${d.cycleLabel ?? shortDate(d.deadlineAt)}`,
+            description: isVL
+              ? "Up to $25K for IP-backed innovations — supports business strategy, product development, regulatory navigation."
+              : "Up to $5K for industry events, investor conferences, and pitch competitions.",
+            pill: `APPLY BY ${shortDate(d.deadlineAt)}${d.status === "extended" ? " · EXT" : ""}`,
+            pillTone: "danger" as const,
+            href: "/equip",
+          };
+        })}
+        eventItems={upcomingWorkshops.map((w) => ({
+          title: w.title,
+          description: w.shortDescription?.trim()
+            ? w.shortDescription
+            : w.locationName ?? "BioHubNet in-person event",
+          pill: formatEventPill(w.startDateTime, w.endDateTime),
+          pillTone: "info" as const,
+          href: `/events/${w.event.slug}/workshops/${w.slug}`,
+        }))}
+      />
+
+      {/* ── PERSONAL STATUS — compact, scannable bottom strip ──────
+            The Pillar Trinity used to carry "your status" data — N
+            in progress, certs earned, talent-pool state. That info
+            still matters, but it doesn't need to dominate the
+            page. Now it's a thin three-column strip below the
+            DEADLINE-DRIVEN board: status + a primary action per
+            pillar. */}
       <section className="border-t border-line">
         <div className="grid grid-cols-1 lg:grid-cols-3 lg:divide-x lg:divide-line">
-          {/* ENGAGE — Training */}
-          <PillarColumn
+          <PersonalStatusColumn
             tone="emerald"
-            eyebrow="Engage · Training"
-            metric={inProgress.toLocaleString()}
-            metricLabel={inProgress === 1 ? "course in progress" : "courses in progress"}
-            stats={[
-              `${certsCount} certificate${certsCount === 1 ? "" : "s"} earned`,
-              `${completedCourseCount} course${completedCourseCount === 1 ? "" : "s"} completed`,
-              `${(user?.credits ?? 0).toLocaleString()} credits available`,
+            eyebrow="Your training"
+            primary={`${inProgress.toLocaleString()} in progress`}
+            secondary={[
+              `${certsCount} certificate${certsCount === 1 ? "" : "s"}`,
+              `${completedCourseCount} course${completedCourseCount === 1 ? "" : "s"} done`,
+              `${(user?.credits ?? 0).toLocaleString()} credits`,
             ]}
-            ctas={
+            cta={
               activeContinue[0]
-                ? [
-                    { label: "Continue learning", href: `/courses/${activeContinue[0].courseId}` },
-                    { label: "Browse catalog", href: "/courses", muted: true },
-                  ]
+                ? { label: "Continue learning", href: `/courses/${activeContinue[0].courseId}` }
                 : suggestedCourses[0]
-                  ? [
-                      { label: `Try ${suggestedCourses[0].title.slice(0, 32)}${suggestedCourses[0].title.length > 32 ? "…" : ""}`, href: `/courses/${suggestedCourses[0].id}` },
-                      { label: "Browse catalog", href: "/courses", muted: true },
-                    ]
-                  : [
-                      { label: "Browse catalog", href: "/courses" },
-                      { label: "View pathways", href: "/pathways", muted: true },
-                    ]
+                  ? { label: "Browse catalog", href: "/courses" }
+                  : { label: "Browse catalog", href: "/courses" }
             }
           />
-
-          {/* EXPERIENCE — Placements */}
-          <PillarColumn
+          <PersonalStatusColumn
             tone="amber"
-            eyebrow="Experience · Placements"
-            metric={openPostingsCount.toLocaleString()}
-            metricLabel={openPostingsCount === 1 ? "internship open" : "internships open"}
-            stats={
+            eyebrow="Your placement"
+            primary={
               talentSubmission
-                ? [
-                    inPoolApproved
-                      ? "In the talent pool · employers can find you"
-                      : talentSubmission.reviewStatus === "rejected"
-                        ? "Talent-pool application — not approved this round"
-                        : "Talent-pool application — under review",
-                    `${savedPostingsCount} saved posting${savedPostingsCount === 1 ? "" : "s"}`,
-                    `Submitted ${new Date(talentSubmission.createdAt).toLocaleDateString()}`,
-                  ]
-                : [
-                    "Not yet in the talent pool",
-                    `${savedPostingsCount} saved posting${savedPostingsCount === 1 ? "" : "s"}`,
-                    "Apply once you have a course or two under your belt",
-                  ]
+                ? inPoolApproved
+                  ? "In the talent pool"
+                  : talentSubmission.reviewStatus === "rejected"
+                    ? "Application not approved"
+                    : "Application under review"
+                : "Not in the talent pool"
             }
-            ctas={
+            secondary={[
+              `${savedPostingsCount} saved posting${savedPostingsCount === 1 ? "" : "s"}`,
               talentSubmission
-                ? [
-                    { label: "Browse internships", href: "/internships" },
-                    { label: "Manage application", href: "/profile/applications", muted: true },
-                  ]
-                : [
-                    { label: "Apply to talent pool", href: "/forms/talent-application" },
-                    { label: "Browse internships", href: "/internships", muted: true },
-                  ]
+                ? `Submitted ${new Date(talentSubmission.createdAt).toLocaleDateString()}`
+                : "Apply once you have a course or two under your belt",
+            ]}
+            cta={
+              talentSubmission
+                ? { label: "Manage application", href: "/profile/applications" }
+                : { label: "Apply to talent pool", href: "/forms/talent-application" }
             }
           />
-
-          {/* EQUIP — Funding */}
-          <PillarColumn
+          <PersonalStatusColumn
             tone="sky"
-            eyebrow="Equip · Funding"
-            metricSlot={<EquipDeadlinesList deadlines={openEquipDeadlines} />}
-            stats={
+            eyebrow="Your funding"
+            primary={
               fundedEquipApp
-                ? [
-                    `Funded $${(fundedEquipApp.approvedAmount ?? 0).toLocaleString()}`,
-                    `Stream: ${fundedEquipApp.stream === "venture_lift" ? "VentureLift" : "VentureConnect"}`,
-                    "Welcome to BHN-backed founders",
-                  ]
+                ? `Funded $${(fundedEquipApp.approvedAmount ?? 0).toLocaleString()}`
                 : liveEquipApp
-                  ? [
-                      `${liveEquipApp.stream === "venture_lift" ? "VentureLift" : "VentureConnect"} application`,
-                      liveEquipApp.status === "draft"
-                        ? `Draft · ${liveEquipApp.requestedAmount ? "$" + liveEquipApp.requestedAmount.toLocaleString() : "in progress"}`
-                        : liveEquipApp.status === "submitted"
-                          ? "Submitted · awaiting review"
-                          : liveEquipApp.status === "under_review"
-                            ? "Under review by the committee"
-                            : "Pre-screen approved — Stage 2 unlocked",
-                      "VentureConnect ≤ $5K · VentureLift ≤ $25K",
-                    ]
-                  : [
-                      "VentureConnect — up to $5K (monthly windows)",
-                      "VentureLift — up to $25K (quarterly windows)",
-                      "Apply with a real idea — even early-stage",
-                    ]
+                  ? liveEquipApp.status === "draft"
+                    ? "Draft in progress"
+                    : liveEquipApp.status === "submitted"
+                      ? "Submitted — awaiting review"
+                      : liveEquipApp.status === "under_review"
+                        ? "Under committee review"
+                        : "Pre-screen approved"
+                  : "No application yet"
             }
-            ctas={
+            secondary={
+              fundedEquipApp
+                ? [`Stream: ${fundedEquipApp.stream === "venture_lift" ? "VentureLift" : "VentureConnect"}`, "Welcome to BHN-backed founders"]
+                : liveEquipApp
+                  ? [`${liveEquipApp.stream === "venture_lift" ? "VentureLift" : "VentureConnect"} application`]
+                  : ["VC ≤ $5K · VL ≤ $25K", "Apply with a real idea — even early-stage"]
+            }
+            cta={
               liveEquipApp
-                ? [
-                    { label: liveEquipApp.status === "draft" ? "Resume draft" : "View application", href: `/equip/${liveEquipApp.id}` },
-                    { label: "How EQUIP works", href: "/equip", muted: true },
-                  ]
-                : [
-                    { label: "Apply for funding", href: "/equip" },
-                    { label: "How EQUIP works", href: "/equip", muted: true },
-                  ]
+                ? { label: liveEquipApp.status === "draft" ? "Resume draft" : "View application", href: `/equip/${liveEquipApp.id}` }
+                : { label: "Apply for funding", href: "/equip" }
             }
           />
         </div>
@@ -407,7 +529,7 @@ export default async function DashboardPage() {
       {/* Recent activity — small ledger of latest course sessions.
           Optional, drops out when nothing's logged yet. */}
       {recentActivity.length > 0 && (
-        <section className="border-t border-line py-6 px-5 sm:px-8">
+        <section className="border-t border-line py-4 px-5 sm:px-8">
           <div className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
             Recent
           </div>
@@ -435,14 +557,14 @@ export default async function DashboardPage() {
 
       {/* ── FOR YOU — sky→violet wash. Leaderboard + latest news. */}
       <section
-        className="border-t border-line py-7 sm:py-9 px-5 sm:px-8"
+        className="border-t border-line py-4 sm:py-6 px-5 sm:px-8"
         style={{
           backgroundImage:
             "linear-gradient(135deg, rgba(56,189,248,0.07) 0%, rgba(124,58,237,0.05) 50%, rgba(244,114,182,0.06) 100%)",
         }}
       >
         <SectionEyebrow>For you</SectionEyebrow>
-        <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8">
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
           <CreditUsageScoreboard userId={userId} />
           <LatestNewsCard />
         </div>
@@ -451,14 +573,14 @@ export default async function DashboardPage() {
       {/* ── REMINDERS — amber wash. Auto-hides when nothing's due. */}
       {hasReminders && (
         <section
-          className="border-t border-line py-7 sm:py-9 px-5 sm:px-8"
+          className="border-t border-line py-4 sm:py-6 px-5 sm:px-8"
           style={{
             backgroundImage:
               "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.04) 60%, rgba(244,63,94,0.04) 100%)",
           }}
         >
           <SectionEyebrow tone="amber">Reminders</SectionEyebrow>
-          <div className="mt-5 divide-y divide-line border-y border-amber-200/40">
+          <div className="mt-3 divide-y divide-line border-y border-amber-200/40">
             <div className="py-2"><UpcomingEventBanner userId={userId} /></div>
             <div className="py-2"><ExpiringCreditsBanner userId={userId} /></div>
             <div className="py-2"><TodaysReviewsCard initial={reviewQueue} /></div>
@@ -517,7 +639,7 @@ export default async function DashboardPage() {
             itself as a limited-time featured promo, so theme
             discovery lives where the action does. */}
       <section
-        className="border-t border-line py-9 sm:py-12 px-5 sm:px-8"
+        className="border-t border-line py-5 sm:py-6 px-5 sm:px-8"
         // Band wash now matches the inner panel's 3-stop ramp
         // (indigo → violet → fuchsia) at very low opacity so the
         // band hints at the loot palette without piling more hues
@@ -529,7 +651,7 @@ export default async function DashboardPage() {
       >
         <div className="max-w-4xl mx-auto">
           <SectionEyebrow tone="brand">Loot vault</SectionEyebrow>
-          <div className="mt-5">
+          <div className="mt-3">
             <RewardsDistanceCard userId={userId} />
           </div>
         </div>
@@ -570,185 +692,261 @@ function SectionEyebrow({
   );
 }
 
-/** One pillar column inside the Pillar Trinity. Uniform structure
- *  across ENGAGE / EXPERIENCE / EQUIP so the trainee can scan all
- *  three pillars the same way: eyebrow → headline metric (or
- *  custom slot) → status lines → CTAs. Tone differentiates them
- *  visually (emerald / amber / sky) but the rhythm stays
- *  consistent.
- *
- *  Either pass `metric` + `metricLabel` for the standard big-
- *  number presentation, OR pass `metricSlot` to render something
- *  bespoke in that real estate — the EQUIP column uses the slot
- *  to list the next VC / VL deadlines instead of a bare count. */
-function PillarColumn({
-  tone,
-  eyebrow,
-  metric,
-  metricLabel,
-  metricSlot,
-  stats,
-  ctas,
+// ─── DEADLINE-DRIVEN BOARD ────────────────────────────────────────
+// Four-column action card mirroring the biohubnet.ca marketing
+// pattern. Each column lists deadline-driven items; each item
+// carries a title + 1-line description + status pill. The board
+// is wrapped in a single rounded panel with a navy banner header,
+// rendering as one editorial unit on every theme.
+
+interface PillarItem {
+  title: string;
+  description: string;
+  pill?: string;
+  pillTone?: "danger" | "info" | "warning" | "neutral";
+  href?: string;
+}
+
+interface PillarConfig {
+  label: string;
+  subtitle: string;
+  audience: string;
+  itemTone: "emerald" | "amber" | "sky" | "violet";
+  emptyMessage: string;
+  viewAllHref: string;
+}
+
+const PILLAR_CONFIG = {
+  engage: {
+    label: "ENGAGE",
+    subtitle: "Industry-led training, workshops, and mentorship",
+    audience: "Open to grad students, postdocs and researchers — free with training credits",
+    itemTone: "emerald",
+    emptyMessage: "No upcoming pathway windows. New cohorts drop most quarters.",
+    viewAllHref: "/pathways",
+  },
+  experience: {
+    label: "EXPERIENCE",
+    subtitle: "Bridging theory and practice through experiential learning",
+    audience: "For grad students and postdocs ready for hands-on placements",
+    itemTone: "amber",
+    emptyMessage: "No open internships, KE rounds, or mobility awards right now.",
+    viewAllHref: "/internships",
+  },
+  equip: {
+    label: "EQUIP",
+    subtitle: "Advancing biomanufacturing innovations with strategic funding support",
+    audience: "For trainee-entrepreneurs with an IP-backed innovation",
+    itemTone: "sky",
+    emptyMessage: "No open funding windows. New VC + VL cycles drop most months.",
+    viewAllHref: "/equip",
+  },
+  events: {
+    label: "EVENTS",
+    subtitle: "Meet the BioHubNet team in person",
+    audience: "Open to all, drop by — no RSVP needed unless noted",
+    itemTone: "violet",
+    emptyMessage: "No public events on the calendar this week.",
+    viewAllHref: "/events",
+  },
+} as const satisfies Record<string, PillarConfig>;
+
+function DeadlineDrivenBoard({
+  engageItems,
+  experienceItems,
+  equipItems,
+  eventItems,
 }: {
-  tone: EyebrowTone;
-  eyebrow: string;
-  metric?: string;
-  metricLabel?: string;
-  metricSlot?: React.ReactNode;
-  stats: string[];
-  ctas: { label: string; href: string; muted?: boolean }[];
+  engageItems: PillarItem[];
+  experienceItems: PillarItem[];
+  equipItems: PillarItem[];
+  eventItems: PillarItem[];
 }) {
-  // Per-tone CTA accent — primary CTA uses the pillar tone's text
-  // colour so it reads as native to the column.
-  const primaryCtaCls =
-    tone === "emerald"
-      ? "text-emerald-700 hover:text-emerald-900"
-      : tone === "amber"
-        ? "text-amber-700 hover:text-amber-900"
-        : tone === "sky"
-          ? "text-sky-700 hover:text-sky-900"
-          : "text-brand-700 hover:text-brand-900";
-  const metricGradient =
-    tone === "emerald"
-      ? "linear-gradient(120deg, #047857 0%, #0d9488 100%)"
-      : tone === "amber"
-        ? "linear-gradient(120deg, #b45309 0%, #c2410c 100%)"
-        : tone === "sky"
-          ? "linear-gradient(120deg, #0369a1 0%, #4338ca 100%)"
-          : "linear-gradient(120deg, var(--brand-700, #1d4f8b) 0%, #4338ca 100%)";
+  return (
+    <section className="border-t border-line px-4 sm:px-6 py-5 sm:py-7">
+      <div className="max-w-6xl mx-auto rounded-2xl overflow-hidden border border-line bg-card-solid shadow-sm">
+        {/* Navy banner — same gradient family as the brand mark.
+            Sits on top of the 4-column body. */}
+        <div
+          className="px-4 sm:px-6 py-3 sm:py-3.5 text-center"
+          style={{
+            background:
+              "linear-gradient(135deg, #0a1f3d 0%, #1d4f8b 55%, #2c8aa3 100%)",
+          }}
+        >
+          <p className="text-white font-black tracking-[0.22em] text-[11px] sm:text-xs">
+            WE ARE DEADLINE-DRIVEN
+          </p>
+        </div>
+
+        {/* Four-column body. Stacks 1-col on small, 2x2 on md,
+            4-col on lg with hairline dividers. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 md:divide-x md:divide-line">
+          <PillarColumn pillar="engage" items={engageItems} />
+          <PillarColumn pillar="experience" items={experienceItems} />
+          <PillarColumn pillar="equip" items={equipItems} />
+          <PillarColumn pillar="events" items={eventItems} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PillarColumn({
+  pillar,
+  items,
+}: {
+  pillar: keyof typeof PILLAR_CONFIG;
+  items: PillarItem[];
+}) {
+  const cfg = PILLAR_CONFIG[pillar];
+  const itemColorCls =
+    cfg.itemTone === "emerald" ? "text-emerald-700 hover:text-emerald-900" :
+    cfg.itemTone === "amber"   ? "text-amber-700 hover:text-amber-900" :
+    cfg.itemTone === "sky"     ? "text-sky-700 hover:text-sky-900" :
+                                  "text-violet-700 hover:text-violet-900";
 
   return (
-    <div className="px-5 sm:px-8 py-7 sm:py-9">
-      <SectionEyebrow tone={tone}>{eyebrow}</SectionEyebrow>
+    <div className="px-4 sm:px-5 py-4 sm:py-5 flex flex-col gap-3">
+      <div>
+        <p className="font-black tracking-[0.04em] text-xl sm:text-2xl text-brand-900 leading-none">
+          {cfg.label}
+        </p>
+        <p className="text-[11px] text-fg leading-snug mt-1.5 font-semibold">
+          {cfg.subtitle}
+        </p>
+        <p className="text-[10.5px] italic text-fg-muted leading-snug mt-1">
+          {cfg.audience}
+        </p>
+      </div>
 
-      {metricSlot ? (
-        <div className="mt-4">{metricSlot}</div>
+      <div className="border-t border-line" />
+
+      {items.length === 0 ? (
+        <p className="text-xs text-fg-muted italic leading-snug">
+          {cfg.emptyMessage}
+        </p>
       ) : (
-        <>
-          <p
-            className="text-5xl font-black tabular-nums leading-none mt-4"
-            style={{
-              backgroundImage: metricGradient,
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-            }}
-          >
-            {metric}
-          </p>
-          <p className="text-xs text-fg-muted mt-1">{metricLabel}</p>
-        </>
+        <ul className="space-y-3.5 flex-1">
+          {items.map((it, i) => {
+            const titleBody = (
+              <>
+                <p className={`text-sm font-bold leading-snug ${itemColorCls} transition-colors`}>
+                  {it.title}
+                </p>
+                {it.description && (
+                  <p className="text-[11.5px] text-fg-muted leading-snug mt-1">
+                    {it.description}
+                  </p>
+                )}
+                {it.pill && (
+                  <span className={`mt-2 inline-flex items-center text-[10px] uppercase tracking-[0.14em] font-black px-2 py-1 ${pillToneClasses(it.pillTone)}`}>
+                    {it.pill}
+                  </span>
+                )}
+              </>
+            );
+            return (
+              <li key={i}>
+                {it.href ? (
+                  <Link href={it.href} className="block group">
+                    {titleBody}
+                  </Link>
+                ) : (
+                  <div>{titleBody}</div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       )}
 
-      <ul className="mt-5 space-y-1.5 text-sm text-fg-muted leading-snug">
-        {stats.map((s, i) => (
-          <li key={i} className="flex items-baseline gap-2">
-            <span aria-hidden className="inline-block w-1 h-1 rounded-full bg-fg-subtle shrink-0 translate-y-[-0.25em]" />
-            <span>{s}</span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="mt-5 flex flex-col items-start gap-1.5">
-        {ctas.map((c, i) => (
-          <Link
-            key={i}
-            href={c.href}
-            className={
-              "inline-flex items-center gap-1.5 text-sm font-bold transition-colors " +
-              (c.muted ? "text-fg-muted hover:text-fg" : `${primaryCtaCls}`)
-            }
-          >
-            {c.label} <ArrowRight size={12} />
-          </Link>
-        ))}
-      </div>
+      <Link
+        href={cfg.viewAllHref}
+        className={`mt-auto pt-2 inline-flex items-center gap-1 text-[11px] font-bold ${itemColorCls}`}
+      >
+        See all {cfg.label.toLowerCase()} <ArrowRight size={11} />
+      </Link>
     </div>
   );
 }
 
-/** EquipDeadlinesList — replaces the bare "X windows open" count
- *  in the EQUIP pillar column with the actual upcoming VC + VL
- *  funding windows. Renders the next 3 rows (so the column height
- *  matches its ENGAGE + EXPERIENCE siblings even on a busy
- *  cycle calendar); if there are more, a "+N more" link sends the
- *  trainee to /equip for the full schedule. Empty state stays
- *  useful: it says what's coming rather than "0 windows". */
-function EquipDeadlinesList({
-  deadlines,
-}: {
-  deadlines: Array<{
-    id: string;
-    stream: string;
-    deadlineAt: Date;
-    status: string;
-    cycleLabel: string | null;
-  }>;
-}) {
-  if (deadlines.length === 0) {
-    return (
-      <div className="space-y-1">
-        <p className="text-2xl font-black text-fg tabular-nums leading-none">—</p>
-        <p className="text-xs text-fg-muted leading-snug">
-          No open funding windows right now. New VC + VL cycles drop most months.
-        </p>
-      </div>
-    );
+function pillToneClasses(tone: PillarItem["pillTone"]): string {
+  switch (tone) {
+    case "info":
+      return "bg-sky-700 text-white";
+    case "warning":
+      return "bg-amber-700 text-white";
+    case "neutral":
+      return "bg-elevated text-fg ring-1 ring-inset ring-line";
+    case "danger":
+    default:
+      return "bg-rose-900 text-white";
   }
+}
 
-  // Cap visible rows at 3 so the column height tracks its sibling
-  // pillars; the overflow link "View N more" carries the rest.
-  const visible = deadlines.slice(0, 3);
-  const overflow = Math.max(0, deadlines.length - visible.length);
+function shortDate(d: Date | null | undefined): string {
+  if (!d) return "TBA";
+  return new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" }).toUpperCase();
+}
+
+function deadlinePill(deadline: Date | null | undefined, status: string): string {
+  if (status === "full") return "FULL · WAITLIST";
+  if (status === "closed") return "CLOSED";
+  if (!deadline) return "OPEN";
+  return `APPLY BY ${shortDate(deadline)}`;
+}
+
+function formatEventPill(start: Date, end: Date | null | undefined): string {
+  const startDate = new Date(start);
+  const dateStr = startDate.toLocaleDateString(undefined, { month: "short", day: "numeric" }).toUpperCase();
+  const startTime = startDate.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }).replace(":00", "");
+  if (!end) return `${dateStr} · ${startTime}`;
+  const endDate = new Date(end);
+  const endTime = endDate.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }).replace(":00", "");
+  return `${dateStr} · ${startTime}–${endTime}`;
+}
+
+// ─── PERSONAL STATUS COLUMN ───────────────────────────────────────
+// Compact below-the-board strip carrying the trainee's personal
+// status across each pillar. Replaces the heavier metric-led
+// PillarColumn from before — same information, less real estate.
+function PersonalStatusColumn({
+  tone,
+  eyebrow,
+  primary,
+  secondary,
+  cta,
+}: {
+  tone: EyebrowTone;
+  eyebrow: string;
+  primary: string;
+  secondary: string[];
+  cta: { label: string; href: string };
+}) {
+  const ctaCls =
+    tone === "emerald" ? "text-emerald-700 hover:text-emerald-900" :
+    tone === "amber"   ? "text-amber-700 hover:text-amber-900" :
+    tone === "sky"     ? "text-sky-700 hover:text-sky-900" :
+                          "text-brand-700 hover:text-brand-900";
 
   return (
-    <div>
-      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted mb-2">
-        Next funding windows
+    <div className="px-5 sm:px-7 py-4 sm:py-5">
+      <SectionEyebrow tone={tone}>{eyebrow}</SectionEyebrow>
+      <p className="mt-2 text-base sm:text-lg font-black text-fg leading-tight">
+        {primary}
       </p>
-      <ul className="divide-y divide-line border-y border-line">
-        {visible.map((d) => {
-          const isVL = d.stream === "venture_lift";
-          const date = new Date(d.deadlineAt).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          });
-          return (
-            <li key={d.id} className="flex items-baseline gap-3 py-2 text-sm">
-              <span
-                className={
-                  "inline-flex items-center gap-1.5 font-black tabular-nums w-9 " +
-                  (isVL ? "text-indigo-700" : "text-sky-700")
-                }
-              >
-                <span
-                  aria-hidden
-                  className={
-                    "inline-block w-1.5 h-1.5 rounded-full " +
-                    (isVL ? "bg-indigo-500" : "bg-sky-500")
-                  }
-                />
-                {isVL ? "VL" : "VC"}
-              </span>
-              <span className="text-fg font-semibold tabular-nums flex-1">{date}</span>
-              {d.status === "extended" && (
-                <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-amber-700">
-                  Extended
-                </span>
-              )}
-            </li>
-          );
-        })}
+      <ul className="mt-1.5 space-y-0.5 text-xs text-fg-muted leading-snug">
+        {secondary.map((s, i) => (
+          <li key={i}>{s}</li>
+        ))}
       </ul>
-      {overflow > 0 && (
-        <Link
-          href="/equip"
-          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-sky-700 hover:text-sky-900 transition-colors"
-        >
-          +{overflow} more <ArrowRight size={11} />
-        </Link>
-      )}
+      <Link
+        href={cta.href}
+        className={`mt-2 inline-flex items-center gap-1 text-xs font-bold ${ctaCls}`}
+      >
+        {cta.label} <ArrowRight size={11} />
+      </Link>
     </div>
   );
 }

@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18e";
+export const TOUR_VERSION = "2026.05.18f";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -506,6 +506,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Big audit-driven sweep. Login form now has visible focus rings on every field + the Sign-up Link + the Sign-in submit. ThemePicker / ThemeCycler buttons grew to 44 × 44 px touch targets. Subtle-text colour on Sakura, Icecream, and Greenwood themes deepened so hints clear the 4.5:1 contrast threshold. MscCultureCycle (the MSC passaging vignette on /login) now respects prefers-reduced-motion. /compliance moved to /admin/compliance — old URL redirects. Access requests added to the admin sidebar (previously orphaned). EQUIP pillar capped at 3 deadlines + a 'more' link. Loot Vault gradient + band wash both retuned to a refined 3-stop indigo→violet→magenta ramp. StylizedMark backdrop now visible on smaller screens. ThemePicker dropdown gained menu / radio-group semantics + a softer (non-rose) Featured promo card. Login petal backdrop's 'culturing' gradient text now declares a contrast-checkable solid fallback.",
     placement: "center",
     since: "2026.05.18e",
+  },
+  {
+    id: "dash-deadline-driven-board",
+    title: "Dashboard rebuilt around 'WE ARE DEADLINE-DRIVEN'",
+    body: "Trainee dashboard now leads with a four-column DEADLINE-DRIVEN board mirroring the biohubnet.ca card. Each column lists deadline-driven items pulled from real data — ENGAGE (pathways + admin-curated highlights), EXPERIENCE (active internships + Knowledge Exchange + Mobility Award), EQUIP (VentureLift / VentureConnect with their amount + audience spelled out), EVENTS (upcoming workshops with location + time). VC and VL are no longer acronyms-only — every card spells them out and explains who they're for. A compact three-column 'your training / placement / funding' status strip sits below the board for personal state. Loot Vault is now a single-row strip (about half its previous height). Whole page got tighter — section padding reduced, gaps trimmed.",
+    placement: "center",
+    since: "2026.05.18f",
   },
   {
     id: "aurora-theme",

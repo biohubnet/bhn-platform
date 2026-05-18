@@ -2833,6 +2833,53 @@ model EquipDeadline {
   @@index([deadlineAt])
 }
 
+// ─── Opportunity deadlines (KE / MA / Engage highlights) ────────
+// Single polymorphic table that surfaces "deadline-driven" cards
+// on the trainee dashboard's WE ARE DEADLINE-DRIVEN section for
+// content that doesn't have its own dedicated model — Knowledge
+// Exchange rounds, Mobility Award windows, and admin-curated
+// Engage highlights (special workshops, featured pathways).
+//
+// `kind` discriminates the source ("knowledge_exchange",
+// "mobility_award", "engage_highlight", or any future kind);
+// `pillar` is the column it surfaces under ("engage" |
+// "experience" | "equip" | "events"). Splitting these means a
+// "MA opportunity for Experience" + a "MA opportunity surfaced
+// under Equip for a sponsor demo" can both live here without an
+// enum change.
+model OpportunityDeadline {
+  id            String    @id @default(cuid())
+  /// Source kind — see model header.
+  kind          String
+  /// Dashboard pillar column.
+  pillar        String
+  title         String
+  /// Optional short blurb (1–3 lines) rendered under the title.
+  blurb         String?
+  /// Optional opens-on date (e.g. "Opens May 4, 2026").
+  opensAt       DateTime?
+  /// Apply-by deadline.
+  deadlineAt    DateTime?
+  /// "active" | "closed" | "full" — closed/full items still render
+  /// with a status pill so trainees see the cycle exists.
+  status        String    @default("active")
+  /// Optional CTA destination; if absent, the card is non-clickable.
+  ctaUrl        String?
+  /// Optional CTA label override (e.g. "Apply by May 29").
+  ctaLabel      String?
+  /// Optional eyebrow-style status pill text (e.g. "FULL · NEXT
+  /// COHORT IN FALL"). Overrides the default status-derived pill.
+  pillText      String?
+  /// Smaller = higher priority within its pillar column.
+  displayOrder  Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([pillar, status, displayOrder])
+  @@index([deadlineAt])
+  @@index([kind])
+}
+
 // ─── HQP Advisory Committee ─────────────────────────────────────
 // The committee runs an annual open call for new members. Each
 // call lives as a "window" — open + close timestamps mirroring
