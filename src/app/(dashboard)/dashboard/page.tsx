@@ -176,6 +176,52 @@ export default async function DashboardPage() {
     take: 3,
   });
 
+  // ─── PILLAR-TRINITY DATA ───────────────────────────────────────
+  // One query per pillar so the trainee dashboard surfaces ENGAGE,
+  // EXPERIENCE, and EQUIP equally. Each pillar column reads the
+  // trainee's status (what they've done) + opportunities (what's
+  // open for them right now). Run in parallel — none depend on
+  // each other.
+  const now = new Date();
+  const [
+    certsCount,
+    completedCourseCount,
+    talentSubmission,
+    openPostingsCount,
+    savedPostingsCount,
+    myEquipApps,
+    openEquipWindowsCount,
+  ] = await Promise.all([
+    prisma.certificate.count({ where: { userId, revokedAt: null } }),
+    prisma.enrollment.count({ where: { userId, status: "completed" } }),
+    prisma.eventFormSubmission.findFirst({
+      where: { userId, form: { slug: "talent-application" } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, createdAt: true, reviewStatus: true, leftPoolAt: true },
+    }),
+    prisma.internshipPosting.count({ where: { status: "active" } }),
+    prisma.userSavedPosting.count({ where: { userId } }),
+    prisma.equipApplication.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+      take: 3,
+      select: { id: true, stream: true, status: true, requestedAmount: true, approvedAmount: true },
+    }),
+    prisma.equipDeadline.count({
+      where: { status: { in: ["open", "extended"] }, deadlineAt: { gte: now } },
+    }),
+  ]);
+
+  // Pillar-level summaries computed once for the JSX.
+  const liveEquipApp = myEquipApps.find((a) =>
+    ["draft", "submitted", "under_review", "pre_screen_approved"].includes(a.status),
+  ) ?? null;
+  const fundedEquipApp = myEquipApps.find((a) => a.status === "funded") ?? null;
+  const inPoolApproved =
+    talentSubmission?.reviewStatus &&
+    ["approved", "approved_skip_review"].includes(talentSubmission.reviewStatus) &&
+    talentSubmission.leftPoolAt === null;
+
   const hasReminders =
     expiringSavedPostings.length > 0 ||
     pendingBuddyInvites.length > 0 ||
@@ -232,44 +278,154 @@ export default async function DashboardPage() {
           (RewardsDistanceCard) lives at the bottom now, narrower,
           per user request. */}
 
-      {/* ── UP NEXT — clean (no tint). Primary action gets full
-            visual weight. */}
-      <section className="border-t border-line py-7 sm:py-9 px-5 sm:px-8">
-        <SectionEyebrow>Up next</SectionEyebrow>
-        <div className="mt-5 space-y-6">
-          <PrimaryNextCard
-            active={activeContinue[0] ?? null}
-            myPathwayCount={myPathways.length}
-            suggestion={suggestedCourses[0] ?? null}
+      {/* ── PILLAR TRINITY ─────────────────────────────────────────
+            Three columns, one per BHN pillar, hairline-divided.
+            Each column reads as the trainee's status in that pillar
+            plus the next action. Designed so a trainee lands and
+            understands their position across ENGAGE / EXPERIENCE /
+            EQUIP at a glance instead of treating the dashboard as
+            an ENGAGE-only surface. Stacks on mobile. */}
+      <section className="border-t border-line">
+        <div className="grid grid-cols-1 lg:grid-cols-3 lg:divide-x lg:divide-line">
+          {/* ENGAGE — Training */}
+          <PillarColumn
+            tone="emerald"
+            eyebrow="Engage · Training"
+            metric={inProgress.toLocaleString()}
+            metricLabel={inProgress === 1 ? "course in progress" : "courses in progress"}
+            stats={[
+              `${certsCount} certificate${certsCount === 1 ? "" : "s"} earned`,
+              `${completedCourseCount} course${completedCourseCount === 1 ? "" : "s"} completed`,
+              `${(user?.credits ?? 0).toLocaleString()} credits available`,
+            ]}
+            ctas={
+              activeContinue[0]
+                ? [
+                    { label: "Continue learning", href: `/courses/${activeContinue[0].courseId}` },
+                    { label: "Browse catalog", href: "/courses", muted: true },
+                  ]
+                : suggestedCourses[0]
+                  ? [
+                      { label: `Try ${suggestedCourses[0].title.slice(0, 32)}${suggestedCourses[0].title.length > 32 ? "…" : ""}`, href: `/courses/${suggestedCourses[0].id}` },
+                      { label: "Browse catalog", href: "/courses", muted: true },
+                    ]
+                  : [
+                      { label: "Browse catalog", href: "/courses" },
+                      { label: "View pathways", href: "/pathways", muted: true },
+                    ]
+            }
           />
-          {recentActivity.length > 0 && (
-            <div>
-              <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
-                Recent
-              </h3>
-              <ul className="divide-y divide-line border-y border-line">
-                {recentActivity.slice(0, 3).map((s) => {
-                  const done = s.status === "passed" || s.status === "completed";
-                  return (
-                    <li key={s.id} className="flex items-baseline gap-3 py-2.5">
-                      <span className={cn(
-                        "text-sm flex-1 truncate",
-                        done ? "text-fg" : "text-muted",
-                      )}>
-                        {s.package.course.title}
-                      </span>
-                      {s.score != null && (
-                        <span className="text-xs text-subtle font-mono tabular-nums shrink-0">{Math.round(s.score)}%</span>
-                      )}
-                      <span className="text-xs text-subtle shrink-0">{new Date(s.updatedAt).toLocaleDateString()}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
+
+          {/* EXPERIENCE — Placements */}
+          <PillarColumn
+            tone="amber"
+            eyebrow="Experience · Placements"
+            metric={openPostingsCount.toLocaleString()}
+            metricLabel={openPostingsCount === 1 ? "internship open" : "internships open"}
+            stats={
+              talentSubmission
+                ? [
+                    inPoolApproved
+                      ? "In the talent pool · employers can find you"
+                      : talentSubmission.reviewStatus === "rejected"
+                        ? "Talent-pool application — not approved this round"
+                        : "Talent-pool application — under review",
+                    `${savedPostingsCount} saved posting${savedPostingsCount === 1 ? "" : "s"}`,
+                    `Submitted ${new Date(talentSubmission.createdAt).toLocaleDateString()}`,
+                  ]
+                : [
+                    "Not yet in the talent pool",
+                    `${savedPostingsCount} saved posting${savedPostingsCount === 1 ? "" : "s"}`,
+                    "Apply once you have a course or two under your belt",
+                  ]
+            }
+            ctas={
+              talentSubmission
+                ? [
+                    { label: "Browse internships", href: "/internships" },
+                    { label: "Manage application", href: "/profile/applications", muted: true },
+                  ]
+                : [
+                    { label: "Apply to talent pool", href: "/forms/talent-application" },
+                    { label: "Browse internships", href: "/internships", muted: true },
+                  ]
+            }
+          />
+
+          {/* EQUIP — Funding */}
+          <PillarColumn
+            tone="sky"
+            eyebrow="Equip · Funding"
+            metric={openEquipWindowsCount.toLocaleString()}
+            metricLabel={openEquipWindowsCount === 1 ? "window open" : "windows open"}
+            stats={
+              fundedEquipApp
+                ? [
+                    `Funded $${(fundedEquipApp.approvedAmount ?? 0).toLocaleString()}`,
+                    `Stream: ${fundedEquipApp.stream === "venture_lift" ? "VentureLift" : "VentureConnect"}`,
+                    "Welcome to BHN-backed founders",
+                  ]
+                : liveEquipApp
+                  ? [
+                      `${liveEquipApp.stream === "venture_lift" ? "VentureLift" : "VentureConnect"} application`,
+                      liveEquipApp.status === "draft"
+                        ? `Draft · ${liveEquipApp.requestedAmount ? "$" + liveEquipApp.requestedAmount.toLocaleString() : "in progress"}`
+                        : liveEquipApp.status === "submitted"
+                          ? "Submitted · awaiting review"
+                          : liveEquipApp.status === "under_review"
+                            ? "Under review by the committee"
+                            : "Pre-screen approved — Stage 2 unlocked",
+                      "VentureConnect ≤ $5K · VentureLift ≤ $25K",
+                    ]
+                  : [
+                      "VentureConnect — up to $5K (monthly windows)",
+                      "VentureLift — up to $25K (quarterly windows)",
+                      "Apply with a real idea — even early-stage",
+                    ]
+            }
+            ctas={
+              liveEquipApp
+                ? [
+                    { label: liveEquipApp.status === "draft" ? "Resume draft" : "View application", href: `/equip/${liveEquipApp.id}` },
+                    { label: "How EQUIP works", href: "/equip", muted: true },
+                  ]
+                : [
+                    { label: "Apply for funding", href: "/equip" },
+                    { label: "How EQUIP works", href: "/equip", muted: true },
+                  ]
+            }
+          />
         </div>
       </section>
+
+      {/* Recent activity — small ledger of latest course sessions.
+          Optional, drops out when nothing's logged yet. */}
+      {recentActivity.length > 0 && (
+        <section className="border-t border-line py-6 px-5 sm:px-8">
+          <div className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
+            Recent
+          </div>
+          <ul className="divide-y divide-line border-y border-line">
+            {recentActivity.slice(0, 3).map((s) => {
+              const done = s.status === "passed" || s.status === "completed";
+              return (
+                <li key={s.id} className="flex items-baseline gap-3 py-2.5">
+                  <span className={cn(
+                    "text-sm flex-1 truncate",
+                    done ? "text-fg" : "text-muted",
+                  )}>
+                    {s.package.course.title}
+                  </span>
+                  {s.score != null && (
+                    <span className="text-xs text-subtle font-mono tabular-nums shrink-0">{Math.round(s.score)}%</span>
+                  )}
+                  <span className="text-xs text-subtle shrink-0">{new Date(s.updatedAt).toLocaleDateString()}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {/* ── FOR YOU — sky→violet wash. Leaderboard + latest news. */}
       <section
@@ -297,6 +453,7 @@ export default async function DashboardPage() {
         >
           <SectionEyebrow tone="amber">Reminders</SectionEyebrow>
           <div className="mt-5 divide-y divide-line border-y border-amber-200/40">
+            <div className="py-2"><UpcomingEventBanner userId={userId} /></div>
             <div className="py-2"><ExpiringCreditsBanner userId={userId} /></div>
             <div className="py-2"><TodaysReviewsCard initial={reviewQueue} /></div>
             {expiringSavedPostings.length > 0 && (
@@ -344,35 +501,31 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* ── WHAT'S COMING — emerald wash. */}
-      <section
-        className="border-t border-line py-7 sm:py-9 px-5 sm:px-8"
-        style={{
-          backgroundImage:
-            "linear-gradient(135deg, rgba(16,185,129,0.07) 0%, rgba(56,189,248,0.04) 100%)",
-        }}
-      >
-        <SectionEyebrow tone="emerald">What&apos;s coming</SectionEyebrow>
-        <div className="mt-5 space-y-4">
-          <UpcomingEventBanner userId={userId} />
-          <DailyThemeCard />
-        </div>
-      </section>
-
-      {/* ── LOOT VAULT — bottom of the page, narrower (max-w-xl
-            centered). Bright loot-coloured wash signals the
-            celebratory nature without needing chrome around it. */}
+      {/* ── BOTTOM: LOOT VAULT + DAILY THEME ───────────────────────
+            Two narrow columns at the bottom of the page — the loot
+            vault (progress toward the next merch tier) and the
+            daily theme suggestion. Both are recognition / discovery
+            extras; pairing them keeps the page sequence ending on a
+            playful note without devoting a full band to either. */}
       <section
         className="border-t border-line py-9 sm:py-12 px-5 sm:px-8"
         style={{
           backgroundImage:
-            "linear-gradient(135deg, rgba(30,58,138,0.08) 0%, rgba(109,40,217,0.07) 40%, rgba(190,24,93,0.06) 75%, rgba(249,115,22,0.05) 100%)",
+            "linear-gradient(135deg, rgba(30,58,138,0.07) 0%, rgba(109,40,217,0.06) 40%, rgba(190,24,93,0.05) 75%, rgba(249,115,22,0.04) 100%)",
         }}
       >
-        <div className="max-w-xl mx-auto">
-          <SectionEyebrow tone="brand">Loot vault</SectionEyebrow>
-          <div className="mt-5">
-            <RewardsDistanceCard userId={userId} />
+        <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8">
+          <div>
+            <SectionEyebrow tone="brand">Loot vault</SectionEyebrow>
+            <div className="mt-5">
+              <RewardsDistanceCard userId={userId} />
+            </div>
+          </div>
+          <div>
+            <SectionEyebrow tone="emerald">Today&apos;s theme</SectionEyebrow>
+            <div className="mt-5">
+              <DailyThemeCard />
+            </div>
           </div>
         </div>
       </section>
@@ -382,27 +535,116 @@ export default async function DashboardPage() {
   );
 }
 
+type EyebrowTone = "brand" | "amber" | "emerald" | "sky";
+
 /** Section eyebrow — small uppercase tracked label with a tone-tinted
  *  gradient hairline leading into the title. Used to mark each
- *  hairline-divided section inside the outer dashboard panel. */
+ *  hairline-divided section. Tone vocabulary mirrors the sidebar
+ *  pillar tones (engage=emerald, experience=amber, equip=sky) so
+ *  visual association carries across the platform. */
 function SectionEyebrow({
   children,
   tone = "brand",
 }: {
   children: React.ReactNode;
-  tone?: "brand" | "amber" | "emerald";
+  tone?: EyebrowTone;
 }) {
   const gradient =
     tone === "amber"
       ? "linear-gradient(90deg, rgb(245,158,11), rgb(244,63,94))"
       : tone === "emerald"
         ? "linear-gradient(90deg, rgb(16,185,129), rgb(56,189,248))"
-        : "linear-gradient(90deg, rgb(56,189,248), rgb(124,58,237))";
+        : tone === "sky"
+          ? "linear-gradient(90deg, rgb(14,165,233), rgb(99,102,241))"
+          : "linear-gradient(90deg, rgb(56,189,248), rgb(124,58,237))";
   return (
     <p className="text-[10px] uppercase tracking-[0.28em] font-bold text-subtle inline-flex items-center gap-2">
       <span aria-hidden className="block h-px w-6" style={{ background: gradient }} />
       {children}
     </p>
+  );
+}
+
+/** One pillar column inside the Pillar Trinity. Uniform structure
+ *  across ENGAGE / EXPERIENCE / EQUIP so the trainee can scan all
+ *  three pillars the same way: eyebrow → big metric → status lines
+ *  → CTAs. Tone differentiates them visually (emerald / amber / sky)
+ *  but the rhythm stays consistent. */
+function PillarColumn({
+  tone,
+  eyebrow,
+  metric,
+  metricLabel,
+  stats,
+  ctas,
+}: {
+  tone: EyebrowTone;
+  eyebrow: string;
+  metric: string;
+  metricLabel: string;
+  stats: string[];
+  ctas: { label: string; href: string; muted?: boolean }[];
+}) {
+  // Per-tone CTA accent — primary CTA uses the pillar tone's text
+  // colour so it reads as native to the column.
+  const primaryCtaCls =
+    tone === "emerald"
+      ? "text-emerald-700 hover:text-emerald-900"
+      : tone === "amber"
+        ? "text-amber-700 hover:text-amber-900"
+        : tone === "sky"
+          ? "text-sky-700 hover:text-sky-900"
+          : "text-brand-700 hover:text-brand-900";
+  const metricGradient =
+    tone === "emerald"
+      ? "linear-gradient(120deg, #047857 0%, #0d9488 100%)"
+      : tone === "amber"
+        ? "linear-gradient(120deg, #b45309 0%, #c2410c 100%)"
+        : tone === "sky"
+          ? "linear-gradient(120deg, #0369a1 0%, #4338ca 100%)"
+          : "linear-gradient(120deg, var(--brand-700, #1d4f8b) 0%, #4338ca 100%)";
+
+  return (
+    <div className="px-5 sm:px-8 py-7 sm:py-9">
+      <SectionEyebrow tone={tone}>{eyebrow}</SectionEyebrow>
+
+      <p
+        className="text-5xl font-black tabular-nums leading-none mt-4"
+        style={{
+          backgroundImage: metricGradient,
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          color: "transparent",
+        }}
+      >
+        {metric}
+      </p>
+      <p className="text-xs text-fg-muted mt-1">{metricLabel}</p>
+
+      <ul className="mt-5 space-y-1.5 text-sm text-fg-muted leading-snug">
+        {stats.map((s, i) => (
+          <li key={i} className="flex items-baseline gap-2">
+            <span aria-hidden className="inline-block w-1 h-1 rounded-full bg-fg-subtle shrink-0 translate-y-[-0.25em]" />
+            <span>{s}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-5 flex flex-col items-start gap-1.5">
+        {ctas.map((c, i) => (
+          <Link
+            key={i}
+            href={c.href}
+            className={
+              "inline-flex items-center gap-1.5 text-sm font-bold transition-colors " +
+              (c.muted ? "text-fg-muted hover:text-fg" : `${primaryCtaCls}`)
+            }
+          >
+            {c.label} <ArrowRight size={12} />
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
 
