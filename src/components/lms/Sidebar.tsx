@@ -205,10 +205,17 @@ const adminEngageItems: NavItem[] = [
     description: "Topic and skill taxonomy that powers the catalog filter panel. Add, rename, retire." },
   { label: "Manage certificates",       href: "/admin/certificates",        icon: Award,        minRole: "admin",
     description: "Every issued certificate. Revoke a credential or look it up by SHA hash." },
-  { label: "Merch fulfillment",         href: "/admin/merch",               icon: Gift,         minRole: "admin",
-    description: "Reward bundles claimed by trainees. Pack pickups for the office; review mailing requests." },
   { label: "Cover art",                 href: "/admin/cover-art",           icon: Sparkles,     minRole: "admin",
     description: "AI-rendered cover art and colour overlays for every course and pathway. Bulk regenerate topic-specific thumbnails or stamp a shared gradient treatment across a series." },
+];
+
+// OPERATIONS — running the day-to-day platform: fulfillment + the
+// event calendar. Pulled out of ENGAGE (where they sat with the
+// learning-loop tools) so admins can find ops work without scanning
+// past enrolment + certificate management.
+const adminOperationsItems: NavItem[] = [
+  { label: "Merch fulfillment",         href: "/admin/merch",               icon: Gift,         minRole: "admin",
+    description: "Reward bundles claimed by trainees. Pack pickups for the office; review mailing requests." },
   { label: "Events",                    href: "/admin/events",              icon: Calendar,     minRole: "admin",
     description: "BHN Annual Symposium & Training Week editions. Edit basics, manage registrations, run check-in. Workshops / sessions / speakers / sponsors are seeded for now." },
 ];
@@ -632,6 +639,7 @@ function SectionGroup({
  *  Platform = cyan, Security = rose, System = slate. */
 const ADMIN_SUBGROUP_TONES = {
   engage:     { bar: "#10b981", text: "#065f46" }, // emerald-500 / 800
+  operations: { bar: "#14b8a6", text: "#115e59" }, // teal-500 / 800
   experience: { bar: "#f59e0b", text: "#92400e" }, // amber-500 / 800
   equip:      { bar: "#0ea5e9", text: "#075985" }, // sky-500 / 800
   insights:   { bar: "#8b5cf6", text: "#5b21b6" }, // violet-500 / 800
@@ -941,6 +949,7 @@ export function Sidebar({
     return userRank >= required;
   };
   const visibleEngageAdmin     = adminEngageItems.filter(filterByRole);
+  const visibleOperationsAdmin = adminOperationsItems.filter(filterByRole);
   const visibleExperienceAdmin = adminExperienceItems.filter(filterByRole);
   const visibleEquipAdmin      = adminEquipItems.filter(filterByRole);
   const visibleInsightsAdmin   = adminInsightsItems.filter(filterByRole);
@@ -965,6 +974,7 @@ export function Sidebar({
   const allAdminHrefs = new Set<string>([
     adminOverview.href,
     ...adminEngageItems.map((i) => i.href),
+    ...adminOperationsItems.map((i) => i.href),
     ...adminExperienceItems.map((i) => i.href),
     ...adminEquipItems.map((i) => i.href),
     ...adminInsightsItems.map((i) => i.href),
@@ -1256,6 +1266,14 @@ export function Sidebar({
             {visibleEngageAdmin.length > 0 && (
               <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.engage} label="Engage">
                 {visibleEngageAdmin.map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+                ))}
+              </AdminSubgroup>
+            )}
+
+            {visibleOperationsAdmin.length > 0 && (
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.operations} label="Operations">
+                {visibleOperationsAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
               </AdminSubgroup>
