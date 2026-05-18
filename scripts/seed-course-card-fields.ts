@@ -53,12 +53,33 @@ const COHORT_WINDOWS: Array<{
   { start: "2026-10-20", end: "2026-12-05", enrollBy: "2026-10-06" },
 ];
 
+/** Sample blurb pool — short 2–3 sentence course descriptions
+ *  used to backfill missing `description` fields on test courses
+ *  so every catalog card shows a "blurb under the title". One
+ *  blurb is picked from this pool per missing-description course,
+ *  cycled by index so the variety reads naturally. */
+const BLURB_POOL: string[] = [
+  "Hands-on intro to the bench techniques every biomanufacturing role expects on day one. Build muscle memory before the placement starts.",
+  "Live cell-culture workflows from media design through bioreactor harvest. Lab partners simulate real biologics production.",
+  "Master the downstream side — filtration, chromatography, polishing — to GMP standard. Bring your QC mindset.",
+  "Engineer microbes to produce something useful (and tasty). Small-scale fermentation, flavour design, and microbial stability rolled into one lab.",
+  "Express + purify luciferase in E. coli, then formulate it into glowing prototypes. STEM-fair friendly; outreach kits included.",
+  "Bench-side primer on cell + gene therapy manufacturing — vector design, transfection, and the QC checks that catch contamination early.",
+  "Step into an MSL role: medical literature, payer conversations, regulatory boundaries. Field-ready in two days.",
+  "Founder bootcamp built around a real IP-backed innovation. Validate the science, pitch the market, leave with a deck.",
+  "Cultivate pigment-producing algae and convert their carotenoids into cosmetic formulations. Sustainable biotech meets beauty.",
+  "Regulatory affairs for life-science professionals — submission strategy, agency interactions, and the post-approval lifecycle.",
+  "Knowledge-exchange placement at a partner lab. Choose 1, 4, or 6 months. You bring curiosity, the lab brings the project.",
+  "Proteomics workflow from sample prep through mass-spec interpretation. Includes simulated data sets to practice analysis.",
+];
+
 async function main() {
   const courses = await prisma.course.findMany({
     orderBy: { createdAt: "asc" },
     select: {
       id: true,
       title: true,
+      description: true,
       code: true,
       delivery: true,
       provider: true,
@@ -154,6 +175,15 @@ async function main() {
     // filter has variety to land on.
     if (!c.isSpecial && i % 5 === 4) {
       data.isSpecial = true;
+    }
+
+    // Description blurb — fill when missing or too short to read
+    // as a 2-3 sentence blurb on the catalog card. The CourseCard
+    // line-clamp-3 already adds CSS-driven ellipsis for long ones;
+    // we just need every course to HAVE something readable.
+    const existingDesc = c.description?.trim() ?? "";
+    if (existingDesc.length < 40) {
+      data.description = BLURB_POOL[i % BLURB_POOL.length];
     }
 
     if (Object.keys(data).length > 0) {

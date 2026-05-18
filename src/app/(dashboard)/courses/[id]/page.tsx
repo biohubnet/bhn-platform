@@ -148,11 +148,6 @@ export default async function CourseDetailPage({
               <span className={cn("text-xs px-2 py-0.5 rounded-full", statusColor(course.status))}>
                 {course.status}
               </span>
-              {course.scormPackage && (
-                <span className="text-xs bg-raised text-muted px-2 py-0.5 rounded">
-                  {course.scormPackage.version === "SCORM_2004" ? "SCORM 2004" : "SCORM 1.2"}
-                </span>
-              )}
             </div>
             <h1 className="text-2xl font-bold text-fg">{course.title}</h1>
             {course.description && (
@@ -289,19 +284,20 @@ export default async function CourseDetailPage({
         canManage={isStaff}
       />
 
-      {/* SCORM Upload (instructors) */}
+      {/* Course-package upload (instructors). The SCORM-specific
+          labelling has been retired from the trainee-facing chrome
+          per user request — the underlying upload + player flow
+          still works the same, the version label just isn't shown
+          anywhere visible. Section heading is now generic and the
+          metadata is reduced to the entry point + upload date. */}
       {isStaff && (
         <div className="bg-card rounded-xl border border-line p-6">
           <h2 className="text-base font-semibold text-fg mb-4 flex items-center gap-2">
             <Upload size={16} />
-            SCORM Package
+            Course package
           </h2>
           {course.scormPackage ? (
             <div className="text-sm text-muted space-y-1">
-              <p>
-                <span className="font-medium">Version:</span>{" "}
-                {course.scormPackage.version === "SCORM_2004" ? "SCORM 2004" : "SCORM 1.2"}
-              </p>
               <p>
                 <span className="font-medium">Entry:</span> {course.scormPackage.entryPoint}
               </p>
@@ -310,7 +306,7 @@ export default async function CourseDetailPage({
               </p>
             </div>
           ) : (
-            <p className="text-sm text-muted mb-3">No SCORM package uploaded yet.</p>
+            <p className="text-sm text-muted mb-3">No package uploaded yet.</p>
           )}
           <div className="mt-3">
             <ScormUploadButton courseId={id} />
