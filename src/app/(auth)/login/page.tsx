@@ -5,9 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight, Check, CheckCircle2, Coins, GraduationCap, Layers, Briefcase,
-  FlaskConical, TestTube, Microscope, Atom,
+  FlaskConical,
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
+import { StylizedMark } from "@/components/branding/StylizedMark";
+import {
+  DnaHelix, Antibody, MrnaStrand, LipidNanoparticle, CellSchematic, Bioreactor,
+} from "@/components/branding/BiomanufacturingGlyphs";
 import { ThemeCycler } from "@/components/ui/ThemePicker";
 
 const REMEMBER_KEY = "bhn-remember-email";
@@ -127,51 +131,59 @@ function LoginPageInner() {
         }}
       />
 
-      {/* ─── BHN MARK — the complete four-petal emblem rendered
-           inline via LogoMark, large + saturated. Anchored
-           top-centre so it sits as the editorial hero of the
-           spread. Inline SVG (instead of cropping the public
-           biohubnet-logo.svg) so the shape always reads as the
-           actual BHN logo — no weird partial-curve fragments. */}
+      {/* ─── BHN MARK — design-study backdrop. Left half is the
+           hand-drawn sketch + construction grid, right half is
+           the finished gradient mark. Pinned to the BOTTOM-RIGHT
+           corner and pulled partially off-screen so it lives in
+           the dark periphery, NEVER behind the centred teaser
+           headline or the form columns. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-20 sm:-top-16"
+        className="pointer-events-none absolute opacity-[0.55] mix-blend-screen"
+        style={{
+          bottom: "-160px",
+          right: "-160px",
+          filter:
+            "drop-shadow(0 0 40px rgba(56,189,248,0.35)) drop-shadow(0 0 16px rgba(63,168,106,0.25))",
+        }}
       >
-        <LogoMark
-          size={420}
-          className="saturate-150 drop-shadow-[0_0_80px_rgba(56,189,248,0.55)] drop-shadow-[0_0_36px_rgba(63,168,106,0.42)]"
-        />
+        <StylizedMark size={520} />
       </div>
 
-      {/* ─── LAB EQUIPMENT ATMOSPHERE — discreet line-art lucide
-           icons scattered in the corners of the stage. Low opacity
-           white-on-dark, far from the form column so they read as
-           background texture, not decoration. One test tube has a
-           rising bubble loop; everything else is static. */}
+      {/* ─── BIOMANUFACTURING MOLECULES — biotech hot-topic glyphs
+           drifting gracefully behind the form. DNA, antibody, mRNA,
+           LNP, cell, and a bioreactor. Each gets its own swim
+           keyframe (32–54s, with negative delays so neighbours
+           don't sync). Low opacity, hidden on small viewports. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Left edge — test tube with bubbles drifting up the
-            inside. Bubbles are positioned over the tube glyph. */}
-        <div className="absolute left-6 sm:left-12 top-[44%] text-sky-200/15 hidden sm:block">
-          <TestTube size={84} strokeWidth={1.1} />
-          <span aria-hidden className="absolute left-[42%] bottom-3 w-1.5 h-1.5 rounded-full bg-sky-200/40 lab-bubble" />
-          <span aria-hidden className="absolute left-[55%] bottom-3 w-1 h-1 rounded-full bg-sky-200/40 lab-bubble lab-bubble-slow" />
-          <span aria-hidden className="absolute left-[38%] bottom-3 w-1 h-1 rounded-full bg-sky-200/40 lab-bubble lab-bubble-slower" />
+        {/* DNA double helix — left middle, drifts long and slow */}
+        <div className="absolute left-4 sm:left-10 top-[40%] text-sky-300/25 hidden sm:block lab-swim-slow">
+          <DnaHelix size={170} strokeWidth={1.3} />
         </div>
 
-        {/* Right edge — flask with one slow bubble. */}
-        <div className="absolute right-8 sm:right-16 top-[58%] text-emerald-200/[0.12] hidden sm:block">
-          <FlaskConical size={96} strokeWidth={1.1} />
-          <span aria-hidden className="absolute left-[48%] bottom-4 w-1.5 h-1.5 rounded-full bg-emerald-200/35 lab-bubble lab-bubble-slow" />
+        {/* Antibody — top-left, light drift */}
+        <div className="absolute left-10 sm:left-24 top-24 text-emerald-300/22 hidden md:block lab-swim-rev">
+          <Antibody size={88} strokeWidth={2} />
         </div>
 
-        {/* Bottom-left corner — microscope silhouette. */}
-        <div className="absolute left-8 sm:left-20 bottom-12 text-white/[0.08] hidden md:block">
-          <Microscope size={72} strokeWidth={1} />
+        {/* mRNA strand — bottom-left, gentle */}
+        <div className="absolute left-8 sm:left-16 bottom-24 text-amber-200/22 hidden sm:block lab-swim-drift">
+          <MrnaStrand size={180} strokeWidth={1.4} />
         </div>
 
-        {/* Top-right corner — atom drift. */}
-        <div className="absolute right-12 top-28 text-amber-200/10 hidden md:block">
-          <Atom size={64} strokeWidth={1} />
+        {/* Lipid nanoparticle — top-right area, drifts opposite to DNA */}
+        <div className="absolute right-8 sm:right-20 top-32 text-violet-300/22 hidden md:block lab-swim">
+          <LipidNanoparticle size={104} strokeWidth={1.3} />
+        </div>
+
+        {/* Cell — right middle */}
+        <div className="absolute right-6 sm:right-14 top-[52%] text-rose-300/18 hidden sm:block lab-swim-slow">
+          <CellSchematic size={130} strokeWidth={1.2} />
+        </div>
+
+        {/* Bioreactor — bottom-right, the workhorse vessel */}
+        <div className="absolute right-12 sm:right-28 bottom-12 text-cyan-200/22 hidden md:block lab-swim-rev">
+          <Bioreactor size={96} strokeWidth={1.3} />
         </div>
       </div>
 
@@ -292,16 +304,31 @@ function LoginPageInner() {
               <Bullet icon={Briefcase}>Internship + full-time matching with vetted employer partners</Bullet>
             </ul>
 
-            {/* Bottom-anchored CTA — `mt-auto` pushes the button to
-                the bottom of the column so it sits on the same
-                baseline as the Sign-in button across the divider. */}
+            {/* Bottom-anchored CTA — gradient-filled "primary"
+                treatment, distinct from the Sign-in white button.
+                `mt-auto` keeps it on the same baseline as Sign-in. */}
             <div className="mt-auto pt-8">
               <Link
                 href="/register"
-                className="group w-full inline-flex items-center justify-center gap-3 bg-white text-slate-900 hover:bg-slate-100 active:bg-slate-200 font-bold tracking-tight py-3.5 text-base transition-colors"
+                className="group relative w-full inline-flex items-center justify-center gap-3 text-white font-bold tracking-tight py-3.5 text-base overflow-hidden transition-transform hover:-translate-y-px"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(120deg, #1d4f8b 0%, #2c8aa3 50%, #3fa86a 100%)",
+                  boxShadow:
+                    "0 10px 28px -8px rgba(56,189,248,0.45), inset 0 1px 0 rgba(255,255,255,0.22)",
+                }}
               >
-                Create your free account
-                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                {/* Soft inner shine sweep on hover */}
+                <span
+                  aria-hidden
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{
+                    background:
+                      "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)",
+                  }}
+                />
+                <span className="relative">Create your free account</span>
+                <ArrowRight size={16} className="relative group-hover:translate-x-1 transition-transform" />
               </Link>
               <p className="text-[11px] text-white/40 mt-3 text-center">
                 About a minute. No payment info needed.
