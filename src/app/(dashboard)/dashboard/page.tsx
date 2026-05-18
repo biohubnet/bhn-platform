@@ -58,26 +58,29 @@ export default async function DashboardPage() {
       // The HR overview is the canonical Studio design-system
       // surface. Override the platform-default DS for this
       // sub-tree only — mirrors the /employer/layout.tsx scope.
+      // Platform rule: hero is the absolute top — CommitteeBadgeStrip
+      // renders inside the per-role dashboards AFTER their hero, not
+      // here.
       <DesignSystemProvider value="studio">
-        <div className="px-4 sm:px-6 pt-4"><CommitteeBadgeStrip userId={userId} /></div>
-        <EmployerDashboard user={employer} />
+        <EmployerDashboard user={employer} committeeBadge={<CommitteeBadgeStrip userId={userId} />} />
       </DesignSystemProvider>
     );
   }
   if (role === "admin" || role === "superadmin") {
     return (
-      <>
-        <div className="pt-1"><CommitteeBadgeStrip userId={userId} /></div>
-        <AdminDashboard user={{ id: userId, name: session!.user?.name ?? null }} role={role} />
-      </>
+      <AdminDashboard
+        user={{ id: userId, name: session!.user?.name ?? null }}
+        role={role}
+        committeeBadge={<CommitteeBadgeStrip userId={userId} />}
+      />
     );
   }
   if (role === "instructor") {
     return (
-      <>
-        <div className="pt-1"><CommitteeBadgeStrip userId={userId} /></div>
-        <InstructorDashboard user={{ id: userId, name: session!.user?.name ?? null }} />
-      </>
+      <InstructorDashboard
+        user={{ id: userId, name: session!.user?.name ?? null }}
+        committeeBadge={<CommitteeBadgeStrip userId={userId} />}
+      />
     );
   }
 
@@ -175,19 +178,56 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* HERO — platform rule: the editorial hero is the absolute
+          top of every page. Banners (committee badge, credit-expiry,
+          today's reviews, saved-internship, buddy invites) all live
+          BELOW it now. */}
+      <PageHero
+        eyebrow={(
+          <>
+            <Sparkles size={11} />
+            {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+          </>
+        )}
+        title={<>Hi, {firstName}.</>}
+        description={(
+          <>
+            <strong className="text-fg">BioHubNet</strong> wires Ontario biomanufacturing HQP from their first course to their first industry placement.{" "}
+            {inProgress > 0
+              ? `${inProgress} in progress.`
+              : completed > 0
+                ? `${completed} completed so far.`
+                : "Start with a course, or skip ahead to the talent pool."}
+          </>
+        )}
+        actions={(
+          <>
+            <Link
+              href={inProgress > 0 ? "/my-courses" : "/courses"}
+              className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow-sm transition-colors"
+            >
+              {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={12} />
+            </Link>
+            <Link
+              href="/experience"
+              className="inline-flex items-center gap-1.5 bg-card hover:bg-elevated border border-line text-fg text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
+              <Compass size={12} /> How it works
+            </Link>
+          </>
+        )}
+      />
+
       {/* Committee badge — auto-hides unless the user holds a
-          committee membership. Mounted above the credit nudge so
-          recognition-level badges sit at the very top of the
-          welcome page when present. */}
+          committee membership. HQP Advisory members get the proud
+          big badge; EQUIP Review members get a compact chip. */}
       <CommitteeBadgeStrip userId={userId} />
 
-      {/* Credit-expiry nudge — auto-hides unless a grant is within 90
-          days of expiry; ramps urgency at 30 and 7 days. Stays above
-          the hero because time-sensitive credit warnings are the one
-          banner urgent enough to read before the hero. */}
+      {/* Credit-expiry nudge — auto-hides unless a grant is within
+          90 days of expiry; ramps urgency at 30 and 7 days. */}
       <ExpiringCreditsBanner userId={userId} />
 
-      {/* Today's review bookmarks — auto-hidden when nothing's due. */}
+      {/* Today's review bookmarks — auto-hides when nothing's due. */}
       <TodaysReviewsCard initial={reviewQueue} />
 
       {/* Saved-internship deadline nudge */}
@@ -242,48 +282,8 @@ export default async function DashboardPage() {
         </Link>
       )}
 
-      {/* HERO — canonical cinematic full-bleed via PageHero. Used to
-          be a bespoke `hero-mesh-brand` band; converted 2026-05-17 so
-          every PageHero / PageHeader / DSPageHeader-using surface
-          looks the same. */}
-      <PageHero
-        eyebrow={(
-          <>
-            <Sparkles size={11} />
-            {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-          </>
-        )}
-        title={<>Hi, {firstName}.</>}
-        description={(
-          <>
-            <strong className="text-fg">BioHubNet</strong> wires Ontario biomanufacturing HQP from their first course to their first industry placement.{" "}
-            {inProgress > 0
-              ? `${inProgress} in progress.`
-              : completed > 0
-                ? `${completed} completed so far.`
-                : "Start with a course, or skip ahead to the talent pool."}
-          </>
-        )}
-        actions={(
-          <>
-            <Link
-              href={inProgress > 0 ? "/my-courses" : "/courses"}
-              className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow-sm transition-colors"
-            >
-              {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={12} />
-            </Link>
-            <Link
-              href="/experience"
-              className="inline-flex items-center gap-1.5 bg-card hover:bg-elevated border border-line text-fg text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
-            >
-              <Compass size={12} /> How it works
-            </Link>
-          </>
-        )}
-      />
-
-      {/* Below-the-hero soft banners (moved here so they don't push
-          the hero down the page). Both auto-hide when not relevant. */}
+      {/* Below-the-hero soft banners. Both auto-hide when not
+          relevant. */}
       <UpcomingEventBanner userId={userId} />
       <DailyThemeCard />
 

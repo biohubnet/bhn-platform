@@ -23,7 +23,16 @@ interface UserShape {
 /** HR-tailored dashboard. Replaces the learner dashboard when role
  *  === "employer". Focuses on three things: profile completeness,
  *  active postings, and recent applicants. */
-export async function EmployerDashboard({ user }: { user: UserShape }) {
+export async function EmployerDashboard({
+  user,
+  committeeBadge,
+}: {
+  user: UserShape;
+  /** Optional content rendered immediately AFTER the hero — used by
+   *  the dashboard page to inject CommitteeBadgeStrip without
+   *  pushing the editorial hero off the top of the page. */
+  committeeBadge?: React.ReactNode;
+}) {
   const firstName = user.name?.split(" ")[0] ?? "there";
   const companyName = user.employerCompany ?? "your company";
 
@@ -130,6 +139,11 @@ export async function EmployerDashboard({ user }: { user: UserShape }) {
         </div>
         <div className="curve-down" />
       </section>
+
+      {/* Committee badge — slotted in by the page wrapper. Renders
+          immediately after the hero so the platform "hero is at the
+          top" rule is preserved. */}
+      {committeeBadge}
 
       {/* Profile-completeness nudge — only if profile is sparse */}
       {profilePct < 100 && (

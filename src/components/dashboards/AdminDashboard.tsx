@@ -32,10 +32,14 @@ import { PageHero } from "@/components/ui/PageHero";
  * Same data-fetching shape as v1 so nothing downstream changes.
  */
 export async function AdminDashboard({
-  user, role,
+  user, role, committeeBadge,
 }: {
   user: { id: string; name: string | null };
   role: string;
+  /** Optional content rendered immediately AFTER the hero — used by
+   *  the dashboard page to inject CommitteeBadgeStrip without
+   *  pushing the editorial hero off the top of the page. */
+  committeeBadge?: React.ReactNode;
 }) {
   const firstName = user.name?.split(" ")[0] ?? "there";
   const isSuperAdmin = role === "superadmin";
@@ -267,6 +271,11 @@ export async function AdminDashboard({
           </>
         )}
       />
+
+      {/* Committee badge — slotted in by the page wrapper. Renders
+          immediately after the hero so the platform "hero is at the
+          top" rule is preserved. */}
+      {committeeBadge}
 
       {/* ── Spotlight ────────────────────────────────────────────────
           The page's focal element. Heavy ambient shadow + a radial-

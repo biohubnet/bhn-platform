@@ -13,9 +13,13 @@ import { PageHero } from "@/components/ui/PageHero";
  * needs grading. Not the trainee's "continue learning" view.
  */
 export async function InstructorDashboard({
-  user,
+  user, committeeBadge,
 }: {
   user: { id: string; name: string | null };
+  /** Optional content rendered immediately AFTER the hero — used by
+   *  the dashboard page to inject CommitteeBadgeStrip without
+   *  pushing the editorial hero off the top of the page. */
+  committeeBadge?: React.ReactNode;
 }) {
   const firstName = user.name?.split(" ")[0] ?? "there";
 
@@ -92,6 +96,11 @@ export async function InstructorDashboard({
           </>
         )}
       />
+
+      {/* Committee badge — slotted in by the page wrapper. Renders
+          immediately after the hero so the platform "hero is at the
+          top" rule is preserved. */}
+      {committeeBadge}
 
       {/* Stat tiles + greeting tagline pulled OUT of the previous hero
           so the new PageHero stays clean. Rendered as a peer row. */}
