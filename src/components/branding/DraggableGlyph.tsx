@@ -258,6 +258,14 @@ export function DraggableGlyph({
     "--spin-origin": `${spin.originX.toFixed(1)}% ${spin.originY.toFixed(1)}%`,
   };
 
+  // The drag/poke behaviour is a mouse-only ENHANCEMENT, not core
+  // functionality — these glyphs are decorative atmosphere on the
+  // login page and live inside an `aria-hidden` parent. We
+  // explicitly mark the inner pointer layer `aria-hidden` and
+  // suppress focus (`tabIndex={-1}`) so it can NEVER appear in the
+  // keyboard tab order. Keyboard + assistive-tech users see no
+  // missing functionality; the atmosphere is just decoration to
+  // them.
   return (
     <div ref={wrapperRef} className={className}>
       {/* SWIM — translate via lab-swim* keyframe */}
@@ -267,9 +275,13 @@ export function DraggableGlyph({
           className={spin.reverse ? "lab-spin-rev" : "lab-spin"}
           style={spinStyle}
         >
-          {/* INNER — pointer events + JS-driven drag transform */}
+          {/* INNER — pointer events + JS-driven drag transform.
+              aria-hidden + tabIndex=-1 so the decorative drag
+              never leaks into the keyboard tab order. */}
           <div
             ref={innerRef}
+            aria-hidden
+            tabIndex={-1}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerEnd}

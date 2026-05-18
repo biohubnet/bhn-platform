@@ -140,17 +140,25 @@ function LoginPageInner() {
            corner and pulled partially off-screen so it lives in
            the dark periphery, NEVER behind the centred teaser
            headline or the form columns. */}
+      {/* Renders smaller + further offscreen on mobile/tablet so it
+          still reads as a peripheral accent, then grows to its full
+          dramatic size on lg+. Without the sm-tier sizing the petal
+          was effectively invisible below lg. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute opacity-[0.55] mix-blend-screen"
+        className="pointer-events-none absolute opacity-[0.55] mix-blend-screen
+                   -bottom-32 -right-32 lg:-bottom-40 lg:-right-40"
         style={{
-          bottom: "-160px",
-          right: "-160px",
           filter:
             "drop-shadow(0 0 40px rgba(56,189,248,0.35)) drop-shadow(0 0 16px rgba(63,168,106,0.25))",
         }}
       >
-        <StylizedMark size={520} />
+        <span className="block lg:hidden">
+          <StylizedMark size={320} />
+        </span>
+        <span className="hidden lg:block">
+          <StylizedMark size={520} />
+        </span>
       </div>
 
       {/* ─── BIOMANUFACTURING MOLECULES — periphery-only.
@@ -274,13 +282,15 @@ function LoginPageInner() {
         <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.05] max-w-3xl mx-auto drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)]">
           Something big is{" "}
           <span
-            className="inline-block"
+            className="inline-block text-emerald-200"
             style={{
+              // Solid emerald-200 above is the contrast-checkable
+              // fallback; the gradient overrides it where supported.
               backgroundImage:
                 "linear-gradient(120deg, #7dd3fc 0%, #5eead4 50%, #86efac 100%)",
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
-              color: "transparent",
+              WebkitTextFillColor: "transparent",
             }}
           >
             culturing.
@@ -354,7 +364,7 @@ function LoginPageInner() {
               </p>
               <Link
                 href="/register"
-                className="group relative w-full inline-flex items-center justify-center gap-3 text-white font-bold tracking-tight py-3.5 text-base overflow-hidden transition-transform hover:-translate-y-px"
+                className="group relative w-full inline-flex items-center justify-center gap-3 text-white font-bold tracking-tight py-3.5 text-base overflow-hidden transition-transform hover:-translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                 style={{
                   backgroundImage:
                     "linear-gradient(120deg, #1d4f8b 0%, #2c8aa3 50%, #3fa86a 100%)",
@@ -432,7 +442,7 @@ function LoginPageInner() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full bg-transparent border-0 border-b border-white/30 px-0 py-2 text-base text-white placeholder:text-white/25 focus:outline-none focus:border-white transition-colors"
+                  className="w-full bg-transparent border-0 border-b border-white/30 px-0 py-2 text-base text-white placeholder:text-white/25 focus:outline-none focus:border-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors"
                   placeholder="you@lab.…"
                 />
               </LineField>
@@ -451,7 +461,7 @@ function LoginPageInner() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full bg-transparent border-0 border-b border-white/30 px-0 py-2 text-base text-white placeholder:text-white/25 focus:outline-none focus:border-white transition-colors"
+                  className="w-full bg-transparent border-0 border-b border-white/30 px-0 py-2 text-base text-white placeholder:text-white/25 focus:outline-none focus:border-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors"
                   placeholder="••••••••"
                 />
               </LineField>
@@ -467,13 +477,17 @@ function LoginPageInner() {
                     required
                     autoComplete="one-time-code"
                     autoFocus
-                    className="w-40 bg-transparent border-0 border-b border-white/30 px-0 py-2 text-center text-xl font-mono tracking-[0.4em] text-white placeholder:text-white/25 focus:outline-none focus:border-white transition-colors"
+                    className="w-40 bg-transparent border-0 border-b border-white/30 px-0 py-2 text-center text-xl font-mono tracking-[0.4em] text-white placeholder:text-white/25 focus:outline-none focus:border-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors"
                     placeholder="123 456"
                   />
                 </LineField>
               )}
 
-              {/* Remember me — minimal toggle, on a line of its own. */}
+              {/* Remember me — minimal toggle, on a line of its own.
+                  The native checkbox is sr-only so keyboard focus lands
+                  on an invisible element; we proxy a visible focus ring
+                  onto the styled `<span>` checkbox via `peer-focus-
+                  visible:*` so keyboard users see what's focused. */}
               <label className="flex items-center gap-3 cursor-pointer select-none group">
                 <span className="relative">
                   <input
@@ -482,7 +496,7 @@ function LoginPageInner() {
                     onChange={(e) => setRemember(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <span className="w-4 h-4 border border-white/40 bg-transparent transition-all peer-checked:bg-white peer-checked:border-white flex items-center justify-center">
+                  <span className="w-4 h-4 border border-white/40 bg-transparent transition-all peer-checked:bg-white peer-checked:border-white peer-focus-visible:ring-2 peer-focus-visible:ring-white/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-transparent flex items-center justify-center">
                     {remember && <Check size={11} className="text-slate-900" strokeWidth={3} />}
                   </span>
                 </span>
@@ -500,7 +514,7 @@ function LoginPageInner() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group relative w-full inline-flex items-center justify-center gap-3 text-white font-bold tracking-tight py-3.5 text-base overflow-hidden transition-transform hover:-translate-y-px disabled:opacity-60 disabled:hover:translate-y-0"
+                  className="group relative w-full inline-flex items-center justify-center gap-3 text-white font-bold tracking-tight py-3.5 text-base overflow-hidden transition-transform hover:-translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:opacity-60 disabled:hover:translate-y-0"
                   style={{
                     backgroundImage:
                       "linear-gradient(120deg, #1d4f8b 0%, #2c8aa3 50%, #3fa86a 100%)",

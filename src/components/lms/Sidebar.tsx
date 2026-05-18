@@ -216,6 +216,8 @@ const adminEngageItems: NavItem[] = [
 // learning-loop tools) so admins can find ops work without scanning
 // past enrolment + certificate management.
 const adminOperationsItems: NavItem[] = [
+  { label: "Access requests",           href: "/admin/access-requests",     icon: Inbox,        minRole: "admin",
+    description: "Submissions from the public /for-employers and /for-trainees pages. Approve to mint an invite, or reject if it's not a fit. Surfaced previously through /admin/inbox + /admin/insights — now also a direct nav entry." },
   { label: "Merch fulfillment",         href: "/admin/merch",               icon: Gift,         minRole: "admin",
     description: "Reward bundles claimed by trainees. Pack pickups for the office; review mailing requests." },
   { label: "Events",                    href: "/admin/events",              icon: Calendar,     minRole: "admin",
@@ -287,7 +289,7 @@ const adminInsightsItems: NavItem[] = [
 // config, Security policies for the governance docs, Compliance
 // for the management overview against PIPEDA / AODA / etc.
 const adminSecurityItems: NavItem[] = [
-  { label: "Compliance",          href: "/compliance",                icon: ShieldCheck, minRole: "admin",
+  { label: "Compliance",          href: "/admin/compliance",          icon: ShieldCheck, minRole: "admin",
     description: "Management overview — every framework BHN follows (PIPEDA, AODA, CASL, encryption, MFA, audit, RBAC, backups), what we actually do for each, and honest status. Five-minute readable." },
   { label: "Audit Log",           href: "/admin/audit",               icon: ShieldCheck, minRole: "admin",
     description: "Append-only log of admin actions. Required for SOC 2 and 21 CFR Part 11 attestation." },

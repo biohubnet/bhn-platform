@@ -52,7 +52,7 @@ export default async function SecurityPoliciesHub() {
           this page reads + renders it. When a director or an auditor
           asks "where's the incident response plan?", point them here.
           The companion 5-minute readable view is at{" "}
-          <Link href="/compliance" className="text-brand-700 hover:underline font-semibold">/compliance</Link>.
+          <Link href="/admin/compliance" className="text-brand-700 hover:underline font-semibold">/compliance</Link>.
         </p>
       </header>
 
@@ -121,7 +121,7 @@ export default async function SecurityPoliciesHub() {
         at request time, so a merged PR is reflected on the next load
         (no rebuild needed). For the policy intent + control mapping
         per regulatory framework, see{" "}
-        <Link href="/compliance" className="text-brand-700 font-semibold hover:underline">
+        <Link href="/admin/compliance" className="text-brand-700 font-semibold hover:underline">
           /compliance
         </Link>
         .

@@ -275,7 +275,7 @@ export default async function AdminSecurityPage() {
         <p className="text-xs text-subtle mt-3 leading-relaxed">
           Threshold: staff-MFA should sit at 100%; a security report
           should land at least once per quarter. Open action items
-          come from the same registry as <Link className="text-brand-600 hover:underline" href="/compliance">/compliance</Link> — partials and
+          come from the same registry as <Link className="text-brand-600 hover:underline" href="/admin/compliance">/compliance</Link> — partials and
           in-progress controls.
         </p>
       </section>
@@ -317,7 +317,7 @@ export default async function AdminSecurityPage() {
             ))}
           </ol>
           <p className="text-xs text-subtle mt-3">
-            Full context for each item is on <Link className="text-brand-600 hover:underline" href="/compliance">/compliance</Link>.
+            Full context for each item is on <Link className="text-brand-600 hover:underline" href="/admin/compliance">/compliance</Link>.
           </p>
         </section>
       )}

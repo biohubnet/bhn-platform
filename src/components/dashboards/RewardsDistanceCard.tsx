@@ -46,16 +46,23 @@ export async function RewardsDistanceCard({ userId }: Props) {
   return (
     <Link
       href="/rewards"
-      className="loot-scoreboard group relative block overflow-hidden rounded-3xl text-white px-6 sm:px-9 py-7 sm:py-9 shadow-[0_18px_50px_-18px_rgba(190,24,93,0.55)]"
+      className="loot-scoreboard group relative block overflow-hidden rounded-3xl text-white px-6 sm:px-9 py-7 sm:py-9 shadow-[0_18px_50px_-18px_rgba(109,40,217,0.5)]"
+      // Refined 3-stop ramp — keeps the arcade energy of the
+      // /rewards page but drops the orange + amber stops that
+      // made the dashboard panel feel tonally jarring against the
+      // band wash above. The fuchsia + amber blob accents below
+      // still hint at the wider rainbow palette without
+      // overloading the gradient itself.
       style={{
         background:
-          "linear-gradient(135deg, #4338ca 0%, #6d28d9 22%, #be185d 50%, #f97316 78%, #fbbf24 100%)",
+          "linear-gradient(135deg, #4338ca 0%, #6d28d9 50%, #be185d 100%)",
       }}
     >
-      {/* Soft blurred blob accents — adds depth on top of the gradient */}
-      <div aria-hidden className="pointer-events-none absolute -top-16 -right-10 w-56 h-56 rounded-full bg-amber-300/40 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-10 w-60 h-60 rounded-full bg-fuchsia-500/35 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute top-1/3 left-1/2 w-44 h-44 -translate-x-1/2 rounded-full bg-sky-400/25 blur-3xl" />
+      {/* Soft blurred blob accents — adds depth + a hint of the
+          warm spectrum without the gradient itself going rainbow */}
+      <div aria-hidden className="pointer-events-none absolute -top-16 -right-10 w-56 h-56 rounded-full bg-amber-300/30 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-10 w-60 h-60 rounded-full bg-fuchsia-500/30 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute top-1/3 left-1/2 w-44 h-44 -translate-x-1/2 rounded-full bg-sky-400/20 blur-3xl" />
 
       {/* Floating glyphs — the playful arcade energy */}
       <div aria-hidden className="pointer-events-none absolute top-5 right-6 hidden sm:block loot-float text-amber-200">

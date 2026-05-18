@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18d";
+export const TOUR_VERSION = "2026.05.18e";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -499,6 +499,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Three updates to the trainee dashboard. (1) EQUIP pillar column now LISTS the next VC + VL funding windows (with extended pips) instead of a bare \"X windows open\" count — a planning surface, not just a pulse. (2) The Loot Vault at the bottom is back to its full playful style — rainbow gradient panel, floating gift/sparkle glyphs, big mono credits scoreboard with a frosted 3-stat row, glowing milestone bar with circular tier markers. Whole panel links into /rewards. (3) The Sakura promo card that used to sit on the dashboard has moved into the theme picker: open the palette (bottom-left of the sidebar) and a featured \"Try Sakura · X d left\" card sits at the very top of the dropdown for any active limited-time theme. Discovery is now beside the action.",
     placement: "center",
     since: "2026.05.18d",
+  },
+  {
+    id: "full-site-audit-sweep",
+    title: "Site-wide accessibility, nav, and polish sweep",
+    body: "Big audit-driven sweep. Login form now has visible focus rings on every field + the Sign-up Link + the Sign-in submit. ThemePicker / ThemeCycler buttons grew to 44 × 44 px touch targets. Subtle-text colour on Sakura, Icecream, and Greenwood themes deepened so hints clear the 4.5:1 contrast threshold. MscCultureCycle (the MSC passaging vignette on /login) now respects prefers-reduced-motion. /compliance moved to /admin/compliance — old URL redirects. Access requests added to the admin sidebar (previously orphaned). EQUIP pillar capped at 3 deadlines + a 'more' link. Loot Vault gradient + band wash both retuned to a refined 3-stop indigo→violet→magenta ramp. StylizedMark backdrop now visible on smaller screens. ThemePicker dropdown gained menu / radio-group semantics + a softer (non-rose) Featured promo card. Login petal backdrop's 'culturing' gradient text now declares a contrast-checkable solid fallback.",
+    placement: "center",
+    since: "2026.05.18e",
   },
   {
     id: "aurora-theme",

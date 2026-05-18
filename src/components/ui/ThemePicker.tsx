@@ -81,14 +81,19 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex items-center gap-2.5 rounded-xl text-sm transition-colors",
+          // Compact mode uses min-h/min-w 44 px so the touch target
+          // clears the WCAG 2.5.5 Level AAA threshold even though
+          // the icon itself is 16 px.
+          "flex items-center gap-2.5 rounded-xl text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1",
           compact
-            ? "p-2 hover:bg-elevated text-muted hover:text-fg"
+            ? "min-h-[44px] min-w-[44px] justify-center p-2 hover:bg-elevated text-muted hover:text-fg"
             : "px-3 py-2 w-full hover:bg-elevated text-muted hover:text-fg"
         )}
         aria-label="Change theme"
+        aria-haspopup="menu"
+        aria-expanded={open}
       >
-        <Palette size={16} />
+        <Palette size={16} aria-hidden />
         {!compact && (
           <>
             <span className="flex-1 text-left">
@@ -148,7 +153,11 @@ function ThemeMenu({
   const order: ThemeCategory[] = ["classic", "flavour", "limited"];
 
   return (
-    <div className="absolute bottom-full left-0 right-0 mb-2 popover p-1.5 z-30 min-w-[280px] max-h-[70vh] overflow-y-auto animate-fade-in">
+    <div
+      className="absolute bottom-full left-0 right-0 mb-2 popover p-1.5 z-30 min-w-[280px] max-h-[70vh] overflow-y-auto animate-fade-in"
+      role="menu"
+      aria-label="Choose theme"
+    >
       {featured && (
         <FeaturedLimitedPromo
           theme={featured}
@@ -177,8 +186,10 @@ function ThemeMenu({
                   key={t.id}
                   type="button"
                   onClick={() => onPick(t.id)}
+                  role="menuitemradio"
+                  aria-checked={active}
                   className={cn(
-                    "group/themerow w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all",
+                    "group/themerow w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
                     active ? "bg-brand-50 ring-1 ring-brand-200" : "hover:bg-elevated"
                   )}
                 >
@@ -212,7 +223,12 @@ function ThemeMenu({
                       </span>
                     </span>
                   </span>
-                  {active && <Check size={13} className="text-brand-600 shrink-0" />}
+                  {active && (
+                    <>
+                      <Check size={13} className="text-brand-600 shrink-0" aria-hidden />
+                      <span className="sr-only">Currently selected</span>
+                    </>
+                  )}
                 </button>
               );
             })}
@@ -273,19 +289,24 @@ function FeaturedLimitedPromo({
 
   return (
     <div
-      className="relative mb-2 overflow-hidden rounded-2xl ring-1 ring-rose-200 bg-card"
+      // Quieter ring + neutral card — the THEME's own accent does
+      // the colour-work via the corner washes below, instead of a
+      // global rose tint that fights the rest of the muted menu.
+      className="relative mb-2 overflow-hidden rounded-2xl ring-1 ring-line bg-card"
       role="region"
       aria-label={`Featured limited-time theme: ${t.name}`}
     >
-      {/* Theme-coloured corner washes — pop the card on any base */}
+      {/* Theme-coloured corner washes — softened from before, so
+          the card hints at the theme's palette without competing
+          with the rest of the menu. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-50"
+        className="pointer-events-none absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl opacity-30"
         style={{ background: accent }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-10 -left-10 w-28 h-28 rounded-full blur-2xl opacity-30"
+        className="pointer-events-none absolute -bottom-10 -left-10 w-24 h-24 rounded-full blur-2xl opacity-15"
         style={{ background: fg }}
       />
 
@@ -306,11 +327,12 @@ function FeaturedLimitedPromo({
           </span>
 
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] uppercase tracking-[0.22em] font-black text-rose-600 inline-flex items-center gap-1">
-              <Sparkles size={10} />
-              Limited time
-            </p>
-            <h3 className="text-sm font-bold text-fg leading-tight mt-0.5">
+            {/* Limited-time pip is the only rose accent now — small
+                enough to read as a tag, not as the card's mood. */}
+            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+              <Sparkles size={9} aria-hidden /> Limited time
+            </span>
+            <h3 className="text-sm font-bold text-fg leading-tight mt-1.5">
               Try {t.name}
             </h3>
             <p className="text-[11px] text-muted leading-snug mt-0.5 line-clamp-2">
@@ -322,9 +344,12 @@ function FeaturedLimitedPromo({
         <button
           type="button"
           onClick={() => onPick(t.id)}
-          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition-colors"
+          // Now uses the BRAND tone so the CTA harmonises with the
+          // rest of the picker's chrome (the active-theme highlight
+          // is also brand-flavored).
+          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1"
         >
-          <Sparkles size={11} />
+          <Sparkles size={11} aria-hidden />
           <span>Try {t.name}</span>
           {daysLeft != null && (
             <span className="font-mono font-normal opacity-80">
@@ -347,7 +372,9 @@ export function ThemeCycler() {
     <button
       type="button"
       onClick={cycle}
-      className="p-2 rounded-xl text-muted hover:bg-elevated hover:text-fg transition-colors flex items-center gap-2"
+      // Same 44 px floor as ThemePicker so the swatch button is a
+      // legit touch target on mobile.
+      className="min-h-[44px] min-w-[44px] justify-center p-2 rounded-xl text-muted hover:bg-elevated hover:text-fg transition-colors flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1"
       aria-label="Cycle theme"
       title={`Theme: ${theme}`}
     >

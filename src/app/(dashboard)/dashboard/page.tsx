@@ -208,13 +208,13 @@ export default async function DashboardPage() {
     }),
     // Upcoming VC / VL windows — render as a LIST in the EQUIP
     // pillar column (replacing the older "X windows open" count).
-    // Capped at 4 so the column stays scannable on a busy cycle
-    // calendar; trainees can click through to /equip for the full
-    // schedule.
+    // We fetch 5 so we can show the next 3 plus a "+N more" link
+    // when more are queued, keeping the column height comparable
+    // to the other two pillars even on a busy cycle calendar.
     prisma.equipDeadline.findMany({
       where: { status: { in: ["open", "extended"] }, deadlineAt: { gte: now } },
       orderBy: { deadlineAt: "asc" },
-      take: 4,
+      take: 5,
       select: { id: true, stream: true, deadlineAt: true, status: true, cycleLabel: true },
     }),
   ]);
@@ -518,9 +518,13 @@ export default async function DashboardPage() {
             discovery lives where the action does. */}
       <section
         className="border-t border-line py-9 sm:py-12 px-5 sm:px-8"
+        // Band wash now matches the inner panel's 3-stop ramp
+        // (indigo → violet → fuchsia) at very low opacity so the
+        // band hints at the loot palette without piling more hues
+        // on top of an already-vivid panel.
         style={{
           backgroundImage:
-            "linear-gradient(135deg, rgba(30,58,138,0.07) 0%, rgba(109,40,217,0.06) 40%, rgba(190,24,93,0.05) 75%, rgba(249,115,22,0.04) 100%)",
+            "linear-gradient(135deg, rgba(67,56,202,0.05) 0%, rgba(109,40,217,0.04) 55%, rgba(190,24,93,0.04) 100%)",
         }}
       >
         <div className="max-w-4xl mx-auto">
@@ -665,10 +669,11 @@ function PillarColumn({
 
 /** EquipDeadlinesList — replaces the bare "X windows open" count
  *  in the EQUIP pillar column with the actual upcoming VC + VL
- *  funding windows. Each row carries a colour-dot stream tag, the
- *  deadline date, and an "Extended" pip when the admin shifted
- *  the window post-creation. Empty state stays useful: it says
- *  what's coming rather than "0 windows". */
+ *  funding windows. Renders the next 3 rows (so the column height
+ *  matches its ENGAGE + EXPERIENCE siblings even on a busy
+ *  cycle calendar); if there are more, a "+N more" link sends the
+ *  trainee to /equip for the full schedule. Empty state stays
+ *  useful: it says what's coming rather than "0 windows". */
 function EquipDeadlinesList({
   deadlines,
 }: {
@@ -691,13 +696,18 @@ function EquipDeadlinesList({
     );
   }
 
+  // Cap visible rows at 3 so the column height tracks its sibling
+  // pillars; the overflow link "View N more" carries the rest.
+  const visible = deadlines.slice(0, 3);
+  const overflow = Math.max(0, deadlines.length - visible.length);
+
   return (
     <div>
       <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted mb-2">
         Next funding windows
       </p>
       <ul className="divide-y divide-line border-y border-line">
-        {deadlines.map((d) => {
+        {visible.map((d) => {
           const isVL = d.stream === "venture_lift";
           const date = new Date(d.deadlineAt).toLocaleDateString(undefined, {
             month: "short",
@@ -731,6 +741,14 @@ function EquipDeadlinesList({
           );
         })}
       </ul>
+      {overflow > 0 && (
+        <Link
+          href="/equip"
+          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-sky-700 hover:text-sky-900 transition-colors"
+        >
+          +{overflow} more <ArrowRight size={11} />
+        </Link>
+      )}
     </div>
   );
 }

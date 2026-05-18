@@ -84,9 +84,9 @@ export default async function CourseDetailPage({
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Archived banner — explains why enrolment is closed. */}
       {isArchived && !isStaff && (
-        <div className="rounded-2xl bg-slate-100 ring-1 ring-inset ring-slate-300 px-4 py-3 flex items-start gap-2">
-          <Archive size={14} className="text-slate-700 shrink-0 mt-0.5" />
-          <p className="text-sm text-slate-900 leading-snug">
+        <div className="rounded-2xl bg-elevated ring-1 ring-inset ring-line-strong px-4 py-3 flex items-start gap-2">
+          <Archive size={14} className="text-fg-muted shrink-0 mt-0.5" />
+          <p className="text-sm text-fg leading-snug">
             <span className="font-bold">This course is archived.</span>{" "}
             New enrolments are closed, but you can still read the course
             details below. If you're already enrolled, your access continues.

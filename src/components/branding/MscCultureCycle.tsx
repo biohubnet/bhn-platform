@@ -26,6 +26,23 @@
 
 import { useEffect, useState } from "react";
 
+/** Read the user's prefers-reduced-motion preference. Returns the
+ *  current value AND subscribes to changes so the component reacts
+ *  if the OS setting flips mid-session. SSR-safe — returns false
+ *  during the initial render and updates after mount. */
+function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return reduced;
+}
+
 const STAGES = [
   "seed",
   "grow",
@@ -62,14 +79,24 @@ interface Props {
 
 export function MscCultureCycle({ size = 200, className }: Props) {
   const [stageIdx, setStageIdx] = useState(0);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
+    // Respect prefers-reduced-motion — freeze on the first stage
+    // ("seed") so motion-sensitive users see a static depiction of
+    // the cycle instead of an animated one.
+    if (reducedMotion) return;
     const stage = STAGES[stageIdx];
     const t = window.setTimeout(() => {
       setStageIdx((i) => (i + 1) % STAGES.length);
     }, STAGE_INFO[stage].duration);
     return () => window.clearTimeout(t);
-  }, [stageIdx]);
+  }, [stageIdx, reducedMotion]);
+
+  // When reduced motion is on, nullify the SVG attribute transitions
+  // below so attribute changes (which CAN still happen if a user
+  // interacts with the cycle) snap rather than animate.
+  const noTransition = reducedMotion ? "none" : undefined;
 
   const stage = STAGES[stageIdx];
   const info = STAGE_INFO[stage];
@@ -133,11 +160,11 @@ export function MscCultureCycle({ size = 200, className }: Props) {
         <ellipse
           cx="90" cy="140" rx="74" ry="58"
           fill="#86efac" fillOpacity={trypsinOpacity}
-          style={{ transition: "fill-opacity 700ms ease" }}
+          style={{ transition: noTransition ?? "fill-opacity 700ms ease" }}
         />
 
         {/* ── Cells ─────────────────────────────────────────────── */}
-        <g style={{ transition: "opacity 500ms ease" }}>
+        <g style={{ transition: noTransition ?? "opacity 500ms ease" }}>
           {CELL_POSITIONS.map((c, i) => {
             const visible = i < visibleCount;
             return (
@@ -152,6 +179,7 @@ export function MscCultureCycle({ size = 200, className }: Props) {
                 strokeOpacity={visible ? cellStrokeOpacity : 0}
                 style={{
                   transition:
+                    noTransition ??
                     "r 500ms ease, fill 500ms ease, stroke 500ms ease, fill-opacity 500ms ease, stroke-opacity 500ms ease",
                 }}
               />
@@ -180,7 +208,7 @@ export function MscCultureCycle({ size = 200, className }: Props) {
         <g
           style={{
             transform: `translateY(${pipetteY}px)`,
-            transition: "transform 1100ms cubic-bezier(.5,.1,.4,1), opacity 300ms ease",
+            transition: noTransition ?? "transform 1100ms cubic-bezier(.5,.1,.4,1), opacity 300ms ease",
             opacity: pipetteVisible ? 1 : 0,
           }}
         >
@@ -215,7 +243,7 @@ export function MscCultureCycle({ size = 200, className }: Props) {
         {/* ── Aspirate stream — column of cells being drawn up ──── */}
         <g
           opacity={streamOpacity}
-          style={{ transition: "opacity 500ms ease" }}
+          style={{ transition: noTransition ?? "opacity 500ms ease" }}
         >
           <path
             d="M 90 118 Q 88 130, 90 140"
@@ -230,7 +258,7 @@ export function MscCultureCycle({ size = 200, className }: Props) {
         {/* ── Re-seed droplet — fresh cells falling out the tip ─── */}
         <g
           opacity={dropletOpacity}
-          style={{ transition: "opacity 500ms ease" }}
+          style={{ transition: noTransition ?? "opacity 500ms ease" }}
         >
           <path
             d="M 90 110 L 90 132"
@@ -265,8 +293,18 @@ export function MscCultureCycle({ size = 200, className }: Props) {
           </text>
         </g>
 
-        {/* ── Stage dots — progress along the cycle ─────────────── */}
-        <g transform="translate(60 256)">
+        {/* ── Stage dots — progress along the cycle. Carries
+              proper progress-bar semantics for screen readers
+              (role + valuenow / valuemax / aria-label) so the dots
+              aren't just decorative. */}
+        <g
+          transform="translate(60 256)"
+          role="progressbar"
+          aria-label={`Cycle stage ${stageIdx + 1} of ${STAGES.length}: ${info.label}`}
+          aria-valuenow={stageIdx + 1}
+          aria-valuemin={1}
+          aria-valuemax={STAGES.length}
+        >
           {STAGES.map((_, i) => (
             <circle
               key={i}
@@ -275,7 +313,7 @@ export function MscCultureCycle({ size = 200, className }: Props) {
               r="1.6"
               fill={i === stageIdx ? "#86efac" : "currentColor"}
               opacity={i === stageIdx ? 1 : 0.3}
-              style={{ transition: "opacity 300ms ease, fill 300ms ease" }}
+              style={{ transition: noTransition ?? "opacity 300ms ease, fill 300ms ease" }}
             />
           ))}
         </g>

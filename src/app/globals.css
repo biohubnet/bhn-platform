@@ -131,7 +131,7 @@
   --raised:    #f3d3d4;
   --fg:        #3a1f24;        /* wine */
   --fg-muted:  #6e4849;
-  --fg-subtle: #a87e80;
+  --fg-subtle: #8a5d5f;        /* deepened from #a87e80 — AA pass (4.7:1 on --bg) */
   --line:      rgba(58, 31, 36, 0.10);
   --line-strong: rgba(58, 31, 36, 0.20);
   --backdrop:  rgba(58, 31, 36, 0.40);
@@ -1129,7 +1129,7 @@ body {
   --raised:    #ffdfd0;
   --fg:        #3d2a3b;
   --fg-muted:  #6b4d6a;
-  --fg-subtle: #a78fa6;
+  --fg-subtle: #7d5d7c;        /* deepened from #a78fa6 — AA pass (4.7:1 on --bg) */
   --line:      rgba(61, 42, 59, 0.10);
   --line-strong: rgba(61, 42, 59, 0.18);
   --backdrop:  rgba(61, 42, 59, 0.40);
@@ -1376,7 +1376,7 @@ body {
   --raised:    #d0d9c1;           /* older moss */
   --fg:        #1f2a1a;           /* humus — deep forest floor */
   --fg-muted:  #4d5a44;           /* damp bark */
-  --fg-subtle: #7e8d72;           /* lichen grey-green */
+  --fg-subtle: #5d6b55;           /* deepened from #7e8d72 — AA pass (4.9:1 on --bg) */
   --line:      rgba(31, 42, 26, 0.10);
   --line-strong: rgba(31, 42, 26, 0.20);
   --backdrop:  rgba(31, 42, 26, 0.42);
