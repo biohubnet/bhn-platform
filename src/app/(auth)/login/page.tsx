@@ -99,29 +99,38 @@ function LoginPageInner() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-brand-50 via-card to-brand-100 px-4 py-8">
-      {/* ─── BACKDROP — huge cropped four-petal mark, anchored to
-           the upper-right, scaled WAY up so only one petal + a
-           sliver of the centre star reads. Low opacity so the
-           form chrome still wins on contrast. ─── */}
+      {/* ─── BACKDROP — huge cropped four-petal mark. Scaled big
+           enough that the SVG's edges always sit OFF-screen on the
+           upper-right so the visible region reads as a continuous
+           bleed instead of "a logo over there with a hard edge".
+           A radial soft-fade mask on the same layer feathers it
+           further into the page background. Bold opacity (28%) per
+           user request. ─── */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.16]"
+        className="pointer-events-none absolute inset-0 opacity-[0.28]"
         style={{
           backgroundImage: "url('/biohubnet-logo.svg')",
-          backgroundSize: "min(1600px, 220%) auto",
-          backgroundPosition: "calc(100% + 200px) calc(0% - 140px)",
+          backgroundSize: "min(2400px, 360%) auto",
+          backgroundPosition: "calc(100% + 540px) calc(0% - 360px)",
           backgroundRepeat: "no-repeat",
+          // Soft radial fade so the petal feathers into the page
+          // gradient instead of presenting a circular outline.
+          WebkitMaskImage:
+            "radial-gradient(ellipse 90% 80% at 100% 0%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 95%)",
+          maskImage:
+            "radial-gradient(ellipse 90% 80% at 100% 0%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 95%)",
         }}
       />
-      {/* Soft radial wash on top to give the form column a clean
-          ground — keeps the cropped petal as backdrop atmosphere
-          rather than fighting for the foreground. */}
+      {/* Soft radial white wash on top to keep the form column
+          legible against the bolder backdrop. Anchored to the
+          lower-left where the cards sit. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 25% 40%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 60%)",
+            "radial-gradient(circle at 20% 65%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 55%)",
         }}
       />
 
