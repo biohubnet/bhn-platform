@@ -864,6 +864,24 @@ body {
   .drift, .drift-slow { animation: none; }
 }
 
+/* ──── Login page — lab-bubble drift ────
+ * Tiny circles rise from the bottom of an SVG lab-equipment glyph
+ * (test tube / flask) on the login backdrop, fading in then out.
+ * Three speeds so multiple bubbles in one glyph don't tick in
+ * unison and look mechanical. Respects prefers-reduced-motion. */
+@keyframes lab-bubble {
+  0%   { transform: translateY(0)    scale(0.6); opacity: 0; }
+  20%  { transform: translateY(-12px) scale(1);   opacity: 0.9; }
+  80%  { transform: translateY(-48px) scale(1);   opacity: 0.7; }
+  100% { transform: translateY(-64px) scale(0.6); opacity: 0; }
+}
+.lab-bubble        { animation: lab-bubble 4.2s ease-in-out infinite; }
+.lab-bubble-slow   { animation: lab-bubble 5.8s ease-in-out infinite; animation-delay: 1.6s; }
+.lab-bubble-slower { animation: lab-bubble 7.4s ease-in-out infinite; animation-delay: 3.1s; }
+@media (prefers-reduced-motion: reduce) {
+  .lab-bubble, .lab-bubble-slow, .lab-bubble-slower { animation: none; opacity: 0; }
+}
+
 /* ──── /rewards page — loot-vault animations ────
  * A small motion vocabulary for the playful merch page: floating
  * gift-box icons, holographic-foil shimmer on collectible cards,

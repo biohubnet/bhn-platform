@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight, Check, CheckCircle2, Coins, GraduationCap, Layers, Briefcase,
-  FlaskConical,
+  FlaskConical, TestTube, Microscope, Atom,
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
 import { ThemeCycler } from "@/components/ui/ThemePicker";
@@ -127,30 +127,53 @@ function LoginPageInner() {
         }}
       />
 
-      {/* ─── PETAL — front and centre. Sits as the editorial
-           subject of the spread; the form below is intentionally
-           thin so the mark stays the visual hero. Drop-shadow glow
-           (cyan + emerald) gives it a halo that integrates it into
-           the spotlight pool. */}
+      {/* ─── BHN MARK — the complete four-petal emblem rendered
+           inline via LogoMark, large + saturated. Anchored
+           top-centre so it sits as the editorial hero of the
+           spread. Inline SVG (instead of cropping the public
+           biohubnet-logo.svg) so the shape always reads as the
+           actual BHN logo — no weird partial-curve fragments. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 -translate-x-1/2"
-        style={{
-          top: "-120px",
-          width: "min(520px, 78vw)",
-          height: "min(520px, 78vw)",
-          backgroundImage: "url('/biohubnet-logo.svg')",
-          // Zoom into the four-petal cluster only — the wordmark
-          // sits in the lower portion of the SVG and we don't want
-          // it here. Scale + pull up so only the emblem reads.
-          backgroundSize: "230% auto",
-          backgroundPosition: "center -55%",
-          backgroundRepeat: "no-repeat",
-          opacity: 1,
-          filter:
-            "drop-shadow(0 0 70px rgba(56,189,248,0.6)) drop-shadow(0 0 30px rgba(63,168,106,0.42)) saturate(1.32)",
-        }}
-      />
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-20 sm:-top-16"
+      >
+        <LogoMark
+          size={420}
+          className="saturate-150 drop-shadow-[0_0_80px_rgba(56,189,248,0.55)] drop-shadow-[0_0_36px_rgba(63,168,106,0.42)]"
+        />
+      </div>
+
+      {/* ─── LAB EQUIPMENT ATMOSPHERE — discreet line-art lucide
+           icons scattered in the corners of the stage. Low opacity
+           white-on-dark, far from the form column so they read as
+           background texture, not decoration. One test tube has a
+           rising bubble loop; everything else is static. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Left edge — test tube with bubbles drifting up the
+            inside. Bubbles are positioned over the tube glyph. */}
+        <div className="absolute left-6 sm:left-12 top-[44%] text-sky-200/15 hidden sm:block">
+          <TestTube size={84} strokeWidth={1.1} />
+          <span aria-hidden className="absolute left-[42%] bottom-3 w-1.5 h-1.5 rounded-full bg-sky-200/40 lab-bubble" />
+          <span aria-hidden className="absolute left-[55%] bottom-3 w-1 h-1 rounded-full bg-sky-200/40 lab-bubble lab-bubble-slow" />
+          <span aria-hidden className="absolute left-[38%] bottom-3 w-1 h-1 rounded-full bg-sky-200/40 lab-bubble lab-bubble-slower" />
+        </div>
+
+        {/* Right edge — flask with one slow bubble. */}
+        <div className="absolute right-8 sm:right-16 top-[58%] text-emerald-200/[0.12] hidden sm:block">
+          <FlaskConical size={96} strokeWidth={1.1} />
+          <span aria-hidden className="absolute left-[48%] bottom-4 w-1.5 h-1.5 rounded-full bg-emerald-200/35 lab-bubble lab-bubble-slow" />
+        </div>
+
+        {/* Bottom-left corner — microscope silhouette. */}
+        <div className="absolute left-8 sm:left-20 bottom-12 text-white/[0.08] hidden md:block">
+          <Microscope size={72} strokeWidth={1} />
+        </div>
+
+        {/* Top-right corner — atom drift. */}
+        <div className="absolute right-12 top-28 text-amber-200/10 hidden md:block">
+          <Atom size={64} strokeWidth={1} />
+        </div>
+      </div>
 
       {/* Vignette — gentle darken at the page edges so the
           spotlight pool reads as the focal area. */}
@@ -228,9 +251,9 @@ function LoginPageInner() {
          * column carries its own "01 / 02" runway-style number
          * stamp so the pair reads like a magazine spread.
          */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-8 lg:gap-0 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-8 lg:gap-0 items-stretch">
           {/* ── 01 · NEW HERE ──────────────────────────────────────── */}
-          <section className="lg:pr-12">
+          <section className="lg:pr-12 flex flex-col">
             <div className="flex items-baseline justify-between mb-6">
               <span
                 className="font-serif italic text-5xl leading-none"
@@ -269,16 +292,21 @@ function LoginPageInner() {
               <Bullet icon={Briefcase}>Internship + full-time matching with vetted employer partners</Bullet>
             </ul>
 
-            <Link
-              href="/register"
-              className="group mt-8 inline-flex items-center gap-3 text-base font-bold text-white py-2 border-b-2 border-white/40 hover:border-white transition-colors"
-            >
-              Create your free account
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <p className="text-[11px] text-white/40 mt-3">
-              About a minute. No payment info needed.
-            </p>
+            {/* Bottom-anchored CTA — `mt-auto` pushes the button to
+                the bottom of the column so it sits on the same
+                baseline as the Sign-in button across the divider. */}
+            <div className="mt-auto pt-8">
+              <Link
+                href="/register"
+                className="group w-full inline-flex items-center justify-center gap-3 bg-white text-slate-900 hover:bg-slate-100 active:bg-slate-200 font-bold tracking-tight py-3.5 text-base transition-colors"
+              >
+                Create your free account
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <p className="text-[11px] text-white/40 mt-3 text-center">
+                About a minute. No payment info needed.
+              </p>
+            </div>
           </section>
 
           {/* Vertical hairline divider — only renders on lg+ where
@@ -286,7 +314,7 @@ function LoginPageInner() {
           <div aria-hidden className="hidden lg:block w-px h-full bg-gradient-to-b from-transparent via-white/15 to-transparent" />
 
           {/* ── 02 · RETURNING ────────────────────────────────────── */}
-          <section className="lg:pl-12">
+          <section className="lg:pl-12 flex flex-col">
             <div className="flex items-baseline justify-between mb-6">
               <span
                 className="font-serif italic text-5xl leading-none"
@@ -322,7 +350,7 @@ function LoginPageInner() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+            <form onSubmit={handleSubmit} className="mt-6 space-y-6 flex-1 flex flex-col">
               {error && (
                 <div className="border-l-2 border-rose-400 pl-4 py-1 text-sm text-rose-200">
                   {error}
@@ -395,18 +423,23 @@ function LoginPageInner() {
                 </span>
               </label>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="group w-full inline-flex items-center justify-center gap-3 bg-white text-slate-900 hover:bg-slate-100 active:bg-slate-200 disabled:opacity-60 font-bold tracking-tight py-3.5 text-base transition-colors"
-              >
-                {loading ? "Signing in…" : (
-                  <>
-                    Sign in
-                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
+              {/* Submit anchored at the bottom of the flex form so
+                  it aligns with the signup CTA across the divider —
+                  same style, same vertical level. */}
+              <div className="mt-auto pt-8">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="group w-full inline-flex items-center justify-center gap-3 bg-white text-slate-900 hover:bg-slate-100 active:bg-slate-200 disabled:opacity-60 font-bold tracking-tight py-3.5 text-base transition-colors"
+                >
+                  {loading ? "Signing in…" : (
+                    <>
+                      Sign in
+                      <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           </section>
         </div>
