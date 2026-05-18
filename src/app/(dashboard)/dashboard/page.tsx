@@ -377,15 +377,13 @@ export default async function DashboardPage() {
           (RewardsDistanceCard) lives at the bottom now, narrower,
           per user request. */}
 
-      {/* ── WE ARE DEADLINE-DRIVEN ─────────────────────────────────
-            Four-column action card mirroring the biohubnet.ca
-            marketing pattern: navy banner header + ENGAGE /
-            EXPERIENCE / EQUIP / EVENTS columns, each listing
-            upcoming deadline-driven items. Replaces the earlier
-            Pillar Trinity (which mixed status + actions across 3
-            columns) with a tighter, action-first board. Stacks
-            2-up on md, 4-up on lg. */}
-      <DeadlineDrivenBoard
+      {/* ── OPEN OPPORTUNITIES — four-column deadline board ──────
+            ENGAGE / EXPERIENCE / EQUIP / EVENTS columns listing
+            upcoming deadline-driven items. Native to the platform
+            design system: standard section padding, SectionEyebrow
+            header, hairline-divided columns, theme-token text +
+            pill colours. Stacks 1-up small, 2x2 md, 4-up lg. */}
+      <OpenOpportunitiesBoard
         engageItems={[
           ...engagePathways.map((p) => ({
             title: p.title,
@@ -665,13 +663,14 @@ export default async function DashboardPage() {
   );
 }
 
-type EyebrowTone = "brand" | "amber" | "emerald" | "sky";
+type EyebrowTone = "brand" | "amber" | "emerald" | "sky" | "violet";
 
 /** Section eyebrow — small uppercase tracked label with a tone-tinted
  *  gradient hairline leading into the title. Used to mark each
  *  hairline-divided section. Tone vocabulary mirrors the sidebar
- *  pillar tones (engage=emerald, experience=amber, equip=sky) so
- *  visual association carries across the platform. */
+ *  pillar tones (engage=emerald, experience=amber, equip=sky,
+ *  events=violet) so visual association carries across the
+ *  platform. */
 function SectionEyebrow({
   children,
   tone = "brand",
@@ -686,7 +685,9 @@ function SectionEyebrow({
         ? "linear-gradient(90deg, rgb(16,185,129), rgb(56,189,248))"
         : tone === "sky"
           ? "linear-gradient(90deg, rgb(14,165,233), rgb(99,102,241))"
-          : "linear-gradient(90deg, rgb(56,189,248), rgb(124,58,237))";
+          : tone === "violet"
+            ? "linear-gradient(90deg, rgb(139,92,246), rgb(244,114,182))"
+            : "linear-gradient(90deg, rgb(56,189,248), rgb(124,58,237))";
   return (
     <p className="text-[10px] uppercase tracking-[0.28em] font-bold text-subtle inline-flex items-center gap-2">
       <span aria-hidden className="block h-px w-6" style={{ background: gradient }} />
@@ -696,11 +697,15 @@ function SectionEyebrow({
 }
 
 // ─── DEADLINE-DRIVEN BOARD ────────────────────────────────────────
-// Four-column action card mirroring the biohubnet.ca marketing
-// pattern. Each column lists deadline-driven items; each item
-// carries a title + 1-line description + status pill. The board
-// is wrapped in a single rounded panel with a navy banner header,
-// rendering as one editorial unit on every theme.
+// Native to the platform design system: a standard flat section
+// (border-t + py-4 sm:py-6 + px-5 sm:px-8) with a SectionEyebrow
+// header and a 4-column hairline-divided body. No rounded panel,
+// no hardcoded navy chrome — every colour comes from the existing
+// SectionEyebrow tone system (emerald/amber/sky/violet) + Tailwind
+// status palette (rose-50/sky-50/amber-50 with ring overlays),
+// both of which already have theme overrides in globals.css. Sits
+// rhythmically next to the For You / Reminders / Loot Vault
+// sections instead of barging in as a marketing card.
 
 interface PillarItem {
   title: string;
@@ -710,51 +715,9 @@ interface PillarItem {
   href?: string;
 }
 
-interface PillarConfig {
-  label: string;
-  subtitle: string;
-  audience: string;
-  itemTone: "emerald" | "amber" | "sky" | "violet";
-  emptyMessage: string;
-  viewAllHref: string;
-}
+type PillarTone = "emerald" | "amber" | "sky" | "violet";
 
-const PILLAR_CONFIG = {
-  engage: {
-    label: "ENGAGE",
-    subtitle: "Industry-led training, workshops, and mentorship",
-    audience: "Open to grad students, postdocs and researchers — free with training credits",
-    itemTone: "emerald",
-    emptyMessage: "No upcoming pathway windows. New cohorts drop most quarters.",
-    viewAllHref: "/pathways",
-  },
-  experience: {
-    label: "EXPERIENCE",
-    subtitle: "Bridging theory and practice through experiential learning",
-    audience: "For grad students and postdocs ready for hands-on placements",
-    itemTone: "amber",
-    emptyMessage: "No open internships, KE rounds, or mobility awards right now.",
-    viewAllHref: "/internships",
-  },
-  equip: {
-    label: "EQUIP",
-    subtitle: "Advancing biomanufacturing innovations with strategic funding support",
-    audience: "For trainee-entrepreneurs with an IP-backed innovation",
-    itemTone: "sky",
-    emptyMessage: "No open funding windows. New VC + VL cycles drop most months.",
-    viewAllHref: "/equip",
-  },
-  events: {
-    label: "EVENTS",
-    subtitle: "Meet the BioHubNet team in person",
-    audience: "Open to all, drop by — no RSVP needed unless noted",
-    itemTone: "violet",
-    emptyMessage: "No public events on the calendar this week.",
-    viewAllHref: "/events",
-  },
-} as const satisfies Record<string, PillarConfig>;
-
-function DeadlineDrivenBoard({
+function OpenOpportunitiesBoard({
   engageItems,
   experienceItems,
   equipItems,
@@ -766,84 +729,132 @@ function DeadlineDrivenBoard({
   eventItems: PillarItem[];
 }) {
   return (
-    <section className="border-t border-line px-5 sm:px-8 py-4 sm:py-6">
-      <div className="max-w-6xl mx-auto rounded-2xl overflow-hidden border border-line bg-card-solid shadow-sm">
-        {/* Navy banner — same gradient family as the brand mark.
-            Sits on top of the 4-column body. */}
-        <div
-          className="px-4 sm:px-6 py-3 sm:py-3.5 text-center"
-          style={{
-            background:
-              "linear-gradient(135deg, #0a1f3d 0%, #1d4f8b 55%, #2c8aa3 100%)",
-          }}
-        >
-          <p className="text-white font-black tracking-[0.22em] text-[11px] sm:text-xs">
-            WE ARE DEADLINE-DRIVEN
-          </p>
-        </div>
-
-        {/* Four-column body. Stacks 1-col on small, 2x2 on md,
-            4-col on lg with hairline dividers. */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 md:divide-x md:divide-line">
-          <PillarColumn pillar="engage" items={engageItems} />
-          <PillarColumn pillar="experience" items={experienceItems} />
-          <PillarColumn pillar="equip" items={equipItems} />
-          <PillarColumn pillar="events" items={eventItems} />
-        </div>
+    <section
+      className="border-t border-line py-4 sm:py-6 px-5 sm:px-8"
+      // Quiet 4-pillar wash — emerald/amber/sky/violet — hints at
+      // the column tones without competing with them. Matches the
+      // wash pattern of For You / Reminders sections.
+      style={{
+        backgroundImage:
+          "linear-gradient(135deg, rgba(16,185,129,0.04) 0%, rgba(245,158,11,0.03) 33%, rgba(14,165,233,0.04) 66%, rgba(139,92,246,0.03) 100%)",
+      }}
+    >
+      <SectionEyebrow tone="brand">Open opportunities</SectionEyebrow>
+      <p className="text-xs text-fg-muted leading-snug mt-1 max-w-2xl">
+        Deadline-driven training, placements, funding, and events. Each column lists what&apos;s open right now.
+      </p>
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-line border-y md:border-y-0 border-line">
+        <PillarColumn
+          tone="emerald"
+          label="Engage · Training"
+          audience="Open to grad students, postdocs and researchers — free with training credits"
+          emptyMessage="No upcoming pathway windows. New cohorts drop most quarters."
+          viewAllHref="/pathways"
+          items={engageItems}
+        />
+        <PillarColumn
+          tone="amber"
+          label="Experience · Placements"
+          audience="For grad students and postdocs ready for hands-on placements"
+          emptyMessage="No open internships, KE rounds, or mobility awards right now."
+          viewAllHref="/internships"
+          items={experienceItems}
+        />
+        <PillarColumn
+          tone="sky"
+          label="Equip · Funding"
+          audience="For trainee-entrepreneurs with an IP-backed innovation"
+          emptyMessage="No open funding windows. New VC + VL cycles drop most months."
+          viewAllHref="/equip"
+          items={equipItems}
+        />
+        <PillarColumn
+          tone="violet"
+          label="Events"
+          audience="Meet the BioHubNet team in person — drop by, no RSVP needed unless noted"
+          emptyMessage="No public events on the calendar this week."
+          viewAllHref="/events"
+          items={eventItems}
+        />
       </div>
     </section>
   );
 }
 
+// Static per-tone class strings for item-title hover + view-all
+// link colour. Kept STATIC (not interpolated) so Tailwind's JIT
+// picks them up at build time. Every dark theme already overrides
+// the 700/900 step in globals.css, so these read on every theme.
+const PILLAR_TONE_CLASSES: Record<PillarTone, { title: string; link: string }> = {
+  emerald: {
+    title: "text-fg group-hover:text-emerald-700 transition-colors",
+    link:  "text-emerald-700 hover:text-emerald-900",
+  },
+  amber: {
+    title: "text-fg group-hover:text-amber-700 transition-colors",
+    link:  "text-amber-700 hover:text-amber-900",
+  },
+  sky: {
+    title: "text-fg group-hover:text-sky-700 transition-colors",
+    link:  "text-sky-700 hover:text-sky-900",
+  },
+  violet: {
+    title: "text-fg group-hover:text-violet-700 transition-colors",
+    link:  "text-violet-700 hover:text-violet-900",
+  },
+};
+
 function PillarColumn({
-  pillar,
+  tone,
+  label,
+  audience,
+  emptyMessage,
+  viewAllHref,
   items,
 }: {
-  pillar: keyof typeof PILLAR_CONFIG;
+  tone: PillarTone;
+  label: string;
+  audience: string;
+  emptyMessage: string;
+  viewAllHref: string;
   items: PillarItem[];
 }) {
-  const cfg = PILLAR_CONFIG[pillar];
-  const itemColorCls =
-    cfg.itemTone === "emerald" ? "text-emerald-700 hover:text-emerald-900" :
-    cfg.itemTone === "amber"   ? "text-amber-700 hover:text-amber-900" :
-    cfg.itemTone === "sky"     ? "text-sky-700 hover:text-sky-900" :
-                                  "text-violet-700 hover:text-violet-900";
+  const cls = PILLAR_TONE_CLASSES[tone];
 
   return (
-    <div className="px-4 sm:px-5 py-4 sm:py-5 flex flex-col gap-3">
-      <div>
-        <p className="font-black tracking-[0.04em] text-xl sm:text-2xl text-brand-900 leading-none">
-          {cfg.label}
-        </p>
-        <p className="text-[11px] text-fg leading-snug mt-1.5 font-semibold">
-          {cfg.subtitle}
-        </p>
-        <p className="text-[10.5px] italic text-fg-muted leading-snug mt-1">
-          {cfg.audience}
-        </p>
-      </div>
-
-      <div className="border-t border-line" />
+    <div className="px-4 lg:px-5 py-4 lg:py-2 flex flex-col">
+      {/* Column header — same SectionEyebrow rhythm as every
+          other section heading on the dashboard. Tone differs
+          per pillar; spacing stays uniform. */}
+      <SectionEyebrow tone={tone}>{label}</SectionEyebrow>
+      <p className="text-[11px] italic text-fg-muted leading-snug mt-1.5">
+        {audience}
+      </p>
 
       {items.length === 0 ? (
-        <p className="text-xs text-fg-muted italic leading-snug">
-          {cfg.emptyMessage}
+        <p className="text-xs text-fg-muted italic leading-snug mt-4">
+          {emptyMessage}
         </p>
       ) : (
-        <ul className="space-y-3.5 flex-1">
+        <ul className="mt-4 space-y-3 flex-1">
           {items.map((it, i) => {
             const titleBody = (
               <>
-                <p className={`text-sm font-bold leading-snug ${itemColorCls} transition-colors`}>
+                <p className={`text-sm font-semibold leading-snug ${cls.title}`}>
                   {it.title}
                 </p>
                 {it.description && (
-                  <p className="text-[11.5px] text-fg-muted leading-snug mt-1">
+                  <p className="text-[11.5px] text-fg-muted leading-snug mt-0.5">
                     {it.description}
                   </p>
                 )}
                 {it.pill && (
-                  <span className={`mt-2 inline-flex items-center text-[10px] uppercase tracking-[0.14em] font-black px-2 py-1 ${pillToneClasses(it.pillTone)}`}>
+                  <span
+                    className={
+                      "mt-1.5 inline-flex items-center text-[10px] uppercase tracking-[0.14em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset " +
+                      pillToneClasses(it.pillTone)
+                    }
+                  >
                     {it.pill}
                   </span>
                 )}
@@ -865,26 +876,30 @@ function PillarColumn({
       )}
 
       <Link
-        href={cfg.viewAllHref}
-        className={`mt-auto pt-2 inline-flex items-center gap-1 text-[11px] font-bold ${itemColorCls}`}
+        href={viewAllHref}
+        className={`mt-auto pt-3 inline-flex items-center gap-1 text-[11px] font-bold ${cls.link}`}
       >
-        See all {cfg.label.toLowerCase()} <ArrowRight size={11} />
+        See all <ArrowRight size={11} />
       </Link>
     </div>
   );
 }
 
+// Status pill tones — light fills with ring outlines, matching the
+// platform's existing status badge family (see admin event status
+// pills, equip-application pills). All three theme overrides for
+// rose / sky / amber kick in on dark themes via globals.css.
 function pillToneClasses(tone: PillarItem["pillTone"]): string {
   switch (tone) {
     case "info":
-      return "bg-sky-700 text-white";
+      return "bg-sky-50 text-sky-800 ring-sky-200";
     case "warning":
-      return "bg-amber-700 text-white";
+      return "bg-amber-50 text-amber-800 ring-amber-200";
     case "neutral":
-      return "bg-elevated text-fg ring-1 ring-inset ring-line";
+      return "bg-elevated text-fg-muted ring-line";
     case "danger":
     default:
-      return "bg-rose-900 text-white";
+      return "bg-rose-50 text-rose-800 ring-rose-200";
   }
 }
 

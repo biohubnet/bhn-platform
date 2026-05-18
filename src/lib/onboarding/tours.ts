@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18g";
+export const TOUR_VERSION = "2026.05.18h";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -520,6 +520,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Three refinements on the trainee DEADLINE-DRIVEN board. (1) EQUIP now shows ONE next-open round per stream (one VentureConnect card + one VentureLift card) instead of the next 5 in date order — guarantees both streams appear; closed/passed windows never show. (2) EVENTS now reads from the same `BhnEvent` calendar source the public `/events` page uses, so the dashboard event cards match what trainees see on the calendar. (3) Section padding, eyebrows, and column rhythm normalised across the page so the dashboard reads as one designed surface.",
     placement: "center",
     since: "2026.05.18g",
+  },
+  {
+    id: "dash-open-opportunities-ds-native",
+    title: "Open opportunities — section rebuilt native to the design system",
+    body: "The four-pillar opportunities board no longer wears the navy banner + rounded panel chrome from the biohubnet.ca mimicry. Rebuilt to match the platform's flat-section + theme-token design system: standard SectionEyebrow header + gradient hairline, italic audience subtitle, hairline-divided columns, theme-aware item titles + descriptions, light status pills (bg-rose-50 / bg-sky-50 / bg-amber-50 with ring outlines) matching the platform's existing status-badge family. The section now sits rhythmically alongside For You / Reminders / Loot Vault — same wash pattern, same chrome — instead of barging in as a marketing-card outlier.",
+    placement: "center",
+    since: "2026.05.18h",
   },
   {
     id: "aurora-theme",
