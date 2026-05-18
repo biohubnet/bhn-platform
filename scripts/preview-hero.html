@@ -33,40 +33,66 @@
         linear-gradient(135deg, #f1f4ec 0%, #d5dfd2 35%, #a8baa7 65%, #8ba590 100%);
     }
 
-    /* (3) Reeded ribs — WIDE 22 px cycle (was 9 px before).
-           Light highlight on the leading edge of each rib + a
-           subtle shadow on the trailing edge, with a flat panel
-           of glass between. Matches the reference's generous,
-           breathing rib spacing. */
+    /* (3a) Cylindrical rib gradient — each rib reads as a real
+           3D cylindrical lens (bright centre, dark troughs).
+           22 px cycle. */
     .l-ribs {
       background-image: repeating-linear-gradient(
         90deg,
-        rgba(255,255,255,0.42) 0px,
-        rgba(255,255,255,0.42) 2.5px,
-        transparent 2.5px,
-        transparent 16px,
-        rgba(40,55,40,0.18) 18px,
-        rgba(40,55,40,0.18) 20px,
-        transparent 20px,
+        rgba(20,35,20,0.20) 0px,
+        rgba(20,35,20,0.20) 1.5px,
+        rgba(255,255,255,0.10) 4px,
+        rgba(255,255,255,0.42) 11px,
+        rgba(255,255,255,0.10) 18px,
+        rgba(20,35,20,0.20) 20.5px,
+        rgba(20,35,20,0.20) 22px
+      );
+    }
+    /* (3b) Sharp highlight edges — wet specular catch on each rib */
+    .l-highlights {
+      opacity: 0.7;
+      mix-blend-mode: screen;
+      background-image: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 10px,
+        rgba(255,255,255,0.65) 10.75px,
+        rgba(255,255,255,0.65) 11.5px,
+        transparent 11.5px,
         transparent 22px
       );
     }
-    /* Hair-thin micro-ridges between the main grooves */
-    .l-microridges {
-      opacity: 0.4;
-      mix-blend-mode: soft-light;
-      background-image: repeating-linear-gradient(
-        90deg,
-        rgba(255,255,255,0.18) 0px,
-        rgba(255,255,255,0.18) 1px,
-        transparent 1px,
-        transparent 11px
+    /* (3c) Diagonal light streak crossing the glass surface */
+    .l-streak {
+      mix-blend-mode: overlay;
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.0) 5%,
+        rgba(255,255,255,0.18) 22%,
+        rgba(255,255,255,0.32) 32%,
+        rgba(255,255,255,0.14) 44%,
+        transparent 60%
       );
     }
 
     /* (4) Frost wash — diagonal mist for airiness */
     .l-frost {
       background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 45%, transparent 100%);
+    }
+
+    /* (6) Subtle horizontal banding — slight uneven glass quality */
+    .l-banding {
+      opacity: 0.3;
+      mix-blend-mode: multiply;
+      background-image: repeating-linear-gradient(
+        180deg,
+        transparent 0px,
+        transparent 14px,
+        rgba(20,35,20,0.08) 14px,
+        rgba(20,35,20,0.08) 16px,
+        transparent 16px,
+        transparent 30px
+      );
     }
 
     /* Content layer */
@@ -193,11 +219,23 @@
         </g>
       </svg>
 
-      <!-- (3) Wide reeded ribs + micro-ridges -->
+      <!-- (3) Reeded glass texture: cylindrical rib gradient +
+           sharp specular highlights + diagonal light streak -->
       <div class="layer l-ribs"></div>
-      <div class="layer l-microridges"></div>
+      <div class="layer l-highlights"></div>
+      <div class="layer l-streak"></div>
       <!-- (4) Diagonal frost wash -->
       <div class="layer l-frost"></div>
+      <!-- (5) Surface noise — fine dust / imperfections -->
+      <svg class="layer" style="opacity: 0.12; mix-blend-mode: overlay;" width="100%" height="100%">
+        <filter id="surface-noise">
+          <feTurbulence type="turbulence" baseFrequency="1.2" numOctaves="3" seed="11" />
+          <feColorMatrix type="matrix" values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1   0 0 0 0.55 0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#surface-noise)" />
+      </svg>
+      <!-- (6) Subtle horizontal banding -->
+      <div class="layer l-banding"></div>
     </div>
 
     <div class="hero-content">
