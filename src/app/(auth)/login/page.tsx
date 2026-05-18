@@ -342,10 +342,16 @@ function LoginPageInner() {
               <Bullet icon={Briefcase}>Internship + full-time matching with vetted employer partners</Bullet>
             </ul>
 
-            {/* Bottom-anchored CTA — gradient-filled "primary"
-                treatment, distinct from the Sign-in white button.
-                `mt-auto` keeps it on the same baseline as Sign-in. */}
+            {/* Bottom-anchored CTA — gradient-filled, same
+                treatment as the Sign-in button across the divider.
+                Caption sits ABOVE the button so the button itself
+                lands at the very bottom of the column and lines up
+                with the Sign-in submit (which is the last element
+                of its own column). */}
             <div className="mt-auto pt-8">
+              <p className="text-[11px] text-white/40 mb-3 text-center">
+                About a minute. No payment info needed.
+              </p>
               <Link
                 href="/register"
                 className="group relative w-full inline-flex items-center justify-center gap-3 text-white font-bold tracking-tight py-3.5 text-base overflow-hidden transition-transform hover:-translate-y-px"
@@ -368,9 +374,6 @@ function LoginPageInner() {
                 <span className="relative">Create your free account</span>
                 <ArrowRight size={16} className="relative group-hover:translate-x-1 transition-transform" />
               </Link>
-              <p className="text-[11px] text-white/40 mt-3 text-center">
-                About a minute. No payment info needed.
-              </p>
             </div>
           </section>
 
