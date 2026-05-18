@@ -1,7 +1,11 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Palette, Check, Sparkles, ArrowRight } from "lucide-react";
+import { Palette, Check, Sparkles, ArrowRight, Languages } from "lucide-react";
+import {
+  usePageTranslationEnabled,
+  setPageTranslationEnabled,
+} from "@/components/translation/usePageTranslationEnabled";
 import {
   useTheme, THEMES, activeThemes, THEME_CATEGORIES,
   type ThemeId, type ThemeCategory,
@@ -236,12 +240,11 @@ function ThemeMenu({
         );
       })}
 
-      {/* Discovery link — the /themes page is where users vote and
-          propose new themes. We don't surface it in the sidebar
-          (would just clutter the misc group); instead the link lives
-          here, where users are already engaging with themes. Soft
-          navigation closes the dropdown naturally as the page swaps. */}
-      <div className="border-t border-line mt-2 pt-2 px-1">
+      {/* Settings rail — translation toggle + discovery link.
+          Lives below the theme list so the dropdown reads as
+          "themes first, preferences underneath". */}
+      <div className="border-t border-line mt-2 pt-2 px-1 space-y-0.5">
+        <PageTranslationToggle />
         <Link
           href="/themes"
           className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium text-muted hover:bg-elevated hover:text-fg transition-colors"
@@ -252,6 +255,42 @@ function ThemeMenu({
         </Link>
       </div>
     </div>
+  );
+}
+
+/** Page translation on/off toggle — sits inside the ThemePicker
+ *  dropdown. Reads + writes the shared
+ *  `usePageTranslationEnabled` flag; the floating translator
+ *  dock at the top-right of the dashboard layout shows/hides
+ *  immediately when this flips (CustomEvent reactivity). */
+function PageTranslationToggle() {
+  const enabled = usePageTranslationEnabled();
+  return (
+    <button
+      type="button"
+      onClick={() => setPageTranslationEnabled(!enabled)}
+      aria-pressed={enabled}
+      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium text-muted hover:bg-elevated hover:text-fg transition-colors"
+    >
+      <Languages size={12} className="text-brand-600 shrink-0" />
+      <span className="flex-1 text-left">Page translation</span>
+      {/* Compact pill switch — green ON, slate OFF. Click anywhere
+          in the row flips it, but the pill is the visual affordance. */}
+      <span
+        className={cn(
+          "relative inline-flex items-center h-4 w-7 rounded-full transition-colors shrink-0",
+          enabled ? "bg-emerald-500" : "bg-slate-400/50",
+        )}
+        aria-hidden
+      >
+        <span
+          className={cn(
+            "absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform",
+            enabled && "translate-x-3",
+          )}
+        />
+      </span>
+    </button>
   );
 }
 

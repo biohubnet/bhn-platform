@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession, ROLE_RANK } from "@/lib/auth";
 import { Sidebar } from "@/components/lms/Sidebar";
 import { Onboarding } from "@/components/onboarding/Onboarding";
-import { PageTranslator } from "@/components/translation/PageTranslator";
+import { TranslatorDock } from "@/components/translation/TranslatorDock";
 import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
 import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
 import { AssistTracker } from "@/components/assist/AssistTracker";
@@ -103,12 +103,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </LayoutBannerProvider>
       </main>
       {/* Floating page-translator dock — fixed to viewport so it stays
-          clickable above all page content (modals at z-50 still win). */}
-      <div className="fixed top-3 right-4 z-40 pointer-events-auto" data-no-translate>
-        <div className="surface px-1 py-1">
-          <PageTranslator />
-        </div>
-      </div>
+          clickable above all page content (modals at z-50 still win).
+          Hides entirely when the user toggles "Page translation" off
+          from the ThemePicker dropdown. */}
+      <TranslatorDock />
       <Onboarding />
       <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
       <NavHighlightOverlay />

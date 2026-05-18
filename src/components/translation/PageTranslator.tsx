@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Languages, Check, RotateCcw, Loader2 } from "lucide-react";
 import { LOCALES, type LocaleId } from "@/lib/i18n/dictionaries";
 import { cn } from "@/lib/utils";
+import { usePageTranslationEnabled } from "./usePageTranslationEnabled";
 
 const STORAGE_KEY = "bhn-page-translation";
 const CACHE_KEY_PREFIX = "bhn-tr-cache:";
@@ -51,8 +52,15 @@ export function PageTranslator() {
   const ref = useRef<HTMLDivElement>(null);
   const refsRef = useRef<NodeRef[]>([]);
 
-  // Restore previous selection on mount
+  // User-controlled on/off toggle. When disabled, the dock renders
+  // nothing AND the auto-translate-on-mount path below is skipped.
+  // Toggled from the ThemePicker dropdown's "Page translation" row.
+  const enabled = usePageTranslationEnabled();
+
+  // Restore previous selection on mount — but only when the user
+  // hasn't disabled translation entirely.
   useEffect(() => {
+    if (!enabled) return;
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY) as LocaleId | null;
       if (saved && LOCALES.some((l) => l.id === saved) && saved !== "en") {
@@ -61,7 +69,7 @@ export function PageTranslator() {
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled]);
 
   // Close popover on outside click
   useEffect(() => {
@@ -206,6 +214,11 @@ export function PageTranslator() {
   }
 
   const activeLocale = active ? LOCALES.find((l) => l.id === active) : null;
+
+  // User-disabled — render nothing so the floating dock disappears.
+  // The wrapping <TranslatorDock> in the layout collapses too because
+  // it queries the same hook (and skips its surface chrome).
+  if (!enabled) return null;
 
   return (
     <div ref={ref} className="relative">
