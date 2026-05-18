@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.17g";
+export const TOUR_VERSION = "2026.05.18a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -468,6 +468,14 @@ export const TOUR_STEPS: TourStep[] = [
     body: "The cinematic page hero is now a single full-bleed gradient stage instead of a cover-banner + paper-body two-tier composition. The title block sits at the bottom of the stage (magazine-cover composition); the auroras + noise + bottom scrim live in the visual real estate above. Theme-driven palette throughout, with per-theme title-shimmer overrides so contrast stays correct on every theme — including Icecream's light pink hero, which swaps the title to a deep berry ramp.",
     placement: "center",
     since: "2026.05.17g",
+  },
+  {
+    id: "login-half-sketch-and-aquarium",
+    title: "Sign out and check the new /login — it's a biotech aquarium now",
+    body: "The login page got a full rebuild. The BHN four-petal mark sits at the bottom-right corner as a 480-pixel design study — LEFT half is pencil sketch on construction grid (multi-stroke wobbly outlines, dashed symmetry circles, axis labels), RIGHT half is the finished gradient mark, joined by an organic wavy boundary with the colour brushed-on across the seam. Behind the form, biotech glyphs (DNA, antibody, mRNA, LNP, cell, bioreactor, T-flask) drift on lab-swim animations — and they're now mouse-interactive: click-and-drag to pull them anywhere, or just brush your cursor past to poke them sideways. A six-stage MSC passaging cycle vignette (seed → grow → 80% confluent → trypsin → aspirate → re-seed) loops in the top-right corner. Five O₂ + CO₂ molecules float around as the incubator atmosphere. Sign out and have a play.",
+    placement: "center",
+    cta: { label: "Open /login in a new tab", href: "/login" },
+    since: "2026.05.18a",
   },
   {
     id: "aurora-theme",

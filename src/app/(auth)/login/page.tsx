@@ -11,7 +11,10 @@ import { LogoMark } from "@/components/ui/Logo";
 import { StylizedMark } from "@/components/branding/StylizedMark";
 import {
   DnaHelix, Antibody, MrnaStrand, LipidNanoparticle, CellSchematic, Bioreactor,
+  TFlask, OxygenMolecule, CarbonDioxideMolecule,
 } from "@/components/branding/BiomanufacturingGlyphs";
+import { DraggableGlyph } from "@/components/branding/DraggableGlyph";
+import { MscCultureCycle } from "@/components/branding/MscCultureCycle";
 import { ThemeCycler } from "@/components/ui/ThemePicker";
 
 const REMEMBER_KEY = "bhn-remember-email";
@@ -151,40 +154,124 @@ function LoginPageInner() {
       </div>
 
       {/* ─── BIOMANUFACTURING MOLECULES — biotech hot-topic glyphs
-           drifting gracefully behind the form. DNA, antibody, mRNA,
-           LNP, cell, and a bioreactor. Each gets its own swim
-           keyframe (32–54s, with negative delays so neighbours
-           don't sync). Low opacity, hidden on small viewports. */}
+           drifting gracefully behind the form. Each one is wrapped
+           in <DraggableGlyph> so the visitor can grab + pull them
+           around the page, or just brush past with the cursor to
+           poke them sideways. The outer layer keeps `pointer-
+           events-none` so the form/links stay clickable; each
+           glyph opts pointer events back on internally. Stays
+           hidden on small viewports so a thumb can't accidentally
+           pin one over the form. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         {/* DNA double helix — left middle, drifts long and slow */}
-        <div className="absolute left-4 sm:left-10 top-[40%] text-sky-300/25 hidden sm:block lab-swim-slow">
+        <DraggableGlyph
+          className="absolute left-4 sm:left-10 top-[40%] text-sky-300/25 hidden sm:block"
+          swimClass="lab-swim-slow"
+        >
           <DnaHelix size={170} strokeWidth={1.3} />
-        </div>
+        </DraggableGlyph>
 
         {/* Antibody — top-left, light drift */}
-        <div className="absolute left-10 sm:left-24 top-24 text-emerald-300/22 hidden md:block lab-swim-rev">
+        <DraggableGlyph
+          className="absolute left-10 sm:left-24 top-24 text-emerald-300/22 hidden md:block"
+          swimClass="lab-swim-rev"
+        >
           <Antibody size={88} strokeWidth={2} />
-        </div>
+        </DraggableGlyph>
 
         {/* mRNA strand — bottom-left, gentle */}
-        <div className="absolute left-8 sm:left-16 bottom-24 text-amber-200/22 hidden sm:block lab-swim-drift">
+        <DraggableGlyph
+          className="absolute left-8 sm:left-16 bottom-32 text-amber-200/22 hidden sm:block"
+          swimClass="lab-swim-drift"
+        >
           <MrnaStrand size={180} strokeWidth={1.4} />
-        </div>
+        </DraggableGlyph>
 
-        {/* Lipid nanoparticle — top-right area, drifts opposite to DNA */}
-        <div className="absolute right-8 sm:right-20 top-32 text-violet-300/22 hidden md:block lab-swim">
+        {/* Lipid nanoparticle — middle-right band, kept well below
+            the MSC cycle vignette so they don't stack. */}
+        <DraggableGlyph
+          className="absolute right-[26%] top-[38%] text-violet-300/22 hidden md:block"
+          swimClass="lab-swim"
+        >
           <LipidNanoparticle size={104} strokeWidth={1.3} />
-        </div>
+        </DraggableGlyph>
 
         {/* Cell — right middle */}
-        <div className="absolute right-6 sm:right-14 top-[52%] text-rose-300/18 hidden sm:block lab-swim-slow">
+        <DraggableGlyph
+          className="absolute right-6 sm:right-14 top-[52%] text-rose-300/18 hidden sm:block"
+          swimClass="lab-swim-slow"
+        >
           <CellSchematic size={130} strokeWidth={1.2} />
-        </div>
+        </DraggableGlyph>
 
-        {/* Bioreactor — bottom-right, the workhorse vessel */}
-        <div className="absolute right-12 sm:right-28 bottom-12 text-cyan-200/22 hidden md:block lab-swim-rev">
+        {/* Bioreactor — bottom-right corner, the workhorse vessel */}
+        <DraggableGlyph
+          className="absolute right-12 sm:right-28 bottom-12 text-cyan-200/22 hidden md:block"
+          swimClass="lab-swim-rev"
+        >
           <Bioreactor size={96} strokeWidth={1.3} />
-        </div>
+        </DraggableGlyph>
+
+        {/* T-flask — mid-left, the everyday tissue-culture vessel */}
+        <DraggableGlyph
+          className="absolute left-[8%] top-[68%] text-teal-200/22 hidden lg:block"
+          swimClass="lab-swim-drift"
+        >
+          <TFlask size={150} strokeWidth={1.3} />
+        </DraggableGlyph>
+
+        {/* MSC passaging cycle — the storytelling vignette. Top-
+            right area, large enough for the stage label to read. */}
+        <DraggableGlyph
+          className="absolute right-[4%] top-[12%] text-slate-200/35 hidden lg:block"
+          swimClass="lab-swim-slow"
+          pokeRadius={140}
+        >
+          <MscCultureCycle size={200} />
+        </DraggableGlyph>
+
+        {/* ── O₂ / CO₂ molecules — the gas atmosphere of every
+              incubator. Smaller, scattered, lower opacity so they
+              read as background "air" rather than focal subjects. */}
+        <DraggableGlyph
+          className="absolute left-[28%] top-[18%] text-sky-200/30 hidden md:block"
+          swimClass="lab-swim-drift"
+          pokeRadius={80}
+        >
+          <OxygenMolecule size={56} />
+        </DraggableGlyph>
+
+        <DraggableGlyph
+          className="absolute right-[44%] top-[8%] text-emerald-200/30 hidden md:block"
+          swimClass="lab-swim"
+          pokeRadius={80}
+        >
+          <CarbonDioxideMolecule size={72} />
+        </DraggableGlyph>
+
+        <DraggableGlyph
+          className="absolute left-[42%] bottom-[18%] text-sky-200/25 hidden md:block"
+          swimClass="lab-swim-rev"
+          pokeRadius={80}
+        >
+          <OxygenMolecule size={48} />
+        </DraggableGlyph>
+
+        <DraggableGlyph
+          className="absolute right-[14%] bottom-[30%] text-emerald-200/25 hidden md:block"
+          swimClass="lab-swim-slow"
+          pokeRadius={80}
+        >
+          <CarbonDioxideMolecule size={60} />
+        </DraggableGlyph>
+
+        <DraggableGlyph
+          className="absolute left-[58%] top-[28%] text-sky-200/22 hidden lg:block"
+          swimClass="lab-swim-drift"
+          pokeRadius={80}
+        >
+          <OxygenMolecule size={42} />
+        </DraggableGlyph>
       </div>
 
       {/* Vignette — gentle darken at the page edges so the

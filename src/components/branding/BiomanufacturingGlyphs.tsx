@@ -149,6 +149,132 @@ export function CellSchematic({ size = 110, strokeWidth = 1.3, className }: Prop
   );
 }
 
+/** T-flask — the everyday tissue-culture vessel (T-25 / T-75 /
+ *  T-175 etc.). Slanted neck with a screw cap, flat body where
+ *  the cell monolayer grows. The "T" is for the cap-down
+ *  triangle-ish silhouette. */
+export function TFlask({ size = 130, strokeWidth = 1.3, className }: Props) {
+  return (
+    <svg
+      width={size}
+      height={size * (96 / 130)}
+      viewBox="0 0 130 96"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      className={className}
+      role="img"
+      aria-label="T-flask"
+    >
+      {/* Body — rounded rectangle, slightly tilted neck on the right */}
+      <path d="M 8 22 Q 8 18, 12 18 L 90 18 L 116 36 L 116 60 L 90 78 L 12 78 Q 8 78, 8 74 Z" />
+      {/* Screw-cap (vertical rect on top of the slanted neck) */}
+      <rect x="100" y="28" width="20" height="8" rx="1" />
+      {/* Cap threads */}
+      <line x1="103" y1="30" x2="117" y2="30" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+      <line x1="103" y1="33" x2="117" y2="33" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+      {/* Media level (dashed) */}
+      <line x1="12" y1="32" x2="86" y2="32" strokeDasharray="3 3" strokeWidth={strokeWidth * 0.7} opacity="0.6" />
+      {/* A few cell colonies in the body */}
+      <circle cx="30" cy="48" r="2" fill="currentColor" fillOpacity="0.45" stroke="none" />
+      <circle cx="46" cy="58" r="2.5" fill="currentColor" fillOpacity="0.45" stroke="none" />
+      <circle cx="62" cy="46" r="1.8" fill="currentColor" fillOpacity="0.45" stroke="none" />
+      <circle cx="76" cy="60" r="2.2" fill="currentColor" fillOpacity="0.45" stroke="none" />
+      <circle cx="36" cy="66" r="1.6" fill="currentColor" fillOpacity="0.45" stroke="none" />
+    </svg>
+  );
+}
+
+/** Oxygen molecule (O₂) — two atoms with a double bond. */
+export function OxygenMolecule({ size = 56, strokeWidth = 1.4, className }: Props) {
+  return (
+    <svg
+      width={size}
+      height={size * (28 / 56)}
+      viewBox="0 0 56 28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      className={className}
+      role="img"
+      aria-label="Oxygen molecule"
+    >
+      {/* Double bond */}
+      <line x1="18" y1="11" x2="38" y2="11" />
+      <line x1="18" y1="17" x2="38" y2="17" />
+      {/* Atoms */}
+      <circle cx="12" cy="14" r="8" fill="currentColor" fillOpacity="0.18" />
+      <circle cx="44" cy="14" r="8" fill="currentColor" fillOpacity="0.18" />
+      {/* Letters */}
+      <text x="12" y="17" textAnchor="middle" fontFamily="ui-sans-serif, system-ui" fontSize="9" fontWeight="700" fill="currentColor" stroke="none">O</text>
+      <text x="44" y="17" textAnchor="middle" fontFamily="ui-sans-serif, system-ui" fontSize="9" fontWeight="700" fill="currentColor" stroke="none">O</text>
+    </svg>
+  );
+}
+
+/** Carbon dioxide molecule (CO₂) — linear O=C=O. */
+export function CarbonDioxideMolecule({ size = 72, strokeWidth = 1.4, className }: Props) {
+  return (
+    <svg
+      width={size}
+      height={size * (28 / 72)}
+      viewBox="0 0 72 28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      className={className}
+      role="img"
+      aria-label="Carbon dioxide molecule"
+    >
+      {/* Two double bonds */}
+      <line x1="18" y1="11" x2="32" y2="11" />
+      <line x1="18" y1="17" x2="32" y2="17" />
+      <line x1="40" y1="11" x2="54" y2="11" />
+      <line x1="40" y1="17" x2="54" y2="17" />
+      {/* Atoms */}
+      <circle cx="12" cy="14" r="7" fill="currentColor" fillOpacity="0.18" />
+      <circle cx="36" cy="14" r="6.5" fill="currentColor" fillOpacity="0.25" />
+      <circle cx="60" cy="14" r="7" fill="currentColor" fillOpacity="0.18" />
+      <text x="12" y="17" textAnchor="middle" fontFamily="ui-sans-serif, system-ui" fontSize="8" fontWeight="700" fill="currentColor" stroke="none">O</text>
+      <text x="36" y="17" textAnchor="middle" fontFamily="ui-sans-serif, system-ui" fontSize="8" fontWeight="700" fill="currentColor" stroke="none">C</text>
+      <text x="60" y="17" textAnchor="middle" fontFamily="ui-sans-serif, system-ui" fontSize="8" fontWeight="700" fill="currentColor" stroke="none">O</text>
+    </svg>
+  );
+}
+
+/** Pipette — slanted tip + body. Used by the MSC passaging
+ *  cycle to aspirate / dispense cells. */
+export function Pipette({ size = 110, strokeWidth = 1.4, className }: Props) {
+  return (
+    <svg
+      width={size * (24 / 110)}
+      height={size}
+      viewBox="0 0 24 110"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      className={className}
+      role="img"
+      aria-label="Pipette"
+    >
+      {/* Body */}
+      <rect x="6" y="2" width="12" height="76" rx="2" />
+      {/* Tapered tip */}
+      <path d="M 6 78 L 12 108 L 18 78 Z" />
+      {/* Volume marks */}
+      <line x1="6" y1="16" x2="10" y2="16" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+      <line x1="6" y1="26" x2="10" y2="26" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+      <line x1="6" y1="36" x2="10" y2="36" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+      <line x1="6" y1="46" x2="10" y2="46" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+      <line x1="6" y1="56" x2="10" y2="56" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+    </svg>
+  );
+}
+
 /** Bioreactor — vertical cylinder vessel with a stirring shaft +
  *  impeller blade, a vent on top, and a sample-port on the side.
  *  The workhorse vessel of every biomanufacturing line. */
