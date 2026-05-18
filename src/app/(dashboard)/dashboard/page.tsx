@@ -497,92 +497,46 @@ export default async function DashboardPage() {
             </g>
           </svg>
 
-          {/* (3a) CYLINDRICAL RIB GRADIENT — each rib reads as a
-                real 3D cylindrical lens (bright at the centre,
-                fading to dark at the trough between ribs).
-                Replaces the flat light/dark stripes with a smooth
-                gradient that suggests a curved glass surface.
-                22 px cycle:
-                  0  – 2 px : dark trough (left edge)
-                  2  – 5 px : transitioning to light
-                  5  – 11 px: ramping up to the bright centre
-                  11 – 17 px: ramping back down from the centre
-                  17 – 20 px: transitioning to dark
-                  20 – 22 px: dark trough (right edge → next rib) */}
+          {/* (3) REEDED RIB PATTERN — WIDER + ASYMMETRIC (matches
+                a real fluted-glass cylinder lit from upper-left).
+                32 px cycle, fewer ribs across the surface so the
+                glass reads less busy. Each rib is an asymmetric
+                gradient: dark trough left → BRIGHT peak at ~28%
+                (where light catches the cylinder's left face) →
+                medium centre → fading shadow right → dark trough.
+                ONE layer doing all the light/shadow work — no
+                separate highlight stripes or speculars stacking
+                on top, which was making the previous build read
+                as too dense. */}
           <div
             className="absolute inset-0"
             style={{
               backgroundImage:
-                "repeating-linear-gradient(90deg, rgba(20,35,20,0.20) 0px, rgba(20,35,20,0.20) 1.5px, rgba(255,255,255,0.10) 4px, rgba(255,255,255,0.42) 11px, rgba(255,255,255,0.10) 18px, rgba(20,35,20,0.20) 20.5px, rgba(20,35,20,0.20) 22px)",
+                "repeating-linear-gradient(90deg, rgba(25,40,25,0.20) 0px, rgba(25,40,25,0.20) 1.5px, rgba(255,255,255,0.55) 9px, rgba(255,255,255,0.22) 16px, rgba(255,255,255,0.05) 24px, rgba(25,40,25,0.12) 29px, rgba(25,40,25,0.20) 32px)",
             }}
           />
 
-          {/* (3b) SHARP HIGHLIGHT EDGES — thin bright lines at
-                the exact rib peaks, sitting on top of the
-                cylindrical gradient. Adds the "wet" specular
-                catch a real glass cylinder shows when caught by
-                a low-angle light. */}
-          <div
-            className="absolute inset-0 opacity-70"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(90deg, transparent 0px, transparent 10px, rgba(255,255,255,0.65) 10.75px, rgba(255,255,255,0.65) 11.5px, transparent 11.5px, transparent 22px)",
-              mixBlendMode: "screen",
-            }}
-          />
-
-          {/* (3c) DIAGONAL LIGHT STREAK — a soft bright band
-                crossing the glass at ~135° (light catching the
-                upper-left, sliding down the surface). Gives the
-                glass a dynamic light source instead of flat
-                ambient illumination. */}
+          {/* (4) SOFT DIAGONAL REFLECTION — a single broad sweep
+                of light at 120°, simulating a window / sky
+                reflecting off the polished glass surface. Quiet,
+                wide, single-pass — no longer competing with rib
+                highlights for the eye's attention. */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(135deg, rgba(255,255,255,0.0) 5%, rgba(255,255,255,0.18) 22%, rgba(255,255,255,0.32) 32%, rgba(255,255,255,0.14) 44%, transparent 60%)",
+                "linear-gradient(120deg, transparent 15%, rgba(255,255,255,0.20) 42%, rgba(255,255,255,0.10) 55%, transparent 78%)",
               mixBlendMode: "overlay",
             }}
           />
 
-          {/* (4) Frost wash — soft milky overlay for airiness.
-                Adds the slightly misted quality real fluted glass
-                always has over its base colour. */}
+          {/* (5) Frost wash — soft milky overlay for the airy /
+                slightly misted quality real fluted glass has. */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 45%, transparent 100%)",
-            }}
-          />
-
-          {/* (5) SURFACE NOISE — fine fractal turbulence painted
-                over the ribs. Reads as dust + micro-imperfections
-                in the glass surface; gives the texture organic
-                irregularity instead of CSS-pattern perfection. */}
-          <svg className="absolute inset-0 w-full h-full opacity-[0.12] mix-blend-overlay">
-            <filter id="dashboard-hero-surface-noise">
-              <feTurbulence type="turbulence" baseFrequency="1.2" numOctaves="3" seed="11" />
-              <feColorMatrix
-                type="matrix"
-                values="0 0 0 0 1
-                        0 0 0 0 1
-                        0 0 0 0 1
-                        0 0 0 0.55 0"
-              />
-            </filter>
-            <rect width="100%" height="100%" filter="url(#dashboard-hero-surface-noise)" />
-          </svg>
-
-          {/* (6) Subtle horizontal banding — very faint, gives
-                the glass a slight unevenness (real glass is never
-                perfectly uniform). 30 px cycle, 4% opacity. */}
-          <div
-            className="absolute inset-0 opacity-30"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(180deg, transparent 0px, transparent 14px, rgba(20,35,20,0.08) 14px, rgba(20,35,20,0.08) 16px, transparent 16px, transparent 30px)",
-              mixBlendMode: "multiply",
+                "linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)",
             }}
           />
         </div>
