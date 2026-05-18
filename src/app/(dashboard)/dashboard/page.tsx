@@ -12,6 +12,7 @@ import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
 import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanner";
 import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
 import { LogoMark } from "@/components/ui/Logo";
+import { StylizedMark } from "@/components/branding/StylizedMark";
 import { CreditUsageScoreboard } from "@/components/dashboards/CreditUsageScoreboard";
 import { RewardsDistanceCard } from "@/components/dashboards/RewardsDistanceCard";
 import { LatestNewsCard } from "@/components/dashboards/LatestNewsCard";
@@ -364,109 +365,100 @@ export default async function DashboardPage() {
             its inner absolute children sit free in its bounding
             box. Same pattern as DSPageHeader's decoration wrapper. */}
         <div aria-hidden className="absolute inset-0 pointer-events-none">
-          {/* ── REEDED / FLUTED GLASS LAYER ──────────────────────────
-                Mesh blobs rendered as SVG ellipses, then sliced into
-                vertical bands by a `feTurbulence + feDisplacementMap`
-                filter — `baseFrequency` is heavily biased horizontal
-                (`2.6 0.004`) so the noise varies rapidly across X
-                but stays nearly constant down Y, producing vertical
-                "streaks" of displacement. With `scale=42`, each
-                vertical strip of the mesh is offset by a different
-                amount horizontally — exactly the way real reeded /
-                fluted glass refracts what's behind it.
+          {/* ── ATMOSPHERIC STAGE — same layered recipe DSPageHeader
+                uses, so this bespoke hero feels native to every
+                other page header on the platform. Built from the
+                /login spotlight stage but theme-aware:
+                  (1) deep radial dome from hero-mesh-1
+                  (2) theme-tinted aurora wash + spotlight cone
+                  (3) visible reeded / fluted glass ribs
+                  (4) StylizedMark backdrop peeking from bottom-right
+                  (5) edge vignette + SVG noise grain
+                NO floating glyphs — strictly static atmospheric
+                layers. */}
 
-                Theme tokens (`--hero-mesh-1..4`) drive the ellipse
-                fills, so every theme picks up its own palette through
-                the same glass effect. */}
-          <svg
-            className="absolute inset-0 w-full h-full"
-            viewBox="0 0 1920 700"
-            preserveAspectRatio="xMidYMid slice"
-          >
-            <defs>
-              <filter id="hero-reeded-glass" x="-10%" y="-10%" width="120%" height="120%">
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="2.6 0.004"
-                  numOctaves="1"
-                  seed="4"
-                  stitchTiles="stitch"
-                  result="turbulence"
-                />
-                <feDisplacementMap
-                  in="SourceGraphic"
-                  in2="turbulence"
-                  scale="42"
-                  xChannelSelector="R"
-                  yChannelSelector="G"
-                />
-              </filter>
-            </defs>
-
-            {/* Theme-tinted mesh blobs, filtered through the reeded-
-                glass displacement so they appear as vertically banded
-                shadows behind the glass. */}
-            <g filter="url(#hero-reeded-glass)">
-              <ellipse cx="260" cy="180" rx="440" ry="280" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.55" />
-              <ellipse cx="1480" cy="540" rx="520" ry="320" fill="var(--hero-mesh-2, #f472b6)" opacity="0.45" />
-              <ellipse cx="1720" cy="120" rx="340" ry="220" fill="var(--hero-mesh-4, #facc15)" opacity="0.4" />
-              <ellipse cx="640" cy="620" rx="320" ry="220" fill="var(--hero-mesh-3, #4ade80)" opacity="0.35" />
-              <ellipse cx="1100" cy="380" rx="380" ry="260" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.25" />
-            </g>
-          </svg>
-
-          {/* Vertical rib pattern — narrow alternating light + shadow
-              stripes on top of the displaced mesh, mimicking the
-              physical ridges of fluted glass catching light. The
-              ribs are 8 px apart at a normal viewport — visible
-              enough to read as glass, narrow enough to feel like
-              "glass texture" not "wallpaper". */}
+          {/* (1) Deep radial dome from theme hero-mesh-1 */}
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: `
-                repeating-linear-gradient(
-                  90deg,
-                  rgba(255,255,255,0.08) 0px,
-                  rgba(255,255,255,0.08) 1px,
-                  rgba(255,255,255,0) 1px,
-                  rgba(255,255,255,0) 4px,
-                  rgba(0,0,0,0.08) 7px,
-                  rgba(0,0,0,0.08) 8px,
-                  rgba(0,0,0,0) 8px
-                )
-              `,
-              mixBlendMode: "soft-light",
+              backgroundImage:
+                "radial-gradient(ellipse 80% 110% at 50% -10%, color-mix(in srgb, var(--hero-mesh-1, #56bdf8) 60%, transparent) 0%, transparent 60%)",
             }}
           />
 
-          {/* A second much-fainter rib pattern at a finer scale to
-              add the "polished glass" micro-texture you see on
-              real fluted glass between the main grooves. */}
-          <div
-            className="absolute inset-0 opacity-60"
-            style={{
-              backgroundImage: `
-                repeating-linear-gradient(
-                  90deg,
-                  rgba(255,255,255,0.04) 0px,
-                  rgba(255,255,255,0.04) 1px,
-                  rgba(255,255,255,0) 1px,
-                  rgba(255,255,255,0) 3px
-                )
-              `,
-              mixBlendMode: "overlay",
-            }}
-          />
-
-          {/* Subtle frost wash — the cool misty haze of fluted glass */}
+          {/* (2a) Aurora wash — two soft theme-tinted glows */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%)",
+                "radial-gradient(circle 720px at 50% 22%, color-mix(in srgb, var(--hero-mesh-1, #56bdf8) 35%, transparent) 0%, transparent 60%), radial-gradient(circle 560px at 50% 30%, color-mix(in srgb, var(--hero-mesh-3, #4ade80) 28%, transparent) 0%, transparent 65%)",
             }}
           />
+
+          {/* (2b) Spotlight cone — warm-white key light */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 36% 32% at 50% 18%, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.05) 50%, transparent 75%)",
+            }}
+          />
+
+          {/* (3) REEDED GLASS RIBS — the "fractal glass" effect with
+              visible vertical-line texture. Primary 10 px pattern
+              with light highlight + dark shadow per rib, secondary
+              3 px micro-texture between grooves. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(90deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.14) 1.5px, transparent 1.5px, transparent 6px, rgba(0,0,0,0.18) 7px, rgba(0,0,0,0.18) 8.5px, transparent 8.5px, transparent 10px)",
+              mixBlendMode: "overlay",
+            }}
+          />
+          <div
+            className="absolute inset-0 opacity-60"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 3px)",
+              mixBlendMode: "soft-light",
+            }}
+          />
+
+          {/* (4) StylizedMark backdrop — peripheral corner ornament */}
+          <div
+            className="hidden lg:block absolute -bottom-32 -right-32 opacity-[0.25] mix-blend-screen"
+            style={{
+              filter:
+                "drop-shadow(0 0 36px rgba(56,189,248,0.32)) drop-shadow(0 0 14px rgba(63,168,106,0.22))",
+            }}
+          >
+            <StylizedMark size={360} />
+          </div>
+
+          {/* (5a) Edge vignette */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 110% 130% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.32) 100%)",
+            }}
+          />
+
+          {/* (5b) SVG noise grain */}
+          <svg className="absolute inset-0 w-full h-full opacity-[0.14] mix-blend-overlay">
+            <filter id="dashboard-hero-noise">
+              <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="5" />
+              <feColorMatrix
+                type="matrix"
+                values="0 0 0 0 1
+                        0 0 0 0 1
+                        0 0 0 0 1
+                        0 0 0 0.4 0"
+              />
+            </filter>
+            <rect width="100%" height="100%" filter="url(#dashboard-hero-noise)" />
+          </svg>
         </div>
 
         {/* CONTENT — direct child of .hero-mesh-brand, which forces

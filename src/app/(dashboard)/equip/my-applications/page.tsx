@@ -9,7 +9,7 @@
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, ArrowRight, AlertTriangle, ClipboardList, Beaker, Rocket } from "lucide-react";
+import { ArrowRight, AlertTriangle, ClipboardList, Beaker, Rocket } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
@@ -73,17 +73,14 @@ export default async function MyEquipApplicationsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <Link href="/equip" className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
-        <ArrowLeft size={12} /> Equip
-      </Link>
-
+    <div>
       <DSPageHeader
         eyebrow="Equip · status tracker"
         title="My applications"
-        icon={<ClipboardList size={22} className="text-brand-600" />}
         description="Every draft and submission, with current status. Click in for the full submission body and reviewer messages."
       />
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
       {tableMissing && isAdmin && (
         <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 flex items-start gap-3">
@@ -161,6 +158,7 @@ export default async function MyEquipApplicationsPage() {
           </ul>
         </DSSection>
       )}
+      </div>
     </div>
   );
 }

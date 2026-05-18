@@ -32,6 +32,7 @@ import type { ReactNode } from "react";
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
 import { DSEyebrow } from "./DSEyebrow";
 import { LayoutBannersSlot } from "@/components/layout/LayoutBanners";
+import { StylizedMark } from "@/components/branding/StylizedMark";
 
 interface Props {
   /** Small uppercase label above the title. Accepts a ReactNode so
@@ -159,44 +160,106 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
             the in-flow path — only the wrapper itself is the direct
             child of `.hero-mesh-brand`, and it's flattened to inset:0. */}
         <div aria-hidden className="absolute inset-0 pointer-events-none">
-          {/* Four dreamy blurred auroras, sized for the compact
-              banner (~12rem tall on lg). Theme-driven via
-              `--hero-mesh-{1..4}`. Layer on top of `.hero-mesh-brand`'s
-              built-in radial auroras for extra depth. */}
+          {/* ── ATMOSPHERIC STAGE — built to feel like the /login
+                page's spotlight stage but theme-aware. Layers,
+                top-to-bottom in z-order:
+                  (1) deep radial dome from the theme's hero-mesh-1
+                  (2) aurora wash — cyan + green theme-tinted glows
+                      around the top centre, like the /login stage
+                  (3) tighter warm-white spotlight cone at top-centre
+                  (4) visible reeded / fluted glass ribs (the
+                      "fractal glass" effect — vertical lines at
+                      strong contrast so the texture really reads)
+                  (5) StylizedMark backdrop peeking from the bottom-
+                      right corner — pulled mostly off-screen and
+                      blend-screened in so it lives in the dark
+                      periphery, never behind the title
+                  (6) edge vignette so the stage feels theatrical
+                  (7) fine SVG noise for editorial grain
+                NO floating glyphs / draggables — strictly static. */}
+
+          {/* (1) Deep radial dome from theme hero-mesh-1 — gives the
+                  stage its theme-flavored sky. */}
           <div
-            className="absolute -top-12 -left-10 w-[22rem] h-[22rem] rounded-full blur-3xl opacity-70"
+            className="absolute inset-0"
             style={{
-              background:
-                "radial-gradient(closest-side, var(--hero-mesh-1, #56bdf8), transparent 70%)",
-            }}
-          />
-          <div
-            className="absolute -bottom-12 right-1/4 w-[20rem] h-[20rem] rounded-full blur-3xl opacity-65"
-            style={{
-              background:
-                "radial-gradient(closest-side, var(--hero-mesh-2, #f472b6), transparent 70%)",
-            }}
-          />
-          <div
-            className="absolute -top-6 right-0 w-[16rem] h-[16rem] rounded-full blur-3xl opacity-50"
-            style={{
-              background:
-                "radial-gradient(closest-side, var(--hero-mesh-4, #facc15), transparent 70%)",
-            }}
-          />
-          <div
-            className="absolute -bottom-6 left-1/3 w-[14rem] h-[14rem] rounded-full blur-3xl opacity-50"
-            style={{
-              background:
-                "radial-gradient(closest-side, var(--hero-mesh-3, #4ade80), transparent 70%)",
+              backgroundImage:
+                "radial-gradient(ellipse 80% 110% at 50% -10%, color-mix(in srgb, var(--hero-mesh-1, #56bdf8) 60%, transparent) 0%, transparent 60%)",
             }}
           />
 
-          {/* Fine SVG noise overlay — grain to break up gradient
-              banding. Also lives inside the decoration wrapper so the
-              `.hero-mesh-brand > *` rule doesn't pull it into flow. */}
+          {/* (2) Aurora wash — two soft theme-tinted radial glows at
+                  the top centre, mirroring the /login spotlight pool. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle 600px at 50% 22%, color-mix(in srgb, var(--hero-mesh-1, #56bdf8) 35%, transparent) 0%, transparent 60%), radial-gradient(circle 480px at 50% 30%, color-mix(in srgb, var(--hero-mesh-3, #4ade80) 28%, transparent) 0%, transparent 65%)",
+            }}
+          />
+
+          {/* (3) Spotlight cone — tighter warm-white ellipse over the
+                  aurora wash, like a theatre's key light. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 32% 28% at 50% 18%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 50%, transparent 75%)",
+            }}
+          />
+
+          {/* (4) Reeded / fluted glass ribs — repeating vertical
+                  stripe pattern with strong soft-light highlight +
+                  overlay shadow per rib. This is the "fractal glass"
+                  effect the user wanted — visible vertical-line
+                  texture across the whole stage. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(90deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.14) 1.5px, transparent 1.5px, transparent 6px, rgba(0,0,0,0.18) 7px, rgba(0,0,0,0.18) 8.5px, transparent 8.5px, transparent 10px)",
+              mixBlendMode: "overlay",
+            }}
+          />
+          {/* Finer rib micro-texture between the main grooves */}
+          <div
+            className="absolute inset-0 opacity-60"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 3px)",
+              mixBlendMode: "soft-light",
+            }}
+          />
+
+          {/* (5) StylizedMark backdrop — the half-sketch / half-
+                  coloured BHN petal peeking from the bottom-right
+                  corner, pulled off-screen so it lives in the dark
+                  periphery and never sits behind the title. Hidden
+                  below `lg` so smaller viewports keep a clean stage. */}
+          <div
+            className="hidden lg:block absolute -bottom-24 -right-24 opacity-[0.28] mix-blend-screen"
+            style={{
+              filter:
+                "drop-shadow(0 0 32px rgba(56,189,248,0.3)) drop-shadow(0 0 12px rgba(63,168,106,0.22))",
+            }}
+          >
+            <StylizedMark size={260} />
+          </div>
+
+          {/* (6) Edge vignette — gentle darkening at corners so the
+                  stage feels framed. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 110% 130% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.32) 100%)",
+            }}
+          />
+
+          {/* (7) Fine SVG noise grain — keeps the gradients from
+                  banding, gives editorial print feel. */}
           <svg
-            className="absolute inset-0 w-full h-full opacity-[0.18] mix-blend-overlay"
+            className="absolute inset-0 w-full h-full opacity-[0.14] mix-blend-overlay"
             xmlns="http://www.w3.org/2000/svg"
           >
             <filter id="ds-cinematic-noise">

@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18l";
+export const TOUR_VERSION = "2026.05.18m";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -555,6 +555,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: "The hero now reads as one panel of theme-tinted reeded glass — vertical-rib texture across the whole background with the mesh blobs visibly sliced into vertical bands behind it. Built with SVG feTurbulence (horizontal-streaked noise) + feDisplacementMap (real per-vertical-band horizontal offset), so each rib actually refracts what's behind it the way real fluted glass does. Plus a pair of layered repeating-linear-gradients drawing the physical ridge highlights + a fine micro-texture between grooves. Theme-aware via the same --hero-mesh-1..4 tokens, so every theme paints its own palette through the same glass.",
     placement: "center",
     since: "2026.05.18l",
+  },
+  {
+    id: "all-heroes-redesign-login-stage",
+    title: "All page heroes — major redesign (no floaters, visible reeded glass)",
+    body: "Every cinematic page header on the platform now wears the /login spotlight stage as its backdrop — deep radial dome from the theme's hero-mesh-1, aurora wash + warm spotlight cone (mirroring the /login centre pool), visible reeded-glass vertical ribs at strong contrast (the 'fractal glass' effect the user was after — actual lines you can see, not subtle), a StylizedMark backdrop peeking from the bottom-right corner, edge vignette, and SVG noise grain. NO floating glyphs. The trainee dashboard hero keeps its bespoke editorial layout but its atmospheric layers were refactored to the same recipe so the platform reads as one design language. Also cleaned up /equip/my-applications — stray back-link + hero icon removed.",
+    placement: "center",
+    since: "2026.05.18m",
   },
   {
     id: "aurora-theme",
