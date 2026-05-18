@@ -352,7 +352,7 @@ export default async function DashboardPage() {
             adds quantitative presence. Bottom scrim from
             .hero-mesh-brand provides contrast under the body
             copy on every theme. */}
-      <section className="relative overflow-hidden hero-mesh-brand">
+      <section className="full-bleed relative overflow-hidden -mt-8 mb-2 hero-mesh-brand">
         {/* Extra blurred mesh accents — beyond what
             .hero-mesh-brand draws — give the panel more atmospheric
             depth. Theme-aware via mesh tokens, but the radii +
@@ -382,7 +382,11 @@ export default async function DashboardPage() {
           }}
         />
 
-        <div className="relative px-5 sm:px-8 lg:px-12 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 lg:pb-24 max-w-6xl mx-auto">
+        {/* Inner content uses the same `max-w-screen-2xl mx-auto px-6`
+            container as the rest of the dashboard so text + actions
+            line up with the body sections below, while the background
+            spans full viewport edge-to-edge. */}
+        <div className="relative max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 lg:pb-24">
           {/* Top rail — left: small "DASHBOARD · weekday, date"
               in mono, then a decorative hairline runner, right:
               the four-petal mark. Editorial / brand mark detail. */}
