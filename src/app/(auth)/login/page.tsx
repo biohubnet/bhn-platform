@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight, Sparkles, Check, CheckCircle2, Coins, GraduationCap, Layers, Briefcase,
+  FlaskConical,
 } from "lucide-react";
-import { Logo } from "@/components/ui/Logo";
+import { LogoMark } from "@/components/ui/Logo";
 import { ThemeCycler } from "@/components/ui/ThemePicker";
 
 const REMEMBER_KEY = "bhn-remember-email";
@@ -97,15 +98,78 @@ function LoginPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-card to-brand-100 px-4 py-8 relative">
-      <div className="absolute top-4 right-4">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-brand-50 via-card to-brand-100 px-4 py-8">
+      {/* ─── BACKDROP — huge cropped four-petal mark, anchored to
+           the upper-right, scaled WAY up so only one petal + a
+           sliver of the centre star reads. Low opacity so the
+           form chrome still wins on contrast. ─── */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.16]"
+        style={{
+          backgroundImage: "url('/biohubnet-logo.svg')",
+          backgroundSize: "min(1600px, 220%) auto",
+          backgroundPosition: "calc(100% + 200px) calc(0% - 140px)",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      {/* Soft radial wash on top to give the form column a clean
+          ground — keeps the cropped petal as backdrop atmosphere
+          rather than fighting for the foreground. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 25% 40%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 60%)",
+        }}
+      />
+
+      {/* Top bar — small mark + theme cycler */}
+      <div className="relative max-w-6xl mx-auto flex items-center justify-between mb-10 sm:mb-14">
+        <Link href="/" className="inline-flex items-center gap-2.5 group">
+          <LogoMark size={32} className="drop-shadow-[0_3px_8px_rgba(28,47,122,0.18)]" />
+          <span className="text-sm font-bold tracking-tight text-fg">
+            Bio<span className="text-brand-600">Hub</span><span className="text-emerald-600">Net</span>
+          </span>
+        </Link>
         <ThemeCycler />
       </div>
-      <div className="max-w-5xl mx-auto">
-        <Link href="/" className="flex justify-center mb-8 mt-4">
-          <Logo size="lg" />
-        </Link>
 
+      {/* ─── TEASER HEADER ─────────────────────────────────────────
+           Lab-coat tone, biotech wordplay. A small "incubating"
+           badge, a bold headline, a sub. Drops in just above the
+           sign-in / register dual card so the page reads as a
+           campaign first and a form second. */}
+      <div className="relative max-w-6xl mx-auto mb-8 sm:mb-12">
+        <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 ring-1 ring-inset ring-amber-200 px-3 py-1 text-[10px] uppercase tracking-[0.22em] font-black text-amber-800">
+          <FlaskConical size={11} className="animate-pulse" />
+          Phase II · Incubating
+        </span>
+        <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-fg leading-[1.05] max-w-3xl">
+          Something big is{" "}
+          <span
+            className="inline-block"
+            style={{
+              backgroundImage:
+                "linear-gradient(120deg, #1d4f8b 0%, #2c8aa3 50%, #3fa86a 100%)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            culturing.
+          </span>
+        </h1>
+        <p className="mt-4 text-base sm:text-lg text-fg-muted max-w-2xl leading-relaxed">
+          BioHubNet is amplifying. New pathways, new partner labs, the EQUIP funding
+          pillar going live. Sign in to watch the cohort grow — or pull up a pipette
+          and join the next round.{" "}
+          <span className="font-mono text-xs text-fg-subtle">// p &lt; 0.05, results pending</span>
+        </p>
+      </div>
+
+      <div className="relative max-w-5xl mx-auto">
         {/*
          * Two-box layout. New user signup on the left, returning
          * user login on the right. On mobile they stack — signup
