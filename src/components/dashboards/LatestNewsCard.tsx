@@ -1,12 +1,10 @@
 /**
- * LatestNewsCard — compact "what's new on the platform" surface for
- * the trainee dashboard. Reads the in-code changelog registry (the
- * same one /changelog renders from), so updates ship automatically
- * the moment a new entry lands in `CHANGELOG_ENTRIES`.
+ * LatestNewsCard — compact "what's new on the platform" surface
+ * for the trainee dashboard. Reads the in-code changelog registry
+ * (same one /changelog renders from).
  *
- * Renders the top three entries with title + a short blurb + a
- * "today / x days ago" stamp. Each row links to /changelog so the
- * trainee can dive into the full body.
+ * Renders flat (no outer rounded box) — its host section provides
+ * the gradient wash. Just header + divide-y list of three entries.
  */
 import Link from "next/link";
 import { Sparkles, ArrowRight } from "lucide-react";
@@ -14,15 +12,12 @@ import { CHANGELOG_ENTRIES, type ChangelogEntry } from "@/lib/changelog/entries"
 
 const NEWS_COUNT = 3;
 
-/** Trim a body string to the first ~120 chars, removing markdown
- *  emphasis markers so the preview doesn't show stray asterisks. */
 function snippet(body: string, max = 140): string {
   const plain = body
     .replace(/[*_`]+/g, "")
     .replace(/\n+/g, " ")
     .trim();
   if (plain.length <= max) return plain;
-  // Cut at the last word boundary before max.
   const cut = plain.slice(0, max);
   const lastSpace = cut.lastIndexOf(" ");
   return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut) + "…";
@@ -42,18 +37,13 @@ export function LatestNewsCard() {
   if (entries.length === 0) return null;
 
   return (
-    <section className="rounded-3xl bg-card border border-line surface-shadow p-5 sm:p-6">
-      <header className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2.5">
-          <span className="w-9 h-9 rounded-2xl bg-sky-100 text-sky-700 inline-flex items-center justify-center">
-            <Sparkles size={16} />
-          </span>
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] font-black text-sky-700">
-              Latest news
-            </p>
-            <h2 className="text-base font-bold text-fg tracking-tight">Fresh on the platform</h2>
-          </div>
+    <section>
+      <header className="flex items-baseline justify-between gap-3 mb-3">
+        <div className="inline-flex items-center gap-2">
+          <Sparkles size={14} className="text-sky-600" />
+          <p className="text-[10px] uppercase tracking-[0.22em] font-black text-sky-700">
+            Fresh on the platform
+          </p>
         </div>
         <Link
           href="/changelog"
@@ -68,33 +58,31 @@ export function LatestNewsCard() {
           <li key={idx}>
             <Link
               href="/changelog"
-              className="block py-3 hover:bg-elevated rounded-lg px-3 -mx-3 transition-colors group"
+              className="flex items-start gap-3 py-3 group hover:bg-elevated/60 transition-colors -mx-2 px-2"
             >
-              <div className="flex items-start gap-3">
-                <span
-                  className={
-                    "shrink-0 mt-1 w-1.5 h-1.5 rounded-full " +
-                    (e.kind === "feature"
-                      ? "bg-emerald-500"
-                      : e.kind === "improvement"
-                        ? "bg-sky-500"
-                        : e.kind === "fix"
-                          ? "bg-amber-500"
-                          : "bg-slate-400")
-                  }
-                  aria-hidden
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-fg leading-snug group-hover:text-brand-700 transition-colors">
-                    {e.title}
-                  </p>
-                  <p className="text-xs text-muted mt-1 leading-snug">
-                    {snippet(e.body)}
-                  </p>
-                  <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mt-1.5">
-                    {relativeDays(e.daysAgo)} · {e.kind}
-                  </p>
-                </div>
+              <span
+                className={
+                  "shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full " +
+                  (e.kind === "feature"
+                    ? "bg-emerald-500"
+                    : e.kind === "improvement"
+                      ? "bg-sky-500"
+                      : e.kind === "fix"
+                        ? "bg-amber-500"
+                        : "bg-slate-400")
+                }
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-fg leading-snug group-hover:text-brand-700 transition-colors">
+                  {e.title}
+                </p>
+                <p className="text-xs text-muted mt-1 leading-snug">
+                  {snippet(e.body)}
+                </p>
+                <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-fg-subtle mt-1.5">
+                  {relativeDays(e.daysAgo)} · {e.kind}
+                </p>
               </div>
             </Link>
           </li>

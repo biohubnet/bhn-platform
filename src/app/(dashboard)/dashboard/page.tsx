@@ -182,7 +182,7 @@ export default async function DashboardPage() {
     (reviewQueue?.length ?? 0) > 0;
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* HERO — platform rule: editorial hero is the absolute top. */}
       <PageHero
         eyebrow={(
@@ -220,161 +220,162 @@ export default async function DashboardPage() {
         )}
       />
 
-      {/* Committee badge — recognition surface. Kept outside the
-          main outer panel because the HQP proud badge has its own
-          full-gradient treatment and would clash visually if nested
-          inside another panel. Auto-hides for non-committee users. */}
+      {/* Committee badge — recognition surface. Auto-hides for
+          non-members. */}
       <CommitteeBadgeStrip userId={userId} />
 
-      {/* ─── OUTER DASHBOARD PANEL ───────────────────────────────────
-          One rounded-3xl canvas, four hairline-divided sections, each
-          with its own faint gradient tint. Mirrors Story Bank's
-          vocabulary at dashboard scale — less rounded-corner box-
-          on-box, more editorial spread. */}
-      <div className="rounded-3xl border border-line bg-card overflow-hidden surface-shadow">
-        {/* ── FOR YOU — sky→violet wash. Top of the panel because
-              this is the trainee's progress moment. */}
+      {/* ─── DASHBOARD SECTIONS ──────────────────────────────────────
+          No outer panel, no rounded inner boxes. Each section is a
+          full-width band with its own faint gradient wash, separated
+          by a hairline. Reads as a sequence of editorial stripes
+          rather than a stack of card-on-card chrome. The Loot Vault
+          (RewardsDistanceCard) lives at the bottom now, narrower,
+          per user request. */}
+
+      {/* ── UP NEXT — clean (no tint). Primary action gets full
+            visual weight. */}
+      <section className="border-t border-line py-7 sm:py-9 px-5 sm:px-8">
+        <SectionEyebrow>Up next</SectionEyebrow>
+        <div className="mt-5 space-y-6">
+          <PrimaryNextCard
+            active={activeContinue[0] ?? null}
+            myPathwayCount={myPathways.length}
+            suggestion={suggestedCourses[0] ?? null}
+          />
+          {recentActivity.length > 0 && (
+            <div>
+              <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
+                Recent
+              </h3>
+              <ul className="divide-y divide-line border-y border-line">
+                {recentActivity.slice(0, 3).map((s) => {
+                  const done = s.status === "passed" || s.status === "completed";
+                  return (
+                    <li key={s.id} className="flex items-baseline gap-3 py-2.5">
+                      <span className={cn(
+                        "text-sm flex-1 truncate",
+                        done ? "text-fg" : "text-muted",
+                      )}>
+                        {s.package.course.title}
+                      </span>
+                      {s.score != null && (
+                        <span className="text-xs text-subtle font-mono tabular-nums shrink-0">{Math.round(s.score)}%</span>
+                      )}
+                      <span className="text-xs text-subtle shrink-0">{new Date(s.updatedAt).toLocaleDateString()}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── FOR YOU — sky→violet wash. Leaderboard + latest news. */}
+      <section
+        className="border-t border-line py-7 sm:py-9 px-5 sm:px-8"
+        style={{
+          backgroundImage:
+            "linear-gradient(135deg, rgba(56,189,248,0.07) 0%, rgba(124,58,237,0.05) 50%, rgba(244,114,182,0.06) 100%)",
+        }}
+      >
+        <SectionEyebrow>For you</SectionEyebrow>
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8">
+          <CreditUsageScoreboard userId={userId} />
+          <LatestNewsCard />
+        </div>
+      </section>
+
+      {/* ── REMINDERS — amber wash. Auto-hides when nothing's due. */}
+      {hasReminders && (
         <section
-          className="px-5 sm:px-8 py-7 sm:py-9 border-b border-line"
+          className="border-t border-line py-7 sm:py-9 px-5 sm:px-8"
           style={{
             backgroundImage:
-              "linear-gradient(135deg, rgba(56,189,248,0.07) 0%, rgba(124,58,237,0.05) 50%, rgba(244,114,182,0.06) 100%)",
+              "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.04) 60%, rgba(244,63,94,0.04) 100%)",
           }}
         >
-          <SectionEyebrow>For you</SectionEyebrow>
-          <div className="mt-5 space-y-5">
-            <RewardsDistanceCard userId={userId} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <CreditUsageScoreboard userId={userId} />
-              <LatestNewsCard />
-            </div>
-          </div>
-        </section>
-
-        {/* ── UP NEXT — clean (no tint) so the primary action carries
-              full visual weight. */}
-        <section className="px-5 sm:px-8 py-7 sm:py-9 border-b border-line">
-          <SectionEyebrow>Up next</SectionEyebrow>
-          <div className="mt-5 space-y-6">
-            <PrimaryNextCard
-              active={activeContinue[0] ?? null}
-              myPathwayCount={myPathways.length}
-              suggestion={suggestedCourses[0] ?? null}
-            />
-            {recentActivity.length > 0 && (
-              <div>
-                <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
-                  Recent
-                </h3>
-                <ul className="divide-y divide-line border-y border-line">
-                  {recentActivity.slice(0, 3).map((s) => {
-                    const done = s.status === "passed" || s.status === "completed";
-                    return (
-                      <li key={s.id} className="flex items-baseline gap-3 py-2.5">
-                        <span className={cn(
-                          "text-sm flex-1 truncate",
-                          done ? "text-fg" : "text-muted",
-                        )}>
-                          {s.package.course.title}
-                        </span>
-                        {s.score != null && (
-                          <span className="text-xs text-subtle font-mono tabular-nums shrink-0">{Math.round(s.score)}%</span>
+          <SectionEyebrow tone="amber">Reminders</SectionEyebrow>
+          <div className="mt-5 divide-y divide-line border-y border-amber-200/40">
+            <div className="py-2"><ExpiringCreditsBanner userId={userId} /></div>
+            <div className="py-2"><TodaysReviewsCard initial={reviewQueue} /></div>
+            {expiringSavedPostings.length > 0 && (
+              <Link
+                href="/profile/applications"
+                className="group flex items-start gap-3 py-3 hover:bg-amber-100/40 transition-colors -mx-5 sm:-mx-8 px-5 sm:px-8"
+              >
+                <span className="text-amber-700 text-lg leading-tight mt-0.5" aria-hidden>⏰</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-amber-900">
+                    {expiringSavedPostings.length} saved posting{expiringSavedPostings.length === 1 ? "" : "s"} expire{expiringSavedPostings.length === 1 ? "s" : ""} this week
+                  </p>
+                  <ul className="text-xs text-amber-800/90 mt-0.5 space-y-0.5">
+                    {expiringSavedPostings.map((s) => (
+                      <li key={s.id}>
+                        <span className="font-medium">{s.posting.title}</span> — {s.posting.companyName}
+                        {s.posting.deadline && (
+                          <span className="text-amber-700/80"> · {s.posting.deadline.toLocaleDateString()}</span>
                         )}
-                        <span className="text-xs text-subtle shrink-0">{new Date(s.updatedAt).toLocaleDateString()}</span>
                       </li>
-                    );
-                  })}
-                </ul>
-              </div>
+                    ))}
+                  </ul>
+                </div>
+                <ArrowRight size={14} className="text-amber-700 shrink-0 mt-1 opacity-60 group-hover:opacity-100 transition-opacity" />
+              </Link>
+            )}
+            {pendingBuddyInvites.length > 0 && (
+              <Link
+                href="/buddy"
+                className="group flex items-center gap-3 py-3 hover:bg-amber-100/40 transition-colors -mx-5 sm:-mx-8 px-5 sm:px-8"
+              >
+                <span className="text-amber-700 text-lg leading-none" aria-hidden>💛</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-900">
+                    {pendingBuddyInvites.length === 1
+                      ? `${pendingBuddyInvites[0].initiator.name ?? pendingBuddyInvites[0].initiator.email} invited you to be their learning buddy`
+                      : `${pendingBuddyInvites.length} learning buddy invites are waiting for you`}
+                  </p>
+                  <p className="text-xs text-amber-800">Open Learning buddies to accept or decline.</p>
+                </div>
+                <ArrowRight size={14} className="text-amber-700 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
+              </Link>
             )}
           </div>
         </section>
+      )}
 
-        {/* ── REMINDERS — amber wash. Time-sensitive nudges: credits
-              expiring, today's review bookmarks, saved-internship
-              deadlines, pending buddy invites. Whole section drops
-              out when nothing's relevant. */}
-        {hasReminders && (
-          <section
-            className="px-5 sm:px-8 py-7 sm:py-9 border-b border-line"
-            style={{
-              backgroundImage:
-                "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.04) 60%, rgba(244,63,94,0.04) 100%)",
-            }}
-          >
-            <SectionEyebrow tone="amber">Reminders</SectionEyebrow>
-            <div className="mt-5 space-y-4">
-              <ExpiringCreditsBanner userId={userId} />
-              <TodaysReviewsCard initial={reviewQueue} />
-              {expiringSavedPostings.length > 0 && (
-                <Link
-                  href="/profile/applications"
-                  className="block bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-2xl px-5 py-3.5 hover:border-amber-300 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 text-lg">
-                      ⏰
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-amber-900">
-                        {expiringSavedPostings.length} saved posting{expiringSavedPostings.length === 1 ? "" : "s"} expire{expiringSavedPostings.length === 1 ? "s" : ""} this week
-                      </p>
-                      <ul className="text-xs text-amber-800/90 mt-0.5 space-y-0.5">
-                        {expiringSavedPostings.map((s) => (
-                          <li key={s.id}>
-                            <span className="font-medium">{s.posting.title}</span> — {s.posting.companyName}
-                            {s.posting.deadline && (
-                              <span className="text-amber-700/80"> · {s.posting.deadline.toLocaleDateString()}</span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </Link>
-              )}
-              {pendingBuddyInvites.length > 0 && (
-                <Link
-                  href="/buddy"
-                  className="block bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-2xl px-5 py-3 hover:border-amber-300 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
-                      💛
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-amber-900">
-                        {pendingBuddyInvites.length === 1
-                          ? `${pendingBuddyInvites[0].initiator.name ?? pendingBuddyInvites[0].initiator.email} invited you to be their learning buddy`
-                          : `${pendingBuddyInvites.length} learning buddy invites are waiting for you`}
-                      </p>
-                      <p className="text-xs text-amber-800">Open Learning buddies to accept or decline.</p>
-                    </div>
-                    <ArrowRight size={16} className="text-amber-700" />
-                  </div>
-                </Link>
-              )}
-            </div>
-          </section>
-        )}
+      {/* ── WHAT'S COMING — emerald wash. */}
+      <section
+        className="border-t border-line py-7 sm:py-9 px-5 sm:px-8"
+        style={{
+          backgroundImage:
+            "linear-gradient(135deg, rgba(16,185,129,0.07) 0%, rgba(56,189,248,0.04) 100%)",
+        }}
+      >
+        <SectionEyebrow tone="emerald">What&apos;s coming</SectionEyebrow>
+        <div className="mt-5 space-y-4">
+          <UpcomingEventBanner userId={userId} />
+          <DailyThemeCard />
+        </div>
+      </section>
 
-        {/* ── WHAT'S COMING — emerald wash. Upcoming events + the
-              daily theme suggestion. Section drops out cleanly when
-              both inner cards auto-hide. */}
-        <section
-          className="px-5 sm:px-8 py-7 sm:py-9"
-          style={{
-            backgroundImage:
-              "linear-gradient(135deg, rgba(16,185,129,0.07) 0%, rgba(56,189,248,0.04) 100%)",
-          }}
-        >
-          <SectionEyebrow tone="emerald">What&apos;s coming</SectionEyebrow>
-          <div className="mt-5 space-y-4">
-            <UpcomingEventBanner userId={userId} />
-            <DailyThemeCard />
+      {/* ── LOOT VAULT — bottom of the page, narrower (max-w-xl
+            centered). Bright loot-coloured wash signals the
+            celebratory nature without needing chrome around it. */}
+      <section
+        className="border-t border-line py-9 sm:py-12 px-5 sm:px-8"
+        style={{
+          backgroundImage:
+            "linear-gradient(135deg, rgba(30,58,138,0.08) 0%, rgba(109,40,217,0.07) 40%, rgba(190,24,93,0.06) 75%, rgba(249,115,22,0.05) 100%)",
+        }}
+      >
+        <div className="max-w-xl mx-auto">
+          <SectionEyebrow tone="brand">Loot vault</SectionEyebrow>
+          <div className="mt-5">
+            <RewardsDistanceCard userId={userId} />
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
 
       <ExploreLinks credits={user?.credits ?? 0} />
     </div>
