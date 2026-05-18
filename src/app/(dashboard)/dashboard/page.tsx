@@ -383,6 +383,77 @@ export default async function DashboardPage() {
               backgroundSize: "28px 28px",
             }}
           />
+
+          {/* ── FRACTAL GLASS SHARDS ─────────────────────────────────
+                Three translucent angular panels that catch the
+                underlying mesh through `backdrop-filter: blur +
+                saturate` (glassmorphism), then layered with an
+                SVG `feTurbulence` fractal-noise filter inside each
+                for a "frosted glass" texture that reads richer than
+                a plain blur. Edges + inner highlights mimic glass
+                catching light. All sit in the decoration layer so
+                they sit behind the title content. Hidden below
+                `md` to keep mobile lean. */}
+          <svg width="0" height="0" className="absolute" aria-hidden>
+            <defs>
+              <filter id="hero-glass-fractal-a" x="0" y="0" width="100%" height="100%">
+                <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="3" seed="7" />
+                <feColorMatrix type="matrix"
+                  values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1   0 0 0 0.55 0" />
+              </filter>
+              <filter id="hero-glass-fractal-b" x="0" y="0" width="100%" height="100%">
+                <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="11" />
+                <feColorMatrix type="matrix"
+                  values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1   0 0 0 0.55 0" />
+              </filter>
+            </defs>
+          </svg>
+
+          {/* Shard 1 — large diagonal pane, mid-left, sits behind
+              the title block. Rotated −12° for a "leaning pane"
+              feel; backdrop-blur saturates the mesh behind. */}
+          <div
+            className="hidden md:block absolute left-[3%] top-[38%] w-[28rem] h-[12rem] -rotate-[12deg] origin-center rounded-2xl border border-white/15 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_22px_60px_-14px_rgba(0,0,0,0.4)]"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              backdropFilter: "blur(22px) saturate(160%)",
+              WebkitBackdropFilter: "blur(22px) saturate(160%)",
+            }}
+          >
+            <svg className="absolute inset-0 w-full h-full opacity-[0.28] mix-blend-overlay">
+              <rect width="100%" height="100%" filter="url(#hero-glass-fractal-a)" />
+            </svg>
+          </div>
+
+          {/* Shard 2 — small accent pane, upper-right corner, near
+              the LogoMark. Rotated +8° to lean opposite to Shard 1. */}
+          <div
+            className="hidden md:block absolute right-[6%] top-[14%] w-[16rem] h-[8rem] rotate-[8deg] origin-center rounded-2xl border border-white/15 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_16px_44px_-12px_rgba(0,0,0,0.35)]"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(18px) saturate(150%)",
+              WebkitBackdropFilter: "blur(18px) saturate(150%)",
+            }}
+          >
+            <svg className="absolute inset-0 w-full h-full opacity-[0.24] mix-blend-overlay">
+              <rect width="100%" height="100%" filter="url(#hero-glass-fractal-b)" />
+            </svg>
+          </div>
+
+          {/* Shard 3 — medium pane near the bottom, lower-right.
+              Anchors the lower edge of the hero composition. */}
+          <div
+            className="hidden lg:block absolute right-[22%] bottom-[10%] w-[20rem] h-[9rem] -rotate-[6deg] origin-center rounded-2xl border border-white/12 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_18px_48px_-14px_rgba(0,0,0,0.32)]"
+            style={{
+              background: "rgba(255,255,255,0.045)",
+              backdropFilter: "blur(20px) saturate(160%)",
+              WebkitBackdropFilter: "blur(20px) saturate(160%)",
+            }}
+          >
+            <svg className="absolute inset-0 w-full h-full opacity-[0.22] mix-blend-overlay">
+              <rect width="100%" height="100%" filter="url(#hero-glass-fractal-a)" />
+            </svg>
+          </div>
         </div>
 
         {/* CONTENT — direct child of .hero-mesh-brand, which forces

@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18j";
+export const TOUR_VERSION = "2026.05.18k";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -541,6 +541,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Trainee dashboard's head banner is now an editorial composition — DASHBOARD masthead with mono date + four-petal mark, italic-serif `Welcome back,` line, your first name set HUGE (6xl→8xl italic serif on the theme's hero-title gradient), a short hairline, a state-aware lead sentence, white-pill + ghost-pill CTAs, and a hairline-separated right-column stats stack (In progress / Credits / Certificates) on lg+. Same theme-aware `.hero-mesh-brand` base, with two extra blurred mesh blobs + a faint constellation grid for atmospheric depth.",
     placement: "center",
     since: "2026.05.18j",
+  },
+  {
+    id: "dash-hero-fractal-glass",
+    title: "Hero — fractal glass shards floating in the background",
+    body: "Three angular glass panels are floating in the trainee hero's background now — translucent rounded shards that catch the underlying mesh through backdrop-blur + saturate (glassmorphism), with an SVG fractal-noise filter inside each at low opacity for a richer 'frosted' texture than a plain blur. Large diagonal pane mid-left (rotated −12°), small accent upper-right near the LogoMark (+8°), medium pane lower-right (−6°). Glass edges + inner highlights mimic real glass catching light. Hidden below md to keep mobile lean.",
+    placement: "center",
+    since: "2026.05.18k",
   },
   {
     id: "aurora-theme",
