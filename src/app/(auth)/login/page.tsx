@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowRight, Sparkles, Check, CheckCircle2, Coins, GraduationCap, Layers, Briefcase,
+  ArrowRight, Check, CheckCircle2, Coins, GraduationCap, Layers, Briefcase,
   FlaskConical,
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
@@ -127,27 +127,28 @@ function LoginPageInner() {
         }}
       />
 
-      {/* ─── BACKDROP PETAL ─── compact, bold, top-centred under
-           the spotlight. Drop-shadow glow gives it a soft halo so
-           the mark reads as suspended in light, not pasted on. */}
+      {/* ─── PETAL — front and centre. Sits as the editorial
+           subject of the spread; the form below is intentionally
+           thin so the mark stays the visual hero. Drop-shadow glow
+           (cyan + emerald) gives it a halo that integrates it into
+           the spotlight pool. */}
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 -translate-x-1/2"
         style={{
-          top: "-180px",
-          width: "min(720px, 95vw)",
-          height: "min(720px, 95vw)",
+          top: "-120px",
+          width: "min(520px, 78vw)",
+          height: "min(520px, 78vw)",
           backgroundImage: "url('/biohubnet-logo.svg')",
-          // Zoom into the emblem area only (the wordmark sits in the
-          // lower portion of the SVG; we don't want it in the
-          // backdrop). Scale ~250% and pull up so the four-petal
-          // cluster fills the frame.
+          // Zoom into the four-petal cluster only — the wordmark
+          // sits in the lower portion of the SVG and we don't want
+          // it here. Scale + pull up so only the emblem reads.
           backgroundSize: "230% auto",
-          backgroundPosition: "center -50%",
+          backgroundPosition: "center -55%",
           backgroundRepeat: "no-repeat",
-          opacity: 0.95,
+          opacity: 1,
           filter:
-            "drop-shadow(0 0 60px rgba(56,189,248,0.55)) drop-shadow(0 0 24px rgba(63,168,106,0.35)) saturate(1.25)",
+            "drop-shadow(0 0 70px rgba(56,189,248,0.6)) drop-shadow(0 0 30px rgba(63,168,106,0.42)) saturate(1.32)",
         }}
       />
 
@@ -207,31 +208,62 @@ function LoginPageInner() {
       </div>
 
       <div className="relative max-w-5xl mx-auto">
+        {/* ── Section divider — a faint horizontal hairline + a
+              "Specimen" plate, sets the editorial mood and gives
+              the eye a clear handoff from the hero teaser into
+              the access pair below. */}
+        <div className="flex items-center gap-4 mb-12 sm:mb-16 text-white/40">
+          <span className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+          <span className="text-[10px] uppercase tracking-[0.45em] font-semibold inline-flex items-center gap-2">
+            <span className="font-mono text-white/30">Spec.</span>
+            <span>Sign in / Join</span>
+          </span>
+          <span className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+        </div>
+
         {/*
-         * Two-box layout. New user signup on the left, returning
-         * user login on the right. On mobile they stack — signup
-         * first because it's a healthy default to lead with the
-         * higher-friction action when the page is everyone's first
-         * stop.
+         * Editorial split — 2 columns on lg, with a vertical
+         * hairline divider between. No card chrome, no rounded
+         * box; just lines, gradients, and breathing room. Each
+         * column carries its own "01 / 02" runway-style number
+         * stamp so the pair reads like a magazine spread.
          */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-          {/* ─── LEFT: New user signup ──────────────────────────────── */}
-          <section className="bg-card rounded-2xl shadow-xl shadow-brand-900/5 border-2 border-brand-200 p-8 hover:border-brand-400 hover:shadow-2xl hover:shadow-brand-600/10 transition-all">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-                <Sparkles size={20} />
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.22em] text-brand-700 font-semibold">New here</p>
-                <h2 className="text-xl font-bold text-fg leading-tight">Start training with BHN</h2>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-8 lg:gap-0 items-start">
+          {/* ── 01 · NEW HERE ──────────────────────────────────────── */}
+          <section className="lg:pr-12">
+            <div className="flex items-baseline justify-between mb-6">
+              <span
+                className="font-serif italic text-5xl leading-none"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(120deg, #7dd3fc 0%, #5eead4 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
+                01
+              </span>
+              <p className="text-[10px] uppercase tracking-[0.32em] font-semibold text-white/50">
+                New here
+              </p>
             </div>
 
-            <p className="text-sm text-muted leading-relaxed">
-              Free to start. <span className="inline-flex items-center gap-1 text-fg font-medium"><Coins size={11} className="text-amber-500" /> 200 BHN credits</span> on the house — most courses cost 50–200, with 4,800 more available after admin review.
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
+              Start training{" "}
+              <span className="font-serif italic font-normal text-white/85">with us</span>
+            </h2>
+
+            <p className="mt-4 text-sm text-slate-300 leading-relaxed">
+              Free to start.{" "}
+              <span className="inline-flex items-center gap-1 text-white font-semibold">
+                <Coins size={11} className="text-amber-300" /> 200 BHN credits
+              </span>{" "}
+              on the house — most courses cost 50–200, with 4,800 more available
+              after admin review.
             </p>
 
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-6 space-y-3 border-t border-white/10 pt-5">
               <Bullet icon={GraduationCap}>Industry-led training across biomanufacturing, regulatory, and analytical tracks</Bullet>
               <Bullet icon={Layers}>Pathways stack courses into focused career tracks (MSL, entrepreneurship, more)</Bullet>
               <Bullet icon={Briefcase}>Internship + full-time matching with vetted employer partners</Bullet>
@@ -239,83 +271,97 @@ function LoginPageInner() {
 
             <Link
               href="/register"
-              className="mt-6 w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold py-3 px-4 rounded-xl shadow-md shadow-brand-600/25 hover:shadow-lg hover:shadow-brand-600/30 hover:-translate-y-0.5 transition-all"
+              className="group mt-8 inline-flex items-center gap-3 text-base font-bold text-white py-2 border-b-2 border-white/40 hover:border-white transition-colors"
             >
               Create your free account
-              <ArrowRight size={16} />
+              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </Link>
-            <p className="text-[11px] text-subtle text-center mt-2.5">
-              Takes about a minute. No payment info needed.
+            <p className="text-[11px] text-white/40 mt-3">
+              About a minute. No payment info needed.
             </p>
           </section>
 
-          {/* ─── RIGHT: Returning user login ─────────────────────────── */}
-          <section className="bg-card rounded-2xl shadow-xl shadow-brand-900/5 border border-line p-8">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-11 h-11 rounded-xl bg-elevated text-muted flex items-center justify-center shrink-0">
-                <ArrowRight size={20} />
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.22em] text-subtle font-semibold">Returning</p>
-                <h2 className="text-xl font-bold text-fg leading-tight">
-                  {justRegistered ? "Account created — sign in" : "Welcome back"}
-                </h2>
-              </div>
+          {/* Vertical hairline divider — only renders on lg+ where
+              the columns sit side-by-side. */}
+          <div aria-hidden className="hidden lg:block w-px h-full bg-gradient-to-b from-transparent via-white/15 to-transparent" />
+
+          {/* ── 02 · RETURNING ────────────────────────────────────── */}
+          <section className="lg:pl-12">
+            <div className="flex items-baseline justify-between mb-6">
+              <span
+                className="font-serif italic text-5xl leading-none"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(120deg, #86efac 0%, #fcd34d 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
+                02
+              </span>
+              <p className="text-[10px] uppercase tracking-[0.32em] font-semibold text-white/50">
+                Returning
+              </p>
             </div>
 
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
+              {justRegistered ? (
+                <>Account created — <span className="font-serif italic font-normal text-white/85">sign in</span></>
+              ) : (
+                <>Welcome <span className="font-serif italic font-normal text-white/85">back</span></>
+              )}
+            </h2>
+
             {justRegistered && (
-              <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-lg px-4 py-3 inline-flex items-start gap-2 w-full">
-                <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-600" />
+              <div className="mt-4 border-l-2 border-emerald-400 pl-4 py-1 text-sm text-emerald-200 inline-flex items-start gap-2 w-full">
+                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-300" />
                 <span>
                   Your account is ready. We pre-filled your email — just enter the password you chose.
                 </span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="mt-6 space-y-6">
               {error && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-lg px-4 py-3">
+                <div className="border-l-2 border-rose-400 pl-4 py-1 text-sm text-rose-200">
                   {error}
                 </div>
               )}
-              <div>
-                <label className="block text-xs font-medium text-muted mb-1.5">Email</label>
+
+              <LineField label="Email">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full bg-card-solid border border-line rounded-lg px-3 py-2.5 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
-                  placeholder="you@example.com"
+                  className="w-full bg-transparent border-0 border-b border-white/30 px-0 py-2 text-base text-white placeholder:text-white/25 focus:outline-none focus:border-white transition-colors"
+                  placeholder="you@lab.…"
                 />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium text-muted">Password</label>
-                  <Link href="/login" className="text-xs text-brand-600 hover:underline">
+              </LineField>
+
+              <LineField
+                label="Password"
+                aside={
+                  <Link href="/login" className="text-[11px] uppercase tracking-[0.22em] text-white/50 hover:text-white transition-colors">
                     Forgot?
                   </Link>
-                </div>
+                }
+              >
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full bg-card-solid border border-line rounded-lg px-3 py-2.5 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                  className="w-full bg-transparent border-0 border-b border-white/30 px-0 py-2 text-base text-white placeholder:text-white/25 focus:outline-none focus:border-white transition-colors"
                   placeholder="••••••••"
                 />
-              </div>
+              </LineField>
 
-              {/* MFA — second-factor field. Only revealed after the
-                  /api/auth/mfa/check probe says this account has TOTP
-                  enabled. Until then the form behaves like before. */}
               {mfaRequired && (
-                <div>
-                  <label className="block text-xs font-medium text-muted mb-1.5">
-                    Authenticator code
-                  </label>
+                <LineField label="Authenticator code" hint="From your authenticator app (Google Authenticator, 1Password, Authy …).">
                   <input
                     inputMode="numeric"
                     pattern="[0-9]*"
@@ -325,17 +371,14 @@ function LoginPageInner() {
                     required
                     autoComplete="one-time-code"
                     autoFocus
-                    className="w-32 text-center text-lg font-mono tracking-[0.3em] bg-card-solid border border-line rounded-lg px-3 py-2.5 text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                    className="w-40 bg-transparent border-0 border-b border-white/30 px-0 py-2 text-center text-xl font-mono tracking-[0.4em] text-white placeholder:text-white/25 focus:outline-none focus:border-white transition-colors"
                     placeholder="123 456"
                   />
-                  <p className="text-[11px] text-subtle mt-1">
-                    From your authenticator app (Google Authenticator, 1Password, Authy …).
-                  </p>
-                </div>
+                </LineField>
               )}
 
-              {/* Remember me */}
-              <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+              {/* Remember me — minimal toggle, on a line of its own. */}
+              <label className="flex items-center gap-3 cursor-pointer select-none group">
                 <span className="relative">
                   <input
                     type="checkbox"
@@ -343,13 +386,11 @@ function LoginPageInner() {
                     onChange={(e) => setRemember(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <span
-                    className="w-4 h-4 rounded border border-line bg-card transition-all peer-checked:bg-brand-600 peer-checked:border-brand-600 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/30 flex items-center justify-center"
-                  >
-                    {remember && <Check size={11} className="text-white" strokeWidth={3} />}
+                  <span className="w-4 h-4 border border-white/40 bg-transparent transition-all peer-checked:bg-white peer-checked:border-white flex items-center justify-center">
+                    {remember && <Check size={11} className="text-slate-900" strokeWidth={3} />}
                   </span>
                 </span>
-                <span className="text-xs text-muted group-hover:text-fg transition-colors">
+                <span className="text-xs text-white/60 group-hover:text-white/85 transition-colors">
                   Remember me on this device
                 </span>
               </label>
@@ -357,9 +398,14 @@ function LoginPageInner() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 disabled:opacity-60 text-white font-medium py-3 px-4 rounded-lg transition-all shadow-md shadow-brand-600/25 text-sm"
+                className="group w-full inline-flex items-center justify-center gap-3 bg-white text-slate-900 hover:bg-slate-100 active:bg-slate-200 disabled:opacity-60 font-bold tracking-tight py-3.5 text-base transition-colors"
               >
-                {loading ? "Signing in…" : "Sign in"}
+                {loading ? "Signing in…" : (
+                  <>
+                    Sign in
+                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
             </form>
           </section>
@@ -380,11 +426,39 @@ function Bullet({
   children: React.ReactNode;
 }) {
   return (
-    <li className="flex items-start gap-2 text-xs text-muted leading-snug">
-      <span className="w-5 h-5 rounded-md bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 mt-0.5">
-        <Icon size={11} />
+    <li className="flex items-start gap-3 text-sm text-slate-300 leading-snug">
+      <span className="w-5 h-5 inline-flex items-center justify-center shrink-0 mt-0.5 text-sky-300">
+        <Icon size={13} strokeWidth={1.5} />
       </span>
       <span>{children}</span>
     </li>
+  );
+}
+
+/** Editorial "line" field — label above (uppercase tracked, light
+ *  on the dark stage), input as a single underline. Replaces the
+ *  card-style bordered inputs the form used to render with. */
+function LineField({
+  label,
+  hint,
+  aside,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  aside?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="flex items-baseline justify-between mb-1">
+        <span className="text-[10px] uppercase tracking-[0.32em] font-semibold text-white/60">
+          {label}
+        </span>
+        {aside}
+      </span>
+      {children}
+      {hint && <span className="block text-[11px] text-white/45 mt-1.5">{hint}</span>}
+    </label>
   );
 }
