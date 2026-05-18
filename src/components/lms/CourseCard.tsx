@@ -1,29 +1,38 @@
 "use client";
 
 /**
- * CourseCard — catalog tile, matched EXACTLY to the legacy BHN
- * course-card reference plus a cover-art banner on top.
+ * CourseCard — catalog tile, native to the platform design system.
  *
- *   ┌────────────────────────────────────────────────┐
- *   │  [   COVER ART — full-width thumbnail   ]      │  ← inherits
- *   ├────────────────────────────────┬───────────────┤   admin-stamped
- *   │ ACRTM101                ♡     │ ◆ Credit 1000 │   overlay
- *   │ Autologous CAR T               │ ◆ In-Person   │
- *   │ Manufacturing Part 1           │ ◆ Seneca      │
- *   │ (dark slate bg, white text)    │               │
- *   │                                │ ─────────     │   (white bg,
- *   │ This course introduces …       │ Enroll by:    │    slate text)
- *   │ […]                            │ June 30, 2025 │
- *   │                                │               │
- *   │                                │ Duration:     │
- *   │ [ Request to Enroll → ]        │ July 23, 2025 │
- *   │                                │ Aug. 15, 2025 │
- *   └────────────────────────────────┴───────────────┘
+ * Theme-aware throughout — no hardcoded slate / white surfaces.
+ * Every colour comes from a theme token so the card adapts to
+ * Light / Dark / Aurora / Sakura / Atom Punk / Greenwood /
+ * Icecream / Hitech etc.
  *
- * Theme-independent — the card has its own dark+white identity
- * (collectible aesthetic, like trading cards) regardless of the
- * platform's active theme. Same look across Light / Dark /
- * Aurora / Sakura / etc.
+ *   ┌───────────────────────────────────────────────┐
+ *   │ [ COVER ART — slim banner ]                   │
+ *   ├──────────────────────────┬────────────────────┤
+ *   │ CODE                 ♡   │ ◆ Credit 500       │  bg-card-solid (LEFT)
+ *   │ Course title…            │ ◆ Hybrid           │  vs
+ *   │ Short blurb under the    │ ◆ OBIO             │  bg-elevated (RIGHT)
+ *   │ title, 3-line clamp…     │ ──────────         │  (theme contrast)
+ *   │                          │ Enroll by:         │
+ *   │                          │ Jun 30, 2025       │
+ *   │                          │ Duration:          │
+ *   │                          │ Jul 23 / Aug 15    │
+ *   ├──────────────────────────┴────────────────────┤
+ *   │      [ Request to Enroll → ] slim brand bar   │  CTA bar
+ *   └───────────────────────────────────────────────┘
+ *
+ * Compact spacing — slimmer padding throughout vs. the previous
+ * design (h-20 cover instead of h-28, p-3.5 instead of p-5 etc.)
+ * so the catalog grid packs more cards into the same viewport.
+ *
+ * Centered, MUTED pills (50-tier bg + 800-text + ring-200) instead
+ * of bright filled chips — much easier on the eye and theme-safe
+ * (every dark theme overrides the 800 step in globals.css).
+ *
+ * Heart icon is an interactive favourite toggle — see toggleFavorite
+ * below.
  */
 
 import Link from "next/link";
@@ -41,7 +50,6 @@ interface CourseCardProps {
     thumbnail: string | null;
     thumbnailOverlay?: unknown;
     status: string;
-    courseType: string;
     duration: number | null;
     creditCost: number;
     delivery: string | null;
@@ -50,17 +58,15 @@ interface CourseCardProps {
     enrollByDate: string | null;
     cohortStartDate: string | null;
     cohortEndDate: string | null;
-    /** Whether the SIGNED-IN user has hearted this course. */
     isFavorite: boolean;
-    _count: { enrollments: number; modules: number };
   };
   role: string;
 }
 
-function fmtLongDate(iso: string | null): string {
+function fmtShortDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString(undefined, {
-    month: "long",
+    month: "short",
     day: "numeric",
     year: "numeric",
   });
@@ -79,22 +85,15 @@ export function CourseCard({ course }: CourseCardProps) {
   const isFree = course.creditCost === 0;
   const hasCohort = !!(course.cohortStartDate && course.cohortEndDate);
   const ctaLabel = course.requiresApproval ? "Request to Enroll" : "Enroll";
-
-  // Live thumbnails get the optional admin-stamped overlay. Archived
-  // cards skip it — the grayscale treatment already does the visual
-  // "not active" work and we don't want two filters competing.
   const overlay = isArchived ? null : parseOverlay(course.thumbnailOverlay);
 
-  // Optimistic favorite state — initialised from the server-passed
-  // prop. The heart-icon button below flips this immediately on
-  // click, then fires the API; on error we revert.
+  // Optimistic favourite state — initialised from the server-passed
+  // prop. Heart icon below flips this immediately on click, then
+  // calls the API; on error we revert.
   const [isFavorite, setIsFavorite] = useState(course.isFavorite);
   const [pending, setPending] = useState(false);
 
   async function toggleFavorite(e: React.MouseEvent<HTMLButtonElement>) {
-    // The whole card is a Link → block both nav (preventDefault) and
-    // event bubbling (stopPropagation) so the heart click stays in
-    // place instead of opening the course.
     e.preventDefault();
     e.stopPropagation();
     if (pending) return;
@@ -102,15 +101,10 @@ export function CourseCard({ course }: CourseCardProps) {
     setIsFavorite(next);
     setPending(true);
     try {
-      const res = await fetch(`/api/courses/${course.id}/favorite`, {
-        method: "POST",
-      });
+      const res = await fetch(`/api/courses/${course.id}/favorite`, { method: "POST" });
       if (!res.ok) {
-        // Revert on failure
         setIsFavorite(!next);
       } else {
-        // Trust server state in case the user's existing-state went
-        // stale (e.g. another tab toggled it).
         const j = (await res.json().catch(() => null)) as { favorited?: boolean } | null;
         if (j && typeof j.favorited === "boolean") setIsFavorite(j.favorited);
       }
@@ -125,19 +119,17 @@ export function CourseCard({ course }: CourseCardProps) {
     <Link
       href={`/courses/${course.id}`}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl transition-all h-full",
-        // Theme-independent dark-slate identity — same look on every theme
-        "bg-slate-900 text-white border border-slate-800",
-        "shadow-[0_1px_2px_rgba(15,23,42,0.08),0_8px_30px_rgba(15,23,42,0.12)]",
-        "hover:shadow-[0_4px_8px_rgba(15,23,42,0.12),0_20px_50px_rgba(15,23,42,0.2)]",
+        "group relative flex flex-col overflow-hidden rounded-xl transition-all h-full",
+        "bg-card-solid border border-line",
+        "shadow-sm hover:shadow-md hover:border-brand-300",
         "hover:-translate-y-0.5",
         isArchived && "opacity-75 hover:opacity-100",
       )}
     >
-      {/* ── COVER ART — full-width banner at the top ──────────── */}
+      {/* ── COVER ART — slim banner at the top ────────────────── */}
       <div
         className={cn(
-          "relative h-24 sm:h-28 overflow-hidden shrink-0",
+          "relative h-20 sm:h-24 overflow-hidden shrink-0",
           isArchived
             ? "bg-gradient-to-br from-slate-400 to-slate-600"
             : "bg-gradient-to-br from-brand-500 to-indigo-600",
@@ -155,28 +147,24 @@ export function CourseCard({ course }: CourseCardProps) {
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <BookOpen size={32} strokeWidth={1.5} className="text-white/55" />
+            <BookOpen size={26} strokeWidth={1.5} className="text-white/55" />
           </div>
         )}
         {overlay && (
           <div className="absolute inset-0" style={overlayStyle(overlay)} />
         )}
         {isArchived && (
-          <span className="absolute top-2 right-2 inline-flex items-center text-[10px] uppercase tracking-[0.18em] font-bold px-2 py-0.5 rounded-full bg-slate-900/85 text-white ring-1 ring-inset ring-white/20">
+          <span className="absolute top-2 right-2 inline-flex items-center text-[9px] uppercase tracking-[0.18em] font-bold px-1.5 py-0.5 rounded-full bg-slate-900/85 text-white ring-1 ring-inset ring-white/20">
             Not active
           </span>
         )}
       </div>
 
-      {/* ── BODY — 2-column dark/white split ──────────────────── */}
-      <div className="grid grid-cols-[1fr_150px] sm:grid-cols-[1fr_170px] flex-1">
-        {/* LEFT — dark slate content area (inherits bg-slate-900) */}
-        <div className="p-5 sm:p-6 flex flex-col min-w-0 relative">
-          {/* Heart toggle — top-right of LEFT column. Tap to add /
-              remove from favorites. Stops propagation + prevents
-              default so the surrounding Link doesn't navigate to
-              the course detail page. Filled red when favorited,
-              outline when not; scales gently on hover. */}
+      {/* ── BODY — 2-column, theme-aware contrast ─────────────── */}
+      <div className="grid grid-cols-[1fr_128px] sm:grid-cols-[1fr_142px] flex-1">
+        {/* LEFT — content side, bg-card-solid (lighter) */}
+        <div className="p-3.5 sm:p-4 flex flex-col min-w-0 relative">
+          {/* Heart favourite toggle — top-right of LEFT column */}
           <button
             type="button"
             onClick={toggleFavorite}
@@ -184,93 +172,94 @@ export function CourseCard({ course }: CourseCardProps) {
             aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
             aria-pressed={isFavorite}
             className={cn(
-              "absolute top-3.5 right-3.5 p-1.5 rounded-full",
-              "transition-all hover:bg-white/10 active:bg-white/15",
+              "absolute top-3 right-3 p-1 rounded-full",
+              "transition-all hover:bg-elevated active:bg-elevated",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70",
               pending && "opacity-60 cursor-wait",
             )}
           >
             <Heart
-              size={18}
+              size={14}
               strokeWidth={1.8}
               className={cn(
                 "transition-all",
                 isFavorite
                   ? "text-rose-500 fill-rose-500 scale-100 group-hover:scale-110"
-                  : "text-rose-300/80 fill-transparent group-hover:text-rose-400 group-hover:scale-110",
+                  : "text-fg-subtle fill-transparent group-hover:text-rose-400 group-hover:scale-110",
               )}
             />
           </button>
 
-          {/* Code (e.g. ACRTM101) */}
+          {/* Code eyebrow */}
           {course.code && (
-            <p className="text-[15px] font-semibold leading-snug text-white pr-7">
+            <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted font-mono pr-6">
               {course.code}
             </p>
           )}
 
           {/* Title */}
-          <h3 className="text-[17px] sm:text-[18px] font-bold leading-tight text-white mt-1 line-clamp-3 pr-7">
+          <h3 className="text-[14px] sm:text-[15px] font-bold leading-snug text-fg group-hover:text-brand-700 transition-colors mt-1 line-clamp-2 pr-6">
             {course.title}
           </h3>
 
-          {/* Description */}
+          {/* Blurb — short description under the title */}
           {course.description && (
-            <p className="mt-4 text-[12.5px] leading-relaxed text-slate-300 line-clamp-5 flex-1">
+            <p className="mt-1.5 text-[11.5px] leading-snug text-fg-muted line-clamp-3 flex-1">
               {course.description}
             </p>
           )}
         </div>
 
-        {/* RIGHT — WHITE sidebar, slate text */}
-        <aside className="p-3 sm:p-4 flex flex-col gap-2 bg-white text-slate-900">
-          {/* Chip stack — capsule shape (rounded-full), solid fills,
-              left-aligned white text. Matches the reference's pill
-              palette exactly. */}
-          <Chip tone="credit" label={isFree ? "Free" : `Credit ${course.creditCost.toLocaleString()}`} />
-          {course.delivery && <Chip tone={deliveryTone(course.delivery)} label={course.delivery} />}
+        {/* RIGHT — metadata sidebar, bg-elevated (darker tint) */}
+        <aside className="p-2.5 sm:p-3 flex flex-col gap-1 bg-elevated border-l border-line">
+          <Chip
+            tone="credit"
+            label={isFree ? "Free" : `Credit ${course.creditCost.toLocaleString()}`}
+          />
+          {course.delivery && (
+            <Chip tone={deliveryTone(course.delivery)} label={course.delivery} />
+          )}
           {course.provider && <Chip tone="provider" label={course.provider} />}
 
-          {/* Enroll-by — separated by a thin slate divider */}
+          {/* Enroll by */}
           {course.enrollByDate && (
-            <div className="mt-4 pt-3 border-t border-slate-200">
-              <p className="text-[11.5px] font-semibold text-slate-700 leading-snug">
+            <div className="mt-2 pt-2 border-t border-line">
+              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-fg-muted leading-snug">
                 Enroll by:
               </p>
-              <p className="text-[12px] font-semibold text-slate-900 leading-snug mt-0.5">
-                {fmtLongDate(course.enrollByDate)}
+              <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
+                {fmtShortDate(course.enrollByDate)}
               </p>
             </div>
           )}
 
-          {/* Duration — cohort dates stack on two lines (matches
-              the reference image's "Jul 23, 2025 / Aug 15, 2025"),
-              fall back to minutes for self-serve modes. */}
+          {/* Duration — cohort dates stack on two lines for In-Person /
+              Hybrid; single-line minutes for self-serve. */}
           {(hasCohort || course.cohortStartDate || course.duration) && (
             <div
               className={cn(
-                "mt-auto pt-3",
-                !course.enrollByDate && "border-t border-slate-200",
+                "mt-auto pt-2",
+                !course.enrollByDate && "border-t border-line",
               )}
             >
-              <p className="text-[11.5px] font-semibold text-slate-700 leading-snug">
+              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-fg-muted leading-snug">
                 Duration:
               </p>
               {hasCohort ? (
                 <>
-                  <p className="text-[12px] font-semibold text-slate-900 leading-snug mt-0.5">
-                    {fmtLongDate(course.cohortStartDate)}
+                  <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
+                    {fmtShortDate(course.cohortStartDate)}
                   </p>
-                  <p className="text-[12px] font-semibold text-slate-900 leading-snug">
-                    {fmtLongDate(course.cohortEndDate)}
+                  <p className="text-[10.5px] font-semibold text-fg leading-snug">
+                    {fmtShortDate(course.cohortEndDate)}
                   </p>
                 </>
               ) : course.cohortStartDate ? (
-                <p className="text-[12px] font-semibold text-slate-900 leading-snug mt-0.5">
-                  {fmtLongDate(course.cohortStartDate)}
+                <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
+                  {fmtShortDate(course.cohortStartDate)}
                 </p>
               ) : (
-                <p className="text-[12px] font-semibold text-slate-900 leading-snug mt-0.5">
+                <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
                   {fmtMinutes(course.duration)}
                 </p>
               )}
@@ -279,33 +268,27 @@ export function CourseCard({ course }: CourseCardProps) {
         </aside>
       </div>
 
-      {/* ── CTA BAR — full-width bottom band, spans across both
-            content + sidebar columns. Slate-800 surface so it
-            visually separates from the body above without breaking
-            the dark identity. */}
-      <div className="bg-slate-800 border-t border-slate-700 p-3 sm:p-3.5">
+      {/* ── CTA BAR — slim, full-width, theme-aware brand fill ── */}
+      <div className="border-t border-line bg-card-solid p-2 sm:p-2.5">
         <span
           className={cn(
-            "w-full inline-flex items-center justify-center gap-1.5",
-            "text-[12px] font-semibold",
-            "px-4 py-2.5 rounded-md transition-colors",
-            "bg-orange-500 text-white group-hover:bg-orange-600",
+            "w-full inline-flex items-center justify-center gap-1",
+            "text-[10.5px] font-bold uppercase tracking-[0.1em]",
+            "px-3 py-1.5 rounded-md transition-colors",
+            "bg-brand-600 text-white group-hover:bg-brand-700",
           )}
         >
           {ctaLabel}
-          <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+          <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
         </span>
       </div>
     </Link>
   );
 }
 
-/** One sidebar chip — capsule-shaped (rounded-full) solid pill
- *  with white text, left-aligned. Matches the reference card's
- *  pill vocabulary exactly: bright teal Credit / Free, vivid
- *  blues for delivery modes (mid-blue for In-Person, indigo for
- *  Hybrid, light cyan for On-Demand, sky for Online), dark
- *  maroon for Provider. */
+/** One sidebar chip — centered text, muted 50-tier bg + ring,
+ *  theme-aware via the standard status-pill family (every dark
+ *  theme overrides the 800 step in globals.css for legibility). */
 function Chip({
   tone, label,
 }: {
@@ -316,8 +299,9 @@ function Chip({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-start text-[12.5px] font-semibold tracking-tight",
-        "px-3.5 py-1.5 rounded-full w-full truncate leading-tight",
+        "inline-flex items-center justify-center text-center",
+        "text-[10.5px] font-semibold leading-tight",
+        "px-2.5 py-1 rounded-full w-full truncate ring-1 ring-inset",
         cls,
       )}
     >
@@ -328,26 +312,19 @@ function Chip({
 
 type ChipTone = "credit" | "in-person" | "online" | "hybrid" | "on-demand" | "provider" | "default";
 
-/** Reference image colour read (best-effort from compressed JPG):
- *    Credit/Free  — bright teal, ~teal-500
- *    In-Person    — vivid mid-blue, ~blue-700
- *    Online       — sky blue (medium light), ~sky-500
- *    Hybrid       — slightly purpler than In-Person, ~indigo-600
- *    On-Demand    — clearly LIGHTER + cooler than In-Person,
- *                   ~cyan-400
- *    Provider     — dark maroon, ~red-900
- *  White text on every chip. */
+/** Muted theme-safe palette — light bg / mid-dark text / ring
+ *  outline. Same vocabulary the platform's existing status pills
+ *  use (admin queues, equip statuses, etc.). */
 const CHIP_CLASSES: Record<ChipTone, string> = {
-  credit:      "bg-teal-500 text-white",
-  "in-person": "bg-blue-700 text-white",
-  online:      "bg-sky-500 text-white",
-  hybrid:      "bg-indigo-600 text-white",
-  "on-demand": "bg-cyan-400 text-white",
-  provider:    "bg-red-900 text-white",
-  default:     "bg-slate-600 text-white",
+  credit:      "bg-emerald-50 text-emerald-800 ring-emerald-200",
+  "in-person": "bg-blue-50 text-blue-800 ring-blue-200",
+  online:      "bg-sky-50 text-sky-800 ring-sky-200",
+  hybrid:      "bg-indigo-50 text-indigo-800 ring-indigo-200",
+  "on-demand": "bg-cyan-50 text-cyan-800 ring-cyan-200",
+  provider:    "bg-rose-50 text-rose-800 ring-rose-200",
+  default:     "bg-elevated text-fg-muted ring-line",
 };
 
-/** Map delivery-mode text to a chip tone. */
 function deliveryTone(delivery: string): ChipTone {
   const d = delivery.toLowerCase();
   if (d.includes("in-person") || d.includes("in person")) return "in-person";

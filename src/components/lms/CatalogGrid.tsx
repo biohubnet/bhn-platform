@@ -18,7 +18,6 @@ export interface CatalogCourse {
   /** Optional colour / gradient wash stamped from /admin/course-thumbnails. */
   thumbnailOverlay?: unknown;
   status: string;
-  courseType: string;
   duration: number | null;
   creditCost: number;
   createdAt: string;
@@ -38,8 +37,6 @@ export interface CatalogCourse {
    *  the filled-vs-outline state of the heart icon on the card. */
   isFavorite: boolean;
   instructor: { name: string | null } | null;
-  _count: { enrollments: number; modules: number };
-  scormPackage: { version: string } | null;
 }
 
 /**

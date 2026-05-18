@@ -77,8 +77,6 @@ export default async function CoursesPage({
     },
     include: {
       instructor: { select: { name: true } },
-      _count: { select: { enrollments: true, modules: true } },
-      scormPackage: { select: { version: true } },
     },
     // Admin-controlled order first, recency as tiebreaker. Every
     // pre-displayOrder course sits at 0 and falls back to the
@@ -96,7 +94,6 @@ export default async function CoursesPage({
     thumbnail: c.thumbnail,
     thumbnailOverlay: c.thumbnailOverlay,
     status: c.status,
-    courseType: c.courseType,
     duration: c.duration,
     creditCost: c.creditCost,
     createdAt: c.createdAt.toISOString(),
@@ -110,8 +107,6 @@ export default async function CoursesPage({
     cohortEndDate: c.cohortEndDate?.toISOString() ?? null,
     isFavorite: favoriteIds.has(c.id),
     instructor: c.instructor,
-    _count: c._count,
-    scormPackage: c.scormPackage,
   }));
 
   // Total count of favorites — used by the favorites-filter chip
