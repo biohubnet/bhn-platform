@@ -12,7 +12,6 @@ import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
 import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanner";
 import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
 import { LogoMark } from "@/components/ui/Logo";
-import { StylizedMark } from "@/components/branding/StylizedMark";
 import { CreditUsageScoreboard } from "@/components/dashboards/CreditUsageScoreboard";
 import { RewardsDistanceCard } from "@/components/dashboards/RewardsDistanceCard";
 import { LatestNewsCard } from "@/components/dashboards/LatestNewsCard";
@@ -365,59 +364,177 @@ export default async function DashboardPage() {
             its inner absolute children sit free in its bounding
             box. Same pattern as DSPageHeader's decoration wrapper. */}
         <div aria-hidden className="absolute inset-0 pointer-events-none">
-          {/* ── ATMOSPHERIC STAGE — same layered recipe DSPageHeader
-                uses, so this bespoke hero feels native to every
-                other page header on the platform. Built from the
-                /login spotlight stage but theme-aware:
-                  (1) deep radial dome from hero-mesh-1
-                  (2) theme-tinted aurora wash + spotlight cone
-                  (3) visible reeded / fluted glass ribs
-                  (4) StylizedMark backdrop peeking from bottom-right
-                  (5) edge vignette + SVG noise grain
-                NO floating glyphs — strictly static atmospheric
-                layers. */}
+          {/* ── REEDED-GLASS HOTHOUSE — a complete redesign per the
+                user's reference image. The hero is no longer a
+                flat mesh-gradient stage; it's a piece of designed
+                art seen THROUGH a sheet of reeded / fluted glass.
 
-          {/* (1) Deep radial dome from theme hero-mesh-1 */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "radial-gradient(ellipse 80% 110% at 50% -10%, color-mix(in srgb, var(--hero-mesh-1, #56bdf8) 60%, transparent) 0%, transparent 60%)",
-            }}
-          />
+                Composition, back-to-front (z-order):
+                  1. Theme-tinted base wash + soft radial spotlight
+                  2. ART LAYER — five stylised palm-frond bodies
+                     (elongated ellipses in theme-mesh colours)
+                     painted across the canvas in a 2:1 viewBox,
+                     soft-focused with feGaussianBlur, then sliced
+                     into vertical bands by an feDisplacementMap
+                     filter (horizontally-streaked feTurbulence at
+                     `baseFrequency 3 0.005`, displacement scale
+                     60 — that's what gives the real refraction
+                     where each rib of the glass cylinder-lenses
+                     the art behind it)
+                  3. Reeded ridge highlights — primary 9 px stripe
+                     pattern (light + shadow per rib, mix-blend
+                     overlay) + fine 3 px micro-texture between
+                     grooves (mix-blend soft-light)
+                  4. Vertical frost wash for the cool haze
+                  5. Edge vignette — gentle 28 % darkening at corners
+                  6. SVG noise grain — keeps gradients from banding,
+                     editorial print feel
 
-          {/* (2a) Aurora wash — two soft theme-tinted glows */}
+                Theme-aware via the existing `--hero-mesh-{1..4}`
+                tokens, so the art behind the glass paints in each
+                theme's palette (greens on Greenwood, pinks on
+                Sakura, cyans on Light / Hitech, indigos on Aurora
+                / Atom Punk). No floating glyphs — strictly static. */}
+
+          {/* (1) Base wash — theme-tinted vertical gradient + soft
+                  top-centre spotlight cone */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(circle 720px at 50% 22%, color-mix(in srgb, var(--hero-mesh-1, #56bdf8) 35%, transparent) 0%, transparent 60%), radial-gradient(circle 560px at 50% 30%, color-mix(in srgb, var(--hero-mesh-3, #4ade80) 28%, transparent) 0%, transparent 65%)",
+                "radial-gradient(ellipse 40% 35% at 50% 18%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 45%, transparent 75%), linear-gradient(180deg, color-mix(in srgb, var(--hero-mesh-1, #56bdf8) 22%, var(--hero-bg, #0d3a51)) 0%, color-mix(in srgb, var(--hero-mesh-3, #4ade80) 14%, var(--hero-bg, #0d3a51)) 100%)",
             }}
           />
 
-          {/* (2b) Spotlight cone — warm-white key light */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 36% 32% at 50% 18%, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.05) 50%, transparent 75%)",
-            }}
-          />
+          {/* (2) ART + DISPLACEMENT — the heart of the redesign.
+                  All the leaf-frond shapes live inside a single
+                  <svg> so we can apply the displacement filter
+                  to the whole group, slicing them vertically
+                  like real reeded glass refraction. */}
+          <svg
+            className="absolute inset-0 w-full h-full"
+            viewBox="0 0 1920 700"
+            preserveAspectRatio="xMidYMid slice"
+          >
+            <defs>
+              {/* Soft-focus blur on the leaf bodies — gives them
+                  the dreamy out-of-focus quality you get when
+                  shooting through real glass. */}
+              <filter id="hero-art-blur" x="-10%" y="-10%" width="120%" height="120%">
+                <feGaussianBlur stdDeviation="9" />
+              </filter>
+              {/* Reeded-glass displacement — `baseFrequency 3 0.005`
+                  is heavily biased horizontal so the turbulence
+                  noise oscillates rapidly across X but stays nearly
+                  constant down Y (producing vertical streaks of
+                  displacement data). feDisplacementMap then offsets
+                  each pixel of the art by a different amount
+                  horizontally depending on which vertical band it
+                  sits in — exactly how a sheet of fluted glass
+                  acts as a strip of cylindrical lenses, refracting
+                  what's behind into vertical slices. */}
+              <filter id="hero-reeded-displace" x="-5%" y="-5%" width="110%" height="110%">
+                <feTurbulence
+                  type="fractalNoise"
+                  baseFrequency="3 0.005"
+                  numOctaves="1"
+                  seed="9"
+                  stitchTiles="stitch"
+                  result="turbulence"
+                />
+                <feDisplacementMap
+                  in="SourceGraphic"
+                  in2="turbulence"
+                  scale="60"
+                  xChannelSelector="R"
+                  yChannelSelector="G"
+                />
+              </filter>
+            </defs>
 
-          {/* (3) REEDED GLASS RIBS — the "fractal glass" effect with
-              visible vertical-line texture. Primary 10 px pattern
-              with light highlight + dark shadow per rib, secondary
-              3 px micro-texture between grooves. */}
+            {/* Art group — feed soft-blurred fronds into the
+                displacement filter so the glass-refraction effect
+                slices the blurred shapes (not crisp ones). */}
+            <g filter="url(#hero-reeded-displace)">
+              <g filter="url(#hero-art-blur)" opacity="0.85">
+                {/* Big background colour blobs — theme-tinted
+                    radial fills add the soft atmospheric depth
+                    behind the leaves. */}
+                <ellipse cx="350" cy="200" rx="500" ry="320" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.45" />
+                <ellipse cx="1500" cy="420" rx="560" ry="340" fill="var(--hero-mesh-3, #4ade80)" opacity="0.4" />
+                <ellipse cx="1750" cy="160" rx="320" ry="220" fill="var(--hero-mesh-4, #facc15)" opacity="0.28" />
+                <ellipse cx="180" cy="560" rx="320" ry="220" fill="var(--hero-mesh-2, #f472b6)" opacity="0.22" />
+
+                {/* ── PALM-FROND ARRAY — five stylised fronds
+                      painted across the canvas at different angles,
+                      sizes, and depth opacities so the composition
+                      has foreground / mid-ground / background
+                      layering when sliced by the glass. */}
+
+                {/* Frond 1 — large, mid-left, tilted slightly left */}
+                <g transform="translate(450 380) rotate(-15)">
+                  <ellipse cx="0" cy="0" rx="55" ry="260" fill="var(--hero-mesh-3, #4ade80)" opacity="0.65" />
+                  <ellipse cx="0" cy="-90" rx="40" ry="200" transform="rotate(-22)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.55" />
+                  <ellipse cx="0" cy="-90" rx="40" ry="200" transform="rotate(22)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.55" />
+                  <ellipse cx="0" cy="-200" rx="28" ry="150" transform="rotate(-42)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.45" />
+                  <ellipse cx="0" cy="-200" rx="28" ry="150" transform="rotate(42)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.45" />
+                </g>
+
+                {/* Frond 2 — medium, far-right top, tilted right */}
+                <g transform="translate(1480 240) rotate(22)">
+                  <ellipse cx="0" cy="0" rx="42" ry="200" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.55" />
+                  <ellipse cx="0" cy="-70" rx="32" ry="160" transform="rotate(-25)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.5" />
+                  <ellipse cx="0" cy="-70" rx="32" ry="160" transform="rotate(25)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.5" />
+                  <ellipse cx="0" cy="-170" rx="22" ry="115" transform="rotate(-44)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.4" />
+                  <ellipse cx="0" cy="-170" rx="22" ry="115" transform="rotate(44)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.4" />
+                </g>
+
+                {/* Frond 3 — smaller, lower-right, gentle right tilt */}
+                <g transform="translate(1180 540) rotate(8)">
+                  <ellipse cx="0" cy="0" rx="38" ry="180" fill="var(--hero-mesh-3, #4ade80)" opacity="0.5" />
+                  <ellipse cx="0" cy="-60" rx="28" ry="140" transform="rotate(-22)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.45" />
+                  <ellipse cx="0" cy="-60" rx="28" ry="140" transform="rotate(22)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.45" />
+                </g>
+
+                {/* Frond 4 — far-left edge accent */}
+                <g transform="translate(60 320) rotate(-32)">
+                  <ellipse cx="0" cy="0" rx="32" ry="180" fill="var(--hero-mesh-3, #4ade80)" opacity="0.4" />
+                  <ellipse cx="0" cy="-60" rx="22" ry="120" transform="rotate(-28)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.35" />
+                  <ellipse cx="0" cy="-60" rx="22" ry="120" transform="rotate(28)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.35" />
+                </g>
+
+                {/* Frond 5 — backdrop frond, mid-back, blurry */}
+                <g transform="translate(900 280) rotate(-3)">
+                  <ellipse cx="0" cy="0" rx="48" ry="240" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.32" />
+                  <ellipse cx="0" cy="-80" rx="36" ry="180" transform="rotate(-20)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.28" />
+                  <ellipse cx="0" cy="-80" rx="36" ry="180" transform="rotate(20)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.28" />
+                </g>
+
+                {/* Warm accent — subtle orange-rust glow in lower
+                    right (matches the reference image's warm note) */}
+                <ellipse cx="1620" cy="600" rx="120" ry="80" fill="var(--hero-mesh-4, #facc15)" opacity="0.3" />
+              </g>
+            </g>
+          </svg>
+
+          {/* (3) REEDED RIDGE HIGHLIGHTS — primary 9 px stripe pattern
+                  with a light edge + a dark groove per rib. Sits ON
+                  TOP of the displaced art, providing the physical
+                  3D rib texture that catches light. mix-blend-overlay
+                  so the ribs interact with the underlying colour
+                  rather than sitting flat. */}
           <div
             className="absolute inset-0"
             style={{
               backgroundImage:
-                "repeating-linear-gradient(90deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.14) 1.5px, transparent 1.5px, transparent 6px, rgba(0,0,0,0.18) 7px, rgba(0,0,0,0.18) 8.5px, transparent 8.5px, transparent 10px)",
+                "repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0px, rgba(255,255,255,0.16) 1.5px, transparent 1.5px, transparent 5px, rgba(0,0,0,0.18) 6px, rgba(0,0,0,0.18) 7.5px, transparent 7.5px, transparent 9px)",
               mixBlendMode: "overlay",
             }}
           />
+          {/* Finer 3 px micro-texture between grooves — the polished
+              quality of real fluted glass between the main ribs. */}
           <div
-            className="absolute inset-0 opacity-60"
+            className="absolute inset-0 opacity-55"
             style={{
               backgroundImage:
                 "repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 3px)",
@@ -425,28 +542,29 @@ export default async function DashboardPage() {
             }}
           />
 
-          {/* (4) StylizedMark backdrop — peripheral corner ornament */}
-          <div
-            className="hidden lg:block absolute -bottom-32 -right-32 opacity-[0.25] mix-blend-screen"
-            style={{
-              filter:
-                "drop-shadow(0 0 36px rgba(56,189,248,0.32)) drop-shadow(0 0 14px rgba(63,168,106,0.22))",
-            }}
-          >
-            <StylizedMark size={360} />
-          </div>
-
-          {/* (5a) Edge vignette */}
+          {/* (4) Vertical frost wash — the cool misty haze fluted
+                  glass has. Slight darkening top + bottom, lighter
+                  middle, so the eye reads the centre as the "warm
+                  pool" of the glass surface. */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 110% 130% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.32) 100%)",
+                "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 100%)",
             }}
           />
 
-          {/* (5b) SVG noise grain */}
-          <svg className="absolute inset-0 w-full h-full opacity-[0.14] mix-blend-overlay">
+          {/* (5) Edge vignette */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 115% 130% at 50% 50%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.28) 100%)",
+            }}
+          />
+
+          {/* (6) SVG noise grain — editorial print texture */}
+          <svg className="absolute inset-0 w-full h-full opacity-[0.12] mix-blend-overlay">
             <filter id="dashboard-hero-noise">
               <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="5" />
               <feColorMatrix

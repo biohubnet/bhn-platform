@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18o";
+export const TOUR_VERSION = "2026.05.18p";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -578,6 +578,14 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     cta: { label: "Open /courses", href: "/courses" },
     since: "2026.05.18o",
+  },
+  {
+    id: "dash-hero-reeded-hothouse",
+    title: "Trainee hero — full redesign, reeded-glass hothouse",
+    body: "The dashboard head banner has been completely redesigned. The hero is now a piece of designed art — five stylised palm fronds painted in your theme's mesh colours, atmospherically blurred, then sliced into vertical bands by a real SVG feDisplacementMap filter (the same way a sheet of reeded / fluted glass works as a strip of cylindrical lenses). Vertical rib highlights + a finer micro-texture between grooves give the glass its 3D ridge quality; a frost wash + edge vignette + noise grain finish the editorial print feel. Every colour is a theme-mesh token so the art adapts per theme.",
+    placement: "center",
+    cta: { label: "Open /dashboard", href: "/dashboard" },
+    since: "2026.05.18p",
   },
   {
     id: "aurora-theme",
