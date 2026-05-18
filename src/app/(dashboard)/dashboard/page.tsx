@@ -364,75 +364,47 @@ export default async function DashboardPage() {
             its inner absolute children sit free in its bounding
             box. Same pattern as DSPageHeader's decoration wrapper. */}
         <div aria-hidden className="absolute inset-0 pointer-events-none">
-          {/* ── REEDED-GLASS HOTHOUSE — a complete redesign per the
-                user's reference image. The hero is no longer a
-                flat mesh-gradient stage; it's a piece of designed
-                art seen THROUGH a sheet of reeded / fluted glass.
+          {/* ── REEDED-GLASS HOTHOUSE — MATCHED TO THE REFERENCE
+                IMAGE. The previous build was too dense (ribs too
+                close together, palette too dark, theme-tinted
+                everywhere). This rebuild commits to a fixed light
+                / sage-green / warm-rust palette regardless of
+                theme — the hero is a SIGNATURE LOOK on the trainee
+                dashboard, not a theme-adaptive surface.
 
-                Composition, back-to-front (z-order):
-                  1. Theme-tinted base wash + soft radial spotlight
-                  2. ART LAYER — five stylised palm-frond bodies
-                     (elongated ellipses in theme-mesh colours)
-                     painted across the canvas in a 2:1 viewBox,
-                     soft-focused with feGaussianBlur, then sliced
-                     into vertical bands by an feDisplacementMap
-                     filter (horizontally-streaked feTurbulence at
-                     `baseFrequency 3 0.005`, displacement scale
-                     60 — that's what gives the real refraction
-                     where each rib of the glass cylinder-lenses
-                     the art behind it)
-                  3. Reeded ridge highlights — primary 9 px stripe
-                     pattern (light + shadow per rib, mix-blend
-                     overlay) + fine 3 px micro-texture between
-                     grooves (mix-blend soft-light)
-                  4. Vertical frost wash for the cool haze
-                  5. Edge vignette — gentle 28 % darkening at corners
-                  6. SVG noise grain — keeps gradients from banding,
-                     editorial print feel
+                Reference characteristics matched:
+                  • LIGHT cream/sage background (not dark)
+                  • Wide vertical ribs (22 px cycle, not 9 px)
+                  • Sage-green palm fronds visible through the glass
+                  • Warm rust accent in the lower-right corner
+                  • Soft-focus leaves through Gaussian blur
+                  • Real refraction via feDisplacementMap so each
+                    rib slices the leaves into a different position
+              */}
 
-                Theme-aware via the existing `--hero-mesh-{1..4}`
-                tokens, so the art behind the glass paints in each
-                theme's palette (greens on Greenwood, pinks on
-                Sakura, cyans on Light / Hitech, indigos on Aurora
-                / Atom Punk). No floating glyphs — strictly static. */}
-
-          {/* (1) Base wash — theme-tinted vertical gradient + soft
-                  top-centre spotlight cone */}
+          {/* (1) Base wash — light cream + sage gradient, NOT
+                  theme-tinted. Matches the airy upper-left → mid
+                  sage transition of the reference image. */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 40% 35% at 50% 18%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 45%, transparent 75%), linear-gradient(180deg, color-mix(in srgb, var(--hero-mesh-1, #56bdf8) 22%, var(--hero-bg, #0d3a51)) 0%, color-mix(in srgb, var(--hero-mesh-3, #4ade80) 14%, var(--hero-bg, #0d3a51)) 100%)",
+                "linear-gradient(135deg, #f1f4ec 0%, #d5dfd2 35%, #a8baa7 65%, #8ba590 100%)",
             }}
           />
 
-          {/* (2) ART + DISPLACEMENT — the heart of the redesign.
-                  All the leaf-frond shapes live inside a single
-                  <svg> so we can apply the displacement filter
-                  to the whole group, slicing them vertically
-                  like real reeded glass refraction. */}
+          {/* (2) ART + DISPLACEMENT — sage palm fronds painted
+                  across the canvas, soft-focused, then sliced
+                  vertically by the reeded-glass displacement. */}
           <svg
             className="absolute inset-0 w-full h-full"
             viewBox="0 0 1920 700"
             preserveAspectRatio="xMidYMid slice"
           >
             <defs>
-              {/* Soft-focus blur on the leaf bodies — gives them
-                  the dreamy out-of-focus quality you get when
-                  shooting through real glass. */}
               <filter id="hero-art-blur" x="-10%" y="-10%" width="120%" height="120%">
-                <feGaussianBlur stdDeviation="9" />
+                <feGaussianBlur stdDeviation="14" />
               </filter>
-              {/* Reeded-glass displacement — `baseFrequency 3 0.005`
-                  is heavily biased horizontal so the turbulence
-                  noise oscillates rapidly across X but stays nearly
-                  constant down Y (producing vertical streaks of
-                  displacement data). feDisplacementMap then offsets
-                  each pixel of the art by a different amount
-                  horizontally depending on which vertical band it
-                  sits in — exactly how a sheet of fluted glass
-                  acts as a strip of cylindrical lenses, refracting
-                  what's behind into vertical slices. */}
               <filter id="hero-reeded-displace" x="-5%" y="-5%" width="110%" height="110%">
                 <feTurbulence
                   type="fractalNoise"
@@ -445,126 +417,110 @@ export default async function DashboardPage() {
                 <feDisplacementMap
                   in="SourceGraphic"
                   in2="turbulence"
-                  scale="60"
+                  scale="75"
                   xChannelSelector="R"
                   yChannelSelector="G"
                 />
               </filter>
             </defs>
 
-            {/* Art group — feed soft-blurred fronds into the
-                displacement filter so the glass-refraction effect
-                slices the blurred shapes (not crisp ones). */}
             <g filter="url(#hero-reeded-displace)">
-              <g filter="url(#hero-art-blur)" opacity="0.85">
-                {/* Big background colour blobs — theme-tinted
-                    radial fills add the soft atmospheric depth
-                    behind the leaves. */}
-                <ellipse cx="350" cy="200" rx="500" ry="320" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.45" />
-                <ellipse cx="1500" cy="420" rx="560" ry="340" fill="var(--hero-mesh-3, #4ade80)" opacity="0.4" />
-                <ellipse cx="1750" cy="160" rx="320" ry="220" fill="var(--hero-mesh-4, #facc15)" opacity="0.28" />
-                <ellipse cx="180" cy="560" rx="320" ry="220" fill="var(--hero-mesh-2, #f472b6)" opacity="0.22" />
+              <g filter="url(#hero-art-blur)">
+                {/* Atmospheric depth blobs — sage greens with a
+                    warm rust accent in the lower-right. */}
+                <ellipse cx="1500" cy="380" rx="640" ry="380" fill="#7a9a7a" opacity="0.55" />
+                <ellipse cx="350" cy="250" rx="500" ry="320" fill="#c9d5c1" opacity="0.45" />
+                <ellipse cx="1750" cy="180" rx="380" ry="240" fill="#6d8a6d" opacity="0.4" />
+                <ellipse cx="1620" cy="600" rx="200" ry="120" fill="#c47950" opacity="0.55" />
 
-                {/* ── PALM-FROND ARRAY — five stylised fronds
-                      painted across the canvas at different angles,
-                      sizes, and depth opacities so the composition
-                      has foreground / mid-ground / background
-                      layering when sliced by the glass. */}
+                {/* PALM FRONDS — sage greens. Six fronds for
+                    a denser canopy on the right, sparse on the
+                    left (matches the reference composition: light
+                    upper-left, leaf-dense lower-right). */}
 
-                {/* Frond 1 — large, mid-left, tilted slightly left */}
-                <g transform="translate(450 380) rotate(-15)">
-                  <ellipse cx="0" cy="0" rx="55" ry="260" fill="var(--hero-mesh-3, #4ade80)" opacity="0.65" />
-                  <ellipse cx="0" cy="-90" rx="40" ry="200" transform="rotate(-22)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.55" />
-                  <ellipse cx="0" cy="-90" rx="40" ry="200" transform="rotate(22)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.55" />
-                  <ellipse cx="0" cy="-200" rx="28" ry="150" transform="rotate(-42)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.45" />
-                  <ellipse cx="0" cy="-200" rx="28" ry="150" transform="rotate(42)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.45" />
+                {/* Frond 1 — large mid-right, tilted left */}
+                <g transform="translate(1280 360) rotate(-18)">
+                  <ellipse cx="0" cy="0" rx="60" ry="280" fill="#5b7a5b" opacity="0.75" />
+                  <ellipse cx="0" cy="-90" rx="44" ry="220" transform="rotate(-22)" fill="#5b7a5b" opacity="0.65" />
+                  <ellipse cx="0" cy="-90" rx="44" ry="220" transform="rotate(22)" fill="#5b7a5b" opacity="0.65" />
+                  <ellipse cx="0" cy="-210" rx="30" ry="160" transform="rotate(-42)" fill="#5b7a5b" opacity="0.55" />
+                  <ellipse cx="0" cy="-210" rx="30" ry="160" transform="rotate(42)" fill="#5b7a5b" opacity="0.55" />
                 </g>
 
-                {/* Frond 2 — medium, far-right top, tilted right */}
-                <g transform="translate(1480 240) rotate(22)">
-                  <ellipse cx="0" cy="0" rx="42" ry="200" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.55" />
-                  <ellipse cx="0" cy="-70" rx="32" ry="160" transform="rotate(-25)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.5" />
-                  <ellipse cx="0" cy="-70" rx="32" ry="160" transform="rotate(25)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.5" />
-                  <ellipse cx="0" cy="-170" rx="22" ry="115" transform="rotate(-44)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.4" />
-                  <ellipse cx="0" cy="-170" rx="22" ry="115" transform="rotate(44)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.4" />
+                {/* Frond 2 — large lower-right, almost horizontal */}
+                <g transform="translate(1620 460) rotate(-58)">
+                  <ellipse cx="0" cy="0" rx="55" ry="300" fill="#5e8462" opacity="0.7" />
+                  <ellipse cx="0" cy="-100" rx="40" ry="220" transform="rotate(-22)" fill="#5e8462" opacity="0.6" />
+                  <ellipse cx="0" cy="-100" rx="40" ry="220" transform="rotate(22)" fill="#5e8462" opacity="0.6" />
+                  <ellipse cx="0" cy="-220" rx="28" ry="160" transform="rotate(-42)" fill="#5e8462" opacity="0.5" />
+                  <ellipse cx="0" cy="-220" rx="28" ry="160" transform="rotate(42)" fill="#5e8462" opacity="0.5" />
                 </g>
 
-                {/* Frond 3 — smaller, lower-right, gentle right tilt */}
-                <g transform="translate(1180 540) rotate(8)">
-                  <ellipse cx="0" cy="0" rx="38" ry="180" fill="var(--hero-mesh-3, #4ade80)" opacity="0.5" />
-                  <ellipse cx="0" cy="-60" rx="28" ry="140" transform="rotate(-22)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.45" />
-                  <ellipse cx="0" cy="-60" rx="28" ry="140" transform="rotate(22)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.45" />
+                {/* Frond 3 — upper-right, tilted right */}
+                <g transform="translate(1700 220) rotate(28)">
+                  <ellipse cx="0" cy="0" rx="48" ry="240" fill="#6b8a6b" opacity="0.6" />
+                  <ellipse cx="0" cy="-80" rx="34" ry="180" transform="rotate(-22)" fill="#6b8a6b" opacity="0.5" />
+                  <ellipse cx="0" cy="-80" rx="34" ry="180" transform="rotate(22)" fill="#6b8a6b" opacity="0.5" />
                 </g>
 
-                {/* Frond 4 — far-left edge accent */}
-                <g transform="translate(60 320) rotate(-32)">
-                  <ellipse cx="0" cy="0" rx="32" ry="180" fill="var(--hero-mesh-3, #4ade80)" opacity="0.4" />
-                  <ellipse cx="0" cy="-60" rx="22" ry="120" transform="rotate(-28)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.35" />
-                  <ellipse cx="0" cy="-60" rx="22" ry="120" transform="rotate(28)" fill="var(--hero-mesh-3, #4ade80)" opacity="0.35" />
+                {/* Frond 4 — mid-canvas, gentle tilt */}
+                <g transform="translate(1080 470) rotate(-32)">
+                  <ellipse cx="0" cy="0" rx="42" ry="220" fill="#5b7a5b" opacity="0.55" />
+                  <ellipse cx="0" cy="-80" rx="32" ry="170" transform="rotate(-22)" fill="#5b7a5b" opacity="0.45" />
+                  <ellipse cx="0" cy="-80" rx="32" ry="170" transform="rotate(22)" fill="#5b7a5b" opacity="0.45" />
                 </g>
 
-                {/* Frond 5 — backdrop frond, mid-back, blurry */}
-                <g transform="translate(900 280) rotate(-3)">
-                  <ellipse cx="0" cy="0" rx="48" ry="240" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.32" />
-                  <ellipse cx="0" cy="-80" rx="36" ry="180" transform="rotate(-20)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.28" />
-                  <ellipse cx="0" cy="-80" rx="36" ry="180" transform="rotate(20)" fill="var(--hero-mesh-1, #56bdf8)" opacity="0.28" />
+                {/* Frond 5 — back-row, mid-right, very soft */}
+                <g transform="translate(1380 200) rotate(38)">
+                  <ellipse cx="0" cy="0" rx="36" ry="200" fill="#7a9a7a" opacity="0.4" />
+                  <ellipse cx="0" cy="-70" rx="26" ry="150" transform="rotate(-22)" fill="#7a9a7a" opacity="0.35" />
+                  <ellipse cx="0" cy="-70" rx="26" ry="150" transform="rotate(22)" fill="#7a9a7a" opacity="0.35" />
                 </g>
 
-                {/* Warm accent — subtle orange-rust glow in lower
-                    right (matches the reference image's warm note) */}
-                <ellipse cx="1620" cy="600" rx="120" ry="80" fill="var(--hero-mesh-4, #facc15)" opacity="0.3" />
+                {/* Frond 6 — far-left, tiny accent */}
+                <g transform="translate(180 480) rotate(-22)">
+                  <ellipse cx="0" cy="0" rx="32" ry="160" fill="#8ba588" opacity="0.4" />
+                  <ellipse cx="0" cy="-50" rx="22" ry="110" transform="rotate(-28)" fill="#8ba588" opacity="0.35" />
+                  <ellipse cx="0" cy="-50" rx="22" ry="110" transform="rotate(28)" fill="#8ba588" opacity="0.35" />
+                </g>
               </g>
             </g>
           </svg>
 
-          {/* (3) REEDED RIDGE HIGHLIGHTS — primary 9 px stripe pattern
-                  with a light edge + a dark groove per rib. Sits ON
-                  TOP of the displaced art, providing the physical
-                  3D rib texture that catches light. mix-blend-overlay
-                  so the ribs interact with the underlying colour
-                  rather than sitting flat. */}
+          {/* (3) REEDED RIDGES — WIDER 22 px cycle (not 9 px).
+                Each rib gets a light highlight on its left edge
+                and a darker shadow on its right edge with a flat
+                stretch of glass between. Matches the reference's
+                generous rib spacing. */}
           <div
             className="absolute inset-0"
             style={{
               backgroundImage:
-                "repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0px, rgba(255,255,255,0.16) 1.5px, transparent 1.5px, transparent 5px, rgba(0,0,0,0.18) 6px, rgba(0,0,0,0.18) 7.5px, transparent 7.5px, transparent 9px)",
-              mixBlendMode: "overlay",
+                "repeating-linear-gradient(90deg, rgba(255,255,255,0.42) 0px, rgba(255,255,255,0.42) 2.5px, transparent 2.5px, transparent 16px, rgba(40,55,40,0.18) 18px, rgba(40,55,40,0.18) 20px, transparent 20px, transparent 22px)",
             }}
           />
-          {/* Finer 3 px micro-texture between grooves — the polished
-              quality of real fluted glass between the main ribs. */}
+          {/* Hair-thin micro-ridges between the main ribs — the
+              polished glass quality between grooves */}
           <div
-            className="absolute inset-0 opacity-55"
+            className="absolute inset-0 opacity-40"
             style={{
               backgroundImage:
-                "repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 3px)",
+                "repeating-linear-gradient(90deg, rgba(255,255,255,0.18) 0px, rgba(255,255,255,0.18) 1px, transparent 1px, transparent 11px)",
               mixBlendMode: "soft-light",
             }}
           />
 
-          {/* (4) Vertical frost wash — the cool misty haze fluted
-                  glass has. Slight darkening top + bottom, lighter
-                  middle, so the eye reads the centre as the "warm
-                  pool" of the glass surface. */}
+          {/* (4) Frost wash — diagonal mist for added airiness */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 100%)",
+                "linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 45%, transparent 100%)",
             }}
           />
 
-          {/* (5) Edge vignette */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 115% 130% at 50% 50%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.28) 100%)",
-            }}
-          />
-
-          {/* (6) SVG noise grain — editorial print texture */}
-          <svg className="absolute inset-0 w-full h-full opacity-[0.12] mix-blend-overlay">
+          {/* (5) SVG noise grain — fine print texture */}
+          <svg className="absolute inset-0 w-full h-full opacity-[0.08] mix-blend-overlay">
             <filter id="dashboard-hero-noise">
               <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="5" />
               <feColorMatrix
@@ -587,36 +543,34 @@ export default async function DashboardPage() {
             background spans full viewport edge-to-edge. */}
         <div className="max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 lg:pb-24">
           {/* Top rail — left: small "DASHBOARD · weekday, date"
-              in mono, then a decorative hairline runner running
-              the rest of the way. The four-petal LogoMark that
-              used to live on the right is gone per user request. */}
+              in mono, then a decorative hairline runner. Dark text
+              now (the hero base is light sage cream). */}
           <div className="flex items-center gap-4 mb-10 sm:mb-12">
-            <span className="text-[10px] uppercase tracking-[0.32em] font-bold text-white/60 font-mono whitespace-nowrap">
+            <span className="text-[10px] uppercase tracking-[0.32em] font-bold text-slate-700 font-mono whitespace-nowrap">
               Dashboard · {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
             </span>
-            <span aria-hidden className="flex-1 h-px bg-gradient-to-r from-white/25 via-white/10 to-transparent" />
+            <span aria-hidden className="flex-1 h-px bg-gradient-to-r from-slate-700/35 via-slate-700/15 to-transparent" />
           </div>
 
-          {/* Title block — two-column on lg (title left, stats
-              right), single column otherwise. Italic-serif "Welcome
-              back," + giant italic-serif name in the cinematic
-              gradient. Pulls every theme's accent into the title
-              treatment. */}
+          {/* Title block — italic-serif welcome + giant italic-serif
+              first name in a deep brand-gradient. Dark text now to
+              read against the light sage hero base. */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 items-end">
             <div className="min-w-0">
-              <p className="text-sm sm:text-base font-serif italic text-white/70 leading-none">
+              <p className="text-sm sm:text-base font-serif italic text-slate-600 leading-none">
                 Welcome back,
               </p>
               <h1
                 className="mt-2 sm:mt-3 font-serif italic text-6xl sm:text-7xl lg:text-8xl leading-[0.92] tracking-tight"
                 style={{
-                  backgroundImage: "var(--hero-title-gradient, linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.85) 55%, var(--brand-600, #1d4f8b) 100%))",
+                  backgroundImage:
+                    "linear-gradient(135deg, #1e3a2e 0%, #2d4f3d 45%, #1d4f8b 100%)",
                   WebkitBackgroundClip: "text",
                   backgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   // Solid colour fallback in case the gradient doesn't
                   // paint (older browsers, SSR pre-paint).
-                  color: "#ffffff",
+                  color: "#1e3a2e",
                 }}
               >
                 {firstName}.
@@ -624,8 +578,8 @@ export default async function DashboardPage() {
 
               {/* Mid-rule + lead sentence */}
               <div className="mt-7 max-w-xl">
-                <span aria-hidden className="block h-px w-12 bg-white/30 mb-4" />
-                <p className="text-base sm:text-lg text-white/85 leading-relaxed">
+                <span aria-hidden className="block h-px w-12 bg-slate-700/40 mb-4" />
+                <p className="text-base sm:text-lg text-slate-700 leading-relaxed">
                   {heroLead}
                 </p>
               </div>
@@ -634,24 +588,23 @@ export default async function DashboardPage() {
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link
                   href={inProgress > 0 ? "/my-courses" : "/courses"}
-                  className="inline-flex items-center gap-1.5 bg-white text-slate-900 hover:bg-white/90 font-bold text-xs px-4 py-2.5 rounded-full shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                  className="inline-flex items-center gap-1.5 bg-slate-900 text-white hover:bg-slate-800 font-bold text-xs px-4 py-2.5 rounded-full shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                 >
                   {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={13} />
                 </Link>
                 <Link
                   href="/experience"
-                  className="inline-flex items-center gap-1.5 bg-white/8 hover:bg-white/14 border border-white/25 text-white text-xs font-semibold px-4 py-2.5 rounded-full transition-colors backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                  className="inline-flex items-center gap-1.5 bg-white/40 hover:bg-white/60 border border-slate-700/30 text-slate-900 text-xs font-semibold px-4 py-2.5 rounded-full transition-colors backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-700/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                 >
                   <Compass size={13} /> How it works
                 </Link>
               </div>
             </div>
 
-            {/* Right-column stats stack — only on lg+. Hairline-
-                separated from the title block. Each row carries a
-                mono number + uppercase label, evoking a printer's
-                colophon or a designer's spec sheet. */}
-            <aside className="hidden lg:block self-stretch pl-10 border-l border-white/15">
+            {/* Right-column stats stack — only on lg+. Dark mono
+                numbers + small uppercase labels against the light
+                sage hero. */}
+            <aside className="hidden lg:block self-stretch pl-10 border-l border-slate-700/20">
               <div className="space-y-5">
                 <HeroStat label="In progress" value={inProgress.toLocaleString()} />
                 <HeroStat label="Credits" value={(user?.credits ?? 0).toLocaleString()} />
@@ -996,15 +949,15 @@ export default async function DashboardPage() {
 
 /** HeroStat — right-column stat tile inside the trainee dashboard
  *  hero. Big mono number on top, tiny uppercase tracked label
- *  underneath. White-on-dark only — sits in the cinematic hero
- *  where text is always white. */
+ *  underneath. Dark text — the hero base is now light sage cream
+ *  (the reeded-glass-hothouse aesthetic). */
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-3xl xl:text-4xl font-black font-mono tabular-nums leading-none text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
+      <p className="text-3xl xl:text-4xl font-black font-mono tabular-nums leading-none text-slate-900">
         {value}
       </p>
-      <p className="mt-1.5 text-[10px] uppercase tracking-[0.28em] font-bold text-white/65">
+      <p className="mt-1.5 text-[10px] uppercase tracking-[0.28em] font-bold text-slate-700">
         {label}
       </p>
     </div>
