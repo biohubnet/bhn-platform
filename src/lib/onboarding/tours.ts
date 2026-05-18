@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18a";
+export const TOUR_VERSION = "2026.05.18b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -476,6 +476,14 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     cta: { label: "Open /login in a new tab", href: "/login" },
     since: "2026.05.18a",
+  },
+  {
+    id: "login-rotation-and-ribosome",
+    title: "Login backdrop tuned — gentler poke, slow rotation, plus a ribosome",
+    body: "Three refinements on the live /login atmosphere. (1) The cursor-poke now uses velocity-based physics instead of a direct push — force eases quadratically to zero at the radius edge so glyphs glide away rather than jump. Poke radius widened to 150 px so the drift starts before the cursor reaches the glyph. (2) Every glyph now slowly rotates around a per-instance random centre of weight (60–140 s per full turn, random 25–75 % transform-origin on both axes, 50/50 clockwise/counter-clockwise) — some twist in place, some trace a wider orbital arc, none of them spin in unison. (3) New ribosome glyph translating an mRNA strand in the middle band of the backdrop, with the large + small subunits, 5′/3′ ends labelled, a growing peptide chain emerging from the exit tunnel, and a synchronized pulse on the active-site codon + newest amino acid so it reads as mid-synthesis.",
+    placement: "center",
+    cta: { label: "Open /login in a new tab", href: "/login" },
+    since: "2026.05.18b",
   },
   {
     id: "aurora-theme",

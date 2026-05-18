@@ -11,7 +11,7 @@ import { LogoMark } from "@/components/ui/Logo";
 import { StylizedMark } from "@/components/branding/StylizedMark";
 import {
   DnaHelix, Antibody, MrnaStrand, LipidNanoparticle, CellSchematic, Bioreactor,
-  TFlask, OxygenMolecule, CarbonDioxideMolecule,
+  TFlask, OxygenMolecule, CarbonDioxideMolecule, Ribosome,
 } from "@/components/branding/BiomanufacturingGlyphs";
 import { DraggableGlyph } from "@/components/branding/DraggableGlyph";
 import { MscCultureCycle } from "@/components/branding/MscCultureCycle";
@@ -218,6 +218,18 @@ function LoginPageInner() {
           swimClass="lab-swim-drift"
         >
           <TFlask size={150} strokeWidth={1.3} />
+        </DraggableGlyph>
+
+        {/* Ribosome on mRNA — synthesizing peptides. Middle-band
+            zone, fresh territory between the DNA helix (left) and
+            the LNP (right). Larger poke radius so the chain gets
+            nudged before the cursor hits the densely-packed body. */}
+        <DraggableGlyph
+          className="absolute left-[34%] top-[54%] text-cyan-200/22 hidden lg:block"
+          swimClass="lab-swim-slow"
+          pokeRadius={170}
+        >
+          <Ribosome size={140} strokeWidth={1.2} />
         </DraggableGlyph>
 
         {/* MSC passaging cycle — the storytelling vignette. Top-

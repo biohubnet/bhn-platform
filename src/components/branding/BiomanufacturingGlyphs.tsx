@@ -275,6 +275,111 @@ export function Pipette({ size = 110, strokeWidth = 1.4, className }: Props) {
   );
 }
 
+/** Ribosome on an mRNA strand, mid-translation — the iconic large
+ *  + small subunit pair (60S over 40S in eukaryotes), the mRNA
+ *  threading through the cleft between them, and a growing
+ *  peptide chain emerging from the large subunit's exit tunnel.
+ *
+ *  Two embedded SMIL `<animate>` loops give a heartbeat-style
+ *  "active site" pulse (the codon currently being read) and a
+ *  matching pulse on the newest amino acid joining the chain, so
+ *  the glyph quietly reads as "in the middle of synthesising"
+ *  rather than a static still life. */
+export function Ribosome({ size = 150, strokeWidth = 1.3, className }: Props) {
+  return (
+    <svg
+      width={size}
+      height={size * (170 / 160)}
+      viewBox="0 0 160 170"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      className={className}
+      role="img"
+      aria-label="Ribosome synthesising a peptide on mRNA"
+    >
+      {/* ── Peptide chain — zigzag emerging from the large
+            subunit's exit tunnel, growing upward */}
+      <g>
+        <path
+          d="M 80 50 L 73 42 L 84 32 L 74 22 L 86 12 L 76 4"
+          strokeWidth={strokeWidth * 1.05}
+          fill="none"
+        />
+        <circle cx="73" cy="42" r="3"   fill="currentColor" fillOpacity="0.50" stroke="none" />
+        <circle cx="84" cy="32" r="3"   fill="currentColor" fillOpacity="0.55" stroke="none" />
+        <circle cx="74" cy="22" r="3"   fill="currentColor" fillOpacity="0.60" stroke="none" />
+        <circle cx="86" cy="12" r="3"   fill="currentColor" fillOpacity="0.65" stroke="none" />
+        <circle cx="76" cy="4"  r="3"   fill="currentColor" fillOpacity="0.70" stroke="none" />
+        {/* Newest residue — pulses as if it's the one being added */}
+        <circle cx="80" cy="50" r="3.2" fill="currentColor" fillOpacity="0.75" stroke="none">
+          <animate attributeName="r" values="2.4;3.8;2.4" dur="2.2s" repeatCount="indefinite" />
+          <animate attributeName="fill-opacity" values="0.45;0.90;0.45" dur="2.2s" repeatCount="indefinite" />
+        </circle>
+      </g>
+
+      {/* ── Large subunit (60S) */}
+      <ellipse
+        cx="80" cy="78" rx="58" ry="28"
+        fill="currentColor" fillOpacity="0.18"
+      />
+      {/* Surface texture — small dots suggest ribosomal proteins */}
+      <g fill="currentColor" stroke="none" opacity="0.55">
+        <circle cx="50"  cy="70" r="1.8" />
+        <circle cx="108" cy="76" r="1.6" />
+        <circle cx="62"  cy="88" r="1.5" />
+        <circle cx="100" cy="90" r="2.0" />
+        <circle cx="80"  cy="64" r="1.6" />
+        <circle cx="118" cy="86" r="1.4" />
+      </g>
+
+      {/* ── Small subunit (40S) */}
+      <ellipse
+        cx="80" cy="124" rx="48" ry="18"
+        fill="currentColor" fillOpacity="0.18"
+      />
+      <g fill="currentColor" stroke="none" opacity="0.5">
+        <circle cx="58"  cy="120" r="1.5" />
+        <circle cx="98"  cy="126" r="1.6" />
+        <circle cx="78"  cy="130" r="1.4" />
+        <circle cx="110" cy="122" r="1.4" />
+      </g>
+
+      {/* ── mRNA strand — threads through the cleft between
+            subunits, extending beyond the ribosome footprint
+            both ways (5′ on the left, 3′ on the right) */}
+      <path
+        d="M 0 116 Q 18 110, 36 116 T 72 116 T 108 116 T 144 116 L 160 116"
+        strokeWidth={strokeWidth * 1.05}
+        fill="none"
+      />
+      {/* Codon markers along the strand */}
+      <g fill="currentColor" stroke="none">
+        <circle cx="14"  cy="116" r="1.3" opacity="0.5" />
+        <circle cx="28"  cy="116" r="1.3" opacity="0.5" />
+        <circle cx="44"  cy="116" r="1.3" opacity="0.5" />
+        <circle cx="58"  cy="116" r="1.3" opacity="0.5" />
+        {/* Active-site codon — pulses in time with the new residue */}
+        <circle cx="80" cy="116" r="2.0" opacity="0.85">
+          <animate attributeName="r" values="1.4;2.6;1.4" dur="2.2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.5;1;0.5" dur="2.2s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="106" cy="116" r="1.3" opacity="0.5" />
+        <circle cx="122" cy="116" r="1.3" opacity="0.5" />
+        <circle cx="138" cy="116" r="1.3" opacity="0.5" />
+      </g>
+
+      {/* 5′ + 3′ end labels — tiny mono, sits just under the strand */}
+      <g fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace" fontSize="6" fill="currentColor" stroke="none" opacity="0.55">
+        <text x="2"   y="128">5′</text>
+        <text x="150" y="128">3′</text>
+      </g>
+    </svg>
+  );
+}
+
 /** Bioreactor — vertical cylinder vessel with a stirring shaft +
  *  impeller blade, a vent on top, and a sample-port on the side.
  *  The workhorse vessel of every biomanufacturing line. */
