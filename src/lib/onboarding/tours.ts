@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18b";
+export const TOUR_VERSION = "2026.05.18c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -484,6 +484,14 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     cta: { label: "Open /login in a new tab", href: "/login" },
     since: "2026.05.18b",
+  },
+  {
+    id: "login-periphery-and-unified-ctas",
+    title: "Login page — periphery-only glyphs + matching brand-gradient CTAs",
+    body: "Three more refinements. (1) Every floating glyph now lives in a strict LEFT / RIGHT edge band (within ~6 % of the viewport edge). Combined with the rotation orbit + swim translate + the cursor-poke physics that pushes glyphs AWAY from the cursor (which lives in the centre over the form), they can no longer wander into the middle. (2) Trimmed three pieces of chrome: the `// p < 0.05, results pending` mono footnote, the `Spec. / Sign in / Join` horizontal section divider, and all five small O₂ / CO₂ atoms. (3) Both CTAs in the access-pair spread now wear the SAME brand-gradient treatment with the inner shine sweep — the Sign-in button used to be flat white-on-slate, now it matches the Sign-up gradient exactly. Differentiation through copy and column context, not treatment.",
+    placement: "center",
+    cta: { label: "Open /login in a new tab", href: "/login" },
+    since: "2026.05.18c",
   },
   {
     id: "aurora-theme",

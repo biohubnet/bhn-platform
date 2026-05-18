@@ -10,8 +10,8 @@ import {
 import { LogoMark } from "@/components/ui/Logo";
 import { StylizedMark } from "@/components/branding/StylizedMark";
 import {
-  DnaHelix, Antibody, MrnaStrand, LipidNanoparticle, CellSchematic, Bioreactor,
-  TFlask, OxygenMolecule, CarbonDioxideMolecule, Ribosome,
+  DnaHelix, Antibody, LipidNanoparticle, CellSchematic, Bioreactor,
+  TFlask, Ribosome,
 } from "@/components/branding/BiomanufacturingGlyphs";
 import { DraggableGlyph } from "@/components/branding/DraggableGlyph";
 import { MscCultureCycle } from "@/components/branding/MscCultureCycle";
@@ -153,136 +153,89 @@ function LoginPageInner() {
         <StylizedMark size={520} />
       </div>
 
-      {/* ─── BIOMANUFACTURING MOLECULES — biotech hot-topic glyphs
-           drifting gracefully behind the form. Each one is wrapped
-           in <DraggableGlyph> so the visitor can grab + pull them
-           around the page, or just brush past with the cursor to
-           poke them sideways. The outer layer keeps `pointer-
-           events-none` so the form/links stay clickable; each
-           glyph opts pointer events back on internally. Stays
-           hidden on small viewports so a thumb can't accidentally
-           pin one over the form. */}
+      {/* ─── BIOMANUFACTURING MOLECULES — periphery-only.
+           Every glyph is positioned in the LEFT or RIGHT edge
+           zone (within ~10 % of the viewport edge), well clear of
+           the form column in the middle. Combined with the swim
+           translate (≤ 58 px) + rotation orbit (≤ ~40 px) + the
+           poke physics that pushes them AWAY from any cursor that
+           drifts close (and the form sits where the cursor lives
+           most), they'll never wander into the centre. Drag-to-
+           centre is overridden the moment you release because
+           spring-back pulls each glyph back to its base position.
+           All `hidden lg:block` — only fire when there's actual
+           periphery to fly around in. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* DNA double helix — left middle, drifts long and slow */}
-        <DraggableGlyph
-          className="absolute left-4 sm:left-10 top-[40%] text-sky-300/25 hidden sm:block"
-          swimClass="lab-swim-slow"
-        >
-          <DnaHelix size={170} strokeWidth={1.3} />
-        </DraggableGlyph>
+        {/* ── LEFT EDGE ─────────────────────────────────────────── */}
 
-        {/* Antibody — top-left, light drift */}
+        {/* Antibody — top-left corner */}
         <DraggableGlyph
-          className="absolute left-10 sm:left-24 top-24 text-emerald-300/22 hidden md:block"
+          className="absolute left-[3%] top-[14%] text-emerald-300/22 hidden lg:block"
           swimClass="lab-swim-rev"
         >
           <Antibody size={88} strokeWidth={2} />
         </DraggableGlyph>
 
-        {/* mRNA strand — bottom-left, gentle */}
+        {/* Ribosome translating mRNA — left edge upper-mid */}
         <DraggableGlyph
-          className="absolute left-8 sm:left-16 bottom-32 text-amber-200/22 hidden sm:block"
-          swimClass="lab-swim-drift"
-        >
-          <MrnaStrand size={180} strokeWidth={1.4} />
-        </DraggableGlyph>
-
-        {/* Lipid nanoparticle — middle-right band, kept well below
-            the MSC cycle vignette so they don't stack. */}
-        <DraggableGlyph
-          className="absolute right-[26%] top-[38%] text-violet-300/22 hidden md:block"
-          swimClass="lab-swim"
-        >
-          <LipidNanoparticle size={104} strokeWidth={1.3} />
-        </DraggableGlyph>
-
-        {/* Cell — right middle */}
-        <DraggableGlyph
-          className="absolute right-6 sm:right-14 top-[52%] text-rose-300/18 hidden sm:block"
-          swimClass="lab-swim-slow"
-        >
-          <CellSchematic size={130} strokeWidth={1.2} />
-        </DraggableGlyph>
-
-        {/* Bioreactor — bottom-right corner, the workhorse vessel */}
-        <DraggableGlyph
-          className="absolute right-12 sm:right-28 bottom-12 text-cyan-200/22 hidden md:block"
-          swimClass="lab-swim-rev"
-        >
-          <Bioreactor size={96} strokeWidth={1.3} />
-        </DraggableGlyph>
-
-        {/* T-flask — mid-left, the everyday tissue-culture vessel */}
-        <DraggableGlyph
-          className="absolute left-[8%] top-[68%] text-teal-200/22 hidden lg:block"
-          swimClass="lab-swim-drift"
-        >
-          <TFlask size={150} strokeWidth={1.3} />
-        </DraggableGlyph>
-
-        {/* Ribosome on mRNA — synthesizing peptides. Middle-band
-            zone, fresh territory between the DNA helix (left) and
-            the LNP (right). Larger poke radius so the chain gets
-            nudged before the cursor hits the densely-packed body. */}
-        <DraggableGlyph
-          className="absolute left-[34%] top-[54%] text-cyan-200/22 hidden lg:block"
+          className="absolute left-[2%] top-[30%] text-cyan-200/22 hidden lg:block"
           swimClass="lab-swim-slow"
           pokeRadius={170}
         >
-          <Ribosome size={140} strokeWidth={1.2} />
+          <Ribosome size={130} strokeWidth={1.2} />
         </DraggableGlyph>
 
-        {/* MSC passaging cycle — the storytelling vignette. Top-
-            right area, large enough for the stage label to read. */}
+        {/* DNA double helix — left edge mid */}
         <DraggableGlyph
-          className="absolute right-[4%] top-[12%] text-slate-200/35 hidden lg:block"
+          className="absolute left-[2%] top-[58%] text-sky-300/25 hidden lg:block"
+          swimClass="lab-swim-slow"
+        >
+          <DnaHelix size={160} strokeWidth={1.3} />
+        </DraggableGlyph>
+
+        {/* T-flask — left edge bottom */}
+        <DraggableGlyph
+          className="absolute left-[4%] bottom-[8%] text-teal-200/22 hidden lg:block"
+          swimClass="lab-swim-drift"
+        >
+          <TFlask size={140} strokeWidth={1.3} />
+        </DraggableGlyph>
+
+        {/* ── RIGHT EDGE ────────────────────────────────────────── */}
+
+        {/* MSC passaging cycle — top-right corner, the
+            storytelling vignette (large enough for the stage
+            label to read) */}
+        <DraggableGlyph
+          className="absolute right-[2%] top-[10%] text-slate-200/35 hidden lg:block"
           swimClass="lab-swim-slow"
           pokeRadius={140}
         >
           <MscCultureCycle size={200} />
         </DraggableGlyph>
 
-        {/* ── O₂ / CO₂ molecules — the gas atmosphere of every
-              incubator. Smaller, scattered, lower opacity so they
-              read as background "air" rather than focal subjects. */}
+        {/* Lipid nanoparticle — right edge upper-mid */}
         <DraggableGlyph
-          className="absolute left-[28%] top-[18%] text-sky-200/30 hidden md:block"
-          swimClass="lab-swim-drift"
-          pokeRadius={80}
-        >
-          <OxygenMolecule size={56} />
-        </DraggableGlyph>
-
-        <DraggableGlyph
-          className="absolute right-[44%] top-[8%] text-emerald-200/30 hidden md:block"
+          className="absolute right-[4%] top-[50%] text-violet-300/22 hidden lg:block"
           swimClass="lab-swim"
-          pokeRadius={80}
         >
-          <CarbonDioxideMolecule size={72} />
+          <LipidNanoparticle size={104} strokeWidth={1.3} />
         </DraggableGlyph>
 
+        {/* Cell — right edge mid-lower */}
         <DraggableGlyph
-          className="absolute left-[42%] bottom-[18%] text-sky-200/25 hidden md:block"
-          swimClass="lab-swim-rev"
-          pokeRadius={80}
-        >
-          <OxygenMolecule size={48} />
-        </DraggableGlyph>
-
-        <DraggableGlyph
-          className="absolute right-[14%] bottom-[30%] text-emerald-200/25 hidden md:block"
+          className="absolute right-[3%] top-[66%] text-rose-300/18 hidden lg:block"
           swimClass="lab-swim-slow"
-          pokeRadius={80}
         >
-          <CarbonDioxideMolecule size={60} />
+          <CellSchematic size={120} strokeWidth={1.2} />
         </DraggableGlyph>
 
+        {/* Bioreactor — bottom-right corner, the workhorse vessel */}
         <DraggableGlyph
-          className="absolute left-[58%] top-[28%] text-sky-200/22 hidden lg:block"
-          swimClass="lab-swim-drift"
-          pokeRadius={80}
+          className="absolute right-[6%] bottom-[6%] text-cyan-200/22 hidden lg:block"
+          swimClass="lab-swim-rev"
         >
-          <OxygenMolecule size={42} />
+          <Bioreactor size={96} strokeWidth={1.3} />
         </DraggableGlyph>
       </div>
 
@@ -336,25 +289,11 @@ function LoginPageInner() {
         <p className="mt-4 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
           BioHubNet is amplifying. New pathways, new partner labs, the EQUIP funding
           pillar going live. Sign in to watch the cohort grow — or pull up a pipette
-          and join the next round.{" "}
-          <span className="font-mono text-xs text-slate-400">// p &lt; 0.05, results pending</span>
+          and join the next round.
         </p>
       </div>
 
-      <div className="relative max-w-5xl mx-auto">
-        {/* ── Section divider — a faint horizontal hairline + a
-              "Specimen" plate, sets the editorial mood and gives
-              the eye a clear handoff from the hero teaser into
-              the access pair below. */}
-        <div className="flex items-center gap-4 mb-12 sm:mb-16 text-white/40">
-          <span className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-          <span className="text-[10px] uppercase tracking-[0.45em] font-semibold inline-flex items-center gap-2">
-            <span className="font-mono text-white/30">Spec.</span>
-            <span>Sign in / Join</span>
-          </span>
-          <span className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-        </div>
-
+      <div className="relative max-w-5xl mx-auto mt-12 sm:mt-16">
         {/*
          * Editorial split — 2 columns on lg, with a vertical
          * hairline divider between. No card chrome, no rounded
@@ -550,18 +489,37 @@ function LoginPageInner() {
               </label>
 
               {/* Submit anchored at the bottom of the flex form so
-                  it aligns with the signup CTA across the divider —
-                  same style, same vertical level. */}
+                  it sits on the same baseline as the Sign-up CTA
+                  across the divider — and now wears the same
+                  brand-gradient treatment so the pair reads as
+                  one design system, not flat-white-vs-gradient. */}
               <div className="mt-auto pt-8">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group w-full inline-flex items-center justify-center gap-3 bg-white text-slate-900 hover:bg-slate-100 active:bg-slate-200 disabled:opacity-60 font-bold tracking-tight py-3.5 text-base transition-colors"
+                  className="group relative w-full inline-flex items-center justify-center gap-3 text-white font-bold tracking-tight py-3.5 text-base overflow-hidden transition-transform hover:-translate-y-px disabled:opacity-60 disabled:hover:translate-y-0"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(120deg, #1d4f8b 0%, #2c8aa3 50%, #3fa86a 100%)",
+                    boxShadow:
+                      "0 10px 28px -8px rgba(56,189,248,0.45), inset 0 1px 0 rgba(255,255,255,0.22)",
+                  }}
                 >
-                  {loading ? "Signing in…" : (
+                  {/* Inner shine sweep on hover — same as Sign-up */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{
+                      background:
+                        "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)",
+                    }}
+                  />
+                  {loading ? (
+                    <span className="relative">Signing in…</span>
+                  ) : (
                     <>
-                      Sign in
-                      <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                      <span className="relative">Sign in</span>
+                      <ArrowRight size={16} className="relative group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
                 </button>
