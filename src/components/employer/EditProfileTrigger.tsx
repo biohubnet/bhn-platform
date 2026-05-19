@@ -42,12 +42,6 @@ interface Profile {
 }
 
 export type LogoShape = "natural" | "circle" | "rounded" | "square";
-const LOGO_SHAPES: { key: LogoShape; label: string }[] = [
-  { key: "natural", label: "Natural" },
-  { key: "circle",  label: "Circle" },
-  { key: "rounded", label: "Rounded" },
-  { key: "square",  label: "Square" },
-];
 
 const COMPANY_SIZES = [
   "", "1-10", "11-50", "51-200", "201-500", "501-1000", "1000+",
@@ -844,71 +838,14 @@ function EditProfileModal({
                     </div>
                   )}
 
-                  {/* ── Shape picker ─────────────────────────────
-                      Tucked between the candidate grid and the manual-
-                      override disclosure. Only matters once the user
-                      has a logo set, so we gate on that — fresh forms
-                      stay uncluttered. */}
-                  {values.companyLogo && (
-                    <div className="mt-3 rounded-xl border border-line bg-elevated/40 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-2">
-                        Logo shape
-                      </p>
-                      <div className="flex flex-wrap items-stretch gap-2">
-                        {LOGO_SHAPES.map((s) => {
-                          const isPicked =
-                            normalizeLogoShape(values.companyLogoShape) === s.key;
-                          const { containerMask, imageFit } = logoShapeClasses(s.key);
-                          return (
-                            <button
-                              key={s.key}
-                              type="button"
-                              onClick={() => set("companyLogoShape", s.key)}
-                              className={
-                                "group/shape relative flex flex-col items-center gap-1.5 p-2 rounded-lg ring-1 ring-inset transition-colors " +
-                                (isPicked
-                                  ? "bg-brand-50 ring-brand-500 text-brand-800"
-                                  : "bg-card-solid ring-line hover:ring-brand-300 text-muted hover:text-fg")
-                              }
-                              aria-pressed={isPicked}
-                            >
-                              {/* Mini live preview in the chosen shape */}
-                              <span
-                                className={
-                                  "w-9 h-9 bg-elevated border border-line overflow-hidden flex items-center justify-center " +
-                                  containerMask
-                                }
-                              >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={logoPreviewSrc}
-                                  alt=""
-                                  className={"w-full h-full " + imageFit}
-                                  onError={(e) => {
-                                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                                  }}
-                                />
-                              </span>
-                              <span className="text-[10px] font-semibold uppercase tracking-wider">
-                                {s.label}
-                              </span>
-                              {isPicked && (
-                                <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-sm">
-                                  <CheckCircle2 size={9} />
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-[10px] text-subtle mt-2 leading-snug">
-                        How the logo is masked on your /employer page
-                        and on every internship posting. <em>Natural</em>{" "}
-                        keeps the original image contained in a circle disc;
-                        the other three crop it.
-                      </p>
-                    </div>
-                  )}
+                  {/* Logo-shape picker removed at user request —
+                      the row defaults to "natural" (via
+                      `normalizeLogoShape`) and the field is no
+                      longer surfaced as editable in the modal. The
+                      DB column + transforms still exist for legacy
+                      profiles that had a non-natural shape set; the
+                      cropper below uses whatever value is on the
+                      row. */}
 
                   {/* ── Cropper: pan / zoom / auto-fit ────────────
                       Lives between the shape picker and the manual-

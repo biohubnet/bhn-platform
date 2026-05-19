@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Employer profile — \"Listed as\" ticker removed, logo search now always returns candidates, Logo-shape picker removed",
+    body: "Three cleanup changes on the employer surface area.\n\n**1. `/employer` public page** — dropped the gradient-styled \"Listed as\" stock-ticker block that sat above the main-business prose in the right sidebar. The `companyTicker` field stays editable in the profile modal and remains in the database; it's just no longer surfaced as a visible call-out on the public employer page.\n\n**2. Edit-profile logo search now always finds something.** `POST /api/employer/profile/logo-search` used to return an empty `candidates` array when the website crawl found nothing usable (private CDN / JS-only app shell / hostile WAF / dead path), leaving the operator with no options in the picker. The endpoint now falls back to a chain of third-party brand-asset services derived purely from the domain:\n  • Clearbit Logo Service (400 px)\n  • DuckDuckGo Icon Service\n  • Google favicon service (256 px and 128 px)\n  • Direct `/favicon.ico` on the company host\n  • Direct `/apple-touch-icon.png` on the company host\n\nThe modal's candidate `<img>` tiles already carry an `onError` that hides broken images, so the operator visually picks whichever of the fallbacks actually loads. Response includes a new `fallbackSources: true` flag so the modal could surface a hint in the future, but no UI change required today — the picker just stops looking empty.\n\n**3. Logo-shape picker removed from the Edit-profile modal.** The 4-button shape selector (Natural / Circle / Rounded / Square) that sat between the candidate grid and the cropper is gone. Profiles that already have a non-natural `companyLogoShape` keep their setting (it's still read at render time by `normalizeLogoShape`), but new users land on `natural` by default and the field is no longer surfaced as editable. The orphan `LOGO_SHAPES` constant + the shape-picker JSX block were removed from `EditProfileTrigger.tsx`.",
+    kind: "improvement",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
+  {
     title: "Cover-art admin — \"Prefer the CLI?\" panel removed",
     body: "User asked to remove the \"Prefer the CLI?\" panel from `/admin/cover-art` (the trailing card that listed the `npx tsx scripts/auto-thumbnail-courses.ts` variants for off-platform batch jobs and pre-deploy seeding). The in-platform `CourseThumbnailRegenerator` immediately above it already does the same work via the UI; the CLI snippet was a leftover from when the panel didn't exist yet. Now-unused `ImageIcon` import dropped as well.",
     kind: "improvement",

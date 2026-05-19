@@ -460,31 +460,14 @@ export default async function EmployerHomePage() {
                   </div>
                 )}
 
-                {/* Right column — main business + ticker, only
-                    rendered when at least one is populated. Acts as
-                    a metadata sidecar to the prose. */}
-                {(user?.companyMainBusiness?.trim() || user?.companyTicker?.trim()) && (
+                {/* Right column — main business sidecar. The "Listed
+                    as" ticker block that used to live above the main-
+                    business prose was removed at user request; the
+                    companyTicker field is still editable in the form
+                    and stored, just not surfaced on the public
+                    employer profile. */}
+                {user?.companyMainBusiness?.trim() && (
                   <aside aria-label="Business overview" className="space-y-5">
-                    {user?.companyTicker?.trim() && (
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-                          Listed as
-                        </p>
-                        <p
-                          className="mt-1 inline-flex items-center gap-2 text-2xl font-bold tabular-nums tracking-tight font-mono"
-                          style={{
-                            backgroundImage:
-                              "linear-gradient(135deg, rgb(29,78,216) 0%, rgb(124,58,237) 100%)",
-                            WebkitBackgroundClip: "text",
-                            backgroundClip: "text",
-                            color: "transparent",
-                          }}
-                          title="Stock ticker"
-                        >
-                          {user.companyTicker.trim()}
-                        </p>
-                      </div>
-                    )}
                     {user?.companyMainBusiness?.trim() && (
                       <div>
                         <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">

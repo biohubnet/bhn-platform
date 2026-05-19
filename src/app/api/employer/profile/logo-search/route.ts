@@ -122,11 +122,66 @@ export async function POST(req: NextRequest) {
     .slice(0, 6);
   const favicon = faviconFallback(baseUrl.hostname);
 
+  // "If can't find logos, try other sources — you must find one."
+  // When the website crawl yields nothing usable (private CDN, JS-only
+  // app shell, hostile WAF, dead path, etc.), synthesise candidates
+  // from third-party brand-asset services that derive a logo from
+  // just the domain. At least one of these almost always returns a
+  // displayable image for any registered domain, so the picker
+  // always has options for the operator to choose from.
+  //
+  // Render-time fallback: each candidate `<img>` in the modal carries
+  // an `onError` that hides the broken image, so the operator
+  // visually picks whichever loads cleanly.
+  if (allCandidates.length === 0) {
+    const fallback: LogoCandidate[] = [
+      {
+        url: `https://logo.clearbit.com/${baseUrl.hostname}?size=400`,
+        source: "Clearbit logo service · 400 px",
+        score: 30,
+      },
+      {
+        url: `https://icons.duckduckgo.com/ip3/${baseUrl.hostname}.ico`,
+        source: "DuckDuckGo icon service",
+        score: 25,
+      },
+      {
+        url: `https://www.google.com/s2/favicons?domain=${baseUrl.hostname}&sz=256`,
+        source: "Google favicon · 256 px",
+        score: 22,
+      },
+      {
+        url: `https://www.google.com/s2/favicons?domain=${baseUrl.hostname}&sz=128`,
+        source: "Google favicon · 128 px",
+        score: 20,
+      },
+      {
+        url: new URL("/favicon.ico", baseUrl).toString(),
+        source: "Direct /favicon.ico",
+        score: 15,
+      },
+      {
+        url: new URL("/apple-touch-icon.png", baseUrl).toString(),
+        source: "Direct /apple-touch-icon.png",
+        score: 14,
+      },
+    ];
+    return NextResponse.json({
+      ok: true,
+      best: fallback[0].url,
+      candidates: fallback,
+      favicon,
+      pagesScanned: pageResults.map((p) => p.path),
+      fallbackSources: true,
+    });
+  }
+
   return NextResponse.json({
     ok: true,
     best: allCandidates[0]?.url ?? null,
     candidates: allCandidates,
     favicon,
     pagesScanned: pageResults.map((p) => p.path),
+    fallbackSources: false,
   });
 }
