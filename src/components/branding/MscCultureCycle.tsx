@@ -146,14 +146,6 @@ export function MscCultureCycle({ size = 200, className }: Props) {
   const cellFillOpacity = isDetaching ? 0.7 : 0.55;
   const cellStrokeOpacity = isDetaching ? 0.85 : 0.78;
 
-  // Three colour washes for the dish — fade in / out per stage.
-  // Real wet-lab vocabulary: green (trypsin), pink (FBS media,
-  // pinker than DMEM alone because of phenol red), pale cyan (PBS).
-  const trypsinOpacity =
-    stage === "trypsin" || stage === "aspirate" ? 0.18 : 0;
-  const neutralizeOpacity = stage === "neutralize" ? 0.22 : 0;
-  const pbsOpacity = stage === "pbsWash" ? 0.20 : 0;
-
   // Pipette descends from above. Off-screen when not in use, lower
   // and inside the dish when aspirating/reseeding.
   const pipetteVisible = stage === "aspirate" || stage === "reseed";
@@ -190,28 +182,9 @@ export function MscCultureCycle({ size = 200, className }: Props) {
           strokeDasharray="2 3" opacity="0.35"
         />
 
-        {/* ── PBS wash — pale cyan rinse, fades in just before
-              trypsin to flag the "rinse off residual FBS" step. */}
-        <ellipse
-          cx="90" cy="140" rx="74" ry="58"
-          fill="#bae6fd" fillOpacity={pbsOpacity}
-          style={{ transition: noTransition ?? "fill-opacity 700ms ease" }}
-        />
-
-        {/* ── Trypsin green wash ────────────────────────────────── */}
-        <ellipse
-          cx="90" cy="140" rx="74" ry="58"
-          fill="#86efac" fillOpacity={trypsinOpacity}
-          style={{ transition: noTransition ?? "fill-opacity 700ms ease" }}
-        />
-
-        {/* ── Neutralize pink wash — DMEM + FBS (phenol red). Fades
-              over the green wash once trypsin is neutralised. */}
-        <ellipse
-          cx="90" cy="140" rx="74" ry="58"
-          fill="#f9a8d4" fillOpacity={neutralizeOpacity}
-          style={{ transition: noTransition ?? "fill-opacity 700ms ease" }}
-        />
+        {/* (Dish background washes — cyan PBS / green trypsin /
+              pink neutralize — removed at user request. Stage
+              context now comes from the label + cell state only.) */}
 
         {/* ── Cells ─────────────────────────────────────────────── */}
         <g style={{ transition: noTransition ?? "opacity 500ms ease" }}>

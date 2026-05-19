@@ -918,25 +918,36 @@ body {
   .hero-blob-a, .hero-blob-b, .hero-blob-c, .hero-blob-d { animation: none; }
 }
 
-/* ──── Login page — lab-spin: slow independent rotation ────
- * Layered on top of lab-swim so each glyph also rotates slowly
- * around its own (per-instance) random "centre of weight". Pure
- * CSS keyframe; the rotation duration + transform-origin are
- * randomised per element by DraggableGlyph via CSS custom
- * properties (--spin-duration, --spin-origin). Use lab-spin-rev
- * for counter-clockwise rotation. Linear easing so the rotation
- * is steady, not bouncing. */
+/* ──── Login page — lab-spin: bounded ±45° oscillation ────
+ * Layered on top of lab-swim so each glyph also rocks slowly
+ * around its own (per-instance) random "centre of weight". The
+ * keyframe is asymmetric (0°→45°→0°→-45°→0°) so that `reverse`
+ * (used by .lab-spin-rev) gives a genuinely different visual
+ * path (right-first vs left-first) rather than identical
+ * playback. Rotation duration + transform-origin are randomised
+ * per element by DraggableGlyph via CSS custom properties
+ * (--spin-duration, --spin-origin).
+ *
+ * Bounded to ±45° (was full 360°) per user request — the MSC
+ * culture-cycle vignette has readable stage labels that flipping
+ * upside-down would mangle, and the other glyphs read more
+ * naturally when they stay roughly upright. Ease-in-out so the
+ * direction reversals at the extremes feel like gentle settling
+ * rather than abrupt snaps. */
 @keyframes lab-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(45deg); }
+  50%  { transform: rotate(0deg); }
+  75%  { transform: rotate(-45deg); }
+  100% { transform: rotate(0deg); }
 }
 .lab-spin {
-  animation: lab-spin var(--spin-duration, 80s) linear infinite;
+  animation: lab-spin var(--spin-duration, 80s) ease-in-out infinite;
   transform-origin: var(--spin-origin, 50% 50%);
   display: inline-block;
 }
 .lab-spin-rev {
-  animation: lab-spin var(--spin-duration, 80s) linear infinite reverse;
+  animation: lab-spin var(--spin-duration, 80s) ease-in-out infinite reverse;
   transform-origin: var(--spin-origin, 50% 50%);
   display: inline-block;
 }

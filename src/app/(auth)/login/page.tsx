@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
 import {
-  DnaHelix, Antibody, WesternBlot, MrnaLnp, CarT,
+  DnaHelix, Antibody, WesternBlot, CarT,
 } from "@/components/branding/BiomanufacturingGlyphs";
 import { DraggableGlyph } from "@/components/branding/DraggableGlyph";
 import { DeepSeaStars } from "@/components/branding/DeepSeaStars";
@@ -185,23 +185,12 @@ function LoginPageInner() {
           <WesternBlot size={132} strokeWidth={1.25} />
         </DraggableGlyph>
 
-        {/* mRNA-LNP — right edge upper-mid. Concentric lipid
-            bilayers wrapping an mRNA strand with 5′ cap + poly-A
-            trail. The delivery vehicle that made mRNA vaccines
-            practical (Pfizer / Moderna). */}
+        {/* CAR-T cell — right edge mid. Engineered T cell with six
+            CAR receptors on its membrane engaging a CD19-positive
+            target. The cancer-immunotherapy approach that cured
+            previously-incurable leukaemias. */}
         <DraggableGlyph
-          className="absolute right-[5%] top-[32%] text-violet-300/24 hidden lg:block"
-          swimClass="lab-swim"
-        >
-          <MrnaLnp size={120} strokeWidth={1.3} />
-        </DraggableGlyph>
-
-        {/* CAR-T cell — right edge lower-mid. Engineered T cell
-            with six CAR receptors on its membrane engaging a
-            CD19-positive target. The cancer-immunotherapy
-            approach that cured previously-incurable leukaemias. */}
-        <DraggableGlyph
-          className="absolute right-[3%] top-[55%] text-rose-300/22 hidden lg:block"
+          className="absolute right-[3%] top-[40%] text-rose-300/22 hidden lg:block"
           swimClass="lab-swim-rev"
           pokeRadius={150}
         >
