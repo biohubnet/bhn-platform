@@ -345,6 +345,11 @@ model User {
   pagesCreated          Page[]                @relation("PageCreatedBy")
   pagesUpdated          Page[]                @relation("PageUpdatedBy")
 
+  // Role-play simulator — generated templates and per-trainee attempts.
+  // SetNull on user delete preserves the generated template for reuse.
+  simulationsCreated    Simulation[]          @relation("SimulationCreator")
+  simulationAttempts    SimulationAttempt[]
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -3159,4 +3164,79 @@ model Page {
 
   @@index([status, audience])
   @@index([updatedAt])
+}
+
+/// Role-play simulator: generated template cached by JD content hash so
+/// the same posting only needs one AI generation across the whole cohort.
+/// payload is a JSON blob shaped per src/lib/simulator/types.ts —
+/// roster (team + cross-functional partners), 12 weeks of scenarios with
+/// choices and stat effects, and review thresholds.
+model Simulation {
+  id           String   @id @default(cuid())
+  /// sha256 of the normalised JD text + prompt version. Unique so we
+  /// dedupe identical postings (RBC posts the same role to LinkedIn,
+  /// Indeed, and their own site; one Simulation row covers all three).
+  sourceHash   String   @unique
+  /// Source URL the trainee pasted, if any. Display only — many will
+  /// be expired or auth-walled by the time someone replays.
+  sourceUrl    String?
+  /// First ~800 chars of the cleaned JD, for the "based on this posting"
+  /// preview at the top of an attempt.
+  jdSnippet    String
+  /// AI-extracted ("Director, Design"). Fallback to "Director" if blank.
+  jobTitle     String
+  /// AI-extracted ("RBC", "Wealthsimple"). Nullable when the AI can't tell.
+  companyName  String?
+  /// AI-extracted ("Toronto", "Montreal, hybrid"). Nullable.
+  location     String?
+  /// JSON blob — see src/lib/simulator/types.ts for SimulationPayload.
+  payload      Json
+  /// Provider + model used to generate, for analytics and re-generation.
+  /// e.g. "cloudflare:llama-3.1-8b-instruct" or "gemini:gemini-2.0-flash".
+  modelUsed    String
+  /// Total wall-clock time the generation took (for monitoring).
+  generationMs Int
+  /// Bumped when we change the prompt or schema in ways that invalidate
+  /// existing payloads. Older Simulation rows with a lower version stay
+  /// playable but won't be re-used for new attempts.
+  promptVersion String  @default("v1")
+  createdById  String?
+  createdAt    DateTime @default(now())
+
+  createdBy User?               @relation("SimulationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  attempts  SimulationAttempt[]
+
+  @@index([sourceUrl])
+  @@index([createdAt])
+}
+
+/// One per trainee per simulation. State is checkpointed after every
+/// choice so a trainee can close the tab and resume later.
+model SimulationAttempt {
+  id            String   @id @default(cuid())
+  simulationId  String
+  userId        String
+  /// 1..12. When week > 12 OR finished, the attempt is done.
+  week          Int      @default(1)
+  /// Index into the scenarios array for the current week.
+  scenarioIndex Int      @default(0)
+  /// JSON: { morale, vpTrust, velocity, crossFunc, capacity } as 0–100.
+  /// Stat keys match Simulation.payload.stats[].key so the same shape
+  /// works regardless of role.
+  stats         Json
+  /// JSON array of decision log entries (week, scenarioId, choiceLabel,
+  /// outcome, effects, tag). Used for the end-of-quarter highlights.
+  log           Json
+  finished      Boolean  @default(false)
+  finalScore    Int?
+  finalTier     String?
+  startedAt     DateTime @default(now())
+  finishedAt    DateTime?
+  updatedAt     DateTime @updatedAt
+
+  simulation Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([simulationId])
 }

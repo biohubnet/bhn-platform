@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.19d";
+export const TOUR_VERSION = "2026.05.19e";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -40,6 +40,16 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Quick 90-second tour of what's on offer. You can pause anytime — we'll save your spot. Press Esc to minimize.",
     placement: "center",
     since: "2025.04",
+  },
+  // ─── New feature flag — Role-play Simulator ─────────────────────
+  {
+    id: "trainee.simulator",
+    title: "New: Role-play any job",
+    body: "Paste a job-posting URL and live through a 12-week quarter as that person — 1:1s, escalations, hiring, the QBR. Every choice moves five stats. At the end you get a performance review from your VP. Cached across trainees, so the same posting only generates once.",
+    placement: "center",
+    roles: ["trainee", "evaluating", "admin", "superadmin"],
+    cta: { label: "Try the simulator", href: "/simulator" },
+    since: "2026.05.19e",
   },
 
   // ─── Trainee path ────────────────────────────────────────────────
