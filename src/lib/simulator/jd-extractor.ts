@@ -12,7 +12,14 @@
 import crypto from "node:crypto";
 
 const JINA_BASE = process.env.JINA_READER_BASE ?? "https://r.jina.ai";
-const MAX_CONTENT_CHARS = 12000; // ~3000 tokens — plenty for any JD
+/** ~1500 tokens. Tightened from 12000 (~3000 tokens) after the AI
+ *  call kept timing out on long postings: the front-half of any JD
+ *  is where the role, team, and responsibilities live; the back-
+ *  half is usually compensation prose, accessibility statements,
+ *  AI-usage disclosures, and bilingual footers — none of which help
+ *  the simulator generator. Trimming this halves input-token cost +
+ *  generation latency without losing role context. */
+const MAX_CONTENT_CHARS = 6000;
 const MIN_CONTENT_CHARS = 300;   // below this it's almost certainly an auth wall
 
 export type ExtractResult =

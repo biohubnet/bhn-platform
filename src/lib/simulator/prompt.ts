@@ -25,9 +25,9 @@ A single valid JSON object matching the schema below. No prose before or after. 
   "stats": [
     { "key": string, "label": string, "short": string, "description": string, "color": string, "initialValue": number }
   ],
-  "team": [Person, ...],               // 8–12 entries. These are the player's direct reports.
-  "partners": [Person, ...],           // 3–6 entries. Cross-functional peers (Product, Eng, Marketing, Compliance, peer Directors, etc.)
-  "scenarios": [Scenario, ...],        // 12–17 entries spanning weeks 1..12
+  "team": [Person, ...],               // 5–7 entries. These are the player's direct reports.
+  "partners": [Person, ...],           // 2–4 entries. Cross-functional peers (Product, Eng, Marketing, Compliance, peer Directors, etc.)
+  "scenarios": [Scenario, ...],        // 8–10 entries spanning weeks 1..12
   "reviewThresholds": { "exceeds": 80, "strongMeets": 70, "meets": 58, "below": 45 }
 }
 
@@ -75,7 +75,7 @@ Choice = {
    - "capacity" — the player's own energy / focus / runway
    Initial values: morale 60, vpTrust 55, velocity 55, crossFunc 50, capacity 70. Colors: morale "#16a34a", vpTrust "#0ea5e9", velocity "#f59e0b", crossFunc "#a855f7", capacity "#ef4444".
 
-2. **Scenarios cover the full quarter.** At least one scenario in each of weeks 1, 2, 3, 5, 8, 10, 12. Total 12–17 scenarios. Mix types — don't make them all VP 1:1s.
+2. **Scenarios cover the full quarter.** At least one scenario in each of weeks 1, 4, 8, 12 (the four anchor weeks). Spread the rest across the remaining weeks. Total 8–10 scenarios. Mix types — don't make them all VP 1:1s.
 
 3. **Choices have real tradeoffs.** A good choice is not just "all positive." Each choice should move both upward and downward stats. The "obvious correct answer" should still cost something. Make at least one option in every scenario tempting-but-flawed.
 

@@ -157,10 +157,13 @@ async function callGemini(systemPrompt: string, userPrompt: string) {
           responseMimeType: "application/json",
         },
       }),
-      // 75 s leaves a 5 s gateway-overhead buffer below the 80 s mark
-      // a 300 s route maxDuration comfortably accommodates plus a
-      // fallback to Cloudflare if Gemini bails.
-      signal: AbortSignal.timeout(75_000),
+      // 120 s per attempt. 75 s wasn't enough — long JDs were
+      // triggering "operation was aborted due to timeout" on BOTH
+      // providers, even after the maxOutputTokens trim. Two 120 s
+      // attempts fit inside the route's 300 s maxDuration with 60 s
+      // of headroom for response handling + the secondary fallback
+      // when Gemini fails.
+      signal: AbortSignal.timeout(120_000),
     },
   );
   const j = (await res.json()) as {
@@ -202,7 +205,7 @@ async function callCloudflare(systemPrompt: string, userPrompt: string) {
         // route's 300 s maxDuration with room for a second attempt.
         max_tokens: 6144,
       }),
-      signal: AbortSignal.timeout(75_000),
+      signal: AbortSignal.timeout(120_000),
     },
   );
   const j = (await res.json()) as {
