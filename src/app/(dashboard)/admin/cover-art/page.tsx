@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ImageIcon, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import {
   CourseThumbnailRegenerator,
   type ThumbnailItem,
@@ -94,30 +94,6 @@ export default async function CoverArtAdminPage() {
       </section>
 
       <CourseThumbnailRegenerator items={items} defaultOverlay={defaultOverlay} />
-
-      <section className="rounded-2xl border border-line bg-card p-5 surface-shadow">
-        <h2 className="text-sm font-semibold text-fg mb-2 inline-flex items-center gap-2">
-          <ImageIcon size={14} className="text-subtle" />
-          Prefer the CLI?
-        </h2>
-        <p className="text-xs text-muted leading-snug mb-3">
-          The same SDXL pipeline runs from the command line — useful for
-          off-platform batch jobs or pre-deploy seeding. Defaults to
-          regenerating the entire course catalog; pass <code className="font-mono text-fg bg-elevated px-1 rounded">--missing-only</code>
-          to keep existing thumbnails and only fill gaps. Pathways are
-          covered by the in-platform tool above (CLI variant TBD).
-        </p>
-        <pre className="text-[11px] text-fg bg-elevated rounded-lg px-3 py-2 font-mono overflow-x-auto">
-{`# regenerate every course thumbnail
-npx tsx scripts/auto-thumbnail-courses.ts
-
-# only fill in courses currently missing thumbnails
-npx tsx scripts/auto-thumbnail-courses.ts --missing-only
-
-# cap at 20 (useful for sanity-check runs)
-npx tsx scripts/auto-thumbnail-courses.ts --limit 20`}
-        </pre>
-      </section>
       </div>
     </div>
   );

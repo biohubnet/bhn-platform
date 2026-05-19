@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Cover-art admin — \"Prefer the CLI?\" panel removed",
+    body: "User asked to remove the \"Prefer the CLI?\" panel from `/admin/cover-art` (the trailing card that listed the `npx tsx scripts/auto-thumbnail-courses.ts` variants for off-platform batch jobs and pre-deploy seeding). The in-platform `CourseThumbnailRegenerator` immediately above it already does the same work via the UI; the CLI snippet was a leftover from when the panel didn't exist yet. Now-unused `ImageIcon` import dropped as well.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Equip deadlines admin — Edit mode can now correct the prepopulated date directly",
     body: "User asked to be able to edit the dates of auto-prepopulated deadline rows (the ones the page-load sync stamps from the canonical VL round schedule in `lib/equip/calendar.ts`). The Edit-mode form gained two new inputs alongside the existing Cycle label + Note:\n\n  • **Deadline date (ET)** — `<input type=\"date\">`, pre-filled from the row's current `deadlineAt` rendered in Toronto-local time.\n  • **Deadline time (ET)** — `<input type=\"time\">`, pre-filled from the row's current time in Toronto-local 24h format.\n\nNew tiny helpers `torontoDateInput` / `torontoTimeInput` produce the `YYYY-MM-DD` and `HH:MM` strings these inputs expect from a stored ISO instant.\n\n**API side** — the existing `update_meta` action on `PATCH /api/admin/equip/deadlines/[id]` now also accepts a `deadlineAt` ISO string. When provided, it overwrites BOTH `deadlineAt` AND `originalDeadlineAt` and clears any prior `extendedAt`/`extendedById` marker so the row reads as a freshly-set value with no extension audit trail (the audit log still records the change with `equip_deadline.update_meta` + before/after detail). The pencil-icon tooltip updates from `Edit cycle label / note` to `Edit date / cycle label / note`.\n\n**Edit vs Extend** — kept distinct on purpose:\n  • **Extend** is for pushing an already-announced deadline forward; status becomes `extended`, `extendedAt`/`extendedById` are stamped, and the row displays \"Originally <X>\" so applicants and admins both see the history.\n  • **Edit + new date** is for hard-correcting a prepopulated value that was never the real deadline. No history is preserved (and shouldn't be — the original was wrong).\n\nThe noon-ET fast path in the existing New-deadline + Extend forms (`noonEasternIso` when time = `12:00`, otherwise a Toronto-local timestamp) is reused for the Edit-mode submit.",
     kind: "feature",
