@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Login backdrop — spinning centrifuge removed, corner left clean",
+    body: "Reverting yesterday's experiment. User asked to drop the bottom-right `SpinningCentrifuge` corner accent on `/login` — the top-down rotor with the six-ghost motion-blur trail and the `13,400 rpm` readout — and leave the corner empty. Removed:\n\n  • The `<SpinningCentrifuge>` block + import from `/login`.\n  • `src/components/branding/SpinningCentrifuge.tsx` (the component file itself — deleted via `git rm`).\n  • The `cfg-spin` `@keyframes` block + `.cfg-spin` class from `globals.css` (no other consumer).\n\nThe `/login` stage now goes: aurora wash → spotlight cone → deep-sea stars → biotech glyph floaters → vignette → form. Nothing in the bottom-right corner.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "StylizedMark — half-sketch / half-painted BHN petal removed everywhere",
     body: "User asked to remove `StylizedMark` entirely. After the previous release swapped it on `/login` for the spinning centrifuge, the only remaining usage was as the bottom-right backdrop on `DSPageHeader` (the canonical cinematic page header used by every `<PageHero>` on the platform). Removed:\n\n  • The `<StylizedMark size={260} />` block from `DSPageHeader` — the half-sketch / half-coloured BHN petal that used to peek from the bottom-right corner with `mix-blend-screen` + a cyan/green drop-shadow glow. The atmospheric stage now stops at the reeded-glass ribs and goes straight to the edge vignette + noise grain. Z-order comments renumbered from 7 layers to 6.\n  • The `import` from `DSPageHeader` and the `StylizedMark.tsx` component file itself (`src/components/branding/StylizedMark.tsx`) — gone from the codebase.\n\nText references in earlier changelog entries describing the old composition are kept as historical record (those entries document what shipped at that time).",
     kind: "improvement",

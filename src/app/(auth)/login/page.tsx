@@ -8,7 +8,6 @@ import {
   FlaskConical,
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
-import { SpinningCentrifuge } from "@/components/branding/SpinningCentrifuge";
 import {
   DnaHelix, Antibody, LipidNanoparticle, CellSchematic, Bioreactor,
   Ribosome, Pcr, WesternBlot,
@@ -134,36 +133,6 @@ function LoginPageInner() {
             "radial-gradient(ellipse 30% 22% at 50% 22%, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 75%)",
         }}
       />
-
-      {/* ─── SPINNING CENTRIFUGE — corner-accent backdrop,
-           replacing the previous half-sketch / half-painted BHN
-           petal. Top-down view of a benchtop centrifuge with the
-           rotor spinning at speed; six ghost copies at staggered
-           rotational offsets produce a persistence-of-vision
-           motion blur as the whole stack rotates once per 0.5 s.
-           Pinned BOTTOM-RIGHT and pulled partially off-screen so
-           it lives in the dark periphery, NEVER behind the
-           centred teaser headline or the form columns. Smaller
-           offset on sm/md so the centrifuge still reads as a
-           peripheral accent on smaller viewports, then grows to
-           its full dramatic size on lg+. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute opacity-[0.55] mix-blend-screen
-                   -bottom-32 -right-32 lg:-bottom-40 lg:-right-40
-                   text-cyan-200"
-        style={{
-          filter:
-            "drop-shadow(0 0 40px rgba(56,189,248,0.40)) drop-shadow(0 0 16px rgba(125,211,252,0.30))",
-        }}
-      >
-        <span className="block lg:hidden">
-          <SpinningCentrifuge size={320} />
-        </span>
-        <span className="hidden lg:block">
-          <SpinningCentrifuge size={520} />
-        </span>
-      </div>
 
       {/* ─── DEEP-SEA STARS — featherweight twinkle / sea-star
            particles drifting downward through the stage like
