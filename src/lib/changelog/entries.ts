@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Equip deadlines admin — table headers are now click-to-sort",
+    body: "User asked for `/admin/equip/deadlines` to sort by clicking column headers. The page renders two tables (VentureConnect + VentureLift) — both now sortable independently.\n\n**Sortable columns** — Deadline (ET), Cycle, Status, Note. The Actions column stays fixed (not sortable). Default sort is `deadlineAt asc` (chronological), matching the previous implicit ordering. Click a header to sort by that column; click again to flip direction. Each table owns its own sort state via a new `StreamTable` subcomponent extracted from `ListView`, so the VC and VL tables can be sorted independently.\n\n**Visual + a11y** — active column shows a coloured up/down arrow pointing in the current direction; inactive columns show a faint `ChevronsUpDown` hint so the user knows they're sortable. Headers carry `aria-sort=\"ascending\" | \"descending\" | \"none\"` for screen readers, and the underlying `<button>` has a `focus-visible` ring for keyboard users.\n\n**Null-safe comparator** — nulls and empty strings (e.g. missing Cycle labels or Notes) always land at the END of the sort regardless of direction. Stops missing values from randomly migrating to the top when the user flips asc↔desc. Status sorts by an explicit `STATUS_ORDER` (open → extended → closed) so the natural lifecycle direction reads sensibly when sorted ascending.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Course card pills — bumped to a true pastel palette",
     body: "User wanted the catalog-card chips (credit / delivery / provider) to read as pastel. The previous palette used the `-50` bg tier which is so close to white that the colour barely registered. Bumped every chip family up one step in Tailwind's tint stack: `bg-{tone}-100` for the bg (a visible-but-soft pastel — mint / sky / lilac / cyan / rose), `text-{tone}-700` for the text (slightly softer than the previous `-800`, still legible), and `ring-{tone}-200` for the same-family hairline ring. Every -100 bg and -700 text variant already has dark-theme overrides in `globals.css` so contrast lands cleanly on Aurora / Hitech / Atom Punk / Greenwood etc. as well. The default chip (used when delivery doesn't map to a known tone) keeps `bg-elevated / text-fg-muted / ring-line`.",
     kind: "improvement",

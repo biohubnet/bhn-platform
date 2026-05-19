@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import {
   Loader2, Plus, Trash2, Lock, Unlock, FastForward, Pencil, X,
   Calendar, List, AlertCircle, ChevronLeft, ChevronRight,
+  ArrowUp, ArrowDown, ChevronsUpDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { holidayDateSet } from "@/lib/equip/calendar";
@@ -287,36 +288,162 @@ function ListView({ deadlines }: { deadlines: Deadline[] }) {
       {Object.entries(byStream).map(([stream, rows]) => {
         if (rows.length === 0) return null;
         const meta = STREAM_META[stream] ?? { label: stream, cap: "", tone: "brand" as const };
-        return (
-          <section key={stream} className="rounded-2xl border border-line bg-card overflow-hidden surface-shadow">
-            <header className="px-5 py-3 border-b border-line flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-bold text-fg">{meta.label}</h3>
-                <p className="text-[11px] text-subtle">{meta.cap}</p>
-              </div>
-              <Badge tone={meta.tone}>{rows.length}</Badge>
-            </header>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-line text-left text-[10px] text-muted uppercase tracking-wide">
-                  <th className="px-5 py-3">Deadline (ET)</th>
-                  <th className="px-5 py-3">Cycle</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Note</th>
-                  <th className="px-5 py-3 w-px">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {rows.map((d) => (
-                  <DeadlineRow key={d.id} d={d} />
-                ))}
-              </tbody>
-            </table>
-          </section>
-        );
+        return <StreamTable key={stream} rows={rows} meta={meta} />;
       })}
     </div>
   );
+}
+
+/** Sortable columns. `null` means the row's value is missing; we
+ *  sort those to the end regardless of direction (consistent UX —
+ *  nulls don't pretend to be the smallest or largest value). */
+type SortKey = "deadlineAt" | "cycleLabel" | "status" | "note";
+type SortDir = "asc" | "desc";
+
+/** Stable ordering for the `status` enum so "Open → Extended → Closed"
+ *  reads naturally when sorted ascending. */
+const STATUS_ORDER: Record<string, number> = {
+  open: 0,
+  extended: 1,
+  closed: 2,
+};
+
+/** One per-stream table, owns its own sort state so the user can
+ *  sort the VC and VL tables independently. Default sort is
+ *  deadline ascending (chronological) — matches the previous
+ *  implicit ordering. */
+function StreamTable({
+  rows,
+  meta,
+}: {
+  rows: Deadline[];
+  meta: { label: string; cap: string; tone: "brand" | "success" };
+}) {
+  const [sortKey, setSortKey] = useState<SortKey>("deadlineAt");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const sortedRows = useMemo(() => {
+    const arr = [...rows];
+    arr.sort((a, b) => compareDeadlines(a, b, sortKey, sortDir));
+    return arr;
+  }, [rows, sortKey, sortDir]);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      // Date columns default to ascending (chronological); text /
+      // status columns default to ascending too so the rule is
+      // uniform. Click again to flip.
+      setSortDir("asc");
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-line bg-card overflow-hidden surface-shadow">
+      <header className="px-5 py-3 border-b border-line flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold text-fg">{meta.label}</h3>
+          <p className="text-[11px] text-subtle">{meta.cap}</p>
+        </div>
+        <Badge tone={meta.tone}>{rows.length}</Badge>
+      </header>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-line text-left text-[10px] text-muted uppercase tracking-wide">
+            <SortableTh sortKey="deadlineAt" current={sortKey} dir={sortDir} onToggle={toggleSort}>Deadline (ET)</SortableTh>
+            <SortableTh sortKey="cycleLabel" current={sortKey} dir={sortDir} onToggle={toggleSort}>Cycle</SortableTh>
+            <SortableTh sortKey="status"     current={sortKey} dir={sortDir} onToggle={toggleSort}>Status</SortableTh>
+            <SortableTh sortKey="note"       current={sortKey} dir={sortDir} onToggle={toggleSort}>Note</SortableTh>
+            <th className="px-5 py-3 w-px">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {sortedRows.map((d) => (
+            <DeadlineRow key={d.id} d={d} />
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+/** Header cell with click-to-sort behaviour + visible arrow
+ *  indicator. Active column gets a coloured arrow pointing in the
+ *  current direction; inactive columns show a faint up/down hint
+ *  so the user knows the column is sortable. `aria-sort` carries
+ *  the same information for screen readers. */
+function SortableTh({
+  sortKey,
+  current,
+  dir,
+  onToggle,
+  children,
+}: {
+  sortKey: SortKey;
+  current: SortKey;
+  dir: SortDir;
+  onToggle: (k: SortKey) => void;
+  children: React.ReactNode;
+}) {
+  const active = current === sortKey;
+  const ariaSort = active ? (dir === "asc" ? "ascending" : "descending") : "none";
+  const Icon = active ? (dir === "asc" ? ArrowUp : ArrowDown) : ChevronsUpDown;
+
+  return (
+    <th
+      scope="col"
+      aria-sort={ariaSort}
+      className="px-5 py-3"
+    >
+      <button
+        type="button"
+        onClick={() => onToggle(sortKey)}
+        className="inline-flex items-center gap-1 uppercase tracking-wide text-[10px] text-muted hover:text-fg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-card rounded"
+      >
+        <span>{children}</span>
+        <Icon
+          size={11}
+          className={active ? "text-brand-600" : "text-muted opacity-50"}
+          aria-hidden
+        />
+      </button>
+    </th>
+  );
+}
+
+/** Pure comparator — null-safe ordering for every sortable column.
+ *  Null values always land at the end (regardless of direction)
+ *  so toggling asc/desc doesn't make missing values randomly
+ *  move to the top of the list. */
+function compareDeadlines(a: Deadline, b: Deadline, key: SortKey, dir: SortDir): number {
+  const mult = dir === "asc" ? 1 : -1;
+
+  switch (key) {
+    case "deadlineAt": {
+      const av = new Date(a.deadlineAt).getTime();
+      const bv = new Date(b.deadlineAt).getTime();
+      return (av - bv) * mult;
+    }
+    case "status": {
+      const av = STATUS_ORDER[a.status] ?? 99;
+      const bv = STATUS_ORDER[b.status] ?? 99;
+      return (av - bv) * mult;
+    }
+    case "cycleLabel":
+    case "note": {
+      const av = a[key];
+      const bv = b[key];
+      // Nulls / empty strings sort to the end in both directions.
+      const aMissing = !av;
+      const bMissing = !bv;
+      if (aMissing && bMissing) return 0;
+      if (aMissing) return 1;
+      if (bMissing) return -1;
+      return av.localeCompare(bv) * mult;
+    }
+  }
 }
 
 function DeadlineRow({ d }: { d: Deadline }) {
