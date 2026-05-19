@@ -144,15 +144,21 @@ export function LoginFloatersEditor({
 
   // ── Gallery (top) — categorise the registry for editorial
   // section headers, in a stable order that matches the showcase
-  // narrative arc (discovery → process → output → people).
+  // narrative arc (discovery → cell → omics → preclinical →
+  // clinical → manufacturing → QC → regulatory → people).
   const CATEGORY_ORDER: FloaterDef["category"][] = [
-    "Molecular",
+    "Discovery",
     "Cell / Process",
-    "Manufacturing",
-    "Analytical",
+    "Omics",
+    "Preclinical",
     "Clinical",
+    "Manufacturing",
+    "QC Analytics",
+    "QC Micro",
     "Regulatory",
-    "Persona",
+    "Medical Affairs",
+    "Commercial",
+    "Patient & Academia",
   ];
   const grouped = CATEGORY_ORDER
     .map((cat) => ({
