@@ -75,7 +75,7 @@ export function PharmacovigilanceSignal({ size = 170, className }: Props) {
         viewBox="0 0 170 170"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
         role="img"
@@ -106,7 +106,7 @@ export function PharmacovigilanceSignal({ size = 170, className }: Props) {
           {/* Identity line — expected ≈ observed reference. */}
           <line
             x1="46" y1="118" x2="146" y2="36"
-            stroke="currentColor" strokeWidth="0.8"
+            stroke="currentColor" strokeWidth="0.55"
             strokeDasharray="2 2" opacity="0.45"
           />
         </g>
@@ -176,7 +176,7 @@ export function PharmacovigilanceSignal({ size = 170, className }: Props) {
               cx={SCATTER[SIGNAL_IDX].x}
               cy={SCATTER[SIGNAL_IDX].y}
               r="6"
-              stroke="#fb7185" strokeWidth="0.9"
+              stroke="#fb7185" strokeWidth="0.65"
               opacity="0.55"
             />
           )}
@@ -190,7 +190,7 @@ export function PharmacovigilanceSignal({ size = 170, className }: Props) {
           <rect
             x="100" y="14" width="48" height="11" rx="5.5"
             fill="#fb7185" fillOpacity="0.18"
-            stroke="#fb7185" strokeWidth="1.0"
+            stroke="#fb7185" strokeWidth="0.72"
           />
           <text
             x="124" y="22"

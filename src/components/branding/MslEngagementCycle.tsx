@@ -65,7 +65,7 @@ export function MslEngagementCycle({ size = 160, className }: Props) {
         viewBox="0 0 160 170"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
         role="img"
@@ -88,7 +88,7 @@ export function MslEngagementCycle({ size = 160, className }: Props) {
         </g>
 
         {/* ── Desk — single horizontal line spanning the meeting. */}
-        <line x1="14" y1="92" x2="146" y2="92" strokeWidth="1.5" />
+        <line x1="14" y1="92" x2="146" y2="92" strokeWidth="1.05" />
         {/* desk legs / shadow */}
         <line x1="26" y1="92" x2="26" y2="104" opacity="0.4" />
         <line x1="134" y1="92" x2="134" y2="104" opacity="0.4" />
@@ -111,7 +111,7 @@ export function MslEngagementCycle({ size = 160, className }: Props) {
           {/* stethoscope: small loop around the neck */}
           <path
             d="M 118 74 Q 124 80, 130 74"
-            strokeWidth="1.1"
+            strokeWidth="0.78"
             opacity="0.7"
             fill="none"
           />
@@ -123,7 +123,7 @@ export function MslEngagementCycle({ size = 160, className }: Props) {
         <path
           d="M 50 68 Q 80 46, 110 68"
           stroke="currentColor"
-          strokeWidth="0.95"
+          strokeWidth="0.68"
           strokeDasharray="2.2 2.2"
           opacity={arcOpacity}
           style={{ transition: noTransition ?? "opacity 500ms ease" }}
@@ -154,7 +154,7 @@ export function MslEngagementCycle({ size = 160, className }: Props) {
         >
           <rect x="68" y="82" width="24" height="6" rx="1" opacity="0.85" />
           {/* lines representing manuscript text */}
-          <line x1="71" y1="85" x2="89" y2="85" strokeWidth="0.7" opacity="0.55" />
+          <line x1="71" y1="85" x2="89" y2="85" strokeWidth="0.5" opacity="0.55" />
         </g>
 
         {/* ── Insight lozenge — rises from the manuscript toward HQ. */}
@@ -169,7 +169,7 @@ export function MslEngagementCycle({ size = 160, className }: Props) {
           <rect
             x="62" y="74" width="18" height="9" rx="4.5"
             fill="currentColor" fillOpacity="0.18"
-            stroke="currentColor" strokeWidth="0.95"
+            stroke="currentColor" strokeWidth="0.68"
           />
           <text
             x="71" y="80.5"

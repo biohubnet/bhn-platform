@@ -80,7 +80,7 @@ export function RegulatorySubmission({ size = 160, className }: Props) {
         viewBox="0 0 160 180"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
         role="img"
@@ -121,7 +121,7 @@ export function RegulatorySubmission({ size = 160, className }: Props) {
                 <rect
                   x="36" y={y} width="88" height="9"
                   rx="1"
-                  stroke="currentColor" strokeWidth="1.2"
+                  stroke="currentColor" strokeWidth="0.85"
                 />
                 <text
                   x="44" y={y + 6.6}
@@ -134,7 +134,7 @@ export function RegulatorySubmission({ size = 160, className }: Props) {
                   {m}
                 </text>
                 {/* Module spine */}
-                <line x1="56" y1={y + 2} x2="56" y2={y + 7} strokeWidth="0.7" opacity="0.4" />
+                <line x1="56" y1={y + 2} x2="56" y2={y + 7} strokeWidth="0.5" opacity="0.4" />
               </g>
             );
           })}
@@ -164,7 +164,7 @@ export function RegulatorySubmission({ size = 160, className }: Props) {
           opacity={showClock ? 1 : 0}
           style={{ transition: noTransition ?? "opacity 600ms ease" }}
         >
-          <circle cx="80" cy="120" r="13" strokeWidth="1.2" opacity="0.85" />
+          <circle cx="80" cy="120" r="13" strokeWidth="0.85" opacity="0.85" />
           <g
             style={{
               transformOrigin: "80px 120px",
@@ -172,7 +172,7 @@ export function RegulatorySubmission({ size = 160, className }: Props) {
               transform: `rotate(${clockRotate}deg)`,
             }}
           >
-            <line x1="80" y1="120" x2="80" y2="111" strokeWidth="1.4" />
+            <line x1="80" y1="120" x2="80" y2="111" strokeWidth="1" />
           </g>
           {/* hour ticks */}
           {[0, 90, 180, 270].map((deg) => (
@@ -180,7 +180,7 @@ export function RegulatorySubmission({ size = 160, className }: Props) {
               key={deg}
               x1="80" y1="109"
               x2="80" y2="111"
-              strokeWidth="1.0"
+              strokeWidth="0.72"
               opacity="0.7"
               transform={`rotate(${deg} 80 120)`}
             />
@@ -197,10 +197,10 @@ export function RegulatorySubmission({ size = 160, className }: Props) {
             transformOrigin: "80px 120px",
           }}
         >
-          <circle cx="80" cy="120" r="13" stroke="#86efac" strokeWidth="1.6" />
+          <circle cx="80" cy="120" r="13" stroke="#86efac" strokeWidth="1.15" />
           <path
             d="M 73 121 L 78 126 L 88 115"
-            stroke="#86efac" strokeWidth="1.8" fill="none"
+            stroke="#86efac" strokeWidth="1.3" fill="none"
             strokeLinecap="round" strokeLinejoin="round"
           />
         </g>

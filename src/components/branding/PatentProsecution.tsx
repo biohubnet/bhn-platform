@@ -73,7 +73,7 @@ export function PatentProsecution({ size = 170, className }: Props) {
         viewBox="0 0 170 180"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
         role="img"
@@ -107,7 +107,7 @@ export function PatentProsecution({ size = 170, className }: Props) {
           {/* Page */}
           <rect x="36" y="26" width="98" height="68" rx="2" />
           {/* Title bar */}
-          <line x1="42" y1="32" x2="118" y2="32" strokeWidth="0.7" opacity="0.55" />
+          <line x1="42" y1="32" x2="118" y2="32" strokeWidth="0.5" opacity="0.55" />
           <text
             x="42" y="32"
             fontSize="4.8"
@@ -149,7 +149,7 @@ export function PatentProsecution({ size = 170, className }: Props) {
                   <line
                     x1="50" y1={c.y - 1}
                     x2={50 + lineW} y2={c.y - 1}
-                    strokeWidth="1.2"
+                    strokeWidth="0.85"
                     stroke="#fb7185"
                     opacity="0.9"
                   />
@@ -189,7 +189,7 @@ export function PatentProsecution({ size = 170, className }: Props) {
           <rect
             x="118" y="22" width="34" height="10" rx="5"
             fill="#fb7185" fillOpacity="0.18"
-            stroke="#fb7185" strokeWidth="1.0"
+            stroke="#fb7185" strokeWidth="0.72"
           />
           <text
             x="135" y="29"
@@ -216,7 +216,7 @@ export function PatentProsecution({ size = 170, className }: Props) {
           <ellipse
             cx="118" cy="90" rx="14" ry="9"
             fill="#86efac" fillOpacity="0.18"
-            stroke="#86efac" strokeWidth="1.4"
+            stroke="#86efac" strokeWidth="1"
           />
           <text
             x="118" y="88"

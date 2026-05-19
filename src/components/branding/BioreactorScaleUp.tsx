@@ -60,7 +60,7 @@ export function BioreactorScaleUp({ size = 200, className }: Props) {
         viewBox="0 0 200 160"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.3"
+        strokeWidth="0.92"
         strokeLinecap="round"
         strokeLinejoin="round"
         role="img"
@@ -83,8 +83,8 @@ export function BioreactorScaleUp({ size = 200, className }: Props) {
               opacity={past ? 0.9 : 0.35}
               style={{ transition: noTransition ?? "opacity 500ms ease" }}
             >
-              <line x1={x1} y1={y} x2={x2 - 3} y2={y} strokeWidth="1.0" strokeDasharray="2 2" />
-              <path d={`M ${x2 - 4} ${y - 2.5} L ${x2} ${y} L ${x2 - 4} ${y + 2.5}`} strokeWidth="1.0" />
+              <line x1={x1} y1={y} x2={x2 - 3} y2={y} strokeWidth="0.72" strokeDasharray="2 2" />
+              <path d={`M ${x2 - 4} ${y - 2.5} L ${x2} ${y} L ${x2 - 4} ${y + 2.5}`} strokeWidth="0.72" />
             </g>
           );
         })}
@@ -120,7 +120,7 @@ export function BioreactorScaleUp({ size = 200, className }: Props) {
                   <line
                     x1={v.cx - v.r + 1.5} y1={v.cy + 2}
                     x2={v.cx + v.r - 1.5} y2={v.cy + 2}
-                    strokeWidth="0.7" opacity="0.55"
+                    strokeWidth="0.5" opacity="0.55"
                   />
                 </g>
               ) : (
@@ -139,19 +139,19 @@ export function BioreactorScaleUp({ size = 200, className }: Props) {
                   <line
                     x1={v.cx} y1={v.cy - v.r - 4}
                     x2={v.cx} y2={v.cy + v.r * 0.4}
-                    strokeWidth="0.9" opacity="0.7"
+                    strokeWidth="0.65" opacity="0.7"
                   />
                   {/* impeller blade */}
                   <line
                     x1={v.cx - v.r * 0.55} y1={v.cy + v.r * 0.4}
                     x2={v.cx + v.r * 0.55} y2={v.cy + v.r * 0.4}
-                    strokeWidth="1.1" opacity="0.8"
+                    strokeWidth="0.78" opacity="0.8"
                   />
                   {/* media line */}
                   <line
                     x1={v.cx - v.r * 0.78} y1={v.cy - v.r * 0.35}
                     x2={v.cx + v.r * 0.78} y2={v.cy - v.r * 0.35}
-                    strokeWidth="0.7" opacity="0.5"
+                    strokeWidth="0.5" opacity="0.5"
                   />
                 </g>
               )}

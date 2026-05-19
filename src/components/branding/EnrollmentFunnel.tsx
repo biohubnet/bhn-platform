@@ -58,7 +58,7 @@ export function EnrollmentFunnel({ size = 150, className }: Props) {
         viewBox="0 0 150 170"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
         role="img"
@@ -68,7 +68,7 @@ export function EnrollmentFunnel({ size = 150, className }: Props) {
               then two narrow tubes to the dosing cup. */}
         <path
           d="M 22 18 L 128 18 L 95 70 L 95 88 L 55 88 L 55 70 Z"
-          stroke="currentColor" strokeWidth="1.4"
+          stroke="currentColor" strokeWidth="1"
           fill="none" opacity="0.85"
         />
         {/* Two arms below the funnel — Arm A on the left, Arm B on the right. */}
@@ -112,7 +112,7 @@ export function EnrollmentFunnel({ size = 150, className }: Props) {
         >
           <path
             d="M 100 32 Q 124 36, 138 60"
-            stroke="currentColor" strokeWidth="0.9"
+            stroke="currentColor" strokeWidth="0.65"
             strokeDasharray="2 2" opacity="0.55"
             fill="none"
           />

@@ -74,7 +74,7 @@ export function BioinformaticsPipeline({ size = 200, className }: Props) {
         viewBox="0 0 200 170"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
         role="img"
@@ -92,7 +92,7 @@ export function BioinformaticsPipeline({ size = 200, className }: Props) {
               key={i}
               x1={18 + i * 8} y1={REF_Y - 2}
               x2={18 + i * 8} y2={REF_Y + 2}
-              strokeWidth="0.7"
+              strokeWidth="0.5"
               opacity="0.5"
             />
           ))}
@@ -138,7 +138,7 @@ export function BioinformaticsPipeline({ size = 200, className }: Props) {
                   x={x} y={y - 2}
                   width={w} height="4"
                   rx="1"
-                  stroke="currentColor" strokeWidth="0.9"
+                  stroke="currentColor" strokeWidth="0.65"
                   fill="currentColor" fillOpacity="0.18"
                   opacity={opacity}
                   style={{ transition: noTransition ?? "x 900ms cubic-bezier(.5,.1,.4,1), y 900ms cubic-bezier(.5,.1,.4,1), width 500ms ease, opacity 500ms ease" }}
@@ -148,7 +148,7 @@ export function BioinformaticsPipeline({ size = 200, className }: Props) {
                   <line
                     x1={x + w + 1} y1={y - 3}
                     x2={x + w + 3} y2={y + 3}
-                    strokeWidth="0.8" opacity="0.6"
+                    strokeWidth="0.55" opacity="0.6"
                   />
                 )}
               </g>
@@ -164,12 +164,12 @@ export function BioinformaticsPipeline({ size = 200, className }: Props) {
           <line
             x1={VAR_X} y1={REF_Y - 18}
             x2={VAR_X} y2={REF_Y - 26}
-            strokeWidth="1.4"
+            strokeWidth="1"
             stroke="#fbbf24"
           />
           <path
             d={`M ${VAR_X - 3} ${REF_Y - 24} L ${VAR_X} ${REF_Y - 28} L ${VAR_X + 3} ${REF_Y - 24}`}
-            stroke="#fbbf24" strokeWidth="1.4" fill="none"
+            stroke="#fbbf24" strokeWidth="1" fill="none"
           />
           {/* A small "T" letter at the variant locus on the reference */}
           <text
@@ -191,7 +191,7 @@ export function BioinformaticsPipeline({ size = 200, className }: Props) {
         >
           <rect
             x={VAR_X - 22} y="2" width="44" height="10" rx="5"
-            stroke="#fbbf24" strokeWidth="1.1"
+            stroke="#fbbf24" strokeWidth="0.78"
             fill="#fbbf24" fillOpacity="0.16"
           />
           <text

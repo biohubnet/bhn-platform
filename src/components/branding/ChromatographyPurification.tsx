@@ -79,7 +79,7 @@ export function ChromatographyPurification({ size = 180, className }: Props) {
         viewBox="0 0 180 160"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
         role="img"
@@ -91,13 +91,13 @@ export function ChromatographyPurification({ size = 180, className }: Props) {
         <line x1="48" y1="22" x2="48" y2="14" />
         <circle cx="48" cy="12" r="2" fill="currentColor" stroke="none" opacity="0.75" />
         {/* Resin frit lines top + bottom */}
-        <line x1="32" y1="28" x2="64" y2="28" strokeWidth="0.8" strokeDasharray="2 1.5" opacity="0.5" />
-        <line x1="32" y1="98" x2="64" y2="98" strokeWidth="0.8" strokeDasharray="2 1.5" opacity="0.5" />
+        <line x1="32" y1="28" x2="64" y2="28" strokeWidth="0.55" strokeDasharray="2 1.5" opacity="0.5" />
+        <line x1="32" y1="98" x2="64" y2="98" strokeWidth="0.55" strokeDasharray="2 1.5" opacity="0.5" />
 
         {/* Resin bed — light hatched fill */}
         <g opacity="0.32">
           {[34, 40, 46, 52, 58].map((x) => (
-            <line key={x} x1={x} y1="32" x2={x} y2="96" strokeWidth="0.7" />
+            <line key={x} x1={x} y1="32" x2={x} y2="96" strokeWidth="0.5" />
           ))}
         </g>
 
@@ -122,7 +122,7 @@ export function ChromatographyPurification({ size = 180, className }: Props) {
         {/* Drip from column to cup during POOL */}
         <line
           x1="48" y1="104" x2="48" y2="118"
-          stroke="#86efac" strokeWidth="1.2"
+          stroke="#86efac" strokeWidth="0.85"
           opacity={poolFill * 0.8}
           style={{ transition: noTransition ?? "opacity 500ms ease" }}
         />
@@ -157,7 +157,7 @@ export function ChromatographyPurification({ size = 180, className }: Props) {
         {/* UV trace itself — reveal via strokeDashoffset. */}
         <path
           d={tracePath}
-          stroke="currentColor" strokeWidth="1.4"
+          stroke="currentColor" strokeWidth="1"
           fill="none"
           strokeDasharray={traceLen}
           strokeDashoffset={traceOffset}

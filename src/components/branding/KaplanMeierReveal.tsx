@@ -91,7 +91,7 @@ export function KaplanMeierReveal({ size = 160, className }: Props) {
         viewBox="0 0 160 170"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
         role="img"
@@ -103,13 +103,13 @@ export function KaplanMeierReveal({ size = 160, className }: Props) {
         {/* tick marks on x */}
         <g opacity="0.4">
           {[44, 66, 88, 110].map((x) => (
-            <line key={x} x1={x} y1="86" x2={x} y2="89" strokeWidth="0.8" />
+            <line key={x} x1={x} y1="86" x2={x} y2="89" strokeWidth="0.55" />
           ))}
         </g>
         {/* tick marks on y */}
         <g opacity="0.4">
           {[28, 48, 68].map((y) => (
-            <line key={y} x1="22" y1={y} x2="19" y2={y} strokeWidth="0.8" />
+            <line key={y} x1="22" y1={y} x2="19" y2={y} strokeWidth="0.55" />
           ))}
         </g>
         {/* axis labels */}
@@ -132,7 +132,7 @@ export function KaplanMeierReveal({ size = 160, className }: Props) {
         {/* ── Initial S(t)=1.0 line — visible during PLOT only */}
         <line
           x1="22" y1="18" x2="132" y2="18"
-          stroke="currentColor" strokeWidth="1.4"
+          stroke="currentColor" strokeWidth="1"
           opacity={stage === "plot" ? 0.85 : 0}
           style={{ transition: noTransition ?? "opacity 500ms ease" }}
         />
@@ -156,7 +156,7 @@ export function KaplanMeierReveal({ size = 160, className }: Props) {
               key={`c-${i}`}
               x1={x} y1={20 + i * 10}
               x2={x} y2={26 + i * 10}
-              strokeWidth="1.1"
+              strokeWidth="0.78"
               opacity="0.65"
             />
           ))}
@@ -166,7 +166,7 @@ export function KaplanMeierReveal({ size = 160, className }: Props) {
               dashoffset. */}
         <path
           d={stepPath}
-          stroke="currentColor" strokeWidth="1.6"
+          stroke="currentColor" strokeWidth="1.15"
           fill="none"
           strokeDasharray={PATH_LEN}
           strokeDashoffset={showStep ? 0 : PATH_LEN}
@@ -182,14 +182,14 @@ export function KaplanMeierReveal({ size = 160, className }: Props) {
           {/* 50% horizontal — corresponds to S(t)=0.50, plot y ≈ 52 */}
           <line
             x1="22" y1="52" x2="132" y2="52"
-            stroke="currentColor" strokeWidth="0.9"
+            stroke="currentColor" strokeWidth="0.65"
             strokeDasharray="2 2" opacity="0.55"
           />
           {/* Median OS crosshair — vertical at the x where the
                 step crosses 52 (between event 2 and 3 → ~x=66). */}
           <line
             x1="66" y1="86" x2="66" y2="52"
-            stroke="currentColor" strokeWidth="0.9"
+            stroke="currentColor" strokeWidth="0.65"
             strokeDasharray="2 2" opacity="0.55"
           />
           <circle cx="66" cy="52" r="2" fill="#86efac" stroke="none" />

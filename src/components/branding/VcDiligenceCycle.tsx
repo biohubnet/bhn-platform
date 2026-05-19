@@ -60,7 +60,7 @@ export function VcDiligenceCycle({ size = 170, className }: Props) {
         viewBox="0 0 170 170"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
         role="img"
@@ -77,13 +77,13 @@ export function VcDiligenceCycle({ size = 170, className }: Props) {
           {/* Front (sourced) deck — slid forward */}
           <rect
             x="44" y="48" width="58" height="38" rx="2"
-            stroke="currentColor" strokeWidth="1.4"
+            stroke="currentColor" strokeWidth="1"
           />
           {/* Page lines */}
           <g opacity="0.55">
-            <line x1="50" y1="58" x2="84" y2="58" strokeWidth="0.9" />
-            <line x1="50" y1="64" x2="78" y2="64" strokeWidth="0.7" />
-            <line x1="50" y1="70" x2="92" y2="70" strokeWidth="0.7" />
+            <line x1="50" y1="58" x2="84" y2="58" strokeWidth="0.65" />
+            <line x1="50" y1="64" x2="78" y2="64" strokeWidth="0.5" />
+            <line x1="50" y1="70" x2="92" y2="70" strokeWidth="0.5" />
             {/* Tiny bar-chart suggestion */}
             <rect x="86" y="74" width="3" height="6" fill="currentColor" stroke="none" />
             <rect x="91" y="70" width="3" height="10" fill="currentColor" stroke="none" />
@@ -107,13 +107,13 @@ export function VcDiligenceCycle({ size = 170, className }: Props) {
               <g key={`t-${i}`}>
                 <rect
                   x={x} y={y} width="14" height="10" rx="1"
-                  stroke="currentColor" strokeWidth="0.9"
+                  stroke="currentColor" strokeWidth="0.65"
                   fill="currentColor" fillOpacity="0.08"
                 />
                 {checked && (
                   <path
                     d={`M ${x + 3} ${y + 5.5} L ${x + 5.5} ${y + 7.5} L ${x + 11} ${y + 3}`}
-                    stroke="#86efac" strokeWidth="1.2" fill="none"
+                    stroke="#86efac" strokeWidth="0.85" fill="none"
                   />
                 )}
               </g>
@@ -121,11 +121,11 @@ export function VcDiligenceCycle({ size = 170, className }: Props) {
           })}
           {/* Magnifier lens — hovering top-right */}
           <g>
-            <circle cx="100" cy="40" r="10" strokeWidth="1.4" />
-            <line x1="108" y1="48" x2="118" y2="58" strokeWidth="1.6" />
+            <circle cx="100" cy="40" r="10" strokeWidth="1" />
+            <line x1="108" y1="48" x2="118" y2="58" strokeWidth="1.15" />
             {/* Crosshair inside the lens */}
-            <line x1="94" y1="40" x2="106" y2="40" strokeWidth="0.6" opacity="0.55" />
-            <line x1="100" y1="34" x2="100" y2="46" strokeWidth="0.6" opacity="0.55" />
+            <line x1="94" y1="40" x2="106" y2="40" strokeWidth="0.42" opacity="0.55" />
+            <line x1="100" y1="34" x2="100" y2="46" strokeWidth="0.42" opacity="0.55" />
           </g>
         </g>
 
@@ -146,7 +146,7 @@ export function VcDiligenceCycle({ size = 170, className }: Props) {
           >
             TERM SHEET
           </text>
-          <line x1="46" y1="40" x2="106" y2="40" strokeWidth="0.7" opacity="0.5" />
+          <line x1="46" y1="40" x2="106" y2="40" strokeWidth="0.5" opacity="0.5" />
           {/* Bulleted lines */}
           <g opacity="0.65">
             {[46, 52, 58, 64, 70, 76].map((y, i) => (
@@ -154,7 +154,7 @@ export function VcDiligenceCycle({ size = 170, className }: Props) {
                 <circle cx="48" cy={y - 1.5} r="0.7" fill="currentColor" stroke="none" />
                 <line
                   x1="52" y1={y - 1.5} x2={[96, 90, 100, 88, 94, 86][i]} y2={y - 1.5}
-                  strokeWidth="0.7"
+                  strokeWidth="0.5"
                 />
               </g>
             ))}
@@ -179,17 +179,17 @@ export function VcDiligenceCycle({ size = 170, className }: Props) {
         >
           <path
             d="M 48 80 Q 56 70, 64 76 T 80 80 Q 88 74, 96 78"
-            stroke="#86efac" strokeWidth="1.5"
+            stroke="#86efac" strokeWidth="1.05"
             fill="none"
             strokeDasharray={SIG_LEN}
             strokeDashoffset={showSig ? 0 : SIG_LEN}
             style={{ transition: noTransition ?? "stroke-dashoffset 900ms cubic-bezier(.4,.1,.4,1)" }}
           />
           {/* Check stamp in the corner */}
-          <circle cx="104" cy="34" r="6.5" stroke="#86efac" strokeWidth="1.3" />
+          <circle cx="104" cy="34" r="6.5" stroke="#86efac" strokeWidth="0.92" />
           <path
             d="M 100 34 L 103 37 L 108 31"
-            stroke="#86efac" strokeWidth="1.4" fill="none"
+            stroke="#86efac" strokeWidth="1" fill="none"
           />
         </g>
 
