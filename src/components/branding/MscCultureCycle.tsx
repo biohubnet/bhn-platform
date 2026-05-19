@@ -65,7 +65,7 @@ const STAGE_INFO: Record<Stage, { label: string; sub: string; duration: number }
   confluent:  { label: "80% CONFLUENT",   sub: "ready to passage",       duration: 3800 },
   pbsWash:    { label: "PBS WASH",        sub: "rinse off residual FBS", duration: 2600 },
   trypsin:    { label: "TRYPSIN · 0.25%", sub: "3-5 min @ 37°C",         duration: 3400 },
-  neutralize: { label: "NEUTRALIZE",      sub: "+ FBS media stops it",   duration: 2600 },
+  neutralize: { label: "NEUTRALIZE",      sub: "FBS inactivates trypsin", duration: 2600 },
   aspirate:   { label: "ASPIRATE",        sub: "pipette out cells",      duration: 3600 },
   reseed:     { label: "RE-SEED · P1",    sub: "fresh flask",            duration: 2800 },
 };
