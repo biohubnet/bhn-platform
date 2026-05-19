@@ -53,25 +53,139 @@ const COHORT_WINDOWS: Array<{
   { start: "2026-10-20", end: "2026-12-05", enrollBy: "2026-10-06" },
 ];
 
-/** Sample blurb pool — short 2–3 sentence course descriptions
- *  used to backfill missing `description` fields on test courses
- *  so every catalog card shows a "blurb under the title". One
- *  blurb is picked from this pool per missing-description course,
- *  cycled by index so the variety reads naturally. */
-const BLURB_POOL: string[] = [
-  "Hands-on intro to the bench techniques every biomanufacturing role expects on day one. Build muscle memory before the placement starts.",
-  "Live cell-culture workflows from media design through bioreactor harvest. Lab partners simulate real biologics production.",
-  "Master the downstream side — filtration, chromatography, polishing — to GMP standard. Bring your QC mindset.",
-  "Engineer microbes to produce something useful (and tasty). Small-scale fermentation, flavour design, and microbial stability rolled into one lab.",
-  "Express + purify luciferase in E. coli, then formulate it into glowing prototypes. STEM-fair friendly; outreach kits included.",
-  "Bench-side primer on cell + gene therapy manufacturing — vector design, transfection, and the QC checks that catch contamination early.",
-  "Step into an MSL role: medical literature, payer conversations, regulatory boundaries. Field-ready in two days.",
-  "Founder bootcamp built around a real IP-backed innovation. Validate the science, pitch the market, leave with a deck.",
-  "Cultivate pigment-producing algae and convert their carotenoids into cosmetic formulations. Sustainable biotech meets beauty.",
-  "Regulatory affairs for life-science professionals — submission strategy, agency interactions, and the post-approval lifecycle.",
-  "Knowledge-exchange placement at a partner lab. Choose 1, 4, or 6 months. You bring curiosity, the lab brings the project.",
-  "Proteomics workflow from sample prep through mass-spec interpretation. Includes simulated data sets to practice analysis.",
+/** Sample blurb bank — short 2–3 sentence course descriptions
+ *  used to backfill missing `description` fields so every catalog
+ *  card shows a "blurb under the title".
+ *
+ *  Each entry carries lowercase topic tags. When a course is
+ *  missing a description, `pickBlurb(title, idx)` scores each
+ *  blurb by how many tags appear in the course title; the
+ *  best-scoring blurb wins, with the index-cycled fallback used
+ *  when nothing matches. This keeps SCORM-imported courses with
+ *  topical titles ("MSC Passaging", "GMP Cleanroom Gowning")
+ *  paired with subject-appropriate blurbs instead of cycling
+ *  generic prose. */
+interface TaggedBlurb { text: string; tags: string[] }
+const BLURB_BANK: TaggedBlurb[] = [
+  {
+    text: "Hands-on intro to the bench techniques every biomanufacturing role expects on day one. Build muscle memory before the placement starts.",
+    tags: ["intro", "bench", "biomanufacturing", "fundamentals"],
+  },
+  {
+    text: "Live cell-culture workflows from media design through bioreactor harvest. Lab partners simulate real biologics production.",
+    tags: ["cell", "culture", "media", "bioreactor", "msc", "passaging", "stem"],
+  },
+  {
+    text: "Master the downstream side — filtration, chromatography, polishing — to GMP standard. Bring your QC mindset.",
+    tags: ["downstream", "filtration", "chromatography", "polish", "purification"],
+  },
+  {
+    text: "Upstream process development — cell line selection, feed strategy, and scale-up from shake flask to single-use bioreactor.",
+    tags: ["upstream", "process", "fermentation", "bioreactor", "scale", "feed"],
+  },
+  {
+    text: "Engineer microbes to produce something useful (and tasty). Small-scale fermentation, flavour design, and microbial stability rolled into one lab.",
+    tags: ["microbe", "fermentation", "yeast", "bacteria", "engineering", "kombucha", "probiotic"],
+  },
+  {
+    text: "Express + purify luciferase in E. coli, then formulate it into glowing prototypes. STEM-fair friendly; outreach kits included.",
+    tags: ["luciferase", "ecoli", "e. coli", "expression", "outreach", "glow"],
+  },
+  {
+    text: "Bench-side primer on cell + gene therapy manufacturing — vector design, transfection, and the QC checks that catch contamination early.",
+    tags: ["gene", "therapy", "vector", "transfection", "viral", "lentivirus", "aav"],
+  },
+  {
+    text: "Engineer CAR-T cells end-to-end: leukapheresis prep, vector design, expansion, release testing, and the patient-side timing constraints.",
+    tags: ["car-t", "cart", "tcell", "t-cell", "immunotherapy", "leukapheresis"],
+  },
+  {
+    text: "mRNA workflow from IVT through LNP formulation to release testing. Cold-chain, capping efficiency, and the QC battery every regulatory file expects.",
+    tags: ["mrna", "lnp", "vaccine", "ivt", "lipid", "nanoparticle"],
+  },
+  {
+    text: "Aseptic technique + cleanroom behaviour — gowning, gait, gloved interventions, settle plates. The hygiene mindset that keeps a fill-finish line green.",
+    tags: ["aseptic", "cleanroom", "gowning", "sterile", "gmp", "fill", "finish"],
+  },
+  {
+    text: "GMP quality fundamentals — batch records, deviations, CAPA, and the audit trail that keeps a facility inspection-ready.",
+    tags: ["gmp", "quality", "qa", "qc", "audit", "deviation", "capa", "sop"],
+  },
+  {
+    text: "Regulatory affairs for life-science professionals — submission strategy, agency interactions, and the post-approval lifecycle.",
+    tags: ["regulatory", "fda", "health canada", "submission", "approval", "ind", "bla"],
+  },
+  {
+    text: "Analytical method development + validation — HPLC, mass-spec, capillary electrophoresis. Hands-on with simulated assay data sets.",
+    tags: ["analytical", "hplc", "mass-spec", "mass spec", "ce", "validation", "assay"],
+  },
+  {
+    text: "Proteomics workflow from sample prep through mass-spec interpretation. Includes simulated data sets to practice analysis.",
+    tags: ["proteomics", "protein", "mass-spec", "mass spec", "ms"],
+  },
+  {
+    text: "Bioassay development for biologics characterisation — ELISA, SPR, cell-based potency assays. Statistical design baked in.",
+    tags: ["bioassay", "elisa", "spr", "potency", "characterisation", "characterization"],
+  },
+  {
+    text: "Molecular biology toolkit — primer design, PCR, qPCR, restriction cloning, Sanger + nanopore sequencing read-outs.",
+    tags: ["pcr", "qpcr", "primer", "cloning", "molecular", "sequencing", "sanger", "nanopore"],
+  },
+  {
+    text: "Step into an MSL role: medical literature, payer conversations, regulatory boundaries. Field-ready in two days.",
+    tags: ["msl", "medical", "liaison", "payer", "literature"],
+  },
+  {
+    text: "Founder bootcamp built around a real IP-backed innovation. Validate the science, pitch the market, leave with a deck.",
+    tags: ["entrepreneur", "founder", "startup", "ip", "pitch", "venture"],
+  },
+  {
+    text: "Cultivate pigment-producing algae and convert their carotenoids into cosmetic formulations. Sustainable biotech meets beauty.",
+    tags: ["algae", "carotenoid", "pigment", "cosmetic", "sustainable", "lipid"],
+  },
+  {
+    text: "Knowledge-exchange placement at a partner lab. Choose 1, 4, or 6 months. You bring curiosity, the lab brings the project.",
+    tags: ["placement", "ke", "exchange", "internship", "industry"],
+  },
+  {
+    text: "Data integrity for regulated environments — ALCOA+, electronic batch records, 21 CFR Part 11 essentials.",
+    tags: ["data integrity", "alcoa", "cfr", "21 cfr", "ebr", "records"],
+  },
+  {
+    text: "Process scale-up from bench to pilot to commercial — sizing, mixing-time scaling, oxygen transfer, and the deviations to expect on each jump.",
+    tags: ["scale-up", "scale up", "pilot", "commercial", "transfer", "oxygen"],
+  },
 ];
+
+/** Score each blurb's tags against the course title's words; pick
+ *  the highest-scoring blurb. Tied scores resolve to the lowest
+ *  bank index (stable). If no tag matches at all, fall back to a
+ *  per-course index cycle so the catalog still gets variety. */
+function pickBlurb(title: string, fallbackIdx: number): string {
+  const t = title.toLowerCase();
+  let bestIdx = -1;
+  let bestScore = 0;
+  for (let i = 0; i < BLURB_BANK.length; i++) {
+    const score = BLURB_BANK[i].tags.reduce(
+      (n, tag) => (t.includes(tag) ? n + 1 : n),
+      0,
+    );
+    if (score > bestScore) {
+      bestScore = score;
+      bestIdx = i;
+    }
+  }
+  if (bestIdx >= 0) return BLURB_BANK[bestIdx].text;
+  return BLURB_BANK[fallbackIdx % BLURB_BANK.length].text;
+}
+
+/** Detect the legacy SCORM bulk-uploader placeholder so we know
+ *  to overwrite it rather than treating it as a real admin-curated
+ *  description. The historical format was:
+ *      "SCORM 1.2 / 2004 module — <title>"
+ *  Match loosely so minor formatting variations (en-dash, hyphen,
+ *  whitespace) all get caught. */
+const SCORM_BOILERPLATE = /^\s*SCORM\s+1\.2\s*\/?\s*2004\s+module/i;
 
 async function main() {
   const courses = await prisma.course.findMany({
@@ -177,13 +291,18 @@ async function main() {
       data.isSpecial = true;
     }
 
-    // Description blurb — fill when missing or too short to read
-    // as a 2-3 sentence blurb on the catalog card. The CourseCard
-    // line-clamp-3 already adds CSS-driven ellipsis for long ones;
-    // we just need every course to HAVE something readable.
+    // Description blurb — fill when missing, too short to read as
+    // a 2-3 sentence blurb, OR when it's the legacy SCORM-uploader
+    // placeholder ("SCORM 1.2 / 2004 module — <title>"). The
+    // CourseCard line-clamp-3 already adds CSS-driven ellipsis for
+    // long ones; we just need every course to HAVE something
+    // readable and topical. Title-keyword matching from
+    // `pickBlurb` ensures e.g. an "MSC Passaging" course gets the
+    // cell-culture blurb, not a random cycle pick.
     const existingDesc = c.description?.trim() ?? "";
-    if (existingDesc.length < 40) {
-      data.description = BLURB_POOL[i % BLURB_POOL.length];
+    const isPlaceholder = SCORM_BOILERPLATE.test(existingDesc);
+    if (existingDesc.length < 40 || isPlaceholder) {
+      data.description = pickBlurb(c.title, i);
     }
 
     if (Object.keys(data).length > 0) {

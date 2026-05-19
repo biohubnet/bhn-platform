@@ -89,9 +89,14 @@ async function uploadCourse(zipPath: string, instructorId?: string | null) {
     const manifestXml = fs.readFileSync(manifestPath, "utf-8");
     const manifest = await parseManifest(manifestXml);
 
-    // Create course shell
+    // Create course shell. We leave `description` null at create time
+    // and let `scripts/seed-course-card-fields.ts` backfill a proper
+    // blurb later — previously we stamped a "SCORM 1.2 / 2004 module
+    // — <title>" placeholder here, which leaked through to the
+    // catalog cards as the visible course blurb until an admin
+    // rewrote it. Null is friendlier: the card renders nothing under
+    // the title rather than visible boilerplate.
     const titleSlug = manifest.title.replace(/\s+/g, "-").toLowerCase();
-    const description = `SCORM 1.2 / 2004 module — ${manifest.title}`;
     const existing = await prisma.course.findFirst({ where: { title: manifest.title } });
     const course = existing
       ? await prisma.course.update({
@@ -101,7 +106,7 @@ async function uploadCourse(zipPath: string, instructorId?: string | null) {
       : await prisma.course.create({
           data: {
             title: manifest.title,
-            description,
+            description: null,
             category: "BHN",
             status: "published",
             courseType: "scorm",

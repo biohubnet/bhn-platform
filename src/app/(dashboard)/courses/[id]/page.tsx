@@ -11,6 +11,7 @@ import { CourseAISummary } from "@/components/lms/CourseAISummary";
 import { CourseTutorWidget } from "@/components/lms/CourseTutorWidget";
 import { MasteryHeatmap } from "@/components/adaptive/MasteryHeatmap";
 import { formatDuration, statusColor, cn } from "@/lib/utils";
+import { displayCourseDescription } from "@/lib/courses/displayDescription";
 import { BookOpen, Clock, Users, Award, Play, Upload, Coins, Archive, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -150,9 +151,12 @@ export default async function CourseDetailPage({
               </span>
             </div>
             <h1 className="text-2xl font-bold text-fg">{course.title}</h1>
-            {course.description && (
-              <p className="text-muted mt-2 text-sm">{course.description}</p>
-            )}
+            {(() => {
+              const blurb = displayCourseDescription(course.description);
+              return blurb ? (
+                <p className="text-muted mt-2 text-sm">{blurb}</p>
+              ) : null;
+            })()}
             <div className="flex items-center gap-4 mt-4 text-sm text-muted">
               <span className="flex items-center gap-1.5">
                 <Users size={14} />

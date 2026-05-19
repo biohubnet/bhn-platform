@@ -40,6 +40,7 @@ import { useState } from "react";
 import { ArrowRight, BookOpen, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
+import { displayCourseDescription } from "@/lib/courses/displayDescription";
 
 interface CourseCardProps {
   course: {
@@ -202,12 +203,21 @@ export function CourseCard({ course }: CourseCardProps) {
             {course.title}
           </h3>
 
-          {/* Blurb — short description under the title */}
-          {course.description && (
-            <p className="mt-1.5 text-[11.5px] leading-snug text-fg-muted line-clamp-3 flex-1">
-              {course.description}
-            </p>
-          )}
+          {/* Blurb — short description under the title.
+              `displayCourseDescription` strips the legacy "SCORM 1.2 /
+              2004 module — <title>" boilerplate the bulk SCORM
+              uploader used to stamp, so the card doesn't render that
+              placeholder until the backfill script replaces it with
+              a real blurb in the DB. */}
+          {(() => {
+            const blurb = displayCourseDescription(course.description);
+            if (!blurb) return null;
+            return (
+              <p className="mt-1.5 text-[11.5px] leading-snug text-fg-muted line-clamp-3 flex-1">
+                {blurb}
+              </p>
+            );
+          })()}
         </div>
 
         {/* RIGHT — metadata sidebar, bg-elevated (darker tint) */}

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, Sparkles, X } from "lucide-react";
+import { displayCourseDescription } from "@/lib/courses/displayDescription";
 
 interface ResultRow {
   id: string;
@@ -95,9 +96,12 @@ export function CourseSearchBar() {
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-fg truncate">{r.title}</p>
-                      {r.description && (
-                        <p className="text-xs text-subtle line-clamp-2 mt-0.5">{r.description}</p>
-                      )}
+                      {(() => {
+                        const blurb = displayCourseDescription(r.description);
+                        return blurb ? (
+                          <p className="text-xs text-subtle line-clamp-2 mt-0.5">{blurb}</p>
+                        ) : null;
+                      })()}
                       <div className="flex items-center gap-2 mt-1">
                         {r.category && <span className="text-[10px] text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded">{r.category}</span>}
                         {r.status === "draft" && <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">Draft</span>}
