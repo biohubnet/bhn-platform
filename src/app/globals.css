@@ -1024,6 +1024,37 @@ body {
   }
 }
 
+/* ──── Login page — centrifuge rotor spin ────
+ * One full revolution per 0.5 s = perceived ~120 RPM in CSS, far
+ * slower than the displayed 13,400 RPM readout but already too
+ * fast for the eye to resolve individual frames — combined with
+ * the six staggered ghost copies inside SpinningCentrifuge, the
+ * stack reads as a motion-blurred trail. Linear timing so the
+ * rotation is steady, not bouncing.
+ *
+ * Uses `transform-box: view-box` so `transform-origin: 120px 120px`
+ * pins to the SVG viewBox centre (the 240×240 viewBox makes the
+ * rotor hub land at exactly 120,120). Without view-box the origin
+ * resolves against the element's own bounding box, which for a
+ * stack of pre-rotated ghosts isn't (120, 120).
+ *
+ * Respects prefers-reduced-motion — the rotor freezes in place,
+ * the ghost-trail still reads as a stylised "stopped mid-shutter"
+ * composition. */
+@keyframes cfg-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.cfg-spin {
+  animation: cfg-spin 0.5s linear infinite;
+  transform-origin: 120px 120px;
+  transform-box: view-box;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cfg-spin { animation: none; }
+}
+
 /* ──── /rewards page — loot-vault animations ────
  * A small motion vocabulary for the playful merch page: floating
  * gift-box icons, holographic-foil shimmer on collectible cards,
