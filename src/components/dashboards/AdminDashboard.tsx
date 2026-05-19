@@ -591,23 +591,28 @@ function SectionAccent({ tone = "brand" }: { tone?: SectionTone }) {
 
 // ─── Sub-components ─────────────────────────────────────────────
 
-/** The page's single focal element.
+/** The page's single focal strip — converted from a rounded
+ *  card to a flat line + gradient row to match the rest of the
+ *  admin dashboard (v4 mid-line layout).
  *
- *  Stagecraft this panel uses:
- *    • Two layered radial-gradient "spotlights" — a brand-tinted key
- *      light from the upper-left, a softer counter-light from lower-
- *      right. They sit absolute-positioned over a near-white card so
- *      the panel reads as if light is falling on it.
- *    • Large ambient drop shadow — wide blur + far offset so the panel
- *      lifts off the page (no other panel has this much shadow).
- *    • A big tone-coloured number on the right side mirroring whatever
- *      the spotlight is telling the admin to act on (count of pending
- *      approvals, % setup complete, active-user count).
- *    • An accent ring on the icon plus a subtle glow halo behind it to
- *      reinforce the "this is the thing" hierarchy.
+ *  Stagecraft this strip still uses:
+ *    • A SOFT tonal radial wash (≈0.10 alpha) behind the content —
+ *      no longer a dramatic "spotlight" since the strip isn't a
+ *      bounded card, just enough tone to read as "look here first".
+ *    • Top + bottom hairlines bracketing the strip from the
+ *      PageHero above and the editorial mid-line layout below.
+ *    • Same uppercase tracked eyebrow + small gradient accent bar
+ *      as every other section — visual rhythm continuous now.
+ *    • Pastel inline icon (no more big white-on-saturated chip
+ *      with halo glow).
+ *    • A big tone-coloured number on the right mirroring whatever
+ *      the strip is telling the admin to act on (pending count,
+ *      setup-percent, active-user count). Same KPI semantics, just
+ *      smaller (4xl/5xl instead of 5xl/6xl) to fit the slimmer row.
  *
- *  Use sparingly: only one SpotlightPanel per page. Anything else
- *  reading at the same visual weight defeats the focal hierarchy.
+ *  Use sparingly: only one SpotlightPanel per page. The dashboard
+ *  below is intentionally quieter so this strip remains the eye's
+ *  first landing.
  */
 function SpotlightPanel({
   s,
@@ -624,133 +629,117 @@ function SpotlightPanel({
     tone: "amber" | "brand" | "emerald";
   };
 }) {
-  // Tone drives the icon chip, the eyebrow colour, the big number,
-  // and the key-light tint. Centralised here so the cascade is
-  // visually coherent.
+  // Tone drives the eyebrow text, the accent gradient bar's RGB,
+  // the soft full-strip radial wash, the inline icon colour, and
+  // the big number on the right. No more rounded card / shadow /
+  // halo'd icon chip — everything's flat now to match the rest of
+  // the line + gradient layout below. The radial wash is still
+  // here as the focal cue (the "gradient" half), just much softer
+  // (≈0.10 alpha vs the old 0.22) since it's no longer bounded by
+  // a card edge.
   const toneCfg: Record<
     typeof s.tone,
     {
       eyebrow: string;
-      chip: string;
+      icon: string;
       bigNumber: string;
-      keyLight: string; // CSS for the upper-left radial gradient
-      iconHalo: string;  // glow ring behind the icon
+      accentRgb: string;
+      cta: string;
+      wash: string;
     }
   > = {
     amber: {
       eyebrow: "text-amber-700",
-      chip: "from-amber-400 to-amber-600 shadow-amber-500/40",
+      icon: "text-amber-400/70",
       bigNumber: "text-amber-700",
-      keyLight: "radial-gradient(ellipse 80% 70% at 18% 22%, rgba(245, 158, 11, 0.22), transparent 60%)",
-      iconHalo: "bg-amber-400/40",
+      accentRgb: "245, 158, 11",
+      cta: "bg-amber-600 hover:bg-amber-700",
+      wash: "radial-gradient(ellipse 80% 100% at 20% 50%, rgba(245, 158, 11, 0.10), transparent 70%)",
     },
     brand: {
       eyebrow: "text-brand-700",
-      chip: "from-brand-500 to-brand-700 shadow-brand-600/40",
+      icon: "text-brand-400/70",
       bigNumber: "text-brand-700",
-      keyLight: "radial-gradient(ellipse 80% 70% at 18% 22%, rgba(94, 143, 247, 0.22), transparent 60%)",
-      iconHalo: "bg-brand-500/40",
+      accentRgb: "94, 143, 247",
+      cta: "bg-brand-600 hover:bg-brand-700",
+      wash: "radial-gradient(ellipse 80% 100% at 20% 50%, rgba(94, 143, 247, 0.10), transparent 70%)",
     },
     emerald: {
       eyebrow: "text-emerald-700",
-      chip: "from-emerald-500 to-emerald-700 shadow-emerald-600/40",
+      icon: "text-emerald-400/70",
       bigNumber: "text-emerald-700",
-      keyLight: "radial-gradient(ellipse 80% 70% at 18% 22%, rgba(16, 185, 129, 0.22), transparent 60%)",
-      iconHalo: "bg-emerald-400/40",
+      accentRgb: "16, 185, 129",
+      cta: "bg-emerald-600 hover:bg-emerald-700",
+      wash: "radial-gradient(ellipse 80% 100% at 20% 50%, rgba(16, 185, 129, 0.10), transparent 70%)",
     },
   };
   const tc = toneCfg[s.tone];
   const Icon = s.icon;
   return (
-    <section
-      className="relative overflow-hidden rounded-3xl border border-line bg-card"
-      style={{
-        boxShadow:
-          "0 40px 80px -28px rgba(15, 23, 42, 0.28), 0 18px 36px -12px rgba(15, 23, 42, 0.12)",
-      }}
-    >
-      {/* Layered spotlight gradients. Pointer-events-none so clicks
-          fall through to the content beneath. */}
+    <section className="relative overflow-hidden border-y border-line/70">
+      {/* Soft tonal wash — replaces the previous big drop shadow +
+          two layered spotlights as the focal cue. Pointer-events-
+          none so clicks fall through to the content. */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: tc.keyLight }}
-        aria-hidden
-      />
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 80% at 92% 92%, rgba(168, 85, 247, 0.12), transparent 65%)",
-        }}
-        aria-hidden
-      />
-      {/* Subtle vignette around the edges so the centre reads as
-          "lit" relative to the panel border. */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 100% 100% at 50% 50%, transparent 55%, rgba(15, 23, 42, 0.05) 100%)",
-        }}
+        style={{ background: tc.wash }}
         aria-hidden
       />
 
-      <div className="relative px-7 py-8 md:px-10 md:py-9">
-        <div className="flex items-start gap-6 md:gap-8 flex-wrap">
-          {/* Icon block — bigger than anywhere else on the page, with
-              a halo glow behind it so the lit-by-spotlight reading
-              holds even on the lighter themes. */}
-          <div className="relative shrink-0">
-            <div
-              className={`absolute -inset-2 rounded-3xl ${tc.iconHalo} blur-2xl opacity-70`}
-              aria-hidden
-            />
-            <div
-              className={`relative w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-gradient-to-br ${tc.chip} text-white flex items-center justify-center shadow-2xl ring-1 ring-white/40`}
-            >
-              <Icon size={32} strokeWidth={2} />
-            </div>
-          </div>
+      <div className="relative px-5 md:px-6 py-5">
+        {/* Eyebrow + accent — same pattern as every other section
+            below. The pastel inline icon supports the eyebrow text
+            rather than punching out of it. */}
+        <h2 className={`text-[11px] uppercase tracking-[0.24em] font-bold inline-flex items-center gap-2 ${tc.eyebrow}`}>
+          <Icon size={12} className={tc.icon} />
+          <span>{s.eyebrow}</span>
+        </h2>
+        <div
+          className="h-px w-20 mt-2"
+          style={{
+            background: `linear-gradient(90deg, rgba(${tc.accentRgb}, 0.8) 0%, rgba(${tc.accentRgb}, 0) 100%)`,
+          }}
+          aria-hidden
+        />
 
-          {/* Headline + body + CTAs */}
+        {/* Main row — headline + body + CTAs on the left, big
+            tone-coloured KPI on the right. Single row on lg+,
+            wraps on smaller viewports. */}
+        <div className="mt-3 flex items-center gap-x-6 gap-y-3 flex-wrap">
           <div className="flex-1 min-w-0">
-            <p className={`text-[10px] uppercase tracking-[0.28em] font-bold ${tc.eyebrow}`}>
-              {s.eyebrow}
-            </p>
-            <h2 className="text-2xl md:text-3xl font-bold text-fg mt-1.5 tracking-tight leading-tight">
+            <h3 className="text-lg md:text-xl font-bold text-fg tracking-tight leading-snug">
               {s.headline}
-            </h2>
-            <p className="text-sm text-muted mt-2 max-w-2xl leading-relaxed">
+            </h3>
+            <p className="text-xs text-muted mt-1 leading-snug max-w-2xl">
               {s.detail}
             </p>
-            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
               <Link
                 href={s.primary.href}
-                className={`inline-flex items-center gap-2 bg-gradient-to-br ${tc.chip} text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-lg ring-1 ring-white/30 transition-all hover:-translate-y-0.5 hover:shadow-xl`}
+                className={`inline-flex items-center gap-1.5 ${tc.cta} text-white font-semibold text-xs px-4 py-2 rounded-md shadow-sm transition-colors`}
               >
-                {s.primary.label} <ArrowRight size={14} />
+                {s.primary.label} <ArrowRight size={13} />
               </Link>
               {s.secondary && (
                 <Link
                   href={s.secondary.href}
-                  className="text-sm font-medium text-muted hover:text-fg inline-flex items-center gap-1"
+                  className="text-xs font-medium text-muted hover:text-fg inline-flex items-center gap-1"
                 >
-                  {s.secondary.label} <ArrowRight size={12} className="opacity-60" />
+                  {s.secondary.label} <ArrowRight size={11} className="opacity-60" />
                 </Link>
               )}
             </div>
           </div>
 
-          {/* Big tone-coloured KPI on the right — visually echoes
-              the headline so the eye lands in two places: copy on
-              the left, scale on the right. Drops to the bottom on
-              narrow viewports via flex-wrap above. */}
+          {/* Big tone-coloured KPI — smaller than the old version
+              (text-4xl / text-5xl instead of 5xl/6xl) and aligned
+              centre-vertically with the headline + body block. */}
           {s.bigNumber && (
-            <div className="ml-auto text-right shrink-0 self-stretch flex flex-col justify-center">
-              <p className={`text-5xl md:text-6xl font-black tabular-nums leading-none tracking-tight ${tc.bigNumber}`}>
+            <div className="ml-auto text-right shrink-0">
+              <p className={`text-4xl md:text-5xl font-black tabular-nums leading-none tracking-tight ${tc.bigNumber}`}>
                 {s.bigNumber}
               </p>
-              <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mt-2">
+              <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mt-1.5">
                 {s.bigNumberLabel}
               </p>
             </div>
