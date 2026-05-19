@@ -76,6 +76,43 @@ export async function extractJobDescription(
   }
 }
 
+/**
+ * Sibling path for the URL extractor — accepts a raw JD body that
+ * the user pasted directly (for URLs that are auth-walled or that
+ * don't read cleanly through Jina). Skips the network round-trip
+ * entirely; just normalises whitespace, validates the length, and
+ * computes the same cache hash so a re-paste of identical content
+ * still hits the cache.
+ */
+export function extractJobDescriptionFromText(
+  rawText: string,
+  promptVersion: string,
+): ExtractResult {
+  const cleaned = rawText
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((l) => l.trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  if (cleaned.length < MIN_CONTENT_CHARS) {
+    return {
+      ok: false,
+      error: `Pasted JD is too short — ${cleaned.length} chars, need at least ${MIN_CONTENT_CHARS}. Paste the full posting body, not just a summary.`,
+    };
+  }
+
+  const content = cleaned.slice(0, MAX_CONTENT_CHARS);
+  const jdSnippet = content.slice(0, 800);
+  const sourceHash = crypto
+    .createHash("sha256")
+    .update(`${promptVersion}::${content}`)
+    .digest("hex");
+
+  return { ok: true, content, jdSnippet, sourceHash };
+}
+
 function normalizeUrl(input: string): string | null {
   const trimmed = input.trim();
   if (!trimmed) return null;

@@ -5,26 +5,22 @@
  * which can take 15–25s on a fresh JD. This page renders a client form
  * with a progress-narrating loading state so the wait feels purposeful.
  */
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { PageHero } from "@/components/ui/PageHero";
 import { NewSimulationForm } from "@/components/simulator/NewSimulationForm";
 
 export const dynamic = "force-dynamic";
 
 export default function NewSimulationPage() {
+  // Back-link removed — the hero is the absolute top of the page;
+  // sidebar handles cross-page navigation. The form below accepts
+  // EITHER a job-posting URL or a pasted JD body (auto-detected on
+  // submit), so the description copy mentions both modes.
   return (
     <div className="space-y-6">
-      <Link
-        href="/simulator"
-        className="inline-flex items-center gap-1 text-sm text-muted hover:text-fg"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" /> Back to simulator
-      </Link>
       <PageHero
         eyebrow="Step 1"
         title="Choose a job to practice"
-        description="Paste any job-posting URL — LinkedIn, Indeed, a company careers page, even a Google Doc with the JD. We'll generate a fictional team and 12 weeks of decisions tailored to the role."
+        description="Paste a job-posting URL (LinkedIn, Indeed, a company careers page) — or paste the full job description text directly if the URL is auth-walled or doesn't read cleanly. We'll generate a fictional team and 12 weeks of decisions tailored to the role."
       />
       <NewSimulationForm />
     </div>

@@ -1,11 +1,18 @@
 /**
  * POST /api/simulator/start
  *
- * Body: { url: string }
+ * Body: { url?: string, text?: string }   — exactly one of the two
  *
  * Flow:
- *   1. Pull clean text from the URL via Jina Reader.
- *   2. Hash the cleaned text + prompt version.
+ *   1. URL mode  → pull clean text from the URL via Jina Reader.
+ *      Text mode → use the pasted JD body verbatim (after whitespace
+ *                   normalisation). Skips the network round-trip when
+ *                   the source is auth-walled (LinkedIn, Workday) or
+ *                   doesn't read cleanly through Jina (Indeed search
+ *                   results, JS-heavy SPAs).
+ *   2. Hash the cleaned text + prompt version. Both modes produce the
+ *      same hash for identical content, so a paste of the same JD a
+ *      URL would have returned still hits the cache.
  *   3. Look for an existing Simulation row with that hash.
  *      - Hit  → skip generation, save bytes.
  *      - Miss → generate with Gemini/Cloudflare, validate, persist.
@@ -19,7 +26,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { extractJobDescription } from "@/lib/simulator/jd-extractor";
+import {
+  extractJobDescription,
+  extractJobDescriptionFromText,
+} from "@/lib/simulator/jd-extractor";
 import { generateSimulation } from "@/lib/simulator/generator";
 import { initialState } from "@/lib/simulator/engine";
 import { PROMPT_VERSION, type SimulationPayload } from "@/lib/simulator/types";
@@ -33,14 +43,23 @@ export async function POST(req: NextRequest) {
   }
   const userId = (session.user as { id?: string }).id!;
 
-  const body = (await req.json().catch(() => ({}))) as { url?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    url?: string;
+    text?: string;
+  };
   const url = (body.url ?? "").trim();
-  if (!url) {
-    return NextResponse.json({ error: "Missing URL" }, { status: 400 });
+  const text = (body.text ?? "").trim();
+  if (!url && !text) {
+    return NextResponse.json(
+      { error: "Provide a job-posting URL or paste the JD body." },
+      { status: 400 },
+    );
   }
 
-  // 1. Extract
-  const extracted = await extractJobDescription(url, PROMPT_VERSION);
+  // 1. Extract — branch on which field was sent.
+  const extracted = url
+    ? await extractJobDescription(url, PROMPT_VERSION)
+    : extractJobDescriptionFromText(text, PROMPT_VERSION);
   if (!extracted.ok) {
     return NextResponse.json({ error: extracted.error }, { status: 400 });
   }
@@ -62,7 +81,10 @@ export async function POST(req: NextRequest) {
     simulation = await prisma.simulation.create({
       data: {
         sourceHash: extracted.sourceHash,
-        sourceUrl: url,
+        // null for pasted-JD mode — the schema has `sourceUrl String?`
+        // precisely so the "Original posting" link can be omitted when
+        // the trainee bypassed Jina with a direct paste.
+        sourceUrl: url || null,
         jdSnippet: extracted.jdSnippet,
         jobTitle: gen.payload.jobTitle,
         companyName: gen.payload.companyName,
