@@ -4,6 +4,7 @@
  * hand-validate. Returns either a clean payload or a string error.
  */
 import type {
+  Briefing,
   Choice,
   Person,
   Scenario,
@@ -90,7 +91,37 @@ export function validatePayload(raw: unknown): ValidationResult {
   if (out.scenarios.length < 8)
     return err(`only ${out.scenarios.length} valid scenarios (need 8+)`);
 
+  // Briefing — optional, gracefully accepted when present. We don't
+  // err out if the model omits it; older payloads (and degraded
+  // fallback outputs) shouldn't break the playthrough.
+  if (isRecord(raw.briefing)) {
+    const briefing = validateBriefing(raw.briefing);
+    if (briefing) out.briefing = briefing;
+  }
+
   return { ok: true, payload: out };
+}
+
+function validateBriefing(raw: Record<string, unknown>): Briefing | null {
+  const hiddenDynamics = nonEmptyString(raw.hiddenDynamics, "");
+  if (!hiddenDynamics) return null;
+  const failureModes = stringArray(raw.failureModes).slice(0, 6);
+  const unwrittenRules = stringArray(raw.unwrittenRules).slice(0, 6);
+  const interviewQuestions = stringArray(raw.interviewQuestions).slice(0, 8);
+  if (
+    failureModes.length === 0 &&
+    unwrittenRules.length === 0 &&
+    interviewQuestions.length === 0
+  ) {
+    // hiddenDynamics alone is too thin — treat as no briefing.
+    return null;
+  }
+  return {
+    hiddenDynamics,
+    failureModes,
+    unwrittenRules,
+    interviewQuestions,
+  };
 }
 
 function validatePerson(raw: unknown, group: "team" | "partner"): Person | null {

@@ -66,6 +66,34 @@ export type ReviewThresholds = {
   below: number;         // 45
 };
 
+/**
+ * Job-dynamics insight that the JD doesn't tell you. Generated alongside
+ * the scenarios so a single AI call produces everything the trainee
+ * needs to understand the role beyond surface-level requirements.
+ *
+ * Surfaced to the player as a "Briefing" panel they can open anytime
+ * during the sim and on the review screen.
+ *
+ * Optional on the type — older simulations generated before the
+ * briefing schema landed simply don't have one, and the UI degrades
+ * gracefully.
+ */
+export type Briefing = {
+  /// 2–4 sentences on who actually has power, the unwritten metric,
+  /// and the most important relationship for the first 90 days.
+  hiddenDynamics: string;
+  /// 3–5 ways people in this role commonly stumble in their first
+  /// quarter. Specific, named patterns ("over-promising on roadmap to
+  /// score with the VP"), not platitudes.
+  failureModes: string[];
+  /// 3–5 things not in the JD that matter — VP communication style,
+  /// who blocks launches, which Slack channels matter, etc.
+  unwrittenRules: string[];
+  /// 5–7 sharp interview questions the player could ask the hiring
+  /// manager to get a clearer picture of the role's reality.
+  interviewQuestions: string[];
+};
+
 export type SimulationPayload = {
   jobTitle: string;
   companyName: string | null;
@@ -85,6 +113,9 @@ export type SimulationPayload = {
   /// 12–17 scenarios spanning weeks 1–12.
   scenarios: Scenario[];
   reviewThresholds: ReviewThresholds;
+  /// Job-dynamics insights — what the JD doesn't tell you. Optional for
+  /// backward compatibility; UI hides this section if absent.
+  briefing?: Briefing;
 };
 
 /// Runtime state of a single trainee playing a Simulation. Mirrors the

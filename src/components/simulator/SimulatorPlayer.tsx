@@ -29,6 +29,8 @@ import { Card } from "@/components/ui/Card";
 import {
   Activity,
   Battery,
+  BookOpen,
+  Compass,
   Loader2,
   Network,
   RotateCcw,
@@ -37,7 +39,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { computeReview } from "@/lib/simulator/engine";
+import { computeDecisionProfile, computeReview } from "@/lib/simulator/engine";
+import { Avatar as PersonAvatar } from "./Avatar";
 import type {
   AttemptState,
   AttemptStats,
@@ -74,6 +77,7 @@ export function SimulatorPlayer({ attemptId, payload, initialState }: Props) {
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [briefingOpen, setBriefingOpen] = useState(false);
   const router = useRouter();
 
   const scenarios = payload.scenarios.filter((s) => s.week === state.week);
@@ -165,7 +169,20 @@ export function SimulatorPlayer({ attemptId, payload, initialState }: Props) {
   return (
     <div className="space-y-5">
       {/* Hero band — role context */}
-      <RoleHeader payload={payload} onReset={handleReset} />
+      <RoleHeader
+        payload={payload}
+        onReset={handleReset}
+        onOpenBriefing={
+          payload.briefing ? () => setBriefingOpen(true) : undefined
+        }
+      />
+
+      {briefingOpen && payload.briefing && (
+        <BriefingModal
+          payload={payload}
+          onClose={() => setBriefingOpen(false)}
+        />
+      )}
 
       {/* Week progress strip */}
       <WeekStrip currentWeek={state.week} scenarios={payload.scenarios} />
@@ -227,9 +244,11 @@ export function SimulatorPlayer({ attemptId, payload, initialState }: Props) {
 function RoleHeader({
   payload,
   onReset,
+  onOpenBriefing,
 }: {
   payload: SimulationPayload;
   onReset: () => void;
+  onOpenBriefing?: () => void;
 }) {
   return (
     <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-line bg-gradient-to-br from-brand-50 via-card-solid to-card-solid p-6 md:p-7">
@@ -268,12 +287,23 @@ function RoleHeader({
             , {payload.vpRole}
           </p>
         </div>
-        <button
-          onClick={onReset}
-          className="shrink-0 text-[10.5px] uppercase tracking-widest text-fg-subtle transition hover:text-rose-700"
-        >
-          Reset
-        </button>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          {onOpenBriefing && (
+            <button
+              onClick={onOpenBriefing}
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 bg-card-solid/70 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-brand-700 shadow-sm transition hover:border-brand-500 hover:bg-brand-50"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Briefing
+            </button>
+          )}
+          <button
+            onClick={onReset}
+            className="text-[10.5px] uppercase tracking-widest text-fg-subtle transition hover:text-rose-700"
+          >
+            Reset
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -713,7 +743,12 @@ function RosterGroup({
                   : "hover:bg-raised/40",
               ].join(" ")}
             >
-              <Avatar size={30} active={activeId === p.id} />
+              <PersonAvatar
+                id={p.id}
+                name={p.name}
+                size={32}
+                active={activeId === p.id}
+              />
               <div className="min-w-0 flex-1">
                 <div
                   className={[
@@ -733,39 +768,6 @@ function RosterGroup({
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-function Avatar({
-  size = 30,
-  active = false,
-}: {
-  size?: number;
-  active?: boolean;
-}) {
-  return (
-    <div
-      className={[
-        "shrink-0 rounded-full border transition",
-        active ? "border-brand-500 bg-brand-100" : "border-line bg-raised/60",
-      ].join(" ")}
-      style={{ width: size, height: size }}
-    >
-      <svg viewBox="0 0 40 40" width={size} height={size}>
-        <circle
-          cx="20"
-          cy="16"
-          r="5.5"
-          fill="currentColor"
-          className={active ? "text-brand-700" : "text-fg-subtle/70"}
-        />
-        <path
-          d="M 8.5 33 C 9 26, 14.5 23.5, 20 23.5 C 25.5 23.5, 31 26, 31.5 33 L 31.5 40 L 8.5 40 Z"
-          fill="currentColor"
-          className={active ? "text-brand-700" : "text-fg-subtle/70"}
-        />
-      </svg>
     </div>
   );
 }
@@ -863,7 +865,7 @@ function PersonPopup({
         }
       >
         <header className="flex shrink-0 items-start gap-3 border-b border-line bg-raised/40 px-5 py-4">
-          <Avatar size={48} active />
+          <PersonAvatar id={person.id} name={person.name} size={52} active />
           <div className="min-w-0 flex-1">
             <div
               className="text-base font-semibold tracking-tight text-fg"
@@ -949,8 +951,13 @@ function ReviewView({
   onReset: () => void;
 }) {
   const review = useMemo(() => computeReview(payload, state), [payload, state]);
+  const profile = useMemo(
+    () => computeDecisionProfile(payload, state),
+    [payload, state],
+  );
   const animatedScore = useCountUp(review.score, 1200);
   const tierClass = TIER_COLOR[review.tier] ?? TIER_COLOR["Meets Expectations"];
+  const [briefingOpen, setBriefingOpen] = useState(false);
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -1094,6 +1101,46 @@ function ReviewView({
         </div>
       </Card>
 
+      {/* Decision profile — playstyle analysis from the log */}
+      <DecisionProfileCard profile={profile} />
+
+      {/* Briefing recap — what the JD didn't tell you (if available) */}
+      {payload.briefing && (
+        <Card className="overflow-hidden">
+          <header className="flex items-center justify-between border-b border-line bg-raised/40 px-5 py-2.5">
+            <span className="flex items-center gap-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
+              <BookOpen className="h-3 w-3" />
+              Briefing recap
+            </span>
+            <button
+              onClick={() => setBriefingOpen(true)}
+              className="text-[11px] font-semibold text-brand-700 hover:text-brand-800"
+            >
+              Open full briefing →
+            </button>
+          </header>
+          <div className="grid gap-px bg-line md:grid-cols-2">
+            <div className="bg-card-solid px-5 py-4">
+              <div className="mb-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-brand-700">
+                Hidden dynamics
+              </div>
+              <p className="line-clamp-4 text-[12.5px] leading-relaxed text-fg-muted">
+                {payload.briefing.hiddenDynamics}
+              </p>
+            </div>
+            <div className="bg-card-solid px-5 py-4">
+              <div className="mb-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-brand-700">
+                Interview questions ({payload.briefing.interviewQuestions.length})
+              </div>
+              <p className="line-clamp-4 text-[12.5px] leading-relaxed text-fg-muted">
+                Open the full briefing for surgical questions to ask the hiring
+                manager — derived from the dynamics you just lived through.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
         <button
           onClick={onReset}
@@ -1112,6 +1159,10 @@ function ReviewView({
       <div className="pt-4 text-center text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">
         Attempt {attemptId.slice(0, 8)} · {state.log.length} decisions logged
       </div>
+
+      {briefingOpen && payload.briefing && (
+        <BriefingModal payload={payload} onClose={() => setBriefingOpen(false)} />
+      )}
     </div>
   );
 }
@@ -1133,4 +1184,292 @@ function useCountUp(target: number, duration = 1000): number {
     return () => cancelAnimationFrame(raf);
   }, [target, duration]);
   return value;
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Briefing modal — what the JD doesn't tell you
+// ────────────────────────────────────────────────────────────────────
+
+function BriefingModal({
+  payload,
+  onClose,
+}: {
+  payload: SimulationPayload;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  if (!payload.briefing) return null;
+  const b = payload.briefing;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/55 p-4 backdrop-blur-[3px] md:p-8"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Job dynamics briefing"
+      style={{ animation: "fade-in 180ms ease-out" }}
+    >
+      <div
+        className="relative w-full max-w-2xl rounded-lg border border-line-strong bg-card-solid shadow-[0_30px_80px_-20px_rgba(15,23,42,0.7)]"
+        onClick={(e) => e.stopPropagation()}
+        style={{ animation: "slide-up-in 240ms ease-out" }}
+      >
+        <header className="flex items-start justify-between gap-3 border-b border-line bg-gradient-to-br from-brand-50 to-card-solid px-6 py-5">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
+              <BookOpen className="h-3 w-3" />
+              Briefing — {payload.jobTitle}
+            </div>
+            <h2
+              className="text-lg font-semibold tracking-tight text-fg md:text-xl"
+              style={{ fontFamily: "var(--font-display-theme, inherit)" }}
+            >
+              What the JD doesn&apos;t tell you
+            </h2>
+            <p className="mt-1 text-[12px] text-fg-muted">
+              Use this to sharpen interview prep, set realistic expectations,
+              and recognise patterns inside the sim.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line bg-card-solid text-fg-muted hover:bg-raised hover:text-fg"
+            aria-label="Close"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </header>
+
+        <div className="space-y-5 px-6 py-6">
+          {/* Hidden dynamics */}
+          <section>
+            <h3 className="mb-2 flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
+              <Compass className="h-3 w-3" />
+              Hidden dynamics
+            </h3>
+            <p className="rounded-md border-l-2 border-brand-500 bg-brand-50/40 px-4 py-3 text-[13.5px] leading-relaxed text-fg">
+              {b.hiddenDynamics}
+            </p>
+          </section>
+
+          {/* Failure modes */}
+          {b.failureModes.length > 0 && (
+            <section>
+              <h3 className="mb-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-rose-700">
+                Common failure modes
+              </h3>
+              <ul className="space-y-2">
+                {b.failureModes.map((f, i) => (
+                  <li
+                    key={i}
+                    className="flex gap-3 rounded-md border border-rose-200/60 bg-rose-50/40 px-3.5 py-2.5 text-[13px] leading-relaxed text-fg"
+                  >
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-100 font-mono text-[10.5px] font-semibold text-rose-700">
+                      {i + 1}
+                    </span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Unwritten rules */}
+          {b.unwrittenRules.length > 0 && (
+            <section>
+              <h3 className="mb-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-amber-800">
+                Unwritten rules
+              </h3>
+              <ul className="space-y-2">
+                {b.unwrittenRules.map((r, i) => (
+                  <li
+                    key={i}
+                    className="flex gap-3 rounded-md border border-amber-200/60 bg-amber-50/40 px-3.5 py-2.5 text-[13px] leading-relaxed text-fg"
+                  >
+                    <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                    <span>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Interview questions */}
+          {b.interviewQuestions.length > 0 && (
+            <section>
+              <h3 className="mb-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-emerald-800">
+                Questions to ask the hiring manager
+              </h3>
+              <ol className="space-y-2">
+                {b.interviewQuestions.map((q, i) => (
+                  <li
+                    key={i}
+                    className="flex gap-3 rounded-md border border-emerald-200/60 bg-emerald-50/40 px-3.5 py-2.5 text-[13px] leading-relaxed text-fg"
+                  >
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-mono text-[10.5px] font-semibold text-emerald-800">
+                      {i + 1}
+                    </span>
+                    <span>&ldquo;{q}&rdquo;</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-2 text-[10.5px] italic text-fg-subtle">
+                Tip: write these on the back of your hand before the interview.
+                Pull them out when the manager asks &ldquo;do you have any
+                questions for us?&rdquo;
+              </p>
+            </section>
+          )}
+        </div>
+
+        <footer className="border-t border-line bg-raised/30 px-5 py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-fg-subtle">
+          Press ESC or click outside to close
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Decision profile — surfaces playstyle patterns from the log
+// ────────────────────────────────────────────────────────────────────
+
+const ARCHETYPE_TONE: Record<string, { bg: string; text: string; border: string }> = {
+  collaborative: {
+    bg: "bg-sky-50",
+    text: "text-sky-800",
+    border: "border-sky-200",
+  },
+  decisive: {
+    bg: "bg-brand-50",
+    text: "text-brand-800",
+    border: "border-brand-200",
+  },
+  conservative: {
+    bg: "bg-amber-50",
+    text: "text-amber-900",
+    border: "border-amber-200",
+  },
+  bold: {
+    bg: "bg-rose-50",
+    text: "text-rose-800",
+    border: "border-rose-200",
+  },
+  balanced: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-800",
+    border: "border-emerald-200",
+  },
+};
+
+function DecisionProfileCard({
+  profile,
+}: {
+  profile: import("@/lib/simulator/engine").DecisionProfile;
+}) {
+  if (profile.decisionCount === 0) return null;
+  const tone = ARCHETYPE_TONE[profile.archetype] ?? ARCHETYPE_TONE.balanced;
+  return (
+    <Card className="overflow-hidden">
+      <header className="border-b border-line bg-raised/40 px-5 py-2.5">
+        <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
+          Your decision profile
+        </span>
+      </header>
+
+      <div className="grid gap-px bg-line md:grid-cols-[1fr_1fr]">
+        <div className="bg-card-solid p-5">
+          <div className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">
+            Archetype
+          </div>
+          <div className="mb-2 inline-flex">
+            <span
+              className={`rounded-full border ${tone.border} ${tone.bg} ${tone.text} px-3 py-1 text-[12px] font-semibold capitalize`}
+            >
+              {profile.archetype}
+            </span>
+          </div>
+          <p className="text-[12.5px] leading-relaxed text-fg-muted">
+            {profile.archetypeBlurb}
+          </p>
+        </div>
+
+        <div className="bg-card-solid p-5">
+          <div className="mb-3 text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">
+            Stat fingerprint
+          </div>
+          <dl className="space-y-2.5 text-[12.5px]">
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-fg-muted">Most protected</dt>
+              <dd className="text-right">
+                <span className="font-semibold text-emerald-700">
+                  {profile.protectedLabel}
+                </span>
+                <span className="ml-2 font-mono text-[11.5px] tabular-nums text-emerald-700">
+                  {profile.protectedNet >= 0
+                    ? `+${profile.protectedNet}`
+                    : profile.protectedNet}
+                </span>
+              </dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-fg-muted">Most sacrificed</dt>
+              <dd className="text-right">
+                <span className="font-semibold text-rose-700">
+                  {profile.sacrificedLabel}
+                </span>
+                <span className="ml-2 font-mono text-[11.5px] tabular-nums text-rose-700">
+                  {profile.sacrificedNet}
+                </span>
+              </dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-fg-muted">Intensity / decision</dt>
+              <dd className="font-mono text-[11.5px] tabular-nums text-fg">
+                {profile.avgIntensity.toFixed(1)} pts
+              </dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-fg-muted">Decisions made</dt>
+              <dd className="font-mono text-[11.5px] tabular-nums text-fg">
+                {profile.decisionCount}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      {profile.patternCallouts.length > 0 && (
+        <div className="border-t border-line bg-raised/20 px-5 py-4">
+          <div className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">
+            Patterns worth reflecting on
+          </div>
+          <ul className="space-y-2">
+            {profile.patternCallouts.map((c, i) => (
+              <li
+                key={i}
+                className="flex gap-2 text-[12.5px] leading-relaxed text-fg"
+              >
+                <span className="mt-1.5 inline-block h-1 w-1 shrink-0 rounded-full bg-brand-500" />
+                <span>{c}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
+  );
 }

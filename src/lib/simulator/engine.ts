@@ -225,3 +225,178 @@ function buildClosing(
 function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
+
+// ────────────────────────────────────────────────────────────────────
+// Decision profile — analyse the player's choices to surface patterns
+// ────────────────────────────────────────────────────────────────────
+
+export type DecisionProfile = {
+  /// Total decisions made.
+  decisionCount: number;
+  /// The stat the player most consistently increased (net positive
+  /// across the quarter). Names the player's "protected" priority.
+  protectedKey: string | null;
+  protectedLabel: string;
+  protectedNet: number;
+  /// The stat the player most consistently traded away.
+  sacrificedKey: string | null;
+  sacrificedLabel: string;
+  sacrificedNet: number;
+  /// Average absolute movement per decision — proxy for how aggressive
+  /// the player's choices were (cautious vs bold).
+  avgIntensity: number;
+  /// Decision archetype derived from choice-tag analysis.
+  /// "collaborative" | "decisive" | "conservative" | "bold" | "balanced"
+  archetype: DecisionArchetype;
+  archetypeBlurb: string;
+  /// 1–3 pattern callouts the player can reflect on.
+  patternCallouts: string[];
+};
+
+export type DecisionArchetype =
+  | "collaborative"
+  | "decisive"
+  | "conservative"
+  | "bold"
+  | "balanced";
+
+/**
+ * Compute a decision-profile from the attempt log + simulation payload.
+ * Pure local analysis — no AI call. Cheap enough to run on every render.
+ */
+export function computeDecisionProfile(
+  payload: SimulationPayload,
+  state: AttemptState,
+): DecisionProfile {
+  const log = state.log;
+  const decisionCount = log.length;
+
+  // Per-stat net + absolute totals across the quarter.
+  const netByStat: Record<string, number> = {};
+  const absByStat: Record<string, number> = {};
+  let totalIntensity = 0;
+  for (const entry of log) {
+    for (const [k, v] of Object.entries(entry.effects ?? {})) {
+      const n = v ?? 0;
+      netByStat[k] = (netByStat[k] ?? 0) + n;
+      absByStat[k] = (absByStat[k] ?? 0) + Math.abs(n);
+      totalIntensity += Math.abs(n);
+    }
+  }
+  const avgIntensity = decisionCount > 0 ? totalIntensity / decisionCount : 0;
+
+  // Identify the most-protected (highest net+) and most-sacrificed (lowest net-) stats.
+  const entries = Object.entries(netByStat);
+  const sortedByNet = [...entries].sort((a, b) => b[1] - a[1]);
+  const protectedEntry = sortedByNet[0];
+  const sacrificedEntry = sortedByNet[sortedByNet.length - 1];
+  const protectedKey = protectedEntry?.[1] > 0 ? protectedEntry[0] : null;
+  const sacrificedKey =
+    sacrificedEntry && sacrificedEntry[1] < 0 ? sacrificedEntry[0] : null;
+  const labelOf = (k: string | null) =>
+    k ? payload.stats.find((s) => s.key === k)?.label ?? k : "—";
+
+  // Tag-based archetype. Look at the verbal "tag" strings on each choice
+  // — they carry intent vocabulary ("brokered", "deferred", "took the
+  // stretch", "held the line"). Keyword-bucket each tag into one of the
+  // four archetypes; whichever wins is the player's style.
+  const buckets: Record<DecisionArchetype, number> = {
+    collaborative: 0,
+    decisive: 0,
+    conservative: 0,
+    bold: 0,
+    balanced: 0,
+  };
+  const TAG_VOCAB: Array<[DecisionArchetype, RegExp]> = [
+    [
+      "collaborative",
+      /broker|coalition|cross-?func|together|aligned|consensus|listen|federated|share|invited/i,
+    ],
+    [
+      "decisive",
+      /held the (line|bar)|chose|named|escalat|owned|made the call|took it back|hard call|direct/i,
+    ],
+    [
+      "conservative",
+      /defer|punt|wait|protect|caut|tactical|minimum viable|shortcut|preserve|skipped/i,
+    ],
+    [
+      "bold",
+      /took the stretch|bet|stretch|advocate|risk|bold|chose to ship|fast|over-?committed/i,
+    ],
+  ];
+  for (const entry of log) {
+    if (!entry.tag) continue;
+    let matched = false;
+    for (const [archetype, re] of TAG_VOCAB) {
+      if (re.test(entry.tag)) {
+        buckets[archetype]++;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) buckets.balanced++;
+  }
+  const archetype = (Object.entries(buckets) as Array<
+    [DecisionArchetype, number]
+  >).sort((a, b) => b[1] - a[1])[0][0];
+
+  const archetypeBlurb = {
+    collaborative:
+      "You consistently chose to broker, build coalition, and bring partners into decisions. Trades speed for durability.",
+    decisive:
+      "You held lines and owned hard calls publicly. Drives clarity, can bruise relationships if the cadence is too high.",
+    conservative:
+      "You protected capacity, deferred non-critical asks, and took the cheaper option when offered. Sustainable, sometimes invisible.",
+    bold:
+      "You said yes to stretch work and bet on big swings. High ceiling, real burnout risk if pattern holds.",
+    balanced:
+      "Your decisions span styles — no dominant archetype this quarter.",
+  }[archetype];
+
+  // 1–3 pattern callouts based on the numbers.
+  const callouts: string[] = [];
+  if (protectedKey && Math.abs(protectedEntry[1]) >= decisionCount * 2) {
+    callouts.push(
+      `Across ${decisionCount} decisions you net +${protectedEntry[1]} on ${labelOf(protectedKey)} — that stat is clearly your priority.`,
+    );
+  }
+  if (sacrificedKey && Math.abs(sacrificedEntry[1]) >= decisionCount * 2) {
+    callouts.push(
+      `${labelOf(sacrificedKey)} dropped ${Math.abs(sacrificedEntry[1])} points across the quarter — recognise the pattern and decide if it's intentional.`,
+    );
+  }
+  if (avgIntensity >= 18) {
+    callouts.push(
+      `High-intensity playstyle — average ${avgIntensity.toFixed(1)} stat-points moved per decision. Sustainable for 1–2 quarters, watch for capacity erosion.`,
+    );
+  } else if (avgIntensity > 0 && avgIntensity <= 10) {
+    callouts.push(
+      `Low-intensity playstyle — choices tended to be safer plays (avg ${avgIntensity.toFixed(1)} stat-points per decision). Consider when boldness would have moved the needle more.`,
+    );
+  }
+  if (archetype === "conservative" && callouts.length < 3) {
+    callouts.push(
+      `Conservative archetype + ${labelOf(protectedKey)} as your top stat is a recognisable "head-down operator" pattern. Strong in steady-state, less so when leadership wants signal.`,
+    );
+  }
+  if (archetype === "bold" && callouts.length < 3) {
+    callouts.push(
+      `Bold archetype + watching capacity erode is the classic "ambitious new director" trap. Two more quarters of this without recovery and a fall-off is statistically likely.`,
+    );
+  }
+
+  return {
+    decisionCount,
+    protectedKey,
+    protectedLabel: labelOf(protectedKey),
+    protectedNet: protectedEntry?.[1] ?? 0,
+    sacrificedKey,
+    sacrificedLabel: labelOf(sacrificedKey),
+    sacrificedNet: sacrificedEntry?.[1] ?? 0,
+    avgIntensity,
+    archetype,
+    archetypeBlurb,
+    patternCallouts: callouts.slice(0, 3),
+  };
+}

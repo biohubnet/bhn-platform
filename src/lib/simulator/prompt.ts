@@ -28,7 +28,15 @@ A single valid JSON object matching the schema below. No prose before or after. 
   "team": [Person, ...],               // 5–7 entries. These are the player's direct reports.
   "partners": [Person, ...],           // 2–4 entries. Cross-functional peers (Product, Eng, Marketing, Compliance, peer Directors, etc.)
   "scenarios": [Scenario, ...],        // 8–10 entries spanning weeks 1..12
-  "reviewThresholds": { "exceeds": 80, "strongMeets": 70, "meets": 58, "below": 45 }
+  "reviewThresholds": { "exceeds": 80, "strongMeets": 70, "meets": 58, "below": 45 },
+  "briefing": Briefing                 // Job-dynamics insight the JD doesn't tell you
+}
+
+Briefing = {
+  "hiddenDynamics": string,            // 2–4 sentences: who really has power in this role, the unwritten metric the player will be judged on, the relationship that matters most in the first 90 days (often NOT the one the JD highlights).
+  "failureModes": [string, ...],       // 3–5 specific named patterns. NOT platitudes. E.g. "Over-promising the roadmap in week 1 — sets a velocity bar the team can't sustain past week 6." NOT "Don't bite off more than you can chew."
+  "unwrittenRules": [string, ...],     // 3–5 things not in the JD. VP communication quirks, which Slack channels are real-decision-making, who blocks launches by default, what "informally counts" as a deliverable.
+  "interviewQuestions": [string, ...]  // 5–7 surgical questions the player should ask the hiring manager. Avoid generic ("what's the culture like"). Prefer specific ("What's a decision the last person in this role made that you wish they'd made differently?", "Where does this org's design system end and Enterprise Design's begin?").
 }
 
 Person = {
@@ -92,6 +100,8 @@ Choice = {
 8. **No identifying real people.** If the JD mentions a specific named person, do NOT use that name in your cast. Generate plausible fictional names.
 
 9. **JSON only.** First character of output must be \`{\`. Last must be \`}\`. No \`\`\` markers, no "Here's the simulation:", no trailing commentary.
+
+10. **Briefing is part of the value, not an afterthought.** Job seekers use this simulator to understand the *real* dynamics of a role beyond the JD. The briefing section is where you reveal what the JD won't tell them. Be honest about power, politics, and unwritten rules. Cite specific named cast members where useful ("Catherine in Enterprise Design will quietly absorb scope if you don't push back early"). Make interview questions surgical enough that asking them would visibly impress the hiring manager. A weak briefing makes the whole sim feel like a game; a sharp briefing makes it feel like a coaching session.
 
 # Sanity guardrails
 
