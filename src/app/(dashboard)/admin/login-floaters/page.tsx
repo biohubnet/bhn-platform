@@ -36,9 +36,10 @@ export default async function AdminLoginFloatersPage() {
           <>
             Manage the ambient process-glyph animations that sit on the dark periphery
             of the public <code className="font-mono text-fg bg-elevated px-1.5 py-0.5 rounded">/login</code> screen.
-            Add, remove, replace, and reposition individual floaters; changes apply on the next login-page load
-            (no deploy needed). Browse the full curated library in the editorial gallery below — each card is the
-            real React component at thumbnail scale, so what you see is what lands on the login backdrop.
+            The gallery below is the picker — click any card to seat that floater on /login (each card is the
+            real React component at thumbnail scale, so what you see is what lands on the login backdrop). The
+            row editor underneath lets you fine-tune position, size, colour, and drift variant for whatever is
+            currently seated. Changes apply on the next login-page load (no deploy needed).
           </>
         )}
       />
