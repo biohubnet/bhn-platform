@@ -58,6 +58,7 @@ import {
   Gauge,
   Sliders,
   Eye,
+  Drama,
 } from "lucide-react";
 
 interface NavItem {
@@ -120,6 +121,8 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
     description: "Live job board of internship and co-op postings from BHN industry partners. Apply directly from here." },
   { label: "Matches for you",           labelKey: "nav.matches",     href: "/profile/matches",          icon: Sparkles,
     description: "AI-ranked internship postings, scored against your skill profile + completed pathways. Each row shows the receipts — direct overlap, semantic similarity, pathway alignment, gaps, and honest caveats." },
+  { label: "Role-play Simulator",       labelKey: "nav.simulator",   href: "/simulator",                icon: Drama,
+    description: "Practise any role before you apply. Paste a job-posting URL and live through a 12-week quarter as that person — 1:1s, escalations, hiring, the QBR. Every choice moves five stats. End-of-quarter performance review from your VP." },
   { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList,
     description: "Status of every application you've submitted across the platform — submitted, reviewed, interview, offer.",
     badgeKey: "offer-requests" },
