@@ -96,6 +96,28 @@ function formatTorontoForDisplay(dateLike: string | Date): string {
   });
 }
 
+/** "YYYY-MM-DD" in Toronto-local time — used to pre-fill the
+ *  HTML `<input type=date>` in the Edit form so the row's existing
+ *  deadline appears in the picker. */
+function torontoDateInput(dateLike: string | Date): string {
+  const date = typeof dateLike === "string" ? new Date(dateLike) : dateLike;
+  // en-CA's default locale string is YYYY-MM-DD, which is what
+  // <input type="date"> expects.
+  return date.toLocaleDateString("en-CA", { timeZone: "America/Toronto" });
+}
+
+/** "HH:MM" (24h) in Toronto-local time — used to pre-fill the
+ *  HTML `<input type=time>` in the Edit form. */
+function torontoTimeInput(dateLike: string | Date): string {
+  const date = typeof dateLike === "string" ? new Date(dateLike) : dateLike;
+  const hhmm = date.toLocaleString("en-CA", {
+    timeZone: "America/Toronto",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+  // en-CA + hour12=false renders 00:00 as "24:00" in some browsers; normalise.
+  return hhmm.replace(/^24/, "00");
+}
+
 export function DeadlineManager({ initial }: Props) {
   const [tab, setTab] = useState<"list" | "calendar">("list");
 
@@ -459,6 +481,12 @@ function DeadlineRow({ d }: { d: Deadline }) {
   const [closeNote, setCloseNote] = useState("");
   const [cycleLabel, setCycleLabel] = useState(d.cycleLabel ?? "");
   const [note, setNote] = useState(d.note ?? "");
+  // Editable date / time of the deadline itself — pre-fill from
+  // the current value (Toronto-local) so admins editing
+  // auto-synced (prepopulated) rows see the current date in the
+  // picker and can nudge it.
+  const [editDate, setEditDate] = useState(() => torontoDateInput(d.deadlineAt));
+  const [editTime, setEditTime] = useState(() => torontoTimeInput(d.deadlineAt));
   const [error, setError] = useState<string | null>(null);
 
   const past = new Date(d.deadlineAt).getTime() < Date.now();
@@ -557,7 +585,7 @@ function DeadlineRow({ d }: { d: Deadline }) {
               type="button"
               onClick={() => setMode(mode === "edit" ? "idle" : "edit")}
               className="text-xs text-muted hover:text-fg inline-flex items-center gap-1"
-              title="Edit cycle label / note"
+              title="Edit date / cycle label / note"
             >
               <Pencil size={11} />
             </button>
@@ -636,6 +664,35 @@ function DeadlineRow({ d }: { d: Deadline }) {
       {mode === "edit" && (
         <tr><td colSpan={5} className="px-5 pb-4 bg-elevated/30">
           <div className="rounded-xl border border-line bg-card-solid p-3 space-y-2">
+            {/* Date + time row — admins can correct prepopulated
+                dates that came out of the auto-sync from the VL
+                round schedule. Unlike `Extend` (which is for
+                pushing an already-announced deadline forward and
+                records an audit trail), Edit is a hard
+                correction: it overwrites both `deadlineAt` AND
+                `originalDeadlineAt` and clears any prior
+                `extendedAt` marker so the row reads as a fresh
+                value rather than an extension. */}
+            <div className="grid grid-cols-[1fr_1fr] gap-2">
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Deadline date (ET)</span>
+                <input
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Deadline time (ET)</span>
+                <input
+                  type="time"
+                  value={editTime}
+                  onChange={(e) => setEditTime(e.target.value)}
+                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm font-mono"
+                />
+              </label>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <label className="block">
                 <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Cycle label</span>
@@ -660,7 +717,16 @@ function DeadlineRow({ d }: { d: Deadline }) {
               <button type="button" onClick={() => setMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
               <button
                 type="button"
-                onClick={() => mutate({ action: "update_meta", cycleLabel, note })}
+                onClick={() => {
+                  // Same noon-ET fast-path as the New-deadline +
+                  // Extend forms — 12:00 picks the daylight-saving-
+                  // aware noon helper, anything else lands at the
+                  // chosen wall-clock time in Eastern.
+                  const iso = editTime === "12:00"
+                    ? noonEasternIso(editDate)
+                    : new Date(`${editDate}T${editTime}:00-05:00`).toISOString();
+                  mutate({ action: "update_meta", cycleLabel, note, deadlineAt: iso });
+                }}
                 disabled={pending}
                 className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
               >

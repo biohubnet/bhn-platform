@@ -9,7 +9,20 @@
  *     action=reopen      → admin escape hatch — flip back to "open"
  *                          without changing dates. Useful when a
  *                          window was closed prematurely.
- *     action=update_meta → edit cycleLabel / note in place.
+ *     action=update_meta → edit cycleLabel / note in place. Also
+ *                          accepts `deadlineAt` for a HARD edit of
+ *                          the date (e.g. correcting an auto-synced
+ *                          prepopulated row). Unlike `extend`, this
+ *                          overwrites both `deadlineAt` AND
+ *                          `originalDeadlineAt` and clears any prior
+ *                          `extendedAt`/`extendedById` marker, so
+ *                          the row reads as a fresh value with no
+ *                          extension audit trail. Use `extend` when
+ *                          you're pushing an already-announced
+ *                          deadline forward and want the history
+ *                          preserved; use `update_meta` with
+ *                          `deadlineAt` when you're correcting a
+ *                          mistakenly-prepopulated date.
  *
  *   DELETE /api/admin/equip/deadlines/[id]   hard delete
  *     Only allowed when the window has no submissions counted
@@ -91,6 +104,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   } else if (action === "update_meta") {
     if (typeof body.cycleLabel === "string") data.cycleLabel = body.cycleLabel.slice(0, 100) || null;
     if (typeof body.note === "string") data.note = body.note.slice(0, 500) || null;
+    // Hard date edit — overwrites both deadlineAt + originalDeadlineAt
+    // and clears any prior extension audit. Use the `extend` action
+    // instead to preserve the "originally X" trail when announcing a
+    // later deadline to applicants.
+    if (typeof body.deadlineAt === "string" && body.deadlineAt.length > 0) {
+      const newDate = new Date(body.deadlineAt);
+      if (isNaN(newDate.getTime())) {
+        return NextResponse.json({ error: "Invalid deadline date" }, { status: 400 });
+      }
+      data.deadlineAt = newDate;
+      data.originalDeadlineAt = newDate;
+      data.extendedAt = null;
+      data.extendedById = null;
+    }
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
