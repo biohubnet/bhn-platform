@@ -176,6 +176,12 @@ model User {
   applicationUpdatedAt   DateTime?
   /// Onboarding progress: { version, seenStepIds[], minimized, dismissed, completedAt }
   onboarding             Json?
+  /// First-login gamified ritual — flips true the moment the user
+  /// finishes the "split a cell" interactive walkthrough at
+  /// /welcome/split-a-cell. Trainee / evaluating roles that hit
+  /// /dashboard with this still false get redirected to the game.
+  /// Admins can replay any time via /welcome/split-a-cell?replay=1.
+  hasSplitCell           Boolean   @default(false)
   /// GDPR/CCPA consent: { necessary, analytics, marketing, version, acceptedAt }
   consent                Json?
   /// Preferred UI language ISO code: en | es | fr | zh

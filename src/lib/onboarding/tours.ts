@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.18p";
+export const TOUR_VERSION = "2026.05.18q";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -43,6 +43,15 @@ export const TOUR_STEPS: TourStep[] = [
   },
 
   // ─── Trainee path ────────────────────────────────────────────────
+  {
+    id: "trainee.first-login-cell-split",
+    title: "First login? You split a cell.",
+    body: "Brand-new trainees land on `/welcome/split-a-cell` on their very first dashboard visit — a 9-stage gamified passaging walkthrough (aspirate media → PBS rinse → trypsin → 3-min incubate → neutralize → re-seed) that mirrors the MSC culture cycle on the login screen. Plays once and the flag flips; from then on you go straight to the dashboard. Admins can replay any time via `/welcome/split-a-cell?replay=1` — the replay path never writes the flag.",
+    placement: "center",
+    roles: ["trainee", "evaluating", "admin", "superadmin"],
+    since: "2026.05.18q",
+    cta: { label: "Replay the ritual (admin)", href: "/welcome/split-a-cell?replay=1" },
+  },
   {
     id: "trainee.dashboard",
     title: "Your home base",

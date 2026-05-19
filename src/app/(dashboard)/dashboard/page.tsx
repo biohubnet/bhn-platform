@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -81,6 +82,22 @@ export default async function DashboardPage() {
         committeeBadge={<CommitteeBadgeStrip userId={userId} />}
       />
     );
+  }
+
+  // First-login gamified ritual — trainees / evaluating users land
+  // on /welcome/split-a-cell on their very first dashboard visit so
+  // they can play the "split a cell" mini-game. Flag flips to true
+  // when they finish; subsequent logins skip the redirect. Admins
+  // never trigger this guard (they hit one of the branches above);
+  // they can replay at any time via /welcome/split-a-cell?replay=1.
+  if (role === "trainee" || role === "evaluating") {
+    const me = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { hasSplitCell: true },
+    });
+    if (me && !me.hasSplitCell) {
+      redirect("/welcome/split-a-cell");
+    }
   }
 
   // Minimal data for the stripped trainee home. We only need:
