@@ -631,8 +631,9 @@ export default async function DashboardPage() {
             on a faint brand-tone wash, signed off with the four-
             petal LogoMark + uppercase team attribution. Standard
             section padding so it pairs with the rest of the page;
-            extra `max-w-2xl mx-auto` centres the body for an
-            editorial line-length that's comfortable to read. */}
+            `max-w-2xl mr-auto` caps the line length for comfortable
+            reading WHILE anchoring the whole block to the left edge
+            of the section. */}
       <section
         className="border-t border-line py-5 sm:py-7 px-5 sm:px-8 relative overflow-hidden"
         style={{
@@ -641,11 +642,11 @@ export default async function DashboardPage() {
         }}
       >
         {/* Left-aligned treatment — eyebrow + body + signature
-            stack on the left edge of the 2xl column. The column
-            itself is still horizontally centred on the page via
-            `mx-auto` so the line length stays editorial; only the
-            text alignment inside is left. */}
-        <div className="relative max-w-2xl mx-auto">
+            stack on the left edge of the section. `mr-auto` (NOT
+            `mx-auto`) pushes the 2xl column against the left edge
+            so the block ITSELF is left-aligned on the page; the
+            max-w-2xl cap still keeps an editorial line length. */}
+        <div className="relative max-w-2xl mr-auto">
           <SectionEyebrow tone="brand">A note from the team</SectionEyebrow>
           <p className="mt-3 font-serif italic text-base sm:text-lg text-fg leading-relaxed">
             Welcome, <span className="not-italic font-bold">{firstName}</span>. We hope
