@@ -1,27 +1,31 @@
 "use client";
 
 /**
- * MscCultureCycle — a six-stage looping animation that tells the
- * full MSC passaging story in one corner of the login backdrop:
+ * MscCultureCycle — an eight-stage looping animation that tells
+ * the full MSC passaging story in one corner of the login
+ * backdrop. Stages follow the standard wet-lab passaging protocol:
  *
  *   1. SEED       — a few cells in fresh media (P0 · seeded)
- *   2. GROW       — proliferating, with little "+1" dividing
- *                   indicators
+ *   2. GROW       — proliferating, "+1" dividing indicators
  *   3. CONFLUENT  — 80 % confluent monolayer, ready to passage
- *   4. TRYPSIN    — a green wash flows in, cells round up (they
- *                   detach from the substrate as the protease cuts
- *                   adhesion proteins)
- *   5. ASPIRATE   — the pipette descends and a stream of cells is
- *                   drawn up into it
- *   6. RE-SEED    — pipette pulls back, only a few cells remain
- *                   in the new dish (P1)
+ *   4. PBS WASH   — old media aspirated; PBS rinse removes
+ *                   residual serum (FBS would inactivate trypsin)
+ *   5. TRYPSIN    — protease cuts adhesion proteins; cells round
+ *                   up (they go from flat-and-spread to compact
+ *                   spheres detached from the substrate)
+ *   6. NEUTRALIZE — FBS-containing media added to stop the
+ *                   digestion; dish wash switches green → pink
+ *                   (phenol red in DMEM+FBS)
+ *   7. ASPIRATE   — pipette descends and draws the cell suspension
+ *                   up into it
+ *   8. RE-SEED    — pipette pulls back, only a few cells remain
+ *                   in the fresh flask (P1)
  *
  * Then the cycle loops back to SEED.
  *
  * No external lib — pure React `useState` + `setTimeout`, with CSS
  * transitions on the SVG attributes so each stage hand-off looks
- * smooth instead of cut. Stage timing is stored in `STAGE_INFO`
- * so it's easy to retune.
+ * smooth instead of cut. Stage timing is in `STAGE_INFO`.
  */
 
 import { useEffect, useState } from "react";
@@ -47,29 +51,45 @@ const STAGES = [
   "seed",
   "grow",
   "confluent",
+  "pbsWash",
   "trypsin",
+  "neutralize",
   "aspirate",
   "reseed",
 ] as const;
 type Stage = (typeof STAGES)[number];
 
 const STAGE_INFO: Record<Stage, { label: string; sub: string; duration: number }> = {
-  seed:      { label: "P0 · SEEDED",     sub: "5×10³ cells/cm²",     duration: 3400 },
-  grow:      { label: "PROLIFERATING",   sub: "doubling…",            duration: 3600 },
-  confluent: { label: "80% CONFLUENT",   sub: "ready to passage",     duration: 4200 },
-  trypsin:   { label: "TRYPSIN · 0.25%", sub: "5 min @ 37°C",         duration: 3600 },
-  aspirate:  { label: "ASPIRATE",        sub: "pipette out cells",    duration: 4200 },
-  reseed:    { label: "RE-SEED · P1",    sub: "fresh flask",          duration: 3000 },
+  seed:       { label: "P0 · SEEDED",     sub: "5×10³ cells/cm²",       duration: 3400 },
+  grow:       { label: "PROLIFERATING",   sub: "doubling…",              duration: 3600 },
+  confluent:  { label: "80% CONFLUENT",   sub: "ready to passage",       duration: 3800 },
+  pbsWash:    { label: "PBS WASH",        sub: "rinse off residual FBS", duration: 2600 },
+  trypsin:    { label: "TRYPSIN · 0.25%", sub: "3-5 min @ 37°C",         duration: 3400 },
+  neutralize: { label: "NEUTRALIZE",      sub: "+ FBS media stops it",   duration: 2600 },
+  aspirate:   { label: "ASPIRATE",        sub: "pipette out cells",      duration: 3600 },
+  reseed:     { label: "RE-SEED · P1",    sub: "fresh flask",            duration: 2800 },
 };
 
-/** Pseudo-randomised cell positions inside the dish ellipse. They
- *  cluster naturally without overlapping much. Listed in the order
- *  they appear as cells divide. */
+/** Cell positions inside the dish ellipse (cx=90, cy=140, rx=78,
+ *  ry=62 in the 180×260 viewBox). Layered so cells appear in
+ *  passage order: 0–3 at SEED, 4–8 at GROW, 9–27 at CONFLUENT
+ *  (the latter 19 fill out the dish into a tight monolayer).
+ *  The denser packing makes 80% confluent actually read as a
+ *  monolayer instead of scattered dots. */
 const CELL_POSITIONS: Array<{ x: number; y: number }> = [
-  { x: 50,  y: 110 }, { x: 86,  y: 102 }, { x: 116, y: 116 }, { x: 68,  y: 132 },
-  { x: 100, y: 138 }, { x: 44,  y: 138 }, { x: 78,  y: 148 }, { x: 116, y: 150 },
-  { x: 58,  y: 96  }, { x: 92,  y: 122 }, { x: 70,  y: 162 }, { x: 108, y: 162 },
-  { x: 38,  y: 122 }, { x: 124, y: 130 }, { x: 50,  y: 154 }, { x: 124, y: 100 },
+  // SEED (first 4) — sparse founders
+  { x: 60, y: 116 }, { x: 110, y: 108 }, { x: 78, y: 148 }, { x: 124, y: 142 },
+  // GROW (positions 4-8) — first round of division
+  { x: 92, y: 122 }, { x: 50, y: 138 }, { x: 100, y: 156 }, { x: 70, y: 130 },
+  { x: 130, y: 124 },
+  // CONFLUENT (positions 9-27) — fill out into a tight packed
+  // monolayer. Roughly grid-aligned with ~16-18 px spacing so
+  // they almost touch at the new flat-cell radius (r=3.2).
+  { x: 44, y: 110 },  { x: 86, y: 134 },  { x: 116, y: 130 }, { x: 58, y: 162 },
+  { x: 90, y: 168 },  { x: 122, y: 162 }, { x: 38, y: 152 },  { x: 100, y: 138 },
+  { x: 138, y: 144 }, { x: 76, y: 168 },  { x: 64, y: 100 },  { x: 96, y: 100 },
+  { x: 108, y: 174 }, { x: 30, y: 134 },  { x: 144, y: 124 }, { x: 70, y: 178 },
+  { x: 130, y: 178 }, { x: 50, y: 172 },  { x: 86, y: 184 },
 ];
 
 interface Props {
@@ -107,18 +127,32 @@ export function MscCultureCycle({ size = 200, className }: Props) {
     stage === "seed" ? 4 :
     stage === "grow" ? 9 :
     stage === "reseed" ? 3 :
-    16;
+    // confluent, pbsWash, trypsin, neutralize, aspirate — all show
+    // the full packed monolayer
+    CELL_POSITIONS.length;
 
-  // Cells go from flat/spread (blue tint) to rounded (green tint)
-  // during trypsin/aspirate stages.
-  const isDetaching = stage === "trypsin" || stage === "aspirate";
-  const cellR = isDetaching ? 3.4 : 2.4;
+  // Detached state — cells are spherical (compact) during trypsin
+  // through aspirate. NOTE the radius logic is FLIPPED vs. before:
+  // flat MSCs are SPREAD (visually larger, r=3.2) and detached
+  // spheres are COMPACT (visually smaller, r=2.4). That's how real
+  // MSCs look — spread + adhered cells take up more dish area than
+  // the same cells rolled into spheres after digestion.
+  const isDetaching =
+    stage === "trypsin" ||
+    stage === "neutralize" ||
+    stage === "aspirate";
+  const cellR = isDetaching ? 2.4 : 3.2;
   const cellFill = isDetaching ? "#86efac" : "#7dd3fc";
-  const cellFillOpacity = isDetaching ? 0.7 : 0.5;
-  const cellStrokeOpacity = isDetaching ? 0.85 : 0.75;
+  const cellFillOpacity = isDetaching ? 0.7 : 0.55;
+  const cellStrokeOpacity = isDetaching ? 0.85 : 0.78;
 
-  // Trypsin pool — green wash inside the dish.
-  const trypsinOpacity = isDetaching ? 0.16 : 0;
+  // Three colour washes for the dish — fade in / out per stage.
+  // Real wet-lab vocabulary: green (trypsin), pink (FBS media,
+  // pinker than DMEM alone because of phenol red), pale cyan (PBS).
+  const trypsinOpacity =
+    stage === "trypsin" || stage === "aspirate" ? 0.18 : 0;
+  const neutralizeOpacity = stage === "neutralize" ? 0.22 : 0;
+  const pbsOpacity = stage === "pbsWash" ? 0.20 : 0;
 
   // Pipette descends from above. Off-screen when not in use, lower
   // and inside the dish when aspirating/reseeding.
@@ -156,10 +190,26 @@ export function MscCultureCycle({ size = 200, className }: Props) {
           strokeDasharray="2 3" opacity="0.35"
         />
 
+        {/* ── PBS wash — pale cyan rinse, fades in just before
+              trypsin to flag the "rinse off residual FBS" step. */}
+        <ellipse
+          cx="90" cy="140" rx="74" ry="58"
+          fill="#bae6fd" fillOpacity={pbsOpacity}
+          style={{ transition: noTransition ?? "fill-opacity 700ms ease" }}
+        />
+
         {/* ── Trypsin green wash ────────────────────────────────── */}
         <ellipse
           cx="90" cy="140" rx="74" ry="58"
           fill="#86efac" fillOpacity={trypsinOpacity}
+          style={{ transition: noTransition ?? "fill-opacity 700ms ease" }}
+        />
+
+        {/* ── Neutralize pink wash — DMEM + FBS (phenol red). Fades
+              over the green wash once trypsin is neutralised. */}
+        <ellipse
+          cx="90" cy="140" rx="74" ry="58"
+          fill="#f9a8d4" fillOpacity={neutralizeOpacity}
           style={{ transition: noTransition ?? "fill-opacity 700ms ease" }}
         />
 
