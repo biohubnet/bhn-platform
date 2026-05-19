@@ -8,13 +8,8 @@ import {
   FlaskConical, Rocket,
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
-import { DraggableGlyph } from "@/components/branding/DraggableGlyph";
 import { DeepSeaStars } from "@/components/branding/DeepSeaStars";
-import { MscCultureCycle } from "@/components/branding/MscCultureCycle";
-import { DnaTranscription } from "@/components/branding/DnaTranscription";
-import { AntibodyBinding } from "@/components/branding/AntibodyBinding";
-import { WesternBlotRun } from "@/components/branding/WesternBlotRun";
-import { CarTKill } from "@/components/branding/CarTKill";
+import { LoginFloaters } from "@/components/branding/LoginFloaters";
 import { ThemeCycler } from "@/components/ui/ThemePicker";
 
 const REMEMBER_KEY = "bhn-remember-email";
@@ -145,76 +140,14 @@ function LoginPageInner() {
       <DeepSeaStars />
 
       {/* ─── BIOMANUFACTURING MOLECULES — periphery-only.
-           Every glyph is positioned in the LEFT or RIGHT edge
-           zone (within ~10 % of the viewport edge), well clear of
-           the form column in the middle. Combined with the swim
-           translate (≤ 58 px) + rotation orbit (≤ ~40 px) + the
-           poke physics that pushes them AWAY from any cursor that
-           drifts close (and the form sits where the cursor lives
-           most), they'll never wander into the centre. Drag-to-
-           centre is overridden the moment you release because
-           spring-back pulls each glyph back to its base position.
-           All `hidden lg:block` — only fire when there's actual
-           periphery to fly around in. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* ── LEFT EDGE ─────────────────────────────────────────── */}
-
-        {/* Antibody binding cycle — top-left. IgG antibody +
-            cognate antigen tweening through circulating →
-            approaching → bound → release. */}
-        <DraggableGlyph
-          className="absolute left-[2%] top-[8%] text-emerald-300/30 hidden lg:block"
-          swimClass="lab-swim-rev"
-          pokeRadius={150}
-        >
-          <AntibodyBinding size={140} />
-        </DraggableGlyph>
-
-        {/* DNA transcription cycle — left edge bottom-mid. Bubble
-            opens, RNA pol docks, mRNA gets synthesised, releases.
-            Wide aspect so it spans the lower-left periphery. */}
-        <DraggableGlyph
-          className="absolute left-[1%] top-[55%] text-sky-300/28 hidden lg:block"
-          swimClass="lab-swim-slow"
-          pokeRadius={160}
-        >
-          <DnaTranscription size={220} />
-        </DraggableGlyph>
-
-        {/* ── RIGHT EDGE ────────────────────────────────────────── */}
-
-        {/* Western blot run cycle — top-right. Samples loaded →
-            running → transferred → probed → developed; bands
-            migrate to their MW positions, target lights up. */}
-        <DraggableGlyph
-          className="absolute right-[3%] top-[8%] text-sky-200/28 hidden lg:block"
-          swimClass="lab-swim-slow"
-          pokeRadius={140}
-        >
-          <WesternBlotRun size={150} />
-        </DraggableGlyph>
-
-        {/* CAR-T kill cycle — right edge mid. T cell patrols,
-            tumor cell drifts in, immune synapse forms, perforin
-            + granzyme lyse the target, debris drifts off. */}
-        <DraggableGlyph
-          className="absolute right-[3%] top-[38%] text-rose-300/28 hidden lg:block"
-          swimClass="lab-swim-rev"
-          pokeRadius={160}
-        >
-          <CarTKill size={160} />
-        </DraggableGlyph>
-
-        {/* MSC passaging cycle — bottom-right. The original
-            storytelling vignette. */}
-        <DraggableGlyph
-          className="absolute right-[2%] bottom-[4%] text-slate-200/35 hidden lg:block"
-          swimClass="lab-swim-slow"
-          pokeRadius={140}
-        >
-          <MscCultureCycle size={200} />
-        </DraggableGlyph>
-      </div>
+           Data-driven now: the active list lives in the
+           `loginFloaters` PlatformSetting row, edited by admins
+           on /admin/login-floaters. The renderer fetches the
+           config from /api/login-floaters on mount, maps each
+           entry through FLOATER_REGISTRY (the curated component
+           library), and positions them via side + verticalPct.
+           Used to be a hardcoded block of 5 floaters here. */}
+      <LoginFloaters />
 
       {/* Vignette — gentle darken at the page edges so the
           spotlight pool reads as the focal area. */}

@@ -276,6 +276,8 @@ const adminEquipItems: NavItem[] = [
 const adminInsightsItems: NavItem[] = [
   { label: "Design system",       href: "/admin/design-system",       icon: Palette,    minRole: "admin",
     description: "Pick the platform-wide layout vocabulary (Classic / Cinematic / Studio) — admin-only, applies to every user. Plus the live tokens reference: surfaces, type scale, radius scale, motion primitives, component patterns, accessibility checklist. Canonical doc at docs/design-system.md." },
+  { label: "Login floaters",      href: "/admin/login-floaters",      icon: FlaskConical, minRole: "admin",
+    description: "Manage the ambient process-glyph animations that sit on the dark periphery of the public /login screen. Add, remove, replace, and reposition individual floaters from a curated 20-item library; changes apply on the next login-page load without a deploy." },
   { label: "Insights",            href: "/admin/insights",            icon: Lightbulb,  minRole: "admin",
     description: "Per-period 'what users told us' synthesis. Read the signal feeds (theme votes, exit-survey responses, access requests, pending-queue heat), write the synthesis note, publish to /changelog so the loop closes back to users." },
   { label: "Experience metrics",  href: "/admin/experience-metrics",  icon: Gauge,      minRole: "admin",

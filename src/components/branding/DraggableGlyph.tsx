@@ -38,6 +38,11 @@ interface Props {
   children: ReactNode;
   /** Tailwind/etc classes for the outer positioning wrapper. */
   className?: string;
+  /** Inline style on the outer positioning wrapper. Used by the
+   *  data-driven /login floater renderer to apply dynamic
+   *  side/verticalPct positions that Tailwind JIT can't extract
+   *  from runtime values. */
+  style?: CSSProperties;
   /** Optional CSS animation class for the swim wrapper (lab-swim*). */
   swimClass?: string;
   /**
@@ -72,6 +77,7 @@ const SPRING_K = 0.014;
 export function DraggableGlyph({
   children,
   className,
+  style,
   swimClass,
   pokeRadius = 150,
   pokeAcceleration = 0.18,
@@ -267,7 +273,7 @@ export function DraggableGlyph({
   // missing functionality; the atmosphere is just decoration to
   // them.
   return (
-    <div ref={wrapperRef} className={className}>
+    <div ref={wrapperRef} className={className} style={style}>
       {/* SWIM — translate via lab-swim* keyframe */}
       <div className={swimClass}>
         {/* SPIN — rotate slowly around the random centre of weight */}
