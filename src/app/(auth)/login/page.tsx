@@ -299,7 +299,8 @@ function LoginPageInner() {
         <p className="mt-4 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
           BioHubNet is amplifying. New pathways, fresh internship rounds, and a cohort
           that keeps growing. Sign in to watch the lights come on — or pull up a pipette
-          and join the next round.
+          and join the next round.{" "}
+          <span className="font-mono text-xs text-slate-400">// p &lt; 0.05, results pending</span>
         </p>
       </div>
 
