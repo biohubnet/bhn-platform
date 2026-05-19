@@ -43,6 +43,7 @@ import {
   type Stage,
   LEGAL_TRANSITIONS,
   legalNextStages,
+  isInterviewSkip,
   KANBAN_COLUMNS,
   STAGE_LABELS,
 } from "@/lib/hiring/stages";
@@ -52,7 +53,7 @@ import {
 // now lives in stages.ts (which has no nodemailer / prisma imports)
 // so client components can pull just the metadata without dragging
 // the server-only mail module into the browser bundle.
-export { STAGES, LEGAL_TRANSITIONS, legalNextStages, KANBAN_COLUMNS, STAGE_LABELS };
+export { STAGES, LEGAL_TRANSITIONS, legalNextStages, isInterviewSkip, KANBAN_COLUMNS, STAGE_LABELS };
 export type { Stage };
 
 export interface TransitionInput {
@@ -213,9 +214,16 @@ async function runTransition(
     },
   });
 
+  // Tag the audit row when this transition skipped the interview
+  // stages (shortlisted/interview_scheduled → offer). Lets audits
+  // easily find offers that bypassed a formal interview.
+  const skippedInterview = isInterviewSkip(fromStage, toStage);
+
   await tx.auditLog.create({
     data: {
-      action: "application.transition",
+      action: skippedInterview
+        ? "application.transition.skipped_interview"
+        : "application.transition",
       actorId: input.actorUserId,
       targetType: "ApplicationStatus",
       targetId: row.id,
@@ -225,6 +233,7 @@ async function runTransition(
         from: fromStage,
         to: toStage,
         rejectionReason: input.rejectionReason ?? null,
+        ...(skippedInterview ? { skippedInterview: true } : {}),
       }),
     },
   });

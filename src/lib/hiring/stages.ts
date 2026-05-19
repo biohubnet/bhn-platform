@@ -30,18 +30,35 @@ export type Stage = (typeof STAGES)[number];
 /** Which target stages are reachable from each source. Identity
  *  transitions (s → s) are NOT in the map; legalNextStages does NOT
  *  include "stay where you are". The service's transitionApplication
- *  short-circuits identical transitions as a no-op separately. */
+ *  short-circuits identical transitions as a no-op separately.
+ *
+ *  `shortlisted → offer` and `interview_scheduled → offer` are the
+ *  two SKIP-INTERVIEW transitions — added so employers who don't
+ *  need a formal interview (returning candidate, internal
+ *  conversion, lab-rotation extension, etc.) can go straight to
+ *  the offer. Both still gated by the "Offer row must exist"
+ *  precondition in transitionApplication, so the only way to
+ *  trigger them is through the Offer composer's Send path; the
+ *  transition's AuditLog row records `from` + `to`, which makes
+ *  skipped-interview offers easy to find in a later audit. */
 export const LEGAL_TRANSITIONS: Record<Stage, Stage[]> = {
   new:                 ["reviewing", "shortlisted", "passed", "withdrawn"],
   reviewing:           ["shortlisted", "passed", "withdrawn"],
-  shortlisted:         ["interview_scheduled", "reviewing", "passed", "withdrawn"],
-  interview_scheduled: ["interviewed", "shortlisted", "passed", "withdrawn"],
+  shortlisted:         ["interview_scheduled", "offer", "reviewing", "passed", "withdrawn"],
+  interview_scheduled: ["interviewed", "offer", "shortlisted", "passed", "withdrawn"],
   interviewed:         ["offer", "shortlisted", "passed", "withdrawn"],
   offer:               ["hired", "interviewed", "passed", "withdrawn"],
   hired:               [],         // terminal — no further transitions
   passed:              ["reviewing"], // re-open if a rejection is reversed
   withdrawn:           ["new"],    // trainee can rescind a withdrawal
 };
+
+/** Was this transition a skip past one or more intermediate stages
+ *  (i.e., shortlisted/interview_scheduled → offer)? Used by the
+ *  service to tag the AuditLog detail so audits can find them. */
+export function isInterviewSkip(from: Stage, to: Stage): boolean {
+  return to === "offer" && (from === "shortlisted" || from === "interview_scheduled");
+}
 
 /** Helper for legal-transitions exposed to the UI so disabled buttons
  *  match what the service would actually accept. Defensive on unknown
