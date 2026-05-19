@@ -292,6 +292,170 @@ export function WesternBlot({ size = 124, strokeWidth = 1.3, className }: Props)
   );
 }
 
+/** mRNA-LNP — mRNA encapsulated in a lipid nanoparticle. The
+ *  delivery vehicle that made mRNA vaccines (Pfizer / Moderna)
+ *  practical: a lipid envelope wrapping a fragile coding strand
+ *  so it survives delivery into the cell.
+ *
+ *  Drawn as concentric dashed lipid bilayers (outer envelope +
+ *  inner bilayer) with an mRNA strand visibly packaged inside —
+ *  a coiled sine wave with a filled 5′ cap and a fade of small
+ *  poly-A markers trailing off, plus a scatter of lipid
+ *  headgroup dots around the outer envelope. */
+export function MrnaLnp({ size = 110, strokeWidth = 1.3, className }: Props) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 110 110"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      role="img"
+      aria-label="mRNA-LNP — mRNA encapsulated in a lipid nanoparticle"
+    >
+      {/* Outer lipid envelope */}
+      <circle cx="55" cy="55" r="46" strokeDasharray="4 3" />
+      {/* Inner lipid bilayer */}
+      <circle
+        cx="55" cy="55" r="32"
+        strokeWidth={strokeWidth * 0.85}
+        strokeDasharray="3 2.5"
+        opacity="0.75"
+      />
+
+      {/* Lipid headgroup dots scattered on the outer envelope —
+            the polar heads facing outward into aqueous space. */}
+      <g fill="currentColor" stroke="none" opacity="0.5">
+        <circle cx="55" cy="9"   r="1.8" />
+        <circle cx="86" cy="22"  r="1.5" />
+        <circle cx="98" cy="55"  r="1.8" />
+        <circle cx="92" cy="86"  r="1.6" />
+        <circle cx="62" cy="100" r="1.5" />
+        <circle cx="30" cy="98"  r="1.7" />
+        <circle cx="12" cy="76"  r="1.5" />
+        <circle cx="10" cy="42"  r="1.7" />
+        <circle cx="26" cy="14"  r="1.4" />
+      </g>
+
+      {/* mRNA strand — coiled inside the inner bilayer, visibly
+            packaged. Gentle figure-eight curve so it reads as a
+            condensed strand rather than a free line. */}
+      <path
+        d="M 34 50 Q 44 38, 55 50 Q 66 62, 76 56 Q 72 70, 56 66 Q 42 62, 38 58"
+        strokeWidth={strokeWidth * 0.95}
+        fill="none"
+        opacity="0.9"
+      />
+
+      {/* 5′ cap — filled dot anchoring the strand. */}
+      <circle cx="34" cy="50" r="2.8" fill="currentColor" fillOpacity="0.8" stroke="none" />
+
+      {/* Poly-A tail markers — fading trail beyond the strand
+            end. */}
+      <g fill="currentColor" stroke="none">
+        <circle cx="40" cy="58" r="1.3" opacity="0.5" />
+        <circle cx="44" cy="62" r="1.2" opacity="0.42" />
+        <circle cx="48" cy="64" r="1.1" opacity="0.34" />
+      </g>
+    </svg>
+  );
+}
+
+/** CAR-T — a T cell engineered with chimeric antigen receptors
+ *  on its surface, shown engaging a CD19-displaying target cell.
+ *  The cancer-immunotherapy approach that cured leukaemias that
+ *  were previously thought incurable (Kymriah, Yescarta, etc.).
+ *
+ *  Drawn as a T cell (with nucleus + nucleolus) on the left with
+ *  six CAR receptors as small Y-projections at 60° intervals
+ *  around the membrane, pointing outward. A partial target cell
+ *  on the right displays three antigen markers; a dashed synapse
+ *  arc joins the engaging CAR to the central antigen, suggesting
+ *  the immune-recognition moment. */
+export function CarT({ size = 130, strokeWidth = 1.3, className }: Props) {
+  // T cell geometry — centred at (40, 55) with radius 34. CARs
+  // anchor on the membrane (radius 34 from centre) and project
+  // outward; tumor cell sits at (110, 55) with radius 22.
+  const CAR_ANGLES = [0, 60, 120, 180, 240, 300]; // degrees
+
+  return (
+    <svg
+      width={size}
+      height={size * (110 / 130)}
+      viewBox="0 0 130 110"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      role="img"
+      aria-label="CAR-T cell engaging a CD19-positive target"
+    >
+      {/* ── T cell — main body */}
+      <circle cx="40" cy="55" r="34" />
+      {/* Nucleus + nucleolus */}
+      <circle cx="40" cy="55" r="11" strokeWidth={strokeWidth * 0.85} fill="currentColor" fillOpacity="0.18" />
+      <circle cx="40" cy="55" r="3.2" fill="currentColor" fillOpacity="0.5" stroke="none" />
+
+      {/* ── CAR receptors — six small Y-projections around the
+            T-cell membrane, evenly spaced. Each Y has a stem
+            (transmembrane region) + two scFv arms with binding-
+            head dots at the tips. */}
+      {CAR_ANGLES.map((deg) => {
+        const rad = (deg * Math.PI) / 180;
+        const baseX = 40 + 34 * Math.cos(rad);
+        const baseY = 55 + 34 * Math.sin(rad);
+        return (
+          <g key={`car-${deg}`} transform={`translate(${baseX} ${baseY}) rotate(${deg})`}>
+            {/* Stem extending outward in the +X direction (after rotation) */}
+            <line x1="0" y1="0" x2="6.5" y2="0" strokeWidth={strokeWidth * 0.95} />
+            {/* Two scFv arms forking outward */}
+            <line x1="6.5" y1="0" x2="11.5" y2="-3.6" strokeWidth={strokeWidth * 0.85} />
+            <line x1="6.5" y1="0" x2="11.5" y2="3.6" strokeWidth={strokeWidth * 0.85} />
+            {/* Binding heads */}
+            <circle cx="11.5" cy="-3.6" r="1.5" fill="currentColor" fillOpacity="0.6" stroke="none" />
+            <circle cx="11.5" cy="3.6"  r="1.5" fill="currentColor" fillOpacity="0.6" stroke="none" />
+          </g>
+        );
+      })}
+
+      {/* ── Target tumor cell — partial circle on the right edge,
+            faded so the eye reads it as a separate cell. */}
+      <circle cx="110" cy="55" r="22" strokeWidth={strokeWidth * 0.85} opacity="0.5" />
+      <circle cx="110" cy="55" r="6"  strokeWidth={strokeWidth * 0.7} fill="currentColor" fillOpacity="0.18" />
+
+      {/* ── Tumor antigen markers (e.g. CD19) — three small
+            projections from the tumor surface pointing back
+            toward the T cell. */}
+      <g>
+        <line x1="89" y1="48" x2="80" y2="42" strokeWidth={strokeWidth * 0.75} opacity="0.7" />
+        <circle cx="80" cy="42" r="2.4" fill="currentColor" fillOpacity="0.65" stroke="none" />
+        <line x1="88" y1="55" x2="78" y2="55" strokeWidth={strokeWidth * 0.75} opacity="0.7" />
+        <circle cx="78" cy="55" r="2.6" fill="currentColor" fillOpacity="0.7"  stroke="none" />
+        <line x1="89" y1="62" x2="80" y2="68" strokeWidth={strokeWidth * 0.75} opacity="0.7" />
+        <circle cx="80" cy="68" r="2.4" fill="currentColor" fillOpacity="0.65" stroke="none" />
+      </g>
+
+      {/* ── Immune synapse — dashed arc joining the engaging
+            CAR (the one at angle 0 → right-most) to the central
+            tumor antigen at (78, 55). Reads as the recognition
+            event. */}
+      <path
+        d="M 74 55 Q 76 55, 78 55"
+        strokeWidth={strokeWidth * 0.55}
+        strokeDasharray="1.4 1.4"
+        opacity="0.7"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
 /** mRNA — single strand wavy line with the 5' cap (filled circle
  *  on the left) and the poly-A tail (a few small dots on the
  *  right). The hot-topic backbone of every mRNA vaccine. */

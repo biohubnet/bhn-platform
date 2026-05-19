@@ -9,8 +9,7 @@ import {
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
 import {
-  DnaHelix, Antibody, LipidNanoparticle, CellSchematic, Bioreactor,
-  Ribosome, Pcr, WesternBlot,
+  DnaHelix, Antibody, WesternBlot, MrnaLnp, CarT,
 } from "@/components/branding/BiomanufacturingGlyphs";
 import { DraggableGlyph } from "@/components/branding/DraggableGlyph";
 import { DeepSeaStars } from "@/components/branding/DeepSeaStars";
@@ -167,15 +166,6 @@ function LoginPageInner() {
           <Antibody size={88} strokeWidth={2} />
         </DraggableGlyph>
 
-        {/* Ribosome translating mRNA — left edge upper-mid */}
-        <DraggableGlyph
-          className="absolute left-[2%] top-[30%] text-cyan-200/22 hidden lg:block"
-          swimClass="lab-swim-slow"
-          pokeRadius={170}
-        >
-          <Ribosome size={130} strokeWidth={1.2} />
-        </DraggableGlyph>
-
         {/* DNA double helix — left edge mid */}
         <DraggableGlyph
           className="absolute left-[2%] top-[58%] text-sky-300/25 hidden lg:block"
@@ -184,61 +174,49 @@ function LoginPageInner() {
           <DnaHelix size={160} strokeWidth={1.3} />
         </DraggableGlyph>
 
-        {/* PCR — left edge bottom (replaces the T-flask). The
-            molecular-biology workhorse: two melted single strands
-            with primers annealed + Taq extending. */}
-        <DraggableGlyph
-          className="absolute left-[3%] bottom-[8%] text-emerald-200/22 hidden lg:block"
-          swimClass="lab-swim-drift"
-        >
-          <Pcr size={160} strokeWidth={1.25} />
-        </DraggableGlyph>
-
         {/* ── RIGHT EDGE ────────────────────────────────────────── */}
 
-        {/* MSC passaging cycle — top-right corner, the
-            storytelling vignette (large enough for the stage
-            label to read) */}
+        {/* Western blot — top-right. Five-lane gel with the kDa
+            ladder + target / loading-control bands. */}
         <DraggableGlyph
-          className="absolute right-[2%] top-[10%] text-slate-200/35 hidden lg:block"
-          swimClass="lab-swim-slow"
-          pokeRadius={140}
-        >
-          <MscCultureCycle size={200} />
-        </DraggableGlyph>
-
-        {/* Western blot — right edge upper-mid. Five-lane gel
-            with the kDa ladder + target / loading-control bands.
-            The protein-analysis counterpart to PCR. */}
-        <DraggableGlyph
-          className="absolute right-[3%] top-[36%] text-sky-200/24 hidden lg:block"
+          className="absolute right-[3%] top-[10%] text-sky-200/24 hidden lg:block"
           swimClass="lab-swim-slow"
         >
           <WesternBlot size={132} strokeWidth={1.25} />
         </DraggableGlyph>
 
-        {/* Lipid nanoparticle — right edge mid */}
+        {/* mRNA-LNP — right edge upper-mid. Concentric lipid
+            bilayers wrapping an mRNA strand with 5′ cap + poly-A
+            trail. The delivery vehicle that made mRNA vaccines
+            practical (Pfizer / Moderna). */}
         <DraggableGlyph
-          className="absolute right-[4%] top-[54%] text-violet-300/22 hidden lg:block"
+          className="absolute right-[5%] top-[32%] text-violet-300/24 hidden lg:block"
           swimClass="lab-swim"
         >
-          <LipidNanoparticle size={104} strokeWidth={1.3} />
+          <MrnaLnp size={120} strokeWidth={1.3} />
         </DraggableGlyph>
 
-        {/* Cell — right edge mid-lower */}
+        {/* CAR-T cell — right edge lower-mid. Engineered T cell
+            with six CAR receptors on its membrane engaging a
+            CD19-positive target. The cancer-immunotherapy
+            approach that cured previously-incurable leukaemias. */}
         <DraggableGlyph
-          className="absolute right-[3%] top-[66%] text-rose-300/18 hidden lg:block"
-          swimClass="lab-swim-slow"
-        >
-          <CellSchematic size={120} strokeWidth={1.2} />
-        </DraggableGlyph>
-
-        {/* Bioreactor — bottom-right corner, the workhorse vessel */}
-        <DraggableGlyph
-          className="absolute right-[6%] bottom-[6%] text-cyan-200/22 hidden lg:block"
+          className="absolute right-[3%] top-[55%] text-rose-300/22 hidden lg:block"
           swimClass="lab-swim-rev"
+          pokeRadius={150}
         >
-          <Bioreactor size={96} strokeWidth={1.3} />
+          <CarT size={148} strokeWidth={1.25} />
+        </DraggableGlyph>
+
+        {/* MSC passaging cycle — bottom-right (moved from the
+            top). The storytelling vignette — large enough for
+            the stage label to read. */}
+        <DraggableGlyph
+          className="absolute right-[2%] bottom-[4%] text-slate-200/35 hidden lg:block"
+          swimClass="lab-swim-slow"
+          pokeRadius={140}
+        >
+          <MscCultureCycle size={200} />
         </DraggableGlyph>
       </div>
 
