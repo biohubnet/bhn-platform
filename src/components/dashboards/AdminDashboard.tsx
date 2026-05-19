@@ -286,197 +286,245 @@ export async function AdminDashboard({
       <SpotlightPanel s={spotlight} />
 
       {/* ────────────────────────────────────────────────────────────
-          EDITORIAL SECTIONS — line + gradient design system.
-          Every section below sits directly on the page background,
-          NO surrounding rounded card. Sections are delimited by:
-            • A top hairline rule (border-t border-line/70)
-            • An uppercase eyebrow label + a small horizontal
-              gradient accent bar (the "gradient" half — short
-              accent line that picks up the section's tone)
-            • Columns separated by vertical hairlines, not boxes
-          The SpotlightPanel above is the one focal that earns
-          rounded corners; everything below stays editorial. */}
-      <div className="divide-y divide-line/70 mt-7">
+          MID-LINE EDITORIAL LAYOUT.
+          Below the SpotlightPanel, a continuous vertical hairline
+          runs down the centre of the dashboard. Sections sit on
+          alternating sides of the line; rows are separated by
+          horizontal hairlines. The line is the spine, content
+          branches off it. Rounded corners only on the spotlight
+          above — everything here is line + gradient. */}
+      <div className="relative mt-7">
+        {/* Vertical midline — continuous, full-height. Hidden
+            below lg where the grid collapses to a single column
+            and the midline metaphor no longer applies. */}
+        <div
+          aria-hidden
+          className="absolute top-0 bottom-0 left-1/2 w-px bg-line/60 -translate-x-1/2 hidden lg:block"
+        />
 
-        {/* ── At-a-glance ────────────────────────────────────────── */}
-        <DashboardSection eyebrow="At-a-glance" eyebrowIcon={Activity}>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y divide-x divide-line/50 md:divide-y-0 mt-4">
-            {metrics.map((m, idx) => {
-              const tones: Record<string, string> = {
-                amber: "text-amber-700",
-                brand: "text-brand-700",
-                muted: "text-fg",
-              };
-              return (
-                <div
-                  key={m.label}
-                  className={`px-5 py-4 ${idx >= 3 ? "lg:border-l lg:border-line/50" : ""}`}
-                >
-                  <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-                    {m.label}
-                  </p>
-                  <p className={`mt-1 font-bold tabular-nums leading-none ${m.emphasis ? "text-4xl" : "text-2xl"} ${tones[m.tone]}`}>
-                    {m.value.toLocaleString()}
-                  </p>
-                  <p className="text-[11px] text-muted mt-1.5 truncate">{m.help}</p>
-                </div>
-              );
-            })}
-          </div>
-        </DashboardSection>
+        <div className="divide-y divide-line/70">
 
-        {/* ── Setup + Quick actions ──────────────────────────────────
-            Two columns separated by a vertical hairline. Each column
-            owns its own internal eyebrow (Get airborne / Daily reach)
-            so no outer "Command deck" wrapper title is needed — the
-            two are functionally parallel sections sharing a row. */}
-        <section className="pt-7 pb-2">
-          {showChecklist && (
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-32 h-1.5 bg-elevated rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all"
-                  style={{ width: `${setupPct}%` }}
-                />
-              </div>
-              <p className="text-[11px] text-muted tabular-nums whitespace-nowrap">
-                Setup {setupPct}% — {checklistDone} / {checklist.length}
-              </p>
-            </div>
-          )}
-          <div className={`grid ${showChecklist ? "lg:grid-cols-[1.05fr_1.5fr]" : "grid-cols-1"} divide-y lg:divide-y-0 lg:divide-x divide-line/50`}>
-            {showChecklist && <SetupColumn checklist={checklist} />}
-            <QuickActionsList isSuperAdmin={isSuperAdmin} pending={totalPending} />
-          </div>
-        </section>
-
-        {/* ── Approval queues (or "all clear" inline state) ────────── */}
-        {totalPending > 0 ? (
-          <DashboardSection
-            eyebrow={`Approval queues · ${totalPending} pending`}
-            eyebrowIcon={ClipboardList}
-            tone="amber"
-            subtitle="Tap any column to triage."
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line/50 mt-4">
-              <QueueRow icon={Coins}   tone="amber"  label="Credit applications"  count={pendingCreditApps}   href="/admin/credit-applications" />
-              <QueueRow icon={UserCog} tone="violet" label="Role-change requests" count={pendingRoleRequests} href="/admin/role-requests" />
-              <QueueRow icon={Layers}  tone="brand"  label="Pathway enrolments"   count={pendingPathwayApps}  href="/admin/pathway-enrollments" />
-            </div>
-          </DashboardSection>
-        ) : (
-          <DashboardSection
-            eyebrow="Approval queues — clear"
-            eyebrowIcon={CheckCircle2}
-            tone="emerald"
-            subtitle="Credit · Role · Pathway · 0 pending"
-          >
-            {/* No body — the eyebrow + subtitle are the entire section. */}
-          </DashboardSection>
-        )}
-
-        {/* ── Credit expiry (auto-hidden when nothing is expiring) ── */}
-        {anyExpiry && (
-          <DashboardSection
-            eyebrow={`Credit expiry · ${CREDIT_GRANT_TTL_DAYS}-day TTL`}
-            eyebrowIcon={Clock}
-            tone="amber"
-            subtitle="Daily sweep + 90/30/7-day warnings handle the runs automatically. This strip is the live look-ahead."
-            rightAside={(
-              <Link
-                href="/api/admin/credits/sweep"
-                prefetch={false}
-                className="text-[11px] font-semibold text-muted hover:text-fg inline-flex items-center gap-1"
-                title="Trigger the sweep manually (cron does this daily anyway)"
-              >
-                Run sweep now <ArrowRight size={11} />
-              </Link>
-            )}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line/50 mt-4">
-              <ExpiryColumn tone="rose"  days={7}  credits={expiring7.credits}  users={expiring7.users} />
-              <ExpiryColumn tone="amber" days={30} credits={expiring30.credits} users={expiring30.users} />
-              <ExpiryColumn tone="brand" days={90} credits={expiring90.credits} users={expiring90.users} />
-            </div>
-          </DashboardSection>
-        )}
-
-        {/* ── Pulse + Activity ───────────────────────────────────────
-            Two columns separated by a vertical hairline. Each column
-            owns its own eyebrow — same pattern as Setup + Quick. */}
-        <section className="pt-7 pb-2">
-          <div className="grid lg:grid-cols-[1fr_2fr] divide-y lg:divide-y-0 lg:divide-x divide-line/50">
-            <div className="lg:pr-6 pb-5 lg:pb-0">
-              <SectionEyebrow icon={Activity}>Live pulse</SectionEyebrow>
-              <SectionAccent />
-              <p className="text-[11px] text-muted mt-2 mb-2">Beats from the last day / week.</p>
-              <ul className="divide-y divide-line/50">
-                <PulseRow icon={GraduationCap} label="Enrolments today"   value={new24hEnrollments} help="Last 24 hours" />
-                <PulseRow icon={Sparkles}      label="New sign-ups (7d)"  value={new7dUsers}        help="Real accounts only" />
-                {isSuperAdmin ? (
-                  <PulseRow icon={Cpu}   label="AI calls (7d)"     value={aiCalls7d} help="Cloudflare + Gemini combined" href="/admin/analytics" />
-                ) : (
-                  <PulseRow icon={Ghost} label="Phantom users"     value={phantomCount} help="Throwaway test accounts"     href="/admin/phantom-users" />
-                )}
-              </ul>
-            </div>
-
-            <div className="lg:pl-6 pt-5 lg:pt-0">
-              <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                <div>
-                  <SectionEyebrow icon={ClipboardList}>Recent activity</SectionEyebrow>
-                  <SectionAccent />
-                  <p className="text-[11px] text-muted mt-2">Last five audit-log entries</p>
-                </div>
-                <Link href="/admin/audit" className="text-xs font-medium text-brand-700 hover:underline inline-flex items-center gap-1">
-                  See all <ArrowRight size={11} />
-                </Link>
-              </div>
-              {recentAudit.length === 0 ? (
-                <div className="py-10 text-center text-sm text-muted">No audit entries yet.</div>
-              ) : (
-                <ul className="divide-y divide-line/50 mt-2">
-                  {recentAudit.map((a) => (
-                    <li key={a.id} className="flex items-center gap-3 py-3 hover:bg-elevated/30 transition-colors">
-                      <div className="w-6 h-6 rounded-md bg-elevated text-subtle flex items-center justify-center shrink-0">
-                        <ClipboardList size={12} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-fg truncate">{a.action}</p>
-                        <p className="text-xs text-muted truncate">
-                          {a.actor?.name ?? a.actor?.email ?? "system"}
-                          {a.targetType && ` · ${a.targetType}`}
+          {/* Row 1: At-a-glance (LEFT) | Setup checklist (RIGHT) */}
+          <MidlineRow
+            left={(
+              <div>
+                <SectionEyebrow icon={Activity}>At-a-glance</SectionEyebrow>
+                <SectionAccent />
+                <div className="mt-4 grid grid-cols-2 gap-y-4 gap-x-5">
+                  {metrics.map((m) => {
+                    const tones: Record<string, string> = {
+                      amber: "text-amber-700",
+                      brand: "text-brand-700",
+                      muted: "text-fg",
+                    };
+                    return (
+                      <div key={m.label}>
+                        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                          {m.label}
                         </p>
+                        <p className={`mt-1 font-bold tabular-nums leading-none ${m.emphasis ? "text-3xl" : "text-2xl"} ${tones[m.tone]}`}>
+                          {m.value.toLocaleString()}
+                        </p>
+                        <p className="text-[11px] text-muted mt-1.5 truncate">{m.help}</p>
                       </div>
-                      <p className="text-[11px] text-subtle shrink-0 tabular-nums">
-                        {new Date(a.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        </section>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            right={showChecklist ? (
+              <div>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <SectionEyebrow icon={Rocket}>Get airborne</SectionEyebrow>
+                    <SectionAccent />
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-24 h-1.5 bg-elevated rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all"
+                        style={{ width: `${setupPct}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted tabular-nums whitespace-nowrap">
+                      {setupPct}% · {checklistDone}/{checklist.length}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted mt-2 leading-snug">
+                  Five milestones every BHN deployment needs in place before real trainees + employers can self-serve.
+                </p>
+                <SetupColumn checklist={checklist} />
+              </div>
+            ) : null}
+          />
 
-        {/* ── Superadmin shortcuts ──────────────────────────────────── */}
-        {isSuperAdmin && (
-          <DashboardSection
-            eyebrow="Superadmin shortcuts"
-            eyebrowIcon={ShieldCheck}
-            tone="brand"
-          >
-            <p className="text-xs text-muted mt-3 leading-relaxed">
-              <Link href="/admin/settings" className="text-brand-700 hover:underline">Platform settings</Link> ·
-              {" "}<Link href="/admin/matching-config" className="text-brand-700 hover:underline">AI matching engine</Link> ·
-              {" "}<Link href="/admin/lti" className="text-brand-700 hover:underline">LTI</Link> ·
-              {" "}<Link href="/admin/course-filters" className="text-brand-700 hover:underline">Course filter options</Link> ·
-              {" "}<Link href="/admin/security" className="text-brand-700 hover:underline">Security policies</Link> ·
-              {" "}<Link href="/admin/system-status" className="text-brand-700 hover:underline">System status (build SHA)</Link>.
-            </p>
-          </DashboardSection>
-        )}
+          {/* Row 2: Daily reach (LEFT) | Approval queues (RIGHT) */}
+          <MidlineRow
+            left={(
+              <div>
+                <SectionEyebrow icon={Zap}>Daily reach</SectionEyebrow>
+                <SectionAccent />
+                <p className="text-[11px] text-muted mt-2 leading-snug">
+                  Surfaces an admin opens most. Pinned here so they&apos;re always one click away.
+                </p>
+                <QuickActionsList isSuperAdmin={isSuperAdmin} pending={totalPending} />
+              </div>
+            )}
+            right={(
+              <div>
+                {totalPending > 0 ? (
+                  <>
+                    <SectionEyebrow icon={ClipboardList} tone="amber">
+                      Approval queues · {totalPending} pending
+                    </SectionEyebrow>
+                    <SectionAccent tone="amber" />
+                    <p className="text-[11px] text-muted mt-2">Tap any row to triage.</p>
+                    {/* `<div>` not `<ul>` — QueueRow returns a
+                        bare `<Link>`, not an `<li>`. */}
+                    <div className="divide-y divide-line/50 mt-3">
+                      <QueueRow icon={Coins}   tone="amber"  label="Credit applications"  count={pendingCreditApps}   href="/admin/credit-applications" />
+                      <QueueRow icon={UserCog} tone="violet" label="Role-change requests" count={pendingRoleRequests} href="/admin/role-requests" />
+                      <QueueRow icon={Layers}  tone="brand"  label="Pathway enrolments"   count={pendingPathwayApps}  href="/admin/pathway-enrollments" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <SectionEyebrow icon={CheckCircle2} tone="emerald">
+                      Approval queues — clear
+                    </SectionEyebrow>
+                    <SectionAccent tone="emerald" />
+                    <p className="text-[11px] text-muted mt-2">Credit · Role · Pathway · 0 pending</p>
+                  </>
+                )}
+              </div>
+            )}
+          />
+
+          {/* Row 3: Credit expiry (LEFT, conditional) | Live pulse (RIGHT) */}
+          <MidlineRow
+            left={anyExpiry ? (
+              <div>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <SectionEyebrow icon={Clock} tone="amber">
+                      Credit expiry · {CREDIT_GRANT_TTL_DAYS}-day TTL
+                    </SectionEyebrow>
+                    <SectionAccent tone="amber" />
+                  </div>
+                  <Link
+                    href="/api/admin/credits/sweep"
+                    prefetch={false}
+                    className="text-[11px] font-semibold text-muted hover:text-fg inline-flex items-center gap-1"
+                    title="Trigger the sweep manually (cron does this daily anyway)"
+                  >
+                    Run sweep now <ArrowRight size={11} />
+                  </Link>
+                </div>
+                <p className="text-[11px] text-muted mt-2 leading-snug max-w-md">
+                  Daily sweep + 90/30/7-day warnings handle the runs automatically. This strip is the live look-ahead.
+                </p>
+                {/* `<div>` not `<ul>` — ExpiryColumn returns a
+                    `<div>`, not an `<li>`. */}
+                <div className="divide-y divide-line/50 mt-3">
+                  <ExpiryColumn tone="rose"  days={7}  credits={expiring7.credits}  users={expiring7.users} />
+                  <ExpiryColumn tone="amber" days={30} credits={expiring30.credits} users={expiring30.users} />
+                  <ExpiryColumn tone="brand" days={90} credits={expiring90.credits} users={expiring90.users} />
+                </div>
+              </div>
+            ) : null}
+            right={(
+              <div>
+                <SectionEyebrow icon={Activity}>Live pulse</SectionEyebrow>
+                <SectionAccent />
+                <p className="text-[11px] text-muted mt-2">Beats from the last day / week.</p>
+                <ul className="divide-y divide-line/50 mt-3">
+                  <PulseRow icon={GraduationCap} label="Enrolments today"   value={new24hEnrollments} help="Last 24 hours" />
+                  <PulseRow icon={Sparkles}      label="New sign-ups (7d)"  value={new7dUsers}        help="Real accounts only" />
+                  {isSuperAdmin ? (
+                    <PulseRow icon={Cpu}   label="AI calls (7d)"     value={aiCalls7d} help="Cloudflare + Gemini combined" href="/admin/analytics" />
+                  ) : (
+                    <PulseRow icon={Ghost} label="Phantom users"     value={phantomCount} help="Throwaway test accounts"     href="/admin/phantom-users" />
+                  )}
+                </ul>
+              </div>
+            )}
+          />
+
+          {/* Row 4: Recent activity (LEFT) | Superadmin shortcuts (RIGHT, conditional) */}
+          <MidlineRow
+            left={(
+              <div>
+                <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                  <div>
+                    <SectionEyebrow icon={ClipboardList}>Recent activity</SectionEyebrow>
+                    <SectionAccent />
+                  </div>
+                  <Link href="/admin/audit" className="text-xs font-medium text-brand-700 hover:underline inline-flex items-center gap-1">
+                    See all <ArrowRight size={11} />
+                  </Link>
+                </div>
+                <p className="text-[11px] text-muted mt-2">Last five audit-log entries.</p>
+                {recentAudit.length === 0 ? (
+                  <div className="py-10 text-center text-sm text-muted">No audit entries yet.</div>
+                ) : (
+                  <ul className="divide-y divide-line/50 mt-3">
+                    {recentAudit.map((a) => (
+                      <li key={a.id} className="flex items-center gap-3 py-3 hover:bg-elevated/30 transition-colors">
+                        {/* Pastel chip — text-subtle/60 so activity
+                            rows read as continuous text. */}
+                        <div className="w-6 h-6 rounded-md bg-elevated text-subtle/60 flex items-center justify-center shrink-0">
+                          <ClipboardList size={12} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-fg truncate">{a.action}</p>
+                          <p className="text-xs text-muted truncate">
+                            {a.actor?.name ?? a.actor?.email ?? "system"}
+                            {a.targetType && ` · ${a.targetType}`}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-subtle shrink-0 tabular-nums">
+                          {new Date(a.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+            right={isSuperAdmin ? (
+              <div>
+                <SectionEyebrow icon={ShieldCheck}>Superadmin shortcuts</SectionEyebrow>
+                <SectionAccent />
+                <p className="text-xs text-muted mt-3 leading-relaxed">
+                  <Link href="/admin/settings" className="text-brand-700 hover:underline">Platform settings</Link> ·
+                  {" "}<Link href="/admin/matching-config" className="text-brand-700 hover:underline">AI matching engine</Link> ·
+                  {" "}<Link href="/admin/lti" className="text-brand-700 hover:underline">LTI</Link> ·
+                  {" "}<Link href="/admin/course-filters" className="text-brand-700 hover:underline">Course filter options</Link> ·
+                  {" "}<Link href="/admin/security" className="text-brand-700 hover:underline">Security policies</Link> ·
+                  {" "}<Link href="/admin/system-status" className="text-brand-700 hover:underline">System status (build SHA)</Link>.
+                </p>
+              </div>
+            ) : null}
+          />
+        </div>
       </div>
+    </div>
+  );
+}
+
+/** One row of the midline grid. Two columns separated by the
+ *  continuous vertical midline (drawn by the parent as an absolutely-
+ *  positioned hairline). Either side can be null — the row still
+ *  renders with the populated side aligned correctly, the empty side
+ *  becomes breathing space. On mobile (< lg) the grid collapses to
+ *  a single column and the cells stack vertically. */
+function MidlineRow({ left, right }: { left: React.ReactNode; right: React.ReactNode }) {
+  if (!left && !right) return null;
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2">
+      <div className="py-7 lg:pr-8">{left}</div>
+      <div className="py-7 lg:pl-8 mt-7 lg:mt-0 border-t border-line/70 lg:border-t-0">{right}</div>
     </div>
   );
 }
@@ -485,53 +533,27 @@ export async function AdminDashboard({
 
 type SectionTone = "brand" | "amber" | "emerald" | "violet";
 
-const SECTION_TONE_CLS: Record<SectionTone, { text: string; accentRgb: string }> = {
-  brand:   { text: "text-brand-700",   accentRgb: "94, 143, 247"  }, // brand-500
-  amber:   { text: "text-amber-700",   accentRgb: "245, 158, 11"  }, // amber-500
-  emerald: { text: "text-emerald-700", accentRgb: "16, 185, 129"  }, // emerald-500
-  violet:  { text: "text-violet-700",  accentRgb: "139, 92, 246"  }, // violet-500
+/** Three values per tone:
+ *    text     — eyebrow text colour (stays saturated, ~-700 step,
+ *               needs to be legible against page bg)
+ *    icon     — lucide-icon colour (PASTEL, ~-400 step at 70%
+ *               opacity, so the icon supports the text rather than
+ *               competing with it)
+ *    accentRgb — the gradient accent bar's tone in `r, g, b` form */
+const SECTION_TONE_CLS: Record<
+  SectionTone,
+  { text: string; icon: string; accentRgb: string }
+> = {
+  brand:   { text: "text-brand-700",   icon: "text-brand-400/70",   accentRgb: "94, 143, 247"  }, // brand-500
+  amber:   { text: "text-amber-700",   icon: "text-amber-400/70",   accentRgb: "245, 158, 11"  }, // amber-500
+  emerald: { text: "text-emerald-700", icon: "text-emerald-400/70", accentRgb: "16, 185, 129"  }, // emerald-500
+  violet:  { text: "text-violet-700",  icon: "text-violet-400/70",  accentRgb: "139, 92, 246"  }, // violet-500
 };
 
-/** Standard editorial section — top hairline (inherited from the
- *  parent's `divide-y`), uppercase eyebrow, gradient accent bar,
- *  optional subtitle, optional right-aligned aside, and children.
- *  No surrounding box — sections sit directly on the page bg. */
-function DashboardSection({
-  eyebrow,
-  eyebrowIcon,
-  tone = "brand",
-  subtitle,
-  rightAside,
-  children,
-}: {
-  eyebrow: string;
-  eyebrowIcon?: React.ElementType;
-  tone?: SectionTone;
-  subtitle?: string;
-  rightAside?: React.ReactNode;
-  children?: React.ReactNode;
-}) {
-  return (
-    <section className="pt-7 pb-5">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <SectionEyebrow icon={eyebrowIcon} tone={tone}>{eyebrow}</SectionEyebrow>
-          <SectionAccent tone={tone} />
-          {subtitle && (
-            <p className="text-[11px] text-muted mt-2 leading-snug max-w-2xl">
-              {subtitle}
-            </p>
-          )}
-        </div>
-        {rightAside}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-/** Uppercase tracked eyebrow with optional leading icon. The tone
- *  drives the colour of both the icon and the text. */
+/** Uppercase tracked eyebrow with optional leading icon. The eyebrow
+ *  text uses the saturated `text` class (-700 step) for legibility;
+ *  the icon uses the pastel `icon` class (-400/70) so it supports
+ *  the text rather than competing with it. */
 function SectionEyebrow({
   icon: Icon,
   tone = "brand",
@@ -544,7 +566,7 @@ function SectionEyebrow({
   const cls = SECTION_TONE_CLS[tone];
   return (
     <h2 className={`text-[11px] uppercase tracking-[0.24em] font-bold inline-flex items-center gap-2 ${cls.text}`}>
-      {Icon && <Icon size={12} />}
+      {Icon && <Icon size={12} className={cls.icon} />}
       <span>{children}</span>
     </h2>
   );
@@ -910,7 +932,9 @@ function PulseRow({
 }) {
   const inner = (
     <div className="flex items-center gap-3 px-5 py-3.5 group hover:bg-elevated/30 transition-colors">
-      <div className="w-9 h-9 rounded-lg bg-elevated text-brand-600 border border-line flex items-center justify-center shrink-0">
+      {/* Pastel icon — brand-400/70 instead of brand-600 so the
+          chip recedes into the row rather than punching out of it. */}
+      <div className="w-9 h-9 rounded-lg bg-elevated text-brand-400/70 border border-line flex items-center justify-center shrink-0">
         <Icon size={15} />
       </div>
       <div className="flex-1 min-w-0">
@@ -967,10 +991,12 @@ function QueueRow({
   count: number;
   href: string;
 }) {
+  // Pastel icon chips — softer tints so the chip reads as a calm
+  // tone marker, not a saturated colour callout.
   const colours: Record<string, string> = {
-    brand:  "bg-brand-50 text-brand-700",
-    amber:  "bg-amber-50 text-amber-700",
-    violet: "bg-violet-50 text-violet-700",
+    brand:  "bg-brand-50/60 text-brand-400",
+    amber:  "bg-amber-50/60 text-amber-400",
+    violet: "bg-violet-50/60 text-violet-400",
   };
   return (
     <Link
