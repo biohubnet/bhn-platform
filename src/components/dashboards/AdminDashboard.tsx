@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   Users, BookOpen, GraduationCap, Layers, Coins,
-  ShieldCheck, AlertCircle, ArrowRight,
+  ShieldCheck, ArrowRight,
   Sparkles, ClipboardList, UserCog, Building2,
   Activity, Clock, Briefcase, Ghost, GitFork, CheckCircle2,
   Zap, Eye, Inbox, Cpu, Rocket, FilePlus,
@@ -285,61 +285,54 @@ export async function AdminDashboard({
           this is the unambiguous hero. */}
       <SpotlightPanel s={spotlight} />
 
-      {/* ── At-a-glance metric strip ─────────────────────────────────
-          Six stat columns separated by hairlines — no individual
-          borders. Unified shell (bg-card / rounded-2xl / border-line)
-          so the spotlight above keeps the entire visual hierarchy.
-          The previous brand-50/40 wash was making this section read
-          as its own visual island — dropped. */}
-      <section className="relative overflow-hidden rounded-2xl border border-line bg-card">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y divide-x divide-line/70 md:divide-y-0">
-          {metrics.map((m, idx) => {
-            // Re-add the bottom border for the first md row on mobile +
-            // hide it on lg via the grid's auto behavior. Tailwind's
-            // `divide-y` already handles vertical divisions; we lean
-            // on it.
-            const tones: Record<string, string> = {
-              amber: "text-amber-700",
-              brand: "text-brand-700",
-              muted: "text-fg",
-            };
-            return (
-              <div
-                key={m.label}
-                className={`px-5 py-4 ${idx >= 3 ? "lg:border-l lg:border-line/70" : ""}`}
-              >
-                <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-                  {m.label}
-                </p>
-                <p className={`mt-1 font-bold tabular-nums leading-none ${m.emphasis ? "text-4xl" : "text-2xl"} ${tones[m.tone]}`}>
-                  {m.value.toLocaleString()}
-                </p>
-                <p className="text-[11px] text-muted mt-1.5 truncate">{m.help}</p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      {/* ────────────────────────────────────────────────────────────
+          EDITORIAL SECTIONS — line + gradient design system.
+          Every section below sits directly on the page background,
+          NO surrounding rounded card. Sections are delimited by:
+            • A top hairline rule (border-t border-line/70)
+            • An uppercase eyebrow label + a small horizontal
+              gradient accent bar (the "gradient" half — short
+              accent line that picks up the section's tone)
+            • Columns separated by vertical hairlines, not boxes
+          The SpotlightPanel above is the one focal that earns
+          rounded corners; everything below stays editorial. */}
+      <div className="divide-y divide-line/70 mt-7">
 
-      {/* ── Command Deck — Setup + Quick Actions inside ONE panel ───
-          Same `bg-card` shell as every other section below the
-          spotlight — the previous brand-50/30 wash and oversized
-          header padding (px-6 pt-5 pb-4) both tightened to match. */}
-      <section className="rounded-2xl border border-line bg-card overflow-hidden">
-        <header className="flex items-end justify-between gap-3 flex-wrap px-5 pt-4 pb-3 border-b border-line/70">
-          <div>
-            <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
-              <Zap size={16} className="text-brand-600" />
-              Command deck
-            </h2>
-            <p className="text-xs text-muted mt-0.5">
-              {showChecklist
-                ? "Bootstrap first, then the surfaces you'll reach for daily."
-                : "The surfaces an admin opens most. Bookmark whichever you reach for daily."}
-            </p>
+        {/* ── At-a-glance ────────────────────────────────────────── */}
+        <DashboardSection eyebrow="At-a-glance" eyebrowIcon={Activity}>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y divide-x divide-line/50 md:divide-y-0 mt-4">
+            {metrics.map((m, idx) => {
+              const tones: Record<string, string> = {
+                amber: "text-amber-700",
+                brand: "text-brand-700",
+                muted: "text-fg",
+              };
+              return (
+                <div
+                  key={m.label}
+                  className={`px-5 py-4 ${idx >= 3 ? "lg:border-l lg:border-line/50" : ""}`}
+                >
+                  <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                    {m.label}
+                  </p>
+                  <p className={`mt-1 font-bold tabular-nums leading-none ${m.emphasis ? "text-4xl" : "text-2xl"} ${tones[m.tone]}`}>
+                    {m.value.toLocaleString()}
+                  </p>
+                  <p className="text-[11px] text-muted mt-1.5 truncate">{m.help}</p>
+                </div>
+              );
+            })}
           </div>
+        </DashboardSection>
+
+        {/* ── Setup + Quick actions ──────────────────────────────────
+            Two columns separated by a vertical hairline. Each column
+            owns its own internal eyebrow (Get airborne / Daily reach)
+            so no outer "Command deck" wrapper title is needed — the
+            two are functionally parallel sections sharing a row. */}
+        <section className="pt-7 pb-2">
           {showChecklist && (
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-32 h-1.5 bg-elevated rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all"
@@ -351,181 +344,226 @@ export async function AdminDashboard({
               </p>
             </div>
           )}
-        </header>
-
-        <div className={`grid ${showChecklist ? "lg:grid-cols-[1.05fr_1.5fr]" : "grid-cols-1"} divide-y lg:divide-y-0 lg:divide-x divide-line/70`}>
-          {showChecklist && (
-            <SetupColumn checklist={checklist} />
-          )}
-          <QuickActionsList isSuperAdmin={isSuperAdmin} pending={totalPending} />
-        </div>
-      </section>
-
-      {/* ── Approval queues ─────────────────────────────────────────
-          Same `bg-card` shell as every other secondary panel — the
-          surface-shadow that used to lift this section off the page
-          was redundant with the spotlight above (and was actively
-          fragmenting the post-spotlight rhythm). The "all clear"
-          fallback now uses the same shell instead of its previous
-          rounded-xl emerald island. */}
-      {totalPending > 0 ? (
-        <section className="rounded-2xl border border-line bg-card overflow-hidden">
-          <header className="px-5 pt-4 pb-3 border-b border-line/70 flex items-center justify-between gap-3">
-            <h2 className="text-sm font-bold text-fg inline-flex items-center gap-2">
-              <ClipboardList size={14} className="text-amber-600" />
-              Approval queues
-              <span className="text-[11px] font-bold text-amber-700 bg-amber-50 ring-1 ring-amber-200 rounded-full px-2 py-0.5 tabular-nums">
-                {totalPending} pending
-              </span>
-            </h2>
-            <p className="text-[11px] text-subtle">Tap any column to triage.</p>
-          </header>
-          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line/70">
-            <QueueRow icon={Coins}   tone="amber"  label="Credit applications"  count={pendingCreditApps}   href="/admin/credit-applications" />
-            <QueueRow icon={UserCog} tone="violet" label="Role-change requests" count={pendingRoleRequests} href="/admin/role-requests" />
-            <QueueRow icon={Layers}  tone="brand"  label="Pathway enrolments"   count={pendingPathwayApps}  href="/admin/pathway-enrollments" />
+          <div className={`grid ${showChecklist ? "lg:grid-cols-[1.05fr_1.5fr]" : "grid-cols-1"} divide-y lg:divide-y-0 lg:divide-x divide-line/50`}>
+            {showChecklist && <SetupColumn checklist={checklist} />}
+            <QuickActionsList isSuperAdmin={isSuperAdmin} pending={totalPending} />
           </div>
         </section>
-      ) : (
-        <section className="rounded-2xl border border-line bg-card overflow-hidden">
-          <div className="px-5 py-4 flex items-center gap-3">
-            <span className="w-8 h-8 rounded-lg bg-emerald-50 ring-1 ring-inset ring-emerald-200 text-emerald-700 inline-flex items-center justify-center shrink-0">
-              <CheckCircle2 size={16} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-fg">Approval queues are clear.</p>
-              <p className="text-[11px] text-muted mt-0.5">Credit · Role · Pathway · 0 pending</p>
+
+        {/* ── Approval queues (or "all clear" inline state) ────────── */}
+        {totalPending > 0 ? (
+          <DashboardSection
+            eyebrow={`Approval queues · ${totalPending} pending`}
+            eyebrowIcon={ClipboardList}
+            tone="amber"
+            subtitle="Tap any column to triage."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line/50 mt-4">
+              <QueueRow icon={Coins}   tone="amber"  label="Credit applications"  count={pendingCreditApps}   href="/admin/credit-applications" />
+              <QueueRow icon={UserCog} tone="violet" label="Role-change requests" count={pendingRoleRequests} href="/admin/role-requests" />
+              <QueueRow icon={Layers}  tone="brand"  label="Pathway enrolments"   count={pendingPathwayApps}  href="/admin/pathway-enrollments" />
             </div>
-          </div>
-        </section>
-      )}
+          </DashboardSection>
+        ) : (
+          <DashboardSection
+            eyebrow="Approval queues — clear"
+            eyebrowIcon={CheckCircle2}
+            tone="emerald"
+            subtitle="Credit · Role · Pathway · 0 pending"
+          >
+            {/* No body — the eyebrow + subtitle are the entire section. */}
+          </DashboardSection>
+        )}
 
-      {/* ── Credit expiry (auto-hidden when nothing is expiring) ───
-          Same `bg-card` shell as the rest — the amber-50/30 wash was
-          pulling the section apart from its neighbours visually. */}
-      {anyExpiry && (
-        <section className="rounded-2xl border border-line bg-card overflow-hidden">
-          <header className="px-5 pt-4 pb-3 border-b border-line/70 flex items-end justify-between gap-3 flex-wrap">
-            <div>
-              <h2 className="text-sm font-bold text-fg tracking-tight inline-flex items-center gap-2">
-                <Clock size={14} className="text-amber-600" />
-                Credit expiry · {CREDIT_GRANT_TTL_DAYS}-day TTL
-              </h2>
-              <p className="text-[11px] text-muted mt-0.5 leading-snug max-w-2xl">
-                Daily sweep + 90/30/7-day warnings handle the runs automatically. This strip is the live look-ahead.
-              </p>
-            </div>
-            <Link
-              href="/api/admin/credits/sweep"
-              prefetch={false}
-              className="text-[11px] font-semibold text-muted hover:text-fg inline-flex items-center gap-1"
-              title="Trigger the sweep manually (cron does this daily anyway)"
-            >
-              Run sweep now <ArrowRight size={11} />
-            </Link>
-          </header>
-          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line/70">
-            <ExpiryColumn tone="rose"  days={7}  credits={expiring7.credits}  users={expiring7.users} />
-            <ExpiryColumn tone="amber" days={30} credits={expiring30.credits} users={expiring30.users} />
-            <ExpiryColumn tone="brand" days={90} credits={expiring90.credits} users={expiring90.users} />
-          </div>
-        </section>
-      )}
-
-      {/* ── Pulse + Activity ───────────────────────────────────────
-          Two-up: live pulse (left) + recent activity feed (right) in
-          a single 2-column grid panel. Hairline divider between.
-          The asymmetry — pulse takes 1 col, activity takes 2 — keeps
-          the eye on the audit feed which is the more-scanned surface.
-          Both panels now share the same `bg-card` shell (the pulse
-          column used to carry a brand-50/30 wash that made the pair
-          look like two cards instead of a matched pair). */}
-      <section className="grid lg:grid-cols-[1fr_2fr] gap-3">
-        <div className="rounded-2xl border border-line bg-card overflow-hidden">
-          <header className="px-5 pt-4 pb-3 border-b border-line/70">
-            <h2 className="text-sm font-bold text-fg inline-flex items-center gap-2">
-              <Activity size={14} className="text-brand-600" />
-              Live pulse
-            </h2>
-            <p className="text-[11px] text-muted mt-0.5">Beats from the last day / week.</p>
-          </header>
-          <ul className="divide-y divide-line/70">
-            <PulseRow icon={GraduationCap} label="Enrolments today"   value={new24hEnrollments} help="Last 24 hours" />
-            <PulseRow icon={Sparkles}      label="New sign-ups (7d)"  value={new7dUsers}        help="Real accounts only" />
-            {isSuperAdmin ? (
-              <PulseRow icon={Cpu}   label="AI calls (7d)"     value={aiCalls7d} help="Cloudflare + Gemini combined" href="/admin/analytics" />
-            ) : (
-              <PulseRow icon={Ghost} label="Phantom users"     value={phantomCount} help="Throwaway test accounts"     href="/admin/phantom-users" />
+        {/* ── Credit expiry (auto-hidden when nothing is expiring) ── */}
+        {anyExpiry && (
+          <DashboardSection
+            eyebrow={`Credit expiry · ${CREDIT_GRANT_TTL_DAYS}-day TTL`}
+            eyebrowIcon={Clock}
+            tone="amber"
+            subtitle="Daily sweep + 90/30/7-day warnings handle the runs automatically. This strip is the live look-ahead."
+            rightAside={(
+              <Link
+                href="/api/admin/credits/sweep"
+                prefetch={false}
+                className="text-[11px] font-semibold text-muted hover:text-fg inline-flex items-center gap-1"
+                title="Trigger the sweep manually (cron does this daily anyway)"
+              >
+                Run sweep now <ArrowRight size={11} />
+              </Link>
             )}
-          </ul>
-        </div>
-
-        <div className="rounded-2xl border border-line bg-card overflow-hidden">
-          <header className="px-5 pt-4 pb-3 border-b border-line/70 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-fg inline-flex items-center gap-2">
-                <ClipboardList size={14} className="text-brand-600" />
-                Recent activity
-              </h2>
-              <p className="text-[11px] text-muted mt-0.5">Last five audit-log entries</p>
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line/50 mt-4">
+              <ExpiryColumn tone="rose"  days={7}  credits={expiring7.credits}  users={expiring7.users} />
+              <ExpiryColumn tone="amber" days={30} credits={expiring30.credits} users={expiring30.users} />
+              <ExpiryColumn tone="brand" days={90} credits={expiring90.credits} users={expiring90.users} />
             </div>
-            <Link href="/admin/audit" className="text-xs font-medium text-brand-700 hover:underline inline-flex items-center gap-1">
-              See all <ArrowRight size={11} />
-            </Link>
-          </header>
-          {recentAudit.length === 0 ? (
-            <div className="px-5 py-10 text-center text-sm text-muted">No audit entries yet.</div>
-          ) : (
-            <ul className="divide-y divide-line/70">
-              {recentAudit.map((a) => (
-                <li key={a.id} className="flex items-center gap-3 px-5 py-3 hover:bg-elevated/30 transition-colors">
-                  <div className="w-6 h-6 rounded-md bg-elevated text-subtle flex items-center justify-center shrink-0">
-                    <ClipboardList size={12} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-fg truncate">{a.action}</p>
-                    <p className="text-xs text-muted truncate">
-                      {a.actor?.name ?? a.actor?.email ?? "system"}
-                      {a.targetType && ` · ${a.targetType}`}
-                    </p>
-                  </div>
-                  <p className="text-[11px] text-subtle shrink-0 tabular-nums">
-                    {new Date(a.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
+          </DashboardSection>
+        )}
 
-      {isSuperAdmin && (
-        // Unified shell to match every other section. Previously a
-        // bg-elevated/40 dashed-border rounded-xl strip — distinctive
-        // but at the cost of looking like a separate widget glued on
-        // at the bottom. Same rounded-2xl card now, brand-tinted
-        // icon chip preserved to keep the "superadmin" signal.
-        <section className="rounded-2xl border border-line bg-card overflow-hidden">
-          <div className="px-5 py-4 flex items-start gap-3">
-            <span className="w-8 h-8 rounded-lg bg-brand-50 ring-1 ring-inset ring-brand-200 text-brand-700 inline-flex items-center justify-center shrink-0">
-              <ShieldCheck size={14} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-fg">Superadmin shortcuts</p>
-              <p className="text-xs text-muted mt-0.5 leading-relaxed">
-                <Link href="/admin/settings" className="text-brand-700 hover:underline">Platform settings</Link> ·
-                {" "}<Link href="/admin/matching-config" className="text-brand-700 hover:underline">AI matching engine</Link> ·
-                {" "}<Link href="/admin/lti" className="text-brand-700 hover:underline">LTI</Link> ·
-                {" "}<Link href="/admin/course-filters" className="text-brand-700 hover:underline">Course filter options</Link> ·
-                {" "}<Link href="/admin/security" className="text-brand-700 hover:underline">Security policies</Link> ·
-                {" "}<Link href="/admin/system-status" className="text-brand-700 hover:underline">System status (build SHA)</Link>.
-              </p>
+        {/* ── Pulse + Activity ───────────────────────────────────────
+            Two columns separated by a vertical hairline. Each column
+            owns its own eyebrow — same pattern as Setup + Quick. */}
+        <section className="pt-7 pb-2">
+          <div className="grid lg:grid-cols-[1fr_2fr] divide-y lg:divide-y-0 lg:divide-x divide-line/50">
+            <div className="lg:pr-6 pb-5 lg:pb-0">
+              <SectionEyebrow icon={Activity}>Live pulse</SectionEyebrow>
+              <SectionAccent />
+              <p className="text-[11px] text-muted mt-2 mb-2">Beats from the last day / week.</p>
+              <ul className="divide-y divide-line/50">
+                <PulseRow icon={GraduationCap} label="Enrolments today"   value={new24hEnrollments} help="Last 24 hours" />
+                <PulseRow icon={Sparkles}      label="New sign-ups (7d)"  value={new7dUsers}        help="Real accounts only" />
+                {isSuperAdmin ? (
+                  <PulseRow icon={Cpu}   label="AI calls (7d)"     value={aiCalls7d} help="Cloudflare + Gemini combined" href="/admin/analytics" />
+                ) : (
+                  <PulseRow icon={Ghost} label="Phantom users"     value={phantomCount} help="Throwaway test accounts"     href="/admin/phantom-users" />
+                )}
+              </ul>
             </div>
-            <AlertCircle size={13} className="text-subtle shrink-0 mt-1" />
+
+            <div className="lg:pl-6 pt-5 lg:pt-0">
+              <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                <div>
+                  <SectionEyebrow icon={ClipboardList}>Recent activity</SectionEyebrow>
+                  <SectionAccent />
+                  <p className="text-[11px] text-muted mt-2">Last five audit-log entries</p>
+                </div>
+                <Link href="/admin/audit" className="text-xs font-medium text-brand-700 hover:underline inline-flex items-center gap-1">
+                  See all <ArrowRight size={11} />
+                </Link>
+              </div>
+              {recentAudit.length === 0 ? (
+                <div className="py-10 text-center text-sm text-muted">No audit entries yet.</div>
+              ) : (
+                <ul className="divide-y divide-line/50 mt-2">
+                  {recentAudit.map((a) => (
+                    <li key={a.id} className="flex items-center gap-3 py-3 hover:bg-elevated/30 transition-colors">
+                      <div className="w-6 h-6 rounded-md bg-elevated text-subtle flex items-center justify-center shrink-0">
+                        <ClipboardList size={12} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-fg truncate">{a.action}</p>
+                        <p className="text-xs text-muted truncate">
+                          {a.actor?.name ?? a.actor?.email ?? "system"}
+                          {a.targetType && ` · ${a.targetType}`}
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-subtle shrink-0 tabular-nums">
+                        {new Date(a.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </section>
-      )}
+
+        {/* ── Superadmin shortcuts ──────────────────────────────────── */}
+        {isSuperAdmin && (
+          <DashboardSection
+            eyebrow="Superadmin shortcuts"
+            eyebrowIcon={ShieldCheck}
+            tone="brand"
+          >
+            <p className="text-xs text-muted mt-3 leading-relaxed">
+              <Link href="/admin/settings" className="text-brand-700 hover:underline">Platform settings</Link> ·
+              {" "}<Link href="/admin/matching-config" className="text-brand-700 hover:underline">AI matching engine</Link> ·
+              {" "}<Link href="/admin/lti" className="text-brand-700 hover:underline">LTI</Link> ·
+              {" "}<Link href="/admin/course-filters" className="text-brand-700 hover:underline">Course filter options</Link> ·
+              {" "}<Link href="/admin/security" className="text-brand-700 hover:underline">Security policies</Link> ·
+              {" "}<Link href="/admin/system-status" className="text-brand-700 hover:underline">System status (build SHA)</Link>.
+            </p>
+          </DashboardSection>
+        )}
+      </div>
     </div>
+  );
+}
+
+// ─── Editorial section helpers ─────────────────────────────────────
+
+type SectionTone = "brand" | "amber" | "emerald" | "violet";
+
+const SECTION_TONE_CLS: Record<SectionTone, { text: string; accentRgb: string }> = {
+  brand:   { text: "text-brand-700",   accentRgb: "94, 143, 247"  }, // brand-500
+  amber:   { text: "text-amber-700",   accentRgb: "245, 158, 11"  }, // amber-500
+  emerald: { text: "text-emerald-700", accentRgb: "16, 185, 129"  }, // emerald-500
+  violet:  { text: "text-violet-700",  accentRgb: "139, 92, 246"  }, // violet-500
+};
+
+/** Standard editorial section — top hairline (inherited from the
+ *  parent's `divide-y`), uppercase eyebrow, gradient accent bar,
+ *  optional subtitle, optional right-aligned aside, and children.
+ *  No surrounding box — sections sit directly on the page bg. */
+function DashboardSection({
+  eyebrow,
+  eyebrowIcon,
+  tone = "brand",
+  subtitle,
+  rightAside,
+  children,
+}: {
+  eyebrow: string;
+  eyebrowIcon?: React.ElementType;
+  tone?: SectionTone;
+  subtitle?: string;
+  rightAside?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <section className="pt-7 pb-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <SectionEyebrow icon={eyebrowIcon} tone={tone}>{eyebrow}</SectionEyebrow>
+          <SectionAccent tone={tone} />
+          {subtitle && (
+            <p className="text-[11px] text-muted mt-2 leading-snug max-w-2xl">
+              {subtitle}
+            </p>
+          )}
+        </div>
+        {rightAside}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** Uppercase tracked eyebrow with optional leading icon. The tone
+ *  drives the colour of both the icon and the text. */
+function SectionEyebrow({
+  icon: Icon,
+  tone = "brand",
+  children,
+}: {
+  icon?: React.ElementType;
+  tone?: SectionTone;
+  children: React.ReactNode;
+}) {
+  const cls = SECTION_TONE_CLS[tone];
+  return (
+    <h2 className={`text-[11px] uppercase tracking-[0.24em] font-bold inline-flex items-center gap-2 ${cls.text}`}>
+      {Icon && <Icon size={12} />}
+      <span>{children}</span>
+    </h2>
+  );
+}
+
+/** Short gradient accent bar that fades from the section's tone
+ *  colour into transparent. This is the "gradient" half of the
+ *  line+gradient design system — the gradient line itself is the
+ *  ornament; no bounded boxes carry the visual hierarchy. */
+function SectionAccent({ tone = "brand" }: { tone?: SectionTone }) {
+  const { accentRgb } = SECTION_TONE_CLS[tone];
+  return (
+    <div
+      className="h-px w-20 mt-2"
+      style={{
+        background: `linear-gradient(90deg, rgba(${accentRgb}, 0.8) 0%, rgba(${accentRgb}, 0) 100%)`,
+      }}
+      aria-hidden
+    />
   );
 }
 
