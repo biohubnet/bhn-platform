@@ -1,16 +1,34 @@
 /**
  * LatestNewsCard — compact "what's new on the platform" surface
  * for the trainee dashboard. Reads the in-code changelog registry
- * (same one /changelog renders from).
+ * (same one /changelog renders from) but filters TWO ways before
+ * slicing the visible entries:
+ *
+ *   1. By the user's role against `e.visibleTo` — fixes a bug where
+ *      this widget rendered the first three entries from the
+ *      registry verbatim regardless of visibility tags, so admin-
+ *      only entries (Admin dashboard v4.x, Login floater internals)
+ *      were leaking onto the trainee dashboard.
+ *
+ *   2. For trainee / evaluating roles, ALSO filter to `kind:
+ *      "feature"` — the in-code registry's `improvement` tier
+ *      covers everything from "EQUIP bullet added to login page"
+ *      (real trainee value) to "atmospheric layer recipe refactored
+ *      to match DSPageHeader" (purely internal). Even ALL-tagged
+ *      improvements are usually irrelevant to a trainee. Features
+ *      are the entries that announce new capability, which is
+ *      what the widget is for.
  *
  * Renders flat (no outer rounded box) — its host section provides
- * the gradient wash. Just header + divide-y list of three entries.
+ * the gradient wash. Header + divide-y list.
  */
 import Link from "next/link";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { CHANGELOG_ENTRIES, type ChangelogEntry } from "@/lib/changelog/entries";
 
 const NEWS_COUNT = 3;
+
+const TRAINEE_ROLES = new Set(["trainee", "evaluating", "user"]);
 
 function snippet(body: string, max = 140): string {
   const plain = body
@@ -32,8 +50,16 @@ function relativeDays(daysAgo: number): string {
   return `${Math.floor(daysAgo / 30)} months ago`;
 }
 
-export function LatestNewsCard() {
-  const entries: ChangelogEntry[] = CHANGELOG_ENTRIES.slice(0, NEWS_COUNT);
+export function LatestNewsCard({ role }: { role: string }) {
+  // Step 1 — role gate. Anything the user wouldn't see on /changelog
+  // because of visibility tags shouldn't show up here either.
+  let visible = CHANGELOG_ENTRIES.filter((e) => e.visibleTo.includes(role));
+  // Step 2 — for trainees, lead with features only. The widget is
+  // a "what's new for me" surface, not a release-notes digest.
+  if (TRAINEE_ROLES.has(role)) {
+    visible = visible.filter((e) => e.kind === "feature");
+  }
+  const entries: ChangelogEntry[] = visible.slice(0, NEWS_COUNT);
   if (entries.length === 0) return null;
 
   return (

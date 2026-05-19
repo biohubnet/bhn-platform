@@ -857,7 +857,7 @@ export default async function DashboardPage() {
         <SectionEyebrow>For you</SectionEyebrow>
         <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
           <CreditUsageScoreboard userId={userId} />
-          <LatestNewsCard />
+          <LatestNewsCard role={role} />
         </div>
       </section>
 
