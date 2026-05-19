@@ -640,7 +640,12 @@ export default async function DashboardPage() {
             "linear-gradient(120deg, rgba(56,189,248,0.045) 0%, rgba(99,102,241,0.03) 55%, rgba(244,114,182,0.045) 100%)",
         }}
       >
-        <div className="relative max-w-2xl mx-auto">
+        {/* Centred treatment — eyebrow, body, and signature all sit
+            on the centre axis instead of hugging the left edge. The
+            `text-center` on the wrapper handles the inline copy;
+            the signature row uses `justify-center` on the flexbox
+            to centre the LogoMark + the attribution chip together. */}
+        <div className="relative max-w-2xl mx-auto text-center">
           <SectionEyebrow tone="brand">A note from the team</SectionEyebrow>
           <p className="mt-3 font-serif italic text-base sm:text-lg text-fg leading-relaxed">
             Welcome, <span className="not-italic font-bold">{firstName}</span>. We hope
@@ -650,7 +655,7 @@ export default async function DashboardPage() {
             keep beyond the platform.{" "}
             <span className="not-italic font-bold">We&apos;re rooting for you.</span>
           </p>
-          <div className="mt-4 flex items-center gap-2.5">
+          <div className="mt-4 flex items-center justify-center gap-2.5">
             <LogoMark size={20} className="shrink-0" />
             <span className="text-[10px] uppercase tracking-[0.28em] font-bold text-fg-muted">
               — The BioHubNet team
