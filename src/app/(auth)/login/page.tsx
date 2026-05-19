@@ -8,12 +8,13 @@ import {
   FlaskConical, Rocket,
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
-import {
-  DnaHelix, Antibody, WesternBlot, CarT,
-} from "@/components/branding/BiomanufacturingGlyphs";
 import { DraggableGlyph } from "@/components/branding/DraggableGlyph";
 import { DeepSeaStars } from "@/components/branding/DeepSeaStars";
 import { MscCultureCycle } from "@/components/branding/MscCultureCycle";
+import { DnaTranscription } from "@/components/branding/DnaTranscription";
+import { AntibodyBinding } from "@/components/branding/AntibodyBinding";
+import { WesternBlotRun } from "@/components/branding/WesternBlotRun";
+import { CarTKill } from "@/components/branding/CarTKill";
 import { ThemeCycler } from "@/components/ui/ThemePicker";
 
 const REMEMBER_KEY = "bhn-remember-email";
@@ -158,48 +159,54 @@ function LoginPageInner() {
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         {/* ── LEFT EDGE ─────────────────────────────────────────── */}
 
-        {/* Antibody — top-left corner */}
+        {/* Antibody binding cycle — top-left. IgG antibody +
+            cognate antigen tweening through circulating →
+            approaching → bound → release. */}
         <DraggableGlyph
-          className="absolute left-[3%] top-[14%] text-emerald-300/22 hidden lg:block"
+          className="absolute left-[2%] top-[8%] text-emerald-300/30 hidden lg:block"
           swimClass="lab-swim-rev"
+          pokeRadius={150}
         >
-          <Antibody size={88} strokeWidth={2} />
+          <AntibodyBinding size={140} />
         </DraggableGlyph>
 
-        {/* DNA double helix — left edge mid */}
+        {/* DNA transcription cycle — left edge bottom-mid. Bubble
+            opens, RNA pol docks, mRNA gets synthesised, releases.
+            Wide aspect so it spans the lower-left periphery. */}
         <DraggableGlyph
-          className="absolute left-[2%] top-[58%] text-sky-300/25 hidden lg:block"
+          className="absolute left-[1%] top-[55%] text-sky-300/28 hidden lg:block"
           swimClass="lab-swim-slow"
+          pokeRadius={160}
         >
-          <DnaHelix size={160} strokeWidth={1.3} />
+          <DnaTranscription size={220} />
         </DraggableGlyph>
 
         {/* ── RIGHT EDGE ────────────────────────────────────────── */}
 
-        {/* Western blot — top-right. Five-lane gel with the kDa
-            ladder + target / loading-control bands. */}
+        {/* Western blot run cycle — top-right. Samples loaded →
+            running → transferred → probed → developed; bands
+            migrate to their MW positions, target lights up. */}
         <DraggableGlyph
-          className="absolute right-[3%] top-[10%] text-sky-200/24 hidden lg:block"
+          className="absolute right-[3%] top-[8%] text-sky-200/28 hidden lg:block"
           swimClass="lab-swim-slow"
+          pokeRadius={140}
         >
-          <WesternBlot size={132} strokeWidth={1.25} />
+          <WesternBlotRun size={150} />
         </DraggableGlyph>
 
-        {/* CAR-T cell — right edge mid. Engineered T cell with six
-            CAR receptors on its membrane engaging a CD19-positive
-            target. The cancer-immunotherapy approach that cured
-            previously-incurable leukaemias. */}
+        {/* CAR-T kill cycle — right edge mid. T cell patrols,
+            tumor cell drifts in, immune synapse forms, perforin
+            + granzyme lyse the target, debris drifts off. */}
         <DraggableGlyph
-          className="absolute right-[3%] top-[40%] text-rose-300/22 hidden lg:block"
+          className="absolute right-[3%] top-[38%] text-rose-300/28 hidden lg:block"
           swimClass="lab-swim-rev"
-          pokeRadius={150}
+          pokeRadius={160}
         >
-          <CarT size={148} strokeWidth={1.25} />
+          <CarTKill size={160} />
         </DraggableGlyph>
 
-        {/* MSC passaging cycle — bottom-right (moved from the
-            top). The storytelling vignette — large enough for
-            the stage label to read. */}
+        {/* MSC passaging cycle — bottom-right. The original
+            storytelling vignette. */}
         <DraggableGlyph
           className="absolute right-[2%] bottom-[4%] text-slate-200/35 hidden lg:block"
           swimClass="lab-swim-slow"
