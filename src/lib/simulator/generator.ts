@@ -172,8 +172,13 @@ async function callGemini(systemPrompt: string, userPrompt: string) {
     error?: { message?: string };
   };
   if (j.error) throw new Error(j.error.message ?? "Gemini error");
-  const text = j.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  if (!text) throw new Error("Gemini returned empty text");
+  const rawText = j.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (rawText == null || rawText === "") throw new Error("Gemini returned empty text");
+  // Defensive coercion — if the API returns an object in this field
+  // for any reason, the downstream extractor used to crash with
+  // "e.trim is not a function". Stringify so the normal "did not
+  // return parseable JSON" path catches the real cause.
+  const text = typeof rawText === "string" ? rawText : JSON.stringify(rawText);
   return {
     text,
     model,
@@ -219,8 +224,16 @@ async function callCloudflare(systemPrompt: string, userPrompt: string) {
   if (!j.success) {
     throw new Error(j.errors?.[0]?.message ?? "Cloudflare AI error");
   }
-  const text = j.result?.response ?? "";
-  if (!text) throw new Error("Cloudflare returned empty text");
+  const rawResp: unknown = j.result?.response;
+  if (rawResp == null || rawResp === "") {
+    throw new Error("Cloudflare returned empty response");
+  }
+  // Cloudflare's Workers AI has shipped at least two response shapes
+  // for this `response` field across recent updates — string (the
+  // common case) and object (when tool-calling or structured-output
+  // paths kick in). Stringify the object case so the downstream
+  // extractor doesn't crash with "e.trim is not a function".
+  const text = typeof rawResp === "string" ? rawResp : JSON.stringify(rawResp);
   return {
     text,
     model: "llama-3.3-70b-instruct",

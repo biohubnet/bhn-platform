@@ -200,8 +200,28 @@ function err(msg: string): ValidationResult {
 /**
  * Extract the first balanced JSON object from a string. LLMs sometimes
  * wrap the response in markdown fences or add a trailing apology.
+ *
+ * Defensive: callers occasionally hand us non-string values when a
+ * provider's API shape drifts (Cloudflare's Llama endpoint has
+ * returned `response` as an object in tool-calling / structured-output
+ * modes). Stringify (or null out) before any string ops so the
+ * "e.trim is not a function" crash from those edge cases turns into
+ * a normal "Model did not return parseable JSON" error path.
  */
-export function extractJsonObject(s: string): string | null {
+export function extractJsonObject(s: unknown): string | null {
+  if (typeof s !== "string") {
+    // Some APIs return the JSON already parsed as an object. If we
+    // see that, re-stringify so the rest of the pipeline (which
+    // expects to parse a JSON string) still works.
+    if (s && typeof s === "object") {
+      try {
+        return JSON.stringify(s);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
   const trimmed = s.trim();
   // Strip ```json ... ``` fences if present
   const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
