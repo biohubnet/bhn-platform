@@ -59,7 +59,6 @@ import {
   Sliders,
   Eye,
   Drama,
-  LayoutGrid,
 } from "lucide-react";
 
 interface NavItem {
@@ -78,12 +77,6 @@ interface NavItem {
    *  Keep in sync with the QueueBadgeKey union in
    *  src/lib/admin/queue-counts.ts. */
   badgeKey?: string;
-  /** When true the link opens in a new browser tab via
-   *  `target="_blank" rel="noopener noreferrer"`. Used for static
-   *  HTML assets in /public (e.g. the floaters showcase gallery)
-   *  that aren't App Router pages and shouldn't be hijacked by
-   *  client-side navigation. */
-  external?: boolean;
 }
 
 // Always-visible top item.
@@ -284,9 +277,7 @@ const adminInsightsItems: NavItem[] = [
   { label: "Design system",       href: "/admin/design-system",       icon: Palette,    minRole: "admin",
     description: "Pick the platform-wide layout vocabulary (Classic / Cinematic / Studio) — admin-only, applies to every user. Plus the live tokens reference: surfaces, type scale, radius scale, motion primitives, component patterns, accessibility checklist. Canonical doc at docs/design-system.md." },
   { label: "Login floaters",      href: "/admin/login-floaters",      icon: FlaskConical, minRole: "admin",
-    description: "Manage the ambient process-glyph animations that sit on the dark periphery of the public /login screen. Add, remove, replace, and reposition individual floaters from a curated 20-item library; changes apply on the next login-page load without a deploy." },
-  { label: "Floaters showcase",   href: "/floaters-showcase.html",    icon: LayoutGrid,   minRole: "admin",  external: true,
-    description: "Editorial gallery of the full BHN life-science floater vocabulary — 45 personas grouped by career landscape (Discovery, Omics, Preclinical, Clinical, Regulatory, Manufacturing, QC, Cell&Gene, Supply, Med Affairs, Commercial, Patient Services). Opens in a new tab as a standalone showcase page." },
+    description: "Manage the ambient process-glyph animations that sit on the dark periphery of the public /login screen. Adds + fine-tunes are driven from an interactive editorial gallery of the curated library; each card is the real React floater at thumbnail scale, so admins see exactly what will land on /login." },
   { label: "Insights",            href: "/admin/insights",            icon: Lightbulb,  minRole: "admin",
     description: "Per-period 'what users told us' synthesis. Read the signal feeds (theme votes, exit-survey responses, access requests, pending-queue heat), write the synthesis note, publish to /changelog so the loop closes back to users." },
   { label: "Experience metrics",  href: "/admin/experience-metrics",  icon: Gauge,      minRole: "admin",
@@ -840,13 +831,6 @@ function NavLink({ item, pathname, onNavigate, queueCounts }: {
       <Link
         ref={linkRef}
         href={item.href}
-        // External (new-tab) items — static HTML in /public, etc. —
-        // bypass client-side routing and open in their own tab so
-        // they don't get hijacked by the App Router. `noopener` +
-        // `noreferrer` are the standard pair for opener-isolation
-        // and referrer-blanking when opening untrusted-ish targets.
-        target={item.external ? "_blank" : undefined}
-        rel={item.external ? "noopener noreferrer" : undefined}
         data-sidebar-nav-href={navDataAttr}
         onClick={() => { hide(); onNavigate?.(); }}
         onMouseEnter={showSoon}

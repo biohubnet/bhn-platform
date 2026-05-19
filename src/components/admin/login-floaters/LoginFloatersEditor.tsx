@@ -3,48 +3,48 @@
 /**
  * Login-floater admin editor.
  *
- * Renders the active list as editable rows + an "Add a floater"
- * panel that picks from the registry. Each row carries:
- *   • registry id (immutable — picked at add time)
- *   • side: left | right
- *   • verticalPct: 0..100
- *   • size: optional px override
- *   • colorClass: optional Tailwind text-color string
- *   • swimClass: optional drift variant
+ * Two parts stacked:
+ *   1. Active rows — one per floater currently seated on the /login
+ *      backdrop. Each row carries the fine-tuning inputs:
+ *        • side: left | right
+ *        • verticalPct: 0..100
+ *        • size: optional px override
+ *        • colorClass: optional Tailwind text-color class
+ *        • swimClass: optional drift variant
+ *   2. The Gallery — editorial visual browse of the curated library
+ *      (FLOATER_REGISTRY). Each card renders the ACTUAL React
+ *      floater component at thumbnail scale so admins see exactly
+ *      what will show up on /login. Click any card to add it to the
+ *      active list. Already-active cards are dimmed + show "ACTIVE".
+ *
+ * The gallery replaces what used to be a separate static
+ * /floaters-showcase.html file — same editorial aesthetic, but now
+ * each card is interactive and only shows floaters that can really
+ * be added (i.e. the ones in the registry).
  *
  * Saves the full list back via POST /api/admin/login-floaters.
- * No drag reorder; ordering inside an array doesn't affect render
- * (each floater is positioned absolutely by side + verticalPct),
- * so reordering would be cosmetic. Reset button restores the
- * default 5-floater layout.
+ * No drag reorder; ordering inside the array doesn't affect render
+ * (each floater is positioned absolutely by side + verticalPct), so
+ * reordering would be cosmetic. Reset button restores the default
+ * 5-floater layout.
  */
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Trash2, Plus, RotateCcw, Save, Loader2, AlertCircle, CheckCircle2,
+  Trash2, RotateCcw, Save, Loader2, AlertCircle, CheckCircle2, Check,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
+import { FLOATER_REGISTRY, FLOATER_LIST, type FloaterDef } from "@/lib/login-floaters/registry";
 import type { FloaterInstance } from "@/lib/login-floaters/types";
-
-interface RegistryEntry {
-  id: string;
-  displayName: string;
-  category: string;
-  defaultSize: number;
-  defaultColorClass: string;
-}
 
 interface Props {
   initialFloaters: FloaterInstance[];
-  registry: RegistryEntry[];
   swimClasses: string[];
 }
 
 export function LoginFloatersEditor({
   initialFloaters,
-  registry,
   swimClasses,
 }: Props) {
   const router = useRouter();
@@ -52,10 +52,6 @@ export function LoginFloatersEditor({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState<string | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
-
-  // Registry id → metadata, for quick label lookups in the rows.
-  const registryById = new Map(registry.map((r) => [r.id, r]));
 
   function patchAt(idx: number, patch: Partial<FloaterInstance>) {
     setFloaters((cur) => cur.map((f, i) => (i === idx ? { ...f, ...patch } : f)));
@@ -68,7 +64,8 @@ export function LoginFloatersEditor({
   function removeAt(idx: number) {
     setFloaters((cur) => cur.filter((_, i) => i !== idx));
   }
-  function addFloater(reg: RegistryEntry) {
+  function addFloater(reg: FloaterDef) {
+    if (floaters.length >= 12) return;
     setFloaters((cur) => [
       ...cur,
       {
@@ -79,7 +76,6 @@ export function LoginFloatersEditor({
         swimClass: "lab-swim-slow",
       },
     ]);
-    setPickerOpen(false);
   }
 
   async function save() {
@@ -139,16 +135,27 @@ export function LoginFloatersEditor({
     });
   }
 
-  // Registry entries grouped by category for the picker.
-  const grouped = registry.reduce<Record<string, RegistryEntry[]>>((acc, r) => {
-    (acc[r.category] ??= []).push(r);
-    return acc;
-  }, {});
-
-  // IDs already in use — block adding the same floater twice
-  // (defending against duplicates that would render in the same
-  // absolute slot anyway).
+  // ── Active editing surface (top) ──────────────────────────────
   const usedIds = new Set(floaters.map((f) => f.id));
+
+  // ── Gallery (bottom) — categorise the registry for editorial
+  // section headers, in a stable order that matches the showcase
+  // narrative arc (discovery → process → output → people).
+  const CATEGORY_ORDER: FloaterDef["category"][] = [
+    "Molecular",
+    "Cell / Process",
+    "Manufacturing",
+    "Analytical",
+    "Clinical",
+    "Regulatory",
+    "Persona",
+  ];
+  const grouped = CATEGORY_ORDER
+    .map((cat) => ({
+      category: cat,
+      entries: FLOATER_LIST.filter((f) => f.category === cat),
+    }))
+    .filter((g) => g.entries.length > 0);
 
   return (
     <div className="space-y-4">
@@ -192,20 +199,16 @@ export function LoginFloatersEditor({
         </div>
       </Card>
 
-      {/* Editable rows. Each row's left side shows the floater
-          name + category; right side has side/vertical/size/color/
-          swim inputs in a compact grid. Nothing fancy — text inputs
-          + selects — but a 12-row table would feel cramped on a
-          half-width column, so we use a stacked row layout. */}
+      {/* Active rows — fine-tuning inputs for already-seated floaters. */}
       <div className="space-y-3">
         {floaters.length === 0 && (
           <Card className="px-5 py-8 text-center text-sm text-muted">
-            No floaters active. Click <strong>Add a floater</strong> below to start, or hit{" "}
+            No floaters active. Scroll down to the gallery and click any card to add it, or hit{" "}
             <strong>Reset</strong> to restore the default 5.
           </Card>
         )}
         {floaters.map((f, idx) => {
-          const reg = registryById.get(f.id);
+          const reg = FLOATER_REGISTRY[f.id];
           return (
             <Card key={`${f.id}-${idx}`} className="px-5 py-4">
               <div className="flex items-start justify-between gap-3 mb-3">
@@ -291,66 +294,114 @@ export function LoginFloatersEditor({
         })}
       </div>
 
-      {/* Add picker — opens a panel of available registry entries
-          grouped by category. Each one is a click-to-add button
-          that appends a default-positioned instance. */}
-      <Card className="px-5 py-4">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <p className="text-sm font-semibold text-fg">Add a floater</p>
-            <p className="text-[11px] text-muted mt-0.5">
-              Pick from the curated library. Already-active floaters are dimmed.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setPickerOpen((o) => !o)}
-            disabled={floaters.length >= 12}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold border border-line hover:bg-elevated disabled:opacity-50"
-          >
-            <Plus size={12} /> {pickerOpen ? "Close picker" : "Open picker"}
-          </button>
-        </div>
-
-        {pickerOpen && (
-          <div className="mt-4 space-y-4">
-            {Object.entries(grouped).map(([category, entries]) => (
-              <div key={category}>
-                <div className="flex items-center gap-2 mb-2">
-                  <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-                    {category}
-                  </p>
-                  <Badge tone="neutral">{entries.length}</Badge>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {entries.map((reg) => {
-                    const inUse = usedIds.has(reg.id);
-                    return (
-                      <button
-                        key={reg.id}
-                        type="button"
-                        onClick={() => !inUse && addFloater(reg)}
-                        disabled={inUse}
-                        className={
-                          "text-left px-3 py-2 rounded-md border text-xs transition-colors " +
-                          (inUse
-                            ? "border-line bg-elevated/40 text-subtle cursor-not-allowed"
-                            : "border-line bg-card-solid text-fg hover:border-brand-300 hover:bg-elevated/60")
-                        }
-                      >
-                        <p className="font-semibold">{reg.displayName}</p>
-                        <p className="text-[10px] text-subtle mt-0.5 font-mono">
-                          {inUse ? "already active" : `default ${reg.defaultSize}px`}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
+      {/* ── GALLERY ────────────────────────────────────────────────
+          The visual picker. Replaces the standalone
+          /floaters-showcase.html — admins see the actual React
+          component animating on each card, grouped into editorial
+          sections. Click any inactive card to add. The dark backdrop
+          + thin hairline categorisation mirrors the showcase's
+          editorial mood. */}
+      <Card className="overflow-hidden p-0">
+        <GalleryHeader count={floaters.length} />
+        <div
+          className="relative px-5 sm:px-8 py-8 sm:py-10"
+          style={{
+            background: "radial-gradient(900px 600px at 80% -10%, rgba(72,188,167,0.10), transparent 60%), radial-gradient(700px 500px at -10% 110%, rgba(56,140,200,0.12), transparent 60%), linear-gradient(180deg, #04080f 0%, #0a1623 100%)",
+          }}
+        >
+          {grouped.map(({ category, entries }, sectionIdx) => (
+            <section key={category} className={sectionIdx > 0 ? "mt-12" : ""}>
+              <div className="mb-5">
+                <p className="font-mono text-[10px] tracking-[0.4em] text-white/40">
+                  {String(sectionIdx + 1).padStart(2, "0")}
+                </p>
+                <h3 className="mt-1 text-xl font-semibold text-white/95 tracking-tight">
+                  {category}
+                </h3>
+                <div className="mt-2 h-px w-16 bg-gradient-to-r from-cyan-300/60 to-transparent" />
               </div>
-            ))}
-          </div>
-        )}
+              <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+                {entries.map((reg) => {
+                  const inUse = usedIds.has(reg.id);
+                  const atCap = floaters.length >= 12 && !inUse;
+                  return (
+                    <button
+                      key={reg.id}
+                      type="button"
+                      onClick={() => !inUse && !atCap && addFloater(reg)}
+                      disabled={inUse || atCap}
+                      className={
+                        "group relative text-left rounded-2xl border p-3.5 transition-all backdrop-blur-md " +
+                        (inUse
+                          ? "border-emerald-400/30 bg-emerald-400/[0.06] cursor-not-allowed"
+                          : atCap
+                            ? "border-white/10 bg-white/[0.02] opacity-40 cursor-not-allowed"
+                            : "border-white/10 bg-white/[0.04] hover:border-white/30 hover:bg-white/[0.07] hover:-translate-y-px")
+                      }
+                      title={inUse ? "Already on the login screen" : atCap ? "Floater cap reached (12)" : `Add ${reg.displayName} to the login screen`}
+                    >
+                      {/* Meta row — category eyebrow + ACTIVE/ADD chip */}
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[9px] font-bold tracking-[0.3em] uppercase text-white/55">
+                          {reg.category}
+                        </span>
+                        {inUse ? (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold tracking-[0.18em] uppercase text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 bg-emerald-400/[0.08]">
+                            <Check size={9} /> Active
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-white/35 px-2 py-0.5 rounded-full border border-white/10 group-hover:text-white/70 group-hover:border-white/25 transition-colors">
+                            Add
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[13px] font-semibold text-white/95 tracking-tight mb-1">
+                        {reg.displayName}
+                      </p>
+                      {/* Stage — square frame containing the actual
+                          floater component at its registered default
+                          size. The component's own colour comes from
+                          the parent's text-color class. */}
+                      <div className={"mt-2 aspect-square flex items-center justify-center rounded-xl " + (reg.defaultColorClass)}
+                        style={{ background: "radial-gradient(60% 60% at 50% 40%, rgba(72,188,167,0.05), transparent 70%)" }}
+                      >
+                        <reg.Component size={Math.min(reg.defaultSize, 160)} />
+                      </div>
+                      <p className="mt-3 text-center font-mono text-[10px] tracking-[0.18em] uppercase text-white/45">
+                        {reg.defaultSize}px · default
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
       </Card>
+    </div>
+  );
+}
+
+/** Editorial header rendered above the dark gallery body. Lives on
+ *  the Card's normal surface so the contrast between admin chrome
+ *  and the dark gallery interior is sharp. */
+function GalleryHeader({ count }: { count: number }) {
+  return (
+    <div className="px-5 sm:px-8 py-5 border-b border-line bg-elevated/30">
+      <p className="font-mono text-[10px] tracking-[0.4em] uppercase text-subtle">
+        Library
+      </p>
+      <h2 className="mt-1 text-lg font-semibold text-fg tracking-tight">
+        Floater gallery
+      </h2>
+      <p className="mt-1.5 text-[12px] text-muted max-w-[60ch]">
+        Editorial browse of the curated library. Each card is the actual React
+        component at thumbnail scale — exactly what shows up on{" "}
+        <code className="font-mono text-fg bg-card-solid px-1.5 py-0.5 rounded text-[11px]">/login</code>.
+        Click any inactive card to seat it on the login backdrop; already-active
+        ones carry the <span className="text-emerald-700 font-semibold">Active</span> chip.
+        Currently <span className="font-semibold text-fg">{count}</span> of 12 seats filled.
+      </p>
     </div>
   );
 }
