@@ -111,6 +111,10 @@ export function ApplicantPanel({
   const [comments, setComments] = useState<Comment[] | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
   const [postingComment, setPostingComment] = useState(false);
+  /** Server-side comment errors (e.g. eligibility-gate rejection
+   *  with code "not_commentable"). Previously a failed post silently
+   *  no-op'd and the employer thought commenting was working. */
+  const [commentError, setCommentError] = useState<string | null>(null);
   const [showResume, setShowResume] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [busyStage, setBusyStage] = useState(false);
@@ -160,17 +164,30 @@ export function ApplicantPanel({
     const body = commentDraft.trim();
     if (!body || postingComment) return;
     setPostingComment(true);
+    setCommentError(null);
     try {
       const r = await fetch(`/api/employer/applicants/${a.submissionId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body }),
       });
-      const j = await r.json();
+      const j = (await r.json().catch(() => ({}))) as {
+        ok?: boolean;
+        comment?: Comment;
+        error?: string;
+        code?: string;
+      };
       if (r.ok && j?.ok && j.comment) {
-        setComments((cur) => (cur ? [...cur, j.comment] : [j.comment]));
+        setComments((cur) => (cur ? [...cur, j.comment as Comment] : [j.comment as Comment]));
         setCommentDraft("");
         onPatch({ commentCount: a.commentCount + 1 });
+      } else {
+        // Surface server-side errors — most importantly the
+        // not_commentable eligibility gate that previously failed
+        // silently. Without this, an employer trying to comment on
+        // a pending/rejected applicant would see no feedback and
+        // wonder if the submit button was broken.
+        setCommentError(j?.error ?? "Couldn't post comment.");
       }
     } finally {
       setPostingComment(false);
@@ -545,6 +562,16 @@ export function ApplicantPanel({
                 placeholder="Notes for the team — fit, follow-ups, who's already spoken to them…"
                 className="w-full text-sm text-fg bg-card rounded-lg border border-line px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500/40 resize-y disabled:opacity-50"
               />
+              {commentError && (
+                // Inline error — most often the eligibility-gate
+                // rejection ("Commenting is locked until an admin
+                // approves this applicant's eligibility."). Used to
+                // fail silently; the employer would click Post and
+                // wonder if it was broken.
+                <p className="mt-1.5 text-xs text-rose-700 bg-rose-50 ring-1 ring-inset ring-rose-200 rounded-md px-2.5 py-1.5">
+                  {commentError}
+                </p>
+              )}
               <div className="mt-1.5 flex items-center justify-end">
                 <button
                   type="button"

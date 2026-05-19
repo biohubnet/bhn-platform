@@ -18,6 +18,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isCommentable } from "@/lib/talent-pool/comments";
 
 export const runtime = "nodejs";
 
@@ -73,10 +74,31 @@ export async function POST(
   const { submissionId } = await ctx.params;
   const submission = await prisma.eventFormSubmission.findUnique({
     where: { id: submissionId },
-    select: { id: true },
+    select: { id: true, reviewStatus: true },
   });
   if (!submission) {
     return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+  }
+
+  // Server-side eligibility gate — the UI already shows a
+  // "Commenting locked" panel when the submission isn't approved,
+  // but the previous version of this handler didn't enforce it
+  // server-side. A motivated employer could bypass the disabled
+  // textarea via dev tools or hit this endpoint directly with
+  // curl/fetch. Lock now matches what the UI promises: comments
+  // are only writable once an admin manually ticks the
+  // submission as approved (reviewStatus → "approved" or
+  // "approved_skip_review").
+  if (!isCommentable(submission.reviewStatus)) {
+    return NextResponse.json(
+      {
+        error:
+          "Commenting is locked until an admin approves this applicant's eligibility.",
+        code: "not_commentable",
+        reviewStatus: submission.reviewStatus,
+      },
+      { status: 403 },
+    );
   }
 
   const body = (await req.json().catch(() => ({}))) as { body?: string };
