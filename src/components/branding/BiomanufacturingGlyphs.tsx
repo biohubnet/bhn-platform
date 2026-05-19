@@ -43,14 +43,19 @@ export function DnaHelix({ size = 140, strokeWidth = 1.2, className }: Props) {
   );
 }
 
-/** Monoclonal antibody — the iconic Y. Two Fab arms with binding
- *  heads, central hinge, Fc stem. Backbone of every mAb therapy. */
-export function Antibody({ size = 90, strokeWidth = 2, className }: Props) {
+/** Monoclonal antibody (IgG) — anatomically faithful schematic:
+ *  TWO heavy chains forming the full Y silhouette (Fab arms +
+ *  Fc stem), TWO light chains paired inboard along each Fab
+ *  arm only, antigen-binding sites at the Fab tips, inter-heavy
+ *  disulfide bonds across the hinge / Fc, and a flared Fc base.
+ *  Same minimalist line-art style as the rest of the family —
+ *  just more biologically honest than the simple Y triangle. */
+export function Antibody({ size = 90, strokeWidth = 1.5, className }: Props) {
   return (
     <svg
       width={size}
-      height={size * (110 / 90)}
-      viewBox="0 0 90 110"
+      height={size * (118 / 90)}
+      viewBox="0 0 90 118"
       fill="none"
       stroke="currentColor"
       strokeWidth={strokeWidth}
@@ -58,15 +63,231 @@ export function Antibody({ size = 90, strokeWidth = 2, className }: Props) {
       strokeLinejoin="round"
       className={className}
       role="img"
-      aria-label="Antibody"
+      aria-label="IgG antibody"
     >
-      <line x1="45" y1="55" x2="45" y2="100" />
-      <line x1="45" y1="55" x2="18" y2="22" />
-      <line x1="45" y1="55" x2="72" y2="22" />
-      <circle cx="18" cy="16" r="7" fill="currentColor" fillOpacity="0.45" />
-      <circle cx="72" cy="16" r="7" fill="currentColor" fillOpacity="0.45" />
-      <circle cx="45" cy="55" r="3.5" fill="currentColor" />
-      <circle cx="45" cy="100" r="5" fill="currentColor" fillOpacity="0.55" />
+      {/* ── Heavy chains — two outer strokes running from each
+            Fab tip down through the hinge into the Fc stem. The
+            Fc stem shows them as two close-parallel verticals
+            that curve in at the base. */}
+      <path d="M 14 12 L 41 50 L 41 96 Q 41 104, 45 106" />
+      <path d="M 76 12 L 49 50 L 49 96 Q 49 104, 45 106" />
+
+      {/* ── Light chains — inboard parallel strokes in each Fab
+            arm only (they don't extend into the Fc), slightly
+            thinner so the heavy chain reads as the dominant
+            backbone. */}
+      <path
+        d="M 22 14 L 43 46"
+        strokeWidth={strokeWidth * 0.85}
+        opacity="0.78"
+      />
+      <path
+        d="M 68 14 L 47 46"
+        strokeWidth={strokeWidth * 0.85}
+        opacity="0.78"
+      />
+
+      {/* ── Antigen-binding sites — variable-region pockets at
+            each Fab tip, drawn as a small hook + filled paratope
+            dot so the "binding face" reads clearly. */}
+      <path d="M 9 12 Q 11 6, 17 7" strokeWidth={strokeWidth * 0.85} fill="none" />
+      <path d="M 81 12 Q 79 6, 73 7" strokeWidth={strokeWidth * 0.85} fill="none" />
+      <circle cx="14" cy="11" r="2.5" fill="currentColor" fillOpacity="0.55" stroke="none" />
+      <circle cx="76" cy="11" r="2.5" fill="currentColor" fillOpacity="0.55" stroke="none" />
+
+      {/* ── Hinge — small filled junction where the two heavy
+            chains pivot together. */}
+      <circle cx="45" cy="50" r="2.6" fill="currentColor" fillOpacity="0.55" stroke="none" />
+
+      {/* ── Inter-heavy-chain disulfide bonds — two short dashed
+            lines crossing the Fc stem (the cysteine bridges
+            holding the heavy chains together in the hinge / Fc
+            region — typical IgG1). */}
+      <line
+        x1="41" y1="60" x2="49" y2="60"
+        strokeWidth={strokeWidth * 0.7}
+        strokeDasharray="1.6 1.4"
+        opacity="0.65"
+      />
+      <line
+        x1="41" y1="66" x2="49" y2="66"
+        strokeWidth={strokeWidth * 0.7}
+        strokeDasharray="1.6 1.4"
+        opacity="0.65"
+      />
+      <line
+        x1="41" y1="84" x2="49" y2="84"
+        strokeWidth={strokeWidth * 0.6}
+        strokeDasharray="1.4 1.4"
+        opacity="0.45"
+      />
+
+      {/* ── Heavy-light disulfide markers — single short tick in
+            each Fab arm where the heavy + light chains link. */}
+      <line x1="31" y1="36" x2="37" y2="40" strokeWidth={strokeWidth * 0.55} opacity="0.45" />
+      <line x1="59" y1="36" x2="53" y2="40" strokeWidth={strokeWidth * 0.55} opacity="0.45" />
+
+      {/* ── Fc base — flared elliptical foot, the constant
+            region tip. */}
+      <ellipse cx="45" cy="106" rx="8" ry="3.2" fill="currentColor" fillOpacity="0.32" stroke="none" />
+    </svg>
+  );
+}
+
+/** PCR — polymerase chain reaction. Iconic single-frame snapshot
+ *  of the denature → anneal → extend cycle: two melted single
+ *  strands (top + bottom, antiparallel), short primers annealed
+ *  with arrowheads pointing in the 5′→3′ extension direction,
+ *  and dots of nucleotides being added by Taq polymerase beyond
+ *  each primer. The everyday workhorse of molecular biology. */
+export function Pcr({ size = 150, strokeWidth = 1.4, className }: Props) {
+  return (
+    <svg
+      width={size}
+      height={size * (76 / 150)}
+      viewBox="0 0 150 76"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      role="img"
+      aria-label="PCR — polymerase chain reaction"
+    >
+      {/* ── Two denatured single strands — gentle waves, separated.
+            Top strand reads 5′→3′ left to right; bottom strand is
+            antiparallel (5′→3′ right to left). */}
+      <path d="M 8 22 Q 28 16, 52 22 T 100 22 T 142 22" />
+      <path d="M 8 54 Q 28 60, 52 54 T 100 54 T 142 54" />
+
+      {/* ── Forward primer — short thicker segment annealed to
+            the bottom strand on the left, with an arrowhead
+            pointing right (the 5′→3′ extension direction). */}
+      <line x1="22" y1="54" x2="46" y2="54" strokeWidth={strokeWidth * 1.55} />
+      <path d="M 46 50 L 50 54 L 46 58" strokeWidth={strokeWidth * 1.05} fill="none" />
+
+      {/* ── Reverse primer — annealed to the top strand on the
+            right, arrowhead pointing left (5′→3′ on the
+            antisense strand). */}
+      <line x1="104" y1="22" x2="128" y2="22" strokeWidth={strokeWidth * 1.55} />
+      <path d="M 104 18 L 100 22 L 104 26" strokeWidth={strokeWidth * 1.05} fill="none" />
+
+      {/* ── Nucleotides being added by Taq polymerase — small
+            dots fading out beyond each primer's arrowhead, so
+            the eye reads "active extension". */}
+      <g fill="currentColor" stroke="none">
+        <circle cx="56" cy="54" r="1.5" opacity="0.85" />
+        <circle cx="62" cy="54" r="1.4" opacity="0.70" />
+        <circle cx="68" cy="54" r="1.3" opacity="0.55" />
+        <circle cx="74" cy="54" r="1.2" opacity="0.40" />
+
+        <circle cx="94" cy="22" r="1.5" opacity="0.85" />
+        <circle cx="88" cy="22" r="1.4" opacity="0.70" />
+        <circle cx="82" cy="22" r="1.3" opacity="0.55" />
+        <circle cx="76" cy="22" r="1.2" opacity="0.40" />
+      </g>
+
+      {/* ── 5′ / 3′ end labels — tiny mono, anchored at the ends,
+            so the antiparallel directionality is legible. */}
+      <g
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+        fontSize="6"
+        fill="currentColor"
+        stroke="none"
+        opacity="0.55"
+      >
+        <text x="0"   y="14">5′</text>
+        <text x="138" y="14">3′</text>
+        <text x="0"   y="74">3′</text>
+        <text x="138" y="74">5′</text>
+      </g>
+    </svg>
+  );
+}
+
+/** Western blot — protein gel/membrane with multiple lanes and
+ *  horizontal bands at varying molecular-weight positions. The
+ *  everyday assay for "is this protein expressed, and how much?".
+ *  Drawn with a kDa ladder on the left + five sample lanes: the
+ *  protein marker (lane 1), three test lanes with the target
+ *  band at ~50 kDa at different intensities, and a knockout
+ *  lane (no target, loading-control only). */
+export function WesternBlot({ size = 124, strokeWidth = 1.3, className }: Props) {
+  return (
+    <svg
+      width={size}
+      height={size * (94 / 124)}
+      viewBox="0 0 124 94"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      role="img"
+      aria-label="Western blot"
+    >
+      {/* ── kDa label — tiny mono at the top of the ladder */}
+      <text
+        x="13" y="6"
+        textAnchor="middle"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+        fontSize="5"
+        fill="currentColor"
+        stroke="none"
+        opacity="0.65"
+      >
+        kDa
+      </text>
+
+      {/* ── Molecular-weight ladder on the left (outside the
+            membrane). Vertical axis with four MW tick marks. */}
+      <line x1="13" y1="14" x2="13" y2="84" strokeWidth={strokeWidth * 0.6} opacity="0.7" />
+      <line x1="10" y1="20" x2="16" y2="20" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+      <line x1="10" y1="34" x2="16" y2="34" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+      <line x1="10" y1="50" x2="16" y2="50" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+      <line x1="10" y1="70" x2="16" y2="70" strokeWidth={strokeWidth * 0.7} opacity="0.7" />
+
+      {/* ── Membrane outline — rounded rectangle */}
+      <rect x="22" y="10" width="96" height="78" rx="2" />
+
+      {/* ── Lane dividers — four hairlines splitting the membrane
+            into five lanes. Subtle so the bands dominate. */}
+      <line x1="41" y1="10" x2="41" y2="88" strokeWidth={strokeWidth * 0.4} opacity="0.35" />
+      <line x1="60" y1="10" x2="60" y2="88" strokeWidth={strokeWidth * 0.4} opacity="0.35" />
+      <line x1="79" y1="10" x2="79" y2="88" strokeWidth={strokeWidth * 0.4} opacity="0.35" />
+      <line x1="98" y1="10" x2="98" y2="88" strokeWidth={strokeWidth * 0.4} opacity="0.35" />
+
+      {/* ── Bands — horizontal rectangles inside lanes at
+            varying MW positions and intensities. Reads like a
+            typical Western: target band at ~50 kDa present in
+            most lanes at varying strength, plus a loading
+            control band lower down (~37 kDa). */}
+      <g fill="currentColor" stroke="none">
+        {/* Lane 1 — protein marker: four bands of equal strength
+              at the four ladder positions. */}
+        <rect x="26" y="19" width="11" height="2"   opacity="0.7" />
+        <rect x="26" y="33" width="11" height="2"   opacity="0.7" />
+        <rect x="26" y="49" width="11" height="2"   opacity="0.7" />
+        <rect x="26" y="69" width="11" height="2"   opacity="0.7" />
+
+        {/* Lane 2 — target moderate, loading-control consistent */}
+        <rect x="45" y="33" width="11" height="2.6" opacity="0.8" />
+        <rect x="45" y="69" width="11" height="2.2" opacity="0.55" />
+
+        {/* Lane 3 — target weaker, loading-control consistent */}
+        <rect x="64" y="33" width="11" height="1.6" opacity="0.45" />
+        <rect x="64" y="69" width="11" height="2.2" opacity="0.55" />
+
+        {/* Lane 4 — target strongest (overexpression?),
+              loading-control consistent */}
+        <rect x="83" y="32" width="11" height="3.4" opacity="0.95" />
+        <rect x="83" y="69" width="11" height="2.2" opacity="0.55" />
+
+        {/* Lane 5 — knockout / negative — no target, loading-only */}
+        <rect x="102" y="69" width="11" height="2.2" opacity="0.55" />
+      </g>
     </svg>
   );
 }

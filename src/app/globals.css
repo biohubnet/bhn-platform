@@ -962,6 +962,68 @@ body {
   .lab-bubble, .lab-bubble-slow, .lab-bubble-slower { animation: none; opacity: 0; }
 }
 
+/* ──── Login page — deep-sea stars sinking ────
+ * Tiny five-pointed sea-stars + ✦ twinkle particles drift
+ * downward through the dark cosmic stage like marine snow /
+ * plankton sinking through deep water — they fall slowly, sway
+ * with imagined currents (different sway profile per variant so
+ * neighbours don't sync), rotate gently as they go, fade in
+ * near the top of the viewport and back out near the bottom.
+ *
+ * Per-instance opacity is passed in via the `--star-op` CSS
+ * custom property (set inline by the DeepSeaStars component on
+ * each star element) so each particle's peak brightness is
+ * preserved through the keyframe.
+ *
+ * Linear timing so the descent reads as steady gravity rather
+ * than ease-bounce. Four sway-profile variants keep the cloud
+ * organic. Respect prefers-reduced-motion. */
+@keyframes sea-star-sink-a {
+  0%   { transform: translate3d(0,      -8vh, 0) rotate(0deg);   opacity: 0; }
+  10%  { opacity: var(--star-op, 0.4); }
+  50%  { transform: translate3d(16px,   50vh, 0) rotate(180deg); }
+  90%  { opacity: var(--star-op, 0.4); }
+  100% { transform: translate3d(-10px, 108vh, 0) rotate(360deg); opacity: 0; }
+}
+@keyframes sea-star-sink-b {
+  0%   { transform: translate3d(0,      -8vh, 0) rotate(0deg);    opacity: 0; }
+  10%  { opacity: var(--star-op, 0.4); }
+  35%  { transform: translate3d(-22px,  32vh, 0) rotate(-90deg);  }
+  72%  { transform: translate3d(18px,   74vh, 0) rotate(-200deg); }
+  90%  { opacity: var(--star-op, 0.4); }
+  100% { transform: translate3d(8px,   108vh, 0) rotate(-280deg); opacity: 0; }
+}
+@keyframes sea-star-sink-c {
+  0%   { transform: translate3d(0,      -8vh, 0) rotate(0deg);   opacity: 0; }
+  10%  { opacity: var(--star-op, 0.4); }
+  50%  { transform: translate3d(28px,   50vh, 0) rotate(120deg); }
+  90%  { opacity: var(--star-op, 0.4); }
+  100% { transform: translate3d(14px,  108vh, 0) rotate(240deg); opacity: 0; }
+}
+@keyframes sea-star-sink-d {
+  0%   { transform: translate3d(0,      -8vh, 0) rotate(0deg);   opacity: 0; }
+  10%  { opacity: var(--star-op, 0.4); }
+  42%  { transform: translate3d(-14px,  42vh, 0) rotate(60deg);  }
+  78%  { transform: translate3d(20px,   82vh, 0) rotate(180deg); }
+  90%  { opacity: var(--star-op, 0.4); }
+  100% { transform: translate3d(-6px,  108vh, 0) rotate(280deg); opacity: 0; }
+}
+.sea-star-sink-a, .sea-star-sink-b, .sea-star-sink-c, .sea-star-sink-d {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+.sea-star-sink-a { animation-name: sea-star-sink-a; }
+.sea-star-sink-b { animation-name: sea-star-sink-b; }
+.sea-star-sink-c { animation-name: sea-star-sink-c; }
+.sea-star-sink-d { animation-name: sea-star-sink-d; }
+@media (prefers-reduced-motion: reduce) {
+  .sea-star-sink-a, .sea-star-sink-b, .sea-star-sink-c, .sea-star-sink-d {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 /* ──── /rewards page — loot-vault animations ────
  * A small motion vocabulary for the playful merch page: floating
  * gift-box icons, holographic-foil shimmer on collectible cards,

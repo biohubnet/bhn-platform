@@ -11,9 +11,10 @@ import { LogoMark } from "@/components/ui/Logo";
 import { StylizedMark } from "@/components/branding/StylizedMark";
 import {
   DnaHelix, Antibody, LipidNanoparticle, CellSchematic, Bioreactor,
-  TFlask, Ribosome,
+  Ribosome, Pcr, WesternBlot,
 } from "@/components/branding/BiomanufacturingGlyphs";
 import { DraggableGlyph } from "@/components/branding/DraggableGlyph";
+import { DeepSeaStars } from "@/components/branding/DeepSeaStars";
 import { MscCultureCycle } from "@/components/branding/MscCultureCycle";
 import { ThemeCycler } from "@/components/ui/ThemePicker";
 
@@ -161,6 +162,16 @@ function LoginPageInner() {
         </span>
       </div>
 
+      {/* ─── DEEP-SEA STARS — featherweight twinkle / sea-star
+           particles drifting downward through the stage like
+           marine snow. Sit BEHIND the biotech glyphs (rendered
+           next) so the foreground stays clean, ABOVE the
+           spotlight wash so the stars feel like they live in
+           the same atmosphere as the BHN petal. CSS-driven
+           keyframes — no JS animation loop. Respects
+           prefers-reduced-motion. */}
+      <DeepSeaStars />
+
       {/* ─── BIOMANUFACTURING MOLECULES — periphery-only.
            Every glyph is positioned in the LEFT or RIGHT edge
            zone (within ~10 % of the viewport edge), well clear of
@@ -201,12 +212,14 @@ function LoginPageInner() {
           <DnaHelix size={160} strokeWidth={1.3} />
         </DraggableGlyph>
 
-        {/* T-flask — left edge bottom */}
+        {/* PCR — left edge bottom (replaces the T-flask). The
+            molecular-biology workhorse: two melted single strands
+            with primers annealed + Taq extending. */}
         <DraggableGlyph
-          className="absolute left-[4%] bottom-[8%] text-teal-200/22 hidden lg:block"
+          className="absolute left-[3%] bottom-[8%] text-emerald-200/22 hidden lg:block"
           swimClass="lab-swim-drift"
         >
-          <TFlask size={140} strokeWidth={1.3} />
+          <Pcr size={160} strokeWidth={1.25} />
         </DraggableGlyph>
 
         {/* ── RIGHT EDGE ────────────────────────────────────────── */}
@@ -222,9 +235,19 @@ function LoginPageInner() {
           <MscCultureCycle size={200} />
         </DraggableGlyph>
 
-        {/* Lipid nanoparticle — right edge upper-mid */}
+        {/* Western blot — right edge upper-mid. Five-lane gel
+            with the kDa ladder + target / loading-control bands.
+            The protein-analysis counterpart to PCR. */}
         <DraggableGlyph
-          className="absolute right-[4%] top-[50%] text-violet-300/22 hidden lg:block"
+          className="absolute right-[3%] top-[36%] text-sky-200/24 hidden lg:block"
+          swimClass="lab-swim-slow"
+        >
+          <WesternBlot size={132} strokeWidth={1.25} />
+        </DraggableGlyph>
+
+        {/* Lipid nanoparticle — right edge mid */}
+        <DraggableGlyph
+          className="absolute right-[4%] top-[54%] text-violet-300/22 hidden lg:block"
           swimClass="lab-swim"
         >
           <LipidNanoparticle size={104} strokeWidth={1.3} />
