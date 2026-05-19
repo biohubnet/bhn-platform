@@ -365,178 +365,162 @@ export default async function DashboardPage() {
             box. Same pattern as DSPageHeader's decoration wrapper. */}
         <div
           aria-hidden
-          className="inset-0 pointer-events-none"
+          className="inset-0 pointer-events-none overflow-hidden"
           // Inline style — load-bearing. The `.hero-mesh-brand > *`
-          // rule in globals.css has higher CSS specificity than
-          // Tailwind's `.absolute` utility, so it would force this
-          // wrapper to `position: relative` (collapsing every
-          // child's `inset-0` to a 0 × 0 box and killing the glass
-          // effect entirely). Inline style wins the cascade.
+          // rule in globals.css would otherwise force this wrapper
+          // to position: relative + z-index: 1 via class specificity,
+          // collapsing every child's `inset-0` to a 0 × 0 box.
           style={{ position: "absolute", inset: 0 }}
         >
-          {/* ── REEDED-GLASS HOTHOUSE — MATCHED TO THE REFERENCE
-                IMAGE. The previous build was too dense (ribs too
-                close together, palette too dark, theme-tinted
-                everywhere). This rebuild commits to a fixed light
-                / sage-green / warm-rust palette regardless of
-                theme — the hero is a SIGNATURE LOOK on the trainee
-                dashboard, not a theme-adaptive surface.
+          {/* ── CINEMATIC BLOB STAGE — a fresh take. Six animated
+                radial-gradient blobs drift in the corners of the
+                hero on a deep midnight base. The blobs are placed
+                (and constrained) so none of them ever crosses the
+                centre band where the title + lead + CTA sit.
 
-                Reference characteristics matched:
-                  • LIGHT cream/sage background (not dark)
-                  • Wide vertical ribs (22 px cycle, not 9 px)
-                  • Sage-green palm fronds visible through the glass
-                  • Warm rust accent in the lower-right corner
-                  • Soft-focus leaves through Gaussian blur
-                  • Real refraction via feDisplacementMap so each
-                    rib slices the leaves into a different position
-              */}
+                Why this fits "cinematic":
+                  • Deep navy base (#0a0e1d → #181f3a) reads like a
+                    night sky or a theatre stage at curtain
+                  • Six saturated jewel-tone blobs — cyan, violet,
+                    rose, amber, emerald, brand-blue — each
+                    100–180 px Gaussian blurred and at 0.45–0.6
+                    opacity so they read as colour wash, not shapes
+                  • Each blob has its own `hero-blob-{a..d}` CSS
+                    keyframe (60–88 s slow drift) so neighbours
+                    never sync; the motion reads as atmospheric
+                    breathing rather than animated banner
+                  • mix-blend-screen / lighter on each blob so they
+                    blend into each other like coloured light, not
+                    flat overlapping shapes
 
-          {/* (1) Base wash — light cream + sage gradient, NOT
-                  theme-tinted. Matches the airy upper-left → mid
-                  sage transition of the reference image. */}
+                BLOB POSITIONS — every one is placed at -X / -Y
+                offsets that push them PAST the corner of the hero,
+                so their visible footprints clip to the corners.
+                The centre band (~30–70% horizontal, ~25–75%
+                vertical) stays clear — title + lead + CTA + stats
+                column all read against quiet midnight. */}
+
+          {/* Base midnight — vertical gradient + a soft top-centre
+                spotlight cone for the "stage" feel */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(135deg, #f1f4ec 0%, #d5dfd2 35%, #a8baa7 65%, #8ba590 100%)",
+                "radial-gradient(ellipse 50% 60% at 50% 15%, rgba(255,255,255,0.06) 0%, transparent 60%), linear-gradient(180deg, #0a0e1d 0%, #131730 50%, #181f3a 100%)",
             }}
           />
 
-          {/* (2) ART + DISPLACEMENT — sage palm fronds painted
-                  across the canvas, soft-focused, then sliced
-                  vertically by the reeded-glass displacement. */}
-          <svg
-            className="absolute inset-0 w-full h-full"
-            viewBox="0 0 1920 700"
-            preserveAspectRatio="xMidYMid slice"
-          >
-            <defs>
-              <filter id="hero-art-blur" x="-10%" y="-10%" width="120%" height="120%">
-                <feGaussianBlur stdDeviation="14" />
-              </filter>
-              <filter id="hero-reeded-displace" x="-5%" y="-5%" width="110%" height="110%">
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="3 0.005"
-                  numOctaves="1"
-                  seed="9"
-                  stitchTiles="stitch"
-                  result="turbulence"
-                />
-                <feDisplacementMap
-                  in="SourceGraphic"
-                  in2="turbulence"
-                  scale="75"
-                  xChannelSelector="R"
-                  yChannelSelector="G"
-                />
-              </filter>
-            </defs>
+          {/* TOP-LEFT — cyan, large, drifts down-right */}
+          <div
+            className="absolute hero-blob-a"
+            style={{
+              top: "-30%",
+              left: "-15%",
+              width: "42rem",
+              height: "42rem",
+              borderRadius: "9999px",
+              background: "radial-gradient(circle, rgba(56,189,248,0.55) 0%, rgba(56,189,248,0) 70%)",
+              filter: "blur(60px)",
+              mixBlendMode: "screen",
+            }}
+          />
 
-            <g filter="url(#hero-reeded-displace)">
-              <g filter="url(#hero-art-blur)">
-                {/* Atmospheric depth blobs — sage greens with a
-                    warm rust accent in the lower-right. */}
-                <ellipse cx="1500" cy="380" rx="640" ry="380" fill="#7a9a7a" opacity="0.55" />
-                <ellipse cx="350" cy="250" rx="500" ry="320" fill="#c9d5c1" opacity="0.45" />
-                <ellipse cx="1750" cy="180" rx="380" ry="240" fill="#6d8a6d" opacity="0.4" />
-                <ellipse cx="1620" cy="600" rx="200" ry="120" fill="#c47950" opacity="0.55" />
+          {/* TOP-RIGHT — magenta-rose, medium, drifts down-left */}
+          <div
+            className="absolute hero-blob-b"
+            style={{
+              top: "-25%",
+              right: "-15%",
+              width: "38rem",
+              height: "38rem",
+              borderRadius: "9999px",
+              background: "radial-gradient(circle, rgba(244,114,182,0.50) 0%, rgba(244,114,182,0) 70%)",
+              filter: "blur(70px)",
+              mixBlendMode: "screen",
+            }}
+          />
 
-                {/* PALM FRONDS — sage greens. Six fronds for
-                    a denser canopy on the right, sparse on the
-                    left (matches the reference composition: light
-                    upper-left, leaf-dense lower-right). */}
+          {/* MID-RIGHT EDGE — violet, narrow, drifts up-left */}
+          <div
+            className="absolute hero-blob-c"
+            style={{
+              top: "20%",
+              right: "-20%",
+              width: "32rem",
+              height: "32rem",
+              borderRadius: "9999px",
+              background: "radial-gradient(circle, rgba(167,139,250,0.45) 0%, rgba(167,139,250,0) 70%)",
+              filter: "blur(80px)",
+              mixBlendMode: "screen",
+            }}
+          />
 
-                {/* Frond 1 — large mid-right, tilted left */}
-                <g transform="translate(1280 360) rotate(-18)">
-                  <ellipse cx="0" cy="0" rx="60" ry="280" fill="#5b7a5b" opacity="0.75" />
-                  <ellipse cx="0" cy="-90" rx="44" ry="220" transform="rotate(-22)" fill="#5b7a5b" opacity="0.65" />
-                  <ellipse cx="0" cy="-90" rx="44" ry="220" transform="rotate(22)" fill="#5b7a5b" opacity="0.65" />
-                  <ellipse cx="0" cy="-210" rx="30" ry="160" transform="rotate(-42)" fill="#5b7a5b" opacity="0.55" />
-                  <ellipse cx="0" cy="-210" rx="30" ry="160" transform="rotate(42)" fill="#5b7a5b" opacity="0.55" />
-                </g>
+          {/* BOTTOM-LEFT — emerald, large, drifts up-right */}
+          <div
+            className="absolute hero-blob-d"
+            style={{
+              bottom: "-30%",
+              left: "-15%",
+              width: "40rem",
+              height: "40rem",
+              borderRadius: "9999px",
+              background: "radial-gradient(circle, rgba(74,222,128,0.50) 0%, rgba(74,222,128,0) 70%)",
+              filter: "blur(70px)",
+              mixBlendMode: "screen",
+            }}
+          />
 
-                {/* Frond 2 — large lower-right, almost horizontal */}
-                <g transform="translate(1620 460) rotate(-58)">
-                  <ellipse cx="0" cy="0" rx="55" ry="300" fill="#5e8462" opacity="0.7" />
-                  <ellipse cx="0" cy="-100" rx="40" ry="220" transform="rotate(-22)" fill="#5e8462" opacity="0.6" />
-                  <ellipse cx="0" cy="-100" rx="40" ry="220" transform="rotate(22)" fill="#5e8462" opacity="0.6" />
-                  <ellipse cx="0" cy="-220" rx="28" ry="160" transform="rotate(-42)" fill="#5e8462" opacity="0.5" />
-                  <ellipse cx="0" cy="-220" rx="28" ry="160" transform="rotate(42)" fill="#5e8462" opacity="0.5" />
-                </g>
+          {/* BOTTOM-RIGHT — warm amber-gold accent, medium */}
+          <div
+            className="absolute hero-blob-a"
+            style={{
+              bottom: "-25%",
+              right: "-10%",
+              width: "32rem",
+              height: "32rem",
+              borderRadius: "9999px",
+              background: "radial-gradient(circle, rgba(251,191,36,0.45) 0%, rgba(251,191,36,0) 70%)",
+              filter: "blur(80px)",
+              mixBlendMode: "screen",
+              animationDelay: "-18s",
+            }}
+          />
 
-                {/* Frond 3 — upper-right, tilted right */}
-                <g transform="translate(1700 220) rotate(28)">
-                  <ellipse cx="0" cy="0" rx="48" ry="240" fill="#6b8a6b" opacity="0.6" />
-                  <ellipse cx="0" cy="-80" rx="34" ry="180" transform="rotate(-22)" fill="#6b8a6b" opacity="0.5" />
-                  <ellipse cx="0" cy="-80" rx="34" ry="180" transform="rotate(22)" fill="#6b8a6b" opacity="0.5" />
-                </g>
+          {/* MID-LEFT EDGE — brand cyan, slim, drifts up-right.
+              Sits in the LEFT periphery so it stays clear of the
+              title block (which is left-aligned from the content's
+              padding, not the section's left edge). */}
+          <div
+            className="absolute hero-blob-b"
+            style={{
+              top: "30%",
+              left: "-22%",
+              width: "30rem",
+              height: "30rem",
+              borderRadius: "9999px",
+              background: "radial-gradient(circle, rgba(29,78,216,0.40) 0%, rgba(29,78,216,0) 70%)",
+              filter: "blur(90px)",
+              mixBlendMode: "screen",
+              animationDelay: "-30s",
+            }}
+          />
 
-                {/* Frond 4 — mid-canvas, gentle tilt */}
-                <g transform="translate(1080 470) rotate(-32)">
-                  <ellipse cx="0" cy="0" rx="42" ry="220" fill="#5b7a5b" opacity="0.55" />
-                  <ellipse cx="0" cy="-80" rx="32" ry="170" transform="rotate(-22)" fill="#5b7a5b" opacity="0.45" />
-                  <ellipse cx="0" cy="-80" rx="32" ry="170" transform="rotate(22)" fill="#5b7a5b" opacity="0.45" />
-                </g>
-
-                {/* Frond 5 — back-row, mid-right, very soft */}
-                <g transform="translate(1380 200) rotate(38)">
-                  <ellipse cx="0" cy="0" rx="36" ry="200" fill="#7a9a7a" opacity="0.4" />
-                  <ellipse cx="0" cy="-70" rx="26" ry="150" transform="rotate(-22)" fill="#7a9a7a" opacity="0.35" />
-                  <ellipse cx="0" cy="-70" rx="26" ry="150" transform="rotate(22)" fill="#7a9a7a" opacity="0.35" />
-                </g>
-
-                {/* Frond 6 — far-left, tiny accent */}
-                <g transform="translate(180 480) rotate(-22)">
-                  <ellipse cx="0" cy="0" rx="32" ry="160" fill="#8ba588" opacity="0.4" />
-                  <ellipse cx="0" cy="-50" rx="22" ry="110" transform="rotate(-28)" fill="#8ba588" opacity="0.35" />
-                  <ellipse cx="0" cy="-50" rx="22" ry="110" transform="rotate(28)" fill="#8ba588" opacity="0.35" />
-                </g>
-              </g>
-            </g>
+          {/* SVG noise grain — print-feel texture, very subtle */}
+          <svg className="absolute inset-0 w-full h-full opacity-[0.08] mix-blend-overlay">
+            <filter id="dashboard-hero-noise">
+              <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="5" />
+              <feColorMatrix type="matrix" values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1   0 0 0 0.5 0" />
+            </filter>
+            <rect width="100%" height="100%" filter="url(#dashboard-hero-noise)" />
           </svg>
 
-          {/* (3) REEDED RIB PATTERN — WIDER + ASYMMETRIC (matches
-                a real fluted-glass cylinder lit from upper-left).
-                32 px cycle, fewer ribs across the surface so the
-                glass reads less busy. Each rib is an asymmetric
-                gradient: dark trough left → BRIGHT peak at ~28%
-                (where light catches the cylinder's left face) →
-                medium centre → fading shadow right → dark trough.
-                ONE layer doing all the light/shadow work — no
-                separate highlight stripes or speculars stacking
-                on top, which was making the previous build read
-                as too dense. */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(90deg, rgba(25,40,25,0.20) 0px, rgba(25,40,25,0.20) 1.5px, rgba(255,255,255,0.55) 9px, rgba(255,255,255,0.22) 16px, rgba(255,255,255,0.05) 24px, rgba(25,40,25,0.12) 29px, rgba(25,40,25,0.20) 32px)",
-            }}
-          />
-
-          {/* (4) SOFT DIAGONAL REFLECTION — a single broad sweep
-                of light at 120°, simulating a window / sky
-                reflecting off the polished glass surface. Quiet,
-                wide, single-pass — no longer competing with rib
-                highlights for the eye's attention. */}
+          {/* Edge vignette — slight 22% darkening at corners for
+              the theatrical frame */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(120deg, transparent 15%, rgba(255,255,255,0.20) 42%, rgba(255,255,255,0.10) 55%, transparent 78%)",
-              mixBlendMode: "overlay",
-            }}
-          />
-
-          {/* (5) Frost wash — soft milky overlay for the airy /
-                slightly misted quality real fluted glass has. */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)",
+                "radial-gradient(ellipse 110% 130% at 50% 50%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.22) 100%)",
             }}
           />
         </div>
@@ -547,71 +531,70 @@ export default async function DashboardPage() {
             px-6` container as the rest of the dashboard so text +
             actions line up with the body sections below, while the
             background spans full viewport edge-to-edge. */}
-        <div className="max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 lg:pb-24">
-          {/* Top rail — left: small "DASHBOARD · weekday, date"
-              in mono, then a decorative hairline runner. Dark text
-              now (the hero base is light sage cream). */}
-          <div className="flex items-center gap-4 mb-10 sm:mb-12">
-            <span className="text-[10px] uppercase tracking-[0.32em] font-bold text-slate-700 font-mono whitespace-nowrap">
+        <div className="max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-14 pt-8 sm:pt-10 lg:pt-12 pb-9 sm:pb-12 lg:pb-14">
+          {/* Top rail — DASHBOARD masthead + hairline runner.
+              White text on midnight base. */}
+          <div className="flex items-center gap-4 mb-6 sm:mb-8">
+            <span className="text-[10px] uppercase tracking-[0.32em] font-bold text-white/60 font-mono whitespace-nowrap">
               Dashboard · {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
             </span>
-            <span aria-hidden className="flex-1 h-px bg-gradient-to-r from-slate-700/35 via-slate-700/15 to-transparent" />
+            <span aria-hidden className="flex-1 h-px bg-gradient-to-r from-white/30 via-white/12 to-transparent" />
           </div>
 
-          {/* Title block — italic-serif welcome + giant italic-serif
-              first name in a deep brand-gradient. Dark text now to
-              read against the light sage hero base. */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 items-end">
+          {/* Title block — italic-serif welcome + first name (sized
+              one step down from the previous build for the trimmed
+              banner height). White text + soft tonal gradient on
+              the name so it pops against the midnight stage. */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-end">
             <div className="min-w-0">
-              <p className="text-sm sm:text-base font-serif italic text-slate-600 leading-none">
+              <p className="text-sm sm:text-base font-serif italic text-white/65 leading-none">
                 Welcome back,
               </p>
               <h1
-                className="mt-2 sm:mt-3 font-serif italic text-6xl sm:text-7xl lg:text-8xl leading-[0.92] tracking-tight"
+                className="mt-2 font-serif italic text-5xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-tight"
                 style={{
                   backgroundImage:
-                    "linear-gradient(135deg, #1e3a2e 0%, #2d4f3d 45%, #1d4f8b 100%)",
+                    "linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.85) 50%, #bae6fd 100%)",
                   WebkitBackgroundClip: "text",
                   backgroundClip: "text",
                   WebkitTextFillColor: "transparent",
-                  // Solid colour fallback in case the gradient doesn't
-                  // paint (older browsers, SSR pre-paint).
-                  color: "#1e3a2e",
+                  // Solid fallback for browsers that miss the gradient.
+                  color: "#ffffff",
                 }}
               >
                 {firstName}.
               </h1>
 
-              {/* Mid-rule + lead sentence */}
-              <div className="mt-7 max-w-xl">
-                <span aria-hidden className="block h-px w-12 bg-slate-700/40 mb-4" />
-                <p className="text-base sm:text-lg text-slate-700 leading-relaxed">
+              {/* Mid-rule + lead sentence — tightened spacing */}
+              <div className="mt-5 max-w-xl">
+                <span aria-hidden className="block h-px w-12 bg-white/30 mb-3" />
+                <p className="text-sm sm:text-base text-white/85 leading-relaxed">
                   {heroLead}
                 </p>
               </div>
 
-              {/* Actions — primary brand pill + ghost secondary */}
-              <div className="mt-7 flex flex-wrap gap-3">
+              {/* Actions — white primary + frosted ghost. */}
+              <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   href={inProgress > 0 ? "/my-courses" : "/courses"}
-                  className="inline-flex items-center gap-1.5 bg-slate-900 text-white hover:bg-slate-800 font-bold text-xs px-4 py-2.5 rounded-full shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                  className="inline-flex items-center gap-1.5 bg-white text-slate-900 hover:bg-white/90 font-bold text-xs px-4 py-2.5 rounded-full shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                 >
                   {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={13} />
                 </Link>
                 <Link
                   href="/experience"
-                  className="inline-flex items-center gap-1.5 bg-white/40 hover:bg-white/60 border border-slate-700/30 text-slate-900 text-xs font-semibold px-4 py-2.5 rounded-full transition-colors backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-700/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                  className="inline-flex items-center gap-1.5 bg-white/8 hover:bg-white/14 border border-white/25 text-white text-xs font-semibold px-4 py-2.5 rounded-full transition-colors backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                 >
                   <Compass size={13} /> How it works
                 </Link>
               </div>
             </div>
 
-            {/* Right-column stats stack — only on lg+. Dark mono
-                numbers + small uppercase labels against the light
-                sage hero. */}
-            <aside className="hidden lg:block self-stretch pl-10 border-l border-slate-700/20">
-              <div className="space-y-5">
+            {/* Right-column stats stack — only on lg+. White mono
+                numbers + small uppercase labels against the midnight
+                base. */}
+            <aside className="hidden lg:block self-stretch pl-8 border-l border-white/15">
+              <div className="space-y-4">
                 <HeroStat label="In progress" value={inProgress.toLocaleString()} />
                 <HeroStat label="Credits" value={(user?.credits ?? 0).toLocaleString()} />
                 <HeroStat label="Certificates" value={certsCount.toLocaleString()} />
@@ -955,15 +938,15 @@ export default async function DashboardPage() {
 
 /** HeroStat — right-column stat tile inside the trainee dashboard
  *  hero. Big mono number on top, tiny uppercase tracked label
- *  underneath. Dark text — the hero base is now light sage cream
- *  (the reeded-glass-hothouse aesthetic). */
+ *  underneath. White-on-midnight — sits in the cinematic blob
+ *  stage. Size trimmed for the shorter banner. */
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-3xl xl:text-4xl font-black font-mono tabular-nums leading-none text-slate-900">
+      <p className="text-2xl xl:text-3xl font-black font-mono tabular-nums leading-none text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
         {value}
       </p>
-      <p className="mt-1.5 text-[10px] uppercase tracking-[0.28em] font-bold text-slate-700">
+      <p className="mt-1 text-[10px] uppercase tracking-[0.28em] font-bold text-white/65">
         {label}
       </p>
     </div>

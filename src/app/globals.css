@@ -887,6 +887,37 @@ body {
   .lab-swim, .lab-swim-slow, .lab-swim-rev, .lab-swim-drift { animation: none; }
 }
 
+/* ──── Trainee dashboard hero — cinematic blob drift ────
+ * Four slow-drift keyframes for the corner-anchored blurred
+ * gradient blobs on the new trainee hero. Each blob has its own
+ * keyframe so neighbours never sync up — different end points,
+ * different scale curves. All very slow (60–90 s) so the motion
+ * reads as "atmospheric breathing" rather than "moving banner".
+ * Respect prefers-reduced-motion. */
+@keyframes hero-blob-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(60px, 40px) scale(1.08); }
+}
+@keyframes hero-blob-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-70px, 50px) scale(1.10); }
+}
+@keyframes hero-blob-c {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(50px, -45px) scale(1.06); }
+}
+@keyframes hero-blob-d {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-55px, -35px) scale(1.08); }
+}
+.hero-blob-a { animation: hero-blob-a 72s ease-in-out infinite; }
+.hero-blob-b { animation: hero-blob-b 88s ease-in-out infinite; animation-delay: -12s; }
+.hero-blob-c { animation: hero-blob-c 66s ease-in-out infinite; animation-delay: -24s; }
+.hero-blob-d { animation: hero-blob-d 80s ease-in-out infinite; animation-delay: -36s; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-blob-a, .hero-blob-b, .hero-blob-c, .hero-blob-d { animation: none; }
+}
+
 /* ──── Login page — lab-spin: slow independent rotation ────
  * Layered on top of lab-swim so each glyph also rotates slowly
  * around its own (per-instance) random "centre of weight". Pure
