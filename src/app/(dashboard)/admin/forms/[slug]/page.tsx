@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Download, ArrowLeft, FileText } from "lucide-react";
+import { Download, ArrowLeft, ArrowRight, FileText } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
@@ -11,6 +11,15 @@ import {
   type TalentReviewStatus,
 } from "@/components/admin/TalentReviewActions";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
+
+/** Per-form column profile — which 1–2 answer-field IDs to surface
+ *  inline on the compact list view, beyond the always-shown Trainee
+ *  + Status + Actions. Each row's remaining fields are accessible
+ *  via the per-submission detail page. */
+const SUMMARY_FIELDS_BY_SLUG: Record<string, string[]> = {
+  "obio-bootcamp": ["company_name", "current_role"],
+  "talent-application": ["status_goal"],
+};
 
 export default async function AdminFormSubmissionsPage({
   params,
@@ -34,15 +43,24 @@ export default async function AdminFormSubmissionsPage({
   const fields = form.fields as unknown as FormField[];
   const ansFields = answerFields(fields);
 
-  // Talent-application is the one form that gates submissions
-  // behind admin review before they appear in the talent pool /
-  // searchable directory. Other slugs (OBIO bootcamp, etc.) treat
-  // every submission as immediately complete — we hide the review
-  // column for them.
+  // Review-state surface is now on for EVERY form, not just talent-
+  // application. OBIO bootcamp + future forms get the same approve/
+  // reject inline actions; admins choose to use them or treat the
+  // status as informational depending on the workflow.
   const isTalentApp = slug === "talent-application";
-  const pendingCount = isTalentApp
-    ? form.submissions.filter((s) => s.reviewStatus === "pending").length
-    : 0;
+  const pendingCount = form.submissions.filter((s) => s.reviewStatus === "pending").length;
+
+  // Pull the per-slug "summary field" IDs (the 1–2 answer fields to
+  // surface inline). The rest live on the detail page. `flatMap`
+  // avoids the type-predicate pitfall — `ansFields.find(...)`
+  // returns `AnswerField | undefined`, which is narrower than the
+  // wider `FormField` union; predicate-typing it back to `FormField`
+  // is illegal.
+  const summaryFieldIds = SUMMARY_FIELDS_BY_SLUG[slug] ?? [];
+  const summaryFields = summaryFieldIds.flatMap((id) => {
+    const f = ansFields.find((af) => af.id === id);
+    return f ? [f] : [];
+  });
 
   return (
     <div>
@@ -54,7 +72,7 @@ export default async function AdminFormSubmissionsPage({
             {form._count.submissions}{" "}
             {form._count.submissions === 1 ? "submission" : "submissions"}
             {form._count.submissions > 200 && " — showing latest 200"}
-            {isTalentApp && pendingCount > 0 && (
+            {pendingCount > 0 && (
               <span className="ml-2 inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full ring-1 ring-inset bg-amber-100 text-amber-800 ring-amber-200">
                 {pendingCount} pending review
               </span>
@@ -106,99 +124,84 @@ export default async function AdminFormSubmissionsPage({
           <p className="font-medium text-muted">No submissions yet.</p>
         </div>
       ) : (
-        // Break out of the dashboard layout's max-w-7xl so the table
-        // gets viewport-edge width on big screens. Negative margin equal
-        // to the layout's px-6, plus a viewport-relative pull on lg+.
-        <div className="-mx-6 lg:-ml-[calc((100vw-min(100vw-22rem,76rem))/2)] lg:-mr-[calc((100vw-min(100vw-22rem,76rem))/2)]">
-          <div className="bg-card border-y lg:border lg:rounded-2xl border-line overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs table-auto">
-                <thead className="bg-elevated/60 border-b border-line">
-                  <tr>
-                    <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-2 py-2 sticky left-0 bg-elevated/95 backdrop-blur-sm">
-                      Submitted
-                    </th>
-                    <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-2 py-2 whitespace-nowrap">
-                      Email
-                    </th>
-                    {isTalentApp && (
-                      <th className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-2 py-2 whitespace-nowrap">
-                        Review
-                      </th>
-                    )}
-                    {ansFields.map((f) => (
-                      <th
-                        key={f.id}
-                        className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider px-2 py-2 align-top"
+        // Compact list — was a 15+ column scroll-monster (one column
+        // per answer field). Now five columns max: Submitted ·
+        // Trainee · 1–2 summary fields (per-slug) · Status / Actions ·
+        // View. Full per-submission detail lives on the new detail
+        // page at /admin/forms/[slug]/submissions/[sid].
+        <div className="bg-card border border-line rounded-2xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-elevated/60 border-b border-line">
+              <tr className="text-left text-[10px] font-semibold text-muted uppercase tracking-wider">
+                <th className="px-5 py-3">Submitted</th>
+                <th className="px-5 py-3">Trainee</th>
+                {summaryFields.map((f) => (
+                  <th key={f.id} className="px-5 py-3 max-w-[180px]">{f.label}</th>
+                ))}
+                <th className="px-5 py-3 whitespace-nowrap">Status / Actions</th>
+                <th className="px-5 py-3 w-px" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {form.submissions.map((s) => {
+                const data = s.data as Record<string, string | string[]>;
+                const dt = new Date(s.createdAt);
+                const cellText = (id: string) => {
+                  const v = data[id];
+                  if (Array.isArray(v)) return v.join(", ");
+                  return v ?? "";
+                };
+                // Trainee display — prefer the form's `name` field
+                // when present (OBIO has one), else the user's email.
+                const traineeName = String(data.name ?? "").trim();
+                return (
+                  <tr key={s.id} className="hover:bg-elevated/40 align-top">
+                    <td className="px-5 py-3 text-xs text-muted whitespace-nowrap">
+                      {dt.toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" })}
+                      <span className="block text-[10px] text-subtle">
+                        {dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <p className="text-sm font-medium text-fg">{traineeName || "—"}</p>
+                      <p className="text-xs text-subtle truncate max-w-[220px]" title={s.email ?? ""}>
+                        {s.email ?? "—"}
+                      </p>
+                    </td>
+                    {summaryFields.map((f) => {
+                      const txt = cellText(f.id);
+                      return (
+                        <td
+                          key={f.id}
+                          className="px-5 py-3 text-xs text-fg max-w-[200px]"
+                          title={txt || ""}
+                        >
+                          <span className="line-clamp-2 leading-snug">{txt || "—"}</span>
+                        </td>
+                      );
+                    })}
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <TalentReviewActions
+                        slug={slug}
+                        submission={{
+                          id: s.id,
+                          reviewStatus: s.reviewStatus as TalentReviewStatus,
+                        }}
+                      />
+                    </td>
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <Link
+                        href={`/admin/forms/${slug}/submissions/${s.id}`}
+                        className="text-xs font-medium text-brand-700 hover:underline inline-flex items-center gap-1"
                       >
-                        <span className="block break-words leading-tight max-w-[140px]">{f.label}</span>
-                      </th>
-                    ))}
+                        View <ArrowRight size={11} />
+                      </Link>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {form.submissions.map((s) => {
-                    const data = s.data as Record<string, string | string[]>;
-                    const dt = new Date(s.createdAt);
-                    const cellText = (id: string) => {
-                      const v = data[id];
-                      if (Array.isArray(v)) return v.join(", ");
-                      return v ?? "";
-                    };
-                    return (
-                      <tr key={s.id} className="hover:bg-elevated/40 align-top">
-                        <td className="px-2 py-1.5 text-[11px] text-muted whitespace-nowrap sticky left-0 bg-card group-hover:bg-elevated/40">
-                          {dt.toLocaleDateString(undefined, { month: "short", day: "2-digit" })}
-                          {" "}
-                          <span className="text-subtle">{dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
-                        </td>
-                        <td className="px-2 py-1.5 text-[11px] text-fg whitespace-nowrap max-w-[160px] truncate" title={s.email ?? ""}>
-                          {s.email ?? "—"}
-                        </td>
-                        {isTalentApp && (
-                          <td className="px-2 py-1.5 whitespace-nowrap">
-                            <TalentReviewActions
-                              slug={slug}
-                              submission={{
-                                id: s.id,
-                                reviewStatus: s.reviewStatus as TalentReviewStatus,
-                              }}
-                            />
-                          </td>
-                        )}
-                        {ansFields.map((f) => {
-                          const txt = cellText(f.id);
-                          const isUrl = typeof txt === "string" && /^https?:\/\//.test(txt);
-                          return (
-                            <td
-                              key={f.id}
-                              className="px-2 py-1.5 text-[11px] text-fg max-w-[160px] truncate"
-                              title={txt || ""}
-                            >
-                              {!txt ? (
-                                "—"
-                              ) : isUrl ? (
-                                <a
-                                  href={txt}
-                                  target="_blank"
-                                  rel="noreferrer noopener"
-                                  className="text-brand-700 hover:underline"
-                                >
-                                  {txt.split("/").pop()?.replace(/^\d+_/, "") || txt}
-                                </a>
-                              ) : (
-                                txt
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
       </div>
