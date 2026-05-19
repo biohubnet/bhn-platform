@@ -155,6 +155,13 @@ const ROADMAP_ITEMS: { horizon: "Now" | "Next" | "Later"; items: RoadmapItem[] }
         audience: "Employers / HR",
         status: "planned",
       },
+      {
+        title: "LinkedIn integration — Add-to-Profile certificates, Sign-in-with-LinkedIn, LinkedIn URL fields",
+        summary:
+          "Three-tier exploration parked for later. TIER 1 (no LinkedIn approval, fastest wins): (a) \"Add Certificate to LinkedIn Profile\" button on every completed BHN certificate using LinkedIn's official certifications-add URL pattern — trainees can showcase BHN credentials on their public profile in one click; (b) Sign-in-with-LinkedIn via NextAuth's built-in LinkedIn provider, bootstrapping name + email + photo on signup; (c) `linkedinUrl` field on trainee + employer profiles — pasted by the user, no API, recruiters click out to LinkedIn. TIER 2 (needs LinkedIn Developer Program review): profile import on signup (headline / work history / education / skills) to bootstrap the trainee profile and Story Bank, plus LinkedIn company-page logo as a fallback in the employer logo-search chain. TIER 3 (needs LinkedIn Talent Solutions / Marketing partnership, paid): cross-post BHN postings to employer LinkedIn pages, recruiter sourcing across the talent pool, and post-program career-outcomes tracking for funder reporting. Recommend starting with Tier 1 bundle (~1 day's work, instant trainee value) — re-evaluate higher tiers once that lands. Adjacent quick win independent of any tier: a `linkedinUrl` field on profiles is a 5-minute change that delivers most of the social-context value without any LinkedIn integration at all.",
+        audience: "All",
+        status: "planned",
+      },
     ],
   },
 ];
