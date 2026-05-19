@@ -168,9 +168,14 @@ const employerItems: (NavItem & { labelKey: string })[] = [
   { label: "How it works",      labelKey: "nav.employerGuide",      href: "/employer/how-it-works", icon: Compass,
     description: "End-to-end explainer for the hiring program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
   { label: "My Postings",       labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: FilePlus,
-    description: "Postings you've published. Edit, pause, or close them; track applicant counts inline." },
-  { label: "Applicants",        labelKey: "nav.employerApplicants", href: "/employer/applicants", icon: Users2,
-    description: "Candidates who've applied to your postings. Filter by skill, shortlist, schedule interviews." },
+    description: "Postings + applicants in one place. Expand any posting row to see its pipeline; the action-queue at the top surfaces new applications, stale stages, and offers still awaiting response." },
+  // The separate "Applicants" sidebar entry was removed — it
+  // pointed at /employer/applicants, which is a redirect to this
+  // same My-Postings workspace. The workspace already hosts the
+  // applicant pipeline inline (via row-expand), so the dupe entry
+  // was confusing without offering a different view. The
+  // /employer/applicants URL still redirects here for old
+  // bookmarks.
   { label: "Talent pool",       labelKey: "nav.talentPool",         href: "/talent-pool",         icon: Users,
     description: "Browse approved talent-application members. View full applications and leave comments (visible to admins + employers, never to the applicant). Commenting unlocks only after admin approves the applicant's eligibility." },
 ];
