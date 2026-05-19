@@ -89,72 +89,60 @@ export default async function SimulatorLandingPage() {
 
 function Hero({ hasAttempts }: { hasAttempts: boolean }) {
   return (
-    <section className="relative overflow-hidden rounded-[var(--radius-lg)] border border-line bg-gradient-to-br from-brand-50 via-card-solid to-card-solid">
-      {/* Decorative blobs */}
-      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-300/30 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-brand-200/30 blur-3xl" />
-
-      <div className="relative grid gap-8 px-6 py-10 md:grid-cols-[1.4fr_1fr] md:px-10 md:py-14 lg:gap-12">
+    <section className="rounded-[var(--radius-lg)] border border-line/70 bg-card-solid">
+      <div className="grid gap-10 px-6 py-10 md:grid-cols-[1.5fr_1fr] md:px-10 md:py-14 lg:gap-14">
         <div className="max-w-2xl">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[10.5px] font-mono uppercase tracking-[0.2em] text-brand-700">
-            <Sparkles className="h-3 w-3" /> New
+          <div className="mb-3 text-[12px] text-fg-subtle">
+            Role-play simulator
           </div>
           <h1
-            className="mb-4 text-[40px] font-semibold leading-[1.05] tracking-tight text-fg md:text-[52px]"
+            className="mb-5 text-[38px] font-semibold leading-[1.1] tracking-tight text-fg md:text-[48px]"
             style={{ fontFamily: "var(--font-display-theme, inherit)" }}
           >
-            Practice the job
-            <br />
-            <span className="text-brand-700">before you apply for it.</span>
+            Practice the job before you apply for it.
           </h1>
-          <p className="max-w-xl text-[15px] leading-relaxed text-fg-muted md:text-base">
-            Paste a job-posting URL. We generate a tailored 12-week quarter —
-            a team of colleagues with daily, weekly, monthly rhythms, real
-            scenarios you'll face in that role, and a performance review from
-            your VP at the end. Every decision moves five stats. Most options
-            have a tempting-but-flawed flavour. Try things you'd never risk
-            in real life.
+          <p className="max-w-xl text-[15px] leading-[1.7] text-fg-muted md:text-[16px]">
+            Paste a job-posting URL. You&apos;ll get a tailored 12-week quarter
+            — a team of colleagues with daily and weekly rhythms, real
+            scenarios you&apos;ll face in that role, and a performance review
+            from your VP at the end. Every decision moves five stats. Most
+            options have a tempting-but-flawed flavour. Try things you&apos;d
+            never risk in real life.
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center gap-4">
             <Link
               href="/simulator/new"
-              className="group inline-flex items-center gap-2 rounded-md bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+              className="inline-flex items-center gap-2 rounded-md bg-brand-600 px-5 py-2.5 text-[14px] font-medium text-white transition hover:bg-brand-700"
             >
-              <Sparkles className="h-4 w-4" />
               {hasAttempts ? "Start a new simulation" : "Start your first simulation"}
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="h-4 w-4" />
             </Link>
-            <span className="text-[11.5px] text-fg-subtle">
-              Typical generation: 15–25 seconds for a fresh job
+            <span className="text-[12px] text-fg-subtle">
+              15–25 seconds for a fresh job.
             </span>
           </div>
         </div>
 
-        {/* Right-side feature grid */}
         <div className="hidden md:block">
-          <div
-            className="rounded-md border border-line bg-card-solid/70 p-5 backdrop-blur-sm shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_rgba(15,23,42,0.06)]"
-            style={{ fontFamily: "var(--font-sans-theme, inherit)" }}
-          >
-            <div className="mb-3 text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-              What you'll experience
+          <div className="rounded-md border border-line/60 bg-raised/20 p-5">
+            <div className="mb-4 text-[12.5px] font-medium text-fg">
+              What you&apos;ll get
             </div>
-            <ul className="space-y-3.5 text-[12.5px] leading-relaxed text-fg">
+            <ul className="space-y-4 text-[13.5px] leading-[1.65] text-fg-muted">
               <FeatureRow icon={Theater}>
-                <strong>Role-played meetings.</strong> VP 1:1s, design
-                critiques, escalations, hiring loops, the QBR. Each scenario
-                ends with 3–4 choices and a real tradeoff.
+                <span className="text-fg">Role-played meetings.</span> VP 1:1s,
+                critiques, escalations, hiring, the QBR. Each scenario ends
+                with 3–4 choices and a real tradeoff.
               </FeatureRow>
               <FeatureRow icon={Compass}>
-                <strong>Hover to preview deltas.</strong> See exactly how a
-                choice moves Team Morale, VP Trust, Velocity, Cross-Functional
-                Trust, and Your Capacity before committing.
+                <span className="text-fg">Hover to preview deltas.</span> See
+                how a choice moves all five stats before committing.
               </FeatureRow>
               <FeatureRow icon={ClipboardList}>
-                <strong>Quarterly review at the end.</strong> A tiered score,
-                per-stat narrative, highlights and lowlights, and a closing
-                line from your VP based on how the quarter actually went.
+                <span className="text-fg">Quarterly review.</span> Tiered
+                score, per-stat narrative, highlights and lowlights, and a
+                closing line from your VP.
               </FeatureRow>
             </ul>
           </div>
@@ -173,9 +161,7 @@ function FeatureRow({
 }) {
   return (
     <li className="flex gap-3">
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-brand-100 text-brand-700">
-        <Icon className="h-3.5 w-3.5" />
-      </span>
+      <Icon className="mt-1 h-3.5 w-3.5 shrink-0 text-fg-subtle" />
       <span className="flex-1">{children}</span>
     </li>
   );
@@ -212,17 +198,17 @@ function HowItWorks() {
       />
       <div className="grid gap-4 md:grid-cols-3">
         {steps.map((s) => (
-          <Card key={s.n} hover className="p-6">
-            <div className="mb-3 font-mono text-[11px] tracking-[0.2em] text-brand-600">
+          <Card key={s.n} className="p-6">
+            <div className="mb-3 text-[12px] tabular-nums text-fg-subtle">
               {s.n}
             </div>
             <div
-              className="mb-2 text-lg font-semibold tracking-tight text-fg"
+              className="mb-2 text-[17px] font-medium tracking-tight text-fg"
               style={{ fontFamily: "var(--font-display-theme, inherit)" }}
             >
               {s.label}
             </div>
-            <p className="text-[13px] leading-relaxed text-fg-muted">
+            <p className="text-[13.5px] leading-[1.65] text-fg-muted">
               {s.body}
             </p>
           </Card>
@@ -237,11 +223,11 @@ function HowItWorks() {
 // ────────────────────────────────────────────────────────────────────
 
 const TIER_TONE: Record<string, string> = {
-  "Exceeds Expectations": "border-emerald-300 bg-emerald-50 text-emerald-800",
-  "Strong Meets": "border-emerald-300 bg-emerald-50 text-emerald-800",
-  "Meets Expectations": "border-amber-300 bg-amber-50 text-amber-900",
-  "Below Expectations": "border-rose-300 bg-rose-50 text-rose-900",
-  "Concerns Raised": "border-rose-400 bg-rose-100 text-rose-900",
+  "Exceeds Expectations": "border-emerald-200/70 bg-card-solid text-emerald-800/90",
+  "Strong Meets": "border-emerald-200/70 bg-card-solid text-emerald-800/90",
+  "Meets Expectations": "border-line-strong bg-card-solid text-fg",
+  "Below Expectations": "border-rose-200/70 bg-card-solid text-rose-800/90",
+  "Concerns Raised": "border-rose-300/80 bg-card-solid text-rose-800/90",
 };
 
 type AttemptWithSim = {
@@ -267,23 +253,20 @@ function AttemptCard({
   const tone =
     kind === "finished" && attempt.finalTier
       ? TIER_TONE[attempt.finalTier] ??
-        "border-line bg-raised/40 text-fg-muted"
-      : "border-brand-200 bg-brand-50/60 text-brand-700";
+        "border-line-strong bg-card-solid text-fg"
+      : "border-line bg-card-solid text-fg-muted";
   return (
     <Link
       href={`/simulator/${attempt.id}`}
       className="group block focus-visible:outline-none"
     >
-      <Card
-        hover
-        className="relative h-full p-5 transition-shadow group-hover:shadow-lg"
-      >
-        <div className="mb-1 flex items-start justify-between gap-2">
+      <Card className="relative h-full p-5 transition-colors group-hover:border-line-strong">
+        <div className="mb-2.5 flex items-start justify-between gap-2">
           <Briefcase className="h-3.5 w-3.5 text-fg-subtle" />
           {kind === "finished" && attempt.finalTier && (
             <span
               className={[
-                "rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                "rounded-full border px-2.5 py-0.5 text-[11px]",
                 tone,
               ].join(" ")}
             >
@@ -291,46 +274,46 @@ function AttemptCard({
             </span>
           )}
           {kind === "active" && (
-            <span className="rounded-full border border-brand-200 bg-brand-50 px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest text-brand-700">
-              Week {attempt.week}/12
+            <span className="rounded-full border border-line bg-card-solid px-2.5 py-0.5 text-[11px] text-fg-muted">
+              Week {attempt.week} / 12
             </span>
           )}
         </div>
         <h3
-          className="mb-1 text-[17px] font-semibold leading-tight tracking-tight text-fg"
+          className="mb-1 text-[17px] font-medium leading-[1.25] tracking-tight text-fg"
           style={{ fontFamily: "var(--font-display-theme, inherit)" }}
         >
           {attempt.simulation.jobTitle}
         </h3>
         {attempt.simulation.companyName && (
-          <p className="mb-4 text-[12px] text-fg-muted">
+          <p className="mb-4 text-[12.5px] text-fg-muted">
             {attempt.simulation.companyName}
             {attempt.simulation.location && ` · ${attempt.simulation.location}`}
           </p>
         )}
 
-        {/* Progress / score row */}
         {kind === "active" ? (
           <WeekProgress current={attempt.week} />
         ) : (
           <div className="flex items-baseline justify-between">
-            <span className="text-[11px] uppercase tracking-widest text-fg-subtle">
-              Final score
-            </span>
+            <span className="text-[12px] text-fg-subtle">Final score</span>
             <span
-              className="font-mono text-2xl font-bold tabular-nums text-brand-700"
-              style={{ fontFamily: "var(--font-display-theme, inherit)" }}
+              className="text-2xl tabular-nums text-fg"
+              style={{
+                fontFamily: "var(--font-display-theme, inherit)",
+                fontWeight: 500,
+              }}
             >
               {attempt.finalScore ?? "—"}
             </span>
           </div>
         )}
 
-        <div className="mt-4 flex items-center justify-between text-[11px] text-fg-subtle">
+        <div className="mt-4 flex items-center justify-between text-[11.5px] text-fg-subtle">
           <span>{new Date(attempt.updatedAt).toLocaleDateString()}</span>
-          <span className="inline-flex items-center gap-1 font-medium text-brand-600 transition group-hover:text-brand-700">
+          <span className="inline-flex items-center gap-1 text-fg-muted transition group-hover:text-fg">
             {kind === "active" ? "Resume" : "Review"}
-            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+            <ArrowRight className="h-3 w-3" />
           </span>
         </div>
       </Card>
@@ -348,9 +331,9 @@ function WeekProgress({ current }: { current: number }) {
           <div
             key={week}
             className={[
-              "h-1.5 flex-1 rounded-full",
-              state === "done" && "bg-brand-600",
-              state === "now" && "bg-brand-500 ring-2 ring-brand-300/40",
+              "h-1 flex-1 rounded-full",
+              state === "done" && "bg-brand-400",
+              state === "now" && "bg-brand-600",
               state === "future" && "bg-line",
             ]
               .filter(Boolean)
@@ -377,19 +360,13 @@ function SectionHeading({
 }) {
   return (
     <div className="mb-4 flex items-baseline justify-between gap-3">
-      <div className="flex items-baseline gap-3">
-        <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-fg-muted">
-          {label}
-        </h2>
+      <div className="flex items-baseline gap-2.5">
+        <h2 className="text-[14px] font-medium text-fg">{label}</h2>
         {typeof count === "number" && (
-          <span className="font-mono text-[10.5px] text-fg-subtle">
-            · {count}
-          </span>
+          <span className="text-[12px] text-fg-subtle">{count}</span>
         )}
       </div>
-      {hint && (
-        <span className="text-[11px] text-fg-subtle">{hint}</span>
-      )}
+      {hint && <span className="text-[12px] text-fg-subtle">{hint}</span>}
     </div>
   );
 }

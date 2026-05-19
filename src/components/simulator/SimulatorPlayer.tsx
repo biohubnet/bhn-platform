@@ -251,22 +251,20 @@ function RoleHeader({
   onOpenBriefing?: () => void;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-line bg-gradient-to-br from-brand-50 via-card-solid to-card-solid p-6 md:p-7">
-      <div className="absolute -right-12 -top-16 h-48 w-48 rounded-full bg-brand-200/40 blur-3xl" />
-      <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-brand-100/30 blur-3xl" />
-      <div className="relative flex items-start justify-between gap-4">
+    <div className="rounded-[var(--radius-lg)] border border-line/70 bg-card-solid px-6 py-6 md:px-7 md:py-7">
+      <div className="flex items-start justify-between gap-5">
         <div className="min-w-0 flex-1">
-          <div className="mb-1.5 text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-            Q1 · Role-play Simulation
+          <div className="mb-2 text-[12px] text-fg-subtle">
+            Role-play simulation · Q1
           </div>
           <h1
-            className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-fg md:text-3xl"
+            className="mb-1.5 text-[26px] font-semibold leading-[1.15] tracking-tight text-fg md:text-[30px]"
             style={{ fontFamily: "var(--font-display-theme, inherit)" }}
           >
             {payload.jobTitle}
           </h1>
           {(payload.companyName || payload.location) && (
-            <p className="text-sm text-fg-muted">
+            <p className="text-[13.5px] text-fg-muted">
               {payload.companyName}
               {payload.location && (
                 <>
@@ -277,21 +275,21 @@ function RoleHeader({
             </p>
           )}
           {payload.context && (
-            <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-fg-muted">
+            <p className="mt-4 max-w-2xl text-[14px] leading-[1.65] text-fg-muted">
               {payload.context}
             </p>
           )}
-          <p className="mt-3 text-[11.5px] text-fg-subtle">
+          <p className="mt-3 text-[12.5px] text-fg-subtle">
             Reporting to{" "}
-            <span className="font-medium text-fg-muted">{payload.vpName}</span>
+            <span className="text-fg-muted">{payload.vpName}</span>
             , {payload.vpRole}
           </p>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
+        <div className="flex shrink-0 flex-col items-end gap-2.5">
           {onOpenBriefing && (
             <button
               onClick={onOpenBriefing}
-              className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 bg-card-solid/70 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-brand-700 shadow-sm transition hover:border-brand-500 hover:bg-brand-50"
+              className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3 py-1.5 text-[12px] font-medium text-fg-muted transition hover:border-line-strong hover:text-fg"
             >
               <BookOpen className="h-3.5 w-3.5" />
               Briefing
@@ -299,7 +297,7 @@ function RoleHeader({
           )}
           <button
             onClick={onReset}
-            className="text-[10.5px] uppercase tracking-widest text-fg-subtle transition hover:text-rose-700"
+            className="text-[11.5px] text-fg-subtle transition hover:text-fg-muted"
           >
             Reset
           </button>
@@ -331,7 +329,7 @@ function WeekStrip({
   }, [scenarios]);
 
   return (
-    <div className="flex items-stretch gap-1">
+    <div className="flex items-stretch gap-1 px-1">
       {Array.from({ length: 12 }, (_, i) => {
         const week = i + 1;
         const state =
@@ -349,26 +347,26 @@ function WeekStrip({
           >
             <div
               className={[
-                "h-1.5 rounded-full transition-all",
-                state === "done" && "bg-brand-600",
-                state === "current" && "bg-brand-500 ring-2 ring-brand-300/50",
-                state === "future" && hasScenarios && "bg-line-strong",
-                state === "future" && !hasScenarios && "bg-line",
+                "h-1 rounded-full transition-colors",
+                state === "done" && "bg-brand-400",
+                state === "current" && "bg-brand-600",
+                state === "future" && hasScenarios && "bg-line-strong/60",
+                state === "future" && !hasScenarios && "bg-line/70",
               ]
                 .filter(Boolean)
                 .join(" ")}
             />
             <div
               className={[
-                "mt-1 text-center font-mono text-[9.5px] tracking-wider transition",
-                state === "current" && "font-bold text-brand-700",
-                state === "done" && "text-fg-muted",
-                state === "future" && "text-fg-subtle",
+                "mt-1.5 text-center text-[10.5px] tabular-nums",
+                state === "current" && "font-semibold text-fg",
+                state === "done" && "text-fg-subtle",
+                state === "future" && "text-fg-subtle/60",
               ]
                 .filter(Boolean)
                 .join(" ")}
             >
-              {String(week).padStart(2, "0")}
+              {week}
             </div>
           </div>
         );
@@ -394,15 +392,13 @@ function DashboardCard({
 }) {
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center justify-between border-b border-line bg-raised/40 px-4 py-2.5">
-        <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-          Director Dashboard
-        </span>
-        <span className="font-mono text-[10.5px] text-fg-muted">
-          W{week}/12
+      <div className="flex items-center justify-between border-b border-line/60 px-5 py-3">
+        <span className="text-[12.5px] font-medium text-fg">Dashboard</span>
+        <span className="text-[11px] tabular-nums text-fg-subtle">
+          Week {week}
         </span>
       </div>
-      <div className="space-y-3.5 p-4">
+      <div className="space-y-4 p-5">
         {payload.stats.map((s) => (
           <StatRow
             key={s.key}
@@ -412,11 +408,9 @@ function DashboardCard({
           />
         ))}
       </div>
-      <div className="border-t border-line bg-raised/20 px-4 py-2">
-        <p className="text-[10.5px] leading-snug text-fg-subtle">
-          Hover any choice to preview the deltas. Choices apply on Continue.
-        </p>
-      </div>
+      <p className="border-t border-line/50 px-5 py-2.5 text-[11px] leading-snug text-fg-subtle">
+        Hover a choice to preview deltas. Changes apply on Continue.
+      </p>
     </Card>
   );
 }
@@ -438,17 +432,17 @@ function StatRow({
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-[11.5px] font-medium text-fg">
-          <Icon className="h-3 w-3 text-fg-subtle" />
+        <span className="flex items-center gap-2 text-[12.5px] text-fg-muted">
+          <Icon className="h-3.5 w-3.5 text-fg-subtle/80" />
           {stat.label}
         </span>
-        <span className="font-mono tabular-nums text-[11.5px] text-fg">
+        <span className="tabular-nums text-[12.5px] text-fg">
           {value}
           {typeof delta === "number" && delta !== 0 && (
             <span
               className={[
-                "ml-1.5 font-semibold",
-                delta > 0 ? "text-emerald-600" : "text-rose-600",
+                "ml-1.5 text-[11.5px]",
+                delta > 0 ? "text-emerald-700/80" : "text-rose-700/80",
               ].join(" ")}
             >
               {delta > 0 ? `+${delta}` : delta}
@@ -456,21 +450,23 @@ function StatRow({
           )}
         </span>
       </div>
-      <div className="relative h-1.5 overflow-hidden rounded-full bg-line">
+      <div className="relative h-[5px] overflow-hidden rounded-full bg-line/70">
         <div
           className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
-          style={{ width: `${value}%`, background: stat.color }}
+          style={{
+            width: `${value}%`,
+            background: stat.color,
+            opacity: 0.85,
+          }}
         />
         {typeof delta === "number" && delta !== 0 && (
           <div
-            className="absolute inset-y-0 rounded-full opacity-55 transition-[width] duration-500"
+            className="absolute inset-y-0 rounded-full opacity-45 transition-[width] duration-500"
             style={{
               left: `${Math.min(value, projected)}%`,
               width: `${Math.abs(projected - value)}%`,
               background:
-                delta > 0
-                  ? "rgb(16, 185, 129)" // emerald-500
-                  : "rgb(244, 63, 94)", // rose-500
+                delta > 0 ? "rgb(16, 185, 129)" : "rgb(244, 63, 94)",
             }}
           />
         )}
@@ -509,56 +505,40 @@ function ScenarioPanel({
   onContinue: () => void;
 }) {
   return (
-    <Card
-      className="relative overflow-hidden"
-      style={{
-        // Subtle paper texture using a radial vignette + faint diagonal lines
-        backgroundImage:
-          "radial-gradient(ellipse at top right, rgba(67, 100, 113, 0.05), transparent 60%)",
-      }}
-    >
-      <header className="flex items-center justify-between border-b border-line bg-raised/40 px-5 py-2.5">
-        <div className="flex items-center gap-2.5">
-          <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-            Week {scenario.week}
-          </span>
-          <span className="text-fg-subtle">·</span>
-          <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-fg-muted">
-            {SCENARIO_TYPE_LABEL[scenario.type] ?? scenario.type}
-          </span>
+    <Card className="overflow-hidden">
+      <header className="flex items-center justify-between border-b border-line/60 px-6 py-3 md:px-7">
+        <div className="flex items-center gap-2 text-[12px] text-fg-subtle">
+          <span className="text-fg-muted">Week {scenario.week}</span>
+          <span>·</span>
+          <span>{SCENARIO_TYPE_LABEL[scenario.type] ?? scenario.type}</span>
         </div>
-        <span className="font-mono text-[10px] text-fg-subtle">
-          {scenario.id}
-        </span>
       </header>
 
-      <div className="px-6 pt-7 md:px-8 md:pt-8">
+      <div className="px-6 pt-8 md:px-8 md:pt-9">
         <h2
-          className="mb-3 text-[28px] font-semibold leading-[1.15] tracking-tight text-fg md:text-[32px]"
+          className="mb-3.5 text-[26px] font-semibold leading-[1.2] tracking-tight text-fg md:text-[30px]"
           style={{ fontFamily: "var(--font-display-theme, inherit)" }}
         >
           {scenario.title}
         </h2>
-        <p className="mb-5 text-[14px] leading-relaxed text-fg-muted md:text-[14.5px]">
+        <p className="mb-6 text-[14.5px] leading-[1.65] text-fg-muted">
           {scenario.setting}
         </p>
       </div>
 
-      <div className="mx-6 mb-6 md:mx-8">
-        <div className="relative rounded-md border-l-[3px] border-brand-600 bg-brand-50/40 px-5 py-4 dark:bg-brand-900/10">
-          <div className="absolute -top-2.5 left-3 bg-card-solid px-2 text-[9.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-            Prompt
-          </div>
-          <p className="text-[15.5px] leading-relaxed text-fg">
-            {scenario.prompt}
-          </p>
-        </div>
+      <div className="mx-6 mb-6 border-l-2 border-line-strong/60 pl-5 md:mx-8 md:mb-7">
+        <p
+          className="text-[16px] leading-[1.6] text-fg md:text-[17px]"
+          style={{ fontFamily: "var(--font-display-theme, inherit)" }}
+        >
+          {scenario.prompt}
+        </p>
       </div>
 
       {!resolved && (
-        <div className="space-y-2.5 px-6 pb-7 md:px-8 md:pb-8">
-          <div className="mb-1 text-[10.5px] font-mono uppercase tracking-[0.18em] text-fg-subtle">
-            Choose one — hover to preview deltas
+        <div className="space-y-2 px-6 pb-7 md:px-8 md:pb-8">
+          <div className="mb-2 text-[12px] text-fg-subtle">
+            Pick one — hover to preview the impact.
           </div>
           {scenario.choices.map((c, idx) => (
             <ChoiceButton
@@ -574,22 +554,20 @@ function ScenarioPanel({
       )}
 
       {resolved && (
-        <div className="space-y-3.5 px-6 pb-7 md:px-8 md:pb-8">
+        <div className="space-y-4 px-6 pb-7 md:px-8 md:pb-8">
           <ChosenCard label={resolved.label} />
           <OutcomeCard outcome={resolved.outcome} />
           <button
             onClick={onContinue}
             disabled={submitting}
-            className="group flex w-full items-center justify-center gap-2 rounded-md bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-md bg-brand-600 px-5 py-3 text-[14px] font-medium text-white transition hover:bg-brand-700 disabled:opacity-50"
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
                 Continue
-                <span className="transition-transform group-hover:translate-x-0.5">
-                  →
-                </span>
+                <span>→</span>
               </>
             )}
           </button>
@@ -620,36 +598,30 @@ function ChoiceButton({
       onMouseLeave={() => onHoverChange(false)}
       onFocus={() => onHoverChange(true)}
       onBlur={() => onHoverChange(false)}
-      className="group relative flex w-full items-start gap-3.5 rounded-md border border-line bg-card-solid/60 px-4 py-3.5 text-left text-[14px] transition hover:-translate-y-0.5 hover:border-brand-400 hover:bg-brand-50/40 hover:shadow-sm focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200 disabled:opacity-50 disabled:hover:translate-y-0"
+      className="group flex w-full items-start gap-3 rounded-md border border-line/70 bg-card-solid px-4 py-3.5 text-left text-[14px] leading-[1.55] text-fg transition hover:border-line-strong hover:bg-raised/30 focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200 disabled:opacity-50"
     >
-      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-line bg-raised/50 font-mono text-[11px] font-medium text-fg-muted transition group-hover:border-brand-500 group-hover:bg-brand-100 group-hover:text-brand-700">
-        {letter}
+      <span className="mt-[1px] shrink-0 text-[12.5px] text-fg-subtle group-hover:text-fg-muted">
+        {letter}.
       </span>
-      <span className="flex-1 leading-relaxed">{choice.label}</span>
+      <span className="flex-1">{choice.label}</span>
     </button>
   );
 }
 
 function ChosenCard({ label }: { label: string }) {
   return (
-    <div className="relative rounded-md border border-brand-300 bg-brand-50 px-4 py-3 dark:bg-brand-900/20">
-      <div className="absolute -top-2.5 left-3 bg-card-solid px-2 text-[9.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-        You chose
-      </div>
-      <p className="pt-1 text-[14px] font-medium leading-relaxed text-fg">
-        {label}
-      </p>
+    <div className="rounded-md border border-line/70 bg-raised/30 px-4 py-3">
+      <div className="mb-1 text-[11px] text-fg-subtle">You chose</div>
+      <p className="text-[14px] leading-[1.55] text-fg">{label}</p>
     </div>
   );
 }
 
 function OutcomeCard({ outcome }: { outcome: string }) {
   return (
-    <div className="relative rounded-md border border-line bg-raised/30 px-4 py-3.5">
-      <div className="absolute -top-2.5 left-3 bg-card-solid px-2 text-[9.5px] font-mono uppercase tracking-[0.18em] text-fg-muted">
-        Outcome
-      </div>
-      <p className="pt-1 text-[13.5px] leading-relaxed text-fg">{outcome}</p>
+    <div className="rounded-md border border-line/70 bg-card-solid px-4 py-3.5">
+      <div className="mb-1.5 text-[11px] text-fg-subtle">Outcome</div>
+      <p className="text-[14px] leading-[1.65] text-fg">{outcome}</p>
     </div>
   );
 }
@@ -675,11 +647,9 @@ function RosterPanel({ payload }: { payload: SimulationPayload }) {
   return (
     <>
       <Card className="overflow-hidden">
-        <header className="flex items-center justify-between border-b border-line bg-raised/40 px-4 py-2.5">
-          <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-            Roster
-          </span>
-          <span className="text-[10px] text-fg-subtle">Click for popup</span>
+        <header className="flex items-center justify-between border-b border-line/60 px-5 py-3">
+          <span className="text-[12.5px] font-medium text-fg">Roster</span>
+          <span className="text-[11px] text-fg-subtle">Click a name</span>
         </header>
         <RosterGroup
           title="Your Team"
@@ -721,26 +691,21 @@ function RosterGroup({
   activeId: string | null;
 }) {
   return (
-    <div className="border-b border-line last:border-b-0">
-      <div className="flex items-baseline justify-between border-b border-line/60 bg-raised/20 px-4 py-1.5">
-        <span className="text-[9.5px] font-mono uppercase tracking-[0.2em] text-fg-muted">
-          {title}
-        </span>
-        <span className="text-[10px] text-fg-subtle">{subtitle}</span>
+    <div className="border-b border-line/40 last:border-b-0">
+      <div className="flex items-baseline justify-between px-5 pb-1.5 pt-3">
+        <span className="text-[11.5px] text-fg-subtle">{title}</span>
+        <span className="text-[11px] text-fg-subtle/70">{subtitle}</span>
       </div>
       <ul>
-        {people.map((p, i) => (
-          <li
-            key={p.id}
-            className={i === people.length - 1 ? "" : "border-b border-line/40"}
-          >
+        {people.map((p) => (
+          <li key={p.id}>
             <button
               onClick={(e) => onOpen(p.id, e)}
               className={[
-                "group flex w-full items-center gap-3 px-4 py-2.5 text-left transition",
+                "group flex w-full items-center gap-3 px-5 py-2.5 text-left transition",
                 activeId === p.id
-                  ? "bg-brand-50 dark:bg-brand-900/20"
-                  : "hover:bg-raised/40",
+                  ? "bg-raised/60"
+                  : "hover:bg-raised/30",
               ].join(" ")}
             >
               <PersonAvatar
@@ -752,15 +717,13 @@ function RosterGroup({
               <div className="min-w-0 flex-1">
                 <div
                   className={[
-                    "truncate text-[12.5px] font-medium leading-tight",
-                    activeId === p.id
-                      ? "text-brand-700"
-                      : "text-fg group-hover:text-brand-700",
+                    "truncate text-[13px] leading-tight",
+                    activeId === p.id ? "font-medium text-fg" : "text-fg",
                   ].join(" ")}
                 >
                   {p.name}
                 </div>
-                <div className="truncate text-[10.5px] leading-tight text-fg-subtle">
+                <div className="truncate text-[11.5px] leading-tight text-fg-subtle">
                   {p.role}
                 </div>
               </div>
@@ -932,11 +895,16 @@ function Rhythm({ label, items }: { label: string; items: string[] }) {
 // ────────────────────────────────────────────────────────────────────
 
 const TIER_COLOR: Record<string, string> = {
-  "Exceeds Expectations": "bg-emerald-50 text-emerald-800 border-emerald-200",
-  "Strong Meets": "bg-emerald-50 text-emerald-800 border-emerald-200",
-  "Meets Expectations": "bg-amber-50 text-amber-900 border-amber-200",
-  "Below Expectations": "bg-rose-50 text-rose-900 border-rose-200",
-  "Concerns Raised": "bg-rose-100 text-rose-900 border-rose-300",
+  "Exceeds Expectations":
+    "bg-card-solid text-emerald-800/90 border-emerald-200/60",
+  "Strong Meets":
+    "bg-card-solid text-emerald-800/90 border-emerald-200/60",
+  "Meets Expectations":
+    "bg-card-solid text-fg border-line-strong",
+  "Below Expectations":
+    "bg-card-solid text-rose-800/90 border-rose-200/60",
+  "Concerns Raised":
+    "bg-card-solid text-rose-800/90 border-rose-300/70",
 };
 
 function ReviewView({
@@ -961,47 +929,44 @@ function ReviewView({
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      {/* Score reveal */}
-      <Card className="relative overflow-hidden border-brand-300 bg-gradient-to-br from-brand-50 via-card-solid to-card-solid p-10 text-center md:p-12">
-        <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-200/40 blur-3xl" />
-        <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-brand-100/40 blur-3xl" />
-        <div className="relative">
-          <div className="mb-3 text-[10.5px] font-mono uppercase tracking-[0.2em] text-brand-700">
-            Q1 Performance Review · {payload.jobTitle}
-          </div>
-          <div
-            className="font-bold tabular-nums leading-none text-brand-700"
-            style={{
-              fontFamily: "var(--font-display-theme, inherit)",
-              fontSize: "clamp(72px, 14vw, 132px)",
-            }}
-          >
-            {animatedScore}
-          </div>
-          <div className="mt-4 inline-block">
-            <span
-              className={[
-                "inline-flex items-center rounded-full border px-4 py-1 text-sm font-semibold",
-                tierClass,
-              ].join(" ")}
-            >
-              {review.tier}
-            </span>
-          </div>
-          <p className="mx-auto mt-5 max-w-xl text-[13.5px] leading-relaxed text-fg-muted">
-            {review.tierBlurb}
-          </p>
+      {/* Score reveal — calm, no blobs, no gradient mesh */}
+      <Card className="p-10 text-center md:p-12">
+        <div className="mb-3 text-[12px] text-fg-subtle">
+          Q1 Performance Review · {payload.jobTitle}
         </div>
+        <div
+          className="tabular-nums leading-none text-fg"
+          style={{
+            fontFamily: "var(--font-display-theme, inherit)",
+            fontSize: "clamp(64px, 12vw, 112px)",
+            fontWeight: 500,
+          }}
+        >
+          {animatedScore}
+        </div>
+        <div className="mt-5 inline-block">
+          <span
+            className={[
+              "inline-flex items-center rounded-full border px-4 py-1 text-[13px] font-medium",
+              tierClass,
+            ].join(" ")}
+          >
+            {review.tier}
+          </span>
+        </div>
+        <p className="mx-auto mt-5 max-w-xl text-[14px] leading-[1.65] text-fg-muted">
+          {review.tierBlurb}
+        </p>
       </Card>
 
       {/* Stat narratives */}
       <Card className="overflow-hidden">
-        <header className="border-b border-line bg-raised/40 px-5 py-2.5">
-          <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
+        <header className="border-b border-line/60 px-5 py-3">
+          <span className="text-[12.5px] font-medium text-fg">
             Stat narratives
           </span>
         </header>
-        <div className="grid gap-px bg-line md:grid-cols-2">
+        <div className="grid gap-px bg-line/50 md:grid-cols-2">
           {review.perStat.map((s) => {
             const def = payload.stats.find((x) => x.key === s.key);
             const start = def?.initialValue ?? 50;
@@ -1009,30 +974,26 @@ function ReviewView({
             const Icon = STAT_ICONS[s.key] ?? Sparkles;
             return (
               <div key={s.key} className="bg-card-solid p-5">
-                <div className="mb-2 flex items-baseline justify-between">
-                  <span className="flex items-center gap-2 text-[13px] font-semibold text-fg">
+                <div className="mb-2 flex items-baseline justify-between gap-3">
+                  <span className="flex items-center gap-2 text-[13.5px] text-fg">
                     <Icon className="h-3.5 w-3.5 text-fg-subtle" />
                     {s.label}
                   </span>
-                  <span className="font-mono tabular-nums">
-                    <span className="text-[10.5px] text-fg-subtle">
-                      {start}
-                    </span>
-                    <span className="mx-1 text-fg-subtle">→</span>
-                    <span className="text-[15px] font-semibold text-brand-700">
-                      {s.value}
-                    </span>
+                  <span className="tabular-nums text-fg-subtle text-[12px]">
+                    {start}
+                    <span className="mx-1">→</span>
+                    <span className="text-[15px] text-fg">{s.value}</span>
                     <span
                       className={[
-                        "ml-2 text-[11px] font-semibold",
-                        delta >= 0 ? "text-emerald-600" : "text-rose-600",
+                        "ml-2 text-[11.5px]",
+                        delta >= 0 ? "text-emerald-700/70" : "text-rose-700/70",
                       ].join(" ")}
                     >
                       {delta >= 0 ? `+${delta}` : delta}
                     </span>
                   </span>
                 </div>
-                <p className="text-[12px] leading-relaxed text-fg-muted">
+                <p className="text-[12.5px] leading-[1.65] text-fg-muted">
                   {s.narrative}
                 </p>
               </div>
@@ -1042,17 +1003,17 @@ function ReviewView({
       </Card>
 
       {review.highlights.length > 0 && (
-        <Card className="overflow-hidden border-emerald-200">
-          <header className="border-b border-emerald-200 bg-emerald-50/70 px-5 py-2.5">
-            <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-emerald-800">
+        <Card className="overflow-hidden">
+          <header className="border-b border-line/60 px-5 py-3">
+            <span className="text-[12.5px] font-medium text-fg">
               Highlights
             </span>
           </header>
-          <ul className="space-y-2 px-5 py-4 text-[13px] text-fg">
+          <ul className="space-y-2 px-5 py-4 text-[13.5px] text-fg">
             {review.highlights.map((h, i) => (
               <li key={i} className="flex gap-2.5">
-                <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span className="leading-relaxed">{h}</span>
+                <span className="mt-1.5 inline-block h-1 w-1 shrink-0 rounded-full bg-fg-subtle/60" />
+                <span className="leading-[1.6]">{h}</span>
               </li>
             ))}
           </ul>
@@ -1060,43 +1021,37 @@ function ReviewView({
       )}
 
       {review.lowlights.length > 0 && (
-        <Card className="overflow-hidden border-rose-200">
-          <header className="border-b border-rose-200 bg-rose-50/70 px-5 py-2.5">
-            <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-rose-800">
+        <Card className="overflow-hidden">
+          <header className="border-b border-line/60 px-5 py-3">
+            <span className="text-[12.5px] font-medium text-fg">
               Areas to develop
             </span>
           </header>
-          <ul className="space-y-2 px-5 py-4 text-[13px] text-fg">
+          <ul className="space-y-2 px-5 py-4 text-[13.5px] text-fg">
             {review.lowlights.map((l, i) => (
               <li key={i} className="flex gap-2.5">
-                <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
-                <span className="leading-relaxed">{l}</span>
+                <span className="mt-1.5 inline-block h-1 w-1 shrink-0 rounded-full bg-fg-subtle/60" />
+                <span className="leading-[1.6]">{l}</span>
               </li>
             ))}
           </ul>
         </Card>
       )}
 
-      {/* VP closing — as a quote */}
-      <Card className="overflow-hidden border-brand-300 bg-brand-50/50">
+      {/* VP closing — calm quote, no accent background */}
+      <Card>
         <div className="px-6 py-6 md:px-8 md:py-7">
-          <div className="mb-3 text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-            Closing — your VP
+          <div className="mb-3 text-[12px] text-fg-subtle">
+            Closing — {payload.vpName}
           </div>
           <blockquote
-            className="relative pl-6 text-[16px] italic leading-relaxed text-fg md:text-[17px]"
+            className="text-[17px] leading-[1.65] text-fg md:text-[18px]"
             style={{ fontFamily: "var(--font-display-theme, inherit)" }}
           >
-            <span
-              aria-hidden
-              className="absolute -left-1 -top-2 select-none text-[44px] leading-none text-brand-300"
-            >
-              &ldquo;
-            </span>
             {review.vpClosing}
           </blockquote>
-          <div className="mt-3 pl-6 text-[11.5px] text-fg-subtle">
-            — {payload.vpName}, {payload.vpRole}
+          <div className="mt-3 text-[12px] text-fg-subtle">
+            {payload.vpRole}
           </div>
         </div>
       </Card>
@@ -1107,34 +1062,34 @@ function ReviewView({
       {/* Briefing recap — what the JD didn't tell you (if available) */}
       {payload.briefing && (
         <Card className="overflow-hidden">
-          <header className="flex items-center justify-between border-b border-line bg-raised/40 px-5 py-2.5">
-            <span className="flex items-center gap-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-              <BookOpen className="h-3 w-3" />
+          <header className="flex items-center justify-between border-b border-line/60 px-5 py-3">
+            <span className="flex items-center gap-2 text-[12.5px] font-medium text-fg">
+              <BookOpen className="h-3.5 w-3.5 text-fg-subtle" />
               Briefing recap
             </span>
             <button
               onClick={() => setBriefingOpen(true)}
-              className="text-[11px] font-semibold text-brand-700 hover:text-brand-800"
+              className="text-[12px] text-fg-muted hover:text-fg"
             >
               Open full briefing →
             </button>
           </header>
-          <div className="grid gap-px bg-line md:grid-cols-2">
+          <div className="grid gap-px bg-line/50 md:grid-cols-2">
             <div className="bg-card-solid px-5 py-4">
-              <div className="mb-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-brand-700">
+              <div className="mb-1.5 text-[11.5px] text-fg-subtle">
                 Hidden dynamics
               </div>
-              <p className="line-clamp-4 text-[12.5px] leading-relaxed text-fg-muted">
+              <p className="line-clamp-4 text-[13px] leading-[1.65] text-fg-muted">
                 {payload.briefing.hiddenDynamics}
               </p>
             </div>
             <div className="bg-card-solid px-5 py-4">
-              <div className="mb-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-brand-700">
+              <div className="mb-1.5 text-[11.5px] text-fg-subtle">
                 Interview questions ({payload.briefing.interviewQuestions.length})
               </div>
-              <p className="line-clamp-4 text-[12.5px] leading-relaxed text-fg-muted">
-                Open the full briefing for surgical questions to ask the hiring
-                manager — derived from the dynamics you just lived through.
+              <p className="line-clamp-4 text-[13px] leading-[1.65] text-fg-muted">
+                Surgical questions to ask the hiring manager — derived from the
+                dynamics you just lived through.
               </p>
             </div>
           </div>
@@ -1227,59 +1182,55 @@ function BriefingModal({
         onClick={(e) => e.stopPropagation()}
         style={{ animation: "slide-up-in 240ms ease-out" }}
       >
-        <header className="flex items-start justify-between gap-3 border-b border-line bg-gradient-to-br from-brand-50 to-card-solid px-6 py-5">
+        <header className="flex items-start justify-between gap-3 border-b border-line/60 px-6 py-5">
           <div className="min-w-0 flex-1">
-            <div className="mb-1 flex items-center gap-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-              <BookOpen className="h-3 w-3" />
+            <div className="mb-1 flex items-center gap-2 text-[12px] text-fg-subtle">
+              <BookOpen className="h-3.5 w-3.5" />
               Briefing — {payload.jobTitle}
             </div>
             <h2
-              className="text-lg font-semibold tracking-tight text-fg md:text-xl"
+              className="text-[19px] font-semibold tracking-tight text-fg md:text-[21px]"
               style={{ fontFamily: "var(--font-display-theme, inherit)" }}
             >
               What the JD doesn&apos;t tell you
             </h2>
-            <p className="mt-1 text-[12px] text-fg-muted">
+            <p className="mt-1.5 text-[13px] leading-[1.6] text-fg-muted">
               Use this to sharpen interview prep, set realistic expectations,
               and recognise patterns inside the sim.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line bg-card-solid text-fg-muted hover:bg-raised hover:text-fg"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-fg-muted hover:bg-raised/40 hover:text-fg"
             aria-label="Close"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         </header>
 
-        <div className="space-y-5 px-6 py-6">
-          {/* Hidden dynamics */}
+        <div className="space-y-6 px-6 py-6">
           <section>
-            <h3 className="mb-2 flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
-              <Compass className="h-3 w-3" />
+            <h3 className="mb-2.5 flex items-center gap-1.5 text-[12.5px] font-medium text-fg">
+              <Compass className="h-3.5 w-3.5 text-fg-subtle" />
               Hidden dynamics
             </h3>
-            <p className="rounded-md border-l-2 border-brand-500 bg-brand-50/40 px-4 py-3 text-[13.5px] leading-relaxed text-fg">
+            <p className="rounded-md border-l-2 border-line-strong/60 bg-raised/20 px-4 py-3 text-[14px] leading-[1.7] text-fg">
               {b.hiddenDynamics}
             </p>
           </section>
 
-          {/* Failure modes */}
           {b.failureModes.length > 0 && (
             <section>
-              <h3 className="mb-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-rose-700">
+              <h3 className="mb-2.5 text-[12.5px] font-medium text-fg">
                 Common failure modes
               </h3>
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {b.failureModes.map((f, i) => (
                   <li
                     key={i}
-                    className="flex gap-3 rounded-md border border-rose-200/60 bg-rose-50/40 px-3.5 py-2.5 text-[13px] leading-relaxed text-fg"
+                    className="flex gap-3 rounded-md border border-line/60 bg-card-solid px-4 py-3 text-[13.5px] leading-[1.65] text-fg"
                   >
-                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-100 font-mono text-[10.5px] font-semibold text-rose-700">
-                      {i + 1}
-                    </span>
+                    <span className="shrink-0 text-fg-subtle">{i + 1}.</span>
                     <span>{f}</span>
                   </li>
                 ))}
@@ -1287,19 +1238,18 @@ function BriefingModal({
             </section>
           )}
 
-          {/* Unwritten rules */}
           {b.unwrittenRules.length > 0 && (
             <section>
-              <h3 className="mb-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-amber-800">
+              <h3 className="mb-2.5 text-[12.5px] font-medium text-fg">
                 Unwritten rules
               </h3>
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {b.unwrittenRules.map((r, i) => (
                   <li
                     key={i}
-                    className="flex gap-3 rounded-md border border-amber-200/60 bg-amber-50/40 px-3.5 py-2.5 text-[13px] leading-relaxed text-fg"
+                    className="flex gap-3 rounded-md border border-line/60 bg-card-solid px-4 py-3 text-[13.5px] leading-[1.65] text-fg"
                   >
-                    <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                    <span className="mt-2 inline-block h-1 w-1 shrink-0 rounded-full bg-fg-subtle/60" />
                     <span>{r}</span>
                   </li>
                 ))}
@@ -1307,35 +1257,37 @@ function BriefingModal({
             </section>
           )}
 
-          {/* Interview questions */}
           {b.interviewQuestions.length > 0 && (
             <section>
-              <h3 className="mb-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-emerald-800">
+              <h3 className="mb-2.5 text-[12.5px] font-medium text-fg">
                 Questions to ask the hiring manager
               </h3>
-              <ol className="space-y-2">
+              <ol className="space-y-1.5">
                 {b.interviewQuestions.map((q, i) => (
                   <li
                     key={i}
-                    className="flex gap-3 rounded-md border border-emerald-200/60 bg-emerald-50/40 px-3.5 py-2.5 text-[13px] leading-relaxed text-fg"
+                    className="flex gap-3 rounded-md border border-line/60 bg-card-solid px-4 py-3 text-[13.5px] leading-[1.65] text-fg"
                   >
-                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-mono text-[10.5px] font-semibold text-emerald-800">
-                      {i + 1}
+                    <span className="shrink-0 text-fg-subtle">{i + 1}.</span>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-display-theme, inherit)",
+                      }}
+                    >
+                      {q}
                     </span>
-                    <span>&ldquo;{q}&rdquo;</span>
                   </li>
                 ))}
               </ol>
-              <p className="mt-2 text-[10.5px] italic text-fg-subtle">
-                Tip: write these on the back of your hand before the interview.
-                Pull them out when the manager asks &ldquo;do you have any
-                questions for us?&rdquo;
+              <p className="mt-3 text-[12px] text-fg-subtle">
+                Tip: keep these on hand when the manager asks &ldquo;do you have
+                any questions for us?&rdquo;
               </p>
             </section>
           )}
         </div>
 
-        <footer className="border-t border-line bg-raised/30 px-5 py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-fg-subtle">
+        <footer className="border-t border-line/60 px-5 py-2.5 text-center text-[11px] text-fg-subtle">
           Press ESC or click outside to close
         </footer>
       </div>
@@ -1349,29 +1301,29 @@ function BriefingModal({
 
 const ARCHETYPE_TONE: Record<string, { bg: string; text: string; border: string }> = {
   collaborative: {
-    bg: "bg-sky-50",
-    text: "text-sky-800",
-    border: "border-sky-200",
+    bg: "bg-card-solid",
+    text: "text-fg",
+    border: "border-line-strong",
   },
   decisive: {
-    bg: "bg-brand-50",
-    text: "text-brand-800",
-    border: "border-brand-200",
+    bg: "bg-card-solid",
+    text: "text-fg",
+    border: "border-line-strong",
   },
   conservative: {
-    bg: "bg-amber-50",
-    text: "text-amber-900",
-    border: "border-amber-200",
+    bg: "bg-card-solid",
+    text: "text-fg",
+    border: "border-line-strong",
   },
   bold: {
-    bg: "bg-rose-50",
-    text: "text-rose-800",
-    border: "border-rose-200",
+    bg: "bg-card-solid",
+    text: "text-fg",
+    border: "border-line-strong",
   },
   balanced: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-800",
-    border: "border-emerald-200",
+    bg: "bg-card-solid",
+    text: "text-fg",
+    border: "border-line-strong",
   },
 };
 
@@ -1384,41 +1336,37 @@ function DecisionProfileCard({
   const tone = ARCHETYPE_TONE[profile.archetype] ?? ARCHETYPE_TONE.balanced;
   return (
     <Card className="overflow-hidden">
-      <header className="border-b border-line bg-raised/40 px-5 py-2.5">
-        <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-brand-700">
+      <header className="border-b border-line/60 px-5 py-3">
+        <span className="text-[12.5px] font-medium text-fg">
           Your decision profile
         </span>
       </header>
 
-      <div className="grid gap-px bg-line md:grid-cols-[1fr_1fr]">
+      <div className="grid gap-px bg-line/50 md:grid-cols-[1fr_1fr]">
         <div className="bg-card-solid p-5">
-          <div className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">
-            Archetype
-          </div>
-          <div className="mb-2 inline-flex">
+          <div className="mb-2 text-[11.5px] text-fg-subtle">Archetype</div>
+          <div className="mb-3 inline-flex">
             <span
-              className={`rounded-full border ${tone.border} ${tone.bg} ${tone.text} px-3 py-1 text-[12px] font-semibold capitalize`}
+              className={`rounded-full border ${tone.border} ${tone.bg} ${tone.text} px-3 py-1 text-[12.5px] capitalize`}
             >
               {profile.archetype}
             </span>
           </div>
-          <p className="text-[12.5px] leading-relaxed text-fg-muted">
+          <p className="text-[13px] leading-[1.65] text-fg-muted">
             {profile.archetypeBlurb}
           </p>
         </div>
 
         <div className="bg-card-solid p-5">
-          <div className="mb-3 text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">
+          <div className="mb-3 text-[11.5px] text-fg-subtle">
             Stat fingerprint
           </div>
-          <dl className="space-y-2.5 text-[12.5px]">
+          <dl className="space-y-2.5 text-[13px]">
             <div className="flex items-baseline justify-between gap-3">
               <dt className="text-fg-muted">Most protected</dt>
               <dd className="text-right">
-                <span className="font-semibold text-emerald-700">
-                  {profile.protectedLabel}
-                </span>
-                <span className="ml-2 font-mono text-[11.5px] tabular-nums text-emerald-700">
+                <span className="text-fg">{profile.protectedLabel}</span>
+                <span className="ml-2 tabular-nums text-[12px] text-emerald-700/80">
                   {profile.protectedNet >= 0
                     ? `+${profile.protectedNet}`
                     : profile.protectedNet}
@@ -1428,23 +1376,21 @@ function DecisionProfileCard({
             <div className="flex items-baseline justify-between gap-3">
               <dt className="text-fg-muted">Most sacrificed</dt>
               <dd className="text-right">
-                <span className="font-semibold text-rose-700">
-                  {profile.sacrificedLabel}
-                </span>
-                <span className="ml-2 font-mono text-[11.5px] tabular-nums text-rose-700">
+                <span className="text-fg">{profile.sacrificedLabel}</span>
+                <span className="ml-2 tabular-nums text-[12px] text-rose-700/80">
                   {profile.sacrificedNet}
                 </span>
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-3">
-              <dt className="text-fg-muted">Intensity / decision</dt>
-              <dd className="font-mono text-[11.5px] tabular-nums text-fg">
+              <dt className="text-fg-muted">Intensity per decision</dt>
+              <dd className="tabular-nums text-[12px] text-fg">
                 {profile.avgIntensity.toFixed(1)} pts
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-3">
               <dt className="text-fg-muted">Decisions made</dt>
-              <dd className="font-mono text-[11.5px] tabular-nums text-fg">
+              <dd className="tabular-nums text-[12px] text-fg">
                 {profile.decisionCount}
               </dd>
             </div>
@@ -1453,17 +1399,17 @@ function DecisionProfileCard({
       </div>
 
       {profile.patternCallouts.length > 0 && (
-        <div className="border-t border-line bg-raised/20 px-5 py-4">
-          <div className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">
+        <div className="border-t border-line/60 px-5 py-4">
+          <div className="mb-2 text-[11.5px] text-fg-subtle">
             Patterns worth reflecting on
           </div>
           <ul className="space-y-2">
             {profile.patternCallouts.map((c, i) => (
               <li
                 key={i}
-                className="flex gap-2 text-[12.5px] leading-relaxed text-fg"
+                className="flex gap-2 text-[13px] leading-[1.65] text-fg"
               >
-                <span className="mt-1.5 inline-block h-1 w-1 shrink-0 rounded-full bg-brand-500" />
+                <span className="mt-2 inline-block h-1 w-1 shrink-0 rounded-full bg-fg-subtle/60" />
                 <span>{c}</span>
               </li>
             ))}
