@@ -6,6 +6,7 @@ import type { FormField } from "@/lib/forms/types";
 import { EventFormView } from "@/components/forms/EventFormView";
 import { ObioBootcampInfo } from "@/components/forms/content/ObioBootcampInfo";
 import { LeavePoolPanel } from "@/components/talent-pool/LeavePoolPanel";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 /**
  * Per-slug marketing/info content rendered ABOVE the registration form.
@@ -145,6 +146,25 @@ export default async function FormPage({
 
   return (
     <>
+      {/* Staff-only seed / clear tray — drops a few demo submissions
+          attached to demo accounts so admins can preview the
+          /admin/forms/[slug] review surface without hand-filling the
+          form. Same component the admin-forms admin page uses; both
+          surfaces target the same API, so a Clear on either side
+          removes everything seeded on the other too. Rendered above
+          the marketing content + the form so admins see it on first
+          view; trainees never see it. */}
+      {isStaff && (
+        <div className="mb-4">
+          <DemoSeedAndClearTray
+            entity="form_submission"
+            scope={{ formSlug: slug }}
+            noun="demo submissions"
+            clearHelp={`Delete every "${slug}" submission from demo accounts. The users themselves stay (reusable for other tests). Real applicants and phantoms are not touched.`}
+          />
+        </div>
+      )}
+
       {/* PageHero owns the editorial top — keep it visually first.
           EventFormView renders its own DSPageHeader hero inside, so
           we place the page-specific admin-review banner AFTER that
