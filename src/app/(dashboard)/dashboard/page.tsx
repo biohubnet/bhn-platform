@@ -1046,11 +1046,11 @@ function OpenOpportunitiesBoard({
           "linear-gradient(135deg, rgba(16,185,129,0.04) 0%, rgba(245,158,11,0.03) 33%, rgba(14,165,233,0.04) 66%, rgba(139,92,246,0.03) 100%)",
       }}
     >
-      <SectionEyebrow tone="brand">Open opportunities</SectionEyebrow>
-      <p className="text-xs text-fg-muted leading-snug mt-1 max-w-2xl">
-        Deadline-driven training, placements, funding, and events. Each column lists what&apos;s open right now.
-      </p>
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-line border-y md:border-y-0 border-line">
+      {/* Section title + intro paragraph removed at user request —
+          the four columns each carry their own label + audience line
+          so the section reads cleanly without an extra eyebrow row
+          above them. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-line border-y md:border-y-0 border-line">
         <PillarColumn
           tone="emerald"
           label="Engage · Training"
@@ -1078,7 +1078,7 @@ function OpenOpportunitiesBoard({
         <PillarColumn
           tone="violet"
           label="Events"
-          audience="Meet the BioHubNet team in person — drop by, no RSVP needed unless noted"
+          audience="Workshops, mixers, and the annual symposium — open to everyone"
           emptyMessage="No public events on the calendar this week."
           viewAllHref="/events"
           items={eventItems}
