@@ -286,11 +286,12 @@ export async function AdminDashboard({
       <SpotlightPanel s={spotlight} />
 
       {/* ── At-a-glance metric strip ─────────────────────────────────
-          One large panel with subtle brand-tinted gradient. Six
-          stat columns separated by hairlines — no individual borders.
-          De-weighted (no shadow) so the spotlight above keeps the
-          attention. */}
-      <section className="relative overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-brand-50/40 via-card to-card">
+          Six stat columns separated by hairlines — no individual
+          borders. Unified shell (bg-card / rounded-2xl / border-line)
+          so the spotlight above keeps the entire visual hierarchy.
+          The previous brand-50/40 wash was making this section read
+          as its own visual island — dropped. */}
+      <section className="relative overflow-hidden rounded-2xl border border-line bg-card">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y divide-x divide-line/70 md:divide-y-0">
           {metrics.map((m, idx) => {
             // Re-add the bottom border for the first md row on mobile +
@@ -321,9 +322,11 @@ export async function AdminDashboard({
       </section>
 
       {/* ── Command Deck — Setup + Quick Actions inside ONE panel ───
-          Lighter than the spotlight by design. */}
-      <section className="rounded-2xl border border-line bg-gradient-to-br from-card via-card to-brand-50/30 overflow-hidden">
-        <header className="flex items-end justify-between gap-3 flex-wrap px-6 pt-5 pb-4 border-b border-line/70">
+          Same `bg-card` shell as every other section below the
+          spotlight — the previous brand-50/30 wash and oversized
+          header padding (px-6 pt-5 pb-4) both tightened to match. */}
+      <section className="rounded-2xl border border-line bg-card overflow-hidden">
+        <header className="flex items-end justify-between gap-3 flex-wrap px-5 pt-4 pb-3 border-b border-line/70">
           <div>
             <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
               <Zap size={16} className="text-brand-600" />
@@ -359,10 +362,14 @@ export async function AdminDashboard({
       </section>
 
       {/* ── Approval queues ─────────────────────────────────────────
-          Single panel with hairline-separated columns when non-zero;
-          compact emerald-zen badge when fully clear. */}
+          Same `bg-card` shell as every other secondary panel — the
+          surface-shadow that used to lift this section off the page
+          was redundant with the spotlight above (and was actively
+          fragmenting the post-spotlight rhythm). The "all clear"
+          fallback now uses the same shell instead of its previous
+          rounded-xl emerald island. */}
       {totalPending > 0 ? (
-        <section className="rounded-2xl border border-line bg-card surface-shadow overflow-hidden">
+        <section className="rounded-2xl border border-line bg-card overflow-hidden">
           <header className="px-5 pt-4 pb-3 border-b border-line/70 flex items-center justify-between gap-3">
             <h2 className="text-sm font-bold text-fg inline-flex items-center gap-2">
               <ClipboardList size={14} className="text-amber-600" />
@@ -380,16 +387,24 @@ export async function AdminDashboard({
           </div>
         </section>
       ) : (
-        <div className="bg-emerald-50/60 border border-emerald-200 rounded-xl px-4 py-3 inline-flex items-center gap-2 text-sm">
-          <CheckCircle2 size={14} className="text-emerald-700" />
-          <span className="text-emerald-900 font-semibold">Approval queues are clear.</span>
-          <span className="text-emerald-700/80 text-xs">Credit · Role · Pathway · 0 pending</span>
-        </div>
+        <section className="rounded-2xl border border-line bg-card overflow-hidden">
+          <div className="px-5 py-4 flex items-center gap-3">
+            <span className="w-8 h-8 rounded-lg bg-emerald-50 ring-1 ring-inset ring-emerald-200 text-emerald-700 inline-flex items-center justify-center shrink-0">
+              <CheckCircle2 size={16} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-fg">Approval queues are clear.</p>
+              <p className="text-[11px] text-muted mt-0.5">Credit · Role · Pathway · 0 pending</p>
+            </div>
+          </div>
+        </section>
       )}
 
-      {/* ── Credit expiry (auto-hidden when nothing is expiring) ─── */}
+      {/* ── Credit expiry (auto-hidden when nothing is expiring) ───
+          Same `bg-card` shell as the rest — the amber-50/30 wash was
+          pulling the section apart from its neighbours visually. */}
       {anyExpiry && (
-        <section className="rounded-2xl border border-line bg-gradient-to-br from-amber-50/30 via-card to-card overflow-hidden">
+        <section className="rounded-2xl border border-line bg-card overflow-hidden">
           <header className="px-5 pt-4 pb-3 border-b border-line/70 flex items-end justify-between gap-3 flex-wrap">
             <div>
               <h2 className="text-sm font-bold text-fg tracking-tight inline-flex items-center gap-2">
@@ -421,9 +436,12 @@ export async function AdminDashboard({
           Two-up: live pulse (left) + recent activity feed (right) in
           a single 2-column grid panel. Hairline divider between.
           The asymmetry — pulse takes 1 col, activity takes 2 — keeps
-          the eye on the audit feed which is the more-scanned surface. */}
+          the eye on the audit feed which is the more-scanned surface.
+          Both panels now share the same `bg-card` shell (the pulse
+          column used to carry a brand-50/30 wash that made the pair
+          look like two cards instead of a matched pair). */}
       <section className="grid lg:grid-cols-[1fr_2fr] gap-3">
-        <div className="rounded-2xl border border-line bg-gradient-to-br from-brand-50/30 via-card to-card overflow-hidden">
+        <div className="rounded-2xl border border-line bg-card overflow-hidden">
           <header className="px-5 pt-4 pb-3 border-b border-line/70">
             <h2 className="text-sm font-bold text-fg inline-flex items-center gap-2">
               <Activity size={14} className="text-brand-600" />
@@ -482,23 +500,30 @@ export async function AdminDashboard({
       </section>
 
       {isSuperAdmin && (
-        <div className="bg-elevated/40 border border-dashed border-line rounded-xl px-4 py-3 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-lg bg-card-solid border border-line text-brand-600 flex items-center justify-center shrink-0">
-            <ShieldCheck size={14} />
+        // Unified shell to match every other section. Previously a
+        // bg-elevated/40 dashed-border rounded-xl strip — distinctive
+        // but at the cost of looking like a separate widget glued on
+        // at the bottom. Same rounded-2xl card now, brand-tinted
+        // icon chip preserved to keep the "superadmin" signal.
+        <section className="rounded-2xl border border-line bg-card overflow-hidden">
+          <div className="px-5 py-4 flex items-start gap-3">
+            <span className="w-8 h-8 rounded-lg bg-brand-50 ring-1 ring-inset ring-brand-200 text-brand-700 inline-flex items-center justify-center shrink-0">
+              <ShieldCheck size={14} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-fg">Superadmin shortcuts</p>
+              <p className="text-xs text-muted mt-0.5 leading-relaxed">
+                <Link href="/admin/settings" className="text-brand-700 hover:underline">Platform settings</Link> ·
+                {" "}<Link href="/admin/matching-config" className="text-brand-700 hover:underline">AI matching engine</Link> ·
+                {" "}<Link href="/admin/lti" className="text-brand-700 hover:underline">LTI</Link> ·
+                {" "}<Link href="/admin/course-filters" className="text-brand-700 hover:underline">Course filter options</Link> ·
+                {" "}<Link href="/admin/security" className="text-brand-700 hover:underline">Security policies</Link> ·
+                {" "}<Link href="/admin/system-status" className="text-brand-700 hover:underline">System status (build SHA)</Link>.
+              </p>
+            </div>
+            <AlertCircle size={13} className="text-subtle shrink-0 mt-1" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-fg">Superadmin shortcuts</p>
-            <p className="text-xs text-muted mt-0.5 leading-relaxed">
-              <Link href="/admin/settings" className="text-brand-700 hover:underline">Platform settings</Link> ·
-              {" "}<Link href="/admin/matching-config" className="text-brand-700 hover:underline">AI matching engine</Link> ·
-              {" "}<Link href="/admin/lti" className="text-brand-700 hover:underline">LTI</Link> ·
-              {" "}<Link href="/admin/course-filters" className="text-brand-700 hover:underline">Course filter options</Link> ·
-              {" "}<Link href="/admin/security" className="text-brand-700 hover:underline">Security policies</Link> ·
-              {" "}<Link href="/admin/system-status" className="text-brand-700 hover:underline">System status (build SHA)</Link>.
-            </p>
-          </div>
-          <AlertCircle size={13} className="text-subtle shrink-0 mt-1" />
-        </div>
+        </section>
       )}
     </div>
   );
