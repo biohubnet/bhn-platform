@@ -40,11 +40,13 @@ Person = {
   "group": "team" | "partner",
   "tenure": string,                    // Short readable: "6 yrs at RBC", "2 yrs in role"
   "oneLiner": string,                  // 1–2 sentences with personality, history, or current dynamic. Sharp, not bland.
-  "daily":   [string, string, ...],    // 3–4 concrete things they actually do daily
-  "weekly":  [string, string, ...],    // 3–5 weekly rituals, meetings, 1:1s
-  "monthly": [string, string, ...],    // 2–4 monthly cadences (reviews, releases)
-  "quarterly":[string, string, ...],   // 2–4 quarterly bets, OKRs, planning rituals
-  "annual":  [string, string, ...]     // 2–3 annual items (perf review, strategy, budget)
+  "daily":   [string, string, ...],    // 2–3 concrete things they actually do daily
+  "weekly":  [string, string, ...]     // 2–3 weekly rituals, meetings, 1:1s
+  // OMIT monthly / quarterly / annual entirely — they were asked for
+  // historically but never displayed in the scenarios; the validator
+  // accepts empty arrays for all five rhythm fields and the runtime
+  // only reads daily + weekly. Cutting these dropped per-Person
+  // output volume by ~60%.
 }
 
 Scenario = {

@@ -42,19 +42,43 @@ export async function generateSimulation(
     };
   }
 
-  // Try Gemini first when available; fall back to Cloudflare.
+  // Race both providers in parallel. Previously we ran them
+  // sequentially (Gemini, then Cloudflare on failure) which doubled
+  // worst-case latency: a slow Gemini call ate the full 120s timeout
+  // before Cloudflare even started. Whichever returns a valid
+  // payload first now wins; the loser is abandoned. Pays 2x AI cost
+  // per generation (both run to completion or timeout) but halves
+  // the worst-case wait and dramatically reduces "operation aborted
+  // due to timeout" returns when one provider is having a bad day.
+  //
+  // Promise.any resolves with the first FULFILLED promise (any
+  // attempt that returned ok). If every provider rejects or returns
+  // ok:false, we surface a combined error.
   const providers: Array<"gemini" | "cloudflare"> = [];
   if (GEMINI_KEY) providers.push("gemini");
   if (CF_TOKEN) providers.push("cloudflare");
 
-  let lastError = "";
-  for (const provider of providers) {
-    const attempt = await runProvider(provider, jdText, userId ?? null);
-    if (attempt.ok) return attempt;
-    lastError = attempt.error;
-    // Fall through to the next provider.
+  const attempts = providers.map(async (provider) => {
+    const result = await runProvider(provider, jdText, userId ?? null);
+    if (!result.ok) {
+      throw new Error(`${provider}: ${result.error}`);
+    }
+    return result;
+  });
+
+  try {
+    return await Promise.any(attempts);
+  } catch (e) {
+    // AggregateError from Promise.any — every provider failed.
+    const errors = (e as AggregateError).errors ?? [e];
+    const combined = errors
+      .map((err) => (err instanceof Error ? err.message : String(err)))
+      .join(" · ");
+    return {
+      ok: false,
+      error: combined || "All providers failed",
+    };
   }
-  return { ok: false, error: lastError || "All providers failed" };
 }
 
 async function runProvider(
