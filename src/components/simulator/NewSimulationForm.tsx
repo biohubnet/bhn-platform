@@ -93,7 +93,10 @@ export function NewSimulationForm() {
 
   /** Status-aware hint copy. The previous one-size-fits-all "Indeed
    *  URL / auth wall / too short" text was actively misleading on the
-   *  504 path (gateway timeout has nothing to do with the URL). */
+   *  504 path (gateway timeout has nothing to do with the URL) and
+   *  on the quota-exceeded path. */
+  const errorMsg = error ?? "";
+  const isQuotaError = /quota|rate.?limit|exceed/i.test(errorMsg);
   const errorHint = (() => {
     if (errorStatus === 504) {
       return (
@@ -105,6 +108,22 @@ export function NewSimulationForm() {
           attempt warms the model's context. If retries keep
           timing out, paste a shorter version of the JD (the
           essentials of the role, not the full benefits + boilerplate).
+        </>
+      );
+    }
+    if (isQuotaError) {
+      // Surfaces the Gemini-quota / Cloudflare-rate-limit case
+      // cleanly. The error body usually contains a "Retry in Xs"
+      // string from the provider; users should wait that long and
+      // retry. Not a config issue users can act on — that's an
+      // admin concern (upgrade the tier, switch the key).
+      return (
+        <>
+          The AI provider is rate-limited or out of quota. The error
+          message usually includes a retry-after seconds value
+          (e.g. &quot;Please retry in 42s&quot;); wait that long and
+          try again. If it persists, an admin needs to upgrade the
+          API tier or rotate the key.
         </>
       );
     }

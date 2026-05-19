@@ -88,8 +88,14 @@ export function validatePayload(raw: unknown): ValidationResult {
     const scenario = validateScenario(s, validKeys);
     if (scenario) out.scenarios.push(scenario);
   }
-  if (out.scenarios.length < 8)
-    return err(`only ${out.scenarios.length} valid scenarios (need 8+)`);
+  // Floor of 5 scenarios — still ~one decision every 2.4 weeks of
+  // the 12-week quarter, enough to feel like a playthrough rather
+  // than a vignette. Was 8, but the prompt's smaller ask (after
+  // dropping monthly/quarterly/annual rhythm fields) combined with
+  // Cloudflare Llama's tendency to under-deliver on long JDs meant
+  // 8+ was rejecting otherwise-usable simulations.
+  if (out.scenarios.length < 5)
+    return err(`only ${out.scenarios.length} valid scenarios (need 5+)`);
 
   // Briefing — optional, gracefully accepted when present. We don't
   // err out if the model omits it; older payloads (and degraded
