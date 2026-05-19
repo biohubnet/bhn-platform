@@ -322,16 +322,19 @@ function Chip({
 
 type ChipTone = "credit" | "in-person" | "online" | "hybrid" | "on-demand" | "provider" | "default";
 
-/** Muted theme-safe palette — light bg / mid-dark text / ring
- *  outline. Same vocabulary the platform's existing status pills
- *  use (admin queues, equip statuses, etc.). */
+/** Pastel theme-safe palette — soft -100 bg, -700 text, faint
+ *  same-family -200 ring. Bumped from the previous near-white
+ *  -50 bg to -100 so each tone reads as an actual pastel hue
+ *  (mint / sky / lilac / cyan / rose) rather than a barely-
+ *  visible wash. Every -100 bg and -700 text already has dark-
+ *  theme overrides in globals.css for legibility. */
 const CHIP_CLASSES: Record<ChipTone, string> = {
-  credit:      "bg-emerald-50 text-emerald-800 ring-emerald-200",
-  "in-person": "bg-blue-50 text-blue-800 ring-blue-200",
-  online:      "bg-sky-50 text-sky-800 ring-sky-200",
-  hybrid:      "bg-indigo-50 text-indigo-800 ring-indigo-200",
-  "on-demand": "bg-cyan-50 text-cyan-800 ring-cyan-200",
-  provider:    "bg-rose-50 text-rose-800 ring-rose-200",
+  credit:      "bg-emerald-100 text-emerald-700 ring-emerald-200",
+  "in-person": "bg-blue-100 text-blue-700 ring-blue-200",
+  online:      "bg-sky-100 text-sky-700 ring-sky-200",
+  hybrid:      "bg-indigo-100 text-indigo-700 ring-indigo-200",
+  "on-demand": "bg-cyan-100 text-cyan-700 ring-cyan-200",
+  provider:    "bg-rose-100 text-rose-700 ring-rose-200",
   default:     "bg-elevated text-fg-muted ring-line",
 };
 
