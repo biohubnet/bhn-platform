@@ -146,12 +146,21 @@ async function callGemini(systemPrompt: string, userPrompt: string) {
         contents: [{ role: "user", parts: [{ text: userPrompt }] }],
         generationConfig: {
           temperature: 0.85,
-          maxOutputTokens: 8192,
+          // 6144 is comfortably above the ~3.5–5 k tokens a validated
+          // payload takes (12 reports + 6 partners + 17 scenarios with
+          // 3–4 choices each), but smaller than the old 8192 cap which
+          // pushed Gemini to spend extra time on padding tokens before
+          // hitting the JSON terminator. Trimming this is the single
+          // biggest lever for staying under the Vercel function budget.
+          maxOutputTokens: 6144,
           // Forcing JSON output dramatically cuts down on "Sure! Here's…" preambles.
           responseMimeType: "application/json",
         },
       }),
-      signal: AbortSignal.timeout(90_000),
+      // 75 s leaves a 5 s gateway-overhead buffer below the 80 s mark
+      // a 300 s route maxDuration comfortably accommodates plus a
+      // fallback to Cloudflare if Gemini bails.
+      signal: AbortSignal.timeout(75_000),
     },
   );
   const j = (await res.json()) as {
@@ -189,9 +198,11 @@ async function callCloudflare(systemPrompt: string, userPrompt: string) {
           { role: "user", content: userPrompt },
         ],
         temperature: 0.85,
-        max_tokens: 8192,
+        // Match Gemini's reduced cap so both providers fit inside the
+        // route's 300 s maxDuration with room for a second attempt.
+        max_tokens: 6144,
       }),
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(75_000),
     },
   );
   const j = (await res.json()) as {

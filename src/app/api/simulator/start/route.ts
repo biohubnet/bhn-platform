@@ -34,7 +34,17 @@ import { generateSimulation } from "@/lib/simulator/generator";
 import { initialState } from "@/lib/simulator/engine";
 import { PROMPT_VERSION, type SimulationPayload } from "@/lib/simulator/types";
 
-export const maxDuration = 60; // seconds — generation can take up to ~30s
+/** Vercel function timeout. The AI generation (Gemini Flash, with a
+ *  Cloudflare Llama-70B fallback) can take 30–80 s on a fresh long
+ *  JD — the previous 60 s budget was clipping real runs at the
+ *  gateway and returning a 504 with no JSON body, which the client
+ *  rendered as the generic "Generation failed" message.
+ *
+ *  Set to Vercel Pro's max (300 s); plans below Pro silently cap
+ *  this at their own ceiling (Hobby = 60 s), in which case bumping
+ *  the export doesn't help and the workaround is to retry, paste
+ *  a shorter JD, or upgrade the plan. */
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   const session = await requireSession().catch(() => null);

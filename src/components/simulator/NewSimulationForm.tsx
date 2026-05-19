@@ -34,6 +34,9 @@ export function NewSimulationForm() {
   const [submitting, setSubmitting] = useState(false);
   const [statusIdx, setStatusIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // Captured separately from `error` so the hint copy can branch on
+  // status (504 timeout vs 400 extractor error vs 502 model error).
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
 
   const detectedAsUrl = looksLikeUrl(input);
   const tooShortForJd = !detectedAsUrl && input.trim().length > 0 && input.trim().length < 300;
@@ -42,6 +45,7 @@ export function NewSimulationForm() {
     e.preventDefault();
     if (!input.trim() || submitting) return;
     setError(null);
+    setErrorStatus(null);
     setSubmitting(true);
 
     // Rotate status messages every 3.5s so the trainee can see progress.
@@ -75,6 +79,7 @@ export function NewSimulationForm() {
         const reason =
           data.error ??
           `Generation failed (HTTP ${res.status} — server didn't return a JSON error).`;
+        setErrorStatus(res.status);
         throw new Error(reason);
       }
       router.push(`/simulator/${data.attemptId}`);
@@ -85,6 +90,41 @@ export function NewSimulationForm() {
       clearInterval(interval);
     }
   }
+
+  /** Status-aware hint copy. The previous one-size-fits-all "Indeed
+   *  URL / auth wall / too short" text was actively misleading on the
+   *  504 path (gateway timeout has nothing to do with the URL). */
+  const errorHint = (() => {
+    if (errorStatus === 504) {
+      return (
+        <>
+          The server hit its time limit before the AI returned. Try
+          again — generation typically completes in 15–25 s but can
+          spike to 60+ s on long postings, and a retry often lands
+          within budget because the partial work from the previous
+          attempt warms the model's context. If retries keep
+          timing out, paste a shorter version of the JD (the
+          essentials of the role, not the full benefits + boilerplate).
+        </>
+      );
+    }
+    if (errorStatus === 502) {
+      return (
+        <>
+          The AI returned a response we couldn&apos;t parse. Usually
+          transient — try again. If it keeps failing on the same input,
+          paste a different posting to confirm the model is reachable.
+        </>
+      );
+    }
+    return (
+      <>
+        Common causes: an Indeed / LinkedIn URL that requires login,
+        a search-results URL (not a specific posting), or a JD body
+        shorter than 300 characters. Try pasting the JD text directly.
+      </>
+    );
+  })();
 
   return (
     <Card className="p-6 md:p-8">
@@ -137,11 +177,7 @@ export function NewSimulationForm() {
           <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/30 dark:bg-rose-900/10 dark:text-rose-200">
             <p className="font-semibold">Couldn&apos;t generate the simulation</p>
             <p className="mt-0.5 leading-snug">{error}</p>
-            <p className="mt-2 text-xs opacity-80">
-              Common causes: an Indeed / LinkedIn URL that requires login,
-              a search-results URL (not a specific posting), or a JD body
-              shorter than 300 characters. Try pasting the JD text directly.
-            </p>
+            <p className="mt-2 text-xs opacity-80">{errorHint}</p>
           </div>
         )}
 
