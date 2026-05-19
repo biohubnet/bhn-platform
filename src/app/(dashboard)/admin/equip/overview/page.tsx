@@ -32,7 +32,7 @@ import { redirect } from "next/navigation";
 import {
   ArrowLeft, ArrowRight, Rocket, Beaker, Activity, AlertTriangle,
   Clock, DollarSign, FileText, ListChecks, Users2, CalendarClock,
-  Sparkles, ChevronRight, TrendingUp,
+  Sparkles, ChevronRight,
 } from "lucide-react";
 import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
@@ -183,7 +183,6 @@ export default async function EquipOverviewPage() {
         <DSPageHeader
           eyebrow="Equip · program overview"
           title="How the funding pillar is doing"
-          icon={<TrendingUp size={20} />}
           description={
             <>
               Aggregate health of both Equip streams. Stat tiles cover open work, recent decisions, and YTD funding.

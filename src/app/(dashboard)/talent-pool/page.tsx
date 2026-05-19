@@ -68,7 +68,6 @@ export default async function TalentPoolPage({
     <div className="space-y-6">
       <DSPageHeader
         eyebrow={`${role === "employer" ? "Employer" : "Admin"} · Experience`}
-        icon={<Users size={20} />}
         title={`Talent pool (${submissions.length})`}
         description="Approved talent-application submissions, ordered by most recent. Click any entry to view the full application and leave private comments (visible to admins + employers only — never to the applicant)."
       />

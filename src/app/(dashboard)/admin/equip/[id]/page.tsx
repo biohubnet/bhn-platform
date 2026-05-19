@@ -82,7 +82,6 @@ export default async function AdminEquipReviewPage({
       <DSPageHeader
         eyebrow={`${stream.name} · ${status.label.toLowerCase()}`}
         title={`Review: ${app.user.name ?? app.user.email}`}
-        icon={<FileText size={22} className="text-brand-600" />}
         description={
           <>
             Submitted {app.submittedAt ? new Date(app.submittedAt).toLocaleString() : "—"}.

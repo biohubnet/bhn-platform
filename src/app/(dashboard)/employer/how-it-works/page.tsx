@@ -1,5 +1,5 @@
 import {
-  Compass, Building2, FilePlus, Inbox, Users, Briefcase,
+  Building2, FilePlus, Inbox, Users, Briefcase,
   Calendar, ArrowDown, ArrowRight, CheckCircle2, Send,
   ClipboardList, Activity, Sparkles,
 } from "lucide-react";
@@ -33,7 +33,6 @@ export default function EmployerHowItWorksPage() {
     <div>
       <DSPageHeader
         eyebrow="Hiring guide"
-        icon={<Compass size={20} />}
         title="Hiring on BHN — how it works"
         description="Profile your company once, post a role with one paste, review AI-matched applicants with the full materials inline, run the pipeline through to an e-signed offer. Hover any highlighted name in this guide to find the matching control in your sidebar."
       />

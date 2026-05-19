@@ -11,7 +11,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Rocket } from "lucide-react";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { EligibilityWizard } from "@/components/equip/EligibilityWizard";
 import { INSTITUTIONS } from "@/lib/equip/institutions";
@@ -61,7 +60,6 @@ export default async function EquipNewApplicationPage({
       <DSPageHeader
         eyebrow="Equip · 3-question wizard"
         title="Find your fit"
-        icon={<Rocket size={22} className="text-brand-600" />}
         description="60 seconds. We'll route you to the right stream and pre-fill everything we already know about you."
       />
       <EligibilityWizard

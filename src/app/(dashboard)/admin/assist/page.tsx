@@ -22,7 +22,7 @@
  * Auth: admin or superadmin only.
  */
 import Link from "next/link";
-import { ArrowLeft, Activity, Sparkles, AlertTriangle, Users, Clock, Share2, Pipette } from "lucide-react";
+import { ArrowLeft, Activity, Sparkles, AlertTriangle, Users, Clock, Share2 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -157,7 +157,6 @@ export default async function AdminAssistDashboardPage() {
       <DSPageHeader
         eyebrow="Admin · platform"
         title="AutoPipette"
-        icon={<Pipette size={22} className="text-brand-600" />}
         description={
           <>
             Health, helpfulness, and findings for AutoPipette — BHN&apos;s
