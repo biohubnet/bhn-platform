@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight, Check, CheckCircle2, Coins, GraduationCap, Layers, Briefcase,
-  FlaskConical,
+  FlaskConical, Rocket,
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
 import {
@@ -346,18 +346,17 @@ function LoginPageInner() {
               <Bullet icon={GraduationCap}>Industry-led training across biomanufacturing, regulatory, and analytical tracks</Bullet>
               <Bullet icon={Layers}>Pathways stack courses into focused career tracks (MSL, entrepreneurship, more)</Bullet>
               <Bullet icon={Briefcase}>Internship + full-time matching with vetted employer partners</Bullet>
+              <Bullet icon={Rocket}>EQUIP funding — VentureConnect + VentureLift micro-grants for innovators, up to $25K</Bullet>
             </ul>
 
             {/* Bottom-anchored CTA — gradient-filled, same
                 treatment as the Sign-in button across the divider.
-                Caption sits ABOVE the button so the button itself
-                lands at the very bottom of the column and lines up
-                with the Sign-in submit (which is the last element
-                of its own column). */}
+                The button is the LAST element in the column so it
+                lands at the very bottom and lines up exactly with
+                the Sign-in submit across the hairline divider
+                (both columns: `flex flex-col` + `mt-auto pt-8` on
+                the CTA wrapper). */}
             <div className="mt-auto pt-8">
-              <p className="text-[11px] text-white/40 mb-3 text-center">
-                About a minute. No payment info needed.
-              </p>
               <Link
                 href="/register"
                 className="group relative w-full inline-flex items-center justify-center gap-3 text-white font-bold tracking-tight py-3.5 text-base overflow-hidden transition-transform hover:-translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
@@ -542,7 +541,14 @@ function LoginPageInner() {
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-8">
-          By signing in you agree to our terms of service.
+          By signing in you agree to our{" "}
+          <Link
+            href="/terms"
+            className="underline decoration-white/30 underline-offset-2 hover:decoration-white/70 hover:text-white transition-colors"
+          >
+            Terms of Service
+          </Link>
+          .
         </p>
       </div>
     </div>
