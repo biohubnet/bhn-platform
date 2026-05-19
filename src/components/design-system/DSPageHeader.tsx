@@ -32,7 +32,6 @@ import type { ReactNode } from "react";
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
 import { DSEyebrow } from "./DSEyebrow";
 import { LayoutBannersSlot } from "@/components/layout/LayoutBanners";
-import { StylizedMark } from "@/components/branding/StylizedMark";
 
 interface Props {
   /** Small uppercase label above the title. Accepts a ReactNode so
@@ -170,12 +169,8 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
                   (4) visible reeded / fluted glass ribs (the
                       "fractal glass" effect — vertical lines at
                       strong contrast so the texture really reads)
-                  (5) StylizedMark backdrop peeking from the bottom-
-                      right corner — pulled mostly off-screen and
-                      blend-screened in so it lives in the dark
-                      periphery, never behind the title
-                  (6) edge vignette so the stage feels theatrical
-                  (7) fine SVG noise for editorial grain
+                  (5) edge vignette so the stage feels theatrical
+                  (6) fine SVG noise for editorial grain
                 NO floating glyphs / draggables — strictly static. */}
 
           {/* (1) Deep radial dome from theme hero-mesh-1 — gives the
@@ -231,22 +226,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
             }}
           />
 
-          {/* (5) StylizedMark backdrop — the half-sketch / half-
-                  coloured BHN petal peeking from the bottom-right
-                  corner, pulled off-screen so it lives in the dark
-                  periphery and never sits behind the title. Hidden
-                  below `lg` so smaller viewports keep a clean stage. */}
-          <div
-            className="hidden lg:block absolute -bottom-24 -right-24 opacity-[0.28] mix-blend-screen"
-            style={{
-              filter:
-                "drop-shadow(0 0 32px rgba(56,189,248,0.3)) drop-shadow(0 0 12px rgba(63,168,106,0.22))",
-            }}
-          >
-            <StylizedMark size={260} />
-          </div>
-
-          {/* (6) Edge vignette — gentle darkening at corners so the
+          {/* (5) Edge vignette — gentle darkening at corners so the
                   stage feels framed. */}
           <div
             className="absolute inset-0"
@@ -256,7 +236,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
             }}
           />
 
-          {/* (7) Fine SVG noise grain — keeps the gradients from
+          {/* (6) Fine SVG noise grain — keeps the gradients from
                   banding, gives editorial print feel. */}
           <svg
             className="absolute inset-0 w-full h-full opacity-[0.14] mix-blend-overlay"
