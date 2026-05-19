@@ -8,6 +8,17 @@ import { Badge } from "@/components/ui/Badge";
 import { PathwayEnrollmentDecideButtons } from "@/components/admin/PathwayEnrollmentDecideButtons";
 import { DemoPhantomTray, type DemoScenario } from "@/components/admin/DemoPhantomTray";
 
+/** Form slugs that admins reach for on the pathway-enrollment surface
+ *  rather than the per-form admin page. These render alongside real
+ *  PathwayEnrollment rows so an admin reviewing "who's signed up for
+ *  what" doesn't have to bounce between /admin/pathway-enrollments
+ *  and /admin/forms/[slug] to find them. Today this is just the OBIO
+ *  Entrepreneurship Bootcamp — it's modelled as an `EventFormSubmission`
+ *  (the form lives at /forms/obio-bootcamp) rather than a Pathway, but
+ *  admins think of it as a pathway-equivalent commitment, so it surfaces
+ *  here too. */
+const PATHWAY_LIKE_FORM_SLUGS = ["obio-bootcamp"] as const;
+
 interface Row {
   id: string;
   pathwayId: string;
@@ -19,6 +30,14 @@ interface Row {
   reviewedAt: Date | null;
   pathway: { id: string; title: string; capacity: number | null };
   user: { id: string; name: string | null; email: string; organization: string | null; jobTitle: string | null };
+}
+
+interface FormSubmissionRow {
+  id: string;
+  formSlug: string;
+  formTitle: string;
+  submittedAt: Date;
+  user: { name: string | null; email: string; organization: string | null; jobTitle: string | null };
 }
 
 export default async function AdminPathwayEnrollmentsPage({ searchParams }: { searchParams: Promise<{ pathwayId?: string }> }) {
@@ -73,6 +92,54 @@ export default async function AdminPathwayEnrollmentsPage({ searchParams }: { se
     orderBy: { title: "asc" },
   });
 
+  // Form-based "pathway-like" registrations. Skipped entirely when a
+  // specific pathway is selected via the filter pill — those forms
+  // aren't tied to a Pathway entity, so filtering to a specific
+  // pathwayId would always render the section empty.
+  let formSubmissionRows: FormSubmissionRow[] = [];
+  if (!sp.pathwayId) {
+    const eventForms = await prisma.eventForm.findMany({
+      where: { slug: { in: [...PATHWAY_LIKE_FORM_SLUGS] } },
+      select: { id: true, slug: true, title: true },
+    });
+    if (eventForms.length > 0) {
+      const formMeta = new Map(eventForms.map((f) => [f.id, { slug: f.slug, title: f.title }]));
+      const subs = await prisma.eventFormSubmission.findMany({
+        where: { formId: { in: eventForms.map((f) => f.id) } },
+        orderBy: { createdAt: "desc" },
+        take: 200,
+        select: {
+          id: true,
+          formId: true,
+          createdAt: true,
+          email: true,
+          userId: true,
+        },
+      });
+      const subUserIds = subs.map((s) => s.userId).filter((id): id is string => !!id);
+      const subUsers = subUserIds.length > 0
+        ? await prisma.user.findMany({
+            where: { id: { in: subUserIds } },
+            select: { id: true, name: true, email: true, organization: true, jobTitle: true },
+          })
+        : [];
+      const subUserMap = new Map(subUsers.map((u) => [u.id, u]));
+      formSubmissionRows = subs.map((s) => {
+        const u = s.userId ? subUserMap.get(s.userId) : undefined;
+        const meta = formMeta.get(s.formId) ?? { slug: "?", title: "?" };
+        return {
+          id: s.id,
+          formSlug: meta.slug,
+          formTitle: meta.title,
+          submittedAt: s.createdAt,
+          user: u
+            ? { name: u.name, email: u.email, organization: u.organization, jobTitle: u.jobTitle }
+            : { name: null, email: s.email ?? "—", organization: null, jobTitle: null },
+        };
+      });
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -109,6 +176,16 @@ export default async function AdminPathwayEnrollmentsPage({ searchParams }: { se
         ))}
       </div>
 
+      {/* Form-based registrations — surfaces submissions to
+          PATHWAY_LIKE_FORM_SLUGS (currently just OBIO bootcamp).
+          Sits above the PathwayEnrollment sections because admins
+          asked for it after losing track of where bootcamp
+          registrations were landing — they aren't PathwayEnrollment
+          rows but they ARE pathway-equivalent commitments from the
+          admin's point of view. Hidden when the filter pill narrows
+          to a specific pathway. */}
+      <FormSubmissionsSection rows={formSubmissionRows} />
+
       {/* Sections */}
       <Section title="Pending review"      tone="amber"   rows={pendingRows}   approvedMap={approvedMap} showQueuePosition={false} />
       <Section title="Waitlist"            tone="warning" rows={waitlistRows}  approvedMap={approvedMap} showQueuePosition />
@@ -131,6 +208,73 @@ export default async function AdminPathwayEnrollmentsPage({ searchParams }: { se
         ]}
         contextLabel="pathway requests"
       />
+    </div>
+  );
+}
+
+/** Form-based registrations (e.g. OBIO bootcamp). Same Card shell
+ *  as the PathwayEnrollment sections so the two read as one
+ *  surface; columns trimmed for the simpler data model
+ *  (no Reason/Reviewer note, no per-row decide buttons — those
+ *  live on `/admin/forms/[slug]`, which the View action links to). */
+function FormSubmissionsSection({ rows }: { rows: FormSubmissionRow[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="font-semibold text-fg">Form-based registrations</h2>
+        <Badge tone="brand">{rows.length}</Badge>
+        <span className="text-[11px] text-subtle ml-1">
+          Not PathwayEnrollment rows — these are EventFormSubmissions for forms admins treat as pathway-equivalent.
+        </span>
+      </div>
+      <Card className="overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-line text-left text-xs text-muted uppercase tracking-wide">
+              <th className="px-5 py-3">Trainee</th>
+              <th className="px-5 py-3">Form</th>
+              <th className="px-5 py-3">Submitted</th>
+              <th className="px-5 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {rows.map((r) => (
+              <tr key={r.id} className="hover:bg-elevated/50 align-top">
+                <td className="px-5 py-3">
+                  <p className="font-medium text-fg">{r.user.name ?? "—"}</p>
+                  <p className="text-xs text-subtle">{r.user.email}</p>
+                  {(r.user.organization || r.user.jobTitle) && (
+                    <p className="text-xs text-subtle mt-0.5">
+                      {[r.user.jobTitle, r.user.organization].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                </td>
+                <td className="px-5 py-3">
+                  <Link
+                    href={`/admin/forms/${r.formSlug}`}
+                    className="text-fg hover:text-brand-700 font-medium truncate inline-block max-w-[260px]"
+                  >
+                    {r.formTitle}
+                  </Link>
+                  <p className="text-xs text-subtle">/forms/{r.formSlug}</p>
+                </td>
+                <td className="px-5 py-3 text-subtle text-xs whitespace-nowrap">
+                  {new Date(r.submittedAt).toLocaleDateString()}
+                </td>
+                <td className="px-5 py-3">
+                  <Link
+                    href={`/admin/forms/${r.formSlug}`}
+                    className="text-xs font-medium text-brand-700 hover:underline"
+                  >
+                    View submissions →
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
     </div>
   );
 }
