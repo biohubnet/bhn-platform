@@ -297,8 +297,8 @@ function LoginPageInner() {
           </span>
         </h1>
         <p className="mt-4 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-          BioHubNet is amplifying. New pathways, new partner labs, the EQUIP funding
-          pillar going live. Sign in to watch the cohort grow — or pull up a pipette
+          BioHubNet is amplifying. New pathways, fresh internship rounds, and a cohort
+          that keeps growing. Sign in to watch the lights come on — or pull up a pipette
           and join the next round.
         </p>
       </div>
