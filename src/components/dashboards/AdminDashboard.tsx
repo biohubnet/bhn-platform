@@ -303,8 +303,15 @@ export async function AdminDashboard({
         />
 
         <div className="divide-y divide-line/70">
+          {/* Row layout v4.2 — re-paired so the two ALWAYS-present
+              sections share a row, and the conditional sections
+              cluster together. In the common steady-state admin
+              (post-setup, no credits expiring, non-superadmin),
+              Row 3 + Row 4's right cell don't render at all,
+              eliminating most of the page's blank space. */}
 
-          {/* Row 1: At-a-glance (LEFT) | Setup checklist (RIGHT) */}
+          {/* Row 1: At-a-glance (LEFT, always) | Daily reach (RIGHT, always)
+                — both content-heavy grids, evenly paired. */}
           <MidlineRow
             left={(
               <div>
@@ -332,7 +339,72 @@ export async function AdminDashboard({
                 </div>
               </div>
             )}
-            right={showChecklist ? (
+            right={(
+              <div>
+                <SectionEyebrow icon={Zap}>Daily reach</SectionEyebrow>
+                <SectionAccent />
+                <p className="text-[11px] text-muted mt-2 leading-snug">
+                  Surfaces an admin opens most. Pinned here so they&apos;re always one click away.
+                </p>
+                <QuickActionsList isSuperAdmin={isSuperAdmin} pending={totalPending} />
+              </div>
+            )}
+          />
+
+          {/* Row 2: Approval queues (LEFT, always) | Live pulse (RIGHT, always)
+                — both lists, both always-present. */}
+          <MidlineRow
+            left={(
+              <div>
+                {totalPending > 0 ? (
+                  <>
+                    <SectionEyebrow icon={ClipboardList} tone="amber">
+                      Approval queues · {totalPending} pending
+                    </SectionEyebrow>
+                    <SectionAccent tone="amber" />
+                    <p className="text-[11px] text-muted mt-2">Tap any row to triage.</p>
+                    <div className="divide-y divide-line/50 mt-3">
+                      <QueueRow icon={Coins}   tone="amber"  label="Credit applications"  count={pendingCreditApps}   href="/admin/credit-applications" />
+                      <QueueRow icon={UserCog} tone="violet" label="Role-change requests" count={pendingRoleRequests} href="/admin/role-requests" />
+                      <QueueRow icon={Layers}  tone="brand"  label="Pathway enrolments"   count={pendingPathwayApps}  href="/admin/pathway-enrollments" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <SectionEyebrow icon={CheckCircle2} tone="emerald">
+                      Approval queues — clear
+                    </SectionEyebrow>
+                    <SectionAccent tone="emerald" />
+                    <p className="text-[11px] text-muted mt-2">Credit · Role · Pathway · 0 pending</p>
+                  </>
+                )}
+              </div>
+            )}
+            right={(
+              <div>
+                <SectionEyebrow icon={Activity}>Live pulse</SectionEyebrow>
+                <SectionAccent />
+                <p className="text-[11px] text-muted mt-2">Beats from the last day / week.</p>
+                <ul className="divide-y divide-line/50 mt-3">
+                  <PulseRow icon={GraduationCap} label="Enrolments today"   value={new24hEnrollments} help="Last 24 hours" />
+                  <PulseRow icon={Sparkles}      label="New sign-ups (7d)"  value={new7dUsers}        help="Real accounts only" />
+                  {isSuperAdmin ? (
+                    <PulseRow icon={Cpu}   label="AI calls (7d)"     value={aiCalls7d} help="Cloudflare + Gemini combined" href="/admin/analytics" />
+                  ) : (
+                    <PulseRow icon={Ghost} label="Phantom users"     value={phantomCount} help="Throwaway test accounts"     href="/admin/phantom-users" />
+                  )}
+                </ul>
+              </div>
+            )}
+          />
+
+          {/* Row 3: Setup checklist (LEFT, conditional) | Credit expiry (RIGHT, conditional)
+                — both conditional sections share a row. When BOTH
+                are absent (common steady-state admin), the entire
+                row is skipped by MidlineRow. When only ONE is
+                present, MidlineRow renders it full-width. */}
+          <MidlineRow
+            left={showChecklist ? (
               <div>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
@@ -357,53 +429,7 @@ export async function AdminDashboard({
                 <SetupColumn checklist={checklist} />
               </div>
             ) : null}
-          />
-
-          {/* Row 2: Daily reach (LEFT) | Approval queues (RIGHT) */}
-          <MidlineRow
-            left={(
-              <div>
-                <SectionEyebrow icon={Zap}>Daily reach</SectionEyebrow>
-                <SectionAccent />
-                <p className="text-[11px] text-muted mt-2 leading-snug">
-                  Surfaces an admin opens most. Pinned here so they&apos;re always one click away.
-                </p>
-                <QuickActionsList isSuperAdmin={isSuperAdmin} pending={totalPending} />
-              </div>
-            )}
-            right={(
-              <div>
-                {totalPending > 0 ? (
-                  <>
-                    <SectionEyebrow icon={ClipboardList} tone="amber">
-                      Approval queues · {totalPending} pending
-                    </SectionEyebrow>
-                    <SectionAccent tone="amber" />
-                    <p className="text-[11px] text-muted mt-2">Tap any row to triage.</p>
-                    {/* `<div>` not `<ul>` — QueueRow returns a
-                        bare `<Link>`, not an `<li>`. */}
-                    <div className="divide-y divide-line/50 mt-3">
-                      <QueueRow icon={Coins}   tone="amber"  label="Credit applications"  count={pendingCreditApps}   href="/admin/credit-applications" />
-                      <QueueRow icon={UserCog} tone="violet" label="Role-change requests" count={pendingRoleRequests} href="/admin/role-requests" />
-                      <QueueRow icon={Layers}  tone="brand"  label="Pathway enrolments"   count={pendingPathwayApps}  href="/admin/pathway-enrollments" />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <SectionEyebrow icon={CheckCircle2} tone="emerald">
-                      Approval queues — clear
-                    </SectionEyebrow>
-                    <SectionAccent tone="emerald" />
-                    <p className="text-[11px] text-muted mt-2">Credit · Role · Pathway · 0 pending</p>
-                  </>
-                )}
-              </div>
-            )}
-          />
-
-          {/* Row 3: Credit expiry (LEFT, conditional) | Live pulse (RIGHT) */}
-          <MidlineRow
-            left={anyExpiry ? (
+            right={anyExpiry ? (
               <div>
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
@@ -424,8 +450,6 @@ export async function AdminDashboard({
                 <p className="text-[11px] text-muted mt-2 leading-snug max-w-md">
                   Daily sweep + 90/30/7-day warnings handle the runs automatically. This strip is the live look-ahead.
                 </p>
-                {/* `<div>` not `<ul>` — ExpiryColumn returns a
-                    `<div>`, not an `<li>`. */}
                 <div className="divide-y divide-line/50 mt-3">
                   <ExpiryColumn tone="rose"  days={7}  credits={expiring7.credits}  users={expiring7.users} />
                   <ExpiryColumn tone="amber" days={30} credits={expiring30.credits} users={expiring30.users} />
@@ -433,25 +457,11 @@ export async function AdminDashboard({
                 </div>
               </div>
             ) : null}
-            right={(
-              <div>
-                <SectionEyebrow icon={Activity}>Live pulse</SectionEyebrow>
-                <SectionAccent />
-                <p className="text-[11px] text-muted mt-2">Beats from the last day / week.</p>
-                <ul className="divide-y divide-line/50 mt-3">
-                  <PulseRow icon={GraduationCap} label="Enrolments today"   value={new24hEnrollments} help="Last 24 hours" />
-                  <PulseRow icon={Sparkles}      label="New sign-ups (7d)"  value={new7dUsers}        help="Real accounts only" />
-                  {isSuperAdmin ? (
-                    <PulseRow icon={Cpu}   label="AI calls (7d)"     value={aiCalls7d} help="Cloudflare + Gemini combined" href="/admin/analytics" />
-                  ) : (
-                    <PulseRow icon={Ghost} label="Phantom users"     value={phantomCount} help="Throwaway test accounts"     href="/admin/phantom-users" />
-                  )}
-                </ul>
-              </div>
-            )}
           />
 
-          {/* Row 4: Recent activity (LEFT) | Superadmin shortcuts (RIGHT, conditional) */}
+          {/* Row 4: Recent activity (LEFT, always) | Superadmin shortcuts (RIGHT, conditional)
+                — Recent always shows; if non-superadmin the row
+                renders Recent full-width via MidlineRow. */}
           <MidlineRow
             left={(
               <div>
@@ -515,16 +525,31 @@ export async function AdminDashboard({
 
 /** One row of the midline grid. Two columns separated by the
  *  continuous vertical midline (drawn by the parent as an absolutely-
- *  positioned hairline). Either side can be null — the row still
- *  renders with the populated side aligned correctly, the empty side
- *  becomes breathing space. On mobile (< lg) the grid collapses to
- *  a single column and the cells stack vertically. */
+ *  positioned hairline). Either side can be null:
+ *
+ *   • If BOTH sides are null, render nothing (skip the row entirely).
+ *   • If ONE side is null, span the full row width with the populated
+ *     side. The page-wide midline still bisects the row visually
+ *     (continuous element drawn by the parent), but the content fills
+ *     both halves so there's no half-page blank beside a conditional
+ *     section that didn't render (setup checklist, credit expiry,
+ *     superadmin shortcuts).
+ *   • If BOTH sides are present, standard 2-col grid with `items-start`
+ *     so cells use their natural heights — the shorter side ends at
+ *     its content edge instead of being stretched to match the taller.
+ *
+ *  Section padding tightened from py-7 → py-5 to claw back another
+ *  16 px per row × 4 rows of vertical blank space. On mobile (< lg)
+ *  the grid still collapses to a single column.
+ */
 function MidlineRow({ left, right }: { left: React.ReactNode; right: React.ReactNode }) {
   if (!left && !right) return null;
+  if (!left) return <div className="py-5">{right}</div>;
+  if (!right) return <div className="py-5">{left}</div>;
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2">
-      <div className="py-7 lg:pr-8">{left}</div>
-      <div className="py-7 lg:pl-8 mt-7 lg:mt-0 border-t border-line/70 lg:border-t-0">{right}</div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 items-start">
+      <div className="py-5 lg:pr-8">{left}</div>
+      <div className="py-5 lg:pl-8 mt-5 lg:mt-0 border-t border-line/70 lg:border-t-0">{right}</div>
     </div>
   );
 }
