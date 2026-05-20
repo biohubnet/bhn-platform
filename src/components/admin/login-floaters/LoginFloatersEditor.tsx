@@ -184,15 +184,16 @@ export function LoginFloatersEditor({
           sections. Click any inactive card to add. The dark backdrop
           + thin hairline categorisation mirrors the showcase's
           editorial mood. */}
-      {/* The gallery card uses overflow-visible (not the default
-          overflow-hidden) so the 2× hover scale on a card can spill
-          past the gallery's bounds without being clipped. The
-          rounded-corner clipping moves to the inner dark body via
-          its own border-radius. */}
-      <Card className="!overflow-visible p-0">
+      {/* The gallery card uses overflow-hidden so a card that pops
+          to 1.5× on hover stays CLIPPED at the gallery's dark frame
+          edge instead of leaking out into the surrounding dashboard
+          chrome. Edge cards get clipped at the frame, which reads
+          as the popup being "framed by" the gallery rather than
+          escaping it. */}
+      <Card className="overflow-hidden p-0">
         <GalleryHeader count={floaters.length} />
         <div
-          className="relative px-5 sm:px-8 py-8 sm:py-10 rounded-b-[var(--radius-lg)] overflow-visible"
+          className="relative px-5 sm:px-8 py-8 sm:py-10"
           style={{
             background: "radial-gradient(900px 600px at 80% -10%, rgba(72,188,167,0.10), transparent 60%), radial-gradient(700px 500px at -10% 110%, rgba(56,140,200,0.12), transparent 60%), linear-gradient(180deg, #04080f 0%, #0a1623 100%)",
           }}
@@ -233,16 +234,17 @@ export function LoginFloatersEditor({
                       }}
                       disabled={atCap}
                       className={
-                        // The hover lift uses a dramatic 2× scale so
-                        // the card POPS to twice its grid size and
-                        // overlaps its neighbours — admins can read
-                        // the bigger floater preview as they swipe
-                        // through the gallery. z-30 + the gallery
-                        // container's overflow-visible keep the
-                        // lifted card on top instead of clipped at
-                        // the gallery edge.
+                        // The hover lift uses a 1.5× scale so the
+                        // card POPS to one-and-a-half its grid size
+                        // and overlaps its neighbours — admins can
+                        // read the bigger floater preview as they
+                        // swipe through the gallery. The gallery
+                        // wrapper above keeps `overflow-hidden` so a
+                        // popped card is CLIPPED at the gallery's
+                        // dark frame edge instead of spilling out
+                        // into the rest of the dashboard.
                         "group relative text-left rounded-2xl border p-3.5 transition-all duration-200 backdrop-blur-md " +
-                        "hover:z-30 hover:scale-[2] hover:shadow-[0_28px_60px_rgba(0,0,0,0.70)] " +
+                        "hover:z-30 hover:scale-[1.5] hover:shadow-[0_22px_50px_rgba(0,0,0,0.65)] " +
                         (inUse
                           ? // Active state. Default = emerald wash; on
                             // hover, swap to a rose wash to signal the
