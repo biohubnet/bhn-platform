@@ -36,7 +36,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Trash2, RotateCcw, Save, Loader2, AlertCircle, CheckCircle2, Check,
+  Trash2, RotateCcw, Save, Loader2, AlertCircle, CheckCircle2, Check, X,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { FLOATER_REGISTRY, FLOATER_LIST, type FloaterDef } from "@/lib/login-floaters/registry";
@@ -67,6 +67,13 @@ export function LoginFloatersEditor({
   }
   function removeAt(idx: number) {
     setFloaters((cur) => cur.filter((_, i) => i !== idx));
+  }
+  /** Remove EVERY instance of the given registry id. Used by the
+   *  gallery's click-to-toggle so clicking an active card on the
+   *  gallery undoes the add (and doesn't care which row position
+   *  it lives at). */
+  function removeAllOfId(id: string) {
+    setFloaters((cur) => cur.filter((f) => f.id !== id));
   }
   function addFloater(reg: FloaterDef) {
     if (floaters.length >= 12) return;
@@ -199,34 +206,75 @@ export function LoginFloatersEditor({
               <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
                 {entries.map((reg) => {
                   const inUse = usedIds.has(reg.id);
+                  // ATCAP applies only when adding — active cards
+                  // are always clickable (to remove).
                   const atCap = floaters.length >= 12 && !inUse;
+                  // Tint the colour-class chip's swatch the same hue
+                  // the floater itself will inherit. We peel the
+                  // tailwind colour family + step from the class
+                  // string and use that to pick a small dot colour;
+                  // keeps the swatch honest without hard-coding it.
+                  const colorSwatch = pickSwatch(reg.defaultColorClass);
                   return (
                     <button
                       key={reg.id}
                       type="button"
-                      onClick={() => !inUse && !atCap && addFloater(reg)}
-                      disabled={inUse || atCap}
+                      onClick={() => {
+                        if (inUse) {
+                          removeAllOfId(reg.id);
+                        } else if (!atCap) {
+                          addFloater(reg);
+                        }
+                      }}
+                      disabled={atCap}
                       className={
-                        "group relative text-left rounded-2xl border p-3.5 transition-all backdrop-blur-md " +
+                        // The hover lift uses `scale + translate` so
+                        // the card "pops up" above its neighbours —
+                        // z-20 ensures the lifted card overlaps
+                        // siblings instead of being clipped by them.
+                        // overflow-visible on the outer is critical
+                        // for the same reason.
+                        "group relative text-left rounded-2xl border p-3.5 transition-all duration-200 backdrop-blur-md " +
+                        "hover:z-20 hover:scale-[1.06] hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(0,0,0,0.55)] " +
                         (inUse
-                          ? "border-emerald-400/30 bg-emerald-400/[0.06] cursor-not-allowed"
+                          ? // Active state. Default = emerald wash; on
+                            // hover, swap to a rose wash to signal the
+                            // pending destructive action.
+                            "border-emerald-400/35 bg-emerald-400/[0.07] cursor-pointer hover:border-rose-400/50 hover:bg-rose-400/[0.10]"
                           : atCap
                             ? "border-white/10 bg-white/[0.02] opacity-40 cursor-not-allowed"
-                            : "border-white/10 bg-white/[0.04] hover:border-white/30 hover:bg-white/[0.07] hover:-translate-y-px")
+                            : "border-white/10 bg-white/[0.04] hover:border-white/35 hover:bg-white/[0.08]")
                       }
-                      title={inUse ? "Already on the login screen" : atCap ? "Floater cap reached (12)" : `Add ${reg.displayName} to the login screen`}
+                      title={
+                        inUse
+                          ? `Click to remove "${reg.displayName}" from /login`
+                          : atCap
+                            ? "Floater cap reached (12)"
+                            : `Click to add "${reg.displayName}" to /login`
+                      }
                     >
-                      {/* Meta row — category eyebrow + ACTIVE/ADD chip */}
+                      {/* Meta row — category eyebrow + status chip.
+                          The chip swaps on hover for active cards
+                          (Active → ✕ Remove) so the destructive
+                          intent reads clearly. */}
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[9px] font-bold tracking-[0.3em] uppercase text-white/55">
                           {reg.category}
                         </span>
                         {inUse ? (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-bold tracking-[0.18em] uppercase text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 bg-emerald-400/[0.08]">
-                            <Check size={9} /> Active
-                          </span>
+                          <>
+                            {/* Default state (active, not hovered) */}
+                            <span className="inline-flex group-hover:hidden items-center gap-1 text-[9px] font-bold tracking-[0.18em] uppercase text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 bg-emerald-400/[0.08]">
+                              <Check size={9} /> Active
+                            </span>
+                            {/* Hover state (active card → confirm
+                                remove on click) */}
+                            <span className="hidden group-hover:inline-flex items-center gap-1 text-[9px] font-bold tracking-[0.18em] uppercase text-rose-200 px-2 py-0.5 rounded-full border border-rose-400/45 bg-rose-400/[0.12]">
+                              <X size={9} /> Remove
+                            </span>
+                          </>
                         ) : (
-                          <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-white/35 px-2 py-0.5 rounded-full border border-white/10 group-hover:text-white/70 group-hover:border-white/25 transition-colors">
+                          <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-white/35 px-2 py-0.5 rounded-full border border-white/10 group-hover:text-white/85 group-hover:border-white/35 group-hover:bg-white/[0.06] transition-colors">
                             Add
                           </span>
                         )}
@@ -235,17 +283,53 @@ export function LoginFloatersEditor({
                         {reg.displayName}
                       </p>
                       {/* Stage — square frame containing the actual
-                          floater component at its registered default
-                          size. The component's own colour comes from
-                          the parent's text-color class. */}
-                      <div className={"mt-2 aspect-square flex items-center justify-center rounded-xl " + (reg.defaultColorClass)}
+                          floater component. Sits at its registered
+                          default size up to a 160-px cap so the grid
+                          stays uniform; on hover the cap relaxes a
+                          touch via scale so the preview reads
+                          larger. */}
+                      <div className={"mt-2 aspect-square flex items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.04] " + (reg.defaultColorClass)}
                         style={{ background: "radial-gradient(60% 60% at 50% 40%, rgba(72,188,167,0.05), transparent 70%)" }}
                       >
                         <reg.Component size={Math.min(reg.defaultSize, 160)} />
                       </div>
-                      <p className="mt-3 text-center font-mono text-[10px] tracking-[0.18em] uppercase text-white/45">
-                        {reg.defaultSize}px · default
-                      </p>
+                      {/* Detail area — height reserved at min-h-[72px]
+                          whether or not it's hovered so the card never
+                          changes size (would cause the whole grid to
+                          reflow as the user swipes across). Default
+                          state shows just `size · default` centred;
+                          hover state reveals the full id / size / tint
+                          breakdown. */}
+                      <div className="mt-3 pt-3 border-t border-white/10 min-h-[72px] relative">
+                        {/* Compact default — single centred line */}
+                        <p className="absolute inset-0 flex items-center justify-center text-center font-mono text-[10px] tracking-[0.18em] uppercase text-white/45 group-hover:opacity-0 transition-opacity">
+                          {reg.defaultSize}px · default
+                        </p>
+                        {/* Hover-revealed deep details — fades in over
+                            the default footer's reserved space, so no
+                            layout reflow on the surrounding grid. */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity space-y-1.5">
+                          <div className="flex items-center justify-between gap-2 text-[10px]">
+                            <span className="font-mono uppercase tracking-[0.18em] text-white/40">id</span>
+                            <code className="font-mono text-white/85 truncate">{reg.id}</code>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 text-[10px]">
+                            <span className="font-mono uppercase tracking-[0.18em] text-white/40">size</span>
+                            <span className="font-mono text-white/85">{reg.defaultSize}px</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 text-[10px]">
+                            <span className="font-mono uppercase tracking-[0.18em] text-white/40">tint</span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <span
+                                aria-hidden
+                                className="inline-block w-2.5 h-2.5 rounded-full ring-1 ring-white/20"
+                                style={{ background: colorSwatch }}
+                              />
+                              <code className="font-mono text-white/75 text-[9.5px]">{reg.defaultColorClass.replace("text-", "")}</code>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </button>
                   );
                 })}
@@ -406,13 +490,18 @@ function GalleryHeader({ count }: { count: number }) {
       <h2 className="mt-1 text-lg font-semibold text-fg tracking-tight">
         Floater gallery
       </h2>
-      <p className="mt-1.5 text-[12px] text-muted max-w-[60ch]">
+      <p className="mt-1.5 text-[12px] text-muted max-w-[64ch]">
         Editorial browse of the curated library. Each card is the actual React
         component at thumbnail scale — exactly what shows up on{" "}
         <code className="font-mono text-fg bg-card-solid px-1.5 py-0.5 rounded text-[11px]">/login</code>.
-        Click any inactive card to seat it on the login backdrop; already-active
-        ones carry the <span className="text-emerald-700 font-semibold">Active</span> chip.
-        Currently <span className="font-semibold text-fg">{count}</span> of 12 seats filled.
+        <span className="block mt-1">
+          <strong>Click an inactive card</strong> to seat it on the login backdrop ·{" "}
+          <strong>click an <span className="text-emerald-700">Active</span> card</strong> to remove it ·{" "}
+          <strong>hover</strong> any card to pop it open and read its id, size, and tint.
+        </span>
+        <span className="block mt-1">
+          Currently <span className="font-semibold text-fg">{count}</span> of 12 seats filled.
+        </span>
       </p>
     </div>
   );
@@ -427,4 +516,34 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <div className="mt-1">{children}</div>
     </label>
   );
+}
+
+/** Lookup a swatch RGB for the gallery's tint dot. Tailwind opacity
+ *  segments (`/28`, `/30`, etc.) are stripped so a class like
+ *  `text-emerald-300/30` resolves to the solid emerald-300 colour
+ *  for the dot. Falls back to a neutral pale blue if the family
+ *  isn't in the lookup. */
+const TAILWIND_SWATCHES: Record<string, string> = {
+  "emerald-200": "rgb(167, 243, 208)",
+  "emerald-300": "rgb(110, 231, 183)",
+  "sky-200":     "rgb(186, 230, 253)",
+  "sky-300":     "rgb(125, 211, 252)",
+  "rose-200":    "rgb(254, 205, 211)",
+  "rose-300":    "rgb(253, 164, 175)",
+  "amber-200":   "rgb(253, 230, 138)",
+  "amber-300":   "rgb(252, 211, 77)",
+  "violet-300":  "rgb(196, 181, 253)",
+  "cyan-200":    "rgb(165, 243, 252)",
+  "cyan-300":    "rgb(103, 232, 249)",
+  "fuchsia-300": "rgb(240, 171, 252)",
+  "indigo-200":  "rgb(199, 210, 254)",
+  "indigo-300":  "rgb(165, 180, 252)",
+  "teal-300":    "rgb(94, 234, 212)",
+  "blue-300":    "rgb(147, 197, 253)",
+  "slate-200":   "rgb(226, 232, 240)",
+};
+
+function pickSwatch(colorClass: string): string {
+  const stripped = colorClass.replace(/^text-/, "").split("/")[0];
+  return TAILWIND_SWATCHES[stripped] ?? "rgb(200, 220, 240)";
 }
