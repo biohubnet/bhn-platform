@@ -668,7 +668,50 @@ export function ResumeEditor({
 
   return (
     <div className="space-y-5">
-      {/* Save status + open-comment count + AI tools toolbar */}
+      {/* ── Primary actions panel ───────────────────────────────────
+       *
+       * Tailor / Versions / Preview PDF are the three things a trainee
+       * actually wants to DO with their resume. They were buried in a
+       * mixed toolbar with the AI-parse button and the save indicator;
+       * promoted here to brand-tinted, full-size action cards so they
+       * read at a glance.
+       *
+       * Each card is the same visual weight — none of these three is
+       * more important than the others. Re-parse stays where it was
+       * (smaller, top-right of the status bar) because it's a less-
+       * frequent action that exists mostly for re-runs after a new
+       * PDF upload. */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        {postings.length > 0 ? (
+          <PrimaryActionCard
+            icon={Target}
+            label="Tailor to posting"
+            sub="Rewrite bullets for a specific role"
+            onClick={() => setTailorOpen((v) => !v)}
+            active={tailorOpen}
+          />
+        ) : (
+          // Keep grid alignment when there's no postings — render a
+          // placeholder card explaining why the action's hidden.
+          <div className="rounded-xl border border-dashed border-line bg-bg/30 p-3 text-[11px] text-fg-subtle leading-snug">
+            Tailor to posting unlocks when there are active internship postings on the platform.
+          </div>
+        )}
+        <PrimaryActionCard
+          icon={Clock}
+          label="Versions"
+          sub="Browse, preview, revert any saved state"
+          onClick={() => setVersionsOpen(true)}
+        />
+        <PrimaryActionLink
+          icon={Printer}
+          label="Preview PDF"
+          sub="Print-styled view → save as PDF"
+          href="/profile/resume/preview"
+        />
+      </div>
+
+      {/* Save status + open-comment count + secondary AI tools */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
           <SaveStatus saving={saving} version={version} savedAt={savedAt} />
@@ -695,48 +738,19 @@ export function ResumeEditor({
               onClick={runParse}
               disabled={parsing}
               className={
-                "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50 transition-colors " +
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold disabled:opacity-50 transition-colors " +
                 (hasParsed
-                  ? "bg-elevated text-fg ring-1 ring-line hover:bg-card"
+                  ? "bg-elevated text-fg-muted ring-1 ring-line hover:bg-card"
                   : "bg-brand-600 text-white hover:bg-brand-700")
               }
               title={hasParsed
                 ? "Overwrite the current tree with a fresh AI parse of your uploaded PDF. Your current version stays in history."
                 : "Read your uploaded PDF/DOCX and seed sections + bullets automatically."}
             >
-              {parsing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+              {parsing ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
               {hasParsed ? "Re-parse from PDF" : "AI-parse my uploaded resume"}
             </button>
           )}
-          {postings.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setTailorOpen((v) => !v)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-elevated text-fg ring-1 ring-line hover:bg-card transition-colors"
-            >
-              <Target size={12} /> Tailor to posting
-            </button>
-          )}
-          {/* Versions — opens the side drawer with every snapshot. */}
-          <button
-            type="button"
-            onClick={() => setVersionsOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-elevated text-fg ring-1 ring-line hover:bg-card transition-colors"
-            title="Browse every saved version of your resume"
-          >
-            <Clock size={12} /> Versions
-          </button>
-          {/* Preview PDF — opens a print-styled page that the browser
-              can save as PDF. Same tab so the editor's draft state
-              (Tailor preview, AI rewrite previews, undo stack) isn't
-              left orphaned in the background. */}
-          <Link
-            href="/profile/resume/preview"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-elevated text-fg ring-1 ring-line hover:bg-card transition-colors"
-            title="Preview your resume in print layout — save as PDF from there"
-          >
-            <Printer size={12} /> Preview PDF
-          </Link>
           {parseError && (
             <span className="text-[11px] text-rose-700">{parseError}</span>
           )}
@@ -964,6 +978,69 @@ export function ResumeEditor({
 }
 
 /* ── Small UI bits ─────────────────────────────────────────────── */
+
+/** Brand-tinted primary action card. Same visual treatment for each
+ *  of Tailor / Versions / Preview PDF so the eye reads them as the
+ *  three things you actually do with a resume. `active` makes the
+ *  card look "on" — useful for toggles like the Tailor panel where
+ *  the card opens an inline drawer. */
+function PrimaryActionCard({
+  icon: Icon, label, sub, onClick, active,
+}: {
+  icon: React.ElementType;
+  label: string;
+  sub: string;
+  onClick: () => void;
+  active?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "group flex items-start gap-3 rounded-xl px-3.5 py-3 text-left transition-colors " +
+        (active
+          ? "bg-brand-100 ring-1 ring-inset ring-brand-300 text-brand-900"
+          : "bg-brand-50 ring-1 ring-inset ring-brand-200 text-brand-900 hover:bg-brand-100")
+      }
+    >
+      <span className="shrink-0 inline-flex w-9 h-9 rounded-lg bg-brand-600 text-white items-center justify-center">
+        <Icon size={16} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-bold leading-tight">{label}</span>
+        <span className="block text-[11px] text-brand-800/80 mt-0.5">{sub}</span>
+      </span>
+    </button>
+  );
+}
+
+/** Link-flavoured primary action card. Same look as PrimaryActionCard
+ *  but routes via next/link instead of an onClick handler — needed
+ *  for the Preview PDF action which navigates to its own page. */
+function PrimaryActionLink({
+  icon: Icon, label, sub, href,
+}: {
+  icon: React.ElementType;
+  label: string;
+  sub: string;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-start gap-3 rounded-xl px-3.5 py-3 text-left transition-colors bg-brand-50 ring-1 ring-inset ring-brand-200 text-brand-900 hover:bg-brand-100"
+    >
+      <span className="shrink-0 inline-flex w-9 h-9 rounded-lg bg-brand-600 text-white items-center justify-center">
+        <Icon size={16} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-bold leading-tight">{label}</span>
+        <span className="block text-[11px] text-brand-800/80 mt-0.5">{sub}</span>
+      </span>
+    </Link>
+  );
+}
 
 function SaveStatus({ saving, version, savedAt }: { saving: boolean; version: number; savedAt: Date | null }) {
   let label = "Auto-saves";
