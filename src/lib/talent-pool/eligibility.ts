@@ -11,6 +11,7 @@
  * — one source of truth for the WHERE fragment + a single per-user
  * eligibility check for surfaces that don't run a list query.
  */
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -23,8 +24,14 @@ import { prisma } from "@/lib/prisma";
  *     where: { ...ELIGIBLE_APPLICANT_FILTER, postingId: id },
  *     ...
  *   })
+ *
+ * The explicit `Prisma.ApplicationStatusWhereInput` annotation matters:
+ * with `as const` the spread leaks a deeply-readonly literal type that
+ * TS won't widen back to the mutable WhereInput, which broke the
+ * production build on Vercel. The annotation pins the shape to the
+ * mutable Prisma input type so the spread is assignment-compatible.
  */
-export const ELIGIBLE_APPLICANT_FILTER = {
+export const ELIGIBLE_APPLICANT_FILTER: Prisma.ApplicationStatusWhereInput = {
   applicant: {
     formSubmissions: {
       some: {
@@ -35,7 +42,7 @@ export const ELIGIBLE_APPLICANT_FILTER = {
       },
     },
   },
-} as const;
+};
 
 /**
  * Per-user eligibility check. Returns true when the user has at
