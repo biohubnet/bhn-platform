@@ -31,7 +31,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, GripVertical, MessageCircle, CheckCircle2, X, Loader2, Sparkles, Save, ChevronUp, ChevronDown,
-  Target, Wand2, Clock, Printer,
+  Target, Wand2, Clock, Printer, RotateCcw,
 } from "lucide-react";
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_LABEL, SECTION_HINTS, rid } from "@/lib/resume/types";
@@ -616,24 +616,49 @@ export function ResumeEditor({
     });
   }
 
-  // ── Undo for removals ───────────────────────────────────────────
+  // ── Recovery stack for removals ────────────────────────────────
+  // Pushed to whenever a bullet / item / section X is clicked. The
+  // panel renders the contents persistently so the user can restore
+  // anything, not just the most recent one — that was the bug the
+  // earlier snackbar created (clicking × on the snackbar quietly
+  // dropped the most recent entry, which felt destructive).
   function pushRemoval(entry: RemovalEntry) {
     setRemovedStack((s) => [...s, entry]);
   }
+  /** Restore the most recent removal (the top of the stack). Used by
+   *  the panel's quick-action and by Cmd/Ctrl-Z if we wire it later. */
   function undoLastRemoval() {
     setRemovedStack((stack) => {
       if (stack.length === 0) return stack;
       const entry = stack[stack.length - 1];
-      // Restore via setContent. Splice the data back at its original
-      // position so the resume reads the same as before the X click.
       setContent((c) => restoreRemoval(c, entry));
       return stack.slice(0, -1);
     });
   }
-  function dismissUndo() {
-    // User waves off the snackbar — clear the most recent entry only,
-    // so older removals from earlier still have undo on the next click.
-    setRemovedStack((s) => s.slice(0, -1));
+  /** Restore a specific entry by stack index. Lets the user reach
+   *  past the most recent removal — e.g. you deleted bullet A, then
+   *  realised bullet B is the one you actually wanted gone. */
+  function restoreSpecific(stackIndex: number) {
+    setRemovedStack((stack) => {
+      if (stackIndex < 0 || stackIndex >= stack.length) return stack;
+      const entry = stack[stackIndex];
+      setContent((c) => restoreRemoval(c, entry));
+      return [...stack.slice(0, stackIndex), ...stack.slice(stackIndex + 1)];
+    });
+  }
+  /** Permanently dismiss all recoverable entries — for when the user
+   *  is confident none of them are coming back and wants to clear
+   *  the visible panel. Confirmed via window.confirm so a stray click
+   *  doesn't wipe minutes of recovery surface. */
+  function clearAllRemovals() {
+    if (removedStack.length === 0) return;
+    const ok = window.confirm(
+      `Permanently dismiss ${removedStack.length} recoverable item(s)?\n\n` +
+      `They won't be retrievable from the recovery panel any more. ` +
+      `The resume tree itself is unaffected.`,
+    );
+    if (!ok) return;
+    setRemovedStack([]);
   }
 
   // ── Header field updates ──
@@ -905,12 +930,16 @@ export function ResumeEditor({
         <Plus size={14} /> Add another section
       </button>
 
-      {/* Undo snackbar — pinned to viewport bottom-right. Renders only
-          when there's something to undo; multiple removals stack. */}
-      <UndoSnackbar
+      {/* Recovery panel — pinned bottom-right. Always visible while
+          the stack has items; lets the user restore any specific
+          removal, not just the most recent. The panel collapses to
+          a small chip that shows the count + most recent entry until
+          the user expands it. */}
+      <RecoveryPanel
         stack={removedStack}
-        onUndo={undoLastRemoval}
-        onDismiss={dismissUndo}
+        onUndoLatest={undoLastRemoval}
+        onRestore={restoreSpecific}
+        onClearAll={clearAllRemovals}
       />
 
       {/* Version-history drawer — opens from the toolbar "Versions"
@@ -1491,43 +1520,124 @@ function restoreRemoval(content: ResumeContent, entry: RemovalEntry): ResumeCont
   };
 }
 
-/** Floating snackbar at the bottom-right showing the most-recent
- *  removal with an Undo button. Multiple removals stack — undoing
- *  reveals the next-most-recent until the stack is empty. Persistent
- *  (no auto-dismiss) so users who notice their mistake a minute later
- *  still get the bullet back. */
-function UndoSnackbar({
-  stack, onUndo, onDismiss,
+/** Recovery panel — pinned to the viewport bottom-right whenever
+ *  the removal stack has items. Two states:
+ *
+ *    • Collapsed (default) — one-line summary of the latest removal
+ *      with an "Undo" button + a "Show all (N)" expand affordance
+ *      when there's more than one in the stack.
+ *
+ *    • Expanded — scrollable list of every removed entity in the
+ *      session, each with its own Restore button. "Dismiss all"
+ *      footer button (confirms) clears the panel without restoring.
+ *
+ *  The earlier snackbar version had an X close button that quietly
+ *  popped the most-recent entry off the stack — destructive and
+ *  easy to misclick. This version has no such destructive close;
+ *  the panel just stays put until the user explicitly restores items
+ *  or clears the panel. Items survive across editor renders within
+ *  a session and only clear on a remount (seed / clear / AI-parse /
+ *  revert). */
+function RecoveryPanel({
+  stack, onUndoLatest, onRestore, onClearAll,
 }: {
   stack: RemovalEntry[];
-  onUndo: () => void;
-  onDismiss: () => void;
+  onUndoLatest: () => void;
+  onRestore: (stackIndex: number) => void;
+  onClearAll: () => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   if (stack.length === 0) return null;
   const latest = stack[stack.length - 1];
-  return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded-xl border border-line bg-card-solid shadow-xl ring-1 ring-line/40 p-3 flex items-center gap-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-fg-subtle">
-          Removed{stack.length > 1 ? ` · ${stack.length} in stack` : ""}
-        </p>
-        <p className="text-[12.5px] text-fg mt-0.5 truncate">{latest.label}</p>
+
+  if (!expanded) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded-xl border border-line bg-card-solid shadow-xl ring-1 ring-line/40 p-3 flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-fg-subtle">
+            Recently removed{stack.length > 1 ? ` · ${stack.length} recoverable` : ""}
+          </p>
+          <p className="text-[12.5px] text-fg mt-0.5 truncate">{latest.label}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onUndoLatest}
+          className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-brand-600 text-white text-[11px] font-bold uppercase tracking-[0.16em] hover:bg-brand-700 transition-colors"
+          title="Restore the most recent removal"
+        >
+          <RotateCcw size={10} /> Undo
+        </button>
+        {stack.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="shrink-0 inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-[10.5px] uppercase tracking-[0.14em] font-bold text-fg-muted ring-1 ring-line hover:bg-elevated"
+            title="See all recoverable removals — restore any specific one"
+          >
+            Show all
+          </button>
+        )}
       </div>
-      <button
-        type="button"
-        onClick={onUndo}
-        className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-brand-600 text-white text-[11px] font-bold uppercase tracking-[0.16em] hover:bg-brand-700 transition-colors"
-      >
-        Undo
-      </button>
-      <button
-        type="button"
-        onClick={onDismiss}
-        title="Dismiss this notice (the bullet stays removed)"
-        className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded text-fg-muted hover:text-fg hover:bg-elevated"
-      >
-        <X size={11} />
-      </button>
+    );
+  }
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 w-[420px] max-w-[calc(100vw-2rem)] max-h-[70vh] rounded-xl border border-line bg-card-solid shadow-2xl ring-1 ring-line/40 flex flex-col">
+      <header className="px-3 py-2.5 border-b border-line flex items-center justify-between gap-2">
+        <div className="inline-flex items-center gap-1.5">
+          <span className="inline-flex w-6 h-6 rounded-md bg-brand-50 text-brand-700 items-center justify-center">
+            <RotateCcw size={11} />
+          </span>
+          <div>
+            <p className="text-[12px] font-semibold text-fg leading-tight">Recovery panel</p>
+            <p className="text-[10px] text-fg-muted">{stack.length} recoverable item{stack.length === 1 ? "" : "s"}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="p-1 rounded text-fg-muted hover:bg-elevated"
+          title="Collapse to the small snackbar"
+        >
+          <ChevronDown size={12} />
+        </button>
+      </header>
+      <ul className="flex-1 overflow-y-auto p-2 space-y-1.5">
+        {/* Render newest first — that's what the user just removed. */}
+        {[...stack].reverse().map((entry, i) => {
+          // The reverse() index needs translating back to the
+          // canonical stack index so onRestore splices the right one.
+          const stackIndex = stack.length - 1 - i;
+          return (
+            <li key={`${stackIndex}-${entry.label}`} className="flex items-start gap-2 rounded-md bg-bg/40 ring-1 ring-line/40 px-2 py-1.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-fg-subtle">
+                  {entry.type === "bullet" ? "Bullet" : entry.type === "item" ? "Item" : "Section"}
+                </p>
+                <p className="text-[12px] text-fg mt-0.5 break-words">{entry.label}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onRestore(stackIndex)}
+                className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-600 text-white text-[10.5px] font-bold uppercase tracking-[0.14em] hover:bg-brand-700 transition-colors"
+                title={`Restore this ${entry.type} to its original position`}
+              >
+                <RotateCcw size={10} /> Restore
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <footer className="px-3 py-2 border-t border-line flex items-center justify-end">
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10.5px] uppercase tracking-[0.14em] font-bold text-fg-muted hover:text-rose-700 hover:bg-rose-50"
+          title="Permanently dismiss every recoverable item (confirms first)"
+        >
+          <Trash2 size={10} /> Dismiss all
+        </button>
+      </footer>
     </div>
   );
 }
