@@ -251,6 +251,11 @@ const adminExperienceItems: NavItem[] = [
     description: "Single global advanced-trainee demo account — completed coursework, both merch tiers earned, full profile, scheduled interviews. For sales calls and training-team demos." },
   { label: "Talent pool",         href: "/talent-pool",               icon: Users,        minRole: "admin",
     description: "Approved talent-application members — same surface employers see, with full submission data + comment threads. Use this to coordinate with employer reviewers." },
+  // Visible to instructors + industrial mentors as well as admins —
+  // reviewing trainee resumes is core mentor work, not an admin
+  // privilege. The route itself re-checks isStaffReviewer(role).
+  { label: "Trainee resumes",     href: "/mentor/trainees",           icon: FileText,     minRole: "instructor",
+    description: "Open a trainee's structured resume, pin comments to specific bullets, and watch them adopt the suggestions. Read-only — the trainee owns what to apply." },
 ];
 
 // EQUIP — the third pillar surface on the admin side. Was buried
@@ -397,6 +402,12 @@ const ROLE_RANK: Record<string, number> = {
   user: 0,
   trainee: 0,
   evaluating: 0,
+  // Industrial mentors are non-instructor staff who comment on
+  // trainee work (resumes, interviews, STAR stories). Granted
+  // instructor-tier rank so the staff-only nav items they need
+  // (Trainee resumes, etc.) are visible. Per-page permission gates
+  // are still the source of truth for what they can actually do.
+  industrial_mentor: 1,
   instructor: 1,
   admin: 2,
   superadmin: 3,

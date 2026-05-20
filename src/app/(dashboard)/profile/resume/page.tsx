@@ -64,6 +64,18 @@ export default async function ResumeStructurePage() {
   const hasParsed = !!resume.parsedAt;
   const showParseCTA = hasUploaded && !hasParsed;
 
+  // Postings the trainee can tailor against. Active postings only;
+  // cap to a sensible number for the dropdown (trainees usually
+  // tailor against postings they've already shortlisted via
+  // /internships, but we don't gate on that here). Sorted by
+  // most-recently-created so the picker matches what they last saw.
+  const postings = await prisma.internshipPosting.findMany({
+    where: { status: "active" },
+    select: { id: true, title: true, companyName: true },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+
   return (
     <div className="space-y-6">
       <PageHero
@@ -128,6 +140,7 @@ export default async function ResumeStructurePage() {
           }))}
           canParse={showParseCTA}
           ownerId={userId}
+          postings={postings}
         />
 
         <p className="mt-6 text-[11px] text-fg-subtle text-center inline-flex items-center justify-center gap-1.5 w-full">

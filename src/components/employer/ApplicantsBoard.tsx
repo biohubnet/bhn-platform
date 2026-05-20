@@ -1088,9 +1088,21 @@ function Drawer({
           <div className="flex flex-wrap gap-2 text-xs">
             {a.resumeUrl && (
               <a href={a.resumeUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-50 text-brand-800 ring-1 ring-brand-200 hover:bg-brand-100">
-                <FileText size={11} /> Resume <ExternalLink size={9} />
+                <FileText size={11} /> Resume PDF <ExternalLink size={9} />
               </a>
             )}
+            {/* Structured-resume view — open inline, leave comments
+                anchored to specific bullets. Read-only for employers;
+                the trainee picks what to apply. */}
+            <a
+              href={`/resume/${a.applicantId}`}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-50 text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100"
+              title="Structured resume — comment on bullets the trainee will see"
+            >
+              <FileText size={11} /> Resume + comments <ExternalLink size={9} />
+            </a>
             {a.videoUrl && (
               <a href={a.videoUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-violet-50 text-violet-800 ring-1 ring-violet-200 hover:bg-violet-100">
                 <Video size={11} /> 1-min video <ExternalLink size={9} />

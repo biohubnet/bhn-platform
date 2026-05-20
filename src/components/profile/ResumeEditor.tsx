@@ -29,9 +29,25 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   Plus, Trash2, GripVertical, MessageCircle, CheckCircle2, X, Loader2, Sparkles, Save, ChevronUp, ChevronDown,
+  Target, Wand2,
 } from "lucide-react";
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_LABEL, rid } from "@/lib/resume/types";
+
+/** Lightweight posting summary fed in from the server shell. */
+export interface PostingSummary {
+  id: string;
+  title: string;
+  companyName: string;
+}
+
+/** Server-returned preview row from POST /api/profile/resume/structure/tailor. */
+interface TailorRewriteRow {
+  id: string;
+  original: string;
+  rewritten: string;
+  changed: boolean;
+}
 
 interface CommentRow {
   id: string;
@@ -59,11 +75,16 @@ interface Props {
   /** When true, show the "AI parse from uploaded file" CTA. */
   canParse: boolean;
   ownerId: string;
+  /** Postings the trainee can tailor their resume against. When the
+   *  array is empty, the "Tailor to posting" toolbar is hidden. */
+  postings?: PostingSummary[];
 }
 
 const DEBOUNCE_MS = 600;
 
-export function ResumeEditor({ initialResume, initialComments, canParse, ownerId }: Props) {
+export function ResumeEditor({
+  initialResume, initialComments, canParse, ownerId, postings = [],
+}: Props) {
   const [content, setContent] = useState<ResumeContent>(initialResume.content);
   const [comments, setComments] = useState<CommentRow[]>(initialComments);
   const [version, setVersion] = useState(initialResume.version);
@@ -73,6 +94,20 @@ export function ResumeEditor({ initialResume, initialComments, canParse, ownerId
   const [parseError, setParseError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
+
+  // ── Per-bullet AI rewrite state ─────────────────────────────────
+  //   key   — bullet id
+  //   value — { original, rewritten } preview waiting for accept/cancel
+  const [rewritePreviews, setRewritePreviews] = useState<Map<string, { original: string; rewritten: string }>>(new Map());
+  const [rewriteBusyId, setRewriteBusyId] = useState<string | null>(null);
+  const [rewriteError, setRewriteError] = useState<{ bulletId: string; msg: string } | null>(null);
+
+  // ── Whole-resume "Tailor to posting" state ──────────────────────
+  const [tailorOpen, setTailorOpen] = useState(false);
+  const [tailorPostingId, setTailorPostingId] = useState<string>("");
+  const [tailorBusy, setTailorBusy] = useState<"preview" | "apply" | null>(null);
+  const [tailorError, setTailorError] = useState<string | null>(null);
+  const [tailorPreview, setTailorPreview] = useState<TailorRewriteRow[] | null>(null);
 
   // ── Auto-save: any change to `content` triggers a debounced PATCH ──
   useEffect(() => {
@@ -120,6 +155,191 @@ export function ResumeEditor({ initialResume, initialComments, canParse, ownerId
         setParseError((e as Error).message);
       }
     });
+  }
+
+  // ── Per-bullet rewrite ──────────────────────────────────────────
+  // 1. Preview path — no DB write, user accepts/cancels inline.
+  // 2. Comment-driven path — calls with apply:true so the server
+  //    persists immediately + marks the source comment "applied"
+  //    (closes the loop on the mentor's suggestion in one click).
+  async function previewBulletRewrite(bulletId: string, commentId?: string) {
+    setRewriteError(null);
+    setRewriteBusyId(bulletId);
+    try {
+      const r = await fetch("/api/profile/resume/structure/rewrite-bullet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bulletId, commentId }),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        ok?: boolean; error?: string;
+        original?: string; rewritten?: string; changed?: boolean;
+      };
+      if (!r.ok || !j.ok || !j.rewritten || !j.original) {
+        setRewriteError({ bulletId, msg: j.error ?? "AI rewrite failed." });
+        return;
+      }
+      if (j.changed === false) {
+        setRewriteError({ bulletId, msg: "AI returned an essentially identical bullet." });
+        return;
+      }
+      setRewritePreviews((m) => {
+        const next = new Map(m);
+        next.set(bulletId, { original: j.original!, rewritten: j.rewritten! });
+        return next;
+      });
+    } finally {
+      setRewriteBusyId(null);
+    }
+  }
+  function acceptBulletRewrite(bulletId: string) {
+    const preview = rewritePreviews.get(bulletId);
+    if (!preview) return;
+    // Mutate via the existing path so auto-save persists + revisions.
+    setContent((c) => ({
+      ...c,
+      sections: c.sections.map((s) => ({
+        ...s,
+        items: s.items.map((it) => ({
+          ...it,
+          bullets: it.bullets.map((b) =>
+            b.id === bulletId ? { ...b, body: preview.rewritten, aiSuggested: true } : b,
+          ),
+        })),
+      })),
+    }));
+    setRewritePreviews((m) => {
+      const next = new Map(m);
+      next.delete(bulletId);
+      return next;
+    });
+  }
+  function dismissBulletRewrite(bulletId: string) {
+    setRewritePreviews((m) => {
+      const next = new Map(m);
+      next.delete(bulletId);
+      return next;
+    });
+    setRewriteError(null);
+  }
+
+  /** Comment-driven rewrite. Server applies + marks the comment
+   *  applied; client refreshes both the bullet body and the comment
+   *  row to match. */
+  async function applyCommentWithAI(commentId: string, bulletId: string) {
+    setRewriteError(null);
+    setRewriteBusyId(bulletId);
+    try {
+      const r = await fetch("/api/profile/resume/structure/rewrite-bullet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bulletId, commentId, apply: true }),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        ok?: boolean; error?: string; rewritten?: string; version?: number; changed?: boolean;
+      };
+      if (!r.ok || !j.ok) {
+        setRewriteError({ bulletId, msg: j.error ?? "AI rewrite failed." });
+        return;
+      }
+      if (j.changed === false || !j.rewritten) {
+        setRewriteError({ bulletId, msg: "AI returned an essentially identical bullet." });
+        return;
+      }
+      // Patch local state to match what the server wrote.
+      const rewritten = j.rewritten;
+      setContent((c) => ({
+        ...c,
+        sections: c.sections.map((s) => ({
+          ...s,
+          items: s.items.map((it) => ({
+            ...it,
+            bullets: it.bullets.map((b) =>
+              b.id === bulletId ? { ...b, body: rewritten, aiSuggested: true } : b,
+            ),
+          })),
+        })),
+      }));
+      if (j.version) setVersion(j.version);
+      setSavedAt(new Date());
+      // Server also marks the comment applied — sync locally.
+      setComments((cur) => cur.map((c) => (c.id === commentId ? { ...c, status: "applied" } : c)));
+    } finally {
+      setRewriteBusyId(null);
+    }
+  }
+
+  // ── Tailor to posting ──────────────────────────────────────────
+  async function runTailorPreview() {
+    if (!tailorPostingId) return;
+    setTailorError(null);
+    setTailorPreview(null);
+    setTailorBusy("preview");
+    try {
+      const r = await fetch("/api/profile/resume/structure/tailor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postingId: tailorPostingId }),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        ok?: boolean; error?: string; rewrites?: TailorRewriteRow[]; note?: string;
+      };
+      if (!r.ok || !j.ok) {
+        setTailorError(j.error ?? "Tailor failed.");
+        return;
+      }
+      const changed = (j.rewrites ?? []).filter((row) => row.changed);
+      setTailorPreview(changed);
+      if (changed.length === 0) {
+        setTailorError(j.note ?? "No bullets needed rewriting for this posting.");
+      }
+    } finally {
+      setTailorBusy(null);
+    }
+  }
+  async function runTailorApply() {
+    if (!tailorPostingId) return;
+    setTailorError(null);
+    setTailorBusy("apply");
+    try {
+      const r = await fetch("/api/profile/resume/structure/tailor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postingId: tailorPostingId, apply: true }),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        ok?: boolean; error?: string; applied?: number; version?: number; rewrites?: TailorRewriteRow[];
+      };
+      if (!r.ok || !j.ok) {
+        setTailorError(j.error ?? "Apply failed.");
+        return;
+      }
+      // Patch every changed bullet locally so the editor reflects the
+      // server-side state without a full reload.
+      const rewriteMap = new Map<string, string>();
+      for (const row of j.rewrites ?? []) {
+        if (row.changed) rewriteMap.set(row.id, row.rewritten);
+      }
+      setContent((c) => ({
+        ...c,
+        sections: c.sections.map((s) => ({
+          ...s,
+          items: s.items.map((it) => ({
+            ...it,
+            bullets: it.bullets.map((b) => {
+              const next = rewriteMap.get(b.id);
+              return next ? { ...b, body: next, aiSuggested: true } : b;
+            }),
+          })),
+        })),
+      }));
+      if (j.version) setVersion(j.version);
+      setSavedAt(new Date());
+      setTailorPreview(null);
+      setTailorOpen(false);
+    } finally {
+      setTailorBusy(null);
+    }
   }
 
   async function updateCommentStatus(id: string, status: "open" | "resolved" | "applied") {
@@ -251,11 +471,11 @@ export function ResumeEditor({ initialResume, initialComments, canParse, ownerId
 
   return (
     <div className="space-y-5">
-      {/* Save status + AI parse CTA */}
+      {/* Save status + AI parse CTA + Tailor-to-posting toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <SaveStatus saving={saving} version={version} savedAt={savedAt} />
-        {canParse && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {canParse && (
             <button
               type="button"
               onClick={runParse}
@@ -265,12 +485,36 @@ export function ResumeEditor({ initialResume, initialComments, canParse, ownerId
               {parsing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
               AI-parse my uploaded resume
             </button>
-            {parseError && (
-              <span className="text-[11px] text-rose-700">{parseError}</span>
-            )}
-          </div>
-        )}
+          )}
+          {postings.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setTailorOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-elevated text-fg ring-1 ring-line hover:bg-card transition-colors"
+            >
+              <Target size={12} /> Tailor to posting
+            </button>
+          )}
+          {parseError && (
+            <span className="text-[11px] text-rose-700">{parseError}</span>
+          )}
+        </div>
       </div>
+
+      {/* Tailor toolbar — picker + preview diff + apply ----------- */}
+      {tailorOpen && postings.length > 0 && (
+        <TailorPanel
+          postings={postings}
+          postingId={tailorPostingId}
+          onPostingId={setTailorPostingId}
+          busy={tailorBusy}
+          error={tailorError}
+          preview={tailorPreview}
+          onPreview={runTailorPreview}
+          onApply={runTailorApply}
+          onClose={() => { setTailorOpen(false); setTailorPreview(null); setTailorError(null); }}
+        />
+      )}
 
       {/* Header block */}
       <section className="bg-card-solid border border-line rounded-2xl p-5">
@@ -360,6 +604,13 @@ export function ResumeEditor({ initialResume, initialComments, canParse, ownerId
                         onChange={(v) => updateBullet(sIdx, iIdx, bIdx, { body: v, aiSuggested: false })}
                         onRemove={() => removeBullet(sIdx, iIdx, bIdx)}
                         onCommentStatus={updateCommentStatus}
+                        onRewrite={() => previewBulletRewrite(bullet.id)}
+                        onApplyCommentWithAI={(commentId) => applyCommentWithAI(commentId, bullet.id)}
+                        rewriting={rewriteBusyId === bullet.id}
+                        rewritePreview={rewritePreviews.get(bullet.id) ?? null}
+                        onAcceptRewrite={() => acceptBulletRewrite(bullet.id)}
+                        onDismissRewrite={() => dismissBulletRewrite(bullet.id)}
+                        rewriteError={rewriteError && rewriteError.bulletId === bullet.id ? rewriteError.msg : null}
                       />
                     );
                   })}
@@ -473,15 +724,24 @@ function IconBtn({
 
 function BulletRow({
   bullet, comments, onChange, onRemove, onCommentStatus,
+  onRewrite, onApplyCommentWithAI, rewriting, rewritePreview, onAcceptRewrite, onDismissRewrite, rewriteError,
 }: {
   bullet: ResumeBullet;
   comments: CommentRow[];
   onChange: (v: string) => void;
   onRemove: () => void;
   onCommentStatus: (id: string, status: "open" | "resolved" | "applied") => void;
+  onRewrite: () => void;
+  onApplyCommentWithAI: (commentId: string) => void;
+  rewriting: boolean;
+  rewritePreview: { original: string; rewritten: string } | null;
+  onAcceptRewrite: () => void;
+  onDismissRewrite: () => void;
+  rewriteError: string | null;
 }) {
   const [showThread, setShowThread] = useState(false);
   const openCount = comments.filter((c) => c.status === "open").length;
+  const hasBody = bullet.body.trim().length > 0;
   return (
     <div className="space-y-1.5">
       <div className="flex items-start gap-2">
@@ -497,6 +757,21 @@ function BulletRow({
             (bullet.aiSuggested ? "border-l-2 border-l-brand-400 bg-brand-50/30 pl-2" : "")
           }
         />
+        {/* "Rewrite with AI" — only shown when the bullet has content;
+            opens an inline diff card under the row that the user
+            accepts or dismisses. No DB write happens until accept. */}
+        {hasBody && (
+          <button
+            type="button"
+            onClick={onRewrite}
+            disabled={rewriting}
+            title="Rewrite this bullet with AI"
+            className="shrink-0 inline-flex items-center gap-1 text-[10.5px] uppercase tracking-[0.16em] font-bold px-2 py-1 rounded-full ring-1 ring-inset bg-brand-50 text-brand-800 ring-brand-200 hover:bg-brand-100 disabled:opacity-50 transition-colors"
+          >
+            {rewriting ? <Loader2 size={9} className="animate-spin" /> : <Wand2 size={9} />}
+            Rewrite
+          </button>
+        )}
         {comments.length > 0 && (
           <button
             type="button"
@@ -515,22 +790,95 @@ function BulletRow({
         )}
         <IconBtn onClick={onRemove} title="Remove bullet" danger><X size={11} /></IconBtn>
       </div>
+
+      {/* Inline rewrite preview — original vs proposed, accept/dismiss */}
+      {rewritePreview && (
+        <RewriteDiff
+          original={rewritePreview.original}
+          rewritten={rewritePreview.rewritten}
+          onAccept={onAcceptRewrite}
+          onDismiss={onDismissRewrite}
+        />
+      )}
+      {rewriteError && !rewritePreview && (
+        <div className="ml-6 text-[11px] text-rose-700 inline-flex items-center gap-1.5">
+          {rewriteError}
+          <button type="button" onClick={onDismissRewrite} className="underline">dismiss</button>
+        </div>
+      )}
+
       {showThread && comments.length > 0 && (
         <div className="ml-6">
-          <CommentList compact comments={comments} onStatus={onCommentStatus} title={null} />
+          <CommentList
+            compact
+            comments={comments}
+            onStatus={onCommentStatus}
+            title={null}
+            onApplyWithAI={onApplyCommentWithAI}
+          />
         </div>
       )}
     </div>
   );
 }
 
+/** Side-by-side diff card for an AI bullet rewrite. The trainee owns
+ *  the accept decision — nothing persists until they click Accept. */
+function RewriteDiff({
+  original, rewritten, onAccept, onDismiss,
+}: {
+  original: string;
+  rewritten: string;
+  onAccept: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="ml-6 rounded-xl border border-brand-200 bg-brand-50/40 p-3 space-y-2">
+      <p className="text-[10px] font-mono uppercase tracking-[0.22em] font-bold text-brand-800 inline-flex items-center gap-1.5">
+        <Wand2 size={10} /> AI rewrite — preview
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="rounded-md bg-card-solid border border-line p-2">
+          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-subtle mb-1">Original</p>
+          <p className="text-sm text-fg leading-snug">{original}</p>
+        </div>
+        <div className="rounded-md bg-card-solid border border-brand-300 p-2">
+          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-brand-700 mb-1">Proposed</p>
+          <p className="text-sm text-fg leading-snug">{rewritten}</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-end gap-1.5">
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-fg-muted hover:bg-fg/5"
+        >
+          <X size={11} /> Dismiss
+        </button>
+        <button
+          type="button"
+          onClick={onAccept}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-600 text-white text-[11px] font-semibold hover:bg-brand-700 transition-colors"
+        >
+          <CheckCircle2 size={11} /> Accept rewrite
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CommentList({
-  comments, onStatus, title, compact,
+  comments, onStatus, title, compact, onApplyWithAI,
 }: {
   comments: CommentRow[];
   onStatus: (id: string, status: "open" | "resolved" | "applied") => void;
   title: string | null;
   compact?: boolean;
+  /** When provided, each open comment shows an "AI apply" button that
+   *  rewrites the anchored bullet using this comment as guidance and
+   *  auto-marks the comment applied on success. Only meaningful for
+   *  bullet-anchored threads — pass-through is hidden otherwise. */
+  onApplyWithAI?: (commentId: string) => void;
 }) {
   return (
     <div className={"rounded-xl border border-amber-200 bg-amber-50/40 " + (compact ? "p-2" : "p-3")}>
@@ -540,6 +888,7 @@ function CommentList({
       <ul className={"space-y-2 " + (compact ? "" : "")}>
         {comments.map((c) => {
           const author = c.authorName ?? c.authorEmail?.split("@")[0] ?? "Reviewer";
+          const canAiApply = !!onApplyWithAI && !!c.anchorBulletId && c.status !== "applied";
           return (
             <li key={c.id} className="bg-card-solid border border-line rounded-md px-2.5 py-1.5">
               <div className="flex items-start gap-2 flex-wrap">
@@ -550,6 +899,16 @@ function CommentList({
                   <p className="text-[13px] text-fg mt-0.5 whitespace-pre-wrap">{c.body}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  {canAiApply && (
+                    <button
+                      type="button"
+                      onClick={() => onApplyWithAI!(c.id)}
+                      className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full bg-brand-50 text-brand-800 ring-1 ring-brand-200 hover:bg-brand-100"
+                      title="Rewrite the bullet using this comment as guidance, then mark it applied"
+                    >
+                      <Wand2 size={9} /> AI apply
+                    </button>
+                  )}
                   {c.status !== "applied" && (
                     <button
                       type="button"
@@ -588,6 +947,115 @@ function CommentList({
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/** Toolbar that drives whole-resume tailoring. Two-step UX:
+ *
+ *   1. Pick a posting → click "Preview" → server returns a list of
+ *      bullets it wants to rewrite, with original + proposed text.
+ *      Nothing is persisted yet; the trainee can preview against a
+ *      different posting without polluting their resume.
+ *   2. Click "Apply all" → server overwrites the changed bullets,
+ *      marks them aiSuggested (brand-tinted left edge in the editor),
+ *      and stamps a ResumeRevision tagged "ai_tailor".
+ *
+ * Each preview row is a compact original / rewritten pair so the
+ * trainee can read the diffs before committing. Nothing forces them
+ * to apply everything — the explicit two-step is the whole point of
+ * separating preview from apply at the API level. */
+function TailorPanel({
+  postings, postingId, onPostingId, busy, error, preview, onPreview, onApply, onClose,
+}: {
+  postings: PostingSummary[];
+  postingId: string;
+  onPostingId: (v: string) => void;
+  busy: "preview" | "apply" | null;
+  error: string | null;
+  preview: TailorRewriteRow[] | null;
+  onPreview: () => void;
+  onApply: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-[10px] font-mono uppercase tracking-[0.22em] font-bold text-brand-800 inline-flex items-center gap-1.5">
+            <Target size={11} /> Tailor to posting
+          </p>
+          <p className="text-[12px] text-fg-muted mt-1 max-w-prose">
+            Pick a posting; we&apos;ll preview bullet-level rewrites that align
+            with its required skills. You apply only after reviewing the diff.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] text-fg-muted hover:bg-fg/5"
+        >
+          <X size={11} /> Close
+        </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={postingId}
+          onChange={(e) => onPostingId(e.target.value)}
+          className="bg-card border border-line rounded-md px-2 py-1.5 text-xs focus:outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100 min-w-[260px]"
+        >
+          <option value="">— Pick a posting —</option>
+          {postings.map((p) => (
+            <option key={p.id} value={p.id}>{p.title} · {p.companyName}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={onPreview}
+          disabled={!postingId || busy !== null}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-card-solid text-fg ring-1 ring-line hover:bg-elevated disabled:opacity-50 transition-colors"
+        >
+          {busy === "preview" ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+          Preview rewrites
+        </button>
+        {preview && preview.length > 0 && (
+          <button
+            type="button"
+            onClick={onApply}
+            disabled={busy !== null}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
+          >
+            {busy === "apply" ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+            Apply all {preview.length}
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <p className="text-[11px] text-fg-muted bg-card-solid ring-1 ring-line rounded-md px-2.5 py-1.5">
+          {error}
+        </p>
+      )}
+
+      {preview && preview.length > 0 && (
+        <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+          {preview.map((row) => (
+            <div key={row.id} className="rounded-lg bg-card-solid ring-1 ring-line p-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-subtle mb-1">Original</p>
+                  <p className="text-[13px] text-fg leading-snug">{row.original}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-brand-700 mb-1">Proposed</p>
+                  <p className="text-[13px] text-fg leading-snug">{row.rewritten}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
