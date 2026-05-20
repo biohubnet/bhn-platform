@@ -19,11 +19,12 @@
  */
 import { redirect } from "next/navigation";
 import { ArrowRight, FileText, Sparkles } from "lucide-react";
-import { getSession } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { emptyResumeContent } from "@/lib/resume/types";
 import { ResumeEditor } from "@/components/profile/ResumeEditor";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,8 @@ export default async function ResumeStructurePage() {
   if (!session) redirect("/login?callbackUrl=/profile/resume");
   const userId = (session.user as { id?: string }).id;
   if (!userId) redirect("/login");
+  const role = (session.user as { role?: string }).role ?? "trainee";
+  const isStaff = checkIsStaff(role);
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -70,6 +73,21 @@ export default async function ResumeStructurePage() {
       />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        {/* Admin-only demo seed/clear. Seed replaces the calling admin's
+            Resume with a multi-section demo tree + 3 mentor comments;
+            Clear deletes the admin's Resume row (cascades comments +
+            revisions). Real trainee resumes are never touched — the
+            tray is self-scoped to the viewing admin's own user id. */}
+        {isStaff && (
+          <div className="mb-5">
+            <DemoSeedAndClearTray
+              entity="user_resume"
+              noun="demo resume"
+              clearHelp="Delete your structured resume + cascade its comments and revisions. Other users' resumes are untouched. Re-seeding rebuilds the demo tree from scratch."
+            />
+          </div>
+        )}
+
         {showParseCTA && (
           <div className="mb-5 flex items-start gap-3 px-4 py-3 rounded-xl border border-brand-200 bg-brand-50/60">
             <span className="mt-0.5 inline-flex w-7 h-7 rounded-md bg-brand-100 text-brand-700 items-center justify-center shrink-0">

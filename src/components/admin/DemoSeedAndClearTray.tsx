@@ -36,7 +36,8 @@ export type DemoSeedEntity =
   | "user_interview"
   | "user_star_story"
   | "user_buddy_pair"
-  | "user_matches";
+  | "user_matches"
+  | "user_resume";
 
 interface Props {
   entity: DemoSeedEntity;
@@ -58,6 +59,7 @@ const DEFAULT_NOUNS: Record<DemoSeedEntity, string> = {
   user_star_story:          "demo STAR stories",
   user_buddy_pair:          "demo buddy pairs",
   user_matches:             "matches scenario",
+  user_resume:              "demo resume",
 };
 
 export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) {

@@ -36,6 +36,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { rid, type ResumeContent } from "@/lib/resume/types";
 
 export const runtime = "nodejs";
 
@@ -55,6 +56,7 @@ const VALID_ENTITIES = [
   "user_star_story",
   "user_buddy_pair",
   "user_matches",
+  "user_resume",
 ] as const;
 type Entity = (typeof VALID_ENTITIES)[number];
 
@@ -64,7 +66,7 @@ function isEntity(s: unknown): s is Entity {
 
 /** Get or create a demo user with the desired role. Returns the id. */
 async function ensureDemoUser(opts: {
-  role: "trainee" | "employer" | "instructor";
+  role: "trainee" | "employer" | "instructor" | "industrial_mentor";
   emailHint: string;
 }): Promise<string> {
   const existing = await prisma.user.findFirst({
@@ -817,6 +819,227 @@ async function seedUserMatchesScenario(userId: string): Promise<SeedDetail> {
   };
 }
 
+/** Seed a structured-resume scenario for the calling admin:
+ *
+ *    1. Replace (or create) the admin's Resume row with a multi-
+ *       section content tree — Summary / Experience / Skills /
+ *       Education — populated with plausible biomanufacturing-trainee
+ *       content. Every bullet body carries a [demo] prefix so mentors
+ *       and the trainee can tell it apart from anything they typed
+ *       themselves, and so a future heuristic clear could find the
+ *       seeded rows without nuking the whole resume.
+ *    2. Stamp a ResumeRevision snapshot so the version-history view
+ *       has something to render.
+ *    3. Author 3 mentor comments on selected bullets (open status),
+ *       so /profile/resume immediately shows the comment-thread UX —
+ *       which is the surface that needed demo coverage in the first
+ *       place. Comments come from a demo industrial_mentor account,
+ *       auto-bootstrapped if missing.
+ *
+ *  Re-seeding is idempotent: the Resume row is upserted, every run
+ *  bumps version + writes a new revision + adds 3 fresh comments. */
+async function seedUserResume(userId: string): Promise<SeedDetail> {
+  // 1. Bootstrap a demo industrial mentor so comments have an author
+  //    with the right role for /profile/resume's permission check.
+  const mentorId = await ensureDemoUser({
+    role: "industrial_mentor",
+    emailHint: "resume-mentor",
+  });
+
+  // 2. Generate stable IDs up-front so we can anchor comments to
+  //    specific bullets / items / sections after the tree is written.
+  const summarySectionId = rid();
+  const expSectionId     = rid();
+  const skillsSectionId  = rid();
+  const eduSectionId     = rid();
+  const stemcellItemId   = rid();
+  const veridiomItemId   = rid();
+  const stemcellBullet1  = rid();
+  const stemcellBullet2  = rid();
+  const stemcellBullet3  = rid();
+  const veridiomBullet1  = rid();
+  const veridiomBullet2  = rid();
+
+  const content: ResumeContent = {
+    header: {
+      name: "Demo Admin",
+      email: "demo@bhn.test",
+      phone: "+1 (416) 555-0142",
+      location: "Toronto, ON",
+      summary: "[demo] Biomanufacturing trainee — aseptic technique, GMP documentation, deviation investigation.",
+    },
+    sections: [
+      {
+        id: summarySectionId, kind: "summary", position: 0,
+        items: [{
+          id: rid(), position: 0, bullets: [
+            {
+              id: rid(), position: 0,
+              body: "[demo] Manufacturing-process trainee with 8 months of bench experience across two GMP environments. Comfortable owning aseptic gowning audits, deviation investigations, and SOP rollovers end-to-end.",
+            },
+          ],
+        }],
+      },
+      {
+        id: expSectionId, kind: "experience", position: 1,
+        items: [
+          {
+            id: stemcellItemId, position: 0,
+            title: "Manufacturing Process Intern",
+            subtitle: "STEMCELL Technologies · Vancouver",
+            dateRange: "May 2025 – Aug 2025",
+            bullets: [
+              {
+                id: stemcellBullet1, position: 0,
+                body: "[demo] Ran 14 shake-flask cultures across two cell lines, holding contamination below the team's 2% threshold for the rotation.",
+              },
+              {
+                id: stemcellBullet2, position: 1,
+                body: "[demo] Co-authored an SOP rollover for aseptic gowning that cut new-hire certification time from 3 weeks to 4 days.",
+              },
+              {
+                id: stemcellBullet3, position: 2,
+                body: "[demo] Built a deviation tracker in Smartsheet that two adjacent teams adopted before the end of the rotation.",
+              },
+            ],
+          },
+          {
+            id: veridiomItemId, position: 1,
+            title: "QA Documentation Assistant",
+            subtitle: "Veridiom Therapeutics · Toronto",
+            dateRange: "Jan 2025 – Apr 2025",
+            bullets: [
+              {
+                id: veridiomBullet1, position: 0,
+                body: "[demo] Shepherded 12 high-risk SOPs through change-control ahead of a pre-PAI audit; all signed off with 7 days of slack.",
+              },
+              {
+                id: veridiomBullet2, position: 1,
+                body: "[demo] Maintained the deviation log and ran a 15-minute standup three times a week with blocked owners.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: skillsSectionId, kind: "skills", position: 2,
+        items: [{
+          id: rid(), position: 0, bullets: [
+            { id: rid(), position: 0, body: "Aseptic technique · BSL-2 trained" },
+            { id: rid(), position: 1, body: "GMP documentation · eQMS change-control" },
+            { id: rid(), position: 2, body: "Cell culture · shake-flask + bioreactor sampling" },
+            { id: rid(), position: 3, body: "Deviation investigation · root-cause analysis" },
+          ],
+        }],
+      },
+      {
+        id: eduSectionId, kind: "education", position: 3,
+        items: [{
+          id: rid(), position: 0,
+          title: "BSc Biotechnology",
+          subtitle: "University of Toronto",
+          dateRange: "2022 – 2026",
+          bullets: [],
+        }],
+      },
+    ],
+  };
+
+  // 3. Upsert the Resume row with the demo content. Increment version
+  //    on every re-seed so the revision snapshot below is unique.
+  const existing = await prisma.resume.findUnique({
+    where: { userId },
+    select: { id: true, version: true },
+  });
+  const nextVersion = existing ? existing.version + 1 : 1;
+  const resume = await prisma.resume.upsert({
+    where: { userId },
+    create: {
+      userId,
+      content: content as unknown as object,
+      version: nextVersion,
+      lastEditedAt: new Date(),
+    },
+    update: {
+      content: content as unknown as object,
+      version: nextVersion,
+      lastEditedAt: new Date(),
+    },
+    select: { id: true, version: true },
+  });
+
+  // 4. Snapshot the revision so the version-history surface has data.
+  await prisma.resumeRevision.create({
+    data: {
+      resumeId: resume.id,
+      version: resume.version,
+      content: content as unknown as object,
+      triggeredBy: "user",
+      note: "[demo] Seeded by /api/admin/demo-seed",
+    },
+  });
+
+  // 5. Three mentor comments anchored at varying granularity, so the
+  //    /profile/resume page shows the inline-thread UX across the
+  //    most common comment-pinning shapes.
+  const commentSeeds: Array<{
+    anchorBulletId: string;
+    anchorItemId: string;
+    anchorSectionId: string;
+    body: string;
+  }> = [
+    {
+      anchorBulletId: stemcellBullet1,
+      anchorItemId: stemcellItemId,
+      anchorSectionId: expSectionId,
+      body: "[demo] The 2% threshold lands well — say which cell lines, recruiters skim for the specifics.",
+    },
+    {
+      anchorBulletId: stemcellBullet2,
+      anchorItemId: stemcellItemId,
+      anchorSectionId: expSectionId,
+      body: "[demo] Strong delta (3 weeks → 4 days). Consider naming the method (\"paired-shadow flow\") so the *action* is concrete, not just the result.",
+    },
+    {
+      anchorBulletId: veridiomBullet1,
+      anchorItemId: veridiomItemId,
+      anchorSectionId: expSectionId,
+      body: "[demo] \"Shepherded\" reads vague — was that 12 of how many? Throughput is what an audit-shop hiring manager looks for here.",
+    },
+  ];
+  let createdComments = 0;
+  const errors: string[] = [];
+  for (const c of commentSeeds) {
+    try {
+      await prisma.resumeComment.create({
+        data: {
+          resumeId: resume.id,
+          authorId: mentorId,
+          authorRole: "industrial_mentor",
+          anchorBulletId: c.anchorBulletId,
+          anchorItemId: c.anchorItemId,
+          anchorSectionId: c.anchorSectionId,
+          body: c.body,
+          status: "open",
+        },
+      });
+      createdComments++;
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  // Count both the resume tree (1) and the mentor comments so the UI
+  // tally reflects what the admin will visibly see on /profile/resume.
+  return {
+    created: 1 + createdComments,
+    note:
+      errors.length > 0
+        ? `${errors.length} comment(s) failed — visit /profile/resume to inspect.`
+        : `1 resume tree + ${createdComments} mentor comments — open /profile/resume.`,
+  };
+}
+
 // ── Route handler ────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -878,6 +1101,12 @@ export async function POST(req: NextRequest) {
     else if (entity === "user_matches") {
       if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
       const detail = await seedUserMatchesScenario(reviewerId);
+      created = detail.created;
+      note = detail.note;
+    }
+    else if (entity === "user_resume") {
+      if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
+      const detail = await seedUserResume(reviewerId);
       created = detail.created;
       note = detail.note;
     }
