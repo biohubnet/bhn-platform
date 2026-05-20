@@ -27,10 +27,11 @@
  */
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, GripVertical, MessageCircle, CheckCircle2, X, Loader2, Sparkles, Save, ChevronUp, ChevronDown,
-  Target, Wand2, Clock,
+  Target, Wand2, Clock, Printer,
 } from "lucide-react";
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_LABEL, SECTION_HINTS, rid } from "@/lib/resume/types";
@@ -638,6 +639,17 @@ export function ResumeEditor({
           >
             <Clock size={12} /> Versions
           </button>
+          {/* Preview PDF — opens a print-styled page that the browser
+              can save as PDF. Same tab so the editor's draft state
+              (Tailor preview, AI rewrite previews, undo stack) isn't
+              left orphaned in the background. */}
+          <Link
+            href="/profile/resume/preview"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-elevated text-fg ring-1 ring-line hover:bg-card transition-colors"
+            title="Preview your resume in print layout — save as PDF from there"
+          >
+            <Printer size={12} /> Preview PDF
+          </Link>
           {parseError && (
             <span className="text-[11px] text-rose-700">{parseError}</span>
           )}
