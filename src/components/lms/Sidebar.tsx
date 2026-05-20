@@ -276,6 +276,8 @@ const adminEquipItems: NavItem[] = [
 const adminInsightsItems: NavItem[] = [
   { label: "Design system",       href: "/admin/design-system",       icon: Palette,    minRole: "admin",
     description: "Pick the platform-wide layout vocabulary (Classic / Cinematic / Studio) — admin-only, applies to every user. Plus the live tokens reference: surfaces, type scale, radius scale, motion primitives, component patterns, accessibility checklist. Canonical doc at docs/design-system.md." },
+  { label: "Design archive",      href: "/admin/design-archive",      icon: Layers,     minRole: "admin",
+    description: "Working sketches and visual-language explorations — admin dashboard mockups (60 visual languages), per-language layout studies (Vintage IBM × 10, Y2K Aero × 50), and any future archives. Each is a static HTML file under public/design-archive/. Reference material when picking a direction for a new surface." },
   { label: "Login floaters",      href: "/admin/login-floaters",      icon: FlaskConical, minRole: "admin",
     description: "Manage the ambient process-glyph animations that sit on the dark periphery of the public /login screen. Adds + fine-tunes are driven from an interactive editorial gallery of the curated library; each card is the real React floater at thumbnail scale, so admins see exactly what will land on /login." },
   { label: "Insights",            href: "/admin/insights",            icon: Lightbulb,  minRole: "admin",

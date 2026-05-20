@@ -1,0 +1,2174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BHN — Admin · Y2K Aero · 50 layouts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=Audiowide&family=Major+Mono+Display&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   SHELL — right sticky sidebar · scrollable main · uniform frames
+════════════════════════════════════════════════════════════════════ */
+:root {
+  --nav-w: 280px;
+  --gap: 14px;
+  /* Y2K Aero tokens */
+  --aero-grad: linear-gradient(135deg, #aef3ff 0%, #c7d0ff 50%, #ffd9ec 100%);
+  --aero-grad-2: linear-gradient(160deg, #d9f6ff 0%, #d4dcff 50%, #ffe5f3 100%);
+  --aero-grad-cool: linear-gradient(135deg, #d9f4ff 0%, #b8d0ff 50%, #d8c8ff 100%);
+  --aero-grad-warm: linear-gradient(135deg, #fff0d0 0%, #ffd0c0 50%, #ffc0e0 100%);
+  --aero-grad-mint: linear-gradient(135deg, #d8ffe8 0%, #b8e8d8 50%, #d8e8ff 100%);
+  --aero-ink: #001a3a;
+  --aero-ink-2: #335577;
+  --aero-ink-3: #557799;
+  --aero-blue: #0066cc;
+  --aero-blue-2: #003d7a;
+  --aero-pink: #c84680;
+  --aero-mint: #00a886;
+  --aero-card: linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(220,235,255,0.72) 100%);
+  --aero-card-strong: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(235,245,255,0.88) 100%);
+  --aero-card-blue: linear-gradient(180deg, rgba(140,200,255,0.85) 0%, rgba(80,150,230,0.78) 100%);
+  --aero-card-pink: linear-gradient(180deg, rgba(255,195,225,0.85) 0%, rgba(255,160,205,0.78) 100%);
+  --aero-card-dark: linear-gradient(180deg, rgba(20,40,90,0.85) 0%, rgba(10,25,60,0.95) 100%);
+  --aero-card-mint: linear-gradient(180deg, rgba(180,255,220,0.85) 0%, rgba(140,235,200,0.78) 100%);
+  --aero-border: 1px solid rgba(255,255,255,0.9);
+  --aero-shadow-sm: 0 1px 0 rgba(255,255,255,1) inset, 0 -1px 0 rgba(0,0,0,0.05) inset, 0 2px 8px rgba(0,50,150,0.10);
+  --aero-shadow: 0 1px 0 rgba(255,255,255,1) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 4px 16px rgba(0,50,150,0.15);
+  --aero-shadow-lg: 0 1px 0 rgba(255,255,255,1) inset, 0 -2px 0 rgba(0,0,0,0.08) inset, 0 12px 36px rgba(0,50,150,0.22);
+  --radius: 14px;
+  --radius-lg: 22px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+html { overflow-x: hidden; }
+body {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: linear-gradient(135deg, #c8e8f8 0%, #d4d8f8 50%, #f8d8e8 100%);
+  color: var(--aero-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-x: hidden;       /* no horizontal page scroll EVER */
+  max-width: 100vw;
+}
+/* Grid children default to `min-width: auto` (content size), so a wide
+   layout inside .main pushes the whole page wider. Force shrinkable. */
+.app { display: grid; grid-template-columns: minmax(0, 1fr) var(--nav-w); align-items: start; min-height: 100vh; }
+.main { padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); min-width: 0; overflow: hidden; }
+
+.intro {
+  background: var(--aero-card-strong);
+  backdrop-filter: blur(20px);
+  border: var(--aero-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--aero-shadow-lg);
+  padding: 28px 32px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 18px;
+}
+.intro h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.025em; margin: 0; line-height: 1.05; text-shadow: 0 1px 0 rgba(255,255,255,0.8); }
+.intro p { margin: 8px 0 0; font-size: 13px; color: var(--aero-ink-2); max-width: 60ch; line-height: 1.5; }
+.intro .count { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--aero-ink-3); text-align: right; }
+.intro .count strong { display: block; font-size: 52px; line-height: 1; color: var(--aero-blue-2); font-weight: 800; margin-top: 6px; font-family: 'Inter'; letter-spacing: -0.03em; text-shadow: 0 1px 0 rgba(255,255,255,0.8); }
+
+/* Frame around each layout */
+.frame {
+  background: var(--aero-grad);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--aero-shadow-lg);
+  scroll-margin-top: 14px;
+  isolation: isolate;
+  position: relative;
+  min-width: 0;      /* flex children can shrink past content width */
+  max-width: 100%;
+}
+.frame-body { min-width: 0; max-width: 100%; overflow: hidden; }
+.frame-body > * { min-width: 0; max-width: 100%; }
+.frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(800px 500px at 25% 10%, rgba(255,255,255,0.55), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.frame > * { position: relative; z-index: 1; }
+.frame-bar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(220,235,255,0.55));
+  border-bottom: 1px solid rgba(255,255,255,0.7);
+  backdrop-filter: blur(20px);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--aero-ink-2);
+}
+.frame-bar .num { background: var(--aero-blue-2); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 10px; letter-spacing: 0.18em; font-weight: 700; }
+.frame-bar .name { font-weight: 600; color: var(--aero-ink); letter-spacing: 0.16em; }
+.frame-bar .cat { color: var(--aero-ink-3); font-size: 10px; }
+.frame-body { padding: 22px 26px; }
+
+/* SIDEBAR — right sticky, Y2K-themed dark glass */
+.side {
+  position: sticky; top: var(--gap); align-self: start;
+  height: calc(100vh - var(--gap) * 2);
+  margin-right: var(--gap);
+  background: var(--aero-card-dark);
+  color: #fff;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--aero-shadow-lg);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.side-hd { padding: 22px 22px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.side-hd .brand { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(180,210,255,0.7); font-weight: 700; margin: 0; }
+.side-hd h2 { margin: 8px 0 4px; font-size: 18px; font-weight: 700; letter-spacing: -0.005em; }
+.side-hd p { margin: 0; font-size: 11.5px; color: rgba(255,255,255,0.55); line-height: 1.4; }
+.side-search { margin: 12px 0 0; position: relative; display: block; }
+.side-search input { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; padding: 8px 10px 8px 28px; font-family: inherit; font-size: 12px; outline: none; }
+.side-search input::placeholder { color: rgba(255,255,255,0.35); }
+.side-search input:focus { border-color: rgba(150,200,255,0.4); background: rgba(255,255,255,0.10); }
+.side-search::before { content: '⌕'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.4); font-size: 14px; }
+.side-list { flex: 1; overflow-y: auto; padding: 8px 12px 16px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+.side-list::-webkit-scrollbar { width: 6px; }
+.side-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+.side-group { margin-top: 14px; }
+.side-group:first-child { margin-top: 6px; }
+.side-group h3 { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(150,190,240,0.6); font-weight: 600; margin: 0 8px 6px; display: flex; align-items: center; gap: 8px; }
+.side-group h3::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+.side-list a { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 7px; color: rgba(255,255,255,0.55); text-decoration: none; font-size: 12.5px; font-weight: 500; transition: background 120ms, color 120ms; }
+.side-list a .num { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.32); letter-spacing: 0.06em; }
+.side-list a .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.3); opacity: 0; transition: opacity 120ms, background 120ms; }
+.side-list a:hover { background: rgba(150,200,255,0.10); color: #fff; }
+.side-list a:hover .num { color: rgba(255,255,255,0.75); }
+.side-list a.is-active { background: linear-gradient(180deg, rgba(150,200,255,0.18) 0%, rgba(100,160,240,0.10) 100%); color: #fff; }
+.side-list a.is-active .num { color: #fff; }
+.side-list a.is-active .dot { opacity: 1; background: #6cb6ff; box-shadow: 0 0 8px rgba(108,182,255,0.6); }
+.side-ft { padding: 14px 22px; border-top: 1px solid rgba(255,255,255,0.08); font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255,255,255,0.35); line-height: 1.4; }
+
+@media (max-width: 1100px) {
+  .app { grid-template-columns: 1fr; }
+  .side { position: static; height: auto; margin: var(--gap); }
+  .side-list { max-height: 320px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Y2K AERO COMPONENT TOKENS — shared across every layout. Each layout
+   composes these into a different structure; never invents new colors
+   or new card-types beyond this palette.
+════════════════════════════════════════════════════════════════════ */
+.aero-card { background: var(--aero-card); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow); padding: 18px 22px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.aero-card-blue { background: var(--aero-card-blue); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow); padding: 18px 22px; color: #fff; backdrop-filter: blur(20px); }
+.aero-card-pink { background: var(--aero-card-pink); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow); padding: 18px 22px; color: var(--aero-ink); backdrop-filter: blur(20px); }
+.aero-card-mint { background: var(--aero-card-mint); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow); padding: 18px 22px; color: var(--aero-ink); backdrop-filter: blur(20px); }
+.aero-card-dark { background: var(--aero-card-dark); border: 1px solid rgba(255,255,255,0.2); border-radius: var(--radius); box-shadow: var(--aero-shadow); padding: 18px 22px; color: #fff; backdrop-filter: blur(20px); }
+
+.aero-h { font-size: 14px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.005em; }
+.aero-gloss { color: var(--aero-ink-3); font-size: 12px; margin: 0 0 14px; }
+.aero-card-blue .aero-gloss, .aero-card-dark .aero-gloss { color: rgba(255,255,255,0.7); }
+.aero-list { list-style: none; padding: 0; margin: 0; }
+.aero-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,50,150,0.10); font-size: 13.5px; }
+.aero-list li:last-child { border-bottom: none; }
+.aero-list li .v { font-weight: 700; color: var(--aero-blue); text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+.aero-card-blue .aero-list li, .aero-card-dark .aero-list li { border-color: rgba(255,255,255,0.15); }
+.aero-card-blue .aero-list li .v, .aero-card-dark .aero-list li .v { color: #b8e0ff; text-shadow: none; }
+
+.aero-kpi .lbl { font-size: 11.5px; color: var(--aero-ink-2); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.aero-kpi .num { font-size: 36px; font-weight: 700; letter-spacing: -0.025em; margin-top: 4px; color: var(--aero-blue-2); text-shadow: 0 1px 0 rgba(255,255,255,0.7); line-height: 1; }
+.aero-kpi .sub { font-size: 12px; color: var(--aero-ink-3); margin-top: 4px; }
+.aero-kpi.warn .num { color: var(--aero-pink); }
+
+.aero-num-mega { font-size: 220px; font-weight: 800; line-height: 0.85; letter-spacing: -0.05em; color: var(--aero-blue-2); text-shadow: 0 2px 0 rgba(255,255,255,0.7), 0 4px 24px rgba(0,50,150,0.25); }
+.aero-num-huge { font-size: 120px; font-weight: 800; line-height: 0.9; letter-spacing: -0.04em; color: var(--aero-blue-2); text-shadow: 0 2px 0 rgba(255,255,255,0.7), 0 4px 16px rgba(0,50,150,0.2); }
+.aero-num-large { font-size: 72px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: var(--aero-blue-2); text-shadow: 0 1px 0 rgba(255,255,255,0.7), 0 4px 12px rgba(0,50,150,0.18); }
+
+.aero-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--aero-ink-2); font-weight: 700; }
+.aero-pill { display: inline-block; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.8); font-size: 11px; font-weight: 600; color: var(--aero-blue-2); letter-spacing: 0.05em; }
+.aero-pill.warn { background: rgba(255,200,220,0.7); border-color: rgba(255,180,200,0.9); color: var(--aero-pink); }
+
+/* ════════════════════════════════════════════════════════════════════
+   GROUP A · FOUNDATIONAL LAYOUTS (L1-L10)
+════════════════════════════════════════════════════════════════════ */
+
+/* L1 — Classic: 4-KPI row + 3 cards row */
+.L1 .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 14px; }
+.L1 .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* L2 — 2-col asymmetric (60/40) */
+.L2 .row { display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; align-items: start; }
+.L2 .right-stack { display: flex; flex-direction: column; gap: 14px; }
+.L2 .right-stack .mini-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* L3 — 2-col 50/50 split */
+.L3 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.L3 .row > * { display: flex; flex-direction: column; gap: 14px; }
+.L3 .kpis-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* L4 — 3-col equal */
+.L4 .col-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.L4 .col-3 > * { display: flex; flex-direction: column; gap: 12px; }
+
+/* L5 — 4-col equal */
+.L5 .col-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+.L5 .col-4 > * { display: flex; flex-direction: column; gap: 12px; }
+
+/* L6 — Sidebar left (240px rail) */
+.L6 .layout { display: grid; grid-template-columns: 240px 1fr; gap: 14px; }
+.L6 .rail { display: flex; flex-direction: column; gap: 12px; }
+.L6 .body3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* L7 — Sidebar right */
+.L7 .layout { display: grid; grid-template-columns: 1fr 240px; gap: 14px; }
+.L7 .body3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.L7 .rail { display: flex; flex-direction: column; gap: 12px; }
+
+/* L8 — Top banner + 3-col below */
+.L8 .banner { display: grid; grid-template-columns: repeat(4,1fr); gap: 0; padding: 24px 26px; margin-bottom: 14px; }
+.L8 .banner > * { padding: 0 20px; border-right: 1px solid rgba(255,255,255,0.5); }
+.L8 .banner > *:last-child { border-right: none; }
+.L8 .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* L9 — 2 rows of 3 cards (hexagonal feel) */
+.L9 .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.L9 .row1 { margin-bottom: 14px; }
+
+/* L10 — Pinwheel: 4 quadrants around a centered hero */
+.L10 .pinwheel { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; min-height: 520px; position: relative; }
+.L10 .hero {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: var(--aero-card-blue);
+  border: 3px solid rgba(255,255,255,0.95);
+  box-shadow: var(--aero-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #fff;
+  z-index: 2;
+}
+.L10 .hero .num { font-size: 72px; font-weight: 800; line-height: 0.9; text-shadow: 0 2px 0 rgba(0,30,80,0.4); }
+.L10 .hero .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.85; }
+.L10 .quad { padding: 22px 24px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   GROUP B · HERO-DRIVEN (L11-L20)
+════════════════════════════════════════════════════════════════════ */
+
+/* L11 — Centered colossal "17" + supporting */
+.L11 .hero { text-align: center; padding: 32px 24px 16px; }
+.L11 .hero .eyebrow { color: var(--aero-pink); }
+.L11 .hero .num { font-size: 280px; font-weight: 800; line-height: 0.85; letter-spacing: -0.05em; color: var(--aero-pink); text-shadow: 0 3px 0 rgba(255,255,255,0.7), 0 6px 32px rgba(200,70,128,0.30); margin: 14px 0 8px; }
+.L11 .hero .what { font-size: 19px; color: var(--aero-ink); max-width: 50ch; margin: 8px auto 0; line-height: 1.4; font-weight: 500; }
+.L11 .below { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-top: 14px; }
+
+/* L12 — Big "1,247" headline */
+.L12 .head { display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; align-items: end; margin-bottom: 18px; padding: 24px 28px 12px; }
+.L12 .head .big { font-size: 200px; font-weight: 800; line-height: 0.85; letter-spacing: -0.05em; color: var(--aero-blue-2); text-shadow: 0 3px 0 rgba(255,255,255,0.75), 0 6px 24px rgba(0,50,150,0.25); }
+.L12 .head .desc h3 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.015em; font-weight: 700; }
+.L12 .head .desc p { color: var(--aero-ink-2); font-size: 14px; line-height: 1.5; max-width: 38ch; margin: 0; }
+.L12 .grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+
+/* L13 — Off-center hero with text wrap */
+.L13 .row { display: grid; grid-template-columns: 2fr 1.4fr; gap: 18px; align-items: stretch; }
+.L13 .hero { padding: 36px 36px; display: flex; flex-direction: column; justify-content: center; background: var(--aero-card-blue); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow); color: #fff; }
+.L13 .hero .eyebrow { color: rgba(255,255,255,0.75); }
+.L13 .hero .big { font-size: 144px; line-height: 0.9; font-weight: 800; letter-spacing: -0.04em; margin: 12px 0; text-shadow: 0 2px 0 rgba(0,30,80,0.5); }
+.L13 .hero .what { font-size: 16px; opacity: 0.9; max-width: 36ch; line-height: 1.4; }
+.L13 .stack { display: flex; flex-direction: column; gap: 14px; }
+.L13 .stack .mini { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* L14 — Full-bleed banner with KPIs in front */
+.L14 .body { padding: 0; }
+.L14 .banner { background: linear-gradient(135deg, #6cb6ff 0%, #c8a8ff 50%, #ff9ec8 100%); padding: 56px 48px 64px; position: relative; overflow: hidden; color: #fff; }
+.L14 .banner::before { content:''; position: absolute; inset: 0; background: radial-gradient(800px 400px at 20% 20%, rgba(255,255,255,0.45), transparent 60%); }
+.L14 .banner h2 { font-size: 56px; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 10px; text-shadow: 0 2px 0 rgba(0,30,80,0.3); position: relative; z-index: 1; }
+.L14 .banner p { font-size: 16px; opacity: 0.95; max-width: 50ch; margin: 0; position: relative; z-index: 1; }
+.L14 .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: -36px 26px 14px; position: relative; z-index: 2; }
+.L14 .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; padding: 0 26px 22px; }
+
+/* L15 — Vertical hero "S·T·A·T·E" stacked */
+.L15 .row { display: grid; grid-template-columns: 160px 1fr; gap: 28px; align-items: stretch; }
+.L15 .vertical { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 64px; font-weight: 800; letter-spacing: 0.1em; line-height: 1.05; text-align: center; color: var(--aero-blue-2); text-shadow: 0 2px 0 rgba(255,255,255,0.7), 0 4px 18px rgba(0,50,150,0.18); padding: 18px 0; }
+.L15 .body { display: flex; flex-direction: column; gap: 14px; }
+.L15 .body .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+.L15 .body .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* L16 — 4 huge KPIs in a row */
+.L16 .grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 14px; }
+.L16 .grid .aero-card { padding: 32px 28px; min-height: 220px; display: flex; flex-direction: column; justify-content: space-between; }
+.L16 .grid .num { font-size: 96px; font-weight: 800; line-height: 0.9; letter-spacing: -0.04em; color: var(--aero-blue-2); text-shadow: 0 2px 0 rgba(255,255,255,0.7), 0 4px 16px rgba(0,50,150,0.2); }
+.L16 .grid .warn .num { color: var(--aero-pink); }
+.L16 .below { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* L17 — Hero with embedded mini KPIs */
+.L17 .hero { background: var(--aero-card-strong); border: var(--aero-border); border-radius: var(--radius-lg); box-shadow: var(--aero-shadow-lg); padding: 36px 40px; display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 32px; margin-bottom: 14px; }
+.L17 .hero .left h2 { font-size: 36px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.02em; line-height: 1.05; }
+.L17 .hero .left p { color: var(--aero-ink-2); font-size: 14.5px; max-width: 48ch; margin: 0 0 18px; line-height: 1.5; }
+.L17 .hero .inset { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0; border-top: 1px solid rgba(0,50,150,0.18); padding-top: 14px; }
+.L17 .hero .inset .kpi { padding: 0 16px; border-right: 1px solid rgba(0,50,150,0.12); }
+.L17 .hero .inset .kpi:first-child { padding-left: 0; }
+.L17 .hero .inset .kpi:last-child { border-right: none; padding-right: 0; }
+.L17 .hero .inset .kpi .num { font-size: 28px; }
+.L17 .hero .right { font-size: 120px; font-weight: 800; line-height: 0.9; color: var(--aero-pink); text-shadow: 0 2px 0 rgba(255,255,255,0.7); letter-spacing: -0.04em; }
+.L17 .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* L18 — Diagonal hero ribbon */
+.L18 .body { padding: 0; position: relative; min-height: 320px; }
+.L18 .ribbon { background: var(--aero-card-blue); padding: 56px 80px; color: #fff; transform: skewY(-3deg); transform-origin: top left; margin: -12px -36px 0; }
+.L18 .ribbon-inner { transform: skewY(3deg); display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 32px; }
+.L18 .ribbon h2 { font-size: 44px; font-weight: 800; margin: 0; letter-spacing: -0.025em; text-shadow: 0 2px 0 rgba(0,30,80,0.4); }
+.L18 .ribbon .num { font-size: 96px; font-weight: 800; line-height: 0.9; text-shadow: 0 2px 0 rgba(0,30,80,0.4); color: #ffd5ec; }
+.L18 .below { padding: 36px 26px 22px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+
+/* L19 — Hero meter (gauge) */
+.L19 .row { display: grid; grid-template-columns: 360px 1fr; gap: 26px; align-items: center; }
+.L19 .gauge { aspect-ratio: 1; background: var(--aero-card-strong); border: var(--aero-border); border-radius: 50%; box-shadow: var(--aero-shadow-lg); display: flex; align-items: center; justify-content: center; position: relative; }
+.L19 .gauge::before { content:''; position: absolute; inset: 14px; border-radius: 50%; background: conic-gradient(from 180deg, #ff5577 0% 14%, rgba(180,200,240,0.3) 14% 100%); }
+.L19 .gauge::after { content:''; position: absolute; inset: 36px; border-radius: 50%; background: var(--aero-card-strong); box-shadow: var(--aero-shadow); }
+.L19 .gauge .center { position: relative; z-index: 1; text-align: center; }
+.L19 .gauge .num { font-size: 80px; font-weight: 800; line-height: 1; color: var(--aero-pink); text-shadow: 0 2px 0 rgba(255,255,255,0.7); }
+.L19 .gauge .of { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--aero-ink-2); margin-top: 4px; }
+.L19 .stack { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* L20 — Hero ticker / marquee */
+.L20 .ticker { background: var(--aero-card-dark); color: #fff; padding: 22px 32px; border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow); overflow: hidden; margin-bottom: 14px; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 22px; }
+.L20 .ticker .live { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,80,120,0.2); border: 1px solid rgba(255,120,150,0.4); border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #ff8caf; }
+.L20 .ticker .live::before { content:''; width: 8px; height: 8px; border-radius: 50%; background: #ff5577; animation: pulse20 1.2s ease-in-out infinite; }
+@keyframes pulse20 { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+.L20 .ticker .stream { display: flex; gap: 24px; overflow: hidden; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; letter-spacing: 0.06em; }
+.L20 .ticker .stream span { white-space: nowrap; }
+.L20 .ticker .stream b { color: #6cb6ff; font-weight: 700; }
+.L20 .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 14px; }
+.L20 .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   GROUP C · MAGAZINE / EDITORIAL (L21-L30)
+════════════════════════════════════════════════════════════════════ */
+
+/* L21 — Magazine cover */
+.L21 .body { padding: 0; display: grid; grid-template-columns: 1.7fr 1fr; min-height: 540px; }
+.L21 .cover { padding: 40px 44px 36px; display: flex; flex-direction: column; justify-content: space-between; }
+.L21 .cover .top .issue { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--aero-ink-2); }
+.L21 .cover h1 { font-size: 88px; font-weight: 800; letter-spacing: -0.04em; line-height: 0.9; margin: 16px 0 12px; color: var(--aero-blue-2); text-shadow: 0 2px 0 rgba(255,255,255,0.7), 0 4px 18px rgba(0,50,150,0.18); }
+.L21 .cover h1 em { font-style: italic; color: var(--aero-pink); }
+.L21 .cover .dek { font-size: 18px; color: var(--aero-ink); max-width: 40ch; line-height: 1.35; }
+.L21 .cover .stamps { display: flex; gap: 8px; margin-top: 24px; flex-wrap: wrap; }
+.L21 .toc { background: var(--aero-card-strong); border-left: var(--aero-border); padding: 36px 32px; display: flex; flex-direction: column; gap: 18px; }
+.L21 .toc h3 { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--aero-ink-2); margin: 0; font-weight: 700; }
+.L21 .toc ul { list-style: none; padding: 0; margin: 0; }
+.L21 .toc ul li { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: baseline; padding: 12px 0; border-bottom: 1px dotted rgba(0,50,150,0.25); }
+.L21 .toc ul li .n { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--aero-pink); font-weight: 700; }
+.L21 .toc ul li .t { font-size: 14.5px; }
+.L21 .toc ul li .v { font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; font-weight: 700; color: var(--aero-blue-2); }
+
+/* L22 — Two-page spread */
+.L22 .spread { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 520px; }
+.L22 .page { padding: 32px 36px; }
+.L22 .page.left { border-right: 1px solid rgba(0,50,150,0.18); }
+.L22 .page h2 { font-size: 36px; font-weight: 800; margin: 0 0 4px; letter-spacing: -0.02em; line-height: 1.05; }
+.L22 .page .deck { color: var(--aero-ink-2); font-size: 14.5px; margin-bottom: 22px; max-width: 38ch; }
+.L22 .page .kpi-row { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
+.L22 .page ul { list-style: none; padding: 0; margin: 0; }
+.L22 .page ul li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(0,50,150,0.12); font-size: 14px; }
+.L22 .page ul li .v { font-weight: 700; color: var(--aero-blue); }
+
+/* L23 — Pull-quote feature */
+.L23 .pull { padding: 56px 48px; display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: center; }
+.L23 .pull .mark { font-size: 144px; line-height: 0.6; font-family: 'Major Mono Display', monospace; color: var(--aero-pink); opacity: 0.55; }
+.L23 .pull blockquote { margin: 0; }
+.L23 .pull blockquote p { font-family: 'Inter', serif; font-size: 36px; font-weight: 600; font-style: italic; line-height: 1.2; color: var(--aero-ink); margin: 0 0 18px; text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+.L23 .pull blockquote footer { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--aero-ink-2); }
+.L23 .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; padding: 0 26px 14px; }
+.L23 .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; padding: 0 26px 22px; }
+
+/* L24 — Cover story + sidebar */
+.L24 .row { display: grid; grid-template-columns: 1.7fr 1fr; gap: 18px; }
+.L24 .feature { background: var(--aero-card-strong); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow); padding: 28px 30px; }
+.L24 .feature .crumb { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--aero-pink); font-weight: 700; }
+.L24 .feature h2 { font-size: 32px; font-weight: 800; margin: 8px 0 8px; letter-spacing: -0.02em; }
+.L24 .feature .lede { font-size: 15px; line-height: 1.5; color: var(--aero-ink-2); max-width: 60ch; margin: 0 0 16px; }
+.L24 .feature .columns { column-count: 2; column-gap: 28px; font-size: 13.5px; line-height: 1.5; color: var(--aero-ink); margin-bottom: 16px; }
+.L24 .feature .columns p { margin: 0 0 12px; }
+.L24 .feature .pulled { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; padding-top: 14px; border-top: 1px solid rgba(0,50,150,0.18); }
+.L24 .side { display: flex; flex-direction: column; gap: 14px; }
+
+/* L25 — Index / glossary alpha listing */
+.L25 .idx { background: var(--aero-card-strong); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow); padding: 28px 30px; }
+.L25 .idx h2 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.01em; font-weight: 700; }
+.L25 .idx .deck { color: var(--aero-ink-2); font-size: 13px; margin: 0 0 18px; }
+.L25 .alpha { display: grid; grid-template-columns: repeat(3,1fr); column-gap: 32px; }
+.L25 .alpha .letter { padding-top: 12px; margin-bottom: 16px; border-top: 1px solid var(--aero-blue-2); }
+.L25 .alpha .letter h3 { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; margin: 0 0 6px; color: var(--aero-pink); font-weight: 700; }
+.L25 .alpha .letter ul { list-style: none; padding: 0; margin: 0; }
+.L25 .alpha .letter ul li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted rgba(0,50,150,0.18); font-size: 13.5px; }
+.L25 .alpha .letter ul li .v { font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--aero-blue); }
+
+/* L26 — Almanac / weekly calendar */
+.L26 .week { display: grid; grid-template-columns: repeat(7,1fr); gap: 10px; padding: 4px 0; }
+.L26 .day { background: var(--aero-card); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow-sm); padding: 14px 14px; min-height: 180px; display: flex; flex-direction: column; }
+.L26 .day.today { background: var(--aero-card-blue); color: #fff; }
+.L26 .day .name { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.7; }
+.L26 .day .num { font-size: 36px; font-weight: 800; line-height: 1; margin-top: 4px; letter-spacing: -0.02em; }
+.L26 .day .day-name { font-size: 14px; opacity: 0.85; margin-bottom: 12px; font-weight: 500; }
+.L26 .day .stat { font-size: 12px; padding: 4px 0; border-top: 1px solid rgba(0,50,150,0.12); margin-top: auto; }
+.L26 .day.today .stat { border-top-color: rgba(255,255,255,0.25); }
+.L26 .below { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 14px; }
+
+/* L27 — Vertical timeline narrative */
+.L27 .narr { max-width: 760px; margin: 12px auto; padding: 0 16px; }
+.L27 .step { position: relative; padding: 0 28px 0 64px; margin-bottom: 22px; }
+.L27 .step::before { content:''; position: absolute; left: 28px; top: 8px; bottom: -22px; width: 2px; background: rgba(0,80,180,0.25); }
+.L27 .step:last-child::before { bottom: 8px; }
+.L27 .step .stamp { position: absolute; left: 16px; top: 8px; width: 26px; height: 26px; background: var(--aero-card-blue); color: #fff; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: var(--aero-shadow-sm); border: 1.5px solid #fff; }
+.L27 .step .time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--aero-pink); font-weight: 700; }
+.L27 .step .aero-card { margin-top: 6px; padding: 16px 20px; }
+
+/* L28 — Field guide (categorized entries) */
+.L28 .fg { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.L28 .fg .cat-card { padding: 22px 26px; }
+.L28 .fg .cat-card .cat-h { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--aero-blue); }
+.L28 .fg .cat-card .cat-h h3 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.005em; }
+.L28 .fg .cat-card .cat-h .pip { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--aero-ink-2); }
+.L28 .fg .entry { display: grid; grid-template-columns: 28px 1fr auto; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px dotted rgba(0,50,150,0.2); }
+.L28 .fg .entry:last-child { border-bottom: none; }
+.L28 .fg .entry .glyph { width: 24px; height: 24px; border-radius: 50%; background: var(--aero-card-blue); color: #fff; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.L28 .fg .entry .t { font-size: 13.5px; }
+.L28 .fg .entry .t small { display: block; font-size: 11.5px; color: var(--aero-ink-3); margin-top: 2px; }
+.L28 .fg .entry .v { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 700; color: var(--aero-blue); }
+
+/* L29 — Postcard style with overlap */
+.L29 .field { position: relative; min-height: 540px; padding: 24px; }
+.L29 .pc { position: absolute; background: var(--aero-card-strong); border: var(--aero-border); border-radius: 4px; box-shadow: var(--aero-shadow-lg); padding: 18px 20px; width: 260px; }
+.L29 .pc.tilt-l { transform: rotate(-2.5deg); }
+.L29 .pc.tilt-r { transform: rotate(2.5deg); }
+.L29 .pc.tilt-s { transform: rotate(-0.5deg); }
+.L29 .pc h3 { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.25em; text-transform: uppercase; margin: 0 0 6px; color: var(--aero-pink); font-weight: 700; padding-bottom: 6px; border-bottom: 1px dashed rgba(0,50,150,0.25); }
+.L29 .pc ul { list-style: none; padding: 0; margin: 0; }
+.L29 .pc ul li { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+.L29 .pc ul li .v { font-weight: 700; color: var(--aero-blue); }
+.L29 .pc .num { font-size: 56px; font-weight: 800; line-height: 1; color: var(--aero-blue-2); text-shadow: 0 2px 0 rgba(255,255,255,0.7); }
+.L29 .pc.p1 { top: 30px; left: 6%; }
+.L29 .pc.p2 { top: 60px; left: 30%; width: 220px; background: var(--aero-card-pink); }
+.L29 .pc.p3 { top: 18px; right: 6%; }
+.L29 .pc.p4 { bottom: 30px; left: 14%; }
+.L29 .pc.p5 { bottom: 60px; left: 42%; }
+.L29 .pc.p6 { bottom: 18px; right: 10%; width: 240px; background: var(--aero-card-blue); color: #fff; }
+.L29 .pc.p6 h3 { color: rgba(255,255,255,0.85); border-bottom-color: rgba(255,255,255,0.3); }
+.L29 .pc.p6 .v { color: #ffd5ec; }
+
+/* L30 — Stamp collection grid */
+.L30 .stamps { display: grid; grid-template-columns: repeat(6,1fr); gap: 14px; padding: 4px 0; }
+.L30 .stamp { background: var(--aero-card); border: 2px dashed rgba(0,50,150,0.3); border-radius: 6px; padding: 14px 12px; min-height: 130px; display: flex; flex-direction: column; justify-content: space-between; }
+.L30 .stamp .perf { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--aero-ink-2); text-align: center; }
+.L30 .stamp .num { font-size: 32px; font-weight: 800; line-height: 1; text-align: center; color: var(--aero-blue-2); text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+.L30 .stamp.warn .num { color: var(--aero-pink); }
+.L30 .stamp .lbl { font-size: 11px; text-align: center; color: var(--aero-ink-2); font-weight: 600; }
+.L30 .below { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 14px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   GROUP D · BENTO / MOSAIC (L31-L40)
+════════════════════════════════════════════════════════════════════ */
+
+/* L31 — Apple bento (mixed sizes) */
+.L31 .bento { display: grid; grid-template-columns: repeat(6,1fr); grid-template-rows: 140px 140px 200px; gap: 12px; }
+.L31 .bento .b { padding: 22px; display: flex; flex-direction: column; justify-content: space-between; }
+.L31 .bento .b1 { grid-column: span 2; grid-row: span 2; }
+.L31 .bento .b1 .num { font-size: 72px; }
+.L31 .bento .b2 { grid-column: span 2; }
+.L31 .bento .b3 { grid-column: span 2; }
+.L31 .bento .b4 { grid-column: span 2; }
+.L31 .bento .b5 { grid-column: span 2; }
+.L31 .bento .b6 { grid-column: span 3; }
+.L31 .bento .b7 { grid-column: span 3; }
+.L31 .bento .b .num { font-size: 48px; font-weight: 800; line-height: 1; color: var(--aero-blue-2); text-shadow: 0 1px 0 rgba(255,255,255,0.7); }
+.L31 .bento .b.warn .num, .L31 .bento .b.warn .lbl-strong { color: var(--aero-pink); }
+.L31 .bento .b .lbl-strong { font-size: 11.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--aero-blue-2); }
+
+/* L32 — Asymmetric tile grid */
+.L32 .grid { display: grid; grid-template-columns: 1fr 1.4fr 1fr; grid-template-rows: auto auto auto; gap: 12px; }
+.L32 .grid > * { padding: 18px 22px; }
+.L32 .a { grid-row: span 2; }
+.L32 .b { grid-column: span 1; }
+.L32 .c { grid-row: span 2; }
+.L32 .d { grid-column: span 1; }
+.L32 .e { grid-column: span 3; }
+.L32 .a .num, .L32 .c .num { font-size: 64px; font-weight: 800; line-height: 1; color: var(--aero-blue-2); text-shadow: 0 1px 0 rgba(255,255,255,0.7); }
+
+/* L33 — Brick wall offset */
+.L33 .row { display: grid; gap: 12px; margin-bottom: 12px; }
+.L33 .row.r1 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.L33 .row.r2 { grid-template-columns: 0.5fr 1fr 1fr 1fr 0.5fr; }
+.L33 .row.r3 { grid-template-columns: 1fr 1fr 1fr; }
+.L33 .row .aero-card { padding: 16px 20px; }
+.L33 .row .num { font-size: 32px; font-weight: 800; line-height: 1; color: var(--aero-blue-2); text-shadow: 0 1px 0 rgba(255,255,255,0.7); }
+.L33 .row .lbl-strong { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--aero-ink-2); }
+
+/* L34 — Tetris irregular */
+.L34 .grid { display: grid; grid-template-columns: repeat(8,1fr); grid-auto-rows: 100px; gap: 10px; }
+.L34 .grid > * { padding: 16px 18px; display: flex; flex-direction: column; justify-content: space-between; }
+.L34 .t1 { grid-column: span 3; grid-row: span 2; }
+.L34 .t2 { grid-column: span 2; grid-row: span 1; }
+.L34 .t3 { grid-column: span 3; grid-row: span 1; }
+.L34 .t4 { grid-column: span 2; grid-row: span 1; }
+.L34 .t5 { grid-column: span 3; grid-row: span 1; }
+.L34 .t6 { grid-column: span 4; grid-row: span 2; }
+.L34 .t7 { grid-column: span 4; grid-row: span 1; }
+.L34 .t8 { grid-column: span 4; grid-row: span 1; }
+.L34 .num { font-size: 38px; font-weight: 800; line-height: 1; color: var(--aero-blue-2); }
+.L34 .t1 .num { font-size: 64px; }
+.L34 .t6 .num { font-size: 56px; }
+.L34 .lbl-strong { font-size: 10.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--aero-ink-2); }
+
+/* L35 — Crazy quilt (chaotic but bounded) */
+.L35 .quilt { display: grid; grid-template-columns: repeat(12,1fr); grid-auto-rows: 84px; gap: 8px; }
+.L35 .quilt > * { padding: 12px 16px; display: flex; flex-direction: column; justify-content: space-between; }
+.L35 .q1 { grid-column: span 4; grid-row: span 2; }
+.L35 .q2 { grid-column: span 3; grid-row: span 1; }
+.L35 .q3 { grid-column: span 5; grid-row: span 1; }
+.L35 .q4 { grid-column: span 3; grid-row: span 2; }
+.L35 .q5 { grid-column: span 5; grid-row: span 1; }
+.L35 .q6 { grid-column: span 2; grid-row: span 1; }
+.L35 .q7 { grid-column: span 2; grid-row: span 1; }
+.L35 .q8 { grid-column: span 4; grid-row: span 2; }
+.L35 .q9 { grid-column: span 4; grid-row: span 1; }
+.L35 .q10 { grid-column: span 4; grid-row: span 1; }
+.L35 .num { font-size: 28px; font-weight: 800; line-height: 1; color: var(--aero-blue-2); }
+.L35 .q1 .num { font-size: 48px; }
+.L35 .lbl-strong { font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--aero-ink-2); }
+
+/* L36 — Hex grid (using clip-path) */
+.L36 .hex-row { display: flex; justify-content: center; gap: -18px; }
+.L36 .hex-row + .hex-row { margin-top: -36px; }
+.L36 .hex-row.offset { padding-left: 110px; }
+.L36 .hex { width: 200px; height: 230px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background: var(--aero-card); border: var(--aero-border); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin: 0 -18px; padding: 24px; }
+.L36 .hex.warn { background: var(--aero-card-pink); }
+.L36 .hex .num { font-size: 38px; font-weight: 800; line-height: 1; color: var(--aero-blue-2); }
+.L36 .hex.warn .num { color: var(--aero-pink); }
+.L36 .hex .lbl-strong { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--aero-ink-2); margin-top: 6px; }
+.L36 .hex .sub { font-size: 11px; color: var(--aero-ink-3); margin-top: 4px; }
+
+/* L37 — Circular tiles */
+.L37 .grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; place-items: center; }
+.L37 .circle { aspect-ratio: 1; width: 180px; border-radius: 50%; background: var(--aero-card-strong); border: 2px solid rgba(255,255,255,0.9); box-shadow: var(--aero-shadow-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.L37 .circle.warn { background: var(--aero-card-pink); }
+.L37 .circle .num { font-size: 48px; font-weight: 800; line-height: 1; color: var(--aero-blue-2); }
+.L37 .circle.warn .num { color: var(--aero-pink); }
+.L37 .circle .lbl-strong { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--aero-ink-2); margin-top: 6px; }
+.L37 .below { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 18px; }
+
+/* L38 — Stacked cards 3D depth */
+.L38 .body { padding: 32px 26px; }
+.L38 .deck { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; perspective: 1200px; }
+.L38 .deck .stack { position: relative; padding-top: 32px; }
+.L38 .deck .stack .card-3 { position: relative; transform: rotate(-2deg); }
+.L38 .deck .stack .card-2 { position: relative; margin-top: -100px; margin-left: 16px; transform: rotate(1deg); }
+.L38 .deck .stack .card-1 { position: relative; margin-top: -100px; margin-left: -8px; transform: rotate(-0.5deg); z-index: 2; }
+.L38 .deck .stack .num { font-size: 36px; font-weight: 800; color: var(--aero-blue-2); }
+
+/* L39 — Floating rotated cards */
+.L39 .float { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+.L39 .float .aero-card { transform: rotate(var(--r, 0deg)); transition: transform 200ms; }
+.L39 .float .aero-card:hover { transform: rotate(0deg) translateY(-4px); }
+.L39 .below { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 16px; }
+
+/* L40 — Polaroid scattered */
+.L40 .field { position: relative; min-height: 600px; }
+.L40 .pol { position: absolute; background: #fff; padding: 12px 12px 36px; box-shadow: var(--aero-shadow-lg); border-radius: 2px; width: 220px; }
+.L40 .pol .photo { background: var(--aero-grad-cool); border-radius: 2px; aspect-ratio: 1.1; display: flex; align-items: center; justify-content: center; }
+.L40 .pol .photo .num { font-size: 64px; font-weight: 800; color: var(--aero-blue-2); text-shadow: 0 2px 0 rgba(255,255,255,0.6); }
+.L40 .pol.warn .photo { background: var(--aero-card-pink); }
+.L40 .pol.warn .photo .num { color: var(--aero-pink); }
+.L40 .pol .cap { font-family: 'Caveat', cursive; font-size: 18px; text-align: center; margin-top: 8px; color: var(--aero-ink); }
+.L40 .pol.p1 { top: 32px; left: 4%; transform: rotate(-4deg); }
+.L40 .pol.p2 { top: 60px; left: 24%; transform: rotate(2deg); }
+.L40 .pol.p3 { top: 24px; left: 46%; transform: rotate(-2deg); }
+.L40 .pol.p4 { top: 50px; right: 22%; transform: rotate(3deg); }
+.L40 .pol.p5 { top: 30px; right: 2%; transform: rotate(-3deg); }
+.L40 .pol.p6 { bottom: 30px; left: 12%; transform: rotate(2deg); }
+.L40 .pol.p7 { bottom: 40px; left: 34%; transform: rotate(-1.5deg); }
+.L40 .pol.p8 { bottom: 20px; right: 28%; transform: rotate(4deg); }
+.L40 .pol.p9 { bottom: 40px; right: 6%; transform: rotate(-2deg); }
+
+/* ════════════════════════════════════════════════════════════════════
+   GROUP E · DATA-DRIVEN (L41-L50)
+════════════════════════════════════════════════════════════════════ */
+
+/* L41 — Big data table */
+.L41 .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }
+.L41 .data-table { background: var(--aero-card-strong); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow); overflow: hidden; }
+.L41 table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.L41 table thead { background: var(--aero-card-blue); color: #fff; }
+.L41 table th { padding: 12px 16px; text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; border-right: 1px solid rgba(255,255,255,0.18); }
+.L41 table th:last-child { border-right: none; }
+.L41 table td { padding: 11px 16px; border-bottom: 1px solid rgba(0,50,150,0.10); border-right: 1px solid rgba(0,50,150,0.06); }
+.L41 table td:last-child { border-right: none; }
+.L41 table tr:last-child td { border-bottom: none; }
+.L41 table .id { font-family: 'IBM Plex Mono', monospace; color: var(--aero-blue); font-weight: 700; }
+.L41 table .status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; }
+.L41 table .status.stale { color: var(--aero-pink); }
+.L41 table .status.ok { color: var(--aero-mint); }
+
+/* L42 — Spreadsheet dense */
+.L42 .grid-12 { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; }
+.L42 .cell { background: var(--aero-card); border: 1px solid rgba(255,255,255,0.85); border-radius: 6px; padding: 10px 12px; box-shadow: var(--aero-shadow-sm); min-height: 64px; }
+.L42 .cell .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--aero-ink-2); font-weight: 600; }
+.L42 .cell .num { font-size: 22px; font-weight: 800; line-height: 1; color: var(--aero-blue-2); text-shadow: 0 1px 0 rgba(255,255,255,0.7); margin-top: 4px; }
+.L42 .cell.warn .num { color: var(--aero-pink); }
+.L42 .row { display: contents; }
+
+/* L43 — Horizontal timeline */
+.L43 .tline { background: var(--aero-card-strong); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow); padding: 28px 32px; margin-bottom: 14px; position: relative; }
+.L43 .tline::before { content:''; position: absolute; left: 32px; right: 32px; top: 50%; height: 2px; background: linear-gradient(90deg, var(--aero-blue-2), var(--aero-pink)); transform: translateY(-50%); }
+.L43 .tline .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; position: relative; }
+.L43 .tline .stop { text-align: center; position: relative; }
+.L43 .tline .stop .dot { width: 18px; height: 18px; border-radius: 50%; background: var(--aero-card-blue); border: 3px solid #fff; box-shadow: var(--aero-shadow-sm); margin: 0 auto 8px; position: relative; z-index: 2; }
+.L43 .tline .stop.now .dot { background: var(--aero-pink); width: 24px; height: 24px; margin-top: -3px; }
+.L43 .tline .stop .time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--aero-ink-2); font-weight: 600; }
+.L43 .tline .stop .label { font-size: 12.5px; margin-top: 4px; color: var(--aero-ink); font-weight: 500; }
+.L43 .below { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+
+/* L44 — Funnel pipeline */
+.L44 .funnel { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0; }
+.L44 .funnel .stage { background: var(--aero-card-blue); color: #fff; padding: 16px 28px; border-radius: 8px; box-shadow: var(--aero-shadow); display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 24px; }
+.L44 .funnel .stage.s1 { width: 95%; background: linear-gradient(180deg, rgba(170,220,255,0.9), rgba(120,180,240,0.85)); color: var(--aero-ink); }
+.L44 .funnel .stage.s2 { width: 80%; background: linear-gradient(180deg, rgba(140,200,255,0.92), rgba(90,160,230,0.88)); color: #fff; }
+.L44 .funnel .stage.s3 { width: 65%; background: linear-gradient(180deg, rgba(110,180,240,0.95), rgba(60,130,210,0.92)); color: #fff; }
+.L44 .funnel .stage.s4 { width: 50%; background: linear-gradient(180deg, rgba(220,140,200,0.92), rgba(200,70,128,0.92)); color: #fff; }
+.L44 .funnel .stage.s5 { width: 35%; background: linear-gradient(180deg, rgba(180,100,180,0.95), rgba(140,60,140,0.95)); color: #fff; }
+.L44 .funnel .stage .label { font-size: 14px; font-weight: 600; }
+.L44 .funnel .stage .num { font-size: 32px; font-weight: 800; line-height: 1; }
+.L44 .below { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+
+/* L45 — Comparison grid (3 columns) */
+.L45 .compare { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.L45 .compare .col { padding: 24px 28px; }
+.L45 .compare .col .label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--aero-ink-2); font-weight: 700; margin-bottom: 8px; }
+.L45 .compare .col h3 { font-size: 22px; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.01em; }
+.L45 .compare .col .big { font-size: 64px; font-weight: 800; line-height: 0.9; color: var(--aero-blue-2); margin: 8px 0 14px; text-shadow: 0 1px 0 rgba(255,255,255,0.7); }
+.L45 .compare .col.warn .big { color: var(--aero-pink); }
+.L45 .compare .col ul { list-style: none; padding: 14px 0 0; margin: 0; border-top: 1px solid rgba(0,50,150,0.18); }
+.L45 .compare .col ul li { display: flex; justify-content: space-between; padding: 7px 0; font-size: 12.5px; }
+.L45 .compare .col ul li .v { font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--aero-blue); }
+.L45 .compare .col.warn ul li .v { color: var(--aero-pink); }
+
+/* L46 — Hierarchical tree */
+.L46 .tree { padding: 16px; }
+.L46 .node { background: var(--aero-card); border: var(--aero-border); border-radius: var(--radius); box-shadow: var(--aero-shadow-sm); padding: 12px 18px; display: inline-grid; grid-template-columns: 1fr auto; gap: 16px; align-items: baseline; min-width: 220px; }
+.L46 .node.root { background: var(--aero-card-blue); color: #fff; min-width: 320px; padding: 18px 24px; }
+.L46 .node .label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; }
+.L46 .node .v { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 800; color: var(--aero-blue); }
+.L46 .node.root .v { color: #ffd5ec; font-size: 24px; }
+.L46 .tier { display: flex; flex-direction: column; align-items: center; gap: 12px; position: relative; }
+.L46 .tier .row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; position: relative; }
+.L46 .tier .row::before { content:''; position: absolute; top: -12px; left: 50%; width: 2px; height: 12px; background: rgba(0,50,150,0.25); }
+.L46 .leaf-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.L46 .leaf { background: var(--aero-card-pink); border: var(--aero-border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--aero-pink); }
+
+/* L47 — Network constellation */
+.L47 .net { position: relative; height: 480px; padding: 16px; }
+.L47 .net svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.L47 .node { position: absolute; background: var(--aero-card); border: var(--aero-border); border-radius: 50%; box-shadow: var(--aero-shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.L47 .node.hub { width: 160px; height: 160px; background: var(--aero-card-blue); color: #fff; }
+.L47 .node.med { width: 110px; height: 110px; }
+.L47 .node.sm { width: 88px; height: 88px; }
+.L47 .node.warn { background: var(--aero-card-pink); }
+.L47 .node .num { font-size: 28px; font-weight: 800; line-height: 1; color: var(--aero-blue-2); text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+.L47 .node.hub .num { font-size: 44px; color: #fff; text-shadow: 0 2px 0 rgba(0,30,80,0.4); }
+.L47 .node.warn .num { color: var(--aero-pink); }
+.L47 .node .lbl { font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--aero-ink-2); }
+.L47 .node.hub .lbl { color: rgba(255,255,255,0.85); }
+
+/* L48 — Map clusters (geographic) */
+.L48 .map { background: var(--aero-card-mint); border: var(--aero-border); border-radius: var(--radius); padding: 28px; min-height: 360px; position: relative; box-shadow: var(--aero-shadow); }
+.L48 .map::before { content:''; position: absolute; inset: 14px; border: 2px dashed rgba(0,80,120,0.18); border-radius: 8px; pointer-events: none; }
+.L48 .pin { position: absolute; background: rgba(255,255,255,0.92); border: 2px solid rgba(255,255,255,0.9); border-radius: 12px; padding: 8px 12px; box-shadow: var(--aero-shadow); text-align: center; }
+.L48 .pin .num { font-size: 22px; font-weight: 800; color: var(--aero-blue-2); line-height: 1; }
+.L48 .pin .lbl { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--aero-ink-2); margin-top: 2px; }
+.L48 .pin.warn { background: rgba(255,210,225,0.95); }
+.L48 .pin.warn .num { color: var(--aero-pink); }
+.L48 .pin::after { content:''; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid rgba(255,255,255,0.9); }
+.L48 .below { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 14px; }
+
+/* L49 — Spiral radial */
+.L49 .radial { position: relative; padding: 24px; height: 460px; display: flex; align-items: center; justify-content: center; }
+.L49 .radial .center { width: 200px; height: 200px; border-radius: 50%; background: var(--aero-card-blue); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--aero-shadow-lg); border: 3px solid #fff; }
+.L49 .radial .center .num { font-size: 56px; font-weight: 800; line-height: 1; text-shadow: 0 2px 0 rgba(0,30,80,0.4); }
+.L49 .radial .center .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; opacity: 0.85; margin-top: 4px; }
+.L49 .radial .spoke { position: absolute; background: var(--aero-card); border: var(--aero-border); border-radius: 999px; padding: 8px 16px; box-shadow: var(--aero-shadow-sm); display: flex; gap: 10px; align-items: baseline; }
+.L49 .radial .spoke .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--aero-ink-2); font-weight: 700; }
+.L49 .radial .spoke .v { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 800; color: var(--aero-blue); }
+.L49 .radial .spoke.warn .v { color: var(--aero-pink); }
+
+/* L50 — Card carousel */
+.L50 .carousel { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+.L50 .carousel::-webkit-scrollbar { height: 8px; }
+.L50 .carousel::-webkit-scrollbar-thumb { background: rgba(0,50,150,0.2); border-radius: 4px; }
+.L50 .carousel .slide { flex: 0 0 320px; padding: 24px 26px; min-height: 220px; display: flex; flex-direction: column; justify-content: space-between; }
+.L50 .carousel .slide .lbl-strong { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--aero-ink-2); font-weight: 700; }
+.L50 .carousel .slide .num { font-size: 88px; font-weight: 800; line-height: 0.9; color: var(--aero-blue-2); text-shadow: 0 2px 0 rgba(255,255,255,0.7); margin: 12px 0; }
+.L50 .carousel .slide.warn .num { color: var(--aero-pink); }
+.L50 .carousel .slide .desc { font-size: 13px; color: var(--aero-ink-2); line-height: 1.4; }
+.L50 .carousel .slide.dark { background: var(--aero-card-dark); color: #fff; }
+.L50 .carousel .slide.dark .lbl-strong { color: rgba(255,255,255,0.7); }
+.L50 .carousel .slide.dark .num { color: #fff; text-shadow: 0 2px 0 rgba(0,30,80,0.4); }
+.L50 .carousel .slide.dark .desc { color: rgba(255,255,255,0.75); }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <main class="main">
+
+    <header class="intro">
+      <div>
+        <h1>M34 · Y2K Aero — 50 layout variations</h1>
+        <p>One visual language — candy gradient backdrop, translucent glass cards with pearl-bright inner highlights, deep navy text with a faint white halo, soft drop shadows tinted blue — across fifty ways of organising the same admin content. Same tokens. Different structures.</p>
+      </div>
+      <div class="count">Layouts<strong>50</strong></div>
+    </header>
+
+    <!-- ═══ GROUP A · FOUNDATIONAL ══════════════════════════════════ -->
+
+    <article class="frame L1" id="L1">
+      <header class="frame-bar"><span class="num">L1</span><span class="name">Classic</span><span class="cat">4 KPI row · 3 cards</span></header>
+      <div class="frame-body">
+        <div class="kpis">
+          <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 this week</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+          <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+        </div>
+        <div class="grid">
+          <div class="aero-card"><h3 class="aero-h">Action queue</h3><p class="aero-gloss">Items awaiting review.</p>
+            <ul class="aero-list"><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench strength</h3><p class="aero-gloss">Approved roster.</p>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit · tail -5</h3><p class="aero-gloss">Recent activity.</p>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li><li><span>Yest credit</span><span class="v">l.singh</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L2" id="L2">
+      <header class="frame-bar"><span class="num">L2</span><span class="name">Asymmetric 60/40</span><span class="cat">Queue heavy left · stats right</span></header>
+      <div class="frame-body">
+        <div class="row">
+          <div class="aero-card"><h3 class="aero-h">Action queue · 17 items</h3><p class="aero-gloss">The desks that need a human read before they keep moving downstream.</p>
+            <ul class="aero-list"><li><span>Credit applications · EQUIP</span><span class="v">6</span></li><li><span>Pathway enrollments · OBIO bootcamp</span><span class="v">4</span></li><li><span>Form approvals · miscellany</span><span class="v">5</span></li><li><span>Talent applications · eligibility</span><span class="v">2</span></li></ul></div>
+          <div class="right-stack">
+            <div class="mini-row">
+              <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+              <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div></div>
+            </div>
+            <div class="aero-card"><h3 class="aero-h">Bench</h3>
+              <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+            <div class="aero-card"><h3 class="aero-h">Audit</h3>
+              <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L3" id="L3">
+      <header class="frame-bar"><span class="num">L3</span><span class="name">50/50 split</span><span class="cat">Two columns, balanced</span></header>
+      <div class="frame-body">
+        <div class="row">
+          <div>
+            <div class="kpis-2">
+              <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 / week</div></div>
+              <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+            </div>
+            <div class="aero-card" style="margin-top:14px"><h3 class="aero-h">Action queue</h3><p class="aero-gloss">Items awaiting review.</p>
+              <ul class="aero-list"><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+          </div>
+          <div>
+            <div class="kpis-2">
+              <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+              <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+            </div>
+            <div class="aero-card" style="margin-top:14px"><h3 class="aero-h">Bench + log</h3><p class="aero-gloss">Roster, activity.</p>
+              <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L4" id="L4">
+      <header class="frame-bar"><span class="num">L4</span><span class="name">3 equal columns</span><span class="cat">Trinity</span></header>
+      <div class="frame-body">
+        <div class="col-3">
+          <div>
+            <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 / week</div></div>
+            <div class="aero-card"><h3 class="aero-h">Bench</h3>
+              <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          </div>
+          <div>
+            <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+            <div class="aero-card"><h3 class="aero-h">Queue</h3>
+              <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          </div>
+          <div>
+            <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+            <div class="aero-card"><h3 class="aero-h">Audit</h3>
+              <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L5" id="L5">
+      <header class="frame-bar"><span class="num">L5</span><span class="name">4 equal columns</span><span class="cat">Quarters</span></header>
+      <div class="frame-body">
+        <div class="col-4">
+          <div>
+            <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+            <div class="aero-card"><h3 class="aero-h">Bench</h3>
+              <ul class="aero-list"><li><span>Approved</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li></ul></div>
+          </div>
+          <div>
+            <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+            <div class="aero-card"><h3 class="aero-h">Pathways</h3>
+              <ul class="aero-list"><li><span>Active</span><span class="v">8</span></li><li><span>Enrollment</span><span class="v">4</span></li></ul></div>
+          </div>
+          <div>
+            <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+            <div class="aero-card"><h3 class="aero-h">Queue</h3>
+              <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Forms</span><span class="v">5</span></li></ul></div>
+          </div>
+          <div>
+            <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div></div>
+            <div class="aero-card"><h3 class="aero-h">Audit</h3>
+              <ul class="aero-list"><li><span>10:42</span><span class="v">j.park</span></li><li><span>09:18</span><span class="v">a.stirl</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L6" id="L6">
+      <header class="frame-bar"><span class="num">L6</span><span class="name">Sidebar left</span><span class="cat">240px rail · main 3-col</span></header>
+      <div class="frame-body">
+        <div class="layout">
+          <aside class="rail">
+            <div class="aero-card-dark aero-kpi"><div class="lbl" style="color:rgba(255,255,255,0.7)">Trainees</div><div class="num" style="color:#fff">1,247</div><div class="sub" style="color:rgba(255,255,255,0.6)">+12 / week</div></div>
+            <div class="aero-card-dark aero-kpi"><div class="lbl" style="color:rgba(255,255,255,0.7)">Courses</div><div class="num" style="color:#fff">42</div></div>
+            <div class="aero-card-dark aero-kpi"><div class="lbl" style="color:rgba(255,255,255,0.7)">Pathways</div><div class="num" style="color:#fff">8</div></div>
+            <div class="aero-card-dark aero-kpi warn"><div class="lbl" style="color:rgba(255,255,255,0.7)">Pending</div><div class="num" style="color:#ff8caf">17</div></div>
+          </aside>
+          <div class="body3">
+            <div class="aero-card"><h3 class="aero-h">Queue</h3><p class="aero-gloss">Awaiting review.</p>
+              <ul class="aero-list"><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+            <div class="aero-card"><h3 class="aero-h">Bench</h3><p class="aero-gloss">Approved roster.</p>
+              <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+            <div class="aero-card"><h3 class="aero-h">Audit</h3><p class="aero-gloss">Tail -5.</p>
+              <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li><li><span>Yest credit</span><span class="v">l.singh</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L7" id="L7">
+      <header class="frame-bar"><span class="num">L7</span><span class="name">Sidebar right</span><span class="cat">Main 3-col · 240px rail</span></header>
+      <div class="frame-body">
+        <div class="layout">
+          <div class="body3">
+            <div class="aero-card"><h3 class="aero-h">Queue</h3><p class="aero-gloss">Awaiting review.</p>
+              <ul class="aero-list"><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+            <div class="aero-card"><h3 class="aero-h">Bench</h3><p class="aero-gloss">Approved roster.</p>
+              <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+            <div class="aero-card"><h3 class="aero-h">Audit</h3><p class="aero-gloss">Tail -5.</p>
+              <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li><li><span>Yest credit</span><span class="v">l.singh</span></li></ul></div>
+          </div>
+          <aside class="rail">
+            <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+            <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+            <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+            <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div></div>
+          </aside>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L8" id="L8">
+      <header class="frame-bar"><span class="num">L8</span><span class="name">T-shape</span><span class="cat">Banner KPIs up · 3 cards below</span></header>
+      <div class="frame-body" style="padding:0">
+        <div class="banner aero-card" style="border-radius:0;border-top:none;border-left:none;border-right:none;margin-bottom:0">
+          <div class="aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 / week</div></div>
+          <div class="aero-kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+          <div class="aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+          <div class="aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+        </div>
+        <div style="padding:14px 26px 22px">
+          <div class="grid">
+            <div class="aero-card"><h3 class="aero-h">Queue</h3><p class="aero-gloss">Items awaiting review.</p>
+              <ul class="aero-list"><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+            <div class="aero-card"><h3 class="aero-h">Bench</h3><p class="aero-gloss">Approved roster.</p>
+              <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+            <div class="aero-card"><h3 class="aero-h">Audit</h3><p class="aero-gloss">Tail -5.</p>
+              <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li><li><span>Yest credit</span><span class="v">l.singh</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L9" id="L9">
+      <header class="frame-bar"><span class="num">L9</span><span class="name">2 rows × 3 cards</span><span class="cat">Hex-feeling grid</span></header>
+      <div class="frame-body">
+        <div class="grid row1">
+          <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 this week</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+          <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+        </div>
+        <div class="grid">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li><li><span>Yest credit</span><span class="v">l.singh</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L10" id="L10">
+      <header class="frame-bar"><span class="num">L10</span><span class="name">Pinwheel</span><span class="cat">4 quadrants · hero in centre</span></header>
+      <div class="frame-body">
+        <div class="pinwheel">
+          <div class="aero-card quad"><h3 class="aero-h">Engage</h3><p class="aero-gloss">Trainees · courses · pathways.</p>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">1,247</span></li><li><span>Courses</span><span class="v">42</span></li><li><span>Pathways</span><span class="v">8</span></li></ul></div>
+          <div class="aero-card quad"><h3 class="aero-h">Queue</h3><p class="aero-gloss">Triage now.</p>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card quad"><h3 class="aero-h">Bench</h3><p class="aero-gloss">Approved roster.</p>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          <div class="aero-card quad"><h3 class="aero-h">Audit</h3><p class="aero-gloss">Recent activity.</p>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+          <div class="hero">
+            <div class="lbl">Pending</div>
+            <div class="num">17</div>
+            <div class="lbl" style="font-size:9.5px">on the desk</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ GROUP B · HERO-DRIVEN ═══════════════════════════════════ -->
+
+    <article class="frame L11" id="L11">
+      <header class="frame-bar"><span class="num">L11</span><span class="name">Colossal centered 17</span><span class="cat">One number · supporting row</span></header>
+      <div class="frame-body">
+        <div class="hero">
+          <p class="aero-eyebrow">Pending — on the desk</p>
+          <div class="num">17</div>
+          <p class="what">Items waiting on a human read. Six are commercial-funding applications. The talent-app queue is the one that quietly stalls.</p>
+        </div>
+        <div class="below">
+          <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Bench</div><div class="num">982</div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L12" id="L12">
+      <header class="frame-bar"><span class="num">L12</span><span class="name">Big headline number</span><span class="cat">1,247 · everything else around</span></header>
+      <div class="frame-body" style="padding:0">
+        <div class="head">
+          <div class="big">1,247</div>
+          <div class="desc">
+            <h3>Trainees on the bench.</h3>
+            <p>The roster keeps growing — twelve new arrivals this week, eight active pathways quietly humming, seventeen items on the desk to read before noon.</p>
+          </div>
+        </div>
+        <div style="padding:0 26px 22px">
+          <div class="grid">
+            <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+            <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+            <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+            <div class="aero-card aero-kpi"><div class="lbl">Bench</div><div class="num">1,108</div><div class="sub">approved</div></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L13" id="L13">
+      <header class="frame-bar"><span class="num">L13</span><span class="name">Off-centre hero · text wrap</span><span class="cat">Blue hero left · stats right</span></header>
+      <div class="frame-body">
+        <div class="row">
+          <div class="hero">
+            <p class="aero-eyebrow">Triage now</p>
+            <div class="big">17</div>
+            <p class="what">Items waiting on a human read this morning. Most desks clear by ten — the talent-app eligibility queue is the one to watch.</p>
+          </div>
+          <div class="stack">
+            <div class="mini">
+              <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+              <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+            </div>
+            <div class="aero-card"><h3 class="aero-h">Queue</h3>
+              <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+            <div class="aero-card"><h3 class="aero-h">Audit</h3>
+              <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L14" id="L14">
+      <header class="frame-bar"><span class="num">L14</span><span class="name">Full-bleed banner</span><span class="cat">Gradient hero · KPIs in front</span></header>
+      <div class="frame-body body" style="padding:0">
+        <div class="banner">
+          <h2>Today, the platform reads healthy.</h2>
+          <p>Seventeen items on the desk, four pathways quietly humming, one operations bureau learning to scale gracefully.</p>
+        </div>
+        <div class="kpis">
+          <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 / wk</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+          <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+        </div>
+        <div class="grid">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L15" id="L15">
+      <header class="frame-bar"><span class="num">L15</span><span class="name">Vertical wordmark</span><span class="cat">Sidewinder type · main content right</span></header>
+      <div class="frame-body">
+        <div class="row">
+          <div class="vertical">OPS · 2026</div>
+          <div class="body">
+            <div class="kpis">
+              <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+              <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+              <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+              <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div></div>
+            </div>
+            <div class="grid">
+              <div class="aero-card"><h3 class="aero-h">Queue</h3>
+                <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+              <div class="aero-card"><h3 class="aero-h">Bench</h3>
+                <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+              <div class="aero-card"><h3 class="aero-h">Audit</h3>
+                <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li></ul></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L16" id="L16">
+      <header class="frame-bar"><span class="num">L16</span><span class="name">Four-up giant KPIs</span><span class="cat">All four numbers at 96px</span></header>
+      <div class="frame-body">
+        <div class="grid">
+          <div class="aero-card"><div class="aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 this week</div></div></div>
+          <div class="aero-card"><div class="aero-kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div></div>
+          <div class="aero-card"><div class="aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">all healthy</div></div></div>
+          <div class="aero-card warn"><div class="aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">needs triage</div></div></div>
+        </div>
+        <div class="below">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L17" id="L17">
+      <header class="frame-bar"><span class="num">L17</span><span class="name">Hero with embedded KPI row</span><span class="cat">17 right · stats baked into card</span></header>
+      <div class="frame-body">
+        <div class="hero">
+          <div class="left">
+            <p class="aero-eyebrow" style="color:var(--aero-pink)">On the desk</p>
+            <h2>The morning queue is steady at seventeen.</h2>
+            <p>Almost entirely commercial-funding applications. Talent-app queue is the one that quietly stalls.</p>
+            <div class="inset">
+              <div class="aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+              <div class="aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+              <div class="aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+              <div class="aero-kpi"><div class="lbl">Bench</div><div class="num">982</div></div>
+            </div>
+          </div>
+          <div class="right">17</div>
+        </div>
+        <div class="grid">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Stale &gt; 14d</h3>
+            <ul class="aero-list"><li><span>L.Singh</span><span class="v">21d</span></li><li><span>K.Iyer</span><span class="v">19d</span></li><li><span>CCRM</span><span class="v">16d</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L18" id="L18">
+      <header class="frame-bar"><span class="num">L18</span><span class="name">Diagonal ribbon</span><span class="cat">Hero slanted · grid below</span></header>
+      <div class="frame-body body" style="padding-top:0;overflow:hidden">
+        <div class="ribbon">
+          <div class="ribbon-inner">
+            <div>
+              <p class="aero-eyebrow" style="color:rgba(255,255,255,0.7)">Operations · today</p>
+              <h2>17 items on the desk.</h2>
+            </div>
+            <div class="num">17</div>
+          </div>
+        </div>
+        <div class="below">
+          <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Bench</div><div class="num">1,108</div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L19" id="L19">
+      <header class="frame-bar"><span class="num">L19</span><span class="name">Hero gauge</span><span class="cat">Pending as a meter dial</span></header>
+      <div class="frame-body">
+        <div class="row">
+          <div class="gauge">
+            <div class="center">
+              <div class="num">17</div>
+              <div class="of">17 / 120 max capacity</div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 this week</div></div>
+            <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+            <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+            <div class="aero-card aero-kpi"><div class="lbl">Bench</div><div class="num">982</div><div class="sub">approved</div></div>
+            <div class="aero-card" style="grid-column:1/-1"><h3 class="aero-h">Queue</h3>
+              <ul class="aero-list"><li><span>Credit applications · EQUIP</span><span class="v">6</span></li><li><span>Pathway enrollments · OBIO</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L20" id="L20">
+      <header class="frame-bar"><span class="num">L20</span><span class="name">Live ticker</span><span class="cat">Bloomberg-style headline strip</span></header>
+      <div class="frame-body">
+        <div class="ticker">
+          <span class="live">Live</span>
+          <div class="stream">
+            <span>QUEUE <b>+17</b></span>
+            <span>TRAINEES <b>1,247</b> (+12)</span>
+            <span>STALE <b>5</b> &gt; 14d</span>
+            <span>BENCH <b>982</b></span>
+            <span>LOGINS TODAY <b>824</b></span>
+            <span>CRED.GRANT <b>250→l.singh</b></span>
+            <span>ROLE.CHG <b>j.park→instructor</b></span>
+          </div>
+        </div>
+        <div class="kpis">
+          <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 this week</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+          <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+        </div>
+        <div class="grid">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ GROUP C · MAGAZINE / EDITORIAL ══════════════════════════ -->
+
+    <article class="frame L21" id="L21">
+      <header class="frame-bar"><span class="num">L21</span><span class="name">Magazine cover</span><span class="cat">Masthead + table of contents</span></header>
+      <div class="frame-body body" style="padding:0">
+        <div class="cover">
+          <div class="top">
+            <p class="issue">BHN Operations · Vol. III · No. 142</p>
+            <h1>Today, the platform reads <em>healthy</em>.</h1>
+            <p class="dek">Seventeen items on the desk, four pathways quietly humming, the bench wider than it's ever been.</p>
+            <div class="stamps">
+              <span class="aero-pill">1,247 trainees</span>
+              <span class="aero-pill">42 courses</span>
+              <span class="aero-pill">8 pathways</span>
+              <span class="aero-pill warn">17 pending</span>
+            </div>
+          </div>
+          <p class="aero-eyebrow">Tuesday · May 20, 2026 · admin@biohubnet.ca</p>
+        </div>
+        <aside class="toc">
+          <h3>Inside this issue</h3>
+          <ul>
+            <li><span class="n">01</span><span class="t">Action queue · the desk this morning</span><span class="v">17</span></li>
+            <li><span class="n">02</span><span class="t">Bench strength · approved roster</span><span class="v">1,108</span></li>
+            <li><span class="n">03</span><span class="t">Stale items · stuck &gt; 14d</span><span class="v">5</span></li>
+            <li><span class="n">04</span><span class="t">Audit log · tail -5</span><span class="v">5</span></li>
+            <li><span class="n">05</span><span class="t">Daily reach · logins today</span><span class="v">824</span></li>
+            <li><span class="n">06</span><span class="t">Triage average</span><span class="v">2.1d</span></li>
+          </ul>
+        </aside>
+      </div>
+    </article>
+
+    <article class="frame L22" id="L22">
+      <header class="frame-bar"><span class="num">L22</span><span class="name">Two-page spread</span><span class="cat">Left page facts · right page deep dive</span></header>
+      <div class="frame-body" style="padding:0">
+        <div class="spread">
+          <section class="page left">
+            <p class="aero-eyebrow" style="color:var(--aero-pink)">Page 12 · The numbers</p>
+            <h2>By the numbers.</h2>
+            <p class="deck">A morning ledger of the platform's vital signs.</p>
+            <div class="kpi-row">
+              <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+              <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+              <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+              <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div></div>
+            </div>
+            <ul>
+              <li><span>Approved bench</span><span class="v">1,108</span></li>
+              <li><span>Logins today</span><span class="v">824</span></li>
+              <li><span>Stale &gt; 14d</span><span class="v">5</span></li>
+            </ul>
+          </section>
+          <section class="page right">
+            <p class="aero-eyebrow" style="color:var(--aero-pink)">Page 13 · The story</p>
+            <h2>The queue, this morning.</h2>
+            <p class="deck">Seventeen items on the desk. Six are commercial-funding applications.</p>
+            <ul>
+              <li><span>Credit applications · EQUIP</span><span class="v">6</span></li>
+              <li><span>Pathway enrollments · OBIO bootcamp</span><span class="v">4</span></li>
+              <li><span>Form approvals · miscellany</span><span class="v">5</span></li>
+              <li><span>Talent applications · eligibility</span><span class="v">2</span></li>
+            </ul>
+            <p style="margin-top:18px;color:var(--aero-ink-2);font-size:13.5px;font-style:italic;line-height:1.45">Most desks are clear by ten in the morning. What stalls quietly is the talent-app eligibility queue.</p>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L23" id="L23">
+      <header class="frame-bar"><span class="num">L23</span><span class="name">Pull-quote feature</span><span class="cat">Big italic quote dominates</span></header>
+      <div class="frame-body" style="padding:0">
+        <div class="pull">
+          <div class="mark">"</div>
+          <blockquote>
+            <p>Most desks are clear by ten. What stalls quietly is the <em>talent-app eligibility queue</em> — that's the one to watch.</p>
+            <footer>From the morning readout · admin briefing · 2026-05-20</footer>
+          </blockquote>
+        </div>
+        <div class="kpis">
+          <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+          <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div></div>
+        </div>
+        <div class="grid">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L24" id="L24">
+      <header class="frame-bar"><span class="num">L24</span><span class="name">Cover story + sidebar</span><span class="cat">Feature article + supporting column</span></header>
+      <div class="frame-body">
+        <div class="row">
+          <article class="feature">
+            <p class="crumb">Cover story · operations</p>
+            <h2>The morning queue is steady at seventeen.</h2>
+            <p class="lede">A weekly ledger of items on the operations desk. Most desks are clear by ten; the talent-app queue is the one that quietly stalls.</p>
+            <div class="columns">
+              <p>Seventeen items waiting on a human read this morning. Six are commercial-funding applications — EQUIP cycles routinely cluster around this hour. Four are pathway enrollments, mostly OBIO bootcamp arrivals. Five form approvals span miscellany.</p>
+              <p>The two open talent applications are the genuine work — eligibility checks across multiple programs, each requiring a careful read. Stale items remain at five, none critical, all aging from prior weeks.</p>
+            </div>
+            <div class="pulled">
+              <div class="aero-card aero-kpi"><div class="lbl">Credit</div><div class="num">6</div></div>
+              <div class="aero-card aero-kpi"><div class="lbl">Enroll</div><div class="num">4</div></div>
+              <div class="aero-card aero-kpi"><div class="lbl">Forms</div><div class="num">5</div></div>
+            </div>
+          </article>
+          <div class="side">
+            <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 this week</div></div>
+            <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+            <div class="aero-card"><h3 class="aero-h">Bench</h3>
+              <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L25" id="L25">
+      <header class="frame-bar"><span class="num">L25</span><span class="name">Index · alphabetical</span><span class="cat">Almanac style · dense list</span></header>
+      <div class="frame-body">
+        <div class="idx">
+          <h2>Operations index · A-Z</h2>
+          <p class="deck">Every measure on the platform, listed alphabetically with this morning's reading.</p>
+          <div class="alpha">
+            <div class="letter">
+              <h3>A — C</h3>
+              <ul>
+                <li><span>Active courses</span><span class="v">38</span></li>
+                <li><span>Admins</span><span class="v">22</span></li>
+                <li><span>Audit entries today</span><span class="v">5</span></li>
+                <li><span>Bench (approved)</span><span class="v">1,108</span></li>
+                <li><span>Credit applications</span><span class="v">6</span></li>
+                <li><span>Courses total</span><span class="v">42</span></li>
+              </ul>
+            </div>
+            <div class="letter">
+              <h3>D — P</h3>
+              <ul>
+                <li><span>Employers</span><span class="v">71</span></li>
+                <li><span>Enrollments pending</span><span class="v">4</span></li>
+                <li><span>Form approvals</span><span class="v">5</span></li>
+                <li><span>Instructors</span><span class="v">33</span></li>
+                <li><span>Logins today</span><span class="v">824</span></li>
+                <li><span>Pathways active</span><span class="v">8</span></li>
+                <li><span>Pending (all)</span><span class="v">17</span></li>
+              </ul>
+            </div>
+            <div class="letter">
+              <h3>Q — Z</h3>
+              <ul>
+                <li><span>Queue · credit</span><span class="v">6</span></li>
+                <li><span>Queue · enroll</span><span class="v">4</span></li>
+                <li><span>Queue · forms</span><span class="v">5</span></li>
+                <li><span>Stale &gt; 14d</span><span class="v">5</span></li>
+                <li><span>Talent applications</span><span class="v">2</span></li>
+                <li><span>Trainees</span><span class="v">1,247</span></li>
+                <li><span>Triage avg</span><span class="v">2.1d</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L26" id="L26">
+      <header class="frame-bar"><span class="num">L26</span><span class="name">Weekly almanac</span><span class="cat">7-day calendar · today highlighted</span></header>
+      <div class="frame-body">
+        <div class="week">
+          <div class="day"><div class="name">May</div><div class="num">14</div><div class="day-name">Thursday</div><div class="stat">6 pending · 1 stale</div></div>
+          <div class="day"><div class="name">May</div><div class="num">15</div><div class="day-name">Friday</div><div class="stat">9 pending · 2 stale</div></div>
+          <div class="day"><div class="name">May</div><div class="num">16</div><div class="day-name">Saturday</div><div class="stat">3 pending</div></div>
+          <div class="day"><div class="name">May</div><div class="num">17</div><div class="day-name">Sunday</div><div class="stat">2 pending</div></div>
+          <div class="day"><div class="name">May</div><div class="num">18</div><div class="day-name">Monday</div><div class="stat">14 pending · 3 stale</div></div>
+          <div class="day"><div class="name">May</div><div class="num">19</div><div class="day-name">Tuesday</div><div class="stat">17 pending · 5 stale</div></div>
+          <div class="day today"><div class="name">May · today</div><div class="num">20</div><div class="day-name">Wednesday</div><div class="stat">17 pending · 5 stale</div></div>
+        </div>
+        <div class="below">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L27" id="L27">
+      <header class="frame-bar"><span class="num">L27</span><span class="name">Timeline narrative</span><span class="cat">Vertical · time-stamped beats</span></header>
+      <div class="frame-body">
+        <div class="narr">
+          <div class="step">
+            <div class="stamp">01</div>
+            <p class="time">08:00 — Open of day</p>
+            <div class="aero-card"><h3 class="aero-h">Platform vital signs</h3>
+              <ul class="aero-list"><li><span>Trainees</span><span class="v">1,247</span></li><li><span>Courses</span><span class="v">42</span></li><li><span>Pathways</span><span class="v">8</span></li></ul></div>
+          </div>
+          <div class="step">
+            <div class="stamp">02</div>
+            <p class="time">09:15 — Triage check-in</p>
+            <div class="aero-card"><h3 class="aero-h">Action queue · 17 items</h3>
+              <ul class="aero-list"><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+          </div>
+          <div class="step">
+            <div class="stamp">03</div>
+            <p class="time">10:00 — Roll-call</p>
+            <div class="aero-card"><h3 class="aero-h">Bench strength · 1,108</h3>
+              <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+          </div>
+          <div class="step">
+            <div class="stamp">04</div>
+            <p class="time">10:42 — Now</p>
+            <div class="aero-card"><h3 class="aero-h">Audit · last 5 entries</h3>
+              <ul class="aero-list"><li><span>10:42 role.change</span><span class="v">j.park</span></li><li><span>09:18 enrollment</span><span class="v">a.stirling</span></li><li><span>08:55 form.review</span><span class="v">m.chen</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L28" id="L28">
+      <header class="frame-bar"><span class="num">L28</span><span class="name">Field guide</span><span class="cat">Categorised entries · numbered glyphs</span></header>
+      <div class="frame-body">
+        <div class="fg">
+          <div class="aero-card cat-card">
+            <div class="cat-h"><h3>Engage</h3><span class="pip">Pillar 01</span></div>
+            <div class="entry"><span class="glyph">T</span><span class="t">Trainees <small>+12 this week</small></span><span class="v">1,247</span></div>
+            <div class="entry"><span class="glyph">C</span><span class="t">Courses <small>38 active · 4 retiring</small></span><span class="v">42</span></div>
+            <div class="entry"><span class="glyph">P</span><span class="t">Pathways <small>All healthy</small></span><span class="v">8</span></div>
+          </div>
+          <div class="aero-card cat-card">
+            <div class="cat-h"><h3>Triage</h3><span class="pip">17 pending</span></div>
+            <div class="entry"><span class="glyph">$</span><span class="t">Credit applications <small>EQUIP cycle</small></span><span class="v">6</span></div>
+            <div class="entry"><span class="glyph">E</span><span class="t">Pathway enrollments <small>OBIO bootcamp</small></span><span class="v">4</span></div>
+            <div class="entry"><span class="glyph">F</span><span class="t">Form approvals <small>miscellany</small></span><span class="v">5</span></div>
+            <div class="entry"><span class="glyph">!</span><span class="t">Talent applications <small>eligibility</small></span><span class="v">2</span></div>
+          </div>
+          <div class="aero-card cat-card">
+            <div class="cat-h"><h3>Bench</h3><span class="pip">1,108 approved</span></div>
+            <div class="entry"><span class="glyph">T</span><span class="t">Trainees <small>roster</small></span><span class="v">982</span></div>
+            <div class="entry"><span class="glyph">E</span><span class="t">Employers <small>active</small></span><span class="v">71</span></div>
+            <div class="entry"><span class="glyph">I</span><span class="t">Instructors <small>contracted</small></span><span class="v">33</span></div>
+            <div class="entry"><span class="glyph">A</span><span class="t">Admins <small>internal</small></span><span class="v">22</span></div>
+          </div>
+          <div class="aero-card cat-card">
+            <div class="cat-h"><h3>Audit</h3><span class="pip">Tail -5</span></div>
+            <div class="entry"><span class="glyph">R</span><span class="t">10:42 role.change <small>j.park → instructor</small></span><span class="v">⌃</span></div>
+            <div class="entry"><span class="glyph">E</span><span class="t">09:18 enrollment <small>a.stirling · OBIO</small></span><span class="v">+</span></div>
+            <div class="entry"><span class="glyph">F</span><span class="t">08:55 form.review <small>m.chen approved</small></span><span class="v">✓</span></div>
+            <div class="entry"><span class="glyph">$</span><span class="t">Yest credit.grant <small>250 → l.singh</small></span><span class="v">$</span></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L29" id="L29">
+      <header class="frame-bar"><span class="num">L29</span><span class="name">Postcard scatter</span><span class="cat">Tilted cards · informal collage</span></header>
+      <div class="frame-body" style="padding:0">
+        <div class="field">
+          <div class="pc tilt-l p1">
+            <h3>Trainees</h3>
+            <div class="num">1,247</div>
+            <p style="font-size:11.5px;color:var(--aero-ink-2);margin:4px 0 0">+12 this week</p>
+          </div>
+          <div class="pc tilt-r p2">
+            <h3>Pending</h3>
+            <div class="num" style="color:var(--aero-pink)">17</div>
+            <p style="font-size:11.5px;color:var(--aero-ink-2);margin:4px 0 0">needs triage</p>
+          </div>
+          <div class="pc tilt-s p3">
+            <h3>Queue</h3>
+            <ul><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul>
+          </div>
+          <div class="pc tilt-r p4">
+            <h3>Pathways</h3>
+            <div class="num">8</div>
+            <p style="font-size:11.5px;color:var(--aero-ink-2);margin:4px 0 0">all healthy</p>
+          </div>
+          <div class="pc tilt-l p5">
+            <h3>Bench</h3>
+            <ul><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul>
+          </div>
+          <div class="pc tilt-s p6">
+            <h3>Audit · tail -5</h3>
+            <ul><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L30" id="L30">
+      <header class="frame-bar"><span class="num">L30</span><span class="name">Stamp collection</span><span class="cat">Small perforated thumbnails · uniform</span></header>
+      <div class="frame-body">
+        <div class="stamps">
+          <div class="stamp"><div class="perf">Trainees</div><div class="num">1,247</div><div class="lbl">+12 wk</div></div>
+          <div class="stamp"><div class="perf">Courses</div><div class="num">42</div><div class="lbl">38 active</div></div>
+          <div class="stamp"><div class="perf">Pathways</div><div class="num">8</div><div class="lbl">healthy</div></div>
+          <div class="stamp warn"><div class="perf">Pending</div><div class="num">17</div><div class="lbl">triage</div></div>
+          <div class="stamp"><div class="perf">Bench</div><div class="num">1,108</div><div class="lbl">approved</div></div>
+          <div class="stamp warn"><div class="perf">Stale</div><div class="num">5</div><div class="lbl">&gt;14d</div></div>
+          <div class="stamp"><div class="perf">Credit</div><div class="num">6</div><div class="lbl">EQUIP</div></div>
+          <div class="stamp"><div class="perf">Enroll</div><div class="num">4</div><div class="lbl">OBIO</div></div>
+          <div class="stamp"><div class="perf">Forms</div><div class="num">5</div><div class="lbl">misc</div></div>
+          <div class="stamp"><div class="perf">Talent</div><div class="num">2</div><div class="lbl">eligibility</div></div>
+          <div class="stamp"><div class="perf">Logins</div><div class="num">824</div><div class="lbl">today</div></div>
+          <div class="stamp"><div class="perf">Triage</div><div class="num">2.1d</div><div class="lbl">avg</div></div>
+        </div>
+        <div class="below">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ GROUP D · BENTO / MOSAIC ═════════════════════════════════ -->
+
+    <article class="frame L31" id="L31">
+      <header class="frame-bar"><span class="num">L31</span><span class="name">Apple bento</span><span class="cat">Mixed sizes · hero tile + supports</span></header>
+      <div class="frame-body">
+        <div class="bento">
+          <div class="b b1 aero-card-blue" style="color:#fff"><div class="lbl-strong" style="color:rgba(255,255,255,0.85)">Trainees</div><div class="num" style="color:#fff;text-shadow:0 2px 0 rgba(0,30,80,0.4)">1,247</div><p style="font-size:12px;opacity:0.85;margin:0">+12 this week</p></div>
+          <div class="b b2 aero-card"><div class="lbl-strong">Courses</div><div class="num">42</div></div>
+          <div class="b b3 aero-card"><div class="lbl-strong">Pathways</div><div class="num">8</div></div>
+          <div class="b b4 aero-card warn"><div class="lbl-strong">Pending</div><div class="num">17</div></div>
+          <div class="b b5 aero-card"><div class="lbl-strong">Bench</div><div class="num">982</div></div>
+          <div class="b b6 aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="b b7 aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L32" id="L32">
+      <header class="frame-bar"><span class="num">L32</span><span class="name">Asymmetric tiles</span><span class="cat">3-col · varied heights</span></header>
+      <div class="frame-body">
+        <div class="grid">
+          <div class="a aero-card-blue" style="color:#fff"><div class="lbl-strong" style="color:rgba(255,255,255,0.85)">Trainees</div><div class="num" style="color:#fff;text-shadow:0 2px 0 rgba(0,30,80,0.4)">1,247</div><p style="font-size:12px;opacity:0.85;margin:6px 0 0">+12 this week. Bench: 982 approved.</p></div>
+          <div class="b aero-card"><h3 class="aero-h">Courses · 42</h3><p class="aero-gloss" style="margin-bottom:0">38 active · 4 retiring this cycle.</p></div>
+          <div class="c aero-card warn" style="background:var(--aero-card-pink)"><div class="lbl-strong" style="color:var(--aero-pink)">Pending</div><div class="num" style="color:var(--aero-pink)">17</div><p style="font-size:12px;color:var(--aero-pink);margin:6px 0 0;font-weight:600">17/120 capacity · 5 are stale</p></div>
+          <div class="d aero-card"><h3 class="aero-h">Pathways · 8</h3><p class="aero-gloss" style="margin-bottom:0">All healthy.</p></div>
+          <div class="e aero-card"><h3 class="aero-h">Queue + audit</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:6px">
+              <ul class="aero-list"><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul>
+              <ul class="aero-list"><li><span>10:42 role.change</span><span class="v">j.park</span></li><li><span>09:18 enrollment</span><span class="v">a.stirling</span></li><li><span>08:55 form.review</span><span class="v">m.chen</span></li><li><span>Yest credit.grant</span><span class="v">l.singh</span></li></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L33" id="L33">
+      <header class="frame-bar"><span class="num">L33</span><span class="name">Brick wall</span><span class="cat">Offset rows · staggered KPIs</span></header>
+      <div class="frame-body">
+        <div class="row r1">
+          <div class="aero-card"><div class="lbl-strong">Trainees</div><div class="num">1,247</div></div>
+          <div class="aero-card"><div class="lbl-strong">Courses</div><div class="num">42</div></div>
+          <div class="aero-card"><div class="lbl-strong">Pathways</div><div class="num">8</div></div>
+          <div class="aero-card warn"><div class="lbl-strong" style="color:var(--aero-pink)">Pending</div><div class="num" style="color:var(--aero-pink)">17</div></div>
+        </div>
+        <div class="row r2">
+          <div></div>
+          <div class="aero-card"><div class="lbl-strong">Bench</div><div class="num">982</div></div>
+          <div class="aero-card"><div class="lbl-strong">Logins</div><div class="num">824</div></div>
+          <div class="aero-card warn"><div class="lbl-strong" style="color:var(--aero-pink)">Stale</div><div class="num" style="color:var(--aero-pink)">5</div></div>
+          <div></div>
+        </div>
+        <div class="row r3">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench breakdown</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L34" id="L34">
+      <header class="frame-bar"><span class="num">L34</span><span class="name">Tetris tiles</span><span class="cat">Irregular shapes · interlocking</span></header>
+      <div class="frame-body">
+        <div class="grid">
+          <div class="t1 aero-card-blue" style="color:#fff"><div class="lbl-strong" style="color:rgba(255,255,255,0.85)">Trainees</div><div class="num" style="color:#fff;text-shadow:0 2px 0 rgba(0,30,80,0.4)">1,247</div></div>
+          <div class="t2 aero-card"><div class="lbl-strong">Courses</div><div class="num">42</div></div>
+          <div class="t3 aero-card"><h3 class="aero-h" style="margin:0">Queue · 17 items</h3><p class="aero-gloss" style="margin:4px 0 0;font-size:11.5px">credit 6 · enroll 4 · forms 5 · talent 2</p></div>
+          <div class="t4 aero-card"><div class="lbl-strong">Pathways</div><div class="num">8</div></div>
+          <div class="t5 aero-card warn"><div class="lbl-strong" style="color:var(--aero-pink)">Pending</div><div class="num" style="color:var(--aero-pink)">17</div></div>
+          <div class="t6 aero-card"><h3 class="aero-h">Bench · 1,108 approved</h3>
+            <ul class="aero-list" style="font-size:12.5px"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+          <div class="t7 aero-card"><div class="lbl-strong">Logins today</div><div class="num">824</div></div>
+          <div class="t8 aero-card warn"><div class="lbl-strong" style="color:var(--aero-pink)">Stale &gt; 14d</div><div class="num" style="color:var(--aero-pink)">5</div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L35" id="L35">
+      <header class="frame-bar"><span class="num">L35</span><span class="name">Crazy quilt</span><span class="cat">Ten irregular tiles · 12-col base</span></header>
+      <div class="frame-body">
+        <div class="quilt">
+          <div class="q1 aero-card-blue" style="color:#fff"><div class="lbl-strong" style="color:rgba(255,255,255,0.85)">Trainees</div><div class="num" style="color:#fff;text-shadow:0 2px 0 rgba(0,30,80,0.3)">1,247</div></div>
+          <div class="q2 aero-card"><div class="lbl-strong">Courses</div><div class="num">42</div></div>
+          <div class="q3 aero-card"><h3 class="aero-h" style="margin:0;font-size:13px">Queue · 17 items awaiting read</h3></div>
+          <div class="q4 aero-card warn"><div class="lbl-strong" style="color:var(--aero-pink)">Pending</div><div class="num" style="color:var(--aero-pink)">17</div></div>
+          <div class="q5 aero-card"><h3 class="aero-h" style="margin:0;font-size:13px">Bench · 1,108 approved roster</h3></div>
+          <div class="q6 aero-card"><div class="lbl-strong">Pathways</div><div class="num">8</div></div>
+          <div class="q7 aero-card warn"><div class="lbl-strong" style="color:var(--aero-pink)">Stale</div><div class="num" style="color:var(--aero-pink)">5</div></div>
+          <div class="q8 aero-card"><h3 class="aero-h">Audit · tail -5</h3>
+            <ul class="aero-list" style="font-size:11.5px"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+          <div class="q9 aero-card"><div class="lbl-strong">Logins today</div><div class="num">824</div></div>
+          <div class="q10 aero-card"><div class="lbl-strong">Triage avg</div><div class="num">2.1d</div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L36" id="L36">
+      <header class="frame-bar"><span class="num">L36</span><span class="name">Honeycomb</span><span class="cat">Hexagonal cells · ample air</span></header>
+      <div class="frame-body" style="padding:36px 24px">
+        <div class="hex-row">
+          <div class="hex"><div class="num">1,247</div><div class="lbl-strong">Trainees</div><div class="sub">+12 / wk</div></div>
+          <div class="hex"><div class="num">42</div><div class="lbl-strong">Courses</div><div class="sub">38 active</div></div>
+          <div class="hex"><div class="num">8</div><div class="lbl-strong">Pathways</div><div class="sub">healthy</div></div>
+          <div class="hex warn"><div class="num">17</div><div class="lbl-strong">Pending</div><div class="sub">triage</div></div>
+        </div>
+        <div class="hex-row offset">
+          <div class="hex"><div class="num">982</div><div class="lbl-strong">Bench</div><div class="sub">approved</div></div>
+          <div class="hex"><div class="num">824</div><div class="lbl-strong">Logins</div><div class="sub">today</div></div>
+          <div class="hex warn"><div class="num">5</div><div class="lbl-strong">Stale</div><div class="sub">&gt;14d</div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L37" id="L37">
+      <header class="frame-bar"><span class="num">L37</span><span class="name">Circular tiles</span><span class="cat">4 pearl orbs · supporting grid</span></header>
+      <div class="frame-body">
+        <div class="grid">
+          <div class="circle"><div class="num">1,247</div><div class="lbl-strong">Trainees</div></div>
+          <div class="circle"><div class="num">42</div><div class="lbl-strong">Courses</div></div>
+          <div class="circle"><div class="num">8</div><div class="lbl-strong">Pathways</div></div>
+          <div class="circle warn"><div class="num">17</div><div class="lbl-strong" style="color:var(--aero-pink)">Pending</div></div>
+        </div>
+        <div class="below">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L38" id="L38">
+      <header class="frame-bar"><span class="num">L38</span><span class="name">Stacked decks</span><span class="cat">3-deep layered cards · depth</span></header>
+      <div class="frame-body body">
+        <div class="deck">
+          <div class="stack">
+            <div class="aero-card card-3"><h3 class="aero-h">Bench (older)</h3>
+              <ul class="aero-list" style="font-size:12px"><li><span>Trainees</span><span class="v">971</span></li><li><span>Employers</span><span class="v">68</span></li></ul></div>
+            <div class="aero-card card-2"><h3 class="aero-h">Bench (recent)</h3>
+              <ul class="aero-list" style="font-size:12px"><li><span>Trainees</span><span class="v">978</span></li><li><span>Employers</span><span class="v">70</span></li></ul></div>
+            <div class="aero-card card-1"><div class="lbl-strong" style="font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--aero-ink-2)">Bench · today</div><div class="num">982</div><p class="aero-gloss" style="margin-bottom:0">approved roster</p></div>
+          </div>
+          <div class="stack">
+            <div class="aero-card card-3"><h3 class="aero-h">Queue (older)</h3>
+              <ul class="aero-list" style="font-size:12px"><li><span>Credit</span><span class="v">8</span></li><li><span>Enroll</span><span class="v">2</span></li></ul></div>
+            <div class="aero-card card-2"><h3 class="aero-h">Queue (recent)</h3>
+              <ul class="aero-list" style="font-size:12px"><li><span>Credit</span><span class="v">7</span></li><li><span>Enroll</span><span class="v">3</span></li></ul></div>
+            <div class="aero-card card-1 warn"><div class="lbl-strong" style="font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--aero-pink)">Queue · today</div><div class="num" style="color:var(--aero-pink)">17</div><p class="aero-gloss" style="margin-bottom:0">items pending</p></div>
+          </div>
+          <div class="stack">
+            <div class="aero-card card-3"><h3 class="aero-h">Audit (-2)</h3><p class="aero-gloss" style="font-size:11.5px;margin-bottom:0">role.change · m.chen</p></div>
+            <div class="aero-card card-2"><h3 class="aero-h">Audit (-1)</h3><p class="aero-gloss" style="font-size:11.5px;margin-bottom:0">credit.grant · l.singh</p></div>
+            <div class="aero-card card-1"><h3 class="aero-h">Audit · latest</h3>
+              <ul class="aero-list" style="font-size:12px"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L39" id="L39">
+      <header class="frame-bar"><span class="num">L39</span><span class="name">Floating rotated</span><span class="cat">Cards tilted · hover to align</span></header>
+      <div class="frame-body">
+        <div class="float">
+          <div class="aero-card aero-kpi" style="--r:-1.5deg"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+          <div class="aero-card aero-kpi" style="--r:1deg"><div class="lbl">Courses</div><div class="num">42</div></div>
+          <div class="aero-card aero-kpi" style="--r:-1deg"><div class="lbl">Pathways</div><div class="num">8</div></div>
+          <div class="aero-card aero-kpi warn" style="--r:2deg"><div class="lbl">Pending</div><div class="num">17</div></div>
+        </div>
+        <div class="below">
+          <div class="aero-card" style="transform:rotate(-0.5deg)"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card" style="transform:rotate(0.5deg)"><h3 class="aero-h">Bench</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          <div class="aero-card" style="transform:rotate(-0.3deg)"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L40" id="L40">
+      <header class="frame-bar"><span class="num">L40</span><span class="name">Polaroid scatter</span><span class="cat">Photo prints with captions · scrapbook</span></header>
+      <div class="frame-body" style="padding:0">
+        <div class="field">
+          <div class="pol p1"><div class="photo"><div class="num">1,247</div></div><div class="cap">trainees, may '26</div></div>
+          <div class="pol p2"><div class="photo"><div class="num">42</div></div><div class="cap">courses live</div></div>
+          <div class="pol p3"><div class="photo"><div class="num">8</div></div><div class="cap">pathways healthy</div></div>
+          <div class="pol p4 warn"><div class="photo"><div class="num">17</div></div><div class="cap">on the desk</div></div>
+          <div class="pol p5"><div class="photo"><div class="num">982</div></div><div class="cap">bench, approved</div></div>
+          <div class="pol p6"><div class="photo"><div class="num">824</div></div><div class="cap">logins today</div></div>
+          <div class="pol p7 warn"><div class="photo"><div class="num">5</div></div><div class="cap">stuck &gt; 14 days</div></div>
+          <div class="pol p8"><div class="photo"><div class="num">71</div></div><div class="cap">employers active</div></div>
+          <div class="pol p9"><div class="photo"><div class="num">22</div></div><div class="cap">admins on duty</div></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ GROUP E · DATA-DRIVEN ═══════════════════════════════════ -->
+
+    <article class="frame L41" id="L41">
+      <header class="frame-bar"><span class="num">L41</span><span class="name">Big data table</span><span class="cat">Triage queue as 8-row table</span></header>
+      <div class="frame-body">
+        <div class="kpis">
+          <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+          <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div></div>
+        </div>
+        <div class="data-table">
+          <table>
+            <thead><tr><th>ID</th><th>Kind</th><th>Subject</th><th>Owner</th><th>Age</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td class="id">APP-2418</td><td>Talent app</td><td>L.Singh · GenScript</td><td>—</td><td>21d</td><td class="status stale">STALE</td></tr>
+              <tr><td class="id">APP-2433</td><td>Talent app</td><td>K.Iyer · STEMCELL</td><td>—</td><td>19d</td><td class="status stale">STALE</td></tr>
+              <tr><td class="id">INT-1182</td><td>Internship</td><td>CCRM · Bioprocess</td><td>m.chen</td><td>16d</td><td class="status stale">STALE</td></tr>
+              <tr><td class="id">EQU-0091</td><td>Credit · EQUIP</td><td>VentureLift · A.Tian</td><td>j.park</td><td>3d</td><td class="status ok">REVIEW</td></tr>
+              <tr><td class="id">EQU-0092</td><td>Credit · EQUIP</td><td>VentureLift · D.Roy</td><td>j.park</td><td>2d</td><td class="status ok">REVIEW</td></tr>
+              <tr><td class="id">ENR-0044</td><td>Path. enrollment</td><td>OBIO · A.Stirling</td><td>m.chen</td><td>1d</td><td class="status ok">REVIEW</td></tr>
+              <tr><td class="id">FRM-2107</td><td>Form approval</td><td>Internship application</td><td>m.chen</td><td>5h</td><td class="status ok">REVIEW</td></tr>
+              <tr><td class="id">FRM-2108</td><td>Form approval</td><td>EQUIP eligibility</td><td>j.park</td><td>2h</td><td class="status ok">REVIEW</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L42" id="L42">
+      <header class="frame-bar"><span class="num">L42</span><span class="name">Spreadsheet dense</span><span class="cat">12-col matrix · everything is a cell</span></header>
+      <div class="frame-body">
+        <div class="grid-12">
+          <div class="cell" style="grid-column: span 3"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+          <div class="cell" style="grid-column: span 3"><div class="lbl">Courses</div><div class="num">42</div></div>
+          <div class="cell" style="grid-column: span 3"><div class="lbl">Pathways</div><div class="num">8</div></div>
+          <div class="cell warn" style="grid-column: span 3"><div class="lbl">Pending</div><div class="num">17</div></div>
+
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Bench</div><div class="num">1,108</div></div>
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Trainees·a</div><div class="num">982</div></div>
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Employers</div><div class="num">71</div></div>
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Instr.</div><div class="num">33</div></div>
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Admins</div><div class="num">22</div></div>
+          <div class="cell warn" style="grid-column: span 2"><div class="lbl">Stale&gt;14</div><div class="num">5</div></div>
+
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Credit</div><div class="num">6</div></div>
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Enroll</div><div class="num">4</div></div>
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Forms</div><div class="num">5</div></div>
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Talent</div><div class="num">2</div></div>
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Logins</div><div class="num">824</div></div>
+          <div class="cell" style="grid-column: span 2"><div class="lbl">Triage</div><div class="num">2.1d</div></div>
+
+          <div class="cell" style="grid-column: span 3"><div class="lbl">10:42 role.change</div><div class="num" style="font-size:16px">j.park → instructor</div></div>
+          <div class="cell" style="grid-column: span 3"><div class="lbl">09:18 enrollment</div><div class="num" style="font-size:16px">a.stirling → OBIO</div></div>
+          <div class="cell" style="grid-column: span 3"><div class="lbl">08:55 form.review</div><div class="num" style="font-size:16px">m.chen approved</div></div>
+          <div class="cell" style="grid-column: span 3"><div class="lbl">Yest credit.grant</div><div class="num" style="font-size:16px">250 → l.singh</div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L43" id="L43">
+      <header class="frame-bar"><span class="num">L43</span><span class="name">Horizontal timeline</span><span class="cat">Day flow · left to right · now-stop</span></header>
+      <div class="frame-body">
+        <div class="tline">
+          <div class="row">
+            <div class="stop"><div class="dot"></div><div class="time">08:00</div><div class="label">Open of day</div></div>
+            <div class="stop"><div class="dot"></div><div class="time">09:15</div><div class="label">Triage check-in</div></div>
+            <div class="stop"><div class="dot"></div><div class="time">10:00</div><div class="label">Roll-call</div></div>
+            <div class="stop now"><div class="dot"></div><div class="time">10:42</div><div class="label">Now · 17 pending</div></div>
+            <div class="stop"><div class="dot"></div><div class="time">12:30</div><div class="label">Midday review</div></div>
+          </div>
+        </div>
+        <div class="below">
+          <div class="aero-card aero-kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+          <div class="aero-card aero-kpi"><div class="lbl">Bench</div><div class="num">982</div></div>
+          <div class="aero-card aero-kpi warn"><div class="lbl">Pending</div><div class="num">17</div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L44" id="L44">
+      <header class="frame-bar"><span class="num">L44</span><span class="name">Funnel · pipeline</span><span class="cat">Submitted → reviewed → offer</span></header>
+      <div class="frame-body">
+        <div class="funnel">
+          <div class="stage s1"><span class="label">Submitted (this quarter)</span><span class="num">214</span></div>
+          <div class="stage s2"><span class="label">Under review</span><span class="num">86</span></div>
+          <div class="stage s3"><span class="label">Eligibility approved</span><span class="num">54</span></div>
+          <div class="stage s4"><span class="label">Interview scheduled</span><span class="num">28</span></div>
+          <div class="stage s5"><span class="label">Offer accepted</span><span class="num">17</span></div>
+        </div>
+        <div class="below">
+          <div class="aero-card"><h3 class="aero-h">Queue this morning</h3>
+            <ul class="aero-list"><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit · tail -5</h3>
+            <ul class="aero-list"><li><span>10:42 role.change</span><span class="v">j.park</span></li><li><span>09:18 enrollment</span><span class="v">a.stirling</span></li><li><span>08:55 form.review</span><span class="v">m.chen</span></li><li><span>Yest credit.grant</span><span class="v">l.singh</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L45" id="L45">
+      <header class="frame-bar"><span class="num">L45</span><span class="name">3-way comparison</span><span class="cat">ENGAGE · EXPERIENCE · EQUIP</span></header>
+      <div class="frame-body">
+        <div class="compare">
+          <div class="aero-card col">
+            <div class="label">Pillar 01</div>
+            <h3>Engage</h3>
+            <div class="big">1,247</div>
+            <p class="aero-gloss" style="margin-bottom:14px">Trainees on the platform. +12 this week.</p>
+            <ul>
+              <li><span>Active courses</span><span class="v">38</span></li>
+              <li><span>Pathways healthy</span><span class="v">8</span></li>
+              <li><span>Logins today</span><span class="v">824</span></li>
+            </ul>
+          </div>
+          <div class="aero-card col warn" style="background:var(--aero-card-pink)">
+            <div class="label" style="color:var(--aero-pink)">Pillar 02</div>
+            <h3>Experience</h3>
+            <div class="big">17</div>
+            <p class="aero-gloss" style="margin-bottom:14px">Applications awaiting a human read. Mostly EQUIP.</p>
+            <ul>
+              <li><span>Credit applications</span><span class="v">6</span></li>
+              <li><span>Pathway enrollments</span><span class="v">4</span></li>
+              <li><span>Form approvals</span><span class="v">5</span></li>
+              <li><span>Stale &gt; 14d</span><span class="v">5</span></li>
+            </ul>
+          </div>
+          <div class="aero-card col">
+            <div class="label">Pillar 03</div>
+            <h3>Equip</h3>
+            <div class="big">82</div>
+            <p class="aero-gloss" style="margin-bottom:14px">Funded since Q1. Six applications under review.</p>
+            <ul>
+              <li><span>VentureConnect</span><span class="v">61</span></li>
+              <li><span>VentureLift</span><span class="v">21</span></li>
+              <li><span>Avg ticket</span><span class="v">$11.4k</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L46" id="L46">
+      <header class="frame-bar"><span class="num">L46</span><span class="name">Hierarchical tree</span><span class="cat">Org chart · pending breakdown</span></header>
+      <div class="frame-body">
+        <div class="tree">
+          <div class="tier">
+            <div class="node root"><span class="label">Pending · all</span><span class="v">17</span></div>
+            <div class="row">
+              <div class="tier">
+                <div class="node"><span class="label">Credit</span><span class="v">6</span></div>
+                <div class="leaf-row">
+                  <span class="leaf">VL · A.Tian</span>
+                  <span class="leaf">VL · D.Roy</span>
+                  <span class="leaf">VC · M.Park</span>
+                  <span class="leaf">+3</span>
+                </div>
+              </div>
+              <div class="tier">
+                <div class="node"><span class="label">Enroll</span><span class="v">4</span></div>
+                <div class="leaf-row">
+                  <span class="leaf">A.Stirling</span>
+                  <span class="leaf">N.Rao</span>
+                  <span class="leaf">+2</span>
+                </div>
+              </div>
+              <div class="tier">
+                <div class="node"><span class="label">Forms</span><span class="v">5</span></div>
+                <div class="leaf-row">
+                  <span class="leaf">Internship</span>
+                  <span class="leaf">EQUIP</span>
+                  <span class="leaf">+3</span>
+                </div>
+              </div>
+              <div class="tier">
+                <div class="node"><span class="label">Talent</span><span class="v">2</span></div>
+                <div class="leaf-row">
+                  <span class="leaf">L.Singh</span>
+                  <span class="leaf">K.Iyer</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L47" id="L47">
+      <header class="frame-bar"><span class="num">L47</span><span class="name">Network constellation</span><span class="cat">Pending hub · satellites</span></header>
+      <div class="frame-body">
+        <div class="net">
+          <svg viewBox="0 0 800 480" preserveAspectRatio="none">
+            <line x1="400" y1="240" x2="180" y2="120" stroke="rgba(0,80,180,0.25)" stroke-width="1.5"/>
+            <line x1="400" y1="240" x2="640" y2="100" stroke="rgba(0,80,180,0.25)" stroke-width="1.5"/>
+            <line x1="400" y1="240" x2="170" y2="380" stroke="rgba(0,80,180,0.25)" stroke-width="1.5"/>
+            <line x1="400" y1="240" x2="630" y2="380" stroke="rgba(0,80,180,0.25)" stroke-width="1.5"/>
+            <line x1="400" y1="240" x2="100" y2="240" stroke="rgba(0,80,180,0.25)" stroke-width="1.5"/>
+            <line x1="400" y1="240" x2="700" y2="240" stroke="rgba(0,80,180,0.25)" stroke-width="1.5"/>
+            <line x1="400" y1="240" x2="400" y2="60" stroke="rgba(0,80,180,0.25)" stroke-width="1.5"/>
+            <line x1="400" y1="240" x2="400" y2="420" stroke="rgba(200,70,128,0.4)" stroke-width="2"/>
+          </svg>
+          <div class="node hub" style="left:calc(50% - 80px); top:calc(50% - 80px)"><div class="num">17</div><div class="lbl">Pending</div></div>
+          <div class="node med" style="left:calc(50% - 320px); top:80px"><div class="num">1,247</div><div class="lbl">Trainees</div></div>
+          <div class="node med" style="left:calc(50% + 200px); top:60px"><div class="num">42</div><div class="lbl">Courses</div></div>
+          <div class="node med warn" style="left:calc(50% + 0px); top:calc(50% + 140px)"><div class="num">5</div><div class="lbl">Stale</div></div>
+          <div class="node sm" style="left:calc(50% - 340px); top:340px"><div class="num">982</div><div class="lbl">Bench</div></div>
+          <div class="node sm" style="left:calc(50% + 220px); top:340px"><div class="num">824</div><div class="lbl">Logins</div></div>
+          <div class="node sm" style="left:calc(50% - 380px); top:calc(50% - 44px)"><div class="num">8</div><div class="lbl">Paths</div></div>
+          <div class="node sm" style="left:calc(50% + 260px); top:calc(50% - 44px)"><div class="num">71</div><div class="lbl">Empl.</div></div>
+          <div class="node sm" style="left:calc(50% - 44px); top:0"><div class="num">22</div><div class="lbl">Admins</div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L48" id="L48">
+      <header class="frame-bar"><span class="num">L48</span><span class="name">Map clusters</span><span class="cat">Geographic-style pin layout</span></header>
+      <div class="frame-body">
+        <div class="map">
+          <div class="pin" style="top:20%; left:14%"><div class="num">1,247</div><div class="lbl">Toronto</div></div>
+          <div class="pin" style="top:30%; left:38%"><div class="num">42</div><div class="lbl">Courses</div></div>
+          <div class="pin" style="top:18%; left:62%"><div class="num">8</div><div class="lbl">Pathways</div></div>
+          <div class="pin warn" style="top:24%; right:8%"><div class="num">17</div><div class="lbl">Pending</div></div>
+          <div class="pin" style="top:58%; left:22%"><div class="num">982</div><div class="lbl">Bench</div></div>
+          <div class="pin" style="top:65%; left:50%"><div class="num">824</div><div class="lbl">Logins</div></div>
+          <div class="pin warn" style="top:62%; right:20%"><div class="num">5</div><div class="lbl">Stale</div></div>
+        </div>
+        <div class="below">
+          <div class="aero-card"><h3 class="aero-h">Queue</h3>
+            <ul class="aero-list"><li><span>Credit</span><span class="v">6</span></li><li><span>Enroll</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Bench</h3>
+            <ul class="aero-list"><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li></ul></div>
+          <div class="aero-card"><h3 class="aero-h">Audit</h3>
+            <ul class="aero-list"><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L49" id="L49">
+      <header class="frame-bar"><span class="num">L49</span><span class="name">Radial spokes</span><span class="cat">Hero centre · KPIs spiraling out</span></header>
+      <div class="frame-body" style="padding:0">
+        <div class="radial">
+          <div class="center"><div class="num">17</div><div class="lbl">Pending</div></div>
+          <div class="spoke" style="top:18%; left:6%"><span class="lbl">Trainees</span><span class="v">1,247</span></div>
+          <div class="spoke" style="top:22%; right:6%"><span class="lbl">Courses</span><span class="v">42</span></div>
+          <div class="spoke" style="top:50%; left:2%; transform:translateY(-50%)"><span class="lbl">Pathways</span><span class="v">8</span></div>
+          <div class="spoke" style="top:50%; right:2%; transform:translateY(-50%)"><span class="lbl">Bench</span><span class="v">1,108</span></div>
+          <div class="spoke" style="bottom:18%; left:8%"><span class="lbl">Logins</span><span class="v">824</span></div>
+          <div class="spoke warn" style="bottom:18%; right:8%"><span class="lbl">Stale</span><span class="v">5</span></div>
+          <div class="spoke" style="top:4%; left:50%; transform:translateX(-50%)"><span class="lbl">Triage avg</span><span class="v">2.1d</span></div>
+          <div class="spoke" style="bottom:4%; left:50%; transform:translateX(-50%)"><span class="lbl">Approved %</span><span class="v">87</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="frame L50" id="L50">
+      <header class="frame-bar"><span class="num">L50</span><span class="name">Card carousel</span><span class="cat">Horizontal scroll · large slides</span></header>
+      <div class="frame-body">
+        <div class="carousel">
+          <div class="aero-card slide"><div class="lbl-strong">Trainees</div><div class="num">1,247</div><div class="desc">+12 this week. Bench: 982 approved. Pathways: 8 healthy.</div></div>
+          <div class="aero-card slide"><div class="lbl-strong">Courses</div><div class="num">42</div><div class="desc">38 active · 4 retiring this cycle.</div></div>
+          <div class="aero-card slide"><div class="lbl-strong">Pathways</div><div class="num">8</div><div class="desc">All healthy. OBIO bootcamp has the most enrollments this week.</div></div>
+          <div class="aero-card slide warn" style="background:var(--aero-card-pink)"><div class="lbl-strong" style="color:var(--aero-pink)">Pending</div><div class="num">17</div><div class="desc">Items waiting on a human read. Most desks clear by 10.</div></div>
+          <div class="aero-card slide dark"><div class="lbl-strong">Bench</div><div class="num">1,108</div><div class="desc">Approved roster across all roles. +14 this week.</div></div>
+          <div class="aero-card slide"><div class="lbl-strong">Logins today</div><div class="num">824</div><div class="desc">+12 new signups this week. Reach is steady.</div></div>
+          <div class="aero-card slide warn" style="background:var(--aero-card-pink)"><div class="lbl-strong" style="color:var(--aero-pink)">Stale &gt; 14d</div><div class="num">5</div><div class="desc">Applications stuck. L.Singh: 21d. K.Iyer: 19d.</div></div>
+        </div>
+      </div>
+    </article>
+
+  </main>
+
+  <!-- ═══ SIDEBAR — right, sticky ═══════════════════════════════════ -->
+  <aside class="side">
+    <div class="side-hd">
+      <p class="brand">BHN · Admin · M34</p>
+      <h2>Y2K Aero · 50 layouts</h2>
+      <p>One visual language. Fifty ways to organise the same content.</p>
+      <label class="side-search">
+        <input type="text" placeholder="Filter — e.g. hero, table, magazine" id="filter" />
+      </label>
+    </div>
+    <nav class="side-list" id="sidelist">
+
+      <div class="side-group" data-group="Foundational">
+        <h3>Foundational</h3>
+        <a href="#L1"><span class="num">L1</span><span>Classic</span><span class="dot"></span></a>
+        <a href="#L2"><span class="num">L2</span><span>Asymmetric 60/40</span><span class="dot"></span></a>
+        <a href="#L3"><span class="num">L3</span><span>50/50 split</span><span class="dot"></span></a>
+        <a href="#L4"><span class="num">L4</span><span>3 equal columns</span><span class="dot"></span></a>
+        <a href="#L5"><span class="num">L5</span><span>4 equal columns</span><span class="dot"></span></a>
+        <a href="#L6"><span class="num">L6</span><span>Sidebar left</span><span class="dot"></span></a>
+        <a href="#L7"><span class="num">L7</span><span>Sidebar right</span><span class="dot"></span></a>
+        <a href="#L8"><span class="num">L8</span><span>T-shape banner</span><span class="dot"></span></a>
+        <a href="#L9"><span class="num">L9</span><span>2 rows × 3</span><span class="dot"></span></a>
+        <a href="#L10"><span class="num">L10</span><span>Pinwheel</span><span class="dot"></span></a>
+      </div>
+
+      <div class="side-group" data-group="Hero-driven">
+        <h3>Hero-driven</h3>
+        <a href="#L11"><span class="num">L11</span><span>Colossal 17</span><span class="dot"></span></a>
+        <a href="#L12"><span class="num">L12</span><span>Big headline</span><span class="dot"></span></a>
+        <a href="#L13"><span class="num">L13</span><span>Off-centre hero</span><span class="dot"></span></a>
+        <a href="#L14"><span class="num">L14</span><span>Full-bleed banner</span><span class="dot"></span></a>
+        <a href="#L15"><span class="num">L15</span><span>Vertical wordmark</span><span class="dot"></span></a>
+        <a href="#L16"><span class="num">L16</span><span>Four-up giant KPIs</span><span class="dot"></span></a>
+        <a href="#L17"><span class="num">L17</span><span>Embedded KPI hero</span><span class="dot"></span></a>
+        <a href="#L18"><span class="num">L18</span><span>Diagonal ribbon</span><span class="dot"></span></a>
+        <a href="#L19"><span class="num">L19</span><span>Gauge meter</span><span class="dot"></span></a>
+        <a href="#L20"><span class="num">L20</span><span>Live ticker</span><span class="dot"></span></a>
+      </div>
+
+      <div class="side-group" data-group="Magazine">
+        <h3>Editorial</h3>
+        <a href="#L21"><span class="num">L21</span><span>Magazine cover</span><span class="dot"></span></a>
+        <a href="#L22"><span class="num">L22</span><span>Two-page spread</span><span class="dot"></span></a>
+        <a href="#L23"><span class="num">L23</span><span>Pull-quote feature</span><span class="dot"></span></a>
+        <a href="#L24"><span class="num">L24</span><span>Cover story + side</span><span class="dot"></span></a>
+        <a href="#L25"><span class="num">L25</span><span>Index · alphabetical</span><span class="dot"></span></a>
+        <a href="#L26"><span class="num">L26</span><span>Weekly almanac</span><span class="dot"></span></a>
+        <a href="#L27"><span class="num">L27</span><span>Timeline narrative</span><span class="dot"></span></a>
+        <a href="#L28"><span class="num">L28</span><span>Field guide</span><span class="dot"></span></a>
+        <a href="#L29"><span class="num">L29</span><span>Postcard scatter</span><span class="dot"></span></a>
+        <a href="#L30"><span class="num">L30</span><span>Stamp collection</span><span class="dot"></span></a>
+      </div>
+
+      <div class="side-group" data-group="Bento">
+        <h3>Bento / mosaic</h3>
+        <a href="#L31"><span class="num">L31</span><span>Apple bento</span><span class="dot"></span></a>
+        <a href="#L32"><span class="num">L32</span><span>Asymmetric tiles</span><span class="dot"></span></a>
+        <a href="#L33"><span class="num">L33</span><span>Brick wall</span><span class="dot"></span></a>
+        <a href="#L34"><span class="num">L34</span><span>Tetris tiles</span><span class="dot"></span></a>
+        <a href="#L35"><span class="num">L35</span><span>Crazy quilt</span><span class="dot"></span></a>
+        <a href="#L36"><span class="num">L36</span><span>Honeycomb</span><span class="dot"></span></a>
+        <a href="#L37"><span class="num">L37</span><span>Circular tiles</span><span class="dot"></span></a>
+        <a href="#L38"><span class="num">L38</span><span>Stacked decks</span><span class="dot"></span></a>
+        <a href="#L39"><span class="num">L39</span><span>Floating rotated</span><span class="dot"></span></a>
+        <a href="#L40"><span class="num">L40</span><span>Polaroid scatter</span><span class="dot"></span></a>
+      </div>
+
+      <div class="side-group" data-group="Data-driven">
+        <h3>Data-driven</h3>
+        <a href="#L41"><span class="num">L41</span><span>Big data table</span><span class="dot"></span></a>
+        <a href="#L42"><span class="num">L42</span><span>Spreadsheet dense</span><span class="dot"></span></a>
+        <a href="#L43"><span class="num">L43</span><span>Horizontal timeline</span><span class="dot"></span></a>
+        <a href="#L44"><span class="num">L44</span><span>Funnel · pipeline</span><span class="dot"></span></a>
+        <a href="#L45"><span class="num">L45</span><span>3-way comparison</span><span class="dot"></span></a>
+        <a href="#L46"><span class="num">L46</span><span>Hierarchical tree</span><span class="dot"></span></a>
+        <a href="#L47"><span class="num">L47</span><span>Network constellation</span><span class="dot"></span></a>
+        <a href="#L48"><span class="num">L48</span><span>Map clusters</span><span class="dot"></span></a>
+        <a href="#L49"><span class="num">L49</span><span>Radial spokes</span><span class="dot"></span></a>
+        <a href="#L50"><span class="num">L50</span><span>Card carousel</span><span class="dot"></span></a>
+      </div>
+
+    </nav>
+    <div class="side-ft">click any layout · scroll to compare · 50 of 50</div>
+  </aside>
+
+</div>
+
+<script>
+  // ── Robust navigation ────────────────────────────────────────────
+  // Earlier version relied on Element.scrollIntoView() for BOTH the
+  // page jump AND the sidebar's auto-follow. That cascades — moving
+  // the sidebar item into view sometimes nudges the page scroll on
+  // top of the user-initiated jump, so the destination was wrong.
+  // Now: window.scrollTo() drives the page (explicit math); the
+  // sidebar's own scrollTop drives the rail (no page-level scroll
+  // calls except the click-to-jump itself).
+
+  const links = Array.from(document.querySelectorAll('.side-list a'));
+  const linkByHref = new Map(links.map(a => [a.getAttribute('href'), a]));
+  const sideList = document.querySelector('.side-list');
+  const frames = Array.from(document.querySelectorAll('.frame'));
+
+  // Click → jump main page to that frame's top (minus a small inset)
+  links.forEach(a => {
+    a.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const href = a.getAttribute('href');
+      const target = document.querySelector(href);
+      if (!target) return;
+      const top = target.getBoundingClientRect().top + window.pageYOffset - 14;
+      window.scrollTo({ top, behavior: 'smooth' });
+    });
+  });
+
+  // Active state via scroll position — pick the frame whose centre is
+  // closest to the viewport's centre. More stable than thresholded
+  // intersection ratios when frames vary wildly in height.
+  function setActive() {
+    const vCenter = window.scrollY + window.innerHeight / 2;
+    let activeId = null;
+    let closest = Infinity;
+    for (const f of frames) {
+      const r = f.getBoundingClientRect();
+      const fCenter = r.top + window.scrollY + r.height / 2;
+      const d = Math.abs(fCenter - vCenter);
+      if (d < closest) { closest = d; activeId = f.id; }
+    }
+    links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + activeId));
+
+    // Keep the active sidebar item visible WITHOUT scrolling the page.
+    // Compute the active link's position inside the side-list and
+    // bring it within the list's visible band only if it has drifted
+    // off — manual scrollTop, never scrollIntoView.
+    const active = links.find(a => a.classList.contains('is-active'));
+    if (active && sideList) {
+      const lr = sideList.getBoundingClientRect();
+      const ar = active.getBoundingClientRect();
+      const pad = 40;
+      if (ar.top < lr.top + pad) {
+        sideList.scrollTop += ar.top - lr.top - pad;
+      } else if (ar.bottom > lr.bottom - pad) {
+        sideList.scrollTop += ar.bottom - lr.bottom + pad;
+      }
+    }
+  }
+
+  // Throttle scroll handler with rAF
+  let raf = 0;
+  window.addEventListener('scroll', () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => { raf = 0; setActive(); });
+  }, { passive: true });
+  setActive();
+
+  // ── Filter ──────────────────────────────────────────────────────
+  const filter = document.getElementById('filter');
+  filter.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll('.side-list a').forEach(a => {
+      a.style.display = !q || a.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+    document.querySelectorAll('.side-group').forEach(g => {
+      const any = Array.from(g.querySelectorAll('a')).some(a => a.style.display !== 'none');
+      g.style.display = any ? '' : 'none';
+    });
+  });
+</script>
+
+</body>
+</html>

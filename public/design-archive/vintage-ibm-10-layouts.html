@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BHN — Admin · M35 Vintage IBM · 10 layouts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   SHELL — main scroll · right sticky sidebar · uniform frame chrome
+════════════════════════════════════════════════════════════════════ */
+:root {
+  --nav-w: 280px;
+  --gap: 14px;
+  --ibm-tan: #ede5d0;
+  --ibm-tan-2: #f5efdc;
+  --ibm-navy: #1a2540;
+  --ibm-navy-2: #2a3a60;
+  --ibm-rust: #8a3a20;
+  --ibm-amber: #c08020;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  background: #d8d2c0;
+  color: #1a2540;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.app { display: grid; grid-template-columns: 1fr var(--nav-w); align-items: start; min-height: 100vh; }
+.main { padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); }
+
+.intro {
+  background: var(--ibm-tan);
+  border: 2px solid var(--ibm-navy);
+  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 18px;
+}
+.intro h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.005em; margin: 0; color: var(--ibm-navy); line-height: 1.1; }
+.intro p { margin: 8px 0 0; font-size: 12.5px; color: #555; max-width: 60ch; line-height: 1.5; font-family: 'IBM Plex Serif', serif; font-style: italic; }
+.intro .count { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.28em; text-transform: uppercase; color: #555; text-align: right; }
+.intro .count strong { display: block; font-size: 44px; line-height: 1; color: var(--ibm-navy); font-weight: 700; margin-top: 6px; font-family: 'IBM Plex Sans'; }
+
+/* Frame around each layout variant */
+.frame { background: var(--ibm-tan); border: 2px solid var(--ibm-navy); overflow: hidden; scroll-margin-top: 14px; }
+.frame-bar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  background: var(--ibm-navy);
+  color: var(--ibm-tan);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.frame-bar .num { background: var(--ibm-tan); color: var(--ibm-navy); padding: 3px 7px; font-size: 10px; font-weight: 700; letter-spacing: 0.15em; }
+.frame-bar .name { font-weight: 600; letter-spacing: 0.18em; }
+.frame-bar .cat { font-size: 10px; opacity: 0.65; letter-spacing: 0.22em; }
+.frame-body { padding: 0; }
+
+/* SIDEBAR — same right-sticky pattern as the master file */
+.side { position: sticky; top: var(--gap); align-self: start; height: calc(100vh - var(--gap) * 2); margin-right: var(--gap); background: var(--ibm-navy); color: #fff; border: 2px solid var(--ibm-navy); overflow: hidden; display: flex; flex-direction: column; }
+.side-hd { padding: 22px 22px 18px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.side-hd .brand { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.38em; text-transform: uppercase; color: rgba(255,255,255,0.55); font-weight: 700; margin: 0; }
+.side-hd h2 { margin: 8px 0 4px; font-size: 18px; font-weight: 700; }
+.side-hd p { margin: 0; font-size: 11.5px; color: rgba(255,255,255,0.55); line-height: 1.4; }
+.side-list { flex: 1; overflow-y: auto; padding: 14px 12px 16px; }
+.side-list a { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; color: rgba(255,255,255,0.55); text-decoration: none; font-size: 12.5px; font-weight: 500; border-left: 2px solid transparent; transition: background 120ms, color 120ms, border-color 120ms; }
+.side-list a .num { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); letter-spacing: 0.08em; }
+.side-list a .dot { width: 6px; height: 6px; background: rgba(255,255,255,0.3); opacity: 0; transition: opacity 120ms, background 120ms; }
+.side-list a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.side-list a.is-active { background: rgba(255,255,255,0.10); color: #fff; border-left-color: var(--ibm-amber); }
+.side-list a.is-active .num { color: #fff; }
+.side-list a.is-active .dot { opacity: 1; background: var(--ibm-amber); }
+.side-ft { padding: 14px 22px; border-top: 1px solid rgba(255,255,255,0.12); font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255,255,255,0.4); line-height: 1.4; }
+@media (max-width: 1100px) {
+  .app { grid-template-columns: 1fr; }
+  .side { position: static; height: auto; margin: var(--gap); }
+  .side-list { max-height: 280px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   IBM TOKENS — shared by every L1-L10 layout. Each layout differs in
+   STRUCTURE, never in palette/type/border. That's how "10 layouts of
+   one design system" stays coherent.
+════════════════════════════════════════════════════════════════════ */
+.ibm { background: var(--ibm-tan); color: var(--ibm-navy); font-family: 'IBM Plex Sans', sans-serif; padding: 0; }
+.ibm .titlebar { background: var(--ibm-navy); color: var(--ibm-tan); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+.ibm .titlebar h2 { font-size: 16px; letter-spacing: 0.15em; text-transform: uppercase; margin: 0; font-weight: 700; }
+.ibm .titlebar .id { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; }
+.ibm .pad { padding: 22px 24px; }
+
+/* Boxes — the universal IBM card. White interior on tan field. */
+.ibm-box { background: #fff; border: 2px solid var(--ibm-navy); padding: 18px 22px; }
+.ibm-box h3 { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; margin: 0 0 4px; font-weight: 700; }
+.ibm-box .gloss { font-family: 'IBM Plex Serif', serif; font-style: italic; font-size: 12.5px; color: #555; margin-bottom: 14px; }
+.ibm-box ul { list-style: none; padding: 0; margin: 0; }
+.ibm-box ul li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; font-size: 13.5px; }
+.ibm-box ul li:last-child { border-bottom: none; }
+.ibm-box ul li .v { font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--ibm-navy); }
+
+/* KPI cell — used in every layout, varying densities */
+.kpi { padding: 16px 22px; }
+.kpi .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ibm-navy); font-weight: 700; }
+.kpi .num { font-size: 38px; font-weight: 700; margin-top: 4px; color: var(--ibm-navy); line-height: 1; }
+.kpi .sub { font-size: 11.5px; color: #666; margin-top: 4px; }
+.kpi.warn .num { color: var(--ibm-rust); }
+.kpi.warn .sub::before { content: '⚠ '; color: var(--ibm-rust); }
+
+/* ────────── L1 · CLASSIC ────────── */
+/* Top dark bar · 4 KPI row · 3 content cards row */
+.L1 .kpis { display: grid; grid-template-columns: repeat(4,1fr); border: 2px solid var(--ibm-navy); background: #fff; }
+.L1 .kpis .kpi { border-right: 2px solid var(--ibm-navy); }
+.L1 .kpis .kpi:last-child { border-right: none; }
+.L1 .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-top: 18px; }
+
+/* ────────── L2 · ASYMMETRIC HERO ────────── */
+.L2 .row { display: grid; grid-template-columns: 1.55fr 1fr; gap: 18px; }
+.L2 .hero { background: var(--ibm-navy); color: var(--ibm-tan); padding: 32px 36px; border: 2px solid var(--ibm-navy); display: flex; flex-direction: column; justify-content: space-between; }
+.L2 .hero .hd { display: flex; justify-content: space-between; align-items: baseline; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; opacity: 0.7; }
+.L2 .hero .big { font-size: 144px; font-weight: 700; line-height: 0.9; letter-spacing: -0.04em; margin: 20px 0 12px; color: var(--ibm-amber); }
+.L2 .hero .what { font-family: 'IBM Plex Serif', serif; font-style: italic; font-size: 17px; max-width: 36ch; line-height: 1.4; margin-bottom: 24px; opacity: 0.9; }
+.L2 .hero ul { list-style: none; padding: 0; margin: 0; border-top: 1px solid rgba(255,255,255,0.18); }
+.L2 .hero ul li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.12); font-size: 13.5px; }
+.L2 .hero ul li .v { font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--ibm-amber); }
+.L2 .stack { display: flex; flex-direction: column; gap: 18px; }
+.L2 .stack .mini-kpis { display: grid; grid-template-columns: 1fr 1fr 1fr; background: #fff; border: 2px solid var(--ibm-navy); }
+.L2 .stack .mini-kpis .kpi { padding: 12px 14px; border-right: 2px solid var(--ibm-navy); }
+.L2 .stack .mini-kpis .kpi:last-child { border-right: none; }
+.L2 .stack .mini-kpis .num { font-size: 26px; }
+
+/* ────────── L3 · MAGAZINE 2-COL ────────── */
+.L3 .masthead { text-align: center; padding: 28px 24px 18px; border-bottom: 4px double var(--ibm-navy); }
+.L3 .masthead .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--ibm-navy); }
+.L3 .masthead h2 { font-family: 'IBM Plex Serif', serif; font-size: 44px; font-weight: 700; letter-spacing: -0.005em; margin: 8px 0 4px; }
+.L3 .masthead .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: #555; }
+.L3 .kpis { display: grid; grid-template-columns: repeat(4,1fr); border-top: 2px solid var(--ibm-navy); border-bottom: 1px solid var(--ibm-navy); margin-top: 0; }
+.L3 .kpis .kpi { border-right: 1px solid #ccc; text-align: center; padding: 18px 16px; }
+.L3 .kpis .kpi:last-child { border-right: none; }
+.L3 .body { display: grid; grid-template-columns: 1.7fr 1fr; gap: 0; padding: 22px 24px; }
+.L3 .col-l { border-right: 1px solid #ccc; padding-right: 28px; }
+.L3 .col-r { padding-left: 28px; display: flex; flex-direction: column; gap: 22px; }
+.L3 h3.section-h { font-family: 'IBM Plex Serif', serif; font-size: 22px; font-weight: 700; margin: 0 0 4px; padding-bottom: 6px; border-bottom: 1px solid var(--ibm-navy); }
+.L3 .gloss { font-family: 'IBM Plex Serif', serif; font-style: italic; font-size: 13.5px; color: #555; margin-bottom: 12px; }
+.L3 ul { list-style: none; padding: 0; margin: 0; }
+.L3 ul li { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px dotted #999; font-size: 14.5px; }
+.L3 ul li .v { font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
+
+/* ────────── L4 · DATA TABLE FIRST ────────── */
+.L4 .pad { padding: 22px 24px; }
+.L4 .kpi-strip { display: grid; grid-template-columns: repeat(4,1fr); border: 2px solid var(--ibm-navy); background: #fff; margin-bottom: 18px; }
+.L4 .kpi-strip .kpi { border-right: 2px solid var(--ibm-navy); padding: 12px 18px; }
+.L4 .kpi-strip .kpi:last-child { border-right: none; }
+.L4 .kpi-strip .num { font-size: 26px; }
+.L4 table.queue { width: 100%; background: #fff; border: 2px solid var(--ibm-navy); border-collapse: collapse; font-size: 13px; }
+.L4 table.queue th { background: var(--ibm-navy); color: var(--ibm-tan); padding: 10px 14px; text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; border-right: 1px solid rgba(237,229,208,0.2); }
+.L4 table.queue th:last-child { border-right: none; }
+.L4 table.queue td { padding: 10px 14px; border-bottom: 1px solid #ddd; border-right: 1px solid #ddd; font-family: 'IBM Plex Mono', monospace; }
+.L4 table.queue td:last-child { border-right: none; }
+.L4 table.queue tr:last-child td { border-bottom: none; }
+.L4 table.queue .status { color: var(--ibm-rust); font-weight: 700; }
+.L4 table.queue .status.ok { color: #2a6a3a; }
+.L4 .below { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+
+/* ────────── L5 · CINEMA BANNER ────────── */
+.L5 .banner { background: #fff; border: 2px solid var(--ibm-navy); padding: 56px 48px; display: grid; grid-template-columns: repeat(4,1fr); gap: 0; }
+.L5 .banner .kpi { padding: 0 24px; border-right: 1px solid var(--ibm-navy); }
+.L5 .banner .kpi:last-child { border-right: none; }
+.L5 .banner .num { font-size: 96px; font-weight: 700; line-height: 0.9; letter-spacing: -0.04em; margin-top: 10px; }
+.L5 .banner .sub { font-size: 13px; margin-top: 10px; }
+.L5 .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; margin-top: 18px; }
+.L5 .grid4 .ibm-box .gloss { font-size: 11.5px; }
+.L5 .grid4 .ibm-box ul li { padding: 6px 0; font-size: 12.5px; }
+
+/* ────────── L6 · VERTICAL TIMELINE ────────── */
+.L6 .pad { padding: 32px 0; max-width: 760px; margin: 0 auto; }
+.L6 .step { position: relative; padding: 0 32px 0 64px; margin-bottom: 28px; }
+.L6 .step::before { content: ''; position: absolute; left: 28px; top: 0; bottom: -28px; width: 2px; background: var(--ibm-navy); }
+.L6 .step:last-child::before { bottom: 8px; }
+.L6 .step .stamp { position: absolute; left: 16px; top: 12px; width: 26px; height: 26px; background: var(--ibm-navy); color: var(--ibm-tan); font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; z-index: 2; }
+.L6 .step .ibm-box { padding: 16px 20px; }
+.L6 .step .ibm-box h3 { margin-bottom: 4px; }
+.L6 .step .kpi-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 0; background: #fff; border: 2px solid var(--ibm-navy); padding: 0; }
+.L6 .step .kpi-row .kpi { border-right: 1px solid var(--ibm-navy); padding: 14px 16px; }
+.L6 .step .kpi-row .kpi:last-child { border-right: none; }
+.L6 .step .kpi-row .num { font-size: 28px; }
+
+/* ────────── L7 · RAIL + 2x2 GRID ────────── */
+.L7 .layout { display: grid; grid-template-columns: 220px 1fr; gap: 0; }
+.L7 .rail { background: var(--ibm-navy); color: var(--ibm-tan); padding: 24px 22px; }
+.L7 .rail .group { margin-bottom: 28px; }
+.L7 .rail .group:last-child { margin-bottom: 0; }
+.L7 .rail h4 { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.35em; text-transform: uppercase; color: rgba(237,229,208,0.55); margin: 0 0 12px; font-weight: 700; }
+.L7 .rail .stat { margin-bottom: 14px; }
+.L7 .rail .stat .lbl { font-size: 11px; color: rgba(237,229,208,0.55); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.18em; text-transform: uppercase; }
+.L7 .rail .stat .num { font-size: 30px; font-weight: 700; line-height: 1; color: var(--ibm-tan); }
+.L7 .rail .stat.warn .num { color: var(--ibm-amber); }
+.L7 .content { padding: 22px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+/* ────────── L8 · DENSE GRID (12-col mainframe report) ────────── */
+.L8 .pad { padding: 22px 24px; }
+.L8 .g { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+.L8 .cell { background: #fff; border: 2px solid var(--ibm-navy); padding: 14px 16px; min-height: 96px; }
+.L8 .cell.k { display: flex; flex-direction: column; justify-content: space-between; }
+.L8 .cell.k .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #555; }
+.L8 .cell.k .num { font-size: 28px; font-weight: 700; line-height: 1; }
+.L8 .cell.k .sub { font-size: 11px; color: #777; }
+.L8 .cell.list { padding: 0; min-height: auto; }
+.L8 .cell.list .hd { background: var(--ibm-navy); color: var(--ibm-tan); padding: 6px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; }
+.L8 .cell.list ul { list-style: none; margin: 0; padding: 8px 12px; }
+.L8 .cell.list ul li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; font-size: 12.5px; }
+.L8 .cell.list ul li:last-child { border-bottom: none; }
+.L8 .cell.list ul li .v { font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
+
+/* ────────── L9 · THREE PILLARS ────────── */
+.L9 .pillars { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; min-height: 540px; }
+.L9 .pillar { border-right: 2px solid var(--ibm-navy); padding: 24px 24px 28px; display: flex; flex-direction: column; }
+.L9 .pillar:last-child { border-right: none; }
+.L9 .pillar h3 { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; margin: 0 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--ibm-navy); font-weight: 700; }
+.L9 .pillar .pkpi { background: #fff; border: 2px solid var(--ibm-navy); padding: 18px 20px; margin-bottom: 16px; }
+.L9 .pillar .pkpi .num { font-size: 56px; font-weight: 700; line-height: 1; margin-top: 6px; }
+.L9 .pillar .pkpi.warn .num { color: var(--ibm-rust); }
+.L9 .pillar .pkpi .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #555; }
+.L9 .pillar .pkpi .sub { font-family: 'IBM Plex Serif', serif; font-style: italic; font-size: 13px; color: #666; margin-top: 6px; }
+.L9 .pillar .plist { background: #fff; border: 2px solid var(--ibm-navy); padding: 14px 18px; }
+.L9 .pillar .plist h4 { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; margin: 0 0 8px; }
+.L9 .pillar .plist ul { list-style: none; padding: 0; margin: 0; }
+.L9 .pillar .plist ul li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dotted #999; font-size: 12.5px; }
+.L9 .pillar .plist ul li:last-child { border-bottom: none; }
+.L9 .pillar .plist ul li .v { font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
+
+/* ────────── L10 · HERO NUMBER + SUPPORTING ────────── */
+.L10 .hero { padding: 48px 32px 16px; text-align: center; }
+.L10 .hero .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.35em; text-transform: uppercase; color: #555; }
+.L10 .hero .big { font-size: 220px; font-weight: 700; line-height: 0.85; letter-spacing: -0.05em; color: var(--ibm-rust); margin: 18px 0 8px; }
+.L10 .hero .what { font-family: 'IBM Plex Serif', serif; font-size: 22px; font-style: italic; color: #555; max-width: 50ch; margin: 0 auto 6px; line-height: 1.35; }
+.L10 .hero .meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: #555; }
+.L10 .below { padding: 24px 32px 36px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+.L10 .below .kpi { background: #fff; border: 2px solid var(--ibm-navy); padding: 14px 16px; }
+.L10 .below .kpi .num { font-size: 26px; }
+.L10 .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; padding: 0 32px 36px; }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <main class="main">
+
+    <header class="intro">
+      <div>
+        <h1>M35 · Vintage IBM — 10 layout variations</h1>
+        <p>One visual language — IBM tan + navy, hairline borders, Plex Sans / Plex Mono, no rounded corners — across ten ways of organising the same admin content. Same tokens, different structure.</p>
+      </div>
+      <div class="count">Layouts<strong>10</strong></div>
+    </header>
+
+    <!-- ═══ L1 · CLASSIC ═══════════════════════════════════════════ -->
+    <article class="frame L1" id="L1">
+      <header class="frame-bar"><span class="num">L1</span><span class="name">Classic</span><span class="cat">4 KPI row · 3 cards</span></header>
+      <div class="frame-body ibm">
+        <div class="titlebar"><h2>BIOHUBNET / OPERATIONS</h2><span class="id">2026-05-19 · 10:42 · ADM001</span></div>
+        <div class="pad">
+          <div class="kpis">
+            <div class="kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 / week</div></div>
+            <div class="kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+            <div class="kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">all healthy</div></div>
+            <div class="kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+          </div>
+          <div class="grid">
+            <div class="ibm-box"><h3>Action queue</h3><p class="gloss">Items awaiting review.</p>
+              <ul><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+            <div class="ibm-box"><h3>Bench strength</h3><p class="gloss">Approved roster, by role.</p>
+              <ul><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+            <div class="ibm-box"><h3>Audit log</h3><p class="gloss">Tail -5 entries.</p>
+              <ul><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li><li><span>16:22 credit</span><span class="v">l.singh</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ L2 · ASYMMETRIC HERO ═══════════════════════════════════ -->
+    <article class="frame L2" id="L2">
+      <header class="frame-bar"><span class="num">L2</span><span class="name">Asymmetric hero</span><span class="cat">Pending dominates · supporting stack</span></header>
+      <div class="frame-body ibm">
+        <div class="titlebar"><h2>BIOHUBNET / OPERATIONS</h2><span class="id">2026-05-19 · 10:42</span></div>
+        <div class="pad">
+          <div class="row">
+            <section class="hero">
+              <div class="hd"><span>The desk this morning</span><span>17 / 12 max</span></div>
+              <div class="big">17</div>
+              <p class="what">Items waiting on a human read. Six are commercial-funding applications. The talent-app queue is the one that quietly stalls.</p>
+              <ul>
+                <li><span>Credit applications · EQUIP</span><span class="v">6</span></li>
+                <li><span>Pathway enrollments · OBIO</span><span class="v">4</span></li>
+                <li><span>Form approvals</span><span class="v">5</span></li>
+                <li><span>Talent applications</span><span class="v">2</span></li>
+              </ul>
+            </section>
+            <div class="stack">
+              <div class="mini-kpis">
+                <div class="kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+                <div class="kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+                <div class="kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+              </div>
+              <div class="ibm-box"><h3>Bench strength</h3>
+                <ul><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+              <div class="ibm-box"><h3>Audit · tail -5</h3>
+                <ul><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enrol</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ L3 · MAGAZINE 2-COL ════════════════════════════════════ -->
+    <article class="frame L3" id="L3">
+      <header class="frame-bar"><span class="num">L3</span><span class="name">Magazine 2-column</span><span class="cat">Masthead · wide queue + side stack</span></header>
+      <div class="frame-body ibm">
+        <div class="masthead">
+          <div class="eyebrow">BHN / OPERATIONS</div>
+          <h2>The Operations Daily</h2>
+          <div class="meta">Vol. III · No. 142 · Tuesday May 19, 2026</div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 / week</div></div>
+          <div class="kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+          <div class="kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+          <div class="kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+        </div>
+        <div class="body">
+          <div class="col-l">
+            <h3 class="section-h">Action queue · 17 items</h3>
+            <p class="gloss">The desks that need a human read before they keep moving downstream.</p>
+            <ul>
+              <li><span>Credit applications · EQUIP</span><span class="v">6</span></li>
+              <li><span>Pathway enrollments · OBIO bootcamp</span><span class="v">4</span></li>
+              <li><span>Form approvals · misc</span><span class="v">5</span></li>
+              <li><span>Talent applications · eligibility</span><span class="v">2</span></li>
+            </ul>
+          </div>
+          <div class="col-r">
+            <div>
+              <h3 class="section-h">Bench</h3>
+              <ul><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul>
+            </div>
+            <div>
+              <h3 class="section-h">Log · tail -5</h3>
+              <ul><li><span>10:42 role</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirl</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ L4 · DATA TABLE FIRST ══════════════════════════════════ -->
+    <article class="frame L4" id="L4">
+      <header class="frame-bar"><span class="num">L4</span><span class="name">Data table first</span><span class="cat">Mainframe report · 17 rows</span></header>
+      <div class="frame-body ibm">
+        <div class="titlebar"><h2>BIOHUBNET / TRIAGE QUEUE</h2><span class="id">2026-05-19 · 10:42 · ADM001</span></div>
+        <div class="pad">
+          <div class="kpi-strip">
+            <div class="kpi"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+            <div class="kpi"><div class="lbl">Courses</div><div class="num">42</div></div>
+            <div class="kpi"><div class="lbl">Pathways</div><div class="num">8</div></div>
+            <div class="kpi warn"><div class="lbl">Pending</div><div class="num">17</div></div>
+          </div>
+          <table class="queue">
+            <thead><tr><th>ID</th><th>Kind</th><th>Subject</th><th>Owner</th><th>Age</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>APP-2418</td><td>Talent app</td><td>L.Singh · GenScript Canada</td><td>—</td><td>21d</td><td class="status">STALE</td></tr>
+              <tr><td>APP-2433</td><td>Talent app</td><td>K.Iyer · STEMCELL</td><td>—</td><td>19d</td><td class="status">STALE</td></tr>
+              <tr><td>INT-1182</td><td>Internship</td><td>CCRM · Bioprocess intern</td><td>m.chen</td><td>16d</td><td class="status">STALE</td></tr>
+              <tr><td>EQU-0091</td><td>Credit · EQUIP</td><td>VentureLift · A.Tian</td><td>j.park</td><td>3d</td><td class="status ok">REVIEW</td></tr>
+              <tr><td>EQU-0092</td><td>Credit · EQUIP</td><td>VentureLift · D.Roy</td><td>j.park</td><td>2d</td><td class="status ok">REVIEW</td></tr>
+              <tr><td>ENR-0044</td><td>Path. enrollment</td><td>OBIO · A.Stirling</td><td>m.chen</td><td>1d</td><td class="status ok">REVIEW</td></tr>
+              <tr><td>FRM-2107</td><td>Form approval</td><td>Internship application</td><td>m.chen</td><td>5h</td><td class="status ok">REVIEW</td></tr>
+            </tbody>
+          </table>
+          <div class="below">
+            <div class="ibm-box"><h3>Bench strength</h3>
+              <ul><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+            <div class="ibm-box"><h3>Audit · tail -5</h3>
+              <ul><li><span>10:42 role.change</span><span class="v">j.park</span></li><li><span>09:18 enroll</span><span class="v">a.stirling</span></li><li><span>08:55 form.review</span><span class="v">m.chen</span></li><li><span>Yest credit.grant</span><span class="v">l.singh</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ L5 · CINEMA BANNER ═════════════════════════════════════ -->
+    <article class="frame L5" id="L5">
+      <header class="frame-bar"><span class="num">L5</span><span class="name">Cinema KPI banner</span><span class="cat">Oversize numbers · 4-col detail</span></header>
+      <div class="frame-body ibm">
+        <div class="titlebar"><h2>BIOHUBNET / SNAPSHOT</h2><span class="id">2026-05-19 · 10:42</span></div>
+        <div class="pad">
+          <div class="banner">
+            <div class="kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 this week</div></div>
+            <div class="kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active · 4 retiring</div></div>
+            <div class="kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">all healthy</div></div>
+            <div class="kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">needs triage</div></div>
+          </div>
+          <div class="grid4">
+            <div class="ibm-box"><h3>Queue</h3><p class="gloss">Awaiting read.</p>
+              <ul><li><span>Credit</span><span class="v">6</span></li><li><span>Enrol</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul></div>
+            <div class="ibm-box"><h3>Bench</h3><p class="gloss">Approved roster.</p>
+              <ul><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instr.</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+            <div class="ibm-box"><h3>Stale &gt; 14d</h3><p class="gloss">Stuck items.</p>
+              <ul><li><span>L.Singh</span><span class="v">21d</span></li><li><span>K.Iyer</span><span class="v">19d</span></li><li><span>CCRM</span><span class="v">16d</span></li></ul></div>
+            <div class="ibm-box"><h3>Audit</h3><p class="gloss">Tail -5.</p>
+              <ul><li><span>role</span><span class="v">j.park</span></li><li><span>enrol</span><span class="v">a.stirl</span></li><li><span>form</span><span class="v">m.chen</span></li><li><span>credit</span><span class="v">l.singh</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ L6 · VERTICAL TIMELINE ═════════════════════════════════ -->
+    <article class="frame L6" id="L6">
+      <header class="frame-bar"><span class="num">L6</span><span class="name">Vertical timeline</span><span class="cat">Single column · narrative flow</span></header>
+      <div class="frame-body ibm">
+        <div class="titlebar" style="text-align:center;display:block"><h2>BIOHUBNET / MORNING READOUT</h2></div>
+        <div class="pad">
+          <div class="step">
+            <div class="stamp">01</div>
+            <div class="kpi-row">
+              <div class="kpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 / wk</div></div>
+              <div class="kpi"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+              <div class="kpi"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+              <div class="kpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">triage</div></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="stamp">02</div>
+            <div class="ibm-box"><h3>Action queue</h3><p class="gloss">Items waiting on a human read.</p>
+              <ul><li><span>Credit applications · EQUIP</span><span class="v">6</span></li><li><span>Pathway enrollments · OBIO</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+          </div>
+          <div class="step">
+            <div class="stamp">03</div>
+            <div class="ibm-box"><h3>Bench strength</h3><p class="gloss">Approved roster, by role.</p>
+              <ul><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+          </div>
+          <div class="step">
+            <div class="stamp">04</div>
+            <div class="ibm-box"><h3>Audit log · tail -5</h3><p class="gloss">Recent activity.</p>
+              <ul><li><span>10:42 role.change</span><span class="v">j.park</span></li><li><span>09:18 enrollment</span><span class="v">a.stirling</span></li><li><span>08:55 form.review</span><span class="v">m.chen</span></li><li><span>Yest credit.grant</span><span class="v">l.singh</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ L7 · RAIL + 2x2 GRID ═══════════════════════════════════ -->
+    <article class="frame L7" id="L7">
+      <header class="frame-bar"><span class="num">L7</span><span class="name">Stats rail + 2×2 grid</span><span class="cat">Quick stats left · detail right</span></header>
+      <div class="frame-body ibm">
+        <div class="titlebar"><h2>BIOHUBNET / OPERATIONS</h2><span class="id">2026-05-19 · 10:42</span></div>
+        <div class="layout">
+          <aside class="rail">
+            <div class="group">
+              <h4>Platform</h4>
+              <div class="stat"><div class="lbl">Trainees</div><div class="num">1,247</div></div>
+              <div class="stat"><div class="lbl">Courses</div><div class="num">42</div></div>
+              <div class="stat"><div class="lbl">Pathways</div><div class="num">8</div></div>
+            </div>
+            <div class="group">
+              <h4>Triage</h4>
+              <div class="stat warn"><div class="lbl">Pending</div><div class="num">17</div></div>
+              <div class="stat warn"><div class="lbl">Stale &gt; 14d</div><div class="num">5</div></div>
+            </div>
+            <div class="group">
+              <h4>Reach</h4>
+              <div class="stat"><div class="lbl">Logins today</div><div class="num">824</div></div>
+              <div class="stat"><div class="lbl">New / week</div><div class="num">12</div></div>
+            </div>
+          </aside>
+          <div class="content">
+            <div class="ibm-box"><h3>Action queue</h3><p class="gloss">Items awaiting review.</p>
+              <ul><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+            <div class="ibm-box"><h3>Bench strength</h3><p class="gloss">Approved roster.</p>
+              <ul><li><span>Trainees</span><span class="v">982</span></li><li><span>Employers</span><span class="v">71</span></li><li><span>Instructors</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul></div>
+            <div class="ibm-box"><h3>Stale &gt; 14d</h3><p class="gloss">Stuck applications.</p>
+              <ul><li><span>L.Singh · talent</span><span class="v">21d</span></li><li><span>K.Iyer · talent</span><span class="v">19d</span></li><li><span>CCRM · internship</span><span class="v">16d</span></li></ul></div>
+            <div class="ibm-box"><h3>Audit · tail -5</h3><p class="gloss">Recent activity.</p>
+              <ul><li><span>10:42 role.change</span><span class="v">j.park</span></li><li><span>09:18 enrollment</span><span class="v">a.stirling</span></li><li><span>08:55 form.review</span><span class="v">m.chen</span></li><li><span>Yest credit.grant</span><span class="v">l.singh</span></li></ul></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ L8 · DENSE GRID (12-col mainframe report) ══════════════ -->
+    <article class="frame L8" id="L8">
+      <header class="frame-bar"><span class="num">L8</span><span class="name">Mainframe report grid</span><span class="cat">12-col · everything on one screen</span></header>
+      <div class="frame-body ibm">
+        <div class="titlebar"><h2>BIOHUBNET / REPORT 2026-05-19</h2><span class="id">PAGE 1 / 1 · ADM001</span></div>
+        <div class="pad">
+          <div class="g">
+            <div class="cell k" style="grid-column: span 3"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 / wk</div></div>
+            <div class="cell k" style="grid-column: span 3"><div class="lbl">Courses</div><div class="num">42</div><div class="sub">38 active</div></div>
+            <div class="cell k" style="grid-column: span 3"><div class="lbl">Pathways</div><div class="num">8</div><div class="sub">healthy</div></div>
+            <div class="cell k" style="grid-column: span 3"><div class="lbl">Pending</div><div class="num" style="color:var(--ibm-rust)">17</div><div class="sub">triage</div></div>
+
+            <div class="cell list" style="grid-column: span 3">
+              <div class="hd">Queue</div>
+              <ul><li><span>Credit</span><span class="v">6</span></li><li><span>Enrol</span><span class="v">4</span></li><li><span>Forms</span><span class="v">5</span></li><li><span>Talent</span><span class="v">2</span></li></ul>
+            </div>
+            <div class="cell list" style="grid-column: span 3">
+              <div class="hd">Bench</div>
+              <ul><li><span>Trainees</span><span class="v">982</span></li><li><span>Empl</span><span class="v">71</span></li><li><span>Instr</span><span class="v">33</span></li><li><span>Admins</span><span class="v">22</span></li></ul>
+            </div>
+            <div class="cell list" style="grid-column: span 3">
+              <div class="hd">Stale &gt; 14d</div>
+              <ul><li><span>L.Singh</span><span class="v">21d</span></li><li><span>K.Iyer</span><span class="v">19d</span></li><li><span>CCRM</span><span class="v">16d</span></li></ul>
+            </div>
+            <div class="cell list" style="grid-column: span 3">
+              <div class="hd">Audit</div>
+              <ul><li><span>role.chg</span><span class="v">j.park</span></li><li><span>enrol</span><span class="v">a.stirl</span></li><li><span>form</span><span class="v">m.chen</span></li><li><span>credit</span><span class="v">l.singh</span></li></ul>
+            </div>
+
+            <div class="cell k" style="grid-column: span 2"><div class="lbl">Logins today</div><div class="num">824</div></div>
+            <div class="cell k" style="grid-column: span 2"><div class="lbl">New / week</div><div class="num">12</div></div>
+            <div class="cell k" style="grid-column: span 2"><div class="lbl">Stale &gt; 14d</div><div class="num" style="color:var(--ibm-rust)">5</div></div>
+            <div class="cell k" style="grid-column: span 2"><div class="lbl">Approved %</div><div class="num">87</div></div>
+            <div class="cell k" style="grid-column: span 2"><div class="lbl">Avg triage</div><div class="num">2.1d</div></div>
+            <div class="cell k" style="grid-column: span 2"><div class="lbl">Open feedback</div><div class="num">3</div></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ L9 · THREE PILLARS ═════════════════════════════════════ -->
+    <article class="frame L9" id="L9">
+      <header class="frame-bar"><span class="num">L9</span><span class="name">Three pillars</span><span class="cat">ENGAGE · TRIAGE · AUDIT</span></header>
+      <div class="frame-body ibm">
+        <div class="titlebar"><h2>BIOHUBNET / OPERATIONS</h2><span class="id">2026-05-19 · 10:42</span></div>
+        <div class="pillars">
+          <section class="pillar">
+            <h3>ENGAGE</h3>
+            <div class="pkpi"><div class="lbl">Trainees</div><div class="num">1,247</div><div class="sub">+12 this week.</div></div>
+            <div class="plist"><h4>Courses</h4>
+              <ul><li><span>Active</span><span class="v">38</span></li><li><span>Retiring</span><span class="v">4</span></li><li><span>Pathways</span><span class="v">8</span></li></ul></div>
+          </section>
+          <section class="pillar">
+            <h3>TRIAGE</h3>
+            <div class="pkpi warn"><div class="lbl">Pending</div><div class="num">17</div><div class="sub">Talent-app queue is the one that quietly stalls.</div></div>
+            <div class="plist"><h4>Queue · breakdown</h4>
+              <ul><li><span>Credit applications</span><span class="v">6</span></li><li><span>Pathway enrollments</span><span class="v">4</span></li><li><span>Form approvals</span><span class="v">5</span></li><li><span>Talent applications</span><span class="v">2</span></li></ul></div>
+          </section>
+          <section class="pillar">
+            <h3>AUDIT</h3>
+            <div class="pkpi"><div class="lbl">Bench</div><div class="num">1,108</div><div class="sub">Approved roster, all roles.</div></div>
+            <div class="plist"><h4>Recent · tail -5</h4>
+              <ul><li><span>10:42 role.change</span><span class="v">j.park</span></li><li><span>09:18 enrollment</span><span class="v">a.stirling</span></li><li><span>08:55 form.review</span><span class="v">m.chen</span></li><li><span>Yest credit.grant</span><span class="v">l.singh</span></li></ul></div>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══ L10 · HERO NUMBER + SUPPORTING ═════════════════════════ -->
+    <article class="frame L10" id="L10">
+      <header class="frame-bar"><span class="num">L10</span><span class="name">Hero number + supporting</span><span class="cat">One commanding figure · context below</span></header>
+      <div class="frame-body ibm">
+        <div class="titlebar"><h2>BIOHUBNET / TODAY'S READ</h2><span class="id">2026-05-19 · 10:42</span></div>
+        <div class="hero">
+          <div class="eyebrow">PENDING — ON THE DESK</div>
+          <div class="big">17</div>
+          <p class="what">Items waiting on a human read. Most desks clear by ten; the talent-app queue is the one to watch.</p>
+          <div class="meta">12 of 12 max · ▲ 3 vs yesterday</div>
+        </div>
+        <div class="below">
+          <div class="kpi"><div class="lbl">Credit · EQUIP</div><div class="num">6</div><div class="sub">VentureLift / Connect</div></div>
+          <div class="kpi"><div class="lbl">Path. enrollments</div><div class="num">4</div><div class="sub">OBIO bootcamp</div></div>
+          <div class="kpi"><div class="lbl">Form approvals</div><div class="num">5</div><div class="sub">Misc</div></div>
+          <div class="kpi"><div class="lbl">Talent apps</div><div class="num">2</div><div class="sub">Eligibility</div></div>
+        </div>
+        <div class="three">
+          <div class="ibm-box"><h3>Trainees · 1,247</h3><p class="gloss">+12 this week.</p>
+            <ul><li><span>Bench (approved)</span><span class="v">982</span></li><li><span>Courses active</span><span class="v">38</span></li><li><span>Pathways</span><span class="v">8</span></li></ul></div>
+          <div class="ibm-box"><h3>Stale &gt; 14d · 5</h3><p class="gloss">Stuck applications.</p>
+            <ul><li><span>L.Singh · talent</span><span class="v">21d</span></li><li><span>K.Iyer · talent</span><span class="v">19d</span></li><li><span>CCRM · internship</span><span class="v">16d</span></li></ul></div>
+          <div class="ibm-box"><h3>Audit · tail -5</h3><p class="gloss">Recent activity.</p>
+            <ul><li><span>10:42 role.change</span><span class="v">j.park</span></li><li><span>09:18 enrol</span><span class="v">a.stirling</span></li><li><span>08:55 form</span><span class="v">m.chen</span></li></ul></div>
+        </div>
+      </div>
+    </article>
+
+  </main>
+
+  <!-- ═══ SIDEBAR (right, sticky) ═══════════════════════════════════ -->
+  <aside class="side">
+    <div class="side-hd">
+      <p class="brand">BHN · Admin · M35</p>
+      <h2>Vintage IBM · 10 layouts</h2>
+      <p>Same visual language. Ten ways to organise the same content.</p>
+    </div>
+    <nav class="side-list" id="sidelist">
+      <a href="#L1"><span class="num">L1</span><span>Classic</span><span class="dot"></span></a>
+      <a href="#L2"><span class="num">L2</span><span>Asymmetric hero</span><span class="dot"></span></a>
+      <a href="#L3"><span class="num">L3</span><span>Magazine 2-column</span><span class="dot"></span></a>
+      <a href="#L4"><span class="num">L4</span><span>Data table first</span><span class="dot"></span></a>
+      <a href="#L5"><span class="num">L5</span><span>Cinema KPI banner</span><span class="dot"></span></a>
+      <a href="#L6"><span class="num">L6</span><span>Vertical timeline</span><span class="dot"></span></a>
+      <a href="#L7"><span class="num">L7</span><span>Stats rail + 2×2 grid</span><span class="dot"></span></a>
+      <a href="#L8"><span class="num">L8</span><span>Mainframe report grid</span><span class="dot"></span></a>
+      <a href="#L9"><span class="num">L9</span><span>Three pillars</span><span class="dot"></span></a>
+      <a href="#L10"><span class="num">L10</span><span>Hero number + supporting</span><span class="dot"></span></a>
+    </nav>
+    <div class="side-ft">click any layout · scroll to compare · 10 of 10</div>
+  </aside>
+
+</div>
+
+<script>
+  const links = Array.from(document.querySelectorAll('.side-list a'));
+  const linkByHref = new Map(links.map(a => [a.getAttribute('href'), a]));
+  const visible = new Map();
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) visible.set(e.target.id, e.intersectionRatio);
+      else visible.delete(e.target.id);
+    }
+    let topId = null, topRatio = 0;
+    for (const [id, ratio] of visible) { if (ratio > topRatio) { topRatio = ratio; topId = id; } }
+    links.forEach(a => a.classList.remove('is-active'));
+    if (topId) {
+      const a = linkByHref.get('#' + topId);
+      if (a) { a.classList.add('is-active'); a.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    }
+  }, { threshold: [0.2, 0.5, 0.8] });
+  document.querySelectorAll('.frame').forEach(f => io.observe(f));
+  links.forEach(a => {
+    a.addEventListener('click', (ev) => {
+      const href = a.getAttribute('href');
+      const target = document.querySelector(href);
+      if (target) { ev.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  });
+</script>
+
+</body>
+</html>
