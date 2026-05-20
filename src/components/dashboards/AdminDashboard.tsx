@@ -1,35 +1,36 @@
 import Link from "next/link";
 import {
-  Users, BookOpen, GraduationCap, Layers, Coins,
-  ShieldCheck, ArrowRight,
-  Sparkles, ClipboardList, UserCog, Building2,
-  Activity, Clock, Briefcase, Ghost, GitFork, CheckCircle2,
-  Zap, Eye, Inbox, Cpu, Rocket, FilePlus,
+  ShieldCheck, ArrowRight, ClipboardList,
+  Building2, Briefcase, BookOpen, Inbox, Rocket,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
-import { PageHero } from "@/components/ui/PageHero";
 
 /**
  * Admin / superadmin dashboard.
  *
- * Redesign v2 (May 2026): the previous version solved the "what is
- * the admin trying to do?" problem (setup checklist, quick actions,
- * adaptive empty states) but the visual language was still a quilt
- * of independently-bordered tiles — too fragmented. This pass keeps
- * the same information architecture and rebuilds the surface as a
- * smaller number of large panels, with hairline dividers inside each
- * panel instead of borders around every cell. Three rules now:
+ * Redesign v3 (May 2026): the v2 mid-line editorial layout still felt
+ * fragmented in practice. This pass commits to one strong visual
+ * language and two layouts on top of it:
  *
- *   1. Bigger gradient sections, not many small boxes.
- *   2. Hairline dividers inside panels, not borders around every
- *      cell. The eye should travel across a panel as one unit.
- *   3. Asymmetric weight — the hero element gets dominance, supporting
- *      elements stay quiet. Numbers in the metrics strip use a much
- *      bigger type ramp than before so the platform pulse reads at a
- *      glance, command-center style.
+ *   • Visual language — M34 "Y2K Aero" from the design archive
+ *     (admin-dashboard-mockups-final.html). Candy gradient backdrop,
+ *     translucent glass cards with pearl inner highlights, deep navy
+ *     text with a faint white halo, soft drop shadows tinted blue.
  *
- * Same data-fetching shape as v1 so nothing downstream changes.
+ *   • Top section — L21 magazine cover. Big editorial masthead on
+ *     the left (italic headline, dek, stamp pills, signoff) +
+ *     numbered table of contents on the right that doubles as a
+ *     deep-link panel to the action queue, bench, audit, setup
+ *     checklist, and credit-expiry watch.
+ *
+ *   • Bottom section — L6 sidebar-left. Dark navy rail of KPI tiles
+ *     on the left (Pending, Users, Employers, Postings, Enrolments,
+ *     Certificates), 3-column glassy content body on the right
+ *     (Action queue, Bench, Audit log tail).
+ *
+ * Same data-fetching shape as v1 / v2 so nothing downstream changes.
+ * Y2K Aero tokens are scoped under `.adash-aero` in the AERO_CSS
+ * constant at the bottom of this file — no leakage to other surfaces.
  */
 export async function AdminDashboard({
   user, role, committeeBadge,
@@ -160,872 +161,351 @@ export async function AdminDashboard({
   const showChecklist = checklistOpen > 0 && (totalUsers < 10 || activePostings === 0 || employerCount === 0);
   const nextChecklistItem = checklist.find((c) => !c.done);
 
-  // Stats for the command-deck metric strip. Six entries; the layout
-  // renders all six as hairline-separated columns. The "primary"
-  // pair (Users + Pending) gets dominance via type-ramp.
-  const metrics: Array<{
-    label: string;
-    value: number;
-    help: string;
-    emphasis?: boolean;
-    tone: "amber" | "brand" | "muted";
-  }> = [
-    { label: "Pending",     value: totalPending,      help: "Approval queues", emphasis: true,  tone: totalPending > 0 ? "amber" : "muted" },
-    { label: "Users",       value: totalUsers,        help: "Real accounts",   emphasis: true,  tone: "brand" },
-    { label: "Employers",   value: employerCount,     help: `${employerInvitesPending} pending invite${employerInvitesPending === 1 ? "" : "s"}`, tone: "muted" },
-    { label: "Postings",    value: activePostings,    help: "Active",          tone: "muted" },
-    { label: "Enrolments",  value: totalEnrollments,  help: `+${new24hEnrollments} today`, tone: "muted" },
-    { label: "Certificates", value: totalCertificates, help: "Lifetime",       tone: "muted" },
-  ];
+  // ── Cover headline (priority cascade) ──────────────────────────
+  // Mirrors the old spotlight cascade but rendered as a magazine
+  // masthead in the new Y2K Aero layout below.
+  const issueDate = now.toLocaleDateString("en-US", {
+    month: "long", day: "numeric", year: "numeric",
+  }).toUpperCase();
 
-  // ── Spotlight (the focal element) ──────────────────────────────
-  // One thing on the page should be obviously The Hero. We pick it
-  // from a priority cascade:
-  //   1. Pending approvals — there's work waiting; that's the focus.
-  //   2. Setup incomplete — push them through the next milestone.
-  //   3. Otherwise — "all systems go" with a forward-looking nudge
-  //      toward Talent applicants (the operational nerve centre).
-  const spotlight: {
-    eyebrow: string;
-    headline: string;
-    detail: string;
-    primary: { href: string; label: string };
-    secondary?: { href: string; label: string };
-    icon: React.ElementType;
-    bigNumber?: string;
-    bigNumberLabel?: string;
-    tone: "amber" | "brand" | "emerald";
-  } = totalPending > 0
-    ? {
-        eyebrow: "Most pressing",
-        headline: `${totalPending} approval${totalPending === 1 ? "" : "s"} waiting on you`,
-        detail: `Trainees across credits, role-change requests, and pathway enrolments are blocked until you triage. Open the queue — most rows take less than a minute.`,
-        primary:   { href: "/admin/credit-applications", label: "Open the queue" },
-        secondary: { href: "/admin/audit", label: "What happened recently" },
-        icon: ClipboardList,
-        bigNumber: totalPending.toLocaleString(),
-        bigNumberLabel: "pending",
-        tone: "amber",
-      }
-    : showChecklist && nextChecklistItem
+  const cover: { headline: React.ReactNode; dek: string } =
+    totalPending > 0
       ? {
-          eyebrow: `Setup · step ${checklistDone + 1} of ${checklist.length}`,
-          headline: nextChecklistItem.label,
-          detail: nextChecklistItem.detail,
-          primary:   { href: nextChecklistItem.href, label: "Do this now" },
-          secondary: { href: "/admin/demo-workspaces", label: "Or spin up a demo workspace" },
-          icon: nextChecklistItem.icon,
-          bigNumber: `${setupPct}%`,
-          bigNumberLabel: "setup complete",
-          tone: "brand",
+          headline: (
+            <>
+              Hi, {firstName} — <em>{totalPending} {totalPending === 1 ? "approval" : "approvals"}</em> waiting.
+            </>
+          ),
+          dek: "Trainees across credit applications, role-change requests, and pathway enrolments are blocked until you triage. Most rows take less than a minute.",
         }
-      : {
-          eyebrow: "All systems go",
-          headline: "Eyes on the talent pipeline",
-          detail: "Queues are clear. The highest-leverage surface day-to-day is /employer/applicants — AI match scores, inline previews, team-private comments per candidate.",
-          primary:   { href: "/employer/applicants", label: "Open talent applicants" },
-          secondary: { href: "/admin/split-view", label: "View as a trainee" },
-          icon: Inbox,
-          bigNumber: totalUsers.toLocaleString(),
-          bigNumberLabel: "active users",
-          tone: "emerald",
-        };
+      : showChecklist && nextChecklistItem
+        ? {
+            headline: (
+              <>
+                Hi, {firstName} — setup, <em>step {checklistDone + 1} of {checklist.length}</em>.
+              </>
+            ),
+            dek: nextChecklistItem.detail,
+          }
+        : {
+            headline: (
+              <>
+                Hi, {firstName} — the platform reads <em>healthy</em>.
+              </>
+            ),
+            dek: `Nothing in the queue. ${totalUsers.toLocaleString()} active user${totalUsers === 1 ? "" : "s"}, ${activePostings} live posting${activePostings === 1 ? "" : "s"}, ${totalApplications} talent application${totalApplications === 1 ? "" : "s"} in flight.`,
+          };
 
   return (
-    <div className="space-y-6">
-      {/* HERO — converted 2026-05-17 from a bespoke hero-mesh-brand
-          band to the canonical PageHero so every dashboard surface
-          uses one cinematic-DS shape. */}
-      <PageHero
-        eyebrow={<><ShieldCheck size={11} /> {isSuperAdmin ? "Superadmin" : "Admin"} desk</>}
-        title={<>Hi, {firstName}.</>}
-        description={(
-          <>
-            {totalPending > 0 ? (
-              <>{totalPending} item{totalPending === 1 ? "" : "s"} waiting on you across credits, role requests, and pathway approvals.</>
-            ) : showChecklist ? (
-              <>{checklistOpen} setup step{checklistOpen === 1 ? "" : "s"} left to get the platform humming.</>
-            ) : (
-              "Nothing in the action queue. Platform is humming."
-            )}
-            {" "}
-            {new7dUsers > 0 && (
-              <span className="text-fg/70">{new7dUsers} new sign-up{new7dUsers === 1 ? "" : "s"} this week.</span>
-            )}
-          </>
-        )}
-        actions={(
-          <>
-            <Link
-              href={totalPending > 0 ? "/admin/credit-applications" : showChecklist && nextChecklistItem ? nextChecklistItem.href : "/admin"}
-              className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow-sm transition-colors"
-            >
-              {totalPending > 0 ? "Review queue" : showChecklist ? "Continue setup" : "Admin overview"} <ArrowRight size={12} />
-            </Link>
-            <Link
-              href="/admin/split-view"
-              className="inline-flex items-center gap-1.5 bg-card hover:bg-elevated border border-line text-fg text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
-            >
-              <Eye size={12} /> View as
-            </Link>
-          </>
-        )}
-      />
+    <div className="adash-aero">
+      {/* Scoped Y2K Aero CSS. Every selector is namespaced under
+          `.adash-aero` so nothing leaks into other surfaces. */}
+      <style dangerouslySetInnerHTML={{ __html: AERO_CSS }} />
 
-      {/* Committee badge — slotted in by the page wrapper. Renders
-          immediately after the hero so the platform "hero is at the
-          top" rule is preserved. */}
+      {/* ════ MAGAZINE COVER ════════════════════════════════════════
+          Big editorial masthead. Cover on the left (eyebrow + italic
+          headline + dek + stamp pills + signoff), table-of-contents
+          aside on the right with numbered jumpers to the data below
+          (and to deeper admin pages). */}
+      <article className="aero-frame">
+        <div className="cover-wrap">
+          <section className="cover">
+            <p className="issue">BHN OPERATIONS · ISSUE {issueDate}</p>
+            <h1 className="headline">{cover.headline}</h1>
+            <p className="dek">{cover.dek}</p>
+            <div className="stamps">
+              <span className="pill">{totalUsers.toLocaleString()} users</span>
+              <span className="pill">{totalCourses} courses</span>
+              <span className="pill">{activePostings} postings</span>
+              <span className={totalPending > 0 ? "pill warn" : "pill"}>
+                {totalPending} pending
+              </span>
+            </div>
+            <p className="signoff">
+              {isSuperAdmin ? "Superadmin desk" : "Admin desk"} · signed in as {firstName}
+              {new7dUsers > 0 && <span> · {new7dUsers} new sign-up{new7dUsers === 1 ? "" : "s"} this week</span>}
+            </p>
+          </section>
+
+          <aside className="toc">
+            <h3>Inside this issue</h3>
+            <ul>
+              <li>
+                <span className="n">01</span>
+                <Link className="t" href="/admin/credit-applications">Action queue · pending</Link>
+                <span className={totalPending > 0 ? "v warn" : "v"}>{totalPending}</span>
+              </li>
+              <li>
+                <span className="n">02</span>
+                <Link className="t" href="/admin/employer-invites">Bench · employers</Link>
+                <span className="v">{employerCount}</span>
+              </li>
+              <li>
+                <span className="n">03</span>
+                <Link className="t" href="/admin/internships">Postings · active</Link>
+                <span className="v">{activePostings}</span>
+              </li>
+              <li>
+                <span className="n">04</span>
+                <Link className="t" href="/admin/audit">Audit log · tail</Link>
+                <span className="v">{recentAudit.length}</span>
+              </li>
+              {showChecklist && (
+                <li>
+                  <span className="n">05</span>
+                  <Link className="t" href={nextChecklistItem?.href ?? "/admin/demo-workspaces"}>
+                    Setup checklist
+                  </Link>
+                  <span className="v">{setupPct}%</span>
+                </li>
+              )}
+              {anyExpiry && (
+                <li>
+                  <span className="n">{showChecklist ? "06" : "05"}</span>
+                  <Link className="t" href="/admin/credit-applications">Credit expiry · 30d window</Link>
+                  <span className="v">{expiring30.users}</span>
+                </li>
+              )}
+              {isSuperAdmin && (
+                <li>
+                  <span className="n">{(showChecklist ? 1 : 0) + (anyExpiry ? 1 : 0) + 5}</span>
+                  <Link className="t" href="/admin/assist">AI calls · 7d</Link>
+                  <span className="v">{aiCalls7d}</span>
+                </li>
+              )}
+            </ul>
+            <Link href="/admin/split-view" className="toc-cta">
+              View the platform as a trainee <ArrowRight size={11} />
+            </Link>
+          </aside>
+        </div>
+      </article>
+
+      {/* Committee badge slot — preserves the existing dashboard
+          page's "render right after the hero" contract. */}
       {committeeBadge}
 
-      {/* ── Spotlight ────────────────────────────────────────────────
-          The page's focal element. Heavy ambient shadow + a radial-
-          gradient "spotlight" backlight from upper-left and a softer
-          counter-light from lower-right. Everything below this panel
-          is intentionally lighter (no shadows, hairline borders) so
-          this is the unambiguous hero. */}
-      <SpotlightPanel s={spotlight} />
+      {/* ════ SIDEBAR LEFT ══════════════════════════════════════════
+          Dark navy rail of KPI cards on the left, 3-column content
+          body on the right (Action queue · Bench · Audit log). */}
+      <article className="aero-frame">
+        <div className="sl-layout">
+          <aside className="sl-rail">
+            <Link href="/admin/credit-applications" className={`sl-kpi ${totalPending > 0 ? "warn" : ""}`}>
+              <div className="lbl">Pending</div>
+              <div className="num">{totalPending}</div>
+              <div className="sub">{totalPending > 0 ? "needs triage" : "all clear"}</div>
+            </Link>
+            <div className="sl-kpi">
+              <div className="lbl">Users</div>
+              <div className="num">{totalUsers.toLocaleString()}</div>
+              <div className="sub">+{new7dUsers} this week</div>
+            </div>
+            <Link href="/admin/employer-invites" className="sl-kpi">
+              <div className="lbl">Employers</div>
+              <div className="num">{employerCount}</div>
+              <div className="sub">{employerInvitesPending} pending invite{employerInvitesPending === 1 ? "" : "s"}</div>
+            </Link>
+            <Link href="/admin/internships" className="sl-kpi">
+              <div className="lbl">Postings</div>
+              <div className="num">{activePostings}</div>
+              <div className="sub">active</div>
+            </Link>
+            <div className="sl-kpi">
+              <div className="lbl">Enrolments</div>
+              <div className="num">{totalEnrollments.toLocaleString()}</div>
+              <div className="sub">+{new24hEnrollments} today</div>
+            </div>
+            <div className="sl-kpi">
+              <div className="lbl">Certificates</div>
+              <div className="num">{totalCertificates.toLocaleString()}</div>
+              <div className="sub">lifetime</div>
+            </div>
+          </aside>
 
-      {/* ────────────────────────────────────────────────────────────
-          MID-LINE EDITORIAL LAYOUT.
-          Below the SpotlightPanel, a continuous vertical hairline
-          runs down the centre of the dashboard. Sections sit on
-          alternating sides of the line; rows are separated by
-          horizontal hairlines. The line is the spine, content
-          branches off it. Rounded corners only on the spotlight
-          above — everything here is line + gradient. */}
-      <div className="relative mt-7">
-        {/* Vertical midline — continuous, full-height. Hidden
-            below lg where the grid collapses to a single column
-            and the midline metaphor no longer applies. */}
-        <div
-          aria-hidden
-          className="absolute top-0 bottom-0 left-1/2 w-px bg-line/60 -translate-x-1/2 hidden lg:block"
-        />
-
-        <div className="divide-y divide-line/70">
-          {/* Row layout v4.2 — re-paired so the two ALWAYS-present
-              sections share a row, and the conditional sections
-              cluster together. In the common steady-state admin
-              (post-setup, no credits expiring, non-superadmin),
-              Row 3 + Row 4's right cell don't render at all,
-              eliminating most of the page's blank space. */}
-
-          {/* Row 1: At-a-glance (LEFT, always) | Daily reach (RIGHT, always)
-                — both content-heavy grids, evenly paired. */}
-          <MidlineRow
-            left={(
-              <div>
-                <SectionEyebrow icon={Activity}>At-a-glance</SectionEyebrow>
-                <SectionAccent />
-                <div className="mt-4 grid grid-cols-2 gap-y-4 gap-x-5">
-                  {metrics.map((m) => {
-                    const tones: Record<string, string> = {
-                      amber: "text-amber-700",
-                      brand: "text-brand-700",
-                      muted: "text-fg",
-                    };
-                    return (
-                      <div key={m.label}>
-                        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-                          {m.label}
-                        </p>
-                        <p className={`mt-1 font-bold tabular-nums leading-none ${m.emphasis ? "text-3xl" : "text-2xl"} ${tones[m.tone]}`}>
-                          {m.value.toLocaleString()}
-                        </p>
-                        <p className="text-[11px] text-muted mt-1.5 truncate">{m.help}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            right={(
-              <div>
-                <SectionEyebrow icon={Zap}>Daily reach</SectionEyebrow>
-                <SectionAccent />
-                <p className="text-[11px] text-muted mt-2 leading-snug">
-                  Surfaces an admin opens most. Pinned here so they&apos;re always one click away.
-                </p>
-                <QuickActionsList isSuperAdmin={isSuperAdmin} pending={totalPending} />
-              </div>
-            )}
-          />
-
-          {/* Row 2: Approval queues (LEFT, always) | Live pulse (RIGHT, always)
-                — both lists, both always-present. */}
-          <MidlineRow
-            left={(
-              <div>
-                {totalPending > 0 ? (
-                  <>
-                    <SectionEyebrow icon={ClipboardList} tone="amber">
-                      Approval queues · {totalPending} pending
-                    </SectionEyebrow>
-                    <SectionAccent tone="amber" />
-                    <p className="text-[11px] text-muted mt-2">Tap any row to triage.</p>
-                    <div className="divide-y divide-line/50 mt-3">
-                      <QueueRow icon={Coins}   tone="amber"  label="Credit applications"  count={pendingCreditApps}   href="/admin/credit-applications" />
-                      <QueueRow icon={UserCog} tone="violet" label="Role-change requests" count={pendingRoleRequests} href="/admin/role-requests" />
-                      <QueueRow icon={Layers}  tone="brand"  label="Pathway enrolments"   count={pendingPathwayApps}  href="/admin/pathway-enrollments" />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <SectionEyebrow icon={CheckCircle2} tone="emerald">
-                      Approval queues — clear
-                    </SectionEyebrow>
-                    <SectionAccent tone="emerald" />
-                    <p className="text-[11px] text-muted mt-2">Credit · Role · Pathway · 0 pending</p>
-                  </>
-                )}
-              </div>
-            )}
-            right={(
-              <div>
-                <SectionEyebrow icon={Activity}>Live pulse</SectionEyebrow>
-                <SectionAccent />
-                <p className="text-[11px] text-muted mt-2">Beats from the last day / week.</p>
-                <ul className="divide-y divide-line/50 mt-3">
-                  <PulseRow icon={GraduationCap} label="Enrolments today"   value={new24hEnrollments} help="Last 24 hours" />
-                  <PulseRow icon={Sparkles}      label="New sign-ups (7d)"  value={new7dUsers}        help="Real accounts only" />
-                  {isSuperAdmin ? (
-                    <PulseRow icon={Cpu}   label="AI calls (7d)"     value={aiCalls7d} help="Cloudflare + Gemini combined" href="/admin/analytics" />
-                  ) : (
-                    <PulseRow icon={Ghost} label="Phantom users"     value={phantomCount} help="Throwaway test accounts"     href="/admin/phantom-users" />
-                  )}
-                </ul>
-              </div>
-            )}
-          />
-
-          {/* Row 3: Setup checklist (LEFT, conditional) | Credit expiry (RIGHT, conditional)
-                — both conditional sections share a row. When BOTH
-                are absent (common steady-state admin), the entire
-                row is skipped by MidlineRow. When only ONE is
-                present, MidlineRow renders it full-width. */}
-          <MidlineRow
-            left={showChecklist ? (
-              <div>
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div>
-                    <SectionEyebrow icon={Rocket}>Get airborne</SectionEyebrow>
-                    <SectionAccent />
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-24 h-1.5 bg-elevated rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all"
-                        style={{ width: `${setupPct}%` }}
-                      />
-                    </div>
-                    <p className="text-[11px] text-muted tabular-nums whitespace-nowrap">
-                      {setupPct}% · {checklistDone}/{checklist.length}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-[11px] text-muted mt-2 leading-snug">
-                  Five milestones every BHN deployment needs in place before real trainees + employers can self-serve.
-                </p>
-                <SetupColumn checklist={checklist} />
-              </div>
-            ) : null}
-            right={anyExpiry ? (
-              <div>
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div>
-                    <SectionEyebrow icon={Clock} tone="amber">
-                      Credit expiry · {CREDIT_GRANT_TTL_DAYS}-day TTL
-                    </SectionEyebrow>
-                    <SectionAccent tone="amber" />
-                  </div>
-                  <Link
-                    href="/api/admin/credits/sweep"
-                    prefetch={false}
-                    className="text-[11px] font-semibold text-muted hover:text-fg inline-flex items-center gap-1"
-                    title="Trigger the sweep manually (cron does this daily anyway)"
-                  >
-                    Run sweep now <ArrowRight size={11} />
+          <div className="sl-body">
+            {/* Action queue */}
+            <div className="aero-card">
+              <h3 className="aero-h"><ClipboardList size={14} /> Action queue</h3>
+              <p className="aero-gloss">Items awaiting a human read.</p>
+              <ul className="aero-list">
+                <li>
+                  <Link href="/admin/credit-applications" className="row">
+                    <span>Credit applications</span>
+                    <span className={pendingCreditApps > 0 ? "v warn" : "v"}>{pendingCreditApps}</span>
                   </Link>
-                </div>
-                <p className="text-[11px] text-muted mt-2 leading-snug max-w-md">
-                  Daily sweep + 90/30/7-day warnings handle the runs automatically. This strip is the live look-ahead.
-                </p>
-                <div className="divide-y divide-line/50 mt-3">
-                  <ExpiryColumn tone="rose"  days={7}  credits={expiring7.credits}  users={expiring7.users} />
-                  <ExpiryColumn tone="amber" days={30} credits={expiring30.credits} users={expiring30.users} />
-                  <ExpiryColumn tone="brand" days={90} credits={expiring90.credits} users={expiring90.users} />
-                </div>
-              </div>
-            ) : null}
-          />
-
-          {/* Row 4: Recent activity (LEFT, always) | Superadmin shortcuts (RIGHT, conditional)
-                — Recent always shows; if non-superadmin the row
-                renders Recent full-width via MidlineRow. */}
-          <MidlineRow
-            left={(
-              <div>
-                <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                  <div>
-                    <SectionEyebrow icon={ClipboardList}>Recent activity</SectionEyebrow>
-                    <SectionAccent />
-                  </div>
-                  <Link href="/admin/audit" className="text-xs font-medium text-brand-700 hover:underline inline-flex items-center gap-1">
-                    See all <ArrowRight size={11} />
+                </li>
+                <li>
+                  <Link href="/admin/role-requests" className="row">
+                    <span>Role-change requests</span>
+                    <span className={pendingRoleRequests > 0 ? "v warn" : "v"}>{pendingRoleRequests}</span>
                   </Link>
-                </div>
-                <p className="text-[11px] text-muted mt-2">Last five audit-log entries.</p>
-                {recentAudit.length === 0 ? (
-                  <div className="py-10 text-center text-sm text-muted">No audit entries yet.</div>
-                ) : (
-                  <ul className="divide-y divide-line/50 mt-3">
-                    {recentAudit.map((a) => (
-                      <li key={a.id} className="flex items-center gap-3 py-3 hover:bg-elevated/30 transition-colors">
-                        {/* Pastel chip — text-subtle/60 so activity
-                            rows read as continuous text. */}
-                        <div className="w-6 h-6 rounded-md bg-elevated text-subtle/60 flex items-center justify-center shrink-0">
-                          <ClipboardList size={12} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-fg truncate">{a.action}</p>
-                          <p className="text-xs text-muted truncate">
-                            {a.actor?.name ?? a.actor?.email ?? "system"}
-                            {a.targetType && ` · ${a.targetType}`}
-                          </p>
-                        </div>
-                        <p className="text-[11px] text-subtle shrink-0 tabular-nums">
-                          {new Date(a.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
+                </li>
+                <li>
+                  <Link href="/admin/pathway-enrollments" className="row">
+                    <span>Pathway enrolments</span>
+                    <span className={pendingPathwayApps > 0 ? "v warn" : "v"}>{pendingPathwayApps}</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin/access-requests" className="row">
+                    <span>Access requests</span>
+                    <span className="v">⌐</span>
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Bench */}
+            <div className="aero-card">
+              <h3 className="aero-h"><ShieldCheck size={14} /> Bench</h3>
+              <p className="aero-gloss">Approved roster, real accounts.</p>
+              <ul className="aero-list">
+                <li><span>Active users</span><span className="v">{totalUsers.toLocaleString()}</span></li>
+                <li><span>Employers (real)</span><span className="v">{employerCount}</span></li>
+                <li><span>Postings active</span><span className="v">{activePostings}</span></li>
+                <li><span>Talent applications</span><span className="v">{totalApplications}</span></li>
+                {(demoWorkspaceCount + phantomCount) > 0 && (
+                  <li>
+                    <span>Demo · phantom accounts</span>
+                    <span className="v">{demoWorkspaceCount + phantomCount}</span>
+                  </li>
                 )}
-              </div>
-            )}
-            right={isSuperAdmin ? (
-              <div>
-                <SectionEyebrow icon={ShieldCheck}>Superadmin shortcuts</SectionEyebrow>
-                <SectionAccent />
-                <p className="text-xs text-muted mt-3 leading-relaxed">
-                  <Link href="/admin/settings" className="text-brand-700 hover:underline">Platform settings</Link> ·
-                  {" "}<Link href="/admin/matching-config" className="text-brand-700 hover:underline">AI matching engine</Link> ·
-                  {" "}<Link href="/admin/lti" className="text-brand-700 hover:underline">LTI</Link> ·
-                  {" "}<Link href="/admin/course-filters" className="text-brand-700 hover:underline">Course filter options</Link> ·
-                  {" "}<Link href="/admin/security" className="text-brand-700 hover:underline">Security policies</Link> ·
-                  {" "}<Link href="/admin/system-status" className="text-brand-700 hover:underline">System status (build SHA)</Link>.
-                </p>
-              </div>
-            ) : null}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
+              </ul>
+            </div>
 
-/** One row of the midline grid. Two columns separated by the
- *  continuous vertical midline (drawn by the parent as an absolutely-
- *  positioned hairline). Either side can be null:
- *
- *   • If BOTH sides are null, render nothing (skip the row entirely).
- *   • If ONE side is null, span the full row width with the populated
- *     side. The page-wide midline still bisects the row visually
- *     (continuous element drawn by the parent), but the content fills
- *     both halves so there's no half-page blank beside a conditional
- *     section that didn't render (setup checklist, credit expiry,
- *     superadmin shortcuts).
- *   • If BOTH sides are present, standard 2-col grid with `items-start`
- *     so cells use their natural heights — the shorter side ends at
- *     its content edge instead of being stretched to match the taller.
- *
- *  Section padding tightened from py-7 → py-5 to claw back another
- *  16 px per row × 4 rows of vertical blank space. On mobile (< lg)
- *  the grid still collapses to a single column.
- */
-function MidlineRow({ left, right }: { left: React.ReactNode; right: React.ReactNode }) {
-  if (!left && !right) return null;
-  if (!left) return <div className="py-5">{right}</div>;
-  if (!right) return <div className="py-5">{left}</div>;
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 items-start">
-      <div className="py-5 lg:pr-8">{left}</div>
-      <div className="py-5 lg:pl-8 mt-5 lg:mt-0 border-t border-line/70 lg:border-t-0">{right}</div>
-    </div>
-  );
-}
-
-// ─── Editorial section helpers ─────────────────────────────────────
-
-type SectionTone = "brand" | "amber" | "emerald" | "violet";
-
-/** Three values per tone:
- *    text     — eyebrow text colour (stays saturated, ~-700 step,
- *               needs to be legible against page bg)
- *    icon     — lucide-icon colour (PASTEL, ~-400 step at 70%
- *               opacity, so the icon supports the text rather than
- *               competing with it)
- *    accentRgb — the gradient accent bar's tone in `r, g, b` form */
-const SECTION_TONE_CLS: Record<
-  SectionTone,
-  { text: string; icon: string; accentRgb: string }
-> = {
-  brand:   { text: "text-brand-700",   icon: "text-brand-400/70",   accentRgb: "94, 143, 247"  }, // brand-500
-  amber:   { text: "text-amber-700",   icon: "text-amber-400/70",   accentRgb: "245, 158, 11"  }, // amber-500
-  emerald: { text: "text-emerald-700", icon: "text-emerald-400/70", accentRgb: "16, 185, 129"  }, // emerald-500
-  violet:  { text: "text-violet-700",  icon: "text-violet-400/70",  accentRgb: "139, 92, 246"  }, // violet-500
-};
-
-/** Uppercase tracked eyebrow with optional leading icon. The eyebrow
- *  text uses the saturated `text` class (-700 step) for legibility;
- *  the icon uses the pastel `icon` class (-400/70) so it supports
- *  the text rather than competing with it. */
-function SectionEyebrow({
-  icon: Icon,
-  tone = "brand",
-  children,
-}: {
-  icon?: React.ElementType;
-  tone?: SectionTone;
-  children: React.ReactNode;
-}) {
-  const cls = SECTION_TONE_CLS[tone];
-  return (
-    <h2 className={`text-[11px] uppercase tracking-[0.24em] font-bold inline-flex items-center gap-2 ${cls.text}`}>
-      {Icon && <Icon size={12} className={cls.icon} />}
-      <span>{children}</span>
-    </h2>
-  );
-}
-
-/** Short gradient accent bar that fades from the section's tone
- *  colour into transparent. This is the "gradient" half of the
- *  line+gradient design system — the gradient line itself is the
- *  ornament; no bounded boxes carry the visual hierarchy. */
-function SectionAccent({ tone = "brand" }: { tone?: SectionTone }) {
-  const { accentRgb } = SECTION_TONE_CLS[tone];
-  return (
-    <div
-      className="h-px w-20 mt-2"
-      style={{
-        background: `linear-gradient(90deg, rgba(${accentRgb}, 0.8) 0%, rgba(${accentRgb}, 0) 100%)`,
-      }}
-      aria-hidden
-    />
-  );
-}
-
-// ─── Sub-components ─────────────────────────────────────────────
-
-/** The page's single focal strip — converted from a rounded
- *  card to a flat line + gradient row to match the rest of the
- *  admin dashboard (v4 mid-line layout).
- *
- *  Stagecraft this strip still uses:
- *    • A SOFT tonal radial wash (≈0.10 alpha) behind the content —
- *      no longer a dramatic "spotlight" since the strip isn't a
- *      bounded card, just enough tone to read as "look here first".
- *    • Top + bottom hairlines bracketing the strip from the
- *      PageHero above and the editorial mid-line layout below.
- *    • Same uppercase tracked eyebrow + small gradient accent bar
- *      as every other section — visual rhythm continuous now.
- *    • Pastel inline icon (no more big white-on-saturated chip
- *      with halo glow).
- *    • A big tone-coloured number on the right mirroring whatever
- *      the strip is telling the admin to act on (pending count,
- *      setup-percent, active-user count). Same KPI semantics, just
- *      smaller (4xl/5xl instead of 5xl/6xl) to fit the slimmer row.
- *
- *  Use sparingly: only one SpotlightPanel per page. The dashboard
- *  below is intentionally quieter so this strip remains the eye's
- *  first landing.
- */
-function SpotlightPanel({
-  s,
-}: {
-  s: {
-    eyebrow: string;
-    headline: string;
-    detail: string;
-    primary: { href: string; label: string };
-    secondary?: { href: string; label: string };
-    icon: React.ElementType;
-    bigNumber?: string;
-    bigNumberLabel?: string;
-    tone: "amber" | "brand" | "emerald";
-  };
-}) {
-  // Tone drives the eyebrow text, the accent gradient bar's RGB,
-  // the soft full-strip radial wash, the inline icon colour, and
-  // the big number on the right. No more rounded card / shadow /
-  // halo'd icon chip — everything's flat now to match the rest of
-  // the line + gradient layout below. The radial wash is still
-  // here as the focal cue (the "gradient" half), just much softer
-  // (≈0.10 alpha vs the old 0.22) since it's no longer bounded by
-  // a card edge.
-  const toneCfg: Record<
-    typeof s.tone,
-    {
-      eyebrow: string;
-      icon: string;
-      bigNumber: string;
-      accentRgb: string;
-      cta: string;
-      wash: string;
-    }
-  > = {
-    amber: {
-      eyebrow: "text-amber-700",
-      icon: "text-amber-400/70",
-      bigNumber: "text-amber-700",
-      accentRgb: "245, 158, 11",
-      cta: "bg-amber-600 hover:bg-amber-700",
-      wash: "radial-gradient(ellipse 80% 100% at 20% 50%, rgba(245, 158, 11, 0.10), transparent 70%)",
-    },
-    brand: {
-      eyebrow: "text-brand-700",
-      icon: "text-brand-400/70",
-      bigNumber: "text-brand-700",
-      accentRgb: "94, 143, 247",
-      cta: "bg-brand-600 hover:bg-brand-700",
-      wash: "radial-gradient(ellipse 80% 100% at 20% 50%, rgba(94, 143, 247, 0.10), transparent 70%)",
-    },
-    emerald: {
-      eyebrow: "text-emerald-700",
-      icon: "text-emerald-400/70",
-      bigNumber: "text-emerald-700",
-      accentRgb: "16, 185, 129",
-      cta: "bg-emerald-600 hover:bg-emerald-700",
-      wash: "radial-gradient(ellipse 80% 100% at 20% 50%, rgba(16, 185, 129, 0.10), transparent 70%)",
-    },
-  };
-  const tc = toneCfg[s.tone];
-  const Icon = s.icon;
-  return (
-    <section className="relative overflow-hidden border-y border-line/70">
-      {/* Soft tonal wash — replaces the previous big drop shadow +
-          two layered spotlights as the focal cue. Pointer-events-
-          none so clicks fall through to the content. */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: tc.wash }}
-        aria-hidden
-      />
-
-      <div className="relative px-5 md:px-6 py-5">
-        {/* Eyebrow + accent — same pattern as every other section
-            below. The pastel inline icon supports the eyebrow text
-            rather than punching out of it. */}
-        <h2 className={`text-[11px] uppercase tracking-[0.24em] font-bold inline-flex items-center gap-2 ${tc.eyebrow}`}>
-          <Icon size={12} className={tc.icon} />
-          <span>{s.eyebrow}</span>
-        </h2>
-        <div
-          className="h-px w-20 mt-2"
-          style={{
-            background: `linear-gradient(90deg, rgba(${tc.accentRgb}, 0.8) 0%, rgba(${tc.accentRgb}, 0) 100%)`,
-          }}
-          aria-hidden
-        />
-
-        {/* Main row — headline + body + CTAs on the left, big
-            tone-coloured KPI on the right. Single row on lg+,
-            wraps on smaller viewports. */}
-        <div className="mt-3 flex items-center gap-x-6 gap-y-3 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg md:text-xl font-bold text-fg tracking-tight leading-snug">
-              {s.headline}
-            </h3>
-            <p className="text-xs text-muted mt-1 leading-snug max-w-2xl">
-              {s.detail}
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <Link
-                href={s.primary.href}
-                className={`inline-flex items-center gap-1.5 ${tc.cta} text-white font-semibold text-xs px-4 py-2 rounded-md shadow-sm transition-colors`}
-              >
-                {s.primary.label} <ArrowRight size={13} />
+            {/* Audit log */}
+            <div className="aero-card">
+              <h3 className="aero-h"><Inbox size={14} /> Audit · tail -{recentAudit.length}</h3>
+              <p className="aero-gloss">Recent platform activity.</p>
+              <ul className="aero-list audit">
+                {recentAudit.length === 0 && (
+                  <li><span style={{color:"var(--aero-ink-3)",fontStyle:"italic"}}>No recent entries</span></li>
+                )}
+                {recentAudit.map((a) => {
+                  const d = new Date(a.createdAt);
+                  const sameDay = d.toDateString() === now.toDateString();
+                  const stamp = sameDay
+                    ? d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })
+                    : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                  const who = a.actor?.name ?? a.actor?.email?.split("@")[0] ?? "—";
+                  return (
+                    <li key={a.id}>
+                      <span><code>{stamp}</code> {a.action}</span>
+                      <span className="v">{who}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <Link href="/admin/audit" className="see-all">
+                See full audit log <ArrowRight size={11} />
               </Link>
-              {s.secondary && (
-                <Link
-                  href={s.secondary.href}
-                  className="text-xs font-medium text-muted hover:text-fg inline-flex items-center gap-1"
-                >
-                  {s.secondary.label} <ArrowRight size={11} className="opacity-60" />
-                </Link>
-              )}
             </div>
           </div>
-
-          {/* Big tone-coloured KPI — smaller than the old version
-              (text-4xl / text-5xl instead of 5xl/6xl) and aligned
-              centre-vertically with the headline + body block. */}
-          {s.bigNumber && (
-            <div className="ml-auto text-right shrink-0">
-              <p className={`text-4xl md:text-5xl font-black tabular-nums leading-none tracking-tight ${tc.bigNumber}`}>
-                {s.bigNumber}
-              </p>
-              <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mt-1.5">
-                {s.bigNumberLabel}
-              </p>
-            </div>
-          )}
         </div>
-      </div>
-    </section>
-  );
-}
-
-
-/** Vertical setup list — numbered steps, hairline-divided rows, all
- *  inside the Command Deck. No individual borders per row — the panel
- *  border is the only one. */
-function SetupColumn({
-  checklist,
-}: {
-  checklist: Array<{
-    id: string;
-    done: boolean;
-    label: string;
-    detail: string;
-    href: string;
-    icon: React.ElementType;
-  }>;
-}) {
-  return (
-    <div>
-      <div className="px-6 pt-5 pb-2">
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          <Rocket size={10} className="inline -mt-0.5 mr-1 text-brand-600" />
-          Get airborne
-        </p>
-        <p className="text-[11px] text-muted mt-1">
-          Five milestones every BHN deployment needs in place before real trainees + employers can self-serve.
-        </p>
-      </div>
-      <ul className="divide-y divide-line/70 border-t border-line/70">
-        {checklist.map((c, idx) => {
-          const Icon = c.icon;
-          return (
-            <li key={c.id}>
-              <Link
-                href={c.href}
-                className={`flex items-start gap-3 px-6 py-3.5 group transition-colors ${
-                  c.done ? "bg-emerald-50/30" : "hover:bg-elevated/40"
-                }`}
-              >
-                <span className={`mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-bold tabular-nums ${
-                  c.done
-                    ? "bg-emerald-500 text-white"
-                    : "bg-elevated text-fg ring-1 ring-line group-hover:bg-brand-50 group-hover:text-brand-700 group-hover:ring-brand-200 transition-colors"
-                }`}>
-                  {c.done ? <CheckCircle2 size={14} /> : idx + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold leading-tight inline-flex items-center gap-1.5 ${
-                    c.done ? "text-emerald-900 line-through decoration-emerald-400/40" : "text-fg"
-                  }`}>
-                    <Icon size={12} className={c.done ? "text-emerald-700" : "text-subtle"} />
-                    {c.label}
-                  </p>
-                  <p className="text-[11px] text-muted leading-snug mt-0.5">{c.detail}</p>
-                </div>
-                {!c.done && (
-                  <ArrowRight size={13} className="text-subtle group-hover:text-brand-700 transition-colors mt-1 shrink-0" />
-                )}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      </article>
     </div>
   );
 }
 
-/** Quick-actions list — single panel column, hairline-divided rows.
- *  Two columns at desktop, single column on mobile. Replaces the
- *  8-tile grid that read as fragmented. */
-function QuickActionsList({
-  isSuperAdmin, pending,
-}: {
-  isSuperAdmin: boolean;
-  pending: number;
-}) {
-  const actions = QUICK_ACTIONS(isSuperAdmin, pending);
-  return (
-    <div>
-      <div className="px-6 pt-5 pb-2">
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          <Zap size={10} className="inline -mt-0.5 mr-1 text-brand-600" />
-          Daily reach
-        </p>
-        <p className="text-[11px] text-muted mt-1">
-          Eight surfaces an admin opens most. Pinned here so they&apos;re always one click away.
-        </p>
-      </div>
-      <ul className="grid md:grid-cols-2 border-t border-line/70 divide-y md:divide-y-0 divide-line/70">
-        {actions.map((a, idx) => {
-          const Icon = a.icon;
-          // Add a vertical divider between the two columns at md+.
-          // Bottom border on every row up to (but not) the last row of
-          // each column for the mobile collapsed layout.
-          const isRightCol = idx % 2 === 1;
-          const isLastRowLeft = idx === actions.length - 2;
-          const isLastRowRight = idx === actions.length - 1;
-          return (
-            <li
-              key={a.href}
-              className={`${isRightCol ? "md:border-l md:border-line/70" : ""} ${
-                !isLastRowLeft && !isLastRowRight ? "md:border-b md:border-line/70" : ""
-              }`}
-            >
-              <Link
-                href={a.href}
-                className="flex items-center gap-3 px-6 py-4 group hover:bg-elevated/40 transition-colors relative"
-              >
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${a.tone} text-white flex items-center justify-center shadow-md shrink-0 transition-transform group-hover:scale-105`}>
-                  <Icon size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-fg leading-tight group-hover:text-brand-700 transition-colors">
-                    {a.label}
-                  </p>
-                  <p className="text-[11px] text-muted mt-0.5 leading-snug truncate">{a.help}</p>
-                </div>
-                {a.badge !== undefined && a.badge > 0 && (
-                  <span className="inline-flex items-center justify-center min-w-[1.4rem] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[10px] font-bold tabular-nums shrink-0">
-                    {a.badge}
-                  </span>
-                )}
-                <ArrowRight size={13} className="text-subtle group-hover:text-brand-700 group-hover:translate-x-0.5 transition-all shrink-0" />
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
+/* ════════════════════════════════════════════════════════════════════
+   Y2K AERO STYLES — scoped to `.adash-aero`. The visual language is
+   M34 (translucent glass cards with pearl inner highlights, candy
+   gradient backdrop, deep navy text with a faint white halo, soft
+   drop shadows tinted blue). Structure is L21 magazine cover on top
+   + L6 sidebar-left below.
+════════════════════════════════════════════════════════════════════ */
+const AERO_CSS = `
+.adash-aero {
+  --aero-ink: #001a3a;
+  --aero-ink-2: #335577;
+  --aero-ink-3: #557799;
+  --aero-blue: #0066cc;
+  --aero-blue-2: #003d7a;
+  --aero-pink: #c84680;
+  --aero-card: linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(220,235,255,0.72) 100%);
+  --aero-card-strong: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(235,245,255,0.88) 100%);
+  --aero-card-dark: linear-gradient(180deg, rgba(20,40,90,0.95) 0%, rgba(10,25,60,0.97) 100%);
+  --aero-border: 1px solid rgba(255,255,255,0.9);
+  --aero-shadow-sm: 0 1px 0 rgba(255,255,255,1) inset, 0 2px 8px rgba(0,50,150,0.10);
+  --aero-shadow: 0 1px 0 rgba(255,255,255,1) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 6px 18px rgba(0,50,150,0.15);
+  --aero-shadow-lg: 0 1px 0 rgba(255,255,255,1) inset, 0 -2px 0 rgba(0,0,0,0.08) inset, 0 12px 36px rgba(0,50,150,0.22);
+  --aero-radius: 14px;
+  --aero-radius-lg: 22px;
+  display: flex; flex-direction: column; gap: 14px;
+  color: var(--aero-ink);
 }
+.adash-aero > .aero-frame {
+  background: linear-gradient(135deg, #aef3ff 0%, #c7d0ff 50%, #ffd9ec 100%);
+  border-radius: var(--aero-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--aero-shadow-lg);
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+}
+.adash-aero > .aero-frame::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(800px 500px at 25% 10%, rgba(255,255,255,0.55), transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.adash-aero > .aero-frame > * { position: relative; z-index: 1; }
 
-function QUICK_ACTIONS(isSuperAdmin: boolean, pending: number): Array<{
-  href: string;
-  label: string;
-  help: string;
-  icon: React.ElementType;
-  tone: string;
-  badge?: number;
-}> {
-  return [
-    { href: "/admin/demo-workspaces",  label: "Demo workspaces", help: "Spin up a throwaway end-to-end test",  icon: Rocket,    tone: "from-violet-500 to-violet-700 shadow-violet-600/20" },
-    { href: "/admin/employer-invites", label: "Invite employer", help: "Generate an HR-onboarding link",        icon: Building2, tone: "from-amber-400 to-amber-600 shadow-amber-500/20" },
-    { href: "/admin/internships/new",  label: "New posting",     help: "AI fills the fields from a JD paste",   icon: FilePlus,  tone: "from-brand-500 to-brand-700 shadow-brand-600/20" },
-    { href: "/employer/applicants",    label: "Talent applicants", help: "Match scores · previews · comments",  icon: Inbox,     tone: "from-emerald-500 to-emerald-700 shadow-emerald-600/20" },
-    { href: "/admin/phantom-users",    label: "Phantom users",   help: "Throwaway accounts for batch testing",  icon: Ghost,     tone: "from-fuchsia-500 to-fuchsia-700 shadow-fuchsia-600/20" },
-    { href: "/admin/split-view",       label: "View as",         help: "Walk every role's experience",          icon: GitFork,   tone: "from-sky-500 to-sky-700 shadow-sky-600/20" },
-    { href: "/admin/users",            label: "Users",           help: "Search, edit, deactivate",              icon: Users,     tone: "from-brand-500 to-brand-700 shadow-brand-600/20" },
-    {
-      href:  isSuperAdmin ? "/admin/system-status" : "/admin/audit",
-      label: isSuperAdmin ? "System status"        : "Audit log",
-      help:  isSuperAdmin ? "DB · AI · security · build SHA" : "Every state change, every actor",
-      icon:  isSuperAdmin ? Activity : ShieldCheck,
-      tone:  "from-slate-500 to-slate-700 shadow-slate-600/20",
-      badge: pending > 0 ? pending : undefined,
-    },
-  ];
-}
+/* ── Magazine cover ────────────────────────────────────────────── */
+.adash-aero .cover-wrap { display: grid; grid-template-columns: 1.7fr 1fr; min-height: 380px; }
+@media (max-width: 900px) { .adash-aero .cover-wrap { grid-template-columns: 1fr; } }
+.adash-aero .cover { padding: 36px 40px 32px; display: flex; flex-direction: column; justify-content: space-between; }
+.adash-aero .cover .issue { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--aero-ink-2); margin: 0 0 14px; font-weight: 700; }
+.adash-aero .cover .headline { font-size: 56px; font-weight: 800; letter-spacing: -0.03em; line-height: 0.95; margin: 0 0 12px; color: var(--aero-blue-2); text-shadow: 0 2px 0 rgba(255,255,255,0.7), 0 4px 18px rgba(0,50,150,0.18); }
+.adash-aero .cover .headline em { font-style: italic; color: var(--aero-pink); }
+.adash-aero .cover .dek { font-size: 16px; color: var(--aero-ink); max-width: 50ch; line-height: 1.45; margin: 0 0 18px; }
+.adash-aero .stamps { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.adash-aero .pill { display: inline-block; padding: 4px 11px; border-radius: 999px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); font-size: 11.5px; font-weight: 700; color: var(--aero-blue-2); letter-spacing: 0.04em; }
+.adash-aero .pill.warn { background: rgba(255,200,220,0.7); border-color: rgba(255,180,200,0.9); color: var(--aero-pink); }
+.adash-aero .signoff { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--aero-ink-3); margin: 20px 0 0; }
 
-/** Hairline-separated row for the live pulse panel. No individual
- *  border per cell — the parent panel owns the frame. */
-function PulseRow({
-  icon: Icon, label, value, help, href,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: number | string;
-  help?: string;
-  href?: string;
-}) {
-  const inner = (
-    <div className="flex items-center gap-3 px-5 py-3.5 group hover:bg-elevated/30 transition-colors">
-      {/* Pastel icon — brand-400/70 instead of brand-600 so the
-          chip recedes into the row rather than punching out of it. */}
-      <div className="w-9 h-9 rounded-lg bg-elevated text-brand-400/70 border border-line flex items-center justify-center shrink-0">
-        <Icon size={15} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle">{label}</p>
-        {help && <p className="text-[11px] text-muted mt-0.5">{help}</p>}
-      </div>
-      <p className="text-2xl font-bold text-fg tabular-nums leading-none shrink-0">{value}</p>
-    </div>
-  );
-  return href ? <li><Link href={href} className="block">{inner}</Link></li> : <li>{inner}</li>;
-}
+.adash-aero .toc { background: var(--aero-card-strong); border-left: var(--aero-border); padding: 32px 28px; display: flex; flex-direction: column; gap: 14px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.adash-aero .toc h3 { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--aero-ink-2); margin: 0; font-weight: 700; }
+.adash-aero .toc ul { list-style: none; padding: 0; margin: 0; }
+.adash-aero .toc ul li { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: baseline; padding: 10px 0; border-bottom: 1px dotted rgba(0,50,150,0.22); }
+.adash-aero .toc ul li:last-child { border-bottom: none; }
+.adash-aero .toc ul li .n { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: var(--aero-pink); font-weight: 700; }
+.adash-aero .toc ul li .t { font-size: 13.5px; color: var(--aero-ink); text-decoration: none; transition: color 120ms; }
+.adash-aero .toc ul li .t:hover { color: var(--aero-blue); }
+.adash-aero .toc ul li .v { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 700; color: var(--aero-blue-2); tab-size: 1ch; font-variant-numeric: tabular-nums; }
+.adash-aero .toc ul li .v.warn { color: var(--aero-pink); }
+.adash-aero .toc-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; color: var(--aero-blue-2); text-decoration: none; padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); align-self: start; transition: all 120ms; }
+.adash-aero .toc-cta:hover { background: rgba(255,255,255,0.85); color: var(--aero-pink); }
 
-/** Column inside the Credit-expiry panel. Hairline-separated, no
- *  individual border per cell. */
-function ExpiryColumn({
-  tone, days, credits, users,
-}: {
-  tone: "rose" | "amber" | "brand";
-  days: number;
-  credits: number;
-  users: number;
-}) {
-  const toneCls: Record<string, string> = {
-    rose:  "text-rose-700",
-    amber: "text-amber-700",
-    brand: "text-brand-700",
-  };
-  const heading =
-    days === 7 ? "Last call (≤ 7 days)"
-    : days === 30 ? "Expiring soon (≤ 30 days)"
-    : "Within 90 days";
-  return (
-    <div className="px-5 py-4">
-      <p className={`text-[10px] uppercase tracking-[0.22em] font-bold ${toneCls[tone]}`}>{heading}</p>
-      <p className="text-3xl font-bold text-fg mt-1.5 tabular-nums leading-none">
-        {credits.toLocaleString()}
-        <span className="text-xs font-semibold text-muted ml-1.5">credits</span>
-      </p>
-      <p className="text-[11px] text-muted mt-2">
-        Across {users.toLocaleString()} trainee{users === 1 ? "" : "s"}
-      </p>
-    </div>
-  );
-}
+/* ── Sidebar left ──────────────────────────────────────────────── */
+.adash-aero .sl-layout { display: grid; grid-template-columns: 240px 1fr; gap: 0; min-height: 460px; }
+@media (max-width: 900px) { .adash-aero .sl-layout { grid-template-columns: 1fr; } }
+.adash-aero .sl-rail { background: var(--aero-card-dark); padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+.adash-aero .sl-kpi { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px 14px; color: #fff; text-decoration: none; transition: background 120ms, border-color 120ms; }
+.adash-aero a.sl-kpi:hover { background: rgba(140,200,255,0.18); border-color: rgba(180,220,255,0.35); }
+.adash-aero .sl-kpi .lbl { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(180,210,255,0.75); font-weight: 700; }
+.adash-aero .sl-kpi .num { font-size: 30px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; color: #fff; text-shadow: 0 2px 0 rgba(0,30,80,0.4); margin-top: 4px; tab-size: 1ch; font-variant-numeric: tabular-nums; }
+.adash-aero .sl-kpi .sub { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+.adash-aero .sl-kpi.warn .num { color: #ffb6d4; }
 
-/** Column inside the Approval-queues panel. Same hairline-divided
- *  pattern; the icon-coloured chip is the only colour cue. */
-function QueueRow({
-  icon: Icon, tone, label, count, href,
-}: {
-  icon: React.ElementType;
-  tone: "brand" | "amber" | "violet";
-  label: string;
-  count: number;
-  href: string;
-}) {
-  // Pastel icon chips — softer tints so the chip reads as a calm
-  // tone marker, not a saturated colour callout.
-  const colours: Record<string, string> = {
-    brand:  "bg-brand-50/60 text-brand-400",
-    amber:  "bg-amber-50/60 text-amber-400",
-    violet: "bg-violet-50/60 text-violet-400",
-  };
-  return (
-    <Link
-      href={href}
-      className="group flex items-center gap-3 px-5 py-4 hover:bg-elevated/30 transition-colors"
-    >
-      <div className={`w-10 h-10 rounded-lg ${colours[tone]} flex items-center justify-center shrink-0`}>
-        <Icon size={17} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle">Pending</p>
-        <p className="text-sm font-semibold text-fg leading-tight mt-0.5">{label}</p>
-      </div>
-      <p className="text-2xl font-bold text-fg tabular-nums leading-none shrink-0">{count}</p>
-      <ArrowRight size={13} className="text-subtle group-hover:text-brand-700 group-hover:translate-x-0.5 transition-all shrink-0" />
-    </Link>
-  );
-}
+.adash-aero .sl-body { padding: 20px 22px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-content: start; }
+@media (max-width: 1100px) { .adash-aero .sl-body { grid-template-columns: 1fr; } }
+
+.adash-aero .aero-card { background: var(--aero-card); border: var(--aero-border); border-radius: var(--aero-radius); box-shadow: var(--aero-shadow); padding: 18px 22px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.adash-aero .aero-h { font-size: 14px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.005em; display: inline-flex; align-items: center; gap: 7px; color: var(--aero-ink); }
+.adash-aero .aero-h svg { color: var(--aero-blue); flex-shrink: 0; }
+.adash-aero .aero-gloss { color: var(--aero-ink-3); font-size: 12px; margin: 0 0 12px; }
+.adash-aero .aero-list { list-style: none; padding: 0; margin: 0; }
+.adash-aero .aero-list li { padding: 0; border-bottom: 1px solid rgba(0,50,150,0.10); }
+.adash-aero .aero-list li:last-child { border-bottom: none; }
+.adash-aero .aero-list li, .adash-aero .aero-list li .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; font-size: 13.5px; }
+.adash-aero .aero-list li .row { padding: 9px 0; width: 100%; color: var(--aero-ink); text-decoration: none; transition: color 120ms; }
+.adash-aero .aero-list li .row:hover { color: var(--aero-blue); }
+.adash-aero .aero-list li > span:first-child { padding: 9px 0; }
+.adash-aero .aero-list li:has(.row) > span { padding: 0; }
+.adash-aero .aero-list li .v { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 700; color: var(--aero-blue); text-shadow: 0 1px 0 rgba(255,255,255,0.6); padding: 9px 0; }
+.adash-aero .aero-list li .v.warn { color: var(--aero-pink); }
+.adash-aero .aero-list.audit code { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; color: var(--aero-ink-3); margin-right: 6px; }
+.adash-aero .see-all { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: var(--aero-blue); text-decoration: none; transition: color 120ms; }
+.adash-aero .see-all:hover { color: var(--aero-pink); }
+`;
