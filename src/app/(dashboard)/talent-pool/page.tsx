@@ -196,6 +196,19 @@ interface SubmissionRow {
   _count: { comments: number };
 }
 
+/**
+ * Table-style submission list — one continuous rounded-2xl panel on
+ * a soft brand wash, hairline `border-t border-line` rules between
+ * rows (no per-row card chrome). A small column header on top labels
+ * the grid so the layout reads as a table rather than a list.
+ *
+ * Each row is a clickable Link styled as a grid:
+ *
+ *   [✓] · Member (name + email + org)  · Eligibility · Comments · Submitted · ↗
+ *
+ * Hover gives a faint elevated wash and slides the trailing arrow
+ * one pixel — same affordance the courses + internships pages use.
+ */
 function SubmissionList({
   submissions, approverMap, showCheckbox,
 }: {
@@ -203,79 +216,132 @@ function SubmissionList({
   approverMap: Map<string, { id: string; name: string | null; email: string | null }>;
   showCheckbox?: boolean;
 }) {
+  // Grid template: optional checkbox · member · eligibility ·
+  // comments · date · arrow. Symmetrical across header and rows.
+  const gridCols = showCheckbox
+    ? "grid-cols-[28px_minmax(0,2.2fr)_minmax(0,1.4fr)_60px_110px_18px]"
+    : "grid-cols-[minmax(0,2.2fr)_minmax(0,1.4fr)_60px_110px_18px]";
+
   return (
-    <ul className="space-y-2">
-      {submissions.map((s) => {
+    <div
+      className="overflow-hidden rounded-2xl border border-line"
+      style={{
+        backgroundImage:
+          "linear-gradient(180deg, var(--brand-50) 0%, var(--card-solid) 35%, var(--card-solid) 70%, var(--brand-50) 100%)",
+      }}
+    >
+      {/* Column header — small mono-eyebrow labels above the rule. */}
+      <div
+        className={`hidden sm:grid ${gridCols} gap-4 px-4 py-2.5 border-b border-line bg-elevated/30 text-[10px] font-mono uppercase tracking-[0.22em] text-fg-subtle font-bold`}
+      >
+        {showCheckbox && <span />}
+        <span>Member</span>
+        <span>Eligibility</span>
+        <span className="text-right pr-1">Activity</span>
+        <span>Submitted</span>
+        <span />
+      </div>
+
+      {submissions.map((s, i) => {
         const isEligible = !!s.eligibilityApprovedAt;
         const approver = s.eligibilityApprovedBy ? approverMap.get(s.eligibilityApprovedBy) : null;
         const approverName = approver?.name ?? approver?.email?.split("@")[0] ?? null;
+        const commentsLocked = !isCommentable(s.reviewStatus);
+        const displayName = s.user?.name ?? null;
+
         return (
-          <li key={s.id} className="flex items-stretch gap-2">
+          <div
+            key={s.id}
+            className={
+              "group grid items-center transition-colors hover:bg-elevated/40 " +
+              gridCols +
+              " gap-3 sm:gap-4 px-3 sm:px-4 py-3 " +
+              (i > 0 ? "border-t border-line " : "")
+            }
+          >
             {showCheckbox && (
-              <div className="self-stretch flex items-center px-1.5">
-                <RowCheckbox id={s.id} label={`Select ${s.user?.name ?? s.user?.email ?? s.id}`} />
+              <div className="flex items-center justify-center">
+                <RowCheckbox id={s.id} label={`Select ${displayName ?? s.user?.email ?? s.id}`} />
               </div>
             )}
-            <Link
-              href={`/talent-pool/${s.id}`}
-              className="flex-1 block rounded-2xl border border-line bg-card hover:border-brand-300 transition-colors p-4 surface-shadow"
-            >
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-fg">
-                      {s.user?.name ?? <span className="italic text-muted">No name</span>}
-                    </p>
-                    {/* Eligibility badge — emerald when eligible (employer-visible),
-                        amber otherwise (admin-only). */}
-                    {isEligible ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset bg-emerald-50 text-emerald-800 ring-emerald-200">
-                        <CheckCircle2 size={9} /> Eligible
-                        {approverName && <span className="opacity-75 normal-case tracking-normal font-normal ml-0.5">· {approverName}</span>}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset bg-amber-50 text-amber-800 ring-amber-200">
-                        <Hourglass size={9} /> Eligibility pending
-                      </span>
-                    )}
-                    {!isCommentable(s.reviewStatus) && (
-                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset bg-amber-50 text-amber-800 ring-amber-200">
-                        <Lock size={9} /> Comments locked
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted mt-0.5">
-                    {s.user?.email ?? s.email ?? "—"}
+
+            {/* Member — name + email + role/org stacked. The whole
+                cell is a Link so the entire row is clickable; the
+                trailing arrow on the right is part of the same
+                grid so the click target stays huge. */}
+            <Link href={`/talent-pool/${s.id}`} className="contents">
+              <div className="min-w-0">
+                <p className="font-semibold text-sm text-fg truncate group-hover:text-brand-700 transition-colors">
+                  {displayName ?? <span className="italic text-muted">No name</span>}
+                </p>
+                <p className="text-[12px] text-fg-muted truncate">
+                  {s.user?.email ?? s.email ?? "—"}
+                </p>
+                {(s.user?.jobTitle || s.user?.organization) && (
+                  <p className="text-[11px] text-subtle truncate mt-0.5">
+                    {s.user?.jobTitle}{s.user?.jobTitle && s.user?.organization && " · "}{s.user?.organization}
                   </p>
-                  {(s.user?.jobTitle || s.user?.organization) && (
-                    <p className="text-[11px] text-subtle mt-0.5">
-                      {s.user?.jobTitle}{s.user?.jobTitle && s.user?.organization && " · "}{s.user?.organization}
-                    </p>
-                  )}
-                  {isEligible && s.eligibilityApprovedAt && (
-                    <p className="text-[10.5px] text-subtle font-mono mt-1 uppercase tracking-[0.14em]">
-                      Approved {new Date(s.eligibilityApprovedAt).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}
-                      {s.eligibilityNote && <span className="normal-case tracking-normal italic"> · &ldquo;{s.eligibilityNote}&rdquo;</span>}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 text-xs text-muted shrink-0">
-                  {s._count.comments > 0 && (
-                    <span className="inline-flex items-center gap-1">
-                      <MessageCircle size={11} />
-                      {s._count.comments}
-                    </span>
-                  )}
-                  <span className="text-[11px] text-subtle">
-                    {new Date(s.createdAt).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}
-                  </span>
-                  <ArrowRight size={12} className="text-subtle" />
-                </div>
+                )}
               </div>
+
+              {/* Eligibility — badge + (when set) approver line + date. */}
+              <div className="min-w-0 flex flex-col gap-1">
+                {isEligible ? (
+                  <>
+                    <span className="inline-flex items-center gap-1 self-start text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset bg-emerald-50 text-emerald-800 ring-emerald-200">
+                      <CheckCircle2 size={9} /> Eligible
+                    </span>
+                    {approverName && (
+                      <p className="text-[11px] text-fg-muted truncate">
+                        by <span className="text-fg">{approverName}</span>
+                        {s.eligibilityApprovedAt && (
+                          <span className="text-subtle"> · {new Date(s.eligibilityApprovedAt).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}</span>
+                        )}
+                      </p>
+                    )}
+                    {s.eligibilityNote && (
+                      <p className="text-[10.5px] text-subtle italic truncate" title={s.eligibilityNote}>
+                        &ldquo;{s.eligibilityNote}&rdquo;
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <span className="inline-flex items-center gap-1 self-start text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset bg-amber-50 text-amber-800 ring-amber-200">
+                    <Hourglass size={9} /> Pending check
+                  </span>
+                )}
+                {commentsLocked && (
+                  <span className="inline-flex items-center gap-1 self-start text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset bg-amber-50 text-amber-800 ring-amber-200">
+                    <Lock size={9} /> Comments locked
+                  </span>
+                )}
+              </div>
+
+              {/* Activity — comments count (just a dash when none). */}
+              <div className="text-right pr-1 text-fg-muted">
+                {s._count.comments > 0 ? (
+                  <span className="inline-flex items-center gap-1 text-xs">
+                    <MessageCircle size={11} />
+                    <span className="font-mono tabular-nums">{s._count.comments}</span>
+                  </span>
+                ) : (
+                  <span className="text-subtle">—</span>
+                )}
+              </div>
+
+              {/* Submitted date — mono, two-line allowed. */}
+              <div className="text-[11.5px] font-mono text-fg-subtle tabular-nums">
+                {new Date(s.createdAt).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}
+              </div>
+
+              <ArrowRight
+                size={14}
+                className="text-subtle group-hover:text-brand-700 group-hover:translate-x-0.5 transition-all justify-self-end"
+              />
             </Link>
-          </li>
+          </div>
         );
       })}
-    </ul>
+    </div>
   );
 }
