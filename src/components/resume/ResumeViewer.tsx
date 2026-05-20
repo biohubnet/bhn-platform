@@ -21,7 +21,7 @@ import {
   MessageCircle, Send, CheckCircle2, RotateCcw, X, ChevronDown, ChevronUp, Plus,
 } from "lucide-react";
 import type { ResumeContent, ResumeBullet, ResumeItem, ResumeSection } from "@/lib/resume/types";
-import { SECTION_LABEL } from "@/lib/resume/types";
+import { SECTION_LABEL, formatItemDates } from "@/lib/resume/types";
 
 interface CommentRow {
   id: string;
@@ -296,16 +296,33 @@ function ItemBlock(props: {
   const { item } = props;
   const [showItemComposer, setShowItemComposer] = useState(false);
   const headerLine = [item.title, item.subtitle].filter(Boolean).join(" — ");
+  const dates = formatItemDates(item);
 
-  if (!headerLine && item.bullets.length === 0) return null;
+  // Nothing renderable at all → skip the row entirely.
+  if (!headerLine && !dates && !item.description && !item.metric && !item.url && item.bullets.length === 0) {
+    return null;
+  }
 
   return (
     <div className="space-y-1.5">
-      {(headerLine || item.dateRange) && (
+      {(headerLine || dates) && (
         <div className="flex items-baseline justify-between gap-3">
           <div className="text-sm font-medium text-fg">{headerLine || <em className="text-fg-subtle">Untitled</em>}</div>
-          {item.dateRange && <div className="text-[11px] text-fg-muted shrink-0">{item.dateRange}</div>}
+          {dates && <div className="text-[11px] text-fg-muted shrink-0">{dates}</div>}
         </div>
+      )}
+      {(item.metric || item.url) && (
+        <div className="flex items-baseline gap-3 text-[11px] text-fg-muted">
+          {item.metric && <span>{item.metric}</span>}
+          {item.url && (
+            <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline truncate">
+              {item.url.replace(/^https?:\/\//, "")}
+            </a>
+          )}
+        </div>
+      )}
+      {item.description && (
+        <p className="text-[13px] text-fg leading-relaxed">{item.description}</p>
       )}
       {item.bullets.length > 0 && (
         <ul className="space-y-1.5 ml-1">

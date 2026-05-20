@@ -33,13 +33,18 @@ OUTPUT STRICTLY this shape:
       "title": "...",   // optional — only if the heading differs from the standard label
       "items": [
         {
-          "title": "...",     // job title / school / project / cert name
-          "subtitle": "...",  // company + location, or institution + degree
-          "dateRange": "...", // free text date range
+          "title": "...",       // job title / degree / project / cert name / paper title
+          "subtitle": "...",    // company+location / institution / role+stack / issuer / authors / venue
+          "startDate": "...",   // "May 2025" — free text, preserve what's printed
+          "endDate": "...",     // "Aug 2025" — omit OR set to "" when current=true
+          "current": true,      // true if "Present" / "Current" / "Now" appears, false otherwise
+          "dateRange": "...",   // OPTIONAL fallback — only if you can't split into start/end
+          "metric": "...",      // GPA for education, credential id for certs, ranking for awards, venue for publications
+          "url": "...",         // project URL / cert verify link / DOI / paper link
+          "description": "...", // one short intro sentence ABOVE the bullets (esp. for summary + experience + projects)
           "bullets": [
             "First bullet point.",
-            "Second bullet point.",
-            "..."
+            "Second bullet point."
           ]
         }
       ]
@@ -49,10 +54,15 @@ OUTPUT STRICTLY this shape:
 
 Rules:
 - Use the most specific 'kind' that fits each heading. Map "Work Experience" / "Professional Experience" / "Employment" to "experience". Map "Technical Skills" / "Core Competencies" / "Skills" to "skills". Map "Selected Projects" / "Side Projects" to "projects". Anything unclear → "other".
-- For SKILLS sections, group every comma-separated list as ONE item with bullets — one bullet per skill keyword.
-- For SUMMARY / OBJECTIVE sections, ONE item with ONE bullet containing the full paragraph.
+- ALWAYS try to split a date range into "startDate" + "endDate" + "current". Only fall back to "dateRange" if the source text really doesn't separate them (rare).
+- For SKILLS sections, group every comma-separated list as ONE item with bullets — one bullet per skill keyword. No title/subtitle/dates needed for the item.
+- For SUMMARY / OBJECTIVE sections, ONE item with the full paragraph in "description" — leave "bullets" empty.
+- For EDUCATION, put GPA / honours / classification into "metric" (e.g. "GPA 3.82 / 4.0"). Coursework / honours / thesis title → bullets.
+- For CERTIFICATIONS, "metric" is the credential id if present; "url" is the verify link. No bullets.
+- For PUBLICATIONS, "subtitle" is the author list, "metric" is the venue / journal, "url" is the DOI or paper link, "description" is an optional one-sentence summary. No bullets.
+- For AWARDS, "metric" is the placement / ranking if relevant.
 - Preserve the order sections + items appear in the source text.
-- Don't invent content. If a field is absent, omit it.
+- Don't invent content. If a field is absent in the source, omit it (don't fabricate dates or URLs).
 - Return JSON only. No prose, no commentary, no markdown fences.`;
 
 export async function parseResumeText(
@@ -119,12 +129,21 @@ function normaliseParsed(raw: unknown): ResumeContent {
       items: itemsRaw.map((it, iIdx) => {
         const iObj = (it ?? {}) as Record<string, unknown>;
         const bulletsRaw = Array.isArray(iObj.bullets) ? iObj.bullets : [];
+        const str = (k: string) =>
+          typeof iObj[k] === "string" ? (iObj[k] as string).trim() || undefined : undefined;
         return {
           id: rid(),
           position: iIdx,
-          title:     typeof iObj.title === "string"     ? iObj.title.trim()     || undefined : undefined,
-          subtitle:  typeof iObj.subtitle === "string"  ? iObj.subtitle.trim()  || undefined : undefined,
-          dateRange: typeof iObj.dateRange === "string" ? iObj.dateRange.trim() || undefined : undefined,
+          title:       str("title"),
+          subtitle:    str("subtitle"),
+          startDate:   str("startDate"),
+          endDate:     str("endDate"),
+          // Coerce truthy → true so "true" / true / 1 all work.
+          current:     iObj.current === true || iObj.current === "true",
+          metric:      str("metric"),
+          url:         str("url"),
+          description: str("description"),
+          dateRange:   str("dateRange"),
           bullets: bulletsRaw
             .filter((b): b is string => typeof b === "string" && b.trim().length > 0)
             .map((body, bIdx) => ({

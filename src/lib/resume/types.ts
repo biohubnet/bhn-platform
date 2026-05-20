@@ -33,9 +33,53 @@ export interface ResumeBullet {
 export interface ResumeItem {
   id: string;
   position: number;
-  title?: string;        // e.g. "Process Engineer Intern"
-  subtitle?: string;     // e.g. "STEMCELL Technologies · Vancouver"
-  dateRange?: string;    // e.g. "May 2025 – Aug 2025"
+  /** Primary line — meaning depends on parent section.kind:
+   *    experience      → job title              ("Process Engineer Intern")
+   *    education       → degree / programme     ("BSc Biotechnology")
+   *    projects        → project name           ("Bioreactor digital twin")
+   *    certifications  → certification name     ("GMP Documentation 101")
+   *    publications    → paper title
+   *    awards          → award name
+   *    volunteering    → role
+   *    other / skills  → free text */
+  title?: string;
+  /** Secondary line — meaning depends on parent section.kind:
+   *    experience      → company + location     ("STEMCELL · Vancouver")
+   *    education       → institution            ("University of Toronto")
+   *    projects        → role / stack
+   *    certifications  → issuing org            ("ISPE Canada")
+   *    publications    → venue                  ("Nature Methods")
+   *    awards          → awarding body
+   *    volunteering    → organisation */
+  subtitle?: string;
+  /** Free-text date range — kept for backward compatibility with the
+   *  original schema (and what the AI parser still tends to emit).
+   *  Render falls back to this when `startDate` / `endDate` are blank
+   *  so old resume rows from before the structured fields landed
+   *  still display correctly. */
+  dateRange?: string;
+  /** Structured start of the item ("Jan 2025"). Free string so users
+   *  can write "May 2025", "Spring 2025", or "2025-05" — we don't
+   *  try to enforce a date format. */
+  startDate?: string;
+  /** Structured end. Ignored when `current` is true. */
+  endDate?: string;
+  /** "Currently working / studying / volunteering here." When true,
+   *  the UI renders "Present" for the end and hides the End field. */
+  current?: boolean;
+  /** Section-appropriate quantitative field. Used by:
+   *    education       → GPA / grade / classification
+   *    awards          → ranking / placement
+   *    certifications  → credential id
+   *  Free string — different programmes use different scales. */
+  metric?: string;
+  /** External link — repo / live demo / certificate verify URL / DOI. */
+  url?: string;
+  /** Optional intro paragraph that renders ABOVE bullets. Useful for
+   *  projects + experience where a sentence of context helps before
+   *  the achievement-bullets, and for "Summary" sections that don't
+   *  need bullets at all. */
+  description?: string;
   bullets: ResumeBullet[];
 }
 
@@ -60,6 +104,183 @@ export interface ResumeContent {
     location?: string;
     summary?: string;
   };
+}
+
+/** Per-kind UI hints. The editor renders item fields differently for
+ *  Experience (start/end + currently here + description) vs Education
+ *  (school + degree + GPA + dates) vs Projects (name + role + URL +
+ *  description + bullets) etc. Each hint says which optional fields
+ *  to surface AND what to label them as — labels are part of UX, not
+ *  schema, so they live here next to the kind enum. */
+export interface SectionFieldHints {
+  /** Render an item editor at all? `false` for Summary which is just
+   *  a single description paragraph at section level. */
+  itemEditor: boolean;
+  /** Label for `title`. */
+  titleLabel: string;
+  /** Label for `subtitle`. Empty string ⇒ field hidden. */
+  subtitleLabel: string;
+  /** Label for `metric`. Empty string ⇒ field hidden. */
+  metricLabel: string;
+  /** Show start / end / current toggle? */
+  showDates: boolean;
+  /** Show description paragraph? */
+  showDescription: boolean;
+  /** Show external URL field? */
+  showUrl: boolean;
+  /** Render the bullet list? Almost always true except summary-like
+   *  sections that use description only. */
+  showBullets: boolean;
+  /** Label for the "Add bullet" / bullet-list eyebrow. */
+  bulletLabel: string;
+  /** Placeholder shown when the bullet textarea is empty. */
+  bulletPlaceholder: string;
+}
+
+export const SECTION_HINTS: Record<ResumeSectionKind, SectionFieldHints> = {
+  summary: {
+    itemEditor: true,
+    titleLabel: "",
+    subtitleLabel: "",
+    metricLabel: "",
+    showDates: false,
+    showDescription: true,
+    showUrl: false,
+    showBullets: false,
+    bulletLabel: "",
+    bulletPlaceholder: "",
+  },
+  experience: {
+    itemEditor: true,
+    titleLabel: "Job title",
+    subtitleLabel: "Company · Location",
+    metricLabel: "",
+    showDates: true,
+    showDescription: true,
+    showUrl: false,
+    showBullets: true,
+    bulletLabel: "Achievements",
+    bulletPlaceholder: "One bullet — what you did, the action, and the outcome (numbers if you have them)",
+  },
+  education: {
+    itemEditor: true,
+    titleLabel: "Degree / Programme",
+    subtitleLabel: "Institution · Location",
+    metricLabel: "GPA / Grade",
+    showDates: true,
+    showDescription: false,
+    showUrl: false,
+    showBullets: true,
+    bulletLabel: "Coursework / Honours",
+    bulletPlaceholder: "Relevant course, thesis title, honour, or research project",
+  },
+  projects: {
+    itemEditor: true,
+    titleLabel: "Project name",
+    subtitleLabel: "Role / Stack",
+    metricLabel: "",
+    showDates: true,
+    showDescription: true,
+    showUrl: true,
+    showBullets: true,
+    bulletLabel: "Highlights",
+    bulletPlaceholder: "Outcome, method, or contribution — one bullet",
+  },
+  certifications: {
+    itemEditor: true,
+    titleLabel: "Certification name",
+    subtitleLabel: "Issuing organisation",
+    metricLabel: "Credential ID",
+    showDates: true,
+    showDescription: false,
+    showUrl: true,
+    showBullets: false,
+    bulletLabel: "",
+    bulletPlaceholder: "",
+  },
+  publications: {
+    itemEditor: true,
+    titleLabel: "Paper title",
+    subtitleLabel: "Authors",
+    metricLabel: "Venue / Journal",
+    showDates: true,
+    showDescription: true,
+    showUrl: true,
+    showBullets: false,
+    bulletLabel: "",
+    bulletPlaceholder: "",
+  },
+  awards: {
+    itemEditor: true,
+    titleLabel: "Award",
+    subtitleLabel: "Awarding body",
+    metricLabel: "Ranking / Placement",
+    showDates: true,
+    showDescription: true,
+    showUrl: false,
+    showBullets: false,
+    bulletLabel: "",
+    bulletPlaceholder: "",
+  },
+  volunteering: {
+    itemEditor: true,
+    titleLabel: "Role",
+    subtitleLabel: "Organisation",
+    metricLabel: "",
+    showDates: true,
+    showDescription: true,
+    showUrl: false,
+    showBullets: true,
+    bulletLabel: "Activities",
+    bulletPlaceholder: "Activity, scope, or impact — one bullet",
+  },
+  skills: {
+    itemEditor: false,
+    titleLabel: "",
+    subtitleLabel: "",
+    metricLabel: "",
+    showDates: false,
+    showDescription: false,
+    showUrl: false,
+    showBullets: true,
+    bulletLabel: "Skills",
+    bulletPlaceholder: "One skill — keyword, framework, technique",
+  },
+  other: {
+    itemEditor: true,
+    titleLabel: "Title",
+    subtitleLabel: "Subtitle",
+    metricLabel: "",
+    showDates: true,
+    showDescription: true,
+    showUrl: true,
+    showBullets: true,
+    bulletLabel: "Details",
+    bulletPlaceholder: "Free-form bullet",
+  },
+};
+
+/** Derive the rendered date string from an item.
+ *
+ * Priority:
+ *   1. `current = true`           → "{startDate} – Present"
+ *   2. both startDate + endDate   → "{startDate} – {endDate}"
+ *   3. only one of the two        → that one alone
+ *   4. fallback to dateRange      → for legacy rows
+ *   5. ""                         → no date renderable */
+export function formatItemDates(item: {
+  startDate?: string;
+  endDate?: string;
+  current?: boolean;
+  dateRange?: string;
+}): string {
+  const s = (item.startDate ?? "").trim();
+  const e = (item.endDate ?? "").trim();
+  if (item.current && s) return `${s} – Present`;
+  if (s && e) return `${s} – ${e}`;
+  if (s) return s;
+  if (e) return e;
+  return (item.dateRange ?? "").trim();
 }
 
 /** Canonical section labels used when rendering. */

@@ -872,12 +872,10 @@ async function seedUserResume(userId: string): Promise<SeedDetail> {
       {
         id: summarySectionId, kind: "summary", position: 0,
         items: [{
-          id: rid(), position: 0, bullets: [
-            {
-              id: rid(), position: 0,
-              body: "[demo] Manufacturing-process trainee with 8 months of bench experience across two GMP environments. Comfortable owning aseptic gowning audits, deviation investigations, and SOP rollovers end-to-end.",
-            },
-          ],
+          id: rid(), position: 0,
+          // Summary uses `description` (one paragraph), not bullets.
+          description: "[demo] Manufacturing-process trainee with 8 months of bench experience across two GMP environments. Comfortable owning aseptic gowning audits, deviation investigations, and SOP rollovers end-to-end. Looking for a fall-2026 internship in upstream bioprocessing.",
+          bullets: [],
         }],
       },
       {
@@ -887,15 +885,22 @@ async function seedUserResume(userId: string): Promise<SeedDetail> {
             id: stemcellItemId, position: 0,
             title: "Manufacturing Process Intern",
             subtitle: "STEMCELL Technologies · Vancouver",
+            // Structured dates with `current: false` — explicit end date.
+            // `dateRange` kept as a fallback for any client that hasn't
+            // upgraded to read the structured fields yet.
+            startDate: "May 2025",
+            endDate:   "Aug 2025",
+            current:   false,
             dateRange: "May 2025 – Aug 2025",
+            description: "[demo] Summer co-op rotating through the upstream cell-culture group; bench work on shake-flask scale plus SOP authoring with the process-engineering team.",
             bullets: [
               {
                 id: stemcellBullet1, position: 0,
-                body: "[demo] Ran 14 shake-flask cultures across two cell lines, holding contamination below the team's 2% threshold for the rotation.",
+                body: "[demo] Ran 14 shake-flask cultures across two cell lines (HEK293 + CHO-K1), holding contamination below the team's 2% threshold for the rotation.",
               },
               {
                 id: stemcellBullet2, position: 1,
-                body: "[demo] Co-authored an SOP rollover for aseptic gowning that cut new-hire certification time from 3 weeks to 4 days.",
+                body: "[demo] Co-authored an SOP rollover for aseptic gowning using a paired-shadow flow that cut new-hire certification time from 3 weeks to 4 days.",
               },
               {
                 id: stemcellBullet3, position: 2,
@@ -907,11 +912,17 @@ async function seedUserResume(userId: string): Promise<SeedDetail> {
             id: veridiomItemId, position: 1,
             title: "QA Documentation Assistant",
             subtitle: "Veridiom Therapeutics · Toronto",
-            dateRange: "Jan 2025 – Apr 2025",
+            // Current role demo — `current: true` so the editor renders
+            // "Present" and hides the end-date field.
+            startDate: "Jan 2025",
+            endDate:   "",
+            current:   true,
+            dateRange: "Jan 2025 – Present",
+            description: "[demo] Part-time QA documentation role alongside coursework; supporting the eQMS migration team.",
             bullets: [
               {
                 id: veridiomBullet1, position: 0,
-                body: "[demo] Shepherded 12 high-risk SOPs through change-control ahead of a pre-PAI audit; all signed off with 7 days of slack.",
+                body: "[demo] Shepherded 12 of 40 high-risk SOPs through change-control ahead of a pre-PAI audit; all signed off with 7 days of slack on the deadline.",
               },
               {
                 id: veridiomBullet2, position: 1,
@@ -929,6 +940,7 @@ async function seedUserResume(userId: string): Promise<SeedDetail> {
             { id: rid(), position: 1, body: "GMP documentation · eQMS change-control" },
             { id: rid(), position: 2, body: "Cell culture · shake-flask + bioreactor sampling" },
             { id: rid(), position: 3, body: "Deviation investigation · root-cause analysis" },
+            { id: rid(), position: 4, body: "Python · pandas / matplotlib for batch-data analysis" },
           ],
         }],
       },
@@ -936,10 +948,17 @@ async function seedUserResume(userId: string): Promise<SeedDetail> {
         id: eduSectionId, kind: "education", position: 3,
         items: [{
           id: rid(), position: 0,
-          title: "BSc Biotechnology",
+          title: "BSc Biotechnology, Honours",
           subtitle: "University of Toronto",
-          dateRange: "2022 – 2026",
-          bullets: [],
+          startDate: "Sep 2022",
+          endDate:   "Apr 2026",
+          current:   true,
+          dateRange: "Sep 2022 – Apr 2026 (expected)",
+          metric:    "GPA 3.82 / 4.0",
+          bullets: [
+            { id: rid(), position: 0, body: "Thesis: contamination-rate modelling in mammalian-cell production runs." },
+            { id: rid(), position: 1, body: "Relevant coursework: Bioprocess Engineering, Cell Culture, Pharmaceutical QA." },
+          ],
         }],
       },
     ],
@@ -947,37 +966,55 @@ async function seedUserResume(userId: string): Promise<SeedDetail> {
 
   // 3. Upsert the Resume row with the demo content. Increment version
   //    on every re-seed so the revision snapshot below is unique.
-  const existing = await prisma.resume.findUnique({
-    where: { userId },
-    select: { id: true, version: true },
-  });
-  const nextVersion = existing ? existing.version + 1 : 1;
-  const resume = await prisma.resume.upsert({
-    where: { userId },
-    create: {
-      userId,
-      content: content as unknown as object,
-      version: nextVersion,
-      lastEditedAt: new Date(),
-    },
-    update: {
-      content: content as unknown as object,
-      version: nextVersion,
-      lastEditedAt: new Date(),
-    },
-    select: { id: true, version: true },
-  });
+  //    Wrapped in try/catch so a Prisma error returns a useful note
+  //    in the admin UI instead of bubbling to a flat 500.
+  let resumeId: string;
+  let resumeVersion: number;
+  try {
+    const existing = await prisma.resume.findUnique({
+      where: { userId },
+      select: { id: true, version: true },
+    });
+    const nextVersion = existing ? existing.version + 1 : 1;
+    const resume = await prisma.resume.upsert({
+      where: { userId },
+      create: {
+        userId,
+        content: content as unknown as object,
+        version: nextVersion,
+        lastEditedAt: new Date(),
+      },
+      update: {
+        content: content as unknown as object,
+        version: nextVersion,
+        lastEditedAt: new Date(),
+      },
+      select: { id: true, version: true },
+    });
+    resumeId = resume.id;
+    resumeVersion = resume.version;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[demo-seed user_resume] upsert failed:", msg);
+    return { created: 0, note: `Resume upsert failed: ${msg.slice(0, 200)}` };
+  }
 
   // 4. Snapshot the revision so the version-history surface has data.
-  await prisma.resumeRevision.create({
-    data: {
-      resumeId: resume.id,
-      version: resume.version,
-      content: content as unknown as object,
-      triggeredBy: "user",
-      note: "[demo] Seeded by /api/admin/demo-seed",
-    },
-  });
+  try {
+    await prisma.resumeRevision.create({
+      data: {
+        resumeId,
+        version: resumeVersion,
+        content: content as unknown as object,
+        triggeredBy: "user",
+        note: "[demo] Seeded by /api/admin/demo-seed",
+      },
+    });
+  } catch (err) {
+    // Revision row is nice-to-have, not blocking — log + continue so
+    // the resume + comments still land.
+    console.error("[demo-seed user_resume] revision insert failed:", err);
+  }
 
   // 5. Three mentor comments anchored at varying granularity, so the
   //    /profile/resume page shows the inline-thread UX across the
@@ -1013,7 +1050,7 @@ async function seedUserResume(userId: string): Promise<SeedDetail> {
     try {
       await prisma.resumeComment.create({
         data: {
-          resumeId: resume.id,
+          resumeId,
           authorId: mentorId,
           authorRole: "industrial_mentor",
           anchorBulletId: c.anchorBulletId,

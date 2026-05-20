@@ -32,7 +32,8 @@ import {
   Target, Wand2,
 } from "lucide-react";
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
-import { SECTION_LABEL, rid } from "@/lib/resume/types";
+import { SECTION_LABEL, SECTION_HINTS, rid } from "@/lib/resume/types";
+import { ResumeItemEditor } from "./ResumeItemEditor";
 
 /** Lightweight posting summary fed in from the server shell. */
 export interface PostingSummary {
@@ -583,51 +584,61 @@ export function ResumeEditor({
             />
           ) : null}
 
-          {/* Items */}
+          {/* Items — rendered via the kind-aware editor so Experience
+              gets start/end + currently here, Education gets GPA,
+              Projects gets a URL, etc. Bullets are still owned by
+              this parent so the comment-thread / AI-rewrite handlers
+              stay wired in one place. */}
           <div className="space-y-3">
-            {section.items.map((item, iIdx) => (
-              <div key={item.id} className="border border-line rounded-xl p-3 bg-card">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
-                  <Field label="Title"      value={item.title ?? ""}     onChange={(v) => updateItem(sIdx, iIdx, { title:     v })} />
-                  <Field label="Subtitle"   value={item.subtitle ?? ""}  onChange={(v) => updateItem(sIdx, iIdx, { subtitle:  v })} />
-                  <Field label="Date range" value={item.dateRange ?? ""} onChange={(v) => updateItem(sIdx, iIdx, { dateRange: v })} />
-                </div>
-
-                <div className="space-y-1.5">
-                  {item.bullets.map((bullet, bIdx) => {
-                    const bulletComments = commentsByBullet.get(bullet.id) ?? [];
-                    return (
-                      <BulletRow
-                        key={bullet.id}
-                        bullet={bullet}
-                        comments={bulletComments}
-                        onChange={(v) => updateBullet(sIdx, iIdx, bIdx, { body: v, aiSuggested: false })}
-                        onRemove={() => removeBullet(sIdx, iIdx, bIdx)}
-                        onCommentStatus={updateCommentStatus}
-                        onRewrite={() => previewBulletRewrite(bullet.id)}
-                        onApplyCommentWithAI={(commentId) => applyCommentWithAI(commentId, bullet.id)}
-                        rewriting={rewriteBusyId === bullet.id}
-                        rewritePreview={rewritePreviews.get(bullet.id) ?? null}
-                        onAcceptRewrite={() => acceptBulletRewrite(bullet.id)}
-                        onDismissRewrite={() => dismissBulletRewrite(bullet.id)}
-                        rewriteError={rewriteError && rewriteError.bulletId === bullet.id ? rewriteError.msg : null}
-                      />
-                    );
-                  })}
-                  <button
-                    type="button"
-                    onClick={() => addBullet(sIdx, iIdx)}
-                    className="text-[11px] text-fg-muted hover:text-brand-700 inline-flex items-center gap-1 px-2 py-1"
-                  >
-                    <Plus size={11} /> Add bullet
-                  </button>
-                </div>
-
-                <div className="mt-2 flex justify-end">
-                  <IconBtn onClick={() => removeItem(sIdx, iIdx)} title="Remove item" danger><Trash2 size={11} /></IconBtn>
-                </div>
-              </div>
-            ))}
+            {section.items.map((item, iIdx) => {
+              const hint = SECTION_HINTS[section.kind];
+              return (
+                <ResumeItemEditor
+                  key={item.id}
+                  kind={section.kind}
+                  item={item}
+                  onPatch={(patch) => updateItem(sIdx, iIdx, patch)}
+                  onRemove={() => removeItem(sIdx, iIdx)}
+                  bulletsSlot={hint.showBullets ? (
+                    <div className="space-y-1.5">
+                      {hint.bulletLabel && (
+                        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-fg-subtle mt-1">
+                          {hint.bulletLabel}
+                        </p>
+                      )}
+                      {item.bullets.map((bullet, bIdx) => {
+                        const bulletComments = commentsByBullet.get(bullet.id) ?? [];
+                        return (
+                          <BulletRow
+                            key={bullet.id}
+                            bullet={bullet}
+                            comments={bulletComments}
+                            placeholder={hint.bulletPlaceholder}
+                            onChange={(v) => updateBullet(sIdx, iIdx, bIdx, { body: v, aiSuggested: false })}
+                            onRemove={() => removeBullet(sIdx, iIdx, bIdx)}
+                            onCommentStatus={updateCommentStatus}
+                            onRewrite={() => previewBulletRewrite(bullet.id)}
+                            onApplyCommentWithAI={(commentId) => applyCommentWithAI(commentId, bullet.id)}
+                            rewriting={rewriteBusyId === bullet.id}
+                            rewritePreview={rewritePreviews.get(bullet.id) ?? null}
+                            onAcceptRewrite={() => acceptBulletRewrite(bullet.id)}
+                            onDismissRewrite={() => dismissBulletRewrite(bullet.id)}
+                            rewriteError={rewriteError && rewriteError.bulletId === bullet.id ? rewriteError.msg : null}
+                          />
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => addBullet(sIdx, iIdx)}
+                        className="text-[11px] text-fg-muted hover:text-brand-700 inline-flex items-center gap-1 px-2 py-1"
+                      >
+                        <Plus size={11} /> Add {section.kind === "skills" ? "skill" : "bullet"}
+                      </button>
+                    </div>
+                  ) : null}
+                />
+              );
+            })}
             <button
               type="button"
               onClick={() => addItem(sIdx)}
@@ -725,6 +736,7 @@ function IconBtn({
 function BulletRow({
   bullet, comments, onChange, onRemove, onCommentStatus,
   onRewrite, onApplyCommentWithAI, rewriting, rewritePreview, onAcceptRewrite, onDismissRewrite, rewriteError,
+  placeholder,
 }: {
   bullet: ResumeBullet;
   comments: CommentRow[];
@@ -738,6 +750,7 @@ function BulletRow({
   onAcceptRewrite: () => void;
   onDismissRewrite: () => void;
   rewriteError: string | null;
+  placeholder?: string;
 }) {
   const [showThread, setShowThread] = useState(false);
   const openCount = comments.filter((c) => c.status === "open").length;
@@ -749,7 +762,7 @@ function BulletRow({
         <textarea
           value={bullet.body}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="One bullet — what you did and the outcome"
+          placeholder={placeholder ?? "One bullet — what you did and the outcome"}
           rows={1}
           className={
             "flex-1 bg-transparent border-0 text-sm leading-snug py-1.5 px-2 rounded-md resize-none " +

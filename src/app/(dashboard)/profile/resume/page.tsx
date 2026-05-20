@@ -117,7 +117,16 @@ export default async function ResumeStructurePage() {
           </div>
         )}
 
+        {/* `key` forces a remount whenever the server-side version or
+            parsedAt changes — i.e. when an admin clicks "Seed demo
+            resume" or "Clear demo", or the trainee runs AI parse.
+            Without the key the editor's useState would keep showing
+            stale content because React preserves state across prop
+            updates. During normal typing the parent server component
+            doesn't re-render so version stays the same → no remount,
+            no lost typing in progress. */}
         <ResumeEditor
+          key={`${resume.id}-${resume.version}-${resume.parsedAt?.toISOString() ?? ""}-${resume.comments.length}`}
           initialResume={{
             id: resume.id,
             content: resume.content as never,
