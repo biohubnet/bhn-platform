@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emptyResumeContent, type ResumeContent } from "@/lib/resume/types";
+import { recordRevision } from "@/lib/resume/revisions";
 
 export const runtime = "nodejs";
 
@@ -66,14 +67,16 @@ export async function PATCH(req: NextRequest) {
         lastEditedAt: new Date(),
       },
     });
-    await tx.resumeRevision.create({
-      data: {
-        resumeId: r.id,
-        version: r.version,
-        content: body.content as unknown as object,
-        triggeredBy: "user",
-        note,
-      },
+    // Auto-save → coalesce into the most recent "user" revision when
+    // one's within the last 5 minutes. Without this every keystroke
+    // burst created 20+ revisions per session and the history drawer
+    // became unusable. See src/lib/resume/revisions.ts for details.
+    await recordRevision(tx, {
+      resumeId: r.id,
+      version: r.version,
+      content: body.content as unknown as object,
+      triggeredBy: "user",
+      note,
     });
     return r;
   });

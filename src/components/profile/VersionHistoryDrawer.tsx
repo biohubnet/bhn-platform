@@ -26,7 +26,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  X, Clock, RotateCcw, Eye, Loader2, Sparkles, Wand2, FileText, RefreshCw, AlertTriangle, CheckCircle2,
+  X, Clock, RotateCcw, Eye, Loader2, Sparkles, Wand2, FileText, RefreshCw, AlertTriangle, CheckCircle2, Bookmark,
 } from "lucide-react";
 import type { ResumeContent } from "@/lib/resume/types";
 import { ResumeViewer } from "@/components/resume/ResumeViewer";
@@ -70,6 +70,12 @@ export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, curre
   // plus the last error message if one came back.
   const [revertingId, setRevertingId] = useState<string | null>(null);
   const [revertError, setRevertError] = useState<string | null>(null);
+
+  // Manual snapshot — fires POST /revisions/snapshot which creates an
+  // always-fresh revision tagged "snapshot" so it stands out from
+  // coalesced auto-saves.
+  const [snapshotting, setSnapshotting] = useState(false);
+  const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -128,6 +134,33 @@ export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, curre
     setPreviewMeta(null);
   }
 
+  async function takeSnapshot() {
+    setSnapshotError(null);
+    const note = window.prompt(
+      "Name this snapshot (optional)",
+      "Before restructuring",
+    );
+    // window.prompt returns null on cancel — bail without writing.
+    // Empty string still creates a snapshot with the default note.
+    if (note === null) return;
+    setSnapshotting(true);
+    try {
+      const r = await fetch("/api/profile/resume/structure/revisions/snapshot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!r.ok || !j.ok) {
+        setSnapshotError(j.error ?? "Snapshot failed.");
+        return;
+      }
+      await loadList();
+    } finally {
+      setSnapshotting(false);
+    }
+  }
+
   async function revert(rev: RevisionRow) {
     setRevertError(null);
     if (rev.version === currentVersion) return;
@@ -179,10 +212,20 @@ export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, curre
             </span>
             <div>
               <h2 className="text-sm font-semibold text-fg leading-tight">Version history</h2>
-              <p className="text-[11px] text-fg-muted">Every save is snapshotted automatically.</p>
+              <p className="text-[11px] text-fg-muted">Continuous edits coalesce; AI events &amp; snapshots stand alone.</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => void takeSnapshot()}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] uppercase tracking-[0.14em] font-bold bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200 hover:bg-brand-100 disabled:opacity-50"
+              disabled={snapshotting}
+              title="Capture the current resume as a named snapshot — always creates a new row, never coalesces."
+            >
+              {snapshotting ? <Loader2 size={10} className="animate-spin" /> : <Bookmark size={10} />}
+              Snapshot now
+            </button>
             <button
               type="button"
               onClick={() => void loadList()}
@@ -211,6 +254,11 @@ export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, curre
         {listError && (
           <div className="px-4 py-2 text-[11px] text-rose-700 bg-rose-50 ring-1 ring-rose-200 m-3 rounded-md inline-flex items-center gap-1.5">
             <AlertTriangle size={11} /> {listError}
+          </div>
+        )}
+        {snapshotError && (
+          <div className="px-4 py-2 text-[11px] text-rose-700 bg-rose-50 ring-1 ring-rose-200 m-3 rounded-md inline-flex items-center gap-1.5">
+            <AlertTriangle size={11} /> {snapshotError}
           </div>
         )}
 
@@ -379,11 +427,12 @@ interface TriggerMeta {
   Icon: React.ComponentType<{ size?: number }>;
 }
 const TRIGGER_META: Record<string, TriggerMeta> = {
-  user:       { label: "Edit",       cls: "bg-card-solid text-fg-muted ring-line",                       Icon: FileText },
-  ai_parse:   { label: "AI parse",   cls: "bg-violet-50 text-violet-800 ring-violet-200",                Icon: Sparkles },
-  ai_suggest: { label: "AI rewrite", cls: "bg-brand-50 text-brand-800 ring-brand-200",                   Icon: Wand2 },
-  ai_tailor:  { label: "AI tailor",  cls: "bg-brand-50 text-brand-800 ring-brand-200",                   Icon: Wand2 },
-  revert:     { label: "Revert",     cls: "bg-amber-50 text-amber-900 ring-amber-200",                   Icon: RotateCcw },
+  user:       { label: "Edit session", cls: "bg-card-solid text-fg-muted ring-line",                       Icon: FileText },
+  ai_parse:   { label: "AI parse",     cls: "bg-violet-50 text-violet-800 ring-violet-200",                Icon: Sparkles },
+  ai_suggest: { label: "AI rewrite",   cls: "bg-brand-50 text-brand-800 ring-brand-200",                   Icon: Wand2 },
+  ai_tailor:  { label: "AI tailor",    cls: "bg-brand-50 text-brand-800 ring-brand-200",                   Icon: Wand2 },
+  revert:     { label: "Revert",       cls: "bg-amber-50 text-amber-900 ring-amber-200",                   Icon: RotateCcw },
+  snapshot:   { label: "Snapshot",     cls: "bg-emerald-50 text-emerald-800 ring-emerald-200",             Icon: Bookmark },
 };
 
 function formatTimestamp(iso: string): string {

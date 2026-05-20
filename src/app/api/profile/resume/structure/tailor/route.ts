@@ -26,6 +26,7 @@ import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { ResumeContent } from "@/lib/resume/types";
 import { applyBulletRewrites, flattenBullets, tailorToPosting } from "@/lib/resume/tailor";
+import { recordRevision } from "@/lib/resume/revisions";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -137,14 +138,12 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, version: true },
     });
-    await tx.resumeRevision.create({
-      data: {
-        resumeId: r.id,
-        version: r.version,
-        content: next as unknown as object,
-        triggeredBy: "ai_tailor",
-        note: `Tailored to: ${posting.title}`,
-      },
+    await recordRevision(tx, {
+      resumeId: r.id,
+      version: r.version,
+      content: next as unknown as object,
+      triggeredBy: "ai_tailor",
+      note: `Tailored to: ${posting.title}`,
     });
     return r;
   });

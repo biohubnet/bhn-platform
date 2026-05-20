@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { ResumeContent } from "@/lib/resume/types";
+import { recordRevision } from "@/lib/resume/revisions";
 
 export const runtime = "nodejs";
 
@@ -67,14 +68,12 @@ export async function POST(_req: NextRequest, ctx: RouteCtx) {
       },
       select: { id: true, version: true },
     });
-    await tx.resumeRevision.create({
-      data: {
-        resumeId: r.id,
-        version: r.version,
-        content: content as unknown as object,
-        triggeredBy: "revert",
-        note: `Reverted to v${source.version}`,
-      },
+    await recordRevision(tx, {
+      resumeId: r.id,
+      version: r.version,
+      content: content as unknown as object,
+      triggeredBy: "revert",
+      note: `Reverted to v${source.version}`,
     });
     return r;
   });

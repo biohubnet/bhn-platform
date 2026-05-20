@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseResumeText } from "@/lib/resume/parse";
+import { recordRevision } from "@/lib/resume/revisions";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -123,14 +124,12 @@ export async function POST(req: NextRequest) {
         lastEditedAt: new Date(),
       },
     });
-    await tx.resumeRevision.create({
-      data: {
-        resumeId: r.id,
-        version: r.version,
-        content: parsed as unknown as object,
-        triggeredBy: "ai_parse",
-        note: "AI parse from uploaded file",
-      },
+    await recordRevision(tx, {
+      resumeId: r.id,
+      version: r.version,
+      content: parsed as unknown as object,
+      triggeredBy: "ai_parse",
+      note: "AI parse from uploaded file",
     });
     return r;
   });

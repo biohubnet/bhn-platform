@@ -37,6 +37,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rid, type ResumeContent } from "@/lib/resume/types";
+import { recordRevision } from "@/lib/resume/revisions";
 
 export const runtime = "nodejs";
 
@@ -1001,14 +1002,15 @@ async function seedUserResume(userId: string): Promise<SeedDetail> {
 
   // 4. Snapshot the revision so the version-history surface has data.
   try {
-    await prisma.resumeRevision.create({
-      data: {
-        resumeId,
-        version: resumeVersion,
-        content: content as unknown as object,
-        triggeredBy: "user",
-        note: "[demo] Seeded by /api/admin/demo-seed",
-      },
+    // Use the coalescing helper. Re-seeds within 5 min update the
+    // existing seed row instead of stacking — admins re-seed
+    // repeatedly while testing and the history shouldn't fill up.
+    await recordRevision(prisma, {
+      resumeId,
+      version: resumeVersion,
+      content: content as unknown as object,
+      triggeredBy: "user",
+      note: "[demo] Seeded by /api/admin/demo-seed",
     });
   } catch (err) {
     // Revision row is nice-to-have, not blocking — log + continue so
