@@ -255,7 +255,7 @@ function RoleHeader({
       <div className="flex items-start justify-between gap-5">
         <div className="min-w-0 flex-1">
           <div className="mb-2 text-[12px] text-fg-subtle">
-            Role-play simulation · Q1
+            RPG · Q1
           </div>
           <h1
             className="mb-1.5 text-[26px] font-semibold leading-[1.15] tracking-tight text-fg md:text-[30px]"

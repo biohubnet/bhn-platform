@@ -297,12 +297,32 @@ async function seedFormSubmissions(formSlug: string): Promise<number> {
     if (typeof f === "object" && f && "id" in f) data[f.id] = demoValueFor(f);
   }
 
-  const samples: Array<{ reviewStatus: "pending" | "approved" | "rejected"; emailSuffix: string; namePrefix: string }> = [
-    { reviewStatus: "pending",  emailSuffix: "1", namePrefix: "Demo · Priya"  },
-    { reviewStatus: "pending",  emailSuffix: "2", namePrefix: "Demo · Marcus" },
-    { reviewStatus: "approved", emailSuffix: "3", namePrefix: "Demo · Aisha"  },
-    { reviewStatus: "rejected", emailSuffix: "4", namePrefix: "Demo · Jordan" },
+  // 20 plausible demo submissions per batch. Status mix mirrors a
+  // realistic queue: ~55% approved (so the talent pool actually has
+  // members to scan), ~30% pending (so the review queue has work),
+  // ~15% rejected (so admins see the lifecycle). Each call appends
+  // 20 fresh rows; the timestamp suffix on the email keeps successive
+  // seed clicks from colliding on (formId, email) unique constraints.
+  const NAME_BANK = [
+    "Priya Patel", "Marcus Chen", "Aisha Mohamed", "Jordan Reyes",
+    "Sofia Romano", "Liam O'Connor", "Yuki Tanaka", "Nadia Karimi",
+    "Ethan Park", "Camila Vásquez", "Hassan Ali", "Mei Lin",
+    "Daniel Volkov", "Anika Singh", "Tomás Cruz", "Hana Yoshida",
+    "Olusegun Adeyemi", "Elena Petrova", "Rohan Iyer", "Zara Khan",
   ];
+  const STATUS_CYCLE: Array<"pending" | "approved" | "rejected"> = [
+    "approved", "pending",  "approved", "pending",  "approved",
+    "rejected", "approved", "pending",  "approved", "pending",
+    "approved", "rejected", "approved", "pending",  "approved",
+    "approved", "pending",  "approved", "rejected", "approved",
+  ];
+  const ts = Date.now().toString(36);
+  const samples: Array<{ reviewStatus: "pending" | "approved" | "rejected"; emailSuffix: string; namePrefix: string }> =
+    NAME_BANK.map((name, i) => ({
+      reviewStatus: STATUS_CYCLE[i] ?? "pending",
+      emailSuffix: `${ts}-${i + 1}`,
+      namePrefix: `Demo · ${name}`,
+    }));
 
   let created = 0;
   for (const s of samples) {

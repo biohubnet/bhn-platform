@@ -9,9 +9,9 @@
  *   - Source badges so the trainee can see *why* a skill is on their
  *     profile (course-inferred / resume / self / admin).
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Sparkles, BookOpen, FileText, X, Plus, ChevronUp, ChevronDown, User,
+  Sparkles, BookOpen, FileText, X, Plus, ChevronUp, ChevronDown, User, Search, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +48,29 @@ export function SkillProfileClient({
   const [mine, setMine] = useState<MySkill[]>(initialMine);
   const [suggested, setSuggested] = useState<Suggestion[]>(suggestions);
   const [busy, setBusy] = useState(false);
+  // Search-and-add state. The user types, we debounce ~200ms then
+  // hit /api/profile/skills/search?q=… for matches not already on
+  // their profile. Empty query falls back to the curated suggestions.
+  const [searchQ, setSearchQ] = useState("");
+  const [searchResults, setSearchResults] = useState<Suggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const q = searchQ.trim();
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!q) { setSearchResults([]); setSearching(false); return; }
+    setSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/profile/skills/search?q=${encodeURIComponent(q)}`);
+        const j = (await r.json().catch(() => ({}))) as { skills?: Suggestion[] };
+        setSearchResults(j.skills ?? []);
+      } catch { setSearchResults([]); }
+      finally { setSearching(false); }
+    }, 200);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchQ]);
 
   // Group by category for readable display
   const grouped = new Map<string, MySkill[]>();
@@ -96,6 +119,7 @@ export function SkillProfileClient({
           ...cur,
         ]);
         setSuggested((cur) => cur.filter((c) => c.id !== s.id));
+        setSearchResults((cur) => cur.filter((c) => c.id !== s.id));
       }
     } finally { setBusy(false); }
   }
@@ -133,27 +157,94 @@ export function SkillProfileClient({
         )}
       </section>
 
-      {/* Suggestions */}
-      {suggested.length > 0 && (
-        <section className="bg-card border border-line rounded-2xl p-5">
-          <h2 className="font-semibold text-fg mb-1">Add a skill</h2>
-          <p className="text-xs text-muted mb-3">Common skills employers look for. Click to add at <em>working</em> level — you can adjust afterwards.</p>
-          <div className="flex flex-wrap gap-2">
-            {suggested.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => claim(s)}
-                disabled={busy}
-                className="text-xs bg-elevated/50 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 border border-line rounded-full px-3 py-1.5 transition-colors disabled:opacity-50"
-              >
-                <Plus size={11} className="inline -mt-0.5 mr-1" />
-                {s.name}
-                {s.category && <span className="text-subtle ml-1">· {s.category}</span>}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Add a skill — search & add. Type to find any platform skill
+          not already on the profile; empty input falls back to the
+          curated "popular" chips (the original behaviour). */}
+      <section className="bg-card border border-line rounded-2xl p-5">
+        <h2 className="font-semibold text-fg mb-1">Add a skill</h2>
+        <p className="text-xs text-muted mb-3">
+          Search any platform skill, or pick from the popular list below. Adds at <em>working</em> level
+          — you can adjust afterwards.
+        </p>
+
+        {/* Search input */}
+        <label className="relative block mb-3">
+          <span className="sr-only">Search skills</span>
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none" />
+          <input
+            type="search"
+            value={searchQ}
+            onChange={(e) => setSearchQ(e.target.value)}
+            placeholder="Search skills — e.g. python, GMP, cell culture…"
+            className="w-full bg-card-solid border border-line focus:border-brand-300 focus:ring-2 focus:ring-brand-200 rounded-xl pl-9 pr-9 py-2 text-sm transition-all outline-none"
+            aria-label="Search skills"
+            autoComplete="off"
+          />
+          {searching && (
+            <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle animate-spin" />
+          )}
+          {searchQ && !searching && (
+            <button
+              type="button"
+              onClick={() => setSearchQ("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-subtle hover:text-fg p-1 rounded"
+              aria-label="Clear search"
+            >
+              <X size={13} />
+            </button>
+          )}
+        </label>
+
+        {/* Results pane — search results when typing, curated chips
+            otherwise. Empty-results case calls out the lack of a
+            match (instead of silently showing nothing). */}
+        {searchQ.trim() ? (
+          searchResults.length === 0 && !searching ? (
+            <p className="text-xs text-muted italic px-1 py-2">
+              No skills matched &ldquo;{searchQ.trim()}&rdquo;. Try a different word or check the popular list below.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {searchResults.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => claim(s)}
+                  disabled={busy}
+                  className="text-xs bg-elevated/50 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 border border-line rounded-full px-3 py-1.5 transition-colors disabled:opacity-50"
+                >
+                  <Plus size={11} className="inline -mt-0.5 mr-1" />
+                  {s.name}
+                  {s.category && <span className="text-subtle ml-1">· {s.category}</span>}
+                </button>
+              ))}
+            </div>
+          )
+        ) : suggested.length > 0 ? (
+          <>
+            <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
+              Popular · employers look for these
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {suggested.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => claim(s)}
+                  disabled={busy}
+                  className="text-xs bg-elevated/50 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 border border-line rounded-full px-3 py-1.5 transition-colors disabled:opacity-50"
+                >
+                  <Plus size={11} className="inline -mt-0.5 mr-1" />
+                  {s.name}
+                  {s.category && <span className="text-subtle ml-1">· {s.category}</span>}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-muted italic px-1 py-2">
+            Type to find any skill on the platform.
+          </p>
+        )}
+      </section>
     </div>
   );
 }

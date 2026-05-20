@@ -93,7 +93,7 @@ function Hero({ hasAttempts }: { hasAttempts: boolean }) {
       <div className="grid gap-10 px-6 py-10 md:grid-cols-[1.5fr_1fr] md:px-10 md:py-14 lg:gap-14">
         <div className="max-w-2xl">
           <div className="mb-3 text-[12px] text-fg-subtle">
-            Role-play simulator
+            RPG · role-play game
           </div>
           <h1
             className="mb-5 text-[38px] font-semibold leading-[1.1] tracking-tight text-fg md:text-[48px]"

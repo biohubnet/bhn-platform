@@ -21,8 +21,6 @@ import { ArrowRight, AlertTriangle, Beaker, Microscope, Rocket, ClipboardList } 
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
-import { DSSection } from "@/components/design-system/DSSection";
-import { DSStatGrid, DSStat } from "@/components/design-system/DSStatGrid";
 import { STREAM_META, STATUS_META, type EquipStatus, type EquipStream } from "@/lib/equip/types";
 import { DeadlinesCard } from "@/components/equip/DeadlinesCard";
 
@@ -115,116 +113,160 @@ WHERE migration_name = '20260620000000_equip_application_pipeline';`}
         </section>
       )}
 
-      {/* Next deadlines — server-fetched. Auto-hides when no open
-          windows exist (no useful state to show). Sits above the
-          stat grid so applicants know what they're racing toward
-          before they evaluate their own progress. */}
+      {/* Next deadlines — auto-hides when no open windows. */}
       <DeadlinesCard />
 
-      {totalApps > 0 && (
-        <DSStatGrid>
-          <DSStat icon={<ClipboardList size={11} />} label="Your apps" value={totalApps} help="across all streams" tone="brand" />
-          <DSStat icon={<Rocket size={11} />} label="Approved" value={totalApproved} help="ready or funded" tone="emerald" />
-          <DSStat icon={<Microscope size={11} />} label="Funded total" value={`$${totalFunded.toLocaleString()}`} help="approved amount" tone="violet" />
-          <DSStat icon={<Beaker size={11} />} label="In progress" value={apps.filter((a) => a.status === "draft").length} help="draft / saved" tone="rose" />
-        </DSStatGrid>
-      )}
-
-      <DSSection
-        eyebrow="Pick a stream"
-        title="Two ways to apply"
-        icon={<Rocket size={14} className="text-brand-600" />}
+      {/* ════════════════════════════════════════════════════════════
+          LINE + GRADIENT BODY.
+          One continuous rounded-3xl outer panel carries a soft brand
+          wash from top to bottom. Inside, sections are separated by
+          hairline `border-t border-line` rules — no rounded cards
+          inside. The eye reads the whole panel as one editorial
+          column, not a stack of tiles. */}
+      <div
+        className="relative overflow-hidden rounded-3xl border border-line"
+        style={{
+          backgroundImage:
+            "linear-gradient(180deg, var(--brand-50) 0%, var(--card-solid) 35%, var(--card-solid) 70%, var(--brand-50) 100%)",
+        }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <StreamCard stream="venture_connect" hasDraft={apps.some((a) => a.stream === "venture_connect" && a.status === "draft")} />
-          <StreamCard stream="venture_lift"    hasDraft={apps.some((a) => a.stream === "venture_lift" && a.status === "draft")} />
-        </div>
-        <p className="text-[11px] text-subtle mt-3 leading-snug">
-          Not sure which one? The next screen has a 3-question wizard that
-          recommends a fit based on where you are in commercialization.
-        </p>
-        <Link
-          href="/equip/apply/new"
-          className="mt-4 inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-sm shadow-brand-600/25 transition-colors"
-        >
-          {hasDraft ? "Continue or start new" : "Start an application"} <ArrowRight size={14} />
-        </Link>
-      </DSSection>
+        {/* ── KPI strip — line-separated columns, no inner boxes ── */}
+        {totalApps > 0 && (
+          <section className="px-6 sm:px-9 py-5">
+            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-subtle font-bold mb-3">
+              At a glance
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
+              <Kpi icon={<ClipboardList size={11} />} label="Your apps" value={totalApps.toString()} help="across all streams" />
+              <Kpi icon={<Rocket size={11} />}        label="Approved"  value={totalApproved.toString()} help="ready or funded" />
+              <Kpi icon={<Microscope size={11} />}    label="Funded"    value={`$${totalFunded.toLocaleString()}`} help="approved total" />
+              <Kpi icon={<Beaker size={11} />}        label="Drafts"    value={apps.filter((a) => a.status === "draft").length.toString()} help="saved · in progress" />
+            </div>
+          </section>
+        )}
 
-      {totalApps > 0 && (
-        <DSSection
-          eyebrow="Your recent submissions"
-          title="My applications"
-          icon={<ClipboardList size={14} className="text-brand-600" />}
-        >
-          <ul className="space-y-2">
-            {apps.map((a) => {
-              const meta = STATUS_META[a.status as EquipStatus] ?? { label: a.status, tone: "neutral" as const };
-              const stream = STREAM_META[a.stream as EquipStream] ?? { name: a.stream, blurb: "", cadence: "", bestFor: "" };
-              const href = a.status === "draft"
-                ? `/equip/apply/${a.id}`
-                : `/equip/my-applications`;
-              return (
-                <li key={a.id}>
-                  <Link
-                    href={href}
-                    className="rounded-xl border border-line bg-card-solid hover:bg-elevated p-3 flex items-center gap-3 transition-colors"
-                  >
-                    <span className="w-9 h-9 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">
-                      {a.stream === "venture_lift" ? <Rocket size={14} /> : <Beaker size={14} />}
-                    </span>
-                    <span className="flex-1 min-w-0">
-                      <span className="text-sm font-bold text-fg block">{stream.name}</span>
-                      <span className="text-[11px] text-muted block truncate">
-                        {a.submittedAt
-                          ? `Submitted ${a.submittedAt.toISOString().slice(0, 10)}`
-                          : `Saved ${a.updatedAt.toISOString().slice(0, 10)}`}
-                        {a.approvedAmount ? ` · $${a.approvedAmount.toLocaleString()} approved` : ""}
+        {/* ── Pick a stream — gradient hairline + two link-rows ── */}
+        <section className={"px-6 sm:px-9 py-7 " + (totalApps > 0 ? "border-t border-line" : "")}>
+          <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-brand-700 font-bold inline-flex items-center gap-2 mb-1.5">
+                <SpineDot /> Pick a stream
+              </p>
+              <h2 className="text-[22px] font-bold text-fg leading-tight">Two ways to apply</h2>
+              <p className="text-[12.5px] text-muted mt-1.5 max-w-[58ch] leading-relaxed">
+                Pick the stream that fits where you are in commercialization. Not sure?
+                The next screen has a 3-question wizard that picks one for you.
+              </p>
+            </div>
+            <Link
+              href="/equip/apply/new"
+              className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold px-4 py-2 rounded-lg shadow-sm shadow-brand-600/25 transition-colors shrink-0"
+            >
+              {hasDraft ? "Continue or start new" : "Start an application"} <ArrowRight size={13} />
+            </Link>
+          </div>
+          <div className="divide-y divide-line border-y border-line">
+            <StreamRow stream="venture_connect" hasDraft={apps.some((a) => a.stream === "venture_connect" && a.status === "draft")} />
+            <StreamRow stream="venture_lift"    hasDraft={apps.some((a) => a.stream === "venture_lift" && a.status === "draft")} />
+          </div>
+        </section>
+
+        {/* ── My applications — list, line-divided, no card chrome ── */}
+        {totalApps > 0 && (
+          <section className="px-6 sm:px-9 py-7 border-t border-line">
+            <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-brand-700 font-bold inline-flex items-center gap-2 mb-1.5">
+                  <SpineDot /> Recent submissions
+                </p>
+                <h2 className="text-[22px] font-bold text-fg leading-tight">My applications</h2>
+              </div>
+              <Link
+                href="/equip/my-applications"
+                className="text-[11px] font-mono uppercase tracking-[0.2em] font-bold text-brand-700 hover:text-brand-800 inline-flex items-center gap-1"
+              >
+                Full history <ArrowRight size={10} />
+              </Link>
+            </div>
+            <ul className="divide-y divide-line border-y border-line">
+              {apps.map((a) => {
+                const meta = STATUS_META[a.status as EquipStatus] ?? { label: a.status, tone: "neutral" as const };
+                const stream = STREAM_META[a.stream as EquipStream] ?? { name: a.stream, blurb: "", cadence: "", bestFor: "" };
+                const href = a.status === "draft" ? `/equip/apply/${a.id}` : `/equip/my-applications`;
+                return (
+                  <li key={a.id}>
+                    <Link href={href} className="flex items-center gap-3 py-3 group transition-colors hover:bg-elevated/40 -mx-3 px-3 rounded-md">
+                      <span className="w-8 h-8 rounded-md bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">
+                        {a.stream === "venture_lift" ? <Rocket size={13} /> : <Beaker size={13} />}
                       </span>
-                    </span>
-                    <StatusBadge tone={meta.tone} label={meta.label} />
-                    <ArrowRight size={13} className="text-muted shrink-0" />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-          <Link
-            href="/equip/my-applications"
-            className="text-xs font-bold text-brand-700 hover:text-brand-800 inline-flex items-center gap-1 mt-3"
-          >
-            View full history <ArrowRight size={11} />
-          </Link>
-        </DSSection>
-      )}
+                      <span className="flex-1 min-w-0">
+                        <span className="text-sm font-bold text-fg block group-hover:text-brand-700 transition-colors">{stream.name}</span>
+                        <span className="text-[11px] text-muted block truncate">
+                          {a.submittedAt
+                            ? `Submitted ${a.submittedAt.toISOString().slice(0, 10)}`
+                            : `Saved ${a.updatedAt.toISOString().slice(0, 10)}`}
+                          {a.approvedAmount ? ` · $${a.approvedAmount.toLocaleString()} approved` : ""}
+                        </span>
+                      </span>
+                      <StatusBadge tone={meta.tone} label={meta.label} />
+                      <ArrowRight size={13} className="text-subtle group-hover:text-brand-700 group-hover:translate-x-0.5 transition-all shrink-0" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
 
-function StreamCard({ stream, hasDraft }: { stream: EquipStream; hasDraft: boolean }) {
+/* ─── Helpers — line + gradient idiom ──────────────────────────── */
+
+/** Hairline-separated KPI column. No card chrome — the eye reads
+ *  four columns as one strip, not four tiles. */
+function Kpi({ icon, label, value, help }: { icon: React.ReactNode; label: string; value: string; help: string }) {
+  return (
+    <div className="px-3 first:pl-0 border-r border-line/70 last:border-r-0">
+      <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-subtle font-bold inline-flex items-center gap-1.5 mb-1.5">
+        {icon} {label}
+      </div>
+      <p className="text-2xl font-bold text-fg leading-none tabular-nums">{value}</p>
+      <p className="text-[11px] text-muted mt-1.5">{help}</p>
+    </div>
+  );
+}
+
+/** Tiny brand dot used as a section-eyebrow accent (the "spine"
+ *  bullet, matching the line+gradient idiom used elsewhere). */
+function SpineDot() {
+  return <span className="inline-block w-1.5 h-1.5 rounded-full bg-gradient-to-br from-brand-500 to-brand-700" aria-hidden />;
+}
+
+function StreamRow({ stream, hasDraft }: { stream: EquipStream; hasDraft: boolean }) {
   const meta = STREAM_META[stream];
   return (
     <Link
       href={`/equip/apply/new?stream=${stream}`}
-      className="rounded-2xl border border-line bg-card-solid hover:bg-elevated p-4 transition-colors"
+      className="flex items-start gap-4 py-4 group transition-colors hover:bg-elevated/30 -mx-3 px-3 rounded-md"
     >
-      <div className="flex items-start gap-3">
-        <span className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">
-          {stream === "venture_lift" ? <Rocket size={16} /> : <Beaker size={16} />}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-fg inline-flex items-center gap-2">
-            {meta.name}
-            {hasDraft && (
-              <span className="text-[9px] uppercase tracking-wider font-bold bg-amber-100 text-amber-800 ring-1 ring-amber-200 px-1.5 py-0.5 rounded">
-                Draft saved
-              </span>
-            )}
-          </p>
-          <p className="text-[11px] text-muted leading-snug mt-1">{meta.blurb}</p>
-          <p className="text-[10px] text-subtle font-mono mt-2">{meta.cadence}</p>
-        </div>
+      <span className="w-10 h-10 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center shrink-0 group-hover:bg-brand-100 transition-colors">
+        {stream === "venture_lift" ? <Rocket size={16} /> : <Beaker size={16} />}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-fg inline-flex items-center gap-2 group-hover:text-brand-700 transition-colors">
+          {meta.name}
+          {hasDraft && (
+            <span className="text-[9px] uppercase tracking-wider font-bold bg-amber-100 text-amber-800 ring-1 ring-amber-200 px-1.5 py-0.5 rounded">
+              Draft saved
+            </span>
+          )}
+        </p>
+        <p className="text-[12px] text-muted leading-snug mt-1">{meta.blurb}</p>
+        <p className="text-[10px] text-subtle font-mono mt-1.5 uppercase tracking-[0.18em]">{meta.cadence}</p>
       </div>
+      <ArrowRight size={14} className="text-subtle group-hover:text-brand-700 group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
     </Link>
   );
 }
