@@ -225,6 +225,8 @@ model User {
   savedPostings         UserSavedPosting[]    @relation("SavedPostingUser")
   reviewBookmarks       ReviewBookmark[]
   signatures            ElectronicSignature[]
+  resume                Resume?               @relation("UserResume")
+  resumeComments        ResumeComment[]       @relation("ResumeCommentAuthor")
 
   // Loyalty / merch rewards. `merchRewards` is the trainee's own
   // claimed/unclaimed reward records; `fulfilledMerch` is the queue
@@ -3257,4 +3259,85 @@ model SimulationAttempt {
 
   @@index([userId, updatedAt])
   @@index([simulationId])
+}
+
+/// Structured resume — a JSON tree of sections → items → bullets,
+/// each with a stable id so comments can anchor at any granularity.
+/// Lives alongside `User.resumeUrl` (the uploaded blob): the uploaded
+/// PDF stays the archival source, and we AI-parse it on first
+/// /profile/resume visit to populate `content`. The trainee always
+/// owns edits; mentors / instructors / admins / employers can only
+/// COMMENT — never edit directly.
+///
+/// `content` shape (TS type lives in `src/lib/resume/types.ts`):
+///   { sections: [
+///       { id, kind, position, title?,
+///         items: [
+///           { id, position, title?, subtitle?, dateRange?,
+///             bullets: [{ id, position, body, aiSuggested? }]
+///           }
+///         ]
+///       }
+///     ]
+///   }
+model Resume {
+  id            String           @id @default(cuid())
+  userId        String           @unique
+  user          User             @relation("UserResume", fields: [userId], references: [id], onDelete: Cascade)
+  sourceFileUrl String?          // upload URL the structure was parsed from
+  parsedAt      DateTime?        // when AI parsed sourceFileUrl into content
+  lastEditedAt  DateTime         @default(now())
+  version       Int              @default(1)
+  content       Json             // the section/item/bullet tree
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  comments      ResumeComment[]
+  revisions     ResumeRevision[]
+
+  @@index([userId])
+}
+
+/// Team-private comments on a structured resume. Mirrors the
+/// ApplicationComment pattern on EventFormSubmission. Anchor fields
+/// are mutually exclusive in practice — UI uses the most-specific
+/// anchor (bullet > item > section > resume-wide).
+model ResumeComment {
+  id             String   @id @default(cuid())
+  resumeId       String
+  resume         Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User     @relation("ResumeCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  authorRole     String   // mentor | instructor | admin | employer | self (snapshot at write time)
+  /// Anchor into the JSON tree. NULL on all three → comment on the
+  /// whole resume.
+  anchorBulletId  String?
+  anchorItemId    String?
+  anchorSectionId String?
+  body           String
+  /// open    — needs the trainee's attention
+  /// resolved — the trainee acknowledged it (manual close)
+  /// applied — the trainee accepted the suggestion into the resume
+  status         String   @default("open")
+  createdAt      DateTime @default(now())
+
+  @@index([resumeId, createdAt])
+  @@index([authorId])
+}
+
+/// Snapshot of the entire resume tree at a save point. Cheap row
+/// per save; lets mentors see the version history and lets the
+/// trainee undo to any prior state. `triggeredBy` distinguishes
+/// trainee edits from AI tailoring runs.
+model ResumeRevision {
+  id           String   @id @default(cuid())
+  resumeId     String
+  resume       Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  version      Int
+  content      Json
+  triggeredBy  String   // user | ai_parse | ai_suggest | ai_tailor
+  note         String?
+  createdAt    DateTime @default(now())
+
+  @@index([resumeId, version])
 }
