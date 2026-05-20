@@ -1103,14 +1103,23 @@ function RewriteDiff({
           >
             <X size={11} /> Dismiss
           </button>
-          <button
-            type="button"
-            onClick={() => onAccept(edited)}
-            disabled={edited.trim().length === 0}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-600 text-white text-[11px] font-semibold hover:bg-brand-700 transition-colors disabled:opacity-50"
-          >
-            <CheckCircle2 size={11} /> Accept rewrite
-          </button>
+          {(() => {
+            const dirty = edited !== rewritten;
+            return (
+              <button
+                type="button"
+                onClick={() => onAccept(edited)}
+                disabled={edited.trim().length === 0}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-600 text-white text-[11px] font-semibold hover:bg-brand-700 transition-colors disabled:opacity-50"
+                title={dirty
+                  ? "Save your edited version to this bullet"
+                  : "Accept the AI's suggested rewrite for this bullet"}
+              >
+                {dirty ? <Save size={11} /> : <CheckCircle2 size={11} />}
+                {dirty ? "Save my edit" : "Accept AI rewrite"}
+              </button>
+            );
+          })()}
         </div>
       </div>
     </div>
@@ -1274,17 +1283,30 @@ function TailorPanel({
           {busy === "preview" ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
           Preview rewrites
         </button>
-        {preview && preview.length > 0 && (
-          <button
-            type="button"
-            onClick={onApply}
-            disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
-          >
-            {busy === "apply" ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
-            Apply all {preview.length}
-          </button>
-        )}
+        {preview && preview.length > 0 && (() => {
+          // Count how many rows the user has edited from the AI's
+          // original. The button label reflects the mix so it's clear
+          // what's about to land.
+          const editedCount = preview.reduce((n, r) => {
+            const t = edits.get(r.id) ?? r.rewritten;
+            return n + (t !== r.rewritten ? 1 : 0);
+          }, 0);
+          let label: string;
+          if (editedCount === 0)             label = `Accept all ${preview.length} AI rewrites`;
+          else if (editedCount === preview.length) label = `Save all ${preview.length} edits`;
+          else                               label = `Apply all ${preview.length} (${editedCount} edited)`;
+          return (
+            <button
+              type="button"
+              onClick={onApply}
+              disabled={busy !== null}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
+            >
+              {busy === "apply" ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+              {label}
+            </button>
+          );
+        })()}
       </div>
 
       {error && (
@@ -1332,8 +1354,12 @@ function TailorPanel({
                     onClick={() => onApplyRow(row.id)}
                     disabled={!editedText.trim()}
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-600 text-white text-[11px] font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors"
+                    title={dirty
+                      ? "Save your edited version to this bullet"
+                      : "Accept the AI's suggested rewrite for this bullet"}
                   >
-                    <CheckCircle2 size={10} /> Accept this row
+                    {dirty ? <Save size={10} /> : <CheckCircle2 size={10} />}
+                    {dirty ? "Save my edit" : "Accept AI rewrite"}
                   </button>
                 </div>
               </div>

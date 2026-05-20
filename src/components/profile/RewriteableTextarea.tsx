@@ -14,7 +14,7 @@
  */
 
 import { useState, useTransition } from "react";
-import { Wand2, Loader2, CheckCircle2, X } from "lucide-react";
+import { Wand2, Loader2, CheckCircle2, X, Save } from "lucide-react";
 
 interface Props {
   value: string;
@@ -179,14 +179,23 @@ export function RewriteableTextarea({
               >
                 <X size={11} /> Dismiss
               </button>
-              <button
-                type="button"
-                onClick={accept}
-                disabled={edited.trim().length === 0}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-600 text-white text-[11px] font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors"
-              >
-                <CheckCircle2 size={11} /> Accept
-              </button>
+              {(() => {
+                const dirty = preview ? edited !== preview.rewritten : false;
+                return (
+                  <button
+                    type="button"
+                    onClick={accept}
+                    disabled={edited.trim().length === 0}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-600 text-white text-[11px] font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors"
+                    title={dirty
+                      ? "Save your edited version to this field"
+                      : "Accept the AI's rewrite for this field"}
+                  >
+                    {dirty ? <Save size={11} /> : <CheckCircle2 size={11} />}
+                    {dirty ? "Save my edit" : "Accept AI rewrite"}
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </div>
