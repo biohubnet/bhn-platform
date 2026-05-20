@@ -33,7 +33,7 @@
  * 5-floater layout.
  */
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   Trash2, RotateCcw, Save, Loader2, AlertCircle, CheckCircle2, Check, X,
@@ -184,15 +184,16 @@ export function LoginFloatersEditor({
           sections. Click any inactive card to add. The dark backdrop
           + thin hairline categorisation mirrors the showcase's
           editorial mood. */}
-      {/* The gallery card uses overflow-hidden so a card that pops
-          to 1.5× on hover stays CLIPPED at the gallery's dark frame
-          edge instead of leaking out into the surrounding dashboard
-          chrome. Edge cards get clipped at the frame, which reads
-          as the popup being "framed by" the gallery rather than
-          escaping it. */}
+      {/* The gallery card uses overflow-hidden so a popped card
+          stays inside the dark frame. Each card's `transformOrigin`
+          is computed dynamically on pointer-enter (see the handler
+          on the button below) so cards near the left/right/top/
+          bottom edges grow INWARD toward the centre — that's why
+          edge popups don't get clipped at the frame. */}
       <Card className="overflow-hidden p-0">
         <GalleryHeader count={floaters.length} />
         <div
+          data-gallery-frame
           className="relative px-5 sm:px-8 py-8 sm:py-10"
           style={{
             background: "radial-gradient(900px 600px at 80% -10%, rgba(72,188,167,0.10), transparent 60%), radial-gradient(700px 500px at -10% 110%, rgba(56,140,200,0.12), transparent 60%), linear-gradient(180deg, #04080f 0%, #0a1623 100%)",
@@ -232,6 +233,7 @@ export function LoginFloatersEditor({
                           addFloater(reg);
                         }
                       }}
+                      onPointerEnter={pickEdgeAwareOrigin}
                       disabled={atCap}
                       className={
                         // The hover lift uses a 1.5× scale so the
@@ -555,4 +557,42 @@ const TAILWIND_SWATCHES: Record<string, string> = {
 function pickSwatch(colorClass: string): string {
   const stripped = colorClass.replace(/^text-/, "").split("/")[0];
   return TAILWIND_SWATCHES[stripped] ?? "rgb(200, 220, 240)";
+}
+
+/** Hover-scale anchor picker. The popup card scales 1.5× on hover;
+ *  if we let every card grow from its centre, edge cards spill past
+ *  the gallery frame and get clipped. This handler runs on
+ *  pointer-enter, measures where THIS card sits relative to the
+ *  gallery's inner padded frame, and picks a `transform-origin`
+ *  that anchors the scale toward the closer edge — so the popup
+ *  grows INWARD (toward the centre of the gallery) on edge cards
+ *  and naturally stays inside the dark frame.
+ *
+ *  Origin map at scale 1.5 (card grows by 25% on each side):
+ *    • left-edge   → `left center`   → grows rightward only
+ *    • right-edge  → `right center`  → grows leftward only
+ *    • top-row     → `center top`    → grows downward only
+ *    • bottom-row  → `center bottom` → grows upward only
+ *    • corners     → combine both axes (e.g. `left top`)
+ *    • interior    → `center center` (the default 1.5× pop)
+ */
+function pickEdgeAwareOrigin(e: ReactPointerEvent<HTMLButtonElement>) {
+  const card = e.currentTarget;
+  const frame = card.closest<HTMLElement>("[data-gallery-frame]");
+  if (!frame) return;
+  const cardRect = card.getBoundingClientRect();
+  const frameRect = frame.getBoundingClientRect();
+  // At scale 1.5 the card grows by 25% on each side.
+  const halfGrowX = cardRect.width * 0.25;
+  const halfGrowY = cardRect.height * 0.25;
+
+  let originX: "left" | "center" | "right" = "center";
+  if (cardRect.left - frameRect.left < halfGrowX) originX = "left";
+  else if (frameRect.right - cardRect.right < halfGrowX) originX = "right";
+
+  let originY: "top" | "center" | "bottom" = "center";
+  if (cardRect.top - frameRect.top < halfGrowY) originY = "top";
+  else if (frameRect.bottom - cardRect.bottom < halfGrowY) originY = "bottom";
+
+  card.style.transformOrigin = `${originX} ${originY}`;
 }
