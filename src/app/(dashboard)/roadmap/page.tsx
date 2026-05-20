@@ -129,6 +129,13 @@ const ROADMAP_ITEMS: { horizon: "Now" | "Next" | "Later"; items: RoadmapItem[] }
         audience: "All",
         status: "planned",
       },
+      {
+        title: "Training-partner LMS integration — replace Auth0 with native federation + LTI 1.3",
+        summary:
+          "Connect BHN trainees to training-partner LMSs through native protocols, replacing the legacy Auth0 broker. Push for LTI 1.3 Advantage as the canonical pattern (purpose-built for LMS interop — SSO + roster + grade passback in one spec); fall back to OIDC for partners that don't speak LTI; SAML 2.0 only for legacy partners that demand it. Capabilities to ship: (a) BHN as OIDC identity provider — issues ID tokens external systems can trust; (b) BHN as SAML 2.0 IdP — for legacy LMS vendors; (c) LTI 1.3 launch from BHN → partner LMS with deep-link + SSO + grade passback (course completion on the partner side flows into BHN's certificate / completion record); (d) SCIM 2.0 user provisioning + deprovisioning so partner-side accounts are created on BHN provision and disabled on offboarding (closes the offboarding gap Auth0 left open); (e) per-partner integration config UI at /admin/integrations so admins can add a new partner LMS without a code deploy (OIDC client_id/secret, SAML metadata URL, LTI deployment_id all editable); (f) account-linking + identity reconciliation by email + claim so the same trainee doesn't end up with two profiles across systems; (g) JWT signing-key rotation with public keys served via JWKS endpoint, rotated quarterly; (h) every federation event hits the existing AuditLog so cross-system actions are reconstructable for compliance. Day-1 blockers: OIDC IdP + LTI 1.3 launch + per-partner config UI + audit logging. Year-1 follow-ups: SAML 2.0 IdP (only if a current partner needs it), SCIM provisioning, full grade-passback (AGS) for partners that support it.",
+        audience: "All",
+        status: "planned",
+      },
     ],
   },
   {
