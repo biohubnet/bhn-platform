@@ -749,6 +749,21 @@ model EventFormSubmission {
   /// Free-text reviewer note shown to the applicant when status
   /// changes (e.g. "Need supervisor letter" or rejection reason).
   reviewerNote   String?
+  /// Eligibility check — a SECOND human-approval gate, distinct from
+  /// reviewStatus. reviewStatus = "approved" means "this submission
+  /// is admitted to the internal talent pool"; eligibilityApprovedAt
+  /// being set means "a human has verified this person is eligible
+  /// to be SHOWN TO EMPLOYERS." The employer-facing /talent-pool
+  /// view filters on eligibilityApprovedAt != null; the admin view
+  /// shows everyone and lets admins toggle the eligibility flag
+  /// (single or batch). `eligibilityApprovedBy` stores the userId of
+  /// the approving admin/instructor; UI joins on User to render
+  /// "approved by Jane" — no FK on the column so admin deletion
+  /// doesn't ripple. `eligibilityNote` is an optional free-text
+  /// reason the approver can attach.
+  eligibilityApprovedAt    DateTime?
+  eligibilityApprovedBy    String?
+  eligibilityNote          String?
   /// User-driven exit from the talent pool. Set when an approved
   /// applicant chooses to leave. Pairs with leftPoolReason +
   /// (optionally) a PoolExitFeedback row. A submission with
@@ -773,6 +788,9 @@ model EventFormSubmission {
   /// Supports "active talent-pool members" — approved AND
   /// haven't left.
   @@index([formId, reviewStatus, leftPoolAt])
+  /// Supports the employer-facing pool query — admin-approved
+  /// AND eligibility-checked AND haven't left.
+  @@index([formId, reviewStatus, eligibilityApprovedAt, leftPoolAt])
 }
 
 /// Admin- or employer-authored comment on a talent-application

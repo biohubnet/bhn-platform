@@ -53,7 +53,17 @@ export async function GET(req: NextRequest) {
   // model; this is the closest signal.) Optionally narrow by location /
   // timing later.
   const subs = await prisma.eventFormSubmission.findMany({
-    where: { form: { slug: "talent-application" }, userId: { not: null } },
+    where: {
+      form: { slug: "talent-application" },
+      userId: { not: null },
+      // Eligibility gate — employers see only submissions a human
+      // has explicitly marked eligible AND that haven't left the
+      // pool. The two-step admit (reviewStatus + eligibility) is
+      // enforced on every employer-facing read of the talent pool.
+      reviewStatus: { in: ["approved", "approved_skip_review"] },
+      eligibilityApprovedAt: { not: null },
+      leftPoolAt: null,
+    },
     include: {
       user: {
         select: {
