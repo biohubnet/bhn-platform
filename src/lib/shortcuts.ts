@@ -15,28 +15,23 @@
 
 export type ShortcutAction =
   | "toggleRole"
-  | "shortcutsHelp"
-  | "goDashboard"
-  | "goCourses"
-  | "goMyCourses"
-  | "goEvents";
+  | "shortcutsHelp";
 
 export interface ShortcutMap {
   toggleRole: string;
   shortcutsHelp: string;
-  goDashboard: string;
-  goCourses: string;
-  goMyCourses: string;
-  goEvents: string;
 }
 
+// The 1 / 2 / 3 / 4 number-key navigation shortcuts (goDashboard /
+// goCourses / goMyCourses / goEvents) were retired on user request —
+// they kept firing while people typed numbers into things like dates,
+// GPA, and version fields, which felt like the app was hijacking
+// every keystroke. Use the sidebar / breadcrumbs instead. `x` (role
+// toggle) and `?` (help overlay) stay because they're unlikely to
+// collide with real input.
 export const DEFAULT_SHORTCUTS: ShortcutMap = {
   toggleRole:    "x", // X — flip between real role and trainee view (admin / superadmin)
   shortcutsHelp: "?", // ? — open the shortcut cheat-sheet overlay
-  goDashboard:   "1", // 1 — jump to /dashboard
-  goCourses:     "2", // 2 — jump to /courses
-  goMyCourses:   "3", // 3 — jump to /my-courses
-  goEvents:      "4", // 4 — jump to /events
 };
 
 export interface ShortcutDef {
@@ -50,10 +45,6 @@ export interface ShortcutDef {
 export const SHORTCUT_CATALOG: ShortcutDef[] = [
   { action: "toggleRole",    label: "Quick role-toggle",     description: "Single tap: flip trainee view on/off. Double tap (same key twice fast): flip HR / employer view on/off, or escape any view-as back to your real seat. Admin / superadmin only.", roleGate: "staff" },
   { action: "shortcutsHelp", label: "Show shortcut cheat-sheet", description: "Pop up an overlay listing every active shortcut." },
-  { action: "goDashboard",   label: "Go to · Dashboard",     description: "Jump to /dashboard from anywhere." },
-  { action: "goCourses",     label: "Go to · Catalog",       description: "Jump to /courses (the course catalog)." },
-  { action: "goMyCourses",   label: "Go to · My Courses",    description: "Jump to /my-courses (your enrolments)." },
-  { action: "goEvents",      label: "Go to · Events",        description: "Jump to /events." },
 ];
 
 export const STORAGE_KEY = "bhn.shortcuts.v1";

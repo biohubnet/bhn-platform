@@ -144,10 +144,10 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
         setShowHelp((v) => !v);
         return;
       }
-      if (kLower === map.goDashboard.toLowerCase()) { e.preventDefault(); router.push("/dashboard"); return; }
-      if (kLower === map.goCourses.toLowerCase())   { e.preventDefault(); router.push("/courses");   return; }
-      if (kLower === map.goMyCourses.toLowerCase()) { e.preventDefault(); router.push("/my-courses"); return; }
-      if (kLower === map.goEvents.toLowerCase())    { e.preventDefault(); router.push("/events");    return; }
+      // The 1 / 2 / 3 / 4 number-key navigation shortcuts were retired
+      // because they fought ordinary number entry (years, GPAs,
+      // versions, dates). Re-add via /profile/shortcuts if you want
+      // them back on your own device.
     }
     document.addEventListener("keydown", onKey);
     return () => {
