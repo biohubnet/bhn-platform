@@ -104,8 +104,14 @@ interface Props {
     sourceFileUrl: string | null;
   };
   initialComments: CommentRow[];
-  /** When true, show the "AI parse from uploaded file" CTA. */
+  /** When true, the AI-parse button is enabled — the user has a PDF
+   *  uploaded that the parser can read. */
   canParse: boolean;
+  /** Has the resume been AI-parsed at least once? Used to flip the
+   *  button label between "AI-parse" and "Re-parse" — re-parsing
+   *  overwrites the current tree (the prior tree is preserved as a
+   *  ResumeRevision so the user can revert if the new parse is worse). */
+  hasParsed?: boolean;
   ownerId: string;
   /** Postings the trainee can tailor their resume against. When the
    *  array is empty, the "Tailor to posting" toolbar is hidden. */
@@ -115,7 +121,7 @@ interface Props {
 const DEBOUNCE_MS = 600;
 
 export function ResumeEditor({
-  initialResume, initialComments, canParse, ownerId, postings = [],
+  initialResume, initialComments, canParse, hasParsed = false, ownerId, postings = [],
 }: Props) {
   const router = useRouter();
   const [versionsOpen, setVersionsOpen] = useState(false);
@@ -179,7 +185,25 @@ export function ResumeEditor({
 
   // ── Comments grouped by anchor for fast lookups ──
   const commentsByBullet  = useMemo(() => indexComments(comments, "anchorBulletId"),  [comments]);
-  const commentsBySection = useMemo(() => indexComments(comments, "anchorSectionId"), [comments]);
+  // Item-anchored comments — mentors can leave these via /resume/[userId]
+  // when the feedback is about the entire job / degree / project, not
+  // a specific bullet. Without indexing them here they were silently
+  // hidden from the trainee.
+  const commentsByItem = useMemo(
+    () => indexComments(
+      comments.filter((c) => !c.anchorBulletId), // bullet anchor wins
+      "anchorItemId",
+    ),
+    [comments],
+  );
+  const commentsBySection = useMemo(
+    () => indexComments(
+      // Section anchor only when there's no narrower bullet/item anchor.
+      comments.filter((c) => !c.anchorBulletId && !c.anchorItemId),
+      "anchorSectionId",
+    ),
+    [comments],
+  );
   const wholeResumeComments = useMemo(
     () => comments.filter((c) => !c.anchorBulletId && !c.anchorItemId && !c.anchorSectionId),
     [comments],
@@ -188,6 +212,19 @@ export function ResumeEditor({
   // ── AI parse handler ──
   function runParse() {
     setParseError(null);
+    // Re-parse confirms with the user — overwrites the current tree
+    // (the existing version is preserved as a ResumeRevision so the
+    // trainee can revert, but the confirm prompt makes the cost
+    // explicit before the AI call fires).
+    if (hasParsed) {
+      const ok = window.confirm(
+        "Re-parse from your uploaded PDF?\n\n" +
+        "This will overwrite your current resume tree with a fresh parse. " +
+        "Your current version is saved in Version history — you can revert " +
+        "from there if you don't like the new parse.",
+      );
+      if (!ok) return;
+    }
     startParse(async () => {
       try {
         const r = await fetch("/api/profile/resume/structure/parse", { method: "POST" });
@@ -606,19 +643,44 @@ export function ResumeEditor({
 
   return (
     <div className="space-y-5">
-      {/* Save status + AI parse CTA + Tailor-to-posting toolbar */}
+      {/* Save status + open-comment count + AI tools toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <SaveStatus saving={saving} version={version} savedAt={savedAt} />
+        <div className="flex items-center gap-3 flex-wrap">
+          <SaveStatus saving={saving} version={version} savedAt={savedAt} />
+          {/* Glanceable badge — at-a-glance "you have N comments to
+              triage". Hidden when there are zero. */}
+          {(() => {
+            const openCount = comments.filter((c) => c.status === "open").length;
+            if (openCount === 0) return null;
+            return (
+              <span
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200 text-[11px] font-semibold"
+                title={`${openCount} open comment${openCount === 1 ? "" : "s"} on this resume`}
+              >
+                <MessageCircle size={11} />
+                {openCount} open
+              </span>
+            );
+          })()}
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           {canParse && (
             <button
               type="button"
               onClick={runParse}
               disabled={parsing}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
+              className={
+                "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50 transition-colors " +
+                (hasParsed
+                  ? "bg-elevated text-fg ring-1 ring-line hover:bg-card"
+                  : "bg-brand-600 text-white hover:bg-brand-700")
+              }
+              title={hasParsed
+                ? "Overwrite the current tree with a fresh AI parse of your uploaded PDF. Your current version stays in history."
+                : "Read your uploaded PDF/DOCX and seed sections + bullets automatically."}
             >
               {parsing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-              AI-parse my uploaded resume
+              {hasParsed ? "Re-parse from PDF" : "AI-parse my uploaded resume"}
             </button>
           )}
           {postings.length > 0 && (
@@ -763,7 +825,20 @@ export function ResumeEditor({
           <div className="space-y-3">
             {section.items.map((item, iIdx) => {
               const hint = SECTION_HINTS[section.kind];
+              const itemComments = commentsByItem.get(item.id) ?? [];
               return (
+                <div key={item.id} className="space-y-1.5">
+                  {/* Item-level comments — mentors leave these via
+                      /resume/[userId] when the feedback is about the
+                      whole job / degree / project, not one bullet. */}
+                  {itemComments.length > 0 && (
+                    <CommentList
+                      compact
+                      title="On this entry"
+                      comments={itemComments}
+                      onStatus={updateCommentStatus}
+                    />
+                  )}
                 <ResumeItemEditor
                   key={item.id}
                   kind={section.kind}
@@ -808,6 +883,7 @@ export function ResumeEditor({
                     </div>
                   ) : null}
                 />
+                </div>
               );
             })}
             <button

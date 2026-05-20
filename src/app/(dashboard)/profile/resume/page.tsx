@@ -62,7 +62,14 @@ export default async function ResumeStructurePage() {
 
   const hasUploaded = !!user.resumeUrl;
   const hasParsed = !!resume.parsedAt;
+  // First-time CTA banner — shown until the first parse. After
+  // parsing the in-toolbar "Parse / Re-parse" button remains
+  // available (canParse below) for re-parsing after a new PDF upload.
   const showParseCTA = hasUploaded && !hasParsed;
+  // Toolbar button is enabled whenever an uploaded PDF exists, so a
+  // user who uploads a fresh resume later can re-parse without
+  // having to refresh state by deleting the row.
+  const canParse = hasUploaded;
 
   // Postings the trainee can tailor against. Active postings only;
   // cap to a sensible number for the dropdown (trainees usually
@@ -147,7 +154,8 @@ export default async function ResumeStructurePage() {
             anchorSectionId: c.anchorSectionId,
             createdAt: c.createdAt.toISOString(),
           }))}
-          canParse={showParseCTA}
+          canParse={canParse}
+          hasParsed={hasParsed}
           ownerId={userId}
           postings={postings}
         />

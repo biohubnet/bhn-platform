@@ -56,6 +56,13 @@ export function ResumePrintView({ content, fallbackName, fallbackEmail }: Props)
     .sort((a, b) => a.position - b.position)
     .filter((s) => sectionHasContent(s));
 
+  // Truly empty resume — no header, no summary, no sections with
+  // content. Render a guided empty state instead of a blank sheet so
+  // the user knows where to go to fill it in.
+  const isEmpty =
+    !name && !email && !phone && !location && !summary &&
+    sectionsToShow.length === 0;
+
   return (
     <>
       {/* Print + layout CSS. Inline so the preview page doesn't need
@@ -153,6 +160,33 @@ export function ResumePrintView({ content, fallbackName, fallbackEmail }: Props)
       `}</style>
 
       <div className="resume-print-shell">
+      {isEmpty ? (
+        // Guided empty state — only shows on screen. Hidden from
+        // print because the .no-print class on the toolbar covers
+        // both the toolbar and (via the same body * rule in
+        // @media print) anything else; but to be safe we wrap the
+        // empty card in .no-print too. If you actually print an
+        // empty resume nothing useful would land on paper anyway.
+        <div className="no-print max-w-2xl mx-auto px-4 py-12">
+          <div className="rounded-2xl border border-dashed border-line bg-card-solid p-8 text-center space-y-3">
+            <span className="inline-flex w-12 h-12 rounded-xl bg-brand-50 text-brand-700 items-center justify-center">
+              <Printer size={20} />
+            </span>
+            <h1 className="text-lg font-semibold text-fg">Nothing to preview yet</h1>
+            <p className="text-sm text-fg-muted max-w-md mx-auto">
+              Your structured resume is empty — there&apos;s no name, summary, or sections to render.
+              Head back to the editor to fill it in, or AI-parse from an uploaded PDF.
+            </p>
+            <Link
+              href="/profile/resume"
+              className="inline-flex items-center gap-1.5 px-3 py-2 mt-2 rounded-md bg-brand-600 text-white text-xs font-bold hover:bg-brand-700 transition-colors"
+            >
+              <ArrowLeft size={12} /> Open the resume editor
+            </Link>
+          </div>
+        </div>
+      ) : (
+      <>
       {/* Toolbar — only visible on screen, hidden from print. */}
       <div className="no-print sticky top-0 z-10 bg-bg/95 backdrop-blur-sm border-b border-line">
         <div className="max-w-[8.5in] mx-auto px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
@@ -207,6 +241,8 @@ export function ResumePrintView({ content, fallbackName, fallbackEmail }: Props)
           <SectionBlock key={section.id} section={section} />
         ))}
       </main>
+      </>
+      )}
       </div>
     </>
   );
