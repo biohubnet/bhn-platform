@@ -27,14 +27,16 @@
  */
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, GripVertical, MessageCircle, CheckCircle2, X, Loader2, Sparkles, Save, ChevronUp, ChevronDown,
-  Target, Wand2,
+  Target, Wand2, Clock,
 } from "lucide-react";
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_LABEL, SECTION_HINTS, rid } from "@/lib/resume/types";
 import { ResumeItemEditor } from "./ResumeItemEditor";
 import { RewriteableTextarea } from "./RewriteableTextarea";
+import { VersionHistoryDrawer } from "./VersionHistoryDrawer";
 
 /** Lightweight posting summary fed in from the server shell. */
 export interface PostingSummary {
@@ -114,6 +116,8 @@ const DEBOUNCE_MS = 600;
 export function ResumeEditor({
   initialResume, initialComments, canParse, ownerId, postings = [],
 }: Props) {
+  const router = useRouter();
+  const [versionsOpen, setVersionsOpen] = useState(false);
   const [content, setContent] = useState<ResumeContent>(initialResume.content);
   const [comments, setComments] = useState<CommentRow[]>(initialComments);
   const [version, setVersion] = useState(initialResume.version);
@@ -625,6 +629,15 @@ export function ResumeEditor({
               <Target size={12} /> Tailor to posting
             </button>
           )}
+          {/* Versions — opens the side drawer with every snapshot. */}
+          <button
+            type="button"
+            onClick={() => setVersionsOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-elevated text-fg ring-1 ring-line hover:bg-card transition-colors"
+            title="Browse every saved version of your resume"
+          >
+            <Clock size={12} /> Versions
+          </button>
           {parseError && (
             <span className="text-[11px] text-rose-700">{parseError}</span>
           )}
@@ -810,6 +823,24 @@ export function ResumeEditor({
         stack={removedStack}
         onUndo={undoLastRemoval}
         onDismiss={dismissUndo}
+      />
+
+      {/* Version-history drawer — opens from the toolbar "Versions"
+          button. After a successful revert we router.refresh() so the
+          server re-fetches the resume; the key-based remount on
+          /profile/resume picks up the new version and replaces the
+          editor's state with the reverted content. */}
+      <VersionHistoryDrawer
+        open={versionsOpen}
+        onClose={() => setVersionsOpen(false)}
+        ownerId={ownerId}
+        currentVersion={version}
+        onReverted={() => {
+          // Close the drawer first (its onClose runs before this),
+          // then ask the server for a fresh page render. The next
+          // mount of ResumeEditor will hold the reverted content.
+          router.refresh();
+        }}
       />
     </div>
   );
