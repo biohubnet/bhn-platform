@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const VALID_TARGETS = new Set(["evaluating", "instructor", "admin"]);
+const VALID_TARGETS = new Set(["evaluating", "industrial_mentor", "instructor", "admin"]);
 
 export async function GET() {
   const session = await requireSession().catch(() => null);

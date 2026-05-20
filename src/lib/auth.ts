@@ -279,6 +279,8 @@ export const ROLE_RANK: Record<string, number> = {
   trainee: 0,
   evaluating: 0,
   employer: 0,              // outside the learner-staff progression — gated separately
+  industrial_mentor: 0,     // industry professional offering guidance to trainees;
+                            //   external like employer, gated per-route, not staff
   engage_hqp_advisor: 1,    // ENGAGE HQP Advisory committee seat
   equip_grant_reviewer: 1,  // EQUIP Grant Review committee seat
   instructor: 1,
@@ -290,11 +292,21 @@ export type Role =
   | "trainee"
   | "evaluating"
   | "employer"
+  | "industrial_mentor"
   | "engage_hqp_advisor"
   | "equip_grant_reviewer"
   | "instructor"
   | "admin"
   | "superadmin";
+
+/** Industrial professional acting as a mentor to trainees. External
+ *  role — sits at rank 0 alongside trainee/evaluating/employer. Not
+ *  auto-granted any privileged access; routes that should expose
+ *  mentor functionality (talent pool read, mentorship pairings,
+ *  trainee progress views) gate on the role explicitly. */
+export function isIndustrialMentor(role: string) {
+  return role === "industrial_mentor";
+}
 
 /** Is this account an employer (HR partner who posts jobs / reviews applicants)? */
 export function isEmployer(role: string) {

@@ -21,6 +21,7 @@ const SUPERADMIN_TARGETS = new Set([
   "trainee",
   "evaluating",
   "employer",
+  "industrial_mentor",
   "engage_hqp_advisor",
   "equip_grant_reviewer",
   "instructor",

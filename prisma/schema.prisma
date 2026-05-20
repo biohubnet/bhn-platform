@@ -16,7 +16,7 @@ model User {
   emailVerified          DateTime?
   image                  String?
   password               String?
-  role                   String    @default("trainee") // trainee | evaluating | employer | instructor | admin | superadmin
+  role                   String    @default("trainee") // trainee | evaluating | employer | industrial_mentor | engage_hqp_advisor | equip_grant_reviewer | instructor | admin | superadmin
   isActive               Boolean   @default(true)
   credits                Float     @default(200)
   /// Employer-only: whether they can browse the rest of the platform
