@@ -50,6 +50,33 @@ interface TailorRewriteRow {
   changed: boolean;
 }
 
+/** A single undoable removal. Captures the exact data + the position
+ *  it was removed from so Undo restores it in place — not appended
+ *  at the end. `label` is used in the snackbar UI ("Bullet removed"
+ *  / "Item removed" / "Section removed"). */
+type RemovalEntry =
+  | {
+      type: "bullet";
+      sectionId: string;
+      itemId: string;
+      bullet: ResumeBullet;
+      position: number;
+      label: string;
+    }
+  | {
+      type: "item";
+      sectionId: string;
+      item: ResumeItem;
+      position: number;
+      label: string;
+    }
+  | {
+      type: "section";
+      section: ResumeSection;
+      position: number;
+      label: string;
+    };
+
 interface CommentRow {
   id: string;
   authorId: string;
@@ -109,6 +136,14 @@ export function ResumeEditor({
   const [tailorBusy, setTailorBusy] = useState<"preview" | "apply" | null>(null);
   const [tailorError, setTailorError] = useState<string | null>(null);
   const [tailorPreview, setTailorPreview] = useState<TailorRewriteRow[] | null>(null);
+
+  // ── Undo stack for removals ─────────────────────────────────────
+  // Push removed bullets / items / sections here so an accidental X
+  // click is one tap away from being restored. Stack supports many
+  // undos in a row — pops the most recent on each Undo click. Lives
+  // on the editor instance; clears on next remount (seed / clear /
+  // AI-parse force a remount which is the right time to start fresh).
+  const [removedStack, setRemovedStack] = useState<RemovalEntry[]>([]);
 
   // ── Auto-save: any change to `content` triggers a debounced PATCH ──
   useEffect(() => {
@@ -193,10 +228,14 @@ export function ResumeEditor({
       setRewriteBusyId(null);
     }
   }
-  function acceptBulletRewrite(bulletId: string) {
+  function acceptBulletRewrite(bulletId: string, edited?: string) {
     const preview = rewritePreviews.get(bulletId);
     if (!preview) return;
-    // Mutate via the existing path so auto-save persists + revisions.
+    // The trainee can edit the "Proposed" textarea before accepting,
+    // so `edited` overrides the AI's exact output. Falls back to the
+    // raw AI text if the diff card didn't pass one through.
+    const finalText = (edited ?? preview.rewritten).trim();
+    if (!finalText) return;
     setContent((c) => ({
       ...c,
       sections: c.sections.map((s) => ({
@@ -204,7 +243,7 @@ export function ResumeEditor({
         items: s.items.map((it) => ({
           ...it,
           bullets: it.bullets.map((b) =>
-            b.id === bulletId ? { ...b, body: preview.rewritten, aiSuggested: true } : b,
+            b.id === bulletId ? { ...b, body: finalText, aiSuggested: true } : b,
           ),
         })),
       })),
@@ -367,7 +406,19 @@ export function ResumeEditor({
     }));
   }
   function removeSection(sIdx: number) {
-    setContent((c) => ({ ...c, sections: c.sections.filter((_, i) => i !== sIdx) }));
+    setContent((c) => {
+      const section = c.sections[sIdx];
+      if (section) {
+        const heading = section.title ?? SECTION_LABEL[section.kind];
+        pushRemoval({
+          type: "section",
+          section,
+          position: sIdx,
+          label: `Section · ${heading}`,
+        });
+      }
+      return { ...c, sections: c.sections.filter((_, i) => i !== sIdx) };
+    });
   }
   function addSection() {
     setContent((c) => ({
@@ -405,12 +456,26 @@ export function ResumeEditor({
     }));
   }
   function removeItem(sIdx: number, iIdx: number) {
-    setContent((c) => ({
-      ...c,
-      sections: c.sections.map((s, i) =>
-        i === sIdx ? { ...s, items: s.items.filter((_, j) => j !== iIdx) } : s
-      ),
-    }));
+    setContent((c) => {
+      const section = c.sections[sIdx];
+      const item = section?.items[iIdx];
+      if (section && item) {
+        const labelBits = [item.title, item.subtitle].filter(Boolean).join(" — ");
+        pushRemoval({
+          type: "item",
+          sectionId: section.id,
+          item,
+          position: iIdx,
+          label: labelBits ? `Item · ${labelBits}` : "Item",
+        });
+      }
+      return {
+        ...c,
+        sections: c.sections.map((s, i) =>
+          i === sIdx ? { ...s, items: s.items.filter((_, j) => j !== iIdx) } : s
+        ),
+      };
+    });
   }
   function addBullet(sIdx: number, iIdx: number) {
     setContent((c) => ({
@@ -450,19 +515,55 @@ export function ResumeEditor({
     }));
   }
   function removeBullet(sIdx: number, iIdx: number, bIdx: number) {
-    setContent((c) => ({
-      ...c,
-      sections: c.sections.map((s, i) =>
-        i === sIdx
-          ? {
-              ...s,
-              items: s.items.map((it, j) =>
-                j === iIdx ? { ...it, bullets: it.bullets.filter((_, k) => k !== bIdx) } : it
-              ),
-            }
-          : s
-      ),
-    }));
+    setContent((c) => {
+      const section = c.sections[sIdx];
+      const item = section?.items[iIdx];
+      const bullet = item?.bullets[bIdx];
+      if (section && item && bullet) {
+        const preview = bullet.body.trim().slice(0, 60);
+        pushRemoval({
+          type: "bullet",
+          sectionId: section.id,
+          itemId: item.id,
+          bullet,
+          position: bIdx,
+          label: preview ? `Bullet · "${preview}${bullet.body.length > 60 ? "…" : ""}"` : "Empty bullet",
+        });
+      }
+      return {
+        ...c,
+        sections: c.sections.map((s, i) =>
+          i === sIdx
+            ? {
+                ...s,
+                items: s.items.map((it, j) =>
+                  j === iIdx ? { ...it, bullets: it.bullets.filter((_, k) => k !== bIdx) } : it
+                ),
+              }
+            : s
+        ),
+      };
+    });
+  }
+
+  // ── Undo for removals ───────────────────────────────────────────
+  function pushRemoval(entry: RemovalEntry) {
+    setRemovedStack((s) => [...s, entry]);
+  }
+  function undoLastRemoval() {
+    setRemovedStack((stack) => {
+      if (stack.length === 0) return stack;
+      const entry = stack[stack.length - 1];
+      // Restore via setContent. Splice the data back at its original
+      // position so the resume reads the same as before the X click.
+      setContent((c) => restoreRemoval(c, entry));
+      return stack.slice(0, -1);
+    });
+  }
+  function dismissUndo() {
+    // User waves off the snackbar — clear the most recent entry only,
+    // so older removals from earlier still have undo on the next click.
+    setRemovedStack((s) => s.slice(0, -1));
   }
 
   // ── Header field updates ──
@@ -621,7 +722,7 @@ export function ResumeEditor({
                             onApplyCommentWithAI={(commentId) => applyCommentWithAI(commentId, bullet.id)}
                             rewriting={rewriteBusyId === bullet.id}
                             rewritePreview={rewritePreviews.get(bullet.id) ?? null}
-                            onAcceptRewrite={() => acceptBulletRewrite(bullet.id)}
+                            onAcceptRewrite={(edited) => acceptBulletRewrite(bullet.id, edited)}
                             onDismissRewrite={() => dismissBulletRewrite(bullet.id)}
                             rewriteError={rewriteError && rewriteError.bulletId === bullet.id ? rewriteError.msg : null}
                           />
@@ -657,6 +758,14 @@ export function ResumeEditor({
       >
         <Plus size={14} /> Add another section
       </button>
+
+      {/* Undo snackbar — pinned to viewport bottom-right. Renders only
+          when there's something to undo; multiple removals stack. */}
+      <UndoSnackbar
+        stack={removedStack}
+        onUndo={undoLastRemoval}
+        onDismiss={dismissUndo}
+      />
     </div>
   );
 }
@@ -747,7 +856,7 @@ function BulletRow({
   onApplyCommentWithAI: (commentId: string) => void;
   rewriting: boolean;
   rewritePreview: { original: string; rewritten: string } | null;
-  onAcceptRewrite: () => void;
+  onAcceptRewrite: (edited?: string) => void;
   onDismissRewrite: () => void;
   rewriteError: string | null;
   placeholder?: string;
@@ -836,19 +945,28 @@ function BulletRow({
 }
 
 /** Side-by-side diff card for an AI bullet rewrite. The trainee owns
- *  the accept decision — nothing persists until they click Accept. */
+ *  the accept decision — nothing persists until they click Accept.
+ *  The "Proposed" pane is an editable textarea so the trainee can
+ *  tweak the AI suggestion before accepting (e.g. soften the tone,
+ *  drop a hallucinated number, shorten by a few words). The original
+ *  stays read-only so the diff stays a diff. */
 function RewriteDiff({
   original, rewritten, onAccept, onDismiss,
 }: {
   original: string;
   rewritten: string;
-  onAccept: () => void;
+  onAccept: (edited: string) => void;
   onDismiss: () => void;
 }) {
+  // Initialise the editable proposed-text from the AI output. A `key`
+  // on this component (its place in the tree) means React mounts a
+  // fresh state every time a new preview opens, so we don't need to
+  // sync `rewritten` into the state on re-render.
+  const [edited, setEdited] = useState(rewritten);
   return (
     <div className="ml-6 rounded-xl border border-brand-200 bg-brand-50/40 p-3 space-y-2">
       <p className="text-[10px] font-mono uppercase tracking-[0.22em] font-bold text-brand-800 inline-flex items-center gap-1.5">
-        <Wand2 size={10} /> AI rewrite — preview
+        <Wand2 size={10} /> AI rewrite — preview · edit before accepting
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div className="rounded-md bg-card-solid border border-line p-2">
@@ -856,25 +974,52 @@ function RewriteDiff({
           <p className="text-sm text-fg leading-snug">{original}</p>
         </div>
         <div className="rounded-md bg-card-solid border border-brand-300 p-2">
-          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-brand-700 mb-1">Proposed</p>
-          <p className="text-sm text-fg leading-snug">{rewritten}</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-brand-700 mb-1">Proposed (editable)</p>
+          <textarea
+            value={edited}
+            onChange={(e) => setEdited(e.target.value)}
+            rows={3}
+            // Mirror the bullet textarea styling so the editing
+            // affordance reads as "this is a normal text input".
+            className="w-full bg-card-solid border border-line rounded-md px-2 py-1.5 text-sm leading-snug focus:outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100 resize-y"
+            onKeyDown={(e) => {
+              // Cmd / Ctrl + Enter accepts — keeps hands on keyboard
+              // for power users who want to skim, tweak, accept.
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                e.preventDefault();
+                onAccept(edited);
+              }
+            }}
+          />
         </div>
       </div>
-      <div className="flex items-center justify-end gap-1.5">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <button
           type="button"
-          onClick={onDismiss}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-fg-muted hover:bg-fg/5"
+          onClick={() => setEdited(rewritten)}
+          disabled={edited === rewritten}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-fg-muted hover:bg-fg/5 disabled:opacity-50"
+          title="Restore the AI's original wording"
         >
-          <X size={11} /> Dismiss
+          Reset to AI
         </button>
-        <button
-          type="button"
-          onClick={onAccept}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-600 text-white text-[11px] font-semibold hover:bg-brand-700 transition-colors"
-        >
-          <CheckCircle2 size={11} /> Accept rewrite
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-fg-muted hover:bg-fg/5"
+          >
+            <X size={11} /> Dismiss
+          </button>
+          <button
+            type="button"
+            onClick={() => onAccept(edited)}
+            disabled={edited.trim().length === 0}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-600 text-white text-[11px] font-semibold hover:bg-brand-700 transition-colors disabled:opacity-50"
+          >
+            <CheckCircle2 size={11} /> Accept rewrite
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1069,6 +1214,91 @@ function TailorPanel({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Splice a previously-removed bullet / item / section back into the
+ *  tree at the exact position it came from. The lookups are by id
+ *  rather than index so a later removal of a different sibling doesn't
+ *  throw the restore off (e.g. you delete bullet A, then bullet B,
+ *  then undo — A goes back to its original slot in the now-shrunken
+ *  list, clamped to the current length). */
+function restoreRemoval(content: ResumeContent, entry: RemovalEntry): ResumeContent {
+  if (entry.type === "section") {
+    const next = [...content.sections];
+    const pos = Math.min(entry.position, next.length);
+    next.splice(pos, 0, entry.section);
+    return { ...content, sections: next.map((s, i) => ({ ...s, position: i })) };
+  }
+  if (entry.type === "item") {
+    return {
+      ...content,
+      sections: content.sections.map((s) => {
+        if (s.id !== entry.sectionId) return s;
+        const next = [...s.items];
+        const pos = Math.min(entry.position, next.length);
+        next.splice(pos, 0, entry.item);
+        return { ...s, items: next.map((it, i) => ({ ...it, position: i })) };
+      }),
+    };
+  }
+  // bullet
+  return {
+    ...content,
+    sections: content.sections.map((s) => {
+      if (s.id !== entry.sectionId) return s;
+      return {
+        ...s,
+        items: s.items.map((it) => {
+          if (it.id !== entry.itemId) return it;
+          const next = [...it.bullets];
+          const pos = Math.min(entry.position, next.length);
+          next.splice(pos, 0, entry.bullet);
+          return { ...it, bullets: next.map((b, i) => ({ ...b, position: i })) };
+        }),
+      };
+    }),
+  };
+}
+
+/** Floating snackbar at the bottom-right showing the most-recent
+ *  removal with an Undo button. Multiple removals stack — undoing
+ *  reveals the next-most-recent until the stack is empty. Persistent
+ *  (no auto-dismiss) so users who notice their mistake a minute later
+ *  still get the bullet back. */
+function UndoSnackbar({
+  stack, onUndo, onDismiss,
+}: {
+  stack: RemovalEntry[];
+  onUndo: () => void;
+  onDismiss: () => void;
+}) {
+  if (stack.length === 0) return null;
+  const latest = stack[stack.length - 1];
+  return (
+    <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded-xl border border-line bg-card-solid shadow-xl ring-1 ring-line/40 p-3 flex items-center gap-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-fg-subtle">
+          Removed{stack.length > 1 ? ` · ${stack.length} in stack` : ""}
+        </p>
+        <p className="text-[12.5px] text-fg mt-0.5 truncate">{latest.label}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onUndo}
+        className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-brand-600 text-white text-[11px] font-bold uppercase tracking-[0.16em] hover:bg-brand-700 transition-colors"
+      >
+        Undo
+      </button>
+      <button
+        type="button"
+        onClick={onDismiss}
+        title="Dismiss this notice (the bullet stays removed)"
+        className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded text-fg-muted hover:text-fg hover:bg-elevated"
+      >
+        <X size={11} />
+      </button>
     </div>
   );
 }
