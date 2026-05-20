@@ -237,55 +237,51 @@ export async function AdminDashboard({
             </p>
           </section>
 
+          {/* TOC replaced with "Across the pillars" — three pillar
+              status blocks aimed at a pillar lead who manages
+              activities across Engage, Experience, Equip. Each block
+              is a clickable card linking into that pillar's main
+              admin surface. */}
           <aside className="toc">
-            <h3>Inside this issue</h3>
-            <ul>
-              <li>
-                <span className="n">01</span>
-                <Link className="t" href="/admin/credit-applications">Action queue · pending</Link>
-                <span className={totalPending > 0 ? "v warn" : "v"}>{totalPending}</span>
-              </li>
-              <li>
-                <span className="n">02</span>
-                <Link className="t" href="/admin/employer-invites">Bench · employers</Link>
-                <span className="v">{employerCount}</span>
-              </li>
-              <li>
-                <span className="n">03</span>
-                <Link className="t" href="/admin/internships">Postings · active</Link>
-                <span className="v">{activePostings}</span>
-              </li>
-              <li>
-                <span className="n">04</span>
-                <Link className="t" href="/admin/audit">Audit log · tail</Link>
-                <span className="v">{recentAudit.length}</span>
-              </li>
-              {showChecklist && nextChecklistItem && (
-                <li>
-                  <span className="n">05</span>
-                  <Link className="t" href={nextChecklistItem.href}>
-                    Setup checklist
-                  </Link>
-                  <span className="v">{setupPct}%</span>
-                </li>
-              )}
-              {anyExpiry && (
-                <li>
-                  <span className="n">{showChecklist ? "06" : "05"}</span>
-                  <Link className="t" href="/admin/credit-applications">Credit expiry · 30d window</Link>
-                  <span className={expiring30.users > 0 ? "v warn" : "v"}>{expiring30.users}</span>
-                </li>
-              )}
-              {isSuperAdmin && aiCalls7d > 0 && (
-                <li>
-                  <span className="n">{(showChecklist ? 1 : 0) + (anyExpiry ? 1 : 0) + 5}</span>
-                  <Link className="t" href="/admin/assist">AI calls · 7d</Link>
-                  <span className="v">{aiCalls7d}</span>
-                </li>
-              )}
-            </ul>
-            <Link href="/admin/split-view" className="toc-cta">
-              View the platform as a trainee <ArrowRight size={11} />
+            <h3>Across the pillars</h3>
+            <Link className="pillar pillar-engage" href="/admin/courses">
+              <div className="ph">
+                <span className="px">Engage</span>
+                <span className="pn">{totalUsers.toLocaleString()}</span>
+              </div>
+              <p className="pd">trainees on the platform</p>
+              <div className="pm">
+                <span><strong>{totalCourses}</strong> courses</span>
+                <span><strong>{totalEnrollments.toLocaleString()}</strong> enrolments</span>
+                <span><strong>+{new7dUsers}</strong> this week</span>
+              </div>
+            </Link>
+            <Link className="pillar pillar-experience" href="/employer/applicants">
+              <div className="ph">
+                <span className="px">Experience</span>
+                <span className="pn">{totalApplications.toLocaleString()}</span>
+              </div>
+              <p className="pd">talent applications in flight</p>
+              <div className="pm">
+                <span><strong>{activePostings}</strong> live postings</span>
+                <span><strong>{employerCount}</strong> employers</span>
+                {pendingRoleRequests > 0 && <span className="warn"><strong>{pendingRoleRequests}</strong> role req.</span>}
+              </div>
+            </Link>
+            <Link className="pillar pillar-equip" href="/admin/equip">
+              <div className="ph">
+                <span className="px">Equip</span>
+                <span className={pendingCreditApps > 0 ? "pn warn" : "pn"}>{pendingCreditApps}</span>
+              </div>
+              <p className="pd">commercialization apps pending</p>
+              <div className="pm">
+                {anyExpiry && <span className="warn"><strong>{expiring30.users}</strong> credit expiring 30d</span>}
+                {!anyExpiry && <span>no expiry watch</span>}
+                {isSuperAdmin && <span><strong>{aiCalls7d}</strong> AI calls · 7d</span>}
+              </div>
+            </Link>
+            <Link href="/admin/insights" className="toc-cta">
+              Open the operations briefing <ArrowRight size={11} />
             </Link>
           </aside>
         </div>
@@ -360,44 +356,127 @@ export async function AdminDashboard({
               </ul>
             </div>
 
-            {/* AUDIT — what people did */}
+            {/* PIPELINE — bench → in-flight → pending → outcome, the
+                cross-pillar funnel a pillar lead reads to see whether
+                the platform is converting work into outcomes. */}
             <div className="aero-card">
-              <h3 className="aero-h"><Inbox size={14} /> Recent activity</h3>
-              <p className="aero-gloss">Last {recentAudit.length} audit-log entries.</p>
-              <ul className="aero-list audit">
-                {recentAudit.length === 0 && (
-                  <li className="empty">No recent entries.</li>
+              <h3 className="aero-h"><Activity size={14} /> Pipeline at a glance</h3>
+              <p className="aero-gloss">Bench → in-flight → pending → outcome, across all pillars.</p>
+              <ul className="aero-list pipeline">
+                <li>
+                  <div className="step">
+                    <span className="step-lbl">Bench</span>
+                    <span className="step-sub">approved roster</span>
+                  </div>
+                  <span className="v">{(totalUsers + employerCount).toLocaleString()}</span>
+                </li>
+                <li>
+                  <div className="step">
+                    <span className="step-lbl">In-flight</span>
+                    <span className="step-sub">postings · talent apps</span>
+                  </div>
+                  <span className="v">{(activePostings + totalApplications).toLocaleString()}</span>
+                </li>
+                <li>
+                  <div className="step">
+                    <span className="step-lbl">Pending review</span>
+                    <span className="step-sub">credit · role · pathway</span>
+                  </div>
+                  <span className={totalPending > 0 ? "v warn" : "v"}>{totalPending}</span>
+                </li>
+                <li>
+                  <div className="step">
+                    <span className="step-lbl">Outcome</span>
+                    <span className="step-sub">certificates issued</span>
+                  </div>
+                  <span className="v">{totalCertificates.toLocaleString()}</span>
+                </li>
+                {employerInvitesPending > 0 && (
+                  <li>
+                    <div className="step">
+                      <span className="step-lbl">Employer invites</span>
+                      <span className="step-sub">awaiting acceptance</span>
+                    </div>
+                    <span className="v">{employerInvitesPending}</span>
+                  </li>
                 )}
-                {recentAudit.map((a) => {
-                  const d = new Date(a.createdAt);
-                  const sameDay = d.toDateString() === now.toDateString();
-                  const stamp = sameDay
-                    ? d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })
-                    : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                  const who = a.actor?.name ?? a.actor?.email?.split("@")[0] ?? "—";
-                  return (
-                    <li key={a.id}>
-                      <span><code>{stamp}</code> {a.action}</span>
-                      <span className="v">{who}</span>
-                    </li>
-                  );
-                })}
               </ul>
-              <Link href="/admin/audit" className="see-all">
-                See full audit log <ArrowRight size={11} />
+              <Link href="/admin/analytics" className="see-all">
+                Open analytics &amp; reports <ArrowRight size={11} />
               </Link>
             </div>
           </div>
 
-          {/* RIGHT RAIL — quick-action shortcuts (not KPI tiles).
-              Drives the things admins actually click on most days. */}
+          {/* RIGHT RAIL — pillar-lead shortcuts, grouped by pillar.
+              Top: smart "Next up" item driven by what's actually
+              pending. Then three pillar sections (Engage · Experience
+              · Equip) with the 2-3 most-clicked admin routes each.
+              Bottom: cross-pillar tools (analytics, design archive,
+              AI health for superadmins). */}
           <aside className="sr-rail">
-            <p className="rail-h">Quick actions</p>
-            <Link href={totalPending > 0 ? "/admin/credit-applications" : "/admin"} className={`qa ${totalPending > 0 ? "qa-primary" : ""}`}>
-              <ClipboardList size={15} />
+
+            {/* Smart "Next up" — surfaces the most-pending pillar so
+                the lead's first click is the highest-leverage one. */}
+            {totalPending > 0 && (
+              <>
+                <p className="rail-h">Next up</p>
+                <Link
+                  href={
+                    pendingCreditApps >= pendingPathwayApps && pendingCreditApps >= pendingRoleRequests
+                      ? "/admin/credit-applications"
+                      : pendingPathwayApps >= pendingRoleRequests
+                        ? "/admin/pathway-enrollments"
+                        : "/admin/role-requests"
+                  }
+                  className="qa qa-primary"
+                >
+                  <ClipboardList size={15} />
+                  <div>
+                    <p className="qa-t">Review the queue</p>
+                    <p className="qa-s">{totalPending} pending across all pillars</p>
+                  </div>
+                </Link>
+              </>
+            )}
+
+            {/* ENGAGE — training pillar. */}
+            <p className="rail-h">Engage</p>
+            <Link href="/admin/courses" className="qa">
+              <BookOpen size={15} />
               <div>
-                <p className="qa-t">{totalPending > 0 ? "Review queue" : "Admin overview"}</p>
-                <p className="qa-s">{totalPending > 0 ? `${totalPending} pending` : "All clear"}</p>
+                <p className="qa-t">Manage courses</p>
+                <p className="qa-s">{totalCourses} published · {totalEnrollments.toLocaleString()} enrolments</p>
+              </div>
+            </Link>
+            <Link href="/admin/pathway-enrollments" className="qa">
+              <Layers size={15} />
+              <div>
+                <p className="qa-t">Pathway enrolments</p>
+                <p className="qa-s">{pendingPathwayApps > 0 ? `${pendingPathwayApps} awaiting review` : "All approved"}</p>
+              </div>
+            </Link>
+            <Link href="/admin/announcements" className="qa">
+              <Activity size={15} />
+              <div>
+                <p className="qa-t">Publish an announcement</p>
+                <p className="qa-s">Trainee-wide broadcast</p>
+              </div>
+            </Link>
+
+            {/* EXPERIENCE — placements pillar. */}
+            <p className="rail-h">Experience</p>
+            <Link href="/employer/applicants" className="qa">
+              <Inbox size={15} />
+              <div>
+                <p className="qa-t">Talent applicants</p>
+                <p className="qa-s">{totalApplications} in flight</p>
+              </div>
+            </Link>
+            <Link href="/admin/internships" className="qa">
+              <Briefcase size={15} />
+              <div>
+                <p className="qa-t">Manage postings</p>
+                <p className="qa-s">{activePostings} active</p>
               </div>
             </Link>
             <Link href="/admin/employer-invites" className="qa">
@@ -407,32 +486,38 @@ export async function AdminDashboard({
                 <p className="qa-s">{employerCount} active · {employerInvitesPending} pending</p>
               </div>
             </Link>
-            <Link href="/admin/internships/new" className="qa">
-              <Briefcase size={15} />
+
+            {/* EQUIP — commercialization pillar. */}
+            <p className="rail-h">Equip</p>
+            <Link href="/admin/equip" className="qa">
+              <Coins size={15} />
               <div>
-                <p className="qa-t">Create a posting</p>
-                <p className="qa-s">{activePostings} live now</p>
+                <p className="qa-t">Commercialization queue</p>
+                <p className="qa-s">{pendingCreditApps > 0 ? `${pendingCreditApps} apps awaiting review` : "No pending review"}</p>
+              </div>
+            </Link>
+            <Link href="/admin/credit-applications" className="qa">
+              <ClipboardList size={15} />
+              <div>
+                <p className="qa-t">Credit grants</p>
+                <p className="qa-s">{anyExpiry ? `${expiring30.users} users expiring 30d` : "No expiry watch"}</p>
+              </div>
+            </Link>
+
+            {/* CROSS-PILLAR — tools, not pillar-specific. */}
+            <p className="rail-h">Tools</p>
+            <Link href="/admin/analytics" className="qa">
+              <Activity size={15} />
+              <div>
+                <p className="qa-t">Reports &amp; analytics</p>
+                <p className="qa-s">Cross-pillar metrics</p>
               </div>
             </Link>
             <Link href="/admin/demo-workspaces" className="qa">
               <Rocket size={15} />
               <div>
-                <p className="qa-t">Spawn a demo workspace</p>
+                <p className="qa-t">Demo workspace</p>
                 <p className="qa-s">{demoWorkspaceCount > 0 ? `${demoWorkspaceCount} spun up` : "Walk a partner through"}</p>
-              </div>
-            </Link>
-            <Link href="/admin/split-view" className="qa">
-              <Eye size={15} />
-              <div>
-                <p className="qa-t">View as a trainee</p>
-                <p className="qa-s">Empathy mode</p>
-              </div>
-            </Link>
-            <Link href="/admin/audit" className="qa">
-              <Clock size={15} />
-              <div>
-                <p className="qa-t">Open audit log</p>
-                <p className="qa-s">Full history · filter</p>
               </div>
             </Link>
             <Link href="/admin/design-archive" className="qa">
@@ -451,15 +536,13 @@ export async function AdminDashboard({
                 </div>
               </Link>
             )}
-            {totalCertificates > 0 && (
-              <Link href="/admin/audit" className="qa qa-aside">
-                <Coins size={15} />
-                <div>
-                  <p className="qa-t">Certificates issued</p>
-                  <p className="qa-s">{totalCertificates.toLocaleString()} lifetime</p>
-                </div>
-              </Link>
-            )}
+            <Link href="/admin/split-view" className="qa qa-aside">
+              <Eye size={15} />
+              <div>
+                <p className="qa-t">Sit in another role</p>
+                <p className="qa-s">Empathy mode</p>
+              </div>
+            </Link>
           </aside>
         </div>
       </article>
@@ -549,27 +632,55 @@ const AERO_CSS = `
   font-size: 10.5px; letter-spacing: 0.32em; text-transform: uppercase;
   color: var(--fg-muted); margin: 0; font-weight: 700;
 }
-.adash-aero .toc ul { list-style: none; padding: 0; margin: 0; }
-.adash-aero .toc ul li {
-  display: grid; grid-template-columns: auto 1fr auto;
-  gap: 12px; align-items: baseline;
-  padding: 10px 0; border-bottom: 1px dotted var(--line);
+/* Pillar summary card (replaces the old TOC list). One per pillar
+   — Engage / Experience / Equip. Each is a clickable tile linking
+   into that pillar's main admin surface. */
+.adash-aero .toc .pillar {
+  display: block;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card-solid);
+  text-decoration: none;
+  color: var(--fg);
+  transition: all 120ms;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset;
 }
-.adash-aero .toc ul li:last-child { border-bottom: none; }
-.adash-aero .toc ul li .n {
+.adash-aero .toc .pillar:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.adash-aero .toc .pillar .ph {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 8px; margin-bottom: 2px;
+}
+.adash-aero .toc .pillar .px {
   font-family: ui-monospace, 'IBM Plex Mono', monospace;
-  font-size: 12px; color: var(--brand-600); font-weight: 700;
+  font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase;
+  color: var(--fg-muted); font-weight: 700;
 }
-.adash-aero .toc ul li .t {
-  font-size: 13.5px; color: var(--fg); text-decoration: none; transition: color 120ms;
-}
-.adash-aero .toc ul li .t:hover { color: var(--brand-700); }
-.adash-aero .toc ul li .v {
-  font-family: ui-monospace, 'IBM Plex Mono', monospace;
-  font-size: 13px; font-weight: 700; color: var(--brand-700);
+.adash-aero .toc .pillar .pn {
+  font-size: 28px; font-weight: 800; letter-spacing: -0.025em;
+  line-height: 1; color: var(--brand-700);
   font-variant-numeric: tabular-nums;
 }
-.adash-aero .toc ul li .v.warn { color: rgb(180, 83, 9); }
+.adash-aero .toc .pillar .pn.warn { color: rgb(180, 83, 9); }
+.adash-aero .toc .pillar .pd {
+  margin: 0 0 8px; font-size: 12px; color: var(--fg-muted); font-style: italic;
+}
+.adash-aero .toc .pillar .pm {
+  display: flex; flex-wrap: wrap; gap: 4px 10px;
+  font-size: 11.5px; color: var(--fg-muted);
+}
+.adash-aero .toc .pillar .pm strong {
+  color: var(--fg); font-weight: 700;
+  font-family: ui-monospace, 'IBM Plex Mono', monospace;
+}
+.adash-aero .toc .pillar .pm .warn { color: rgb(180, 83, 9); }
+.adash-aero .toc .pillar.pillar-engage { border-left: 3px solid var(--brand-500); }
+.adash-aero .toc .pillar.pillar-experience { border-left: 3px solid rgb(245, 158, 11); }
+.adash-aero .toc .pillar.pillar-equip { border-left: 3px solid rgb(99, 102, 241); }
 .adash-aero .toc-cta {
   display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
   font-family: ui-monospace, 'IBM Plex Mono', monospace;
@@ -632,6 +743,25 @@ const AERO_CSS = `
   font-weight: 700; color: var(--brand-700);
 }
 .adash-aero .aero-list li .v.warn { color: rgb(180, 83, 9); }
+/* Pipeline rows — two-line label/sub pair on the left, big value
+   on the right. Used by the "Pipeline at a glance" card. */
+.adash-aero .aero-list.pipeline li {
+  padding: 12px 0; align-items: center;
+}
+.adash-aero .aero-list.pipeline .step {
+  display: flex; flex-direction: column;
+}
+.adash-aero .aero-list.pipeline .step-lbl {
+  font-size: 13.5px; font-weight: 600; color: var(--fg);
+}
+.adash-aero .aero-list.pipeline .step-sub {
+  font-size: 11px; color: var(--fg-subtle); font-style: italic; margin-top: 2px;
+}
+.adash-aero .aero-list.pipeline .v {
+  font-size: 22px; font-weight: 800; letter-spacing: -0.02em;
+  color: var(--brand-700); padding: 0;
+  font-variant-numeric: tabular-nums;
+}
 .adash-aero .aero-list .urgent {
   display: inline-block; font-family: ui-monospace, monospace;
   font-size: 8.5px; letter-spacing: 0.16em;
@@ -671,8 +801,13 @@ const AERO_CSS = `
 .adash-aero .rail-h {
   font-family: ui-monospace, 'IBM Plex Mono', monospace;
   font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase;
-  color: var(--fg-muted); margin: 0 0 6px 6px; font-weight: 700;
+  color: var(--fg-muted); font-weight: 700;
+  margin: 14px 6px 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 8px;
 }
+.adash-aero .rail-h:first-child { margin-top: 0; }
 .adash-aero .qa {
   display: grid; grid-template-columns: 28px 1fr;
   gap: 12px; align-items: center;
