@@ -34,6 +34,7 @@ import {
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_LABEL, SECTION_HINTS, rid } from "@/lib/resume/types";
 import { ResumeItemEditor } from "./ResumeItemEditor";
+import { RewriteableTextarea } from "./RewriteableTextarea";
 
 /** Lightweight posting summary fed in from the server shell. */
 export interface PostingSummary {
@@ -136,6 +137,12 @@ export function ResumeEditor({
   const [tailorBusy, setTailorBusy] = useState<"preview" | "apply" | null>(null);
   const [tailorError, setTailorError] = useState<string | null>(null);
   const [tailorPreview, setTailorPreview] = useState<TailorRewriteRow[] | null>(null);
+  // Per-row edited text for the Tailor preview. Initialised from the
+  // AI's `rewritten` when the preview lands; the user can tweak each
+  // row's textarea before applying. Apply functions look up the
+  // edited text rather than the raw AI output so manual tweaks land
+  // verbatim in the resume.
+  const [tailorEdits, setTailorEdits] = useState<Map<string, string>>(new Map());
 
   // ── Undo stack for removals ─────────────────────────────────────
   // Push removed bullets / items / sections here so an accidental X
@@ -314,6 +321,7 @@ export function ResumeEditor({
     if (!tailorPostingId) return;
     setTailorError(null);
     setTailorPreview(null);
+    setTailorEdits(new Map());
     setTailorBusy("preview");
     try {
       const r = await fetch("/api/profile/resume/structure/tailor", {
@@ -330,6 +338,12 @@ export function ResumeEditor({
       }
       const changed = (j.rewrites ?? []).filter((row) => row.changed);
       setTailorPreview(changed);
+      // Seed each row's editable text from the AI output so the user
+      // sees the AI's suggestion in the textarea — they can edit
+      // before clicking Apply per-row or Apply all.
+      const seeded = new Map<string, string>();
+      for (const row of changed) seeded.set(row.id, row.rewritten);
+      setTailorEdits(seeded);
       if (changed.length === 0) {
         setTailorError(j.note ?? "No bullets needed rewriting for this posting.");
       }
@@ -337,29 +351,43 @@ export function ResumeEditor({
       setTailorBusy(null);
     }
   }
-  async function runTailorApply() {
-    if (!tailorPostingId) return;
+
+  /** Apply a single tailor-preview row using whatever's in its
+   *  textarea right now. Mutates local content state; auto-save
+   *  persists via the standard PATCH path. Removes the row from the
+   *  preview list so the user sees their queue shrink as they accept. */
+  function applyTailorRow(bulletId: string) {
+    const edited = (tailorEdits.get(bulletId) ?? "").trim();
+    if (!edited) return;
+    setContent((c) => ({
+      ...c,
+      sections: c.sections.map((s) => ({
+        ...s,
+        items: s.items.map((it) => ({
+          ...it,
+          bullets: it.bullets.map((b) =>
+            b.id === bulletId ? { ...b, body: edited, aiSuggested: true } : b,
+          ),
+        })),
+      })),
+    }));
+    setTailorPreview((rows) => (rows ? rows.filter((r) => r.id !== bulletId) : rows));
+    setTailorEdits((m) => {
+      const next = new Map(m);
+      next.delete(bulletId);
+      return next;
+    });
+  }
+
+  /** Apply every remaining tailor-preview row using each row's edited
+   *  text. Same client-side mutation pattern as applyTailorRow but in
+   *  bulk; auto-save snapshots one revision after the debounce. */
+  function runTailorApply() {
+    if (!tailorPreview || tailorPreview.length === 0) return;
     setTailorError(null);
     setTailorBusy("apply");
     try {
-      const r = await fetch("/api/profile/resume/structure/tailor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postingId: tailorPostingId, apply: true }),
-      });
-      const j = (await r.json().catch(() => ({}))) as {
-        ok?: boolean; error?: string; applied?: number; version?: number; rewrites?: TailorRewriteRow[];
-      };
-      if (!r.ok || !j.ok) {
-        setTailorError(j.error ?? "Apply failed.");
-        return;
-      }
-      // Patch every changed bullet locally so the editor reflects the
-      // server-side state without a full reload.
-      const rewriteMap = new Map<string, string>();
-      for (const row of j.rewrites ?? []) {
-        if (row.changed) rewriteMap.set(row.id, row.rewritten);
-      }
+      const edits = new Map(tailorEdits); // snapshot
       setContent((c) => ({
         ...c,
         sections: c.sections.map((s) => ({
@@ -367,15 +395,15 @@ export function ResumeEditor({
           items: s.items.map((it) => ({
             ...it,
             bullets: it.bullets.map((b) => {
-              const next = rewriteMap.get(b.id);
-              return next ? { ...b, body: next, aiSuggested: true } : b;
+              const next = edits.get(b.id);
+              return next && next.trim() ? { ...b, body: next.trim(), aiSuggested: true } : b;
             }),
           })),
         })),
       }));
-      if (j.version) setVersion(j.version);
       setSavedAt(new Date());
       setTailorPreview(null);
+      setTailorEdits(new Map());
       setTailorOpen(false);
     } finally {
       setTailorBusy(null);
@@ -603,7 +631,7 @@ export function ResumeEditor({
         </div>
       </div>
 
-      {/* Tailor toolbar — picker + preview diff + apply ----------- */}
+      {/* Tailor toolbar — picker + preview diff + per-row + apply-all */}
       {tailorOpen && postings.length > 0 && (
         <TailorPanel
           postings={postings}
@@ -612,9 +640,23 @@ export function ResumeEditor({
           busy={tailorBusy}
           error={tailorError}
           preview={tailorPreview}
+          edits={tailorEdits}
+          onEditRow={(id, text) => {
+            setTailorEdits((m) => {
+              const next = new Map(m);
+              next.set(id, text);
+              return next;
+            });
+          }}
+          onApplyRow={applyTailorRow}
           onPreview={runTailorPreview}
           onApply={runTailorApply}
-          onClose={() => { setTailorOpen(false); setTailorPreview(null); setTailorError(null); }}
+          onClose={() => {
+            setTailorOpen(false);
+            setTailorPreview(null);
+            setTailorEdits(new Map());
+            setTailorError(null);
+          }}
         />
       )}
 
@@ -628,11 +670,14 @@ export function ResumeEditor({
           <Field label="Location" value={content.header?.location ?? ""} onChange={(v) => updateHeader({ location: v })} />
         </div>
         <div className="mt-3">
-          <Field
+          <RewriteableTextarea
             label="Summary"
             value={content.header?.summary ?? ""}
             onChange={(v) => updateHeader({ summary: v })}
-            multiline
+            placeholder="2-3 sentences for the top of the resume — what you do, what you specialise in, what you're looking for."
+            rows={3}
+            rewriteContext="Resume header — professional summary paragraph"
+            rewriteInstruction="Keep it 2-3 sentences max. Lead with what they do, end with what they're looking for."
           />
         </div>
       </section>
@@ -1124,7 +1169,7 @@ function CommentList({
  * to apply everything — the explicit two-step is the whole point of
  * separating preview from apply at the API level. */
 function TailorPanel({
-  postings, postingId, onPostingId, busy, error, preview, onPreview, onApply, onClose,
+  postings, postingId, onPostingId, busy, error, preview, edits, onEditRow, onApplyRow, onPreview, onApply, onClose,
 }: {
   postings: PostingSummary[];
   postingId: string;
@@ -1132,6 +1177,11 @@ function TailorPanel({
   busy: "preview" | "apply" | null;
   error: string | null;
   preview: TailorRewriteRow[] | null;
+  /** Edited "Proposed" text per row id — initialised from the AI's
+   *  suggestion, mutated as the user types in each row's textarea. */
+  edits: Map<string, string>;
+  onEditRow: (id: string, text: string) => void;
+  onApplyRow: (id: string) => void;
   onPreview: () => void;
   onApply: () => void;
   onClose: () => void;
@@ -1197,21 +1247,51 @@ function TailorPanel({
       )}
 
       {preview && preview.length > 0 && (
-        <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-          {preview.map((row) => (
-            <div key={row.id} className="rounded-lg bg-card-solid ring-1 ring-line p-2.5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-subtle mb-1">Original</p>
-                  <p className="text-[13px] text-fg leading-snug">{row.original}</p>
+        <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+          {preview.map((row) => {
+            const editedText = edits.get(row.id) ?? row.rewritten;
+            const dirty = editedText !== row.rewritten;
+            return (
+              <div key={row.id} className="rounded-lg bg-card-solid ring-1 ring-line p-2.5 space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-subtle mb-1">Original</p>
+                    <p className="text-[13px] text-fg leading-snug">{row.original}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-brand-700 mb-1">
+                      Proposed (editable){dirty && <span className="ml-1 text-[9px] font-normal text-brand-600">· edited</span>}
+                    </p>
+                    <textarea
+                      value={editedText}
+                      onChange={(e) => onEditRow(row.id, e.target.value)}
+                      rows={Math.max(2, Math.min(6, Math.ceil(editedText.length / 70)))}
+                      className="w-full bg-card-solid border border-line rounded-md px-2 py-1.5 text-[13px] leading-snug focus:outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100 resize-y"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-brand-700 mb-1">Proposed</p>
-                  <p className="text-[13px] text-fg leading-snug">{row.rewritten}</p>
+                <div className="flex items-center justify-end gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onEditRow(row.id, row.rewritten)}
+                    disabled={!dirty}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10.5px] font-medium text-fg-muted hover:bg-fg/5 disabled:opacity-40"
+                    title="Restore the AI's original suggestion for this row"
+                  >
+                    Reset to AI
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onApplyRow(row.id)}
+                    disabled={!editedText.trim()}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-600 text-white text-[11px] font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors"
+                  >
+                    <CheckCircle2 size={10} /> Accept this row
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

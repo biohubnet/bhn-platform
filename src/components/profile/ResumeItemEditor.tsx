@@ -18,6 +18,7 @@
 import type { ResumeItem, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_HINTS } from "@/lib/resume/types";
 import { Trash2, ExternalLink } from "lucide-react";
+import { RewriteableTextarea } from "./RewriteableTextarea";
 
 interface Props {
   kind: ResumeSectionKind;
@@ -125,17 +126,30 @@ export function ResumeItemEditor({ kind, item, onPatch, onRemove, bulletsSlot }:
         </div>
       )}
 
-      {/* Free-text description / intro paragraph */}
+      {/* Free-text description / intro paragraph — wrapped with the
+          AI rewrite chip so the trainee can ask for a stronger version
+          inline. Context fed to the prompt includes the item's
+          title / subtitle so the rewrite stays grounded. */}
       {h.showDescription && (
-        <Field
+        <RewriteableTextarea
           label="Description"
           value={item.description ?? ""}
           onChange={(v) => onPatch({ description: v })}
-          multiline
+          rows={3}
           placeholder={
             kind === "summary"
               ? "Your professional summary — 2-3 sentences for the top of the resume"
               : "One-sentence context for this entry. The bullets below carry the achievements."
+          }
+          rewriteContext={
+            kind === "summary"
+              ? "Resume summary section — opening paragraph at the top of the resume"
+              : `Description under ${[item.title, item.subtitle].filter(Boolean).join(" · ") || `${kind} item`}`
+          }
+          rewriteInstruction={
+            kind === "summary"
+              ? "Keep it 2-3 sentences. First sentence: what they do. Second: specialty. Third: what they're looking for."
+              : "Keep it one short sentence — context for the bullets below, not a replacement for them."
           }
         />
       )}
