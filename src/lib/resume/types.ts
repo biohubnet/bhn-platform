@@ -262,12 +262,18 @@ export const SECTION_HINTS: Record<ResumeSectionKind, SectionFieldHints> = {
 
 /** Derive the rendered date string from an item.
  *
- * Priority:
- *   1. `current = true`           → "{startDate} – Present"
- *   2. both startDate + endDate   → "{startDate} – {endDate}"
- *   3. only one of the two        → that one alone
- *   4. fallback to dateRange      → for legacy rows
- *   5. ""                         → no date renderable */
+ * Priority (in order — first match wins):
+ *   1. current + start + end     → "{startDate} – {endDate} (expected)"
+ *                                   — student with a graduation date,
+ *                                     contractor with a projected end,
+ *                                     etc.
+ *   2. current + start (no end)  → "{startDate} – Present"
+ *   3. current + end (no start)  → "Expected: {endDate}"
+ *   4. both start + end          → "{startDate} – {endDate}"
+ *   5. only one of the two       → that one alone
+ *   6. fallback to dateRange     → for legacy rows that pre-date the
+ *                                   structured-date fields
+ *   7. ""                        → no date renderable */
 export function formatItemDates(item: {
   startDate?: string;
   endDate?: string;
@@ -276,7 +282,12 @@ export function formatItemDates(item: {
 }): string {
   const s = (item.startDate ?? "").trim();
   const e = (item.endDate ?? "").trim();
-  if (item.current && s) return `${s} – Present`;
+  if (item.current) {
+    if (s && e) return `${s} – ${e} (expected)`;
+    if (s)      return `${s} – Present`;
+    if (e)      return `Expected: ${e}`;
+    return "Present";
+  }
   if (s && e) return `${s} – ${e}`;
   if (s) return s;
   if (e) return e;

@@ -56,7 +56,19 @@ export function ResumeItemEditor({ kind, item, onPatch, onRemove, bulletsSlot }:
         </div>
       )}
 
-      {/* Dates + currently-here toggle */}
+      {/* Dates + currently-here toggle.
+       *
+       * End date stays editable even when "Currently here" is checked
+       * — for Education that's where the user types an *expected*
+       * graduation date. The display layer (formatItemDates) does the
+       * right thing with the combination:
+       *
+       *   start + end + current → "Sep 2022 – May 2026 (expected)"
+       *   start + current       → "Sep 2022 – Present"
+       *   end   + current       → "Expected: May 2026"
+       *
+       * Toggling the checkbox never clears endDate any more — that
+       * was throwing away user typing on every accidental click. */}
       {h.showDates && (
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-end">
           <Field
@@ -66,27 +78,21 @@ export function ResumeItemEditor({ kind, item, onPatch, onRemove, bulletsSlot }:
             placeholder="May 2025"
           />
           <Field
-            label={item.current ? "End date (hidden — current)" : "End date"}
+            // Re-label by kind + "current" state so it's obvious what
+            // the field means in context.
+            label={endDateLabel(kind, item.current === true)}
             value={item.endDate ?? ""}
             onChange={(v) => onPatch({ endDate: v })}
-            placeholder="Aug 2025"
-            disabled={item.current === true}
+            placeholder={endDatePlaceholder(kind, item.current === true)}
           />
           <label className="inline-flex items-center gap-2 text-[11px] text-fg-muted whitespace-nowrap pb-1.5 cursor-pointer">
             <input
               type="checkbox"
               checked={item.current === true}
-              onChange={(e) => onPatch({
-                current: e.target.checked,
-                // When toggling "currently here" on, blank out endDate
-                // so the next render shows "Present" cleanly. Off →
-                // leave endDate as-is so the user keeps anything they
-                // already typed.
-                ...(e.target.checked ? { endDate: "" } : {}),
-              })}
+              onChange={(e) => onPatch({ current: e.target.checked })}
               className="rounded border-line text-brand-600 focus:ring-brand-300"
             />
-            Currently here
+            {currentLabel(kind)}
           </label>
         </div>
       )}
@@ -99,6 +105,7 @@ export function ResumeItemEditor({ kind, item, onPatch, onRemove, bulletsSlot }:
               label={h.metricLabel}
               value={item.metric ?? ""}
               onChange={(v) => onPatch({ metric: v })}
+              placeholder={metricPlaceholder(kind)}
             />
           )}
           {h.showUrl && (
@@ -169,6 +176,55 @@ export function ResumeItemEditor({ kind, item, onPatch, onRemove, bulletsSlot }:
       </div>
     </div>
   );
+}
+
+/** End-date field label, kind-aware. For Education we explicitly call
+ *  out "Expected graduation" when the user is still in school so they
+ *  know exactly what to type. For Certifications "End date" is the
+ *  expiry; if Currently here is on it means "no expiry". */
+function endDateLabel(kind: ResumeSectionKind, current: boolean): string {
+  if (current) {
+    if (kind === "education") return "Expected graduation (optional)";
+    if (kind === "certifications") return "Expiry (leave empty if no expiry)";
+    if (kind === "projects") return "Ongoing — expected end (optional)";
+    return "End date (optional)";
+  }
+  if (kind === "education") return "End date / graduation";
+  if (kind === "certifications") return "Expiry";
+  return "End date";
+}
+
+/** Placeholder for the kind-specific "metric" field. Empty values
+ *  are omitted from the rendered resume, so we let users know via
+ *  the placeholder that nothing's required. */
+function metricPlaceholder(kind: ResumeSectionKind): string {
+  switch (kind) {
+    case "education":      return "GPA 3.8 / 4.0  ·  optional, omitted if empty";
+    case "certifications": return "Credential ID  ·  optional";
+    case "awards":         return "Top 5%  ·  1st place  ·  optional";
+    case "publications":   return "Nature Methods  ·  arXiv  ·  optional";
+    default:               return "Optional";
+  }
+}
+
+function endDatePlaceholder(kind: ResumeSectionKind, current: boolean): string {
+  if (current && kind === "education") return "May 2026";
+  if (current) return "";
+  return "Aug 2025";
+}
+
+/** Checkbox label, kind-aware. "Currently here" reads weirdly for
+ *  Certifications and Awards — let it mean something more specific
+ *  per kind. */
+function currentLabel(kind: ResumeSectionKind): string {
+  switch (kind) {
+    case "experience":     return "Currently working here";
+    case "education":      return "Currently studying";
+    case "volunteering":   return "Currently active";
+    case "projects":       return "Ongoing project";
+    case "certifications": return "No expiry";
+    default:               return "Currently here";
+  }
 }
 
 function Field({

@@ -948,10 +948,14 @@ function BulletRow({
           value={bullet.body}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder ?? "One bullet — what you did and the outcome"}
-          rows={1}
+          // rows=2 gives a comfortable starting height; the
+          // field-sizing:content rule (where supported) auto-grows
+          // as the user types; resize-y is the universal fallback.
+          rows={2}
+          style={{ fieldSizing: "content" } as React.CSSProperties}
           className={
-            "flex-1 bg-transparent border-0 text-sm leading-snug py-1.5 px-2 rounded-md resize-none " +
-            "focus:outline-none focus:bg-card-solid focus:ring-1 focus:ring-brand-100 " +
+            "flex-1 bg-card-solid border border-line text-sm leading-snug py-1.5 px-2 rounded-md resize-y min-h-[44px] " +
+            "focus:outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100 " +
             (bullet.aiSuggested ? "border-l-2 border-l-brand-400 bg-brand-50/30 pl-2" : "")
           }
         />
