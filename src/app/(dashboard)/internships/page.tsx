@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { InternshipFilters } from "@/components/lms/InternshipFilters";
 import { PostingSaveButton } from "@/components/lms/PostingSaveButton";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
+import { InternshipAdminTable, type AdminPostingRow } from "@/components/internships/InternshipAdminTable";
 
 export const dynamic = "force-dynamic";
 
@@ -174,6 +175,31 @@ export default async function InternshipsPage({
           types={distinctTypes.map((d) => d.type ?? "").filter(Boolean)}
         />
 
+        {/* Admin batch view — compact table with checkboxes + sticky
+            action toolbar (Activate · Draft · Close · Delete). The
+            card grid below is preserved for trainees and employers
+            who want the rich visual presentation. */}
+        {isAdmin && postings.length > 0 && (
+          <div className="mb-5">
+            <InternshipAdminTable
+              postings={postings.map<AdminPostingRow>((p) => ({
+                id: p.id,
+                companyName: p.companyName,
+                title: p.title,
+                status: (p.status as AdminPostingRow["status"]) ?? "draft",
+                location: p.location ?? null,
+                type: p.type ?? null,
+                deadline: p.deadline ? p.deadline.toISOString() : null,
+                createdAt: p.createdAt.toISOString(),
+                skillCount: p.skills.length,
+              }))}
+            />
+          </div>
+        )}
+
+        {/* Admins get the batch table above and skip the card grid —
+            no duplication. To preview the trainee view they can use
+            "Sit in another role" from the admin dashboard rail. */}
         {postings.length === 0 ? (
           <div className="bg-card rounded-2xl border border-line p-16 text-center">
             <div className="w-12 h-12 mx-auto rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
@@ -198,7 +224,7 @@ export default async function InternshipsPage({
               )}
             </p>
           </div>
-        ) : (
+        ) : isAdmin ? null /* admins already saw the batch table above */ : (
           <div className="grid md:grid-cols-2 gap-5">
             {postings.map((p) => {
               const closed = p.status === "closed";

@@ -13,8 +13,8 @@
  *   ├──────────────────────────┬────────────────────┤
  *   │ CODE                 ♡   │ ◆ Credit 500       │  bg-card-solid (LEFT)
  *   │ Course title…            │ ◆ Hybrid           │  vs
- *   │ Short blurb under the    │ ◆ OBIO             │  bg-elevated (RIGHT)
- *   │ title, 3-line clamp…     │ ──────────         │  (theme contrast)
+ *   │ Short blurb under the    │ ◆ OBIO             │  bg-raised   (RIGHT)
+ *   │ title, 3-line clamp…     │ ──────────         │  (stronger contrast)
  *   │                          │ Enroll by:         │
  *   │                          │ Jun 30, 2025       │
  *   │                          │ Duration:          │
@@ -173,14 +173,14 @@ export function CourseCard({ course }: CourseCardProps) {
             aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
             aria-pressed={isFavorite}
             className={cn(
-              "absolute top-3 right-3 p-1 rounded-full",
-              "transition-all hover:bg-elevated active:bg-elevated",
+              "absolute top-2.5 right-2.5 p-1.5 rounded-full",
+              "transition-all hover:bg-raised active:bg-raised",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70",
               pending && "opacity-60 cursor-wait",
             )}
           >
             <Heart
-              size={14}
+              size={18}
               strokeWidth={1.8}
               className={cn(
                 "transition-all",
@@ -220,8 +220,11 @@ export function CourseCard({ course }: CourseCardProps) {
           })()}
         </div>
 
-        {/* RIGHT — metadata sidebar, bg-elevated (darker tint) */}
-        <aside className="p-2.5 sm:p-3 flex flex-col gap-1 bg-elevated border-l border-line">
+        {/* RIGHT — metadata sidebar, bg-raised (the next-step darker
+            surface above bg-elevated). Gives stronger left/right
+            contrast so the metadata column reads as a distinct shelf
+            against the lighter content side. */}
+        <aside className="p-2.5 sm:p-3 flex flex-col gap-1 bg-raised border-l border-line">
           <Chip
             tone="credit"
             label={isFree ? "Free" : `Credit ${course.creditCost.toLocaleString()}`}
