@@ -184,10 +184,15 @@ export function LoginFloatersEditor({
           sections. Click any inactive card to add. The dark backdrop
           + thin hairline categorisation mirrors the showcase's
           editorial mood. */}
-      <Card className="overflow-hidden p-0">
+      {/* The gallery card uses overflow-visible (not the default
+          overflow-hidden) so the 2× hover scale on a card can spill
+          past the gallery's bounds without being clipped. The
+          rounded-corner clipping moves to the inner dark body via
+          its own border-radius. */}
+      <Card className="!overflow-visible p-0">
         <GalleryHeader count={floaters.length} />
         <div
-          className="relative px-5 sm:px-8 py-8 sm:py-10"
+          className="relative px-5 sm:px-8 py-8 sm:py-10 rounded-b-[var(--radius-lg)] overflow-visible"
           style={{
             background: "radial-gradient(900px 600px at 80% -10%, rgba(72,188,167,0.10), transparent 60%), radial-gradient(700px 500px at -10% 110%, rgba(56,140,200,0.12), transparent 60%), linear-gradient(180deg, #04080f 0%, #0a1623 100%)",
           }}
@@ -228,14 +233,16 @@ export function LoginFloatersEditor({
                       }}
                       disabled={atCap}
                       className={
-                        // The hover lift uses `scale + translate` so
-                        // the card "pops up" above its neighbours —
-                        // z-20 ensures the lifted card overlaps
-                        // siblings instead of being clipped by them.
-                        // overflow-visible on the outer is critical
-                        // for the same reason.
+                        // The hover lift uses a dramatic 2× scale so
+                        // the card POPS to twice its grid size and
+                        // overlaps its neighbours — admins can read
+                        // the bigger floater preview as they swipe
+                        // through the gallery. z-30 + the gallery
+                        // container's overflow-visible keep the
+                        // lifted card on top instead of clipped at
+                        // the gallery edge.
                         "group relative text-left rounded-2xl border p-3.5 transition-all duration-200 backdrop-blur-md " +
-                        "hover:z-20 hover:scale-[1.06] hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(0,0,0,0.55)] " +
+                        "hover:z-30 hover:scale-[2] hover:shadow-[0_28px_60px_rgba(0,0,0,0.70)] " +
                         (inUse
                           ? // Active state. Default = emerald wash; on
                             // hover, swap to a rose wash to signal the
@@ -285,10 +292,10 @@ export function LoginFloatersEditor({
                       {/* Stage — square frame containing the actual
                           floater component. Sits at its registered
                           default size up to a 160-px cap so the grid
-                          stays uniform; on hover the cap relaxes a
-                          touch via scale so the preview reads
-                          larger. */}
-                      <div className={"mt-2 aspect-square flex items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.04] " + (reg.defaultColorClass)}
+                          stays uniform; the hover 2× scale on the
+                          parent card already doubles the stage, so
+                          no nested scaling is needed here. */}
+                      <div className={"mt-2 aspect-square flex items-center justify-center rounded-xl " + (reg.defaultColorClass)}
                         style={{ background: "radial-gradient(60% 60% at 50% 40%, rgba(72,188,167,0.05), transparent 70%)" }}
                       >
                         <reg.Component size={Math.min(reg.defaultSize, 160)} />
