@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Search, ArrowRight, MessageCircle, Lock, CheckCircle2, Hourglass } from "lucide-react";
+import { Users, Search, ArrowRight, MessageCircle, Lock, CheckCircle2, AlertTriangle } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canComment, isCommentable } from "@/lib/talent-pool/comments";
@@ -103,7 +103,7 @@ export default async function TalentPoolPage({
         description={
           isEmployer
             ? "Eligibility-checked talent-application submissions. These members have been verified for employer review. Click any entry to view the full application."
-            : "Approved talent-application submissions. Tick the eligibility box to release each member to employers. Click any entry to view the full application and leave private comments (visible to admins + employers only — never to the applicant)."
+            : "Approved talent-application submissions. Every new row lands as 'Awaiting admin approval' and is hidden from employers until you tick the box and click 'Approve eligibility' — that's the second gate. Click any entry to view the full application and leave private comments."
         }
       />
 
@@ -286,6 +286,14 @@ function SubmissionList({
 
               {/* Eligibility — badge + (when set) approver line + date. */}
               <div className="min-w-0 flex flex-col gap-1">
+                {/* Eligibility chip — two unambiguous states, with a
+                    deliberately strong colour gap so admins can never
+                    misread an un-approved row as approved:
+                      • Eligible (admin-approved) → emerald + Check
+                      • Awaiting approval         → rose + AlertTriangle
+                    The rose tone reads as "this row needs you" rather
+                    than "everything's fine"; the icon + verb-y label
+                    ("Awaiting") confirms it's a TO-DO state. */}
                 {isEligible ? (
                   <>
                     <span className="inline-flex items-center gap-1 self-start text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset bg-emerald-50 text-emerald-800 ring-emerald-200">
@@ -306,9 +314,14 @@ function SubmissionList({
                     )}
                   </>
                 ) : (
-                  <span className="inline-flex items-center gap-1 self-start text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset bg-amber-50 text-amber-800 ring-amber-200">
-                    <Hourglass size={9} /> Pending check
-                  </span>
+                  <>
+                    <span className="inline-flex items-center gap-1 self-start text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset bg-rose-50 text-rose-800 ring-rose-200">
+                      <AlertTriangle size={9} /> Awaiting admin approval
+                    </span>
+                    <p className="text-[10.5px] text-fg-subtle italic">
+                      Hidden from employers until approved
+                    </p>
+                  </>
                 )}
                 {commentsLocked && (
                   <span className="inline-flex items-center gap-1 self-start text-[10px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset bg-amber-50 text-amber-800 ring-amber-200">

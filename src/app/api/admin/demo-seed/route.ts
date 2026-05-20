@@ -335,6 +335,13 @@ async function seedFormSubmissions(formSlug: string): Promise<number> {
         data: { ...data, fullName: s.namePrefix },
         reviewStatus: s.reviewStatus,
         reviewedAt: s.reviewStatus !== "pending" ? new Date() : null,
+        // Eligibility gate stays UNCHECKED on every seeded row — an
+        // admin must explicitly approve before the talent becomes
+        // visible to employers. Set null explicitly (matches the
+        // schema default) so the intent is impossible to miss.
+        eligibilityApprovedAt: null,
+        eligibilityApprovedBy: null,
+        eligibilityNote: null,
       },
     });
     created++;
