@@ -7,6 +7,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { ApplicantsBoard } from "@/components/employer/ApplicantsBoard";
+import { ELIGIBLE_APPLICANT_FILTER } from "@/lib/talent-pool/eligibility";
 
 export const dynamic = "force-dynamic";
 
@@ -63,20 +64,23 @@ export default async function PostingApplicants({ params }: { params: Promise<{ 
   const since7d = new Date(Date.now() - 7 * 86_400_000);
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const [byStage, stale, applied24h] = await Promise.all([
+    // Eligibility gate applied to every count — the header numbers
+    // must match the rows employers actually see.
     prisma.applicationStatus.groupBy({
       by: ["status"],
-      where: { postingId: id },
+      where: { ...ELIGIBLE_APPLICANT_FILTER, postingId: id },
       _count: { status: true },
     }),
     prisma.applicationStatus.count({
       where: {
+        ...ELIGIBLE_APPLICANT_FILTER,
         postingId: id,
         status: { in: ["new", "reviewing", "shortlisted", "phone_screen", "onsite", "offer"] },
         stageEnteredAt: { lt: since7d },
       },
     }),
     prisma.applicationStatus.count({
-      where: { postingId: id, stageEnteredAt: { gt: since24h } },
+      where: { ...ELIGIBLE_APPLICANT_FILTER, postingId: id, stageEnteredAt: { gt: since24h } },
     }),
   ]);
   const countByStatus: Record<string, number> = {};

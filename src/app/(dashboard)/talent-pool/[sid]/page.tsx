@@ -40,6 +40,28 @@ export default async function TalentPoolDetailPage({
   });
   if (!submission || submission.form.slug !== "talent-application") notFound();
 
+  // Eligibility gate — direct-URL access for employers must still
+  // respect the second admit gate. Admins / instructors keep full
+  // visibility so they can verify and approve.
+  if (role === "employer" && !submission.eligibilityApprovedAt) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        <Link href="/talent-pool" className="text-xs text-muted hover:text-fg inline-flex items-center gap-1 mb-4">
+          <ArrowLeft size={12} /> Back to talent pool
+        </Link>
+        <div className="bg-rose-50 ring-1 ring-rose-200 rounded-2xl p-8 text-center">
+          <p className="text-sm font-semibold text-rose-800 mb-1">
+            This member isn&apos;t eligible for employer view yet.
+          </p>
+          <p className="text-[12.5px] text-rose-700 leading-relaxed max-w-[58ch] mx-auto">
+            Their talent application is in the pool but awaiting an admin&apos;s eligibility approval.
+            You&apos;ll see them here once they&apos;re cleared for employer review.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Employers can only view in-pool entries; admins can view all
   // statuses (so they can debug pending submissions). Trainees
   // are already redirected by the role gate above.

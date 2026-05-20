@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isUserEligibleForEmployers } from "@/lib/talent-pool/eligibility";
 import { STAGE_LABELS, legalNextStages, type Stage } from "@/lib/hiring/stages";
 import { ApplicantActions } from "@/components/hiring/ApplicantActions";
 import { scoreFitForTrainee } from "@/lib/matching/fit";
@@ -78,6 +79,35 @@ export default async function ApplicantDetailPage({
         <p className="font-medium text-muted">This posting belongs to another employer.</p>
       </div>
     );
+  }
+
+  // Eligibility gate — even though the URL is direct, employers
+  // must not see an applicant whose talent-pool eligibility has
+  // not been admin-approved (or has been revoked). Admins keep
+  // full visibility so they can investigate flagged applications.
+  if (role === "employer") {
+    const eligible = await isUserEligibleForEmployers(app.applicantId);
+    if (!eligible) {
+      return (
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+          <Link
+            href={`/employer/postings/${id}/applicants`}
+            className="text-xs text-muted hover:text-fg inline-flex items-center gap-1 mb-4"
+          >
+            <ArrowLeft size={12} /> Back to applicants
+          </Link>
+          <div className="bg-rose-50 ring-1 ring-rose-200 rounded-2xl p-8 text-center">
+            <p className="text-sm font-semibold text-rose-800 mb-1">
+              This applicant isn&apos;t eligible for employer view yet.
+            </p>
+            <p className="text-[12.5px] text-rose-700 leading-relaxed max-w-[58ch] mx-auto">
+              Their talent-application is in the pool but awaiting an admin&apos;s eligibility approval.
+              The platform&apos;s admin team will notify you once they&apos;re cleared to be reviewed.
+            </p>
+          </div>
+        </div>
+      );
+    }
   }
 
   const interviews = await prisma.interview.findMany({

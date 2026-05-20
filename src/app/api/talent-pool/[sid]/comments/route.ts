@@ -39,9 +39,16 @@ export async function GET(
   const { sid } = await ctx.params;
   const submission = await prisma.eventFormSubmission.findUnique({
     where: { id: sid },
-    select: { id: true, reviewStatus: true },
+    select: { id: true, reviewStatus: true, eligibilityApprovedAt: true },
   });
   if (!submission) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+
+  // Eligibility gate — employers must not be able to read the
+  // comment thread on a member who hasn't been eligibility-
+  // approved. Admins / instructors keep full visibility.
+  if (role === "employer" && !submission.eligibilityApprovedAt) {
+    return NextResponse.json({ error: "Awaiting admin eligibility approval" }, { status: 403 });
+  }
 
   const comments = await prisma.applicationComment.findMany({
     where: { submissionId: sid },
@@ -72,9 +79,19 @@ export async function POST(
   const { sid } = await ctx.params;
   const submission = await prisma.eventFormSubmission.findUnique({
     where: { id: sid },
-    select: { id: true, reviewStatus: true },
+    select: { id: true, reviewStatus: true, eligibilityApprovedAt: true },
   });
   if (!submission) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+
+  // Eligibility gate — employers cannot post comments on a member
+  // who hasn't been eligibility-approved. Admins / instructors can
+  // (they're the ones collaborating on the approval decision).
+  if (role === "employer" && !submission.eligibilityApprovedAt) {
+    return NextResponse.json(
+      { error: "Awaiting admin eligibility approval", code: "eligibility_required" },
+      { status: 403 },
+    );
+  }
 
   if (!isCommentable(submission.reviewStatus)) {
     return NextResponse.json(

@@ -26,6 +26,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ELIGIBLE_APPLICANT_FILTER } from "@/lib/talent-pool/eligibility";
 import {
   HrWorkspace,
   type PostingSummary,
@@ -116,6 +117,9 @@ export default async function EmployerWorkspacePage() {
   const queueRows = postingIds.length
     ? await prisma.applicationStatus.findMany({
         where: {
+          // Eligibility gate — un-approved applicants are hidden
+          // from the HR action queue.
+          ...ELIGIBLE_APPLICANT_FILTER,
           postingId: { in: postingIds },
           OR: [
             { status: "new" },

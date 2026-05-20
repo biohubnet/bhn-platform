@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ELIGIBLE_APPLICANT_FILTER } from "@/lib/talent-pool/eligibility";
 import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
 import { EditProfileTrigger } from "@/components/employer/EditProfileTrigger";
 import { SetPasswordBanner } from "@/components/employer/SetPasswordBanner";
@@ -162,6 +163,9 @@ export default async function EmployerHomePage() {
     }).catch(() => null),
     prisma.applicationStatus.findMany({
       where: {
+        // Eligibility gate — only show applicants who have been
+        // human-verified and are still in the pool.
+        ...ELIGIBLE_APPLICANT_FILTER,
         ...nestedPostingWhere,
         OR: [
           { status: "new" },
