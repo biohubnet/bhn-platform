@@ -1,75 +1,76 @@
 "use client";
 
 /**
- * LaunchSwitch — military "rocket-launch cover" button.
+ * LaunchSwitch — clear-cover delete switch.
  *
- * Inspired by the protected red switches on a jet's weapons panel.
- * Three states:
+ * A pulsing, glowing red **DELETE** button sits at all times under
+ * a transparent glass cover. The glow is visible through the
+ * cover, so the affordance reads as "warning, but protected." The
+ * gesture:
  *
- *   1. CLOSED  — striped cover sits over the button. Click to flip.
- *   2. ARMED   — cover hinges up, red "FIRE" button exposed. Click
- *                to commit; click the cover (or anywhere) to bail.
- *   3. LAUNCHING — red LED flashes, T-minus countdown ticks down
- *                  (default 5 seconds). User can hit ABORT (or the
- *                  cover) to cancel anytime during the countdown.
- *                  When the countdown hits zero, onFire() fires.
+ *   1. CLOSED  — Glass cover sits over the glowing DELETE button.
+ *                The text glow pulses gently so the user knows the
+ *                surface is interactive. Click the cover → it
+ *                hinges up on its top edge (animated, ~450ms).
  *
- * Use this for irreversible destructive actions — hard-delete a row,
- * wipe a workspace, abandon a draft. The flip-cover + countdown
- * gesture costs the user three deliberate clicks (and grants 5
- * seconds to think) so accidental triggers are essentially
- * impossible.
+ *   2. ARMED   — Cover hinged ~82°, DELETE button fully exposed +
+ *                clickable. Click DELETE to commit; click the
+ *                lifted cover (or its hinge area) to bail.
  *
- * Visual language: military stencil typography, hazard stripes when
- * armed, LED-glow during launch. Sharp corners. Red metallic cover.
- * Small footprint — defaults to ~96×30 px so the switch fits in a
- * card's action row without dominating.
+ *   3. LAUNCHING — Button transforms into a panel showing
+ *                  "DELETING IN 10" with a flashing LED, counting
+ *                  down once per second. User can hit the × to
+ *                  abort, or close the cover, at any point during
+ *                  the countdown. When the count hits 0, onFire()
+ *                  fires exactly once.
  *
- * Saved to the design system at /admin/design-system; reuse anywhere
- * a one-step Delete button is too cheap.
+ * No military jargon, no hazard stripes — the cover is glass; the
+ * warning comes from the glow + the deliberate flip-then-press
+ * gesture + the 10-second cooling-off window.
+ *
+ * Sized small by default (~92×28 in sm, ~140×42 in md). Saved to
+ * the design system at /admin/design-system as the canonical
+ * irreversible-destructive control.
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Zap, X } from "lucide-react";
+import { X } from "lucide-react";
 
 type State = "closed" | "armed" | "launching";
 
 export interface LaunchSwitchProps {
-  /** Called once after the countdown completes. The caller is
-   *  responsible for actually deleting / executing whatever.
-   *  When ABORT is hit during countdown this never fires. */
+  /** Called once after the countdown completes. Caller does the
+   *  actual delete. Never fires if the user aborts. */
   onFire: () => void;
-  /** Optional — fires when the user starts arming the switch (open
-   *  cover). Lets the host card flash a warning border, etc. */
+  /** Optional — fires when the user starts arming (opens cover). */
   onArm?: () => void;
   /** Optional — fires when the user aborts before firing. */
   onAbort?: () => void;
-  /** Countdown seconds. Default 5. */
+  /** Countdown seconds. Default 10. */
   countdownSeconds?: number;
-  /** Visible label on the closed cover. Default "DELETE". */
+  /** Visible label on the button. Default "DELETE". */
   label?: string;
-  /** Footprint. "sm" (default, ~84×24) fits inline action rows;
-   *  "md" (~120×36) is for emphasised destructive panels. */
+  /** Footprint. "sm" (default, ~92×28) fits inline action rows;
+   *  "md" (~140×42) is for emphasised destructive panels. */
   size?: "sm" | "md";
   /** Optional aria-label for screen readers. */
   ariaLabel?: string;
   /** Verb used during the countdown — "Deleting", "Wiping",
-   *  "Resetting". Default "Deleting". The cover label ("DELETE") is
-   *  set via the `label` prop above. */
+   *  "Resetting". Default "Deleting". The button label ("DELETE")
+   *  is set via the `label` prop above. */
   actionVerb?: string;
 }
 
 export function LaunchSwitch({
-  onFire, onArm, onAbort, countdownSeconds = 5, label = "DELETE",
+  onFire, onArm, onAbort, countdownSeconds = 10, label = "DELETE",
   size = "sm", ariaLabel, actionVerb = "Deleting",
 }: LaunchSwitchProps) {
   const [state, setState] = useState<State>("closed");
   const [remaining, setRemaining] = useState(countdownSeconds);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Reset countdown whenever we leave the launching state. Means a
-  // fresh arm always starts from the full countdown, not whatever
-  // residue is in `remaining`.
+  // Reset countdown when leaving the launching state. A fresh arm
+  // always starts from the full countdown.
   useEffect(() => {
     if (state !== "launching") {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -77,8 +78,8 @@ export function LaunchSwitch({
       setRemaining(countdownSeconds);
       return;
     }
-    // launching → start the tick. We use real-time (Date.now diff)
-    // so the countdown stays honest even if the tab is throttled.
+    // Real-time tick — Date.now diff stays honest even if the tab
+    // is throttled.
     const startedAt = Date.now();
     intervalRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startedAt) / 1000);
@@ -86,9 +87,6 @@ export function LaunchSwitch({
       if (left <= 0) {
         if (intervalRef.current) clearInterval(intervalRef.current);
         setRemaining(0);
-        // setState to closed AFTER onFire so the visual lingers on
-        // "T-0" for a frame; the host typically navigates away
-        // immediately so this doesn't matter in practice.
         onFire();
         setState("closed");
         return;
@@ -114,153 +112,163 @@ export function LaunchSwitch({
     setState("launching");
   }
 
-  // Smaller by default — the old footprint read "beefy" inline with
-  // text-[11px] buttons; this refines the chassis without losing
-  // readability of the stencilled label.
   const dims = size === "md"
-    ? { w: 120, h: 36, font: 10, labelFont: 9.5 }
-    : { w: 84,  h: 24, font: 8.5, labelFont: 8.5 };
+    ? { w: 140, h: 42, font: 11, labelFont: 11 }
+    : { w: 92,  h: 28, font: 9,  labelFont: 9.5 };
   const launching = state === "launching";
+  const coverFlipped = state !== "closed";
 
   return (
     <div
       role="group"
       aria-label={ariaLabel ?? `${label} switch`}
-      // Outer chassis: dark metallic frame the cover hinges off.
-      className="relative inline-block select-none font-mono"
-      style={{ width: dims.w, height: dims.h, perspective: "240px" }}
+      className="relative inline-block select-none font-mono align-middle"
+      style={{ width: dims.w, height: dims.h, perspective: "260px" }}
     >
-      {/* Base — the always-visible foundation. When the cover is up
-          (armed or launching), the FIRE button shows through here. */}
+      {/* Base layer — the glowing DELETE button. Visible at all
+          times (through the glass cover when closed; directly when
+          armed; replaced by the countdown panel when launching). */}
       <div
-        className={
-          "absolute inset-0 rounded-[3px] overflow-hidden " +
-          (launching
-            ? "bg-rose-700 ring-1 ring-rose-900 shadow-[inset_0_0_8px_rgba(0,0,0,0.4)]"
-            : "bg-zinc-900 ring-1 ring-zinc-700 shadow-[inset_0_0_4px_rgba(0,0,0,0.5)]")
-        }
+        className="absolute inset-0 rounded-md overflow-hidden ring-1 ring-rose-900/60 bg-gradient-to-b from-rose-700 to-rose-900"
+        style={{
+          boxShadow: "inset 0 0 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04)",
+        }}
       >
-        {/* Subtle screw "rivets" at the four corners for the metal-
-            panel feel. Tiny dots, not real interactives. */}
-        <Rivet style={{ top: 2,  left: 2  }} />
-        <Rivet style={{ top: 2,  right: 2 }} />
-        <Rivet style={{ bottom: 2, left: 2  }} />
-        <Rivet style={{ bottom: 2, right: 2 }} />
-
-        {/* ARMED — exposed red button visible under the cover. Reads
-            the same verb as the cover label ("DELETE") so the action
-            stays obvious without military jargon. */}
-        {state === "armed" && (
-          <button
-            type="button"
-            onClick={fire}
-            className="absolute inset-[2px] rounded-[2px] bg-gradient-to-b from-rose-500 to-rose-700 ring-1 ring-rose-900 text-white font-bold tracking-[0.18em] uppercase active:translate-y-[1px] active:from-rose-600 active:to-rose-800 hover:from-rose-400 hover:to-rose-600 transition-colors"
-            style={{ fontSize: dims.font }}
-            aria-label={`${label} — start countdown`}
-          >
-            <span className="inline-flex items-center justify-center gap-1">
-              <Zap size={dims.font} className="-rotate-12" /> {label}
-            </span>
-          </button>
-        )}
-
-        {/* LAUNCHING — flashing LED with verb + countdown. ABORT (×)
-            on the right gives the user the full countdown to cancel. */}
-        {launching && (
-          <div className="absolute inset-[2px] flex items-center justify-between px-1.5 rounded-[2px] bg-gradient-to-b from-rose-600 to-rose-800 ring-1 ring-rose-900">
+        {/* DELETING + countdown panel. Renders only while launching. */}
+        {launching ? (
+          <div className="absolute inset-0 flex items-center justify-between px-2">
             <span
               aria-hidden
-              className="inline-block w-1.5 h-1.5 rounded-full bg-yellow-300 shadow-[0_0_4px_2px_rgba(253,224,71,0.7)] animate-[ls_pulse_0.5s_ease-in-out_infinite] shrink-0"
+              className="inline-block w-1.5 h-1.5 rounded-full bg-yellow-300 shadow-[0_0_4px_2px_rgba(253,224,71,0.75)] animate-[ls_pulse_0.5s_ease-in-out_infinite] shrink-0"
             />
             <span
-              className="font-bold tracking-[0.14em] uppercase text-white tabular-nums truncate"
+              className="font-bold tracking-[0.12em] uppercase text-white tabular-nums truncate"
               style={{ fontSize: dims.font }}
             >
-              {actionVerb} · {remaining}s
+              {actionVerb} in {remaining}
             </span>
             <button
               type="button"
               onClick={closeCover}
               aria-label="Abort countdown"
               title="Abort — close the cover to cancel"
-              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded text-white/90 hover:text-white hover:bg-white/20 shrink-0"
+              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded text-white/95 hover:text-white hover:bg-white/20 shrink-0"
             >
               <X size={dims.font} />
             </button>
           </div>
+        ) : (
+          // Pulsing glowing DELETE label. Visible through the cover
+          // when closed, fully exposed + clickable when armed.
+          <button
+            type="button"
+            onClick={state === "armed" ? fire : undefined}
+            // Don't intercept clicks while closed — the cover layer
+            // sits on top and owns the open-gesture. tabIndex=-1 in
+            // closed state keeps it out of the focus chain so the
+            // user tabs onto the cover, not this.
+            tabIndex={state === "armed" ? 0 : -1}
+            aria-label={`${label} — start ${countdownSeconds}-second countdown`}
+            className={
+              "absolute inset-0 flex items-center justify-center font-bold uppercase " +
+              "text-rose-100 active:translate-y-[1px] focus:outline-none " +
+              (state === "armed"
+                ? "cursor-pointer hover:text-white"
+                : "cursor-default")
+            }
+            style={{
+              fontSize: dims.labelFont,
+              letterSpacing: "0.18em",
+              // Pulsing text-glow + a subtle inset highlight. The
+              // glow comes from `text-shadow` layers stacked so the
+              // halo around the letters reads as neon, not a flat
+              // colour shift.
+              animation: "ls_glow 1.6s ease-in-out infinite",
+              pointerEvents: state === "armed" ? "auto" : "none",
+            }}
+          >
+            {label}
+          </button>
         )}
       </div>
 
-      {/* COVER — flips up on click. position: absolute on top of
-          the base; uses transform-origin: top to hinge along its
-          top edge. Both states use the bracket transform syntax so
-          the browser actually interpolates the value cleanly. */}
+      {/* COVER — transparent glass that hinges up on click. Sits
+          ABOVE the base so it captures the open-gesture click; when
+          flipped up it leaves the base exposed. */}
       <button
         type="button"
         onClick={state === "closed" ? openCover : closeCover}
         aria-label={state === "closed" ? `Lift cover to ${label.toLowerCase()}` : "Close cover"}
-        aria-pressed={state !== "closed"}
-        className={
-          "absolute inset-0 rounded-[3px] overflow-hidden ring-1 ring-amber-900/70 " +
-          "transition-[transform,box-shadow] duration-[400ms] " +
-          // Custom easing — out-back-style overshoot when closing
-          // gives the cover a satisfying "click shut" feel; the
-          // open direction stays soft ease-out.
-          (state === "closed"
-            ? "[transition-timing-function:cubic-bezier(0.34,1.42,0.64,1)] "
-            : "ease-out ") +
-          "[transform-origin:top_center] " +
-          (state === "closed"
-            ? "[transform:rotateX(0deg)]"
-            : "[transform:rotateX(-82deg)] shadow-[0_10px_14px_-8px_rgba(0,0,0,0.5)]")
-        }
+        aria-pressed={coverFlipped}
+        // Cover sits above the base. When closed it's clickable
+        // (lifts on click); when flipped, it's still clickable
+        // (closes the cover / aborts) but the base button is now
+        // the visual focus.
+        className="absolute inset-0 rounded-md overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
         style={{
-          // Hazard stripes — diagonal yellow/black, the universal
-          // "watch out" pattern on military panels. Slightly muted
-          // amber + onyx for a less garish, more refined look.
-          backgroundImage:
-            "repeating-linear-gradient(45deg, #f59e0b 0 6px, #18181b 6px 12px)",
-          // Make sure the hidden face doesn't show through the back.
+          // Glass — very faint frosted plastic, mostly transparent.
+          background: "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))",
+          // A thin rim on the edges so the cover reads as a discrete
+          // object rather than vanishing entirely.
+          boxShadow: coverFlipped
+            ? "0 8px 14px -8px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.18)"
+            : "inset 0 0 0 1px rgba(255,255,255,0.18), inset 0 1px 0 0 rgba(255,255,255,0.25)",
+          // backdrop-filter blurs whatever's behind the cover (the
+          // base DELETE button). 1.5px keeps the glow visible but
+          // softens it slightly, giving a "you can almost touch
+          // the button" feel.
+          backdropFilter: coverFlipped ? "none" : "blur(1px)",
+          WebkitBackdropFilter: coverFlipped ? "none" : "blur(1px)",
           backfaceVisibility: "hidden",
-          // Click target stays at the cover's footprint while it's
-          // flipped, so the user can grab it to close.
-          pointerEvents: "auto",
+          transformOrigin: "top center",
+          transform: coverFlipped ? "rotateX(-82deg)" : "rotateX(0deg)",
+          transition: coverFlipped
+            ? "transform 320ms ease-out, box-shadow 320ms ease-out, backdrop-filter 200ms ease-out"
+            : "transform 450ms cubic-bezier(0.34, 1.42, 0.64, 1), box-shadow 450ms ease-out, backdrop-filter 200ms ease-out 200ms",
         }}
       >
-        {/* Stencilled label — only visible on the closed cover. The
-            text rides on top of the hazard stripes via a darker
-            inset stencil panel so it stays legible at small sizes. */}
+        {/* A faint top-edge "hinge" highlight when closed so the
+            user can tell which edge the cover lifts from. */}
         <span
-          className={
-            "absolute inset-1 inline-flex items-center justify-center rounded-sm " +
-            "bg-zinc-900/85 text-amber-200 ring-1 ring-amber-700/70 font-bold uppercase " +
-            "transition-opacity " +
-            (state === "closed" ? "opacity-100" : "opacity-0")
-          }
-          style={{ fontSize: dims.labelFont, letterSpacing: "0.16em" }}
-        >
-          {label}
-        </span>
+          aria-hidden
+          className="absolute top-0 left-0 right-0 h-[2px] rounded-t-md"
+          style={{
+            background: "linear-gradient(to bottom, rgba(255,255,255,0.45), transparent)",
+            opacity: coverFlipped ? 0 : 1,
+            transition: "opacity 200ms ease-out",
+          }}
+        />
       </button>
 
-      {/* Keyframes for the LED pulse. Inline so the component is
-          self-contained without touching globals.css. */}
+      {/* Keyframes — kept inline so the component is self-contained
+          and you can drop a LaunchSwitch anywhere without touching
+          globals.css. */}
       <style jsx global>{`
         @keyframes ls_pulse {
           0%, 100% { transform: scale(1);   opacity: 1; }
           50%      { transform: scale(0.6); opacity: 0.35; }
         }
+        @keyframes ls_glow {
+          0%, 100% {
+            text-shadow:
+              0 0 3px rgba(255, 100, 100, 0.55),
+              0 0 6px rgba(255, 60, 60, 0.45);
+            color: rgb(255, 220, 220);
+          }
+          50% {
+            text-shadow:
+              0 0 5px rgba(255, 120, 120, 0.95),
+              0 0 12px rgba(255, 60, 60, 0.85),
+              0 0 22px rgba(255, 30, 30, 0.55);
+            color: rgb(255, 240, 240);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ls-no-anim, [class*="ls_glow"] {
+            animation: none !important;
+          }
+        }
       `}</style>
     </div>
-  );
-}
-
-function Rivet({ style }: { style: React.CSSProperties }) {
-  return (
-    <span
-      aria-hidden
-      className="absolute w-[3px] h-[3px] rounded-full bg-zinc-600 shadow-[inset_0_0_1px_rgba(0,0,0,0.5)]"
-      style={style}
-    />
   );
 }

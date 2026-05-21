@@ -529,7 +529,13 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
         </SubSection>
       </Section>
 
-      <Section icon={Rocket} title="LaunchSwitch — protected destructive action" eyebrow="Component · safety pattern">
+      <Section icon={Rocket} title="LaunchSwitch — clear-cover delete switch" eyebrow="Component · safety pattern">
+        <p className="text-sm text-fg-muted leading-relaxed">
+          A pulsing, glowing red <strong>DELETE</strong> button sits at all times under a transparent glass cover. The glow is visible through the cover so the affordance reads as &quot;warning, but protected.&quot; To commit: click the cover (it hinges up), click the now-exposed button (10-second countdown starts), wait it out. To bail: close the cover at any point.
+        </p>
+        <p className="text-[11px] text-fg-subtle italic">
+          (The previous design system entry described an opaque amber-and-black hazard cover — that was the v1. The clear-glass + neon-glow design is what shipped.)
+        </p>
         <p className="text-sm text-fg-muted leading-relaxed">
           Two-stage destructive control inspired by the protected red switches on a jet fighter&apos;s weapons panel.
           Reach for it any time a single accidental click would be costly to undo — hard-delete a row, abandon a draft, wipe a workspace.
@@ -540,19 +546,19 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
             <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
               <LaunchSwitchDemo />
               <p className="text-[11px] text-fg-muted text-center">
-                <span className="font-bold text-fg">Closed</span> · striped cover sits over the DELETE button. Click to lift.
+                <span className="font-bold text-fg">Closed</span> · glass cover sits over the glowing DELETE button. Glow pulses through. Click the cover to lift.
               </p>
             </div>
             <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
               <LaunchSwitchDemo />
               <p className="text-[11px] text-fg-muted text-center">
-                <span className="font-bold text-fg">Armed</span> · cover hinged 82°, red DELETE button exposed. Click anywhere on the cover to bail.
+                <span className="font-bold text-fg">Armed</span> · cover hinged 82°, DELETE exposed + clickable. Click the cover (or its hinge area) to bail.
               </p>
             </div>
             <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
               <LaunchSwitchDemo />
               <p className="text-[11px] text-fg-muted text-center">
-                <span className="font-bold text-fg">Launching</span> · DELETING countdown ticks down with a flashing LED. Click ABORT (×) to cancel.
+                <span className="font-bold text-fg">Launching</span> · &quot;Deleting in 10&quot; ticks down once per second with a flashing LED. Click × to abort.
               </p>
             </div>
           </div>
@@ -562,11 +568,11 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
           <div className="flex items-center gap-6 flex-wrap">
             <div className="flex flex-col items-center gap-2">
               <LaunchSwitchDemo />
-              <code className="text-[11px] text-fg-muted">size=&quot;sm&quot; · 84×24</code>
+              <code className="text-[11px] text-fg-muted">size=&quot;sm&quot; · 92×28</code>
             </div>
             <div className="flex flex-col items-center gap-2">
               <LaunchSwitchMediumDemo />
-              <code className="text-[11px] text-fg-muted">size=&quot;md&quot; · 120×36</code>
+              <code className="text-[11px] text-fg-muted">size=&quot;md&quot; · 140×42</code>
             </div>
           </div>
         </SubSection>
@@ -585,7 +591,7 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
         <SubSection title="Props">
           <pre className="text-[11px] font-mono bg-elevated/40 rounded-md p-3 overflow-x-auto leading-relaxed">{`<LaunchSwitch
   label="DELETE"            // text on the cover; default "DELETE"
-  countdownSeconds={5}      // T-minus before onFire runs; default 5
+  countdownSeconds={10}     // T-minus before onFire runs; default 10
   size="sm" | "md"          // 96×30 (default) or 140×44
   onArm={() => {}}          // optional — fires when cover lifts
   onAbort={() => {}}        // optional — fires when user cancels
