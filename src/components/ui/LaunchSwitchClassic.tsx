@@ -107,9 +107,11 @@ export function LaunchSwitchClassic({
     setState("launching");
   }
 
+  // Wider footprint than the original so "Deleting · 5s" fits with
+  // headroom for the LED dot + abort × without truncating.
   const dims = size === "md"
-    ? { w: 120, h: 36, font: 10, labelFont: 9.5 }
-    : { w: 84,  h: 24, font: 8.5, labelFont: 8.5 };
+    ? { w: 160, h: 38, font: 10,  labelFont: 9.5 }
+    : { w: 118, h: 26, font: 8.5, labelFont: 8.5 };
   const launching = state === "launching";
 
   return (
@@ -147,25 +149,37 @@ export function LaunchSwitchClassic({
         )}
 
         {launching && (
-          <div className="absolute inset-[2px] flex items-center justify-between px-1.5 rounded-[2px] bg-gradient-to-b from-rose-600 to-rose-800 ring-1 ring-rose-900">
+          <div className="absolute inset-[2px] flex items-center justify-between pl-1.5 pr-0.5 rounded-[2px] bg-gradient-to-b from-rose-600 to-rose-800 ring-1 ring-rose-900">
             <span
               aria-hidden
               className="inline-block w-1.5 h-1.5 rounded-full bg-yellow-300 shadow-[0_0_4px_2px_rgba(253,224,71,0.7)] animate-[ls_pulse_0.5s_ease-in-out_infinite] shrink-0"
             />
             <span
-              className="font-bold tracking-[0.14em] uppercase text-white tabular-nums truncate"
+              className="font-bold tracking-[0.14em] uppercase text-white tabular-nums"
               style={{ fontSize: dims.font }}
             >
               {actionVerb} · {remaining}s
             </span>
+            {/* Beefier abort × — yellow chip + thicker stroke so the
+                bail-out is the most visible thing on the launching
+                panel. The action it triggers (close cover, halt
+                countdown) is the *safe* path. */}
             <button
               type="button"
               onClick={closeCover}
               aria-label="Abort countdown"
               title="Abort — close the cover to cancel"
-              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded text-white/90 hover:text-white hover:bg-white/20 shrink-0"
+              className="inline-flex items-center justify-center rounded-sm bg-yellow-300 text-rose-900 ring-1 ring-yellow-500 shadow-[0_0_6px_rgba(253,224,71,0.55)] hover:bg-yellow-200 hover:text-rose-950 active:translate-y-[1px] shrink-0"
+              style={{
+                width:  size === "md" ? 22 : 18,
+                height: size === "md" ? 22 : 18,
+              }}
             >
-              <X size={dims.font} />
+              <X
+                size={size === "md" ? 14 : 12}
+                strokeWidth={3}
+                aria-hidden
+              />
             </button>
           </div>
         )}

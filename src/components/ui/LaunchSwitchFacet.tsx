@@ -95,9 +95,10 @@ export function LaunchSwitchFacet({
   }
   function fire() { setState("launching"); }
 
+  // Same wider footprint as LaunchSwitch so the countdown text fits.
   const dims = size === "md"
-    ? { w: 140, h: 42, font: 11, labelFont: 11 }
-    : { w: 92,  h: 28, font: 9,  labelFont: 9.5 };
+    ? { w: 180, h: 44, font: 11, labelFont: 11 }
+    : { w: 132, h: 30, font: 9,  labelFont: 9.5 };
   const launching  = state === "launching";
   const coverOpen  = state !== "closed";
 
@@ -116,13 +117,13 @@ export function LaunchSwitchFacet({
         style={{ boxShadow: "inset 0 0 6px rgba(0,0,0,0.45)" }}
       >
         {launching ? (
-          <div className="absolute inset-0 flex items-center justify-between px-2">
+          <div className="absolute inset-0 flex items-center justify-between pl-2 pr-1">
             <span
               aria-hidden
               className="inline-block w-1.5 h-1.5 rounded-full bg-yellow-300 shadow-[0_0_4px_2px_rgba(253,224,71,0.75)] animate-[ls_pulse_0.5s_ease-in-out_infinite] shrink-0"
             />
             <span
-              className="font-bold tracking-[0.12em] uppercase text-white tabular-nums truncate"
+              className="font-bold tracking-[0.12em] uppercase text-white tabular-nums"
               style={{ fontSize: dims.font }}
             >
               {actionVerb} in {remaining}
@@ -132,9 +133,17 @@ export function LaunchSwitchFacet({
               onClick={closeCover}
               aria-label="Abort countdown"
               title="Abort — close the cover to cancel"
-              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded text-white/95 hover:text-white hover:bg-white/20 shrink-0"
+              className="inline-flex items-center justify-center rounded-md bg-yellow-300 text-rose-900 ring-1 ring-yellow-500 shadow-[0_0_8px_rgba(253,224,71,0.55)] hover:bg-yellow-200 hover:text-rose-950 active:translate-y-[1px] shrink-0"
+              style={{
+                width:  size === "md" ? 26 : 20,
+                height: size === "md" ? 26 : 20,
+              }}
             >
-              <X size={dims.font} />
+              <X
+                size={size === "md" ? 16 : 13}
+                strokeWidth={3}
+                aria-hidden
+              />
             </button>
           </div>
         ) : (

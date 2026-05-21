@@ -693,9 +693,14 @@ function SectionGroup({
           reads as anchored to the border line. Tightened the `top`
           offset from -11px to -10px so the chip sits flush against
           the border edge without that visible gap that used to read
-          as a grey block under it. */}
+          as a grey block under it.
+
+          left-5 (was left-3) keeps the chevron clear of the section's
+          rounded corner — at left-3 the chevron landed right where
+          the rounded-xl border curves away, making it read as a
+          floating glyph rather than anchored to the section. */}
       <div
-        className="group/section absolute -top-[10px] left-3 z-20 px-1.5 flex items-center gap-1"
+        className="group/section absolute -top-[10px] left-5 z-20 px-1.5 flex items-center gap-1"
         onMouseEnter={hasTooltip ? placeTooltip : undefined}
         onFocus={hasTooltip ? placeTooltip : undefined}
       >

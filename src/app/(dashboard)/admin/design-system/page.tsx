@@ -572,11 +572,11 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
           <div className="flex items-center gap-6 flex-wrap">
             <div className="flex flex-col items-center gap-2">
               <LaunchSwitchDemo />
-              <code className="text-[11px] text-fg-muted">size=&quot;sm&quot; · 92×28</code>
+              <code className="text-[11px] text-fg-muted">size=&quot;sm&quot; · 132×30</code>
             </div>
             <div className="flex flex-col items-center gap-2">
               <LaunchSwitchMediumDemo />
-              <code className="text-[11px] text-fg-muted">size=&quot;md&quot; · 140×42</code>
+              <code className="text-[11px] text-fg-muted">size=&quot;md&quot; · 180×44</code>
             </div>
           </div>
         </SubSection>
@@ -593,7 +593,7 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
               </div>
               <div className="text-center">
                 <p className="text-[12px] font-semibold text-fg">LaunchSwitch (current)</p>
-                <p className="text-[11px] text-fg-muted mt-0.5">Clear glass cover, neon-glow DELETE underneath, 10-second cool-off. 92×28 (sm) / 140×42 (md).</p>
+                <p className="text-[11px] text-fg-muted mt-0.5">Clear glass cover, neon-glow DELETE underneath, 10-second cool-off. 132×30 (sm) / 180×44 (md).</p>
                 <code className="text-[10px] text-fg-subtle font-mono">@/components/ui/LaunchSwitch</code>
               </div>
             </div>
@@ -604,7 +604,7 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
               </div>
               <div className="text-center">
                 <p className="text-[12px] font-semibold text-fg">LaunchSwitchFacet (new)</p>
-                <p className="text-[11px] text-fg-muted mt-0.5">Opaque plastic cover carved into four triangular facets meeting at the centre. Fixed top-left light source, diagonal seams visible. 92×28 (sm) / 140×42 (md).</p>
+                <p className="text-[11px] text-fg-muted mt-0.5">Opaque plastic cover carved into four triangular facets meeting at the centre. Fixed top-left light source, diagonal seams visible. 132×30 (sm) / 180×44 (md).</p>
                 <code className="text-[10px] text-fg-subtle font-mono">@/components/ui/LaunchSwitchFacet</code>
               </div>
             </div>
@@ -615,7 +615,7 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
               </div>
               <div className="text-center">
                 <p className="text-[12px] font-semibold text-fg">LaunchSwitchClassic (original)</p>
-                <p className="text-[11px] text-fg-muted mt-0.5">Hazard-striped cover, red FIRE button under, 5-second countdown, rivet corners. 84×24 (sm) / 120×36 (md).</p>
+                <p className="text-[11px] text-fg-muted mt-0.5">Hazard-striped cover, red FIRE button under, 5-second countdown, rivet corners. 118×26 (sm) / 160×38 (md).</p>
                 <code className="text-[10px] text-fg-subtle font-mono">@/components/ui/LaunchSwitchClassic</code>
               </div>
             </div>
@@ -642,8 +642,8 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
   countdownSeconds={10}     // T-minus before onFire runs.
                             //  • LaunchSwitch / Facet default: 10
                             //  • LaunchSwitchClassic default:    5
-  size="sm" | "md"          // glass / facet: 92×28 / 140×42
-                            // classic:       84×24 / 120×36
+  size="sm" | "md"          // glass / facet: 132×30 / 180×44
+                            // classic:       118×26 / 160×38
   actionVerb="Deleting"     // word during countdown ("Wiping", etc.)
   onArm={() => {}}          // optional — fires when cover lifts
   onAbort={() => {}}        // optional — fires when user cancels
