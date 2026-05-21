@@ -357,6 +357,21 @@ model User {
   simulationsCreated    Simulation[]          @relation("SimulationCreator")
   simulationAttempts    SimulationAttempt[]
 
+  /// Per-user sidebar / feature preferences. JSON blob with shape:
+  ///   {
+  ///     hidden: string[];  // feature ids the user has toggled off
+  ///     order:  string[];  // explicit ordering for visible items;
+  ///                        // any id not in this array uses the
+  ///                        // registry's default order.
+  ///   }
+  ///
+  /// Null / empty → use registry defaults. Per-user only — never
+  /// affects other users' view of the platform. See
+  /// src/lib/preferences/registry.ts for the source of truth on
+  /// what's toggleable; whenever a sidebar nav item is added or
+  /// removed, also update that registry.
+  featurePrefs          Json?
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 

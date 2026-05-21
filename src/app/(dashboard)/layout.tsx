@@ -15,6 +15,7 @@ import {
   LayoutBannerProvider,
   type LayoutBannerData,
 } from "@/components/layout/LayoutBanners";
+import { foldEffective, parsePrefs } from "@/lib/preferences/active";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -37,6 +38,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
           demoExpiresAt: true,
           email: true,
           emailVerified: true,
+          // Per-user sidebar prefs (see src/lib/preferences/registry.ts).
+          // Null until the user makes their first toggle on
+          // /profile/preferences. Resolved into a Set<string> below.
+          featurePrefs: true,
         },
       })
     : null;
@@ -87,6 +92,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         allowPlatformContent={userRow?.allowPlatformContent ?? false}
         queueCounts={queueCounts}
         committees={committeeSlugs}
+        hiddenFeatures={foldEffective(parsePrefs(userRow?.featurePrefs)).hiddenSet}
       />
       <main className="flex-1 overflow-y-auto relative">
         {/* Platform rule: the editorial hero (DSPageHeader) is the

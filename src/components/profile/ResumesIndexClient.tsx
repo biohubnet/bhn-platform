@@ -16,6 +16,8 @@ import { useRouter } from "next/navigation";
 import {
   Plus, FileText, Clock, MessageCircle, Archive, RotateCcw, Pencil, Copy, Eye, Sparkles, Loader2,
 } from "lucide-react";
+import type { ResumeContent } from "@/lib/resume/types";
+import { ResumeThumbnail } from "./ResumeThumbnail";
 
 interface PostingChip {
   id: string;
@@ -30,6 +32,9 @@ interface ResumeRow {
   lastEditedAt: string;
   version: number;
   hasParsed: boolean;
+  /** Full content tree — used by ResumeThumbnail to render the
+   *  paper-style mini preview on each card. */
+  content: ResumeContent;
   derivedFrom: { id: string; name: string } | null;
   derivedForPosting: PostingChip | null;
   commentCount: number;
@@ -194,93 +199,109 @@ function ResumeCard({
   const updatedRel = formatRelative(row.lastEditedAt);
   return (
     <li className={
-      "rounded-xl border p-3 space-y-2 transition-colors " +
+      "rounded-xl border p-3 transition-colors flex gap-3 " +
       (row.isArchived
         ? "border-line bg-bg/30"
         : "border-line bg-card-solid hover:bg-elevated")
     }>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <Link href={`/profile/resume?id=${row.id}`} className="block">
-            <p className="text-sm font-semibold text-fg leading-tight hover:underline truncate">
-              {row.name}
+      {/* Paper-style thumbnail — clickable through to the editor so
+          the whole left column reads as "open this resume". */}
+      <Link
+        href={`/profile/resume?id=${row.id}`}
+        className="shrink-0 self-start block hover:opacity-90 transition-opacity"
+        aria-label={`Open ${row.name}`}
+      >
+        <ResumeThumbnail
+          content={row.content}
+          width={144}
+          dimmed={row.isArchived}
+        />
+      </Link>
+
+      <div className="min-w-0 flex-1 flex flex-col gap-1.5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <Link href={`/profile/resume?id=${row.id}`} className="block">
+              <p className="text-sm font-semibold text-fg leading-tight hover:underline truncate">
+                {row.name}
+              </p>
+            </Link>
+            <p className="text-[10.5px] uppercase tracking-[0.14em] font-mono text-fg-subtle mt-0.5 tabular-nums">
+              v{row.version}
+              {row.hasParsed && <span className="ml-1.5 text-brand-700 normal-case font-semibold inline-flex items-center gap-0.5"><Sparkles size={9} /> parsed</span>}
             </p>
-          </Link>
-          <p className="text-[10.5px] uppercase tracking-[0.14em] font-mono text-fg-subtle mt-0.5 tabular-nums">
-            v{row.version}
-            {row.hasParsed && <span className="ml-1.5 text-brand-700 normal-case font-semibold inline-flex items-center gap-0.5"><Sparkles size={9} /> parsed</span>}
-          </p>
+          </div>
+          {row.isArchived && (
+            <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-[0.14em] font-bold bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200">
+              <Archive size={9} /> Archived
+            </span>
+          )}
         </div>
-        {row.isArchived && (
-          <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-[0.14em] font-bold bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200">
-            <Archive size={9} /> Archived
-          </span>
+
+        {row.derivedFrom && (
+          <p className="text-[11px] text-fg-muted">
+            Derived from <Link href={`/profile/resume?id=${row.derivedFrom.id}`} className="font-medium text-brand-700 hover:underline">{row.derivedFrom.name}</Link>
+          </p>
         )}
-      </div>
-
-      {row.derivedFrom && (
-        <p className="text-[11px] text-fg-muted">
-          Derived from <Link href={`/profile/resume?id=${row.derivedFrom.id}`} className="font-medium text-brand-700 hover:underline">{row.derivedFrom.name}</Link>
-        </p>
-      )}
-      {row.derivedForPosting && (
-        <p className="text-[11px] text-fg-muted">
-          Tailored for {row.derivedForPosting.companyName} · {row.derivedForPosting.title}
-        </p>
-      )}
-
-      <div className="flex items-center gap-2 text-[11px] text-fg-muted">
-        <span className="inline-flex items-center gap-1"><Clock size={10} /> {updatedRel}</span>
-        {row.commentCount > 0 && (
-          <span className="inline-flex items-center gap-1"><MessageCircle size={10} /> {row.commentCount}</span>
+        {row.derivedForPosting && (
+          <p className="text-[11px] text-fg-muted">
+            Tailored for {row.derivedForPosting.companyName} · {row.derivedForPosting.title}
+          </p>
         )}
-      </div>
 
-      <div className="flex items-center gap-1 pt-1 flex-wrap">
-        <Link
-          href={`/profile/resume?id=${row.id}`}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold bg-brand-50 text-brand-800 ring-1 ring-brand-200 hover:bg-brand-100"
-        >
-          <FileText size={10} /> Open
-        </Link>
-        <Link
-          href={`/profile/resume/preview?id=${row.id}`}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-fg-muted ring-1 ring-line hover:bg-elevated"
-        >
-          <Eye size={10} /> Preview
-        </Link>
-        <button
-          type="button"
-          onClick={onDuplicate}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-fg-muted ring-1 ring-line hover:bg-elevated"
-        >
-          <Copy size={10} /> Duplicate
-        </button>
-        <button
-          type="button"
-          onClick={onRename}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-fg-muted ring-1 ring-line hover:bg-elevated"
-        >
-          <Pencil size={10} /> Rename
-        </button>
-        {onArchive && (
+        <div className="flex items-center gap-2 text-[11px] text-fg-muted">
+          <span className="inline-flex items-center gap-1"><Clock size={10} /> {updatedRel}</span>
+          {row.commentCount > 0 && (
+            <span className="inline-flex items-center gap-1"><MessageCircle size={10} /> {row.commentCount}</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1 flex-wrap mt-auto pt-1">
+          <Link
+            href={`/profile/resume?id=${row.id}`}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold bg-brand-50 text-brand-800 ring-1 ring-brand-200 hover:bg-brand-100"
+          >
+            <FileText size={10} /> Open
+          </Link>
+          <Link
+            href={`/profile/resume/preview?id=${row.id}`}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-fg-muted ring-1 ring-line hover:bg-elevated"
+          >
+            <Eye size={10} /> Preview
+          </Link>
           <button
             type="button"
-            onClick={onArchive}
-            className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-rose-700 hover:bg-rose-50"
+            onClick={onDuplicate}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-fg-muted ring-1 ring-line hover:bg-elevated"
           >
-            <Archive size={10} /> Archive
+            <Copy size={10} /> Duplicate
           </button>
-        )}
-        {onRestore && (
           <button
             type="button"
-            onClick={onRestore}
-            className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-brand-700 hover:bg-brand-50"
+            onClick={onRename}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-fg-muted ring-1 ring-line hover:bg-elevated"
           >
-            <RotateCcw size={10} /> Restore
+            <Pencil size={10} /> Rename
           </button>
-        )}
+          {onArchive && (
+            <button
+              type="button"
+              onClick={onArchive}
+              className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-rose-700 hover:bg-rose-50"
+            >
+              <Archive size={10} /> Archive
+            </button>
+          )}
+          {onRestore && (
+            <button
+              type="button"
+              onClick={onRestore}
+              className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-brand-700 hover:bg-brand-50"
+            >
+              <RotateCcw size={10} /> Restore
+            </button>
+          )}
+        </div>
       </div>
     </li>
   );

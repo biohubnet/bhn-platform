@@ -56,7 +56,7 @@ import {
   Ghost,
   MessageSquare,
   Gauge,
-  Sliders,
+  Sliders, SlidersHorizontal,
   Eye,
   Drama,
 } from "lucide-react";
@@ -67,6 +67,12 @@ interface NavItem {
   icon: React.ElementType;
   minRole?: "instructor" | "admin" | "superadmin";
   exact?: boolean;
+  /** Stable id that maps this item to a row in the preferences
+   *  switchboard (src/lib/preferences/registry.ts). When set, the
+   *  Sidebar filters the item out if the viewing user has it hidden
+   *  in their featurePrefs. Items without a featureId aren't
+   *  user-hideable (e.g. the dashboard always shows). */
+  featureId?: string;
   /** One-or-two-sentence "what does this do" surfaced as a hover/focus
    *  popover next to the link. Kept English-only for now; if we localize
    *  later, swap for descriptionKey + dictionary entry. */
@@ -79,30 +85,45 @@ interface NavItem {
   badgeKey?: string;
 }
 
-// Always-visible top item.
+// Always-visible top item. Dashboard intentionally has no featureId
+// because hiding it leaves a user with nowhere to land — keep it
+// unhideable; the switchboard registry references "learn-dashboard"
+// but the toggle is informational only.
 const dashboardItem: NavItem & { labelKey: string } = {
   label: "Dashboard", labelKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true,
+  featureId: "learn-dashboard",
   description: "Home base. What's in progress, your credit balance, and quick links into the catalog and pathways.",
 };
 
 // ENGAGE — the learning loop: catalog → pathway → progress → credits → rewards.
 const engageItems: (NavItem & { labelKey: string })[] = [
   { label: "Course Catalog",     labelKey: "nav.catalog",     href: "/courses", icon: BookOpen,
+    featureId: "learn-courses",
     description: "Every published course. Natural-language search ranks results by what each course actually covers, not just keyword matches." },
   { label: "Learning Pathways",  labelKey: "nav.pathways",    href: "/pathways", icon: Layers,
+    featureId: "learn-pathways",
     description: "Multi-course learning journeys with a single certificate at the end. Some are open; gated ones need admin approval." },
   { label: "My Courses",         labelKey: "nav.myCourses",   href: "/my-courses", icon: GraduationCap,
+    featureId: "learn-my-courses",
     description: "Active enrollments and completed courses. Pick up where you left off." },
   { label: "Gradebook",          labelKey: "nav.gradebook",   href: "/gradebook", icon: BarChart3,
+    featureId: "learn-gradebook",
     description: "Your grades across every course — assessment scores, completion status, time spent." },
   { label: "Certificates",       labelKey: "nav.certificates",href: "/certificates", icon: Award,
+    featureId: "learn-certificates",
     description: "Every credential you've earned. Each has a public verify link to share with employers." },
   { label: "My Credits",         labelKey: "nav.credits",     href: "/credits", icon: Coins,
+    featureId: "learn-credits",
     description: "Balance plus a log of every grant and spend. Apply for additional credits here." },
   { label: "Rewards",            labelKey: "nav.rewards",     href: "/rewards", icon: Gift,
+    featureId: "learn-rewards",
     description: "BHN merch rewards at 2,500 and 5,000 credits trained. Pickup at U of T or request mailing." },
   { label: "Events",             labelKey: "nav.events",      href: "/events", icon: Calendar,
+    featureId: "engage-events",
     description: "BHN Annual Symposium & Training Week. Workshops, agenda, speakers. Register here." },
+  { label: "Preferences",        labelKey: "nav.preferences", href: "/profile/preferences", icon: SlidersHorizontal,
+    featureId: "account-preferences",
+    description: "Switchboard for what shows up in your sidebar. Per-user — never affects anyone else." },
 ];
 
 // EXPERIENCE — applications and connections to industry placements.
@@ -114,8 +135,10 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "How it works",              labelKey: "nav.experienceGuide", href: "/experience",            icon: Compass,
     description: "End-to-end explainer for the EXPERIENCE program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
   { label: "Application Builder",       labelKey: "nav.application", href: "/profile/application",      icon: FileText,
+    featureId: "profile-application",
     description: "Build a reusable resume + 1-min video intro + elevator pitch. Made once; auto-attached to every application form." },
   { label: "Resume (structured)",       labelKey: "nav.resumeStructured", href: "/profile/resumes",       icon: FileText,
+    featureId: "profile-resumes",
     description: "Maintain one master resume + tailored copies per role. Each has its own version history, mentor comments, and PDF export. Click through any card to edit it." },
   { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase,
     description: "Submit bio, supervisor letter, transcript, resume, and STAR video — we share with vetted industry partners." },
@@ -126,11 +149,14 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "RPG",                       labelKey: "nav.simulator",   href: "/simulator",                icon: Drama,
     description: "Practise any role before you apply. Paste a job-posting URL and live through a 12-week quarter as that person — 1:1s, escalations, hiring, the QBR. Every choice moves five stats. End-of-quarter performance review from your VP." },
   { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList,
+    featureId: "experience-tracker",
     description: "Status of every application you've submitted across the platform — submitted, reviewed, interview, offer.",
     badgeKey: "offer-requests" },
   { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Lightbulb,
+    featureId: "profile-skills",
     description: "Skills you've earned through training. Mapped against postings to surface ones you'd be strong for." },
   { label: "Story Bank",                labelKey: "nav.stories",     href: "/profile/stories",          icon: BookOpen,
+    featureId: "profile-stories",
     description: "Reusable STAR-format stories from your application prep. Tagged by skill so the prep flow can suggest 'use this story' on the next posting." },
   { label: "Interviews",                labelKey: "nav.interviews",  href: "/interviews",               icon: Calendar,
     description: "Interviews scheduled with employers — date, format, link, and prep notes in one place.",
@@ -430,6 +456,10 @@ interface SidebarProps {
    *  a COMMITTEES section without an additional fetch. Empty array →
    *  no section rendered. */
   committees?: string[];
+  /** Set of featureIds the viewing user has hidden via the
+   *  /profile/preferences switchboard. Items in this set are filtered
+   *  out of the sidebar before render. */
+  hiddenFeatures?: Set<string>;
 }
 
 /**
@@ -941,7 +971,15 @@ export function Sidebar({
   role, realRole, actingAs, user, credits, allowPlatformContent = false,
   queueCounts,
   committees = [],
+  hiddenFeatures,
 }: SidebarProps) {
+  // Helper used wherever the sidebar iterates an item list — drops
+  // items the user has hidden via /profile/preferences. When the
+  // prop is absent (legacy renders, tests, etc.) nothing is filtered.
+  const visibleByPrefs = <T extends { featureId?: string }>(items: T[]): T[] =>
+    hiddenFeatures && hiddenFeatures.size > 0
+      ? items.filter((i) => !i.featureId || !hiddenFeatures.has(i.featureId))
+      : items;
   const pathname = usePathname();
   const t = useT();
   // Effective role for visibility gating. When a superadmin is acting
@@ -1142,7 +1180,7 @@ export function Sidebar({
               },
             ]}
           >
-            {engageItems.map((item) => {
+            {visibleByPrefs(engageItems).map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
             })}
@@ -1190,7 +1228,7 @@ export function Sidebar({
               },
             ]}
           >
-            {experienceItems.map((item) => {
+            {visibleByPrefs(experienceItems).map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
             })}

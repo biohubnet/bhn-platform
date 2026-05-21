@@ -25,6 +25,12 @@ export default async function ResumesIndexPage() {
   const userId = (session.user as { id?: string }).id;
   if (!userId) redirect("/login");
 
+  // We pull `content` here so the index can render a paper-style
+  // thumbnail per row. Resume.content is a JSON blob containing the
+  // structured tree; the thumbnail component only reads
+  // header.name + sections[].title + items[].title + bullet counts,
+  // which is cheap. For users with many resumes this is still a
+  // bounded payload (~few KB each) so the overhead's fine.
   const resumes = await prisma.resume.findMany({
     where: { userId },
     orderBy: [{ isArchived: "asc" }, { lastEditedAt: "desc" }],
@@ -35,6 +41,7 @@ export default async function ResumesIndexPage() {
       lastEditedAt: true,
       version: true,
       parsedAt: true,
+      content: true,
       derivedFromId: true,
       derivedForPostingId: true,
       derivedFrom: { select: { id: true, name: true } },
@@ -75,6 +82,7 @@ export default async function ResumesIndexPage() {
             lastEditedAt: r.lastEditedAt.toISOString(),
             version: r.version,
             hasParsed: !!r.parsedAt,
+            content: r.content as never,
             derivedFrom: r.derivedFrom,
             derivedForPosting: r.derivedForPostingId
               ? (postingById.get(r.derivedForPostingId) ?? null)
