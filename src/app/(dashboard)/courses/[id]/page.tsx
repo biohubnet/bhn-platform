@@ -258,6 +258,35 @@ export default async function CourseDetailPage({
                 {enrollment.progress > 0 ? "Continue Learning" : "Start Learning"}
               </Link>
             )}
+            {/* Enrolled but the course has no playable content yet —
+                no SCORM package AND no modules. Previously this
+                left the action row empty with no explanation; now
+                we show a disabled button so the user understands
+                why there's no launch, and (for staff) a CTA to add
+                content. Without this branch enrolled trainees would
+                arrive, look around, and silently bounce. */}
+            {enrollment && !course.scormPackage && course.modules.length === 0 && (
+              isStaff ? (
+                <a
+                  href="#course-content"
+                  className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                  title="This course has no SCORM package and no modules — trainees can enrol but won't see a launch button. Scroll to the Course package section to upload one."
+                >
+                  <AlertCircle size={14} />
+                  Add course content
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  title="The instructor hasn't added course content yet. Check back soon, or reach out to your mentor if this is blocking you."
+                  className="flex items-center gap-2 bg-elevated text-subtle text-sm font-medium px-4 py-2 rounded-lg cursor-not-allowed ring-1 ring-inset ring-line"
+                >
+                  <Play size={14} />
+                  No content yet
+                </button>
+              )
+            )}
           </div>
         </div>
 
@@ -295,7 +324,7 @@ export default async function CourseDetailPage({
           anywhere visible. Section heading is now generic and the
           metadata is reduced to the entry point + upload date. */}
       {isStaff && (
-        <div className="bg-card rounded-xl border border-line p-6">
+        <div id="course-content" className="bg-card rounded-xl border border-line p-6 scroll-mt-20">
           <h2 className="text-base font-semibold text-fg mb-4 flex items-center gap-2">
             <Upload size={16} />
             Course package
