@@ -944,7 +944,7 @@ export function ResumeEditor({
               </select>
               <input
                 type="text"
-                placeholder={`Custom title (defaults to "${SECTION_LABEL[section.kind]}")`}
+                placeholder={`Optional · custom heading (default "${SECTION_LABEL[section.kind]}")`}
                 value={section.title ?? ""}
                 onChange={(e) => updateSection(sIdx, { title: e.target.value })}
                 className="bg-transparent border-0 text-base font-semibold text-fg focus:outline-none focus:bg-card rounded px-2 py-0.5 -ml-2"
