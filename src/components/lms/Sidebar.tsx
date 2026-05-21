@@ -31,7 +31,7 @@ import {
   Pipette,
   LineChart,
   Coins as CoinsIcon,
-  UserCog, UserCircle2,
+  UserCog,
   HeartHandshake,
   Briefcase,
   Users2,
@@ -123,18 +123,12 @@ const engageItems: (NavItem & { labelKey: string })[] = [
     description: "BHN Annual Symposium & Training Week. Workshops, agenda, speakers. Register here." },
 ];
 
-// MY PROFILE — account-level settings + personal-control surfaces.
-// Lives at the bottom of the user nav. Currently small but grows
-// as more per-user controls land (notification prefs, theme, etc.).
-//
-// "Feature switcher board" routes to /profile (anchor #feature-switcher
-// for an in-page scroll); the standalone /profile/preferences route
-// still works for any deep links that already exist.
-const myProfileItems: (NavItem & { labelKey: string })[] = [
-  { label: "My profile",         labelKey: "nav.myProfile",   href: "/profile",             icon: UserCircle2,
-    featureId: "account-profile",
-    description: "Account info + Feature switcher board (controls what shows up in your sidebar)." },
-];
+// MY PROFILE section retired from the sidebar — it carried a single
+// link to /profile that duplicated the avatar at the bottom-left of
+// the sidebar (which already opens the same page). One affordance
+// per surface keeps the nav scannable. The /profile route + the
+// Feature switcher board it contains are unaffected; reach them via
+// the avatar.
 
 // EXPERIENCE — applications and connections to industry placements.
 // Renamed (8 May 2026) from "My Application" / "My Applications" to
@@ -1534,21 +1528,10 @@ export function Sidebar({
           </>
         )}
 
-        {/* MY PROFILE — account-level settings + personal-control
-            surfaces. Sits below the program-pillar nav so users can
-            reach Preferences without scrolling the whole sidebar. */}
-        {showLearnerNav && visibleByPrefs(myProfileItems).length > 0 && (
-          <SectionGroup
-            title="MY PROFILE"
-            tone="neutral"
-            description="Per-user settings — only affects your own view of the platform."
-          >
-            {visibleByPrefs(myProfileItems).map((item) => {
-              const labeled = { ...item, label: t(item.labelKey) };
-              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
-            })}
-          </SectionGroup>
-        )}
+        {/* MY PROFILE retired — the avatar at the bottom-left of
+            the sidebar already routes to /profile, so this section
+            was duplicated affordance. The /profile route still
+            works (Feature switcher board lives there). */}
 
         {isAdmin && (
           <SectionGroup
