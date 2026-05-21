@@ -69,6 +69,16 @@ const ARCHIVE_ENTRIES: ArchiveEntry[] = [
     tags: ["M34", "Y2K", "Glass", "Aero"],
   },
   {
+    slug: "create-resume-fx",
+    title: "Create resume · 4 transition candidates",
+    description:
+      "Side-by-side preview of four candidate transitions for the moment between clicking 'Create' and landing in the editor. Each runs in ~500-700ms with a Replay button: A — paper sliding up from a DRAFTS drawer at the bottom; B — round rubber stamp drops in tilted, slams the sheet, lifts off with an 'ISSUED' mark behind it; C — type-on scaffold (typewriter sweep with blinking cursor); D — origami unfold from a small diamond with lingering crease lines. Pick one and the chosen primitive gets wired into ResumeCreatingOverlay.",
+    date: "2026-05-21",
+    count: 4,
+    countLabel: "transitions",
+    tags: ["Animation", "Create flow", "Resume", "Microinteraction"],
+  },
+  {
     slug: "design-tokens",
     title: "Design tokens · all 13 themes visualised",
     description:

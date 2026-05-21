@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Create resume · animation candidates</title>
+  <style>
+    :root {
+      --bg:        #ecedea;
+      --card:      #fafaf6;
+      --elevated:  #e3e3df;
+      --fg:        #1c1c20;
+      --fg-muted:  #565660;
+      --fg-subtle: #8d8d96;
+      --line:      rgba(28,28,32,0.10);
+      --brand-100: #cadbe1;
+      --brand-300: #7398a4;
+      --brand-500: #3b6471;
+      --brand-700: #213c46;
+      --brand-900: #101e24;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; background: var(--bg); color: var(--fg); font: 14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 1200px; margin: 0 auto; padding: 36px 24px 80px; }
+    header.doc h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.01em; }
+    header.doc p  { margin: 0; color: var(--fg-muted); max-width: 760px; }
+    header.doc    { margin-bottom: 30px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+    .cell {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 22px 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .cell .meta {
+      flex-shrink: 0;
+    }
+    .cell .meta h2 {
+      margin: 0 0 4px;
+      font-size: 16px;
+    }
+    .cell .meta p {
+      margin: 0;
+      color: var(--fg-muted);
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+    .stage {
+      position: relative;
+      height: 340px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background:
+        repeating-linear-gradient(45deg,
+          color-mix(in oklab, var(--elevated) 60%, transparent) 0 8px,
+          transparent 8px 16px),
+        var(--bg);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .replay {
+      align-self: flex-start;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: var(--brand-700);
+      color: white;
+      border: 1px solid var(--brand-900);
+      font: 700 11px/1 ui-monospace, monospace;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .replay:hover { background: var(--brand-900); }
+
+    /* ─── Shared "sheet" — a stylised resume page used as the
+            landing element in every variant. */
+    .sheet {
+      width: 200px;
+      height: 260px;
+      background: white;
+      border: 1px solid rgba(0,0,0,0.10);
+      border-radius: 6px;
+      box-shadow:
+        0 22px 32px -22px rgba(0,0,0,0.35),
+        0 4px 10px -4px rgba(0,0,0,0.18);
+      padding: 18px 18px 14px;
+      position: relative;
+    }
+    .sheet .row { display: block; height: 4px; border-radius: 2px; background: #d4d4d8; margin-bottom: 6px; }
+    .sheet .row.head { height: 10px; background: #1c1c20; width: 60%; margin-bottom: 8px; }
+    .sheet .row.contact { height: 3px; width: 78%; background: #71717a; margin-bottom: 14px; }
+    .sheet .block { margin-bottom: 10px; }
+    .sheet .block .head2 { height: 5px; width: 40%; background: var(--brand-500); margin-bottom: 5px; border-radius: 2px; }
+    .sheet .block .body { height: 3.5px; width: 96%; background: #a1a1aa; margin-bottom: 4px; border-radius: 2px; }
+    .sheet .block .body.short { width: 70%; }
+
+    /* ─────────────────────────────────────────────────────────────
+       Variant A · Paper sliding up from a drawer
+       The drawer label sits at the bottom. A sheet lifts up from
+       behind it and settles in the centre. Mask + transforms give
+       the illusion of the sheet emerging from inside the drawer.
+       ───────────────────────────────────────────────────────────── */
+    .vA .stage { padding-bottom: 36px; align-items: flex-end; }
+    .vA .sheet {
+      animation: vA-lift 620ms cubic-bezier(0.22, 1.05, 0.30, 1.0) forwards;
+      transform: translateY(160px);
+      opacity: 0;
+      margin-bottom: 24px;
+    }
+    @keyframes vA-lift {
+      0%   { transform: translateY(160px) scale(0.98); opacity: 0; }
+      40%  { opacity: 1; }
+      80%  { transform: translateY(-6px) scale(1);      opacity: 1; }
+      100% { transform: translateY(0)    scale(1);      opacity: 1; }
+    }
+    .vA .drawer {
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 0;
+      height: 28px;
+      background: linear-gradient(180deg, #2a323e, #1a2028);
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 700 10px/1 ui-monospace, monospace;
+      letter-spacing: 0.20em;
+      text-transform: uppercase;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.10),
+                  0 -8px 14px -4px rgba(0,0,0,0.25);
+      z-index: 2;
+    }
+    /* The drawer "slot" above the label — a thin dark gap the
+       sheet looks like it's emerging from. */
+    .vA .drawer::before {
+      content: "";
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      top: -3px;
+      height: 3px;
+      background: #0d1117;
+      border-radius: 2px;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       Variant B · Stamp / certify
+       A round rubber stamp drops in from above with a slight tilt,
+       compresses on impact, lifts off, and the sheet remains.
+       ───────────────────────────────────────────────────────────── */
+    .vB .stage { position: relative; }
+    .vB .sheet {
+      opacity: 0;
+      animation: vB-sheet-in 200ms 380ms ease-out forwards;
+    }
+    @keyframes vB-sheet-in {
+      from { opacity: 0; transform: scale(0.95); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .vB .stamp {
+      position: absolute;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #be4040, #7a1c1c);
+      border: 3px solid #5b1010;
+      box-shadow:
+        0 22px 30px -8px rgba(122,28,28,0.5),
+        inset 0 0 0 6px rgba(255,255,255,0.18),
+        inset 0 0 0 7px #7a1c1c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font: 700 10px/1.1 ui-monospace, monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      text-align: center;
+      animation: vB-stamp 700ms cubic-bezier(0.30, 1.4, 0.32, 1.0) forwards;
+      transform: translateY(-360px) rotate(-22deg) scale(1.2);
+      z-index: 3;
+    }
+    @keyframes vB-stamp {
+      0%   { transform: translateY(-360px) rotate(-22deg) scale(1.2); }
+      55%  { transform: translateY(0)     rotate(-6deg)  scale(1.04); }
+      62%  { transform: translateY(8px)   rotate(-3deg)  scale(0.96); }
+      70%  { transform: translateY(-2px)  rotate(-1deg)  scale(1.00); }
+      100% { transform: translateY(-160px) rotate(2deg)  scale(0.85); opacity: 0.7; }
+    }
+    /* The ink mark left behind on the sheet. */
+    .vB .ink-mark {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border: 2.5px solid rgba(122,28,28,0.85);
+      border-radius: 50%;
+      opacity: 0;
+      animation: vB-ink 600ms 300ms ease-out forwards;
+      z-index: 2;
+    }
+    .vB .ink-mark::before {
+      content: "ISSUED";
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(122,28,28,0.85);
+      font: 700 9px/1 ui-monospace, monospace;
+      letter-spacing: 0.20em;
+    }
+    @keyframes vB-ink {
+      0%   { opacity: 0; transform: scale(1.4); }
+      30%  { opacity: 0.95; transform: scale(1); }
+      100% { opacity: 0.85; transform: scale(1); }
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       Variant C · Type-on scaffold
+       The sheet appears instantly. Inside, the rows expand width
+       (typewriter-style) one at a time over ~600ms.
+       ───────────────────────────────────────────────────────────── */
+    .vC .sheet .row,
+    .vC .sheet .block .head2,
+    .vC .sheet .block .body {
+      width: 0 !important;
+      animation: vC-type 240ms cubic-bezier(0.5, 0, 0.2, 1) forwards;
+    }
+    .vC .sheet .row.head    { animation-delay:  80ms; }
+    .vC .sheet .row.contact { animation-delay: 150ms; }
+    .vC .sheet .block:nth-of-type(3) .head2 { animation-delay: 240ms; }
+    .vC .sheet .block:nth-of-type(3) .body:nth-of-type(1) { animation-delay: 290ms; }
+    .vC .sheet .block:nth-of-type(3) .body:nth-of-type(2) { animation-delay: 330ms; }
+    .vC .sheet .block:nth-of-type(4) .head2 { animation-delay: 380ms; }
+    .vC .sheet .block:nth-of-type(4) .body:nth-of-type(1) { animation-delay: 420ms; }
+    .vC .sheet .block:nth-of-type(4) .body:nth-of-type(2) { animation-delay: 460ms; }
+    .vC .sheet .block:nth-of-type(5) .head2 { animation-delay: 510ms; }
+    .vC .sheet .block:nth-of-type(5) .body:nth-of-type(1) { animation-delay: 550ms; }
+    .vC .sheet .block:nth-of-type(5) .body:nth-of-type(2) { animation-delay: 590ms; }
+    @keyframes vC-type {
+      to { width: var(--target, 100%) !important; }
+    }
+    /* Set per-row targets via CSS variables. */
+    .vC .sheet .row.head    { --target: 60%; }
+    .vC .sheet .row.contact { --target: 78%; }
+    .vC .sheet .block .head2 { --target: 40%; }
+    .vC .sheet .block .body  { --target: 96%; }
+    .vC .sheet .block .body.short { --target: 70%; }
+    /* A small blinking cursor at the end of the last typed line. */
+    .vC .cursor {
+      position: absolute;
+      width: 2px;
+      height: 8px;
+      background: var(--brand-500);
+      animation: vC-cursor-blink 0.7s 600ms steps(2, jump-none) infinite,
+                 vC-cursor-fade 200ms 1100ms ease-out forwards;
+    }
+    @keyframes vC-cursor-blink {
+      50% { opacity: 0; }
+    }
+    @keyframes vC-cursor-fade {
+      to { opacity: 0; }
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       Variant D · Origami unfold
+       Small folded diamond expands in two beats — diagonal then
+       lateral — until it's a full sheet. Crease lines linger as
+       a hint of the folds.
+       ───────────────────────────────────────────────────────────── */
+    .vD .sheet {
+      transform-origin: center;
+      animation: vD-unfold 720ms cubic-bezier(0.22, 1.05, 0.30, 1.0) forwards;
+      transform: rotate(45deg) scale(0.18);
+      opacity: 0;
+    }
+    @keyframes vD-unfold {
+      0%   { transform: rotate(45deg)  scale(0.18); opacity: 0; }
+      25%  { transform: rotate(45deg)  scale(0.30); opacity: 0.7; }
+      45%  { transform: rotate(20deg)  scale(0.55) scaleY(0.4); opacity: 0.95; }
+      70%  { transform: rotate(0deg)   scale(0.85) scaleY(1);    opacity: 1; }
+      85%  { transform: rotate(0deg)   scale(1.04); }
+      100% { transform: rotate(0deg)   scale(1);    opacity: 1; }
+    }
+    /* Crease lines on the sheet — appear briefly, fade out. */
+    .vD .crease {
+      position: absolute;
+      background: rgba(0,0,0,0.10);
+      opacity: 0;
+      animation: vD-crease 600ms 500ms ease-out forwards;
+      pointer-events: none;
+    }
+    .vD .crease-diag {
+      top: 0; left: 50%;
+      width: 1px;
+      height: 100%;
+      transform-origin: top center;
+      transform: rotate(35deg);
+    }
+    .vD .crease-h {
+      left: 0; right: 0;
+      top: 50%;
+      height: 1px;
+    }
+    @keyframes vD-crease {
+      0%   { opacity: 0;    }
+      30%  { opacity: 0.6;  }
+      100% { opacity: 0.10; }
+    }
+
+    .footnote {
+      margin-top: 32px;
+      padding: 14px 16px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.02);
+      color: var(--fg-muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="doc">
+      <h1>Create-resume animation · candidate variations</h1>
+      <p>
+        Four candidate transitions for the moment between &quot;click Create&quot; and &quot;land in the editor&quot;.
+        Each runs in ~500-700ms. Click <strong>Replay</strong> on a panel to see it again. All
+        motion is pure CSS keyframes — no library, no React; the production version would use the
+        same primitives wired into <code>ResumeCreatingOverlay.tsx</code>.
+      </p>
+    </header>
+
+    <div class="grid">
+      <!-- Variant A — paper from a drawer -->
+      <div class="cell vA">
+        <div class="meta">
+          <h2>A · Paper sliding up from a drawer</h2>
+          <p>A small DRAFTS label sits at the bottom; a sheet lifts up from behind it with a slight overshoot, then settles. Reads as <em>pulled from the system</em>.</p>
+        </div>
+        <div class="stage" id="stage-vA">
+          <div class="sheet">
+            <span class="row head"></span>
+            <span class="row contact"></span>
+            <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
+            <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
+            <div class="block"><span class="head2"></span><span class="body short"></span></div>
+          </div>
+          <div class="drawer">Drafts</div>
+        </div>
+        <button class="replay" onclick="replay('vA')">Replay</button>
+      </div>
+
+      <!-- Variant B — stamp / certify -->
+      <div class="cell vB">
+        <div class="meta">
+          <h2>B · Stamp · certify</h2>
+          <p>A round rubber stamp drops in tilted from above, slams onto the centre, compresses, lifts off, and the sheet remains stamped &quot;ISSUED&quot;. Feels <em>authoritative · officially logged</em>.</p>
+        </div>
+        <div class="stage" id="stage-vB">
+          <div class="sheet">
+            <span class="row head"></span>
+            <span class="row contact"></span>
+            <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
+            <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
+            <div class="block"><span class="head2"></span><span class="body short"></span></div>
+            <span class="ink-mark"></span>
+          </div>
+          <div class="stamp">RESUME<br/>ISSUED</div>
+        </div>
+        <button class="replay" onclick="replay('vB')">Replay</button>
+      </div>
+
+      <!-- Variant C — type-on scaffold -->
+      <div class="cell vC">
+        <div class="meta">
+          <h2>C · Type-on scaffold</h2>
+          <p>Blank sheet appears instantly. Lines &quot;type themselves&quot; in a rapid typewriter sweep — name, contact, three sections each with body lines. Cursor blinks at the end. Feels <em>fast · technical</em>.</p>
+        </div>
+        <div class="stage" id="stage-vC">
+          <div class="sheet">
+            <span class="row head"></span>
+            <span class="row contact"></span>
+            <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
+            <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
+            <div class="block"><span class="head2"></span><span class="body short"></span></div>
+            <span class="cursor" style="bottom: 22px; left: 80px;"></span>
+          </div>
+        </div>
+        <button class="replay" onclick="replay('vC')">Replay</button>
+      </div>
+
+      <!-- Variant D — origami unfold -->
+      <div class="cell vD">
+        <div class="meta">
+          <h2>D · Origami unfold</h2>
+          <p>Starts as a tiny rotated diamond. Unfolds in three beats — rotation, lateral expand, lay flat — with faint crease lines lingering. Feels <em>crafted · playful · made by hand</em>.</p>
+        </div>
+        <div class="stage" id="stage-vD">
+          <div class="sheet">
+            <span class="row head"></span>
+            <span class="row contact"></span>
+            <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
+            <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
+            <div class="block"><span class="head2"></span><span class="body short"></span></div>
+            <span class="crease crease-diag"></span>
+            <span class="crease crease-h"></span>
+          </div>
+        </div>
+        <button class="replay" onclick="replay('vD')">Replay</button>
+      </div>
+    </div>
+
+    <p class="footnote">
+      Once you pick one, say <code>go with A</code> (or B / C / D). I'll wire the chosen one into the
+      live create-resume + duplicate flow at <code>/profile/resumes</code> and retire the other three.
+      The animation primitives are pure CSS keyframes, so the live version will look identical to what
+      you see here.
+    </p>
+  </main>
+  <script>
+    function replay(id) {
+      const stage = document.getElementById('stage-' + id);
+      const clone = stage.cloneNode(true);
+      stage.replaceWith(clone);
+    }
+  </script>
+</body>
+</html>
