@@ -55,13 +55,14 @@ export function MatchingConfigShell({
 
   return (
     <>
-      {/* Centered column — the alien-neural pipeline diagram sits at
-          the top of this column rather than going full-bleed. It's
-          compact (~280 px tall, max-w-[700px] centered) so it reads
-          as a small lit organism above the form, not a hero banner. */}
+      {/* Centered column — page header at the top so the eyebrow +
+          title + description set the context, then the alien-neural
+          pipeline diagram, then the explainer. Compact (~280 px
+          tall, max-w-[700px] centered) so it reads as a small lit
+          organism under the hero, not its own banner. */}
       <div className="max-w-5xl mx-auto space-y-6">
-        <MatchingPipelineAnimation config={cfg} />
         {pageHeader}
+        <MatchingPipelineAnimation config={cfg} />
         {explainer}
         <MatchingConfigClient
           initial={initial}

@@ -615,11 +615,14 @@ export function MatchingPipelineAnimation({ config }: Props) {
                 >
                   {h.weight}
                 </text>
-                {/* Subscore label — placed to the SIDE of the node
-                    in the wide canvas, not below, because vertical
-                    space is tight in the new shorter strip. */}
+                {/* Subscore label — to the SIDE of the node, placed
+                    well BELOW the axon's exit y so the path going
+                    out toward the output node doesn't strike through
+                    the type. Previously sat at y+3 (essentially the
+                    same horizontal as the path) and the output-going
+                    bezier visibly crossed the letters. */}
                 <text
-                  x={HIDDEN_X + 24} y={y + 3}
+                  x={HIDDEN_X + 24} y={y + 22}
                   fill={h.hue}
                   fontSize="10"
                   letterSpacing="2"
@@ -635,14 +638,15 @@ export function MatchingPipelineAnimation({ config }: Props) {
                     reads as actively processing. Pool varies per
                     subscore (direct = single-token matches,
                     semantic = ≈ relationships, pathway = → graph
-                    walks); see MIDDLE_CAPTION_POOLS. */}
+                    walks); see MIDDLE_CAPTION_POOLS. Also nudged
+                    down to keep its baseline clear of the axon. */}
                 {(() => {
                   const cap = middleCaptions[h.id] ?? { full: "", visible: 0 };
                   const visibleText = cap.full.slice(0, cap.visible);
                   const stillTyping = cap.visible < cap.full.length;
                   return (
                     <text
-                      x={HIDDEN_X + 24} y={y + 16}
+                      x={HIDDEN_X + 24} y={y + 34}
                       fill="rgba(226, 232, 240, 0.70)"
                       fontSize="9"
                       fontFamily="ui-monospace, monospace"
