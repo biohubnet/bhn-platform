@@ -34,7 +34,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { X, Check } from "lucide-react";
+import { X } from "lucide-react";
 
 // State machine:
 //   closed    → armed       (click cover, cover lifts)
@@ -165,40 +165,98 @@ export function LaunchSwitch({
             • idle/armed (default): rose gradient glow with the
               pulsing DELETE label visible through / under the cover
             • launching: countdown panel with abort ×
-            • completed: green "DELETED" chip with check glyph,
-              shown for ~2s as the action settles. The base also
-              shifts to emerald so the colour change reinforces the
-              state — destructive red → safe-now green. */}
+            • completed: ELIMINATION effect — matte-black chassis
+              with a strike-through "DELETED" label, a horizontal
+              CRT scan-line collapse, and a brief white flash.
+              Reads "this thing is GONE" rather than "this thing is
+              safely confirmed". Holds for ~2s while the host card
+              plays its own outro. */}
       <div
         className={
-          "absolute inset-0 rounded-md overflow-hidden ring-1 transition-colors duration-300 " +
+          "absolute inset-0 rounded-md overflow-hidden ring-1 transition-colors duration-200 " +
           (completed
-            ? "ring-emerald-700/60 bg-gradient-to-b from-emerald-500 to-emerald-700"
+            ? "ring-black/80 bg-zinc-950"
             : "ring-rose-900/60 bg-gradient-to-b from-rose-700 to-rose-900")
         }
         style={{
-          boxShadow: "inset 0 0 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04)",
+          boxShadow: completed
+            ? "inset 0 0 14px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.04)"
+            : "inset 0 0 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04)",
         }}
       >
-        {/* DELETED — terminal confirmation chip. Replaces the
-            launching panel once the countdown hits zero. Sits for
-            ~2s before onFire() fires (see the completed→closed
-            effect above). The host card uses this 2s window to
-            play its own outro animation. */}
+        {/* DELETED — elimination effect. CRT-style: the chassis
+            goes matte black, a horizontal scan-line collapses over
+            it, the text strikes through with a tracking blow-out,
+            and a brief white-bar flash punctuates the end. Holds
+            for ~2s before onFire() fires; the host card uses this
+            window to play its own outro animation. */}
         {completed ? (
-          <div className="absolute inset-0 flex items-center justify-center gap-1.5 px-2">
-            <Check
-              size={size === "md" ? 14 : 11}
-              strokeWidth={3}
-              className="text-white shrink-0"
-              aria-hidden
-            />
-            <span
-              className="font-bold tracking-[0.16em] uppercase text-white"
-              style={{ fontSize: dims.font }}
+          <div className="absolute inset-0 overflow-hidden">
+            {/* The strike-through text. The label fades + spreads
+                slightly as the line draws through it. Layers a
+                subtle text-shadow flicker via the ls_eliminate
+                keyframe so the text feels "shorted out" rather
+                than just printed. */}
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ animation: "ls_eliminate_text 2000ms ease-out forwards" }}
             >
-              Deleted
-            </span>
+              <span
+                className="relative font-bold uppercase text-zinc-300"
+                style={{
+                  fontSize: dims.font,
+                  letterSpacing: "0.18em",
+                }}
+              >
+                Deleted
+                {/* The strike-through line draws across the word
+                    in 320ms then sits as a hard red stroke. */}
+                <span
+                  aria-hidden
+                  className="absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-rose-500"
+                  style={{
+                    height: 1.5,
+                    transformOrigin: "left center",
+                    animation: "ls_strike 360ms cubic-bezier(0.6,0,0.4,1) forwards",
+                  }}
+                />
+              </span>
+            </div>
+            {/* Horizontal CRT scan-line that travels top → bottom
+                then collapses to a single mid-line at the end. */}
+            <span
+              aria-hidden
+              className="absolute left-0 right-0 bg-white/70"
+              style={{
+                height: 1,
+                top: 0,
+                boxShadow: "0 0 8px 1px rgba(255,255,255,0.5)",
+                animation: "ls_scanline 900ms cubic-bezier(0.6,0,0.4,1) forwards",
+              }}
+            />
+            {/* CRT shutdown: at the end the whole panel collapses
+                vertically to a thin line, mimicking an old TV
+                cutting power. Pure transform: scaleY so width
+                stays full. */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "repeating-linear-gradient(to bottom, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px)",
+                opacity: 0.55,
+                animation: "ls_scanlines_fade 2000ms ease-out forwards",
+              }}
+            />
+            {/* Final white-flash bar at ~1700ms — the "TV blink off"
+                punctuation right before onFire fires. */}
+            <span
+              aria-hidden
+              className="absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-white"
+              style={{
+                height: 1,
+                animation: "ls_crt_off 2000ms ease-out forwards",
+              }}
+            />
           </div>
         ) : launching ? (
           <div className="absolute inset-0 flex items-center justify-between pl-2 pr-1">
@@ -342,8 +400,53 @@ export function LaunchSwitch({
             color: rgb(255, 240, 240);
           }
         }
+
+        /* ─── Elimination effect (completed state) ─────────────── */
+        /* The strike-through line scales from 0 → 100% width
+           across the word — feels like a hard red mark slamming
+           through it. */
+        @keyframes ls_strike {
+          0%   { transform: translateY(-50%) scaleX(0); opacity: 0.9; }
+          70%  { transform: translateY(-50%) scaleX(1); opacity: 1; }
+          100% { transform: translateY(-50%) scaleX(1); opacity: 0.85; }
+        }
+        /* Horizontal scan line travels top → bottom and fades. */
+        @keyframes ls_scanline {
+          0%   { top: 0;    opacity: 0.9; }
+          85%  { top: 100%; opacity: 0.7; }
+          100% { top: 100%; opacity: 0;   }
+        }
+        /* Subtle CRT scan-lines fade as the panel dies. */
+        @keyframes ls_scanlines_fade {
+          0%   { opacity: 0;    }
+          15%  { opacity: 0.55; }
+          85%  { opacity: 0.35; }
+          100% { opacity: 0.10; }
+        }
+        /* The "DELETED" text itself: appears, holds, then on the
+           final beat its letter-spacing blows out + opacity drops
+           in lock-step with the CRT-off bar. */
+        @keyframes ls_eliminate_text {
+          0%   { opacity: 0;   letter-spacing: 0.18em; transform: translateY(0); filter: brightness(1); }
+          18%  { opacity: 1;   letter-spacing: 0.18em; }
+          80%  { opacity: 0.9; letter-spacing: 0.22em; }
+          92%  { opacity: 0.5; letter-spacing: 0.46em; filter: brightness(2.4) blur(0.6px); }
+          100% { opacity: 0;   letter-spacing: 0.46em; transform: scaleY(0.05); }
+        }
+        /* The white bar that punctuates the end — appears just
+           before the text dies and collapses to nothing along
+           with it, mimicking an old TV power-off. */
+        @keyframes ls_crt_off {
+          0%, 80% { opacity: 0; transform: translateY(-50%) scaleX(0); }
+          88%     { opacity: 1; transform: translateY(-50%) scaleX(1); height: 2px; }
+          96%     { opacity: 1; transform: translateY(-50%) scaleX(1); height: 1px; }
+          100%    { opacity: 0; transform: translateY(-50%) scaleX(0); height: 0;   }
+        }
+
         @media (prefers-reduced-motion: reduce) {
-          .ls-no-anim, [class*="ls_glow"] {
+          .ls-no-anim, [class*="ls_glow"], [class*="ls_strike"],
+          [class*="ls_scanline"], [class*="ls_scanlines_fade"],
+          [class*="ls_eliminate_text"], [class*="ls_crt_off"] {
             animation: none !important;
           }
         }

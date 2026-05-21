@@ -1,31 +1,31 @@
 "use client";
 
 /**
- * ResumeCreatingOverlay — full-viewport transition shown while a new
- * resume is being created (or duplicated). The "click → blank
- * editor" jump used to feel abrupt; this gives the create flow a
- * tiny piece of theatre that maps to what's actually happening:
+ * ResumeCreatingOverlay — quick zoom-to-window transition shown
+ * between the input dialog and the editor.
  *
- *   1. A blank paper sheet folds up out of the bottom of the
- *      viewport and lands centred.
- *   2. Horizontal "section lines" draw themselves across the sheet
- *      one by one (header → experience → skills → education).
- *   3. The resume's name rises under the sheet.
- *   4. The caption ticks from "Creating resume…" → "Opening editor…"
+ * Earlier iteration tried a paper-folds-up timeline with section
+ * lines drawing themselves — pretty, but slow (1.7s) and the
+ * pacing felt like a screen-saver. Replaced with a snappy zoom:
+ * a tiny card appears at near-zero scale, expands into a window-
+ * shaped panel with a faux title bar + the resume name, then the
+ * parent navigates. Total ~650ms.
  *
- * The whole thing runs in ~1.6s, then onFinish() fires and the
- * parent navigates. All motion is pure CSS — no rAF loop, nothing
- * to clean up. Respects `prefers-reduced-motion: reduce` by
- * skipping the animation timeline and going straight to the final
- * state.
+ * The "window" framing matches what the user is about to see —
+ * they're zooming INTO the editor that's about to open. Title bar
+ * mimics a macOS-style chrome (three dots) so the visual reads as
+ * "a new window is opening", not as "decoration".
+ *
+ * All motion is CSS via styled-jsx. Honours
+ * `prefers-reduced-motion: reduce` by skipping the timeline.
  */
 import { useEffect, useRef } from "react";
 
 export interface ResumeCreatingOverlayProps {
   /** Whether the overlay should be shown. */
   open: boolean;
-  /** The name of the resume being created — surfaces under the
-   *  paper sheet so the user sees the title they typed. */
+  /** The name of the resume being created — printed in the
+   *  window's title bar so the user sees the title they typed. */
   name: string;
   /** Verb shown in the caption. "Creating" for a fresh resume,
    *  "Duplicating" when cloning from an existing one. */
@@ -38,23 +38,18 @@ export interface ResumeCreatingOverlayProps {
 export function ResumeCreatingOverlay({
   open, name, verb = "Creating", onFinish,
 }: ResumeCreatingOverlayProps) {
-  // Auto-finish after the timeline runs. The parent kicks off the
-  // API call in parallel; the overlay handles the visual minimum
-  // duration. ~1700ms is enough for the paper to land + section
-  // lines to draw + caption to swap, without dragging on so long
-  // the user feels they're waiting.
-  //
-  // We route onFinish through a ref so the timeout schedules ONCE
-  // (on `open` transition) and always calls the latest callback at
-  // fire time. If we listed onFinish in the dep array directly, the
-  // parent re-rendering with new state (e.g. when pendingHref is
-  // set) would clear + re-schedule the timer, doubling the wait.
+  // Route onFinish through a ref so the timeout schedules ONCE
+  // and always calls the latest closure (the parent may re-render
+  // mid-animation when the API resolves; we don't want to clear +
+  // re-schedule the timer in that case).
   const onFinishRef = useRef(onFinish);
   useEffect(() => { onFinishRef.current = onFinish; }, [onFinish]);
   useEffect(() => {
     if (!open) return;
     const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const t = setTimeout(() => onFinishRef.current(), reduce ? 200 : 1700);
+    // 650ms total: ~80ms backdrop fade, ~420ms zoom, ~150ms hold
+    // so the user can register the window title, then navigate.
+    const t = setTimeout(() => onFinishRef.current(), reduce ? 200 : 650);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -68,28 +63,25 @@ export function ResumeCreatingOverlay({
       aria-label={`${verb} resume`}
       className="rc-overlay"
     >
-      <div className="rc-card">
-        <div className="rc-sheet">
-          {/* The "header" stripe — name + a contact line under it.
-              Drawn first so it looks like the first thing typed. */}
-          <span className="rc-line rc-line-head" />
-          <span className="rc-line rc-line-contact" />
-          {/* Three section blocks. Each block has a heading line
-              and two body lines. Stagger via animation-delay. */}
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="rc-block" style={{ animationDelay: `${0.55 + i * 0.18}s` }}>
-              <span className="rc-line rc-line-heading" />
-              <span className="rc-line rc-line-body" />
-              <span className="rc-line rc-line-body short" />
-            </div>
-          ))}
+      <div className="rc-window">
+        {/* Title bar — three dots on the left so it reads as a
+            window opening (rather than a generic modal). Title in
+            the centre shows the resume name + verb. */}
+        <div className="rc-titlebar">
+          <span className="rc-dot" style={{ background: "#ff5f57" }} />
+          <span className="rc-dot" style={{ background: "#febc2e" }} />
+          <span className="rc-dot" style={{ background: "#28c840" }} />
+          <span className="rc-title" title={name}>
+            {verb} · <strong>{name}</strong>
+          </span>
         </div>
-
-        <p className="rc-name" title={name}>{name}</p>
-        <p className="rc-caption">
-          <span className="rc-caption-now">{verb} resume…</span>
-          <span className="rc-caption-next">Opening editor…</span>
-        </p>
+        {/* Window body — kept deliberately minimal. A single line
+            of fake content + a thin progress bar that sweeps once
+            during the zoom. Plenty of empty space so the focus
+            stays on the zoom itself, not the contents. */}
+        <div className="rc-body">
+          <div className="rc-progress" />
+        </div>
       </div>
 
       <style jsx>{`
@@ -100,144 +92,103 @@ export function ResumeCreatingOverlay({
           display: flex;
           align-items: center;
           justify-content: center;
-          background: color-mix(in oklab, var(--bg) 80%, transparent);
-          backdrop-filter: blur(8px) saturate(120%);
-          -webkit-backdrop-filter: blur(8px) saturate(120%);
-          animation: rc-fadein 220ms ease-out;
+          background: color-mix(in oklab, var(--bg) 60%, transparent);
+          backdrop-filter: blur(10px) saturate(120%);
+          -webkit-backdrop-filter: blur(10px) saturate(120%);
+          animation: rc-backdrop-in 120ms ease-out;
         }
-        @keyframes rc-fadein {
+        @keyframes rc-backdrop-in {
           from { opacity: 0; }
           to   { opacity: 1; }
         }
-        .rc-card {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 14px;
-        }
-        /* Paper sheet — A4-ish aspect, lifts up from below the
-           viewport and lands with a soft overshoot. */
-        .rc-sheet {
-          position: relative;
-          width: 220px;
-          height: 290px;
+        /* The "window". Starts as a tiny pinprick (scale 0.06)
+           and zooms out to ~70vw × ~55vh, like opening a new
+           browser tab into existence. Cubic-bezier with a slight
+           overshoot at the end so it lands with weight. */
+        .rc-window {
+          width: min(70vw, 720px);
+          height: min(55vh, 480px);
           background: var(--card-solid);
           border: 1px solid var(--line);
-          border-radius: 6px;
+          border-radius: 12px;
           box-shadow:
-            0 22px 32px -22px rgba(0,0,0,0.35),
-            0 4px 10px -4px rgba(0,0,0,0.18),
-            inset 0 1px 0 rgba(255,255,255,0.4);
-          padding: 22px 22px 18px;
+            0 32px 64px -24px rgba(0, 0, 0, 0.45),
+            0 8px 16px -6px rgba(0, 0, 0, 0.20),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+          opacity: 0;
+          transform: scale(0.06);
+          transform-origin: center;
+          animation: rc-window-zoom 420ms cubic-bezier(0.20, 1.05, 0.30, 1.0) forwards;
           overflow: hidden;
-          opacity: 0;
-          transform: translateY(60px) rotate(-3deg);
-          animation: rc-paper-up 540ms cubic-bezier(0.22, 1.2, 0.36, 1) forwards;
+          display: flex;
+          flex-direction: column;
         }
-        @keyframes rc-paper-up {
-          0%   { opacity: 0; transform: translateY(60px) rotate(-3deg); }
-          70%  { opacity: 1; transform: translateY(-4px) rotate(1deg);  }
-          100% { opacity: 1; transform: translateY(0)   rotate(0deg);  }
+        @keyframes rc-window-zoom {
+          0%   { opacity: 0;   transform: scale(0.06); filter: blur(8px); }
+          35%  { opacity: 0.7;                       filter: blur(2px); }
+          75%  { opacity: 1;   transform: scale(1.03); filter: blur(0);   }
+          100% { opacity: 1;   transform: scale(1.00); filter: blur(0);   }
         }
-        /* Lines draw themselves from left to right via a width
-           transition on a flat block. */
-        .rc-line {
-          display: block;
-          height: 6px;
-          width: 0;
-          border-radius: 3px;
-          background: var(--brand-300);
-          animation: rc-line-grow 360ms cubic-bezier(0.22, 0.9, 0.36, 1) forwards;
+        .rc-titlebar {
+          flex-shrink: 0;
+          height: 38px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 0 14px;
+          border-bottom: 1px solid var(--line);
+          background: linear-gradient(180deg, color-mix(in oklab, var(--elevated) 80%, transparent), var(--card-solid));
         }
-        .rc-line.rc-line-head {
-          height: 12px;
-          background: var(--fg);
-          width: 0;
-          animation-delay: 280ms;
+        .rc-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          box-shadow: inset 0 0 0 1px rgba(0,0,0,0.10);
+          flex-shrink: 0;
         }
-        .rc-line.rc-line-head { --target: 60%; }
-        .rc-line-contact {
-          height: 4px;
-          width: 0;
-          background: var(--fg-subtle);
-          margin-top: 8px;
-          animation-delay: 380ms;
-        }
-        .rc-line-contact { --target: 78%; }
-        .rc-block {
-          margin-top: 14px;
-          opacity: 0;
-          animation: rc-block-in 280ms ease-out forwards;
-        }
-        @keyframes rc-block-in {
-          from { opacity: 0; transform: translateY(6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .rc-line-heading {
-          height: 5px;
-          background: var(--brand-500);
-          width: 0;
-          --target: 40%;
-          animation-delay: inherit;
-        }
-        .rc-line-body {
-          height: 4px;
-          width: 0;
-          background: var(--fg-subtle);
-          margin-top: 6px;
-          --target: 96%;
-        }
-        .rc-line-body.short { --target: 70%; }
-        @keyframes rc-line-grow {
-          to { width: var(--target, 100%); }
-        }
-        /* Resume name under the sheet — fades + nudges up. */
-        .rc-name {
-          margin: 0;
-          font-size: 15px;
-          font-weight: 700;
-          color: var(--fg);
-          opacity: 0;
-          transform: translateY(8px);
-          animation: rc-text-in 320ms 540ms ease-out forwards;
-          max-width: 320px;
-          text-overflow: ellipsis;
+        .rc-title {
+          margin-left: 8px;
+          font-size: 12px;
+          color: var(--fg-muted);
+          flex: 1;
+          text-align: center;
           white-space: nowrap;
           overflow: hidden;
+          text-overflow: ellipsis;
+          padding-right: 36px; /* balance the 3 dots on the left */
         }
-        @keyframes rc-text-in {
-          to { opacity: 1; transform: translateY(0); }
+        .rc-title strong { color: var(--fg); font-weight: 700; }
+        .rc-body {
+          flex: 1;
+          display: flex;
+          align-items: flex-end;
+          padding: 18px;
         }
-        /* Caption that cross-fades from "Creating…" to "Opening…" */
-        .rc-caption {
-          position: relative;
-          margin: 0;
-          height: 16px;
-          width: 200px;
-          font-size: 11px;
-          font-family: ui-monospace, "SF Mono", Menlo, monospace;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          color: var(--fg-muted);
-          text-align: center;
+        /* Single thin progress bar at the bottom of the window
+           body — animates left → right over the same window timeline
+           so the zoom-in feels like the editor is loading. */
+        .rc-progress {
+          height: 2px;
+          width: 0;
+          background: var(--brand-500);
+          border-radius: 2px;
+          box-shadow: 0 0 8px var(--brand-300);
+          animation: rc-progress-grow 420ms 160ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
-        .rc-caption span {
-          position: absolute;
-          inset: 0;
-          opacity: 0;
+        @keyframes rc-progress-grow {
+          from { width: 0; }
+          to   { width: 100%; }
         }
-        .rc-caption-now  { animation: rc-cap-in 280ms 640ms ease-out forwards, rc-cap-out 280ms 1240ms ease-in forwards; }
-        .rc-caption-next { animation: rc-cap-in 280ms 1300ms ease-out forwards; }
-        @keyframes rc-cap-in  { to { opacity: 1; } }
-        @keyframes rc-cap-out { to { opacity: 0; } }
 
         @media (prefers-reduced-motion: reduce) {
-          .rc-sheet, .rc-line, .rc-block, .rc-name, .rc-caption span {
+          .rc-overlay, .rc-window, .rc-progress {
             animation: none !important;
             opacity: 1 !important;
             transform: none !important;
-            width: var(--target, 100%) !important;
+            filter: none !important;
+            width: auto;
           }
+          .rc-progress { width: 100%; }
         }
       `}</style>
     </div>

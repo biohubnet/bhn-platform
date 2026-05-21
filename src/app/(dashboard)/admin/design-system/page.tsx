@@ -562,7 +562,7 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
             <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
               <LaunchSwitchDemo />
               <p className="text-[11px] text-fg-muted text-center">
-                <span className="font-bold text-fg">Launching → Deleted</span> · &quot;Deleting in 10&quot; ticks down once per second with a flashing LED. At 0 the panel turns green and reads &quot;Deleted&quot; with a check for 2 seconds (host card uses this beat for its own outro animation) before <code>onFire()</code> runs.
+                <span className="font-bold text-fg">Launching → Eliminated</span> · &quot;Deleting in 10&quot; ticks down once per second with a flashing LED. At 0 the chassis goes matte black, a red strike-through slams across the word DELETED, a CRT scan-line travels the panel, the text&apos;s letter-spacing blows out, and a final white-bar flash collapses to nothing — the whole &quot;eliminated&quot; sequence runs ~2s before <code>onFire()</code>. The host card uses this window to play its own outro animation.
               </p>
             </div>
           </div>
