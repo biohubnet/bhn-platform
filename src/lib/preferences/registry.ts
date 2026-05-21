@@ -123,7 +123,7 @@ export interface FeatureDef {
 export const FEATURES: FeatureDef[] = [
   // Profile -------------------------------------------------------
   { id: "profile-application", label: "Application Builder",      description: "Build your reusable resume + 1-min video intro + elevator pitch.",                         group: "profile",    defaultEnabled: true },
-  { id: "profile-resumes",     label: "Resumes (structured)",      description: "Master + tailored copies with version history, mentor comments, PDF export.",            group: "profile",    defaultEnabled: true },
+  { id: "profile-resumes",     label: "Resume tailoring",          description: "Master + tailored copies with version history, mentor comments, PDF export.",            group: "profile",    defaultEnabled: true },
   { id: "profile-skills",      label: "My skills",                 description: "Your skill profile — inferred, extracted, self-claimed.",                                 group: "profile",    defaultEnabled: true },
   { id: "profile-stories",     label: "STAR stories",              description: "Reusable behavioural-interview stories you draft once and pull into applications.",       group: "profile",    defaultEnabled: true },
   { id: "profile-job-folders", label: "Job folders",               description: "Per-role workspaces — JD + tailored resume + cover letter + interview prep, all in one place.", group: "profile",    defaultEnabled: true },
@@ -158,7 +158,9 @@ export const FEATURES: FeatureDef[] = [
   { id: "engage-themes",       label: "Themes",                    description: "Theme proposals + voting.",                                                                group: "engage",     defaultEnabled: false },
 
   // EQUIP ---------------------------------------------------------
-  { id: "equip-deadlines",     label: "EQUIP deadlines",           description: "Upcoming review windows + submission deadlines.",                                          group: "equip",      defaultEnabled: false },
+  { id: "equip-funding",       label: "EQUIP · Funding",           description: "VentureConnect + VentureLift funding applications.",                                       group: "equip",      defaultEnabled: false },
+  { id: "equip-tracker",       label: "EQUIP · My applications",   description: "Your in-flight EQUIP funding applications + their status.",                              group: "equip",      defaultEnabled: false },
+  { id: "equip-deadlines",     label: "EQUIP · Deadlines",         description: "Upcoming review windows + submission deadlines.",                                          group: "equip",      defaultEnabled: false },
   // (Most EQUIP entries are admin-only — they're toggled under "admin" below.)
 
   // Account -------------------------------------------------------

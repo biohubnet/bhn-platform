@@ -25,6 +25,68 @@ export default async function ResumesIndexPage() {
   const userId = (session.user as { id?: string }).id;
   if (!userId) redirect("/login");
 
+  // When the user has uploaded a PDF via the Application Builder
+  // (User.resumeUrl is set) AND they don't yet have a Resume row
+  // pointing at that URL, scaffold one. Two ways the prior flow
+  // missed this:
+  //   1. New user who uploaded a PDF but never visited /profile/resume
+  //      → no Resume row exists at all
+  //   2. Existing user who uploaded a FRESH PDF after their first
+  //      Resume row was created → the new URL never made it onto
+  //      any Resume.sourceFileUrl
+  // Either way, after this block runs there's at least one Resume
+  // row referencing the latest uploaded PDF, so the user sees it
+  // on this index + can re-parse from it.
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { resumeUrl: true },
+  });
+  if (user?.resumeUrl) {
+    const existingWithSameSource = await prisma.resume.findFirst({
+      where: { userId, sourceFileUrl: user.resumeUrl },
+      select: { id: true },
+    });
+    if (!existingWithSameSource) {
+      // First check if the user has ANY resume at all.
+      const anyResume = await prisma.resume.findFirst({
+        where: { userId },
+        select: { id: true, sourceFileUrl: true, isArchived: true },
+        orderBy: { lastEditedAt: "desc" },
+      });
+      if (!anyResume) {
+        // No resumes yet → create a Main resume pointing at the upload.
+        const { emptyResumeContent } = await import("@/lib/resume/types");
+        await prisma.resume.create({
+          data: {
+            userId,
+            name: "Main resume",
+            sourceFileUrl: user.resumeUrl,
+            content: emptyResumeContent() as unknown as object,
+          },
+        });
+      } else if (!anyResume.sourceFileUrl && !anyResume.isArchived) {
+        // Existing main resume without a source → backfill it.
+        await prisma.resume.update({
+          where: { id: anyResume.id },
+          data: { sourceFileUrl: user.resumeUrl },
+        });
+      } else {
+        // User has a resume with a DIFFERENT source URL. The new
+        // upload is a fresh PDF — give it its own row so they can
+        // pick which to parse from.
+        const { emptyResumeContent } = await import("@/lib/resume/types");
+        await prisma.resume.create({
+          data: {
+            userId,
+            name: "From uploaded PDF",
+            sourceFileUrl: user.resumeUrl,
+            content: emptyResumeContent() as unknown as object,
+          },
+        });
+      }
+    }
+  }
+
   // We pull `content` here so the index can render a paper-style
   // thumbnail per row. Resume.content is a JSON blob containing the
   // structured tree; the thumbnail component only reads
@@ -41,6 +103,7 @@ export default async function ResumesIndexPage() {
       lastEditedAt: true,
       version: true,
       parsedAt: true,
+      sourceFileUrl: true,
       content: true,
       derivedFromId: true,
       derivedForPostingId: true,
@@ -82,6 +145,7 @@ export default async function ResumesIndexPage() {
             lastEditedAt: r.lastEditedAt.toISOString(),
             version: r.version,
             hasParsed: !!r.parsedAt,
+            sourceFileUrl: r.sourceFileUrl,
             content: r.content as never,
             derivedFrom: r.derivedFrom,
             derivedForPosting: r.derivedForPostingId

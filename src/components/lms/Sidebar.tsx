@@ -18,7 +18,7 @@ import {
   Users,
   Settings,
   LogOut,
-  ChevronRight,
+  ChevronRight, ChevronDown,
   Coins,
   FileText,
   Megaphone,
@@ -121,6 +121,12 @@ const engageItems: (NavItem & { labelKey: string })[] = [
   { label: "Events",             labelKey: "nav.events",      href: "/events", icon: Calendar,
     featureId: "engage-events",
     description: "BHN Annual Symposium & Training Week. Workshops, agenda, speakers. Register here." },
+];
+
+// MY PROFILE — account-level settings + personal-control surfaces.
+// Lives at the bottom of the user nav. Currently small but grows
+// as more per-user controls land (notification prefs, theme, etc.).
+const myProfileItems: (NavItem & { labelKey: string })[] = [
   { label: "Preferences",        labelKey: "nav.preferences", href: "/profile/preferences", icon: SlidersHorizontal,
     featureId: "account-preferences",
     description: "Switchboard for what shows up in your sidebar. Per-user — never affects anyone else." },
@@ -133,23 +139,28 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 // kept the same so deep links stay alive.
 const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "How it works",              labelKey: "nav.experienceGuide", href: "/experience",            icon: Compass,
+    featureId: "experience-guide",
     description: "End-to-end explainer for the EXPERIENCE program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
   { label: "Application Builder",       labelKey: "nav.application", href: "/profile/application",      icon: FileText,
     featureId: "profile-application",
     description: "Build a reusable resume + 1-min video intro + elevator pitch. Made once; auto-attached to every application form." },
-  { label: "Resume (structured)",       labelKey: "nav.resumeStructured", href: "/profile/resumes",       icon: FileText,
+  { label: "Resume tailoring",          labelKey: "nav.resumeStructured", href: "/profile/resumes",       icon: FileText,
     featureId: "profile-resumes",
     description: "Maintain one master resume + tailored copies per role. Each has its own version history, mentor comments, and PDF export. Click through any card to edit it." },
-  { label: "Job folders",               labelKey: "nav.jobFolders", href: "/profile/job-folders",        icon: FolderOpen,
+  { label: "↳ Job folders",             labelKey: "nav.jobFolders", href: "/profile/job-folders",        icon: FolderOpen,
     featureId: "profile-job-folders",
     description: "One folder per role — JD, tailored resume, cover letter, interview prep. AI-generates cover letter + prep guide from your linked resume." },
   { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase,
+    featureId: "experience-talent",
     description: "Submit bio, supervisor letter, transcript, resume, and STAR video — we share with vetted industry partners." },
   { label: "Internships",               labelKey: "nav.internships", href: "/internships",              icon: Briefcase,
+    featureId: "experience-internships",
     description: "Live job board of internship and co-op postings from BHN industry partners. Apply directly from here." },
   { label: "Matches for you",           labelKey: "nav.matches",     href: "/profile/matches",          icon: Sparkles,
+    featureId: "experience-matches",
     description: "AI-ranked internship postings, scored against your skill profile + completed pathways. Each row shows the receipts — direct overlap, semantic similarity, pathway alignment, gaps, and honest caveats." },
   { label: "RPG",                       labelKey: "nav.simulator",   href: "/simulator",                icon: Drama,
+    featureId: "experience-simulator",
     description: "Practise any role before you apply. Paste a job-posting URL and live through a 12-week quarter as that person — 1:1s, escalations, hiring, the QBR. Every choice moves five stats. End-of-quarter performance review from your VP." },
   { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList,
     featureId: "experience-tracker",
@@ -162,6 +173,7 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
     featureId: "profile-stories",
     description: "Reusable STAR-format stories from your application prep. Tagged by skill so the prep flow can suggest 'use this story' on the next posting." },
   { label: "Interviews",                labelKey: "nav.interviews",  href: "/interviews",               icon: Calendar,
+    featureId: "experience-interviews",
     description: "Interviews scheduled with employers — date, format, link, and prep notes in one place.",
     badgeKey: "interview-requests" },
 ];
@@ -174,13 +186,14 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
 // sidebar item most trainees would scroll past.
 const miscItems: (NavItem & { labelKey: string })[] = [
   { label: "Learning buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake,
+    featureId: "experience-buddy",
     description: "Pair up with someone for accountability — share a course or pathway, see each other's progress, leave async notes.",
     badgeKey: "buddy-invites" },
   // labelKey is overridden per-role at render time ("What's new" for trainees).
   { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Bell,
+    featureId: "engage-changelog",
     description: "What's shipped recently — features, fixes, and improvements." },
-  { label: "Roadmap",            labelKey: "nav.roadmap",     href: "/roadmap",  icon: Compass, minRole: "superadmin",
-    description: "Internal planning surface — Now / Next / Later horizons for the platform. Superadmin only; the public-facing 'what shipped' view is /changelog." },
+  // Roadmap moved to the admin Platform group on user request.
 ];
 
 // EQUIP — the funding loop: pillar #3 alongside Engage / Experience.
@@ -190,8 +203,10 @@ const miscItems: (NavItem & { labelKey: string })[] = [
 // tracking visible to the applicant.
 const equipItems: (NavItem & { labelKey: string })[] = [
   { label: "Funding",                    labelKey: "nav.equip.funding",    href: "/equip", icon: Rocket, exact: true,
+    featureId: "equip-funding",
     description: "BHN's commercialization-funding pillar. Start a new VentureConnect (≤$5K) or VentureLift (≤$25K) application; the 3-question wizard routes you to the right stream and pre-fills everything from your profile." },
   { label: "My applications",            labelKey: "nav.equip.tracker",    href: "/equip/my-applications", icon: ClipboardList,
+    featureId: "equip-tracker",
     description: "Status of every EQUIP application you've submitted — draft, submitted, under review, approved, funded. Click any row for the full submission body and reviewer notes." },
 ];
 
@@ -373,6 +388,8 @@ const adminSystemItems: NavItem[] = [
 //   4. Feedback loops (Theme proposals, Feedback)
 //   5. Operations (Launch Readiness, Phantom users)
 const adminPlatformItems: NavItem[] = [
+  { label: "Roadmap",             href: "/roadmap",                   icon: Compass,     minRole: "superadmin",
+    description: "Internal planning surface — Now / Next / Later horizons for the platform. Moved here from the user-side nav per request; the public-facing 'what shipped' view is /changelog." },
   { label: "Inbox",               href: "/admin/inbox",               icon: Inbox,       minRole: "admin",
     description: "Every pending admin request in one queue — credit apps, role changes, employer invites, mailing requests.",
     badgeKey: "inbox-total" },
@@ -545,6 +562,31 @@ const TONE_STYLES: Record<SectionTone, ToneStyles> = {
   },
 };
 
+/** Per-section collapsed state, persisted in localStorage so the
+ *  user's choice survives navigation + reloads. Keyed by section
+ *  title — titles are stable for the lifetime of the section. */
+const COLLAPSE_STORAGE_KEY = "bhn.sidebar.collapsed.v1";
+
+function readCollapsed(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw) as unknown;
+    if (!Array.isArray(arr)) return new Set();
+    return new Set(arr.filter((s): s is string => typeof s === "string"));
+  } catch { return new Set(); }
+}
+function writeCollapsed(s: Set<string>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify([...s]));
+    // Notify other SectionGroup instances on the same page so a
+    // click in one collapses just that one without forcing the
+    // others to re-read. Minor — they each own their own state.
+  } catch { /* quota / private-mode — silent, the collapse still works in-memory */ }
+}
+
 function SectionGroup({
   title, description, programs, children, tone = "neutral",
 }: {
@@ -567,6 +609,23 @@ function SectionGroup({
 }) {
   const hasTooltip = !!description || (programs && programs.length > 0);
   const toneStyles = TONE_STYLES[tone];
+
+  // Collapse state — persisted in localStorage keyed by title.
+  // Initialise via lazy initial to avoid hydration mismatch (SSR
+  // can't read localStorage; the first client render syncs).
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    setCollapsed(readCollapsed().has(title));
+  }, [title]);
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      const all = readCollapsed();
+      if (next) all.add(title); else all.delete(title);
+      writeCollapsed(all);
+      return next;
+    });
+  }
 
   // Tooltip is positioned `fixed` (not `absolute`) so it escapes the
   // sidebar <nav>'s overflow-y-auto box, which would otherwise clip
@@ -626,10 +685,25 @@ function SectionGroup({
           background). The chip's opaque fill covers any subpixel
           bleed-through. */}
       <div
-        className="group/section absolute -top-[11px] left-3 z-20 px-1.5 bg-page rounded-md"
+        className="group/section absolute -top-[11px] left-3 z-20 px-1.5 bg-page rounded-md flex items-center gap-1"
         onMouseEnter={hasTooltip ? placeTooltip : undefined}
         onFocus={hasTooltip ? placeTooltip : undefined}
       >
+        {/* Chevron toggle — clicking flips the section open/closed.
+            Persisted to localStorage; survives navigation. Sits left
+            of the title chip so the chip itself stays clickable for
+            its tooltip without competing for the collapse action. */}
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? `Expand ${title}` : `Collapse ${title}`}
+          aria-expanded={!collapsed}
+          className="inline-flex items-center justify-center w-4 h-4 rounded text-fg-muted hover:bg-fg/5 hover:text-fg shrink-0"
+        >
+          {collapsed
+            ? <ChevronRight size={11} aria-hidden />
+            : <ChevronDown size={11} aria-hidden />}
+        </button>
         <span
           ref={chipRef}
           tabIndex={hasTooltip ? 0 : -1}
@@ -692,7 +766,10 @@ function SectionGroup({
           </div>
         )}
       </div>
-      {children}
+      {/* Children hidden when collapsed. Keep the rounded outer
+          container visible so the chip + chevron still sit on a
+          recognisable rail; just drop the nav links below it. */}
+      {!collapsed && children}
     </div>
   );
 }
@@ -1254,7 +1331,7 @@ export function Sidebar({
               },
             ]}
           >
-            {equipItems.map((item) => {
+            {visibleByPrefs(equipItems).map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
             })}
@@ -1339,7 +1416,7 @@ export function Sidebar({
         {showLearnerNav && (
           <>
             <div className="pt-2" />
-            {miscItems
+            {visibleByPrefs(miscItems)
               // miscItems default to trainee-visible unless an explicit
               // `minRole` is set (e.g. roadmap is superadmin-only). The
               // shared filterByRole helper assumes admin-default for
@@ -1355,6 +1432,22 @@ export function Sidebar({
                 return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
               })}
           </>
+        )}
+
+        {/* MY PROFILE — account-level settings + personal-control
+            surfaces. Sits below the program-pillar nav so users can
+            reach Preferences without scrolling the whole sidebar. */}
+        {showLearnerNav && visibleByPrefs(myProfileItems).length > 0 && (
+          <SectionGroup
+            title="MY PROFILE"
+            tone="neutral"
+            description="Per-user settings — only affects your own view of the platform."
+          >
+            {visibleByPrefs(myProfileItems).map((item) => {
+              const labeled = { ...item, label: t(item.labelKey) };
+              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
+            })}
+          </SectionGroup>
         )}
 
         {isAdmin && (

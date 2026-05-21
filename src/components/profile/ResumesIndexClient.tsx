@@ -33,6 +33,11 @@ interface ResumeRow {
   lastEditedAt: string;
   version: number;
   hasParsed: boolean;
+  /** Uploaded PDF / DOCX backing this resume. Lets the index show a
+   *  "Parse from PDF" CTA on the card when an upload exists but the
+   *  structured tree hasn't been seeded yet — the most common
+   *  "where's my resume?" UX gap when users come from /profile/application. */
+  sourceFileUrl: string | null;
   /** Full content tree — used by ResumeThumbnail to render the
    *  paper-style mini preview on each card. */
   content: ResumeContent;
@@ -435,7 +440,31 @@ function ResumeCard({
           {row.commentCount > 0 && (
             <span className="inline-flex items-center gap-1"><MessageCircle size={11} /> {row.commentCount}</span>
           )}
+          {row.sourceFileUrl && (
+            <a
+              href={row.sourceFileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-brand-700 hover:underline"
+              title="Open the uploaded PDF in a new tab"
+            >
+              <FileText size={11} /> Uploaded PDF
+            </a>
+          )}
         </div>
+
+        {/* AI-parse CTA — when the user has an uploaded PDF but the
+            structured tree hasn't been seeded yet. The most common
+            "where's my resume?" UX gap when users come from
+            /profile/application without ever opening the editor. */}
+        {row.sourceFileUrl && !row.hasParsed && (
+          <Link
+            href={`/profile/resume?id=${row.id}`}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-bold bg-brand-50 text-brand-900 ring-1 ring-inset ring-brand-200 hover:bg-brand-100"
+          >
+            <Sparkles size={11} /> AI-parse from your uploaded PDF
+          </Link>
+        )}
 
         {/* Primary actions row — Open + Preview front and centre,
             larger so they're tap-friendly. */}
