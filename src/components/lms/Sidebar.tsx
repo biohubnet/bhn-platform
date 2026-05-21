@@ -686,16 +686,16 @@ function SectionGroup({
           padding bridges the gap so the cursor can travel into the
           tooltip without losing hover.
 
-          Border notch: the wrapping <div> intentionally has the page
-          background colour so it visually breaks the container's 1px
-          border line where the chip sits. `rounded-md` matches the
-          chip's own corner radius so the page-colour halo around the
-          chip doesn't show square corners (which used to read as a
-          flat box behind the chip on themes with a gradient mesh
-          background). The chip's opaque fill covers any subpixel
-          bleed-through. */}
+          The wrapper is fully transparent now — the chip + chevron
+          sit directly on the section's tint with no page-colour
+          notch behind them. The chip's own opaque fill covers the
+          section's top border where they overlap, so the chip still
+          reads as anchored to the border line. Tightened the `top`
+          offset from -11px to -10px so the chip sits flush against
+          the border edge without that visible gap that used to read
+          as a grey block under it. */}
       <div
-        className="group/section absolute -top-[11px] left-3 z-20 px-1.5 bg-page rounded-md flex items-center gap-1"
+        className="group/section absolute -top-[10px] left-3 z-20 px-1.5 flex items-center gap-1"
         onMouseEnter={hasTooltip ? placeTooltip : undefined}
         onFocus={hasTooltip ? placeTooltip : undefined}
       >
