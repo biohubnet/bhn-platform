@@ -40,6 +40,7 @@ import { ResumeItemEditor } from "./ResumeItemEditor";
 import { RewriteableTextarea } from "./RewriteableTextarea";
 import { VersionHistoryDrawer } from "./VersionHistoryDrawer";
 import { ResumeLintPanel } from "./ResumeLintPanel";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 /** Lightweight posting summary fed in from the server shell. */
 export interface PostingSummary {
@@ -198,6 +199,10 @@ export function ResumeEditor({
   // AI-parse force a remount which is the right time to start fresh).
   const [removedStack, setRemovedStack] = useState<RemovalEntry[]>([]);
 
+  // Branded confirm dialog — replaces window.confirm() for the re-parse
+  // overwrite prompt and the "clear all recoverable removals" prompt.
+  const { confirmDialog, node: confirmNode } = useConfirmDialog();
+
   // ── Auto-save: any change to `content` triggers a debounced PATCH ──
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
@@ -245,19 +250,20 @@ export function ResumeEditor({
   );
 
   // ── AI parse handler ──
-  function runParse() {
+  async function runParse() {
     setParseError(null);
     // Re-parse confirms with the user — overwrites the current tree
     // (the existing version is preserved as a ResumeRevision so the
     // trainee can revert, but the confirm prompt makes the cost
     // explicit before the AI call fires).
     if (hasParsed) {
-      const ok = window.confirm(
-        "Re-parse from your uploaded PDF?\n\n" +
-        "This will overwrite your current resume tree with a fresh parse. " +
-        "Your current version is saved in Version history — you can revert " +
-        "from there if you don't like the new parse.",
-      );
+      const ok = await confirmDialog({
+        title: "Re-parse from your uploaded PDF?",
+        description: "This overwrites your current resume tree with a fresh AI parse. Your current version is saved in Version history — you can revert from there if you don't like the new parse.",
+        confirmLabel: "Re-parse",
+        cancelLabel: "Keep current",
+        tone: "warning",
+      });
       if (!ok) return;
     }
     startParse(async () => {
@@ -786,15 +792,18 @@ export function ResumeEditor({
   }
   /** Permanently dismiss all recoverable entries — for when the user
    *  is confident none of them are coming back and wants to clear
-   *  the visible panel. Confirmed via window.confirm so a stray click
+   *  the visible panel. Confirmed via ConfirmDialog so a stray click
    *  doesn't wipe minutes of recovery surface. */
-  function clearAllRemovals() {
+  async function clearAllRemovals() {
     if (removedStack.length === 0) return;
-    const ok = window.confirm(
-      `Permanently dismiss ${removedStack.length} recoverable item(s)?\n\n` +
-      `They won't be retrievable from the recovery panel any more. ` +
-      `The resume tree itself is unaffected.`,
-    );
+    const count = removedStack.length;
+    const ok = await confirmDialog({
+      title: `Dismiss ${count} recoverable item${count === 1 ? "" : "s"}?`,
+      description: "They won't be retrievable from the recovery panel any more. The resume tree itself is unaffected.",
+      confirmLabel: "Dismiss all",
+      cancelLabel: "Keep them",
+      tone: "warning",
+    });
     if (!ok) return;
     setRemovedStack([]);
   }
@@ -1206,6 +1215,10 @@ export function ResumeEditor({
           even after they've scrolled past the inline SaveStatus near
           the top. See FloatingSaveStatus for the three-state visual. */}
       <FloatingSaveStatus saving={saving} version={version} savedAt={savedAt} />
+
+      {/* Confirm dialog portal — yes/no prompts (re-parse overwrite,
+          dismiss-all-removals). See ConfirmDialog for the API. */}
+      {confirmNode}
     </div>
   );
 }
