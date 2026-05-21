@@ -12,14 +12,52 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Plus, Loader2, FileDown, Clock, Library,
-  ChevronDown, ChevronUp, RotateCcw, Archive,
+  Plus, Loader2, FileDown, Printer, Clock, Library,
+  ChevronDown, ChevronUp, RotateCcw, Archive, History,
 } from "lucide-react";
 import { useInputDialog } from "@/components/ui/InputDialog";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import type { ResumeContent, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_LABEL } from "@/lib/resume/types";
+
+/** Shape of a row from GET /api/profile/master/bullets/[id]/revisions. */
+interface RevisionRow {
+  id: string;
+  body: string;
+  tags: string[];
+  source: "user_edit" | "ai_rewrite" | "promoted_from_resume" | "imported_from_pdf" | string;
+  createdAt: string;
+}
+
+/** Short, neutral label shown in the source chip on the revision list. */
+const SOURCE_LABEL: Record<string, string> = {
+  user_edit: "Edit",
+  ai_rewrite: "AI",
+  promoted_from_resume: "Promoted",
+  imported_from_pdf: "Imported",
+};
+
+/** Compact relative-time formatter — "3m ago", "2h ago", "5d ago".
+ *  Falls back to a YYYY-MM-DD string for anything older than a month so
+ *  the timestamp stays scannable at a glance. */
+function relativeTime(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return "";
+  const diff = Date.now() - t;
+  if (diff < 0) return "just now";
+  const sec = Math.floor(diff / 1000);
+  if (sec < 45) return "just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 30) return `${day}d ago`;
+  // Older than 30 days — show the date instead. The timestamp is
+  // already an ISO string so a slice is enough.
+  return iso.slice(0, 10);
+}
 
 export interface MasterBulletRow {
   id: string;
@@ -182,10 +220,18 @@ export function MasterResumeClient({
     setSnapshots((s) => [j.snapshot!, ...s]);
   }
 
-  function downloadSnapshot(snap: MasterSnapshotRow) {
+  function downloadSnapshotJson(snap: MasterSnapshotRow) {
     // Open in a new tab — the endpoint sets Content-Disposition so
     // the browser downloads with the correct filename.
     window.open(`/api/profile/master/snapshots/${snap.id}/download?format=json`, "_blank");
+  }
+
+  function openSnapshotPrint(snap: MasterSnapshotRow) {
+    // PDF path — open the print-friendly snapshot page in a new tab.
+    // The page auto-fires the browser's print dialog, where "Save as
+    // PDF" is the default destination. document.title is set to the
+    // conventional filename so the suggested filename is sensible.
+    window.open(`/profile/master/snapshots/${snap.id}/print?autoPrint=1`, "_blank");
   }
 
   const isEmpty = bullets.length === 0 && archivedCount === 0;
@@ -258,7 +304,7 @@ export function MasterResumeClient({
         <div className="rounded-2xl border border-line bg-card-solid p-4">
           <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted">Snapshots</h3>
           <p className="text-[12px] text-fg-muted mt-1 leading-snug">
-            Locked, named, downloadable versions of your master.
+            Locked, named, downloadable versions of your master. Each version exports as JSON or as a print-friendly view (Save as PDF from your browser).
           </p>
           <button
             type="button"
@@ -285,14 +331,24 @@ export function MasterResumeClient({
                       {new Date(s.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => downloadSnapshot(s)}
-                    title="Download JSON"
-                    className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded text-fg-muted hover:bg-elevated hover:text-fg"
-                  >
-                    <FileDown size={13} />
-                  </button>
+                  <div className="shrink-0 flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => openSnapshotPrint(s)}
+                      title="Open print-friendly view (Save as PDF from your browser)"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded text-fg-muted hover:bg-elevated hover:text-fg"
+                    >
+                      <Printer size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => downloadSnapshotJson(s)}
+                      title="Download JSON"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded text-fg-muted hover:bg-elevated hover:text-fg"
+                    >
+                      <FileDown size={13} />
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -408,6 +464,14 @@ function BulletEditor({
   const [tagDraft, setTagDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  // Revision list state — `null` means "not loaded yet"; an empty
+  // array means "loaded, but no revisions" (shouldn't happen since we
+  // only show the toggle when revisionCount > 0, but kept distinct
+  // for clarity).
+  const [revisions, setRevisions] = useState<RevisionRow[] | null>(null);
+  const [revisionsLoading, setRevisionsLoading] = useState(false);
+  const [revisionsError, setRevisionsError] = useState<string | null>(null);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounced autosave on body changes (700ms — matches the existing
@@ -418,10 +482,66 @@ function BulletEditor({
     saveTimer.current = setTimeout(async () => {
       setBusy(true);
       try { await onPatch(bullet.id, { body }); } finally { setBusy(false); }
+      // The autosave wrote a new revision — drop the cached list so
+      // the next expand fetches fresh.
+      setRevisions(null);
     }, 700);
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [body]);
+
+  async function fetchRevisions() {
+    setRevisionsLoading(true);
+    setRevisionsError(null);
+    try {
+      const r = await fetch(`/api/profile/master/bullets/${bullet.id}/revisions`);
+      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; revisions?: RevisionRow[]; error?: string };
+      if (!r.ok || !j.ok || !Array.isArray(j.revisions)) {
+        setRevisionsError(j.error ?? "Couldn't load revisions.");
+        return;
+      }
+      setRevisions(j.revisions);
+    } catch (e) {
+      setRevisionsError(e instanceof Error ? e.message : "Couldn't load revisions.");
+    } finally {
+      setRevisionsLoading(false);
+    }
+  }
+
+  function toggleHistory() {
+    const next = !showHistory;
+    setShowHistory(next);
+    // Lazy fetch on first expand. We don't load on render because the
+    // cost-per-bullet adds up on a library with dozens of entries.
+    if (next && revisions === null && !revisionsLoading) {
+      void fetchRevisions();
+    }
+  }
+
+  async function restoreRevision(rev: RevisionRow) {
+    if (rev.body === body) {
+      // Already at this body — collapse the panel rather than firing
+      // a pointless PATCH (which would also coalesce into the most
+      // recent revision and noop on the row).
+      setShowHistory(false);
+      return;
+    }
+    setRestoringId(rev.id);
+    setBody(rev.body);
+    try {
+      // Reuse the existing PATCH — it writes a `user_edit` revision
+      // when the body changes, which is exactly the audit trail we
+      // want for a restore.
+      await onPatch(bullet.id, { body: rev.body });
+    } finally {
+      setRestoringId(null);
+    }
+    // Reset cached revisions; the restore wrote a new row.
+    setRevisions(null);
+    if (showHistory) {
+      void fetchRevisions();
+    }
+  }
 
   function addTag() {
     const v = tagDraft.trim();
@@ -475,11 +595,14 @@ function BulletEditor({
           {bullet.revisionCount > 0 && (
             <button
               type="button"
-              onClick={() => setShowHistory((v) => !v)}
+              onClick={toggleHistory}
               title={`${bullet.revisionCount} prior revision${bullet.revisionCount === 1 ? "" : "s"}`}
-              className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-fg-muted hover:text-fg"
+              className={cn(
+                "inline-flex items-center gap-1 text-[10.5px] font-semibold hover:text-fg",
+                showHistory ? "text-fg" : "text-fg-muted",
+              )}
             >
-              <RotateCcw size={10} /> {bullet.revisionCount} {showHistory ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+              <History size={10} /> {bullet.revisionCount} {showHistory ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
             </button>
           )}
           <button
@@ -493,9 +616,71 @@ function BulletEditor({
         </div>
       </div>
       {showHistory && (
-        <p className="mt-1.5 text-[11px] text-fg-subtle italic">
-          Revision history UI lands in a follow-up. {bullet.revisionCount} prior revision{bullet.revisionCount === 1 ? "" : "s"} stored.
-        </p>
+        <div className="mt-1.5 rounded-md border border-line/60 bg-bg/30 p-2 space-y-1.5">
+          {revisionsLoading && (
+            <p className="text-[11px] text-fg-subtle inline-flex items-center gap-1">
+              <Loader2 size={10} className="animate-spin" /> Loading revisions…
+            </p>
+          )}
+          {revisionsError && (
+            <p className="text-[11px] text-rose-700">{revisionsError}</p>
+          )}
+          {!revisionsLoading && !revisionsError && revisions && revisions.length === 0 && (
+            <p className="text-[11px] text-fg-subtle italic">No prior revisions yet.</p>
+          )}
+          {!revisionsLoading && !revisionsError && revisions && revisions.length > 0 && (
+            <ul className="space-y-1">
+              {revisions.map((rev) => {
+                const isCurrent = rev.body === body;
+                const restoring = restoringId === rev.id;
+                return (
+                  <li
+                    key={rev.id}
+                    className="rounded border border-line/60 bg-card-solid px-2 py-1.5 text-[11.5px] flex items-start gap-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={cn(
+                          "leading-snug",
+                          isCurrent ? "text-fg-subtle italic" : "text-fg",
+                        )}
+                        title={rev.body}
+                      >
+                        {rev.body.length > 160 ? rev.body.slice(0, 157) + "…" : rev.body}
+                      </p>
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[10px] text-fg-subtle">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-elevated ring-1 ring-inset ring-line text-fg-muted font-semibold uppercase tracking-wide">
+                          {SOURCE_LABEL[rev.source] ?? rev.source}
+                        </span>
+                        <span className="font-variant-numeric tabular-nums">{relativeTime(rev.createdAt)}</span>
+                        {isCurrent && (
+                          <span className="text-fg-subtle">· current</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => restoreRevision(rev)}
+                      disabled={isCurrent || restoring}
+                      title={isCurrent ? "This revision matches the current text" : "Restore this revision"}
+                      className="shrink-0 inline-flex items-center gap-1 px-1.5 py-1 rounded text-[10.5px] font-semibold text-brand-700 ring-1 ring-inset ring-brand-200 bg-brand-50 hover:bg-brand-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {restoring ? (
+                        <Loader2 size={10} className="animate-spin" />
+                      ) : (
+                        <RotateCcw size={10} />
+                      )}
+                      Restore
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {!revisionsLoading && revisions && revisions.length === 10 && (
+            <p className="text-[10px] text-fg-subtle">Showing the 10 most recent revisions. Older entries are archived.</p>
+          )}
+        </div>
       )}
     </li>
   );

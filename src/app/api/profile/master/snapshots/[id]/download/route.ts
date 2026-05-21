@@ -1,16 +1,23 @@
 /**
- * GET /api/profile/master/snapshots/[id]/download?format=json
+ * GET /api/profile/master/snapshots/[id]/download?format=json|pdf
  *
  * Returns the snapshot as a downloadable file with a versioned
  * Content-Disposition filename:
  *
  *   master-resume_<slug>_v<n>_<YYYY-MM-DD>.json
  *
- * Today only `format=json` is supported. PDF generation will land
- * in a follow-up; the existing /profile/resume/preview print-styled
- * HTML page can render any ResumeContent tree, so the PDF path is
- * "fetch that HTML server-side + run through a renderer", which is
- * a bigger lift than this MVP.
+ * `format=json` (default) streams JSON inline.
+ *
+ * `format=pdf` is an MVP — we don't have a server-side PDF renderer
+ * (no puppeteer / chromium in the deploy bundle), so this branch
+ * 302-redirects to `/profile/master/snapshots/[id]/print?autoPrint=1`.
+ * That page renders the same ResumePrintView the active-resume
+ * preview uses and auto-fires `window.print()`; the user's browser
+ * picks "Save as PDF" as the destination. The user types the filename
+ * suggestion themselves — the redirect target's <title> is set so
+ * the browser's print dialog defaults to a sensible filename.
+ * Server-side PDF render can land later by swapping this branch for
+ * a renderer call; the caller-facing URL stays the same.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
@@ -94,12 +101,27 @@ export async function GET(
     });
   }
 
-  // PDF support pending — return 501 with a clear note so the UI
-  // can fall back to JSON until the PDF renderer lands.
+  if (format === "pdf") {
+    // No server-side PDF render — redirect to the print-friendly
+    // page with the auto-print flag. The browser then opens its own
+    // print dialog (where "Save as PDF" is the default destination on
+    // every modern browser). Filename naming is decided in the dialog
+    // by the user, but the print page sets document.title so the
+    // suggestion lands close to our `master-resume_<slug>_v<n>_<date>`
+    // convention.
+    const target = new URL(req.url);
+    target.pathname = `/profile/master/snapshots/${snapshot.id}/print`;
+    target.search = "?autoPrint=1";
+    // 302 (default) — not a permanent redirect; the target URL is
+    // session-dependent (auth-gated) and the JSON branch lives at the
+    // same path with a different query.
+    return NextResponse.redirect(target);
+  }
+
   return NextResponse.json(
     {
-      error: "PDF download is not implemented in this build. Use ?format=json for now.",
+      error: `Unsupported format "${format}". Use json or pdf.`,
     },
-    { status: 501 },
+    { status: 400 },
   );
 }
