@@ -10,7 +10,7 @@
  * over from there.
  */
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -58,6 +58,21 @@ export function ResumesIndexClient({ initialResumes }: Props) {
   const router = useRouter();
   const { inputDialog, node: dialogNode } = useInputDialog();
   const [resumes, setResumes] = useState<ResumeRow[]>(initialResumes);
+  // Re-sync local state when the server hands down fresh data
+  // (e.g. after router.refresh() following an admin Seed/Clear or
+  // any other action that mutates the user's resumes off this page).
+  // Without this, useState(initialResumes) only reads its initial
+  // value at mount, so the freshly seeded rows never reach the UI
+  // until the user manually reloads. Compare by id-set so we don't
+  // clobber state mid-typing on benign re-renders that don't
+  // actually change the list.
+  useEffect(() => {
+    const sameIds =
+      initialResumes.length === resumes.length
+      && initialResumes.every((r, i) => r.id === resumes[i]?.id);
+    if (!sameIds) setResumes(initialResumes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialResumes]);
   const [creating, startCreate] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
