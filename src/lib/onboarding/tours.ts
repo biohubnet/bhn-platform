@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.20a";
+export const TOUR_VERSION = "2026.05.19j";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -693,16 +693,6 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     since: "2026.05.07m",
     cta: { label: "Open skill ontology", href: "/admin/skills" },
-  },
-  {
-    id: "skill-cards-organic-blobs",
-    title: "Skill cards now cluster as organic blobs",
-    body: "/admin/skills no longer reads as a sheet of rectangles. Each card now wears one of eight organic blob silhouettes and the cluster lightly bumps together. The grid is almost still at rest — each card breathes between two shapes on a slow phase-offset cycle — but glide the cursor across it and cards sway toward the pointer, tilt slightly, lift, and tint. Hover for the wave; leave to settle.",
-    path: "/admin/skills",
-    placement: "center",
-    roles: ["admin", "superadmin"],
-    since: "2026.05.20a",
-    cta: { label: "See it on /admin/skills", href: "/admin/skills" },
   },
   {
     id: "public-marketing-pages",

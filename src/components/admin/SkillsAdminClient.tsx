@@ -34,38 +34,6 @@ const STATUS_CLS: Record<string, string> = {
   merged:     "bg-elevated text-subtle border-line",
 };
 
-// Organic blob silhouettes. Each entry is a border-radius shorthand
-// using the horizontal-radius / vertical-radius form. Picking from a
-// fixed palette (rather than randomising) keeps cards' shapes stable
-// across re-renders so the cluster doesn't shimmer as React updates.
-const BLOB_SHAPES = [
-  "47% 53% 60% 40% / 52% 45% 55% 48%",
-  "55% 45% 50% 50% / 45% 60% 40% 55%",
-  "60% 40% 55% 45% / 55% 50% 50% 45%",
-  "42% 58% 45% 55% / 60% 50% 40% 55%",
-  "50% 50% 60% 40% / 45% 55% 50% 50%",
-  "58% 42% 50% 50% / 50% 60% 45% 55%",
-  "48% 52% 38% 62% / 55% 48% 52% 45%",
-  "62% 38% 48% 52% / 42% 58% 48% 52%",
-];
-
-// Deterministic shape picker — same skill id always lands on the
-// same blob, so neighbours keep their bumpy-but-stable silhouettes
-// across renders, status flips, and filter changes.
-function blobShape(id: string): string {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return BLOB_SHAPES[h % BLOB_SHAPES.length];
-}
-// Small per-card breath phase offset so the cluster doesn't pulse
-// in unison. Returns 0–5.9s — a wide enough spread that twenty cards
-// look alive without ever synchronising.
-function blobPhase(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 17 + id.charCodeAt(i)) >>> 0;
-  return (h % 60) / 10;
-}
-
 export function SkillsAdminClient({
   initialSkills,
   isSuperadmin = false,
@@ -603,7 +571,7 @@ function SkillsCardGrid({
       ref={gridRef}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      className="skills-wave-grid relative grid gap-1.5 grid-cols-[repeat(auto-fill,minmax(200px,1fr))] py-3"
+      className="skills-wave-grid relative grid gap-3.5 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]"
       style={{
         // Unitless defaults — see comment on handleMove for why.
         "--mx": "-9999",
@@ -635,40 +603,24 @@ function SkillsCardGrid({
           --dx: calc(var(--mx) - var(--cx, 99999));
           --dy: calc(var(--my) - var(--cy, 99999));
           /* 1 / (1 + d²/k²) — soft Gaussian-ish falloff. k tunes the
-             wave radius; ~180 means the lift drops to half at ~180px. */
-          --d2: calc((var(--dx) * var(--dx) + var(--dy) * var(--dy)) / (180 * 180));
+             wave radius; ~160 means the lift drops to half at ~160px. */
+          --d2: calc((var(--dx) * var(--dx) + var(--dy) * var(--dy)) / (160 * 160));
           --proximity: calc(var(--in) / (1 + var(--d2)));
-          /* Cards are mostly still — the only motion at rest is a
-             tiny ambient breath (see keyframes below). Mouse adds
-             lift + a faint sway toward the cursor so the cluster
-             feels like soft pebbles being nudged. */
-          animation: skill_breath 6s ease-in-out infinite;
-          animation-delay: calc(var(--phase, 0) * 1s);
-          transform:
-            translate(
-              calc(var(--proximity) * var(--dx) * 0.014px),
-              calc(var(--proximity) * var(--dy) * 0.014px - var(--proximity) * 2px)
-            )
-            rotate(calc(var(--proximity) * var(--dx) * 0.012deg))
-            scale(calc(1 + var(--proximity) * 0.025));
+          transform: translateY(calc(var(--proximity) * -3px));
           box-shadow:
-            0 calc(var(--proximity) * 10px) calc(var(--proximity) * 28px) calc(var(--proximity) * -10px) rgba(56, 189, 248, calc(var(--proximity) * 0.5));
+            0 calc(var(--proximity) * 8px) calc(var(--proximity) * 24px) calc(var(--proximity) * -8px) rgba(56, 189, 248, calc(var(--proximity) * 0.45)),
+            0 1px 0 0 var(--line);
           background-image: radial-gradient(
             circle at calc(var(--mx) * 1px) calc(var(--my) * 1px),
             color-mix(in oklab, var(--brand-100) calc(var(--proximity) * 60%), transparent),
             transparent 60%
           );
-          transition: transform 280ms cubic-bezier(0.2, 0.7, 0.2, 1.1), box-shadow 280ms ease-out;
-        }
-        @keyframes skill_breath {
-          0%,   100% { border-radius: var(--blob-a, 50%); }
-          50%        { border-radius: var(--blob-b, 50%); }
+          transition: transform 200ms ease-out, box-shadow 200ms ease-out;
         }
         @media (prefers-reduced-motion: reduce) {
           .skills-wave-grid :global(.skill-card) {
             transform: none !important;
             background-image: none !important;
-            animation: none !important;
           }
         }
       `}</style>
@@ -713,48 +665,30 @@ function SkillCard({
     return () => ro.disconnect();
   }, []);
 
-  // Two blob silhouettes per card — one for the resting state, one
-  // for the breath-midpoint. Picking two different shapes from the
-  // palette gives the card a slow, gentle morph between two real
-  // organic outlines rather than morphing toward a circle.
-  const blobA = blobShape(skill.id);
-  const blobB = blobShape(skill.id + "_b");
-  const phase = blobPhase(skill.id);
-
   return (
     <div
       ref={cardRef}
       className={cn(
-        "skill-card relative border bg-card-solid px-5 py-4 cursor-default overflow-hidden min-h-[150px] flex flex-col",
+        "skill-card relative rounded-xl border bg-card-solid p-4 cursor-default overflow-hidden min-h-[140px] flex flex-col",
         isSelected
           ? "border-brand-400 ring-1 ring-brand-300 bg-brand-50/40"
           : "border-line",
       )}
-      style={{
-        // Two blob silhouettes + a phase offset, all consumed by the
-        // shared `skill_breath` keyframe in the parent's <style jsx>.
-        // Inline so each card gets its own values without spinning up
-        // a per-card stylesheet.
-        ["--blob-a" as string]: blobA,
-        ["--blob-b" as string]: blobB,
-        ["--phase" as string]: String(phase),
-        borderRadius: blobA,
-      } as React.CSSProperties}
     >
-      {/* Selection checkbox — pulled in from the corner so it stays
-          inside the blob curve rather than poking past the bulge.
-          Click flips selection without triggering edit. */}
+      {/* Selection checkbox — top-right corner. Click flips selection
+          without triggering edit. Larger hit target than a native
+          checkbox for tap-friendliness. */}
       <button
         type="button"
         onClick={onToggleSelect}
         aria-label={isSelected ? "Deselect" : "Select for batch action"}
         title={isSelected ? "Deselect" : "Select for batch action"}
-        className="absolute top-3.5 right-3.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full text-fg-muted hover:text-fg hover:bg-elevated"
+        className="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-6 h-6 rounded text-fg-muted hover:text-fg hover:bg-elevated"
       >
         {isSelected ? <CheckSquare size={16} className="text-brand-700" /> : <Square size={16} />}
       </button>
 
-      <div className="flex items-start gap-2 pr-8">
+      <div className="flex items-start gap-2 pr-7">
         <p className="text-[15px] font-semibold text-fg leading-tight break-words flex-1">
           {skill.name}
         </p>
@@ -795,10 +729,7 @@ function SkillCard({
         </p>
       )}
 
-      {/* No hard divider — a horizontal rule would cut a straight
-          chord across the blob silhouette. Use a small top margin
-          instead so the count row floats inside the bulge. */}
-      <div className="mt-auto pt-3 flex items-center justify-between text-[11px] text-fg-subtle">
+      <div className="mt-auto pt-3 border-t border-line/60 flex items-center justify-between text-[11px] text-fg-subtle">
         <span title="Courses · Users · Postings tagged" className="font-mono tabular-nums">
           {skill.counts.courses}c · {skill.counts.users}u · {skill.counts.postings}p
         </span>
