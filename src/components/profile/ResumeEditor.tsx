@@ -161,6 +161,16 @@ export function ResumeEditor({
   const [rewriteBusyId, setRewriteBusyId] = useState<string | null>(null);
   const [rewriteError, setRewriteError] = useState<{ bulletId: string; msg: string } | null>(null);
 
+  // ── Bullet drag-to-reorder state ────────────────────────────────
+  // Tracks which bullet (if any) the user is currently dragging by
+  // its sIdx / iIdx / bIdx. Restricted to within-item reorder for
+  // now — cross-item bullet moves are rare and would force the user
+  // to also rewrite which item each one is attributed to.
+  const [bulletDrag, setBulletDrag] = useState<
+    | { sIdx: number; iIdx: number; bIdx: number; bulletId: string }
+    | null
+  >(null);
+
   // ── Whole-resume "Tailor to posting" state ──────────────────────
   const [tailorOpen, setTailorOpen] = useState(false);
   const [tailorPostingId, setTailorPostingId] = useState<string>("");
@@ -715,6 +725,34 @@ export function ResumeEditor({
       };
     });
   }
+  /** Reorder bullets within one item via index → index. Used by the
+   *  drag-handle on each bullet row. Positions are re-stamped after
+   *  the splice so the printed order on the PDF matches the visual
+   *  order in the editor. */
+  function moveBullet(sIdx: number, iIdx: number, fromBIdx: number, toBIdx: number) {
+    if (fromBIdx === toBIdx) return;
+    setContent((c) => ({
+      ...c,
+      sections: c.sections.map((s, i) => {
+        if (i !== sIdx) return s;
+        return {
+          ...s,
+          items: s.items.map((it, j) => {
+            if (j !== iIdx) return it;
+            const next = [...it.bullets];
+            if (fromBIdx < 0 || fromBIdx >= next.length) return it;
+            const clampedTo = Math.max(0, Math.min(next.length - 1, toBIdx));
+            const [moved] = next.splice(fromBIdx, 1);
+            next.splice(clampedTo, 0, moved);
+            return {
+              ...it,
+              bullets: next.map((b, idx) => ({ ...b, position: idx })),
+            };
+          }),
+        };
+      }),
+    }));
+  }
 
   // ── Recovery stack for removals ────────────────────────────────
   // Pushed to whenever a bullet / item / section X is clicked. The
@@ -834,10 +872,10 @@ export function ResumeEditor({
             return (
               <span
                 className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200 text-[11px] font-semibold"
-                title={`${openCount} open comment${openCount === 1 ? "" : "s"} on this resume`}
+                title={`${openCount} comment${openCount === 1 ? "" : "s"} from mentors or instructors still need${openCount === 1 ? "s" : ""} your reply. Open each thread and mark it Resolved (you chose not to act) or Applied (you took the suggestion).`}
               >
                 <MessageCircle size={11} />
-                {openCount} open
+                {openCount} {openCount === 1 ? "comment needs reply" : "comments need reply"}
               </span>
             );
           })()}
@@ -1049,6 +1087,14 @@ export function ResumeEditor({
                       )}
                       {item.bullets.map((bullet, bIdx) => {
                         const bulletComments = commentsByBullet.get(bullet.id) ?? [];
+                        const isDragging   = bulletDrag?.bulletId === bullet.id;
+                        // Drop targets only highlight when the drag
+                        // originated within the SAME item — bullets
+                        // can't be dragged across items today.
+                        const isValidTarget = !!bulletDrag
+                          && bulletDrag.sIdx === sIdx
+                          && bulletDrag.iIdx === iIdx
+                          && bulletDrag.bulletId !== bullet.id;
                         return (
                           <BulletRow
                             key={bullet.id}
@@ -1065,6 +1111,23 @@ export function ResumeEditor({
                             onAcceptRewrite={(edited) => acceptBulletRewrite(bullet.id, edited)}
                             onDismissRewrite={() => dismissBulletRewrite(bullet.id)}
                             rewriteError={rewriteError && rewriteError.bulletId === bullet.id ? rewriteError.msg : null}
+                            isDragging={isDragging}
+                            isDragTarget={isValidTarget}
+                            onDragStartBullet={() =>
+                              setBulletDrag({ sIdx, iIdx, bIdx, bulletId: bullet.id })
+                            }
+                            onDragEndBullet={() => setBulletDrag(null)}
+                            onDropOnBullet={() => {
+                              if (
+                                bulletDrag
+                                && bulletDrag.sIdx === sIdx
+                                && bulletDrag.iIdx === iIdx
+                                && bulletDrag.bIdx !== bIdx
+                              ) {
+                                moveBullet(sIdx, iIdx, bulletDrag.bIdx, bIdx);
+                              }
+                              setBulletDrag(null);
+                            }}
                           />
                         );
                       })}
@@ -1442,6 +1505,7 @@ function BulletRow({
   bullet, comments, onChange, onRemove, onCommentStatus,
   onRewrite, onApplyCommentWithAI, rewriting, rewritePreview, onAcceptRewrite, onDismissRewrite, rewriteError,
   placeholder,
+  isDragging, isDragTarget, onDragStartBullet, onDragEndBullet, onDropOnBullet,
 }: {
   bullet: ResumeBullet;
   comments: CommentRow[];
@@ -1456,14 +1520,60 @@ function BulletRow({
   onDismissRewrite: () => void;
   rewriteError: string | null;
   placeholder?: string;
+  /** Drag-to-reorder wiring. The grip handle is the drag source;
+   *  the entire row is the drop target. Reorder is within-item
+   *  only (see bulletDrag state in the parent). */
+  isDragging: boolean;
+  isDragTarget: boolean;
+  onDragStartBullet: () => void;
+  onDragEndBullet: () => void;
+  onDropOnBullet: () => void;
 }) {
   const [showThread, setShowThread] = useState(false);
   const openCount = comments.filter((c) => c.status === "open").length;
   const hasBody = bullet.body.trim().length > 0;
   return (
-    <div className="space-y-1.5">
+    <div
+      className={
+        "space-y-1.5 rounded-md transition-all " +
+        (isDragging ? "opacity-40 " : "") +
+        (isDragTarget ? "ring-2 ring-brand-300 ring-offset-2 ring-offset-card-solid bg-brand-50/40 " : "")
+      }
+      onDragOver={(e) => {
+        // Only show drop affordance if a sibling bullet is being
+        // dragged (the parent flags this via isDragTarget).
+        if (isDragTarget) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        if (!isDragTarget) return;
+        e.preventDefault();
+        onDropOnBullet();
+      }}
+    >
       <div className="flex items-start gap-2">
-        <GripVertical size={12} className="text-fg-subtle mt-2 shrink-0" />
+        {/* Real drag handle. The 6-dot GripVertical icon used to be
+            purely decorative — it looked like a drag affordance but
+            did nothing. Now it's the actual drag-start surface:
+            mousedown + drag picks up the bullet, drop on another
+            bullet in the same item reorders. cursor-grab telegraphs
+            the affordance even before the user picks it up. */}
+        <span
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.effectAllowed = "move";
+            // Some browsers refuse to start a drag unless data is
+            // set. The value isn't read — we route via the parent's
+            // bulletDrag state — but we have to put something here.
+            e.dataTransfer.setData("text/plain", bullet.id);
+            onDragStartBullet();
+          }}
+          onDragEnd={onDragEndBullet}
+          title="Drag to reorder within this item"
+          className="mt-1.5 shrink-0 inline-flex items-center justify-center w-4 h-5 rounded text-fg-subtle hover:text-fg hover:bg-elevated cursor-grab active:cursor-grabbing"
+          aria-label="Drag to reorder bullet"
+        >
+          <GripVertical size={12} />
+        </span>
         <textarea
           value={bullet.body}
           onChange={(e) => onChange(e.target.value)}
@@ -1504,10 +1614,19 @@ function BulletRow({
                 ? "bg-amber-50 text-amber-800 ring-amber-200 hover:bg-amber-100"
                 : "bg-elevated text-fg-muted ring-line hover:bg-card")
             }
-            title={`${comments.length} comment${comments.length === 1 ? "" : "s"} · ${openCount} open`}
+            // Tooltip spells out what "open" means in plain English:
+            // a comment a mentor / admin / instructor left on this
+            // bullet that you haven't yet marked Resolved (you
+            // chose not to act on it) or Applied (you took the
+            // suggestion). Open ≈ "still needs your eyes".
+            title={
+              openCount > 0
+                ? `${comments.length} comment${comments.length === 1 ? "" : "s"} on this bullet from mentors/instructors. ${openCount} still need${openCount === 1 ? "s" : ""} your reply — open the thread to mark each one Resolved or Applied.`
+                : `${comments.length} comment${comments.length === 1 ? "" : "s"} on this bullet — all already handled. Click to view the history.`
+            }
           >
             <MessageCircle size={9} /> {comments.length}
-            {openCount > 0 && <span className="font-semibold">· {openCount} open</span>}
+            {openCount > 0 && <span className="font-semibold">· {openCount} need{openCount === 1 ? "s" : ""} reply</span>}
           </button>
         )}
         <IconBtn onClick={onRemove} title="Remove bullet" danger><X size={11} /></IconBtn>
