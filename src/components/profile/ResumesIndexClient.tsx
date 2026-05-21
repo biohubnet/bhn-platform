@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { ResumeContent } from "@/lib/resume/types";
 import { ResumeThumbnail } from "./ResumeThumbnail";
+import { LaunchSwitch } from "@/components/ui/LaunchSwitch";
 
 interface PostingChip {
   id: string;
@@ -153,16 +154,14 @@ export function ResumesIndexClient({ initialResumes }: Props) {
   }
 
   /** Permanently delete a resume — hard delete via the API's
-   *  ?force=true mode. Cascades to comments + revisions. Always
-   *  confirms first; this is irreversible. */
+   *  ?force=true mode. Cascades to comments + revisions.
+   *
+   *  No window.confirm() — the LaunchSwitch (cover-flip + 5s
+   *  countdown + abort) already enforces a deliberate commitment
+   *  ritual, and stacking a browser-native confirm on top would be
+   *  visually + cognitively redundant. */
   async function hardDelete(row: ResumeRow) {
     setError(null);
-    const ok = window.confirm(
-      `Permanently delete "${row.name}"?\n\n` +
-      `This is irreversible — comments and version history go with it. ` +
-      `If you only want it out of your way, choose Archive instead (recoverable from this page).`,
-    );
-    if (!ok) return;
     // Optimistic removal.
     setResumes((cur) => cur.filter((x) => x.id !== row.id));
     setSelected((s) => {
@@ -517,14 +516,17 @@ function ResumeCard({
               <RotateCcw size={11} /> Restore
             </button>
           )}
-          <button
-            type="button"
-            onClick={onDelete}
-            className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold text-rose-700 ring-1 ring-rose-200 hover:bg-rose-50"
-            title="Permanently delete this resume — irreversible. Archive if you might want it back."
-          >
-            <Trash2 size={11} /> Delete
-          </button>
+          {/* Destructive control anchored to the right edge of the
+              row via ml-auto on its wrapper. Stays in the same
+              corner regardless of how many secondary buttons are
+              to its left or how the row wraps on narrow viewports. */}
+          <div className="ml-auto">
+            <LaunchSwitch
+              label="DELETE"
+              ariaLabel="Delete resume — protected switch with 5-second countdown"
+              onFire={onDelete}
+            />
+          </div>
         </div>
       </div>
     </li>

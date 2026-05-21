@@ -3,11 +3,13 @@ import { redirect } from "next/navigation";
 import {
   Palette, Type, Box, Layers, Zap, Accessibility, Sparkles,
   CheckCircle2, AlertTriangle, Info, XCircle, Plus, Loader2, ArrowRight, Check, Hourglass, ExternalLink,
+  Rocket,
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { getActiveDesignSystem } from "@/lib/settings";
 import { DesignSystemAdminPicker } from "@/components/admin/DesignSystemAdminPicker";
 import { DesignSystemShowroom } from "@/components/admin/DesignSystemShowroom";
+import { LaunchSwitch } from "@/components/ui/LaunchSwitch";
 
 /**
  * /admin/design-system — live mirror of docs/design-system.md.
@@ -438,6 +440,71 @@ export default async function AdminDesignSystemPage() {
           <A11yItem todo>Quarterly WCAG 2.1 AA contrast sweep across all 9 themes — current cadence ad-hoc.</A11yItem>
           <A11yItem todo>Screen-reader walkthrough of every critical journey — not yet done.</A11yItem>
         </ul>
+      </Section>
+
+      <Section icon={Rocket} title="LaunchSwitch — protected destructive action" eyebrow="Component · safety pattern">
+        <p className="text-sm text-fg-muted leading-relaxed">
+          Two-stage destructive control inspired by the protected red switches on a jet fighter&apos;s weapons panel.
+          Reach for it any time a single accidental click would be costly to undo — hard-delete a row, abandon a draft, wipe a workspace.
+        </p>
+
+        <SubSection title="States">
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
+              <LaunchSwitch label="DELETE" onFire={() => { /* demo */ }} />
+              <p className="text-[11px] text-fg-muted text-center">
+                <span className="font-bold text-fg">Closed</span> · striped cover sits over the FIRE button. Click to lift.
+              </p>
+            </div>
+            <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
+              <LaunchSwitch label="DELETE" onFire={() => { /* demo */ }} />
+              <p className="text-[11px] text-fg-muted text-center">
+                <span className="font-bold text-fg">Armed</span> · cover hinged 78°, red FIRE button exposed. Click anywhere on the cover to bail.
+              </p>
+            </div>
+            <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
+              <LaunchSwitch label="DELETE" countdownSeconds={5} onFire={() => { /* demo */ }} />
+              <p className="text-[11px] text-fg-muted text-center">
+                <span className="font-bold text-fg">Launching</span> · T-minus countdown ticks down with a flashing LED. Click ABORT (×) to cancel.
+              </p>
+            </div>
+          </div>
+        </SubSection>
+
+        <SubSection title="Sizes">
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="flex flex-col items-center gap-2">
+              <LaunchSwitch size="sm" label="DELETE" onFire={() => {}} />
+              <code className="text-[11px] text-fg-muted">size=&quot;sm&quot; · 96×30</code>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <LaunchSwitch size="md" label="DELETE" onFire={() => {}} />
+              <code className="text-[11px] text-fg-muted">size=&quot;md&quot; · 140×44</code>
+            </div>
+          </div>
+        </SubSection>
+
+        <SubSection title="When to reach for it">
+          <ul className="space-y-1.5 text-sm text-fg-muted">
+            <li>• Hard-delete a row (vs. soft-archive) — the irreversible cousin of Archive.</li>
+            <li>• Abandon a draft, wipe a workspace, reset a long-form editor.</li>
+            <li>• Anywhere a one-click button would be too cheap given the cost of an accidental press.</li>
+          </ul>
+          <p className="text-[11px] text-fg-subtle mt-2">
+            <strong>Don&apos;t</strong> use it for routine destructive actions (delete one comment, remove one row from a list of many). Reserve the cover-flip drama for actions that cost real work to undo — otherwise it becomes ceremony for ceremony&apos;s sake.
+          </p>
+        </SubSection>
+
+        <SubSection title="Props">
+          <pre className="text-[11px] font-mono bg-elevated/40 rounded-md p-3 overflow-x-auto leading-relaxed">{`<LaunchSwitch
+  label="DELETE"            // text on the cover; default "DELETE"
+  countdownSeconds={5}      // T-minus before onFire runs; default 5
+  size="sm" | "md"          // 96×30 (default) or 140×44
+  onArm={() => {}}          // optional — fires when cover lifts
+  onAbort={() => {}}        // optional — fires when user cancels
+  onFire={() => {}}         // required — runs once countdown hits 0
+/>`}</pre>
+        </SubSection>
       </Section>
     </div>
   );
