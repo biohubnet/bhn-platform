@@ -506,8 +506,19 @@ function ResumeCard({
           </Link>
         </div>
 
-        {/* Secondary actions — slightly smaller, less visually loud. */}
+        {/* Secondary actions — slightly smaller, less visually loud.
+            The LaunchSwitch leads the row (left-anchored). The cover
+            already guarantees it can't be triggered accidentally, so
+            the conventional "destructive last" placement isn't
+            needed — keeping a stable left edge for the destructive
+            control beats it migrating around as siblings appear and
+            disappear (Archive vs. Restore swap). */}
         <div className="flex items-center gap-1.5 flex-wrap mt-auto pt-1">
+          <LaunchSwitch
+            label="DELETE"
+            ariaLabel="Delete resume — protected switch with 10-second countdown"
+            onFire={onDelete}
+          />
           <button
             type="button"
             onClick={onDuplicate}
@@ -540,17 +551,6 @@ function ResumeCard({
               <RotateCcw size={11} /> Restore
             </button>
           )}
-          {/* Destructive control anchored to the right edge of the
-              row via ml-auto on its wrapper. Stays in the same
-              corner regardless of how many secondary buttons are
-              to its left or how the row wraps on narrow viewports. */}
-          <div className="ml-auto">
-            <LaunchSwitch
-              label="DELETE"
-              ariaLabel="Delete resume — protected switch with 5-second countdown"
-              onFire={onDelete}
-            />
-          </div>
         </div>
       </div>
     </li>
