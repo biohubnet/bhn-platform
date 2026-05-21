@@ -902,7 +902,11 @@ function AdminSubgroup({
         onClick={toggleCollapsed}
         aria-label={collapsed ? `Expand ${label}` : `Collapse ${label}`}
         aria-expanded={!collapsed}
-        className="group w-full flex items-center gap-1.5 px-3 pt-3 pb-1.5 text-[12px] uppercase tracking-[0.18em] font-bold select-none cursor-pointer hover:bg-fg/5 rounded transition-colors"
+        // text-left needed because <button> defaults to text-align:
+        // center — wrapped labels (e.g. "SECURITY & COMPLIANCE")
+        // were centring instead of staying flush-left with the
+        // chevron.
+        className="group w-full flex items-center gap-1.5 px-3 pt-3 pb-1.5 text-left text-[12px] uppercase tracking-[0.18em] font-bold select-none cursor-pointer hover:bg-fg/5 rounded transition-colors"
         style={{ color: tone.text }}
       >
         <ChevronDown
