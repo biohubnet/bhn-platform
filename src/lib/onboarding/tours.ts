@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.21a";
+export const TOUR_VERSION = "2026.05.21b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -165,6 +165,16 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     cta: { label: "Open resume editor", href: "/profile/resume" },
     since: "2026.05.21a",
+  },
+  {
+    id: "trainee.master-resume-pull",
+    title: "Pull bullets from your master library",
+    body: "Open any resume in the editor and click \"Pull from master\" on the master banner — a right-side drawer slides in with every bullet in your library. Drag any bullet by its grip onto an entry in your draft, or use the \"Send to\" picker on each card. Once you edit a pulled bullet, a chip appears underneath offering to push the new wording back to the master so future drafts pick it up. Click \"Keep local only\" to suppress the chip for this tailored copy.",
+    path: "/profile/resume",
+    placement: "center",
+    cta: { label: "Open resume editor", href: "/profile/resume" },
+    roles: ["trainee", "evaluating", "admin", "superadmin"],
+    since: "2026.05.21b",
   },
 
   // ─── Instructor path ─────────────────────────────────────────────

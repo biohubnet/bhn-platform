@@ -36,6 +36,14 @@ interface MasterStats {
 
 const COLLAPSE_KEY = "bhn:master-banner-collapsed";
 
+/** Custom window event the banner fires when the user clicks
+ *  "Pull from master". The ResumeEditor listens for this event and
+ *  opens its in-tree PullFromMasterDrawer. This decouples the banner
+ *  (which lives one DOM level up from the editor) from the editor's
+ *  internal state without lifting the drawer's state to a shared
+ *  parent client component. */
+export const OPEN_MASTER_DRAWER_EVENT = "bhn:open-master-drawer";
+
 export function MasterResumeBanner() {
   const [stats, setStats] = useState<MasterStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -164,16 +172,20 @@ export function MasterResumeBanner() {
                   <span className="block text-[11px] text-fg-muted mt-0.5 leading-tight">Edit, add, archive bullets.</span>
                 </span>
               </Link>
-              <div
-                title="Pull-from-master drag interaction lands in a follow-up — for now, copy bullets manually from /profile/master."
-                className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid/60 ring-1 ring-inset ring-dashed ring-line text-fg-subtle"
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent(OPEN_MASTER_DRAWER_EVENT));
+                }}
+                title="Open the master library in a right-side drawer — drag a bullet onto any entry to insert it, or use Send to → from each card"
+                className="group inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid ring-1 ring-inset ring-line hover:ring-brand-300 hover:bg-brand-50/60 transition-colors text-left"
               >
-                <ArrowDown size={13} className="mt-0.5 shrink-0" />
+                <ArrowDown size={13} className="text-brand-700 mt-0.5 shrink-0" />
                 <span className="min-w-0">
-                  <span className="block text-[12.5px] font-semibold leading-tight">Pull from master</span>
-                  <span className="block text-[11px] mt-0.5 leading-tight">Drag-from-master coming soon.</span>
+                  <span className="block text-[12.5px] font-bold text-fg leading-tight">Pull from master</span>
+                  <span className="block text-[11px] text-fg-muted mt-0.5 leading-tight">Drag a bullet onto an entry, or use Send to.</span>
                 </span>
-              </div>
+              </button>
               <div
                 title="AI tailor flow lands in a follow-up — picks 12 best bullets via embedding similarity + LLM re-rank."
                 className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid/60 ring-1 ring-inset ring-dashed ring-line text-fg-subtle"
@@ -185,13 +197,13 @@ export function MasterResumeBanner() {
                 </span>
               </div>
               <div
-                title="Promotion chip lands in a follow-up — edit a bullet here, push the improvement to the master."
-                className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid/60 ring-1 ring-inset ring-dashed ring-line text-fg-subtle"
+                title="Once you edit a bullet that came from your master library, a chip appears beneath it offering to push the improved wording back to the master."
+                className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid ring-1 ring-inset ring-line text-fg"
               >
-                <ArrowUp size={13} className="mt-0.5 shrink-0" />
+                <ArrowUp size={13} className="text-brand-700 mt-0.5 shrink-0" />
                 <span className="min-w-0">
-                  <span className="block text-[12.5px] font-semibold leading-tight">Promote edits to master</span>
-                  <span className="block text-[11px] mt-0.5 leading-tight">Coming soon.</span>
+                  <span className="block text-[12.5px] font-bold leading-tight">Promote edits to master</span>
+                  <span className="block text-[11px] text-fg-muted mt-0.5 leading-tight">Edit a pulled bullet — a chip will offer to push the improvement back.</span>
                 </span>
               </div>
             </div>

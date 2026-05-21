@@ -32,6 +32,7 @@ import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, GripVertical, MessageCircle, CheckCircle2, X, Loader2, Sparkles, Save, ChevronUp, ChevronDown,
   Target, Wand2, Clock, Printer, RotateCcw, FileText, Check, Info,
+  Library, ArrowUp,
 } from "lucide-react";
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_LABEL, SECTION_HINTS, rid } from "@/lib/resume/types";
@@ -40,6 +41,14 @@ import { ResumeItemEditor } from "./ResumeItemEditor";
 import { RewriteableTextarea } from "./RewriteableTextarea";
 import { VersionHistoryDrawer } from "./VersionHistoryDrawer";
 import { ResumeLintPanel } from "./ResumeLintPanel";
+import { PullFromMasterDrawer } from "./PullFromMasterDrawer";
+import { OPEN_MASTER_DRAWER_EVENT } from "./MasterResumeBanner";
+
+/** Custom MIME the master drawer sets on dataTransfer when a master
+ *  bullet is being dragged. The editor's drop targets use it to tell
+ *  master pulls apart from in-item bullet reorders without reading
+ *  text/plain (browsers don't expose payloads during dragover). */
+const MASTER_DRAG_MIME = "application/x-bhn-master-bullet";
 
 /** Lightweight posting summary fed in from the server shell. */
 export interface PostingSummary {
@@ -171,6 +180,32 @@ export function ResumeEditor({
     | null
   >(null);
 
+  // ── Pull-from-master state ──────────────────────────────────────
+  // The drawer + drop targets surface bullets from the user's master
+  // library. Opens via either:
+  //   - the "Pull from master" button on the MasterResumeBanner
+  //     (banner dispatches a window CustomEvent we listen for here),
+  //   - or programmatic open via the same path.
+  // Drops happen on bullet rows + the bullets-list area inside each
+  // resume item; the pullFromMaster helper persists the insertion via
+  // /api/profile/resume/[id]/pull-from-master and replaces local
+  // content with the server's response.
+  const [masterDrawerOpen, setMasterDrawerOpen] = useState(false);
+  const [masterPullError, setMasterPullError] = useState<string | null>(null);
+  // Skip-flag for the auto-save effect — set to true RIGHT BEFORE we
+  // setContent from a server-authoritative response (pull-from-master).
+  // Without this, the auto-save effect would immediately PATCH the
+  // same content back to the server, double-bumping the version and
+  // updating the just-recorded revision in place (coalesce window).
+  const skipNextAutoSave = useRef(false);
+
+  // Listen for the banner-dispatched open event.
+  useEffect(() => {
+    function handler() { setMasterDrawerOpen(true); }
+    window.addEventListener(OPEN_MASTER_DRAWER_EVENT, handler);
+    return () => window.removeEventListener(OPEN_MASTER_DRAWER_EVENT, handler);
+  }, []);
+
   // ── Whole-resume "Tailor to posting" state ──────────────────────
   const [tailorOpen, setTailorOpen] = useState(false);
   const [tailorPostingId, setTailorPostingId] = useState<string>("");
@@ -201,6 +236,10 @@ export function ResumeEditor({
   // ── Auto-save: any change to `content` triggers a debounced PATCH ──
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
+    // Server-side write happened in another handler (e.g. pull-from-
+    // master) and the local state is the response we just replaced
+    // with — don't echo it back.
+    if (skipNextAutoSave.current) { skipNextAutoSave.current = false; return; }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       setSaving(true);
@@ -559,6 +598,117 @@ export function ResumeEditor({
       }
     } finally {
       setTailorBusy(null);
+    }
+  }
+
+  // ── Pull a bullet from the master library ───────────────────────
+  //
+  // Two callers:
+  //   • Drop handler on a BulletRow or bullets-list area → fires
+  //     with the dropped-on position so the new bullet lands there.
+  //   • "Send to" picker in the drawer → fires with no position so
+  //     the new bullet appends at the end of the target item.
+  //
+  // Persistence path:
+  //   1. Flush any pending auto-save so the endpoint reads the user's
+  //      latest content, not a stale snapshot.
+  //   2. POST to the pull-from-master endpoint — server splices the
+  //      bullet in, records a revision, returns the updated content.
+  //   3. Replace local content + version with the server's response,
+  //      with skipNextAutoSave on so we don't echo the same content
+  //      back via the auto-save effect.
+  async function pullFromMaster(args: {
+    masterBulletId: string;
+    targetSectionId: string;
+    targetItemId: string;
+    position?: number;
+  }) {
+    setMasterPullError(null);
+    // Flush any debounced auto-save first. We send the current local
+    // content directly so the endpoint reads what the user sees.
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    setSaving(true);
+    try {
+      // Push current local content as the authoritative state before
+      // the splice. Without this, an in-flight typing session would
+      // be lost when the server splices the master bullet onto the
+      // older persisted content.
+      await fetch("/api/profile/resume/structure", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, resumeId: initialResume.id }),
+      }).catch(() => null);
+
+      const r = await fetch(`/api/profile/resume/${initialResume.id}/pull-from-master`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(args),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        resume?: { id: string; version: number; content: ResumeContent };
+      };
+      if (!r.ok || !j.ok || !j.resume) {
+        setMasterPullError(j.error ?? "Couldn't pull bullet from master.");
+        return;
+      }
+      skipNextAutoSave.current = true;
+      setContent(j.resume.content);
+      setVersion(j.resume.version);
+      setSavedAt(new Date());
+    } catch (e) {
+      setMasterPullError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // ── Promote an edited bullet back to the master library ─────────
+  //
+  // Called from BulletRow's promote chip. The bullet must have
+  // `derivedFromMasterBulletId` (only derived bullets show the chip).
+  // On success we update the bullet's `derivedFromMasterBody` snapshot
+  // locally to the just-promoted body so the chip disappears until
+  // the user edits the bullet again. Persisting the snapshot is the
+  // auto-save effect's job — we tag a marker on the bullet and the
+  // next debounce flushes it.
+  async function promoteToMaster(args: {
+    bulletId: string;
+    masterBulletId: string;
+    body: string;
+  }) {
+    setMasterPullError(null);
+    try {
+      const r = await fetch("/api/profile/master/bullets/promote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ masterBulletId: args.masterBulletId, body: args.body }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!r.ok || !j.ok) {
+        setMasterPullError(j.error ?? "Couldn't promote bullet to master.");
+        return;
+      }
+      // Sync the bullet's derived-snapshot to match the promoted body
+      // so the chip stops showing until the user makes another edit.
+      setContent((c) => ({
+        ...c,
+        sections: c.sections.map((s) => ({
+          ...s,
+          items: s.items.map((it) => ({
+            ...it,
+            bullets: it.bullets.map((b) =>
+              b.id === args.bulletId ? { ...b, derivedFromMasterBody: args.body } : b,
+            ),
+          })),
+        })),
+      }));
+    } catch (e) {
+      setMasterPullError((e as Error).message);
     }
   }
 
@@ -1079,7 +1229,17 @@ export function ResumeEditor({
                   onPatch={(patch) => updateItem(sIdx, iIdx, patch)}
                   onRemove={() => removeItem(sIdx, iIdx)}
                   bulletsSlot={hint.showBullets ? (
-                    <div className="space-y-1.5">
+                    <BulletsListDropZone
+                      onDropMasterBullet={(masterBulletId, position) =>
+                        void pullFromMaster({
+                          masterBulletId,
+                          targetSectionId: section.id,
+                          targetItemId: item.id,
+                          position,
+                        })
+                      }
+                      bulletCount={item.bullets.length}
+                    >
                       {hint.bulletLabel && (
                         <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-fg-subtle mt-1">
                           {hint.bulletLabel}
@@ -1128,6 +1288,17 @@ export function ResumeEditor({
                               }
                               setBulletDrag(null);
                             }}
+                            onDropMasterBullet={(masterBulletId) =>
+                              void pullFromMaster({
+                                masterBulletId,
+                                targetSectionId: section.id,
+                                targetItemId: item.id,
+                                position: bIdx,
+                              })
+                            }
+                            onPromoteToMaster={(masterBulletId, body) =>
+                              void promoteToMaster({ bulletId: bullet.id, masterBulletId, body })
+                            }
                           />
                         );
                       })}
@@ -1138,7 +1309,7 @@ export function ResumeEditor({
                       >
                         <Plus size={11} /> Add {section.kind === "skills" ? "skill" : "bullet"}
                       </button>
-                    </div>
+                    </BulletsListDropZone>
                   ) : null}
                 />
                 </div>
@@ -1206,6 +1377,92 @@ export function ResumeEditor({
           even after they've scrolled past the inline SaveStatus near
           the top. See FloatingSaveStatus for the three-state visual. */}
       <FloatingSaveStatus saving={saving} version={version} savedAt={savedAt} />
+
+      {/* Pull-from-master drawer — toggled by the banner button via
+          a window CustomEvent, or by future in-editor buttons. The
+          drawer fetches /api/profile/master on open and renders every
+          non-archived bullet, grouped by section, with a drag handle
+          and a "Send to" picker. */}
+      <PullFromMasterDrawer
+        open={masterDrawerOpen}
+        onClose={() => setMasterDrawerOpen(false)}
+        content={content}
+        onSendToTarget={async (args) => {
+          await pullFromMaster(args);
+        }}
+      />
+
+      {/* Inline error toast for pull / promote failures. Auto-dismiss
+          with a click; never blocks the surface. */}
+      {masterPullError && (
+        <div className="fixed left-4 bottom-4 z-50 max-w-sm rounded-lg bg-rose-50 ring-1 ring-rose-200 text-rose-900 text-[12px] px-3 py-2 shadow-lg flex items-start gap-2">
+          <span className="flex-1">{masterPullError}</span>
+          <button
+            type="button"
+            onClick={() => setMasterPullError(null)}
+            className="p-0.5 rounded hover:bg-rose-100 shrink-0"
+            aria-label="Dismiss error"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Wraps an item's bullets list and accepts master-bullet drops on
+ *  the empty space inside (or below the last bullet) — keeps the
+ *  drop target generous so the user doesn't have to aim at a specific
+ *  bullet row when they just want to add to this item.
+ *
+ *  Master pulls dropped here append to the end (position omitted ⇒
+ *  endpoint defaults to append). Drops on a specific BulletRow take
+ *  priority via event bubbling — the row handles its own drop and
+ *  stops propagation. */
+function BulletsListDropZone({
+  children, onDropMasterBullet, bulletCount,
+}: {
+  children: React.ReactNode;
+  onDropMasterBullet: (masterBulletId: string, position?: number) => void;
+  bulletCount: number;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      className={
+        "space-y-1.5 rounded-md transition-colors " +
+        (hover ? "ring-2 ring-brand-300 ring-offset-1 ring-offset-card-solid bg-brand-50/40 " : "")
+      }
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes(MASTER_DRAG_MIME)) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          if (!hover) setHover(true);
+        }
+      }}
+      onDragLeave={(e) => {
+        // Only un-hover when we genuinely leave the zone, not when
+        // the cursor crosses into a child. relatedTarget being null
+        // (or outside the current target) means a real leave.
+        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+        setHover(false);
+      }}
+      onDrop={(e) => {
+        setHover(false);
+        if (!e.dataTransfer.types.includes(MASTER_DRAG_MIME)) return;
+        const data = e.dataTransfer.getData("text/plain");
+        if (!data.startsWith("master:")) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const masterBulletId = data.slice("master:".length);
+        // Append-at-end when dropped on the list area (a bullet row
+        // would have stopped propagation already and handled the
+        // drop at its specific position).
+        onDropMasterBullet(masterBulletId, bulletCount);
+      }}
+    >
+      {children}
     </div>
   );
 }
@@ -1506,6 +1763,7 @@ function BulletRow({
   onRewrite, onApplyCommentWithAI, rewriting, rewritePreview, onAcceptRewrite, onDismissRewrite, rewriteError,
   placeholder,
   isDragging, isDragTarget, onDragStartBullet, onDragEndBullet, onDropOnBullet,
+  onDropMasterBullet, onPromoteToMaster,
 }: {
   bullet: ResumeBullet;
   comments: CommentRow[];
@@ -1528,10 +1786,40 @@ function BulletRow({
   onDragStartBullet: () => void;
   onDragEndBullet: () => void;
   onDropOnBullet: () => void;
+  /** Master-bullet drop handler. Fires when a master bullet is
+   *  dropped ON THIS ROW (not the surrounding bullets-list zone);
+   *  the new bullet gets inserted at this row's position. */
+  onDropMasterBullet: (masterBulletId: string) => void;
+  /** Push the bullet's current body back to its source master bullet.
+   *  Only meaningful when bullet.derivedFromMasterBulletId is set. */
+  onPromoteToMaster: (masterBulletId: string, body: string) => void;
 }) {
   const [showThread, setShowThread] = useState(false);
+  // ── Promote-this-edit chip dismiss state ────────────────────────
+  // Keyed by sessionStorage on `${bulletId}:${dismissedBody}` so the
+  // chip stays hidden for the body the user just dismissed, but
+  // reappears the moment they type one more character — that's the
+  // intentional "keep reminding me on each edit" behaviour.
+  const dismissKey = `bhn:promote-dismissed:${bullet.id}`;
+  const [dismissedBody, setDismissedBody] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try { return sessionStorage.getItem(dismissKey); } catch { return null; }
+  });
   const openCount = comments.filter((c) => c.status === "open").length;
   const hasBody = bullet.body.trim().length > 0;
+  // Promote chip surfaces when the bullet was pulled from master AND
+  // the current body differs from the snapshot we took at pull-time
+  // AND the user hasn't dismissed THIS body's reminder.
+  const isDerivedAndEdited =
+    !!bullet.derivedFromMasterBulletId
+    && typeof bullet.derivedFromMasterBody === "string"
+    && bullet.body.trim() !== bullet.derivedFromMasterBody.trim()
+    && bullet.body.trim().length > 0;
+  const showPromoteChip = isDerivedAndEdited && dismissedBody !== bullet.body;
+  function dismissPromoteChip() {
+    setDismissedBody(bullet.body);
+    try { sessionStorage.setItem(dismissKey, bullet.body); } catch { /* ignore quota */ }
+  }
   return (
     <div
       className={
@@ -1540,11 +1828,29 @@ function BulletRow({
         (isDragTarget ? "ring-2 ring-brand-300 ring-offset-2 ring-offset-card-solid bg-brand-50/40 " : "")
       }
       onDragOver={(e) => {
+        // Master-bullet drag — always accept on a row so the user
+        // can target a specific insertion position.
+        if (e.dataTransfer.types.includes(MASTER_DRAG_MIME)) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          return;
+        }
         // Only show drop affordance if a sibling bullet is being
         // dragged (the parent flags this via isDragTarget).
         if (isDragTarget) e.preventDefault();
       }}
       onDrop={(e) => {
+        // Master-bullet drop takes priority; stops the bullets-list
+        // wrapper from also handling the same drop (append-at-end).
+        if (e.dataTransfer.types.includes(MASTER_DRAG_MIME)) {
+          const data = e.dataTransfer.getData("text/plain");
+          if (data.startsWith("master:")) {
+            e.preventDefault();
+            e.stopPropagation();
+            onDropMasterBullet(data.slice("master:".length));
+            return;
+          }
+        }
         if (!isDragTarget) return;
         e.preventDefault();
         onDropOnBullet();
@@ -1574,6 +1880,15 @@ function BulletRow({
         >
           <GripVertical size={12} />
         </span>
+        {bullet.derivedFromMasterBulletId && (
+          <span
+            title="This bullet came from your master library. Edits surface a 'promote to master' chip you can use to push improvements back."
+            className="mt-1.5 shrink-0 inline-flex items-center justify-center w-4 h-5 rounded text-brand-700"
+            aria-label="Pulled from master library"
+          >
+            <Library size={11} />
+          </span>
+        )}
         <textarea
           value={bullet.body}
           onChange={(e) => onChange(e.target.value)}
@@ -1631,6 +1946,42 @@ function BulletRow({
         )}
         <IconBtn onClick={onRemove} title="Remove bullet" danger><X size={11} /></IconBtn>
       </div>
+
+      {/* Promote-this-edit chip — surfaces when the bullet was pulled
+          from master and the user has edited the body away from the
+          snapshot we took at pull-time. Two outs: Promote (pushes the
+          new wording back to the master bullet) or Keep local only
+          (suppresses the chip for this exact body string; further
+          edits re-surface the chip — intentional). */}
+      {showPromoteChip && bullet.derivedFromMasterBulletId && (
+        <div className="ml-6 inline-flex items-start gap-2 rounded-md ring-1 ring-brand-200 bg-brand-50/60 px-2 py-1.5 text-[11px]">
+          <ArrowUp size={11} className="mt-0.5 shrink-0 text-brand-700" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] text-fg leading-snug">
+              <strong className="text-brand-900">Edited from master.</strong>
+              <span className="text-fg-muted"> Push this wording back to your library so future drafts pick up the improvement?</span>
+            </p>
+            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => onPromoteToMaster(bullet.derivedFromMasterBulletId!, bullet.body)}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-brand-600 text-white text-[10px] font-bold uppercase tracking-[0.14em] hover:bg-brand-700 transition-colors"
+                title="Update the source master bullet with this new body. A revision is recorded in the master's history."
+              >
+                <ArrowUp size={9} /> Promote to master
+              </button>
+              <button
+                type="button"
+                onClick={dismissPromoteChip}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-[0.14em] text-fg-muted ring-1 ring-line hover:bg-elevated"
+                title="Hide this prompt until you edit the bullet again. The master library isn't touched."
+              >
+                Keep local only
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Inline rewrite preview — original vs proposed, accept/dismiss */}
       {rewritePreview && (
