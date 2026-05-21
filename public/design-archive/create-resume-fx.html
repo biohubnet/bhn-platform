@@ -276,49 +276,164 @@
     }
 
     /* ─────────────────────────────────────────────────────────────
-       Variant D · Origami unfold
-       Small folded diamond expands in two beats — diagonal then
-       lateral — until it's a full sheet. Crease lines linger as
-       a hint of the folds.
+       Variant D · Origami unfold (3D, two-stage)
+       Real 3D perspective: the sheet starts as a folded quarter
+       (TL quadrant only visible). Three rotation operations play
+       out in sequence so the user actually sees paper unfolding
+       around real hinges:
+         1. TR + BR unfold along the vertical center fold
+            (rotateY −180° → 0°, hinged on left edges)
+         2. The bottom half unfolds along the horizontal center
+            fold (rotateX −180° → 0°, hinged on its top edge)
+         3. The whole sheet scales 0.4 → 1 with a soft overshoot
+       Each rotating panel has its own backface treatment + a
+       light/shadow gradient so the user sees the paper's "back"
+       briefly during the unfold. Crease lines linger to suggest
+       the folds were really there.
        ───────────────────────────────────────────────────────────── */
-    .vD .sheet {
-      transform-origin: center;
-      animation: vD-unfold 720ms cubic-bezier(0.22, 1.05, 0.30, 1.0) forwards;
-      transform: rotate(45deg) scale(0.18);
+    .vD .stage {
+      /* Perspective on the stage gives every transform inside it
+         depth. Origin sits slightly above centre so the fold-
+         downs read naturally (camera looking down on the desk). */
+      perspective: 1500px;
+      perspective-origin: 50% 35%;
+    }
+    .vD .o-sheet {
+      position: relative;
+      width: 200px;
+      height: 260px;
+      transform-style: preserve-3d;
+      transform: scale(0.4);
       opacity: 0;
+      animation: vD-sheet-scale 760ms cubic-bezier(0.22, 1.05, 0.30, 1.0) forwards;
     }
-    @keyframes vD-unfold {
-      0%   { transform: rotate(45deg)  scale(0.18); opacity: 0; }
-      25%  { transform: rotate(45deg)  scale(0.30); opacity: 0.7; }
-      45%  { transform: rotate(20deg)  scale(0.55) scaleY(0.4); opacity: 0.95; }
-      70%  { transform: rotate(0deg)   scale(0.85) scaleY(1);    opacity: 1; }
-      85%  { transform: rotate(0deg)   scale(1.04); }
-      100% { transform: rotate(0deg)   scale(1);    opacity: 1; }
+    @keyframes vD-sheet-scale {
+      0%   { transform: scale(0.40); opacity: 0; }
+      15%  {                         opacity: 1; }
+      60%  { transform: scale(0.62); }
+      85%  { transform: scale(1.04); }
+      100% { transform: scale(1);    }
     }
-    /* Crease lines on the sheet — appear briefly, fade out. */
-    .vD .crease {
+    /* Top + bottom halves are stacked vertically. Both contain
+       their own quadrants. Each half preserves-3d so its children
+       (the quadrants) can rotate independently. */
+    .vD .o-half {
       position: absolute;
-      background: rgba(0,0,0,0.10);
-      opacity: 0;
-      animation: vD-crease 600ms 500ms ease-out forwards;
-      pointer-events: none;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      transform-style: preserve-3d;
     }
-    .vD .crease-diag {
-      top: 0; left: 50%;
-      width: 1px;
-      height: 100%;
-      transform-origin: top center;
-      transform: rotate(35deg);
-    }
-    .vD .crease-h {
-      left: 0; right: 0;
+    .vD .o-top { top: 0; }
+    .vD .o-bot {
       top: 50%;
-      height: 1px;
+      /* Hinged on its top edge (which sits on the centre of the
+         sheet). Starts folded UP behind the top half. Unfolds
+         downward over 360ms after a brief pause. */
+      transform-origin: top center;
+      transform: rotateX(-180deg);
+      animation: vD-unfold-bottom 380ms 320ms cubic-bezier(0.4, 0.05, 0.2, 1) forwards;
     }
-    @keyframes vD-crease {
+    @keyframes vD-unfold-bottom {
+      to { transform: rotateX(0deg); }
+    }
+    /* Quadrants. TL + BL stay flat; TR + BR are folded behind
+       (rotated −180° around Y) and unfold first. Each quadrant
+       has its own paper face — solid white, soft shadow that
+       intensifies during the fold to suggest a free edge moving
+       in space. */
+    .vD .o-quad {
+      position: absolute;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      background: white;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      transform-style: preserve-3d;
+      /* Each quad gets a soft inset edge highlight so the seams
+         between quadrants read as creases, not as printed lines. */
+      box-shadow: inset 0 0 0 0 transparent;
+    }
+    .vD .o-tl { left: 0;  }
+    .vD .o-tr {
+      left: 50%;
+      transform-origin: left center;
+      transform: rotateY(-180deg);
+      animation: vD-unfold-tr 320ms 60ms cubic-bezier(0.4, 0.05, 0.2, 1) forwards;
+      /* The back side of the paper is slightly darker so when
+         you see the back during the rotation it reads as paper
+         rather than a glitch. */
+      background:
+        linear-gradient(to right, white 0%, white 100%);
+    }
+    .vD .o-tr::before {
+      /* Backface — visible during rotation 90° → 270°. A muted
+         cream so it reads as the back of the same paper. */
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: #e8e5dd;
+      transform: rotateY(180deg);
+      backface-visibility: hidden;
+    }
+    .vD .o-tr, .vD .o-bl, .vD .o-br {
+      backface-visibility: hidden;
+    }
+    .vD .o-bl { left: 0;  }
+    .vD .o-br {
+      left: 50%;
+      transform-origin: left center;
+      transform: rotateY(-180deg);
+      animation: vD-unfold-br 320ms 60ms cubic-bezier(0.4, 0.05, 0.2, 1) forwards;
+    }
+    .vD .o-br::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: #e8e5dd;
+      transform: rotateY(180deg);
+      backface-visibility: hidden;
+    }
+    @keyframes vD-unfold-tr {
+      0%   { transform: rotateY(-180deg); }
+      100% { transform: rotateY(0deg);    }
+    }
+    @keyframes vD-unfold-br {
+      0%   { transform: rotateY(-180deg); }
+      100% { transform: rotateY(0deg);    }
+    }
+    /* Crease lines — drawn on top of the sheet AFTER the unfold
+       so the user sees the folds were really there. Fade to faint
+       quickly so they don't clutter the final rest state. */
+    .vD .o-crease {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.12);
+      opacity: 0;
+      animation: vD-crease-fade 600ms 660ms ease-out forwards;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .vD .o-crease.v { top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-0.5px); }
+    .vD .o-crease.h { left: 0; right: 0; top: 50%;  height: 1px; transform: translateY(-0.5px); }
+    @keyframes vD-crease-fade {
       0%   { opacity: 0;    }
-      30%  { opacity: 0.6;  }
-      100% { opacity: 0.10; }
+      30%  { opacity: 0.55; }
+      100% { opacity: 0.08; }
+    }
+    /* Content layer — laid over the whole sheet AFTER all folds
+       complete, so the printed content "appears" as the page
+       settles. Without this the content would render upside-down /
+       backwards inside the folded quadrants. */
+    .vD .o-content {
+      position: absolute;
+      inset: 14px;
+      opacity: 0;
+      animation: vD-content-in 280ms 680ms ease-out forwards;
+      pointer-events: none;
+      z-index: 4;
+    }
+    @keyframes vD-content-in {
+      to { opacity: 1; }
     }
 
     .footnote {
@@ -404,21 +519,39 @@
         <button class="replay" onclick="replay('vC')">Replay</button>
       </div>
 
-      <!-- Variant D — origami unfold -->
+      <!-- Variant D — origami unfold (real 3D) -->
       <div class="cell vD">
         <div class="meta">
-          <h2>D · Origami unfold</h2>
-          <p>Starts as a tiny rotated diamond. Unfolds in three beats — rotation, lateral expand, lay flat — with faint crease lines lingering. Feels <em>crafted · playful · made by hand</em>.</p>
+          <h2>D · Origami unfold · <span style="color:var(--brand-700)">3D</span></h2>
+          <p>Real perspective — the sheet starts as a folded quarter; the right half flips open around the centre vertical fold (you see the paper&apos;s back face during the rotation), then the bottom half flips down around the centre horizontal fold. Lays flat with a soft scale-overshoot, crease lines linger. Feels <em>crafted · tactile · the paper has mass</em>.</p>
         </div>
         <div class="stage" id="stage-vD">
-          <div class="sheet">
-            <span class="row head"></span>
-            <span class="row contact"></span>
-            <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
-            <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
-            <div class="block"><span class="head2"></span><span class="body short"></span></div>
-            <span class="crease crease-diag"></span>
-            <span class="crease crease-h"></span>
+          <!-- Stage has perspective; sheet preserves-3d. The four
+               quadrants each have their own paper face + backface;
+               TR + BR start folded back behind TL + BL, and the
+               bottom half is folded up behind the top half. -->
+          <div class="o-sheet">
+            <div class="o-half o-top">
+              <div class="o-quad o-tl"></div>
+              <div class="o-quad o-tr"></div>
+            </div>
+            <div class="o-half o-bot">
+              <div class="o-quad o-bl"></div>
+              <div class="o-quad o-br"></div>
+            </div>
+            <!-- Crease lines on top of the unfolded sheet. -->
+            <span class="o-crease v"></span>
+            <span class="o-crease h"></span>
+            <!-- Printed content appears at the very end so it
+                 doesn't render upside-down inside the folded
+                 quadrants. -->
+            <div class="o-content">
+              <span class="row head"></span>
+              <span class="row contact"></span>
+              <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
+              <div class="block"><span class="head2"></span><span class="body"></span><span class="body short"></span></div>
+              <div class="block"><span class="head2"></span><span class="body short"></span></div>
+            </div>
           </div>
         </div>
         <button class="replay" onclick="replay('vD')">Replay</button>
@@ -426,10 +559,13 @@
     </div>
 
     <p class="footnote">
-      Once you pick one, say <code>go with A</code> (or B / C / D). I'll wire the chosen one into the
-      live create-resume + duplicate flow at <code>/profile/resumes</code> and retire the other three.
-      The animation primitives are pure CSS keyframes, so the live version will look identical to what
-      you see here.
+      <strong>Status:</strong> A (drawer-pull) is the chosen primary candidate. D has been rebuilt
+      with real 3D perspective — two-stage fold around the vertical centre then the horizontal centre,
+      with the paper's backface visible during each rotation. Compare A and the new 3D D side-by-side
+      and tell me <code>go with A</code> or <code>go with D</code> — I'll wire the chosen one into the
+      live create-resume + duplicate flow at <code>/profile/resumes</code> and retire the rest. The
+      animation primitives are pure CSS keyframes, so the live version will look identical to what you
+      see here.
     </p>
   </main>
   <script>
