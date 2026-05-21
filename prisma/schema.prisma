@@ -357,6 +357,12 @@ model User {
   simulationsCreated    Simulation[]          @relation("SimulationCreator")
   simulationAttempts    SimulationAttempt[]
 
+  /// Job folders — per-application bundles owned by this user. Each
+  /// folder ties together a JD snippet (or full posting), a tailored
+  /// resume, a cover letter, and an interview prep guide. See
+  /// JobFolder model below + /profile/job-folders.
+  jobFolders            JobFolder[]           @relation("UserJobFolders")
+
   /// Per-user sidebar / feature preferences. JSON blob with shape:
   ///   {
   ///     hidden: string[];  // feature ids the user has toggled off
@@ -3339,6 +3345,9 @@ model Resume {
 
   comments      ResumeComment[]
   revisions     ResumeRevision[]
+  /// Folders that picked this resume as their tailored copy. SET NULL
+  /// on delete means the folder survives if the resume is gone.
+  jobFolders    JobFolder[]      @relation("JobFolderResume")
 
   @@index([userId, isArchived])
   @@index([derivedFromId])
@@ -3386,4 +3395,47 @@ model ResumeRevision {
   createdAt    DateTime @default(now())
 
   @@index([resumeId, version])
+}
+
+/// A per-application "job folder" — a self-organising bundle of
+/// everything you produce for one role. Holds:
+///   • A snippet (or paste) of the job description
+///   • An optional link to an InternshipPosting on this platform
+///   • An optional link to a Resume tailored for the role
+///   • Cover letter text (with AI-generate/tailor button on the UI)
+///   • Interview prep notes (with AI-generate from JD + resume)
+///   • Status — drafting / submitted / interviewing / offer / closed
+///
+/// Self-only — never visible to other users. Soft-archive flag for
+/// "I'm not actively pursuing this anymore but might come back."
+model JobFolder {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation("UserJobFolders", fields: [userId], references: [id], onDelete: Cascade)
+  /// Short title — usually "Company · Role". Free text; can be
+  /// renamed any time.
+  title         String
+  /// Free-text job description snippet. Either pasted from the
+  /// posting URL or summarised by the user. Markdown allowed.
+  jdSnippet     String   @default("")
+  /// Optional posting on this platform — when set the folder
+  /// surfaces a chip linking back to the live posting page.
+  postingId     String?
+  /// Optional resume this folder was tailored against. Set NULL
+  /// on delete so deleting a resume doesn't cascade-kill the
+  /// folder (the user might still want the JD + cover letter).
+  resumeId      String?
+  resume        Resume?  @relation("JobFolderResume", fields: [resumeId], references: [id], onDelete: SetNull)
+  /// Long-form cover letter (markdown). Auto-saved on the UI.
+  coverLetter   String   @default("")
+  /// Interview prep guide (markdown). Auto-saved on the UI.
+  interviewPrep String   @default("")
+  /// drafting | submitted | interviewing | offer | rejected | closed
+  status        String   @default("drafting")
+  isArchived    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, isArchived])
+  @@index([resumeId])
 }

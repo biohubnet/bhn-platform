@@ -56,7 +56,7 @@ import {
   Ghost,
   MessageSquare,
   Gauge,
-  Sliders, SlidersHorizontal,
+  Sliders, SlidersHorizontal, FolderOpen,
   Eye,
   Drama,
 } from "lucide-react";
@@ -140,6 +140,9 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "Resume (structured)",       labelKey: "nav.resumeStructured", href: "/profile/resumes",       icon: FileText,
     featureId: "profile-resumes",
     description: "Maintain one master resume + tailored copies per role. Each has its own version history, mentor comments, and PDF export. Click through any card to edit it." },
+  { label: "Job folders",               labelKey: "nav.jobFolders", href: "/profile/job-folders",        icon: FolderOpen,
+    featureId: "profile-job-folders",
+    description: "One folder per role — JD, tailored resume, cover letter, interview prep. AI-generates cover letter + prep guide from your linked resume." },
   { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase,
     description: "Submit bio, supervisor letter, transcript, resume, and STAR video — we share with vetted industry partners." },
   { label: "Internships",               labelKey: "nav.internships", href: "/internships",              icon: Briefcase,

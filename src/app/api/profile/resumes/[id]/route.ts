@@ -72,7 +72,7 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
   return NextResponse.json({ ok: true, resume: updated });
 }
 
-export async function DELETE(_req: NextRequest, ctx: RouteCtx) {
+export async function DELETE(req: NextRequest, ctx: RouteCtx) {
   const userId = await getMyUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await ctx.params;
@@ -80,11 +80,20 @@ export async function DELETE(_req: NextRequest, ctx: RouteCtx) {
   const owned = await loadOwned(userId, id);
   if (!owned) return NextResponse.json({ error: "Resume not found." }, { status: 404 });
 
-  // Soft-archive — comments, revisions, and the derivation chain
-  // stay intact. Recoverable from /profile/resumes by unarchiving.
+  // ?force=true → hard delete. Cascades to ResumeComment + ResumeRevision
+  // via the FK ON DELETE CASCADE declared in the schema. Irreversible;
+  // the client is expected to confirm before calling.
+  //
+  // Otherwise → soft-archive. The default, preserves all history for
+  // restore later from /profile/resumes.
+  const force = req.nextUrl.searchParams.get("force") === "true";
+  if (force) {
+    await prisma.resume.delete({ where: { id } });
+    return NextResponse.json({ ok: true, hardDeleted: true });
+  }
   await prisma.resume.update({
     where: { id },
     data: { isArchived: true },
   });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, hardDeleted: false });
 }

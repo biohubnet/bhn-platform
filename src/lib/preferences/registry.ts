@@ -126,6 +126,7 @@ export const FEATURES: FeatureDef[] = [
   { id: "profile-resumes",     label: "Resumes (structured)",      description: "Master + tailored copies with version history, mentor comments, PDF export.",            group: "profile",    defaultEnabled: true },
   { id: "profile-skills",      label: "My skills",                 description: "Your skill profile — inferred, extracted, self-claimed.",                                 group: "profile",    defaultEnabled: true },
   { id: "profile-stories",     label: "STAR stories",              description: "Reusable behavioural-interview stories you draft once and pull into applications.",       group: "profile",    defaultEnabled: true },
+  { id: "profile-job-folders", label: "Job folders",               description: "Per-role workspaces — JD + tailored resume + cover letter + interview prep, all in one place.", group: "profile",    defaultEnabled: true },
 
   // Learn ---------------------------------------------------------
   { id: "learn-dashboard",     label: "Dashboard",                 description: "Your home — pickup-where-you-left-off, upcoming events, notifications.",                  group: "learn",      defaultEnabled: true },
