@@ -31,7 +31,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, GripVertical, MessageCircle, CheckCircle2, X, Loader2, Sparkles, Save, ChevronUp, ChevronDown,
-  Target, Wand2, Clock, Printer, RotateCcw, FileText, Check,
+  Target, Wand2, Clock, Printer, RotateCcw, FileText, Check, Info,
 } from "lucide-react";
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_LABEL, SECTION_HINTS, rid } from "@/lib/resume/types";
@@ -935,24 +935,54 @@ export function ResumeEditor({
       {/* Sections */}
       {content.sections.map((section, sIdx) => (
         <section key={section.id} className="bg-card-solid border border-line rounded-2xl p-5">
-          <div className="flex items-start justify-between gap-2 mb-3 flex-wrap">
-            <div className="flex items-center gap-2">
+          {/* Section heading row.
+           *
+           * Two controls that confuse users until they understand the
+           * split:
+           *   • The kind <select> ("Experience" / "Skills" / …)
+           *     controls how the section *behaves* — which fields
+           *     show (dates, GPA, URL, bullets), what placeholder
+           *     copy each field gets, and how the section is parsed
+           *     by AI tailoring.
+           *   • The "Custom heading" <input> next to it controls
+           *     only what the section *prints as* on the PDF. Leave
+           *     it empty and the printed heading defaults to the
+           *     kind's label ("Experience"). Type something and that
+           *     overrides — e.g. "Industry roles", "Research
+           *     experience", "Bench experience".
+           *
+           * Discoverability: the Info icon next to the heading input
+           * carries a tooltip explaining the purpose for users who
+           * don't read the helper line below. */}
+          <div className="flex items-start justify-between gap-2 mb-1.5 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <select
                 value={section.kind}
                 onChange={(e) => updateSection(sIdx, { kind: e.target.value as ResumeSectionKind })}
+                title="Section type — controls which fields show inside (dates / GPA / URL / bullets) and how AI tailoring treats it."
                 className="bg-card border border-line rounded-md px-2 py-1 text-xs font-mono uppercase tracking-[0.18em] font-bold text-fg-muted"
               >
                 {(Object.keys(SECTION_LABEL) as ResumeSectionKind[]).map((k) => (
                   <option key={k} value={k}>{SECTION_LABEL[k]}</option>
                 ))}
               </select>
-              <input
-                type="text"
-                placeholder={`Optional · custom heading (default "${SECTION_LABEL[section.kind]}")`}
-                value={section.title ?? ""}
-                onChange={(e) => updateSection(sIdx, { title: e.target.value })}
-                className="bg-transparent border-0 text-base font-semibold text-fg focus:outline-none focus:bg-card rounded px-2 py-0.5 -ml-2"
-              />
+              <div className="inline-flex items-center gap-1">
+                <input
+                  type="text"
+                  placeholder={`Heading prints as "${SECTION_LABEL[section.kind]}" — override here`}
+                  value={section.title ?? ""}
+                  onChange={(e) => updateSection(sIdx, { title: e.target.value })}
+                  title={`Custom heading for the printed PDF only. Leave blank to use the default ("${SECTION_LABEL[section.kind]}"). Examples: "Industry roles", "Research experience", "Bench skills".`}
+                  className="bg-transparent border-0 text-base font-semibold text-fg focus:outline-none focus:bg-card rounded px-2 py-0.5 -ml-2 min-w-[260px]"
+                />
+                <span
+                  title={`Custom heading for the printed PDF only — overrides the default "${SECTION_LABEL[section.kind]}". Leave it empty and the section type's label is used. Useful when you want a more specific name (e.g. "Industry roles" instead of "Experience") or to group two sections of the same type with different headings.`}
+                  className="inline-flex items-center justify-center w-4 h-4 rounded-full text-fg-subtle hover:text-fg cursor-help shrink-0"
+                  aria-label="About custom heading"
+                >
+                  <Info size={12} />
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <IconBtn onClick={() => moveSection(sIdx, -1)} title="Move up"><ChevronUp size={12} /></IconBtn>
@@ -960,6 +990,16 @@ export function ResumeEditor({
               <IconBtn onClick={() => removeSection(sIdx)} title="Remove section" danger><Trash2 size={12} /></IconBtn>
             </div>
           </div>
+
+          {/* One-liner under the heading row clarifying the two
+              controls. Shown on the FIRST section only — once is
+              enough; repeating it on every section becomes noise. */}
+          {sIdx === 0 && (
+            <p className="text-[11px] text-fg-subtle leading-snug mb-3">
+              The <strong>dropdown</strong> sets the section type (which fields appear and how AI tailors it).
+              The <strong>heading text</strong> is what prints on your PDF — leave blank to use the type&apos;s default name, or type your own (e.g. <em>Industry roles</em>, <em>Research experience</em>).
+            </p>
+          )}
 
           {/* Section-level comments */}
           {commentsBySection.get(section.id)?.length ? (
