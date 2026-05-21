@@ -700,9 +700,19 @@ function SectionGroup({
           aria-expanded={!collapsed}
           className="inline-flex items-center justify-center w-4 h-4 rounded text-fg-muted hover:bg-fg/5 hover:text-fg shrink-0"
         >
-          {collapsed
-            ? <ChevronRight size={11} aria-hidden />
-            : <ChevronDown size={11} aria-hidden />}
+          {/* One chevron, rotated. Animating the rotation reads
+              more elegantly than swapping two icons — the glyph
+              sweeps from down-pointing (expanded) to right-pointing
+              (collapsed) over the same duration as the content
+              animation below. */}
+          <ChevronDown
+            size={11}
+            aria-hidden
+            className={cn(
+              "transition-transform duration-300 ease-out",
+              collapsed && "-rotate-90",
+            )}
+          />
         </button>
         <span
           ref={chipRef}
@@ -766,10 +776,38 @@ function SectionGroup({
           </div>
         )}
       </div>
-      {/* Children hidden when collapsed. Keep the rounded outer
-          container visible so the chip + chevron still sit on a
-          recognisable rail; just drop the nav links below it. */}
-      {!collapsed && children}
+      {/* Collapse animation — the grid-rows trick.
+       *
+       *   • Wrapper is a 1-row grid. Its row size animates from
+       *     `1fr` (expanded — sized to content) to `0fr` (collapsed
+       *     — zero height) over the same duration as the chevron's
+       *     rotation. Browsers interpolate grid-template-rows
+       *     smoothly, so the children shrink in lockstep with the
+       *     rotating glyph.
+       *
+       *   • The inner child has `overflow: hidden` + `min-h-0` so
+       *     content gets clipped during the animation. Without
+       *     min-h-0, a grid item can refuse to shrink below its
+       *     content height and the animation skips.
+       *
+       *   • Opacity fades alongside so the last 60ms isn't an
+       *     awkward "blink-out at 0 height". The combined feel is a
+       *     soft accordion close that matches the rest of the
+       *     platform's transitions (300ms, ease-out).
+       *
+       *   • `inert` + `aria-hidden` when collapsed so screen readers
+       *     skip the hidden links and keyboard tab order doesn't
+       *     land inside an invisible region. */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
+          collapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100",
+        )}
+        aria-hidden={collapsed}
+        {...(collapsed ? { inert: "" as unknown as boolean } : {})}
+      >
+        <div className="overflow-hidden min-h-0">{children}</div>
+      </div>
     </div>
   );
 }
