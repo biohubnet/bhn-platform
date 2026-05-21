@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { ResumeItemEditor } from "./ResumeItemEditor";
 import { RewriteableTextarea } from "./RewriteableTextarea";
 import { VersionHistoryDrawer } from "./VersionHistoryDrawer";
+import { ResumeLintPanel } from "./ResumeLintPanel";
 
 /** Lightweight posting summary fed in from the server shell. */
 export interface PostingSummary {
@@ -1098,6 +1099,14 @@ export function ResumeEditor({
       >
         <Plus size={14} /> Add another section
       </button>
+
+      {/* Grammar + style lint panel — runs an AI pass over the whole
+          resume and surfaces typos, weak verbs, passive voice, vague
+          filler, missing quantification on experience bullets, tense
+          inconsistency, repetition, and first-person openers. Pinned
+          at the bottom so it reads as the "final check before
+          export" step. */}
+      <ResumeLintPanel content={content} setContent={setContent} />
 
       {/* Recovery panel — pinned bottom-right. Always visible while
           the stack has items; lets the user restore any specific

@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.19j";
+export const TOUR_VERSION = "2026.05.21a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -156,6 +156,15 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     cta: { label: "Open profile", href: "/profile" },
     since: "2025.04",
+  },
+  {
+    id: "trainee.resume-lint",
+    title: "Resume — grammar + style check",
+    body: "Scroll to the bottom of any resume's edit page for the new Grammar & style check. It lints the resume like a linter lints code — flags weak verbs, passive voice, vague filler, missing quantification on experience bullets, tense inconsistency, repetition, and first-person openers. Each issue carries a one-line explanation and (when applicable) a suggested rewrite you can Apply with one click. Nothing changes unless you accept the fix.",
+    path: "/profile/resume",
+    placement: "center",
+    cta: { label: "Open resume editor", href: "/profile/resume" },
+    since: "2026.05.21a",
   },
 
   // ─── Instructor path ─────────────────────────────────────────────
