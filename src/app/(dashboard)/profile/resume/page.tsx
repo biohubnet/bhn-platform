@@ -27,6 +27,7 @@ import { emptyResumeContent } from "@/lib/resume/types";
 import { ResumeEditor } from "@/components/profile/ResumeEditor";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 import { getOrCreateActiveResume } from "@/lib/resume/active";
+import { MasterResumeBanner } from "@/components/profile/MasterResumeBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +142,14 @@ export default async function ResumeStructurePage({ searchParams }: PageProps) {
         >
           <ArrowLeft size={14} /> All resumes
         </Link>
+      </div>
+
+      {/* Master resume banner — collapsible, surfaces the user's
+          library + quick-actions. See docs/plans/master-resume.md
+          for the full design. Loads + fetches lazily so the
+          tailoring page isn't blocked. */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <MasterResumeBanner />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6">

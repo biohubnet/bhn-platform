@@ -123,7 +123,8 @@ export interface FeatureDef {
 export const FEATURES: FeatureDef[] = [
   // Profile -------------------------------------------------------
   { id: "profile-application", label: "Application Builder",      description: "Build your reusable resume + 1-min video intro + elevator pitch.",                         group: "profile",    defaultEnabled: true },
-  { id: "profile-resumes",     label: "Resume tailoring",          description: "Master + tailored copies with version history, mentor comments, PDF export.",            group: "profile",    defaultEnabled: true },
+  { id: "profile-master",      label: "Master resume",             description: "Your library of every accomplishment bullet. Tailored drafts pull from it; AI uses it to fit any posting. Snapshots are downloadable.", group: "profile",    defaultEnabled: true },
+  { id: "profile-resumes",     label: "Resume tailoring",          description: "Tailored drafts that pull from your master library, with version history, mentor comments, PDF export.",            group: "profile",    defaultEnabled: true },
   { id: "profile-skills",      label: "My skills",                 description: "Your skill profile — inferred, extracted, self-claimed.",                                 group: "profile",    defaultEnabled: true },
   { id: "profile-stories",     label: "STAR stories",              description: "Reusable behavioural-interview stories you draft once and pull into applications.",       group: "profile",    defaultEnabled: true },
   { id: "profile-job-folders", label: "Job folders",               description: "Per-role workspaces — JD + tailored resume + cover letter + interview prep, all in one place.", group: "profile",    defaultEnabled: true },
@@ -182,6 +183,7 @@ export const MINIMAL_PRESET = new Set([
   "learn-dashboard",
   "learn-courses",
   "learn-my-courses",
+  "profile-master",
   "profile-resumes",
   "account-preferences",
 ]);

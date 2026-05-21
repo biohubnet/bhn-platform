@@ -232,6 +232,9 @@ model User {
   // most-recently-edited non-archived (see lib/resume/active.ts).
   resumes               Resume[]              @relation("UserResume")
   resumeComments        ResumeComment[]       @relation("ResumeCommentAuthor")
+  /// Singleton master resume — the user's library of every bullet
+  /// they've ever written. See model MasterResume.
+  masterResume          MasterResume?         @relation("UserMasterResume")
 
   // Loyalty / merch rewards. `merchRewards` is the trainee's own
   // claimed/unclaimed reward records; `fulfilledMerch` is the queue
@@ -3395,6 +3398,137 @@ model ResumeRevision {
   createdAt    DateTime @default(now())
 
   @@index([resumeId, version])
+}
+
+/// Master resume — a user's central LIBRARY of every accomplishment
+/// they've ever written. Singleton per user.
+///
+/// Mental model: master = wardrobe; tailored Resume rows = outfits.
+/// Bullets are first-class (see MasterBullet) — the master holds
+/// them as a library, tailored resumes pull from it.
+///
+/// See docs/plans/master-resume.md for the full design + the five
+/// principles that drove the data model.
+model MasterResume {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation("UserMasterResume", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Shared header data — name, email, phone, location, summary.
+  /// One source of truth across every tailored resume the user owns.
+  /// Same shape as ResumeContent.header in src/lib/resume/types.ts.
+  header    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bullets   MasterBullet[]
+  snapshots MasterSnapshot[]
+}
+
+/// A single accomplishment / line item in the master library.
+/// Lives independently of any Resume row. Tailored resumes can
+/// reference these bullets, edit them locally, or promote edits
+/// back here.
+model MasterBullet {
+  id              String       @id @default(cuid())
+  masterId        String
+  master          MasterResume @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  /// Which section kind this bullet belongs to. Mirrors
+  /// ResumeSectionKind in src/lib/resume/types.ts.
+  sectionKind     String
+
+  /// For experience-type bullets, the anchor identifies the job
+  /// (e.g. "Manufacturing Process Intern · STEMCELL Technologies").
+  /// Skills bullets have no anchor. Stored loose (free text) —
+  /// anchors are a UX affordance for grouping, not a FK.
+  anchorTitle     String?
+  anchorSubtitle  String?
+  anchorDateRange String?
+
+  /// Current bullet text.
+  body            String
+
+  /// User- or AI-applied tags. Used by the AI picker to short-list
+  /// relevant bullets before LLM re-ranking.
+  tags            String[]
+
+  /// Source attribution. If this bullet was first added by promoting
+  /// it from a tailored Resume, this records that Resume's id.
+  /// Helps the user trace lineage.
+  sourceResumeId  String?
+
+  /// Pin order within the section / anchor group.
+  position        Int          @default(0)
+
+  /// Soft archive — bullets the user doesn't currently want
+  /// surfaced in AI tailoring or library views, but might revive.
+  isArchived      Boolean      @default(false)
+
+  /// Embedding for AI retrieval (Cloudflare bge-small-en-v1.5, 384d).
+  /// Managed via raw SQL (pgvector) — same pattern as Skill /
+  /// PostingSkill embeddings elsewhere in the schema.
+  embedding       Unsupported("vector(384)")?
+  /// The text that produced the current embedding. If `body` !=
+  /// `embeddingText`, the embedding is stale and gets re-computed
+  /// on the next AI pick.
+  embeddingText   String?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  revisions       MasterBulletRevision[]
+
+  @@index([masterId, sectionKind, isArchived])
+  @@index([masterId, anchorTitle])
+}
+
+/// Per-bullet revision history. New revision row written on every
+/// substantive body change (with the same 5-minute coalesce as
+/// ResumeRevision).
+model MasterBulletRevision {
+  id        String       @id @default(cuid())
+  bulletId  String
+  bullet    MasterBullet @relation(fields: [bulletId], references: [id], onDelete: Cascade)
+
+  body      String
+  tags      String[]
+
+  /// Why was this revision made?
+  /// "user_edit" | "ai_rewrite" | "promoted_from_resume" | "imported_from_pdf"
+  source    String
+
+  createdAt DateTime     @default(now())
+
+  @@index([bulletId, createdAt])
+}
+
+/// Locked, named, downloadable snapshot of the master at a moment
+/// in time. Like a git tag.
+model MasterSnapshot {
+  id            String       @id @default(cuid())
+  masterId      String
+  master        MasterResume @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  /// Auto-incremented per master. v1, v2, v3...
+  versionNumber Int
+  /// User-supplied label. "Fall 2026 polish", "Pre-graduation", etc.
+  name          String
+
+  /// Full snapshot of the master's bullets + header at this moment,
+  /// stored as ResumeContent JSON so the snapshot can be rendered
+  /// in the existing /profile/resume/preview PDF flow later.
+  content       Json
+
+  /// Pre-generated PDF for download. Optional — the download
+  /// endpoint regenerates if absent.
+  pdfUrl        String?
+
+  createdAt     DateTime     @default(now())
+
+  @@unique([masterId, versionNumber])
+  @@index([masterId, createdAt])
 }
 
 /// A per-application "job folder" — a self-organising bundle of
