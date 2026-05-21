@@ -4,6 +4,12 @@
 -- columns + their indexes + the self-referential FK for derivation.
 
 -- 1. Drop the unique constraint that capped each user to one resume.
+-- NOTE: this `DROP CONSTRAINT` is a no-op in production because the
+-- 20260705 init migration created Resume_userId_key as a unique
+-- INDEX (`CREATE UNIQUE INDEX`), not a constraint. The follow-up
+-- 20260709 migration drops it correctly via `DROP INDEX`. Leaving
+-- this line in place since it does drop the entity in environments
+-- where Prisma's schema sync created the uniqueness as a constraint.
 ALTER TABLE "Resume" DROP CONSTRAINT IF EXISTS "Resume_userId_key";
 
 -- 2. New columns with sensible defaults so existing rows backfill
