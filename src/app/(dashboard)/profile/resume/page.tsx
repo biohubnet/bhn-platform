@@ -122,24 +122,26 @@ export default async function ResumeStructurePage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      {/* Top back affordance — the editor is a deep page; users land
-          here from the resume index, from a sibling-switch, or from
-          a "Tailor → Save as new" jump. A persistent back link at
-          both ends of the page short-circuits the browser-back hop. */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-2">
-        <Link
-          href="/profile/resumes"
-          className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-fg-muted hover:text-fg transition-colors"
-        >
-          <ArrowLeft size={13} /> All resumes
-        </Link>
-      </div>
-
       <PageHero
         eyebrow={<><FileText size={11} /> Profile · Structured resume</>}
         title="Your resume — structured"
         description="Edit your resume as a structured tree of sections, items, and bullets. Mentors, instructors, and admins can leave comments pinned to any line; you decide what to apply. Export back to PDF anytime."
       />
+
+      {/* Back affordance — sits under the hero banner (never above
+          it; the hero owns the page's top edge). Rendered as a full
+          button rather than a small text link so it reads as a
+          deliberate exit, not an afterthought. The matching bottom
+          variant lives below the editor so users on a long page can
+          leave from either end. */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <Link
+          href="/profile/resumes"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold text-fg ring-1 ring-line bg-card-solid hover:bg-elevated transition-colors"
+        >
+          <ArrowLeft size={14} /> All resumes
+        </Link>
+      </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         {/* Admin-only demo seed/clear. Seed replaces the calling admin's
