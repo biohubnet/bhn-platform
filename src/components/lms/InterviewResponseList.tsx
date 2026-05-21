@@ -50,9 +50,16 @@ export function InterviewResponseList({ interviews }: { interviews: Interview[] 
 
   if (list.length === 0) {
     return (
-      <div className="bg-card border border-line rounded-2xl p-12 text-center">
-        <Calendar className="mx-auto text-subtle mb-2" size={26} />
-        <p className="text-sm text-muted">No interviews waiting on your response.</p>
+      <div className="bg-card border border-dashed border-line rounded-2xl p-10 text-center space-y-3">
+        <span className="inline-flex w-12 h-12 rounded-xl bg-brand-50 text-brand-700 items-center justify-center ring-1 ring-inset ring-brand-200">
+          <Calendar size={20} />
+        </span>
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold text-fg">No interviews scheduled</h3>
+          <p className="text-sm text-fg-muted max-w-md mx-auto">
+            When an employer schedules an interview with you, it&apos;ll show up here with the date, format, link, and any prep notes they shared.
+          </p>
+        </div>
       </div>
     );
   }

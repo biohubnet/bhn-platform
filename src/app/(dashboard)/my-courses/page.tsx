@@ -78,13 +78,21 @@ export default async function MyCoursesPage() {
       <div className="space-y-6">
 
       {enrollments.length === 0 ? (
-        <div className="text-center py-16 bg-card rounded-xl border border-line">
-          <p className="text-muted">No enrollments yet</p>
+        <div className="text-center py-12 px-6 bg-card rounded-2xl border border-dashed border-line space-y-3">
+          <span className="inline-flex w-12 h-12 rounded-xl bg-brand-50 text-brand-700 items-center justify-center ring-1 ring-inset ring-brand-200">
+            <GraduationCap size={20} />
+          </span>
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold text-fg">No courses yet</h2>
+            <p className="text-sm text-fg-muted max-w-md mx-auto">
+              Pick something from the catalog to start learning. Once you enrol, courses you have in progress will show up here.
+            </p>
+          </div>
           <Link
             href="/courses"
-            className="inline-block mt-4 bg-brand-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-brand-700 transition-colors"
+            className="inline-flex items-center gap-1.5 bg-brand-600 text-white text-sm font-bold px-4 py-2 rounded-md hover:bg-brand-700 transition-colors"
           >
-            Browse Courses
+            Browse the catalog
           </Link>
         </div>
       ) : (

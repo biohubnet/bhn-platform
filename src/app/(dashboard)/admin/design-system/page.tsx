@@ -442,6 +442,57 @@ export default async function AdminDesignSystemPage() {
         </ul>
       </Section>
 
+      <Section icon={Type} title="Voice & tone" eyebrow="Microcopy · how the platform sounds">
+        <p className="text-sm text-fg-muted leading-relaxed">
+          Canonical doc: <code className="font-mono text-fg bg-elevated px-1 rounded">docs/ux/microcopy.md</code>. Short, opinionated. When in doubt, copy the patterns there.
+        </p>
+        <SubSection title="Principles in one sentence each">
+          <ul className="space-y-1.5 text-sm">
+            <li>• <strong>Plain professional</strong> — closer to a respected colleague&apos;s email than a landing page.</li>
+            <li>• <strong>You</strong> is the user; <strong>we</strong> is the platform (sparingly).</li>
+            <li>• <strong>Imperative</strong> for actions (Save · Apply · Delete · Tailor to posting).</li>
+            <li>• <strong>Past tense</strong> for done state (Saved · Submitted on May 12).</li>
+            <li>• <strong>No</strong> exclamation marks, no emoji in product UI, no clichés (&quot;passionate&quot;, &quot;dynamic&quot;, &quot;synergy&quot;).</li>
+          </ul>
+        </SubSection>
+        <SubSection title="Empty states — required shape">
+          <p className="text-sm text-fg-muted leading-relaxed">
+            Every list / index page that can be empty must render: icon (single lucide glyph, 12pt) + headline (one short sentence) + subhead (one short sentence) + primary action. Anti-pattern: bare &quot;No items.&quot;
+          </p>
+        </SubSection>
+        <SubSection title="Error messages — three rules">
+          <ul className="space-y-1.5 text-sm">
+            <li>1. Say what happened in plain language. No error codes leaked to the user.</li>
+            <li>2. Suggest a recovery. &quot;Try again&quot;, &quot;Add a JD first&quot;, &quot;Check your network&quot;.</li>
+            <li>3. Don&apos;t blame the user. Frame even input errors as a request.</li>
+          </ul>
+        </SubSection>
+      </Section>
+
+      <Section icon={AlertTriangle} title="Destructive confirmation — three tiers" eyebrow="Safety pattern">
+        <p className="text-sm text-fg-muted leading-relaxed">
+          Pick the gate that matches how much work is at risk. Don&apos;t stack tiers — that&apos;s ceremony for ceremony&apos;s sake.
+        </p>
+        <SubSection title="Tier 1 — no gate">
+          <p className="text-sm text-fg-muted leading-relaxed">
+            Routine, easily reversible. Acts immediately. The action&apos;s own undo / archive / recovery panel is the safety net.
+          </p>
+          <p className="text-[11px] text-fg-subtle mt-1">Examples: hide a sidebar item, archive a row, remove a single comment.</p>
+        </SubSection>
+        <SubSection title="Tier 2 — window.confirm()">
+          <p className="text-sm text-fg-muted leading-relaxed">
+            Moderate-risk. Modal browser confirm with a message that states <em>the specific action</em> and <em>its specific impact</em>. Numbers help.
+          </p>
+          <p className="text-[11px] text-fg-subtle mt-1">Examples: batch operations on N rows, revert to v8, abandon a multi-section draft.</p>
+        </SubSection>
+        <SubSection title="Tier 3 — LaunchSwitch">
+          <p className="text-sm text-fg-muted leading-relaxed">
+            Irreversible. Cover-flip + 5-second countdown is the confirmation. <strong>Never</strong> stack a window.confirm on top of a LaunchSwitch — pick one. See the LaunchSwitch section below for the component.
+          </p>
+          <p className="text-[11px] text-fg-subtle mt-1">Examples: hard-delete a resume or job folder, wipe a workspace.</p>
+        </SubSection>
+      </Section>
+
       <Section icon={Rocket} title="LaunchSwitch — protected destructive action" eyebrow="Component · safety pattern">
         <p className="text-sm text-fg-muted leading-relaxed">
           Two-stage destructive control inspired by the protected red switches on a jet fighter&apos;s weapons panel.

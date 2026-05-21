@@ -130,9 +130,16 @@ export function SkillProfileClient({
       <section className="bg-card border border-line rounded-2xl p-5">
         <h2 className="font-semibold text-fg mb-3">Skills on your profile</h2>
         {mine.length === 0 ? (
-          <div className="py-8 text-center">
-            <Sparkles className="mx-auto text-subtle mb-2" size={24} />
-            <p className="text-sm text-muted">No skills yet. Complete a course or claim from the suggestions below.</p>
+          <div className="py-8 px-6 text-center space-y-3 rounded-xl border border-dashed border-line bg-bg/30">
+            <span className="inline-flex w-12 h-12 rounded-xl bg-brand-50 text-brand-700 items-center justify-center ring-1 ring-inset ring-brand-200">
+              <Sparkles size={20} />
+            </span>
+            <div className="space-y-1">
+              <h3 className="text-base font-semibold text-fg">No skills on your profile yet</h3>
+              <p className="text-sm text-fg-muted max-w-md mx-auto">
+                Skills are how postings match you. Complete a course to earn one automatically, or use the search below to claim ones you already have.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

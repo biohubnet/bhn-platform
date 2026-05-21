@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Award, Download } from "lucide-react";
@@ -29,10 +30,22 @@ export default async function CertificatesPage() {
       <div className="space-y-6">
 
       {certificates.length === 0 ? (
-        <div className="text-center py-16 bg-card rounded-xl border border-line">
-          <Award size={40} className="mx-auto text-subtle mb-4" />
-          <p className="text-muted font-medium">No certificates yet</p>
-          <p className="text-sm text-subtle mt-1">Complete a course to earn your first certificate</p>
+        <div className="text-center py-12 px-6 bg-card rounded-2xl border border-dashed border-line space-y-3">
+          <span className="inline-flex w-12 h-12 rounded-xl bg-brand-50 text-brand-700 items-center justify-center ring-1 ring-inset ring-brand-200">
+            <Award size={20} />
+          </span>
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold text-fg">No certificates yet</h2>
+            <p className="text-sm text-fg-muted max-w-md mx-auto">
+              Complete any course and you&apos;ll earn a verifiable certificate. Each one is a signed PDF with a public verify link you can share with employers.
+            </p>
+          </div>
+          <Link
+            href="/my-courses"
+            className="inline-flex items-center gap-1.5 bg-brand-600 text-white text-sm font-bold px-4 py-2 rounded-md hover:bg-brand-700 transition-colors"
+          >
+            See my courses
+          </Link>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
