@@ -15,6 +15,7 @@ import {
   LaunchSwitchFacetDemo, LaunchSwitchFacetMediumDemo,
 } from "@/components/admin/LaunchSwitchPreview";
 import { InputDialogPreview } from "@/components/admin/InputDialogPreview";
+import { ConfirmDialogPreview } from "@/components/admin/ConfirmDialogPreview";
 
 /**
  * /admin/design-system — live mirror of docs/design-system.md.
@@ -482,6 +483,45 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
         </SubSection>
       </Section>
 
+      <Section icon={AlertTriangle} title="ConfirmDialog — designed replacement for window.confirm" eyebrow="Component · confirm modal">
+        <p className="text-sm text-fg-muted leading-relaxed">
+          A polished yes/no modal that replaces <code className="font-mono text-fg bg-elevated px-1 rounded">window.confirm()</code>. Three tones (<code className="font-mono text-fg bg-elevated px-1 rounded">neutral</code>, <code className="font-mono text-fg bg-elevated px-1 rounded">warning</code>, <code className="font-mono text-fg bg-elevated px-1 rounded">destructive</code>) map onto the destructive-confirmation hierarchy above — pick the tone that matches the prompt&apos;s stakes. <strong>New code should reach for this, not <code className="font-mono text-fg bg-elevated px-1 rounded">window.confirm</code>.</strong> For irreversible WORK-DESTROYING actions, escalate to <code className="font-mono text-fg bg-elevated px-1 rounded">LaunchSwitch</code> instead.
+        </p>
+        <SubSection title="Try it — three tones">
+          <ConfirmDialogPreview />
+        </SubSection>
+        <SubSection title="API">
+          <pre className="text-[11px] font-mono bg-elevated/40 rounded-md p-3 overflow-x-auto leading-relaxed">{`const { confirmDialog, node } = useConfirmDialog();
+// ...render \`node\` somewhere in the component tree.
+
+const ok = await confirmDialog({
+  title: "Clear every field on this form?",   // required, phrase as a question
+  description: "This wipes your draft. Can't be undone.", // optional subhead
+  confirmLabel: "Clear form",                 // default depends on tone
+  cancelLabel: "Cancel",                      // default "Cancel"
+  tone: "warning",                            // neutral | warning | destructive
+  icon: AlertTriangle,                        // optional override
+});
+if (!ok) return; // user cancelled (X / Escape / backdrop / Cancel)`}</pre>
+        </SubSection>
+        <SubSection title="Behaviour">
+          <ul className="space-y-1.5 text-sm text-fg-muted">
+            <li>• <strong>Confirm</strong> autofocuses on open — Enter confirms, Escape cancels, click backdrop or × also cancels.</li>
+            <li>• Header gradient + icon disc + confirm-button colour all switch with the tone. Neutral = brand, warning = amber, destructive = rose.</li>
+            <li>• Promise resolves to <code className="font-mono text-fg bg-elevated px-1 rounded">true</code> on confirm, <code className="font-mono text-fg bg-elevated px-1 rounded">false</code> on cancel.</li>
+            <li>• Uses <code className="font-mono text-fg bg-elevated px-1 rounded">role=&quot;alertdialog&quot;</code> + <code className="font-mono text-fg bg-elevated px-1 rounded">aria-modal</code> + labelled heading + described body for screen readers.</li>
+          </ul>
+        </SubSection>
+        <SubSection title="Tone → use case mapping">
+          <ul className="space-y-1.5 text-sm text-fg-muted">
+            <li>• <strong>neutral</strong> — routine choices (&quot;Open in a new tab?&quot;, &quot;Apply these AI rewrites?&quot;). Brand-coloured confirm.</li>
+            <li>• <strong>warning</strong> — moderate risk, recoverable (&quot;Clear the form?&quot;, &quot;Discard this draft?&quot;). Amber confirm.</li>
+            <li>• <strong>destructive</strong> — irreversible but bounded (&quot;Delete this comment thread?&quot;, &quot;Remove this saved posting?&quot;). Rose confirm.</li>
+            <li>• <strong>Irreversible WORK-DESTROYING</strong> (hard-delete a resume, wipe a workspace) — don&apos;t use ConfirmDialog. Reach for <code className="font-mono text-fg bg-elevated px-1 rounded">LaunchSwitch</code>, which has the cover-flip + countdown ritual that fits that tier.</li>
+          </ul>
+        </SubSection>
+      </Section>
+
       <Section icon={Type} title="Voice & tone" eyebrow="Microcopy · how the platform sounds">
         <p className="text-sm text-fg-muted leading-relaxed">
           Canonical doc: <code className="font-mono text-fg bg-elevated px-1 rounded">docs/ux/microcopy.md</code>. Short, opinionated. When in doubt, copy the patterns there.
@@ -519,15 +559,15 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
           </p>
           <p className="text-[11px] text-fg-subtle mt-1">Examples: hide a sidebar item, archive a row, remove a single comment.</p>
         </SubSection>
-        <SubSection title="Tier 2 — window.confirm()">
+        <SubSection title="Tier 2 — ConfirmDialog">
           <p className="text-sm text-fg-muted leading-relaxed">
-            Moderate-risk. Modal browser confirm with a message that states <em>the specific action</em> and <em>its specific impact</em>. Numbers help.
+            Moderate-risk. Branded yes/no modal — <strong>not</strong> <code className="font-mono text-fg bg-elevated px-1 rounded">window.confirm</code>, which doesn&apos;t fit the design system. Use <code className="font-mono text-fg bg-elevated px-1 rounded">useConfirmDialog()</code> with <code className="font-mono text-fg bg-elevated px-1 rounded">tone=&quot;warning&quot;</code> (for batch ops, reverts, discards) or <code className="font-mono text-fg bg-elevated px-1 rounded">tone=&quot;destructive&quot;</code> (for bounded-but-irreversible actions like deleting a single comment thread). The dialog&apos;s message must state <em>the specific action</em> and <em>its specific impact</em>. Numbers help.
           </p>
-          <p className="text-[11px] text-fg-subtle mt-1">Examples: batch operations on N rows, revert to v8, abandon a multi-section draft.</p>
+          <p className="text-[11px] text-fg-subtle mt-1">Examples: batch operations on N rows, revert to v8, abandon a multi-section draft, clear a form.</p>
         </SubSection>
         <SubSection title="Tier 3 — LaunchSwitch">
           <p className="text-sm text-fg-muted leading-relaxed">
-            Irreversible. Cover-flip + 5-second countdown is the confirmation. <strong>Never</strong> stack a window.confirm on top of a LaunchSwitch — pick one. See the LaunchSwitch section below for the component.
+            Irreversible work-destroying. Cover-flip + 10-second countdown + elimination effect is the confirmation. <strong>Never</strong> stack ConfirmDialog on top of a LaunchSwitch — pick one. See the LaunchSwitch section below for the component.
           </p>
           <p className="text-[11px] text-fg-subtle mt-1">Examples: hard-delete a resume or job folder, wipe a workspace.</p>
         </SubSection>

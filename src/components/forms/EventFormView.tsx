@@ -9,6 +9,7 @@ import {
   Upload, Paperclip, Eraser, FileText,
 } from "lucide-react";
 import { PageHero } from "@/components/ui/PageHero";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   type FormField,
   type ChoiceField,
@@ -90,6 +91,12 @@ export function EventFormView({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  // Branded confirm dialog — replaces window.confirm() for the
+  // "are you sure you want to clear?" prompt + any other yes/no
+  // prompts this view triggers. Renders nothing until opened; the
+  // hook returns the portal node we drop near the form's end.
+  const { confirmDialog, node: confirmNode } = useConfirmDialog();
 
   const enterEdit = () => {
     setDraft(JSON.parse(JSON.stringify(schema)));
@@ -477,9 +484,16 @@ export function EventFormView({
               </button>
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   if (submitting) return;
-                  if (!window.confirm("Clear every field on this form? This can't be undone — but you can refill it.")) return;
+                  const ok = await confirmDialog({
+                    title: "Clear every field on this form?",
+                    description: "This wipes everything you've typed so far. It can't be undone — but the form's still here, so you can refill it.",
+                    confirmLabel: "Clear form",
+                    cancelLabel: "Keep what I've typed",
+                    tone: "warning",
+                  });
+                  if (!ok) return;
                   setValues({});
                   setSubmitError(null);
                 }}
@@ -495,6 +509,10 @@ export function EventFormView({
         )}
       </div>
       </div>
+
+      {/* ConfirmDialog portal — only rendered while a confirmDialog()
+          call is awaiting a response. See ConfirmDialog for the API. */}
+      {confirmNode}
     </div>
   );
 }
