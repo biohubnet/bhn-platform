@@ -17,7 +17,7 @@
  *             comments inline next to the relevant bullet + can mark
  *             each one applied / resolved.
  */
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowRight, FileText, Sparkles } from "lucide-react";
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -25,10 +25,15 @@ import { PageHero } from "@/components/ui/PageHero";
 import { emptyResumeContent } from "@/lib/resume/types";
 import { ResumeEditor } from "@/components/profile/ResumeEditor";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
+import { getOrCreateActiveResume } from "@/lib/resume/active";
 
 export const dynamic = "force-dynamic";
 
-export default async function ResumeStructurePage() {
+interface PageProps {
+  searchParams: Promise<{ id?: string }>;
+}
+
+export default async function ResumeStructurePage({ searchParams }: PageProps) {
   const session = await getSession();
   if (!session) redirect("/login?callbackUrl=/profile/resume");
   const userId = (session.user as { id?: string }).id;
@@ -36,28 +41,59 @@ export default async function ResumeStructurePage() {
   const role = (session.user as { role?: string }).role ?? "trainee";
   const isStaff = checkIsStaff(role);
 
+  const { id: requestedResumeId } = await searchParams;
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, name: true, email: true, resumeUrl: true },
   });
   if (!user) redirect("/login");
 
-  // Scaffold a resume row on first visit so comments + revisions
-  // have something to attach to. Idempotent — second visit reads it.
-  const resume = await prisma.resume.upsert({
-    where: { userId },
-    create: {
+  // Resolve the resume the page should load — explicit ?id= takes
+  // precedence; otherwise the user's most-recently-edited non-archived
+  // resume. Auto-creates a "Main resume" on first ever visit so the
+  // landing experience just works.
+  let activeBasic;
+  try {
+    activeBasic = await getOrCreateActiveResume({
       userId,
-      sourceFileUrl: user.resumeUrl ?? null,
-      content: emptyResumeContent() as unknown as object,
-    },
-    update: {},
+      resumeId: requestedResumeId ?? null,
+    });
+  } catch {
+    // The user passed a resumeId that doesn't belong to them — 404.
+    notFound();
+  }
+
+  // Backfill the source-file URL on first scaffold so future re-parse
+  // flows have something to read from. Cheap update; no-op when the
+  // user has never uploaded a PDF.
+  if (!activeBasic.sourceFileUrl && user.resumeUrl) {
+    await prisma.resume.update({
+      where: { id: activeBasic.id },
+      data: { sourceFileUrl: user.resumeUrl },
+    });
+  }
+
+  const resume = await prisma.resume.findUnique({
+    where: { id: activeBasic.id },
     include: {
       comments: {
         include: { author: { select: { id: true, name: true, email: true, role: true } } },
         orderBy: { createdAt: "asc" },
       },
+      derivedFrom: { select: { id: true, name: true } },
     },
+  });
+  if (!resume) notFound();
+  void emptyResumeContent; // referenced via getOrCreateActiveResume
+
+  // Sibling resumes — every resume this user owns. Powers the picker
+  // dropdown at the top of the editor. Archived rows excluded; we
+  // surface them from /profile/resumes (the index) instead.
+  const siblings = await prisma.resume.findMany({
+    where: { userId, isArchived: false },
+    select: { id: true, name: true, lastEditedAt: true, derivedForPostingId: true },
+    orderBy: { lastEditedAt: "desc" },
   });
 
   const hasUploaded = !!user.resumeUrl;
@@ -158,6 +194,13 @@ export default async function ResumeStructurePage() {
           hasParsed={hasParsed}
           ownerId={userId}
           postings={postings}
+          siblings={siblings.map((s) => ({
+            id: s.id,
+            name: s.name,
+            lastEditedAt: s.lastEditedAt.toISOString(),
+            derivedForPostingId: s.derivedForPostingId,
+          }))}
+          currentName={resume.name}
         />
 
         <p className="mt-6 text-[11px] text-fg-subtle text-center inline-flex items-center justify-center gap-1.5 w-full">

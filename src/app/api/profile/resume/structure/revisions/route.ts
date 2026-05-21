@@ -13,25 +13,27 @@
  * on the mentor side it'll be a separate endpoint with its own
  * permission check.
  */
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveResume } from "@/lib/resume/active";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await requireSession().catch(() => null);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = (session.user as { id?: string }).id ?? null;
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const resume = await prisma.resume.findUnique({
-    where: { userId },
-    select: { id: true, version: true },
-  });
-  if (!resume) {
+  // Optional ?id= — list revisions for that specific resume. Without
+  // it we list revisions for the most-recently-edited resume.
+  const resumeId = req.nextUrl.searchParams.get("id");
+  const target = await getActiveResume({ userId, resumeId });
+  if (!target) {
     return NextResponse.json({ ok: true, currentVersion: 0, revisions: [] });
   }
+  const resume = { id: target.id, version: target.version };
 
   const revisions = await prisma.resumeRevision.findMany({
     where: { resumeId: resume.id },

@@ -225,7 +225,12 @@ model User {
   savedPostings         UserSavedPosting[]    @relation("SavedPostingUser")
   reviewBookmarks       ReviewBookmark[]
   signatures            ElectronicSignature[]
-  resume                Resume?               @relation("UserResume")
+  // Users can own multiple structured resumes (a base + tailored
+  // copies per posting). The 20260706 migration dropped the
+  // @unique constraint on Resume.userId; this relation is now
+  // one-to-many. Callers that want "the user's main resume" look up
+  // most-recently-edited non-archived (see lib/resume/active.ts).
+  resumes               Resume[]              @relation("UserResume")
   resumeComments        ResumeComment[]       @relation("ResumeCommentAuthor")
 
   // Loyalty / merch rewards. `merchRewards` is the trainee's own
@@ -3280,10 +3285,35 @@ model SimulationAttempt {
 ///       }
 ///     ]
 ///   }
+/// A trainee's structured resume. Users can own multiple — typically
+/// a "Main resume" they maintain over time + tailored copies created
+/// for specific postings. The unique constraint on userId was lifted
+/// in the 20260520 migration to make this possible; the lookup of
+/// "the user's resume" is now "most-recently-edited non-archived"
+/// unless an explicit resumeId is provided.
 model Resume {
   id            String           @id @default(cuid())
-  userId        String           @unique
+  userId        String
   user          User             @relation("UserResume", fields: [userId], references: [id], onDelete: Cascade)
+  /// Human-readable name shown in the picker + on the index page.
+  /// Defaults to "Main resume" on first create; tailor-save-as uses
+  /// the posting title.
+  name          String           @default("Main resume")
+  /// Soft-archive flag. Archived resumes are hidden from the picker
+  /// and the default-load logic but still exist for restore. We
+  /// never hard-delete from the API; old work stays recoverable.
+  isArchived    Boolean          @default(false)
+  /// When this resume was created by tailoring (or duplicating) from
+  /// another one, derivedFromId attributes the source so the index
+  /// page can show "Tailored from Main resume". SET NULL on delete
+  /// so deleting the source doesn't cascade-kill the derived copies.
+  derivedFromId       String?
+  derivedFrom         Resume?    @relation("DerivedResumes", fields: [derivedFromId], references: [id], onDelete: SetNull)
+  derivedResumes      Resume[]   @relation("DerivedResumes")
+  /// Optional posting id this resume was tailored for. Surfaces in
+  /// the index as a chip; lets the future "open my tailored copy
+  /// for posting X" lookups be a one-shot query.
+  derivedForPostingId String?
   sourceFileUrl String?          // upload URL the structure was parsed from
   parsedAt      DateTime?        // when AI parsed sourceFileUrl into content
   lastEditedAt  DateTime         @default(now())
@@ -3295,7 +3325,8 @@ model Resume {
   comments      ResumeComment[]
   revisions     ResumeRevision[]
 
-  @@index([userId])
+  @@index([userId, isArchived])
+  @@index([derivedFromId])
 }
 
 /// Team-private comments on a structured resume. Mirrors the

@@ -27,6 +27,7 @@ import { prisma } from "@/lib/prisma";
 import type { ResumeContent } from "@/lib/resume/types";
 import { applyBulletRewrites, flattenBullets, tailorToPosting } from "@/lib/resume/tailor";
 import { recordRevision } from "@/lib/resume/revisions";
+import { getActiveResume } from "@/lib/resume/active";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -40,12 +41,26 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     postingId?: unknown;
     apply?: unknown;
+    resumeId?: unknown;
+    saveAsNew?: unknown;
+    newResumeName?: unknown;
   };
   const postingId = typeof body.postingId === "string" ? body.postingId : null;
   if (!postingId) {
     return NextResponse.json({ error: "postingId required" }, { status: 400 });
   }
+  const targetResumeId = typeof body.resumeId === "string" ? body.resumeId : null;
   const apply = body.apply === true;
+  // When set, the apply step DOESN'T mutate the source resume in
+  // place — it creates a fresh Resume row with the tailored content
+  // and posting-derived name, leaving the original untouched. This
+  // is the recommended UX so users can maintain a master + multiple
+  // tailored copies in parallel.
+  const saveAsNew = body.saveAsNew === true;
+  const newResumeName =
+    typeof body.newResumeName === "string" && body.newResumeName.trim()
+      ? body.newResumeName.trim().slice(0, 120)
+      : null;
 
   // Fetch posting + its required-skill names so the prompt can name
   // them in the rewrite guidance. Read-anyone since postings are
@@ -53,6 +68,7 @@ export async function POST(req: NextRequest) {
   const posting = await prisma.internshipPosting.findUnique({
     where: { id: postingId },
     select: {
+      id: true,
       title: true,
       positionDetails: true,
       keySkills: true,
@@ -71,9 +87,19 @@ export async function POST(req: NextRequest) {
   const relSkills = posting.skills.map((s) => s.skill.name);
   const skills = relSkills.length > 0 ? relSkills : posting.keySkills;
 
-  // Load the caller's resume + flatten the bullets.
+  // Resolve which resume we're tailoring FROM. Default to most-
+  // recently-edited; client can pin via resumeId. Either way the
+  // source resume is the read-from copy — saveAsNew controls whether
+  // the apply writes back to it or to a fresh sibling.
+  const source = await getActiveResume({ userId, resumeId: targetResumeId });
+  if (!source) {
+    return NextResponse.json(
+      { error: "No structured resume yet. Visit /profile/resume to scaffold one first." },
+      { status: 400 },
+    );
+  }
   const resume = await prisma.resume.findUnique({
-    where: { userId },
+    where: { id: source.id },
     select: { id: true, content: true, version: true },
   });
   if (!resume) {
@@ -128,7 +154,35 @@ export async function POST(req: NextRequest) {
   }
   const next = applyBulletRewrites(content, rewriteMap);
 
+  // Apply mode forks based on saveAsNew. The default (saveAsNew = true
+  // on the client) creates a new Resume row so the source stays
+  // pristine; the legacy in-place mode mutates the source resume.
   const updated = await prisma.$transaction(async (tx) => {
+    if (saveAsNew) {
+      const name =
+        newResumeName ??
+        `${truncate(posting.title, 60)}${posting.title.length > 60 ? "…" : ""}`;
+      const created = await tx.resume.create({
+        data: {
+          userId,
+          name,
+          content: next as unknown as object,
+          version: 1,
+          lastEditedAt: new Date(),
+          derivedFromId: source.id,
+          derivedForPostingId: posting.id,
+        },
+        select: { id: true, version: true },
+      });
+      await recordRevision(tx, {
+        resumeId: created.id,
+        version: created.version,
+        content: next as unknown as object,
+        triggeredBy: "ai_tailor",
+        note: `Tailored from ${source.name ?? "source"} → ${posting.title}`,
+      });
+      return created;
+    }
     const r = await tx.resume.update({
       where: { id: resume.id },
       data: {
@@ -153,5 +207,12 @@ export async function POST(req: NextRequest) {
     applied: Object.keys(rewriteMap).length,
     version: updated.version,
     rewrites: result.rewrites,
+    // When saveAsNew, the caller needs to know which resume the
+    // tailored content landed in so the client can route to it.
+    ...(saveAsNew ? { newResumeId: updated.id } : {}),
   });
+}
+
+function truncate(s: string, n: number): string {
+  return s.length <= n ? s : s.slice(0, n);
 }

@@ -31,7 +31,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, GripVertical, MessageCircle, CheckCircle2, X, Loader2, Sparkles, Save, ChevronUp, ChevronDown,
-  Target, Wand2, Clock, Printer, RotateCcw,
+  Target, Wand2, Clock, Printer, RotateCcw, FileText,
 } from "lucide-react";
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_LABEL, SECTION_HINTS, rid } from "@/lib/resume/types";
@@ -44,6 +44,17 @@ export interface PostingSummary {
   id: string;
   title: string;
   companyName: string;
+}
+
+/** One of the user's resumes — feeds the picker dropdown so the user
+ *  can switch between Main / Tailored copies without leaving the
+ *  editor. The picker drives a navigation to /profile/resume?id=X
+ *  which triggers a fresh server-side load via the existing key. */
+export interface ResumeSibling {
+  id: string;
+  name: string;
+  lastEditedAt: string;
+  derivedForPostingId: string | null;
 }
 
 /** Server-returned preview row from POST /api/profile/resume/structure/tailor. */
@@ -116,12 +127,18 @@ interface Props {
   /** Postings the trainee can tailor their resume against. When the
    *  array is empty, the "Tailor to posting" toolbar is hidden. */
   postings?: PostingSummary[];
+  /** Every (non-archived) resume the user owns — drives the picker
+   *  dropdown at the top of the editor. */
+  siblings?: ResumeSibling[];
+  /** Display name of the resume currently being edited. */
+  currentName?: string;
 }
 
 const DEBOUNCE_MS = 600;
 
 export function ResumeEditor({
-  initialResume, initialComments, canParse, hasParsed = false, ownerId, postings = [],
+  initialResume, initialComments, canParse, hasParsed = false, ownerId,
+  postings = [], siblings = [], currentName,
 }: Props) {
   const router = useRouter();
   const [versionsOpen, setVersionsOpen] = useState(false);
@@ -154,6 +171,12 @@ export function ResumeEditor({
   // edited text rather than the raw AI output so manual tweaks land
   // verbatim in the resume.
   const [tailorEdits, setTailorEdits] = useState<Map<string, string>>(new Map());
+  // When checked, the Apply step doesn't mutate this resume in place —
+  // it asks the server to create a NEW resume row with the tailored
+  // content, attribution to the source, and the posting tied in. The
+  // checkbox defaults to ON because parallel tailored copies is the
+  // new mental model; users who want in-place can untick.
+  const [tailorSaveAsNew, setTailorSaveAsNew] = useState(true);
 
   // ── Undo stack for removals ─────────────────────────────────────
   // Push removed bullets / items / sections here so an accidental X
@@ -421,32 +444,107 @@ export function ResumeEditor({
     });
   }
 
-  /** Apply every remaining tailor-preview row using each row's edited
-   *  text. Same client-side mutation pattern as applyTailorRow but in
-   *  bulk; auto-save snapshots one revision after the debounce. */
-  function runTailorApply() {
+  /** Apply every remaining tailor-preview row.
+   *
+   *  Two paths, gated by the saveAsNew checkbox:
+   *
+   *  - **In place** (saveAsNew = false): mutate the current resume's
+   *    content via setContent; auto-save handles the PATCH. Same
+   *    behaviour as before multi-resume.
+   *
+   *  - **Save as new** (saveAsNew = true, default): POST to the
+   *    tailor endpoint with saveAsNew + the edited rewrites. The
+   *    server creates a fresh Resume row tied to the posting and
+   *    derived from this one. On success we route the editor to
+   *    the new resume (?id=…) so the user lands on their tailored
+   *    copy with the source resume untouched. */
+  async function runTailorApply() {
     if (!tailorPreview || tailorPreview.length === 0) return;
     setTailorError(null);
     setTailorBusy("apply");
     try {
-      const edits = new Map(tailorEdits); // snapshot
-      setContent((c) => ({
-        ...c,
-        sections: c.sections.map((s) => ({
-          ...s,
-          items: s.items.map((it) => ({
-            ...it,
-            bullets: it.bullets.map((b) => {
-              const next = edits.get(b.id);
-              return next && next.trim() ? { ...b, body: next.trim(), aiSuggested: true } : b;
-            }),
+      if (tailorSaveAsNew) {
+        // Server-side create. We send the edited rewrites by patching
+        // the content tree client-side first and pushing the whole
+        // tree through the structure POST? Simpler: use the tailor
+        // endpoint with saveAsNew + rely on it for the AI run +
+        // create. But we need to honour the user's per-row edits.
+        // Send the content tree directly with applied edits as the
+        // initial content of the new resume.
+        const edits = new Map(tailorEdits);
+        const tailoredContent: ResumeContent = {
+          ...content,
+          sections: content.sections.map((s) => ({
+            ...s,
+            items: s.items.map((it) => ({
+              ...it,
+              bullets: it.bullets.map((b) => {
+                const next = edits.get(b.id);
+                return next && next.trim() ? { ...b, body: next.trim(), aiSuggested: true } : b;
+              }),
+            })),
           })),
-        })),
-      }));
-      setSavedAt(new Date());
-      setTailorPreview(null);
-      setTailorEdits(new Map());
-      setTailorOpen(false);
+        };
+        // First create a duplicate; then PATCH the duplicate's content
+        // with the tailored tree. Two round-trips, but uses existing
+        // endpoints without needing to ship per-row edits through the
+        // tailor endpoint's apply path.
+        const created = await fetch("/api/profile/resumes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: tailorPostingName(tailorPostingId, postings),
+            sourceResumeId: initialResume.id,
+          }),
+        });
+        const j = (await created.json().catch(() => ({}))) as {
+          ok?: boolean; error?: string; resume?: { id: string };
+        };
+        if (!created.ok || !j.ok || !j.resume) {
+          setTailorError(j.error ?? "Couldn't create tailored resume.");
+          return;
+        }
+        const newId = j.resume.id;
+        // Push the tailored content into the new resume + tag it for
+        // derivation. PATCH /structure handles content + revision; we
+        // also want to set derivedForPostingId, so we hit the resumes
+        // collection's PATCH for that metadata after.
+        await fetch("/api/profile/resume/structure", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            resumeId: newId,
+            content: tailoredContent,
+            note: "Tailored from source resume",
+          }),
+        });
+        // Navigate to the new resume.
+        setTailorPreview(null);
+        setTailorEdits(new Map());
+        setTailorOpen(false);
+        router.push(`/profile/resume?id=${newId}`);
+      } else {
+        // In-place — same as the prior behaviour. Mutate content
+        // state; auto-save persists via the existing PATCH path.
+        const edits = new Map(tailorEdits);
+        setContent((c) => ({
+          ...c,
+          sections: c.sections.map((s) => ({
+            ...s,
+            items: s.items.map((it) => ({
+              ...it,
+              bullets: it.bullets.map((b) => {
+                const next = edits.get(b.id);
+                return next && next.trim() ? { ...b, body: next.trim(), aiSuggested: true } : b;
+              }),
+            })),
+          })),
+        }));
+        setSavedAt(new Date());
+        setTailorPreview(null);
+        setTailorEdits(new Map());
+        setTailorOpen(false);
+      }
     } finally {
       setTailorBusy(null);
     }
@@ -668,6 +766,17 @@ export function ResumeEditor({
 
   return (
     <div className="space-y-5">
+      {/* Resume picker — multi-resume aware. Shows the current
+          resume's name as the selected value; the dropdown lists
+          every non-archived sibling + a link to /profile/resumes
+          for the full index (which also handles archived rows). */}
+      <ResumePicker
+        currentName={currentName ?? "Main resume"}
+        currentResumeId={initialResume.id}
+        siblings={siblings}
+        onSwitch={(id) => router.push(`/profile/resume?id=${id}`)}
+      />
+
       {/* ── Primary actions panel ───────────────────────────────────
        *
        * Tailor / Versions / Preview PDF are the three things a trainee
@@ -777,6 +886,8 @@ export function ResumeEditor({
           onApplyRow={applyTailorRow}
           onPreview={runTailorPreview}
           onApply={runTailorApply}
+          saveAsNew={tailorSaveAsNew}
+          onSaveAsNewChange={setTailorSaveAsNew}
           onClose={() => {
             setTailorOpen(false);
             setTailorPreview(null);
@@ -984,6 +1095,81 @@ export function ResumeEditor({
  *  three things you actually do with a resume. `active` makes the
  *  card look "on" — useful for toggles like the Tailor panel where
  *  the card opens an inline drawer. */
+/** Multi-resume picker. Selects between every non-archived resume
+ *  the user owns. Switching routes to /profile/resume?id=X which
+ *  triggers a fresh server-side load — the existing key-based
+ *  remount on the page handles state hand-off cleanly. */
+/** Build a default "tailored resume" name from a posting id and the
+ *  available postings list — e.g. "STEMCELL · Process Engineer Intern".
+ *  Falls back to "Tailored resume" if the posting isn't found. */
+function tailorPostingName(postingId: string, postings: PostingSummary[]): string {
+  const p = postings.find((x) => x.id === postingId);
+  if (!p) return "Tailored resume";
+  return `${p.companyName} · ${p.title}`.slice(0, 120);
+}
+
+function ResumePicker({
+  currentName, currentResumeId, siblings, onSwitch,
+}: {
+  currentName: string;
+  currentResumeId: string;
+  siblings: ResumeSibling[];
+  onSwitch: (id: string) => void;
+}) {
+  const others = siblings.filter((s) => s.id !== currentResumeId);
+  return (
+    <div className="flex items-center justify-between gap-3 flex-wrap rounded-xl border border-line bg-card-solid px-3 py-2">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <span className="inline-flex w-7 h-7 rounded-md bg-brand-50 text-brand-700 items-center justify-center shrink-0">
+          <FileText size={13} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-fg-subtle">Editing</p>
+          {/* Native select keeps the picker accessible + lightweight.
+              When the user only has one resume, the dropdown still
+              works but only shows the current name + the "all resumes"
+              link — no real switching to do. */}
+          <select
+            value={currentResumeId}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "__all__") {
+                window.location.href = "/profile/resumes";
+                return;
+              }
+              if (v === "__new__") {
+                // Routed to the new-resume API by the index page; here
+                // we just navigate the user to the index where the
+                // "+ New resume" affordance lives.
+                window.location.href = "/profile/resumes";
+                return;
+              }
+              if (v !== currentResumeId) onSwitch(v);
+            }}
+            className="-ml-1 px-1.5 py-0.5 rounded text-sm font-semibold text-fg bg-transparent hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-brand-100 max-w-full truncate"
+          >
+            <option value={currentResumeId}>{currentName}</option>
+            {others.length > 0 && (
+              <optgroup label="Switch to">
+                {others.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </optgroup>
+            )}
+            <option value="__all__">All resumes / new…</option>
+          </select>
+        </div>
+      </div>
+      <Link
+        href="/profile/resumes"
+        className="text-[11px] font-medium text-brand-700 hover:underline shrink-0"
+      >
+        Manage resumes →
+      </Link>
+    </div>
+  );
+}
+
 function PrimaryActionCard({
   icon: Icon, label, sub, onClick, active,
 }: {
@@ -1407,7 +1593,8 @@ function CommentList({
  * to apply everything — the explicit two-step is the whole point of
  * separating preview from apply at the API level. */
 function TailorPanel({
-  postings, postingId, onPostingId, busy, error, preview, edits, onEditRow, onApplyRow, onPreview, onApply, onClose,
+  postings, postingId, onPostingId, busy, error, preview, edits, onEditRow, onApplyRow,
+  onPreview, onApply, onClose, saveAsNew, onSaveAsNewChange,
 }: {
   postings: PostingSummary[];
   postingId: string;
@@ -1423,6 +1610,10 @@ function TailorPanel({
   onPreview: () => void;
   onApply: () => void;
   onClose: () => void;
+  /** When true, Apply creates a new sibling resume; false → mutates
+   *  this resume in place. */
+  saveAsNew: boolean;
+  onSaveAsNewChange: (v: boolean) => void;
 }) {
   return (
     <div className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4 space-y-3">
@@ -1465,6 +1656,26 @@ function TailorPanel({
           {busy === "preview" ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
           Preview rewrites
         </button>
+        {preview && preview.length > 0 && (
+          // Save-as-new toggle — visible only once there's a preview
+          // ready to apply. Default on; user can untick to overwrite
+          // the current resume in place. Tooltip spells out which
+          // mode they're in so there's no surprise on click.
+          <label className="inline-flex items-center gap-1.5 text-[11px] text-fg-muted cursor-pointer ml-1">
+            <input
+              type="checkbox"
+              checked={saveAsNew}
+              onChange={(e) => onSaveAsNewChange(e.target.checked)}
+              className="rounded border-line text-brand-600 focus:ring-brand-300"
+            />
+            <span>
+              Save as a new resume
+              <span className="text-fg-subtle ml-1">
+                ({saveAsNew ? "your current resume stays untouched" : "overwrites this resume"})
+              </span>
+            </span>
+          </label>
+        )}
         {preview && preview.length > 0 && (() => {
           // Count how many rows the user has edited from the AI's
           // original. The button label reflects the mix so it's clear

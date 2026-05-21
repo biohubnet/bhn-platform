@@ -28,6 +28,7 @@ import { prisma } from "@/lib/prisma";
 import type { ResumeContent } from "@/lib/resume/types";
 import { rewriteBullet } from "@/lib/resume/tailor";
 import { recordRevision } from "@/lib/resume/revisions";
+import { getActiveResume } from "@/lib/resume/active";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -42,17 +43,26 @@ export async function POST(req: NextRequest) {
     bulletId?: unknown;
     commentId?: unknown;
     apply?: unknown;
+    resumeId?: unknown;
   };
   const bulletId = typeof body.bulletId === "string" ? body.bulletId : null;
   if (!bulletId) {
     return NextResponse.json({ error: "bulletId required" }, { status: 400 });
   }
   const commentId = typeof body.commentId === "string" ? body.commentId : null;
+  const targetResumeId = typeof body.resumeId === "string" ? body.resumeId : null;
   const apply = body.apply === true;
 
-  // Load the caller's resume tree + locate the target bullet.
+  // Resolve which resume the bullet belongs to. Caller can pin a
+  // specific resumeId (when editing a tailored copy); otherwise we
+  // default to the most-recently-edited.
+  const target = await getActiveResume({ userId, resumeId: targetResumeId });
+  if (!target) {
+    return NextResponse.json({ error: "No resume to rewrite against." }, { status: 400 });
+  }
+  // Fetch full content for the located resume.
   const resume = await prisma.resume.findUnique({
-    where: { userId },
+    where: { id: target.id },
     select: { id: true, content: true, version: true },
   });
   if (!resume) {

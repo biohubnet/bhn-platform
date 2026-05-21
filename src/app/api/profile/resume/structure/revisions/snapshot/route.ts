@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { recordRevision } from "@/lib/resume/revisions";
+import { getActiveResume } from "@/lib/resume/active";
 
 export const runtime = "nodejs";
 
@@ -27,13 +28,21 @@ export async function POST(req: NextRequest) {
   const userId = (session.user as { id?: string }).id ?? null;
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = (await req.json().catch(() => ({}))) as { note?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { note?: unknown; resumeId?: unknown };
   const note = typeof body.note === "string" && body.note.trim()
     ? body.note.trim().slice(0, 200)
     : "Manual snapshot";
+  const targetResumeId = typeof body.resumeId === "string" ? body.resumeId : null;
 
+  const target = await getActiveResume({ userId, resumeId: targetResumeId });
+  if (!target) {
+    return NextResponse.json(
+      { error: "No resume to snapshot yet. Edit your resume first." },
+      { status: 400 },
+    );
+  }
   const resume = await prisma.resume.findUnique({
-    where: { userId },
+    where: { id: target.id },
     select: { id: true, content: true, version: true },
   });
   if (!resume) {

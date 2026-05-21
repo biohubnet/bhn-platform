@@ -18,6 +18,7 @@ import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseResumeText } from "@/lib/resume/parse";
 import { recordRevision } from "@/lib/resume/revisions";
+import { getOrCreateActiveResume } from "@/lib/resume/active";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -30,9 +31,14 @@ async function getMyUser() {
 }
 
 export async function POST(req: NextRequest) {
-  void req;
   const userId = await getMyUser();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Optional explicit resumeId from body — when set, parse into that
+  // specific resume (e.g. a tailored copy the user wants re-parsed
+  // from the latest PDF). Default: most-recently-edited resume.
+  const body = (await req.json().catch(() => ({}))) as { resumeId?: string };
+  const targetResumeId = typeof body.resumeId === "string" ? body.resumeId : null;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -105,18 +111,15 @@ export async function POST(req: NextRequest) {
 
   const parsed = await parseResumeText(text, { userId });
 
+  // Resolve target resume (auto-creates a "Main resume" on first
+  // ever parse so a fresh trainee can land on /profile/resume and
+  // click the CTA without a separate "create resume" step).
+  const target = await getOrCreateActiveResume({ userId, resumeId: targetResumeId });
+
   const updated = await prisma.$transaction(async (tx) => {
-    const r = await tx.resume.upsert({
-      where: { userId },
-      create: {
-        userId,
-        sourceFileUrl: url,
-        parsedAt: new Date(),
-        content: parsed as unknown as object,
-        version: 1,
-        lastEditedAt: new Date(),
-      },
-      update: {
+    const r = await tx.resume.update({
+      where: { id: target.id },
+      data: {
         sourceFileUrl: url,
         parsedAt: new Date(),
         content: parsed as unknown as object,

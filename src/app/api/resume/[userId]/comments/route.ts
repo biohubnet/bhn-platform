@@ -37,8 +37,12 @@ export async function GET(_req: NextRequest, ctx: RouteCtx) {
   });
   if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const resume = await prisma.resume.findUnique({
-    where: { userId: ownerId },
+  // Mentor side reads the owner's most-recently-edited non-archived
+  // resume. Future: support ?resumeId= so reviewers can comment on a
+  // specific tailored copy. For now: the active one only.
+  const resume = await prisma.resume.findFirst({
+    where: { userId: ownerId, isArchived: false },
+    orderBy: { lastEditedAt: "desc" },
     select: { id: true },
   });
   if (!resume) return NextResponse.json({ ok: true, comments: [] });
@@ -70,16 +74,30 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
   const text = typeof body.body === "string" ? body.body.trim().slice(0, 4000) : "";
   if (!text) return NextResponse.json({ error: "body required" }, { status: 400 });
 
-  const resume = await prisma.resume.upsert({
-    where: { userId: ownerId },
-    create: {
-      userId: ownerId,
-      // Empty scaffold — the owner hasn't visited /profile/resume yet,
-      // but a reviewer can still drop a comment they'll see on arrival.
-      content: { sections: [] } as unknown as object,
-    },
-    update: {},
+  // Locate the owner's active resume (most-recently-edited non-
+  // archived). If they've never started one, scaffold a "Main resume"
+  // so the comment has a home. findFirst + create is safe here
+  // because the unique constraint was dropped — concurrent attempts
+  // by two reviewers would just create two resumes, which is OK
+  // (they'd both be visible in the picker; the owner can rename or
+  // archive duplicates).
+  let resume = await prisma.resume.findFirst({
+    where: { userId: ownerId, isArchived: false },
+    orderBy: { lastEditedAt: "desc" },
+    select: { id: true },
   });
+  if (!resume) {
+    resume = await prisma.resume.create({
+      data: {
+        userId: ownerId,
+        name: "Main resume",
+        // Empty scaffold — the owner hasn't visited /profile/resume yet,
+        // but a reviewer can still drop a comment they'll see on arrival.
+        content: { sections: [] } as unknown as object,
+      },
+      select: { id: true },
+    });
+  }
 
   const comment = await prisma.resumeComment.create({
     data: {

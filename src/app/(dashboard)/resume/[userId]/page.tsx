@@ -72,8 +72,13 @@ export default async function MentorResumePage({ params }: PageProps) {
   });
   if (!owner) notFound();
 
-  const resume = await prisma.resume.findUnique({
-    where: { userId: ownerId },
+  // Mentor view loads the owner's most-recently-edited non-archived
+  // resume. Future enhancement: a resume picker on the mentor side
+  // too so they can review tailored copies. For now, default to
+  // "the resume the trainee is actively working on."
+  const resume = await prisma.resume.findFirst({
+    where: { userId: ownerId, isArchived: false },
+    orderBy: { lastEditedAt: "desc" },
     include: {
       comments: {
         include: { author: { select: { id: true, name: true, email: true, role: true } } },

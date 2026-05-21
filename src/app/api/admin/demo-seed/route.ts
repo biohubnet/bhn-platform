@@ -969,31 +969,44 @@ async function seedUserResume(userId: string): Promise<SeedDetail> {
   //    on every re-seed so the revision snapshot below is unique.
   //    Wrapped in try/catch so a Prisma error returns a useful note
   //    in the admin UI instead of bubbling to a flat 500.
+  //    Multi-resume aware: target the admin's most-recently-edited
+  //    non-archived resume; create one if none exists. We DON'T
+  //    create a new sibling on every reseed — that would pollute
+  //    the picker with "Main resume", "Main resume (2)", etc.
   let resumeId: string;
   let resumeVersion: number;
   try {
-    const existing = await prisma.resume.findUnique({
-      where: { userId },
+    const existing = await prisma.resume.findFirst({
+      where: { userId, isArchived: false },
+      orderBy: { lastEditedAt: "desc" },
       select: { id: true, version: true },
     });
-    const nextVersion = existing ? existing.version + 1 : 1;
-    const resume = await prisma.resume.upsert({
-      where: { userId },
-      create: {
-        userId,
-        content: content as unknown as object,
-        version: nextVersion,
-        lastEditedAt: new Date(),
-      },
-      update: {
-        content: content as unknown as object,
-        version: nextVersion,
-        lastEditedAt: new Date(),
-      },
-      select: { id: true, version: true },
-    });
-    resumeId = resume.id;
-    resumeVersion = resume.version;
+    if (existing) {
+      const updated = await prisma.resume.update({
+        where: { id: existing.id },
+        data: {
+          content: content as unknown as object,
+          version: existing.version + 1,
+          lastEditedAt: new Date(),
+        },
+        select: { id: true, version: true },
+      });
+      resumeId = updated.id;
+      resumeVersion = updated.version;
+    } else {
+      const created = await prisma.resume.create({
+        data: {
+          userId,
+          name: "Main resume",
+          content: content as unknown as object,
+          version: 1,
+          lastEditedAt: new Date(),
+        },
+        select: { id: true, version: true },
+      });
+      resumeId = created.id;
+      resumeVersion = created.version;
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[demo-seed user_resume] upsert failed:", msg);
