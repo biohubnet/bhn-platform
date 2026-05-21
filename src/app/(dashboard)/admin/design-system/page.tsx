@@ -12,6 +12,7 @@ import { DesignSystemShowroom } from "@/components/admin/DesignSystemShowroom";
 import {
   LaunchSwitchDemo, LaunchSwitchMediumDemo,
   LaunchSwitchClassicDemo, LaunchSwitchClassicMediumDemo,
+  LaunchSwitchFacetDemo, LaunchSwitchFacetMediumDemo,
 } from "@/components/admin/LaunchSwitchPreview";
 import { InputDialogPreview } from "@/components/admin/InputDialogPreview";
 
@@ -537,7 +538,7 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
           A pulsing, glowing red <strong>DELETE</strong> button sits at all times under a transparent glass cover. The glow is visible through the cover so the affordance reads as &quot;warning, but protected.&quot; To commit: click the cover (it hinges up), click the now-exposed button (10-second countdown starts), wait it out. To bail: close the cover at any point.
         </p>
         <p className="text-[11px] text-fg-subtle italic">
-          Ships in <strong>two variants</strong>. <code>LaunchSwitch</code> is the current canonical control — clear glass cover, neon-glow DELETE, 10-second cool-off. <code>LaunchSwitchClassic</code> is the original military rocket-launch design — hazard-striped cover, red FIRE button, 5-second countdown — kept for industrial surfaces where the stencil-and-stripe language fits. Both have the same API.
+          Ships in <strong>three variants</strong>. <code>LaunchSwitch</code> is the current canonical control — clear glass cover, neon-glow DELETE, 10-second cool-off. <code>LaunchSwitchClassic</code> is the original military rocket-launch design — hazard-striped cover, red FIRE button, 5-second countdown. <code>LaunchSwitchFacet</code> is a new faceted plastic-cover variant — four triangle facets with fixed top-left light source, reflection/seam geometry baked into the surface. All three share the same prop API. Companion HTML exploration with twelve cover geometries lives at <code>/design-archive/delete-buttons-prism-covers.html</code>.
         </p>
         <p className="text-sm text-fg-muted leading-relaxed">
           Two-stage destructive control inspired by the protected red switches on a jet fighter&apos;s weapons panel.
@@ -580,11 +581,11 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
           </div>
         </SubSection>
 
-        <SubSection title="Variants — glass-cover vs. military classic">
+        <SubSection title="Variants — pick by surface">
           <p className="text-sm text-fg-muted leading-relaxed">
-            Both variants share the same prop API. Pick by surface: glass-cover for soft product-design surfaces; classic for industrial / admin tooling where the hazard-stripe language fits.
+            All three share the same prop API. Pick by how industrial vs. product-design the surface wants to feel: glass-cover is soft and modern; facet is a moulded plastic-prism middle ground; classic is hazard-stripe industrial.
           </p>
-          <div className="grid sm:grid-cols-2 gap-4 mt-2">
+          <div className="grid sm:grid-cols-3 gap-4 mt-2">
             <div className="rounded-xl border border-line bg-elevated/40 p-5 flex flex-col items-center gap-3">
               <div className="flex items-center gap-6">
                 <LaunchSwitchDemo />
@@ -592,8 +593,19 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
               </div>
               <div className="text-center">
                 <p className="text-[12px] font-semibold text-fg">LaunchSwitch (current)</p>
-                <p className="text-[11px] text-fg-muted mt-0.5">Clear glass cover, neon-glow DELETE underneath, 10-second cool-off. Default footprint 92×28 (sm) / 140×42 (md).</p>
-                <code className="text-[10px] text-fg-subtle font-mono">from &quot;@/components/ui/LaunchSwitch&quot;</code>
+                <p className="text-[11px] text-fg-muted mt-0.5">Clear glass cover, neon-glow DELETE underneath, 10-second cool-off. 92×28 (sm) / 140×42 (md).</p>
+                <code className="text-[10px] text-fg-subtle font-mono">@/components/ui/LaunchSwitch</code>
+              </div>
+            </div>
+            <div className="rounded-xl border border-line bg-elevated/40 p-5 flex flex-col items-center gap-3">
+              <div className="flex items-center gap-6">
+                <LaunchSwitchFacetDemo />
+                <LaunchSwitchFacetMediumDemo />
+              </div>
+              <div className="text-center">
+                <p className="text-[12px] font-semibold text-fg">LaunchSwitchFacet (new)</p>
+                <p className="text-[11px] text-fg-muted mt-0.5">Opaque plastic cover carved into four triangular facets meeting at the centre. Fixed top-left light source, diagonal seams visible. 92×28 (sm) / 140×42 (md).</p>
+                <code className="text-[10px] text-fg-subtle font-mono">@/components/ui/LaunchSwitchFacet</code>
               </div>
             </div>
             <div className="rounded-xl border border-line bg-elevated/40 p-5 flex flex-col items-center gap-3">
@@ -603,11 +615,14 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
               </div>
               <div className="text-center">
                 <p className="text-[12px] font-semibold text-fg">LaunchSwitchClassic (original)</p>
-                <p className="text-[11px] text-fg-muted mt-0.5">Hazard-striped cover, red FIRE button under, 5-second countdown, rivet corners. Footprint 84×24 (sm) / 120×36 (md).</p>
-                <code className="text-[10px] text-fg-subtle font-mono">from &quot;@/components/ui/LaunchSwitchClassic&quot;</code>
+                <p className="text-[11px] text-fg-muted mt-0.5">Hazard-striped cover, red FIRE button under, 5-second countdown, rivet corners. 84×24 (sm) / 120×36 (md).</p>
+                <code className="text-[10px] text-fg-subtle font-mono">@/components/ui/LaunchSwitchClassic</code>
               </div>
             </div>
           </div>
+          <p className="text-[11px] text-fg-muted mt-3">
+            For further cover-geometry exploration (twelve cover styles — faceted pyramid, chamfered bezel, fresnel, octagon-stamped, refracted prism, hex-faceted lens, …) see <a href="/design-archive/delete-buttons-prism-covers.html" target="_blank" rel="noopener" className="underline hover:text-fg">delete-buttons-prism-covers.html</a> in the design archive.
+          </p>
         </SubSection>
 
         <SubSection title="When to reach for it">
@@ -621,14 +636,14 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
           </p>
         </SubSection>
 
-        <SubSection title="Props (shared by both variants)">
-          <pre className="text-[11px] font-mono bg-elevated/40 rounded-md p-3 overflow-x-auto leading-relaxed">{`<LaunchSwitch          // or <LaunchSwitchClassic />
+        <SubSection title="Props (shared by all three variants)">
+          <pre className="text-[11px] font-mono bg-elevated/40 rounded-md p-3 overflow-x-auto leading-relaxed">{`<LaunchSwitch          // or <LaunchSwitchFacet /> or <LaunchSwitchClassic />
   label="DELETE"            // text on the cover; default "DELETE"
   countdownSeconds={10}     // T-minus before onFire runs.
-                            //  • LaunchSwitch default: 10
-                            //  • LaunchSwitchClassic default: 5
-  size="sm" | "md"          // glass: 92×28 / 140×42
-                            // classic: 84×24 / 120×36
+                            //  • LaunchSwitch / Facet default: 10
+                            //  • LaunchSwitchClassic default:    5
+  size="sm" | "md"          // glass / facet: 92×28 / 140×42
+                            // classic:       84×24 / 120×36
   actionVerb="Deleting"     // word during countdown ("Wiping", etc.)
   onArm={() => {}}          // optional — fires when cover lifts
   onAbort={() => {}}        // optional — fires when user cancels

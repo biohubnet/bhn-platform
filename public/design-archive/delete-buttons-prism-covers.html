@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Delete button · prism plastic-cover variations</title>
+  <style>
+    /* ─── Page chrome ────────────────────────────────────────── */
+    :root {
+      --bg: #0c1116;
+      --panel: #141b22;
+      --line: #232c36;
+      --ink: #e6edf3;
+      --muted: #8b96a3;
+      --accent: #f59e0b;
+      --rose: #f43f5e;
+      --rose-deep: #9f1239;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font: 14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 1180px; margin: 0 auto; padding: 40px 28px 80px; }
+    header h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.01em; }
+    header p  { margin: 0; color: var(--muted); max-width: 720px; }
+    header { margin-bottom: 36px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+    h2 { margin: 36px 0 4px; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+    h2 + p { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .cell {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 28px 18px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      min-height: 200px;
+      position: relative;
+    }
+    .cell .meta {
+      text-align: center;
+      width: 100%;
+    }
+    .cell .meta .name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.02em;
+    }
+    .cell .meta .desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+      line-height: 1.45;
+    }
+    .num {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      font: 700 10px/1 ui-monospace, monospace;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    /* ─── Shared switch chassis (all variants) ──────────────── */
+    .sw {
+      position: relative;
+      width: 132px;
+      height: 64px;
+      perspective: 380px;
+      transform-style: preserve-3d;
+      cursor: pointer;
+      user-select: none;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    /* The base — the glowing button under the cover. */
+    .base {
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+      box-shadow:
+        inset 0 0 14px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      font-size: 13px;
+      color: #ffe4e6;
+      text-shadow:
+        0 0 6px rgba(255,90,90,0.85),
+        0 0 14px rgba(255,40,40,0.55);
+      overflow: hidden;
+    }
+    /* Cover sits over the base. Each variant gives the cover its own
+       facets / reflection style. */
+    .cover {
+      position: absolute;
+      inset: 0;
+      transform-origin: top center;
+      transform: rotateX(0deg);
+      transition:
+        transform 480ms cubic-bezier(0.32, 1.4, 0.55, 1),
+        box-shadow 480ms ease-out;
+      border-radius: 8px;
+      backface-visibility: hidden;
+    }
+    .sw.open .cover {
+      transform: rotateX(-85deg);
+      transition: transform 360ms ease-out, box-shadow 360ms ease-out;
+      box-shadow: 0 14px 18px -10px rgba(0,0,0,0.6);
+    }
+    /* A subtle hinge highlight along the top edge. */
+    .hinge {
+      position: absolute;
+      top: 0;
+      left: 6%;
+      right: 6%;
+      height: 2px;
+      border-radius: 0 0 6px 6px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0));
+      pointer-events: none;
+    }
+
+    /* ─── 01 · Faceted pyramid — four triangle facets meeting in
+            the centre. Each facet reflects light at a different
+            angle, giving the cover the look of a low-poly gem. */
+    .v01 .cover {
+      background:
+        /* Top triangle — light angled in from top-left */
+        linear-gradient(135deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.05) 50%, transparent 50%) top    / 50% 50% no-repeat,
+        linear-gradient(225deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.04) 50%, transparent 50%) top right / 50% 50% no-repeat,
+        linear-gradient(315deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.02) 50%, transparent 50%) bottom right / 50% 50% no-repeat,
+        linear-gradient(45deg,  rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.03) 50%, transparent 50%) bottom left  / 50% 50% no-repeat,
+        linear-gradient(180deg, rgba(248, 250, 252, 0.18), rgba(148, 163, 184, 0.18));
+      border: 1px solid rgba(255,255,255,0.20);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.10),
+        inset 0 1px 0 rgba(255,255,255,0.45);
+      /* Faint diagonal seams between facets so the geometry reads. */
+      mask-image:
+        linear-gradient(black, black);
+    }
+    .v01 .cover::before, .v01 .cover::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .v01 .cover::before {
+      background:
+        linear-gradient(to top right, transparent calc(50% - 0.4px), rgba(0,0,0,0.18) 50%, transparent calc(50% + 0.4px)),
+        linear-gradient(to top left,  transparent calc(50% - 0.4px), rgba(0,0,0,0.18) 50%, transparent calc(50% + 0.4px));
+    }
+
+    /* ─── 02 · Chamfered bezel — central flat with four bevelled
+            edges. Mimics injection-moulded plastic with a sharp
+            chamfer all around. */
+    .v02 .cover {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 8%, rgba(255,255,255,0) 92%, rgba(0,0,0,0.30) 100%) ,
+        linear-gradient(90deg,  rgba(255,255,255,0.40) 0%, rgba(255,255,255,0) 8%, rgba(255,255,255,0) 92%, rgba(0,0,0,0.22) 100%) ,
+        linear-gradient(180deg, rgba(226, 232, 240, 0.22), rgba(100, 116, 139, 0.22));
+      border: 1px solid rgba(255,255,255,0.20);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.12),
+        inset 0 0 18px rgba(255,255,255,0.10);
+    }
+    .v02 .cover::after {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: 4px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04));
+      border-top: 1px solid rgba(255,255,255,0.30);
+      pointer-events: none;
+    }
+
+    /* ─── 03 · Diamond rib — four flat triangular facets, no
+            seams; light catches only the top-left and bottom-right
+            for an asymmetric gem-cut shimmer. */
+    .v03 .cover {
+      background:
+        conic-gradient(from 45deg at 50% 50%,
+          rgba(255,255,255,0.40) 0deg,
+          rgba(255,255,255,0.04) 90deg,
+          rgba(255,255,255,0.22) 180deg,
+          rgba(255,255,255,0.02) 270deg,
+          rgba(255,255,255,0.40) 360deg
+        ),
+        linear-gradient(180deg, rgba(226, 232, 240, 0.20), rgba(71, 85, 105, 0.20));
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);
+    }
+
+    /* ─── 04 · Rooftop — single ridge running left → right,
+            two triangular slopes catching light differently. */
+    .v04 .cover {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.08) 48%, transparent 50%) top    / 100% 50% no-repeat,
+        linear-gradient(0deg,   rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.18)     48%, transparent 50%) bottom / 100% 50% no-repeat,
+        linear-gradient(180deg, rgba(241, 245, 249, 0.20), rgba(100, 116, 139, 0.20));
+      border: 1px solid rgba(255,255,255,0.20);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);
+      position: relative;
+    }
+    .v04 .cover::before {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 50%;
+      height: 1px;
+      background: rgba(0,0,0,0.30);
+      box-shadow: 0 -1px 0 rgba(255,255,255,0.30);
+      pointer-events: none;
+    }
+
+    /* ─── 05 · Fresnel — concentric chamfered rings, like a
+            lighthouse lens. Created with stacked radial gradients
+            offset so each ring catches light at a different angle. */
+    .v05 .cover {
+      background:
+        repeating-radial-gradient(circle at 30% 30%,
+          rgba(255,255,255,0.18) 0px,
+          rgba(255,255,255,0.18) 1px,
+          rgba(255,255,255,0.02) 2px,
+          rgba(255,255,255,0.02) 10px
+        ),
+        linear-gradient(180deg, rgba(248, 250, 252, 0.18), rgba(100, 116, 139, 0.18));
+      border: 1px solid rgba(255,255,255,0.20);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.10),
+        inset 0 0 14px rgba(255,255,255,0.06);
+    }
+
+    /* ─── 06 · Octagon-stamped — central octagonal panel inset
+            into a chamfered surround. Reads like a sealed industrial
+            switch housing. */
+    .v06 .cover {
+      background:
+        linear-gradient(180deg, rgba(226, 232, 240, 0.22), rgba(100, 116, 139, 0.22));
+      border: 1px solid rgba(255,255,255,0.20);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.10),
+        inset 0 1px 0 rgba(255,255,255,0.36);
+      clip-path: polygon(
+        4% 0,   96% 0,
+        100% 22%, 100% 78%,
+        96% 100%, 4% 100%,
+        0 78%,   0 22%
+      );
+    }
+    .v06 .cover::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      clip-path: polygon(
+        6% 0,   94% 0,
+        100% 28%, 100% 72%,
+        94% 100%, 6% 100%,
+        0 72%,   0 28%
+      );
+      background: linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.04));
+      pointer-events: none;
+    }
+
+    /* ─── 07 · Crystal V-grooves — three vertical chamfered ribs
+            running top-to-bottom, like a fluted glass cover. Each
+            rib catches light along its left face and shadows on the
+            right. */
+    .v07 .cover {
+      background:
+        repeating-linear-gradient(90deg,
+          rgba(255,255,255,0.42) 0px,
+          rgba(255,255,255,0.04) 18px,
+          rgba(0,0,0,0.18) 32px,
+          rgba(0,0,0,0.06) 36px,
+          rgba(255,255,255,0.42) 36px
+        ),
+        linear-gradient(180deg, rgba(241, 245, 249, 0.16), rgba(100, 116, 139, 0.16));
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);
+    }
+
+    /* ─── 08 · Twin-pitch roof — two ridges with a valley between.
+            Top and bottom slopes light bright; the valley sits in
+            shadow. Reads like a hardware case lid with relief. */
+    .v08 .cover {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.05) 28%, transparent 30%) top    / 100% 30% no-repeat,
+        linear-gradient(180deg, rgba(0,0,0,0.20)      0%, rgba(0,0,0,0.05)        50%, rgba(0,0,0,0.20)      100%) center / 100% 40% no-repeat,
+        linear-gradient(0deg,   rgba(255,255,255,0.30) 0%, rgba(0,0,0,0.10)     28%, transparent 30%) bottom / 100% 30% no-repeat,
+        linear-gradient(180deg, rgba(226, 232, 240, 0.20), rgba(100, 116, 139, 0.20));
+      border: 1px solid rgba(255,255,255,0.20);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);
+    }
+
+    /* ─── 09 · Refracted prism — a triangular wedge bisects the
+            cover diagonally. Above the bisect, light is "refracted"
+            with a cyan-tinted streak; below, with a warm-tinted
+            streak. The illusion is loose but reads as glass. */
+    .v09 .cover {
+      background:
+        linear-gradient(135deg,
+          rgba(186, 230, 253, 0.32) 0%,
+          rgba(186, 230, 253, 0.06) 32%,
+          transparent 50%,
+          rgba(254, 215, 170, 0.06) 68%,
+          rgba(254, 215, 170, 0.32) 100%
+        ),
+        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(148, 163, 184, 0.18));
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.34);
+    }
+    .v09 .cover::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        transparent calc(50% - 0.6px),
+        rgba(255,255,255,0.36) 50%,
+        transparent calc(50% + 0.6px)
+      );
+      pointer-events: none;
+    }
+
+    /* ─── 10 · Hex-faceted lens — six radial slices like a cut
+            stone seen edge-on. Light cycles around the slices via
+            a conic gradient with sharp stops. */
+    .v10 .cover {
+      background:
+        conic-gradient(from 30deg at 50% 50%,
+          rgba(255,255,255,0.44) 0deg 30deg,
+          rgba(255,255,255,0.06) 30deg 90deg,
+          rgba(255,255,255,0.30) 90deg 150deg,
+          rgba(255,255,255,0.04) 150deg 210deg,
+          rgba(255,255,255,0.36) 210deg 270deg,
+          rgba(255,255,255,0.08) 270deg 330deg,
+          rgba(255,255,255,0.44) 330deg 360deg
+        ),
+        linear-gradient(180deg, rgba(226, 232, 240, 0.18), rgba(71, 85, 105, 0.20));
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.10),
+        inset 0 1px 0 rgba(255,255,255,0.40);
+    }
+
+    /* ─── 11 · Single-bevel slope — entire cover is one inclined
+            plane, top-edge in deep shadow, bottom-edge bright.
+            Like a wedge of plastic angled down toward the user. */
+    .v11 .cover {
+      background:
+        linear-gradient(180deg,
+          rgba(0,0,0,0.32) 0%,
+          rgba(255,255,255,0.04) 28%,
+          rgba(255,255,255,0.28) 65%,
+          rgba(255,255,255,0.58) 100%
+        ),
+        linear-gradient(180deg, rgba(241, 245, 249, 0.18), rgba(100, 116, 139, 0.20));
+      border: 1px solid rgba(255,255,255,0.20);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.10),
+        inset 0 -1px 0 rgba(255,255,255,0.50);
+    }
+
+    /* ─── 12 · Saw-tooth — five sharp ridges across the cover.
+            Each ridge has a bright crest and a shadowed trough.
+            Reads like the grip-pattern moulded into a switch cover. */
+    .v12 .cover {
+      background:
+        repeating-linear-gradient(90deg,
+          rgba(255,255,255,0.42) 0px,
+          rgba(255,255,255,0.06) 8px,
+          rgba(0,0,0,0.22) 16px,
+          rgba(255,255,255,0.42) 24px
+        ),
+        linear-gradient(180deg, rgba(226, 232, 240, 0.18), rgba(100, 116, 139, 0.20));
+      border: 1px solid rgba(255,255,255,0.20);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);
+    }
+
+    /* Hover affordance — a subtle ambient pulse on the base label
+       so the user can see something's interactive under the cover. */
+    @keyframes glow {
+      0%, 100% { text-shadow: 0 0 6px rgba(255,90,90,0.85),  0 0 14px rgba(255,40,40,0.55); }
+      50%      { text-shadow: 0 0 10px rgba(255,130,130,0.95), 0 0 22px rgba(255,40,40,0.85), 0 0 30px rgba(255,30,30,0.45); }
+    }
+    .base { animation: glow 1.8s ease-in-out infinite; }
+
+    .note {
+      margin-top: 32px;
+      padding: 14px 16px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Delete button · prism plastic-cover variations</h1>
+      <p>
+        Twelve delete-switch designs exploring <strong>plastic covers with angled facets</strong> — each
+        cover is a single flat plane on top of a glowing DELETE button, but its surface geometry
+        (chamfers, ridges, conic facets, fresnel rings) creates a different reflection signature.
+        Click any switch to flip the cover open and back closed; the base button glows through while
+        closed. None of these commit anything — they're visual studies for the LaunchSwitch family.
+      </p>
+    </header>
+
+    <h2>A · Faceted</h2>
+    <p>Geometry built from triangle facets meeting at internal seams.</p>
+    <div class="grid">
+      <div class="cell">
+        <span class="num">01</span>
+        <div class="sw v01" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Faceted pyramid</div><div class="desc">Four triangle facets meeting at the centre.</div></div>
+      </div>
+      <div class="cell">
+        <span class="num">03</span>
+        <div class="sw v03" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Diamond rib</div><div class="desc">Conic facets — asymmetric gem-cut shimmer.</div></div>
+      </div>
+      <div class="cell">
+        <span class="num">10</span>
+        <div class="sw v10" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Hex-faceted lens</div><div class="desc">Six radial slices cycling bright/dark.</div></div>
+      </div>
+    </div>
+
+    <h2>B · Bevelled / chamfered</h2>
+    <p>Central flat with sharp chamfered edges all around — injection-moulded plastic look.</p>
+    <div class="grid">
+      <div class="cell">
+        <span class="num">02</span>
+        <div class="sw v02" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Chamfered bezel</div><div class="desc">Flat top, bevelled edges, inset rectangle.</div></div>
+      </div>
+      <div class="cell">
+        <span class="num">06</span>
+        <div class="sw v06" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Octagon-stamped</div><div class="desc">Industrial sealed-switch housing.</div></div>
+      </div>
+      <div class="cell">
+        <span class="num">11</span>
+        <div class="sw v11" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Single-bevel slope</div><div class="desc">Whole cover inclined toward the user.</div></div>
+      </div>
+    </div>
+
+    <h2>C · Ribbed / fluted</h2>
+    <p>Parallel ridges across the surface — each ridge has its own light/shadow side.</p>
+    <div class="grid">
+      <div class="cell">
+        <span class="num">04</span>
+        <div class="sw v04" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Rooftop</div><div class="desc">One ridge, two slopes — classic A-frame.</div></div>
+      </div>
+      <div class="cell">
+        <span class="num">07</span>
+        <div class="sw v07" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Crystal V-grooves</div><div class="desc">Vertical chamfered ribs — fluted glass.</div></div>
+      </div>
+      <div class="cell">
+        <span class="num">08</span>
+        <div class="sw v08" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Twin-pitch roof</div><div class="desc">Two crests, valley between — case-lid relief.</div></div>
+      </div>
+      <div class="cell">
+        <span class="num">12</span>
+        <div class="sw v12" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Saw-tooth</div><div class="desc">Five micro-ridges — moulded grip pattern.</div></div>
+      </div>
+    </div>
+
+    <h2>D · Refractive</h2>
+    <p>Looser interpretations — light splitting, fresnel rings, refracted colour streaks.</p>
+    <div class="grid">
+      <div class="cell">
+        <span class="num">05</span>
+        <div class="sw v05" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Fresnel</div><div class="desc">Concentric chamfered rings — lighthouse lens.</div></div>
+      </div>
+      <div class="cell">
+        <span class="num">09</span>
+        <div class="sw v09" onclick="this.classList.toggle('open')">
+          <div class="base">DELETE</div>
+          <div class="cover"><span class="hinge"></span></div>
+        </div>
+        <div class="meta"><div class="name">Refracted prism</div><div class="desc">Cyan + amber refraction streaks across a bisect.</div></div>
+      </div>
+    </div>
+
+    <p class="note">
+      All twelve covers flip with the same animation primitive: <code>transform-origin: top center; rotateX(-85deg)</code>
+      with a cubic-bezier on close (slight overshoot, "click shut") and ease-out on open. The reflection / refraction
+      effects come entirely from stacked CSS gradients (linear, conic, radial) — no images, no SVG, no JS beyond a class
+      toggle. <strong>Reflections are static</strong>, picking a fixed light direction (top-left, ~135°) so they read as
+      moulded geometry rather than animated highlights. Picking the right one for production means deciding how
+      "industrial" vs. "product" the surface wants to feel: facets and bevels read industrial; refractive / fresnel
+      reads softer and more product-design.
+    </p>
+  </main>
+</body>
+</html>

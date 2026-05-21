@@ -69,6 +69,16 @@ const ARCHIVE_ENTRIES: ArchiveEntry[] = [
     tags: ["M34", "Y2K", "Glass", "Aero"],
   },
   {
+    slug: "delete-buttons-prism-covers",
+    title: "Delete button · 12 prism plastic-cover variations",
+    description:
+      "Twelve flip-cover delete switches exploring plastic covers with angled facets and reflection geometry — faceted pyramid, chamfered bezel, diamond rib, rooftop ridge, fresnel rings, octagon-stamped housing, crystal V-grooves, twin-pitch roof, refracted prism with cyan/amber split, hex-faceted lens, single-bevel slope, saw-tooth ridges. Each cover hinges open on click. Companion piece to the canonical LaunchSwitch.",
+    date: "2026-05-20",
+    count: 12,
+    countLabel: "covers",
+    tags: ["Delete", "LaunchSwitch", "Plastic", "Facets", "Bevel", "Reflection"],
+  },
+  {
     slug: "delete-buttons-50",
     title: "Delete button · 50 variations",
     description:

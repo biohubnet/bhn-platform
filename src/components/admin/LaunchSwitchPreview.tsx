@@ -23,6 +23,7 @@
 
 import { LaunchSwitch } from "@/components/ui/LaunchSwitch";
 import { LaunchSwitchClassic } from "@/components/ui/LaunchSwitchClassic";
+import { LaunchSwitchFacet } from "@/components/ui/LaunchSwitchFacet";
 
 export function LaunchSwitchDemo({ label = "DELETE" }: { label?: string }) {
   return (
@@ -61,6 +62,27 @@ export function LaunchSwitchClassicMediumDemo() {
       size="md"
       label="DELETE"
       ariaLabel="DELETE — classic medium demo"
+      onFire={() => { /* demo */ }}
+    />
+  );
+}
+
+export function LaunchSwitchFacetDemo({ label = "DELETE" }: { label?: string }) {
+  return (
+    <LaunchSwitchFacet
+      label={label}
+      ariaLabel={`${label} — facet, demo, no-op`}
+      onFire={() => { /* demo */ }}
+    />
+  );
+}
+
+export function LaunchSwitchFacetMediumDemo() {
+  return (
+    <LaunchSwitchFacet
+      size="md"
+      label="DELETE"
+      ariaLabel="DELETE — facet medium demo"
       onFire={() => { /* demo */ }}
     />
   );
