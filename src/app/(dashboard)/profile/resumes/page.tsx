@@ -17,6 +17,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { ResumesIndexClient } from "@/components/profile/ResumesIndexClient";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
+import { MasterResumeBanner } from "@/components/profile/MasterResumeBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -138,6 +139,17 @@ export default async function ResumesIndexPage() {
         title="Your resumes"
         description="Maintain one master resume plus tailored copies per role. Each resume has its own version history, mentor comments, and PDF export."
       />
+
+      {/* Master resume banner — sits above the resumes index so
+          the library is a constant companion to the tailoring
+          workflow. Without a `resumeId` prop the AI-tailor + Build-
+          from-this-draft buttons fall back to disabled / hidden
+          states; the Open-master-library + snapshot-download CTAs
+          stay live since they don't need a specific draft to act
+          on. See docs/plans/master-resume.md for the design. */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <MasterResumeBanner />
+      </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         {/* Admin-only seed/clear tray. Seed plants 10 demo resumes on
