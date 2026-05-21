@@ -186,6 +186,15 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["trainee", "evaluating", "admin", "superadmin"],
     since: "2026.05.21b",
   },
+  {
+    id: "trainee.master-ai-tailor",
+    title: "AI tailor for this role — from your master library",
+    body: "On any resume's edit page, expand the Master resume banner at the top and click AI tailor for this role. Paste the JD (or pick from your saved postings); the AI embeds the role, cosine-ranks your master bullets, then asks the LLM to pick the ≤12 strongest matches and light-rewrite each one to match the posting's vocabulary. Preview every pick with a side-by-side diff and a 'Why this bullet?' reason — accept any subset. Your bullets stay yours; the AI never invents new ones or adds facts you didn't write.",
+    path: "/profile/resume",
+    placement: "center",
+    cta: { label: "Open resume editor", href: "/profile/resume" },
+    since: "2026.05.21c",
+  },
 
   // ─── Instructor path ─────────────────────────────────────────────
   {

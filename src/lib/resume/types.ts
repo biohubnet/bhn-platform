@@ -28,10 +28,11 @@ export interface ResumeBullet {
    *  UI can highlight "AI proposed" rows differently until the user
    *  accepts them. Once accepted (or manually edited), set false. */
   aiSuggested?: boolean;
-  /** Marks bullets that were pulled from the user's master library.
-   *  When set, the editor can surface a "promote this edit" chip
-   *  beneath the bullet once the user changes `body` away from the
-   *  snapshot in `derivedFromMasterBody`. */
+  /** Marks bullets that were derived from the user's master library
+   *  (via drag-from-master pull or the AI tailor flow). When set,
+   *  the editor surfaces a "promote this edit" chip beneath the
+   *  bullet once the user changes `body` away from the snapshot in
+   *  `derivedFromMasterBody`. */
   derivedFromMasterBulletId?: string;
   /** Snapshot of the master bullet's body at the moment of the pull.
    *  The promote chip compares this against the current `body` — if

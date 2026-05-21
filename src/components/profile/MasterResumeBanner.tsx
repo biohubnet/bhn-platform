@@ -27,6 +27,7 @@ import {
   Library, ChevronDown, ChevronUp, ArrowUpRight, FileDown,
   Clock, ArrowUp, ArrowDown, Wand2, Sparkles, Loader2, CheckCircle2,
 } from "lucide-react";
+import { MasterTailorDrawer } from "./MasterTailorDrawer";
 
 interface MasterStats {
   bulletCount: number;
@@ -45,14 +46,27 @@ const COLLAPSE_KEY = "bhn:master-banner-collapsed";
  *  parent client component. */
 export const OPEN_MASTER_DRAWER_EVENT = "bhn:open-master-drawer";
 
-export function MasterResumeBanner() {
+interface BannerProps {
+  /** The id of the resume the surrounding page is editing — passed
+   *  through to the AI-tailor drawer + Build-from-this-draft button.
+   *  Optional: the banner is loadable in contexts without a resume
+   *  yet (e.g. /profile/master itself, if that ever embeds it); the
+   *  AI-tailor and Build-from-this-draft buttons are hidden when
+   *  this is absent because there's nothing to tailor INTO or
+   *  extract FROM. Falls back to the page's ?id= query param. */
+  resumeId?: string;
+}
+
+export function MasterResumeBanner({ resumeId: resumeIdProp }: BannerProps = {}) {
   const searchParams = useSearchParams();
-  const resumeId = searchParams?.get("id") ?? null;
+  const resumeId = resumeIdProp ?? searchParams?.get("id") ?? null;
+
 
   const [stats, setStats] = useState<MasterStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [tailorOpen, setTailorOpen] = useState(false);
 
   // AI-extract state. Only relevant when the empty-state CTA fires.
   // `running` is the loading flag; `result` is the summary toast
@@ -154,6 +168,7 @@ export function MasterResumeBanner() {
   const isEmpty = stats.bulletCount === 0;
 
   return (
+    <>
     <section
       role="region"
       aria-label="Master resume library"
@@ -286,16 +301,31 @@ export function MasterResumeBanner() {
                   <span className="block text-[11px] text-fg-muted mt-0.5 leading-tight">Drag a bullet onto an entry, or use Send to.</span>
                 </span>
               </button>
-              <div
-                title="AI tailor flow lands in a follow-up — picks 12 best bullets via embedding similarity + LLM re-rank."
-                className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid/60 ring-1 ring-inset ring-dashed ring-line text-fg-subtle"
-              >
-                <Wand2 size={13} className="mt-0.5 shrink-0" />
-                <span className="min-w-0">
-                  <span className="block text-[12.5px] font-semibold leading-tight">AI tailor for this role</span>
-                  <span className="block text-[11px] mt-0.5 leading-tight">Coming soon.</span>
-                </span>
-              </div>
+              {resumeId ? (
+                <button
+                  type="button"
+                  onClick={() => setTailorOpen(true)}
+                  className="group inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid ring-1 ring-inset ring-line hover:ring-brand-300 hover:bg-brand-50/60 transition-colors text-left"
+                  title={`Pick the 12 best bullets from your ${stats.bulletCount}-bullet library + light-rewrite to match the role.`}
+                >
+                  <Wand2 size={13} className="text-brand-700 mt-0.5 shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-bold text-fg leading-tight">AI tailor for this role</span>
+                    <span className="block text-[11px] text-fg-muted mt-0.5 leading-tight">Pick + rewrite 12 best bullets.</span>
+                  </span>
+                </button>
+              ) : (
+                <div
+                  title="Open a resume tailoring page first — the AI tailor inserts bullets into the resume you're editing."
+                  className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid/60 ring-1 ring-inset ring-dashed ring-line text-fg-subtle"
+                >
+                  <Wand2 size={13} className="mt-0.5 shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-semibold leading-tight">AI tailor for this role</span>
+                    <span className="block text-[11px] mt-0.5 leading-tight">Open a resume to enable.</span>
+                  </span>
+                </div>
+              )}
               <div
                 title="Once you edit a bullet that came from your master library, a chip appears beneath it offering to push the improved wording back to the master."
                 className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid ring-1 ring-inset ring-line text-fg"
@@ -336,5 +366,14 @@ export function MasterResumeBanner() {
         </div>
       )}
     </section>
+    {resumeId && (
+      <MasterTailorDrawer
+        open={tailorOpen}
+        onClose={() => setTailorOpen(false)}
+        resumeId={resumeId}
+        libraryBulletCount={stats.bulletCount}
+      />
+    )}
+    </>
   );
 }
