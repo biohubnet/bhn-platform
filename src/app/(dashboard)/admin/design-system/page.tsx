@@ -9,7 +9,7 @@ import { requireRole } from "@/lib/auth";
 import { getActiveDesignSystem } from "@/lib/settings";
 import { DesignSystemAdminPicker } from "@/components/admin/DesignSystemAdminPicker";
 import { DesignSystemShowroom } from "@/components/admin/DesignSystemShowroom";
-import { LaunchSwitch } from "@/components/ui/LaunchSwitch";
+import { LaunchSwitchDemo, LaunchSwitchMediumDemo } from "@/components/admin/LaunchSwitchPreview";
 import { InputDialogPreview } from "@/components/admin/InputDialogPreview";
 
 /**
@@ -538,21 +538,21 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
         <SubSection title="States">
           <div className="grid sm:grid-cols-3 gap-4">
             <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
-              <LaunchSwitch label="DELETE" onFire={() => { /* demo */ }} />
+              <LaunchSwitchDemo />
               <p className="text-[11px] text-fg-muted text-center">
-                <span className="font-bold text-fg">Closed</span> · striped cover sits over the FIRE button. Click to lift.
+                <span className="font-bold text-fg">Closed</span> · striped cover sits over the DELETE button. Click to lift.
               </p>
             </div>
             <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
-              <LaunchSwitch label="DELETE" onFire={() => { /* demo */ }} />
+              <LaunchSwitchDemo />
               <p className="text-[11px] text-fg-muted text-center">
-                <span className="font-bold text-fg">Armed</span> · cover hinged 78°, red FIRE button exposed. Click anywhere on the cover to bail.
+                <span className="font-bold text-fg">Armed</span> · cover hinged 82°, red DELETE button exposed. Click anywhere on the cover to bail.
               </p>
             </div>
             <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
-              <LaunchSwitch label="DELETE" countdownSeconds={5} onFire={() => { /* demo */ }} />
+              <LaunchSwitchDemo />
               <p className="text-[11px] text-fg-muted text-center">
-                <span className="font-bold text-fg">Launching</span> · T-minus countdown ticks down with a flashing LED. Click ABORT (×) to cancel.
+                <span className="font-bold text-fg">Launching</span> · DELETING countdown ticks down with a flashing LED. Click ABORT (×) to cancel.
               </p>
             </div>
           </div>
@@ -561,12 +561,12 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
         <SubSection title="Sizes">
           <div className="flex items-center gap-6 flex-wrap">
             <div className="flex flex-col items-center gap-2">
-              <LaunchSwitch size="sm" label="DELETE" onFire={() => {}} />
-              <code className="text-[11px] text-fg-muted">size=&quot;sm&quot; · 96×30</code>
+              <LaunchSwitchDemo />
+              <code className="text-[11px] text-fg-muted">size=&quot;sm&quot; · 84×24</code>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <LaunchSwitch size="md" label="DELETE" onFire={() => {}} />
-              <code className="text-[11px] text-fg-muted">size=&quot;md&quot; · 140×44</code>
+              <LaunchSwitchMediumDemo />
+              <code className="text-[11px] text-fg-muted">size=&quot;md&quot; · 120×36</code>
             </div>
           </div>
         </SubSection>
