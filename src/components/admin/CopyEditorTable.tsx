@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Save, RotateCcw, Loader2, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { CopyEntry } from "@/lib/copy-registry";
 
 interface OverrideInfo {
@@ -30,6 +31,7 @@ export function CopyEditorTable({ entries, overrides }: Props) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { confirmDialog, node: confirmNode } = useConfirmDialog();
 
   function openEdit(e: CopyEntry) {
     const current = overrides[e.key]?.value ?? e.defaultText;
@@ -60,7 +62,14 @@ export function CopyEditorTable({ entries, overrides }: Props) {
   }
 
   async function reset(key: string) {
-    if (!window.confirm("Reset to the code default? You'll lose the current override.")) return;
+    const ok = await confirmDialog({
+      title: "Reset to the code default?",
+      description: "Your current override is dropped and the in-code default takes over. You can re-edit it any time.",
+      confirmLabel: "Reset override",
+      cancelLabel: "Keep override",
+      tone: "warning",
+    });
+    if (!ok) return;
     setBusy(true);
     setError(null);
     try {
@@ -176,6 +185,7 @@ export function CopyEditorTable({ entries, overrides }: Props) {
           );
         })}
       </ul>
+      {confirmNode}
     </div>
   );
 }

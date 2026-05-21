@@ -21,6 +21,7 @@ import type { ResumeContent } from "@/lib/resume/types";
 import { ResumeThumbnail } from "./ResumeThumbnail";
 import { LaunchSwitch } from "@/components/ui/LaunchSwitch";
 import { useInputDialog } from "@/components/ui/InputDialog";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ResumeCreatingOverlay } from "./ResumeCreatingOverlay";
 
 interface PostingChip {
@@ -57,6 +58,7 @@ interface Props {
 export function ResumesIndexClient({ initialResumes }: Props) {
   const router = useRouter();
   const { inputDialog, node: dialogNode } = useInputDialog();
+  const { confirmDialog, node: confirmNode } = useConfirmDialog();
   const [resumes, setResumes] = useState<ResumeRow[]>(initialResumes);
   // Re-sync local state when the server hands down fresh data
   // (e.g. after router.refresh() following an admin Seed/Clear or
@@ -218,9 +220,13 @@ export function ResumesIndexClient({ initialResumes }: Props) {
   async function setArchived(row: ResumeRow, archived: boolean) {
     setError(null);
     if (archived && active.length <= 1) {
-      const ok = window.confirm(
-        "This is your only active resume. Archiving it will leave you with no live resume — you'll need to restore or create one to keep working. Continue?",
-      );
+      const ok = await confirmDialog({
+        title: "Archive your only active resume?",
+        description: "You'll be left with no live resume — restore or create one to keep working. Archived resumes stay editable from the Archived section.",
+        confirmLabel: "Archive anyway",
+        cancelLabel: "Keep it active",
+        tone: "warning",
+      });
       if (!ok) return;
     }
     // Optimistic update.
@@ -309,11 +315,13 @@ export function ResumesIndexClient({ initialResumes }: Props) {
   async function batchDelete() {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
-    const ok = window.confirm(
-      `Permanently delete ${ids.length} resume${ids.length === 1 ? "" : "s"}?\n\n` +
-      `This is irreversible — comments + version history go with them. ` +
-      `Choose Archive instead if you might want them back.`,
-    );
+    const ok = await confirmDialog({
+      title: `Permanently delete ${ids.length} resume${ids.length === 1 ? "" : "s"}?`,
+      description: "This is irreversible — comments and version history go with them. Choose Archive instead if you might want them back.",
+      confirmLabel: `Delete ${ids.length}`,
+      cancelLabel: "Keep them",
+      tone: "destructive",
+    });
     if (!ok) return;
     setBatchBusy("delete");
     try {
@@ -467,6 +475,10 @@ export function ResumesIndexClient({ initialResumes }: Props) {
       {/* Input dialog portal — only rendered when an inputDialog()
           call is awaiting a response. See InputDialog for the API. */}
       {dialogNode}
+
+      {/* Confirm dialog portal — yes/no prompts (archive-when-last,
+          batch-delete, etc). See ConfirmDialog for the API. */}
+      {confirmNode}
 
       {/* Creating / Duplicating animation — full-viewport overlay
           with a paper-sheet-folds-up animation. Plays for ~1.7s

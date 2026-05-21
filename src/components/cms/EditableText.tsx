@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, X, Save, RotateCcw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 /**
  * Renders a string + (for staff) an inline pencil button that opens
@@ -56,6 +57,7 @@ export function EditableText({
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const { confirmDialog, node: confirmNode } = useConfirmDialog();
 
   // Re-sync when the server-resolved text changes (after router.refresh
   // following a save, or when the parent's context changes).
@@ -98,7 +100,14 @@ export function EditableText({
   }
 
   async function reset() {
-    if (!window.confirm("Reset this text to the code default? You'll lose your current override.")) return;
+    const ok = await confirmDialog({
+      title: "Reset this text to the code default?",
+      description: "Your current override is dropped and the in-code default takes over. You can re-edit it any time.",
+      confirmLabel: "Reset override",
+      cancelLabel: "Keep override",
+      tone: "warning",
+    });
+    if (!ok) return;
     setSaving(true);
     setError(null);
     try {
@@ -133,6 +142,8 @@ export function EditableText({
       >
         {(text || allowEmpty || isStaff) && visibleText}
       </span>
+
+      {confirmNode}
 
       {editing && isStaff && (
         <div

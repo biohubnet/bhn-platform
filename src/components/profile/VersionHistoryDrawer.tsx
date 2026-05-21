@@ -31,6 +31,7 @@ import {
 import type { ResumeContent } from "@/lib/resume/types";
 import { ResumeViewer } from "@/components/resume/ResumeViewer";
 import { useInputDialog } from "@/components/ui/InputDialog";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface RevisionRow {
   id: string;
@@ -57,6 +58,7 @@ interface Props {
 
 export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, currentVersion }: Props) {
   const { inputDialog, node: dialogNode } = useInputDialog();
+  const { confirmDialog, node: confirmNode } = useConfirmDialog();
   const [list, setList] = useState<RevisionRow[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -171,10 +173,13 @@ export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, curre
   async function revert(rev: RevisionRow) {
     setRevertError(null);
     if (rev.version === currentVersion) return;
-    const ok = window.confirm(
-      `Revert to v${rev.version}? Your current resume will be replaced.\n\n` +
-      `Your work between v${rev.version} and v${currentVersion} stays in the version history — you can revert back if you change your mind.`,
-    );
+    const ok = await confirmDialog({
+      title: `Revert to v${rev.version}?`,
+      description: `Your current resume will be replaced. Your work between v${rev.version} and v${currentVersion} stays in the version history — you can revert back if you change your mind.`,
+      confirmLabel: `Revert to v${rev.version}`,
+      cancelLabel: "Keep current",
+      tone: "warning",
+    });
     if (!ok) return;
     setRevertingId(rev.id);
     try {
@@ -423,6 +428,7 @@ export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, curre
         </div>
       )}
       {dialogNode}
+      {confirmNode}
     </>
   );
 }

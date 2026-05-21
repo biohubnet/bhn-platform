@@ -14,6 +14,7 @@ import {
   Plus, FolderOpen, Loader2, Archive, RotateCcw, Trash2, FileText, Mail, BookOpen, Briefcase, CheckSquare, Square, X, ExternalLink,
 } from "lucide-react";
 import { useInputDialog } from "@/components/ui/InputDialog";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface FolderRow {
   id: string;
@@ -44,6 +45,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 export function JobFoldersIndexClient({ initialFolders }: Props) {
   const router = useRouter();
   const { inputDialog, node: dialogNode } = useInputDialog();
+  const { confirmDialog, node: confirmNode } = useConfirmDialog();
   const [folders, setFolders] = useState<FolderRow[]>(initialFolders);
   const [creating, startCreate] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -100,10 +102,13 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
   }
 
   async function hardDelete(row: FolderRow) {
-    const ok = window.confirm(
-      `Permanently delete "${row.title}"?\n\nIrreversible. Cover letter + interview prep go with it. ` +
-      `Archive instead if you might want it back.`,
-    );
+    const ok = await confirmDialog({
+      title: `Permanently delete "${row.title}"?`,
+      description: "Irreversible. Cover letter and interview prep go with it. Archive instead if you might want it back.",
+      confirmLabel: "Delete folder",
+      cancelLabel: "Keep it",
+      tone: "destructive",
+    });
     if (!ok) return;
     setFolders((cur) => cur.filter((x) => x.id !== row.id));
     const r = await fetch(`/api/profile/job-folders/${row.id}?force=true`, { method: "DELETE" });
@@ -115,9 +120,14 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
 
   async function batchDelete() {
     const ids = Array.from(selected);
-    const ok = window.confirm(
-      `Permanently delete ${ids.length} folder${ids.length === 1 ? "" : "s"}? Irreversible.`,
-    );
+    if (ids.length === 0) return;
+    const ok = await confirmDialog({
+      title: `Permanently delete ${ids.length} folder${ids.length === 1 ? "" : "s"}?`,
+      description: "Irreversible. Cover letters and interview prep go with them. Archive instead if you might want them back.",
+      confirmLabel: `Delete ${ids.length}`,
+      cancelLabel: "Keep them",
+      tone: "destructive",
+    });
     if (!ok) return;
     setFolders((cur) => cur.filter((x) => !ids.includes(x.id)));
     setSelected(new Set());
@@ -233,6 +243,7 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
         </details>
       )}
       {dialogNode}
+      {confirmNode}
     </div>
   );
 }
