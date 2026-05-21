@@ -58,6 +58,7 @@ const VALID_ENTITIES = [
   "user_buddy_pair",
   "user_matches",
   "user_resume",
+  "user_resumes_10",
 ] as const;
 type Entity = (typeof VALID_ENTITIES)[number];
 
@@ -1092,6 +1093,181 @@ async function seedUserResume(userId: string): Promise<SeedDetail> {
   };
 }
 
+/** Seed ten plausibly-named demo resumes for the calling admin so the
+ *  /profile/resumes index has real content to lay out against.
+ *  Each row shares the same skeleton tree (see makeDemoResumeContent
+ *  below) with the header.summary varied so the resumes look like
+ *  ten different tailored copies of the admin's main resume — which
+ *  is the realistic shape an active user reaches.
+ *
+ *  No mentor comments or revisions are written — those add weight to
+ *  a single-resume seed for the editor demo, but ten resumes' worth
+ *  of comments would clutter the index. Each row's `name` and
+ *  header.summary carries a [demo] tag so the clear path can
+ *  unambiguously delete what this function planted (the existing
+ *  user_resume clear already drops all of the admin's resumes via
+ *  userId, which is sufficient).
+ */
+async function seedTenUserResumes(userId: string): Promise<SeedDetail> {
+  // Distinct names + summaries so the index doesn't read as ten
+  // identical cards. Tailored-to-posting copies are the most
+  // realistic case once a user has been on the platform a while.
+  const variants: { name: string; summary: string }[] = [
+    {
+      name: "[demo] Main resume",
+      summary: "[demo] Biomanufacturing trainee with bench experience across upstream cell-culture and QA documentation. Aseptic-trained; comfortable owning deviation investigations end-to-end.",
+    },
+    {
+      name: "[demo] Academic CV",
+      summary: "[demo] Research-track biotechnology undergraduate with a contamination-rate modelling thesis. Looking for graduate research roles in mammalian-cell process science.",
+    },
+    {
+      name: "[demo] Tailored · Process Engineer @ STEMCELL",
+      summary: "[demo] Process-engineering-leaning resume rewritten around upstream scale-up and SOP authorship. Targets the STEMCELL Manufacturing Process Engineer role.",
+    },
+    {
+      name: "[demo] Tailored · QC Technician @ Veridiom",
+      summary: "[demo] QC-leaning resume foregrounding eQMS migration, change-control, and the deviation log work at Veridiom. Targets the QC Technician posting.",
+    },
+    {
+      name: "[demo] Tailored · Bioreactor Operator @ AbCellera",
+      summary: "[demo] Operations-leaning resume centred on bioreactor sampling cadence and contamination thresholds. Targets the AbCellera Bioreactor Operator posting.",
+    },
+    {
+      name: "[demo] Tailored · GMP Documentation @ AstraZeneca",
+      summary: "[demo] Documentation-leaning resume foregrounding SOP rollover and pre-PAI audit prep. Targets the AstraZeneca GMP Documentation Specialist posting.",
+    },
+    {
+      name: "[demo] Tailored · Upstream Scientist @ Sanofi",
+      summary: "[demo] Upstream-bioprocessing-leaning resume highlighting HEK293 + CHO-K1 shake-flask work. Targets the Sanofi Upstream Scientist II role.",
+    },
+    {
+      name: "[demo] Tailored · Downstream Engineer @ Regeneron",
+      summary: "[demo] Downstream-leaning resume rewritten around purification + buffer-prep adjacencies inferred from the shake-flask + bioreactor experience. Targets the Regeneron Downstream Engineer posting.",
+    },
+    {
+      name: "[demo] Industrial mentor application",
+      summary: "[demo] Mentorship-focused resume foregrounding the gowning SOP rollover (3 weeks → 4 days for new hires) and the cross-team Smartsheet deviation tracker adoption. Targets the BHN industrial-mentor pool.",
+    },
+    {
+      name: "[demo] Co-op summary",
+      summary: "[demo] Summary-only co-op resume reformatted as a one-page tear-sheet: lead with current studies + most recent role, two-line per bullet, no Skills section.",
+    },
+  ];
+
+  let created = 0;
+  const failures: string[] = [];
+  for (const v of variants) {
+    try {
+      await prisma.resume.create({
+        data: {
+          userId,
+          name: v.name,
+          content: makeDemoResumeContent(v.summary) as unknown as object,
+          version: 1,
+          lastEditedAt: new Date(),
+        },
+        select: { id: true },
+      });
+      created++;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      failures.push(`${v.name}: ${msg.slice(0, 120)}`);
+      console.error("[demo-seed user_resumes_10] create failed:", v.name, msg);
+    }
+  }
+
+  return {
+    created,
+    note:
+      failures.length > 0
+        ? `${created} of ${variants.length} seeded; ${failures.length} failed — see server logs.`
+        : `${created} resume rows on /profile/resumes — open the page to see them.`,
+  };
+}
+
+/** Build a skeleton resume content tree with a configurable header
+ *  summary. Same shape as seedUserResume's content but trimmed of
+ *  the per-bullet ids that anchor mentor comments (we don't seed
+ *  comments for these). Adequate detail so the resume thumbnails
+ *  on /profile/resumes look populated, not empty.
+ */
+function makeDemoResumeContent(summary: string): ResumeContent {
+  return {
+    header: {
+      name: "Demo Admin",
+      email: "demo@bhn.test",
+      phone: "+1 (416) 555-0142",
+      location: "Toronto, ON",
+      summary,
+    },
+    sections: [
+      {
+        id: rid(), kind: "experience", position: 0,
+        items: [
+          {
+            id: rid(), position: 0,
+            title: "Manufacturing Process Intern",
+            subtitle: "STEMCELL Technologies · Vancouver",
+            startDate: "May 2025",
+            endDate:   "Aug 2025",
+            current:   false,
+            dateRange: "May 2025 – Aug 2025",
+            description: "Summer co-op rotating through the upstream cell-culture group.",
+            bullets: [
+              { id: rid(), position: 0, body: "Ran 14 shake-flask cultures across HEK293 + CHO-K1, holding contamination below the team's 2% threshold." },
+              { id: rid(), position: 1, body: "Co-authored an SOP rollover for aseptic gowning that cut new-hire certification from 3 weeks to 4 days." },
+              { id: rid(), position: 2, body: "Built a deviation tracker in Smartsheet that two adjacent teams adopted." },
+            ],
+          },
+          {
+            id: rid(), position: 1,
+            title: "QA Documentation Assistant",
+            subtitle: "Veridiom Therapeutics · Toronto",
+            startDate: "Jan 2025",
+            endDate:   "",
+            current:   true,
+            dateRange: "Jan 2025 – Present",
+            description: "Part-time QA documentation role alongside coursework.",
+            bullets: [
+              { id: rid(), position: 0, body: "Shepherded 12 of 40 high-risk SOPs through change-control ahead of a pre-PAI audit." },
+              { id: rid(), position: 1, body: "Maintained the deviation log + ran a 15-minute standup three times a week." },
+            ],
+          },
+        ],
+      },
+      {
+        id: rid(), kind: "skills", position: 1,
+        items: [{
+          id: rid(), position: 0, bullets: [
+            { id: rid(), position: 0, body: "Aseptic technique · BSL-2 trained" },
+            { id: rid(), position: 1, body: "GMP documentation · eQMS change-control" },
+            { id: rid(), position: 2, body: "Cell culture · shake-flask + bioreactor sampling" },
+            { id: rid(), position: 3, body: "Deviation investigation · root-cause analysis" },
+          ],
+        }],
+      },
+      {
+        id: rid(), kind: "education", position: 2,
+        items: [{
+          id: rid(), position: 0,
+          title: "BSc Biotechnology, Honours",
+          subtitle: "University of Toronto",
+          startDate: "Sep 2022",
+          endDate:   "Apr 2026",
+          current:   true,
+          dateRange: "Sep 2022 – Apr 2026 (expected)",
+          metric:    "GPA 3.82 / 4.0",
+          bullets: [
+            { id: rid(), position: 0, body: "Thesis: contamination-rate modelling in mammalian-cell production runs." },
+            { id: rid(), position: 1, body: "Relevant coursework: Bioprocess Engineering, Cell Culture, Pharmaceutical QA." },
+          ],
+        }],
+      },
+    ],
+  };
+}
+
 // ── Route handler ────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -1159,6 +1335,16 @@ export async function POST(req: NextRequest) {
     else if (entity === "user_resume") {
       if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
       const detail = await seedUserResume(reviewerId);
+      created = detail.created;
+      note = detail.note;
+    }
+    else if (entity === "user_resumes_10") {
+      // Spawn ten plausibly-named resume rows for the calling admin
+      // so the /profile/resumes index has real content to lay out
+      // against. All ten are siblings (no derivation chain) so the
+      // listing renders them in last-edited order.
+      if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
+      const detail = await seedTenUserResumes(reviewerId);
       created = detail.created;
       note = detail.note;
     }

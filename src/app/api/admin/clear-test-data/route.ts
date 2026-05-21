@@ -57,6 +57,7 @@ const VALID_ENTITIES = [
   "user_buddy_pair",
   "user_matches",
   "user_resume",
+  "user_resumes_10",
 ] as const;
 type Entity = (typeof VALID_ENTITIES)[number];
 
@@ -286,15 +287,14 @@ export async function POST(req: NextRequest) {
       deleted = r.count;
       if (r.count > 0) byKind["self-demo"] = r.count;
     }
-  } else if (entity === "user_resume") {
-    // The matching seed completely rewrites the calling admin's
-    // Resume.content with a demo tree + attaches demo comments +
-    // writes a revision snapshot. Clear takes the whole Resume row
-    // back out — comments and revisions cascade via FK. On next
-    // visit to /profile/resume the page scaffolds a fresh empty
-    // resume, so this is reversible by the trainee just navigating
-    // there again. Self-scoped, so a real trainee's resume is never
-    // touched by an admin pressing this button.
+  } else if (entity === "user_resume" || entity === "user_resumes_10") {
+    // user_resume — wipes the calling admin's single demo Resume row.
+    // user_resumes_10 — wipes the 10-row sibling set seeded by the
+    //   matching seed. Both clear paths share the same SQL because
+    //   they're scoped by userId and the admin's resumes are all
+    //   the same kind of demo data; no risk of touching a real
+    //   trainee's resume since this filters by the admin's own
+    //   user id.
     const meId = (session.user as { id?: string }).id;
     if (meId) {
       const r = await prisma.resume.deleteMany({ where: { userId: meId } });

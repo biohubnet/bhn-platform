@@ -12,10 +12,11 @@
  */
 import { redirect } from "next/navigation";
 import { ArrowRight, FileText } from "lucide-react";
-import { getSession } from "@/lib/auth";
+import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { ResumesIndexClient } from "@/components/profile/ResumesIndexClient";
+import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,8 @@ export default async function ResumesIndexPage() {
   if (!session) redirect("/login?callbackUrl=/profile/resumes");
   const userId = (session.user as { id?: string }).id;
   if (!userId) redirect("/login");
+  const role = (session.user as { role?: string }).role ?? "trainee";
+  const isStaff = checkIsStaff(role);
 
   // When the user has uploaded a PDF via the Application Builder
   // (User.resumeUrl is set) AND they don't yet have a Resume row
@@ -137,6 +140,22 @@ export default async function ResumesIndexPage() {
       />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        {/* Admin-only seed/clear tray. Seed plants 10 demo resumes on
+            the calling admin's account so the index page has real
+            content to lay out against — useful when iterating on
+            card design, batch operations, etc. Clear wipes ALL of
+            the calling admin's resumes (self-scoped — never touches
+            a real trainee's data). */}
+        {isStaff && (
+          <div className="mb-5">
+            <DemoSeedAndClearTray
+              entity="user_resumes_10"
+              noun="10 demo resumes"
+              clearHelp="Delete every resume on YOUR own account (cascades to comments + revisions). Self-scoped — other users' resumes are untouched. Re-seeding plants ten fresh demo rows."
+            />
+          </div>
+        )}
+
         <ResumesIndexClient
           initialResumes={resumes.map((r) => ({
             id: r.id,
