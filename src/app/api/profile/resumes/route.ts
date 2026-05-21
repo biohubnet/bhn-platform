@@ -113,19 +113,42 @@ export async function POST(req: NextRequest) {
     if (!src || src.userId !== userId) {
       return NextResponse.json({ error: "Source resume not found." }, { status: 404 });
     }
-    content = src.content;
+    // Defensive: a few legacy rows have `content` stored as a
+    // stringified JSON instead of a proper JSON object. Prisma's
+    // Json column accepts either, but the resume editor expects an
+    // object — re-parse here so the duplicate is always a real tree.
+    let srcContent: unknown = src.content;
+    if (typeof srcContent === "string") {
+      try { srcContent = JSON.parse(srcContent); } catch { srcContent = emptyResumeContent(); }
+    }
+    if (!srcContent || typeof srcContent !== "object") {
+      srcContent = emptyResumeContent();
+    }
+    content = srcContent;
     derivedFromId = sourceResumeId;
   }
 
-  const created = await prisma.resume.create({
-    data: {
-      userId,
-      name,
-      content: content as unknown as object,
-      derivedFromId,
-    },
-    select: { id: true, name: true, lastEditedAt: true, version: true },
-  });
-
-  return NextResponse.json({ ok: true, resume: created });
+  try {
+    const created = await prisma.resume.create({
+      data: {
+        userId,
+        name,
+        content: content as unknown as object,
+        derivedFromId,
+      },
+      select: { id: true, name: true, lastEditedAt: true, version: true },
+    });
+    return NextResponse.json({ ok: true, resume: created });
+  } catch (err) {
+    // Surface the real reason for a duplicate failure instead of
+    // letting Next's default 500 mask it as "Internal Server Error".
+    // The error message is safe to return — it never contains user
+    // data, only the Prisma constraint that failed.
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/profile/resumes] create failed:", msg);
+    return NextResponse.json(
+      { error: `Couldn't ${sourceResumeId ? "duplicate" : "create"} resume — ${msg.split("\n")[0]}` },
+      { status: 500 },
+    );
+  }
 }

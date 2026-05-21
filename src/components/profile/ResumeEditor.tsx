@@ -31,10 +31,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, GripVertical, MessageCircle, CheckCircle2, X, Loader2, Sparkles, Save, ChevronUp, ChevronDown,
-  Target, Wand2, Clock, Printer, RotateCcw, FileText,
+  Target, Wand2, Clock, Printer, RotateCcw, FileText, Check,
 } from "lucide-react";
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
 import { SECTION_LABEL, SECTION_HINTS, rid } from "@/lib/resume/types";
+import { cn } from "@/lib/utils";
 import { ResumeItemEditor } from "./ResumeItemEditor";
 import { RewriteableTextarea } from "./RewriteableTextarea";
 import { VersionHistoryDrawer } from "./VersionHistoryDrawer";
@@ -1084,6 +1085,12 @@ export function ResumeEditor({
           router.refresh();
         }}
       />
+
+      {/* Floating save indicator — always visible in the viewport's
+          bottom-right corner so the user knows their work is safe
+          even after they've scrolled past the inline SaveStatus near
+          the top. See FloatingSaveStatus for the three-state visual. */}
+      <FloatingSaveStatus saving={saving} version={version} savedAt={savedAt} />
     </div>
   );
 }
@@ -1238,6 +1245,87 @@ function SaveStatus({ saving, version, savedAt }: { saving: boolean; version: nu
       {saving ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
       {label}
     </p>
+  );
+}
+
+/**
+ * FloatingSaveStatus — always-visible save badge anchored to the
+ * viewport's bottom-right corner.
+ *
+ * The inline `SaveStatus` near the top of the editor scrolls away as
+ * the user works down a long resume. This floating variant stays
+ * pinned so the user always knows the save state at a glance:
+ *
+ *   • Saving — amber chip, spinner, "Saving…"
+ *   • Just saved (within the last 4s) — green chip with check,
+ *     "Saved · v12". Fades to the idle state after the window.
+ *   • Idle — neutral chip, save glyph, "v12".
+ *
+ * Positioned with `position: fixed` so it survives any ancestor
+ * `overflow: hidden` and is robust to the editor's varying height.
+ * Respects safe-area on mobile.
+ */
+function FloatingSaveStatus({ saving, version, savedAt }: { saving: boolean; version: number; savedAt: Date | null }) {
+  // Fresh-save glow — green chip for 4 seconds after a save completes,
+  // then fades back to the neutral idle state. Without this, the
+  // badge would stay green forever, eventually losing its meaning.
+  const [showJustSaved, setShowJustSaved] = useState(false);
+  useEffect(() => {
+    if (!savedAt || saving) {
+      setShowJustSaved(false);
+      return;
+    }
+    setShowJustSaved(true);
+    const t = setTimeout(() => setShowJustSaved(false), 4000);
+    return () => clearTimeout(t);
+  }, [savedAt, saving]);
+
+  // State → visuals. Tailwind classes resolved once per state so the
+  // chip can transition smoothly between them via the wrapper's
+  // `transition-colors`.
+  let label: string;
+  let chipClass: string;
+  let Glyph: React.ElementType;
+  let spin = false;
+  if (saving) {
+    label = "Saving…";
+    chipClass = "bg-amber-50 text-amber-900 ring-amber-200";
+    Glyph = Loader2;
+    spin = true;
+  } else if (showJustSaved) {
+    label = `Saved · v${version}`;
+    chipClass = "bg-emerald-50 text-emerald-800 ring-emerald-200";
+    Glyph = Check;
+  } else if (savedAt) {
+    label = `v${version}`;
+    chipClass = "bg-card-solid text-fg-muted ring-line";
+    Glyph = Save;
+  } else {
+    label = "Auto-saves";
+    chipClass = "bg-card-solid text-fg-muted ring-line";
+    Glyph = Save;
+  }
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      // Bottom-right with safe-area + a bit of breathing room. z-40
+      // keeps it above the editor content but below any modal /
+      // toaster (which run at z-50 in this app).
+      className="fixed z-40 right-4 bottom-4 pb-[env(safe-area-inset-bottom)] pr-[env(safe-area-inset-right)] pointer-events-none"
+    >
+      <span
+        className={cn(
+          "pointer-events-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ring-1 shadow-md text-[11.5px] font-mono uppercase tracking-[0.16em] backdrop-blur-sm transition-colors duration-300",
+          chipClass,
+        )}
+        title={savedAt ? `Last saved at ${savedAt.toLocaleTimeString()}` : "Edits save automatically as you type"}
+      >
+        <Glyph size={12} className={spin ? "animate-spin" : undefined} aria-hidden />
+        {label}
+      </span>
+    </div>
   );
 }
 

@@ -17,8 +17,9 @@
  *             comments inline next to the relevant bullet + can mark
  *             each one applied / resolved.
  */
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight, FileText, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileText, Sparkles } from "lucide-react";
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
@@ -121,6 +122,19 @@ export default async function ResumeStructurePage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
+      {/* Top back affordance — the editor is a deep page; users land
+          here from the resume index, from a sibling-switch, or from
+          a "Tailor → Save as new" jump. A persistent back link at
+          both ends of the page short-circuits the browser-back hop. */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-2">
+        <Link
+          href="/profile/resumes"
+          className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-fg-muted hover:text-fg transition-colors"
+        >
+          <ArrowLeft size={13} /> All resumes
+        </Link>
+      </div>
+
       <PageHero
         eyebrow={<><FileText size={11} /> Profile · Structured resume</>}
         title="Your resume — structured"
@@ -207,6 +221,19 @@ export default async function ResumeStructurePage({ searchParams }: PageProps) {
           Your edits save automatically and snapshot a revision. Mentors and admins can only comment — never edit.
           <ArrowRight size={11} />
         </p>
+
+        {/* Bottom back affordance — paired with the top one. The
+            editor can be long when multiple sections are expanded;
+            scrolling all the way back up to leave the page is a
+            paper-cut we don't need to inflict. */}
+        <div className="mt-6 mb-4 flex justify-center">
+          <Link
+            href="/profile/resumes"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-semibold text-fg-muted ring-1 ring-line bg-card-solid hover:bg-elevated hover:text-fg transition-colors"
+          >
+            <ArrowLeft size={14} /> Back to all resumes
+          </Link>
+        </div>
       </div>
     </div>
   );
