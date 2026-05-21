@@ -917,6 +917,9 @@ export function ResumeEditor({
             rewriteContext="Resume header — professional summary paragraph"
             rewriteInstruction="Keep it 2-3 sentences max. Lead with what they do, end with what they're looking for."
           />
+          <p className="mt-1.5 text-[11px] text-fg-subtle leading-snug">
+            This is the short opener that prints under your name on the PDF. If you also have a separate &quot;Summary&quot; section below, it duplicates this field — you can delete it from the section&apos;s menu.
+          </p>
         </div>
       </section>
 

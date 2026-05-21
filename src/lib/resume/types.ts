@@ -309,14 +309,20 @@ export const SECTION_LABEL: Record<ResumeSectionKind, string> = {
 };
 
 /** Empty-state resume content used when a user opens /profile/resume
- *  without an uploaded file. */
+ *  without an uploaded file.
+ *
+ *  Note: the "summary" SectionKind is still supported — users can
+ *  manually add one as a longer-form "Profile" section if they want.
+ *  But we no longer seed it on new resumes, because it duplicated
+ *  the role of `header.summary` (the 2-3 sentence opener the editor
+ *  surfaces at the top of the page). Two summaries by default
+ *  confused users on which one to fill in. */
 export function emptyResumeContent(): ResumeContent {
   return {
     sections: [
-      { id: rid(), kind: "summary",    position: 0, items: [{ id: rid(), position: 0, bullets: [] }] },
-      { id: rid(), kind: "experience", position: 1, items: [] },
-      { id: rid(), kind: "skills",     position: 2, items: [{ id: rid(), position: 0, bullets: [] }] },
-      { id: rid(), kind: "education",  position: 3, items: [] },
+      { id: rid(), kind: "experience", position: 0, items: [] },
+      { id: rid(), kind: "skills",     position: 1, items: [{ id: rid(), position: 0, bullets: [] }] },
+      { id: rid(), kind: "education",  position: 2, items: [] },
     ],
   };
 }
