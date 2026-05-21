@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Loader2, FileDown, Clock, Library,
-  ChevronDown, ChevronUp, RotateCcw, Archive,
+  ChevronDown, ChevronUp, RotateCcw, Archive, Sparkles, CheckCircle2,
 } from "lucide-react";
 import { useInputDialog } from "@/components/ui/InputDialog";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -95,6 +95,90 @@ export function MasterResumeClient({
   }, [bullets]);
 
   const presentSections = SECTION_ORDER.filter((k) => (grouped[k]?.length ?? 0) > 0);
+
+  // ── Seed-from-resume picker (empty-state only) ──────────────────
+  //
+  // When the library is empty, give users a one-click path to seed it
+  // from one of their existing tailored resumes. We only fetch the
+  // candidate list when needed — once the library has any bullet the
+  // picker disappears and we never make the call.
+  const [availableResumes, setAvailableResumes] = useState<
+    { id: string; name: string; lastEditedAt: string }[] | null
+  >(null);
+  const [pickedResumeId, setPickedResumeId] = useState<string>("");
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<
+    { created: number; skipped: number; total: number; note?: string } | null
+  >(null);
+
+  const isEmpty = bullets.length === 0 && archivedCount === 0;
+
+  useEffect(() => {
+    if (!isEmpty || availableResumes !== null) return;
+    let alive = true;
+    fetch("/api/profile/resumes")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Couldn't load resumes."))))
+      .then((j: { resumes?: { id: string; name: string; lastEditedAt: string; isArchived: boolean }[] }) => {
+        if (!alive) return;
+        const active = (j.resumes ?? []).filter((r) => !r.isArchived);
+        setAvailableResumes(active);
+        if (active.length > 0 && !pickedResumeId) {
+          setPickedResumeId(active[0].id);
+        }
+      })
+      .catch(() => { if (alive) setAvailableResumes([]); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEmpty]);
+
+  async function seedFromResume() {
+    if (!pickedResumeId || seeding) return;
+    setError(null);
+    setSeedResult(null);
+    setSeeding(true);
+    try {
+      const r = await fetch("/api/profile/resume/master/ai-extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resumeId: pickedResumeId }),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        ok?: boolean;
+        created?: number;
+        skipped?: number;
+        total?: number;
+        note?: string;
+        error?: string;
+      };
+      if (!r.ok || !j.ok) {
+        setError(j.error ?? "Couldn't seed from this resume.");
+        return;
+      }
+      setSeedResult({
+        created: j.created ?? 0,
+        skipped: j.skipped ?? 0,
+        total: j.total ?? 0,
+        note: j.note,
+      });
+      // Refresh the master so the freshly-extracted bullets render.
+      // We don't bother with optimistic updates here — the user just
+      // watched the loader spin, a hard reload of the list is fine.
+      const fresh = await fetch("/api/profile/master");
+      if (fresh.ok) {
+        const fj = (await fresh.json()) as {
+          ok?: boolean;
+          master?: { header: ResumeContent["header"] | null; updatedAt: string };
+          bullets?: MasterBulletRow[];
+        };
+        if (fj.ok && fj.bullets) setBullets(fj.bullets);
+        if (fj.ok && fj.master) setMaster((m) => ({ ...m, header: fj.master!.header, updatedAt: fj.master!.updatedAt }));
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   // ── Bullet CRUD ─────────────────────────────────────────────────
   async function addBullet(sectionKind: ResumeSectionKind, anchorTitle: string | null = null) {
@@ -188,8 +272,6 @@ export function MasterResumeClient({
     window.open(`/api/profile/master/snapshots/${snap.id}/download?format=json`, "_blank");
   }
 
-  const isEmpty = bullets.length === 0 && archivedCount === 0;
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6">
       <div className="space-y-4">
@@ -205,9 +287,59 @@ export function MasterResumeClient({
             <Library size={28} className="mx-auto text-brand-600 mb-3" />
             <h2 className="text-base font-semibold text-fg">Your library is empty</h2>
             <p className="text-[13px] text-fg-muted mt-1 max-w-md mx-auto leading-snug">
-              Add your first bullet under any section, or open one of your tailored resumes and promote a bullet from there to seed the library.
+              Seed it from a resume you've already written, or add your first bullet by hand.
             </p>
-            <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+
+            {/* Seed-from-resume picker — only when the user actually has
+                tailored resumes to pull from. New users with no resumes
+                fall through to the manual-add CTAs below. */}
+            {availableResumes && availableResumes.length > 0 && (
+              <div className="mt-5 mx-auto max-w-md rounded-xl border border-brand-200/70 bg-brand-50/40 p-3 text-left">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles size={13} className="text-brand-700" />
+                  <span className="text-[12px] font-bold text-brand-900">Seed library from a resume</span>
+                </div>
+                <p className="text-[11.5px] text-fg-muted leading-snug mb-2.5">
+                  AI reads the resume's bullets and adds anything new to your master.
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <select
+                    value={pickedResumeId}
+                    onChange={(e) => setPickedResumeId(e.target.value)}
+                    disabled={seeding}
+                    className="flex-1 min-w-0 text-[12.5px] px-2.5 py-1.5 rounded-md bg-card-solid ring-1 ring-inset ring-line focus:outline-none focus:ring-brand-300 disabled:opacity-60"
+                  >
+                    {availableResumes.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={seedFromResume}
+                    disabled={seeding || !pickedResumeId}
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-bold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {seeding ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    {seeding ? "Extracting…" : "Seed"}
+                  </button>
+                </div>
+                {seedResult && (
+                  <div className="mt-2.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-900 text-[11.5px] px-2.5 py-1.5 flex items-start gap-1.5">
+                    <CheckCircle2 size={12} className="mt-0.5 shrink-0" />
+                    <span>
+                      {seedResult.total === 0
+                        ? (seedResult.note ?? "Nothing to extract — this resume has no bullets yet.")
+                        : <>Added <strong>{seedResult.created}</strong> of {seedResult.total} bullet{seedResult.total === 1 ? "" : "s"}{seedResult.skipped > 0 ? `, skipped ${seedResult.skipped} duplicate${seedResult.skipped === 1 ? "" : "s"}` : ""}.</>}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <p className="mt-5 text-[11px] uppercase tracking-[0.18em] font-bold text-fg-subtle">
+              Or add manually
+            </p>
+            <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
               {(["experience", "skills", "education", "projects"] as ResumeSectionKind[]).map((k) => (
                 <button
                   key={k}
