@@ -8,7 +8,9 @@ import { PageHero } from "@/components/ui/PageHero";
 export const dynamic = "force-dynamic";
 
 export default async function SkillsAdminPage() {
-  await requireRole("admin");
+  const session = await requireRole("admin");
+  const role = (session.user as { role?: string }).role ?? "admin";
+  const isSuperadmin = role === "superadmin";
 
   // First-visit seed + warm a small batch of embeddings.
   await ensureSkillSeed();
@@ -33,6 +35,7 @@ export default async function SkillsAdminPage() {
       />
 
       <SkillsAdminClient
+        isSuperadmin={isSuperadmin}
         initialSkills={skills.map((s) => ({
           id: s.id,
           name: s.name,

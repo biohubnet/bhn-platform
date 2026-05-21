@@ -9,9 +9,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus, Search, Pencil, GitMerge, Trash2, X, Check, AlertCircle,
-  CheckCircle2, EyeOff, Sparkles, Tags,
+  CheckCircle2, EyeOff, Sparkles, Tags, CheckSquare, Square, Loader2, Eye, Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LaunchSwitch } from "@/components/ui/LaunchSwitch";
 
 interface SkillRow {
   id: string;
@@ -33,7 +34,18 @@ const STATUS_CLS: Record<string, string> = {
   merged:     "bg-elevated text-subtle border-line",
 };
 
-export function SkillsAdminClient({ initialSkills }: { initialSkills: SkillRow[] }) {
+export function SkillsAdminClient({
+  initialSkills,
+  isSuperadmin = false,
+}: {
+  initialSkills: SkillRow[];
+  /** Hard delete is server-gated to superadmin (see DELETE handler
+   *  in /api/admin/skills/route.ts). The batch toolbar uses this
+   *  flag to disable the Delete affordance for plain admins so they
+   *  don't hit a 403 they can't act on. Status changes (active /
+   *  review / deprecated) stay available for admin role. */
+  isSuperadmin?: boolean;
+}) {
   const router = useRouter();
   const [skills, setSkills] = useState<SkillRow[]>(initialSkills);
   const [query, setQuery] = useState("");
@@ -42,6 +54,66 @@ export function SkillsAdminClient({ initialSkills }: { initialSkills: SkillRow[]
   const [creating, setCreating] = useState(false);
   const [merging, setMerging] = useState<SkillRow | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Multi-select state — selected[id] = true. Filtering / sorting
+  // doesn't drop ids from the selection so the user can move between
+  // tabs without losing their queue.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchBusy, setBatchBusy] = useState<null | "active" | "review" | "deprecated" | "delete">(null);
+
+  function toggleSelected(id: string) {
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function clearSelection() { setSelected(new Set()); }
+  function selectAllFiltered() {
+    setSelected((s) => {
+      const next = new Set(s);
+      for (const sk of filtered) next.add(sk.id);
+      return next;
+    });
+  }
+
+  async function batchSetStatus(status: "active" | "review" | "deprecated") {
+    if (selected.size === 0) return;
+    setBatchBusy(status);
+    try {
+      const ids = Array.from(selected);
+      // Optimistic local update.
+      setSkills((cur) => cur.map((s) => (ids.includes(s.id) ? { ...s, status } : s)));
+      // Fire individual PATCHes in parallel — no batch endpoint yet,
+      // but Promise.all is fine for the typical N=1..50 selection.
+      await Promise.all(ids.map((id) =>
+        fetch("/api/admin/skills", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, status }),
+        }),
+      ));
+      clearSelection();
+    } finally {
+      setBatchBusy(null);
+    }
+  }
+
+  async function batchDelete() {
+    if (selected.size === 0) return;
+    setBatchBusy("delete");
+    try {
+      const ids = Array.from(selected);
+      setSkills((cur) => cur.filter((s) => !ids.includes(s.id)));
+      await Promise.all(ids.map((id) =>
+        fetch(`/api/admin/skills?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
+      ));
+      clearSelection();
+    } finally {
+      setBatchBusy(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -98,12 +170,72 @@ export function SkillsAdminClient({ initialSkills }: { initialSkills: SkillRow[]
         </button>
       </div>
 
+      {/* Batch toolbar — appears when 1+ skills are selected. Sticks
+          to the top of the viewport so the user can scroll the grid
+          freely without losing their action surface. */}
+      {selected.size > 0 && (
+        <div className="sticky top-2 z-30 rounded-xl border border-brand-300 bg-brand-50/95 backdrop-blur-sm shadow-md px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-brand-600 text-white">
+              <CheckSquare size={13} />
+            </span>
+            <span className="text-sm font-semibold text-brand-900">
+              {selected.size} selected
+            </span>
+            <button type="button" onClick={selectAllFiltered} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] text-fg-muted hover:bg-fg/5" title="Select every skill in the current filter">
+              + select all filtered
+            </button>
+            <button type="button" onClick={clearSelection} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] text-fg-muted hover:bg-fg/5">
+              <X size={11} /> Clear
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => batchSetStatus("active")}
+              disabled={batchBusy !== null}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100 disabled:opacity-50"
+            >
+              {batchBusy === "active" ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+              Mark active
+            </button>
+            <button
+              type="button"
+              onClick={() => batchSetStatus("review")}
+              disabled={batchBusy !== null}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200 hover:bg-amber-100 disabled:opacity-50"
+            >
+              {batchBusy === "review" ? <Loader2 size={11} className="animate-spin" /> : <Eye size={11} />}
+              Mark for review
+            </button>
+            <button
+              type="button"
+              onClick={() => batchSetStatus("deprecated")}
+              disabled={batchBusy !== null}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-rose-50 text-rose-900 ring-1 ring-inset ring-rose-200 hover:bg-rose-100 disabled:opacity-50"
+            >
+              {batchBusy === "deprecated" ? <Loader2 size={11} className="animate-spin" /> : <Archive size={11} />}
+              Deprecate
+            </button>
+            {isSuperadmin && (
+              <LaunchSwitch
+                label="DELETE"
+                ariaLabel={`Hard-delete ${selected.size} skill${selected.size === 1 ? "" : "s"}`}
+                onFire={batchDelete}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Cards — wave effect on mousemove. Each card watches the
           cursor position; the closer the cursor, the more it lifts +
           tints. Movement across the grid leaves a temporary wave of
           highlighted cards behind. */}
       <SkillsCardGrid
         skills={filtered}
+        selected={selected}
+        onToggleSelect={toggleSelected}
         onEdit={setEditing}
         onMerge={setMerging}
       />
@@ -398,9 +530,11 @@ function ModalFooter({ children }: { children: React.ReactNode }) {
  * Cards stay clickable + keyboard-navigable. The wave is decorative;
  * `prefers-reduced-motion: reduce` zeroes it out via globals.css. */
 function SkillsCardGrid({
-  skills, onEdit, onMerge,
+  skills, selected, onToggleSelect, onEdit, onMerge,
 }: {
   skills: SkillRow[];
+  selected: Set<string>;
+  onToggleSelect: (id: string) => void;
   onEdit: (s: SkillRow) => void;
   onMerge: (s: SkillRow) => void;
 }) {
@@ -437,7 +571,7 @@ function SkillsCardGrid({
       ref={gridRef}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      className="skills-wave-grid relative grid gap-2.5 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]"
+      className="skills-wave-grid relative grid gap-3.5 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]"
       style={{
         // Unitless defaults — see comment on handleMove for why.
         "--mx": "-9999",
@@ -449,6 +583,8 @@ function SkillsCardGrid({
         <SkillCard
           key={s.id}
           skill={s}
+          isSelected={selected.has(s.id)}
+          onToggleSelect={() => onToggleSelect(s.id)}
           onEdit={() => onEdit(s)}
           onMerge={() => onMerge(s)}
         />
@@ -496,9 +632,11 @@ function SkillsCardGrid({
  *  measurement effect that writes --cx/--cy onto the card so the
  *  parent's wave CSS knows where the card sits inside the grid. */
 function SkillCard({
-  skill, onEdit, onMerge,
+  skill, isSelected, onToggleSelect, onEdit, onMerge,
 }: {
   skill: SkillRow;
+  isSelected: boolean;
+  onToggleSelect: () => void;
   onEdit: () => void;
   onMerge: () => void;
 }) {
@@ -530,32 +668,68 @@ function SkillCard({
   return (
     <div
       ref={cardRef}
-      className="skill-card relative rounded-xl border border-line bg-card-solid p-3 cursor-default overflow-hidden"
+      className={cn(
+        "skill-card relative rounded-xl border bg-card-solid p-4 cursor-default overflow-hidden min-h-[140px] flex flex-col",
+        isSelected
+          ? "border-brand-400 ring-1 ring-brand-300 bg-brand-50/40"
+          : "border-line",
+      )}
     >
-      <div className="flex items-start justify-between gap-1.5">
-        <p className="text-[13px] font-semibold text-fg leading-tight line-clamp-2 break-words">
+      {/* Selection checkbox — top-right corner. Click flips selection
+          without triggering edit. Larger hit target than a native
+          checkbox for tap-friendliness. */}
+      <button
+        type="button"
+        onClick={onToggleSelect}
+        aria-label={isSelected ? "Deselect" : "Select for batch action"}
+        title={isSelected ? "Deselect" : "Select for batch action"}
+        className="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-6 h-6 rounded text-fg-muted hover:text-fg hover:bg-elevated"
+      >
+        {isSelected ? <CheckSquare size={16} className="text-brand-700" /> : <Square size={16} />}
+      </button>
+
+      <div className="flex items-start gap-2 pr-7">
+        <p className="text-[15px] font-semibold text-fg leading-tight break-words flex-1">
           {skill.name}
         </p>
+      </div>
+
+      {/* Category + status sit on the same line under the title now,
+          giving them more room to breathe than the prior crammed
+          right-aligned chip + tiny status pill. */}
+      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+        {skill.category && (
+          <span className="text-[11px] text-fg-muted px-1.5 py-0.5 rounded bg-elevated/60">
+            {skill.category}
+          </span>
+        )}
         <span
           className={cn(
-            "shrink-0 text-[9px] uppercase tracking-[0.14em] px-1.5 py-0.5 rounded border",
+            "text-[10px] uppercase tracking-[0.14em] px-1.5 py-0.5 rounded border",
             STATUS_CLS[skill.status] ?? STATUS_CLS.active,
           )}
         >
           {skill.status}
         </span>
       </div>
-      {skill.category && (
-        <p className="mt-1 text-[10.5px] text-fg-muted">{skill.category}</p>
-      )}
-      {skill.aliases.length > 0 && (
-        <p className="mt-1.5 text-[10.5px] text-fg-subtle line-clamp-2">
-          <Tags size={9} className="inline -mt-0.5 mr-1" />
-          {skill.aliases.map((a) => a.alias).slice(0, 4).join(" · ")}
-          {skill.aliases.length > 4 && ` +${skill.aliases.length - 4}`}
+
+      {/* Description gets surfaced if present — was hidden previously,
+          which made similar-named skills hard to tell apart. */}
+      {skill.description && (
+        <p className="mt-2 text-[12px] text-fg-muted leading-snug line-clamp-2">
+          {skill.description}
         </p>
       )}
-      <div className="mt-2 pt-2 border-t border-line/60 flex items-center justify-between text-[10px] text-fg-subtle">
+
+      {skill.aliases.length > 0 && (
+        <p className="mt-2 text-[11px] text-fg-subtle line-clamp-2">
+          <Tags size={10} className="inline -mt-0.5 mr-1" />
+          {skill.aliases.map((a) => a.alias).slice(0, 5).join(" · ")}
+          {skill.aliases.length > 5 && ` +${skill.aliases.length - 5}`}
+        </p>
+      )}
+
+      <div className="mt-auto pt-3 border-t border-line/60 flex items-center justify-between text-[11px] text-fg-subtle">
         <span title="Courses · Users · Postings tagged" className="font-mono tabular-nums">
           {skill.counts.courses}c · {skill.counts.users}u · {skill.counts.postings}p
         </span>
