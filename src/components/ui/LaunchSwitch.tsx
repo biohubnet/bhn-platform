@@ -48,15 +48,20 @@ export interface LaunchSwitchProps {
   countdownSeconds?: number;
   /** Visible label on the closed cover. Default "DELETE". */
   label?: string;
-  /** Footprint. "sm" (default, ~96×30) fits inline action rows;
-   *  "md" (~140×44) is for emphasised destructive panels. */
+  /** Footprint. "sm" (default, ~84×24) fits inline action rows;
+   *  "md" (~120×36) is for emphasised destructive panels. */
   size?: "sm" | "md";
   /** Optional aria-label for screen readers. */
   ariaLabel?: string;
+  /** Verb used during the countdown — "Deleting", "Wiping",
+   *  "Resetting". Default "Deleting". The cover label ("DELETE") is
+   *  set via the `label` prop above. */
+  actionVerb?: string;
 }
 
 export function LaunchSwitch({
-  onFire, onArm, onAbort, countdownSeconds = 5, label = "DELETE", size = "sm", ariaLabel,
+  onFire, onArm, onAbort, countdownSeconds = 5, label = "DELETE",
+  size = "sm", ariaLabel, actionVerb = "Deleting",
 }: LaunchSwitchProps) {
   const [state, setState] = useState<State>("closed");
   const [remaining, setRemaining] = useState(countdownSeconds);
@@ -109,9 +114,12 @@ export function LaunchSwitch({
     setState("launching");
   }
 
+  // Smaller by default — the old footprint read "beefy" inline with
+  // text-[11px] buttons; this refines the chassis without losing
+  // readability of the stencilled label.
   const dims = size === "md"
-    ? { w: 140, h: 44, font: 11, labelFont: 10 }
-    : { w: 96,  h: 30, font: 9,  labelFont: 9  };
+    ? { w: 120, h: 36, font: 10, labelFont: 9.5 }
+    : { w: 84,  h: 24, font: 8.5, labelFont: 8.5 };
   const launching = state === "launching";
 
   return (
@@ -139,43 +147,43 @@ export function LaunchSwitch({
         <Rivet style={{ bottom: 2, left: 2  }} />
         <Rivet style={{ bottom: 2, right: 2 }} />
 
-        {/* ARMED — "FIRE" button visible under the cover. Clickable
-            when armed; ignored when launching (the cover is still
-            visually flipped up but the button has been replaced by
-            the countdown). */}
+        {/* ARMED — exposed red button visible under the cover. Reads
+            the same verb as the cover label ("DELETE") so the action
+            stays obvious without military jargon. */}
         {state === "armed" && (
           <button
             type="button"
             onClick={fire}
-            className="absolute inset-[3px] rounded-[2px] bg-gradient-to-b from-rose-500 to-rose-700 ring-1 ring-rose-900 text-white font-bold tracking-[0.18em] uppercase active:translate-y-[1px] active:from-rose-600 active:to-rose-800 hover:from-rose-400 hover:to-rose-600 transition-colors"
+            className="absolute inset-[2px] rounded-[2px] bg-gradient-to-b from-rose-500 to-rose-700 ring-1 ring-rose-900 text-white font-bold tracking-[0.18em] uppercase active:translate-y-[1px] active:from-rose-600 active:to-rose-800 hover:from-rose-400 hover:to-rose-600 transition-colors"
             style={{ fontSize: dims.font }}
-            aria-label="Fire — initiate countdown"
+            aria-label={`${label} — start countdown`}
           >
             <span className="inline-flex items-center justify-center gap-1">
-              <Zap size={dims.font} className="-rotate-12" /> FIRE
+              <Zap size={dims.font} className="-rotate-12" /> {label}
             </span>
           </button>
         )}
 
-        {/* LAUNCHING — flashing red LED with countdown. ABORT below. */}
+        {/* LAUNCHING — flashing LED with verb + countdown. ABORT (×)
+            on the right gives the user the full countdown to cancel. */}
         {launching && (
-          <div className="absolute inset-[3px] flex items-center justify-between px-1.5 rounded-[2px] bg-gradient-to-b from-rose-600 to-rose-800 ring-1 ring-rose-900">
+          <div className="absolute inset-[2px] flex items-center justify-between px-1.5 rounded-[2px] bg-gradient-to-b from-rose-600 to-rose-800 ring-1 ring-rose-900">
             <span
               aria-hidden
-              className="inline-block w-1.5 h-1.5 rounded-full bg-yellow-300 shadow-[0_0_4px_2px_rgba(253,224,71,0.7)] animate-[ls_pulse_0.5s_ease-in-out_infinite]"
+              className="inline-block w-1.5 h-1.5 rounded-full bg-yellow-300 shadow-[0_0_4px_2px_rgba(253,224,71,0.7)] animate-[ls_pulse_0.5s_ease-in-out_infinite] shrink-0"
             />
             <span
-              className="font-bold tracking-[0.18em] uppercase text-white tabular-nums"
+              className="font-bold tracking-[0.14em] uppercase text-white tabular-nums truncate"
               style={{ fontSize: dims.font }}
             >
-              T-{remaining}
+              {actionVerb} · {remaining}s
             </span>
             <button
               type="button"
               onClick={closeCover}
               aria-label="Abort countdown"
-              title="ABORT — close the cover to cancel"
-              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded text-white/90 hover:text-white hover:bg-white/20"
+              title="Abort — close the cover to cancel"
+              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded text-white/90 hover:text-white hover:bg-white/20 shrink-0"
             >
               <X size={dims.font} />
             </button>
@@ -185,7 +193,8 @@ export function LaunchSwitch({
 
       {/* COVER — flips up on click. position: absolute on top of
           the base; uses transform-origin: top to hinge along its
-          top edge. */}
+          top edge. Both states use the bracket transform syntax so
+          the browser actually interpolates the value cleanly. */}
       <button
         type="button"
         onClick={state === "closed" ? openCover : closeCover}
@@ -193,14 +202,17 @@ export function LaunchSwitch({
         aria-pressed={state !== "closed"}
         className={
           "absolute inset-0 rounded-[3px] overflow-hidden ring-1 ring-amber-900/70 " +
-          "transition-transform duration-300 ease-out origin-top " +
-          // Closed = cover sits flat over base.
-          // Open  = cover hinged ~75 deg up; we leave a sliver so it
-          //         reads as "lifted, not removed" + so clicking it
-          //         again closes it.
+          "transition-[transform,box-shadow] duration-[400ms] " +
+          // Custom easing — out-back-style overshoot when closing
+          // gives the cover a satisfying "click shut" feel; the
+          // open direction stays soft ease-out.
           (state === "closed"
-            ? "rotate-x-0"
-            : "[transform:rotateX(-78deg)] shadow-[0_8px_12px_-8px_rgba(0,0,0,0.4)]")
+            ? "[transition-timing-function:cubic-bezier(0.34,1.42,0.64,1)] "
+            : "ease-out ") +
+          "[transform-origin:top_center] " +
+          (state === "closed"
+            ? "[transform:rotateX(0deg)]"
+            : "[transform:rotateX(-82deg)] shadow-[0_10px_14px_-8px_rgba(0,0,0,0.5)]")
         }
         style={{
           // Hazard stripes — diagonal yellow/black, the universal

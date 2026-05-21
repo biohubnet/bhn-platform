@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import {
   Plus, FolderOpen, Loader2, Archive, RotateCcw, Trash2, FileText, Mail, BookOpen, Briefcase, CheckSquare, Square, X, ExternalLink,
 } from "lucide-react";
+import { useInputDialog } from "@/components/ui/InputDialog";
 
 interface FolderRow {
   id: string;
@@ -42,6 +43,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 
 export function JobFoldersIndexClient({ initialFolders }: Props) {
   const router = useRouter();
+  const { inputDialog, node: dialogNode } = useInputDialog();
   const [folders, setFolders] = useState<FolderRow[]>(initialFolders);
   const [creating, startCreate] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,14 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
 
   async function createFolder() {
     setError(null);
-    const title = window.prompt("Name this folder (e.g. \"STEMCELL · Process Engineer Intern\")", "New job folder");
+    const title = await inputDialog({
+      title: "New job folder",
+      description: "One folder per role you're pursuing — usually \"Company · Role\".",
+      label: "Folder name",
+      placeholder: "STEMCELL · Process Engineer Intern",
+      defaultValue: "New job folder",
+      confirmLabel: "Create",
+    });
     if (title === null) return;
     startCreate(async () => {
       const r = await fetch("/api/profile/job-folders", {
@@ -223,6 +232,7 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
           </ul>
         </details>
       )}
+      {dialogNode}
     </div>
   );
 }

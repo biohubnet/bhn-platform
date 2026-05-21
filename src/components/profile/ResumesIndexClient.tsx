@@ -20,6 +20,7 @@ import {
 import type { ResumeContent } from "@/lib/resume/types";
 import { ResumeThumbnail } from "./ResumeThumbnail";
 import { LaunchSwitch } from "@/components/ui/LaunchSwitch";
+import { useInputDialog } from "@/components/ui/InputDialog";
 
 interface PostingChip {
   id: string;
@@ -54,6 +55,7 @@ interface Props {
 
 export function ResumesIndexClient({ initialResumes }: Props) {
   const router = useRouter();
+  const { inputDialog, node: dialogNode } = useInputDialog();
   const [resumes, setResumes] = useState<ResumeRow[]>(initialResumes);
   const [creating, startCreate] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +81,14 @@ export function ResumesIndexClient({ initialResumes }: Props) {
 
   async function createBlank() {
     setError(null);
-    const name = window.prompt("Name this resume", "New resume");
+    const name = await inputDialog({
+      title: "New resume",
+      description: "Give it a name. You can rename it any time.",
+      label: "Resume name",
+      placeholder: "e.g. Main resume, Academic CV",
+      defaultValue: "New resume",
+      confirmLabel: "Create",
+    });
     if (name === null) return;
     startCreate(async () => {
       const r = await fetch("/api/profile/resumes", {
@@ -98,7 +107,13 @@ export function ResumesIndexClient({ initialResumes }: Props) {
 
   async function duplicate(source: ResumeRow) {
     setError(null);
-    const name = window.prompt(`Duplicate "${source.name}" as…`, `${source.name} (copy)`);
+    const name = await inputDialog({
+      title: "Duplicate resume",
+      description: `Make a copy of "${source.name}" with all its sections, items, and bullets.`,
+      label: "New resume name",
+      defaultValue: `${source.name} (copy)`,
+      confirmLabel: "Duplicate",
+    });
     if (name === null) return;
     const r = await fetch("/api/profile/resumes", {
       method: "POST",
@@ -115,7 +130,12 @@ export function ResumesIndexClient({ initialResumes }: Props) {
 
   async function rename(row: ResumeRow) {
     setError(null);
-    const name = window.prompt("Rename resume", row.name);
+    const name = await inputDialog({
+      title: "Rename resume",
+      label: "Resume name",
+      defaultValue: row.name,
+      confirmLabel: "Rename",
+    });
     if (name === null) return;
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -351,6 +371,10 @@ export function ResumesIndexClient({ initialResumes }: Props) {
           </ul>
         </details>
       )}
+
+      {/* Input dialog portal — only rendered when an inputDialog()
+          call is awaiting a response. See InputDialog for the API. */}
+      {dialogNode}
     </div>
   );
 }

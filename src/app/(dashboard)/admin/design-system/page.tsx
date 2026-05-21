@@ -3,13 +3,14 @@ import { redirect } from "next/navigation";
 import {
   Palette, Type, Box, Layers, Zap, Accessibility, Sparkles,
   CheckCircle2, AlertTriangle, Info, XCircle, Plus, Loader2, ArrowRight, Check, Hourglass, ExternalLink,
-  Rocket,
+  Rocket, Pencil,
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { getActiveDesignSystem } from "@/lib/settings";
 import { DesignSystemAdminPicker } from "@/components/admin/DesignSystemAdminPicker";
 import { DesignSystemShowroom } from "@/components/admin/DesignSystemShowroom";
 import { LaunchSwitch } from "@/components/ui/LaunchSwitch";
+import { InputDialogPreview } from "@/components/admin/InputDialogPreview";
 
 /**
  * /admin/design-system — live mirror of docs/design-system.md.
@@ -440,6 +441,41 @@ export default async function AdminDesignSystemPage() {
           <A11yItem todo>Quarterly WCAG 2.1 AA contrast sweep across all 9 themes — current cadence ad-hoc.</A11yItem>
           <A11yItem todo>Screen-reader walkthrough of every critical journey — not yet done.</A11yItem>
         </ul>
+      </Section>
+
+      <Section icon={Pencil} title="InputDialog — designed replacement for window.prompt" eyebrow="Component · input modal">
+        <p className="text-sm text-fg-muted leading-relaxed">
+          A polished modal that asks for one short string with optional default + description. Same primitive as <code className="font-mono text-fg bg-elevated px-1 rounded">window.prompt</code> but inside the platform&apos;s surface language: rounded card, brand-tinted icon disc, soft gradient header, line + flat aesthetic. <strong>New code should reach for this, not <code className="font-mono text-fg bg-elevated px-1 rounded">window.prompt</code>.</strong>
+        </p>
+        <SubSection title="Try it">
+          <InputDialogPreview />
+        </SubSection>
+        <SubSection title="API">
+          <pre className="text-[11px] font-mono bg-elevated/40 rounded-md p-3 overflow-x-auto leading-relaxed">{`const { inputDialog, node } = useInputDialog();
+// ...render \`node\` somewhere in the component tree.
+
+const value = await inputDialog({
+  title: "Name this snapshot",          // required
+  description: "Optional one-liner",    // optional subhead
+  label: "Snapshot name",               // input label (default "Name")
+  placeholder: "Before restructuring",
+  defaultValue: "",
+  confirmLabel: "Snapshot",             // button text (default "Save")
+  cancelLabel: "Cancel",
+  allowEmpty: false,                    // accept "" trimmed?
+  maxLength: 200,
+  icon: Pencil,                         // override the icon
+});
+if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
+        </SubSection>
+        <SubSection title="Behaviour">
+          <ul className="space-y-1.5 text-sm text-fg-muted">
+            <li>• Autofocus + select the input on open so the user can type immediately.</li>
+            <li>• <strong>Enter</strong> confirms (when valid). <strong>Escape</strong>, backdrop click, and the <strong>×</strong> button all cancel.</li>
+            <li>• Disables confirm when input is empty (unless <code className="font-mono text-fg bg-elevated px-1 rounded">allowEmpty</code> is set).</li>
+            <li>• Promise resolves to the entered string (trimmed unless <code className="font-mono text-fg bg-elevated px-1 rounded">allowEmpty</code>), or <code className="font-mono text-fg bg-elevated px-1 rounded">null</code> on cancel.</li>
+          </ul>
+        </SubSection>
       </Section>
 
       <Section icon={Type} title="Voice & tone" eyebrow="Microcopy · how the platform sounds">

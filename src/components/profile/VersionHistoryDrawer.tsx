@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import type { ResumeContent } from "@/lib/resume/types";
 import { ResumeViewer } from "@/components/resume/ResumeViewer";
+import { useInputDialog } from "@/components/ui/InputDialog";
 
 interface RevisionRow {
   id: string;
@@ -55,6 +56,7 @@ interface Props {
 }
 
 export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, currentVersion }: Props) {
+  const { inputDialog, node: dialogNode } = useInputDialog();
   const [list, setList] = useState<RevisionRow[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -136,12 +138,17 @@ export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, curre
 
   async function takeSnapshot() {
     setSnapshotError(null);
-    const note = window.prompt(
-      "Name this snapshot (optional)",
-      "Before restructuring",
-    );
-    // window.prompt returns null on cancel — bail without writing.
-    // Empty string still creates a snapshot with the default note.
+    const note = await inputDialog({
+      title: "Snapshot now",
+      description: "Captures the current resume as a named version in the history. Useful before a risky restructure.",
+      label: "Snapshot name",
+      placeholder: "Before restructuring",
+      defaultValue: "Before restructuring",
+      confirmLabel: "Snapshot",
+      allowEmpty: true,
+    });
+    // null on cancel — bail without writing. Empty string still
+    // creates a snapshot with the default note from the server.
     if (note === null) return;
     setSnapshotting(true);
     try {
@@ -415,6 +422,7 @@ export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, curre
           </div>
         </div>
       )}
+      {dialogNode}
     </>
   );
 }
