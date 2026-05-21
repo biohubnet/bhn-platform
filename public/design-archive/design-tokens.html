@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Design tokens · all 13 themes</title>
+  <style>
+    :root {
+      --doc-bg: #0e131a;
+      --doc-panel: #161d27;
+      --doc-line: #232c38;
+      --doc-ink: #e6edf3;
+      --doc-muted: #8b96a3;
+      --doc-accent: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; background: var(--doc-bg); color: var(--doc-ink); font: 14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 1280px; margin: 0 auto; padding: 48px 28px 96px; }
+    header.doc h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.01em; }
+    header.doc p  { margin: 0; color: var(--doc-muted); max-width: 760px; }
+    header.doc    { margin-bottom: 32px; padding-bottom: 22px; border-bottom: 1px solid var(--doc-line); }
+    nav.toc { position: sticky; top: 0; background: rgba(14,19,26,0.92); backdrop-filter: blur(8px); padding: 12px 0; margin-bottom: 28px; border-bottom: 1px solid var(--doc-line); z-index: 10; }
+    nav.toc-inner { display: flex; gap: 6px; flex-wrap: wrap; }
+    nav.toc a { color: var(--doc-muted); text-decoration: none; padding: 4px 10px; font: 700 11px/1 ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.10em; border: 1px solid var(--doc-line); border-radius: 999px; }
+    nav.toc a:hover { color: var(--doc-ink); border-color: var(--doc-ink); }
+
+    .theme { background: var(--doc-panel); border: 1px solid var(--doc-line); border-radius: 14px; padding: 22px 22px 26px; margin-bottom: 28px; }
+    .theme-h { display: flex; align-items: baseline; gap: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--doc-line); margin-bottom: 18px; }
+    .theme-h h2 { margin: 0; font-size: 22px; letter-spacing: -0.005em; text-transform: capitalize; }
+    .theme-sub  { color: var(--doc-muted); font: 700 11px/1 ui-monospace, monospace; }
+    .theme h3 { margin: 22px 0 10px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--doc-accent); font-weight: 800; }
+    .theme h3:first-of-type { margin-top: 6px; }
+
+    .grid-ramp { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+    .grid-semantic { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 10px; }
+    .swatch { background: rgba(255,255,255,0.02); border: 1px solid var(--doc-line); border-radius: 8px; padding: 10px 10px 8px; display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+    .swatch.ramp { padding: 8px 6px 6px; align-items: center; text-align: center; gap: 4px; }
+    .swatch .chip { width: 100%; height: 40px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); }
+    .swatch.ramp .chip { height: 48px; }
+    .swatch code { font: 700 11px/1.2 ui-monospace, monospace; color: var(--doc-ink); }
+    .swatch .sw-label { font-size: 11px; color: var(--doc-muted); }
+    .swatch .sw-val   { font: 600 10px/1.2 ui-monospace, monospace; color: var(--doc-ink); opacity: 0.8; }
+    .swatch.ramp span { font: 600 9.5px/1.2 ui-monospace, monospace; color: var(--doc-muted); }
+
+    .radius-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .radius-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--doc-line); border-radius: 8px; }
+    .radius-box { width: 56px; height: 56px; }
+    .radius-cell code { font: 700 11px/1 ui-monospace, monospace; }
+    .radius-cell span { font: 600 10px/1 ui-monospace, monospace; color: var(--doc-muted); }
+
+    .hero-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .hero-cell { height: 64px; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.10); }
+    .hero-cell code { font: 700 10px/1 ui-monospace, monospace; color: rgba(255,255,255,0.85); text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+    .hero-cell span { font: 600 10px/1 ui-monospace, monospace; color: rgba(255,255,255,0.75); text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+
+    .mock { padding: 18px; }
+    .mock-card { padding: 18px 18px 14px; max-width: 520px; }
+    .mock-card h4 { margin: 4px 0 4px; font-size: 16px; }
+    .mock-card p  { margin: 0 0 4px; font-size: 13px; }
+    .mock-card .subtle { font-size: 11px; margin-top: 6px; }
+    .mock-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font: 700 10px/1.6 ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.14em; background: var(--brand-100); color: var(--brand-900); }
+    .mock-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .mock-actions button { font: 700 12px/1 ui-sans-serif, system-ui; padding: 8px 14px; cursor: pointer; }
+
+    @media (max-width: 720px) {
+      .grid-ramp { grid-template-columns: repeat(5, 1fr); }
+      .radius-row { grid-template-columns: repeat(2, 1fr); }
+      .hero-row { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="doc">
+      <h1>Design tokens · BHN training platform</h1>
+      <p>
+        Every theme exposes the same set of CSS custom properties so components can stay theme-agnostic.
+        Below, each theme is rendered as its own panel showing the brand ramp (50→900), the semantic
+        surface + text tokens (bg, card, elevated, raised, fg, fg-muted, fg-subtle, line…), the radius
+        scale (sm / md / lg / xl), the hero mesh palette, and a small composition mock so the tokens
+        meet in the field. Generated from <code>src/app/globals.css</code>.
+      </p>
+    </header>
+    <nav class="toc"><div class="toc-inner"><a href="#theme-light">light</a><a href="#theme-rosalind">rosalind</a><a href="#theme-sakura">sakura</a><a href="#theme-mist">mist</a><a href="#theme-salty">salty</a><a href="#theme-greenwood">greenwood</a><a href="#theme-chilli">chilli</a><a href="#theme-icecream">icecream</a><a href="#theme-coldbrew">coldbrew</a><a href="#theme-dryice">dryice</a><a href="#theme-atompunk">atompunk</a><a href="#theme-aurora">aurora</a><a href="#theme-hitech">hitech</a></div></nav>
+    
+<section id="theme-light" class="theme" style="--popover-bg: #e7e9ee; --bg: #ecedea; --card: rgba(252,252,250,0.88); --card-solid: #fafaf6; --elevated: #e3e3df; --raised: #d6d6d2; --fg: #1c1c20; --fg-muted: #565660; --fg-subtle: #8d8d96; --line: rgba(28,28,32,0.08); --line-strong: rgba(28,28,32,0.16); --backdrop: rgba(28,28,32,0.45); --brand-50: #e3edf0; --brand-100: #cadbe1; --brand-200: #a3bdc6; --brand-300: #7398a4; --brand-400: #517986; --brand-500: #3b6471; --brand-600: #2c4f5a; --brand-700: #213c46; --brand-800: #182d35; --brand-900: #101e24; --radius-sm: 10px; --radius: 14px; --radius-lg: 22px; --radius-xl: 28px; --hero-bg: #0d3a51; --hero-mesh-1: #0891b2; --hero-mesh-2: #2dd4bf; --hero-mesh-3: #1d4ed8; --hero-mesh-4: #0e7490;">
+  <header class="theme-h">
+    <h2>light</h2>
+    <span class="theme-sub">data-theme="light"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#e3edf0"></div><code>50</code><span>#e3edf0</span></div><div class="swatch ramp"><div class="chip" style="background:#cadbe1"></div><code>100</code><span>#cadbe1</span></div><div class="swatch ramp"><div class="chip" style="background:#a3bdc6"></div><code>200</code><span>#a3bdc6</span></div><div class="swatch ramp"><div class="chip" style="background:#7398a4"></div><code>300</code><span>#7398a4</span></div><div class="swatch ramp"><div class="chip" style="background:#517986"></div><code>400</code><span>#517986</span></div><div class="swatch ramp"><div class="chip" style="background:#3b6471"></div><code>500</code><span>#3b6471</span></div><div class="swatch ramp"><div class="chip" style="background:#2c4f5a"></div><code>600</code><span>#2c4f5a</span></div><div class="swatch ramp"><div class="chip" style="background:#213c46"></div><code>700</code><span>#213c46</span></div><div class="swatch ramp"><div class="chip" style="background:#182d35"></div><code>800</code><span>#182d35</span></div><div class="swatch ramp"><div class="chip" style="background:#101e24"></div><code>900</code><span>#101e24</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#ecedea"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#ecedea</span></div><div class="swatch"><div class="chip" style="background:#fafaf6"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#fafaf6</span></div><div class="swatch"><div class="chip" style="background:#e3e3df"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">#e3e3df</span></div><div class="swatch"><div class="chip" style="background:#d6d6d2"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">#d6d6d2</span></div><div class="swatch"><div class="chip" style="background:#1c1c20"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#1c1c20</span></div><div class="swatch"><div class="chip" style="background:#565660"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#565660</span></div><div class="swatch"><div class="chip" style="background:#8d8d96"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#8d8d96</span></div><div class="swatch"><div class="chip" style="background:rgba(28,28,32,0.08)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(28,28,32,0.08)</span></div><div class="swatch"><div class="chip" style="background:rgba(28,28,32,0.16)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(28,28,32,0.16)</span></div><div class="swatch"><div class="chip" style="background:#e7e9ee"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">#e7e9ee</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:10px; background: var(--brand-300);"></div><code>--radius-sm</code><span>10px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:14px; background: var(--brand-300);"></div><code>--radius</code><span>14px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:22px; background: var(--brand-300);"></div><code>--radius-lg</code><span>22px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:28px; background: var(--brand-300);"></div><code>--radius-xl</code><span>28px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#0d3a51"><code>--hero-bg</code><span>#0d3a51</span></div><div class="hero-cell" style="background:#0891b2"><code>--hero-mesh-1</code><span>#0891b2</span></div><div class="hero-cell" style="background:#2dd4bf"><code>--hero-mesh-2</code><span>#2dd4bf</span></div><div class="hero-cell" style="background:#1d4ed8"><code>--hero-mesh-3</code><span>#1d4ed8</span></div><div class="hero-cell" style="background:#0e7490"><code>--hero-mesh-4</code><span>#0e7490</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">light</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-rosalind" class="theme" style="--popover-bg: #ebe2cf; --bg: #f4ede0; --card: rgba(251, 246, 236, 0.92); --card-solid: #fbf6ec; --elevated: #ebe2cf; --raised: #ddd2bb; --fg: #2e261f; --fg-muted: #5e5145; --fg-subtle: #948a7c; --line: rgba(46, 38, 31, 0.10); --line-strong: rgba(46, 38, 31, 0.20); --backdrop: rgba(46, 38, 31, 0.40); --brand-50: #e7ede4; --brand-100: #d2dccd; --brand-200: #b4c3a9; --brand-300: #92a684; --brand-400: #738968; --brand-500: #5b7152; --brand-600: #485940; --brand-700: #364432; --brand-800: #283226; --brand-900: #1a201a; --radius-sm: 12px; --radius: 18px; --radius-lg: 26px; --radius-xl: 36px; --hero-bg: #2e3d2c; --hero-mesh-1: #4f6b48; --hero-mesh-2: #a8625a; --hero-mesh-3: #1f2a1f; --hero-mesh-4: #6b8458;">
+  <header class="theme-h">
+    <h2>rosalind</h2>
+    <span class="theme-sub">data-theme="rosalind"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#e7ede4"></div><code>50</code><span>#e7ede4</span></div><div class="swatch ramp"><div class="chip" style="background:#d2dccd"></div><code>100</code><span>#d2dccd</span></div><div class="swatch ramp"><div class="chip" style="background:#b4c3a9"></div><code>200</code><span>#b4c3a9</span></div><div class="swatch ramp"><div class="chip" style="background:#92a684"></div><code>300</code><span>#92a684</span></div><div class="swatch ramp"><div class="chip" style="background:#738968"></div><code>400</code><span>#738968</span></div><div class="swatch ramp"><div class="chip" style="background:#5b7152"></div><code>500</code><span>#5b7152</span></div><div class="swatch ramp"><div class="chip" style="background:#485940"></div><code>600</code><span>#485940</span></div><div class="swatch ramp"><div class="chip" style="background:#364432"></div><code>700</code><span>#364432</span></div><div class="swatch ramp"><div class="chip" style="background:#283226"></div><code>800</code><span>#283226</span></div><div class="swatch ramp"><div class="chip" style="background:#1a201a"></div><code>900</code><span>#1a201a</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#f4ede0"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#f4ede0</span></div><div class="swatch"><div class="chip" style="background:#fbf6ec"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#fbf6ec</span></div><div class="swatch"><div class="chip" style="background:#ebe2cf"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">#ebe2cf</span></div><div class="swatch"><div class="chip" style="background:#ddd2bb"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">#ddd2bb</span></div><div class="swatch"><div class="chip" style="background:#2e261f"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#2e261f</span></div><div class="swatch"><div class="chip" style="background:#5e5145"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#5e5145</span></div><div class="swatch"><div class="chip" style="background:#948a7c"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#948a7c</span></div><div class="swatch"><div class="chip" style="background:rgba(46, 38, 31, 0.10)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(46, 38, 31, 0.10)</span></div><div class="swatch"><div class="chip" style="background:rgba(46, 38, 31, 0.20)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(46, 38, 31, 0.20)</span></div><div class="swatch"><div class="chip" style="background:#ebe2cf"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">#ebe2cf</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:12px; background: var(--brand-300);"></div><code>--radius-sm</code><span>12px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:18px; background: var(--brand-300);"></div><code>--radius</code><span>18px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:26px; background: var(--brand-300);"></div><code>--radius-lg</code><span>26px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:36px; background: var(--brand-300);"></div><code>--radius-xl</code><span>36px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#2e3d2c"><code>--hero-bg</code><span>#2e3d2c</span></div><div class="hero-cell" style="background:#4f6b48"><code>--hero-mesh-1</code><span>#4f6b48</span></div><div class="hero-cell" style="background:#a8625a"><code>--hero-mesh-2</code><span>#a8625a</span></div><div class="hero-cell" style="background:#1f2a1f"><code>--hero-mesh-3</code><span>#1f2a1f</span></div><div class="hero-cell" style="background:#6b8458"><code>--hero-mesh-4</code><span>#6b8458</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">rosalind</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-sakura" class="theme" style="--popover-bg: #fceaee; --bg: #fdf2f4; --card: rgba(255, 250, 249, 0.92); --card-solid: #fffaf9; --elevated: #faeae9; --raised: #f3d3d4; --fg: #3a1f24; --fg-muted: #6e4849; --fg-subtle: #8a5d5f; --line: rgba(58, 31, 36, 0.10); --line-strong: rgba(58, 31, 36, 0.20); --backdrop: rgba(58, 31, 36, 0.40); --brand-50: #fce8eb; --brand-100: #f9d2d8; --brand-200: #f5b1bb; --brand-300: #ec8c9a; --brand-400: #df6a7c; --brand-500: #d04c61; --brand-600: #b03b50; --brand-700: #8a2d3f; --brand-800: #66222e; --brand-900: #461820; --radius-sm: 10px; --radius: 14px; --radius-lg: 20px; --radius-xl: 28px; --hero-bg: #5a1e2c; --hero-mesh-1: #d04c61; --hero-mesh-2: #f9d2d8; --hero-mesh-3: #b03b50; --hero-mesh-4: #66222e;">
+  <header class="theme-h">
+    <h2>sakura</h2>
+    <span class="theme-sub">data-theme="sakura"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#fce8eb"></div><code>50</code><span>#fce8eb</span></div><div class="swatch ramp"><div class="chip" style="background:#f9d2d8"></div><code>100</code><span>#f9d2d8</span></div><div class="swatch ramp"><div class="chip" style="background:#f5b1bb"></div><code>200</code><span>#f5b1bb</span></div><div class="swatch ramp"><div class="chip" style="background:#ec8c9a"></div><code>300</code><span>#ec8c9a</span></div><div class="swatch ramp"><div class="chip" style="background:#df6a7c"></div><code>400</code><span>#df6a7c</span></div><div class="swatch ramp"><div class="chip" style="background:#d04c61"></div><code>500</code><span>#d04c61</span></div><div class="swatch ramp"><div class="chip" style="background:#b03b50"></div><code>600</code><span>#b03b50</span></div><div class="swatch ramp"><div class="chip" style="background:#8a2d3f"></div><code>700</code><span>#8a2d3f</span></div><div class="swatch ramp"><div class="chip" style="background:#66222e"></div><code>800</code><span>#66222e</span></div><div class="swatch ramp"><div class="chip" style="background:#461820"></div><code>900</code><span>#461820</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#fdf2f4"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#fdf2f4</span></div><div class="swatch"><div class="chip" style="background:#fffaf9"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#fffaf9</span></div><div class="swatch"><div class="chip" style="background:#faeae9"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">#faeae9</span></div><div class="swatch"><div class="chip" style="background:#f3d3d4"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">#f3d3d4</span></div><div class="swatch"><div class="chip" style="background:#3a1f24"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#3a1f24</span></div><div class="swatch"><div class="chip" style="background:#6e4849"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#6e4849</span></div><div class="swatch"><div class="chip" style="background:#8a5d5f"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#8a5d5f</span></div><div class="swatch"><div class="chip" style="background:rgba(58, 31, 36, 0.10)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(58, 31, 36, 0.10)</span></div><div class="swatch"><div class="chip" style="background:rgba(58, 31, 36, 0.20)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(58, 31, 36, 0.20)</span></div><div class="swatch"><div class="chip" style="background:#fceaee"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">#fceaee</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:10px; background: var(--brand-300);"></div><code>--radius-sm</code><span>10px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:14px; background: var(--brand-300);"></div><code>--radius</code><span>14px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:20px; background: var(--brand-300);"></div><code>--radius-lg</code><span>20px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:28px; background: var(--brand-300);"></div><code>--radius-xl</code><span>28px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#5a1e2c"><code>--hero-bg</code><span>#5a1e2c</span></div><div class="hero-cell" style="background:#d04c61"><code>--hero-mesh-1</code><span>#d04c61</span></div><div class="hero-cell" style="background:#f9d2d8"><code>--hero-mesh-2</code><span>#f9d2d8</span></div><div class="hero-cell" style="background:#b03b50"><code>--hero-mesh-3</code><span>#b03b50</span></div><div class="hero-cell" style="background:#66222e"><code>--hero-mesh-4</code><span>#66222e</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">sakura</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-mist" class="theme" style="--popover-bg: rgba(255, 255, 255, 0.94); --bg: #f4f6fa; --card: rgba(255, 255, 255, 0.62); --card-solid: rgba(255, 255, 255, 0.95); --elevated: rgba(255, 255, 255, 0.50); --raised: rgba(255, 255, 255, 0.72); --fg: #1c2230; --fg-muted: #515b6e; --fg-subtle: #8993a4; --line: rgba(255, 255, 255, 0.55); --line-strong: rgba(255, 255, 255, 0.75); --backdrop: rgba(28, 34, 48, 0.35); --brand-50: #eef2f8; --brand-100: #dde4ee; --brand-200: #b8c6d8; --brand-300: #8da4bf; --brand-400: #6783a3; --brand-500: #4f6c8e; --brand-600: #3e5775; --brand-700: #324558; --brand-800: #263643; --brand-900: #1a242f; --radius-sm: 16px; --radius: 24px; --radius-lg: 32px; --radius-xl: 40px; --hero-bg: #2d3a52; --hero-mesh-1: #5b6f8c; --hero-mesh-2: #94a3c4; --hero-mesh-3: #1f2a40; --hero-mesh-4: #3e5775;">
+  <header class="theme-h">
+    <h2>mist</h2>
+    <span class="theme-sub">data-theme="mist"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#eef2f8"></div><code>50</code><span>#eef2f8</span></div><div class="swatch ramp"><div class="chip" style="background:#dde4ee"></div><code>100</code><span>#dde4ee</span></div><div class="swatch ramp"><div class="chip" style="background:#b8c6d8"></div><code>200</code><span>#b8c6d8</span></div><div class="swatch ramp"><div class="chip" style="background:#8da4bf"></div><code>300</code><span>#8da4bf</span></div><div class="swatch ramp"><div class="chip" style="background:#6783a3"></div><code>400</code><span>#6783a3</span></div><div class="swatch ramp"><div class="chip" style="background:#4f6c8e"></div><code>500</code><span>#4f6c8e</span></div><div class="swatch ramp"><div class="chip" style="background:#3e5775"></div><code>600</code><span>#3e5775</span></div><div class="swatch ramp"><div class="chip" style="background:#324558"></div><code>700</code><span>#324558</span></div><div class="swatch ramp"><div class="chip" style="background:#263643"></div><code>800</code><span>#263643</span></div><div class="swatch ramp"><div class="chip" style="background:#1a242f"></div><code>900</code><span>#1a242f</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#f4f6fa"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#f4f6fa</span></div><div class="swatch"><div class="chip" style="background:rgba(255, 255, 255, 0.95)"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">rgba(255, 255, 255, 0.95)</span></div><div class="swatch"><div class="chip" style="background:rgba(255, 255, 255, 0.50)"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">rgba(255, 255, 255, 0.50)</span></div><div class="swatch"><div class="chip" style="background:rgba(255, 255, 255, 0.72)"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">rgba(255, 255, 255, 0.72)</span></div><div class="swatch"><div class="chip" style="background:#1c2230"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#1c2230</span></div><div class="swatch"><div class="chip" style="background:#515b6e"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#515b6e</span></div><div class="swatch"><div class="chip" style="background:#8993a4"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#8993a4</span></div><div class="swatch"><div class="chip" style="background:rgba(255, 255, 255, 0.55)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(255, 255, 255, 0.55)</span></div><div class="swatch"><div class="chip" style="background:rgba(255, 255, 255, 0.75)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(255, 255, 255, 0.75)</span></div><div class="swatch"><div class="chip" style="background:rgba(255, 255, 255, 0.94)"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">rgba(255, 255, 255, 0.94)</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:16px; background: var(--brand-300);"></div><code>--radius-sm</code><span>16px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:24px; background: var(--brand-300);"></div><code>--radius</code><span>24px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:32px; background: var(--brand-300);"></div><code>--radius-lg</code><span>32px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:40px; background: var(--brand-300);"></div><code>--radius-xl</code><span>40px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#2d3a52"><code>--hero-bg</code><span>#2d3a52</span></div><div class="hero-cell" style="background:#5b6f8c"><code>--hero-mesh-1</code><span>#5b6f8c</span></div><div class="hero-cell" style="background:#94a3c4"><code>--hero-mesh-2</code><span>#94a3c4</span></div><div class="hero-cell" style="background:#1f2a40"><code>--hero-mesh-3</code><span>#1f2a40</span></div><div class="hero-cell" style="background:#3e5775"><code>--hero-mesh-4</code><span>#3e5775</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">mist</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-salty" class="theme" style="--popover-bg: #e6ecee; --bg: #f0f4f5; --card: rgba(255, 255, 255, 0.92); --card-solid: #fbfdfd; --elevated: #e6ecee; --raised: #d3dde1; --fg: #1f3a44; --fg-muted: #4a6975; --fg-subtle: #8aa3ad; --line: rgba(31, 58, 68, 0.10); --line-strong: rgba(31, 58, 68, 0.20); --backdrop: rgba(31, 58, 68, 0.40); --brand-50: #e8eef0; --brand-100: #cdd9dd; --brand-200: #a4bac1; --brand-300: #7d99a3; --brand-400: #5b7a85; --brand-500: #436069; --brand-600: #2e4750; --brand-700: #233640; --brand-800: #19262e; --brand-900: #0e1a1f; --radius-sm: 8px; --radius: 12px; --radius-lg: 18px; --radius-xl: 26px; --hero-bg: #1a2e35; --hero-mesh-1: #44737d; --hero-mesh-2: #8aa3ad; --hero-mesh-3: #0e1a1f; --hero-mesh-4: #d3dde1;">
+  <header class="theme-h">
+    <h2>salty</h2>
+    <span class="theme-sub">data-theme="salty"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#e8eef0"></div><code>50</code><span>#e8eef0</span></div><div class="swatch ramp"><div class="chip" style="background:#cdd9dd"></div><code>100</code><span>#cdd9dd</span></div><div class="swatch ramp"><div class="chip" style="background:#a4bac1"></div><code>200</code><span>#a4bac1</span></div><div class="swatch ramp"><div class="chip" style="background:#7d99a3"></div><code>300</code><span>#7d99a3</span></div><div class="swatch ramp"><div class="chip" style="background:#5b7a85"></div><code>400</code><span>#5b7a85</span></div><div class="swatch ramp"><div class="chip" style="background:#436069"></div><code>500</code><span>#436069</span></div><div class="swatch ramp"><div class="chip" style="background:#2e4750"></div><code>600</code><span>#2e4750</span></div><div class="swatch ramp"><div class="chip" style="background:#233640"></div><code>700</code><span>#233640</span></div><div class="swatch ramp"><div class="chip" style="background:#19262e"></div><code>800</code><span>#19262e</span></div><div class="swatch ramp"><div class="chip" style="background:#0e1a1f"></div><code>900</code><span>#0e1a1f</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#f0f4f5"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#f0f4f5</span></div><div class="swatch"><div class="chip" style="background:#fbfdfd"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#fbfdfd</span></div><div class="swatch"><div class="chip" style="background:#e6ecee"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">#e6ecee</span></div><div class="swatch"><div class="chip" style="background:#d3dde1"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">#d3dde1</span></div><div class="swatch"><div class="chip" style="background:#1f3a44"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#1f3a44</span></div><div class="swatch"><div class="chip" style="background:#4a6975"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#4a6975</span></div><div class="swatch"><div class="chip" style="background:#8aa3ad"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#8aa3ad</span></div><div class="swatch"><div class="chip" style="background:rgba(31, 58, 68, 0.10)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(31, 58, 68, 0.10)</span></div><div class="swatch"><div class="chip" style="background:rgba(31, 58, 68, 0.20)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(31, 58, 68, 0.20)</span></div><div class="swatch"><div class="chip" style="background:#e6ecee"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">#e6ecee</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:8px; background: var(--brand-300);"></div><code>--radius-sm</code><span>8px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:12px; background: var(--brand-300);"></div><code>--radius</code><span>12px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:18px; background: var(--brand-300);"></div><code>--radius-lg</code><span>18px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:26px; background: var(--brand-300);"></div><code>--radius-xl</code><span>26px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#1a2e35"><code>--hero-bg</code><span>#1a2e35</span></div><div class="hero-cell" style="background:#44737d"><code>--hero-mesh-1</code><span>#44737d</span></div><div class="hero-cell" style="background:#8aa3ad"><code>--hero-mesh-2</code><span>#8aa3ad</span></div><div class="hero-cell" style="background:#0e1a1f"><code>--hero-mesh-3</code><span>#0e1a1f</span></div><div class="hero-cell" style="background:#d3dde1"><code>--hero-mesh-4</code><span>#d3dde1</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">salty</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-greenwood" class="theme" style="--popover-bg: #e3ead8; --bg: #eef1ea; --card: rgba(248, 251, 240, 0.92); --card-solid: #f7faf2; --elevated: #e1e8d5; --raised: #d0d9c1; --fg: #1f2a1a; --fg-muted: #4d5a44; --fg-subtle: #5d6b55; --line: rgba(31, 42, 26, 0.10); --line-strong: rgba(31, 42, 26, 0.20); --backdrop: rgba(31, 42, 26, 0.42); --brand-50: #eaf1de; --brand-100: #d6e4be; --brand-200: #b8cf94; --brand-300: #94b569; --brand-400: #759a48; --brand-500: #5d7f33; --brand-600: #456224; --brand-700: #36501c; --brand-800: #283c14; --brand-900: #1c2a0d; --radius-sm: 10px; --radius: 14px; --radius-lg: 20px; --radius-xl: 28px; --hero-bg: #1f3a1e; --hero-mesh-1: #6f9151; --hero-mesh-2: #c6a449; --hero-mesh-3: #2a4a22; --hero-mesh-4: #8ba85b;">
+  <header class="theme-h">
+    <h2>greenwood</h2>
+    <span class="theme-sub">data-theme="greenwood"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#eaf1de"></div><code>50</code><span>#eaf1de</span></div><div class="swatch ramp"><div class="chip" style="background:#d6e4be"></div><code>100</code><span>#d6e4be</span></div><div class="swatch ramp"><div class="chip" style="background:#b8cf94"></div><code>200</code><span>#b8cf94</span></div><div class="swatch ramp"><div class="chip" style="background:#94b569"></div><code>300</code><span>#94b569</span></div><div class="swatch ramp"><div class="chip" style="background:#759a48"></div><code>400</code><span>#759a48</span></div><div class="swatch ramp"><div class="chip" style="background:#5d7f33"></div><code>500</code><span>#5d7f33</span></div><div class="swatch ramp"><div class="chip" style="background:#456224"></div><code>600</code><span>#456224</span></div><div class="swatch ramp"><div class="chip" style="background:#36501c"></div><code>700</code><span>#36501c</span></div><div class="swatch ramp"><div class="chip" style="background:#283c14"></div><code>800</code><span>#283c14</span></div><div class="swatch ramp"><div class="chip" style="background:#1c2a0d"></div><code>900</code><span>#1c2a0d</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#eef1ea"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#eef1ea</span></div><div class="swatch"><div class="chip" style="background:#f7faf2"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#f7faf2</span></div><div class="swatch"><div class="chip" style="background:#e1e8d5"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">#e1e8d5</span></div><div class="swatch"><div class="chip" style="background:#d0d9c1"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">#d0d9c1</span></div><div class="swatch"><div class="chip" style="background:#1f2a1a"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#1f2a1a</span></div><div class="swatch"><div class="chip" style="background:#4d5a44"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#4d5a44</span></div><div class="swatch"><div class="chip" style="background:#5d6b55"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#5d6b55</span></div><div class="swatch"><div class="chip" style="background:rgba(31, 42, 26, 0.10)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(31, 42, 26, 0.10)</span></div><div class="swatch"><div class="chip" style="background:rgba(31, 42, 26, 0.20)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(31, 42, 26, 0.20)</span></div><div class="swatch"><div class="chip" style="background:#e3ead8"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">#e3ead8</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:10px; background: var(--brand-300);"></div><code>--radius-sm</code><span>10px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:14px; background: var(--brand-300);"></div><code>--radius</code><span>14px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:20px; background: var(--brand-300);"></div><code>--radius-lg</code><span>20px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:28px; background: var(--brand-300);"></div><code>--radius-xl</code><span>28px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#1f3a1e"><code>--hero-bg</code><span>#1f3a1e</span></div><div class="hero-cell" style="background:#6f9151"><code>--hero-mesh-1</code><span>#6f9151</span></div><div class="hero-cell" style="background:#c6a449"><code>--hero-mesh-2</code><span>#c6a449</span></div><div class="hero-cell" style="background:#2a4a22"><code>--hero-mesh-3</code><span>#2a4a22</span></div><div class="hero-cell" style="background:#8ba85b"><code>--hero-mesh-4</code><span>#8ba85b</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">greenwood</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-chilli" class="theme" style="--popover-bg: rgba(54, 24, 18, 0.96); --bg: #1a0a08; --card: rgba(36, 18, 14, 0.92); --card-solid: #240e0a; --elevated: rgba(54, 24, 18, 0.92); --raised: rgba(72, 32, 24, 0.92); --fg: #ffeacf; --fg-muted: #d4a98a; --fg-subtle: #8a6855; --line: rgba(255, 91, 60, 0.28); --line-strong: rgba(255, 91, 60, 0.50); --backdrop: rgba(20, 5, 0, 0.85); --brand-50: #2a0a06; --brand-100: #4a1408; --brand-200: #7a1f0a; --brand-300: #a82c10; --brand-400: #d83c14; --brand-500: #ed5024; --brand-600: #ff6b3d; --brand-700: #ff8a64; --brand-800: #ffae8d; --brand-900: #ffd4bb; --radius-sm: 6px; --radius: 10px; --radius-lg: 16px; --radius-xl: 22px; --hero-bg: #2a0c08; --hero-mesh-1: #ff5b3c; --hero-mesh-2: #ffb33c; --hero-mesh-3: #2a0c08; --hero-mesh-4: #c2440f;">
+  <header class="theme-h">
+    <h2>chilli</h2>
+    <span class="theme-sub">data-theme="chilli"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#2a0a06"></div><code>50</code><span>#2a0a06</span></div><div class="swatch ramp"><div class="chip" style="background:#4a1408"></div><code>100</code><span>#4a1408</span></div><div class="swatch ramp"><div class="chip" style="background:#7a1f0a"></div><code>200</code><span>#7a1f0a</span></div><div class="swatch ramp"><div class="chip" style="background:#a82c10"></div><code>300</code><span>#a82c10</span></div><div class="swatch ramp"><div class="chip" style="background:#d83c14"></div><code>400</code><span>#d83c14</span></div><div class="swatch ramp"><div class="chip" style="background:#ed5024"></div><code>500</code><span>#ed5024</span></div><div class="swatch ramp"><div class="chip" style="background:#ff6b3d"></div><code>600</code><span>#ff6b3d</span></div><div class="swatch ramp"><div class="chip" style="background:#ff8a64"></div><code>700</code><span>#ff8a64</span></div><div class="swatch ramp"><div class="chip" style="background:#ffae8d"></div><code>800</code><span>#ffae8d</span></div><div class="swatch ramp"><div class="chip" style="background:#ffd4bb"></div><code>900</code><span>#ffd4bb</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#1a0a08"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#1a0a08</span></div><div class="swatch"><div class="chip" style="background:#240e0a"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#240e0a</span></div><div class="swatch"><div class="chip" style="background:rgba(54, 24, 18, 0.92)"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">rgba(54, 24, 18, 0.92)</span></div><div class="swatch"><div class="chip" style="background:rgba(72, 32, 24, 0.92)"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">rgba(72, 32, 24, 0.92)</span></div><div class="swatch"><div class="chip" style="background:#ffeacf"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#ffeacf</span></div><div class="swatch"><div class="chip" style="background:#d4a98a"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#d4a98a</span></div><div class="swatch"><div class="chip" style="background:#8a6855"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#8a6855</span></div><div class="swatch"><div class="chip" style="background:rgba(255, 91, 60, 0.28)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(255, 91, 60, 0.28)</span></div><div class="swatch"><div class="chip" style="background:rgba(255, 91, 60, 0.50)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(255, 91, 60, 0.50)</span></div><div class="swatch"><div class="chip" style="background:rgba(54, 24, 18, 0.96)"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">rgba(54, 24, 18, 0.96)</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:6px; background: var(--brand-300);"></div><code>--radius-sm</code><span>6px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:10px; background: var(--brand-300);"></div><code>--radius</code><span>10px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:16px; background: var(--brand-300);"></div><code>--radius-lg</code><span>16px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:22px; background: var(--brand-300);"></div><code>--radius-xl</code><span>22px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#2a0c08"><code>--hero-bg</code><span>#2a0c08</span></div><div class="hero-cell" style="background:#ff5b3c"><code>--hero-mesh-1</code><span>#ff5b3c</span></div><div class="hero-cell" style="background:#ffb33c"><code>--hero-mesh-2</code><span>#ffb33c</span></div><div class="hero-cell" style="background:#2a0c08"><code>--hero-mesh-3</code><span>#2a0c08</span></div><div class="hero-cell" style="background:#c2440f"><code>--hero-mesh-4</code><span>#c2440f</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">chilli</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-icecream" class="theme" style="--popover-bg: #fff0e6; --bg: #fff8f3; --card: rgba(255, 255, 255, 0.92); --card-solid: #fffaf5; --elevated: #ffefe6; --raised: #ffdfd0; --fg: #3d2a3b; --fg-muted: #6b4d6a; --fg-subtle: #7d5d7c; --line: rgba(61, 42, 59, 0.10); --line-strong: rgba(61, 42, 59, 0.18); --backdrop: rgba(61, 42, 59, 0.40); --brand-50: #ffeaee; --brand-100: #ffd0d8; --brand-200: #ffa9b9; --brand-300: #ff7e94; --brand-400: #ff5773; --brand-500: #ed3a5a; --brand-600: #c5234a; --brand-700: #9a1a3c; --brand-800: #6e132d; --brand-900: #4a0c1f; --radius-sm: 14px; --radius: 20px; --radius-lg: 30px; --radius-xl: 42px; --hero-bg: #ffb1c1; --hero-mesh-1: #ff7eb6; --hero-mesh-2: #b8e0d2; --hero-mesh-3: #ffd6a5; --hero-mesh-4: #c8b6e8; --hero-fg: #3d2a3b; --hero-scrim: 0; --hero-title-gradient: linear-gradient(120deg, var(--brand-800, #3d2a3b) 0%, var(--brand-900, #2a1d28) 55%, var(--brand-800, #3d2a3b) 100%);">
+  <header class="theme-h">
+    <h2>icecream</h2>
+    <span class="theme-sub">data-theme="icecream"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#ffeaee"></div><code>50</code><span>#ffeaee</span></div><div class="swatch ramp"><div class="chip" style="background:#ffd0d8"></div><code>100</code><span>#ffd0d8</span></div><div class="swatch ramp"><div class="chip" style="background:#ffa9b9"></div><code>200</code><span>#ffa9b9</span></div><div class="swatch ramp"><div class="chip" style="background:#ff7e94"></div><code>300</code><span>#ff7e94</span></div><div class="swatch ramp"><div class="chip" style="background:#ff5773"></div><code>400</code><span>#ff5773</span></div><div class="swatch ramp"><div class="chip" style="background:#ed3a5a"></div><code>500</code><span>#ed3a5a</span></div><div class="swatch ramp"><div class="chip" style="background:#c5234a"></div><code>600</code><span>#c5234a</span></div><div class="swatch ramp"><div class="chip" style="background:#9a1a3c"></div><code>700</code><span>#9a1a3c</span></div><div class="swatch ramp"><div class="chip" style="background:#6e132d"></div><code>800</code><span>#6e132d</span></div><div class="swatch ramp"><div class="chip" style="background:#4a0c1f"></div><code>900</code><span>#4a0c1f</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#fff8f3"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#fff8f3</span></div><div class="swatch"><div class="chip" style="background:#fffaf5"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#fffaf5</span></div><div class="swatch"><div class="chip" style="background:#ffefe6"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">#ffefe6</span></div><div class="swatch"><div class="chip" style="background:#ffdfd0"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">#ffdfd0</span></div><div class="swatch"><div class="chip" style="background:#3d2a3b"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#3d2a3b</span></div><div class="swatch"><div class="chip" style="background:#6b4d6a"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#6b4d6a</span></div><div class="swatch"><div class="chip" style="background:#7d5d7c"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#7d5d7c</span></div><div class="swatch"><div class="chip" style="background:rgba(61, 42, 59, 0.10)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(61, 42, 59, 0.10)</span></div><div class="swatch"><div class="chip" style="background:rgba(61, 42, 59, 0.18)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(61, 42, 59, 0.18)</span></div><div class="swatch"><div class="chip" style="background:#fff0e6"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">#fff0e6</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:14px; background: var(--brand-300);"></div><code>--radius-sm</code><span>14px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:20px; background: var(--brand-300);"></div><code>--radius</code><span>20px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:30px; background: var(--brand-300);"></div><code>--radius-lg</code><span>30px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:42px; background: var(--brand-300);"></div><code>--radius-xl</code><span>42px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#ffb1c1"><code>--hero-bg</code><span>#ffb1c1</span></div><div class="hero-cell" style="background:#ff7eb6"><code>--hero-mesh-1</code><span>#ff7eb6</span></div><div class="hero-cell" style="background:#b8e0d2"><code>--hero-mesh-2</code><span>#b8e0d2</span></div><div class="hero-cell" style="background:#ffd6a5"><code>--hero-mesh-3</code><span>#ffd6a5</span></div><div class="hero-cell" style="background:#c8b6e8"><code>--hero-mesh-4</code><span>#c8b6e8</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">icecream</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-coldbrew" class="theme" style="--popover-bg: rgba(40, 26, 18, 0.96); --bg: #0c0604; --card: rgba(28, 18, 12, 0.92); --card-solid: #18100a; --elevated: rgba(40, 26, 18, 0.92); --raised: rgba(58, 38, 26, 0.92); --fg: #f5e8d0; --fg-muted: #c4a98c; --fg-subtle: #8a6e54; --line: rgba(192, 141, 99, 0.16); --line-strong: rgba(192, 141, 99, 0.34); --backdrop: rgba(8, 4, 2, 0.85); --brand-50: #1a0e08; --brand-100: #2a1810; --brand-200: #432718; --brand-300: #5d3920; --brand-400: #7d4f30; --brand-500: #a06c44; --brand-600: #d49a6e; --brand-700: #e6b88a; --brand-800: #f0d2af; --brand-900: #f9ead0; --radius-sm: 8px; --radius: 12px; --radius-lg: 18px; --radius-xl: 24px; --hero-bg: #0a0503; --hero-mesh-1: #d49a6e; --hero-mesh-2: #5d3920; --hero-mesh-3: #18100a; --hero-mesh-4: #c08d63;">
+  <header class="theme-h">
+    <h2>coldbrew</h2>
+    <span class="theme-sub">data-theme="coldbrew"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#1a0e08"></div><code>50</code><span>#1a0e08</span></div><div class="swatch ramp"><div class="chip" style="background:#2a1810"></div><code>100</code><span>#2a1810</span></div><div class="swatch ramp"><div class="chip" style="background:#432718"></div><code>200</code><span>#432718</span></div><div class="swatch ramp"><div class="chip" style="background:#5d3920"></div><code>300</code><span>#5d3920</span></div><div class="swatch ramp"><div class="chip" style="background:#7d4f30"></div><code>400</code><span>#7d4f30</span></div><div class="swatch ramp"><div class="chip" style="background:#a06c44"></div><code>500</code><span>#a06c44</span></div><div class="swatch ramp"><div class="chip" style="background:#d49a6e"></div><code>600</code><span>#d49a6e</span></div><div class="swatch ramp"><div class="chip" style="background:#e6b88a"></div><code>700</code><span>#e6b88a</span></div><div class="swatch ramp"><div class="chip" style="background:#f0d2af"></div><code>800</code><span>#f0d2af</span></div><div class="swatch ramp"><div class="chip" style="background:#f9ead0"></div><code>900</code><span>#f9ead0</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#0c0604"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#0c0604</span></div><div class="swatch"><div class="chip" style="background:#18100a"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#18100a</span></div><div class="swatch"><div class="chip" style="background:rgba(40, 26, 18, 0.92)"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">rgba(40, 26, 18, 0.92)</span></div><div class="swatch"><div class="chip" style="background:rgba(58, 38, 26, 0.92)"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">rgba(58, 38, 26, 0.92)</span></div><div class="swatch"><div class="chip" style="background:#f5e8d0"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#f5e8d0</span></div><div class="swatch"><div class="chip" style="background:#c4a98c"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#c4a98c</span></div><div class="swatch"><div class="chip" style="background:#8a6e54"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#8a6e54</span></div><div class="swatch"><div class="chip" style="background:rgba(192, 141, 99, 0.16)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(192, 141, 99, 0.16)</span></div><div class="swatch"><div class="chip" style="background:rgba(192, 141, 99, 0.34)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(192, 141, 99, 0.34)</span></div><div class="swatch"><div class="chip" style="background:rgba(40, 26, 18, 0.96)"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">rgba(40, 26, 18, 0.96)</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:8px; background: var(--brand-300);"></div><code>--radius-sm</code><span>8px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:12px; background: var(--brand-300);"></div><code>--radius</code><span>12px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:18px; background: var(--brand-300);"></div><code>--radius-lg</code><span>18px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:24px; background: var(--brand-300);"></div><code>--radius-xl</code><span>24px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#0a0503"><code>--hero-bg</code><span>#0a0503</span></div><div class="hero-cell" style="background:#d49a6e"><code>--hero-mesh-1</code><span>#d49a6e</span></div><div class="hero-cell" style="background:#5d3920"><code>--hero-mesh-2</code><span>#5d3920</span></div><div class="hero-cell" style="background:#18100a"><code>--hero-mesh-3</code><span>#18100a</span></div><div class="hero-cell" style="background:#c08d63"><code>--hero-mesh-4</code><span>#c08d63</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">coldbrew</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-dryice" class="theme" style="--popover-bg: rgba(20, 35, 48, 0.96); --bg: #0a1318; --card: rgba(15, 26, 35, 0.85); --card-solid: #0d1a23; --elevated: rgba(20, 35, 48, 0.82); --raised: rgba(29, 49, 66, 0.90); --fg: #e0eef5; --fg-muted: #8aa6b8; --fg-subtle: #5a7589; --line: rgba(160, 200, 220, 0.16); --line-strong: rgba(160, 200, 220, 0.32); --backdrop: rgba(0, 5, 10, 0.85); --brand-50: #0f1f29; --brand-100: #16303f; --brand-200: #224354; --brand-300: #305b71; --brand-400: #4480a0; --brand-500: #6da5c2; --brand-600: #8fc8dc; --brand-700: #a8d6e4; --brand-800: #c1e1eb; --brand-900: #d8eef4; --radius-sm: 3px; --radius: 5px; --radius-lg: 8px; --radius-xl: 12px; --hero-bg: #050b0f; --hero-mesh-1: #1a3b4f; --hero-mesh-2: #6da5c2; --hero-mesh-3: #0f1f29; --hero-mesh-4: #88b8cf;">
+  <header class="theme-h">
+    <h2>dryice</h2>
+    <span class="theme-sub">data-theme="dryice"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#0f1f29"></div><code>50</code><span>#0f1f29</span></div><div class="swatch ramp"><div class="chip" style="background:#16303f"></div><code>100</code><span>#16303f</span></div><div class="swatch ramp"><div class="chip" style="background:#224354"></div><code>200</code><span>#224354</span></div><div class="swatch ramp"><div class="chip" style="background:#305b71"></div><code>300</code><span>#305b71</span></div><div class="swatch ramp"><div class="chip" style="background:#4480a0"></div><code>400</code><span>#4480a0</span></div><div class="swatch ramp"><div class="chip" style="background:#6da5c2"></div><code>500</code><span>#6da5c2</span></div><div class="swatch ramp"><div class="chip" style="background:#8fc8dc"></div><code>600</code><span>#8fc8dc</span></div><div class="swatch ramp"><div class="chip" style="background:#a8d6e4"></div><code>700</code><span>#a8d6e4</span></div><div class="swatch ramp"><div class="chip" style="background:#c1e1eb"></div><code>800</code><span>#c1e1eb</span></div><div class="swatch ramp"><div class="chip" style="background:#d8eef4"></div><code>900</code><span>#d8eef4</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#0a1318"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#0a1318</span></div><div class="swatch"><div class="chip" style="background:#0d1a23"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#0d1a23</span></div><div class="swatch"><div class="chip" style="background:rgba(20, 35, 48, 0.82)"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">rgba(20, 35, 48, 0.82)</span></div><div class="swatch"><div class="chip" style="background:rgba(29, 49, 66, 0.90)"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">rgba(29, 49, 66, 0.90)</span></div><div class="swatch"><div class="chip" style="background:#e0eef5"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#e0eef5</span></div><div class="swatch"><div class="chip" style="background:#8aa6b8"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#8aa6b8</span></div><div class="swatch"><div class="chip" style="background:#5a7589"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#5a7589</span></div><div class="swatch"><div class="chip" style="background:rgba(160, 200, 220, 0.16)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(160, 200, 220, 0.16)</span></div><div class="swatch"><div class="chip" style="background:rgba(160, 200, 220, 0.32)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(160, 200, 220, 0.32)</span></div><div class="swatch"><div class="chip" style="background:rgba(20, 35, 48, 0.96)"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">rgba(20, 35, 48, 0.96)</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:3px; background: var(--brand-300);"></div><code>--radius-sm</code><span>3px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:5px; background: var(--brand-300);"></div><code>--radius</code><span>5px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:8px; background: var(--brand-300);"></div><code>--radius-lg</code><span>8px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:12px; background: var(--brand-300);"></div><code>--radius-xl</code><span>12px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#050b0f"><code>--hero-bg</code><span>#050b0f</span></div><div class="hero-cell" style="background:#1a3b4f"><code>--hero-mesh-1</code><span>#1a3b4f</span></div><div class="hero-cell" style="background:#6da5c2"><code>--hero-mesh-2</code><span>#6da5c2</span></div><div class="hero-cell" style="background:#0f1f29"><code>--hero-mesh-3</code><span>#0f1f29</span></div><div class="hero-cell" style="background:#88b8cf"><code>--hero-mesh-4</code><span>#88b8cf</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">dryice</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-atompunk" class="theme" style="--popover-bg: #ede1c8; --bg: #f3ead8; --card: rgba(254, 250, 240, 0.94); --card-solid: #fefaf0; --elevated: #ede1c8; --raised: #ddd0b3; --fg: #0e1a3a; --fg-muted: #3d4a6b; --fg-subtle: #6b7388; --line: rgba(14, 26, 58, 0.14); --line-strong: rgba(14, 26, 58, 0.24); --backdrop: rgba(14, 26, 58, 0.55); --brand-50: #d8eded; --brand-100: #b3dbdb; --brand-200: #84c4c4; --brand-300: #4faaaa; --brand-400: #2a9595; --brand-500: #1a8a8a; --brand-600: #137575; --brand-700: #0e5f5f; --brand-800: #084949; --brand-900: #053535; --radius-sm: 2px; --radius: 4px; --radius-lg: 6px; --radius-xl: 8px; --hero-bg: #0e1a3a; --hero-mesh-1: #1a8a8a; --hero-mesh-2: #e85a3c; --hero-mesh-3: #07484a; --hero-mesh-4: #f5c81f;">
+  <header class="theme-h">
+    <h2>atompunk</h2>
+    <span class="theme-sub">data-theme="atompunk"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#d8eded"></div><code>50</code><span>#d8eded</span></div><div class="swatch ramp"><div class="chip" style="background:#b3dbdb"></div><code>100</code><span>#b3dbdb</span></div><div class="swatch ramp"><div class="chip" style="background:#84c4c4"></div><code>200</code><span>#84c4c4</span></div><div class="swatch ramp"><div class="chip" style="background:#4faaaa"></div><code>300</code><span>#4faaaa</span></div><div class="swatch ramp"><div class="chip" style="background:#2a9595"></div><code>400</code><span>#2a9595</span></div><div class="swatch ramp"><div class="chip" style="background:#1a8a8a"></div><code>500</code><span>#1a8a8a</span></div><div class="swatch ramp"><div class="chip" style="background:#137575"></div><code>600</code><span>#137575</span></div><div class="swatch ramp"><div class="chip" style="background:#0e5f5f"></div><code>700</code><span>#0e5f5f</span></div><div class="swatch ramp"><div class="chip" style="background:#084949"></div><code>800</code><span>#084949</span></div><div class="swatch ramp"><div class="chip" style="background:#053535"></div><code>900</code><span>#053535</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#f3ead8"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#f3ead8</span></div><div class="swatch"><div class="chip" style="background:#fefaf0"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#fefaf0</span></div><div class="swatch"><div class="chip" style="background:#ede1c8"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">#ede1c8</span></div><div class="swatch"><div class="chip" style="background:#ddd0b3"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">#ddd0b3</span></div><div class="swatch"><div class="chip" style="background:#0e1a3a"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#0e1a3a</span></div><div class="swatch"><div class="chip" style="background:#3d4a6b"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#3d4a6b</span></div><div class="swatch"><div class="chip" style="background:#6b7388"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#6b7388</span></div><div class="swatch"><div class="chip" style="background:rgba(14, 26, 58, 0.14)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(14, 26, 58, 0.14)</span></div><div class="swatch"><div class="chip" style="background:rgba(14, 26, 58, 0.24)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(14, 26, 58, 0.24)</span></div><div class="swatch"><div class="chip" style="background:#ede1c8"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">#ede1c8</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:2px; background: var(--brand-300);"></div><code>--radius-sm</code><span>2px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:4px; background: var(--brand-300);"></div><code>--radius</code><span>4px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:6px; background: var(--brand-300);"></div><code>--radius-lg</code><span>6px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:8px; background: var(--brand-300);"></div><code>--radius-xl</code><span>8px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#0e1a3a"><code>--hero-bg</code><span>#0e1a3a</span></div><div class="hero-cell" style="background:#1a8a8a"><code>--hero-mesh-1</code><span>#1a8a8a</span></div><div class="hero-cell" style="background:#e85a3c"><code>--hero-mesh-2</code><span>#e85a3c</span></div><div class="hero-cell" style="background:#07484a"><code>--hero-mesh-3</code><span>#07484a</span></div><div class="hero-cell" style="background:#f5c81f"><code>--hero-mesh-4</code><span>#f5c81f</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">atompunk</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-aurora" class="theme" style="--popover-bg: #1a1e3c; --bg: #0d1126; --card: rgba(26, 30, 60, 0.85); --card-solid: #1a1e3c; --elevated: rgba(36, 42, 76, 0.85); --raised: rgba(50, 56, 96, 0.85); --fg: #e8ebf2; --fg-muted: #b1b6c8; --fg-subtle: #7a8098; --line: rgba(180, 190, 220, 0.10); --line-strong: rgba(180, 190, 220, 0.20); --backdrop: rgba(0, 0, 0, 0.72); --brand-50: #261241; --brand-100: #321858; --brand-200: #401e72; --brand-300: #4f238d; --brand-400: #5d27a8; --brand-500: #ad7ce0; --brand-600: #6b21a8; --brand-700: #561888; --brand-800: #421267; --brand-900: #2e0d49; --radius-sm: 10px; --radius: 14px; --radius-lg: 22px; --radius-xl: 28px; --hero-bg: #0b0f24; --hero-mesh-1: #56bdf8; --hero-mesh-2: #f472b6; --hero-mesh-3: #4ade80; --hero-mesh-4: #facc15; --hero-title-gradient: linear-gradient(120deg, rgba(255,255,255,0.98) 0%, var(--brand-500, #ad7ce0) 55%, rgba(255,255,255,0.98) 100%);">
+  <header class="theme-h">
+    <h2>aurora</h2>
+    <span class="theme-sub">data-theme="aurora"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#261241"></div><code>50</code><span>#261241</span></div><div class="swatch ramp"><div class="chip" style="background:#321858"></div><code>100</code><span>#321858</span></div><div class="swatch ramp"><div class="chip" style="background:#401e72"></div><code>200</code><span>#401e72</span></div><div class="swatch ramp"><div class="chip" style="background:#4f238d"></div><code>300</code><span>#4f238d</span></div><div class="swatch ramp"><div class="chip" style="background:#5d27a8"></div><code>400</code><span>#5d27a8</span></div><div class="swatch ramp"><div class="chip" style="background:#ad7ce0"></div><code>500</code><span>#ad7ce0</span></div><div class="swatch ramp"><div class="chip" style="background:#6b21a8"></div><code>600</code><span>#6b21a8</span></div><div class="swatch ramp"><div class="chip" style="background:#561888"></div><code>700</code><span>#561888</span></div><div class="swatch ramp"><div class="chip" style="background:#421267"></div><code>800</code><span>#421267</span></div><div class="swatch ramp"><div class="chip" style="background:#2e0d49"></div><code>900</code><span>#2e0d49</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#0d1126"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#0d1126</span></div><div class="swatch"><div class="chip" style="background:#1a1e3c"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#1a1e3c</span></div><div class="swatch"><div class="chip" style="background:rgba(36, 42, 76, 0.85)"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">rgba(36, 42, 76, 0.85)</span></div><div class="swatch"><div class="chip" style="background:rgba(50, 56, 96, 0.85)"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">rgba(50, 56, 96, 0.85)</span></div><div class="swatch"><div class="chip" style="background:#e8ebf2"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#e8ebf2</span></div><div class="swatch"><div class="chip" style="background:#b1b6c8"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#b1b6c8</span></div><div class="swatch"><div class="chip" style="background:#7a8098"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#7a8098</span></div><div class="swatch"><div class="chip" style="background:rgba(180, 190, 220, 0.10)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(180, 190, 220, 0.10)</span></div><div class="swatch"><div class="chip" style="background:rgba(180, 190, 220, 0.20)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(180, 190, 220, 0.20)</span></div><div class="swatch"><div class="chip" style="background:#1a1e3c"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">#1a1e3c</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:10px; background: var(--brand-300);"></div><code>--radius-sm</code><span>10px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:14px; background: var(--brand-300);"></div><code>--radius</code><span>14px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:22px; background: var(--brand-300);"></div><code>--radius-lg</code><span>22px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:28px; background: var(--brand-300);"></div><code>--radius-xl</code><span>28px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#0b0f24"><code>--hero-bg</code><span>#0b0f24</span></div><div class="hero-cell" style="background:#56bdf8"><code>--hero-mesh-1</code><span>#56bdf8</span></div><div class="hero-cell" style="background:#f472b6"><code>--hero-mesh-2</code><span>#f472b6</span></div><div class="hero-cell" style="background:#4ade80"><code>--hero-mesh-3</code><span>#4ade80</span></div><div class="hero-cell" style="background:#facc15"><code>--hero-mesh-4</code><span>#facc15</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">aurora</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="theme-hitech" class="theme" style="--popover-bg: #03101a; --bg: #02060d; --card: rgba(8,22,38,0.84); --card-solid: #06121f; --elevated: rgba(12,32,52,0.82); --raised: rgba(20,52,84,0.90); --fg: #e3f7ff; --fg-muted: #8ecfe8; --fg-subtle: #4f7e98; --line: rgba(0,212,255,0.28); --line-strong: rgba(0,212,255,0.55); --backdrop: rgba(0,0,0,0.82); --brand-50: #002232; --brand-100: #00405d; --brand-200: #005f86; --brand-300: #007fb3; --brand-400: #00aae0; --brand-500: #00d4ff; --brand-600: #007fb3; --brand-700: #00aae0; --brand-800: #00d4ff; --brand-900: #80edff; --radius-sm: 0px; --radius: 2px; --radius-lg: 4px; --radius-xl: 6px; --hero-bg: #001017; --hero-mesh-1: #00d4ff; --hero-mesh-2: #06b6d4; --hero-mesh-3: #0e7490; --hero-mesh-4: #042f38;">
+  <header class="theme-h">
+    <h2>hitech</h2>
+    <span class="theme-sub">data-theme="hitech"</span>
+  </header>
+
+  <h3>Brand ramp · 50→900</h3>
+  <div class="grid-ramp"><div class="swatch ramp"><div class="chip" style="background:#002232"></div><code>50</code><span>#002232</span></div><div class="swatch ramp"><div class="chip" style="background:#00405d"></div><code>100</code><span>#00405d</span></div><div class="swatch ramp"><div class="chip" style="background:#005f86"></div><code>200</code><span>#005f86</span></div><div class="swatch ramp"><div class="chip" style="background:#007fb3"></div><code>300</code><span>#007fb3</span></div><div class="swatch ramp"><div class="chip" style="background:#00aae0"></div><code>400</code><span>#00aae0</span></div><div class="swatch ramp"><div class="chip" style="background:#00d4ff"></div><code>500</code><span>#00d4ff</span></div><div class="swatch ramp"><div class="chip" style="background:#007fb3"></div><code>600</code><span>#007fb3</span></div><div class="swatch ramp"><div class="chip" style="background:#00aae0"></div><code>700</code><span>#00aae0</span></div><div class="swatch ramp"><div class="chip" style="background:#00d4ff"></div><code>800</code><span>#00d4ff</span></div><div class="swatch ramp"><div class="chip" style="background:#80edff"></div><code>900</code><span>#80edff</span></div></div>
+
+  <h3>Semantic surface + text</h3>
+  <div class="grid-semantic"><div class="swatch"><div class="chip" style="background:#02060d"></div><code>--bg</code><span class="sw-label">Page background</span><span class="sw-val">#02060d</span></div><div class="swatch"><div class="chip" style="background:#06121f"></div><code>--card-solid</code><span class="sw-label">Card surface</span><span class="sw-val">#06121f</span></div><div class="swatch"><div class="chip" style="background:rgba(12,32,52,0.82)"></div><code>--elevated</code><span class="sw-label">Elevated surface</span><span class="sw-val">rgba(12,32,52,0.82)</span></div><div class="swatch"><div class="chip" style="background:rgba(20,52,84,0.90)"></div><code>--raised</code><span class="sw-label">Raised surface</span><span class="sw-val">rgba(20,52,84,0.90)</span></div><div class="swatch"><div class="chip" style="background:#e3f7ff"></div><code>--fg</code><span class="sw-label">Foreground</span><span class="sw-val">#e3f7ff</span></div><div class="swatch"><div class="chip" style="background:#8ecfe8"></div><code>--fg-muted</code><span class="sw-label">Muted text</span><span class="sw-val">#8ecfe8</span></div><div class="swatch"><div class="chip" style="background:#4f7e98"></div><code>--fg-subtle</code><span class="sw-label">Subtle text</span><span class="sw-val">#4f7e98</span></div><div class="swatch"><div class="chip" style="background:rgba(0,212,255,0.28)"></div><code>--line</code><span class="sw-label">Hairline</span><span class="sw-val">rgba(0,212,255,0.28)</span></div><div class="swatch"><div class="chip" style="background:rgba(0,212,255,0.55)"></div><code>--line-strong</code><span class="sw-label">Strong hairline</span><span class="sw-val">rgba(0,212,255,0.55)</span></div><div class="swatch"><div class="chip" style="background:#03101a"></div><code>--popover-bg</code><span class="sw-label">Popover surface</span><span class="sw-val">#03101a</span></div></div>
+
+  <h3>Radius scale</h3>
+  <div class="radius-row"><div class="radius-cell"><div class="radius-box" style="border-radius:0px; background: var(--brand-300);"></div><code>--radius-sm</code><span>0px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:2px; background: var(--brand-300);"></div><code>--radius</code><span>2px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:4px; background: var(--brand-300);"></div><code>--radius-lg</code><span>4px</span></div><div class="radius-cell"><div class="radius-box" style="border-radius:6px; background: var(--brand-300);"></div><code>--radius-xl</code><span>6px</span></div></div>
+
+  <h3>Hero mesh palette</h3>
+  <div class="hero-row"><div class="hero-cell" style="background:#001017"><code>--hero-bg</code><span>#001017</span></div><div class="hero-cell" style="background:#00d4ff"><code>--hero-mesh-1</code><span>#00d4ff</span></div><div class="hero-cell" style="background:#06b6d4"><code>--hero-mesh-2</code><span>#06b6d4</span></div><div class="hero-cell" style="background:#0e7490"><code>--hero-mesh-3</code><span>#0e7490</span></div><div class="hero-cell" style="background:#042f38"><code>--hero-mesh-4</code><span>#042f38</span></div></div>
+
+  <h3>Composition</h3>
+  <div class="mock" style="background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius);">
+      <div class="mock-card" style="background: var(--card-solid); border: 1px solid var(--line); border-radius: var(--radius-sm);">
+        <div class="mock-chip">hitech</div>
+        <h4 style="color: var(--fg);">Headline</h4>
+        <p style="color: var(--fg-muted);">Muted body copy describing this card.</p>
+        <p class="subtle" style="color: var(--fg-subtle);">Subtle metadata · 2h ago</p>
+        <div class="mock-actions">
+          <button class="btn-primary" style="background: var(--brand-600); color: white; border-radius: var(--radius-sm); border: 1px solid var(--brand-700);">Primary</button>
+          <button class="btn-secondary" style="background: var(--elevated); color: var(--fg); border-radius: var(--radius-sm); border: 1px solid var(--line);">Secondary</button>
+        </div>
+      </div>
+    </div>
+</section>
+  </main>
+</body>
+</html>

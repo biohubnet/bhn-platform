@@ -69,6 +69,16 @@ const ARCHIVE_ENTRIES: ArchiveEntry[] = [
     tags: ["M34", "Y2K", "Glass", "Aero"],
   },
   {
+    slug: "design-tokens",
+    title: "Design tokens · all 13 themes visualised",
+    description:
+      "Auto-generated single-page tour of every theme on the platform — light + 12 named variants (rosalind, sakura, mist, salty, greenwood, chilli, icecream, coldbrew, dryice, atompunk, aurora, hitech). Each theme renders its full token kit: brand ramp 50→900, semantic surface/text tokens (bg, card-solid, elevated, raised, fg, fg-muted, fg-subtle, line, popover-bg), radius scale (sm/md/lg/xl), hero-mesh palette, and a small composition mock (card + primary + secondary button + chip). Generated directly from src/app/globals.css so the visualisation never drifts from the live token defs.",
+    date: "2026-05-21",
+    count: 13,
+    countLabel: "themes",
+    tags: ["Tokens", "Themes", "Palette", "Brand ramp", "Radii", "Hero mesh"],
+  },
+  {
     slug: "delete-buttons-prism-covers",
     title: "Delete button · 12 prism plastic-cover variations",
     description:
