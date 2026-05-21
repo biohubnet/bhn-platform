@@ -10,7 +10,7 @@
  * over from there.
  */
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -21,6 +21,7 @@ import type { ResumeContent } from "@/lib/resume/types";
 import { ResumeThumbnail } from "./ResumeThumbnail";
 import { LaunchSwitch } from "@/components/ui/LaunchSwitch";
 import { useInputDialog } from "@/components/ui/InputDialog";
+import { ResumeCreatingOverlay } from "./ResumeCreatingOverlay";
 
 interface PostingChip {
   id: string;
@@ -60,6 +61,27 @@ export function ResumesIndexClient({ initialResumes }: Props) {
   const [creating, startCreate] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  // Animated transition state for create + duplicate. We hold the
+  // navigation target until the overlay's timeline completes, so
+  // the paper-folds-up animation has a chance to play even when
+  // the API returns in 50ms. If the API is still in flight when
+  // the timeline ends, we wait on `pendingHrefRef` (set after the
+  // POST resolves).
+  //
+  // Why a ref instead of state for the href: the overlay's onFinish
+  // is captured by setTimeout when the overlay mounts. By the time
+  // it fires, any re-render that landed a new pendingHref would be
+  // invisible to a state-based closure. The ref always reads the
+  // latest value at fire time.
+  const [overlay, setOverlay] = useState<{ name: string; verb: "Creating" | "Duplicating" } | null>(null);
+  const pendingHrefRef = useRef<string | null>(null);
+  function finishOverlay() {
+    const href = pendingHrefRef.current;
+    pendingHrefRef.current = null;
+    setOverlay(null);
+    if (href) router.push(href);
+  }
+
   // Multi-select state — checkbox per card. When at least one row
   // is selected, the sticky batch toolbar surfaces above the list
   // with Archive / Restore / Delete / Open all PDFs.
@@ -90,18 +112,33 @@ export function ResumesIndexClient({ initialResumes }: Props) {
       confirmLabel: "Create",
     });
     if (name === null) return;
+    const cleanName = name.trim() || "New resume";
+    // Pop the overlay immediately so the user sees the paper-folds-
+    // up animation start while the API call runs in parallel. If
+    // the API errors, the overlay's finishOverlay() runs anyway —
+    // we close it and surface the error in the page chip.
+    pendingHrefRef.current = null;
+    setOverlay({ name: cleanName, verb: "Creating" });
     startCreate(async () => {
       const r = await fetch("/api/profile/resumes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() || "New resume" }),
+        body: JSON.stringify({ name: cleanName }),
       });
       const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string; resume?: { id: string } };
       if (!r.ok || !j.ok || !j.resume) {
+        // Drop the overlay early on failure so the user sees the
+        // error chip immediately instead of finishing a fake
+        // success animation.
+        setOverlay(null);
+        pendingHrefRef.current = null;
         setError(j.error ?? "Couldn't create resume.");
         return;
       }
-      router.push(`/profile/resume?id=${j.resume.id}`);
+      // Stash the target. If the overlay timeline is already done
+      // by the time the API returns, navigate now; otherwise
+      // finishOverlay() will pick it up when the timeline ends.
+      pendingHrefRef.current = `/profile/resume?id=${j.resume.id}`;
     });
   }
 
@@ -115,17 +152,22 @@ export function ResumesIndexClient({ initialResumes }: Props) {
       confirmLabel: "Duplicate",
     });
     if (name === null) return;
+    const cleanName = name.trim() || `${source.name} (copy)`;
+    pendingHrefRef.current = null;
+    setOverlay({ name: cleanName, verb: "Duplicating" });
     const r = await fetch("/api/profile/resumes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim() || `${source.name} (copy)`, sourceResumeId: source.id }),
+      body: JSON.stringify({ name: cleanName, sourceResumeId: source.id }),
     });
     const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string; resume?: { id: string } };
     if (!r.ok || !j.ok || !j.resume) {
+      setOverlay(null);
+      pendingHrefRef.current = null;
       setError(j.error ?? "Duplicate failed.");
       return;
     }
-    router.push(`/profile/resume?id=${j.resume.id}`);
+    pendingHrefRef.current = `/profile/resume?id=${j.resume.id}`;
   }
 
   async function rename(row: ResumeRow) {
@@ -375,6 +417,19 @@ export function ResumesIndexClient({ initialResumes }: Props) {
       {/* Input dialog portal — only rendered when an inputDialog()
           call is awaiting a response. See InputDialog for the API. */}
       {dialogNode}
+
+      {/* Creating / Duplicating animation — full-viewport overlay
+          with a paper-sheet-folds-up animation. Plays for ~1.7s
+          while the API call runs in parallel; navigates to the new
+          editor when the timeline finishes. */}
+      {overlay && (
+        <ResumeCreatingOverlay
+          open
+          name={overlay.name}
+          verb={overlay.verb}
+          onFinish={finishOverlay}
+        />
+      )}
     </div>
   );
 }
