@@ -26,6 +26,7 @@ import {
   Library, ChevronDown, ChevronUp, ArrowUpRight, FileDown,
   Clock, ArrowUp, ArrowDown, Wand2,
 } from "lucide-react";
+import { MasterTailorDrawer } from "./MasterTailorDrawer";
 
 interface MasterStats {
   bulletCount: number;
@@ -36,11 +37,22 @@ interface MasterStats {
 
 const COLLAPSE_KEY = "bhn:master-banner-collapsed";
 
-export function MasterResumeBanner() {
+interface BannerProps {
+  /** The id of the resume the surrounding page is editing — passed
+   *  through to the AI-tailor drawer so it knows where to insert
+   *  accepted bullets. Optional because the banner is loadable in
+   *  contexts without a resume yet (e.g. /profile/master itself, if
+   *  that ever embeds it); the AI-tailor button is hidden when this
+   *  is absent because there's nothing to tailor INTO. */
+  resumeId?: string;
+}
+
+export function MasterResumeBanner({ resumeId }: BannerProps = {}) {
   const [stats, setStats] = useState<MasterStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [tailorOpen, setTailorOpen] = useState(false);
 
   // Pull state on mount. The /api/profile/master endpoint lazy-
   // creates the row, so this also primes the master for new users.
@@ -94,6 +106,7 @@ export function MasterResumeBanner() {
   const isEmpty = stats.bulletCount === 0;
 
   return (
+    <>
     <section
       role="region"
       aria-label="Master resume library"
@@ -142,13 +155,16 @@ export function MasterResumeBanner() {
                   <span className="block text-[11px] text-fg-muted mt-0.5">Add your first bullets section by section.</span>
                 </span>
               </Link>
-              <div className="inline-flex items-start gap-3 px-3.5 py-3 rounded-xl bg-card-solid/60 ring-1 ring-inset ring-dashed ring-line text-fg-subtle">
+              <div
+                title="Build your library first — open the master and add bullets, or extract from an existing resume."
+                className="inline-flex items-start gap-3 px-3.5 py-3 rounded-xl bg-card-solid/60 ring-1 ring-inset ring-dashed ring-line text-fg-subtle"
+              >
                 <span className="shrink-0 inline-flex w-9 h-9 rounded-lg bg-elevated text-fg-muted items-center justify-center">
                   <Wand2 size={15} />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[13px] font-semibold leading-tight">AI tailor (locked)</span>
-                  <span className="block text-[11px] mt-0.5">Build a library of at least a few bullets first — the AI picks from your master.</span>
+                  <span className="block text-[11px] mt-0.5">Build your library first — open the master and add bullets, or extract from an existing resume.</span>
                 </span>
               </div>
             </div>
@@ -174,16 +190,31 @@ export function MasterResumeBanner() {
                   <span className="block text-[11px] mt-0.5 leading-tight">Drag-from-master coming soon.</span>
                 </span>
               </div>
-              <div
-                title="AI tailor flow lands in a follow-up — picks 12 best bullets via embedding similarity + LLM re-rank."
-                className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid/60 ring-1 ring-inset ring-dashed ring-line text-fg-subtle"
-              >
-                <Wand2 size={13} className="mt-0.5 shrink-0" />
-                <span className="min-w-0">
-                  <span className="block text-[12.5px] font-semibold leading-tight">AI tailor for this role</span>
-                  <span className="block text-[11px] mt-0.5 leading-tight">Coming soon.</span>
-                </span>
-              </div>
+              {resumeId ? (
+                <button
+                  type="button"
+                  onClick={() => setTailorOpen(true)}
+                  className="group inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid ring-1 ring-inset ring-line hover:ring-brand-300 hover:bg-brand-50/60 transition-colors text-left"
+                  title={`Pick the 12 best bullets from your ${stats.bulletCount}-bullet library + light-rewrite to match the role.`}
+                >
+                  <Wand2 size={13} className="text-brand-700 mt-0.5 shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-bold text-fg leading-tight">AI tailor for this role</span>
+                    <span className="block text-[11px] text-fg-muted mt-0.5 leading-tight">Pick + rewrite 12 best bullets.</span>
+                  </span>
+                </button>
+              ) : (
+                <div
+                  title="Open a resume tailoring page first — the AI tailor inserts bullets into the resume you're editing."
+                  className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid/60 ring-1 ring-inset ring-dashed ring-line text-fg-subtle"
+                >
+                  <Wand2 size={13} className="mt-0.5 shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-semibold leading-tight">AI tailor for this role</span>
+                    <span className="block text-[11px] mt-0.5 leading-tight">Open a resume to enable.</span>
+                  </span>
+                </div>
+              )}
               <div
                 title="Promotion chip lands in a follow-up — edit a bullet here, push the improvement to the master."
                 className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid/60 ring-1 ring-inset ring-dashed ring-line text-fg-subtle"
@@ -224,5 +255,14 @@ export function MasterResumeBanner() {
         </div>
       )}
     </section>
+    {resumeId && (
+      <MasterTailorDrawer
+        open={tailorOpen}
+        onClose={() => setTailorOpen(false)}
+        resumeId={resumeId}
+        libraryBulletCount={stats.bulletCount}
+      />
+    )}
+    </>
   );
 }

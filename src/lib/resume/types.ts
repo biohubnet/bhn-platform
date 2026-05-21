@@ -28,6 +28,13 @@ export interface ResumeBullet {
    *  UI can highlight "AI proposed" rows differently until the user
    *  accepts them. Once accepted (or manually edited), set false. */
   aiSuggested?: boolean;
+  /** The master-library bullet this resume bullet was derived from
+   *  (via the AI tailor flow or a future drag-from-master pull).
+   *  When the user edits a bullet that carries this id, the editor
+   *  surfaces the "Promote this edit to the master?" chip so a good
+   *  rewrite can flow back to the library instead of dying in one
+   *  draft. Cleared when the user explicitly de-links the bullet. */
+  derivedFromMasterBulletId?: string;
 }
 
 export interface ResumeItem {

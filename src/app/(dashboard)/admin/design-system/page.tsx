@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import {
   Palette, Type, Box, Layers, Zap, Accessibility, Sparkles,
   CheckCircle2, AlertTriangle, Info, XCircle, Plus, Loader2, ArrowRight, Check, Hourglass, ExternalLink,
-  Rocket, Pencil,
+  Rocket, Pencil, Wand2,
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { getActiveDesignSystem } from "@/lib/settings";
@@ -689,6 +689,37 @@ if (!ok) return; // user cancelled (X / Escape / backdrop / Cancel)`}</pre>
   onAbort={() => {}}        // optional — fires when user cancels
   onFire={() => {}}         // required — runs once countdown hits 0
 />`}</pre>
+        </SubSection>
+      </Section>
+
+      <Section icon={Wand2} title="MasterTailorDrawer — AI tailor from the master library" eyebrow="Component · drawer">
+        <p className="text-sm text-fg-muted leading-relaxed">
+          Right-anchored drawer that wires the AI tailor flow for a tailored resume. Triggered by the <strong>AI tailor for this role</strong> button in <code className="text-[11px]">MasterResumeBanner</code>. Three deliberate steps so the user always knows where they are:
+        </p>
+        <SubSection title="The three steps">
+          <ol className="space-y-2 text-sm text-fg-muted list-decimal pl-5">
+            <li><span className="font-semibold text-fg">Input.</span> Tabs between &quot;Paste a JD&quot; (textarea, 40-char minimum) and &quot;Pick a posting&quot; (filterable list of active + saved postings). Confirm with <strong>Find my best bullets</strong>.</li>
+            <li><span className="font-semibold text-fg">Loading.</span> Single full-height spinner — &quot;Reading the JD + searching your N-bullet library…&quot;. Server: embed JD → cosine-rank ≤30 → LLM pick + light-rewrite. ~3–6s on a warm provider.</li>
+            <li><span className="font-semibold text-fg">Review.</span> Suggestions grouped by section. Each row: checkbox (default checked) · anchor chip · original/rewrite side-by-side diff (editable rewrite column) · <strong>Why this bullet?</strong> expand with similarity %. Footer: Back · Cancel · Accept N selected.</li>
+          </ol>
+        </SubSection>
+        <SubSection title="The two endpoints">
+          <ul className="space-y-1.5 text-sm text-fg-muted">
+            <li>• <code className="text-[11px]">POST /api/profile/resume/master/ai-tailor</code> — preview-only. Returns <code className="text-[11px]">suggestions[]</code> with bulletId, original, rewritten, reason, anchor, similarity. Nothing written.</li>
+            <li>• <code className="text-[11px]">POST /api/profile/resume/master/ai-tailor/apply</code> — accepts the user&apos;s subset, finds/creates the matching section + item by anchor, inserts each bullet with <code className="text-[11px]">aiSuggested: true</code> and <code className="text-[11px]">derivedFromMasterBulletId</code>. One revision tagged <code className="text-[11px]">triggeredBy: &quot;ai_tailor&quot;</code>.</li>
+          </ul>
+        </SubSection>
+        <SubSection title="The five AI rules (system prompt)">
+          <ul className="space-y-1.5 text-sm text-fg-muted">
+            <li>• Pick ONLY from existing master bullets — never invent.</li>
+            <li>• Don&apos;t add facts, numbers, tools, or experiences not in the original bullet.</li>
+            <li>• Rewrites are LIGHT — vocabulary matches only; never change the underlying claim.</li>
+            <li>• Pick at most N (default 12). Fewer is fine if only fewer are relevant.</li>
+            <li>• Each pick must have a concrete JD-grounded reason.</li>
+          </ul>
+          <p className="text-[11px] text-fg-subtle italic mt-2">
+            Provider stack: Gemini Flash primary, Cloudflare Llama fallback (via <code>chat()</code>). Embeddings: Cloudflare bge-small-en-v1.5 384d (via <code>embed()</code>). Full prompt language in <code>src/lib/resume/master-tailor.ts</code>.
+          </p>
         </SubSection>
       </Section>
     </div>

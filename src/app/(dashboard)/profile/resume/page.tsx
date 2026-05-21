@@ -149,7 +149,7 @@ export default async function ResumeStructurePage({ searchParams }: PageProps) {
           for the full design. Loads + fetches lazily so the
           tailoring page isn't blocked. */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <MasterResumeBanner />
+        <MasterResumeBanner resumeId={activeBasic.id} />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
