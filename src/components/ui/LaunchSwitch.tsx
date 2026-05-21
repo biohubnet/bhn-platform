@@ -34,9 +34,22 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 
-type State = "closed" | "armed" | "launching";
+// State machine:
+//   closed    → armed       (click cover, cover lifts)
+//   armed     → launching   (click DELETE button, countdown starts)
+//   launching → completed   (countdown hits 0 — panel reads "DELETED",
+//                            still abortable for the first instant)
+//   completed → closed      (after 2s pause, onFire() fires once and
+//                            the cover snaps shut)
+//
+// The 2s pause-on-DELETED gives the host UI a beat to play its own
+// outro animation (e.g. card collapsing closed) while the user still
+// sees the confirmation chip. Without it the LaunchSwitch closed the
+// instant the countdown ended, which made the card vanish before the
+// user could register that anything had happened.
+type State = "closed" | "armed" | "launching" | "completed";
 
 export interface LaunchSwitchProps {
   /** Called once after the countdown completes. Caller does the
@@ -87,8 +100,12 @@ export function LaunchSwitch({
       if (left <= 0) {
         if (intervalRef.current) clearInterval(intervalRef.current);
         setRemaining(0);
-        onFire();
-        setState("closed");
+        // Move to the "completed" state — DELETED is shown for 2s
+        // before onFire() fires (see the dedicated effect below).
+        // Doing it in two steps lets the user actually see the
+        // confirmation chip; firing onFire immediately tended to
+        // unmount the host card before the countdown registered.
+        setState("completed");
         return;
       }
       setRemaining(left);
@@ -98,6 +115,20 @@ export function LaunchSwitch({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, countdownSeconds]);
+
+  // "Completed" → onFire after a 2-second pause showing DELETED.
+  // Separate effect so the timer state stays clean: cancelling the
+  // pause (rare — most hosts unmount the LaunchSwitch immediately
+  // once onFire runs) just unsubscribes the timeout.
+  useEffect(() => {
+    if (state !== "completed") return;
+    const t = setTimeout(() => {
+      onFire();
+      setState("closed");
+    }, 2000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   function openCover() {
     setState("armed");
@@ -120,6 +151,7 @@ export function LaunchSwitch({
     ? { w: 180, h: 44, font: 11, labelFont: 11 }
     : { w: 132, h: 30, font: 9,  labelFont: 9.5 };
   const launching = state === "launching";
+  const completed = state === "completed";
   const coverFlipped = state !== "closed";
 
   return (
@@ -129,17 +161,46 @@ export function LaunchSwitch({
       className="relative inline-block select-none font-mono align-middle"
       style={{ width: dims.w, height: dims.h, perspective: "260px" }}
     >
-      {/* Base layer — the glowing DELETE button. Visible at all
-          times (through the glass cover when closed; directly when
-          armed; replaced by the countdown panel when launching). */}
+      {/* Base layer — three visual modes share this surface:
+            • idle/armed (default): rose gradient glow with the
+              pulsing DELETE label visible through / under the cover
+            • launching: countdown panel with abort ×
+            • completed: green "DELETED" chip with check glyph,
+              shown for ~2s as the action settles. The base also
+              shifts to emerald so the colour change reinforces the
+              state — destructive red → safe-now green. */}
       <div
-        className="absolute inset-0 rounded-md overflow-hidden ring-1 ring-rose-900/60 bg-gradient-to-b from-rose-700 to-rose-900"
+        className={
+          "absolute inset-0 rounded-md overflow-hidden ring-1 transition-colors duration-300 " +
+          (completed
+            ? "ring-emerald-700/60 bg-gradient-to-b from-emerald-500 to-emerald-700"
+            : "ring-rose-900/60 bg-gradient-to-b from-rose-700 to-rose-900")
+        }
         style={{
           boxShadow: "inset 0 0 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04)",
         }}
       >
-        {/* DELETING + countdown panel. Renders only while launching. */}
-        {launching ? (
+        {/* DELETED — terminal confirmation chip. Replaces the
+            launching panel once the countdown hits zero. Sits for
+            ~2s before onFire() fires (see the completed→closed
+            effect above). The host card uses this 2s window to
+            play its own outro animation. */}
+        {completed ? (
+          <div className="absolute inset-0 flex items-center justify-center gap-1.5 px-2">
+            <Check
+              size={size === "md" ? 14 : 11}
+              strokeWidth={3}
+              className="text-white shrink-0"
+              aria-hidden
+            />
+            <span
+              className="font-bold tracking-[0.16em] uppercase text-white"
+              style={{ fontSize: dims.font }}
+            >
+              Deleted
+            </span>
+          </div>
+        ) : launching ? (
           <div className="absolute inset-0 flex items-center justify-between pl-2 pr-1">
             <span
               aria-hidden

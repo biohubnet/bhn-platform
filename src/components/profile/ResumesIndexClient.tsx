@@ -61,6 +61,13 @@ export function ResumesIndexClient({ initialResumes }: Props) {
   const [creating, startCreate] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  // Cards in this set are mid-outro: the LaunchSwitch already fired
+  // and we want a brief collapse animation before the row actually
+  // unmounts. ResumeCard reads `isDeleting` and applies a CSS
+  // transition; the parent removes the row from `resumes` after the
+  // animation completes (see hardDelete below).
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+
   // Animated transition state for create + duplicate. We hold the
   // navigation target until the overlay's timeline completes, so
   // the paper-folds-up animation has a chance to play even when
@@ -224,16 +231,42 @@ export function ResumesIndexClient({ initialResumes }: Props) {
    *  visually + cognitively redundant. */
   async function hardDelete(row: ResumeRow) {
     setError(null);
-    // Optimistic removal.
-    setResumes((cur) => cur.filter((x) => x.id !== row.id));
+    // Two-stage removal so the card has a chance to play its outro
+    // animation before vanishing:
+    //   1. Mark deleting → the card collapses (height + opacity +
+    //      scale via CSS transition).
+    //   2. Wait for the animation (~480ms) then actually drop the
+    //      row from the list AND fire the API in parallel.
+    //
+    // The LaunchSwitch has already shown its DELETED state for 2s
+    // BEFORE calling this — so the user sees: countdown finishes →
+    // green DELETED chip (2s) → card collapses (~0.5s) → gone.
+    setDeletingIds((s) => {
+      const next = new Set(s);
+      next.add(row.id);
+      return next;
+    });
     setSelected((s) => {
       const next = new Set(s);
       next.delete(row.id);
       return next;
     });
+    // 480ms matches the CSS collapse duration on the card. After
+    // it unmounts, we drop the row from state. The API call runs
+    // in parallel — by the time the animation finishes the server
+    // has almost certainly already deleted the row.
+    setTimeout(() => {
+      setResumes((cur) => cur.filter((x) => x.id !== row.id));
+      setDeletingIds((s) => {
+        const next = new Set(s);
+        next.delete(row.id);
+        return next;
+      });
+    }, 480);
     const r = await fetch(`/api/profile/resumes/${row.id}?force=true`, { method: "DELETE" });
     if (!r.ok) {
-      // Roll back by triggering a hard re-fetch.
+      // Roll back by triggering a hard re-fetch — the row will
+      // pop back into existence on the next render.
       router.refresh();
       setError("Delete failed — refresh to see actual state.");
     }
@@ -382,6 +415,7 @@ export function ResumesIndexClient({ initialResumes }: Props) {
               key={r.id}
               row={r}
               isSelected={selected.has(r.id)}
+              isDeleting={deletingIds.has(r.id)}
               onToggleSelect={() => toggleSelected(r.id)}
               onRename={() => rename(r)}
               onDuplicate={() => duplicate(r)}
@@ -402,6 +436,7 @@ export function ResumesIndexClient({ initialResumes }: Props) {
               <ResumeCard
                 key={r.id}
                 isSelected={selected.has(r.id)}
+                isDeleting={deletingIds.has(r.id)}
                 onToggleSelect={() => toggleSelected(r.id)}
                 onDelete={() => hardDelete(r)}
                 row={r}
@@ -435,10 +470,14 @@ export function ResumesIndexClient({ initialResumes }: Props) {
 }
 
 function ResumeCard({
-  row, isSelected, onToggleSelect, onRename, onDuplicate, onArchive, onRestore, onDelete,
+  row, isSelected, isDeleting = false, onToggleSelect, onRename, onDuplicate, onArchive, onRestore, onDelete,
 }: {
   row: ResumeRow;
   isSelected: boolean;
+  /** Mid-outro flag. While true, the card collapses (height,
+   *  opacity, scale) and inputs are visually muted. The parent
+   *  unmounts the row once the animation finishes (~480ms). */
+  isDeleting?: boolean;
   onToggleSelect: () => void;
   onRename: () => void;
   onDuplicate: () => void;
@@ -448,20 +487,50 @@ function ResumeCard({
 }) {
   const updatedRel = formatRelative(row.lastEditedAt);
   return (
-    <li className={
-      "relative rounded-xl border p-3 transition-colors flex gap-3 " +
-      (isSelected
-        ? "border-brand-400 bg-brand-50/60 ring-1 ring-brand-300"
-        : row.isArchived
-          ? "border-line bg-bg/30"
-          : "border-line bg-card-solid hover:bg-elevated")
-    }>
+    <li
+      style={
+        isDeleting
+          ? {
+              // Collapse: max-height contracts (driving the row's
+              // physical footprint to 0), opacity fades, and a
+              // subtle scale + translate tilts the card off the
+              // surface as it goes. All transitioned via the
+              // same 480ms easing so they finish together. The
+              // parent removes the row from state on the same
+              // schedule so we don't leave a zero-height ghost.
+              maxHeight: 0,
+              opacity: 0,
+              transform: "scale(0.92) translateY(-8px)",
+              marginTop: 0,
+              marginBottom: 0,
+              paddingTop: 0,
+              paddingBottom: 0,
+              pointerEvents: "none",
+              overflow: "hidden",
+            }
+          : { maxHeight: 600 }
+      }
+      className={
+        "relative rounded-xl border p-3 flex gap-3 " +
+        // Transition properties — colour for hover (same as before)
+        // PLUS the outro choreography: max-height, opacity, transform,
+        // padding, margin. Easing matches the 480ms unmount delay in
+        // the parent's hardDelete().
+        "transition-[background-color,border-color,max-height,opacity,transform,padding,margin] duration-[480ms] ease-[cubic-bezier(0.55,0,0.1,1)] " +
+        (isSelected
+          ? "border-brand-400 bg-brand-50/60 ring-1 ring-brand-300"
+          : row.isArchived
+            ? "border-line bg-bg/30"
+            : "border-line bg-card-solid hover:bg-elevated")
+      }
+    >
       {/* Multi-select checkbox in the corner — clicking flips the
           selection without navigating into the resume. */}
       <button
         type="button"
         onClick={onToggleSelect}
-        className="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-6 h-6 rounded text-fg-muted hover:text-fg hover:bg-elevated"
+        disabled={isDeleting}
+        className="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-6 h-6 rounded text-fg-muted hover:text-fg hover:bg-elevated disabled:opacity-50"
         aria-label={isSelected ? "Deselect" : "Select"}
         title={isSelected ? "Deselect" : "Select for batch action"}
       >

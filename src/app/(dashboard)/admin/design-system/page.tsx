@@ -562,7 +562,7 @@ if (value === null) return; // user cancelled (X / Escape / backdrop)`}</pre>
             <div className="rounded-xl border border-line bg-elevated/40 p-4 flex flex-col items-center gap-3">
               <LaunchSwitchDemo />
               <p className="text-[11px] text-fg-muted text-center">
-                <span className="font-bold text-fg">Launching</span> · &quot;Deleting in 10&quot; ticks down once per second with a flashing LED. Click × to abort.
+                <span className="font-bold text-fg">Launching → Deleted</span> · &quot;Deleting in 10&quot; ticks down once per second with a flashing LED. At 0 the panel turns green and reads &quot;Deleted&quot; with a check for 2 seconds (host card uses this beat for its own outro animation) before <code>onFire()</code> runs.
               </p>
             </div>
           </div>
