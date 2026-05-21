@@ -31,7 +31,7 @@ import {
   Pipette,
   LineChart,
   Coins as CoinsIcon,
-  UserCog,
+  UserCog, UserCircle2,
   HeartHandshake,
   Briefcase,
   Users2,
@@ -126,10 +126,14 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 // MY PROFILE — account-level settings + personal-control surfaces.
 // Lives at the bottom of the user nav. Currently small but grows
 // as more per-user controls land (notification prefs, theme, etc.).
+//
+// "Feature switcher board" routes to /profile (anchor #feature-switcher
+// for an in-page scroll); the standalone /profile/preferences route
+// still works for any deep links that already exist.
 const myProfileItems: (NavItem & { labelKey: string })[] = [
-  { label: "Preferences",        labelKey: "nav.preferences", href: "/profile/preferences", icon: SlidersHorizontal,
-    featureId: "account-preferences",
-    description: "Switchboard for what shows up in your sidebar. Per-user — never affects anyone else." },
+  { label: "My profile",         labelKey: "nav.myProfile",   href: "/profile",             icon: UserCircle2,
+    featureId: "account-profile",
+    description: "Account info + Feature switcher board (controls what shows up in your sidebar)." },
 ];
 
 // EXPERIENCE — applications and connections to industry placements.
@@ -667,8 +671,14 @@ function SectionGroup({
       // globals.css.
       data-section-tone={tone}
       className={cn(
-        "relative mt-5 mb-2 rounded-xl border p-1.5 pt-3 space-y-0.5",
-        toneStyles.container,
+        "relative mt-5 mb-2 rounded-xl transition-[padding,border-color,background-color] duration-300 ease-out",
+        // When collapsed, drop the border / background / padding so
+        // the user just sees the chip + chevron floating on the
+        // sidebar background. Otherwise the empty container leaves
+        // a grey "ghost box" where the section would render.
+        collapsed
+          ? "p-0 border border-transparent bg-transparent"
+          : cn("border p-1.5 pt-3 space-y-0.5", toneStyles.container),
       )}
     >
       {/* Title chip — wrapped in a tiny hover-group that opens a tooltip
@@ -866,21 +876,64 @@ function AdminSubgroup({
   label: string;
   children: React.ReactNode;
 }) {
+  // Collapse state — shares the same localStorage bucket as the top-
+  // level sections so admins who collapse "Engage" once get a stable
+  // sidebar across sessions. We prefix the key with "admin:" so the
+  // top-level "Engage" pillar and the admin-side "Engage" subgroup
+  // don't collide.
+  const storageKey = `admin:${label}`;
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    setCollapsed(readCollapsed().has(storageKey));
+  }, [storageKey]);
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      const all = readCollapsed();
+      if (next) all.add(storageKey); else all.delete(storageKey);
+      writeCollapsed(all);
+      return next;
+    });
+  }
   return (
     <div className="mt-1 first:mt-0">
-      <p
-        className="px-3 pt-3 pb-1.5 text-[12px] uppercase tracking-[0.18em] font-bold select-none"
+      <button
+        type="button"
+        onClick={toggleCollapsed}
+        aria-label={collapsed ? `Expand ${label}` : `Collapse ${label}`}
+        aria-expanded={!collapsed}
+        className="group w-full flex items-center gap-1.5 px-3 pt-3 pb-1.5 text-[12px] uppercase tracking-[0.18em] font-bold select-none cursor-pointer hover:bg-fg/5 rounded transition-colors"
         style={{ color: tone.text }}
       >
-        {label}
-      </p>
-      <div className="relative">
-        <span
+        <ChevronDown
+          size={11}
           aria-hidden
-          className="absolute left-0 top-0 bottom-1 w-0.5 rounded-full z-10 pointer-events-none"
-          style={{ background: tone.bar }}
+          className={cn(
+            "transition-transform duration-300 ease-out shrink-0 opacity-60 group-hover:opacity-100",
+            collapsed && "-rotate-90",
+          )}
         />
-        {children}
+        <span>{label}</span>
+      </button>
+      {/* Same grid-rows collapse trick as SectionGroup. */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
+          collapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100",
+        )}
+        aria-hidden={collapsed}
+        {...(collapsed ? { inert: "" as unknown as boolean } : {})}
+      >
+        <div className="overflow-hidden min-h-0">
+          <div className="relative">
+            <span
+              aria-hidden
+              className="absolute left-0 top-0 bottom-1 w-0.5 rounded-full z-10 pointer-events-none"
+              style={{ background: tone.bar }}
+            />
+            {children}
+          </div>
+        </div>
       </div>
     </div>
   );

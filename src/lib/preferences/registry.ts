@@ -164,7 +164,8 @@ export const FEATURES: FeatureDef[] = [
   // (Most EQUIP entries are admin-only — they're toggled under "admin" below.)
 
   // Account -------------------------------------------------------
-  { id: "account-preferences", label: "Preferences",               description: "This page — control which features show up in your sidebar.",                              group: "account",    defaultEnabled: true },
+  { id: "account-profile",     label: "My profile",                description: "Account info, password, role requests, and the Feature switcher board (this).",         group: "account",    defaultEnabled: true },
+  { id: "account-preferences", label: "Preferences (legacy)",      description: "Standalone /profile/preferences page — kept for deep-link compatibility. The canonical home is now /profile.", group: "account",    defaultEnabled: false },
   { id: "account-shortcuts",   label: "Keyboard shortcuts",        description: "Rebind the platform-wide shortcuts (x for role toggle, ? for help).",                     group: "account",    defaultEnabled: false },
 ];
 
