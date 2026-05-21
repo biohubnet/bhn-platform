@@ -5,7 +5,7 @@
  * deprecated, delete (superadmin only). Mirrors the /admin/course-filters
  * UX so the admin pattern is consistent.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus, Search, Pencil, GitMerge, Trash2, X, Check, AlertCircle,
@@ -98,44 +98,20 @@ export function SkillsAdminClient({ initialSkills }: { initialSkills: SkillRow[]
         </button>
       </div>
 
-      {/* List */}
-      <div className="bg-card border border-line rounded-2xl overflow-hidden">
-        {filtered.length === 0 ? (
-          <p className="px-6 py-12 text-center text-muted text-sm">No skills match. Add one with the button above.</p>
-        ) : (
-          <ul className="divide-y divide-line">
-            {filtered.map((s) => (
-              <li key={s.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-elevated/30 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-fg">{s.name}</span>
-                    {s.category && <span className="text-[11px] text-subtle px-1.5 py-0.5 rounded bg-elevated">{s.category}</span>}
-                    <span className={cn("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", STATUS_CLS[s.status] ?? STATUS_CLS.active)}>
-                      {s.status}
-                    </span>
-                  </div>
-                  {s.aliases.length > 0 && (
-                    <p className="text-[11px] text-muted mt-1 truncate">
-                      <Tags size={10} className="inline -mt-0.5 mr-1" />
-                      {s.aliases.map((a) => a.alias).slice(0, 6).join(" · ")}
-                      {s.aliases.length > 6 && ` +${s.aliases.length - 6} more`}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 text-[11px] text-subtle shrink-0">
-                  <span title="Courses tagged">{s.counts.courses}c</span>
-                  <span title="Users with this skill">{s.counts.users}u</span>
-                  <span title="Postings tagged">{s.counts.postings}p</span>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <IconBtn icon={Pencil} title="Edit" onClick={() => setEditing(s)} />
-                  <IconBtn icon={GitMerge} title="Merge into another skill" onClick={() => setMerging(s)} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {/* Cards — wave effect on mousemove. Each card watches the
+          cursor position; the closer the cursor, the more it lifts +
+          tints. Movement across the grid leaves a temporary wave of
+          highlighted cards behind. */}
+      <SkillsCardGrid
+        skills={filtered}
+        onEdit={setEditing}
+        onMerge={setMerging}
+      />
+      {filtered.length === 0 && (
+        <p className="px-6 py-12 text-center text-muted text-sm bg-card border border-line rounded-2xl">
+          No skills match. Add one with the button above.
+        </p>
+      )}
 
       {(creating || editing) && (
         <SkillEditor
@@ -403,4 +379,191 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 function ModalFooter({ children }: { children: React.ReactNode }) {
   return <div className="mt-4 flex justify-end gap-2">{children}</div>;
+}
+
+/** Skills rendered as a dense card grid with a mouse-driven wave.
+ *
+ * Each card subscribes to the grid container's mousemove and reads
+ * `--mx, --my` (the cursor's pixel position inside the grid). A CSS
+ * radial gradient + small lift transform are driven by the distance
+ * between the card's centre and the cursor. The closer the cursor,
+ * the more the card lifts + tints. As the cursor moves across the
+ * grid, the lift ripples — a wave of highlighted cards travels with
+ * the cursor, with a soft fade-out as it moves on.
+ *
+ * Pure CSS — no JS animation loop. Mousemove writes CSS custom
+ * properties on the grid; each card computes its own offset to the
+ * cursor via the same vars and a fixed per-card centre offset.
+ *
+ * Cards stay clickable + keyboard-navigable. The wave is decorative;
+ * `prefers-reduced-motion: reduce` zeroes it out via globals.css. */
+function SkillsCardGrid({
+  skills, onEdit, onMerge,
+}: {
+  skills: SkillRow[];
+  onEdit: (s: SkillRow) => void;
+  onMerge: (s: SkillRow) => void;
+}) {
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  // Throttled via rAF so we never call setProperty more than once per
+  // frame even if mousemove fires 60+ times.
+  const frame = useRef<number | null>(null);
+  function handleMove(e: React.MouseEvent<HTMLDivElement>) {
+    const el = gridRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if (frame.current !== null) return;
+    frame.current = requestAnimationFrame(() => {
+      // Unitless on purpose — CSS calc() can multiply unitless
+      // numbers but not lengths (px * px is invalid). We append px
+      // only at the final consumption point inside the CSS.
+      el.style.setProperty("--mx", `${x}`);
+      el.style.setProperty("--my", `${y}`);
+      el.style.setProperty("--in", "1");
+      frame.current = null;
+    });
+  }
+  function handleLeave() {
+    const el = gridRef.current;
+    if (!el) return;
+    el.style.setProperty("--in", "0");
+  }
+
+  return (
+    <div
+      ref={gridRef}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      className="skills-wave-grid relative grid gap-2.5 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]"
+      style={{
+        // Unitless defaults — see comment on handleMove for why.
+        "--mx": "-9999",
+        "--my": "-9999",
+        "--in": "0",
+      } as React.CSSProperties}
+    >
+      {skills.map((s) => (
+        <SkillCard
+          key={s.id}
+          skill={s}
+          onEdit={() => onEdit(s)}
+          onMerge={() => onMerge(s)}
+        />
+      ))}
+      {/* Scoped CSS for the wave. Lives next to the component so the
+          two stay in sync as we tune the feel. */}
+      <style jsx>{`
+        .skills-wave-grid :global(.skill-card) {
+          /* All distance variables are UNITLESS. CSS calc() can
+             multiply unitless numbers (--dx * --dx) but cannot
+             multiply lengths (px * px is invalid). We append units
+             only at the final consumption point — px on translateY,
+             px on the gradient centre, etc.
+             Defaults fall back to 99999 so a not-yet-measured card
+             stays off-screen-far and shows zero proximity. */
+          --dx: calc(var(--mx) - var(--cx, 99999));
+          --dy: calc(var(--my) - var(--cy, 99999));
+          /* 1 / (1 + d²/k²) — soft Gaussian-ish falloff. k tunes the
+             wave radius; ~160 means the lift drops to half at ~160px. */
+          --d2: calc((var(--dx) * var(--dx) + var(--dy) * var(--dy)) / (160 * 160));
+          --proximity: calc(var(--in) / (1 + var(--d2)));
+          transform: translateY(calc(var(--proximity) * -3px));
+          box-shadow:
+            0 calc(var(--proximity) * 8px) calc(var(--proximity) * 24px) calc(var(--proximity) * -8px) rgba(56, 189, 248, calc(var(--proximity) * 0.45)),
+            0 1px 0 0 var(--line);
+          background-image: radial-gradient(
+            circle at calc(var(--mx) * 1px) calc(var(--my) * 1px),
+            color-mix(in oklab, var(--brand-100) calc(var(--proximity) * 60%), transparent),
+            transparent 60%
+          );
+          transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .skills-wave-grid :global(.skill-card) {
+            transform: none !important;
+            background-image: none !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/** A single skill rendered as a compact card. Owns its position-
+ *  measurement effect that writes --cx/--cy onto the card so the
+ *  parent's wave CSS knows where the card sits inside the grid. */
+function SkillCard({
+  skill, onEdit, onMerge,
+}: {
+  skill: SkillRow;
+  onEdit: () => void;
+  onMerge: () => void;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    function measure() {
+      if (!el) return;
+      // offsetLeft/offsetTop are relative to the nearest positioned
+      // ancestor — which is the grid wrapper (position: relative).
+      // Unitless so the CSS calc() can multiply --dx * --dx.
+      const cx = el.offsetLeft + el.offsetWidth / 2;
+      const cy = el.offsetTop + el.offsetHeight / 2;
+      el.style.setProperty("--cx", `${cx}`);
+      el.style.setProperty("--cy", `${cy}`);
+    }
+    measure();
+    // Also re-measure when the GRID resizes (cards reflow on
+    // column-count changes when the window resizes).
+    const grid = el.parentElement;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    if (grid) ro.observe(grid);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={cardRef}
+      className="skill-card relative rounded-xl border border-line bg-card-solid p-3 cursor-default overflow-hidden"
+    >
+      <div className="flex items-start justify-between gap-1.5">
+        <p className="text-[13px] font-semibold text-fg leading-tight line-clamp-2 break-words">
+          {skill.name}
+        </p>
+        <span
+          className={cn(
+            "shrink-0 text-[9px] uppercase tracking-[0.14em] px-1.5 py-0.5 rounded border",
+            STATUS_CLS[skill.status] ?? STATUS_CLS.active,
+          )}
+        >
+          {skill.status}
+        </span>
+      </div>
+      {skill.category && (
+        <p className="mt-1 text-[10.5px] text-fg-muted">{skill.category}</p>
+      )}
+      {skill.aliases.length > 0 && (
+        <p className="mt-1.5 text-[10.5px] text-fg-subtle line-clamp-2">
+          <Tags size={9} className="inline -mt-0.5 mr-1" />
+          {skill.aliases.map((a) => a.alias).slice(0, 4).join(" · ")}
+          {skill.aliases.length > 4 && ` +${skill.aliases.length - 4}`}
+        </p>
+      )}
+      <div className="mt-2 pt-2 border-t border-line/60 flex items-center justify-between text-[10px] text-fg-subtle">
+        <span title="Courses · Users · Postings tagged" className="font-mono tabular-nums">
+          {skill.counts.courses}c · {skill.counts.users}u · {skill.counts.postings}p
+        </span>
+        <div className="flex items-center gap-0.5">
+          <IconBtn icon={Pencil} title="Edit" onClick={onEdit} />
+          <IconBtn icon={GitMerge} title="Merge" onClick={onMerge} />
+        </div>
+      </div>
+    </div>
+  );
 }

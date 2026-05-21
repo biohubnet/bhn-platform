@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Delete buttons · 50 variations · BHN design archive</title>
+  <style>
+    /* ── Page chrome ─────────────────────────────────────────── */
+    :root {
+      --bg: #0d0f12;
+      --panel: #16191e;
+      --line: #232831;
+      --text: #e6e8eb;
+      --muted: #8a91a0;
+      --brand: #38bdf8;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --emerald: #10b981;
+      --violet: #a78bfa;
+      --cyan: #22d3ee;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    body { padding: 32px 24px 96px; }
+    header { max-width: 1280px; margin: 0 auto 32px; }
+    h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 6px; }
+    .subhead { color: var(--muted); font-size: 14px; max-width: 70ch; }
+    .group {
+      max-width: 1280px;
+      margin: 0 auto 32px;
+    }
+    .group-h {
+      display: flex; align-items: baseline; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--line); margin-bottom: 16px;
+    }
+    .group-h h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0; }
+    .group-h .count { font-size: 11px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, monospace; }
+    .grid {
+      display: grid; gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    .cell {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 12px 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      min-height: 132px;
+      justify-content: center;
+    }
+    .cell .num {
+      position: absolute;
+      top: 6px; left: 8px;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 10px;
+      color: var(--muted);
+      opacity: 0.6;
+      letter-spacing: 0.1em;
+    }
+    .cell-wrap { position: relative; }
+    .cell .name { font-size: 11px; color: var(--muted); text-align: center; line-height: 1.3; font-family: ui-monospace, SFMono-Regular, monospace; letter-spacing: 0.04em; }
+
+    /* ── Shared button base ─────────────────────────────────── */
+    button { cursor: pointer; font-family: inherit; border: none; }
+
+    /* ════════════════════════════════════════════════════════════
+       GROUP A — Minimal · refined · animated micro-interactions
+       (1-10)
+       ════════════════════════════════════════════════════════════ */
+
+    /* 1. Ink fill — text colour fades as a coloured ink rises from bottom. */
+    .b1 {
+      position: relative; padding: 8px 18px; font-size: 13px; font-weight: 600;
+      color: var(--rose); background: transparent; border-radius: 0;
+      overflow: hidden;
+    }
+    .b1::before {
+      content: ''; position: absolute; inset: auto 0 0 0; height: 0%;
+      background: var(--rose); transition: height 280ms cubic-bezier(0.65, 0, 0.35, 1);
+      z-index: 0;
+    }
+    .b1 span { position: relative; z-index: 1; transition: color 280ms ease; }
+    .b1:hover::before { height: 100%; }
+    .b1:hover span { color: #fff; }
+
+    /* 2. Pixel sweep — diagonal pixel band slides across. */
+    .b2 {
+      position: relative; padding: 8px 18px; font-size: 13px; font-weight: 600;
+      color: var(--text); background: transparent;
+      border-bottom: 1px solid var(--text); overflow: hidden;
+    }
+    .b2::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(75deg, transparent 0 35%, rgba(244,63,94,0.7) 50%, transparent 65% 100%);
+      transform: translateX(-110%); transition: transform 420ms ease;
+    }
+    .b2:hover::after { transform: translateX(110%); }
+
+    /* 3. Letter-spacing pulse — DELETE expands on hover, underline grows. */
+    .b3 {
+      padding: 6px 12px; font-size: 12px; color: var(--rose); background: transparent;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      position: relative; transition: letter-spacing 240ms ease;
+    }
+    .b3::after {
+      content: ''; position: absolute; bottom: 2px; left: 50%; right: 50%; height: 1px;
+      background: var(--rose);
+      transition: left 240ms ease, right 240ms ease;
+    }
+    .b3:hover { letter-spacing: 0.34em; }
+    .b3:hover::after { left: 12%; right: 12%; }
+
+    /* 4. Magnet x — text + icon pull apart on hover. */
+    .b4 { padding: 6px 12px; color: var(--text); background: transparent; font-size: 13px; display: inline-flex; gap: 4px; align-items: center; }
+    .b4 svg { transition: transform 240ms ease; }
+    .b4 span { transition: transform 240ms ease; }
+    .b4:hover svg { transform: translateX(-3px); color: var(--rose); }
+    .b4:hover span { transform: translateX(3px); color: var(--rose); }
+
+    /* 5. Shutter — single line scaleY from centre. */
+    .b5 {
+      padding: 0; background: transparent; color: var(--rose); font-size: 13px; font-weight: 600;
+      letter-spacing: 0.16em;
+      position: relative;
+    }
+    .b5::before {
+      content: ''; position: absolute; left: -8px; right: -8px; top: 50%;
+      height: 1px; background: var(--rose); transform: scaleX(0) translateY(-50%);
+      transform-origin: center; transition: transform 280ms cubic-bezier(0.85, 0, 0.15, 1);
+    }
+    .b5:hover::before { transform: scaleX(1) translateY(-50%); }
+
+    /* 6. Glyph-only X — line + line stroke draws on hover. */
+    .b6 {
+      width: 32px; height: 32px; padding: 0; background: transparent;
+      color: var(--muted); display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 50%; transition: color 240ms ease, background 240ms ease;
+    }
+    .b6 svg { stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset 380ms ease; }
+    .b6:hover { color: var(--rose); background: rgba(244,63,94,0.08); }
+    .b6:hover svg { stroke-dashoffset: 0; }
+
+    /* 7. Underline replace — DELETE → REMOVE on hover. */
+    .b7 {
+      padding: 6px 0; background: transparent; color: var(--text); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.14em; position: relative; overflow: hidden; height: 24px;
+      display: inline-block;
+    }
+    .b7 .a, .b7 .b {
+      display: block; transition: transform 320ms cubic-bezier(0.65, 0, 0.35, 1), color 320ms ease;
+    }
+    .b7 .b { position: absolute; top: 100%; left: 0; right: 0; color: var(--rose); }
+    .b7:hover .a { transform: translateY(-100%); }
+    .b7:hover .b { transform: translateY(-100%); }
+
+    /* 8. Glow ring — emanates outward on hover. */
+    .b8 {
+      width: 32px; height: 32px; border-radius: 50%; background: var(--panel); color: var(--rose);
+      display: inline-flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .b8::before {
+      content: ''; position: absolute; inset: 0; border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(244,63,94,0.6); transition: box-shadow 420ms ease;
+    }
+    .b8:hover::before { box-shadow: 0 0 0 8px rgba(244,63,94,0); }
+
+    /* 9. Type — slash strikethrough animates in. */
+    .b9 { padding: 6px 12px; background: transparent; color: var(--text); font-size: 13px; position: relative; }
+    .b9::after {
+      content: ''; position: absolute; left: 4px; right: 100%; top: 50%; height: 1px;
+      background: var(--rose); transition: right 280ms cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    .b9:hover { color: var(--rose); }
+    .b9:hover::after { right: 4px; }
+
+    /* 10. Corner cut — corners shrink inward on hover. */
+    .b10 {
+      padding: 6px 14px; background: transparent; color: var(--rose); font-size: 13px;
+      font-weight: 600; letter-spacing: 0.12em;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+      transition: clip-path 240ms ease;
+      box-shadow: inset 0 0 0 1px var(--rose);
+    }
+    .b10:hover { clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px); }
+
+    /* ════════════════════════════════════════════════════════════
+       GROUP B — Geometric · architectural · spatial
+       (11-20)
+       ════════════════════════════════════════════════════════════ */
+
+    /* 11. Folded corner — a triangle peels back like a page. */
+    .b11 { padding: 8px 18px; background: var(--panel); color: var(--text); font-size: 12px; font-weight: 600; position: relative; }
+    .b11::after {
+      content: ''; position: absolute; top: 0; right: 0;
+      border-top: 0 solid var(--rose); border-right: 0 solid transparent;
+      transition: border-top-width 280ms ease, border-right-width 280ms ease;
+    }
+    .b11:hover::after { border-top-width: 18px; border-right-width: 18px; }
+
+    /* 12. Bracket close — corner brackets clamp in. */
+    .b12 { padding: 8px 18px; background: transparent; color: var(--rose); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; position: relative; }
+    .b12::before, .b12::after {
+      content: ''; position: absolute; width: 8px; height: 8px; border-color: var(--rose); border-style: solid; border-width: 0;
+      transition: width 220ms ease, height 220ms ease;
+    }
+    .b12::before { top: 0; left: 0; border-top-width: 1px; border-left-width: 1px; }
+    .b12::after { bottom: 0; right: 0; border-bottom-width: 1px; border-right-width: 1px; }
+    .b12:hover::before, .b12:hover::after { width: 100%; height: 100%; }
+
+    /* 13. Stairstep — top-left and bottom-right step inward. */
+    .b13 { padding: 8px 14px; background: var(--panel); color: var(--rose); font-size: 12px; font-weight: 600;
+      transition: padding 220ms ease, background 220ms ease, color 220ms ease; border-radius: 2px; }
+    .b13:hover { padding: 8px 22px; background: var(--rose); color: #fff; }
+
+    /* 14. Bisect — line splits the button in half on hover. */
+    .b14 { padding: 8px 18px; background: transparent; color: var(--text); font-size: 12px; font-weight: 600; position: relative;
+      box-shadow: inset 0 0 0 1px var(--line); }
+    .b14::before {
+      content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+      background: var(--rose); transform: scaleY(0); transition: transform 280ms ease;
+    }
+    .b14:hover::before { transform: scaleY(1); }
+    .b14:hover { color: var(--rose); }
+
+    /* 15. Bevel — chamfered corners deepen on hover. */
+    .b15 {
+      padding: 8px 16px; background: var(--rose); color: #fff; font-size: 12px; font-weight: 700;
+      clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+      transition: clip-path 220ms ease, filter 220ms ease;
+    }
+    .b15:hover { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); filter: brightness(1.1); }
+
+    /* 16. Slab — a thin slab slides under the text. */
+    .b16 { padding: 6px 14px; background: transparent; color: var(--text); font-size: 13px; position: relative; }
+    .b16::before {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+      background: var(--rose); transform-origin: left; transform: scaleX(0); transition: transform 280ms ease;
+    }
+    .b16:hover::before { transform: scaleX(1); }
+
+    /* 17. Iso shift — button tilts 6° on hover (3D perspective parent). */
+    .b17-wrap { perspective: 240px; display: inline-block; }
+    .b17 { padding: 8px 16px; background: var(--panel); color: var(--rose); font-size: 12px; font-weight: 600;
+      border: 1px solid var(--rose); transition: transform 280ms ease, background 280ms ease, color 280ms ease; }
+    .b17:hover { transform: rotateX(-15deg) translateY(-2px); background: var(--rose); color: #fff; }
+
+    /* 18. Two-tone diagonal — split with diagonal gradient that shifts. */
+    .b18 { padding: 8px 18px; color: #fff; font-size: 12px; font-weight: 700;
+      background: linear-gradient(45deg, var(--rose) 0% 50%, #18181b 50% 100%);
+      background-size: 200% 100%; background-position: 0% 0%;
+      transition: background-position 320ms ease; }
+    .b18:hover { background-position: 100% 0%; }
+
+    /* 19. Cross-hatch — overlay reveals a finely-hatched warning pattern. */
+    .b19 { padding: 8px 18px; background: transparent; color: var(--text); font-size: 12px; font-weight: 600; position: relative; overflow: hidden;
+      box-shadow: inset 0 0 0 1px var(--line); }
+    .b19::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(45deg, rgba(244,63,94,0.7) 0 2px, transparent 2px 6px);
+      opacity: 0; transition: opacity 240ms ease;
+    }
+    .b19:hover::after { opacity: 1; }
+    .b19 span { position: relative; z-index: 1; }
+    .b19:hover span { color: #fff; }
+
+    /* 20. Aperture — circle iris closes around X on hover. */
+    .b20 { width: 36px; height: 36px; padding: 0; background: transparent; border-radius: 50%; color: var(--muted); position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    .b20::before {
+      content: ''; position: absolute; inset: 4px; border-radius: 50%; border: 1px solid var(--muted);
+      transform: scale(1.2); opacity: 0; transition: transform 280ms ease, opacity 280ms ease;
+    }
+    .b20:hover { color: var(--rose); }
+    .b20:hover::before { transform: scale(1); opacity: 1; border-color: var(--rose); }
+
+    /* ════════════════════════════════════════════════════════════
+       GROUP C — 8-bit Nintendo · pixel art · arcade
+       (21-35)
+       ════════════════════════════════════════════════════════════ */
+
+    /* Shared pixel-art base. We use Press Start 2P-ish via system fallback
+       so no external font fetch; the look comes from chunky borders, hard
+       pixel shadow, no anti-aliasing on the outline shape. */
+    .pixel { font-family: ui-monospace, "Courier New", monospace; letter-spacing: 0.06em; text-transform: uppercase;
+      image-rendering: pixelated; -webkit-font-smoothing: none; }
+
+    /* 21. Classic NES grey — chunky stepped border + hard shadow. */
+    .b21 {
+      padding: 8px 14px; background: #d8d8d8; color: #202020;
+      box-shadow:
+        4px 0 0 0 #d8d8d8,
+        -4px 0 0 0 #d8d8d8,
+        0 4px 0 0 #d8d8d8,
+        0 -4px 0 0 #d8d8d8,
+        4px 4px 0 0 #202020,
+        -4px 4px 0 0 #202020,
+        4px -4px 0 0 #202020,
+        -4px -4px 0 0 #202020;
+      font-size: 11px; font-weight: 700;
+      transition: transform 80ms steps(2);
+    }
+    .b21:active { transform: translate(2px, 2px); }
+
+    /* 22. Coin block — gold like Mario block, flashes on hover. */
+    .b22 {
+      padding: 8px 14px; background: #f7c84a; color: #4a2c00; font-size: 11px; font-weight: 700;
+      box-shadow:
+        inset 0 -3px 0 0 #b3851c,
+        inset 0 3px 0 0 #ffe88a,
+        inset -3px 0 0 0 #b3851c,
+        inset 3px 0 0 0 #ffe88a;
+      transition: transform 80ms steps(2);
+    }
+    .b22:active { transform: translateY(2px); box-shadow:
+        inset 0 -3px 0 0 #b3851c,
+        inset 0 3px 0 0 #b3851c; }
+    @keyframes coin-shimmer { 0% { filter: brightness(1);} 50% { filter: brightness(1.4); } 100% { filter: brightness(1); } }
+    .b22:hover { animation: coin-shimmer 280ms steps(3) infinite; }
+
+    /* 23. Mushroom red — red-on-cream NES Mario palette. */
+    .b23 {
+      padding: 6px 12px; background: #d72d31; color: #fff8e7; font-size: 11px; font-weight: 700;
+      box-shadow:
+        inset 0 -3px 0 0 #8c1316,
+        inset 0 3px 0 0 #ff6f6f,
+        0 3px 0 0 #2a0a0a;
+      transition: transform 60ms steps(2);
+    }
+    .b23:active { transform: translateY(3px); box-shadow:
+        inset 0 -3px 0 0 #8c1316,
+        inset 0 3px 0 0 #ff6f6f,
+        0 0 0 0 #2a0a0a; }
+
+    /* 24. Zelda heart — red square with darker pixel inner heart. */
+    .b24 {
+      width: 36px; height: 36px; padding: 0; background: #d72d31; position: relative;
+      box-shadow: inset 0 0 0 2px #2a0a0a;
+    }
+    .b24::before, .b24::after {
+      content: ''; position: absolute; width: 8px; height: 8px; background: #fff;
+      top: 8px;
+    }
+    .b24::before { left: 8px; }
+    .b24::after { right: 8px; }
+    @keyframes heart-empty { 0% { background: #d72d31; } 100% { background: #2a0a0a; } }
+    .b24:hover { animation: heart-empty 320ms steps(2) forwards; }
+
+    /* 25. Skull — red Game Boy mortal-screen. */
+    .b25 {
+      padding: 8px 12px; background: #8b0e10; color: #ffeada; font-size: 10px; font-weight: 700;
+      box-shadow: inset 0 0 0 2px #ffeada, 0 0 0 2px #2a0a0a;
+    }
+    .b25::before {
+      content: '💀'; margin-right: 4px;
+      filter: grayscale(1) brightness(2);
+    }
+    @keyframes skull-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .b25:hover { animation: skull-blink 240ms steps(2) 3; }
+
+    /* 26. Bomb — bomb icon with fuse spark. */
+    .b26 { padding: 8px 14px; background: #2a2a2a; color: #ffd34d; font-size: 11px; font-weight: 700;
+      border: 2px solid #ffd34d; position: relative; }
+    .b26::before { content: '💣'; margin-right: 6px; }
+    @keyframes spark { 0% { box-shadow: inset 0 0 0 0 #ffd34d; } 50% { box-shadow: inset 0 0 0 2px #ffd34d; } 100% { box-shadow: inset 0 0 0 0 #ffd34d; } }
+    .b26:hover { animation: spark 280ms steps(3) infinite; }
+
+    /* 27. Game Over — blinking red ALL-CAPS on black. */
+    .b27 { padding: 8px 16px; background: #000; color: #ff2020; font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+      box-shadow: 0 0 0 2px #ff2020, 0 0 0 4px #000; }
+    @keyframes gameover { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .b27:hover { animation: gameover 360ms steps(2) infinite; }
+
+    /* 28. Pixel arrow press — diamond shrinks into the page. */
+    .b28 {
+      width: 36px; height: 36px; background: #d72d31; padding: 0;
+      clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+      transition: transform 80ms steps(3);
+      box-shadow: 0 0 0 0 #ff8888;
+    }
+    .b28:hover { transform: scale(0.85); box-shadow: 0 0 0 6px rgba(255,136,136,0.3); }
+
+    /* 29. Pixel HP bar — drains from full to empty on hover. */
+    .b29 { padding: 0; background: transparent; width: 120px; }
+    .b29 .label { font-family: ui-monospace, monospace; font-size: 10px; color: #f43f5e; letter-spacing: 0.16em; margin-bottom: 4px; text-align: left; }
+    .b29 .bar { height: 10px; background: #2a0a0a; box-shadow: inset 0 0 0 2px #fff; padding: 2px; }
+    .b29 .fill { background: #38ff5c; height: 100%; width: 100%; transition: width 720ms steps(8); }
+    .b29:hover .fill { width: 0; background: #ff2020; }
+
+    /* 30. Pacman — yellow pacman opens to eat the delete word. */
+    .b30 { padding: 0; background: transparent; color: var(--text); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; font-family: ui-monospace, monospace; }
+    .b30 .pac {
+      width: 16px; height: 16px; background: #ffe000; border-radius: 50%;
+      clip-path: polygon(0 0, 100% 0, 50% 50%, 100% 100%, 0 100%);
+      transition: clip-path 200ms steps(3);
+    }
+    .b30:hover .pac { clip-path: polygon(0 0, 100% 35%, 50% 50%, 100% 65%, 0 100%); }
+    .b30:hover { color: #ff2020; }
+
+    /* 31. Tetris drop — block falls into place. */
+    .b31 { padding: 6px 10px; background: transparent; color: var(--text); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; position: relative; height: 32px; }
+    .b31 .blk {
+      position: absolute; left: 4px; top: -24px; width: 8px; height: 24px;
+      background: #ff2020; box-shadow: inset 0 0 0 1px #fff;
+      transition: top 320ms cubic-bezier(0.4, 0, 0.7, 1);
+    }
+    .b31:hover .blk { top: 6px; }
+
+    /* 32. Boss pixel — red dripping bar. */
+    .b32 { padding: 6px 14px; background: #8b0e10; color: #fff8e7; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; position: relative; box-shadow: inset 0 0 0 2px #fff; }
+    .b32::after {
+      content: ''; position: absolute; bottom: -3px; left: 0; right: 0; height: 4px;
+      background: repeating-linear-gradient(90deg, transparent 0 4px, #8b0e10 4px 6px, transparent 6px 10px);
+      transition: height 240ms ease;
+    }
+    .b32:hover::after { height: 8px; }
+
+    /* 33. 1-UP — green NES box that flashes "1UP". */
+    .b33 { padding: 8px 14px; background: #38a830; color: #fff; font-family: ui-monospace, monospace; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; box-shadow: inset 0 -3px 0 0 #186812, inset 0 3px 0 0 #80e078; transition: filter 80ms steps(2); }
+    .b33:hover { filter: hue-rotate(290deg) brightness(1.1); } /* turns red */
+
+    /* 34. Pong paddle — sliding paddle on the right comes in. */
+    .b34 { padding: 8px 14px 8px 20px; background: #000; color: #fff; font-size: 11px; font-weight: 700; font-family: ui-monospace, monospace; position: relative; overflow: hidden; }
+    .b34::before { content: ''; position: absolute; right: -8px; top: 0; bottom: 0; width: 4px; background: #fff; transition: right 320ms cubic-bezier(0.4, 0, 0.6, 1); }
+    .b34:hover::before { right: 0; }
+    .b34::after { content: '·'; position: absolute; left: 12px; top: 50%; width: 4px; height: 4px; background: #fff; transform: translateY(-50%); border-radius: 0; }
+
+    /* 35. Boss explode — black pixel square that scrambles. */
+    .b35 { width: 36px; height: 36px; background: var(--rose); color: #fff; padding: 0; font-size: 10px; font-weight: 700; font-family: ui-monospace, monospace; position: relative; }
+    .b35::before, .b35::after {
+      content: ''; position: absolute; width: 6px; height: 6px; background: #fff; opacity: 0;
+      transition: opacity 60ms steps(1), transform 200ms steps(3);
+    }
+    .b35::before { top: 2px; left: 2px; }
+    .b35::after { bottom: 2px; right: 2px; }
+    .b35:hover::before { opacity: 1; transform: translate(-4px, -4px); }
+    .b35:hover::after { opacity: 1; transform: translate(4px, 4px); }
+    @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(-1px, 1px); } 50% { transform: translate(1px, -1px); } 75% { transform: translate(-1px, -1px); } }
+    .b35:hover { animation: shake 120ms steps(4) infinite; }
+
+    /* ════════════════════════════════════════════════════════════
+       GROUP D — Industrial · alarm · safety
+       (36-45)
+       ════════════════════════════════════════════════════════════ */
+
+    /* 36. Alarm strobe — red border pulses on hover. */
+    .b36 { padding: 8px 14px; background: transparent; color: #ff2020; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; box-shadow: 0 0 0 1px #ff2020; }
+    @keyframes alarm-pulse { 0%, 100% { box-shadow: 0 0 0 1px #ff2020; } 50% { box-shadow: 0 0 0 4px #ff2020; } }
+    .b36:hover { animation: alarm-pulse 400ms ease infinite; }
+
+    /* 37. Diagonal hazard — yellow/black stripes underneath, text overrides. */
+    .b37 { padding: 8px 14px; background-image: repeating-linear-gradient(45deg, #f59e0b 0 8px, #18181b 8px 16px); color: #fff; font-size: 11px; font-weight: 700; position: relative; }
+    .b37 span { position: relative; z-index: 1; background: #18181b; padding: 2px 6px; transition: background 240ms ease; }
+    .b37:hover span { background: transparent; }
+
+    /* 38. Scanline — CRT scan band moves across. */
+    .b38 { padding: 8px 14px; background: #0a0a0a; color: #66ff66; font-family: ui-monospace, monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; position: relative; overflow: hidden; box-shadow: 0 0 0 1px #66ff66; }
+    .b38::after {
+      content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+      background: linear-gradient(transparent, rgba(102,255,102,0.6), transparent);
+      animation: scan 1.8s linear infinite paused;
+    }
+    @keyframes scan { 0% { top: -10%; } 100% { top: 110%; } }
+    .b38:hover::after { animation-play-state: running; }
+
+    /* 39. Throbbing dot — small red dot beside text pulses. */
+    .b39 { padding: 6px 12px; background: transparent; color: var(--text); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: inset 0 0 0 1px var(--line); }
+    .b39::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #ff2020; box-shadow: 0 0 6px #ff2020; }
+    @keyframes throb { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.5; } }
+    .b39:hover::before { animation: throb 600ms ease infinite; }
+
+    /* 40. Crossed-out — DELETE letters get crossed out left-to-right. */
+    .b40 { padding: 6px 12px; background: transparent; color: var(--text); font-size: 13px; font-weight: 700; letter-spacing: 0.16em; position: relative; }
+    .b40::after {
+      content: ''; position: absolute; left: 4px; top: 50%; right: 100%; height: 2px; background: var(--rose);
+      transition: right 360ms cubic-bezier(0.4, 0, 0.6, 1);
+    }
+    .b40:hover::after { right: 4px; }
+
+    /* 41. Industrial — knurled-edge button. */
+    .b41 { padding: 8px 16px; background: linear-gradient(to bottom, #4a4a4a, #2a2a2a); color: #ff2020; font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      box-shadow:
+        inset 0 1px 0 0 rgba(255,255,255,0.2),
+        inset 0 -1px 0 0 rgba(0,0,0,0.6),
+        0 1px 0 0 #000;
+      transition: transform 100ms ease, box-shadow 100ms ease;
+    }
+    .b41:active { transform: translateY(1px); box-shadow:
+        inset 0 1px 0 0 rgba(0,0,0,0.6),
+        inset 0 -1px 0 0 rgba(255,255,255,0.1),
+        0 0 0 0 #000; }
+
+    /* 42. Slash pixel — diagonal sword-slash crosses the text. */
+    .b42 { padding: 6px 12px; background: transparent; color: var(--text); font-size: 12px; font-weight: 700; position: relative; overflow: hidden; }
+    .b42::after { content: ''; position: absolute; left: -10%; top: 50%; right: 110%; height: 1px; background: var(--rose);
+      transform: rotate(-12deg); transform-origin: left; transition: right 320ms ease; }
+    .b42:hover::after { right: -10%; }
+
+    /* 43. Dim — entire button fades to half opacity when armed. */
+    .b43 { padding: 8px 14px; background: var(--rose); color: #fff; font-size: 11px; font-weight: 700; opacity: 1; transition: opacity 240ms ease; }
+    .b43:hover { opacity: 0.5; }
+
+    /* 44. Static — CRT static reveal on hover. */
+    .b44 { padding: 8px 14px; background: #18181b; color: #fff; font-size: 11px; font-weight: 700; position: relative; overflow: hidden; }
+    .b44::before { content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 3px 3px; opacity: 0; transition: opacity 200ms ease; }
+    .b44:hover::before { opacity: 1; }
+    .b44:hover { color: #ff2020; }
+
+    /* 45. Vacuum suck — button shrinks before vanishing. */
+    .b45 { padding: 8px 14px; background: var(--rose); color: #fff; font-size: 11px; font-weight: 700; transition: transform 280ms cubic-bezier(0.85, 0, 0.15, 1.4); }
+    .b45:hover { transform: scale(0.8) rotate(-2deg); }
+
+    /* ════════════════════════════════════════════════════════════
+       GROUP E — Playful · soft motion · whimsical
+       (46-50)
+       ════════════════════════════════════════════════════════════ */
+
+    /* 46. Wiggle — friendly wiggle when hovered. */
+    @keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-2deg); } 75% { transform: rotate(2deg); } }
+    .b46 { padding: 6px 14px; background: #fce7eb; color: #be1a4f; font-size: 12px; font-weight: 600; border-radius: 6px; }
+    .b46:hover { animation: wiggle 320ms ease infinite; }
+
+    /* 47. Splash — soft pink wash radiates outward. */
+    .b47 { padding: 6px 14px; background: transparent; color: #be1a4f; font-size: 12px; font-weight: 600; position: relative; border-radius: 6px; }
+    .b47::before {
+      content: ''; position: absolute; inset: 0; border-radius: 6px;
+      background: radial-gradient(circle at center, #fce7eb, transparent 70%);
+      opacity: 0; transition: opacity 240ms ease, transform 240ms ease;
+      transform: scale(0.6);
+    }
+    .b47:hover::before { opacity: 1; transform: scale(1); }
+    .b47 span { position: relative; }
+
+    /* 48. Pop — text bounces up + comes back. */
+    @keyframes pop-up { 0% { transform: translateY(0);} 40% { transform: translateY(-8px); } 100% { transform: translateY(0); } }
+    .b48 { padding: 8px 14px; background: transparent; color: var(--rose); font-size: 12px; font-weight: 700; }
+    .b48:hover { animation: pop-up 420ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    /* 49. Ghost — chip becomes translucent then re-appears. */
+    .b49 { padding: 6px 14px; background: var(--rose); color: #fff; font-size: 12px; font-weight: 700; border-radius: 999px; transition: opacity 200ms ease, transform 200ms ease; }
+    .b49:hover { opacity: 0.3; transform: translateY(-2px); }
+
+    /* 50. Confetti spark — three small dots burst around the button. */
+    .b50 { padding: 6px 14px; background: #18181b; color: #ff2020; font-size: 11px; font-weight: 700; position: relative; border-radius: 4px; }
+    .b50::before, .b50::after { content: ''; position: absolute; width: 4px; height: 4px; background: #ffd34d; border-radius: 50%; opacity: 0; transition: opacity 200ms ease, transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .b50::before { top: 0; left: 4px; }
+    .b50::after { bottom: 0; right: 4px; background: #ff2020; }
+    .b50:hover::before { opacity: 1; transform: translate(-8px, -10px); }
+    .b50:hover::after { opacity: 1; transform: translate(8px, 10px); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Delete button · 50 variations</h1>
+    <p class="subhead">
+      Saved survey of delete-button design directions. Five groups — minimal micro-animations, geometric / architectural, 8-bit Nintendo, industrial / alarm, and playful. No thick lines anywhere; all rely on motion + colour + glyph for the warning signal.
+      Hover any button to see its behaviour. Click to feel the press / active state. Each is keyboard-focusable.
+    </p>
+  </header>
+
+  <!-- Group A -->
+  <section class="group">
+    <div class="group-h"><h2>A · Minimal · animated micro-interactions</h2><span class="count">01 — 10</span></div>
+    <div class="grid">
+      <div class="cell-wrap"><div class="cell"><span class="num">01</span><button class="b1"><span>DELETE</span></button><p class="name">Ink fill</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">02</span><button class="b2">DELETE</button><p class="name">Pixel sweep</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">03</span><button class="b3">DELETE</button><p class="name">Letter-spacing pulse</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">04</span><button class="b4"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m1 0v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6"/></svg><span>Delete</span></button><p class="name">Magnet split</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">05</span><button class="b5">DELETE</button><p class="name">Shutter</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">06</span><button class="b6"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M18 6L6 18"/></svg></button><p class="name">Aperture X stroke</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">07</span><button class="b7"><span class="a">DELETE</span><span class="b">REMOVE</span></button><p class="name">Word swap</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">08</span><button class="b8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button><p class="name">Glow ring</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">09</span><button class="b9">DELETE</button><p class="name">Strike-through</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">10</span><button class="b10">DELETE</button><p class="name">Corner cut</p></div></div>
+    </div>
+  </section>
+
+  <!-- Group B -->
+  <section class="group">
+    <div class="group-h"><h2>B · Geometric · architectural · spatial</h2><span class="count">11 — 20</span></div>
+    <div class="grid">
+      <div class="cell-wrap"><div class="cell"><span class="num">11</span><button class="b11">DELETE</button><p class="name">Folded corner</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">12</span><button class="b12">DELETE</button><p class="name">Bracket clamp</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">13</span><button class="b13">DELETE</button><p class="name">Stairstep widen</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">14</span><button class="b14">DELETE</button><p class="name">Bisect</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">15</span><button class="b15">DELETE</button><p class="name">Bevel deepen</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">16</span><button class="b16">DELETE</button><p class="name">Slab slide</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">17</span><div class="b17-wrap"><button class="b17">DELETE</button></div><p class="name">Iso tilt</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">18</span><button class="b18">DELETE</button><p class="name">Diagonal two-tone</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">19</span><button class="b19"><span>DELETE</span></button><p class="name">Cross-hatch reveal</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">20</span><button class="b20"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button><p class="name">Aperture iris</p></div></div>
+    </div>
+  </section>
+
+  <!-- Group C — 8-bit Nintendo -->
+  <section class="group">
+    <div class="group-h"><h2>C · 8-bit Nintendo · pixel art · arcade</h2><span class="count">21 — 35</span></div>
+    <div class="grid">
+      <div class="cell-wrap"><div class="cell"><span class="num">21</span><button class="b21 pixel">DELETE</button><p class="name">NES classic chip</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">22</span><button class="b22 pixel">DELETE</button><p class="name">Coin block shimmer</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">23</span><button class="b23 pixel">DELETE</button><p class="name">Mushroom red</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">24</span><button class="b24 pixel" aria-label="Delete heart"></button><p class="name">Zelda heart empty</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">25</span><button class="b25 pixel">DELETE</button><p class="name">Mortal screen</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">26</span><button class="b26 pixel">DELETE</button><p class="name">Bomb fuse</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">27</span><button class="b27 pixel">GAME OVER</button><p class="name">Game Over flash</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">28</span><button class="b28 pixel" aria-label="Delete"></button><p class="name">D-pad diamond</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">29</span><div class="b29 pixel"><div class="label">HP</div><div class="bar"><div class="fill"></div></div></div><p class="name">HP drains red</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">30</span><button class="b30 pixel"><span class="pac"></span> DELETE</button><p class="name">Pacman munch</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">31</span><button class="b31 pixel"><span class="blk"></span>DELETE</button><p class="name">Tetris drop</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">32</span><button class="b32 pixel">BOSS</button><p class="name">Boss bar drip</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">33</span><button class="b33 pixel">1-UP</button><p class="name">1-UP hue shift</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">34</span><button class="b34 pixel">PONG · DEL</button><p class="name">Pong paddle</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">35</span><button class="b35 pixel" aria-label="Delete">DEL</button><p class="name">Boss explode</p></div></div>
+    </div>
+  </section>
+
+  <!-- Group D — Industrial -->
+  <section class="group">
+    <div class="group-h"><h2>D · Industrial · alarm · safety signal</h2><span class="count">36 — 45</span></div>
+    <div class="grid">
+      <div class="cell-wrap"><div class="cell"><span class="num">36</span><button class="b36">DELETE</button><p class="name">Alarm strobe</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">37</span><button class="b37"><span>DELETE</span></button><p class="name">Hazard stripes</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">38</span><button class="b38">DELETE</button><p class="name">CRT scanline</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">39</span><button class="b39">DELETE</button><p class="name">Throbbing dot</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">40</span><button class="b40">DELETE</button><p class="name">Cross-out line</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">41</span><button class="b41">DELETE</button><p class="name">Industrial knurl</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">42</span><button class="b42">DELETE</button><p class="name">Sword slash</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">43</span><button class="b43">DELETE</button><p class="name">Fade dim</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">44</span><button class="b44">DELETE</button><p class="name">CRT static</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">45</span><button class="b45">DELETE</button><p class="name">Vacuum suck</p></div></div>
+    </div>
+  </section>
+
+  <!-- Group E — Playful -->
+  <section class="group">
+    <div class="group-h"><h2>E · Playful · soft motion · whimsical</h2><span class="count">46 — 50</span></div>
+    <div class="grid">
+      <div class="cell-wrap"><div class="cell"><span class="num">46</span><button class="b46">Delete</button><p class="name">Wiggle</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">47</span><button class="b47"><span>Delete</span></button><p class="name">Splash wash</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">48</span><button class="b48">DELETE</button><p class="name">Pop bounce</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">49</span><button class="b49">Delete</button><p class="name">Ghost</p></div></div>
+      <div class="cell-wrap"><div class="cell"><span class="num">50</span><button class="b50">DELETE</button><p class="name">Confetti burst</p></div></div>
+    </div>
+  </section>
+</body>
+</html>

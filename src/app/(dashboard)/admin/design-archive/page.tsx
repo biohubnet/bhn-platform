@@ -68,6 +68,16 @@ const ARCHIVE_ENTRIES: ArchiveEntry[] = [
     countLabel: "layouts",
     tags: ["M34", "Y2K", "Glass", "Aero"],
   },
+  {
+    slug: "delete-buttons-50",
+    title: "Delete button · 50 variations",
+    description:
+      "Survey of delete-button motion + form. Grouped into minimal micro-animations, geometric / architectural, 8-bit Nintendo (NES classic chip, coin block, Zelda heart, Pacman munch, Tetris drop, Pong paddle, boss-bar drip), industrial / alarm (CRT scanline, hazard stripes, throbbing LED), and playful. No thick lines anywhere — motion + colour + glyph do the work.",
+    date: "2026-05-20",
+    count: 50,
+    countLabel: "buttons",
+    tags: ["Delete", "8-bit", "NES", "Pixel", "Motion", "Alarm"],
+  },
 ];
 
 export default async function AdminDesignArchivePage() {
