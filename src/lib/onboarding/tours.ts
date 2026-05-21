@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.21a";
+export const TOUR_VERSION = "2026.05.21b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Welcome ─────────────────────────────────────────────────────
@@ -50,6 +50,16 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["trainee", "evaluating", "admin", "superadmin"],
     cta: { label: "Try the simulator", href: "/simulator" },
     since: "2026.05.19e",
+  },
+  // ─── New: Master resume AI-extract ──────────────────────────────
+  {
+    id: "trainee.master-ai-extract",
+    title: "New: Seed your master library from a resume",
+    body: "The master resume is your library of every bullet you've ever written. Used to bootstrap by hand — now AI does it in one click. Open any tailored resume and use the **Build master from this draft** button in the master banner, or seed from `/profile/master` directly. Dedupes against anything already in your library, so re-running is safe.",
+    placement: "center",
+    roles: ["trainee", "evaluating", "admin", "superadmin"],
+    cta: { label: "Open my master", href: "/profile/master" },
+    since: "2026.05.21b",
   },
 
   // ─── Trainee path ────────────────────────────────────────────────
