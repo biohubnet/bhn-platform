@@ -140,14 +140,32 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ ok: true, resume: created });
   } catch (err) {
-    // Surface the real reason for a duplicate failure instead of
-    // letting Next's default 500 mask it as "Internal Server Error".
-    // The error message is safe to return — it never contains user
-    // data, only the Prisma constraint that failed.
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[POST /api/profile/resumes] create failed:", msg);
+    // Surface the real reason for a failure instead of letting Next's
+    // default 500 mask it as "Internal Server Error". Prisma errors
+    // arrive as multi-line strings that often start with a blank
+    // line ("\nInvalid `prisma.resume.create()` invocation:\n…"),
+    // so a naive `split("\n")[0]` would return "". Grab the first
+    // *meaningful* line instead, plus include the Prisma error code
+    // (e.g. P2002 for unique violation) when present so the client
+    // — and the Vercel log — show the actual constraint that failed.
+    const e = err as { name?: string; code?: string; message?: string; meta?: unknown };
+    const rawMsg = typeof e?.message === "string" ? e.message : String(err);
+    const firstLine = rawMsg.split("\n").map((l) => l.trim()).find((l) => l.length > 0) ?? "Unknown error";
+    const code = typeof e?.code === "string" ? e.code : undefined;
+    console.error("[POST /api/profile/resumes] create failed:", {
+      name: e?.name,
+      code,
+      message: rawMsg,
+      meta: e?.meta,
+      sourceResumeId,
+      userId,
+      derivedFromId,
+    });
+    const codeChip = code ? `${code} · ` : "";
     return NextResponse.json(
-      { error: `Couldn't ${sourceResumeId ? "duplicate" : "create"} resume — ${msg.split("\n")[0]}` },
+      {
+        error: `Couldn't ${sourceResumeId ? "duplicate" : "create"} resume — ${codeChip}${firstLine}`,
+      },
       { status: 500 },
     );
   }
