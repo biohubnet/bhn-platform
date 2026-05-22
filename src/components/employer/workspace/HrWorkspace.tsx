@@ -41,6 +41,19 @@ import { ApplicantPanel } from "@/components/employer/workspace/ApplicantPanel";
 import { NewPostingInline } from "@/components/employer/workspace/NewPostingInline";
 import { cn } from "@/lib/utils";
 
+// ── Helpers ───────────────────────────────────────────────────────
+
+function relativeTimeShort(iso: string | Date): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 60)  return `${Math.max(1, mins)}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)   return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30)  return `${days}d ago`;
+  return new Date(iso).toLocaleDateString("en-CA", { month: "short", day: "numeric" });
+}
+
 // ── Data shapes coming from the server ──────────────────────────
 
 export interface PostingSummary {
@@ -65,6 +78,9 @@ export interface PostingSummary {
     hired: number;
     closed: number;
   };
+  /** Attribution — populated once multi-user team writes begin. */
+  lastTouchedAt?:     string | null;
+  lastTouchedByName?: string | null;
 }
 
 export type QueueItemKind = "new" | "stale" | "offer-waiting";
@@ -449,6 +465,11 @@ function PostingRow({
             <p className="text-xs text-muted mt-0.5 truncate">
               {posting.companyName}
               {posting.location && <> · {posting.location}</>}
+              {posting.lastTouchedByName && posting.lastTouchedAt && (
+                <span className="ml-2 text-subtle">
+                  · touched by {posting.lastTouchedByName} · {relativeTimeShort(posting.lastTouchedAt)}
+                </span>
+              )}
             </p>
             {/* Funnel mini-bar */}
             {c.total > 0 && (

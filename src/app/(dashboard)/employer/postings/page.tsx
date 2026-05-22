@@ -98,6 +98,8 @@ export default async function EmployerWorkspacePage() {
       hours: true,
       duration: true,
       type: true,
+      lastTouchedAt: true,
+      lastTouchedBy: { select: { name: true } },
     },
     orderBy: { createdAt: "desc" },
   }).catch(() => [] as Array<{
@@ -106,6 +108,8 @@ export default async function EmployerWorkspacePage() {
     createdAt: Date; updatedAt: Date; keySkills: string[];
     compensation: string | null; hours: string | null;
     duration: string | null; type: string | null;
+    lastTouchedAt: Date | null;
+    lastTouchedBy: { name: string | null } | null;
   }>);
 
   // ── Per-stage counts in one groupBy ──────────────────────
@@ -204,6 +208,8 @@ export default async function EmployerWorkspacePage() {
       duration: p.duration,
       type: p.type,
       counts: { total, newCount, inProgress, hired, closed },
+      lastTouchedAt:     p.lastTouchedAt?.toISOString() ?? null,
+      lastTouchedByName: p.lastTouchedBy?.name ?? null,
     };
   });
 

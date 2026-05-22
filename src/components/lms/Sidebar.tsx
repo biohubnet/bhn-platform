@@ -237,6 +237,8 @@ const employerItems: (NavItem & { labelKey: string })[] = [
   // was confusing without offering a different view. The
   // /employer/applicants URL still redirects here for old
   // bookmarks.
+  { label: "Team",              labelKey: "nav.employerTeam",       href: "/employer/team",       icon: Users2,
+    description: "Manage your company workspace — invite teammates, approve join requests, and set role permissions. Owner can change roles; manager+ can send invites." },
   { label: "Talent pool",       labelKey: "nav.talentPool",         href: "/talent-pool",         icon: Users,
     description: "Browse approved talent-application members. View full applications and leave comments (visible to admins + employers, never to the applicant). Commenting unlocks only after admin approves the applicant's eligibility." },
 ];

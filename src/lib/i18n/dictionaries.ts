@@ -56,6 +56,7 @@ const en: Dict = {
   "nav.employerProfile": "Company profile",
   "nav.employerPostings": "My Postings",
   "nav.employerApplicants": "Applicants",
+  "nav.employerTeam": "Team",
   "nav.talentPool": "Talent pool",
   "nav.equip.funding": "Funding",
   "nav.equip.tracker": "My applications",

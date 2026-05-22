@@ -456,6 +456,16 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open my employer home", href: "/employer" },
   },
   {
+    id: "employer-team-workspace",
+    title: "Invite your HR team to share this workspace",
+    body: "Your employer account is now a shared company workspace. Open **EMPLOYER PORTAL → Team** to invite colleagues — each gets their own role (Owner, Manager, Generalist, or Viewer). They receive a 7-day link by email; once they accept, you'll all see each other's activity on postings and applicants. Job done solo? Leave it as-is — nothing changes for single-user accounts.",
+    path: "/employer/team",
+    placement: "center",
+    since: "2026.05.22a",
+    roles: ["employer", "admin", "superadmin"],
+    cta: { label: "Open Team", href: "/employer/team" },
+  },
+  {
     id: "internship-board",
     title: "Internship Opportunities is live",
     body: "EXPERIENCE → Internship Opportunities lists open postings from BioHubNet's industry partners. Browse, then apply through the company's own site. Admins post by pasting a job description — the AI parses it into structured fields.",
