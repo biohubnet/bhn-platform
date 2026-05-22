@@ -245,14 +245,24 @@ export default async function EmployerHomePage() {
   return (
     <DesignSystemProvider value="studio">
     <div className="-mt-2 space-y-0">
-      {noPassword && <SetPasswordBanner className="mb-4" />}
 
       {/* ── PANEL ──────────────────────────────────────────────
           Single rounded outer wrapper containing the cover banner
           and the body — one continuous edge per side instead of two
-          stacked rings clashing at the seam. */}
+          stacked rings clashing at the seam.
+          Note: the SetPasswordBanner used to render ABOVE this
+          panel — that broke the platform-wide "hero owns the top
+          edge" rule. It now sits INSIDE the panel, just below
+          CoverBanner (the hero), so the cover always sits at the
+          very top of the page. */}
       <div className="rounded-3xl overflow-hidden shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)]">
         <CoverBanner />
+
+        {noPassword && (
+          <div className="px-6 sm:px-10 lg:px-14 pt-4">
+            <SetPasswordBanner />
+          </div>
+        )}
 
         <div
           className="relative -mt-24 sm:-mt-28"

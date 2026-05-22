@@ -205,18 +205,26 @@ export default async function EmployerWorkspacePage() {
     where: { createdById: userId ?? "_", isDemoSeed: true },
   }).catch(() => 0);
 
+  // Hero always sits at the very top of the page — never let any
+  // banner / seeder / utility bar slip above it. The hero owns the
+  // top edge of every page on the platform. Both the SetPassword
+  // notice and the admin DemoSeederBar render UNDER the workspace's
+  // hero strip; we slot them between the hero and the workspace's
+  // content using a small layout shim.
   return (
-    <>
-      {noPassword && <SetPasswordBanner className="mb-4" />}
-      <DemoSeederBar hasExistingDemos={demoCount > 0} />
-      <HrWorkspace
-        firstName={me?.name?.split(" ")[0] ?? null}
-        companyName={me?.employerCompany ?? null}
-        isAdmin={isAdmin}
-        isFresh={isFresh}
-        postings={postings}
-        actionQueue={actionQueue}
-      />
-    </>
+    <HrWorkspace
+      firstName={me?.name?.split(" ")[0] ?? null}
+      companyName={me?.employerCompany ?? null}
+      isAdmin={isAdmin}
+      isFresh={isFresh}
+      postings={postings}
+      actionQueue={actionQueue}
+      slotAboveContent={
+        <>
+          {noPassword && <SetPasswordBanner className="mb-4" />}
+          <DemoSeederBar hasExistingDemos={demoCount > 0} />
+        </>
+      }
+    />
   );
 }

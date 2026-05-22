@@ -85,6 +85,12 @@ interface Props {
   isFresh: boolean;
   postings: PostingSummary[];
   actionQueue: QueueItem[];
+  /** Optional content rendered AFTER the hero strip and BEFORE the
+   *  workspace body. Used by the page shell to hang things like the
+   *  admin DemoSeederBar or a "Set your password" notice without
+   *  letting them slip above the hero — the hero owns the top of
+   *  every page on the platform, by convention. */
+  slotAboveContent?: React.ReactNode;
 }
 
 /** Applicant fetched lazily when a posting is expanded. Shape mirrors
@@ -121,6 +127,7 @@ export interface ApplicantData {
 
 export function HrWorkspace({
   firstName, companyName, isAdmin, isFresh, postings, actionQueue,
+  slotAboveContent,
 }: Props) {
   // ── Expansion state ──────────────────────────────────────
   const [expandedPostingId, setExpandedPostingId] = useState<string | null>(
@@ -248,6 +255,13 @@ export function HrWorkspace({
               : "Everything's caught up. Postings expand below — click any to review applicants inline."
         }
       />
+
+      {/* Slot for content that needs to sit BELOW the hero but
+          ABOVE the workspace body — admin seed bar, set-password
+          notice, etc. The hero owns the top edge of the page; the
+          shell hangs ancillary banners here so they don't slip above
+          it. */}
+      {slotAboveContent}
 
       {/* ── Stats strip ───────────────────────────────────── */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
