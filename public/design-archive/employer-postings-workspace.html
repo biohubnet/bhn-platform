@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HR postings workspace — DSPageHeader + inline pipelines (archived)</title>
+  <style>
+    :root {
+      --doc-bg: #0e131a;
+      --doc-panel: #141b22;
+      --doc-line: #232c38;
+      --doc-ink: #e6edf3;
+      --doc-muted: #8b96a3;
+      --doc-accent: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--doc-bg); color: var(--doc-ink); font: 14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+    header.doc h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.01em; }
+    header.doc p  { margin: 0; color: var(--doc-muted); max-width: 760px; line-height: 1.6; }
+    header.doc    { margin-bottom: 30px; padding-bottom: 22px; border-bottom: 1px solid var(--doc-line); }
+    h2 { margin: 36px 0 6px; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--doc-accent); font-weight: 700; }
+    h2 + p { margin: 0 0 16px; color: var(--doc-muted); font-size: 13px; line-height: 1.6; }
+
+    /* ── DSPageHeader hero (Studio variant) ─────────────────────
+       Faithful HTML port of the workspace's hero strip from
+       components/design-system/DSPageHeader.tsx. Rendered through
+       the route-scoped Studio DesignSystemProvider on the
+       /employer/* routes. Full-bleed gradient + drifting blob
+       backgrounds + a curve-down SVG that hides the seam to the
+       page body. */
+    .ds-hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px 18px 0 0;
+      border: 1px solid var(--doc-line);
+      border-bottom: none;
+      padding: 28px 32px 70px;
+      color: #fff;
+      background-image:
+        radial-gradient(at 22% 18%, rgba(168,85,247,0.55) 0px, transparent 55%),
+        radial-gradient(at 78% 24%, rgba(244,114,182,0.5) 0px, transparent 50%),
+        radial-gradient(at 38% 84%, rgba(99,102,241,0.55) 0px, transparent 55%),
+        radial-gradient(at 92% 88%, rgba(239,68,68,0.4) 0px, transparent 50%),
+        linear-gradient(135deg, #1e1b4b 0%, #312e81 35%, #6b21a8 70%, #831843 100%);
+    }
+    .ds-hero-curve {
+      position: absolute;
+      left: 0; right: 0; bottom: -1px;
+      width: 100%;
+      height: 60px;
+      pointer-events: none;
+    }
+    .ds-hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.18);
+      font: 700 10px/1 ui-monospace, monospace;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+    .ds-hero-row {
+      display: flex; align-items: center; gap: 18px;
+      margin-top: 16px;
+    }
+    .ds-hero-disc {
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      background: white;
+      box-shadow:
+        0 18px 40px -10px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.6);
+      border: 4px solid #fff;
+      display: flex; align-items: center; justify-content: center;
+      color: #312e81;
+      font-size: 28px;
+    }
+    .ds-hero-title { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.01em; }
+    .ds-hero-desc { margin: 6px 0 0; font-size: 14px; opacity: 0.85; max-width: 640px; line-height: 1.5; }
+
+    /* ── Workspace body ─────────────────────────────────────── */
+    .ws-body {
+      background: var(--doc-panel);
+      border: 1px solid var(--doc-line);
+      border-radius: 0 0 18px 18px;
+      padding: 22px 24px 28px;
+    }
+
+    /* Stats strip */
+    .ws-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .ws-stat {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--doc-line);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .ws-stat-label {
+      font: 700 10px/1 ui-monospace, monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--doc-muted);
+    }
+    .ws-stat-value {
+      font: 800 26px/1.1 ui-sans-serif, system-ui;
+      margin: 6px 0 2px;
+    }
+    .ws-stat-sub { font-size: 11px; color: var(--doc-muted); }
+
+    /* Action queue */
+    .ws-queue {
+      background: rgba(251, 191, 36, 0.06);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 22px;
+    }
+    .ws-queue h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: #fde68a;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .ws-queue-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: var(--doc-ink);
+      margin-bottom: 6px;
+    }
+    .ws-queue-tag {
+      font: 700 9px/1 ui-monospace, monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(251,191,36,0.15);
+      color: #fcd34d;
+    }
+
+    /* Posting rows */
+    .ws-posting {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--doc-line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+    }
+    .ws-posting-head {
+      display: flex; align-items: center; gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ws-posting-title { font-weight: 700; flex: 1; min-width: 200px; }
+    .ws-posting-meta { font-size: 11px; color: var(--doc-muted); }
+    .ws-chip {
+      font: 700 9px/1 ui-monospace, monospace;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      color: var(--doc-muted);
+    }
+    .ws-chip.active { background: rgba(34,197,94,0.18); color: #86efac; }
+
+    .props {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .prop {
+      background: var(--doc-panel);
+      border: 1px solid var(--doc-line);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .prop h3 { margin: 0 0 4px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--doc-accent); }
+    .prop p { margin: 0; color: var(--doc-muted); font-size: 12px; line-height: 1.55; }
+    .prop code { font: 600 11px/1.5 ui-monospace, monospace; color: var(--doc-ink); background: rgba(255,255,255,0.04); padding: 1px 5px; border-radius: 3px; }
+
+    .footnote {
+      margin-top: 32px;
+      padding: 14px 16px;
+      border: 1px dashed var(--doc-line);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      color: var(--doc-muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .footnote code { font: 600 11px/1.5 ui-monospace, monospace; color: var(--doc-ink); background: rgba(255,255,255,0.04); padding: 1px 5px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="doc">
+      <h1>HR postings workspace — DSPageHeader + inline pipelines <span style="color:var(--doc-muted); font-weight:400;">(archived 2026-05-21)</span></h1>
+      <p>
+        The hiring workspace that lived at <code style="background:rgba(255,255,255,0.04); padding:1px 5px; border-radius:3px;">/employer/postings</code> — a Studio-variant
+        <code style="background:rgba(255,255,255,0.04); padding:1px 5px; border-radius:3px;">DSPageHeader</code> hero (gradient + drifting blobs + curve-down) over a four-up stats strip, an
+        amber-tinted action-queue panel, and expandable posting rows with inline applicant pipelines. Retired when HR
+        was consolidated back to a single entry at <code style="background:rgba(255,255,255,0.04); padding:1px 5px; border-radius:3px;">/employer</code> (the brand-stage page with the wavy aurora
+        cover banner — preserved live, not archived). The visual treatment of the workspace's hero + the stats / queue /
+        posting-row pattern is preserved here as a reference for future surfaces.
+      </p>
+    </header>
+
+    <h2>The workspace</h2>
+    <p>Hero strip + stats + action queue + posting rows. Resize to see the responsive collapse.</p>
+
+    <div class="ds-hero">
+      <div class="ds-hero-eyebrow">
+        <span aria-hidden style="width:14px;height:14px;border-radius:4px;background:rgba(255,255,255,0.15)"></span>
+        Hiring workspace
+      </div>
+      <div class="ds-hero-row">
+        <div class="ds-hero-disc">🏢</div>
+        <div>
+          <h2 class="ds-hero-title">Welcome back, Jordan.</h2>
+          <p class="ds-hero-desc">3 items need your attention. Tap any of them below to jump straight to the candidate.</p>
+        </div>
+      </div>
+      <!-- Curve-down SVG hides the seam to the page body. -->
+      <svg class="ds-hero-curve" viewBox="0 0 100 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 0 L100 0 L100 60 Q50 30 0 60 Z" fill="#141b22" />
+      </svg>
+    </div>
+
+    <div class="ws-body">
+      <div class="ws-stats">
+        <div class="ws-stat">
+          <div class="ws-stat-label">Postings</div>
+          <div class="ws-stat-value">7</div>
+          <div class="ws-stat-sub">5 active</div>
+        </div>
+        <div class="ws-stat">
+          <div class="ws-stat-label">Applicants</div>
+          <div class="ws-stat-value" style="color:#fbbf24;">42</div>
+          <div class="ws-stat-sub">3 new</div>
+        </div>
+        <div class="ws-stat">
+          <div class="ws-stat-label">In progress</div>
+          <div class="ws-stat-value">14</div>
+          <div class="ws-stat-sub">reviewing → offer</div>
+        </div>
+        <div class="ws-stat">
+          <div class="ws-stat-label">Hired</div>
+          <div class="ws-stat-value" style="color:#34d399;">9</div>
+          <div class="ws-stat-sub">lifetime</div>
+        </div>
+      </div>
+
+      <div class="ws-queue">
+        <h3>⚠ Needs your attention</h3>
+        <div class="ws-queue-row">
+          <span class="ws-queue-tag">New</span>
+          <span style="flex:1">Maria Chen applied to <strong>Manufacturing Process Intern</strong></span>
+          <span style="color:var(--doc-muted)">2h ago</span>
+        </div>
+        <div class="ws-queue-row">
+          <span class="ws-queue-tag">Stale</span>
+          <span style="flex:1">Sam Liu at <strong>onsite</strong> for <strong>QA Documentation Specialist</strong></span>
+          <span style="color:var(--doc-muted)">9 days idle</span>
+        </div>
+        <div class="ws-queue-row">
+          <span class="ws-queue-tag">Offer</span>
+          <span style="flex:1">Awaiting response — <strong>Joon Park</strong> for <strong>Process Engineering Intern</strong></span>
+          <span style="color:var(--doc-muted)">3 days</span>
+        </div>
+      </div>
+
+      <div class="ws-posting">
+        <div class="ws-posting-head">
+          <span class="ws-chip active">Active</span>
+          <div class="ws-posting-title">Manufacturing Process Intern</div>
+          <span class="ws-posting-meta">Vancouver · 12 applicants · 4 new</span>
+          <span style="color:var(--doc-muted)">▾</span>
+        </div>
+      </div>
+      <div class="ws-posting">
+        <div class="ws-posting-head">
+          <span class="ws-chip active">Active</span>
+          <div class="ws-posting-title">QA Documentation Specialist</div>
+          <span class="ws-posting-meta">Toronto · 8 applicants · 0 new</span>
+          <span style="color:var(--doc-muted)">▾</span>
+        </div>
+      </div>
+      <div class="ws-posting">
+        <div class="ws-posting-head">
+          <span class="ws-chip">Draft</span>
+          <div class="ws-posting-title">Bioreactor Operator</div>
+          <span class="ws-posting-meta">Vancouver · not published</span>
+          <span style="color:var(--doc-muted)">▾</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Anatomy</h2>
+    <p>Five stacked sections that ran linearly down a single scroll.</p>
+
+    <div class="props">
+      <div class="prop">
+        <h3>1 · DSPageHeader hero</h3>
+        <p>
+          Studio variant — <code>linear-gradient(135deg, #1e1b4b 0%, #312e81 35%, #6b21a8 70%, #831843 100%)</code>
+          base with four <code>radial-gradient</code> drift blobs (violet top-left, pink top-right, indigo bottom-left,
+          red bottom-right). White-disc icon at <code>shadow-cover-disc</code>. Curve-down SVG at the bottom hides the
+          seam to the page body.
+        </p>
+      </div>
+      <div class="prop">
+        <h3>2 · Stats strip</h3>
+        <p>
+          Four <code>StatChip</code> cells: Postings (raw + active count), Applicants (raw + new badge in amber when
+          &gt;0), In progress (reviewing → offer), Hired (lifetime). Even grid; collapses to 2-col on mobile.
+        </p>
+      </div>
+      <div class="prop">
+        <h3>3 · Action queue</h3>
+        <p>
+          Amber-tinted panel surfacing items needing attention: <code>New</code> applications, <code>Stale</code> rows
+          (in a stage &gt;7 days), <code>Offer</code> awaiting response (&gt;2 days). Each row jumps the user directly
+          to the applicant, expanded inline.
+        </p>
+      </div>
+      <div class="prop">
+        <h3>4 · Posting rows</h3>
+        <p>
+          One row per posting. Collapsed: status chip + title + location + applicant count + new badge.
+          Expanded (click ▾): full applicant pipeline inline (kanban-style stage lanes with drag-drop).
+          Lazy-loaded on first expand.
+        </p>
+      </div>
+      <div class="prop">
+        <h3>5 · Inline forms</h3>
+        <p>
+          Schedule interview / send offer / create new posting all open as inline drawers — no route change. The
+          <code>HrWorkspace</code> client component owns every mutation.
+        </p>
+      </div>
+      <div class="prop">
+        <h3>+ slotAboveContent</h3>
+        <p>
+          A prop on <code>HrWorkspace</code> that renders any content between the hero strip and the workspace body.
+          Used by the page shell for the admin <code>DemoSeederBar</code> + the <code>SetPasswordBanner</code> notice,
+          so they sit BELOW the hero instead of slipping above it.
+        </p>
+      </div>
+    </div>
+
+    <p class="footnote">
+      Originally lived in <code>src/app/(dashboard)/employer/postings/page.tsx</code> + <code>src/components/employer/workspace/HrWorkspace.tsx</code>. That route now
+      308-redirects to <code>/employer</code>, which carries the brand-stage hero with the wavy aurora cover banner.
+      The per-posting deep routes (<code>/employer/postings/[id]/...</code>) still exist for applicant management; only
+      the workspace's linear index/dashboard treatment is retired.
+    </p>
+  </main>
+</body>
+</html>

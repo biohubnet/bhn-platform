@@ -69,6 +69,16 @@ const ARCHIVE_ENTRIES: ArchiveEntry[] = [
     tags: ["M34", "Y2K", "Glass", "Aero"],
   },
   {
+    slug: "employer-postings-workspace",
+    title: "HR postings workspace · DSPageHeader + inline pipelines",
+    description:
+      "The hiring workspace at /employer/postings (retired 2026-05-21 when HR was consolidated back to a single entry at /employer with the wavy aurora cover banner). Studio-variant DSPageHeader hero — gradient base with four drifting blob backgrounds + curve-down SVG — over a four-up stats strip, an amber action-queue panel, and expandable posting rows with inline applicant pipelines. Faithful HTML port of the hero + stats + queue + row pattern so a future surface can reuse the treatment.",
+    date: "2026-05-21",
+    count: 1,
+    countLabel: "workspace",
+    tags: ["Hero", "Studio", "Workspace", "Pipelines", "Archived"],
+  },
+  {
     slug: "create-resume-fx",
     title: "Create resume · 4 transition candidates",
     description:

@@ -35,7 +35,6 @@ import {
   HeartHandshake,
   Briefcase,
   Users2,
-  FilePlus,
   Building2,
   ListChecks,
   Activity,
@@ -212,13 +211,22 @@ const equipItems: (NavItem & { labelKey: string })[] = [
 ];
 
 // EMPLOYER PORTAL — visible only when role === "employer".
+//
+// Note: the standalone "My Postings" entry pointing at
+// /employer/postings was retired 2026-05-21. That workspace
+// (DSPageHeader hero + stats + action queue + expandable posting
+// rows with inline applicant pipelines) has been folded back into
+// the brand-stage Overview at /employer, which carries the wavy
+// aurora cover banner + identity row + action queue + posting
+// preview natively. /employer/postings still works — it
+// 308-redirects to /employer — so old bookmarks keep firing. The
+// retired workspace's visual treatment is archived at
+// /design-archive/employer-postings-workspace.html for future reuse.
 const employerItems: (NavItem & { labelKey: string })[] = [
   { label: "Overview",          labelKey: "nav.employerHome",       href: "/employer",            icon: Building2, exact: true,
-    description: "Your company brand stage — profile (with one-URL AI auto-fill), live action queue, and the hiring shopfront trainees see on every posting. The pencil top-right opens the edit modal." },
+    description: "Your company brand stage — profile (with one-URL AI auto-fill), live action queue, and the hiring shopfront trainees see on every posting. The pencil top-right opens the edit modal. Click any posting row to drill into its pipeline + applicant management." },
   { label: "How it works",      labelKey: "nav.employerGuide",      href: "/employer/how-it-works", icon: Compass,
     description: "End-to-end explainer for the hiring program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
-  { label: "My Postings",       labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: FilePlus,
-    description: "Postings + applicants in one place. Expand any posting row to see its pipeline; the action-queue at the top surfaces new applications, stale stages, and offers still awaiting response." },
   // The separate "Applicants" sidebar entry was removed — it
   // pointed at /employer/applicants, which is a redirect to this
   // same My-Postings workspace. The workspace already hosts the
