@@ -13,6 +13,81 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+
+  // ── Design-token leak guard ─────────────────────────────────────
+  //
+  // The platform's colour system lives in `src/app/globals.css` as
+  // CSS custom properties consumed via Tailwind utility classes
+  // (`text-fg`, `bg-card-solid`, `ring-brand-300`, …). Each theme
+  // re-binds those variables, so any colour expressed through a
+  // token tracks every theme switch automatically.
+  //
+  // The leak this rule prevents: hard-coded colour values embedded
+  // into Tailwind arbitrary-value classes —
+  //
+  //     <div className="bg-[#1c1c20]">        // ❌ stays this colour forever
+  //     <div className="bg-card-solid">       // ✅ follows the theme
+  //
+  //     <div className="shadow-[0_4px_rgba(56,189,248,0.45)]">  // ❌ sky-blue glow forever
+  //     <div className="shadow-brand-glow">                     // ✅ moves with the brand
+  //
+  // The selectors below match string literals + template-literal
+  // chunks containing a colour-bearing Tailwind utility (`text-`,
+  // `bg-`, `border-`, `shadow-`, `drop-shadow-`, `ring-`, `outline-`,
+  // `from-`, `to-`, `via-`, `fill-`, `stroke-`, `decoration-`,
+  // `divide-`, `placeholder-`, `caret-`, `accent-`) wrapped around an
+  // arbitrary value that contains a hex / rgb / rgba / hsl / hsla
+  // colour. Non-colour arbitrary values (`w-[24px]`, `text-[10.5px]`,
+  // `top-[-9999]`, etc.) are NOT flagged — they're sizing, not
+  // theming, and have no token equivalent.
+  //
+  // Current severity: WARN.
+  //   Roughly 40 pre-existing leaks live in the codebase today —
+  //   mostly tinted shadows that need named shadow tokens to land
+  //   in globals.css before the call-sites can be rewritten
+  //   (e.g. `--shadow-card`, `--shadow-glow-brand`,
+  //   `--shadow-glow-amber-300`). Until those tokens exist the
+  //   rule lives at "warn" so it surfaces every leak without
+  //   blocking the build. Once the shadow tokens land + the
+  //   existing leaks are swept, promote to "error" by flipping
+  //   the level below.
+  //
+  // If you genuinely need to hard-code a colour (transactional email
+  // HTML where CSS variables don't render, a fixed export-to-PDF
+  // surface, an SVG asset), suppress with
+  // `// eslint-disable-next-line no-restricted-syntax` plus a one-
+  // line comment explaining WHY a token wouldn't work.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          // Plain string literal — the common `className="…"` case.
+          selector:
+            "Literal[value=/(text|bg|border|shadow|drop-shadow|ring|outline|from|to|via|fill|stroke|decoration|divide|placeholder|caret|accent)-\\[[^\\]]*(?:#[0-9a-fA-F]{3,8}|rgba?\\(|hsla?\\()/]",
+          message:
+            "Design-token leak: hard-coded colour inside a Tailwind arbitrary value. Use a token (e.g. `text-fg`, `bg-card-solid`, `ring-brand-300`) instead — see docs/design-system.md. If a token genuinely doesn't fit, suppress with `// eslint-disable-next-line no-restricted-syntax` and a one-line reason.",
+        },
+        {
+          // Template literal chunk — catches the same pattern inside
+          // `${cn(...)}` / backtick-string class compositions.
+          selector:
+            "TemplateElement[value.raw=/(text|bg|border|shadow|drop-shadow|ring|outline|from|to|via|fill|stroke|decoration|divide|placeholder|caret|accent)-\\[[^\\]]*(?:#[0-9a-fA-F]{3,8}|rgba?\\(|hsla?\\()/]",
+          message:
+            "Design-token leak: hard-coded colour inside a Tailwind arbitrary value. Use a token (e.g. `text-fg`, `bg-card-solid`, `ring-brand-300`) instead — see docs/design-system.md.",
+        },
+      ],
+    },
+  },
+
+  // Transactional emails ship to inboxes whose clients don't render
+  // CSS variables — design tokens cannot reach there. The rule is
+  // muted only inside the auth email-send route.
+  {
+    files: ["src/app/api/auth/send-code/**"],
+    rules: { "no-restricted-syntax": "off" },
+  },
 ]);
 
 export default eslintConfig;
