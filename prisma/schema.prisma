@@ -313,9 +313,9 @@ model User {
   // across the two streams (VentureConnect ≤ $5K, VentureLift
   // ≤ $25K), and the same admin user can also be the reviewer on
   // other people's apps — hence two named relations.
-  equipApplications  EquipApplication[] @relation("EquipApplicant")
-  equipReviewed      EquipApplication[] @relation("EquipReviewer")
-  equipMessages      EquipApplicationMessage[]
+  equipApplications EquipApplication[]        @relation("EquipApplicant")
+  equipReviewed     EquipApplication[]        @relation("EquipReviewer")
+  equipMessages     EquipApplicationMessage[]
 
   // Committee memberships — see CommitteeMembership model. A user
   // can belong to zero or more committees (Equip review, HQP, …).
@@ -323,48 +323,48 @@ model User {
   // badge for that user, and (for the equip_review committee)
   // grants /admin/equip review access without needing the admin
   // primary role.
-  committees         CommitteeMembership[]
+  committees CommitteeMembership[]
 
   // Equip deadline audit relations — who created / closed /
   // extended each funding window. The triple relation is needed
   // because Prisma's relation discovery requires unambiguous
   // names when one model points at the same target three times.
-  equipDeadlinesCreated   EquipDeadline[] @relation("EquipDeadlineCreator")
-  equipDeadlinesClosed    EquipDeadline[] @relation("EquipDeadlineCloser")
-  equipDeadlinesExtended  EquipDeadline[] @relation("EquipDeadlineExtender")
+  equipDeadlinesCreated  EquipDeadline[] @relation("EquipDeadlineCreator")
+  equipDeadlinesClosed   EquipDeadline[] @relation("EquipDeadlineCloser")
+  equipDeadlinesExtended EquipDeadline[] @relation("EquipDeadlineExtender")
 
   // HQP advisory committee — member applications + the open-
   // call windows. See models below for the workflow.
-  hqpApplications       HqpMemberApplication[] @relation("HqpApplicant")
-  hqpAppsDecided        HqpMemberApplication[] @relation("HqpAppDecider")
-  hqpWindowsCreated     HqpApplicationWindow[] @relation("HqpWindowCreator")
+  hqpApplications   HqpMemberApplication[] @relation("HqpApplicant")
+  hqpAppsDecided    HqpMemberApplication[] @relation("HqpAppDecider")
+  hqpWindowsCreated HqpApplicationWindow[] @relation("HqpWindowCreator")
 
   // HQP feedback rounds — admin-published topic sets that
   // committee members respond to.
-  hqpRoundsCreated      HqpFeedbackRound[]    @relation("HqpRoundCreator")
-  hqpResponses          HqpFeedbackResponse[] @relation("HqpResponder")
+  hqpRoundsCreated HqpFeedbackRound[]    @relation("HqpRoundCreator")
+  hqpResponses     HqpFeedbackResponse[] @relation("HqpResponder")
 
   // HQP meetings / action items / COI relations
-  hqpMeetingsCreated    HqpMeeting[]          @relation("HqpMeetingCreator")
-  hqpAttendance         HqpMeetingAttendance[] @relation("HqpAttendee")
-  hqpActionsCreated     HqpActionItem[]       @relation("HqpActionCreator")
-  hqpActionsAssigned    HqpActionItem[]       @relation("HqpActionAssignee")
-  hqpCoiDisclosures     HqpCoiDisclosure[]    @relation("HqpCoiDeclarer")
+  hqpMeetingsCreated HqpMeeting[]           @relation("HqpMeetingCreator")
+  hqpAttendance      HqpMeetingAttendance[] @relation("HqpAttendee")
+  hqpActionsCreated  HqpActionItem[]        @relation("HqpActionCreator")
+  hqpActionsAssigned HqpActionItem[]        @relation("HqpActionAssignee")
+  hqpCoiDisclosures  HqpCoiDisclosure[]     @relation("HqpCoiDeclarer")
 
   // CMS-authored pages — author + last-editor relations.
-  pagesCreated          Page[]                @relation("PageCreatedBy")
-  pagesUpdated          Page[]                @relation("PageUpdatedBy")
+  pagesCreated Page[] @relation("PageCreatedBy")
+  pagesUpdated Page[] @relation("PageUpdatedBy")
 
   // Role-play simulator — generated templates and per-trainee attempts.
   // SetNull on user delete preserves the generated template for reuse.
-  simulationsCreated    Simulation[]          @relation("SimulationCreator")
-  simulationAttempts    SimulationAttempt[]
+  simulationsCreated Simulation[]        @relation("SimulationCreator")
+  simulationAttempts SimulationAttempt[]
 
   /// Job folders — per-application bundles owned by this user. Each
   /// folder ties together a JD snippet (or full posting), a tailored
   /// resume, a cover letter, and an interview prep guide. See
   /// JobFolder model below + /profile/job-folders.
-  jobFolders            JobFolder[]           @relation("UserJobFolders")
+  jobFolders JobFolder[] @relation("UserJobFolders")
 
   /// Per-user sidebar / feature preferences. JSON blob with shape:
   ///   {
@@ -379,7 +379,32 @@ model User {
   /// src/lib/preferences/registry.ts for the source of truth on
   /// what's toggleable; whenever a sidebar nav item is added or
   /// removed, also update that registry.
-  featurePrefs          Json?
+  featurePrefs Json?
+
+  // ── Employer team portal — back-relations ──
+  // See docs/plans/employer-team-portal.md for the full architecture.
+  // Promotes the employer surface from single-seat to a shared
+  // company workspace. Existing employer User rows get a mirrored
+  // Company + owner CompanyMember from the backfill script.
+  companyMemberships         CompanyMember[]          @relation("CompanyMembership")
+  companyMemberInvitedBy     CompanyMember[]          @relation("CompanyMemberInviter")
+  companyInvitesSent         CompanyInvite[]          @relation("CompanyInviteSender")
+  companyInvitesAccepted     CompanyInvite[]          @relation("CompanyInviteAccepter")
+  companyJoinRequestsMade    CompanyJoinRequest[]     @relation("CompanyJoinRequester")
+  companyJoinRequestsDecided CompanyJoinRequest[]     @relation("CompanyJoinDecider")
+  activityActions            EmployerActivityLog[]    @relation("ActivityActor")
+  activityAsApplicant        EmployerActivityLog[]    @relation("ActivityApplicant")
+  activityAsTarget           EmployerActivityLog[]    @relation("ActivityTarget")
+  applicantTeamComments      ApplicantTeamComment[]   @relation("ApplicantTeamCommentAuthor")
+  postingTeamMemberships     PostingTeamMember[]      @relation("PostingTeamMembership")
+  postingTeamAdded           PostingTeamMember[]      @relation("PostingTeamAdder")
+  emailTemplatesAuthored     EmailTemplate[]          @relation("EmailTemplateAuthor")
+  scorecardsSubmitted        ScorecardSubmission[]    @relation("ScorecardInterviewer")
+  notifications              Notification[]           @relation("NotificationRecipient")
+  notificationPreferences    NotificationPreference[] @relation("NotificationPrefUser")
+  postingsLastTouched        InternshipPosting[]      @relation("PostingLastTouch")
+  statusesLastTouched        ApplicationStatus[]      @relation("StatusLastTouch")
+  employerPresencePings      EmployerPresencePing[]   @relation("EmployerPresenceUser")
 
   @@index([newsletterStatus, newsletterExportedAt])
 }
@@ -627,10 +652,23 @@ model ApplicationStatus {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  /// Employer-team-portal: denormalised last-touch attribution for
+  /// the inline chip on the applicant card ("Touched by Sarah · 14m
+  /// ago"). Distinct from `updatedById` because comment writes update
+  /// `lastTouched*` without touching `updatedById` (which today only
+  /// records status/note/rating edits).
+  lastTouchedAt   DateTime?
+  lastTouchedById String?
+
   posting   InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
   applicant User              @relation("Applicant", fields: [applicantId], references: [id], onDelete: Cascade)
   updatedBy User?             @relation("StatusEditor", fields: [updatedById], references: [id], onDelete: SetNull)
   offer     Offer?
+
+  // Employer team portal back-relations.
+  lastTouchedBy User?                  @relation("StatusLastTouch", fields: [lastTouchedById], references: [id], onDelete: SetNull)
+  teamComments  ApplicantTeamComment[]
+  scorecards    ScorecardSubmission[]  @relation("ApplicationStatusScorecards")
 
   @@unique([postingId, applicantId])
   @@index([status])
@@ -662,6 +700,410 @@ model Interview {
   @@index([postingId])
   @@index([applicantId])
   @@index([status])
+}
+
+// ───────────────────────────────────────────────────────────────
+// Employer team portal — multi-user company workspace.
+// See docs/plans/employer-team-portal.md for the full architecture.
+//
+// The unit of ownership moves from User (single-seat employer) to
+// Company. Existing employer Users get mirrored into a Company +
+// owner CompanyMember by the backfill script; postings, applicants,
+// activity, and notifications scope to the Company. Per-posting
+// `PostingTeamMember` rows narrow notification fan-out to "the
+// people actually working on this req."
+// ───────────────────────────────────────────────────────────────
+
+/// The employer account itself — promoted out of the User row so a
+/// company can have many member users. All company-shaped data
+/// (brand, logo, profile copy, postings) hangs off this. Existing
+/// User-side company fields stay populated through the migration
+/// for read-path fallback; a later migration drops them.
+model Company {
+  id     String  @id @default(cuid())
+  /// Display name — what shows on the brand-stage banner and on
+  /// every posting card. Free-form; not unique.
+  name   String
+  /// Lower-cased canonical domain (e.g. "sanofi.com"). Drives the
+  /// signup-time auto-suggest panel + brand-fetch defaults. Not
+  /// unique — two companies with the same domain is rare but legal
+  /// (consultancies, parent/subsidiary).
+  domain String?
+
+  // ── Brand / profile fields (mirrored off User during migration) ──
+  website       String?
+  logo          String?
+  logoShape     String?
+  logoTransform Json?
+  brand         Json?
+  industry      String?
+  size          String?
+  location      String?
+  description   String?
+  founded       String?
+  mainBusiness  String?
+  ticker        String?
+
+  /// "real" | "demo" | "sandbox" — mirrors User.accountKind so demo
+  /// companies can be swept on expiry by the same cleanup job.
+  kind          String    @default("real")
+  demoExpiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members           CompanyMember[]
+  invites           CompanyInvite[]
+  joinRequests      CompanyJoinRequest[]
+  postings          InternshipPosting[]
+  activityEntries   EmployerActivityLog[]
+  templates         EmailTemplate[]
+  notifications     Notification[]
+  notificationPrefs NotificationPreference[]
+
+  @@index([domain])
+  @@index([kind, demoExpiresAt])
+}
+
+/// A user's membership in a company. (companyId, userId) is unique
+/// — a user has at most one role per company.
+model CompanyMember {
+  id          String    @id @default(cuid())
+  companyId   String
+  userId      String
+  /// "owner" | "manager" | "generalist" | "viewer"
+  role        String
+  /// User-supplied job title for display ("HR Director", "Talent
+  /// Partner — North America"). Optional; UI falls back to the role
+  /// label when null.
+  title       String?
+  /// Who invited this member in. Null for the seed-owner row
+  /// created during the single-seat → multi-seat migration.
+  invitedById String?
+  joinedAt    DateTime  @default(now())
+  /// Last time this member loaded any /employer/* page — drives
+  /// the "active in last 7 days" chip on the team menu.
+  lastSeenAt  DateTime?
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User    @relation("CompanyMembership", fields: [userId], references: [id], onDelete: Cascade)
+  invitedBy User?   @relation("CompanyMemberInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, userId])
+  @@index([userId])
+  @@index([companyId, role])
+}
+
+/// A pending invite — issued by an Owner/Manager, redeemed when the
+/// invitee follows the link and accepts. Tokens are single-use,
+/// random enough that we never need to rate-limit guessing.
+model CompanyInvite {
+  id          String  @id @default(cuid())
+  companyId   String
+  email       String
+  /// Role they'd hold after accepting.
+  role        String
+  /// User-supplied title hint, surfaced on the accept page.
+  title       String?
+  token       String  @unique
+  invitedById String
+  /// Optional personal note from the inviter; surfaced on the
+  /// accept page so the invitee knows the context.
+  note        String?
+
+  /// "pending" | "accepted" | "revoked" | "expired"
+  status       String    @default("pending")
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  acceptedById String?
+  createdAt    DateTime  @default(now())
+
+  company    Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invitedBy  User    @relation("CompanyInviteSender", fields: [invitedById], references: [id], onDelete: Cascade)
+  acceptedBy User?   @relation("CompanyInviteAccepter", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  @@index([companyId, status])
+  @@index([email, status])
+}
+
+/// Pending request from a user who signed up with a matching email
+/// domain but no Owner has approved them yet. Owner / Manager sees
+/// these in the team panel and approves with one click — the
+/// suggested role is pre-filled by the title→role auto-detect at
+/// request time, but the approver can override before approving.
+model CompanyJoinRequest {
+  id            String    @id @default(cuid())
+  companyId     String
+  requesterId   String
+  /// Pre-filled from title→role auto-detect.
+  suggestedRole String
+  /// Optional message from the requester.
+  note          String?
+  /// "pending" | "approved" | "declined" | "superseded"
+  status        String    @default("pending")
+  decidedById   String?
+  decidedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requester User    @relation("CompanyJoinRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  decidedBy User?   @relation("CompanyJoinDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, requesterId, status])
+  @@index([companyId, status])
+}
+
+/// One row per attributable team action. The /employer/activity
+/// feed reads from here. Inline attribution chips read from
+/// denormalised `lastTouched*` columns on ApplicationStatus +
+/// InternshipPosting — kept in sync from the same write path.
+model EmployerActivityLog {
+  id           String  @id @default(cuid())
+  companyId    String
+  actorId      String
+  /// "posting_created" | "posting_edited" | "posting_closed" |
+  /// "stage_changed" | "applicant_commented" | "interview_scheduled" |
+  /// "scorecard_submitted" | "offer_sent" | "offer_accepted" |
+  /// "applicant_hired" | "applicant_rejected" | "bulk_email_sent" |
+  /// "bulk_rejected" | "template_created" | "template_edited" |
+  /// "member_invited" | "member_joined" | "member_role_changed" |
+  /// "member_removed" | "join_request_approved" | "join_request_declined"
+  kind         String
+  /// Structured payload — what changed, prev/next values, ref IDs.
+  /// Shape depends on `kind`; the feed renderer has per-kind copy
+  /// templates that parse it.
+  payload      Json
+  /// Optional FKs for the common targets so the feed can join
+  /// efficiently without parsing payload JSON.
+  postingId    String?
+  applicantId  String?
+  targetUserId String?
+
+  createdAt DateTime @default(now())
+
+  company    Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  actor      User               @relation("ActivityActor", fields: [actorId], references: [id], onDelete: Cascade)
+  posting    InternshipPosting? @relation("PostingActivity", fields: [postingId], references: [id], onDelete: SetNull)
+  applicant  User?              @relation("ActivityApplicant", fields: [applicantId], references: [id], onDelete: SetNull)
+  targetUser User?              @relation("ActivityTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  notifications Notification[]
+
+  @@index([companyId, createdAt])
+  @@index([companyId, kind, createdAt])
+  @@index([postingId, createdAt])
+  @@index([applicantId, createdAt])
+}
+
+/// Threaded team discussion on a single applicant — scoped to a
+/// (posting, applicant) pair so HR can debate fit per-role. Distinct
+/// from the existing ApplicationComment (which is on
+/// EventFormSubmission, for talent-pool review).
+model ApplicantTeamComment {
+  id                  String   @id @default(cuid())
+  applicationStatusId String
+  authorId            String
+  /// Role at write time — preserved through future role changes.
+  authorRoleAtWrite   String
+  body                String
+  /// User IDs the author @mentioned in the body. Drives the
+  /// Notification fan-out. We extract IDs at write time and pin them
+  /// so future renaming / edit-of-the-body doesn't lose the original
+  /// ping target.
+  mentions            String[]
+  /// Optional FK to a parent comment, for one-level threading.
+  parentId            String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  applicationStatus ApplicationStatus      @relation(fields: [applicationStatusId], references: [id], onDelete: Cascade)
+  author            User                   @relation("ApplicantTeamCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  parent            ApplicantTeamComment?  @relation("ApplicantTeamCommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies           ApplicantTeamComment[] @relation("ApplicantTeamCommentReplies")
+
+  @@index([applicationStatusId, createdAt])
+}
+
+/// Who's working on this specific req. A posting has at most one
+/// recruiter and at most one hiring_manager (enforced in app code,
+/// not at DB level so we can do swaps in one transaction). N
+/// interviewers + N observers allowed.
+///
+/// This is the targeting scope for notifications: @-pings on a
+/// candidate notify the posting's team first, not the whole company.
+model PostingTeamMember {
+  id        String   @id @default(cuid())
+  postingId String
+  userId    String
+  /// "recruiter" | "hiring_manager" | "interviewer" | "observer"
+  role      String
+  addedById String?
+  addedAt   DateTime @default(now())
+
+  posting InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  user    User              @relation("PostingTeamMembership", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy User?             @relation("PostingTeamAdder", fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@unique([postingId, userId])
+  @@index([userId])
+  @@index([postingId, role])
+}
+
+/// Reusable email body per company. Pre-seeded on company creation
+/// with a starter set (rejection-early, rejection-post-interview,
+/// interview-invitation, offer-follow-up); editable from
+/// /employer/templates.
+///
+/// Bodies support double-curly merge variables resolved at send
+/// time: {{candidateFirstName}}, {{candidateLastName}}, {{postingTitle}},
+/// {{companyName}}, {{interviewerName}}, {{interviewDateTime}},
+/// {{senderFirstName}}, {{senderSignature}}.
+model EmailTemplate {
+  id             String   @id @default(cuid())
+  companyId      String
+  /// User-facing label ("Rejection — early stage").
+  name           String
+  /// Stage hint so the bulk-action picker can suggest the right
+  /// template: "rejection" | "interview_invite" | "offer" |
+  /// "follow_up" | "general"
+  kind           String
+  subject        String
+  body           String
+  /// Pre-seeded starter templates carry this flag so the UI can
+  /// show a "Starter" chip; users can still edit or delete them.
+  isStarter      Boolean  @default(false)
+  /// Version label for the starter template this row was created
+  /// from — used by the "See the latest starter version" diff so
+  /// we never silently overwrite a company's edits.
+  starterVersion Int?
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation("EmailTemplateAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([companyId, kind])
+}
+
+/// A per-posting rubric — N criteria the team grades each
+/// interviewee against. Owners / Managers define this; each
+/// interviewer fills in one ScorecardSubmission per candidate.
+model InterviewScorecard {
+  id        String   @id @default(cuid())
+  postingId String   @unique
+  /// Criteria as JSON array:
+  ///   [{ id: cuid, label: string, description?: string, scale: 4|5 }]
+  criteria  Json
+  /// Soft-locked once any submission exists — only Owners can edit.
+  locked    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posting     InternshipPosting     @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  submissions ScorecardSubmission[]
+}
+
+/// One interviewer's filled-in scorecard for one candidate.
+model ScorecardSubmission {
+  id                  String    @id @default(cuid())
+  scorecardId         String
+  applicationStatusId String
+  interviewerId       String
+  /// { [criterionId]: { score: number, note?: string } }
+  scores              Json
+  /// "strong_yes" | "yes" | "no_decision" | "no" | "strong_no"
+  recommendation      String?
+  /// Free-text summary the interviewer writes after the meeting.
+  summary             String?
+  /// "draft" | "submitted". Drafts are visible only to the author;
+  /// submitted scorecards are visible to the posting's hiring team.
+  status              String    @default("draft")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  submittedAt         DateTime?
+
+  scorecard         InterviewScorecard @relation(fields: [scorecardId], references: [id], onDelete: Cascade)
+  applicationStatus ApplicationStatus  @relation("ApplicationStatusScorecards", fields: [applicationStatusId], references: [id], onDelete: Cascade)
+  interviewer       User               @relation("ScorecardInterviewer", fields: [interviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([scorecardId, applicationStatusId, interviewerId])
+  @@index([applicationStatusId, status])
+}
+
+/// Per-user fan-out from EmployerActivityLog events the user cares
+/// about. One Notification row per (user × event). Drives both the
+/// in-app inbox (sidebar bell) and the daily digest email.
+///
+/// Created by the `writeEmployerAction` helper after every activity
+/// write: looks at the kind + the posting's PostingTeamMembers +
+/// @mentions to decide which users get a row.
+model Notification {
+  id            String    @id @default(cuid())
+  userId        String
+  companyId     String
+  /// FK back to the activity-log row that triggered this — so
+  /// rendering can re-use the feed's per-kind copy templates.
+  activityLogId String
+  /// Why does this user care? Drives the inbox grouping + digest
+  /// subject:
+  ///   "mention"         — explicitly @-tagged
+  ///   "hiring_team"     — they're on the posting's team
+  ///   "owner_oversight" — Owner-only signal (member joined, bulk sent)
+  ///   "self_action"     — receipt of an action they took
+  reason        String
+  readAt        DateTime?
+  /// Set when the daily digest job has included this row, so we
+  /// don't double-send.
+  digestSentAt  DateTime?
+  createdAt     DateTime  @default(now())
+
+  user        User                @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  activityLog EmployerActivityLog @relation(fields: [activityLogId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([userId, digestSentAt])
+}
+
+/// Per-user notification preference per company. Lazy-created on
+/// first read with sensible defaults: in-app on, email immediate
+/// off (except @mentions which always notify), email digest on.
+model NotificationPreference {
+  id               String   @id @default(cuid())
+  userId           String
+  companyId        String
+  inAppOn          Boolean  @default(true)
+  emailImmediateOn Boolean  @default(false)
+  emailDigestOn    Boolean  @default(true)
+  /// "daily" | "weekly" | "off"
+  digestCadence    String   @default("daily")
+  /// Reasons the user has muted — applies to inbox + email both.
+  /// "mention" entries are ignored (mentions always notify).
+  mutedReasons     String[]
+
+  user    User    @relation("NotificationPrefUser", fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+}
+
+/// Lightweight presence heartbeat — written when a member loads an
+/// applicant row, swept by a daily cron. No websockets; the UI polls
+/// every 20s. Cheap enough at our scale.
+model EmployerPresencePing {
+  id                  String   @id @default(cuid())
+  companyId           String
+  userId              String
+  applicationStatusId String
+  expiresAt           DateTime
+  createdAt           DateTime @default(now())
+
+  user User @relation("EmployerPresenceUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, applicationStatusId])
+  @@index([applicationStatusId, expiresAt])
+  @@index([expiresAt])
 }
 
 /// Admin-editable list of options that drives the Course catalog
@@ -720,6 +1162,19 @@ model InternshipPosting {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  /// Employer-team-portal: company that owns this posting. Backfilled
+  /// for every existing posting by the team-portal migration script
+  /// (creator's User row → mirrored Company → companyId here).
+  /// Nullable so the migration is reversible; once every posting has
+  /// a companyId a later migration will tighten this to NOT NULL.
+  companyId String?
+
+  /// Denormalised last-touch attribution for the inline chip on the
+  /// posting row ("last edit by Marcus · 2h ago"). Updated by the
+  /// writeEmployerAction helper on every mutation.
+  lastTouchedAt   DateTime?
+  lastTouchedById String?
+
   // Phase 1–5 additions
   skills              PostingSkill[]
   applicationStatuses ApplicationStatus[]
@@ -731,7 +1186,15 @@ model InternshipPosting {
   sourcedStories StarStory[]   @relation("StarStorySource")
   offers         Offer[]
 
+  // Employer team portal back-relations.
+  company       Company?              @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  lastTouchedBy User?                 @relation("PostingLastTouch", fields: [lastTouchedById], references: [id], onDelete: SetNull)
+  teamMembers   PostingTeamMember[]
+  scorecard     InterviewScorecard?
+  activityLogs  EmployerActivityLog[] @relation("PostingActivity")
+
   @@index([status, createdAt])
+  @@index([companyId, status, createdAt])
 }
 
 /// Trainee bookmarks. Lets a trainee mark postings they want to come
@@ -753,15 +1216,15 @@ model UserSavedPosting {
 
 /// Individual answer set for an EventForm. `data` is keyed by field id.
 model EventFormSubmission {
-  id             String    @id @default(cuid())
-  formId         String
-  form           EventForm @relation(fields: [formId], references: [id], onDelete: Cascade)
-  data           Json
-  email          String?
-  userId         String?
+  id                    String    @id @default(cuid())
+  formId                String
+  form                  EventForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  data                  Json
+  email                 String?
+  userId                String?
   /// Optional FK to User — set null if the user is deleted; submissions
   /// outlive accounts so we keep the row but lose the link.
-  user           User?     @relation("FormSubmitter", fields: [userId], references: [id], onDelete: SetNull)
+  user                  User?     @relation("FormSubmitter", fields: [userId], references: [id], onDelete: SetNull)
   /// Review state for talent-pool gating. Default "pending" so any
   /// new submission waits for admin review before becoming visible
   /// in the talent pool / searchable directory. Forms that don't
@@ -774,12 +1237,12 @@ model EventFormSubmission {
   ///                  fast-path; same talent-pool membership as
   ///                  "approved" but flagged for audit
   ///   rejected    — admin reviewed + declined
-  reviewStatus   String    @default("pending")
-  reviewedBy     String?
-  reviewedAt     DateTime?
+  reviewStatus          String    @default("pending")
+  reviewedBy            String?
+  reviewedAt            DateTime?
   /// Free-text reviewer note shown to the applicant when status
   /// changes (e.g. "Need supervisor letter" or rejection reason).
-  reviewerNote   String?
+  reviewerNote          String?
   /// Eligibility check — a SECOND human-approval gate, distinct from
   /// reviewStatus. reviewStatus = "approved" means "this submission
   /// is admitted to the internal talent pool"; eligibilityApprovedAt
@@ -792,20 +1255,20 @@ model EventFormSubmission {
   /// "approved by Jane" — no FK on the column so admin deletion
   /// doesn't ripple. `eligibilityNote` is an optional free-text
   /// reason the approver can attach.
-  eligibilityApprovedAt    DateTime?
-  eligibilityApprovedBy    String?
-  eligibilityNote          String?
+  eligibilityApprovedAt DateTime?
+  eligibilityApprovedBy String?
+  eligibilityNote       String?
   /// User-driven exit from the talent pool. Set when an approved
   /// applicant chooses to leave. Pairs with leftPoolReason +
   /// (optionally) a PoolExitFeedback row. A submission with
   /// leftPoolAt set is hidden from employer-facing talent-pool
   /// views even if reviewStatus is approved. Re-submission flips
   /// it back to null on save.
-  leftPoolAt     DateTime?
+  leftPoolAt            DateTime?
   /// found_job | career_change | not_relevant | platform_quality |
   /// found_elsewhere | other
-  leftPoolReason String?
-  createdAt      DateTime  @default(now())
+  leftPoolReason        String?
+  createdAt             DateTime  @default(now())
 
   comments     ApplicationComment[]
   exitFeedback PoolExitFeedback?
@@ -935,7 +1398,7 @@ model FeedbackInvitation {
 }
 
 model Course {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   /// Short course code shown on the catalog card (e.g. "BIOP210",
   /// "ACRTM101"). Optional — courses without a code render without
   /// the eyebrow on the card.
@@ -962,31 +1425,31 @@ model Course {
   thumbnailOverlay Json?
   category         String?
   tags             String?
-  status           String   @default("draft")
-  courseType       String   @default("scorm")
-  passingScore     Float    @default(80)
-  maxAttempts      Int      @default(0)
+  status           String    @default("draft")
+  courseType       String    @default("scorm")
+  passingScore     Float     @default(80)
+  maxAttempts      Int       @default(0)
   duration         Int?
-  creditCost       Float    @default(0)
+  creditCost       Float     @default(0)
   // Catalog filter facets — see src/lib/courses/filters.ts for the
   // canonical option lists. Free-text so admins can extend later.
   topic            String? // e.g. "Regulatory Affairs"
   delivery         String? // "Asynchronous" | "Online" | "In-Person" | "Blended"
   provider         String? // e.g. "CASTL", "BioTalent Canada"
-  isSpecial        Boolean  @default(false) // Special Programs / Workshops flag
+  isSpecial        Boolean   @default(false) // Special Programs / Workshops flag
   /// When true, enrollment creates an Enrollment row with
   /// status="pending" instead of "active". Admins approve / reject
   /// from /admin/enrollments. Defaults to false so existing courses
   /// stay self-serve.
-  requiresApproval Boolean  @default(false)
+  requiresApproval Boolean   @default(false)
   /// Admin-controlled catalog display order. Lower numbers render
   /// first; ties fall back to createdAt desc (the previous default).
   /// Admins can drag-reorder tiles on /courses to set this.
-  displayOrder     Int      @default(0)
+  displayOrder     Int       @default(0)
   instructorId     String?
-  instructor       User?    @relation("Instructor", fields: [instructorId], references: [id])
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  instructor       User?     @relation("Instructor", fields: [instructorId], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // AI-generated summary of the course (visible to learners; refreshable by staff).
   aiSummary  String?
@@ -1016,8 +1479,8 @@ model CourseFavorite {
   courseId  String
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
   @@index([userId])
@@ -1251,24 +1714,24 @@ model Certificate {
 }
 
 model Pathway {
-  id          String                      @id @default(cuid())
-  title       String
-  description String?
-  thumbnail   String?
+  id               String                      @id @default(cuid())
+  title            String
+  description      String?
+  thumbnail        String?
   /// Non-destructive colour / gradient overlay rendered on top of
   /// `thumbnail` wherever the pathway is shown. Same shape as
   /// Course.thumbnailOverlay — see src/lib/courses/thumbnail-overlay.ts.
   /// Set from /admin/cover-art alongside course overlays.
   thumbnailOverlay Json?
-  category    String?
-  status      String                      @default("draft") // draft | published
-  creditCost  Float                       @default(0)
-  createdById String?
-  embeddedAt  DateTime?
+  category         String?
+  status           String                      @default("draft") // draft | published
+  creditCost       Float                       @default(0)
+  createdById      String?
+  embeddedAt       DateTime?
   /// 384-d BGE-small embedding; managed via raw SQL (pgvector).
-  embedding   Unsupported("vector(384)")?
-  createdAt   DateTime                    @default(now())
-  updatedAt   DateTime                    @updatedAt
+  embedding        Unsupported("vector(384)")?
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
 
   /// Pathway-level fallback enrollment fields. Used when no
   /// PathwayCohort rows exist (legacy / single-cohort pathways).
@@ -2607,7 +3070,7 @@ model AssistEvent {
   target    String?
   payload   Json?
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, ts])
   @@index([sessionId, ts])
@@ -2633,7 +3096,7 @@ model AssistDailyRollup {
   /// (heuristic: a form.submit_attempt without a subsequent error).
   completed    Boolean  @default(false)
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, surface, day])
   @@index([userId, day])
@@ -2651,7 +3114,7 @@ model AssistWeeklySummary {
   stuckOn   String[]
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, weekStart])
   @@index([userId, weekStart])
@@ -2659,38 +3122,38 @@ model AssistWeeklySummary {
 }
 
 model AssistHint {
-  id           String    @id @default(cuid())
-  userId       String
+  id          String    @id @default(cuid())
+  userId      String
   /// Stable key into the help-card registry. Always one of the
   /// curated keys; the AI selects, never authors prose.
-  helpKey      String
+  helpKey     String
   /// Snapshotted at queue time so registry edits don't retroactively
   /// rewrite history.
-  title        String
-  body         String
-  ctaLabel     String?
-  ctaHref      String?
+  title       String
+  body        String
+  ctaLabel    String?
+  ctaHref     String?
   /// Surface the user was on when the hint was triggered.
-  surface      String?
+  surface     String?
   /// "rule:rage-click" | "rule:form-abandon" | "ai:claude-haiku" | ...
-  triggeredBy  String
+  triggeredBy String
   /// 0..1. Drives whether the hint actually shows
   /// (per-user threshold + global floor).
-  confidence   Float     @default(0.5)
+  confidence  Float     @default(0.5)
   /// pending = queued; shown = currently visible / recently visible;
   /// dismissed = user clicked ✕; clicked = user followed the CTA;
   /// expired = TTL elapsed without a show; suppressed = preferences
   /// killed it before show.
-  status       String    @default("pending")
-  shownAt      DateTime?
-  resolvedAt   DateTime?
-  createdAt    DateTime  @default(now())
+  status      String    @default("pending")
+  shownAt     DateTime?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
   /// Hints have a short TTL — a stuck-state from 2 days ago is no
   /// longer the right interruption.
-  expiresAt    DateTime
+  expiresAt   DateTime
 
-  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  feedback     AssistHintFeedback[]
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedback AssistHintFeedback[]
 
   @@index([userId, status])
   @@index([userId, createdAt])
@@ -2698,17 +3161,17 @@ model AssistHint {
 }
 
 model AssistHintFeedback {
-  id        String   @id @default(cuid())
-  userId    String
-  hintId    String
+  id     String   @id @default(cuid())
+  userId String
+  hintId String
   /// "shown" | "clicked" | "dismissed" | "ignored" | "rated"
-  kind      String
+  kind   String
   /// 1..5 — only set when kind = "rated"
-  rating    Int?
-  ts        DateTime @default(now())
+  rating Int?
+  ts     DateTime @default(now())
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  hint      AssistHint @relation(fields: [hintId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hint AssistHint @relation(fields: [hintId], references: [id], onDelete: Cascade)
 
   @@index([hintId, kind])
   @@index([userId, ts])
@@ -2735,7 +3198,7 @@ model AssistPreferences {
   suppressUntil       DateTime?
   updatedAt           DateTime  @updatedAt
 
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ─── Equip pillar ────────────────────────────────────────────────
@@ -2746,10 +3209,10 @@ model AssistPreferences {
 // without per-field migrations.
 
 model EquipApplication {
-  id                       String    @id @default(cuid())
-  userId                   String
+  id                     String    @id @default(cuid())
+  userId                 String
   /// "venture_connect" | "venture_lift"
-  stream                   String
+  stream                 String
   /// Pipeline status — extended set:
   ///   draft | submitted | under_review
   ///   | pre_screen_approved | pre_screen_rejected   ← VL stage-1 outcomes
@@ -2757,64 +3220,64 @@ model EquipApplication {
   /// VentureLift moves through pre_screen_approved before its
   /// applicant can open the full Stage-2 form; VentureConnect
   /// skips that intermediate state.
-  status                   String    @default("draft")
+  status                 String    @default("draft")
   /// Which stage of the application is currently in play.
   ///   pre_screen — only set for VL while it's pre-screening
   ///   full_app   — set when VL has moved past pre-screening and
   ///                the applicant is filling in the full form,
   ///                or when VC (no pre-screen) is anywhere in
   ///                its flow.
-  applicationStage         String    @default("pre_screen")
-  requestedAmount          Float?
-  approvedAmount           Float?
+  applicationStage       String    @default("pre_screen")
+  requestedAmount        Float?
+  approvedAmount         Float?
   /// "grad" | "postdoc" | "research_associate" | "founder"
-  applicantType            String?
+  applicantType          String?
   /// Slug from the curated 14-institution list (see
   /// lib/equip/institutions.ts).
-  institution              String?
-  institutionOther         String?
+  institution            String?
+  institutionOther       String?
   /// "exploring" | "building" | "unsure" — routes stream pick.
-  commercializationStage   String?
+  commercializationStage String?
   /// Stream-specific form fields. Typed shape lives in
   /// lib/equip/types.ts.
-  formData                 Json      @default("{}")
+  formData               Json      @default("{}")
   /// Attachments. Shape: [{ key, name, size, contentType, kind }]
   /// where kind is "pitch_deck" | "prototype_photo" | "letter" |
   /// "video_pitch" | "cv" | "support_letter" | "ip_doc" | "other".
-  documents                Json      @default("[]")
-  reviewerId               String?
-  reviewerNote             String?
-  reviewedAt               DateTime?
-  submittedAt              DateTime?
+  documents              Json      @default("[]")
+  reviewerId             String?
+  reviewerNote           String?
+  reviewedAt             DateTime?
+  submittedAt            DateTime?
   /// VL pre-screening decision timestamp. Distinct from
   /// decidedAt (final approve/reject of the full app).
-  preScreenDecidedAt       DateTime?
+  preScreenDecidedAt     DateTime?
   /// Reviewer note from the pre-screening decision. Distinct
   /// from reviewerNote which now refers to the final Stage-2
   /// decision.
-  preScreenReviewerNote    String?
+  preScreenReviewerNote  String?
   /// When the full (Stage-2) application form was submitted.
   /// Null while the applicant is still drafting Stage 2.
-  fullAppSubmittedAt       DateTime?
+  fullAppSubmittedAt     DateTime?
   /// Per-criterion reviewer scores for VL Stage 2. Mirrors the
   /// 6 categories in the Evaluation Guide. Shape:
   ///   { innovation: 1-5, market: 1-5, plan: 1-5,
   ///     commercialization: 1-5, impact: 1-5, budget: 1-5,
   ///     comment?: string }
-  reviewerScores           Json?
-  decidedAt                DateTime?
-  fundedAt                 DateTime?
-  disbursementNote         String?
-  aiAssisted               Boolean   @default(false)
+  reviewerScores         Json?
+  decidedAt              DateTime?
+  fundedAt               DateTime?
+  disbursementNote       String?
+  aiAssisted             Boolean   @default(false)
   /// Post-approval check-in templates. Shape: [{ id, title, dueOn,
   /// status, note, updatedAt }].
-  milestones               Json      @default("[]")
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  milestones             Json      @default("[]")
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
-  user      User                       @relation("EquipApplicant", fields: [userId], references: [id], onDelete: Cascade)
-  reviewer  User?                      @relation("EquipReviewer",  fields: [reviewerId], references: [id], onDelete: SetNull)
-  messages  EquipApplicationMessage[]
+  user     User                      @relation("EquipApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User?                     @relation("EquipReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  messages EquipApplicationMessage[]
 
   @@index([userId, status])
   @@index([status, submittedAt])
@@ -2828,8 +3291,8 @@ model EquipApplicationMessage {
   body          String
   createdAt     DateTime @default(now())
 
-  application   EquipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application EquipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([applicationId, createdAt])
 }
@@ -2858,7 +3321,7 @@ model CommitteeMembership {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, committee])
   @@index([committee, active])
@@ -2920,8 +3383,8 @@ model EquipDeadline {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  createdBy User  @relation("EquipDeadlineCreator", fields: [createdById], references: [id])
-  closedBy  User? @relation("EquipDeadlineCloser",  fields: [closedById],  references: [id])
+  createdBy  User  @relation("EquipDeadlineCreator", fields: [createdById], references: [id])
+  closedBy   User? @relation("EquipDeadlineCloser", fields: [closedById], references: [id])
   extendedBy User? @relation("EquipDeadlineExtender", fields: [extendedById], references: [id])
 
   @@index([stream, status, deadlineAt])
@@ -2943,32 +3406,32 @@ model EquipDeadline {
 // under Equip for a sponsor demo" can both live here without an
 // enum change.
 model OpportunityDeadline {
-  id            String    @id @default(cuid())
+  id           String    @id @default(cuid())
   /// Source kind — see model header.
-  kind          String
+  kind         String
   /// Dashboard pillar column.
-  pillar        String
-  title         String
+  pillar       String
+  title        String
   /// Optional short blurb (1–3 lines) rendered under the title.
-  blurb         String?
+  blurb        String?
   /// Optional opens-on date (e.g. "Opens May 4, 2026").
-  opensAt       DateTime?
+  opensAt      DateTime?
   /// Apply-by deadline.
-  deadlineAt    DateTime?
+  deadlineAt   DateTime?
   /// "active" | "closed" | "full" — closed/full items still render
   /// with a status pill so trainees see the cycle exists.
-  status        String    @default("active")
+  status       String    @default("active")
   /// Optional CTA destination; if absent, the card is non-clickable.
-  ctaUrl        String?
+  ctaUrl       String?
   /// Optional CTA label override (e.g. "Apply by May 29").
-  ctaLabel      String?
+  ctaLabel     String?
   /// Optional eyebrow-style status pill text (e.g. "FULL · NEXT
   /// COHORT IN FALL"). Overrides the default status-derived pill.
-  pillText      String?
+  pillText     String?
   /// Smaller = higher priority within its pillar column.
-  displayOrder  Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([pillar, status, displayOrder])
   @@index([deadlineAt])
@@ -2997,7 +3460,7 @@ model HqpApplicationWindow {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy   User                   @relation("HqpWindowCreator", fields: [createdById], references: [id])
+  createdBy    User                   @relation("HqpWindowCreator", fields: [createdById], references: [id])
   applications HqpMemberApplication[]
 
   @@index([year])
@@ -3022,9 +3485,9 @@ model HqpMemberApplication {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  user      User                 @relation("HqpApplicant",   fields: [userId],     references: [id], onDelete: Cascade)
-  window    HqpApplicationWindow @relation(                  fields: [windowId],   references: [id], onDelete: Cascade)
-  decidedBy User?                @relation("HqpAppDecider",  fields: [decidedById], references: [id], onDelete: SetNull)
+  user      User                 @relation("HqpApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  window    HqpApplicationWindow @relation(fields: [windowId], references: [id], onDelete: Cascade)
+  decidedBy User?                @relation("HqpAppDecider", fields: [decidedById], references: [id], onDelete: SetNull)
 
   @@unique([userId, windowId])
   @@index([windowId, status])
@@ -3055,24 +3518,24 @@ model HqpFeedbackRound {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy User                   @relation("HqpRoundCreator", fields: [createdById], references: [id])
+  createdBy User                  @relation("HqpRoundCreator", fields: [createdById], references: [id])
   responses HqpFeedbackResponse[]
 
   @@index([status, opensAt, closesAt])
 }
 
 model HqpFeedbackResponse {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   roundId     String
   userId      String
   /// JSON map { topicId: answerText }. Topics that aren't in the
   /// answers object are treated as unanswered.
-  answers     Json     @default("{}")
+  answers     Json      @default("{}")
   /// "draft" | "submitted"
-  status      String   @default("draft")
+  status      String    @default("draft")
   submittedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   round HqpFeedbackRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
   user  User             @relation("HqpResponder", fields: [userId], references: [id], onDelete: Cascade)
@@ -3130,23 +3593,23 @@ model HqpMeetingAttendance {
 }
 
 model HqpActionItem {
-  id           String    @id @default(cuid())
-  meetingId    String?
-  title        String
-  description  String?
-  assignedToId String?
-  dueOn        DateTime?
+  id             String    @id @default(cuid())
+  meetingId      String?
+  title          String
+  description    String?
+  assignedToId   String?
+  dueOn          DateTime?
   /// "open" | "in_progress" | "done" | "cancelled"
-  status       String    @default("open")
-  createdById  String
-  resolvedAt   DateTime?
+  status         String    @default("open")
+  createdById    String
+  resolvedAt     DateTime?
   resolutionNote String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  meeting    HqpMeeting? @relation(fields: [meetingId],    references: [id], onDelete: SetNull)
-  assignedTo User?       @relation("HqpActionAssignee",    fields: [assignedToId], references: [id], onDelete: SetNull)
-  createdBy  User        @relation("HqpActionCreator",     fields: [createdById],  references: [id])
+  meeting    HqpMeeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  assignedTo User?       @relation("HqpActionAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy  User        @relation("HqpActionCreator", fields: [createdById], references: [id])
 
   @@index([status, dueOn])
   @@index([assignedToId, status])
@@ -3193,17 +3656,17 @@ model HqpCoiDisclosure {
 ///                   "staff"     — instructor+
 ///                   "admins"    — admin+
 model Page {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  title       String
-  body        String
-  excerpt     String?
-  status      String   @default("draft")
-  audience    String   @default("public")
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  title    String
+  body     String
+  excerpt  String?
+  status   String  @default("draft")
+  audience String  @default("public")
 
   publishedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   createdById String
   updatedById String?
@@ -3221,36 +3684,36 @@ model Page {
 /// roster (team + cross-functional partners), 12 weeks of scenarios with
 /// choices and stat effects, and review thresholds.
 model Simulation {
-  id           String   @id @default(cuid())
+  id            String   @id @default(cuid())
   /// sha256 of the normalised JD text + prompt version. Unique so we
   /// dedupe identical postings (RBC posts the same role to LinkedIn,
   /// Indeed, and their own site; one Simulation row covers all three).
-  sourceHash   String   @unique
+  sourceHash    String   @unique
   /// Source URL the trainee pasted, if any. Display only — many will
   /// be expired or auth-walled by the time someone replays.
-  sourceUrl    String?
+  sourceUrl     String?
   /// First ~800 chars of the cleaned JD, for the "based on this posting"
   /// preview at the top of an attempt.
-  jdSnippet    String
+  jdSnippet     String
   /// AI-extracted ("Director, Design"). Fallback to "Director" if blank.
-  jobTitle     String
+  jobTitle      String
   /// AI-extracted ("RBC", "Wealthsimple"). Nullable when the AI can't tell.
-  companyName  String?
+  companyName   String?
   /// AI-extracted ("Toronto", "Montreal, hybrid"). Nullable.
-  location     String?
+  location      String?
   /// JSON blob — see src/lib/simulator/types.ts for SimulationPayload.
-  payload      Json
+  payload       Json
   /// Provider + model used to generate, for analytics and re-generation.
   /// e.g. "cloudflare:llama-3.1-8b-instruct" or "gemini:gemini-2.0-flash".
-  modelUsed    String
+  modelUsed     String
   /// Total wall-clock time the generation took (for monitoring).
-  generationMs Int
+  generationMs  Int
   /// Bumped when we change the prompt or schema in ways that invalidate
   /// existing payloads. Older Simulation rows with a lower version stay
   /// playable but won't be re-used for new attempts.
-  promptVersion String  @default("v1")
-  createdById  String?
-  createdAt    DateTime @default(now())
+  promptVersion String   @default("v1")
+  createdById   String?
+  createdAt     DateTime @default(now())
 
   createdBy User?               @relation("SimulationCreator", fields: [createdById], references: [id], onDelete: SetNull)
   attempts  SimulationAttempt[]
@@ -3262,13 +3725,13 @@ model Simulation {
 /// One per trainee per simulation. State is checkpointed after every
 /// choice so a trainee can close the tab and resume later.
 model SimulationAttempt {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   simulationId  String
   userId        String
   /// 1..12. When week > 12 OR finished, the attempt is done.
-  week          Int      @default(1)
+  week          Int       @default(1)
   /// Index into the scenarios array for the current week.
-  scenarioIndex Int      @default(0)
+  scenarioIndex Int       @default(0)
   /// JSON: { morale, vpTrust, velocity, crossFunc, capacity } as 0–100.
   /// Stat keys match Simulation.payload.stats[].key so the same shape
   /// works regardless of role.
@@ -3276,12 +3739,12 @@ model SimulationAttempt {
   /// JSON array of decision log entries (week, scenarioId, choiceLabel,
   /// outcome, effects, tag). Used for the end-of-quarter highlights.
   log           Json
-  finished      Boolean  @default(false)
+  finished      Boolean   @default(false)
   finalScore    Int?
   finalTier     String?
-  startedAt     DateTime @default(now())
+  startedAt     DateTime  @default(now())
   finishedAt    DateTime?
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime  @updatedAt
 
   simulation Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -3316,41 +3779,41 @@ model SimulationAttempt {
 /// "the user's resume" is now "most-recently-edited non-archived"
 /// unless an explicit resumeId is provided.
 model Resume {
-  id            String           @id @default(cuid())
-  userId        String
-  user          User             @relation("UserResume", fields: [userId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  userId              String
+  user                User      @relation("UserResume", fields: [userId], references: [id], onDelete: Cascade)
   /// Human-readable name shown in the picker + on the index page.
   /// Defaults to "Main resume" on first create; tailor-save-as uses
   /// the posting title.
-  name          String           @default("Main resume")
+  name                String    @default("Main resume")
   /// Soft-archive flag. Archived resumes are hidden from the picker
   /// and the default-load logic but still exist for restore. We
   /// never hard-delete from the API; old work stays recoverable.
-  isArchived    Boolean          @default(false)
+  isArchived          Boolean   @default(false)
   /// When this resume was created by tailoring (or duplicating) from
   /// another one, derivedFromId attributes the source so the index
   /// page can show "Tailored from Main resume". SET NULL on delete
   /// so deleting the source doesn't cascade-kill the derived copies.
   derivedFromId       String?
-  derivedFrom         Resume?    @relation("DerivedResumes", fields: [derivedFromId], references: [id], onDelete: SetNull)
-  derivedResumes      Resume[]   @relation("DerivedResumes")
+  derivedFrom         Resume?   @relation("DerivedResumes", fields: [derivedFromId], references: [id], onDelete: SetNull)
+  derivedResumes      Resume[]  @relation("DerivedResumes")
   /// Optional posting id this resume was tailored for. Surfaces in
   /// the index as a chip; lets the future "open my tailored copy
   /// for posting X" lookups be a one-shot query.
   derivedForPostingId String?
-  sourceFileUrl String?          // upload URL the structure was parsed from
-  parsedAt      DateTime?        // when AI parsed sourceFileUrl into content
-  lastEditedAt  DateTime         @default(now())
-  version       Int              @default(1)
-  content       Json             // the section/item/bullet tree
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  sourceFileUrl       String? // upload URL the structure was parsed from
+  parsedAt            DateTime? // when AI parsed sourceFileUrl into content
+  lastEditedAt        DateTime  @default(now())
+  version             Int       @default(1)
+  content             Json // the section/item/bullet tree
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  comments      ResumeComment[]
-  revisions     ResumeRevision[]
+  comments   ResumeComment[]
+  revisions  ResumeRevision[]
   /// Folders that picked this resume as their tailored copy. SET NULL
   /// on delete means the folder survives if the resume is gone.
-  jobFolders    JobFolder[]      @relation("JobFolderResume")
+  jobFolders JobFolder[]      @relation("JobFolderResume")
 
   @@index([userId, isArchived])
   @@index([derivedFromId])
@@ -3361,23 +3824,23 @@ model Resume {
 /// are mutually exclusive in practice — UI uses the most-specific
 /// anchor (bullet > item > section > resume-wide).
 model ResumeComment {
-  id             String   @id @default(cuid())
-  resumeId       String
-  resume         Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  authorId       String
-  author         User     @relation("ResumeCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  authorRole     String   // mentor | instructor | admin | employer | self (snapshot at write time)
+  id              String   @id @default(cuid())
+  resumeId        String
+  resume          Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          User     @relation("ResumeCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  authorRole      String // mentor | instructor | admin | employer | self (snapshot at write time)
   /// Anchor into the JSON tree. NULL on all three → comment on the
   /// whole resume.
   anchorBulletId  String?
   anchorItemId    String?
   anchorSectionId String?
-  body           String
+  body            String
   /// open    — needs the trainee's attention
   /// resolved — the trainee acknowledged it (manual close)
   /// applied — the trainee accepted the suggestion into the resume
-  status         String   @default("open")
-  createdAt      DateTime @default(now())
+  status          String   @default("open")
+  createdAt       DateTime @default(now())
 
   @@index([resumeId, createdAt])
   @@index([authorId])
@@ -3388,14 +3851,14 @@ model ResumeComment {
 /// trainee undo to any prior state. `triggeredBy` distinguishes
 /// trainee edits from AI tailoring runs.
 model ResumeRevision {
-  id           String   @id @default(cuid())
-  resumeId     String
-  resume       Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  version      Int
-  content      Json
-  triggeredBy  String   // user | ai_parse | ai_suggest | ai_tailor
-  note         String?
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  resumeId    String
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  version     Int
+  content     Json
+  triggeredBy String // user | ai_parse | ai_suggest | ai_tailor
+  note        String?
+  createdAt   DateTime @default(now())
 
   @@index([resumeId, version])
 }
@@ -3410,14 +3873,14 @@ model ResumeRevision {
 /// See docs/plans/master-resume.md for the full design + the five
 /// principles that drove the data model.
 model MasterResume {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation("UserMasterResume", fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation("UserMasterResume", fields: [userId], references: [id], onDelete: Cascade)
 
   /// Shared header data — name, email, phone, location, summary.
   /// One source of truth across every tailored resume the user owns.
   /// Same shape as ResumeContent.header in src/lib/resume/types.ts.
-  header    Json?
+  header Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3431,13 +3894,13 @@ model MasterResume {
 /// reference these bullets, edit them locally, or promote edits
 /// back here.
 model MasterBullet {
-  id              String       @id @default(cuid())
-  masterId        String
-  master          MasterResume @relation(fields: [masterId], references: [id], onDelete: Cascade)
+  id       String       @id @default(cuid())
+  masterId String
+  master   MasterResume @relation(fields: [masterId], references: [id], onDelete: Cascade)
 
   /// Which section kind this bullet belongs to. Mirrors
   /// ResumeSectionKind in src/lib/resume/types.ts.
-  sectionKind     String
+  sectionKind String
 
   /// For experience-type bullets, the anchor identifies the job
   /// (e.g. "Manufacturing Process Intern · STEMCELL Technologies").
@@ -3448,37 +3911,37 @@ model MasterBullet {
   anchorDateRange String?
 
   /// Current bullet text.
-  body            String
+  body String
 
   /// User- or AI-applied tags. Used by the AI picker to short-list
   /// relevant bullets before LLM re-ranking.
-  tags            String[]
+  tags String[]
 
   /// Source attribution. If this bullet was first added by promoting
   /// it from a tailored Resume, this records that Resume's id.
   /// Helps the user trace lineage.
-  sourceResumeId  String?
+  sourceResumeId String?
 
   /// Pin order within the section / anchor group.
-  position        Int          @default(0)
+  position Int @default(0)
 
   /// Soft archive — bullets the user doesn't currently want
   /// surfaced in AI tailoring or library views, but might revive.
-  isArchived      Boolean      @default(false)
+  isArchived Boolean @default(false)
 
   /// Embedding for AI retrieval (Cloudflare bge-small-en-v1.5, 384d).
   /// Managed via raw SQL (pgvector) — same pattern as Skill /
   /// PostingSkill embeddings elsewhere in the schema.
-  embedding       Unsupported("vector(384)")?
+  embedding     Unsupported("vector(384)")?
   /// The text that produced the current embedding. If `body` !=
   /// `embeddingText`, the embedding is stale and gets re-computed
   /// on the next AI pick.
-  embeddingText   String?
+  embeddingText String?
 
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  revisions       MasterBulletRevision[]
+  revisions MasterBulletRevision[]
 
   @@index([masterId, sectionKind, isArchived])
   @@index([masterId, anchorTitle])
@@ -3488,18 +3951,18 @@ model MasterBullet {
 /// substantive body change (with the same 5-minute coalesce as
 /// ResumeRevision).
 model MasterBulletRevision {
-  id        String       @id @default(cuid())
-  bulletId  String
-  bullet    MasterBullet @relation(fields: [bulletId], references: [id], onDelete: Cascade)
+  id       String       @id @default(cuid())
+  bulletId String
+  bullet   MasterBullet @relation(fields: [bulletId], references: [id], onDelete: Cascade)
 
-  body      String
-  tags      String[]
+  body String
+  tags String[]
 
   /// Why was this revision made?
   /// "user_edit" | "ai_rewrite" | "promoted_from_resume" | "imported_from_pdf"
-  source    String
+  source String
 
-  createdAt DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   @@index([bulletId, createdAt])
 }
@@ -3507,9 +3970,9 @@ model MasterBulletRevision {
 /// Locked, named, downloadable snapshot of the master at a moment
 /// in time. Like a git tag.
 model MasterSnapshot {
-  id            String       @id @default(cuid())
-  masterId      String
-  master        MasterResume @relation(fields: [masterId], references: [id], onDelete: Cascade)
+  id       String       @id @default(cuid())
+  masterId String
+  master   MasterResume @relation(fields: [masterId], references: [id], onDelete: Cascade)
 
   /// Auto-incremented per master. v1, v2, v3...
   versionNumber Int
@@ -3519,13 +3982,13 @@ model MasterSnapshot {
   /// Full snapshot of the master's bullets + header at this moment,
   /// stored as ResumeContent JSON so the snapshot can be rendered
   /// in the existing /profile/resume/preview PDF flow later.
-  content       Json
+  content Json
 
   /// Pre-generated PDF for download. Optional — the download
   /// endpoint regenerates if absent.
-  pdfUrl        String?
+  pdfUrl String?
 
-  createdAt     DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([masterId, versionNumber])
   @@index([masterId, createdAt])
