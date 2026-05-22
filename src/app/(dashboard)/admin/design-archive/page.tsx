@@ -69,6 +69,16 @@ const ARCHIVE_ENTRIES: ArchiveEntry[] = [
     tags: ["M34", "Y2K", "Glass", "Aero"],
   },
   {
+    slug: "employer-cover-banner",
+    title: "HR cover banner · wavy aurora hero",
+    description:
+      "The full-bleed hero that opened the original HR home page at /employer (retired 2026-05-21 when the workspace at /employer/postings became the entry point). 5-stop deep-violet-to-pink gradient stage with four corner aurora blurs (cyan / pink / amber / lime), an SVG fractal-noise grain at overlay-blend, a subtle mid-line tick, a bottom-fade shadow, and a BRAND STAGE eyebrow label. Faithful HTML port preserved for future surfaces that want a dramatic full-bleed hero.",
+    date: "2026-05-21",
+    count: 1,
+    countLabel: "hero",
+    tags: ["Hero", "Gradient", "Aurora", "Noise", "Archived"],
+  },
+  {
     slug: "create-resume-fx",
     title: "Create resume · 4 transition candidates",
     description:

@@ -80,7 +80,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   const isProd = process.env.NODE_ENV === "production";
   const cookieName = isProd ? "__Secure-next-auth.session-token" : "next-auth.session-token";
 
-  const dest = user.role === "employer" ? "/employer" : "/dashboard";
+  // HR's entry point is now the workspace at /employer/postings.
+  // The standalone /employer home was retired 2026-05-21 (it now
+  // 308-redirects here, so old links still resolve, but new sandbox
+  // sign-ins should land directly on the workspace).
+  const dest = user.role === "employer" ? "/employer/postings" : "/dashboard";
   const res = NextResponse.redirect(`${origin}${dest}`);
   res.cookies.set({
     name: cookieName,

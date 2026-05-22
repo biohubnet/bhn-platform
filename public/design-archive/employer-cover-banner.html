@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HR cover banner — wavy aurora hero (archived)</title>
+  <style>
+    :root {
+      --doc-bg: #0e131a;
+      --doc-panel: #141b22;
+      --doc-line: #232c38;
+      --doc-ink: #e6edf3;
+      --doc-muted: #8b96a3;
+      --doc-accent: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--doc-bg); color: var(--doc-ink); font: 14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+    header.doc h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.01em; }
+    header.doc p  { margin: 0; color: var(--doc-muted); max-width: 760px; line-height: 1.6; }
+    header.doc    { margin-bottom: 30px; padding-bottom: 22px; border-bottom: 1px solid var(--doc-line); }
+    h2 { margin: 36px 0 6px; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--doc-accent); font-weight: 700; }
+    h2 + p { margin: 0 0 16px; color: var(--doc-muted); font-size: 13px; line-height: 1.6; }
+
+    /* ── The banner. Mirrors the React CoverBanner component
+          retired 2026-05-21. 5-stop deep-violet → pink base,
+          four aurora blurs at the corners, fractal-noise grain,
+          a thin mid-line + bottom-shadow gradient, and the
+          "BRAND STAGE" eyebrow at the top-left. ─────────────── */
+    .stage {
+      position: relative;
+      height: 22rem;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid var(--doc-line);
+    }
+    .stage-base {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(135deg, #0b0f24 0%, #142046 25%, #312e81 50%, #6b21a8 75%, #831843 100%);
+    }
+    .aurora {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(48px);
+    }
+    .aurora.cyan {
+      top: -10rem; left: -8rem;
+      width: 36rem; height: 36rem;
+      opacity: 0.7;
+      background: radial-gradient(closest-side, rgba(56,189,248,0.7), rgba(56,189,248,0) 70%);
+    }
+    .aurora.pink {
+      bottom: -8rem; right: 33%;
+      width: 34rem; height: 34rem;
+      opacity: 0.6;
+      background: radial-gradient(closest-side, rgba(244,114,182,0.7), rgba(244,114,182,0) 70%);
+    }
+    .aurora.amber {
+      top: 0; right: 0;
+      width: 24rem; height: 24rem;
+      opacity: 0.4;
+      background: radial-gradient(closest-side, rgba(250,204,21,0.5), rgba(250,204,21,0) 70%);
+    }
+    .aurora.lime {
+      bottom: 0; left: 33%;
+      width: 22rem; height: 22rem;
+      opacity: 0.4;
+      background: radial-gradient(closest-side, rgba(74,222,128,0.5), rgba(74,222,128,0) 70%);
+    }
+    .stage-noise {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      opacity: 0.22;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+    .stage-line {
+      position: absolute; left: 0; right: 0; top: 50%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent);
+    }
+    .stage-bottom-shadow {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 10rem;
+      background: linear-gradient(to bottom, transparent, transparent, rgba(0,0,0,0.40));
+    }
+    .stage-eyebrow {
+      position: absolute; top: 1.25rem; left: 2.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.28em; font-weight: 700;
+      color: rgba(255,255,255,0.70);
+    }
+    .stage-eyebrow .tick {
+      width: 1.5rem; height: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.7));
+    }
+
+    .props {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .prop {
+      background: var(--doc-panel);
+      border: 1px solid var(--doc-line);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .prop h3 { margin: 0 0 4px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--doc-accent); }
+    .prop p { margin: 0; color: var(--doc-muted); font-size: 12px; line-height: 1.55; }
+    .prop code { font: 600 11px/1.5 ui-monospace, monospace; color: var(--doc-ink); background: rgba(255,255,255,0.04); padding: 1px 5px; border-radius: 3px; }
+
+    .footnote {
+      margin-top: 32px;
+      padding: 14px 16px;
+      border: 1px dashed var(--doc-line);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      color: var(--doc-muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .footnote code { font: 600 11px/1.5 ui-monospace, monospace; color: var(--doc-ink); background: rgba(255,255,255,0.04); padding: 1px 5px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="doc">
+      <h1>HR cover banner — wavy aurora hero <span style="color:var(--doc-muted); font-weight:400;">(archived 2026-05-21)</span></h1>
+      <p>
+        The hero from the original HR home page at <code style="background:rgba(255,255,255,0.04); padding:1px 5px; border-radius:3px;">/employer</code> — a 5-stop
+        deep-violet-to-pink gradient stage with four aurora blurs and a fractal-noise overlay. Used as the full-bleed
+        backdrop behind the company identity row from the spring 2026 design through May 2026, when the HR home was
+        consolidated into the workspace at <code style="background:rgba(255,255,255,0.04); padding:1px 5px; border-radius:3px;">/employer/postings</code>. Archived here as a
+        reusable reference — the gradient stops, aurora positions, noise opacity, and eyebrow chrome are all preserved.
+      </p>
+    </header>
+
+    <h2>The banner</h2>
+    <p>Rendered at the original 22rem height. Resize the viewport to see the bleed scale.</p>
+
+    <div class="stage">
+      <div class="stage-base"></div>
+      <div class="aurora cyan"></div>
+      <div class="aurora pink"></div>
+      <div class="aurora amber"></div>
+      <div class="aurora lime"></div>
+      <!-- Fractal-noise grain — same SVG filter as the React version. -->
+      <svg class="stage-noise" xmlns="http://www.w3.org/2000/svg">
+        <filter id="cover-noise">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" />
+          <feColorMatrix
+            type="matrix"
+            values="0 0 0 0 1
+                    0 0 0 0 1
+                    0 0 0 0 1
+                    0 0 0 0.4 0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#cover-noise)" />
+      </svg>
+      <div class="stage-line"></div>
+      <div class="stage-bottom-shadow"></div>
+      <div class="stage-eyebrow">
+        <span class="tick" aria-hidden></span>
+        Brand stage
+      </div>
+    </div>
+
+    <h2>Anatomy</h2>
+    <p>The banner is six stacked layers. Order matters — bottom up.</p>
+
+    <div class="props">
+      <div class="prop">
+        <h3>1 · Base gradient</h3>
+        <p>
+          <code>linear-gradient(135deg, #0b0f24 0%, #142046 25%, #312e81 50%, #6b21a8 75%, #831843 100%)</code> —
+          5-stop deep navy → indigo → violet → magenta. Sets the dramatic violet-pink stage.
+        </p>
+      </div>
+      <div class="prop">
+        <h3>2 · Four auroras</h3>
+        <p>
+          Cyan top-left, pink bottom-right-of-centre, amber top-right, lime bottom-left-of-centre. Each is a radial
+          gradient at <code>blur(48px)</code> with opacity 0.4–0.7. The colour pairing covers all four corners of the
+          colour wheel so any composited content sits warmly regardless of position.
+        </p>
+      </div>
+      <div class="prop">
+        <h3>3 · Fractal noise grain</h3>
+        <p>
+          SVG <code>feTurbulence</code> + <code>feColorMatrix</code> at <code>mix-blend-mode: overlay</code> with
+          opacity 0.22. Softens the gradient banding, lifts the colours toward a printed-poster feel.
+        </p>
+      </div>
+      <div class="prop">
+        <h3>4 · Mid-line tick</h3>
+        <p>
+          A 1-pixel-tall horizontal line at 50% Y, dimmed at the edges via a transparent-to-15%-white-to-transparent
+          gradient. Reads as a horizon line; subtle, mostly subconscious.
+        </p>
+      </div>
+      <div class="prop">
+        <h3>5 · Bottom shadow</h3>
+        <p>
+          A 10rem tall gradient at the bottom of the stage, transparent at the top, 40% black at the bottom. Lets the
+          identity row above the banner read clearly against the dark fade-out.
+        </p>
+      </div>
+      <div class="prop">
+        <h3>6 · Eyebrow chrome</h3>
+        <p>
+          A short white tick + the <code>BRAND STAGE</code> label at top-left, 10px caps with 0.28em tracking. The only
+          UI element on the banner; everything else is decorative.
+        </p>
+      </div>
+    </div>
+
+    <p class="footnote">
+      Originally lived in <code>src/app/(dashboard)/employer/page.tsx</code> as the <code>CoverBanner()</code> function.
+      That page was retired 2026-05-21 in favour of starting HR users at <code>/employer/postings</code> (the workspace
+      that opens with the gradient hero from <code>DSPageHeader</code>). Faithful HTML port preserved here for future
+      surfaces that want a dramatic full-bleed hero. Same noise filter, same gradient stops, same aurora positions —
+      drop into a new context and re-skin.
+    </p>
+  </main>
+</body>
+</html>
