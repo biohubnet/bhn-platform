@@ -12,9 +12,16 @@
 import { PageTranslator } from "./PageTranslator";
 import { usePageTranslationEnabled } from "./usePageTranslationEnabled";
 
-export function TranslatorDock() {
-  const enabled = usePageTranslationEnabled();
-  if (!enabled) return null;
+interface Props {
+  /** Platform-level gate — superadmin toggle at /admin/settings.
+   *  When false the dock is hidden regardless of the user's own toggle. */
+  platformEnabled?: boolean;
+}
+
+export function TranslatorDock({ platformEnabled = true }: Props) {
+  const userEnabled = usePageTranslationEnabled();
+  // Both gates must be open: the platform setting AND the user's per-tab toggle.
+  if (!platformEnabled || !userEnabled) return null;
 
   return (
     <div className="fixed top-3 right-4 z-40 pointer-events-auto" data-no-translate>

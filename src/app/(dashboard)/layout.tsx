@@ -73,11 +73,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // badgeKey. The two key namespaces ("interview-requests" vs.
   // "credit-applications") never collide.
   const canSeeAdminQueues = ROLE_RANK[realRole ?? role] >= ROLE_RANK.admin;
-  const [adminCounts, traineeCounts, committeeSlugs] = await Promise.all([
+  const [adminCounts, traineeCounts, committeeSlugs, translationSetting] = await Promise.all([
     canSeeAdminQueues ? getAdminQueueCounts() : Promise.resolve(undefined),
     userId ? getTraineeQueueCounts(userId) : Promise.resolve(undefined),
     userId ? getCommitteesForUser(userId) : Promise.resolve([]),
+    prisma.platformSetting.findUnique({ where: { key: "translationEnabled" }, select: { value: true } }).catch(() => null),
   ]);
+  // Platform-level gate: absent row (never set) → enabled (default true).
+  const translationPlatformEnabled = translationSetting?.value !== "false";
   const queueCounts: QueueCounts | undefined =
     adminCounts || traineeCounts ? { ...traineeCounts, ...adminCounts } : undefined;
 
@@ -112,7 +115,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           clickable above all page content (modals at z-50 still win).
           Hides entirely when the user toggles "Page translation" off
           from the ThemePicker dropdown. */}
-      <TranslatorDock />
+      <TranslatorDock platformEnabled={translationPlatformEnabled} />
       <Onboarding />
       <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
       <NavHighlightOverlay />
