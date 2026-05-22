@@ -35,6 +35,7 @@ import {
   HeartHandshake,
   Briefcase,
   Users2,
+  FilePlus,
   Building2,
   ListChecks,
   Activity,
@@ -211,19 +212,13 @@ const equipItems: (NavItem & { labelKey: string })[] = [
 ];
 
 // EMPLOYER PORTAL — visible only when role === "employer".
-//
-// Note: the standalone "Overview" entry pointing at /employer was
-// retired 2026-05-21. That page (with the wavy aurora cover banner
-// + identity row + KPI tiles) has been folded into the workspace
-// at /employer/postings, which is now the entry point. /employer
-// still works — it 308-redirects here — so old links + bookmarks
-// keep firing. The original banner is archived at
-// /design-archive/employer-cover-banner.html for future reuse.
 const employerItems: (NavItem & { labelKey: string })[] = [
-  { label: "Overview",          labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: Building2, exact: true,
-    description: "Your HR workspace — postings + applicants in one place. Expand any posting row to see its pipeline; the action-queue at the top surfaces new applications, stale stages, and offers still awaiting response." },
+  { label: "Overview",          labelKey: "nav.employerHome",       href: "/employer",            icon: Building2, exact: true,
+    description: "Your company brand stage — profile (with one-URL AI auto-fill), live action queue, and the hiring shopfront trainees see on every posting. The pencil top-right opens the edit modal." },
   { label: "How it works",      labelKey: "nav.employerGuide",      href: "/employer/how-it-works", icon: Compass,
     description: "End-to-end explainer for the hiring program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
+  { label: "My Postings",       labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: FilePlus,
+    description: "Postings + applicants in one place. Expand any posting row to see its pipeline; the action-queue at the top surfaces new applications, stale stages, and offers still awaiting response." },
   // The separate "Applicants" sidebar entry was removed — it
   // pointed at /employer/applicants, which is a redirect to this
   // same My-Postings workspace. The workspace already hosts the

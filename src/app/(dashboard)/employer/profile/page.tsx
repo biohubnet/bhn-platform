@@ -3,13 +3,11 @@ import { redirect } from "next/navigation";
 /**
  * /employer/profile — legacy alias.
  *
- * The HR home page (cover banner + identity row + postings preview)
- * was retired 2026-05-21 in favour of /employer/postings as the
- * entry point. This route stays as a redirect so any deep link
- * out there (changelog, old onboarding tour, bookmarks) keeps
- * working. Redirects via /employer (which itself 308-redirects to
- * /employer/postings) so the chain stays short.
+ * The profile design (cover banner, identity card, stats, postings
+ * preview) is now the /employer home page; the standalone /profile
+ * route is preserved as a redirect so any deep link out there
+ * (changelog, old onboarding tour, bookmarks) keeps working.
  */
 export default function LegacyEmployerProfileRedirect() {
-  redirect("/employer/postings");
+  redirect("/employer");
 }

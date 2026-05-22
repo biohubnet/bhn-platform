@@ -25,7 +25,7 @@ const PRESETS: Preset[] = [
     label: "Internship board",
     description: "Trainee browse vs HR posting management.",
     left:  { title: "Trainee · Internship board",   href: "/internships" },
-    right: { title: "HR · Postings workspace",      href: "/employer/postings" },
+    right: { title: "HR · Employer dashboard",      href: "/employer" },
   },
   {
     id: "courses",
