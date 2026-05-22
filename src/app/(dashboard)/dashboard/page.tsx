@@ -966,7 +966,7 @@ export default async function DashboardPage() {
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-2xl xl:text-3xl font-black font-mono tabular-nums leading-none text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
+      <p className="text-2xl xl:text-3xl font-black font-mono tabular-nums leading-none text-white drop-shadow-text-dim">
         {value}
       </p>
       <p className="mt-1 text-[10px] uppercase tracking-[0.28em] font-bold text-white/65">

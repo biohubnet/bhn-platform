@@ -1,4 +1,9 @@
 "use client";
+/* eslint-disable no-restricted-syntax -- the military rocket-launch
+ * cover's chassis / inset / cover-lift / LED pulse / abort glow / rivet
+ * shadows are all hard-tuned rgba values that drive the cover-flip
+ * animation pipeline and the visual language of the original variant.
+ * Themes don't re-tune them by design — the classic look is the look. */
 
 /**
  * LaunchSwitchClassic — original "rocket-launch cover" delete switch.

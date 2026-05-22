@@ -41,16 +41,14 @@ const eslintConfig = defineConfig([
   // `top-[-9999]`, etc.) are NOT flagged — they're sizing, not
   // theming, and have no token equivalent.
   //
-  // Current severity: WARN.
-  //   Roughly 40 pre-existing leaks live in the codebase today —
-  //   mostly tinted shadows that need named shadow tokens to land
-  //   in globals.css before the call-sites can be rewritten
-  //   (e.g. `--shadow-card`, `--shadow-glow-brand`,
-  //   `--shadow-glow-amber-300`). Until those tokens exist the
-  //   rule lives at "warn" so it surfaces every leak without
-  //   blocking the build. Once the shadow tokens land + the
-  //   existing leaks are swept, promote to "error" by flipping
-  //   the level below.
+  // Current severity: ERROR.
+  //   Started life at "warn" with ~40 pre-existing leaks. After the
+  //   named shadow-token sweep (May 2026 — `shadow-card-rest`,
+  //   `shadow-modal`, `shadow-amber-pulse`, `drop-shadow-text-dim`,
+  //   etc. — see the @theme inline block in globals.css), every leak
+  //   was either migrated to a token OR explicitly suppressed with
+  //   a one-line `eslint-disable-next-line no-restricted-syntax`
+  //   reason. The rule now blocks any new leak from landing.
   //
   // If you genuinely need to hard-code a colour (transactional email
   // HTML where CSS variables don't render, a fixed export-to-PDF
@@ -61,7 +59,7 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": [
-        "warn",
+        "error",
         {
           // Plain string literal — the common `className="…"` case.
           selector:
@@ -75,7 +73,7 @@ const eslintConfig = defineConfig([
           selector:
             "TemplateElement[value.raw=/(text|bg|border|shadow|drop-shadow|ring|outline|from|to|via|fill|stroke|decoration|divide|placeholder|caret|accent)-\\[[^\\]]*(?:#[0-9a-fA-F]{3,8}|rgba?\\(|hsla?\\()/]",
           message:
-            "Design-token leak: hard-coded colour inside a Tailwind arbitrary value. Use a token (e.g. `text-fg`, `bg-card-solid`, `ring-brand-300`) instead — see docs/design-system.md.",
+            "Design-token leak: hard-coded colour inside a Tailwind arbitrary value. Use a token (e.g. `text-fg`, `bg-card-solid`, `ring-brand-300`) instead — see docs/design-system.md. If a token genuinely doesn't fit, suppress with `// eslint-disable-next-line no-restricted-syntax` and a one-line reason.",
         },
       ],
     },

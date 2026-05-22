@@ -107,7 +107,7 @@ export async function CommitteeBadgeStrip({ userId }: Props) {
         const palette = PROUD_GRADIENT[c.badgeTone] ?? PROUD_GRADIENT.violet;
         const inner = (
           <article
-            className="relative overflow-hidden rounded-3xl text-white px-5 sm:px-7 py-5 sm:py-6 shadow-[0_18px_48px_-18px_rgba(0,0,0,0.45)] surface-shadow"
+            className="relative overflow-hidden rounded-3xl text-white px-5 sm:px-7 py-5 sm:py-6 shadow-committee surface-shadow"
             style={{ backgroundImage: palette.bg }}
           >
             {/* Soft halos to give the gradient depth */}
@@ -126,7 +126,7 @@ export async function CommitteeBadgeStrip({ userId }: Props) {
                   style={{ background: "conic-gradient(from 0deg, #fde68a, #fbbf24, #f59e0b, #fde68a, #fbbf24)" }}
                 />
                 <div
-                  className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full ring-4 ring-white/85 shadow-[0_10px_30px_-6px_rgba(0,0,0,0.4),inset_0_2px_4px_rgba(255,255,255,0.4)] flex items-center justify-center text-amber-900"
+                  className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full ring-4 ring-white/85 shadow-committee-disc flex items-center justify-center text-amber-900"
                   style={{ backgroundImage: palette.medal }}
                 >
                   <Icon size={28} />

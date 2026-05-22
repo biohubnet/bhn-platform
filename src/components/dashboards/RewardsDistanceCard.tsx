@@ -44,6 +44,7 @@ export async function RewardsDistanceCard({ userId }: Props) {
   return (
     <Link
       href="/rewards"
+      // eslint-disable-next-line no-restricted-syntax -- purple-violet tinted shadow ties the loot card to its specific indigo→violet→pink gradient; deliberately stays purple across themes.
       className="loot-scoreboard group relative block overflow-hidden rounded-2xl text-white px-5 sm:px-6 py-4 sm:py-5 shadow-[0_14px_36px_-18px_rgba(109,40,217,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
       style={{
         background:
@@ -61,7 +62,7 @@ export async function RewardsDistanceCard({ userId }: Props) {
             <Zap size={10} className="loot-glow text-amber-200" aria-hidden />
             Credits trained
           </p>
-          <p className="text-3xl sm:text-4xl font-black leading-none font-mono tabular-nums mt-0.5 drop-shadow-[0_2px_12px_rgba(0,0,0,0.32)]">
+          <p className="text-3xl sm:text-4xl font-black leading-none font-mono tabular-nums mt-0.5 drop-shadow-text-dim">
             {spent.toLocaleString()}
             <span aria-hidden className="ml-1.5 text-sm align-top text-amber-200">★</span>
           </p>
@@ -71,7 +72,7 @@ export async function RewardsDistanceCard({ userId }: Props) {
         <div className="flex-1 min-w-0">
           <div className="relative h-2 rounded-full bg-white/15 overflow-visible">
             <div
-              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.7)] transition-all"
+              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 shadow-amber-bar-soft transition-all"
               style={{ width: `${journeyPct}%` }}
             />
             {journeyTiers.map((t) => {
@@ -94,7 +95,7 @@ export async function RewardsDistanceCard({ userId }: Props) {
             })}
             <span
               aria-hidden
-              className="absolute -top-0.5 -translate-x-1/2 w-1 h-3 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.95)] pointer-events-none"
+              className="absolute -top-0.5 -translate-x-1/2 w-1 h-3 rounded-full bg-white shadow-white-pulse pointer-events-none"
               style={{ left: `${journeyPct}%` }}
             />
           </div>

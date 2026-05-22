@@ -246,7 +246,7 @@ export function LoginFloatersEditor({
                         // dark frame edge instead of spilling out
                         // into the rest of the dashboard.
                         "group relative text-left rounded-2xl border p-3.5 transition-all duration-200 backdrop-blur-md " +
-                        "hover:z-30 hover:scale-[1.5] hover:shadow-[0_22px_50px_rgba(0,0,0,0.65)] " +
+                        "hover:z-30 hover:scale-[1.5] hover:shadow-elevated-heavy " +
                         (inUse
                           ? // Active state. Default = emerald wash; on
                             // hover, swap to a rose wash to signal the

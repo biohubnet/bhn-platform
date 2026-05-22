@@ -52,6 +52,69 @@
   --hero-mesh-2: #2dd4bf;
   --hero-mesh-3: #1d4ed8;
   --hero-mesh-4: #0e7490;
+
+  /* ── Shadow tokens ───────────────────────────────────────────
+   * Define every reusable shadow as a CSS custom property here so
+   * each theme can re-tune intensity. The bindings in @theme inline
+   * (below) expose them to Tailwind as utility classes — `shadow-card-rest`,
+   * `drop-shadow-text-dim`, etc.
+   *
+   * If a shadow is genuinely one-of-a-kind (the purple rewards card
+   * panel, the violet ENGAGE sidebar group), leave it inline with a
+   * one-line `// eslint-disable-next-line no-restricted-syntax` reason
+   * comment in the JSX. Don't manufacture a token for every visual.
+   *
+   * Categories:
+   *  • Card / panel shadows — surfaces sitting on the page bg
+   *  • Modal / drawer shadows — heavier, used on overlays
+   *  • Disc shadows — circular logos / avatars sitting on hero
+   *  • Text shadows — readable text on dark image / gradient bgs
+   *  • Brand glow — the Logo's tinted halo
+   *  • Amber attention — active-state glows used across CourseFilters,
+   *    Sidebar highlights, ImpersonationBanner, Rewards meter
+   */
+  /* Card surfaces */
+  --shadow-card-rest:   0 1px 2px rgba(15,23,42,0.04), 0 8px 30px rgba(15,23,42,0.06);
+  --shadow-card-hover:  0 2px 4px rgba(15,23,42,0.06), 0 16px 40px rgba(15,23,42,0.10);
+
+  /* Heavy elevated panels — employer cover, committee badge, login floater hover */
+  --shadow-elevated:        0 24px 60px -20px rgba(0,0,0,0.45);
+  --shadow-elevated-heavy:  0 22px 50px rgba(0,0,0,0.65);
+  --shadow-committee:       0 18px 48px -18px rgba(0,0,0,0.45);
+
+  /* Modal / drawer */
+  --shadow-modal:       0 24px 60px -12px rgba(15,23,42,0.55);
+  --shadow-modal-deep:  0 30px 80px -20px rgba(15,23,42,0.7);
+
+  /* Disc shadows — circular icons sitting on heroes / cover banners */
+  --shadow-cover-disc:      0 18px 40px -10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6);
+  --shadow-committee-disc:  0 10px 30px -6px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.4);
+
+  /* Text-shadows for legibility on dark / gradient backgrounds */
+  --shadow-text-soft:   0 1px 8px rgba(0,0,0,0.45);
+  --shadow-text-dim:    0 2px 12px rgba(0,0,0,0.35);
+  --shadow-text-glow:   0 2px 18px rgba(0,0,0,0.45);
+  --shadow-text-deep:   0 4px 24px rgba(0,0,0,0.35);
+
+  /* Brand-tinted Logo glow. Two flavours — Logo.tsx uses the
+   * deep blue, the login page uses a sky variant. */
+  --shadow-brand-glow:        0 3px 10px rgba(42,79,219,0.25);
+  --shadow-brand-glow-sky:    0 3px 12px rgba(56,189,248,0.45);
+
+  /* Amber attention glows — active state, externally-flagged nav,
+   * audit banner, reward meter. Stay amber across all themes
+   * intentionally (amber = "look here"), so these don't re-tune
+   * per-theme even on dark themes. */
+  --shadow-amber-glow:        0 0 14px -4px rgba(251,191,36,0.4);
+  --shadow-amber-glow-strong: 0 0 24px -4px rgba(251,191,36,0.7);
+  --shadow-amber-pulse:       0 0 18px rgba(251,191,36,0.5);
+  --shadow-amber-pill:        0 4px 12px -3px rgba(120,53,15,0.35);
+  --shadow-amber-bar:         0 0 22px rgba(251,191,36,0.85);
+  --shadow-amber-bar-soft:    0 0 12px rgba(251,191,36,0.7);
+
+  /* White / indicator glows — meter caret, pulse dots */
+  --shadow-white-pulse:        0 0 10px rgba(255,255,255,0.95);
+  --shadow-white-pulse-strong: 0 0 16px rgba(255,255,255,0.95);
 }
 
 /* Nightfall (id "dark") was retired 2026-05-17. Voltage (id
@@ -507,6 +570,38 @@
   --color-surface-0: var(--card);
   --color-surface-1: var(--bg);
   --color-surface-2: var(--elevated);
+
+  /* Shadow tokens — bound from CSS custom properties above so
+   * themes can override per-theme intensity. Tailwind v4 picks up
+   * `--shadow-*` and `--drop-shadow-*` keys and generates the
+   * matching `shadow-<name>` + `drop-shadow-<name>` utilities. */
+  --shadow-card-rest:        var(--shadow-card-rest);
+  --shadow-card-hover:       var(--shadow-card-hover);
+  --shadow-elevated:         var(--shadow-elevated);
+  --shadow-elevated-heavy:   var(--shadow-elevated-heavy);
+  --shadow-committee:        var(--shadow-committee);
+  --shadow-modal:            var(--shadow-modal);
+  --shadow-modal-deep:       var(--shadow-modal-deep);
+  --shadow-cover-disc:       var(--shadow-cover-disc);
+  --shadow-committee-disc:   var(--shadow-committee-disc);
+  --shadow-amber-glow:       var(--shadow-amber-glow);
+  --shadow-amber-glow-strong: var(--shadow-amber-glow-strong);
+  --shadow-amber-pulse:      var(--shadow-amber-pulse);
+  --shadow-amber-pill:       var(--shadow-amber-pill);
+  --shadow-amber-bar:        var(--shadow-amber-bar);
+  --shadow-amber-bar-soft:   var(--shadow-amber-bar-soft);
+  --shadow-white-pulse:      var(--shadow-white-pulse);
+  --shadow-white-pulse-strong: var(--shadow-white-pulse-strong);
+
+  /* Drop-shadow flavour — same values bound under the
+   * --drop-shadow-* namespace so Tailwind generates the
+   * `drop-shadow-text-soft` etc. utilities used on text. */
+  --drop-shadow-text-soft:   var(--shadow-text-soft);
+  --drop-shadow-text-dim:    var(--shadow-text-dim);
+  --drop-shadow-text-glow:   var(--shadow-text-glow);
+  --drop-shadow-text-deep:   var(--shadow-text-deep);
+  --drop-shadow-brand-glow:  var(--shadow-brand-glow);
+  --drop-shadow-brand-glow-sky: var(--shadow-brand-glow-sky);
 }
 
 html, body { background: var(--bg); }

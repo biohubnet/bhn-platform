@@ -125,7 +125,7 @@ export function Logo({ size = "md", variant = "default", className }: LogoProps)
   const isLight = variant === "light";
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <LogoMark size={markSize[size]} className="drop-shadow-[0_3px_10px_rgba(42,79,219,0.25)]" />
+      <LogoMark size={markSize[size]} className="drop-shadow-brand-glow" />
       <div className="leading-tight">
         <p className={cn(
           "font-semibold tracking-tight",

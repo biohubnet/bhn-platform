@@ -557,6 +557,7 @@ const TONE_STYLES: Record<SectionTone, ToneStyles> = {
     // brighter than the surrounding sections so the operator can spot
     // it instantly even when scanning a packed sidebar. Pairs with
     // the violet-tinted explainer + eye glyph the preview row uses.
+    // eslint-disable-next-line no-restricted-syntax -- violet-specific halo for the role-preview ENGAGE container; designed to stay violet across all themes.
     container: "border-violet-300 bg-violet-100/55 ring-1 ring-inset ring-violet-200/70 shadow-[0_2px_12px_-6px_rgba(124,58,237,0.35)]",
     chip:      "text-violet-900 bg-violet-200 ring-1 ring-inset ring-violet-400 shadow-sm",
     hover:     "focus:bg-violet-300 group-hover/section:bg-violet-300 transition-colors",
@@ -1078,7 +1079,7 @@ function NavLink({ item, pathname, onNavigate, queueCounts }: {
           // is hovered, the matching nav row lights up with a brand
           // ring + amber-ish flash so the reader can locate the
           // mentioned control at a glance.
-          externalHighlight && "ring-2 ring-amber-400 bg-amber-50 text-amber-900 shadow-[0_0_18px_rgba(251,191,36,0.5)] animate-pulse",
+          externalHighlight && "ring-2 ring-amber-400 bg-amber-50 text-amber-900 shadow-amber-pulse animate-pulse",
         )}
       >
         {/* Theme-independent active accent — a 2px left edge in brand-600.

@@ -80,7 +80,7 @@ export function CourseFilters({ options }: { options: CourseFilterOptions }) {
         // Dark surface, independent of theme — the filter panel reads
         // as a control strip floating above the bright course cards.
         "bg-slate-900 text-slate-100 ring-1 ring-slate-800",
-        "shadow-[0_8px_28px_-12px_rgba(0,0,0,0.35)]",
+        "shadow-modal",
       )}
     >
       {/* Compact header row: title + featured special toggle + clear-all.
@@ -111,8 +111,8 @@ export function CourseFilters({ options }: { options: CourseFilterOptions }) {
             "group ml-auto inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all",
             "ring-2 ring-inset",
             selected.special
-              ? "bg-amber-400 text-slate-900 ring-amber-300 shadow-[0_0_24px_-4px_rgba(251,191,36,0.7)] scale-[1.02]"
-              : "bg-amber-500/10 text-amber-300 ring-amber-500/50 hover:bg-amber-500/20 hover:text-amber-200 hover:ring-amber-400 shadow-[0_0_14px_-4px_rgba(251,191,36,0.4)]",
+              ? "bg-amber-400 text-slate-900 ring-amber-300 shadow-amber-glow-strong scale-[1.02]"
+              : "bg-amber-500/10 text-amber-300 ring-amber-500/50 hover:bg-amber-500/20 hover:text-amber-200 hover:ring-amber-400 shadow-amber-glow",
           )}
         >
           <Sparkles
