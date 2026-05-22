@@ -4,8 +4,6 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EmployerDashboard } from "@/components/employer/EmployerDashboard";
-import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
 import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
@@ -44,27 +42,15 @@ export default async function DashboardPage() {
 
   // Per-role dashboards. Each fetches its own data; we do a tiny User
   // lookup here just to grab name + role-specific fields.
+  //
+  // Employers don't render a /dashboard surface anymore — their
+  // canonical home is the brand-stage Overview at /employer (wavy
+  // aurora cover banner + identity row + action queue + hiring
+  // shopfront). The Dashboard sidebar entry is also hidden for
+  // employers (see Sidebar.tsx). Hitting /dashboard directly (e.g.
+  // from the post-login push or an old bookmark) routes here.
   if (role === "employer") {
-    const employer = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true, name: true,
-        employerCompany: true, companyWebsite: true, companyLogo: true,
-        companyIndustry: true, companySize: true, companyLocation: true,
-        companyDescription: true, companyFounded: true,
-      },
-    });
-    if (employer) return (
-      // The HR overview is the canonical Studio design-system
-      // surface. Override the platform-default DS for this
-      // sub-tree only — mirrors the /employer/layout.tsx scope.
-      // Platform rule: hero is the absolute top — CommitteeBadgeStrip
-      // renders inside the per-role dashboards AFTER their hero, not
-      // here.
-      <DesignSystemProvider value="studio">
-        <EmployerDashboard user={employer} committeeBadge={<CommitteeBadgeStrip userId={userId} />} />
-      </DesignSystemProvider>
-    );
+    redirect("/employer");
   }
   if (role === "admin" || role === "superadmin") {
     return (

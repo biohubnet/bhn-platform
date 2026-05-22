@@ -1337,7 +1337,16 @@ export function Sidebar({
         </Link>
 
       <nav data-sidebar-nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+        {/* Dashboard is the standard learner home. Employers don't
+            have a separate "Dashboard" surface anymore — their
+            canonical entry is the EMPLOYER PORTAL → Overview
+            below, which carries the brand-stage wavy banner +
+            identity row + action queue. Hiding the Dashboard link
+            for employers keeps the sidebar honest (no link → a
+            page that just redirects them back out). */}
+        {!isEmployer && (
+          <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+        )}
 
         {isEmployer && (
           <SectionGroup
