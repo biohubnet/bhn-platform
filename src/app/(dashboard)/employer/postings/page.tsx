@@ -26,6 +26,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveCompanyId, updateLastSeen } from "@/lib/employer/company";
 import { ELIGIBLE_APPLICANT_FILTER } from "@/lib/talent-pool/eligibility";
 import {
   HrWorkspace,
@@ -67,8 +68,21 @@ export default async function EmployerWorkspacePage() {
       }).catch(() => null)
     : null;
 
+  // Resolve active company, stamp last-seen.
+  const companyId = isAdmin
+    ? null
+    : userId ? await getActiveCompanyId(userId) : null;
+  if (companyId && userId) updateLastSeen(companyId, userId);
+
+  // Company-scoped filter with legacy createdById fallback.
+  const postingsFilter = isAdmin
+    ? {}
+    : companyId
+    ? { companyId }
+    : { createdById: userId ?? "_" };
+
   const postingsRaw = await prisma.internshipPosting.findMany({
-    where: isAdmin ? {} : { createdById: userId ?? "_" },
+    where: postingsFilter,
     select: {
       id: true,
       title: true,

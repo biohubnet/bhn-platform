@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveCompanyId, updateLastSeen } from "@/lib/employer/company";
 import { ELIGIBLE_APPLICANT_FILTER } from "@/lib/talent-pool/eligibility";
 import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
 import { EditProfileTrigger } from "@/components/employer/EditProfileTrigger";
@@ -106,13 +107,29 @@ export default async function EmployerHomePage() {
       }).catch(() => null)
     : null;
 
+  // Resolve the company this session is acting on behalf of.
+  // Admins bypass company scoping and see the full platform.
+  // Single-seat employers have exactly one company (backfilled by
+  // scripts/backfillEmployerCompanies.ts); multi-seat users resolve
+  // via getActiveCompanyId which respects a ?company= URL param once
+  // the company-switcher UI ships.
+  const companyId = isAdmin
+    ? null
+    : userId ? await getActiveCompanyId(userId) : null;
+
+  // Stamp last-seen (fire-and-forget, non-blocking).
+  if (companyId && userId) updateLastSeen(companyId, userId);
+
   // Filter shape for InternshipPosting. Admins see the full platform;
-  // employers see only their own postings. Each downstream query
-  // either uses this directly or wraps it as a nested `posting`
-  // relation filter — we conditionally OMIT the `posting:` key when
-  // the filter is empty (admin) to keep Prisma from interpreting
-  // `posting: {}` as a relation filter (which can be ambiguous).
-  const postingsWhere = isAdmin ? undefined : { createdById: userId ?? "_" };
+  // employers are scoped to their company. We fall back to the legacy
+  // createdById filter if companyId hasn't been backfilled yet (early
+  // transition period) so existing single-seat employers never see an
+  // empty page mid-rollout.
+  const postingsWhere = isAdmin
+    ? undefined
+    : companyId
+    ? { companyId }
+    : { createdById: userId ?? "_" };
   const nestedPostingWhere = postingsWhere ? { posting: postingsWhere } : {};
 
   const since7d = new Date(Date.now() - 7 * 86_400_000);
