@@ -30,19 +30,45 @@ function daysAgo(n: number): Date {
   return new Date(Date.now() - n * 86_400_000);
 }
 
-/** Resolves the company to seed into, with an admin fallback.
- *  Admins may not have a CompanyMember row; for them we fall back to
- *  the first company in the DB so the seed / clear actions always work
- *  when testing the team page without being an explicit member. */
+/** Resolves (or bootstraps) the company to seed into.
+ *  Mirrors the logic in the team page so seed/clear always work even
+ *  when the backfill script hasn't run and no Company rows exist yet. */
 async function resolveCompanyId(userId: string, isAdmin: boolean): Promise<string | null> {
   const own = await getActiveCompanyId(userId);
   if (own) return own;
   if (!isAdmin) return null;
-  const first = await prisma.company.findFirst({
+
+  const existing = await prisma.company.findFirst({
     orderBy: { createdAt: "asc" },
     select:  { id: true },
   });
-  return first?.id ?? null;
+
+  if (existing) {
+    // Adopt the existing company — upsert a member row so the admin
+    // can perform actions without needing a manual invite.
+    await prisma.companyMember.upsert({
+      where:  { companyId_userId: { companyId: existing.id, userId } },
+      create: { companyId: existing.id, userId, role: "owner", joinedAt: new Date() },
+      update: {},
+    });
+    return existing.id;
+  }
+
+  // No companies at all — auto-create one.
+  const profile = await prisma.user.findUnique({
+    where:  { id: userId },
+    select: { employerCompany: true },
+  });
+  const newCo = await prisma.company.create({
+    data: {
+      name:    profile?.employerCompany?.trim() || "My Company",
+      members: {
+        create: { userId, role: "owner", joinedAt: new Date() },
+      },
+    },
+    select: { id: true },
+  });
+  return newCo.id;
 }
 
 export async function POST() {
