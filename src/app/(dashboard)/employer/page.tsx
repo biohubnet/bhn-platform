@@ -43,7 +43,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Globe, MapPin, Users, Calendar, Briefcase, Sparkles,
-  ShieldCheck, Clock, ArrowRight, Inbox, AlertTriangle, Hourglass,
+  ShieldCheck, Clock, ArrowRight,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -588,25 +588,56 @@ export default async function EmployerHomePage() {
             </section>
           )}
 
-          {/* ── ACTION QUEUE ─────────────────────────────────── */}
+          {/* ── ACTION QUEUE CALLOUT ─────────────────────────── */}
+          {/* Full queue lives in the My Postings workspace where
+              applicants can be expanded, staged, and managed inline.
+              The Overview page shows a compact summary so the brand
+              stage isn't buried under an operational list. */}
           {actionQueue.length > 0 && (
             <section
               aria-label="Action queue"
-              className="relative px-6 sm:px-10 lg:px-14 py-10 sm:py-12 border-t border-line"
+              className="relative px-6 sm:px-10 lg:px-14 py-6 sm:py-8 border-t border-line"
             >
-              <div className="flex items-end justify-between gap-4 flex-wrap mb-5">
-                <div>
-                  <SectionEyebrow>Needs your attention</SectionEyebrow>
-                  <h2 className="text-xl sm:text-2xl font-bold text-fg tracking-tight">
-                    Action queue · {actionQueue.length}
-                  </h2>
+              <SectionEyebrow>Needs your attention</SectionEyebrow>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-full text-white text-sm font-bold shrink-0"
+                    style={{
+                      background: "linear-gradient(135deg, rgb(56,189,248), rgb(124,58,237))",
+                    }}
+                  >
+                    {actionQueue.length}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-fg text-sm leading-snug">
+                      {[
+                        actionQueue.filter((q) => q.kind === "new").length > 0
+                          ? `${actionQueue.filter((q) => q.kind === "new").length} new`
+                          : null,
+                        actionQueue.filter((q) => q.kind === "stale").length > 0
+                          ? `${actionQueue.filter((q) => q.kind === "stale").length} stalled`
+                          : null,
+                        actionQueue.filter((q) => q.kind === "offer-waiting").length > 0
+                          ? `${actionQueue.filter((q) => q.kind === "offer-waiting").length} awaiting reply`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}{" "}
+                      item{actionQueue.length !== 1 ? "s" : ""} need your attention
+                    </p>
+                    <p className="text-xs text-muted mt-0.5">
+                      New applications, stalled candidates, and offers awaiting response.
+                    </p>
+                  </div>
                 </div>
+                <Link
+                  href="/employer/postings"
+                  className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800 bg-card border border-brand-200 hover:border-brand-300 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  Review in workspace <ArrowRight size={12} />
+                </Link>
               </div>
-              <ul className="divide-y divide-line">
-                {actionQueue.map((q) => (
-                  <QueueRow key={q.applicationStatusId} item={q} />
-                ))}
-              </ul>
             </section>
           )}
 
@@ -903,50 +934,6 @@ function InlineStat({
     <div className="px-5 sm:px-8 first:pl-0 last:pr-0">
       {inner}
     </div>
-  );
-}
-
-interface QueueItem {
-  applicationStatusId: string;
-  postingId: string;
-  postingTitle: string;
-  applicantId: string;
-  applicantName: string | null;
-  kind: QueueKind;
-  daysInStage: number;
-}
-
-function QueueRow({ item }: { item: QueueItem }) {
-  const kindMeta: Record<QueueKind, { label: string; icon: typeof Inbox; tone: string }> = {
-    "new":             { label: "New application",  icon: Inbox,         tone: "text-brand-700" },
-    "stale":           { label: "Stalled",          icon: AlertTriangle, tone: "text-amber-700" },
-    "offer-waiting":   { label: "Awaiting reply",   icon: Hourglass,     tone: "text-violet-700" },
-  };
-  const meta = kindMeta[item.kind];
-  const Icon = meta.icon;
-  return (
-    <li>
-      <Link
-        href={`/employer/postings/${item.postingId}/applicants/${item.applicationStatusId}`}
-        className="group block py-3 hover:bg-elevated/40 transition-colors -mx-3 sm:-mx-5 px-3 sm:px-5 rounded-xl"
-      >
-        <div className="flex items-center gap-3 flex-wrap">
-          <Icon size={14} className={`${meta.tone} shrink-0`} />
-          <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle whitespace-nowrap">
-            {meta.label}
-          </span>
-          <span className="font-semibold text-fg group-hover:text-brand-700 transition-colors truncate min-w-0 flex-1">
-            {item.applicantName ?? "Unknown applicant"}
-          </span>
-          <span className="text-xs text-muted truncate">
-            {item.postingTitle}
-          </span>
-          <span className="text-[10px] uppercase tracking-[0.16em] font-bold text-subtle tabular-nums whitespace-nowrap">
-            {item.daysInStage}d
-          </span>
-        </div>
-      </Link>
-    </li>
   );
 }
 

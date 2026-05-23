@@ -256,7 +256,7 @@ export function HrWorkspace({
               full-bleed gradient + drifting blobs + curve-down
               treatment as the /employer overview hero. ─── */}
       <DSPageHeader
-        eyebrow="Hiring workspace"
+        eyebrow="My postings"
         icon={<Building2 size={20} />}
         title={
           firstName

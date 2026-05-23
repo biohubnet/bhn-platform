@@ -226,7 +226,7 @@ const equipItems: (NavItem & { labelKey: string })[] = [
 const employerItems: (NavItem & { labelKey: string })[] = [
   { label: "Overview",          labelKey: "nav.employerHome",       href: "/employer",            icon: Building2, exact: true,
     description: "Your company brand stage — profile (with one-URL AI auto-fill), live action queue, and the hiring shopfront trainees see on every posting. The pencil top-right opens the edit modal." },
-  { label: "How it works",      labelKey: "nav.employerGuide",      href: "/employer/how-it-works", icon: Compass,
+  { label: "Hiring guide",       labelKey: "nav.employerGuide",      href: "/employer/how-it-works", icon: Compass,
     description: "End-to-end explainer for the hiring program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
   { label: "My Postings",       labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: FilePlus,
     description: "Postings + applicants in one place. Expand any posting row to see its pipeline; the action queue at the top surfaces new applications, stale stages, and offers still awaiting response. Create new postings from this surface." },

@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Employer portal consolidation — cleaner navigation and no duplicate queue",
+    body: "Three small polish changes that remove duplicate surfaces and align labels across the employer portal:\n\n• **Overview action queue is now a compact callout.** The full expanded action queue previously appeared on *both* the Overview (brand-stage) page and the My Postings workspace. The Overview now shows a summary chip (counts by kind) with a single 'Review in workspace' link. The interactive queue — expand an applicant inline, move stages, schedule — still lives in **My Postings**.\n\n• **'How it works' renamed to 'Hiring guide'** in the sidebar (and the English translation key). The page's own eyebrow already said 'Hiring guide'; the sidebar label now matches.\n\n• **My Postings page eyebrow updated.** The hero strip on `/employer/postings` used to say 'Hiring workspace'; it now says 'My postings' so the page header and the sidebar label read the same.",
+    kind: "improvement",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
+  {
     title: "Team workspace for employer accounts",
     body: "HR accounts are now shared workspaces. Multiple people from the same company can sign in, each with a role (Owner · Manager · Generalist · Viewer), and see each other's activity on postings and applicants.\n\n**What's new:**\n\n• **Team page at `/employer/team`** — see all members with role chips and last-seen timestamps. Owner can change roles and remove members from the roster; manager+ can invite.\n\n• **Invite teammates** — the invite button opens a modal where you can add people individually or paste a list (one email per line; optionally `email, Job Title` to auto-suggest a role). Each invite sends a branded email with a 7-day accept link. The public accept page at `/invite/[token]` works before the invitee has an account.\n\n• **Join requests** — when someone with a matching company email domain signs up, the system surfaces a 'Join request' for the team's managers to approve or decline in one click.\n\n• **Attribution chips** — posting rows in the workspace now show a subtle 'touched by Name · Nh ago' line, so you know who last worked on each req.\n\n• **Roles:** Owner (full admin), Manager (invite + approve), Generalist (post + review), Viewer (read-only). You cannot invite at a higher tier than your own role.\n\nThe migration is additive — every existing employer account is automatically the Owner of a company workspace; nothing changes about how your postings or applicants look.",
     kind: "feature",
