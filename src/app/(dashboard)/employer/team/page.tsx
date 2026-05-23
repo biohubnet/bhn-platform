@@ -76,7 +76,17 @@ export default async function EmployerTeamPage() {
     );
   }
 
-  const companyId = await getActiveCompanyId(userId);
+  // For admins: try their own CompanyMember row first, then fall back to
+  // the first company in the DB so they can always inspect and seed any
+  // workspace without needing to be explicitly invited as a member.
+  const companyId = isAdmin
+    ? (await getActiveCompanyId(userId)) ??
+      (await prisma.company.findFirst({
+        orderBy: { createdAt: "asc" },
+        select:  { id: true },
+      }))?.id ?? null
+    : await getActiveCompanyId(userId);
+
   if (!companyId) {
     return (
       <div className="bg-card border border-line rounded-2xl p-12 text-center">
@@ -88,11 +98,16 @@ export default async function EmployerTeamPage() {
   }
 
   // Caller's role on this company.
-  const callerMembership = await prisma.companyMember.findUnique({
+  // Admins always get owner-tier access regardless of whether they hold
+  // an actual CompanyMember row — this lets admins seed demo members,
+  // manage invites, and review join requests on any workspace.
+  const callerMembership = isAdmin ? null : await prisma.companyMember.findUnique({
     where:  { companyId_userId: { companyId, userId } },
     select: { role: true },
   });
-  const callerRole = (callerMembership?.role ?? "viewer") as "owner" | "manager" | "generalist" | "viewer";
+  const callerRole = (
+    isAdmin ? "owner" : (callerMembership?.role ?? "viewer")
+  ) as "owner" | "manager" | "generalist" | "viewer";
   const canManage  = meetsMinRole(callerRole, "manager");
   const isOwner    = callerRole === "owner";
 

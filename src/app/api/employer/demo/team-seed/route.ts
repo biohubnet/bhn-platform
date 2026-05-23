@@ -30,18 +30,34 @@ function daysAgo(n: number): Date {
   return new Date(Date.now() - n * 86_400_000);
 }
 
+/** Resolves the company to seed into, with an admin fallback.
+ *  Admins may not have a CompanyMember row; for them we fall back to
+ *  the first company in the DB so the seed / clear actions always work
+ *  when testing the team page without being an explicit member. */
+async function resolveCompanyId(userId: string, isAdmin: boolean): Promise<string | null> {
+  const own = await getActiveCompanyId(userId);
+  if (own) return own;
+  if (!isAdmin) return null;
+  const first = await prisma.company.findFirst({
+    orderBy: { createdAt: "asc" },
+    select:  { id: true },
+  });
+  return first?.id ?? null;
+}
+
 export async function POST() {
   const session = await getSession();
   const role    = (session?.user as { role?: string })?.role ?? "";
   const userId  = (session?.user as { id?: string })?.id;
+  const isAdmin = ["admin", "superadmin"].includes(role);
   if (
     !session || !userId ||
-    (role !== "employer" && !["admin", "superadmin"].includes(role))
+    (role !== "employer" && !isAdmin)
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const companyId = await getActiveCompanyId(userId);
+  const companyId = await resolveCompanyId(userId, isAdmin);
   if (!companyId) {
     return NextResponse.json(
       { error: "No company workspace found" },
@@ -95,14 +111,15 @@ export async function DELETE() {
   const session = await getSession();
   const role    = (session?.user as { role?: string })?.role ?? "";
   const userId  = (session?.user as { id?: string })?.id;
+  const isAdmin = ["admin", "superadmin"].includes(role);
   if (
     !session || !userId ||
-    (role !== "employer" && !["admin", "superadmin"].includes(role))
+    (role !== "employer" && !isAdmin)
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const companyId = await getActiveCompanyId(userId);
+  const companyId = await resolveCompanyId(userId, isAdmin);
   if (!companyId) {
     return NextResponse.json(
       { error: "No company workspace found" },
