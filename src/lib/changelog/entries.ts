@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Sidebar section headers: unified chip + chevron on the right",
+    body: "The collapse toggle on sidebar section group headers (ENGAGE, EXPERIENCE, EQUIP, ADMINISTRATION, etc.) has been redesigned.\n\n**Before:** a tiny separate `^` button floated to the *left* of the section name chip — two separate click targets, awkward placement.\n\n**After:** the chip itself is the toggle. The chevron now sits *inside* the chip on the right, animating 90° between expanded and collapsed. Same localStorage persistence, same smooth grid-rows accordion animation. Admin sub-group headings (Engage / Experience / Platform / etc.) also got the chevron-right treatment for consistency.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
     title: "Team page: roles legend, hero header, and demo seeder",
     body: "The `/employer/team` page has three new things:\n\n• **Full hero header** — replaces the plain page header with a DSPageHeader (gradient hero, eyebrow, description auto-updates based on how many members you have).\n\n• **Roles legend** — a compact card below the header lists all four roles (Owner, Manager, Generalist, Viewer) with a one-line capability summary so you always know what each tier can do before you invite someone.\n\n• **Demo team seeder** — a violet toolbar (manager+ only) with **Add demo team** and **Clear** buttons. Adds three realistic demo members (a Manager, Generalist, and Viewer with staggered last-seen timestamps) so you can preview the full team roster experience before your real colleagues have accepted their invites. Clear removes them without touching your real team.",
     kind: "improvement",

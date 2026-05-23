@@ -534,19 +534,19 @@ const TONE_STYLES: Record<SectionTone, ToneStyles> = {
   neutral: {
     container: "border-line",
     chip:      "text-subtle bg-card-solid ring-1 ring-inset ring-line",
-    hover:     "focus:text-fg group-hover/section:text-fg",
+    hover:     "focus:text-fg hover:text-fg",
   },
   engage: {
     // Sage / jade — Engage = learn / practise / earn credits.
     container: "border-emerald-200/70 bg-emerald-50/25",
     chip:      "text-emerald-800 bg-emerald-100 ring-1 ring-inset ring-emerald-200/70 shadow-sm",
-    hover:     "focus:bg-emerald-200 group-hover/section:bg-emerald-200 transition-colors",
+    hover:     "focus:bg-emerald-200 hover:bg-emerald-200 transition-colors",
   },
   experience: {
     // Muted gold — Experience = real-world / employer-facing surfaces.
     container: "border-amber-200/70 bg-amber-50/25",
     chip:      "text-amber-800 bg-amber-100 ring-1 ring-inset ring-amber-200/70 shadow-sm",
-    hover:     "focus:bg-amber-200 group-hover/section:bg-amber-200 transition-colors",
+    hover:     "focus:bg-amber-200 hover:bg-amber-200 transition-colors",
   },
   equip: {
     // Rose / berry — Equip = commercialization funding. Sits as the
@@ -555,7 +555,7 @@ const TONE_STYLES: Record<SectionTone, ToneStyles> = {
     // for what comes next" without competing for attention.
     container: "border-rose-200/70 bg-rose-50/25",
     chip:      "text-rose-800 bg-rose-100 ring-1 ring-inset ring-rose-200/70 shadow-sm",
-    hover:     "focus:bg-rose-200 group-hover/section:bg-rose-200 transition-colors",
+    hover:     "focus:bg-rose-200 hover:bg-rose-200 transition-colors",
   },
   electric: {
     // Soft sky — Administration. Tinted just-enough-stronger than the
@@ -564,7 +564,7 @@ const TONE_STYLES: Record<SectionTone, ToneStyles> = {
     // clean palette.
     container: "border-sky-300 bg-sky-100/60 ring-1 ring-inset ring-sky-200/60",
     chip:      "text-sky-900 bg-sky-200 ring-1 ring-inset ring-sky-300 shadow-sm",
-    hover:     "focus:bg-sky-300 group-hover/section:bg-sky-300 transition-colors",
+    hover:     "focus:bg-sky-300 hover:bg-sky-300 transition-colors",
   },
   "hr-preview": {
     // Violet — superadmin "preview the HR seat" peek. Distinctively
@@ -574,7 +574,7 @@ const TONE_STYLES: Record<SectionTone, ToneStyles> = {
     // eslint-disable-next-line no-restricted-syntax -- violet-specific halo for the role-preview ENGAGE container; designed to stay violet across all themes.
     container: "border-violet-300 bg-violet-100/55 ring-1 ring-inset ring-violet-200/70 shadow-[0_2px_12px_-6px_rgba(124,58,237,0.35)]",
     chip:      "text-violet-900 bg-violet-200 ring-1 ring-inset ring-violet-400 shadow-sm",
-    hover:     "focus:bg-violet-300 group-hover/section:bg-violet-300 transition-colors",
+    hover:     "focus:bg-violet-300 hover:bg-violet-300 transition-colors",
   },
 };
 
@@ -649,7 +649,7 @@ function SectionGroup({
   // the chip's screen-space coordinates on hover/focus and apply
   // `top` / `left` inline. Default position is off-screen so the
   // tooltip is never visible until a real position is computed.
-  const chipRef = useRef<HTMLSpanElement>(null);
+  const chipRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
   function placeTooltip() {
@@ -712,63 +712,43 @@ function SectionGroup({
           the rounded-xl border curves away, making it read as a
           floating glyph rather than anchored to the section. */}
       <div
-        className="group/section absolute -top-[10px] left-5 z-20 px-1.5 flex items-center gap-1"
+        className="group/section absolute -top-[10px] left-5 z-20 px-1.5"
         onMouseEnter={hasTooltip ? placeTooltip : undefined}
         onFocus={hasTooltip ? placeTooltip : undefined}
       >
-        {/* Chevron toggle — clicking flips the section open/closed.
-            Persisted to localStorage; survives navigation. Sits left
-            of the title chip so the chip itself stays clickable for
-            its tooltip without competing for the collapse action. */}
+        {/* Unified chip + collapse toggle — one element does both.
+            Clicking collapses/expands the section; the ChevronDown on
+            the RIGHT gives the standard expand/collapse affordance
+            without a separate floating button to the left. Tooltip
+            still fires via the group/section wrapper above. */}
         <button
+          ref={chipRef}
           type="button"
           onClick={toggleCollapsed}
           aria-label={collapsed ? `Expand ${title}` : `Collapse ${title}`}
           aria-expanded={!collapsed}
-          className="inline-flex items-center justify-center w-4 h-4 rounded text-fg-muted hover:bg-fg/5 hover:text-fg shrink-0"
-        >
-          {/* One chevron, rotated. Animating the rotation reads
-              more elegantly than swapping two icons — the glyph
-              sweeps from down-pointing (expanded) to right-pointing
-              (collapsed) over the same duration as the content
-              animation below. */}
-          <ChevronDown
-            size={11}
-            aria-hidden
-            className={cn(
-              "transition-transform duration-300 ease-out",
-              collapsed && "-rotate-90",
-            )}
-          />
-        </button>
-        <span
-          ref={chipRef}
-          tabIndex={hasTooltip ? 0 : -1}
           // data-section-tone exposes the tone to CSS so dark themes
-          // (Hi-tech, Nightfall) can override chip
-          // bg/text/ring without rewriting the Tailwind classes —
-          // the default Tailwind palette (`bg-sky-100`, `text-sky-900`,
-          // etc.) inverts poorly on inky-black themes and leaves the
-          // chip label invisible. See [data-theme="hitech"] section
-          // tone rules in globals.css.
+          // (Hi-tech, Nightfall) can override chip bg/text/ring without
+          // rewriting the Tailwind classes. See globals.css.
           data-section-tone={tone}
           className={cn(
-            // text-xs (12px) reads more confidently than the prior
-            // text-[10px] without dominating the sidebar. font-medium
-            // (not semibold) + tracking-[0.18em] keeps the label
-            // present without shouting — slender and editorial,
-            // closer to Notion / Linear titles.
-            "px-2.5 py-1 text-xs font-medium uppercase tracking-[0.18em] rounded-md inline-block",
+            "px-2.5 py-1 text-xs font-medium uppercase tracking-[0.18em] rounded-md inline-flex items-center gap-1.5",
             toneStyles.chip,
-            hasTooltip && cn(
-              "cursor-help focus:outline-none",
-              toneStyles.hover,
-            ),
+            "cursor-pointer focus:outline-none",
+            toneStyles.hover,
           )}
           aria-describedby={hasTooltip ? `${title}-tooltip` : undefined}
         >
           {title}
-        </span>
+          <ChevronDown
+            size={10}
+            aria-hidden
+            className={cn(
+              "transition-transform duration-300 ease-out opacity-50",
+              collapsed && "-rotate-90",
+            )}
+          />
+        </button>
         {hasTooltip && (
           <div
             id={`${title}-tooltip`}
@@ -926,6 +906,7 @@ function AdminSubgroup({
         className="group w-full flex items-center gap-1.5 px-3 pt-3 pb-1.5 text-left text-[12px] uppercase tracking-[0.18em] font-bold select-none cursor-pointer hover:bg-fg/5 rounded transition-colors"
         style={{ color: tone.text }}
       >
+        <span className="flex-1">{label}</span>
         <ChevronDown
           size={11}
           aria-hidden
@@ -934,7 +915,6 @@ function AdminSubgroup({
             collapsed && "-rotate-90",
           )}
         />
-        <span>{label}</span>
       </button>
       {/* Same grid-rows collapse trick as SectionGroup. */}
       <div

@@ -30,9 +30,18 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.21b";
+export const TOUR_VERSION = "2026.05.22a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Sidebar section chips (May 2026) ────────────────────────────
+  {
+    id: "sidebar.section-chip-toggle",
+    title: "Section headers now collapse on click",
+    body: "The ENGAGE, EXPERIENCE, and EQUIP section labels in the sidebar are now the collapse toggle — click the chip to fold or unfold the section. The chevron lives inside the chip on the right, so there's no separate tiny button to hunt for. Your collapsed state is still saved across reloads.",
+    selector: "[data-sidebar-nav] [data-section-tone]",
+    placement: "right",
+    since: "2026.05.22a",
+  },
   // ─── Welcome ─────────────────────────────────────────────────────
   {
     id: "welcome",
