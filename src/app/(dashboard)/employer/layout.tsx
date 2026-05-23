@@ -1,18 +1,20 @@
 /**
- * /employer layout.
+ * /employer layout — routes the entire HR portal through Studio.
  *
- * Previously route-scoped every page under this segment to Studio.
- * After the 2026-05-17 unification, only the HR Overview home page
- * (`/employer/page.tsx`) keeps the Studio brand-stage look — its
- * page file wraps its own content in `<DesignSystemProvider
- * value="studio">`. Every other employer sub-page (how-it-works,
- * postings, applicants pipeline, etc.) is a workspace surface, not
- * a brand stage, so it inherits the platform-default Cinematic look
- * via the root dashboard layout.
+ * Studio gives every DSPageHeader under /employer/* the full-bleed
+ * gradient-mesh hero with drifting blobs and a curve-down divider,
+ * matching the visual language of the brand-stage overview page.
  *
- * Layout file kept (rather than deleted) so future overrides have a
- * place to land without restructuring the routing tree.
+ * The overview page (/employer/page.tsx) used to carry its own
+ * inline <DesignSystemProvider value="studio"> — that wrapper is
+ * removed now that the layout handles it for the whole segment.
  */
+import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
+
 export default function EmployerLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <DesignSystemProvider value="studio">
+      {children}
+    </DesignSystemProvider>
+  );
 }

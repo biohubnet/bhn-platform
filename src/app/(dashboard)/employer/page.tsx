@@ -49,7 +49,6 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getActiveCompanyId, updateLastSeen } from "@/lib/employer/company";
 import { ELIGIBLE_APPLICANT_FILTER } from "@/lib/talent-pool/eligibility";
-import { DesignSystemProvider } from "@/components/ui/DesignSystemProvider";
 import { EditProfileTrigger } from "@/components/employer/EditProfileTrigger";
 import { SetPasswordBanner } from "@/components/employer/SetPasswordBanner";
 import { normalizeLogoShape, logoShapeClasses } from "@/lib/employer/logo-shape";
@@ -263,13 +262,8 @@ export default async function EmployerHomePage() {
     companyTicker: user?.companyTicker ?? null,
   };
 
-  // Route-scoped Studio override. The /employer LAYOUT no longer
-  // forces Studio for the whole segment; only this home page (the
-  // canonical HR Overview brand stage) opts into it. Every other
-  // /employer/* sub-page inherits the platform-default Cinematic
-  // look from the root dashboard layout.
+  // Studio is now applied segment-wide via employer/layout.tsx.
   return (
-    <DesignSystemProvider value="studio">
     <div className="-mt-2 space-y-0">
 
       {/* ── PANEL ──────────────────────────────────────────────
@@ -777,7 +771,6 @@ export default async function EmployerHomePage() {
         </div>
       </div>
     </div>
-    </DesignSystemProvider>
   );
 }
 
