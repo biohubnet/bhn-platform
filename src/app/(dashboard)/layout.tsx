@@ -10,6 +10,7 @@ import { AssistHintDock } from "@/components/assist/AssistHintDock";
 import { prisma } from "@/lib/prisma";
 import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
 import { getTraineeQueueCounts } from "@/lib/trainee/queue-counts";
+import { getEmployerQueueCounts } from "@/lib/employer/queue-counts";
 import { getCommitteesForUser } from "@/lib/committees/membership";
 import {
   LayoutBannerProvider,
@@ -73,16 +74,25 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // badgeKey. The two key namespaces ("interview-requests" vs.
   // "credit-applications") never collide.
   const canSeeAdminQueues = ROLE_RANK[realRole ?? role] >= ROLE_RANK.admin;
-  const [adminCounts, traineeCounts, committeeSlugs, translationSetting] = await Promise.all([
+  const isEmployer = (realRole ?? role) === "employer";
+  const [adminCounts, traineeCounts, employerCounts, committeeSlugs, translationSetting] = await Promise.all([
     canSeeAdminQueues ? getAdminQueueCounts() : Promise.resolve(undefined),
     userId ? getTraineeQueueCounts(userId) : Promise.resolve(undefined),
+    // Employer join-request badge — only fetched for employer accounts
+    // (and admins acting as employer) to avoid an unnecessary DB query
+    // on every trainee page load.
+    (isEmployer || canSeeAdminQueues) && userId
+      ? getEmployerQueueCounts(userId)
+      : Promise.resolve(undefined),
     userId ? getCommitteesForUser(userId) : Promise.resolve([]),
     prisma.platformSetting.findUnique({ where: { key: "translationEnabled" }, select: { value: true } }).catch(() => null),
   ]);
   // Platform-level gate: absent row (never set) → enabled (default true).
   const translationPlatformEnabled = translationSetting?.value !== "false";
   const queueCounts: QueueCounts | undefined =
-    adminCounts || traineeCounts ? { ...traineeCounts, ...adminCounts } : undefined;
+    adminCounts || traineeCounts || employerCounts
+      ? { ...traineeCounts, ...adminCounts, ...employerCounts }
+      : undefined;
 
   return (
     <div className="dashboard-layout flex h-screen bg-page">

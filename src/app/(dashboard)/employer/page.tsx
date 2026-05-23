@@ -147,6 +147,8 @@ export default async function EmployerHomePage() {
     livePostingsPreview,
     firstPosting,
     queueRows,
+    teamMemberCount,
+    pendingJoinRequestCount,
   ] = await Promise.all([
     prisma.internshipPosting.count({ where: { ...(postingsWhere ?? {}), status: "active" } }).catch(() => 0),
     prisma.applicationStatus.count({ where: nestedPostingWhere }).catch(() => 0),
@@ -207,6 +209,13 @@ export default async function EmployerHomePage() {
       posting: { id: string; title: string };
       applicant: { id: string; name: string | null; email: string };
     }>),
+    // Team stats — only meaningful once the backfill has run (companyId populated).
+    companyId
+      ? prisma.companyMember.count({ where: { companyId } }).catch(() => 0)
+      : Promise.resolve(0),
+    companyId
+      ? prisma.companyJoinRequest.count({ where: { companyId, status: "pending" } }).catch(() => 0)
+      : Promise.resolve(0),
   ]);
 
   // flatMap-with-guard so an orphan row (relation cascaded away but
@@ -525,7 +534,7 @@ export default async function EmployerHomePage() {
             }}
           >
             <SectionEyebrow>By the numbers</SectionEyebrow>
-            <div className="grid grid-cols-3 divide-x divide-line">
+            <div className={`grid divide-x divide-line ${companyId ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
               <InlineStat
                 label={isAdmin ? "Postings live (platform)" : "Postings live"}
                 value={postingsLive}
@@ -541,8 +550,43 @@ export default async function EmployerHomePage() {
                 value={interviewsCount}
                 tone="rose"
               />
+              {companyId && (
+                <InlineStat
+                  label="Team members"
+                  value={teamMemberCount}
+                  tone="emerald"
+                  href="/employer/team"
+                />
+              )}
             </div>
           </section>
+
+          {/* ── PENDING JOIN REQUESTS callout ─────────────────── */}
+          {pendingJoinRequestCount > 0 && (
+            <section
+              aria-label="Pending join requests"
+              className="px-6 sm:px-10 lg:px-14 py-5 border-t border-amber-200/60 bg-amber-50/40"
+            >
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-500 text-white text-xs font-bold shrink-0">
+                    {pendingJoinRequestCount}
+                  </span>
+                  <p className="text-sm font-medium text-fg">
+                    {pendingJoinRequestCount === 1
+                      ? "1 person from your company domain is requesting to join"
+                      : `${pendingJoinRequestCount} people from your company domain are requesting to join`}
+                  </p>
+                </div>
+                <Link
+                  href="/employer/team"
+                  className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 bg-white border border-amber-200 hover:border-amber-300 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  Review requests <ArrowRight size={12} />
+                </Link>
+              </div>
+            </section>
+          )}
 
           {/* ── ACTION QUEUE ─────────────────────────────────── */}
           {actionQueue.length > 0 && (
@@ -820,19 +864,21 @@ function Dot() {
 }
 
 function InlineStat({
-  label, value, tone,
+  label, value, tone, href,
 }: {
   label: string;
   value: number;
-  tone: "brand" | "violet" | "rose";
+  tone: "brand" | "violet" | "rose" | "emerald";
+  href?: string;
 }) {
   const gradients: Record<typeof tone, string> = {
-    brand:  "linear-gradient(135deg, rgb(56,189,248) 0%, rgb(29,78,216) 100%)",
-    violet: "linear-gradient(135deg, rgb(167,139,250) 0%, rgb(109,40,217) 100%)",
-    rose:   "linear-gradient(135deg, rgb(251,113,133) 0%, rgb(190,18,60) 100%)",
+    brand:   "linear-gradient(135deg, rgb(56,189,248) 0%, rgb(29,78,216) 100%)",
+    violet:  "linear-gradient(135deg, rgb(167,139,250) 0%, rgb(109,40,217) 100%)",
+    rose:    "linear-gradient(135deg, rgb(251,113,133) 0%, rgb(190,18,60) 100%)",
+    emerald: "linear-gradient(135deg, rgb(52,211,153) 0%, rgb(4,120,87) 100%)",
   };
-  return (
-    <div className="px-5 sm:px-8 first:pl-0 last:pr-0">
+  const inner = (
+    <>
       <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
         {label}
       </p>
@@ -847,6 +893,15 @@ function InlineStat({
       >
         {value.toLocaleString()}
       </p>
+    </>
+  );
+  return href ? (
+    <Link href={href} className="px-5 sm:px-8 first:pl-0 last:pr-0 hover:opacity-80 transition-opacity">
+      {inner}
+    </Link>
+  ) : (
+    <div className="px-5 sm:px-8 first:pl-0 last:pr-0">
+      {inner}
     </div>
   );
 }
