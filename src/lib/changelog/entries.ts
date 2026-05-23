@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Team page: roles legend, hero header, and demo seeder",
+    body: "The `/employer/team` page has three new things:\n\n• **Full hero header** — replaces the plain page header with a DSPageHeader (gradient hero, eyebrow, description auto-updates based on how many members you have).\n\n• **Roles legend** — a compact card below the header lists all four roles (Owner, Manager, Generalist, Viewer) with a one-line capability summary so you always know what each tier can do before you invite someone.\n\n• **Demo team seeder** — a violet toolbar (manager+ only) with **Add demo team** and **Clear** buttons. Adds three realistic demo members (a Manager, Generalist, and Viewer with staggered last-seen timestamps) so you can preview the full team roster experience before your real colleagues have accepted their invites. Clear removes them without touching your real team.",
+    kind: "improvement",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
+  {
     title: "Employer portal consolidation — cleaner navigation and no duplicate queue",
     body: "Three small polish changes that remove duplicate surfaces and align labels across the employer portal:\n\n• **Overview action queue is now a compact callout.** The full expanded action queue previously appeared on *both* the Overview (brand-stage) page and the My Postings workspace. The Overview now shows a summary chip (counts by kind) with a single 'Review in workspace' link. The interactive queue — expand an applicant inline, move stages, schedule — still lives in **My Postings**.\n\n• **'How it works' renamed to 'Hiring guide'** in the sidebar (and the English translation key). The page's own eyebrow already said 'Hiring guide'; the sidebar label now matches.\n\n• **My Postings page eyebrow updated.** The hero strip on `/employer/postings` used to say 'Hiring workspace'; it now says 'My postings' so the page header and the sidebar label read the same.",
     kind: "improvement",

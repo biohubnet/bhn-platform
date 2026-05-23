@@ -458,10 +458,10 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "employer-team-workspace",
     title: "Invite your HR team to share this workspace",
-    body: "Your employer account is now a shared company workspace. Open **EMPLOYER PORTAL → Team** to invite colleagues — each gets their own role (Owner, Manager, Generalist, or Viewer). They receive a 7-day link by email; once they accept, you'll all see each other's activity on postings and applicants. Job done solo? Leave it as-is — nothing changes for single-user accounts.",
+    body: "Your employer account is now a shared company workspace. Open **EMPLOYER PORTAL → Hiring guide** to invite colleagues — each gets their own role (Owner, Manager, Generalist, or Viewer). They receive a 7-day link by email; once they accept, you'll all see each other's activity on postings and applicants. Job done solo? Leave it as-is — nothing changes for single-user accounts.\n\nNew: the Team page now has a **roles legend** so you always know what each level can do, plus a **demo seeder** to preview the page with sample team members before inviting real colleagues.",
     path: "/employer/team",
     placement: "center",
-    since: "2026.05.22a",
+    since: "2026.05.22b",
     roles: ["employer", "admin", "superadmin"],
     cta: { label: "Open Team", href: "/employer/team" },
   },
