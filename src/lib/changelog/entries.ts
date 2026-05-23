@@ -23,6 +23,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    title: "Employer overview: admin feature inventory + DemoSeederBar confirm fix",
+    body: "Two improvements to the employer portal:\n\n• **Admin feature inventory** — a new section at the bottom of `/employer` (admin / superadmin only) shows a comprehensive inventory of every surface built for HR accounts: Brand Stage, Hiring Workspace, Team Management, and Other Employer Surfaces. Each group lists features with brief notes and direct links to the relevant pages.\n\n• **DemoSeederBar confirm fix** — the postings demo seeder now uses the same inline two-step confirm pattern as the team demo seeder (first click shows 'Remove all demo data?' + 'Yes, remove' + 'Cancel'; no more `window.confirm`).",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
     title: "Sidebar section headers: unified chip + chevron on the right",
     body: "The collapse toggle on sidebar section group headers (ENGAGE, EXPERIENCE, EQUIP, ADMINISTRATION, etc.) has been redesigned.\n\n**Before:** a tiny separate `^` button floated to the *left* of the section name chip — two separate click targets, awkward placement.\n\n**After:** the chip itself is the toggle. The chevron now sits *inside* the chip on the right, animating 90° between expanded and collapsed. Same localStorage persistence, same smooth grid-rows accordion animation. Admin sub-group headings (Engage / Experience / Platform / etc.) also got the chevron-right treatment for consistency.",
     kind: "improvement",

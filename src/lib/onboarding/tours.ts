@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.22a";
+export const TOUR_VERSION = "2026.05.22b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Admin: employer feature inventory (May 2026) ─────────────────
+  {
+    id: "admin.employer-feature-inventory",
+    title: "Employer portal feature map",
+    body: "Scroll to the bottom of `/employer` to see a complete inventory of every surface built for HR accounts — Brand Stage, Hiring Workspace, Team Management, and more — with direct links to each route. Visible only when signed in as admin or superadmin.",
+    path: "/employer",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open employer overview", href: "/employer" },
+    since: "2026.05.22b",
+  },
   // ─── Sidebar section chips (May 2026) ────────────────────────────
   {
     id: "sidebar.section-chip-toggle",

@@ -691,6 +691,89 @@ export default async function EmployerHomePage() {
               </Link>
             </section>
           )}
+
+          {/* ── ADMIN: Employer portal feature inventory ─────────
+              Visible only to admin / superadmin. A comprehensive
+              map of every surface, tool, and feature built for HR
+              accounts — so operators can audit the portal at a
+              glance without memorising every route.
+              Never rendered for employer or trainee roles. */}
+          {isAdmin && (
+            <section
+              aria-label="Admin: employer feature inventory"
+              className="relative px-6 sm:px-10 lg:px-14 py-10 sm:py-12 border-t border-sky-300/60"
+              style={{
+                backgroundImage:
+                  "linear-gradient(180deg, rgba(14,165,233,0.07) 0%, rgba(56,189,248,0.03) 100%)",
+              }}
+            >
+              <SectionEyebrow>Admin view only</SectionEyebrow>
+              <div className="mb-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-fg tracking-tight">
+                  Employer portal — what&apos;s built
+                </h2>
+                <p className="text-sm text-muted mt-1.5 max-w-2xl leading-snug">
+                  Complete inventory of every surface and tool built for HR accounts. Not visible to employers or trainees.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
+                <HrFeatureGroup
+                  color="#0ea5e9"
+                  title="Brand Stage (this page)"
+                  href="/employer"
+                  items={[
+                    { label: "Cinematic cover banner", note: "5-stop gradient · 5 aurora blobs · noise texture overlay" },
+                    { label: "Logo disc", note: "Shape: natural / circle / rounded / square · pan + zoom crop in editor" },
+                    { label: "Profile editor", note: "URL auto-fill via Clearbit/favicon · name, industry, size, location, founded, ticker, main business" },
+                    { label: "Identity row", note: "Name · industry · location · size · founded · website · verified badge · hired-count chip" },
+                    { label: "About section", note: "Pull-quote with 3-colour gradient rule · main-business sidecar" },
+                    { label: "Stats bar", note: "Postings live · applicants reviewed · interviews held · team members (link to /team)" },
+                    { label: "Pending join requests callout", note: "Amber banner when domain-match requests await approval" },
+                    { label: "Action queue callout", note: "New apps · stalled ≥ 7 d · offers awaiting ≥ 2 d → deep-links to My Postings" },
+                    { label: "Hiring shopfront", note: "Live postings as scannable list rows — what trainees see when they find the company" },
+                  ]}
+                />
+
+                <HrFeatureGroup
+                  color="#8b5cf6"
+                  title="Hiring Workspace"
+                  href="/employer/postings"
+                  items={[
+                    { label: "Create & manage postings", note: "Title · skills · location · type · compensation · deadline · status (draft / active / paused / closed)" },
+                    { label: "Inline applicant pipeline", note: "7 stages: new → reviewing → shortlisted → phone screen → onsite → offer → hired / rejected" },
+                    { label: "Action queue", note: "Per-posting queue surfacing new apps, stalled ≥ 7 d, and offers awaiting response" },
+                    { label: "Demo seeder", note: "3 postings + applicants at every stage + interviews + offers — seed / clear without touching real data" },
+                  ]}
+                />
+
+                <HrFeatureGroup
+                  color="#10b981"
+                  title="Team Management"
+                  href="/employer/team"
+                  items={[
+                    { label: "Member roster", note: "Role chips · title · last-seen badges · change role · remove member" },
+                    { label: "Invite by email", note: "Role assigned on invite · pending invite list with revoke · 7-day expiry" },
+                    { label: "Join request panel", note: "Domain-match auto-suggest · approve / decline with one click" },
+                    { label: "4-tier role system", note: "Owner → full admin · Manager → invite + approve · Generalist → post only · Viewer → read-only" },
+                    { label: "Demo team seeder", note: "3 demo members (Manager, Generalist, Viewer) with staggered last-seen timestamps" },
+                  ]}
+                />
+
+                <HrFeatureGroup
+                  color="#f59e0b"
+                  title="Other Employer Surfaces"
+                  items={[
+                    { label: "Hiring guide", href: "/employer/how-it-works", note: "End-to-end explainer with sidebar NavHighlight hover-integration" },
+                    { label: "Talent pool", href: "/talent-pool", note: "Browse approved talent-application members · leave comments (employer-visible, admin-visible, not trainee-visible)" },
+                    { label: "Employer invites", href: "/admin/employer-invites", note: "(Admin) Generate invite codes · track open rate · revoke" },
+                    { label: "Split view", href: "/admin/split-view", note: "(Admin) Side-by-side HR + trainee preview panes for QA" },
+                    { label: "Demo workspaces", href: "/admin/demo-workspaces", note: "(Admin) Time-limited sandbox for prospective employer partners" },
+                  ]}
+                />
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </div>
@@ -1016,6 +1099,66 @@ function PostingListRow({ posting }: { posting: PostingPreview }) {
         </div>
       </Link>
     </li>
+  );
+}
+
+// ─── Admin sub-components ────────────────────────────────────────
+
+/** One group in the admin HR feature inventory. A coloured dot +
+ *  title header followed by a left-accented bullet list of features
+ *  with short descriptive notes. Used only in the admin-gated section
+ *  at the bottom of /employer. */
+function HrFeatureGroup({
+  color, title, href, items,
+}: {
+  color: string;
+  title: string;
+  href?: string;
+  items: { label: string; note: string; href?: string }[];
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <span
+          aria-hidden
+          className="w-2 h-2 rounded-full shrink-0"
+          style={{ background: color }}
+        />
+        <h3 className="text-xs font-bold text-fg uppercase tracking-[0.18em]">
+          {title}
+        </h3>
+        {href && (
+          <Link
+            href={href}
+            className="ml-auto text-[11px] font-semibold inline-flex items-center gap-1 hover:underline"
+            style={{ color }}
+          >
+            Open <ArrowRight size={10} />
+          </Link>
+        )}
+      </div>
+      <ul
+        className="space-y-1.5 border-l-2 pl-4"
+        style={{ borderColor: `${color}44` }}
+      >
+        {items.map((item) => (
+          <li key={item.label} className="text-xs leading-snug">
+            {item.href ? (
+              <Link
+                href={item.href}
+                className="font-semibold hover:underline"
+                style={{ color }}
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <span className="font-semibold text-fg">{item.label}</span>
+            )}{" "}
+            <span className="text-muted">{item.note}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

@@ -25,6 +25,7 @@ export function DemoSeederBar({
   const [busy, setBusy] = useState<"seed" | "clear" | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   async function seed() {
     setBusy("seed");
@@ -59,12 +60,10 @@ export function DemoSeederBar({
   }
 
   async function clear() {
-    if (!confirm("Delete all demo-seeded postings (and the applications, interviews, and offers attached to them)? This can't be undone.")) {
-      return;
-    }
     setBusy("clear");
     setMsg(null);
     setError(null);
+    setConfirmClear(false);
     try {
       const res = await fetch("/api/employer/demo/seed", { method: "DELETE" });
       const j = (await res.json().catch(() => ({}))) as {
@@ -113,7 +112,8 @@ export function DemoSeederBar({
           </p>
         )}
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex flex-wrap items-center gap-2 shrink-0">
+        {/* Seed button */}
         <button
           type="button"
           onClick={seed}
@@ -125,18 +125,44 @@ export function DemoSeederBar({
             : <Sparkles size={12} />}
           {busy === "seed" ? "Seeding…" : hasExistingDemos ? "Add more" : "Seed demo data"}
         </button>
-        {hasExistingDemos && (
+
+        {/* Clear — two-step confirm, no window.confirm */}
+        {hasExistingDemos && !confirmClear && (
           <button
             type="button"
-            onClick={clear}
+            onClick={() => setConfirmClear(true)}
             disabled={busy !== null}
             className="inline-flex items-center gap-1.5 bg-card-solid hover:bg-rose-50 border border-line hover:border-rose-200 text-rose-800 text-xs font-bold px-3 py-2 rounded-lg transition-colors disabled:opacity-60"
           >
-            {busy === "clear"
-              ? <Loader2 size={12} className="animate-spin" />
-              : <Eraser size={12} />}
-            {busy === "clear" ? "Clearing…" : "Clear demo data"}
+            <Eraser size={12} />
+            Clear demo data
           </button>
+        )}
+        {confirmClear && (
+          <>
+            <span className="text-[11px] font-semibold text-rose-700 whitespace-nowrap">
+              Remove all demo data?
+            </span>
+            <button
+              type="button"
+              onClick={clear}
+              disabled={busy !== null}
+              className="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors"
+            >
+              {busy === "clear"
+                ? <Loader2 size={12} className="animate-spin" />
+                : <Eraser size={12} />}
+              {busy === "clear" ? "Clearing…" : "Yes, remove"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmClear(false)}
+              disabled={busy !== null}
+              className="text-xs text-muted hover:text-fg transition-colors px-1"
+            >
+              Cancel
+            </button>
+          </>
         )}
       </div>
     </section>
