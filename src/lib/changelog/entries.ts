@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Voltage theme contrast fixes — May 2026 ──────────────────────
+  {
+    title: "Voltage theme — WCAG AA contrast fixes",
+    body: "Three contrast failures in the Voltage (TRON) theme have been corrected: `fg-subtle` text (#4f7e98, 4.28:1 on cards) is lifted to #6baec4 (passes 4.5:1 on all surfaces); UI borders raised from 1.88:1 to ~3.1:1 on card backgrounds (WCAG 1.4.11); CTA button background darkened from #007fb3 (4.48:1) to #0073a8 (5.23:1); and the bright cyan hover state (#00aae0 + white = 2.68:1) is fixed by switching to near-black text (7.57:1) so the glow is preserved without sacrificing legibility.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── HR sprint — May 2026 ──────────────────────────────────────────
   {
     title: "Public job board + direct-apply path",

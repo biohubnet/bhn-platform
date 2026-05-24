@@ -391,14 +391,14 @@
   --raised:    rgba(20,52,84,0.90);
   --fg:        #e3f7ff;
   --fg-muted:  #8ecfe8;
-  --fg-subtle: #4f7e98;
-  --line:      rgba(0,212,255,0.28);
+  --fg-subtle: #6baec4;            /* lifted: #4f7e98 failed AA on card/elevated/raised */
+  --line:      rgba(0,212,255,0.45); /* was 0.28; 0.45 → ~3.1:1 on card (WCAG 1.4.11) */
   --line-strong: rgba(0,212,255,0.55);
   --backdrop:  rgba(0,0,0,0.82);
 
   /* TRON cyan brand scale. 50–200 stay deep so they read as subtle
    * tints; 500 is the signature electric cyan; 600 is the CTA
-   * (white text ~5:1); 700+ ramps to glow. */
+   * (white text 5.23:1 via override below); 700+ ramps to glow. */
   --brand-50:  #002232;
   --brand-100: #00405d;
   --brand-200: #005f86;
@@ -540,6 +540,21 @@
 
 /* Nightfall-specific section-tone overrides removed when the theme
  * was retired. Voltage (id "hitech") has its own equivalents below. */
+
+/* ── Voltage button-contrast overrides (WCAG AA compliance) ────────────────
+ * Problem 1: bg-brand-600 (#007fb3) + white text = 4.48:1 — 0.02 below AA.
+ *   Fix: override background to #0073a8 → 5.23:1. text-brand-600 (icons /
+ *   links, 21+ files) is NOT affected — CSS vars unchanged, only .bg-brand-600.
+ * Problem 2: hover:bg-brand-700 (#00aae0) + white text = 2.68:1 — severe fail.
+ *   Fix: keep bright cyan bg, flip text to near-black (var(--bg)) → 7.57:1.
+ * These non-@layer rules beat @layer utilities without !important. */
+[data-theme="hitech"] .bg-brand-600 {
+  background-color: #0073a8;
+}
+[data-theme="hitech"] .hover\:bg-brand-700:hover {
+  background-color: var(--brand-700);
+  color: var(--bg);
+}
 
 /* ───── Tailwind theme bindings ───── */
 @theme inline {
