@@ -447,6 +447,16 @@
   --color-emerald-200:rgba(16, 185, 129, 0.26);
   --color-sky-50:     rgba(14, 165, 233, 0.12);
   --color-sky-100:    rgba(14, 165, 233, 0.18);
+  /* violet + blue were missing — caused node-card bg-violet-50 to composite
+   * to a medium gray (~rgb(148,148,158)) on the inky bg instead of a
+   * near-black tint, making all text on pipeline cards fail contrast.
+   * bg-blue-50 POST method chips stayed white on the dark detail panel. */
+  --color-violet-50:  rgba(139, 92, 246, 0.10);
+  --color-violet-100: rgba(139, 92, 246, 0.18);
+  --color-violet-200: rgba(139, 92, 246, 0.26);
+  --color-blue-50:    rgba(59, 130, 246, 0.10);
+  --color-blue-100:   rgba(59, 130, 246, 0.18);
+  --color-blue-200:   rgba(59, 130, 246, 0.26);
 }
 [data-theme="hitech"] .text-rose-700    { color: #fb7185; }
 [data-theme="hitech"] .text-rose-800    { color: #f87171; }
@@ -457,9 +467,21 @@
 [data-theme="hitech"] .text-emerald-700 { color: #34d399; }
 [data-theme="hitech"] .text-emerald-800 { color: #6ee7b7; }
 [data-theme="hitech"] .text-emerald-900 { color: #a7f3d0; }
+[data-theme="hitech"] .text-sky-600     { color: #38bdf8; }  /* was missing — 4.38:1 dark fail */
 [data-theme="hitech"] .text-sky-700     { color: #38bdf8; }
 [data-theme="hitech"] .text-sky-800     { color: #7dd3fc; }
 [data-theme="hitech"] .text-sky-900     { color: #bae6fd; }
+[data-theme="hitech"] .text-violet-600  { color: #a78bfa; }  /* was missing — dark purple on dark bg */
+[data-theme="hitech"] .text-violet-700  { color: #a78bfa; }
+[data-theme="hitech"] .text-violet-800  { color: #c4b5fd; }
+[data-theme="hitech"] .text-violet-900  { color: #ddd6fe; }
+[data-theme="hitech"] .text-blue-600    { color: #60a5fa; }  /* was missing — POST badge inconsistency */
+[data-theme="hitech"] .text-blue-700    { color: #93c5fd; }
+[data-theme="hitech"] .text-blue-800    { color: #bfdbfe; }
+[data-theme="hitech"] .text-blue-900    { color: #dbeafe; }
+/* text-brand-600 as icon/link text fails on Voltage raised (2.97:1). Bright
+ * cyan matches the TRON palette and passes everywhere (7.16:1 on raised). */
+[data-theme="hitech"] .text-brand-600   { color: #00aae0; }
 
 /* Sidebar section title chips + container overrides for Hi-tech.
  * The default Tailwind tones (bg-sky-100, text-sky-900, …)

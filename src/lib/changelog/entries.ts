@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Voltage colour-system completeness — May 2026 ───────────────
+  {
+    title: "Voltage theme — violet, blue, and brand-600 text contrast",
+    body: "The Voltage dark theme was missing overrides for the `violet` and `blue` Tailwind colour families, causing `bg-violet-50` to composite to a medium gray (~rgb(148,148,158)) instead of a near-black tint — text on pipeline node cards failed at 2.58:1. Inline callout boxes using `text-violet-700` on that gray background failed at 2.15:1. Fixed by adding the same tint-override pattern already used for rose/amber/emerald/sky. Also added missing `text-sky-600` lift (was 4.38:1), full violet/blue text lifts, and a `text-brand-600` link/icon override (was 2.97:1 on raised surfaces).",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Theme contrast fixes — May 2026 ─────────────────────────────
   {
     title: "All themes — WCAG AA fg-subtle contrast pass",
