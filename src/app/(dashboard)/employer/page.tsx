@@ -52,6 +52,7 @@ import { ELIGIBLE_APPLICANT_FILTER } from "@/lib/talent-pool/eligibility";
 import { EditProfileTrigger } from "@/components/employer/EditProfileTrigger";
 import { SetPasswordBanner } from "@/components/employer/SetPasswordBanner";
 import { OnboardingWizard } from "@/components/employer/OnboardingWizard";
+import { HrFlowChart } from "@/components/employer/HrFlowChart";
 import { normalizeLogoShape, logoShapeClasses } from "@/lib/employer/logo-shape";
 import {
   parseLogoTransform,
@@ -745,6 +746,10 @@ export default async function EmployerHomePage() {
                     { label: "Inline applicant pipeline", note: "7 stages: new → reviewing → shortlisted → phone screen → onsite → offer → hired / rejected" },
                     { label: "Action queue", note: "Per-posting queue surfacing new apps, stalled ≥ 7 d, and offers awaiting response" },
                     { label: "Demo seeder", note: "3 postings + applicants at every stage + interviews + offers — seed / clear without touching real data" },
+                    { label: "Duplicate posting", note: "2-step confirm — creates draft copy titled '<original> (Copy)'" },
+                    { label: "Scorecard builder", note: "≤10 criteria, 4/5-pt scale, lock, per-applicant interviewer submissions" },
+                    { label: "Hiring team panel", note: "Assign recruiter / hiring_manager / interviewer / observer per posting" },
+                    { label: "Bulk messaging", note: "Multi-select candidates + compose email with {{merge}} vars, 2-step confirm" },
                   ]}
                 />
 
@@ -763,15 +768,27 @@ export default async function EmployerHomePage() {
 
                 <HrFeatureGroup
                   color="#f59e0b"
-                  title="Other Employer Surfaces"
+                  title="New HR Surfaces (May 2026 sprint)"
                   items={[
+                    { label: "Email templates", href: "/employer/templates", note: "5 kinds · merge variables · starter protection · inline create/edit" },
+                    { label: "Pipeline analytics + CSV", href: "/employer/analytics", note: "Stage funnel · velocity bars · offer acceptance rate · CSV download" },
+                    { label: "Interview calendar", href: "/employer/calendar", note: "Week-view grid · format chips · confirmed vs pending slots" },
+                    { label: "Notification inbox", note: "Bell + unread badge in sidebar · day-grouped drawer · mark-all-read" },
+                    { label: "Public job board", href: "/jobs", note: "No-auth /jobs listing + /jobs/[id] detail + /jobs/[id]/apply direct apply" },
+                    { label: "Talent pool filters", href: "/talent-pool", note: "Skills · stage · availability filters — all AND-combined with text search" },
+                    { label: "Employer onboarding wizard", note: "4-step localStorage-persisted card (bottom-left) for new accounts" },
                     { label: "Hiring guide", href: "/employer/how-it-works", note: "End-to-end explainer with sidebar NavHighlight hover-integration" },
-                    { label: "Talent pool", href: "/talent-pool", note: "Browse approved talent-application members · leave comments (employer-visible, admin-visible, not trainee-visible)" },
-                    { label: "Employer invites", href: "/admin/employer-invites", note: "(Admin) Generate invite codes · track open rate · revoke" },
-                    { label: "Split view", href: "/admin/split-view", note: "(Admin) Side-by-side HR + trainee preview panes for QA" },
-                    { label: "Demo workspaces", href: "/admin/demo-workspaces", note: "(Admin) Time-limited sandbox for prospective employer partners" },
                   ]}
                 />
+              </div>
+
+              {/* ── Interactive flowchart ──────────────────────────
+                  Second subsection: a clickable node-map of every
+                  route, page, API endpoint, and component in the
+                  full HR module. Helps admins trace the exact data
+                  and UI path for any hiring event. */}
+              <div className="mt-12 pt-10 border-t border-sky-200/60">
+                <HrFlowChart />
               </div>
             </section>
           )}
