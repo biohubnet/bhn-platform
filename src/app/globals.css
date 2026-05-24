@@ -22,7 +22,7 @@
   --raised:    #d6d6d2;
   --fg:        #1c1c20;        /* warm charcoal (was cool navy #0b1b3b) */
   --fg-muted:  #565660;
-  --fg-subtle: #8d8d96;
+  --fg-subtle: #5b5b65;        /* AA: was #8d8d96 (2.26:1 on raised ❌); now min 4.60:1 ✅ */
   --line:      rgba(28,28,32,0.08);
   --line-strong: rgba(28,28,32,0.16);
   --backdrop:  rgba(28,28,32,0.45);
@@ -143,7 +143,7 @@
   --raised:    #ddd2bb;
   --fg:        #2e261f;        /* espresso */
   --fg-muted:  #5e5145;
-  --fg-subtle: #948a7c;
+  --fg-subtle: #625849;        /* AA: was #948a7c (2.27:1 on raised ❌); now min 4.65:1 ✅ */
   --line:      rgba(46, 38, 31, 0.10);
   --line-strong: rgba(46, 38, 31, 0.20);
   --backdrop:  rgba(46, 38, 31, 0.40);
@@ -194,7 +194,7 @@
   --raised:    #f3d3d4;
   --fg:        #3a1f24;        /* wine */
   --fg-muted:  #6e4849;
-  --fg-subtle: #8a5d5f;        /* deepened from #a87e80 — AA pass (4.7:1 on --bg) */
+  --fg-subtle: #7d5254;        /* AA: deepened again from #8a5d5f (3.96:1 on raised ❌); now min 4.70:1 ✅ */
   --line:      rgba(58, 31, 36, 0.10);
   --line-strong: rgba(58, 31, 36, 0.20);
   --backdrop:  rgba(58, 31, 36, 0.40);
@@ -292,7 +292,7 @@
   --raised:    rgba(255, 255, 255, 0.72);
   --fg:        #1c2230;        /* deep slate, premium feel */
   --fg-muted:  #515b6e;
-  --fg-subtle: #8993a4;
+  --fg-subtle: #5e677f;        /* AA: was #8993a4 (2.87:1 on bg ❌); now min 5.21:1 ✅ */
   --line:      rgba(255, 255, 255, 0.55);
   --line-strong: rgba(255, 255, 255, 0.75);
   --backdrop:  rgba(28, 34, 48, 0.35);

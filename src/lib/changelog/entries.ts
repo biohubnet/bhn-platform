@@ -22,7 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
-  // ── Voltage theme contrast fixes — May 2026 ──────────────────────
+  // ── Theme contrast fixes — May 2026 ─────────────────────────────
+  {
+    title: "All themes — WCAG AA fg-subtle contrast pass",
+    body: "The `fg-subtle` helper/placeholder text colour now passes WCAG AA (4.5:1) across every surface in all five themes. Previous values ranged from 2.26:1 (Daylight on raised) to 3.96:1 (Sakura on raised) — far below the AA minimum. Updated to: Daylight #5b5b65, Rosalind #625849, Sakura #7d5254, Mist #5e677f. These colours preserve each theme's tonal identity while clearing the 4.5:1 bar on the darkest surface that `text-subtle` can appear against.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   {
     title: "Voltage theme — WCAG AA contrast fixes",
     body: "Three contrast failures in the Voltage (TRON) theme have been corrected: `fg-subtle` text (#4f7e98, 4.28:1 on cards) is lifted to #6baec4 (passes 4.5:1 on all surfaces); UI borders raised from 1.88:1 to ~3.1:1 on card backgrounds (WCAG 1.4.11); CTA button background darkened from #007fb3 (4.48:1) to #0073a8 (5.23:1); and the bright cyan hover state (#00aae0 + white = 2.68:1) is fixed by switching to near-black text (7.57:1) so the glow is preserved without sacrificing legibility.",
