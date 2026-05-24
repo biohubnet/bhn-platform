@@ -457,6 +457,60 @@
   --color-blue-50:    rgba(59, 130, 246, 0.10);
   --color-blue-100:   rgba(59, 130, 246, 0.18);
   --color-blue-200:   rgba(59, 130, 246, 0.26);
+  /* ── Completeness pass (May 2026) — every remaining Tailwind family ──────
+   * Without these, any component using e.g. bg-slate-100 renders as a
+   * near-white chip on the near-black Voltage page (visual pop + contrast fail).
+   * sky-200 fix is critical: bg-sky-200 + text-sky-900 (lifted to #bae6fd) was
+   * 1:1 invisible on the admin sidebar chip. */
+  --color-sky-200:     rgba(14, 165, 233, 0.26);   /* critical: was invisible sidebar chip */
+  --color-green-50:    rgba(34, 197, 94, 0.10);
+  --color-green-100:   rgba(34, 197, 94, 0.18);
+  --color-green-200:   rgba(34, 197, 94, 0.26);
+  --color-red-50:      rgba(239, 68, 68, 0.10);
+  --color-red-100:     rgba(239, 68, 68, 0.18);
+  --color-red-200:     rgba(239, 68, 68, 0.26);
+  --color-cyan-50:     rgba(6, 182, 212, 0.10);
+  --color-cyan-100:    rgba(6, 182, 212, 0.18);
+  --color-cyan-200:    rgba(6, 182, 212, 0.26);
+  --color-indigo-50:   rgba(99, 102, 241, 0.10);
+  --color-indigo-100:  rgba(99, 102, 241, 0.18);
+  --color-indigo-200:  rgba(99, 102, 241, 0.26);
+  --color-purple-50:   rgba(168, 85, 247, 0.10);
+  --color-purple-100:  rgba(168, 85, 247, 0.18);
+  --color-purple-200:  rgba(168, 85, 247, 0.26);
+  --color-orange-50:   rgba(249, 115, 22, 0.10);
+  --color-orange-100:  rgba(249, 115, 22, 0.18);
+  --color-orange-200:  rgba(249, 115, 22, 0.26);
+  --color-teal-50:     rgba(20, 184, 166, 0.10);
+  --color-teal-100:    rgba(20, 184, 166, 0.18);
+  --color-teal-200:    rgba(20, 184, 166, 0.26);
+  --color-slate-50:    rgba(148, 163, 184, 0.08);
+  --color-slate-100:   rgba(148, 163, 184, 0.15);
+  --color-slate-200:   rgba(148, 163, 184, 0.24);
+  --color-gray-50:     rgba(156, 163, 175, 0.08);
+  --color-gray-100:    rgba(156, 163, 175, 0.15);
+  --color-gray-200:    rgba(156, 163, 175, 0.24);
+  --color-zinc-50:     rgba(161, 161, 170, 0.08);
+  --color-zinc-100:    rgba(161, 161, 170, 0.15);
+  --color-zinc-200:    rgba(161, 161, 170, 0.24);
+  --color-neutral-50:  rgba(163, 163, 163, 0.08);
+  --color-neutral-100: rgba(163, 163, 163, 0.15);
+  --color-neutral-200: rgba(163, 163, 163, 0.24);
+  --color-stone-50:    rgba(168, 162, 158, 0.08);
+  --color-stone-100:   rgba(168, 162, 158, 0.15);
+  --color-stone-200:   rgba(168, 162, 158, 0.24);
+  --color-yellow-50:   rgba(234, 179, 8, 0.10);
+  --color-yellow-100:  rgba(234, 179, 8, 0.18);
+  --color-yellow-200:  rgba(234, 179, 8, 0.26);
+  --color-lime-50:     rgba(132, 204, 22, 0.10);
+  --color-lime-100:    rgba(132, 204, 22, 0.18);
+  --color-lime-200:    rgba(132, 204, 22, 0.26);
+  --color-pink-50:     rgba(236, 72, 153, 0.10);
+  --color-pink-100:    rgba(236, 72, 153, 0.18);
+  --color-pink-200:    rgba(236, 72, 153, 0.26);
+  --color-fuchsia-50:  rgba(217, 70, 239, 0.10);
+  --color-fuchsia-100: rgba(217, 70, 239, 0.18);
+  --color-fuchsia-200: rgba(217, 70, 239, 0.26);
 }
 [data-theme="hitech"] .text-rose-700    { color: #fb7185; }
 [data-theme="hitech"] .text-rose-800    { color: #f87171; }
@@ -482,6 +536,79 @@
 /* text-brand-600 as icon/link text fails on Voltage raised (2.97:1). Bright
  * cyan matches the TRON palette and passes everywhere (7.16:1 on raised). */
 [data-theme="hitech"] .text-brand-600   { color: #00aae0; }
+/* ── Completeness pass — text lifts for every remaining family ────────────
+ * Without these, dark native shades (e.g. slate-700 #334155) fail at 1.32:1
+ * on Voltage's near-black surfaces. Values use 400-range brights for -600
+ * and 300-range pales for -700+; each passes ≥4.5:1 on the darkest surface
+ * (raised, L≈0.029). Previously missing -600 lifts for emerald/rose/amber
+ * are also included here — those were silent 2–4:1 failures in the old set. */
+[data-theme="hitech"] .text-emerald-600 { color: #34d399; }  /* was 2.03:1 on card */
+[data-theme="hitech"] .text-rose-600    { color: #fb7185; }  /* was 4.01:1 on card */
+[data-theme="hitech"] .text-amber-600   { color: #fbbf24; }  /* was 4.29:1 on raised */
+[data-theme="hitech"] .text-green-600   { color: #4ade80; }
+[data-theme="hitech"] .text-green-700   { color: #4ade80; }
+[data-theme="hitech"] .text-green-800   { color: #86efac; }
+[data-theme="hitech"] .text-green-900   { color: #bbf7d0; }
+[data-theme="hitech"] .text-red-600     { color: #f87171; }
+[data-theme="hitech"] .text-red-700     { color: #fca5a5; }
+[data-theme="hitech"] .text-red-800     { color: #fecaca; }
+[data-theme="hitech"] .text-red-900     { color: #fee2e2; }
+[data-theme="hitech"] .text-cyan-600    { color: #22d3ee; }
+[data-theme="hitech"] .text-cyan-700    { color: #67e8f9; }
+[data-theme="hitech"] .text-cyan-800    { color: #a5f3fc; }
+[data-theme="hitech"] .text-cyan-900    { color: #cffafe; }  /* was 1.41:1 — critical */
+[data-theme="hitech"] .text-indigo-600  { color: #818cf8; }
+[data-theme="hitech"] .text-indigo-700  { color: #a5b4fc; }
+[data-theme="hitech"] .text-indigo-800  { color: #c7d2fe; }
+[data-theme="hitech"] .text-indigo-900  { color: #e0e7ff; }
+[data-theme="hitech"] .text-purple-600  { color: #c084fc; }
+[data-theme="hitech"] .text-purple-700  { color: #d8b4fe; }
+[data-theme="hitech"] .text-purple-800  { color: #e9d5ff; }
+[data-theme="hitech"] .text-purple-900  { color: #f3e8ff; }
+[data-theme="hitech"] .text-orange-600  { color: #fb923c; }
+[data-theme="hitech"] .text-orange-700  { color: #fdba74; }
+[data-theme="hitech"] .text-orange-800  { color: #fed7aa; }
+[data-theme="hitech"] .text-orange-900  { color: #ffedd5; }
+[data-theme="hitech"] .text-teal-600    { color: #2dd4bf; }
+[data-theme="hitech"] .text-teal-700    { color: #5eead4; }
+[data-theme="hitech"] .text-teal-800    { color: #99f6e4; }
+[data-theme="hitech"] .text-teal-900    { color: #ccfbf1; }
+[data-theme="hitech"] .text-slate-600   { color: #94a3b8; }
+[data-theme="hitech"] .text-slate-700   { color: #cbd5e1; }  /* was 1.32:1 — severe */
+[data-theme="hitech"] .text-slate-800   { color: #e2e8f0; }
+[data-theme="hitech"] .text-slate-900   { color: #f1f5f9; }
+[data-theme="hitech"] .text-gray-600    { color: #9ca3af; }
+[data-theme="hitech"] .text-gray-700    { color: #d1d5db; }
+[data-theme="hitech"] .text-gray-800    { color: #e5e7eb; }
+[data-theme="hitech"] .text-gray-900    { color: #f3f4f6; }
+[data-theme="hitech"] .text-zinc-600    { color: #a1a1aa; }
+[data-theme="hitech"] .text-zinc-700    { color: #d4d4d8; }
+[data-theme="hitech"] .text-zinc-800    { color: #e4e4e7; }
+[data-theme="hitech"] .text-zinc-900    { color: #f4f4f5; }
+[data-theme="hitech"] .text-neutral-600 { color: #a3a3a3; }
+[data-theme="hitech"] .text-neutral-700 { color: #d4d4d4; }
+[data-theme="hitech"] .text-neutral-800 { color: #e5e5e5; }
+[data-theme="hitech"] .text-neutral-900 { color: #f5f5f5; }
+[data-theme="hitech"] .text-stone-600   { color: #a8a29e; }
+[data-theme="hitech"] .text-stone-700   { color: #d6d3d1; }
+[data-theme="hitech"] .text-stone-800   { color: #e7e5e4; }
+[data-theme="hitech"] .text-stone-900   { color: #f5f5f4; }
+[data-theme="hitech"] .text-yellow-600  { color: #facc15; }
+[data-theme="hitech"] .text-yellow-700  { color: #fde047; }
+[data-theme="hitech"] .text-yellow-800  { color: #fef08a; }
+[data-theme="hitech"] .text-yellow-900  { color: #fef9c3; }
+[data-theme="hitech"] .text-lime-600    { color: #a3e635; }
+[data-theme="hitech"] .text-lime-700    { color: #bef264; }
+[data-theme="hitech"] .text-lime-800    { color: #d9f99d; }
+[data-theme="hitech"] .text-lime-900    { color: #ecfccb; }
+[data-theme="hitech"] .text-pink-600    { color: #f472b6; }
+[data-theme="hitech"] .text-pink-700    { color: #f9a8d4; }
+[data-theme="hitech"] .text-pink-800    { color: #fbcfe8; }
+[data-theme="hitech"] .text-pink-900    { color: #fce7f3; }
+[data-theme="hitech"] .text-fuchsia-600 { color: #e879f9; }
+[data-theme="hitech"] .text-fuchsia-700 { color: #f0abfc; }
+[data-theme="hitech"] .text-fuchsia-800 { color: #f5d0fe; }
+[data-theme="hitech"] .text-fuchsia-900 { color: #fae8ff; }
 
 /* Sidebar section title chips + container overrides for Hi-tech.
  * The default Tailwind tones (bg-sky-100, text-sky-900, …)
@@ -1351,6 +1478,107 @@ body {
 [data-theme="coldbrew"] .text-emerald-800 { color: #c8d8b8; }
 [data-theme="coldbrew"] .text-sky-700     { color: #a8c0d4; }
 [data-theme="coldbrew"] .text-sky-800     { color: #c8d8e6; }
+/* Complete colour coverage — missing -200 tints + all absent families. */
+[data-theme="coldbrew"] {
+  --color-amber-200:   rgba(212, 154, 110, 0.30);
+  --color-emerald-200: rgba(140, 168, 130, 0.24);
+  --color-sky-100:     rgba(140, 165, 185, 0.18);
+  --color-sky-200:     rgba(140, 165, 185, 0.26);
+  --color-violet-50:   rgba(139, 92, 246, 0.10);
+  --color-violet-100:  rgba(139, 92, 246, 0.18);
+  --color-violet-200:  rgba(139, 92, 246, 0.26);
+  --color-blue-50:     rgba(59, 130, 246, 0.10);
+  --color-blue-100:    rgba(59, 130, 246, 0.18);
+  --color-blue-200:    rgba(59, 130, 246, 0.26);
+  --color-green-50:    rgba(34, 197, 94, 0.10);
+  --color-green-100:   rgba(34, 197, 94, 0.18);
+  --color-green-200:   rgba(34, 197, 94, 0.26);
+  --color-red-50:      rgba(239, 68, 68, 0.10);
+  --color-red-100:     rgba(239, 68, 68, 0.18);
+  --color-red-200:     rgba(239, 68, 68, 0.26);
+  --color-cyan-50:     rgba(6, 182, 212, 0.10);
+  --color-cyan-100:    rgba(6, 182, 212, 0.18);
+  --color-cyan-200:    rgba(6, 182, 212, 0.26);
+  --color-indigo-50:   rgba(99, 102, 241, 0.10);
+  --color-indigo-100:  rgba(99, 102, 241, 0.18);
+  --color-indigo-200:  rgba(99, 102, 241, 0.26);
+  --color-purple-50:   rgba(168, 85, 247, 0.10);
+  --color-purple-100:  rgba(168, 85, 247, 0.18);
+  --color-purple-200:  rgba(168, 85, 247, 0.26);
+  --color-orange-50:   rgba(249, 115, 22, 0.10);
+  --color-orange-100:  rgba(249, 115, 22, 0.18);
+  --color-orange-200:  rgba(249, 115, 22, 0.26);
+  --color-teal-50:     rgba(20, 184, 166, 0.10);
+  --color-teal-100:    rgba(20, 184, 166, 0.18);
+  --color-teal-200:    rgba(20, 184, 166, 0.26);
+  --color-yellow-50:   rgba(234, 179, 8, 0.10);
+  --color-yellow-100:  rgba(234, 179, 8, 0.18);
+  --color-yellow-200:  rgba(234, 179, 8, 0.26);
+  --color-slate-50:    rgba(148, 163, 184, 0.08);
+  --color-slate-100:   rgba(148, 163, 184, 0.15);
+  --color-slate-200:   rgba(148, 163, 184, 0.24);
+  --color-gray-50:     rgba(156, 163, 175, 0.08);
+  --color-gray-100:    rgba(156, 163, 175, 0.15);
+  --color-gray-200:    rgba(156, 163, 175, 0.24);
+}
+/* Missing 600/900 levels for existing warm families. */
+[data-theme="coldbrew"] .text-rose-600     { color: #cf7060; }  /* warm peachy-rose, 5.9:1 on card */
+[data-theme="coldbrew"] .text-rose-900     { color: #f8e0d0; }
+[data-theme="coldbrew"] .text-amber-600    { color: #b87a38; }  /* warm caramel, 5.7:1 */
+[data-theme="coldbrew"] .text-amber-900    { color: #f5ead8; }
+[data-theme="coldbrew"] .text-emerald-600  { color: #7aa068; }  /* muted sage, 6.8:1 */
+[data-theme="coldbrew"] .text-emerald-900  { color: #c8e0b8; }
+[data-theme="coldbrew"] .text-sky-600      { color: #6890a8; }  /* muted steel-blue, 6.0:1 */
+[data-theme="coldbrew"] .text-sky-900      { color: #cce0ee; }
+/* Complete missing families — text lifts for 600–900. */
+[data-theme="coldbrew"] .text-violet-600   { color: #a78bfa; }
+[data-theme="coldbrew"] .text-violet-700   { color: #c4b5fd; }
+[data-theme="coldbrew"] .text-violet-800   { color: #ddd6fe; }
+[data-theme="coldbrew"] .text-violet-900   { color: #ede9fe; }
+[data-theme="coldbrew"] .text-blue-600     { color: #60a5fa; }
+[data-theme="coldbrew"] .text-blue-700     { color: #93c5fd; }
+[data-theme="coldbrew"] .text-blue-800     { color: #bfdbfe; }
+[data-theme="coldbrew"] .text-blue-900     { color: #dbeafe; }
+[data-theme="coldbrew"] .text-green-600    { color: #4ade80; }
+[data-theme="coldbrew"] .text-green-700    { color: #86efac; }
+[data-theme="coldbrew"] .text-green-800    { color: #bbf7d0; }
+[data-theme="coldbrew"] .text-green-900    { color: #dcfce7; }
+[data-theme="coldbrew"] .text-red-600      { color: #f87171; }
+[data-theme="coldbrew"] .text-red-700      { color: #fca5a5; }
+[data-theme="coldbrew"] .text-red-800      { color: #fecaca; }
+[data-theme="coldbrew"] .text-red-900      { color: #fee2e2; }
+[data-theme="coldbrew"] .text-cyan-600     { color: #22d3ee; }
+[data-theme="coldbrew"] .text-cyan-700     { color: #67e8f9; }
+[data-theme="coldbrew"] .text-cyan-800     { color: #a5f3fc; }
+[data-theme="coldbrew"] .text-cyan-900     { color: #cffafe; }
+[data-theme="coldbrew"] .text-indigo-600   { color: #818cf8; }
+[data-theme="coldbrew"] .text-indigo-700   { color: #a5b4fc; }
+[data-theme="coldbrew"] .text-indigo-800   { color: #c7d2fe; }
+[data-theme="coldbrew"] .text-indigo-900   { color: #e0e7ff; }
+[data-theme="coldbrew"] .text-purple-600   { color: #c084fc; }
+[data-theme="coldbrew"] .text-purple-700   { color: #d8b4fe; }
+[data-theme="coldbrew"] .text-purple-800   { color: #e9d5ff; }
+[data-theme="coldbrew"] .text-purple-900   { color: #f3e8ff; }
+[data-theme="coldbrew"] .text-orange-600   { color: #fb923c; }
+[data-theme="coldbrew"] .text-orange-700   { color: #fdba74; }
+[data-theme="coldbrew"] .text-orange-800   { color: #fed7aa; }
+[data-theme="coldbrew"] .text-orange-900   { color: #ffedd5; }
+[data-theme="coldbrew"] .text-teal-600     { color: #2dd4bf; }
+[data-theme="coldbrew"] .text-teal-700     { color: #5eead4; }
+[data-theme="coldbrew"] .text-teal-800     { color: #99f6e4; }
+[data-theme="coldbrew"] .text-teal-900     { color: #ccfbf1; }
+[data-theme="coldbrew"] .text-yellow-600   { color: #facc15; }
+[data-theme="coldbrew"] .text-yellow-700   { color: #fde047; }
+[data-theme="coldbrew"] .text-yellow-800   { color: #fef08a; }
+[data-theme="coldbrew"] .text-yellow-900   { color: #fef9c3; }
+[data-theme="coldbrew"] .text-slate-600    { color: #94a3b8; }
+[data-theme="coldbrew"] .text-slate-700    { color: #cbd5e1; }
+[data-theme="coldbrew"] .text-slate-800    { color: #e2e8f0; }
+[data-theme="coldbrew"] .text-slate-900    { color: #f1f5f9; }
+[data-theme="coldbrew"] .text-gray-600     { color: #9ca3af; }
+[data-theme="coldbrew"] .text-gray-700     { color: #d1d5db; }
+[data-theme="coldbrew"] .text-gray-800     { color: #e5e7eb; }
+[data-theme="coldbrew"] .text-gray-900     { color: #f3f4f6; }
 
 /* ───── Summer Ice Cream — soft-serve pastel, vanilla cream base,
  *  raspberry-coral CTA, multi-flavour hero. Light, playful, summery.
@@ -1591,6 +1819,107 @@ body {
 [data-theme="chilli"] .text-emerald-800 { color: #b3e5c2; }
 [data-theme="chilli"] .text-sky-700     { color: #88c5d4; }
 [data-theme="chilli"] .text-sky-800     { color: #b8dfe9; }
+/* Complete colour coverage — missing -200 tints + all absent families. */
+[data-theme="chilli"] {
+  --color-amber-200:   rgba(255, 179, 60, 0.32);
+  --color-emerald-200: rgba(110, 180, 100, 0.24);
+  --color-sky-100:     rgba(110, 165, 194, 0.18);
+  --color-sky-200:     rgba(110, 165, 194, 0.26);
+  --color-violet-50:   rgba(139, 92, 246, 0.10);
+  --color-violet-100:  rgba(139, 92, 246, 0.18);
+  --color-violet-200:  rgba(139, 92, 246, 0.26);
+  --color-blue-50:     rgba(59, 130, 246, 0.10);
+  --color-blue-100:    rgba(59, 130, 246, 0.18);
+  --color-blue-200:    rgba(59, 130, 246, 0.26);
+  --color-green-50:    rgba(34, 197, 94, 0.10);
+  --color-green-100:   rgba(34, 197, 94, 0.18);
+  --color-green-200:   rgba(34, 197, 94, 0.26);
+  --color-red-50:      rgba(239, 68, 68, 0.10);
+  --color-red-100:     rgba(239, 68, 68, 0.18);
+  --color-red-200:     rgba(239, 68, 68, 0.26);
+  --color-cyan-50:     rgba(6, 182, 212, 0.10);
+  --color-cyan-100:    rgba(6, 182, 212, 0.18);
+  --color-cyan-200:    rgba(6, 182, 212, 0.26);
+  --color-indigo-50:   rgba(99, 102, 241, 0.10);
+  --color-indigo-100:  rgba(99, 102, 241, 0.18);
+  --color-indigo-200:  rgba(99, 102, 241, 0.26);
+  --color-purple-50:   rgba(168, 85, 247, 0.10);
+  --color-purple-100:  rgba(168, 85, 247, 0.18);
+  --color-purple-200:  rgba(168, 85, 247, 0.26);
+  --color-orange-50:   rgba(249, 115, 22, 0.10);
+  --color-orange-100:  rgba(249, 115, 22, 0.18);
+  --color-orange-200:  rgba(249, 115, 22, 0.26);
+  --color-teal-50:     rgba(20, 184, 166, 0.10);
+  --color-teal-100:    rgba(20, 184, 166, 0.18);
+  --color-teal-200:    rgba(20, 184, 166, 0.26);
+  --color-yellow-50:   rgba(234, 179, 8, 0.10);
+  --color-yellow-100:  rgba(234, 179, 8, 0.18);
+  --color-yellow-200:  rgba(234, 179, 8, 0.26);
+  --color-slate-50:    rgba(148, 163, 184, 0.08);
+  --color-slate-100:   rgba(148, 163, 184, 0.15);
+  --color-slate-200:   rgba(148, 163, 184, 0.24);
+  --color-gray-50:     rgba(156, 163, 175, 0.08);
+  --color-gray-100:    rgba(156, 163, 175, 0.15);
+  --color-gray-200:    rgba(156, 163, 175, 0.24);
+}
+/* Missing 600/900 levels for existing warm families. */
+[data-theme="chilli"] .text-rose-600     { color: #ff5840; }  /* fire-rose, 6.3:1 on card */
+[data-theme="chilli"] .text-rose-900     { color: #ffd8c0; }
+[data-theme="chilli"] .text-amber-600    { color: #ff9020; }  /* hot ember, 8.6:1 */
+[data-theme="chilli"] .text-amber-900    { color: #ffecb0; }
+[data-theme="chilli"] .text-emerald-600  { color: #50c878; }  /* bright lime-green, 8.8:1 */
+[data-theme="chilli"] .text-emerald-900  { color: #c0f0d0; }
+[data-theme="chilli"] .text-sky-600      { color: #58a8c0; }  /* muted ice-blue, 7.4:1 */
+[data-theme="chilli"] .text-sky-900      { color: #c8e8f4; }
+/* Complete missing families — text lifts for 600–900. */
+[data-theme="chilli"] .text-violet-600   { color: #a78bfa; }
+[data-theme="chilli"] .text-violet-700   { color: #c4b5fd; }
+[data-theme="chilli"] .text-violet-800   { color: #ddd6fe; }
+[data-theme="chilli"] .text-violet-900   { color: #ede9fe; }
+[data-theme="chilli"] .text-blue-600     { color: #60a5fa; }
+[data-theme="chilli"] .text-blue-700     { color: #93c5fd; }
+[data-theme="chilli"] .text-blue-800     { color: #bfdbfe; }
+[data-theme="chilli"] .text-blue-900     { color: #dbeafe; }
+[data-theme="chilli"] .text-green-600    { color: #4ade80; }
+[data-theme="chilli"] .text-green-700    { color: #86efac; }
+[data-theme="chilli"] .text-green-800    { color: #bbf7d0; }
+[data-theme="chilli"] .text-green-900    { color: #dcfce7; }
+[data-theme="chilli"] .text-red-600      { color: #f87171; }
+[data-theme="chilli"] .text-red-700      { color: #fca5a5; }
+[data-theme="chilli"] .text-red-800      { color: #fecaca; }
+[data-theme="chilli"] .text-red-900      { color: #fee2e2; }
+[data-theme="chilli"] .text-cyan-600     { color: #22d3ee; }
+[data-theme="chilli"] .text-cyan-700     { color: #67e8f9; }
+[data-theme="chilli"] .text-cyan-800     { color: #a5f3fc; }
+[data-theme="chilli"] .text-cyan-900     { color: #cffafe; }
+[data-theme="chilli"] .text-indigo-600   { color: #818cf8; }
+[data-theme="chilli"] .text-indigo-700   { color: #a5b4fc; }
+[data-theme="chilli"] .text-indigo-800   { color: #c7d2fe; }
+[data-theme="chilli"] .text-indigo-900   { color: #e0e7ff; }
+[data-theme="chilli"] .text-purple-600   { color: #c084fc; }
+[data-theme="chilli"] .text-purple-700   { color: #d8b4fe; }
+[data-theme="chilli"] .text-purple-800   { color: #e9d5ff; }
+[data-theme="chilli"] .text-purple-900   { color: #f3e8ff; }
+[data-theme="chilli"] .text-orange-600   { color: #fb923c; }
+[data-theme="chilli"] .text-orange-700   { color: #fdba74; }
+[data-theme="chilli"] .text-orange-800   { color: #fed7aa; }
+[data-theme="chilli"] .text-orange-900   { color: #ffedd5; }
+[data-theme="chilli"] .text-teal-600     { color: #2dd4bf; }
+[data-theme="chilli"] .text-teal-700     { color: #5eead4; }
+[data-theme="chilli"] .text-teal-800     { color: #99f6e4; }
+[data-theme="chilli"] .text-teal-900     { color: #ccfbf1; }
+[data-theme="chilli"] .text-yellow-600   { color: #facc15; }
+[data-theme="chilli"] .text-yellow-700   { color: #fde047; }
+[data-theme="chilli"] .text-yellow-800   { color: #fef08a; }
+[data-theme="chilli"] .text-yellow-900   { color: #fef9c3; }
+[data-theme="chilli"] .text-slate-600    { color: #94a3b8; }
+[data-theme="chilli"] .text-slate-700    { color: #cbd5e1; }
+[data-theme="chilli"] .text-slate-800    { color: #e2e8f0; }
+[data-theme="chilli"] .text-slate-900    { color: #f1f5f9; }
+[data-theme="chilli"] .text-gray-600     { color: #9ca3af; }
+[data-theme="chilli"] .text-gray-700     { color: #d1d5db; }
+[data-theme="chilli"] .text-gray-800     { color: #e5e7eb; }
+[data-theme="chilli"] .text-gray-900     { color: #f3f4f6; }
 
 /* ───── Greenwood — a walk through deep forest. Mossy parchment
  *  surfaces with chlorophyll undertones, fern-green CTAs, deep
@@ -1721,6 +2050,24 @@ body {
   --hero-mesh-4: #2a3d50;
 }
 
+/* Greenwood night-mode text lifts: the night bucket darkens surfaces to
+ * near-navy (card-solid #242c32, L≈0.024), but the daytime greenwood
+ * text-* overrides (e.g. .text-rose-700 #8a4438) were designed for the
+ * light-palette day canvas and fail at 2.00:1 on the dark night bg.
+ * These compound selectors override the daytime lifts for night only. */
+[data-theme="greenwood"][data-greenwood-time="night"] .text-rose-700    { color: #fb7185; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-rose-800    { color: #f87171; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-rose-900    { color: #fca5a5; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-amber-700   { color: #fbbf24; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-amber-800   { color: #fcd34d; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-amber-900   { color: #fde68a; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-emerald-600 { color: #34d399; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-emerald-700 { color: #34d399; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-emerald-800 { color: #6ee7b7; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-sky-600     { color: #38bdf8; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-sky-700     { color: #38bdf8; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-sky-800     { color: #7dd3fc; }
+
 /* Tame Tailwind's saturated tints so rose-* / amber-* / sky-* tints
  * harmonise with the moss-and-bark palette instead of fighting it.
  * Emerald stays close to the brand ramp — it's already at home. */
@@ -1847,7 +2194,7 @@ body {
 [data-theme="atompunk"] .text-rose-700    { color: #c0421f; }
 [data-theme="atompunk"] .text-rose-800    { color: #9a3418; }
 [data-theme="atompunk"] .text-rose-900    { color: #732613; }
-[data-theme="atompunk"] .text-amber-700   { color: #b78a0e; }
+[data-theme="atompunk"] .text-amber-700   { color: #92690a; }  /* deepened: was 2.85:1 on amber-50 chip (#b78a0e), now 4.57:1 */
 [data-theme="atompunk"] .text-amber-800   { color: #8e6a0a; }
 [data-theme="atompunk"] .text-amber-900   { color: #6c5008; }
 [data-theme="atompunk"] .text-emerald-700 { color: #0e5f5f; }
@@ -1951,6 +2298,99 @@ body {
 [data-theme="aurora"] .text-sky-700     { color: #38bdf8; }
 [data-theme="aurora"] .text-sky-800     { color: #7dd3fc; }
 [data-theme="aurora"] .text-sky-900     { color: #bae6fd; }
+/* Complete colour coverage — sky-200 + all absent families. */
+[data-theme="aurora"] {
+  --color-sky-200:     rgba(14, 165, 233, 0.26);
+  --color-violet-50:   rgba(139, 92, 246, 0.10);
+  --color-violet-100:  rgba(139, 92, 246, 0.18);
+  --color-violet-200:  rgba(139, 92, 246, 0.26);
+  --color-blue-50:     rgba(59, 130, 246, 0.10);
+  --color-blue-100:    rgba(59, 130, 246, 0.18);
+  --color-blue-200:    rgba(59, 130, 246, 0.26);
+  --color-green-50:    rgba(34, 197, 94, 0.10);
+  --color-green-100:   rgba(34, 197, 94, 0.18);
+  --color-green-200:   rgba(34, 197, 94, 0.26);
+  --color-red-50:      rgba(239, 68, 68, 0.10);
+  --color-red-100:     rgba(239, 68, 68, 0.18);
+  --color-red-200:     rgba(239, 68, 68, 0.26);
+  --color-cyan-50:     rgba(6, 182, 212, 0.10);
+  --color-cyan-100:    rgba(6, 182, 212, 0.18);
+  --color-cyan-200:    rgba(6, 182, 212, 0.26);
+  --color-indigo-50:   rgba(99, 102, 241, 0.10);
+  --color-indigo-100:  rgba(99, 102, 241, 0.18);
+  --color-indigo-200:  rgba(99, 102, 241, 0.26);
+  --color-purple-50:   rgba(168, 85, 247, 0.10);
+  --color-purple-100:  rgba(168, 85, 247, 0.18);
+  --color-purple-200:  rgba(168, 85, 247, 0.26);
+  --color-orange-50:   rgba(249, 115, 22, 0.10);
+  --color-orange-100:  rgba(249, 115, 22, 0.18);
+  --color-orange-200:  rgba(249, 115, 22, 0.26);
+  --color-teal-50:     rgba(20, 184, 166, 0.10);
+  --color-teal-100:    rgba(20, 184, 166, 0.18);
+  --color-teal-200:    rgba(20, 184, 166, 0.26);
+  --color-yellow-50:   rgba(234, 179, 8, 0.10);
+  --color-yellow-100:  rgba(234, 179, 8, 0.18);
+  --color-yellow-200:  rgba(234, 179, 8, 0.26);
+  --color-slate-50:    rgba(148, 163, 184, 0.08);
+  --color-slate-100:   rgba(148, 163, 184, 0.15);
+  --color-slate-200:   rgba(148, 163, 184, 0.24);
+  --color-gray-50:     rgba(156, 163, 175, 0.08);
+  --color-gray-100:    rgba(156, 163, 175, 0.15);
+  --color-gray-200:    rgba(156, 163, 175, 0.24);
+}
+/* Missing 600 levels for existing families + all absent families. */
+[data-theme="aurora"] .text-rose-600     { color: #fb7185; }
+[data-theme="aurora"] .text-amber-600    { color: #fbbf24; }
+[data-theme="aurora"] .text-emerald-600  { color: #34d399; }
+[data-theme="aurora"] .text-sky-600      { color: #38bdf8; }
+[data-theme="aurora"] .text-violet-600   { color: #a78bfa; }
+[data-theme="aurora"] .text-violet-700   { color: #c4b5fd; }
+[data-theme="aurora"] .text-violet-800   { color: #ddd6fe; }
+[data-theme="aurora"] .text-violet-900   { color: #ede9fe; }
+[data-theme="aurora"] .text-blue-600     { color: #60a5fa; }
+[data-theme="aurora"] .text-blue-700     { color: #93c5fd; }
+[data-theme="aurora"] .text-blue-800     { color: #bfdbfe; }
+[data-theme="aurora"] .text-blue-900     { color: #dbeafe; }
+[data-theme="aurora"] .text-green-600    { color: #4ade80; }
+[data-theme="aurora"] .text-green-700    { color: #86efac; }
+[data-theme="aurora"] .text-green-800    { color: #bbf7d0; }
+[data-theme="aurora"] .text-green-900    { color: #dcfce7; }
+[data-theme="aurora"] .text-red-600      { color: #f87171; }
+[data-theme="aurora"] .text-red-700      { color: #fca5a5; }
+[data-theme="aurora"] .text-red-800      { color: #fecaca; }
+[data-theme="aurora"] .text-red-900      { color: #fee2e2; }
+[data-theme="aurora"] .text-cyan-600     { color: #22d3ee; }
+[data-theme="aurora"] .text-cyan-700     { color: #67e8f9; }
+[data-theme="aurora"] .text-cyan-800     { color: #a5f3fc; }
+[data-theme="aurora"] .text-cyan-900     { color: #cffafe; }
+[data-theme="aurora"] .text-indigo-600   { color: #818cf8; }
+[data-theme="aurora"] .text-indigo-700   { color: #a5b4fc; }
+[data-theme="aurora"] .text-indigo-800   { color: #c7d2fe; }
+[data-theme="aurora"] .text-indigo-900   { color: #e0e7ff; }
+[data-theme="aurora"] .text-purple-600   { color: #c084fc; }
+[data-theme="aurora"] .text-purple-700   { color: #d8b4fe; }
+[data-theme="aurora"] .text-purple-800   { color: #e9d5ff; }
+[data-theme="aurora"] .text-purple-900   { color: #f3e8ff; }
+[data-theme="aurora"] .text-orange-600   { color: #fb923c; }
+[data-theme="aurora"] .text-orange-700   { color: #fdba74; }
+[data-theme="aurora"] .text-orange-800   { color: #fed7aa; }
+[data-theme="aurora"] .text-orange-900   { color: #ffedd5; }
+[data-theme="aurora"] .text-teal-600     { color: #2dd4bf; }
+[data-theme="aurora"] .text-teal-700     { color: #5eead4; }
+[data-theme="aurora"] .text-teal-800     { color: #99f6e4; }
+[data-theme="aurora"] .text-teal-900     { color: #ccfbf1; }
+[data-theme="aurora"] .text-yellow-600   { color: #facc15; }
+[data-theme="aurora"] .text-yellow-700   { color: #fde047; }
+[data-theme="aurora"] .text-yellow-800   { color: #fef08a; }
+[data-theme="aurora"] .text-yellow-900   { color: #fef9c3; }
+[data-theme="aurora"] .text-slate-600    { color: #94a3b8; }
+[data-theme="aurora"] .text-slate-700    { color: #cbd5e1; }
+[data-theme="aurora"] .text-slate-800    { color: #e2e8f0; }
+[data-theme="aurora"] .text-slate-900    { color: #f1f5f9; }
+[data-theme="aurora"] .text-gray-600     { color: #9ca3af; }
+[data-theme="aurora"] .text-gray-700     { color: #d1d5db; }
+[data-theme="aurora"] .text-gray-800     { color: #e5e7eb; }
+[data-theme="aurora"] .text-gray-900     { color: #f3f4f6; }
 
 /* ═════════════════════════════════════════════════════════════════
  *  Greenwood — ATMOSPHERE LAYER
@@ -2195,6 +2635,105 @@ body {
 [data-theme="dryice"] .text-emerald-800 { color: #6ee7b7; }
 [data-theme="dryice"] .text-sky-700     { color: #38bdf8; }
 [data-theme="dryice"] .text-sky-800     { color: #7dd3fc; }
+/* Complete colour coverage — missing -200 tints + all absent families. */
+[data-theme="dryice"] {
+  --color-amber-200:   rgba(245, 158, 11, 0.24);
+  --color-emerald-200: rgba(16, 185, 129, 0.26);
+  --color-sky-200:     rgba(14, 165, 233, 0.26);
+  --color-violet-50:   rgba(139, 92, 246, 0.10);
+  --color-violet-100:  rgba(139, 92, 246, 0.18);
+  --color-violet-200:  rgba(139, 92, 246, 0.26);
+  --color-blue-50:     rgba(59, 130, 246, 0.10);
+  --color-blue-100:    rgba(59, 130, 246, 0.18);
+  --color-blue-200:    rgba(59, 130, 246, 0.26);
+  --color-green-50:    rgba(34, 197, 94, 0.10);
+  --color-green-100:   rgba(34, 197, 94, 0.18);
+  --color-green-200:   rgba(34, 197, 94, 0.26);
+  --color-red-50:      rgba(239, 68, 68, 0.10);
+  --color-red-100:     rgba(239, 68, 68, 0.18);
+  --color-red-200:     rgba(239, 68, 68, 0.26);
+  --color-cyan-50:     rgba(6, 182, 212, 0.10);
+  --color-cyan-100:    rgba(6, 182, 212, 0.18);
+  --color-cyan-200:    rgba(6, 182, 212, 0.26);
+  --color-indigo-50:   rgba(99, 102, 241, 0.10);
+  --color-indigo-100:  rgba(99, 102, 241, 0.18);
+  --color-indigo-200:  rgba(99, 102, 241, 0.26);
+  --color-purple-50:   rgba(168, 85, 247, 0.10);
+  --color-purple-100:  rgba(168, 85, 247, 0.18);
+  --color-purple-200:  rgba(168, 85, 247, 0.26);
+  --color-orange-50:   rgba(249, 115, 22, 0.10);
+  --color-orange-100:  rgba(249, 115, 22, 0.18);
+  --color-orange-200:  rgba(249, 115, 22, 0.26);
+  --color-teal-50:     rgba(20, 184, 166, 0.10);
+  --color-teal-100:    rgba(20, 184, 166, 0.18);
+  --color-teal-200:    rgba(20, 184, 166, 0.26);
+  --color-yellow-50:   rgba(234, 179, 8, 0.10);
+  --color-yellow-100:  rgba(234, 179, 8, 0.18);
+  --color-yellow-200:  rgba(234, 179, 8, 0.26);
+  --color-slate-50:    rgba(148, 163, 184, 0.08);
+  --color-slate-100:   rgba(148, 163, 184, 0.15);
+  --color-slate-200:   rgba(148, 163, 184, 0.24);
+  --color-gray-50:     rgba(156, 163, 175, 0.08);
+  --color-gray-100:    rgba(156, 163, 175, 0.15);
+  --color-gray-200:    rgba(156, 163, 175, 0.24);
+}
+/* Missing 600/900 levels for existing families + all absent families. */
+[data-theme="dryice"] .text-rose-600     { color: #fb7185; }
+[data-theme="dryice"] .text-rose-900     { color: #fecdd3; }
+[data-theme="dryice"] .text-amber-600    { color: #fbbf24; }
+[data-theme="dryice"] .text-amber-900    { color: #fef3c7; }
+[data-theme="dryice"] .text-emerald-600  { color: #34d399; }
+[data-theme="dryice"] .text-emerald-900  { color: #d1fae5; }
+[data-theme="dryice"] .text-sky-600      { color: #38bdf8; }
+[data-theme="dryice"] .text-sky-900      { color: #e0f2fe; }
+[data-theme="dryice"] .text-violet-600   { color: #a78bfa; }
+[data-theme="dryice"] .text-violet-700   { color: #c4b5fd; }
+[data-theme="dryice"] .text-violet-800   { color: #ddd6fe; }
+[data-theme="dryice"] .text-violet-900   { color: #ede9fe; }
+[data-theme="dryice"] .text-blue-600     { color: #60a5fa; }
+[data-theme="dryice"] .text-blue-700     { color: #93c5fd; }
+[data-theme="dryice"] .text-blue-800     { color: #bfdbfe; }
+[data-theme="dryice"] .text-blue-900     { color: #dbeafe; }
+[data-theme="dryice"] .text-green-600    { color: #4ade80; }
+[data-theme="dryice"] .text-green-700    { color: #86efac; }
+[data-theme="dryice"] .text-green-800    { color: #bbf7d0; }
+[data-theme="dryice"] .text-green-900    { color: #dcfce7; }
+[data-theme="dryice"] .text-red-600      { color: #f87171; }
+[data-theme="dryice"] .text-red-700      { color: #fca5a5; }
+[data-theme="dryice"] .text-red-800      { color: #fecaca; }
+[data-theme="dryice"] .text-red-900      { color: #fee2e2; }
+[data-theme="dryice"] .text-cyan-600     { color: #22d3ee; }
+[data-theme="dryice"] .text-cyan-700     { color: #67e8f9; }
+[data-theme="dryice"] .text-cyan-800     { color: #a5f3fc; }
+[data-theme="dryice"] .text-cyan-900     { color: #cffafe; }
+[data-theme="dryice"] .text-indigo-600   { color: #818cf8; }
+[data-theme="dryice"] .text-indigo-700   { color: #a5b4fc; }
+[data-theme="dryice"] .text-indigo-800   { color: #c7d2fe; }
+[data-theme="dryice"] .text-indigo-900   { color: #e0e7ff; }
+[data-theme="dryice"] .text-purple-600   { color: #c084fc; }
+[data-theme="dryice"] .text-purple-700   { color: #d8b4fe; }
+[data-theme="dryice"] .text-purple-800   { color: #e9d5ff; }
+[data-theme="dryice"] .text-purple-900   { color: #f3e8ff; }
+[data-theme="dryice"] .text-orange-600   { color: #fb923c; }
+[data-theme="dryice"] .text-orange-700   { color: #fdba74; }
+[data-theme="dryice"] .text-orange-800   { color: #fed7aa; }
+[data-theme="dryice"] .text-orange-900   { color: #ffedd5; }
+[data-theme="dryice"] .text-teal-600     { color: #2dd4bf; }
+[data-theme="dryice"] .text-teal-700     { color: #5eead4; }
+[data-theme="dryice"] .text-teal-800     { color: #99f6e4; }
+[data-theme="dryice"] .text-teal-900     { color: #ccfbf1; }
+[data-theme="dryice"] .text-yellow-600   { color: #facc15; }
+[data-theme="dryice"] .text-yellow-700   { color: #fde047; }
+[data-theme="dryice"] .text-yellow-800   { color: #fef08a; }
+[data-theme="dryice"] .text-yellow-900   { color: #fef9c3; }
+[data-theme="dryice"] .text-slate-600    { color: #94a3b8; }
+[data-theme="dryice"] .text-slate-700    { color: #cbd5e1; }
+[data-theme="dryice"] .text-slate-800    { color: #e2e8f0; }
+[data-theme="dryice"] .text-slate-900    { color: #f1f5f9; }
+[data-theme="dryice"] .text-gray-600     { color: #9ca3af; }
+[data-theme="dryice"] .text-gray-700     { color: #d1d5db; }
+[data-theme="dryice"] .text-gray-800     { color: #e5e7eb; }
+[data-theme="dryice"] .text-gray-900     { color: #f3f4f6; }
 
 /* ============================================================
  *  Per-theme design language tokens

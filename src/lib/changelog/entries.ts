@@ -22,6 +22,21 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Full dark-theme colour coverage — May 2026 ───────────────────
+  {
+    title: "All dark themes — complete WCAG AA colour-family coverage",
+    body: "Coldbrew, Dryice, Chilli, and Aurora dark themes now have full override coverage for every Tailwind colour family used in the app. Previously, 12 families (violet, slate, green, red, cyan, blue, indigo, gray, orange, yellow, purple, teal) had no dark-theme tint-var or text-lift overrides — using default light Tailwind colours on dark surfaces caused severe contrast failures (as low as 1.9:1 for native text-rose-600 on espresso card). All four themes now match the complete override system already in place for the Voltage theme. An automated audit script (`node scripts/audit-theme-coverage.js`) validates coverage and exits non-zero if gaps are found.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Voltage theme — complete colour-system coverage pass",
+    body: "Extended the Voltage dark theme's colour override system to cover all remaining Tailwind colour families: green, red, cyan, indigo, purple, orange, teal, yellow, slate, gray, zinc, neutral, stone, lime, pink, fuchsia, and the critical sky-200 chip border fix. Added matching bright text lifts (600–900 shades) for each new family. Also added 600-level lifts for rose/amber/emerald/sky which were previously only covered at 700–800.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Voltage colour-system completeness — May 2026 ───────────────
   {
     title: "Voltage theme — violet, blue, and brand-600 text contrast",
