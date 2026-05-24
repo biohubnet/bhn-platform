@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.24b";
+export const TOUR_VERSION = "2026.05.24c";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Platform Demo Hub (May 2026) ────────────────────────────────
+  {
+    id: "admin.demo-hub",
+    title: "New: Platform Demo Hub",
+    body: "A new interactive walkthrough at Admin → Platform Demo Hub lets you guide visitors through the full BHN journey via three persona characters: Rex (Trainee), Vera (Employer), and Max (Admin). Each persona explores ENGAGE, EXPERIENCE, and EQUIP with live links to real platform pages. Designed for investor briefings and board presentations.",
+    path: "/admin/demo",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Demo Hub", href: "/admin/demo" },
+    since: "2026.05.24c",
+  },
   // ─── HR sprint: 11 new employer features (May 2026) ──────────────
   {
     id: "employer.job-board",

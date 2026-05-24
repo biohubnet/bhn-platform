@@ -315,6 +315,8 @@ const adminExperienceItems: NavItem[] = [
     description: "Time-limited demo workspaces for prospective partners. Auto-cleanup after expiry." },
   { label: "Showcase Trainee",    href: "/admin/showcases",           icon: Sparkles,     minRole: "admin",
     description: "Single global advanced-trainee demo account — completed coursework, both merch tiers earned, full profile, scheduled interviews. For sales calls and training-team demos." },
+  { label: "Platform Demo Hub",  href: "/admin/demo",                icon: Drama,        minRole: "admin",
+    description: "Interactive 3-persona walkthrough for senior management, investors, and board presentations. Rex (Trainee), Vera (Employer), and Max (Admin) each navigate ENGAGE · EXPERIENCE · EQUIP." },
   { label: "Talent pool",         href: "/talent-pool",               icon: Users,        minRole: "admin",
     description: "Approved talent-application members — same surface employers see, with full submission data + comment threads. Use this to coordinate with employer reviewers." },
   // Visible to instructors + industrial mentors as well as admins —

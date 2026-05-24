@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Platform Demo Hub — May 2026 ─────────────────────────────────
+  {
+    title: "Platform Demo Hub — interactive 3-persona walkthrough",
+    body: "A new admin page at /admin/demo provides an interactive, senior-management-ready walkthrough of the BHN platform. Three dinosaur characters — Rex (Triceratops / Trainee / emerald), Vera (Velociraptor / Employer / violet), and Max (Brachiosaurus / Admin / sky) — each navigate all three platform pillars: ENGAGE (learning & certification), EXPERIENCE (placements & hiring), and EQUIP (funding & ventures). Vera's locked states for ENGAGE and EQUIP explain the cross-role relationship rather than silently blocking. Each phase panel shows the screens the persona sees, the actions they take, how their actions ripple to the other two roles, and a live link to the real platform page. Designed for investor briefings, board presentations, sales calls, and new-staff orientation.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Sakura atmosphere — May 2026 ────────────────────────────────
   {
     title: "Sakura theme — falling cherry-blossom petals",
