@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Sakura atmosphere — May 2026 ────────────────────────────────
+  {
+    title: "Sakura theme — falling cherry-blossom petals",
+    body: "The Sakura theme now has a live atmosphere layer: 10 cherry-blossom petals drift across the viewport in three petal shapes (single / open / elongated), each with its own random duration (22–38 s), sway amplitude, and starting rotation. A blurred rose-pink petal-drift mist settles at the bottom of the screen, and a rotating hanami scene caption (花見) appears in the bottom-right corner, cycling every 18 s. Respects prefers-reduced-motion — motion collapses completely while the colour palette remains. Follows the same architecture as the Greenwood falling-leaves layer.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Full dark-theme colour coverage — May 2026 ───────────────────
   {
     title: "All dark themes — complete WCAG AA colour-family coverage",

@@ -8,6 +8,7 @@ import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { ConsentProvider } from "@/components/consent/ConsentProvider";
 import { CookieBanner } from "@/components/consent/CookieBanner";
 import { GreenwoodAtmosphere } from "@/components/themes/GreenwoodAtmosphere";
+import { SakuraAtmosphere } from "@/components/themes/SakuraAtmosphere";
 import type { DesignSystemId } from "@/lib/design-system/registry";
 
 export function Providers({
@@ -35,6 +36,10 @@ export function Providers({
                   read the active theme; returns null for every other
                   theme so it's free until needed. */}
               <GreenwoodAtmosphere />
+              {/* Falling cherry-blossom petals + pink mist when
+                  theme === "sakura". Returns null for every other
+                  theme — free while inactive. */}
+              <SakuraAtmosphere />
               {children}
               <CookieBanner />
             </DesignSystemProvider>

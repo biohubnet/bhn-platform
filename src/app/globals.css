@@ -2613,6 +2613,130 @@ body {
   .greenwood-atmosphere .greenwood-caption-text { animation: none !important; }
 }
 
+/* ═════════════════════════════════════════════════════════════════
+ *  Sakura — ATMOSPHERE LAYER
+ *
+ *  Companion CSS to <SakuraAtmosphere> in
+ *  src/components/themes/SakuraAtmosphere.tsx.
+ *
+ *    • sakura-petal-fall keyframe — one shared keyframe driven by
+ *      per-petal CSS vars (--petal-sway, --petal-start-rot,
+ *      --petal-scale) so no two petals follow the same path.
+ *    • sakura-mist — blurred rose-pink wash at the bottom of the
+ *      viewport, reads as accumulated fallen petals.
+ *    • sakura-caption — hanami scene observations (bottom-right),
+ *      fade in on each new line.
+ *
+ *  Mirrors the Greenwood atmosphere architecture exactly — petals
+ *  rotate less than leaves (smoother tumble) and sway more (they're
+ *  lighter than oak leaves in autumn wind).
+ *  ═════════════════════════════════════════════════════════════════ */
+
+@keyframes sakura-petal-fall {
+  0% {
+    transform:
+      translate3d(0, -14vh, 0)
+      rotate(var(--petal-start-rot, 0deg))
+      scale(var(--petal-scale, 1));
+    opacity: 0;
+  }
+  6%  { opacity: 1; }
+  25% {
+    transform:
+      translate3d(calc(var(--petal-sway, 90px) *  0.55), 25vh, 0)
+      rotate(calc(var(--petal-start-rot, 0deg) + 160deg))
+      scale(var(--petal-scale, 1));
+  }
+  50% {
+    transform:
+      translate3d(calc(var(--petal-sway, 90px) * -0.65), 50vh, 0)
+      rotate(calc(var(--petal-start-rot, 0deg) + 340deg))
+      scale(var(--petal-scale, 1));
+  }
+  75% {
+    transform:
+      translate3d(calc(var(--petal-sway, 90px) *  0.40), 75vh, 0)
+      rotate(calc(var(--petal-start-rot, 0deg) + 510deg))
+      scale(var(--petal-scale, 1));
+  }
+  94% { opacity: 1; }
+  100% {
+    transform:
+      translate3d(calc(var(--petal-sway, 90px) * -0.25), 116vh, 0)
+      rotate(calc(var(--petal-start-rot, 0deg) + 660deg))
+      scale(var(--petal-scale, 1));
+    opacity: 0;
+  }
+}
+
+@keyframes sakura-mist-drift {
+  0%, 100% { transform: translate3d(0, 0, 0);     opacity: 0.50; }
+  50%       { transform: translate3d(28px, -8px, 0); opacity: 0.68; }
+}
+
+.sakura-atmosphere .sakura-mist {
+  position: absolute;
+  inset: -10% -20% -10% -20%;
+  background:
+    radial-gradient(ellipse 60% 35% at 20% 88%, rgba(248, 180, 196, 0.28), transparent 68%),
+    radial-gradient(ellipse 55% 30% at 76% 94%, rgba(252, 210, 220, 0.22), transparent 70%),
+    radial-gradient(ellipse 40% 22% at 50% 76%, rgba(255, 228, 234, 0.16), transparent 72%);
+  filter: blur(32px);
+  animation: sakura-mist-drift 56s ease-in-out infinite;
+}
+
+.sakura-atmosphere .sakura-petal {
+  position: absolute;
+  top: 0;
+  display: inline-block;
+  line-height: 0;
+  filter: drop-shadow(0 1px 2px rgba(176, 60, 90, 0.10));
+  animation-name: sakura-petal-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* ── Sakura scene caption (bottom-right). Reuses the same fade-in
+ *    timing pattern as Greenwood's forest captions. */
+@keyframes sakura-caption-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sakura-atmosphere .sakura-caption {
+  position: absolute;
+  bottom: 20px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.52;
+}
+.sakura-atmosphere .sakura-caption-marker {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d04c61;
+  flex-shrink: 0;
+}
+.sakura-atmosphere .sakura-caption-text {
+  font-size: 11px;
+  font-style: italic;
+  color: #6e2030;
+  letter-spacing: 0.03em;
+  animation: sakura-caption-fade-in 1.2s ease forwards;
+}
+
+/* Reduced-motion safety net — same defence-in-depth pattern as
+ * Greenwood. The component already returns null for reduced-motion
+ * users; this covers any edge case where the DOM persists. */
+@media (prefers-reduced-motion: reduce) {
+  .sakura-atmosphere .sakura-mist,
+  .sakura-atmosphere .sakura-petal,
+  .sakura-atmosphere .sakura-caption-text { animation: none !important; }
+}
+
 /* Tame Tailwind tints for the dark Dry Ice. Same approach as the
  * Nightfall theme — desaturate rose / amber / emerald base tints so
  * cards using bg-rose-50 etc. don't blast the cool palette. */
