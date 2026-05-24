@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.22b";
+export const TOUR_VERSION = "2026.05.24a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Voltage theme hero title contrast fix (May 2026) ────────────
+  {
+    id: "employer.voltage-title-contrast",
+    title: "Voltage theme: hero titles now readable",
+    body: "The **Welcome back** title on all employer pages now uses bright electric-cyan on the Voltage (hi-tech) theme, replacing the previous dark-teal gradient that made the text hard to read against the near-black hero.",
+    path: "/employer",
+    placement: "center",
+    roles: ["employer", "admin", "superadmin"],
+    since: "2026.05.24a",
+  },
   // ─── Admin: employer feature inventory (May 2026) ─────────────────
   {
     id: "admin.employer-feature-inventory",

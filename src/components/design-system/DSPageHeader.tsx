@@ -93,7 +93,7 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
                   className="gradient-text"
                   style={{
                     backgroundImage:
-                      "linear-gradient(120deg, rgba(255,255,255,0.95) 0%, var(--brand-200, #bae6fd) 55%, rgba(255,255,255,0.95) 100%)",
+                      "var(--hero-title-gradient, linear-gradient(120deg, rgba(255,255,255,0.95) 0%, var(--brand-200, #bae6fd) 55%, rgba(255,255,255,0.95) 100%))",
                   }}
                 >
                   {title}

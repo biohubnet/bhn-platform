@@ -422,6 +422,10 @@
   --hero-mesh-2: #06b6d4;
   --hero-mesh-3: #0e7490;
   --hero-mesh-4: #042f38;
+
+  /* Studio hero title uses bright cyan on Voltage so the text is legible
+   * against the near-black hero background (--brand-200 is dark #005f86). */
+  --hero-title-gradient: linear-gradient(120deg, rgba(255,255,255,0.95) 0%, #00d4ff 55%, rgba(255,255,255,0.95) 100%);
 }
 
 /* Body bg-size override: radials fill the screen, grid layers tile. */
