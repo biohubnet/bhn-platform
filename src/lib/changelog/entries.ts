@@ -22,6 +22,84 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── HR sprint — May 2026 ──────────────────────────────────────────
+  {
+    title: "Public job board + direct-apply path",
+    body: "Candidates can now browse all active postings at `/jobs` and apply directly from `/jobs/[id]/apply`. The form collects name, email, phone (optional), cover letter (100–3000 chars), and resume URL. Submissions create an `AccessRequest` row so employers see them in their hiring workspace without any admin step.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Notification inbox — bell icon + unread badge",
+    body: "A bell icon now appears in the sidebar header showing an unread count. Clicking it opens a drawer grouped by day, with per-notification icons and mark-read / mark-all-read actions. The count is fetched server-side on every page load so it's accurate on first paint.",
+    kind: "feature",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
+  {
+    title: "Employer onboarding wizard",
+    body: "New employers see a 4-step guided wizard (fixed bottom-left card) walking through: set up your company profile → post your first role → invite teammates → you're ready. Progress is persisted in localStorage, and the wizard can be minimised or dismissed permanently.",
+    kind: "feature",
+    visibleTo: ALL.filter(r => r === "employer"),
+    daysAgo: 0,
+  },
+  {
+    title: "Email template management",
+    body: "A new **Email templates** page at `/employer/templates` lets you create, edit, and delete reusable email templates grouped by kind: rejection, interview invite, offer, follow-up, and general. Each template supports merge variables (`{{candidateFirstName}}`, `{{postingTitle}}`, etc.) with one-click chip insertion.",
+    kind: "feature",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
+  {
+    title: "Pipeline analytics + CSV export",
+    body: "A new **Analytics** page at `/employer/analytics` shows stage-by-stage funnel counts, offer acceptance rates, average days-per-stage velocity bars, and a company-wide summary. Download a full CSV of all applications with one click.",
+    kind: "feature",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
+  {
+    title: "Interview calendar",
+    body: "A new **Calendar** page at `/employer/calendar` displays all upcoming interviews in a week-view grid (desktop) or stacked list (mobile). Navigate weeks with Previous/Next arrows, see format chips (phone/video/on-site), and spot confirmed vs. pending slots at a glance.",
+    kind: "feature",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
+  {
+    title: "Interview scorecard builder",
+    body: "Each posting now has a dedicated **Scorecard** page at `/employer/postings/[id]/scorecard`. Build a rubric of up to 10 criteria with custom labels, descriptions, and 4- or 5-point scales. Interviewers submit scores and a hire/no-hire recommendation per candidate; all submissions are visible in a summary panel.",
+    kind: "feature",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
+  {
+    title: "Bulk candidate messaging",
+    body: "Select one or more applicants in the hiring workspace and compose a freeform email via the **Message candidates** panel that appears below the list. Supports `{{candidateFirstName}}` personalisation. A two-step confirm prevents accidental sends.",
+    kind: "feature",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
+  {
+    title: "Hiring team assignment per posting",
+    body: "A new **Hiring team** section at the bottom of each expanded posting row lets managers assign company members to the posting with a role: Recruiter, Hiring Manager, Interviewer, or Observer. Assigned members receive notifications for that posting.",
+    kind: "feature",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
+  {
+    title: "Duplicate posting",
+    body: "A **Duplicate** button (two-step confirm) now appears next to each posting header in the workspace. Creates a copy titled `<original> (Copy)` in draft status so you can reuse a well-crafted posting without re-entering everything from scratch.",
+    kind: "feature",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
+  {
+    title: "Talent pool: skills, stage, and availability filters",
+    body: "The talent pool now supports three new search dimensions: filter by **skills** (comma-separated), by **pipeline stage** (new / shortlisted / phone screen / etc.), and by **availability** (exclude anyone already in offer/hired stage). All three filters combine with the existing text search.",
+    kind: "improvement",
+    visibleTo: ALL.filter(r => r === "employer" || r === "admin" || r === "superadmin"),
+    daysAgo: 0,
+  },
   {
     title: "Voltage theme: hero title contrast fix for employer pages",
     body: "On the **Voltage** (hi-tech) theme, the hero title on all `/employer/*` pages (Postings, Team, How it works, etc.) now uses a bright electric-cyan gradient (`#00d4ff`) instead of the dark teal `--brand-200` token. The Studio DSPageHeader title gradient is now theme-overridable via `--hero-title-gradient` — every other theme continues to use its existing brand-200 sweep, and Voltage overrides it with its bright `--brand-500` cyan so the title is legible against the near-black hero background.",

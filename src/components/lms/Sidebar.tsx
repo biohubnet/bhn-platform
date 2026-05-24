@@ -60,6 +60,7 @@ import {
   Eye,
   Drama,
 } from "lucide-react";
+import { NotificationBell } from "@/components/ui/NotificationInbox";
 
 interface NavItem {
   label: string;
@@ -240,6 +241,12 @@ const employerItems: (NavItem & { labelKey: string })[] = [
   { label: "Team",              labelKey: "nav.employerTeam",       href: "/employer/team",       icon: Users2,
     description: "Manage your company workspace — invite teammates, approve join requests, and set role permissions. Owner can change roles; manager+ can send invites.",
     badgeKey: "employer-join-requests" },
+  { label: "Templates",         labelKey: "nav.employerTemplates",  href: "/employer/templates",  icon: Mail,
+    description: "Email templates for rejections, interview invites, offers, and follow-ups. Supports merge variables like {{candidateFirstName}} and {{postingTitle}}." },
+  { label: "Analytics",         labelKey: "nav.employerAnalytics",  href: "/employer/analytics",  icon: BarChart3,
+    description: "Pipeline conversion rates, stage velocity, offer acceptance, and CSV export across all your postings." },
+  { label: "Calendar",          labelKey: "nav.employerCalendar",   href: "/employer/calendar",   icon: Calendar,
+    description: "Week-view calendar of all upcoming interviews across your postings — navigate weeks, see pending vs. confirmed slots." },
   { label: "Talent pool",       labelKey: "nav.talentPool",         href: "/talent-pool",         icon: Users,
     description: "Browse approved talent-application members. View full applications and leave comments (visible to admins + employers, never to the applicant). Commenting unlocks only after admin approves the applicant's eligibility." },
 ];
@@ -495,6 +502,10 @@ interface SidebarProps {
    *  /profile/preferences switchboard. Items in this set are filtered
    *  out of the sidebar before render. */
   hiddenFeatures?: Set<string>;
+  /** Unread notification count — rendered as a badge on the bell icon
+   *  in the logo header. Only meaningful for signed-in users with
+   *  employer/hiring-team activity. */
+  initialUnreadCount?: number;
 }
 
 /**
@@ -1144,6 +1155,7 @@ export function Sidebar({
   queueCounts,
   committees = [],
   hiddenFeatures,
+  initialUnreadCount = 0,
 }: SidebarProps) {
   // Helper used wherever the sidebar iterates an item list — drops
   // items the user has hidden via /profile/preferences. When the
@@ -1312,15 +1324,16 @@ export function Sidebar({
         </button>
 
         {/* Logo */}
-        <Link href="/dashboard" className="px-6 py-5 border-b border-line block hover:bg-elevated/50 transition-colors">
-          <div className="flex items-center gap-3">
-            <LogoMark size={36} className="drop-shadow-sm" />
-            <div className="leading-tight">
+        <div className="px-4 py-4 border-b border-line flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-3 flex-1 min-w-0 hover:bg-elevated/50 rounded-lg px-2 py-1 transition-colors">
+            <LogoMark size={36} className="drop-shadow-sm shrink-0" />
+            <div className="leading-tight min-w-0">
               <p className="font-bold text-fg text-sm">BHN <span className="text-brand-600 font-semibold">Training</span></p>
               <p className="text-[10px] uppercase tracking-[0.18em] text-subtle mt-0.5">{effectiveRole}</p>
             </div>
-          </div>
-        </Link>
+          </Link>
+          <NotificationBell initialUnreadCount={initialUnreadCount} />
+        </div>
 
       <nav data-sidebar-nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {/* Dashboard is the standard learner home. Employers don't

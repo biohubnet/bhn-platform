@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Search, ArrowRight, MessageCircle, Lock, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Users, ArrowRight, MessageCircle, Lock, CheckCircle2, AlertTriangle } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canComment, isCommentable } from "@/lib/talent-pool/comments";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { EligibilityBatchToolbar, RowCheckbox } from "@/components/talent-pool/EligibilityBatchToolbar";
+import { TalentPoolFilterBar } from "@/components/talent-pool/TalentPoolFilterBar";
 
 /**
  * /talent-pool — admin + employer + instructor view of approved
@@ -26,7 +27,7 @@ import { EligibilityBatchToolbar, RowCheckbox } from "@/components/talent-pool/E
 export default async function TalentPoolPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; skills?: string; stage?: string; available?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login?callbackUrl=/talent-pool");
@@ -35,6 +36,9 @@ export default async function TalentPoolPage({
 
   const sp = await searchParams;
   const q = sp.q?.trim() ?? "";
+  const skillsParam = sp.skills?.trim() ?? "";
+  const stage = sp.stage?.trim() ?? "";
+  const available = sp.available === "true";
 
   const form = await prisma.eventForm.findUnique({
     where: { slug: "talent-application" },
@@ -54,6 +58,91 @@ export default async function TalentPoolPage({
   // Staff can approve eligibility (admin/instructor); employers cannot.
   const canApproveEligibility = isAdmin || isInstructor;
 
+  // Skills filter: resolve skill names → userIds with matching UserSkill rows.
+  // We do a case-insensitive partial match on skill name so "PCR" matches "PCR
+  // amplification" etc. When no skills param is given this step is skipped.
+  const skillTokens = skillsParam
+    ? skillsParam.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  let skillFilterUserIds: string[] | null = null;
+  if (skillTokens.length > 0) {
+    // Find all Skill ids whose name matches any token (case-insensitive).
+    const matchingSkills = await prisma.skill.findMany({
+      where: {
+        OR: skillTokens.map((token) => ({
+          name: { contains: token, mode: "insensitive" as const },
+        })),
+        status: { not: "deprecated" },
+      },
+      select: { id: true },
+    });
+    const skillIds = matchingSkills.map((s) => s.id);
+    if (skillIds.length === 0) {
+      // No skills matched — no results.
+      skillFilterUserIds = [];
+    } else {
+      const userSkills = await prisma.userSkill.findMany({
+        where: { skillId: { in: skillIds } },
+        select: { userId: true },
+        distinct: ["userId"],
+      });
+      skillFilterUserIds = userSkills.map((us) => us.userId);
+    }
+  }
+
+  // Stage filter: find applicantIds that have an ApplicationStatus with the
+  // requested status value.
+  let stageFilterUserIds: string[] | null = null;
+  if (stage) {
+    const statuses = await prisma.applicationStatus.findMany({
+      where: { status: stage },
+      select: { applicantId: true },
+      distinct: ["applicantId"],
+    });
+    stageFilterUserIds = statuses.map((s) => s.applicantId);
+  }
+
+  // Available filter: exclude candidates who already have offer/hired status.
+  let unavailableUserIds: string[] | null = null;
+  if (available) {
+    const placed = await prisma.applicationStatus.findMany({
+      where: { status: { in: ["offer", "hired"] } },
+      select: { applicantId: true },
+      distinct: ["applicantId"],
+    });
+    unavailableUserIds = placed.map((s) => s.applicantId);
+  }
+
+  // Build the user-id filter combining skills + stage + available constraints.
+  // All active constraints must be satisfied (intersection).
+  let userIdFilter: { in: string[] } | { notIn: string[] } | undefined = undefined;
+  {
+    const includeSets: string[][] = [];
+    if (skillFilterUserIds !== null) includeSets.push(skillFilterUserIds);
+    if (stageFilterUserIds !== null) includeSets.push(stageFilterUserIds);
+
+    if (includeSets.length > 0) {
+      // Intersect all include sets.
+      const intersected = includeSets.reduce((acc, cur) => {
+        const s = new Set(cur);
+        return acc.filter((id) => s.has(id));
+      });
+      userIdFilter = { in: intersected };
+    }
+
+    if (unavailableUserIds !== null && unavailableUserIds.length > 0) {
+      // If we already have an include set, subtract unavailable from it.
+      if (userIdFilter && "in" in userIdFilter) {
+        const excludeSet = new Set(unavailableUserIds);
+        userIdFilter = { in: userIdFilter.in.filter((id) => !excludeSet.has(id)) };
+      } else {
+        // No include constraint yet — just exclude.
+        userIdFilter = { notIn: unavailableUserIds };
+      }
+    }
+  }
+
   const submissions = await prisma.eventFormSubmission.findMany({
     where: {
       formId: form.id,
@@ -62,6 +151,10 @@ export default async function TalentPoolPage({
       // Employer-facing gate: only show eligibility-approved rows.
       // Admin/instructor: include un-checked ones so they can approve.
       ...(isEmployer ? { eligibilityApprovedAt: { not: null } } : {}),
+      // User-id filter from skills/stage/available constraints.
+      ...(userIdFilter !== undefined
+        ? { user: { id: userIdFilter } }
+        : {}),
       ...(q && {
         OR: [
           { email: { contains: q, mode: "insensitive" as const } },
@@ -120,26 +213,18 @@ export default async function TalentPoolPage({
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
 
-      <form action="/talent-pool" method="get" className="flex items-center gap-2">
-        <label className="relative flex-1 max-w-sm">
-          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
-          <input
-            type="search"
-            name="q"
-            defaultValue={q}
-            placeholder="Search name or email…"
-            className="w-full bg-card border border-line rounded-xl pl-8 pr-3 py-2 text-sm"
-          />
-        </label>
-        {q && (
-          <Link href="/talent-pool" className="text-xs text-muted hover:text-fg">
-            Clear
-          </Link>
-        )}
-        {/* Pool-wide eligibility split — gives admins/instructors a
-            sense of "how much triage is left" before they scroll. */}
-        {canApproveEligibility && submissions.length > 0 && (
-          <span className="ml-auto inline-flex items-center gap-3 text-[11px] font-mono uppercase tracking-[0.18em] text-fg-muted">
+      <TalentPoolFilterBar q={q} skills={skillsParam} stage={stage} available={available} />
+
+      {/* Pool-wide eligibility split — gives admins/instructors a
+          sense of "how much triage is left" before they scroll. */}
+      {canApproveEligibility && submissions.length > 0 && (
+        <div className="flex items-center gap-4 text-[11px] font-mono uppercase tracking-[0.18em] text-fg-muted">
+          {(q || skillsParam || stage || available) && (
+            <Link href="/talent-pool" className="text-xs text-muted hover:text-fg font-sans normal-case tracking-normal mr-auto">
+              ← Clear filters
+            </Link>
+          )}
+          <span className="ml-auto inline-flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               {eligibleCount} eligible
@@ -149,8 +234,15 @@ export default async function TalentPoolPage({
               {pendingCount} pending
             </span>
           </span>
-        )}
-      </form>
+        </div>
+      )}
+      {!canApproveEligibility && (q || skillsParam || stage || available) && (
+        <div>
+          <Link href="/talent-pool" className="text-xs text-muted hover:text-fg">
+            ← Clear filters
+          </Link>
+        </div>
+      )}
 
       {submissions.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-card p-10 text-center">

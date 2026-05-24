@@ -51,6 +51,7 @@ import { getActiveCompanyId, updateLastSeen } from "@/lib/employer/company";
 import { ELIGIBLE_APPLICANT_FILTER } from "@/lib/talent-pool/eligibility";
 import { EditProfileTrigger } from "@/components/employer/EditProfileTrigger";
 import { SetPasswordBanner } from "@/components/employer/SetPasswordBanner";
+import { OnboardingWizard } from "@/components/employer/OnboardingWizard";
 import { normalizeLogoShape, logoShapeClasses } from "@/lib/employer/logo-shape";
 import {
   parseLogoTransform,
@@ -265,6 +266,12 @@ export default async function EmployerHomePage() {
   // Studio is now applied segment-wide via employer/layout.tsx.
   return (
     <div className="-mt-2 space-y-0">
+      {/* Onboarding wizard — shows as a fixed bottom-left card for new
+          employers. localStorage-persisted so dismiss survives reloads.
+          Not shown to admins (they already know the portal). */}
+      {!isAdmin && (
+        <OnboardingWizard show={true} />
+      )}
 
       {/* ── PANEL ──────────────────────────────────────────────
           Single rounded outer wrapper containing the cover banner

@@ -34,11 +34,13 @@ import { useState, useMemo, useEffect } from "react";
 import {
   Sparkles, AlertTriangle, ArrowRight, Inbox, Activity, CheckCircle2,
   Calendar as CalendarIcon, FilePlus, ChevronDown, ChevronRight, X,
-  Briefcase, Building2, Users, Loader2,
+  Briefcase, Building2, Users, Loader2, Copy, Mail,
 } from "lucide-react";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { ApplicantPanel } from "@/components/employer/workspace/ApplicantPanel";
 import { NewPostingInline } from "@/components/employer/workspace/NewPostingInline";
+import { PostingTeamPanel } from "@/components/employer/workspace/PostingTeamPanel";
+import { MessageComposer } from "@/components/employer/workspace/MessageComposer";
 import { cn } from "@/lib/utils";
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -419,6 +421,39 @@ function PostingRow({
   onReloadApplicants: () => void;
 }) {
   const c = posting.counts;
+
+  // ── Duplicate state ─────────────────────────────────────
+  const [dupeConfirm, setDupeConfirm]   = useState(false);
+  const [dupeLoading, setDupeLoading]   = useState(false);
+
+  async function duplicate(e: React.MouseEvent) {
+    e.stopPropagation();
+    setDupeLoading(true);
+    try {
+      const r = await fetch(`/api/employer/postings/${posting.id}/duplicate`, { method: "POST" });
+      if (r.ok) window.location.reload();
+    } finally {
+      setDupeLoading(false);
+      setDupeConfirm(false);
+    }
+  }
+
+  // ── Bulk applicant selection for messaging ───────────────
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  function toggleSelect(appStatusId: string | null) {
+    if (!appStatusId) return;
+    setSelectedIds((prev) =>
+      prev.includes(appStatusId) ? prev.filter((id) => id !== appStatusId) : [...prev, appStatusId],
+    );
+  }
+
+  function toggleSelectAll() {
+    if (!applicants) return;
+    const allIds = applicants.map((a) => a.applicationStatusId).filter(Boolean) as string[];
+    setSelectedIds(selectedIds.length === allIds.length ? [] : allIds);
+  }
+
   // Funnel mini-bar widths
   const funnel = useMemo(() => {
     const total = c.total || 1;
@@ -438,64 +473,95 @@ function PostingRow({
         isExpanded ? "border-brand-300 ring-1 ring-brand-200" : "border-line hover:border-brand-200",
       )}
     >
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full text-left p-4 sm:p-5"
-        aria-expanded={isExpanded}
-      >
-        <div className="flex items-start gap-3 flex-wrap">
-          <div className="shrink-0 mt-1">
-            {isExpanded ? (
-              <ChevronDown size={16} className="text-brand-600" />
-            ) : (
-              <ChevronRight size={16} className="text-subtle" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <h3 className="text-base font-bold text-fg tracking-tight">{posting.title}</h3>
-              <StatusPill status={posting.status} />
-              {posting.deadline && (
-                <span className="text-[11px] text-subtle inline-flex items-center gap-0.5">
-                  <CalendarIcon size={10} /> {new Date(posting.deadline).toLocaleDateString()}
-                </span>
+      {/* Header row — left is expand trigger, right has action buttons */}
+      <div className="flex items-stretch">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex-1 text-left p-4 sm:p-5 min-w-0"
+          aria-expanded={isExpanded}
+        >
+          <div className="flex items-start gap-3 flex-wrap">
+            <div className="shrink-0 mt-1">
+              {isExpanded ? (
+                <ChevronDown size={16} className="text-brand-600" />
+              ) : (
+                <ChevronRight size={16} className="text-subtle" />
               )}
             </div>
-            <p className="text-xs text-muted mt-0.5 truncate">
-              {posting.companyName}
-              {posting.location && <> · {posting.location}</>}
-              {posting.lastTouchedByName && posting.lastTouchedAt && (
-                <span className="ml-2 text-subtle">
-                  · touched by {posting.lastTouchedByName} · {relativeTimeShort(posting.lastTouchedAt)}
-                </span>
-              )}
-            </p>
-            {/* Funnel mini-bar */}
-            {c.total > 0 && (
-              <div className="mt-2 max-w-md">
-                <div className="flex h-1.5 rounded-full overflow-hidden bg-elevated">
-                  {funnel.newPct > 0       && <span className="bg-amber-500"   style={{ width: `${funnel.newPct}%` }} />}
-                  {funnel.inProgressPct > 0 && <span className="bg-brand-500"   style={{ width: `${funnel.inProgressPct}%` }} />}
-                  {funnel.hiredPct > 0     && <span className="bg-emerald-500" style={{ width: `${funnel.hiredPct}%` }} />}
-                  {funnel.closedPct > 0    && <span className="bg-slate-400"   style={{ width: `${funnel.closedPct}%` }} />}
-                </div>
-                <p className="text-[11px] text-muted mt-1.5">
-                  {c.total} applicant{c.total === 1 ? "" : "s"}
-                  {c.newCount > 0    && <> · <span className="font-bold text-amber-700">{c.newCount} new</span></>}
-                  {c.inProgress > 0  && <> · <span className="text-brand-700">{c.inProgress} in progress</span></>}
-                  {c.hired > 0       && <> · <span className="text-emerald-700">{c.hired} hired</span></>}
-                </p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <h3 className="text-base font-bold text-fg tracking-tight">{posting.title}</h3>
+                <StatusPill status={posting.status} />
+                {posting.deadline && (
+                  <span className="text-[11px] text-subtle inline-flex items-center gap-0.5">
+                    <CalendarIcon size={10} /> {new Date(posting.deadline).toLocaleDateString()}
+                  </span>
+                )}
               </div>
-            )}
-            {c.total === 0 && (
-              <p className="text-[11px] text-subtle mt-2 italic">
-                No applicants yet — they&apos;ll surface here when trainees apply.
+              <p className="text-xs text-muted mt-0.5 truncate">
+                {posting.companyName}
+                {posting.location && <> · {posting.location}</>}
+                {posting.lastTouchedByName && posting.lastTouchedAt && (
+                  <span className="ml-2 text-subtle">
+                    · touched by {posting.lastTouchedByName} · {relativeTimeShort(posting.lastTouchedAt)}
+                  </span>
+                )}
               </p>
-            )}
+              {/* Funnel mini-bar */}
+              {c.total > 0 && (
+                <div className="mt-2 max-w-md">
+                  <div className="flex h-1.5 rounded-full overflow-hidden bg-elevated">
+                    {funnel.newPct > 0       && <span className="bg-amber-500"   style={{ width: `${funnel.newPct}%` }} />}
+                    {funnel.inProgressPct > 0 && <span className="bg-brand-500"   style={{ width: `${funnel.inProgressPct}%` }} />}
+                    {funnel.hiredPct > 0     && <span className="bg-emerald-500" style={{ width: `${funnel.hiredPct}%` }} />}
+                    {funnel.closedPct > 0    && <span className="bg-slate-400"   style={{ width: `${funnel.closedPct}%` }} />}
+                  </div>
+                  <p className="text-[11px] text-muted mt-1.5">
+                    {c.total} applicant{c.total === 1 ? "" : "s"}
+                    {c.newCount > 0    && <> · <span className="font-bold text-amber-700">{c.newCount} new</span></>}
+                    {c.inProgress > 0  && <> · <span className="text-brand-700">{c.inProgress} in progress</span></>}
+                    {c.hired > 0       && <> · <span className="text-emerald-700">{c.hired} hired</span></>}
+                  </p>
+                </div>
+              )}
+              {c.total === 0 && (
+                <p className="text-[11px] text-subtle mt-2 italic">
+                  No applicants yet — they&apos;ll surface here when trainees apply.
+                </p>
+              )}
+            </div>
           </div>
+        </button>
+
+        {/* Duplicate button — separate from the expand trigger */}
+        <div className="flex items-center pr-4 gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+          {dupeConfirm ? (
+            <span className="flex items-center gap-1 text-xs">
+              <span className="text-muted font-semibold">Duplicate?</span>
+              <button
+                type="button"
+                disabled={dupeLoading}
+                onClick={duplicate}
+                className="text-[10px] font-bold text-brand-700 hover:underline disabled:opacity-50"
+              >
+                {dupeLoading ? <Loader2 size={10} className="animate-spin" /> : "Yes"}
+              </button>
+              <button type="button" onClick={() => setDupeConfirm(false)} className="text-[10px] text-muted hover:text-fg">×</button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setDupeConfirm(true); }}
+              className="p-1.5 rounded-lg text-muted hover:text-brand-700 hover:bg-brand-50 transition-colors"
+              aria-label="Duplicate posting"
+              title="Duplicate as draft"
+            >
+              <Copy size={13} />
+            </button>
+          )}
         </div>
-      </button>
+      </div>
 
       {/* ── Expanded body ──────────────────────────────────── */}
       {isExpanded && (
@@ -513,23 +579,79 @@ function PostingRow({
           )}
 
           {!loadingApplicants && applicants !== null && applicants.length > 0 && (
-            <ul className="divide-y divide-line/70">
-              {applicants.map((a) => (
-                <li key={a.applicantId} className="bg-card">
-                  <ApplicantPanel
-                    a={a}
-                    isExpanded={expandedApplicantId === a.applicantId}
-                    onToggle={() => onToggleApplicant(a.applicantId)}
-                    postingId={posting.id}
-                    postingTitle={posting.title}
-                    postingCompany={posting.companyName}
-                    onPatch={(patch) => onApplicantPatch(a.applicantId, patch)}
-                    onReloadAll={onReloadApplicants}
+            <>
+              {/* Bulk-select toolbar */}
+              <div className="flex items-center gap-3 px-4 py-2 border-b border-line/50 bg-card/60">
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-muted hover:text-fg">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.length === applicants.length && applicants.length > 0}
+                    onChange={toggleSelectAll}
+                    className="accent-brand-600 rounded"
                   />
-                </li>
-              ))}
-            </ul>
+                  All
+                </label>
+                {selectedIds.length > 0 && (
+                  <span className="flex items-center gap-1 text-xs font-semibold text-brand-700">
+                    <Mail size={11} /> {selectedIds.length} selected
+                  </span>
+                )}
+              </div>
+
+              <ul className="divide-y divide-line/70">
+                {applicants.map((a) => (
+                  <li key={a.applicantId} className="bg-card flex items-stretch">
+                    {/* Checkbox column */}
+                    <div
+                      className="flex items-start pt-4 pl-4 pr-2 shrink-0"
+                      onClick={(e) => { e.stopPropagation(); toggleSelect(a.applicationStatusId); }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!(a.applicationStatusId && selectedIds.includes(a.applicationStatusId))}
+                        onChange={() => toggleSelect(a.applicationStatusId)}
+                        className="accent-brand-600 rounded mt-0.5 cursor-pointer"
+                        aria-label={`Select ${a.name ?? a.email}`}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <ApplicantPanel
+                        a={a}
+                        isExpanded={expandedApplicantId === a.applicantId}
+                        onToggle={() => onToggleApplicant(a.applicantId)}
+                        postingId={posting.id}
+                        postingTitle={posting.title}
+                        postingCompany={posting.companyName}
+                        onPatch={(patch) => onApplicantPatch(a.applicantId, patch)}
+                        onReloadAll={onReloadApplicants}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Bulk message composer — appears when applicants are selected */}
+              <MessageComposer
+                postingId={posting.id}
+                selectedIds={selectedIds}
+                applicants={applicants}
+                onClear={() => setSelectedIds([])}
+              />
+            </>
           )}
+
+          {/* Hiring team panel — always visible in expanded state */}
+          <PostingTeamPanel postingId={posting.id} />
+
+          {/* Scorecard link */}
+          <div className="border-t border-line/70 px-5 py-3">
+            <a
+              href={`/employer/postings/${posting.id}/scorecard`}
+              className="text-xs text-brand-700 hover:underline font-semibold inline-flex items-center gap-1"
+            >
+              Interview scorecard →
+            </a>
+          </div>
         </div>
       )}
     </article>
@@ -606,3 +728,5 @@ function queueDescription(q: QueueItem): string {
 void Sparkles;
 void X;
 void Users;
+void Copy;
+void Mail;

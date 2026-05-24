@@ -75,7 +75,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // "credit-applications") never collide.
   const canSeeAdminQueues = ROLE_RANK[realRole ?? role] >= ROLE_RANK.admin;
   const isEmployer = (realRole ?? role) === "employer";
-  const [adminCounts, traineeCounts, employerCounts, committeeSlugs, translationSetting] = await Promise.all([
+  const [adminCounts, traineeCounts, employerCounts, committeeSlugs, translationSetting, unreadCount] = await Promise.all([
     canSeeAdminQueues ? getAdminQueueCounts() : Promise.resolve(undefined),
     userId ? getTraineeQueueCounts(userId) : Promise.resolve(undefined),
     // Employer join-request badge — only fetched for employer accounts
@@ -86,6 +86,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       : Promise.resolve(undefined),
     userId ? getCommitteesForUser(userId) : Promise.resolve([]),
     prisma.platformSetting.findUnique({ where: { key: "translationEnabled" }, select: { value: true } }).catch(() => null),
+    // Notification unread count — only for signed-in users. Shown as a
+    // badge on the bell icon in the sidebar header.
+    userId
+      ? prisma.notification.count({ where: { userId, readAt: null } }).catch(() => 0)
+      : Promise.resolve(0),
   ]);
   // Platform-level gate: absent row (never set) → enabled (default true).
   const translationPlatformEnabled = translationSetting?.value !== "false";
@@ -106,6 +111,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         queueCounts={queueCounts}
         committees={committeeSlugs}
         hiddenFeatures={foldEffective(parsePrefs(userRow?.featurePrefs)).hiddenSet}
+        initialUnreadCount={unreadCount}
       />
       <main className="flex-1 overflow-y-auto relative">
         {/* Platform rule: the editorial hero (DSPageHeader) is the
