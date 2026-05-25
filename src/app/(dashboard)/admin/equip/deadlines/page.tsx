@@ -22,52 +22,66 @@ import { RoundTimeline } from "@/components/admin/equip/RoundTimeline";
 
 export const dynamic = "force-dynamic";
 
-/** Idempotent sync: insert any EquipDeadline rows from
- *  derivedDeadlineSpecs() that don't already exist. Match by
- *  (stream, Toronto calendar date). Hand-scheduled rows or
- *  status="closed" rows on the same date are kept; we only
- *  fill in the gaps. Also repairs existing rows that were
- *  previously auto-synced with status="open" when their window
- *  hasn't started yet — flips those to "scheduled".
- *  Runs on every page load — cheap, three queries. */
+/** Sync: keeps EquipDeadline rows authoritative against the canonical
+ *  schedule in derivedDeadlineSpecs(). Order matters:
+ *   1. Delete stale/out-of-horizon auto-synced rows FIRST so the
+ *      subsequent insert step sees a clean slate.
+ *   2. Insert any rows that are now missing.
+ *   3. Repair status="open" on rows whose window hasn't opened yet.
+ *  Only rows whose note starts with the auto-sync prefix are ever
+ *  deleted — admin-created rows are always left alone. */
 async function syncRoundsToDeadlines(actorId: string): Promise<number> {
   const specs = derivedDeadlineSpecs();
   if (specs.length === 0) return 0;
-  const now = new Date();
+  const now    = new Date();
+  const halfDay = 12 * 60 * 60 * 1000;
 
-  /** Correct status for a spec at the current instant:
-   *  "closed"    — deadline already passed
-   *  "open"      — window has opened (opensAt ≤ now) and not yet closed
-   *  "scheduled" — window hasn't opened yet */
   function specStatus(s: (typeof specs)[number]): string {
     if (s.deadlineAt < now) return "closed";
     if (s.opensAt <= now)   return "open";
     return "scheduled";
   }
 
-  // Snapshot existing rows over the relevant date range so we
-  // can dedupe by Toronto-local calendar date.
-  const earliest = specs.reduce(
-    (min, s) => (s.deadlineAt < min ? s.deadlineAt : min),
-    specs[0].deadlineAt,
-  );
-  const latest = specs.reduce(
-    (max, s) => (s.deadlineAt > max ? s.deadlineAt : max),
-    specs[0].deadlineAt,
-  );
-  const existing = await prisma.equipDeadline.findMany({
-    where: { deadlineAt: { gte: earliest, lte: new Date(latest.getTime() + 24 * 60 * 60 * 1000) } },
+  // ── Step 1: purge stale auto-synced rows ───────────────────────
+  // Fetch every row that was written by this function (identified by
+  // the note prefix). Delete those that either fall outside the
+  // schedule horizon (> 2026) or no longer match any current spec by
+  // (stream + date ± 12 h). This cleans up old estimated dates,
+  // removed rounds, and VC rows beyond the generation window.
+  const autoSynced = await prisma.equipDeadline.findMany({
+    where: { note: { startsWith: "Auto-synced" } },
+    select: { id: true, stream: true, deadlineAt: true },
+  });
+  const staleIds = autoSynced
+    .filter(
+      (row) =>
+        row.deadlineAt >= new Date("2027-01-01T00:00:00.000Z") ||
+        !specs.some(
+          (s) =>
+            s.stream === row.stream &&
+            Math.abs(s.deadlineAt.getTime() - row.deadlineAt.getTime()) <= halfDay,
+        ),
+    )
+    .map((r) => r.id);
+  if (staleIds.length > 0) {
+    await prisma.equipDeadline.deleteMany({ where: { id: { in: staleIds } } });
+  }
+
+  // ── Step 2: insert missing rows ────────────────────────────────
+  // Re-snapshot after the purge so dedup is accurate.
+  const remaining = await prisma.equipDeadline.findMany({
     select: { stream: true, deadlineAt: true },
   });
   const seen = new Set(
-    existing.map((d) => `${d.stream}|${d.deadlineAt.toLocaleDateString("en-CA", { timeZone: "America/Toronto" })}`),
+    remaining.map(
+      (d) =>
+        `${d.stream}|${d.deadlineAt.toLocaleDateString("en-CA", { timeZone: "America/Toronto" })}`,
+    ),
   );
-
   const toCreate = specs.filter((s) => {
     const key = `${s.stream}|${s.deadlineAt.toLocaleDateString("en-CA", { timeZone: "America/Toronto" })}`;
     return !seen.has(key);
   });
-
   if (toCreate.length > 0) {
     await prisma.equipDeadline.createMany({
       data: toCreate.map((s) => ({
@@ -82,12 +96,9 @@ async function syncRoundsToDeadlines(actorId: string): Promise<number> {
     });
   }
 
-  // Repair pass: existing rows that were previously auto-synced as
-  // "open" but whose window hasn't started yet should be "scheduled".
-  // We never touch admin-set "closed" or "extended" rows.
+  // ── Step 3: repair status="open" on not-yet-open windows ───────
   const toSchedule = specs.filter((s) => specStatus(s) === "scheduled");
   if (toSchedule.length > 0) {
-    const halfDay = 12 * 60 * 60 * 1000;
     await Promise.all(
       toSchedule.map((s) =>
         prisma.equipDeadline.updateMany({
@@ -97,42 +108,13 @@ async function syncRoundsToDeadlines(actorId: string): Promise<number> {
               gte: new Date(s.deadlineAt.getTime() - halfDay),
               lte: new Date(s.deadlineAt.getTime() + halfDay),
             },
-            status: "open", // only repair incorrectly-open future rows
+            status: "open",
           },
           data: { status: "scheduled" },
         }),
       ),
     );
   }
-
-  // Reconcile pass: delete auto-synced rows whose date no longer
-  // matches any current spec (e.g. stale estimated Round 6 dates
-  // replaced by real spreadsheet values). Only touches rows whose
-  // note starts with the auto-sync prefix — admin-created rows are
-  // left alone regardless of date.
-  const halfDay = 12 * 60 * 60 * 1000;
-  const autoSynced = await prisma.equipDeadline.findMany({
-    where: { note: { startsWith: "Auto-synced from VL round schedule" } },
-    select: { id: true, stream: true, deadlineAt: true },
-  });
-  const staleIds = autoSynced
-    .filter((row) =>
-      !specs.some(
-        (s) =>
-          s.stream === row.stream &&
-          Math.abs(s.deadlineAt.getTime() - row.deadlineAt.getTime()) <= halfDay,
-      ),
-    )
-    .map((r) => r.id);
-  if (staleIds.length > 0) {
-    await prisma.equipDeadline.deleteMany({ where: { id: { in: staleIds } } });
-  }
-
-  // Prune pass: delete any rows beyond the schedule horizon (end of
-  // 2026). Handles rows written when the horizon was further out.
-  await prisma.equipDeadline.deleteMany({
-    where: { deadlineAt: { gte: new Date("2027-01-01T00:00:00.000Z") } },
-  });
 
   return toCreate.length;
 }
