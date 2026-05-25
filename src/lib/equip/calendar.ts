@@ -70,10 +70,8 @@ export interface EquipRound {
   stages: EquipRoundStage[];
 }
 
-/** Rounds 3–5: sourced from the VentureLift_Key_Dates_2025-2026 spreadsheet.
- *  Round 6: dates are ESTIMATED — stages spaced using Round 4's durations as
- *  a template. Replace with actual spreadsheet values once Round 6 is
- *  published by BHN. Update this constant when a new round is announced. */
+/** Source of truth: VentureLift_Key_Dates_2025-2026 spreadsheet (all rounds).
+ *  Update this constant when a new round is announced. */
 export const VL_ROUNDS: EquipRound[] = [
   {
     stream: "venture_lift",
@@ -120,7 +118,7 @@ export const VL_ROUNDS: EquipRound[] = [
       { key: "invite_decision",        label: "Invite decision",              date: "2026-06-01", tone: "brand"   },
       { key: "full_app_deadline",      label: "Full application deadline",    date: "2026-06-05", tone: "amber"   },
       { key: "review_deadline",        label: "Review deadline",              date: "2026-06-30", tone: "violet"  },
-      { key: "adjudication",           label: "Adjudication window",          date: "2026-07-22", endDate: "2026-07-30", tone: "violet" },
+      { key: "adjudication",           label: "Adjudication window",          date: "2026-07-23", endDate: "2026-07-30", tone: "violet" },
       { key: "funding_announcement",   label: "Funding announcement",         date: "2026-08-05", approximate: true, tone: "emerald" },
     ],
   },
@@ -130,23 +128,33 @@ export const VL_ROUNDS: EquipRound[] = [
     label: "Round 6",
     year: 2026,
     stages: [
-      // ⚠️  ESTIMATED DATES — not yet confirmed in the BHN spreadsheet.
-      // Spaced from Round 5's Aug 5 funding announcement using Round 4
-      // stage-gap durations as a template. Update when BHN publishes
-      // the official Round 6 key-dates.
-      { key: "launch",                 label: "Launch",                       date: "2026-08-17", tone: "brand"   },
-      { key: "launch_reminder",        label: "Launch reminder",              date: "2026-09-08", tone: "neutral" },
-      { key: "pre_screening_deadline", label: "Pre-screening deadline",       date: "2026-09-25", tone: "amber"   },
-      { key: "consultations",          label: "Pre-screening consultations",  date: "2026-09-28", endDate: "2026-10-02", tone: "violet" },
-      { key: "invite_decision",        label: "Invite decision",              date: "2026-10-07", tone: "brand"   },
-      { key: "full_app_deadline",      label: "Full application deadline",    date: "2026-10-28", tone: "amber"   },
-      { key: "review_deadline",        label: "Review deadline",              date: "2026-11-17", tone: "violet"  },
-      { key: "adjudication",           label: "Adjudication window",          date: "2026-11-19", endDate: "2026-11-25", tone: "violet" },
-      { key: "funding_announcement",   label: "Funding announcement",         date: "2026-12-01", approximate: true, tone: "emerald" },
+      { key: "launch",                 label: "Launch",                       date: "2026-07-07", tone: "brand"   },
+      { key: "pre_screening_deadline", label: "Pre-screening deadline",       date: "2026-08-01", tone: "amber"   },
+      { key: "consultations",          label: "Pre-screening consultations",  date: "2026-08-04", endDate: "2026-08-08", tone: "violet" },
+      { key: "invite_decision",        label: "Invite decision",              date: "2026-08-13", tone: "brand"   },
+      { key: "full_app_deadline",      label: "Full application deadline",    date: "2026-09-05", tone: "amber"   },
+      { key: "review_deadline",        label: "Review deadline",              date: "2026-09-24", tone: "violet"  },
+      { key: "adjudication",           label: "Adjudication window",          date: "2026-09-25", endDate: "2026-09-29", tone: "violet" },
+      { key: "funding_announcement",   label: "Funding announcement",         date: "2026-09-29", endDate: "2026-09-30", tone: "emerald" },
+    ],
+  },
+  {
+    stream: "venture_lift",
+    roundNumber: 7,
+    label: "Round 7",
+    year: 2026,
+    stages: [
+      { key: "launch",                 label: "Launch",                       date: "2026-09-14", tone: "brand"   },
+      { key: "pre_screening_deadline", label: "Pre-screening deadline",       date: "2026-10-05", tone: "amber"   },
+      { key: "consultations",          label: "Pre-screening consultations",  date: "2026-10-08", endDate: "2026-10-14", tone: "violet" },
+      { key: "invite_decision",        label: "Invite decision",              date: "2026-10-19", tone: "brand"   },
+      { key: "full_app_deadline",      label: "Full application deadline",    date: "2026-11-08", tone: "amber"   },
+      { key: "review_deadline",        label: "Review deadline",              date: "2026-11-25", tone: "violet"  },
+      { key: "adjudication",           label: "Adjudication window",          date: "2026-11-27", endDate: "2026-12-03", tone: "violet" },
+      { key: "funding_announcement",   label: "Funding announcement",         date: "2026-12-03", endDate: "2026-12-10", tone: "emerald" },
     ],
   },
 ];
-// Round 7 (2027) removed — schedule horizon is end of 2026.
 
 /** Return only stages with a hard deadline (pre-screening + full
  *  application). These are the rows that get synced into

@@ -105,10 +105,31 @@ async function syncRoundsToDeadlines(actorId: string): Promise<number> {
     );
   }
 
+  // Reconcile pass: delete auto-synced rows whose date no longer
+  // matches any current spec (e.g. stale estimated Round 6 dates
+  // replaced by real spreadsheet values). Only touches rows whose
+  // note starts with the auto-sync prefix — admin-created rows are
+  // left alone regardless of date.
+  const halfDay = 12 * 60 * 60 * 1000;
+  const autoSynced = await prisma.equipDeadline.findMany({
+    where: { note: { startsWith: "Auto-synced from VL round schedule" } },
+    select: { id: true, stream: true, deadlineAt: true },
+  });
+  const staleIds = autoSynced
+    .filter((row) =>
+      !specs.some(
+        (s) =>
+          s.stream === row.stream &&
+          Math.abs(s.deadlineAt.getTime() - row.deadlineAt.getTime()) <= halfDay,
+      ),
+    )
+    .map((r) => r.id);
+  if (staleIds.length > 0) {
+    await prisma.equipDeadline.deleteMany({ where: { id: { in: staleIds } } });
+  }
+
   // Prune pass: delete any rows beyond the schedule horizon (end of
-  // 2026). Handles rows written when the horizon was further out
-  // (e.g. VL Round 7, VC deadlines for 2027-2028). Runs after the
-  // insert so we never have a gap between delete + re-insert.
+  // 2026). Handles rows written when the horizon was further out.
   await prisma.equipDeadline.deleteMany({
     where: { deadlineAt: { gte: new Date("2027-01-01T00:00:00.000Z") } },
   });
