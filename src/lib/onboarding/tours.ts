@@ -1269,6 +1269,16 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Events admin", href: "/admin/events" },
   },
   {
+    id: "equip-deadlines-scheduled-status",
+    title: "VentureLift rounds no longer show Open before they start",
+    body: "Future VentureLift and VentureConnect deadline windows now appear as **Scheduled** (not Open) until their window actually opens — for VL pre-screening that's the Launch date, for full application the Invite Decision date, for VC the 1st of the month. The status flips to Open automatically when the window starts. Round dates for Rounds 6 and 7 were also corrected to be non-overlapping quarterly cycles.",
+    path: "/admin/equip/deadlines",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    since: "2026.05.25",
+    cta: { label: "Open Equip deadlines", href: "/admin/equip/deadlines" },
+  },
+  {
     id: "complete",
     title: "You're all set",
     body: "Reopen this tour anytime from 'Take the tour' in the sidebar — the compass icon at the bottom-left, sitting next to the theme picker. New features will surface here as they ship.",

@@ -2108,4 +2108,11 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     visibleTo: ALL,
     daysAgo: 6,
   },
+  {
+    title: "VentureLift round schedule corrected to non-overlapping quarterly cycles; deadline statuses now reflect open vs scheduled",
+    body: "Two fixes to the Equip deadlines page and the canonical VL round schedule in `lib/equip/calendar.ts`.\n\n**1. Non-overlapping quarterly rounds.** Rounds 5, 6, and 7 previously overlapped: Round 6 launched in July while Round 5 was still in adjudication, and Round 7 launched in September while Round 6 was still open. Fixed by spacing the rounds so each one starts after the previous funding announcement:\n  • Round 5 (Q2 2026): unchanged — Apr 27 launch → ~Aug 5 funding (already in progress).\n  • Round 6 (Q3 2026): Aug 17 launch → Dec 1 funding (was Jul 7 → Sep 29 — entirely overlapping with R5).\n  • Round 7 (Q1 2027): Jan 11 launch → Apr 27 funding (was Sep 14 → Dec 10 — overlapping with R6; moved to after the December holiday break). Stage gaps follow the Round 4 duration template throughout.\n\n**2. Correct deadline statuses — open vs scheduled.** Previously every auto-synced deadline row (including rounds that hadn't opened yet) was created with `status = \"open\"`. Now:\n  • `\"open\"` — window has started (`opensAt ≤ now < deadlineAt`). For VL pre-screening this is the round's Launch date; for full application it is the Invite Decision date; for VC monthly it is the first of the month.\n  • `\"scheduled\"` — window exists but hasn't opened yet (`opensAt > now`).\n  • `\"closed\"` — deadline already passed.\n  A repair pass runs on every deadlines-page load and flips any existing `\"open\"` rows whose window hasn't started to `\"scheduled\"` (only touches auto-synced rows, never admin-set *closed* or *extended* rows). The admin deadlines manager gains a **Scheduled** badge (neutral tone), and the status sort order is now Scheduled → Open → Extended → Closed.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
 ];

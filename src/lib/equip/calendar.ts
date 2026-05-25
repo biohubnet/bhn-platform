@@ -128,30 +128,36 @@ export const VL_ROUNDS: EquipRound[] = [
     label: "Round 6",
     year: 2026,
     stages: [
-      { key: "launch",                 label: "Launch",                       date: "2026-07-07", tone: "brand"   },
-      { key: "pre_screening_deadline", label: "Pre-screening deadline",       date: "2026-08-01", tone: "amber"   },
-      { key: "consultations",          label: "Pre-screening consultations",  date: "2026-08-04", endDate: "2026-08-08", tone: "violet" },
-      { key: "invite_decision",        label: "Invite decision",              date: "2026-08-13", tone: "brand"   },
-      { key: "full_app_deadline",      label: "Full application deadline",    date: "2026-09-05", tone: "amber"   },
-      { key: "review_deadline",        label: "Review deadline",              date: "2026-09-24", tone: "violet"  },
-      { key: "adjudication",           label: "Adjudication window",          date: "2026-09-25", endDate: "2026-09-29", tone: "violet" },
-      { key: "funding_announcement",   label: "Funding announcement",         date: "2026-09-29", endDate: "2026-09-30", tone: "emerald" },
+      // Round 6 starts after Round 5's ~Aug 5 funding announcement.
+      // Stages spaced using Round 4 as the duration template.
+      { key: "launch",                 label: "Launch",                       date: "2026-08-17", tone: "brand"   },
+      { key: "launch_reminder",        label: "Launch reminder",              date: "2026-09-08", tone: "neutral" },
+      { key: "pre_screening_deadline", label: "Pre-screening deadline",       date: "2026-09-25", tone: "amber"   },
+      { key: "consultations",          label: "Pre-screening consultations",  date: "2026-09-28", endDate: "2026-10-02", tone: "violet" },
+      { key: "invite_decision",        label: "Invite decision",              date: "2026-10-07", tone: "brand"   },
+      { key: "full_app_deadline",      label: "Full application deadline",    date: "2026-10-28", tone: "amber"   },
+      { key: "review_deadline",        label: "Review deadline",              date: "2026-11-17", tone: "violet"  },
+      { key: "adjudication",           label: "Adjudication window",          date: "2026-11-19", endDate: "2026-11-25", tone: "violet" },
+      { key: "funding_announcement",   label: "Funding announcement",         date: "2026-12-01", approximate: true, tone: "emerald" },
     ],
   },
   {
     stream: "venture_lift",
     roundNumber: 7,
     label: "Round 7",
-    year: 2026,
+    year: 2027,
     stages: [
-      { key: "launch",                 label: "Launch",                       date: "2026-09-14", tone: "brand"   },
-      { key: "pre_screening_deadline", label: "Pre-screening deadline",       date: "2026-10-05", tone: "amber"   },
-      { key: "consultations",          label: "Pre-screening consultations",  date: "2026-10-08", endDate: "2026-10-14", tone: "violet" },
-      { key: "invite_decision",        label: "Invite decision",              date: "2026-10-19", tone: "brand"   },
-      { key: "full_app_deadline",      label: "Full application deadline",    date: "2026-11-08", tone: "amber"   },
-      { key: "review_deadline",        label: "Review deadline",              date: "2026-11-25", tone: "violet"  },
-      { key: "adjudication",           label: "Adjudication window",          date: "2026-11-27", endDate: "2026-12-03", tone: "violet" },
-      { key: "funding_announcement",   label: "Funding announcement",         date: "2026-12-03", endDate: "2026-12-10", tone: "emerald" },
+      // Round 7 starts after the December holiday break, following
+      // Round 6's ~Dec 1 funding announcement.
+      { key: "launch",                 label: "Launch",                       date: "2027-01-11", tone: "brand"   },
+      { key: "launch_reminder",        label: "Launch reminder",              date: "2027-02-02", tone: "neutral" },
+      { key: "pre_screening_deadline", label: "Pre-screening deadline",       date: "2027-02-19", tone: "amber"   },
+      { key: "consultations",          label: "Pre-screening consultations",  date: "2027-02-22", endDate: "2027-02-26", tone: "violet" },
+      { key: "invite_decision",        label: "Invite decision",              date: "2027-03-03", tone: "brand"   },
+      { key: "full_app_deadline",      label: "Full application deadline",    date: "2027-03-24", tone: "amber"   },
+      { key: "review_deadline",        label: "Review deadline",              date: "2027-04-13", tone: "violet"  },
+      { key: "adjudication",           label: "Adjudication window",          date: "2027-04-15", endDate: "2027-04-21", tone: "violet" },
+      { key: "funding_announcement",   label: "Funding announcement",         date: "2027-04-27", approximate: true, tone: "emerald" },
     ],
   },
 ];
@@ -222,9 +228,14 @@ export function venturConnectMonthlyDeadlines(): DerivedDeadlineSpec[] {
       const monday = lastMondayOfMonth(y, m0);
       const iso = ymdLocal(monday);
       const monthName = monday.toLocaleString("en-CA", { month: "long" });
+      // VC window opens at the 1st of the month and closes on the
+      // last Monday (the deadline). Status is "open" for the entire
+      // month and "scheduled" before the month starts.
+      const opensAt = noonEasternOn(ymdLocal(new Date(y, m0, 1)));
       out.push({
         stream: "venture_connect",
         deadlineAt: noonEasternOn(iso),
+        opensAt,
         cycleLabel: `${monthName} ${y}`,
         stageKey: "pre_screening_deadline",
         stageLabel: `${monthName} ${y} VC deadline`,
@@ -260,6 +271,14 @@ export function noonEasternOn(yyyymmdd: string): Date {
 export interface DerivedDeadlineSpec {
   stream: EquipStream;
   deadlineAt: Date;
+  /** The earliest instant when this window should be considered
+   *  open for submissions. For VL pre-screening this is the round
+   *  launch date; for VL full application it is the invite-decision
+   *  date; for VC monthly windows it is the first of the month.
+   *  The sync function uses this to set the initial `status`
+   *  correctly: "open" when opensAt ≤ now < deadlineAt, otherwise
+   *  "scheduled" (future) or "closed" (past). */
+  opensAt: Date;
   cycleLabel: string;
   /** Stage key — useful for surfaceful labelling and future
    *  filtering. Stored in the `note` column for now since
@@ -276,10 +295,18 @@ export interface DerivedDeadlineSpec {
 export function derivedDeadlineSpecs(): DerivedDeadlineSpec[] {
   const out: DerivedDeadlineSpec[] = [];
   for (const r of VL_ROUNDS) {
+    // Window opens at the round's Launch date (pre-screening) or
+    // the Invite Decision date (full application).
+    const launchStage = r.stages.find((s) => s.key === "launch");
+    const inviteStage = r.stages.find((s) => s.key === "invite_decision");
     for (const s of deadlineStagesFromRound(r)) {
+      const openSource =
+        s.key === "pre_screening_deadline" ? launchStage : inviteStage;
+      const opensAt = noonEasternOn((openSource ?? s).date);
       out.push({
         stream: r.stream,
         deadlineAt: noonEasternOn(s.date),
+        opensAt,
         cycleLabel: `${r.label} · ${s.label}`,
         stageKey: s.key,
         stageLabel: s.label,

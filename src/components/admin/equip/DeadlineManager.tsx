@@ -322,12 +322,13 @@ function ListView({ deadlines }: { deadlines: Deadline[] }) {
 type SortKey = "deadlineAt" | "cycleLabel" | "status" | "note";
 type SortDir = "asc" | "desc";
 
-/** Stable ordering for the `status` enum so "Open → Extended → Closed"
+/** Stable ordering for status values so "Scheduled → Open → Extended → Closed"
  *  reads naturally when sorted ascending. */
 const STATUS_ORDER: Record<string, number> = {
-  open: 0,
-  extended: 1,
-  closed: 2,
+  scheduled: 0,
+  open: 1,
+  extended: 2,
+  closed: 3,
 };
 
 /** One per-stream table, owns its own sort state so the user can
@@ -528,10 +529,11 @@ function DeadlineRow({ d }: { d: Deadline }) {
   }
 
   const statusBadge =
-    d.status === "open"     ? <Badge tone="success">Open</Badge> :
-    d.status === "extended" ? <Badge tone="brand">Extended</Badge> :
-    d.status === "closed"   ? <Badge tone="danger">Closed</Badge> :
-                              <Badge tone="neutral">{d.status}</Badge>;
+    d.status === "open"      ? <Badge tone="success">Open</Badge> :
+    d.status === "extended"  ? <Badge tone="brand">Extended</Badge> :
+    d.status === "closed"    ? <Badge tone="danger">Closed</Badge> :
+    d.status === "scheduled" ? <Badge tone="neutral">Scheduled</Badge> :
+                               <Badge tone="neutral">{d.status}</Badge>;
 
   return (
     <>

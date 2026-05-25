@@ -26,11 +26,24 @@ export const dynamic = "force-dynamic";
  *  derivedDeadlineSpecs() that don't already exist. Match by
  *  (stream, Toronto calendar date). Hand-scheduled rows or
  *  status="closed" rows on the same date are kept; we only
- *  fill in the gaps. Runs on every page load — cheap, two
- *  queries (findMany + createMany). */
+ *  fill in the gaps. Also repairs existing rows that were
+ *  previously auto-synced with status="open" when their window
+ *  hasn't started yet — flips those to "scheduled".
+ *  Runs on every page load — cheap, three queries. */
 async function syncRoundsToDeadlines(actorId: string): Promise<number> {
   const specs = derivedDeadlineSpecs();
   if (specs.length === 0) return 0;
+  const now = new Date();
+
+  /** Correct status for a spec at the current instant:
+   *  "closed"    — deadline already passed
+   *  "open"      — window has opened (opensAt ≤ now) and not yet closed
+   *  "scheduled" — window hasn't opened yet */
+  function specStatus(s: (typeof specs)[number]): string {
+    if (s.deadlineAt < now) return "closed";
+    if (s.opensAt <= now)   return "open";
+    return "scheduled";
+  }
 
   // Snapshot existing rows over the relevant date range so we
   // can dedupe by Toronto-local calendar date.
@@ -54,19 +67,44 @@ async function syncRoundsToDeadlines(actorId: string): Promise<number> {
     const key = `${s.stream}|${s.deadlineAt.toLocaleDateString("en-CA", { timeZone: "America/Toronto" })}`;
     return !seen.has(key);
   });
-  if (toCreate.length === 0) return 0;
 
-  await prisma.equipDeadline.createMany({
-    data: toCreate.map((s) => ({
-      stream: s.stream,
-      deadlineAt: s.deadlineAt,
-      originalDeadlineAt: s.deadlineAt,
-      status: "open",
-      cycleLabel: s.cycleLabel,
-      note: `Auto-synced from VL round schedule (${s.stageLabel})`,
-      createdById: actorId,
-    })),
-  });
+  if (toCreate.length > 0) {
+    await prisma.equipDeadline.createMany({
+      data: toCreate.map((s) => ({
+        stream: s.stream,
+        deadlineAt: s.deadlineAt,
+        originalDeadlineAt: s.deadlineAt,
+        status: specStatus(s),
+        cycleLabel: s.cycleLabel,
+        note: `Auto-synced from VL round schedule (${s.stageLabel})`,
+        createdById: actorId,
+      })),
+    });
+  }
+
+  // Repair pass: existing rows that were previously auto-synced as
+  // "open" but whose window hasn't started yet should be "scheduled".
+  // We never touch admin-set "closed" or "extended" rows.
+  const toSchedule = specs.filter((s) => specStatus(s) === "scheduled");
+  if (toSchedule.length > 0) {
+    const halfDay = 12 * 60 * 60 * 1000;
+    await Promise.all(
+      toSchedule.map((s) =>
+        prisma.equipDeadline.updateMany({
+          where: {
+            stream: s.stream,
+            deadlineAt: {
+              gte: new Date(s.deadlineAt.getTime() - halfDay),
+              lte: new Date(s.deadlineAt.getTime() + halfDay),
+            },
+            status: "open", // only repair incorrectly-open future rows
+          },
+          data: { status: "scheduled" },
+        }),
+      ),
+    );
+  }
+
   return toCreate.length;
 }
 
