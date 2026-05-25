@@ -3,11 +3,10 @@
  * Admin manager for Equip funding-window deadlines.
  *
  * Two views toggled by tab:
- *   • List view — table grouped by stream, sortable by date.
- *                 Per-row actions: extend / close / reopen / delete.
- *   • Calendar view — month-grid of upcoming windows. Click a
- *                 day to create a new deadline at that date
- *                 with the default 12:00 PM ET time.
+ *   • List view — combined month-by-month table showing VentureConnect
+ *                 and VentureLift side by side. Per-row inline actions:
+ *                 extend / close / reopen / edit / delete.
+ *   • Calendar view — month-grid of upcoming windows. Read-only.
  *
  * Both views call the same /api/admin/equip/deadlines endpoints.
  */
@@ -16,7 +15,6 @@ import { useRouter } from "next/navigation";
 import {
   Loader2, Plus, Trash2, Lock, Unlock, FastForward, Pencil, X,
   Calendar, List, AlertCircle, ChevronLeft, ChevronRight,
-  ArrowUp, ArrowDown, ChevronsUpDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { holidayDateSet } from "@/lib/equip/calendar";
@@ -43,10 +41,6 @@ const STREAM_META: Record<string, { label: string; cap: string; tone: "brand" | 
   venture_lift:    { label: "VentureLift",    cap: "≤$25,000 / quarterly cycle", tone: "success" },
 };
 
-/** Build the ISO string for noon Eastern on the given calendar date.
- *  Toronto is UTC-5 EST / UTC-4 EDT — we ask the browser to compute
- *  this so DST is handled automatically. The result is the same
- *  absolute UTC instant whether we ship it locally or on Vercel. */
 /** Flatten the UOFT_HOLIDAYS list into a Record keyed by Toronto
  *  yyyy-mm-dd so the calendar's per-cell lookup is O(1).
  *  Memoised at module level — the holiday schedule is static
@@ -287,15 +281,44 @@ function NewDeadlineForm() {
   );
 }
 
-function ListView({ deadlines }: { deadlines: Deadline[] }) {
-  const byStream = useMemo(() => {
-    const acc: Record<string, Deadline[]> = { venture_connect: [], venture_lift: [] };
-    for (const d of deadlines) {
-      (acc[d.stream] ?? (acc[d.stream] = [])).push(d);
-    }
-    return acc;
-  }, [deadlines]);
+// ── Combined list-view helpers ─────────────────────────────────────────────────
 
+/** "YYYY-MM" in Toronto-local time — used to bucket deadlines by month. */
+function torontoYYYYMM(dateLike: string | Date): string {
+  const date = typeof dateLike === "string" ? new Date(dateLike) : dateLike;
+  return date.toLocaleDateString("en-CA", { timeZone: "America/Toronto" }).slice(0, 7);
+}
+
+/** Compact display format: "Sep 25, 12:00 PM ET" */
+function formatShort(dateLike: string | Date): string {
+  const date = typeof dateLike === "string" ? new Date(dateLike) : dateLike;
+  return date.toLocaleString("en-US", {
+    timeZone: "America/Toronto",
+    month: "short", day: "numeric",
+    hour: "numeric", minute: "2-digit", hour12: true, timeZoneName: "short",
+  });
+}
+
+function getStatusBadge(status: string) {
+  if (status === "open")      return <Badge tone="success">Open</Badge>;
+  if (status === "extended")  return <Badge tone="brand">Extended</Badge>;
+  if (status === "closed")    return <Badge tone="danger">Closed</Badge>;
+  if (status === "scheduled") return <Badge tone="neutral">Scheduled</Badge>;
+  return <Badge tone="neutral">{status}</Badge>;
+}
+
+type SideMode = "idle" | "extend" | "close" | "edit" | "delete";
+
+interface MonthGroup {
+  monthKey: string;  // "YYYY-MM"
+  label:    string;  // "January 2026"
+  vc:       Deadline | null;
+  vl:       Deadline | null;
+}
+
+// ── List view ─────────────────────────────────────────────────────────────────
+
+function ListView({ deadlines }: { deadlines: Deadline[] }) {
   if (deadlines.length === 0) {
     return (
       <div className="rounded-2xl border border-line bg-card p-12 text-center surface-shadow">
@@ -304,335 +327,356 @@ function ListView({ deadlines }: { deadlines: Deadline[] }) {
       </div>
     );
   }
-
-  return (
-    <div className="space-y-5">
-      {Object.entries(byStream).map(([stream, rows]) => {
-        if (rows.length === 0) return null;
-        const meta = STREAM_META[stream] ?? { label: stream, cap: "", tone: "brand" as const };
-        return <StreamTable key={stream} rows={rows} meta={meta} />;
-      })}
-    </div>
-  );
+  return <CombinedTable deadlines={deadlines} />;
 }
 
-/** Sortable columns. `null` means the row's value is missing; we
- *  sort those to the end regardless of direction (consistent UX —
- *  nulls don't pretend to be the smallest or largest value). */
-type SortKey = "deadlineAt" | "cycleLabel" | "status" | "note";
-type SortDir = "asc" | "desc";
+function CombinedTable({ deadlines }: { deadlines: Deadline[] }) {
+  const [hidePast, setHidePast] = useState(true);
 
-/** Stable ordering for status values so "Scheduled → Open → Extended → Closed"
- *  reads naturally when sorted ascending. */
-const STATUS_ORDER: Record<string, number> = {
-  scheduled: 0,
-  open: 1,
-  extended: 2,
-  closed: 3,
-};
-
-/** One per-stream table, owns its own sort state so the user can
- *  sort the VC and VL tables independently. Default sort is
- *  deadline ascending (chronological) — matches the previous
- *  implicit ordering. */
-function StreamTable({
-  rows,
-  meta,
-}: {
-  rows: Deadline[];
-  meta: { label: string; cap: string; tone: "brand" | "success" };
-}) {
-  const [sortKey, setSortKey] = useState<SortKey>("deadlineAt");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
-
-  const sortedRows = useMemo(() => {
-    const arr = [...rows];
-    arr.sort((a, b) => compareDeadlines(a, b, sortKey, sortDir));
-    return arr;
-  }, [rows, sortKey, sortDir]);
-
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      // Date columns default to ascending (chronological); text /
-      // status columns default to ascending too so the rule is
-      // uniform. Click again to flip.
-      setSortDir("asc");
+  const groups = useMemo<MonthGroup[]>(() => {
+    const map = new Map<string, MonthGroup>();
+    for (const d of deadlines) {
+      const key = torontoYYYYMM(d.deadlineAt);
+      if (!map.has(key)) {
+        const label = new Date(d.deadlineAt).toLocaleDateString("en-US", {
+          timeZone: "America/Toronto",
+          month: "long", year: "numeric",
+        });
+        map.set(key, { monthKey: key, label, vc: null, vl: null });
+      }
+      const g = map.get(key)!;
+      // If multiple deadlines exist for the same stream in a month,
+      // keep the latest (highest deadlineAt) — edge-case safety.
+      if (d.stream === "venture_connect") {
+        if (!g.vc || new Date(d.deadlineAt) > new Date(g.vc.deadlineAt)) g.vc = d;
+      } else if (d.stream === "venture_lift") {
+        if (!g.vl || new Date(d.deadlineAt) > new Date(g.vl.deadlineAt)) g.vl = d;
+      }
     }
-  }
+    return Array.from(map.values()).sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+  }, [deadlines]);
+
+  const now = new Date();
+  const isPast = (g: MonthGroup) => {
+    const vcPast = !g.vc || new Date(g.vc.deadlineAt) < now;
+    const vlPast = !g.vl || new Date(g.vl.deadlineAt) < now;
+    return vcPast && vlPast;
+  };
+
+  const pastCount = groups.filter(isPast).length;
+  const visible   = hidePast ? groups.filter((g) => !isPast(g)) : groups;
 
   return (
     <section className="rounded-2xl border border-line bg-card overflow-hidden surface-shadow">
       <header className="px-5 py-3 border-b border-line flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-bold text-fg">{meta.label}</h3>
-          <p className="text-[11px] text-subtle">{meta.cap}</p>
-        </div>
-        <Badge tone={meta.tone}>{rows.length}</Badge>
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+          Funding windows — month view
+        </p>
+        {pastCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setHidePast((v) => !v)}
+            className="text-xs text-muted hover:text-fg transition-colors"
+          >
+            {hidePast
+              ? `Show ${pastCount} past month${pastCount !== 1 ? "s" : ""}`
+              : "Hide past"}
+          </button>
+        )}
       </header>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-line text-left text-[10px] text-muted uppercase tracking-wide">
-            <SortableTh sortKey="deadlineAt" current={sortKey} dir={sortDir} onToggle={toggleSort}>Deadline (ET)</SortableTh>
-            <SortableTh sortKey="cycleLabel" current={sortKey} dir={sortDir} onToggle={toggleSort}>Cycle</SortableTh>
-            <SortableTh sortKey="status"     current={sortKey} dir={sortDir} onToggle={toggleSort}>Status</SortableTh>
-            <SortableTh sortKey="note"       current={sortKey} dir={sortDir} onToggle={toggleSort}>Note</SortableTh>
-            <th className="px-5 py-3 w-px">Actions</th>
+            <th className="px-5 py-3 w-28">Month</th>
+            <th className="px-5 py-3">
+              <span className="text-brand-700 font-bold normal-case tracking-normal">VentureConnect</span>
+              <span className="text-subtle font-normal ml-1.5 normal-case tracking-normal">≤$5K · monthly</span>
+            </th>
+            <th className="px-5 py-3">
+              <span className="text-emerald-700 font-bold normal-case tracking-normal">VentureLift</span>
+              <span className="text-subtle font-normal ml-1.5 normal-case tracking-normal">≤$25K · quarterly</span>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
-          {sortedRows.map((d) => (
-            <DeadlineRow key={d.id} d={d} />
+          {visible.map((g) => (
+            <CombinedMonthRow key={g.monthKey} group={g} />
           ))}
+          {visible.length === 0 && (
+            <tr>
+              <td colSpan={3} className="px-5 py-8 text-center text-muted text-sm">
+                {hidePast ? "No upcoming deadlines." : "No deadlines."}
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </section>
   );
 }
 
-/** Header cell with click-to-sort behaviour + visible arrow
- *  indicator. Active column gets a coloured arrow pointing in the
- *  current direction; inactive columns show a faint up/down hint
- *  so the user knows the column is sortable. `aria-sort` carries
- *  the same information for screen readers. */
-function SortableTh({
-  sortKey,
-  current,
-  dir,
-  onToggle,
-  children,
-}: {
-  sortKey: SortKey;
-  current: SortKey;
-  dir: SortDir;
-  onToggle: (k: SortKey) => void;
-  children: React.ReactNode;
-}) {
-  const active = current === sortKey;
-  const ariaSort = active ? (dir === "asc" ? "ascending" : "descending") : "none";
-  const Icon = active ? (dir === "asc" ? ArrowUp : ArrowDown) : ChevronsUpDown;
-
-  return (
-    <th
-      scope="col"
-      aria-sort={ariaSort}
-      className="px-5 py-3"
-    >
-      <button
-        type="button"
-        onClick={() => onToggle(sortKey)}
-        className="inline-flex items-center gap-1 uppercase tracking-wide text-[10px] text-muted hover:text-fg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-card rounded"
-      >
-        <span>{children}</span>
-        <Icon
-          size={11}
-          className={active ? "text-brand-600" : "text-muted opacity-50"}
-          aria-hidden
-        />
-      </button>
-    </th>
-  );
-}
-
-/** Pure comparator — null-safe ordering for every sortable column.
- *  Null values always land at the end (regardless of direction)
- *  so toggling asc/desc doesn't make missing values randomly
- *  move to the top of the list. */
-function compareDeadlines(a: Deadline, b: Deadline, key: SortKey, dir: SortDir): number {
-  const mult = dir === "asc" ? 1 : -1;
-
-  switch (key) {
-    case "deadlineAt": {
-      const av = new Date(a.deadlineAt).getTime();
-      const bv = new Date(b.deadlineAt).getTime();
-      return (av - bv) * mult;
-    }
-    case "status": {
-      const av = STATUS_ORDER[a.status] ?? 99;
-      const bv = STATUS_ORDER[b.status] ?? 99;
-      return (av - bv) * mult;
-    }
-    case "cycleLabel":
-    case "note": {
-      const av = a[key];
-      const bv = b[key];
-      // Nulls / empty strings sort to the end in both directions.
-      const aMissing = !av;
-      const bMissing = !bv;
-      if (aMissing && bMissing) return 0;
-      if (aMissing) return 1;
-      if (bMissing) return -1;
-      return av.localeCompare(bv) * mult;
-    }
-  }
-}
-
-function DeadlineRow({ d }: { d: Deadline }) {
+function CombinedMonthRow({ group }: { group: MonthGroup }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [mode, setMode] = useState<"idle" | "extend" | "close" | "edit" | "delete">("idle");
-  const [newDate, setNewDate] = useState(() => {
-    const next = new Date(d.deadlineAt);
+  const now    = new Date();
+
+  // ── VentureConnect side state ──────────────────────────────────
+  const [vcPending, startVcTransition] = useTransition();
+  const [vcMode, setVcMode]             = useState<SideMode>("idle");
+  const [vcNewDate, setVcNewDate]       = useState(() => {
+    if (!group.vc) return "";
+    const next = new Date(group.vc.deadlineAt);
     next.setDate(next.getDate() + 7);
     return next.toISOString().slice(0, 10);
   });
-  const [newTime, setNewTime] = useState("12:00");
-  const [closeNote, setCloseNote] = useState("");
-  const [cycleLabel, setCycleLabel] = useState(d.cycleLabel ?? "");
-  const [note, setNote] = useState(d.note ?? "");
-  // Editable date / time of the deadline itself — pre-fill from
-  // the current value (Toronto-local) so admins editing
-  // auto-synced (prepopulated) rows see the current date in the
-  // picker and can nudge it.
-  const [editDate, setEditDate] = useState(() => torontoDateInput(d.deadlineAt));
-  const [editTime, setEditTime] = useState(() => torontoTimeInput(d.deadlineAt));
-  const [error, setError] = useState<string | null>(null);
+  const [vcNewTime, setVcNewTime]         = useState("12:00");
+  const [vcCloseNote, setVcCloseNote]     = useState("");
+  const [vcEditDate, setVcEditDate]       = useState(() => group.vc ? torontoDateInput(group.vc.deadlineAt) : "");
+  const [vcEditTime, setVcEditTime]       = useState(() => group.vc ? torontoTimeInput(group.vc.deadlineAt) : "");
+  const [vcCycleLabel, setVcCycleLabel]   = useState(group.vc?.cycleLabel ?? "");
+  const [vcNote, setVcNote]               = useState(group.vc?.note ?? "");
+  const [vcError, setVcError]             = useState<string | null>(null);
 
-  const past = new Date(d.deadlineAt).getTime() < Date.now();
+  // ── VentureLift side state ─────────────────────────────────────
+  const [vlPending, startVlTransition] = useTransition();
+  const [vlMode, setVlMode]             = useState<SideMode>("idle");
+  const [vlNewDate, setVlNewDate]       = useState(() => {
+    if (!group.vl) return "";
+    const next = new Date(group.vl.deadlineAt);
+    next.setDate(next.getDate() + 7);
+    return next.toISOString().slice(0, 10);
+  });
+  const [vlNewTime, setVlNewTime]         = useState("12:00");
+  const [vlCloseNote, setVlCloseNote]     = useState("");
+  const [vlEditDate, setVlEditDate]       = useState(() => group.vl ? torontoDateInput(group.vl.deadlineAt) : "");
+  const [vlEditTime, setVlEditTime]       = useState(() => group.vl ? torontoTimeInput(group.vl.deadlineAt) : "");
+  const [vlCycleLabel, setVlCycleLabel]   = useState(group.vl?.cycleLabel ?? "");
+  const [vlNote, setVlNote]               = useState(group.vl?.note ?? "");
+  const [vlError, setVlError]             = useState<string | null>(null);
 
-  function mutate(body: Record<string, unknown>) {
-    setError(null);
-    startTransition(async () => {
+  // ── Mutation helpers ───────────────────────────────────────────
+  function vcMutate(body: Record<string, unknown>) {
+    if (!group.vc) return;
+    setVcError(null);
+    startVcTransition(async () => {
       try {
-        const res = await fetch(`/api/admin/equip/deadlines/${d.id}`, {
+        const res = await fetch(`/api/admin/equip/deadlines/${group.vc!.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
         const j = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(j.error ?? "Action failed");
-        setMode("idle");
+        setVcMode("idle");
         router.refresh();
       } catch (e) {
-        setError((e as Error).message);
+        setVcError((e as Error).message);
       }
     });
   }
 
-  function del() {
-    setError(null);
-    startTransition(async () => {
+  function vcDel() {
+    if (!group.vc) return;
+    setVcError(null);
+    startVcTransition(async () => {
       try {
-        const res = await fetch(`/api/admin/equip/deadlines/${d.id}`, { method: "DELETE" });
+        const res = await fetch(`/api/admin/equip/deadlines/${group.vc!.id}`, { method: "DELETE" });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
           throw new Error(j.error ?? "Delete failed");
         }
         router.refresh();
       } catch (e) {
-        setError((e as Error).message);
+        setVcError((e as Error).message);
       }
     });
   }
 
-  const statusBadge =
-    d.status === "open"      ? <Badge tone="success">Open</Badge> :
-    d.status === "extended"  ? <Badge tone="brand">Extended</Badge> :
-    d.status === "closed"    ? <Badge tone="danger">Closed</Badge> :
-    d.status === "scheduled" ? <Badge tone="neutral">Scheduled</Badge> :
-                               <Badge tone="neutral">{d.status}</Badge>;
+  function vlMutate(body: Record<string, unknown>) {
+    if (!group.vl) return;
+    setVlError(null);
+    startVlTransition(async () => {
+      try {
+        const res = await fetch(`/api/admin/equip/deadlines/${group.vl!.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(j.error ?? "Action failed");
+        setVlMode("idle");
+        router.refresh();
+      } catch (e) {
+        setVlError((e as Error).message);
+      }
+    });
+  }
+
+  function vlDel() {
+    if (!group.vl) return;
+    setVlError(null);
+    startVlTransition(async () => {
+      try {
+        const res = await fetch(`/api/admin/equip/deadlines/${group.vl!.id}`, { method: "DELETE" });
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.error ?? "Delete failed");
+        }
+        router.refresh();
+      } catch (e) {
+        setVlError((e as Error).message);
+      }
+    });
+  }
+
+  const vcPast = group.vc ? new Date(group.vc.deadlineAt) < now : false;
+  const vlPast = group.vl ? new Date(group.vl.deadlineAt) < now : false;
 
   return (
     <>
-      <tr className={"align-top " + (past && d.status !== "closed" ? "opacity-70" : "")}>
-        <td className="px-5 py-3">
-          <p className="text-fg font-medium">{formatTorontoForDisplay(d.deadlineAt)}</p>
-          {d.extendedAt && (
-            <p className="text-[11px] text-subtle">
-              Originally {formatTorontoForDisplay(d.originalDeadlineAt)}
-            </p>
+      {/* ── Main data row ─────────────────────────────────────── */}
+      <tr className="align-top">
+
+        {/* Month column */}
+        <td className="px-5 py-3 font-semibold text-xs text-fg whitespace-nowrap align-top">
+          {group.label}
+        </td>
+
+        {/* VentureConnect column */}
+        <td className={"px-5 py-3 align-top " + (vcPast && group.vc && group.vc.status !== "closed" ? "opacity-70" : "")}>
+          {group.vc ? (
+            <>
+              <p className="font-medium text-fg text-xs">{formatShort(group.vc.deadlineAt)}</p>
+              {group.vc.extendedAt && (
+                <p className="text-[10px] text-subtle">Was {formatShort(group.vc.originalDeadlineAt)}</p>
+              )}
+              {group.vc.cycleLabel && <p className="text-[10px] text-muted">{group.vc.cycleLabel}</p>}
+              <div className="mt-1">{getStatusBadge(group.vc.status)}</div>
+              {group.vc.note && <p className="text-[10px] text-muted mt-1 line-clamp-2">{group.vc.note}</p>}
+              <div className="flex items-center gap-1 flex-wrap mt-1.5">
+                {group.vc.status !== "closed" && (
+                  <button type="button"
+                    onClick={() => setVcMode(vcMode === "extend" ? "idle" : "extend")}
+                    className="text-xs text-brand-700 hover:text-brand-900 inline-flex items-center gap-1">
+                    <FastForward size={11} /> Extend
+                  </button>
+                )}
+                {group.vc.status !== "closed" ? (
+                  <button type="button"
+                    onClick={() => setVcMode(vcMode === "close" ? "idle" : "close")}
+                    className="text-xs text-rose-700 hover:text-rose-900 inline-flex items-center gap-1">
+                    <Lock size={11} /> Close
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => vcMutate({ action: "reopen" })} disabled={vcPending}
+                    className="text-xs text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1 disabled:opacity-50">
+                    {vcPending ? <Loader2 size={11} className="animate-spin" /> : <Unlock size={11} />}
+                    {" "}Reopen
+                  </button>
+                )}
+                <button type="button"
+                  onClick={() => setVcMode(vcMode === "edit" ? "idle" : "edit")}
+                  className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
+                  <Pencil size={11} />
+                </button>
+                <button type="button"
+                  onClick={() => setVcMode(vcMode === "delete" ? "idle" : "delete")}
+                  disabled={vcPending}
+                  className={"text-xs inline-flex items-center gap-1 disabled:opacity-50 " +
+                    (vcMode === "delete" ? "text-rose-900 font-semibold" : "text-rose-700 hover:text-rose-900")}>
+                  <Trash2 size={11} />{vcMode === "delete" && <span>Delete?</span>}
+                </button>
+              </div>
+              {vcError && (
+                <p className="text-[11px] text-rose-700 mt-1 inline-flex items-center gap-1.5">
+                  <AlertCircle size={11} /> {vcError}
+                </p>
+              )}
+            </>
+          ) : (
+            <span className="text-subtle text-xs">—</span>
           )}
         </td>
-        <td className="px-5 py-3 text-muted">{d.cycleLabel ?? "—"}</td>
-        <td className="px-5 py-3">{statusBadge}{past && d.status !== "closed" && <span className="ml-2 text-[10px] text-subtle">(date passed)</span>}</td>
-        <td className="px-5 py-3 text-muted text-xs max-w-xs">
-          <p className="line-clamp-2">{d.note ?? "—"}</p>
-        </td>
-        <td className="px-5 py-3">
-          <div className="flex items-center gap-1 flex-wrap">
-            {d.status !== "closed" && (
-              <button
-                type="button"
-                onClick={() => setMode(mode === "extend" ? "idle" : "extend")}
-                className="text-xs text-brand-700 hover:text-brand-900 inline-flex items-center gap-1"
-                title="Extend the deadline"
-              >
-                <FastForward size={11} /> Extend
-              </button>
-            )}
-            {d.status !== "closed" ? (
-              <button
-                type="button"
-                onClick={() => setMode(mode === "close" ? "idle" : "close")}
-                className="text-xs text-rose-700 hover:text-rose-900 inline-flex items-center gap-1"
-                title="Close this window"
-              >
-                <Lock size={11} /> Close
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => mutate({ action: "reopen" })}
-                disabled={pending}
-                className="text-xs text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1 disabled:opacity-50"
-              >
-                {pending ? <Loader2 size={11} className="animate-spin" /> : <Unlock size={11} />}
-                Reopen
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setMode(mode === "edit" ? "idle" : "edit")}
-              className="text-xs text-muted hover:text-fg inline-flex items-center gap-1"
-              title="Edit date / cycle label / note"
-            >
-              <Pencil size={11} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode(mode === "delete" ? "idle" : "delete")}
-              disabled={pending}
-              className={
-                "text-xs inline-flex items-center gap-1 disabled:opacity-50 " +
-                (mode === "delete"
-                  ? "text-rose-900 font-semibold"
-                  : "text-rose-700 hover:text-rose-900")
-              }
-              title="Delete this deadline"
-            >
-              <Trash2 size={11} />
-              {mode === "delete" && <span>Delete?</span>}
-            </button>
-          </div>
-          {error && (
-            <p className="text-[11px] text-rose-700 mt-1 inline-flex items-center gap-1.5">
-              <AlertCircle size={11} /> {error}
-            </p>
+
+        {/* VentureLift column */}
+        <td className={"px-5 py-3 align-top " + (vlPast && group.vl && group.vl.status !== "closed" ? "opacity-70" : "")}>
+          {group.vl ? (
+            <>
+              <p className="font-medium text-fg text-xs">{formatShort(group.vl.deadlineAt)}</p>
+              {group.vl.extendedAt && (
+                <p className="text-[10px] text-subtle">Was {formatShort(group.vl.originalDeadlineAt)}</p>
+              )}
+              {group.vl.cycleLabel && <p className="text-[10px] text-muted">{group.vl.cycleLabel}</p>}
+              <div className="mt-1">{getStatusBadge(group.vl.status)}</div>
+              {group.vl.note && <p className="text-[10px] text-muted mt-1 line-clamp-2">{group.vl.note}</p>}
+              <div className="flex items-center gap-1 flex-wrap mt-1.5">
+                {group.vl.status !== "closed" && (
+                  <button type="button"
+                    onClick={() => setVlMode(vlMode === "extend" ? "idle" : "extend")}
+                    className="text-xs text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1">
+                    <FastForward size={11} /> Extend
+                  </button>
+                )}
+                {group.vl.status !== "closed" ? (
+                  <button type="button"
+                    onClick={() => setVlMode(vlMode === "close" ? "idle" : "close")}
+                    className="text-xs text-rose-700 hover:text-rose-900 inline-flex items-center gap-1">
+                    <Lock size={11} /> Close
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => vlMutate({ action: "reopen" })} disabled={vlPending}
+                    className="text-xs text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1 disabled:opacity-50">
+                    {vlPending ? <Loader2 size={11} className="animate-spin" /> : <Unlock size={11} />}
+                    {" "}Reopen
+                  </button>
+                )}
+                <button type="button"
+                  onClick={() => setVlMode(vlMode === "edit" ? "idle" : "edit")}
+                  className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
+                  <Pencil size={11} />
+                </button>
+                <button type="button"
+                  onClick={() => setVlMode(vlMode === "delete" ? "idle" : "delete")}
+                  disabled={vlPending}
+                  className={"text-xs inline-flex items-center gap-1 disabled:opacity-50 " +
+                    (vlMode === "delete" ? "text-rose-900 font-semibold" : "text-rose-700 hover:text-rose-900")}>
+                  <Trash2 size={11} />{vlMode === "delete" && <span>Delete?</span>}
+                </button>
+              </div>
+              {vlError && (
+                <p className="text-[11px] text-rose-700 mt-1 inline-flex items-center gap-1.5">
+                  <AlertCircle size={11} /> {vlError}
+                </p>
+              )}
+            </>
+          ) : (
+            <span className="text-subtle text-xs">—</span>
           )}
         </td>
       </tr>
 
-      {mode === "extend" && (
-        <tr><td colSpan={5} className="px-5 pb-4 bg-elevated/30">
-          <div className="rounded-xl border border-line bg-card-solid p-3 space-y-2">
+      {/* ── VentureConnect action panels ──────────────────────── */}
+
+      {vcMode === "extend" && group.vc && (
+        <tr><td colSpan={3} className="px-5 pb-3 bg-elevated/30">
+          <div className="rounded-xl border border-brand-200 bg-card-solid p-3 space-y-2">
+            <p className="text-[10px] font-bold text-brand-700 uppercase tracking-wider">VentureConnect · Extend deadline</p>
             <p className="text-[11px] text-subtle">New deadline (ET). Must be after the current deadline.</p>
             <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 items-end">
-              <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="bg-card-solid border border-line rounded-lg px-2 py-1.5 text-sm" />
-              <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} className="bg-card-solid border border-line rounded-lg px-2 py-1.5 text-sm font-mono" />
-              <button
-                type="button"
+              <input type="date" value={vcNewDate} onChange={(e) => setVcNewDate(e.target.value)}
+                className="bg-card-solid border border-line rounded-lg px-2 py-1.5 text-sm" />
+              <input type="time" value={vcNewTime} onChange={(e) => setVcNewTime(e.target.value)}
+                className="bg-card-solid border border-line rounded-lg px-2 py-1.5 text-sm font-mono" />
+              <button type="button" disabled={vcPending}
                 onClick={() => {
-                  const iso = newTime === "12:00" ? noonEasternIso(newDate) : new Date(`${newDate}T${newTime}:00-05:00`).toISOString();
-                  mutate({ action: "extend", deadlineAt: iso });
+                  const iso = vcNewTime === "12:00"
+                    ? noonEasternIso(vcNewDate)
+                    : new Date(`${vcNewDate}T${vcNewTime}:00-05:00`).toISOString();
+                  vcMutate({ action: "extend", deadlineAt: iso });
                 }}
-                disabled={pending}
-                className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
-              >
-                {pending ? <Loader2 size={11} className="animate-spin" /> : "Extend"}
+                className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
+                {vcPending ? <Loader2 size={11} className="animate-spin" /> : "Extend"}
               </button>
-              <button type="button" onClick={() => setMode("idle")} className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
+              <button type="button" onClick={() => setVcMode("idle")} className="text-xs text-muted hover:text-fg">
                 <X size={11} />
               </button>
             </div>
@@ -640,125 +684,200 @@ function DeadlineRow({ d }: { d: Deadline }) {
         </td></tr>
       )}
 
-      {mode === "close" && (
-        <tr><td colSpan={5} className="px-5 pb-4 bg-elevated/30">
+      {vcMode === "close" && group.vc && (
+        <tr><td colSpan={3} className="px-5 pb-3 bg-elevated/30">
           <div className="rounded-xl border border-line bg-card-solid p-3 space-y-2">
+            <p className="text-[10px] font-bold text-brand-700 uppercase tracking-wider">VentureConnect · Close window</p>
             <label className="block">
               <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Close note (optional)</span>
-              <input
-                type="text"
-                value={closeNote}
-                onChange={(e) => setCloseNote(e.target.value)}
+              <input type="text" value={vcCloseNote} onChange={(e) => setVcCloseNote(e.target.value)}
                 placeholder="Reason for early close — applicants see this on /equip"
-                className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm"
-              />
+                className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm" />
             </label>
             <div className="flex items-center justify-end gap-2">
-              <button type="button" onClick={() => setMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
-              <button
-                type="button"
-                onClick={() => mutate({ action: "close", note: closeNote || undefined })}
-                disabled={pending}
-                className="bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
-              >
-                {pending ? <Loader2 size={11} className="animate-spin" /> : "Confirm close"}
+              <button type="button" onClick={() => setVcMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
+              <button type="button" disabled={vcPending}
+                onClick={() => vcMutate({ action: "close", note: vcCloseNote || undefined })}
+                className="bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
+                {vcPending ? <Loader2 size={11} className="animate-spin" /> : "Confirm close"}
               </button>
             </div>
           </div>
         </td></tr>
       )}
 
-      {mode === "edit" && (
-        <tr><td colSpan={5} className="px-5 pb-4 bg-elevated/30">
+      {vcMode === "edit" && group.vc && (
+        <tr><td colSpan={3} className="px-5 pb-3 bg-elevated/30">
           <div className="rounded-xl border border-line bg-card-solid p-3 space-y-2">
-            {/* Date + time row — admins can correct prepopulated
-                dates that came out of the auto-sync from the VL
-                round schedule. Unlike `Extend` (which is for
-                pushing an already-announced deadline forward and
-                records an audit trail), Edit is a hard
-                correction: it overwrites both `deadlineAt` AND
-                `originalDeadlineAt` and clears any prior
-                `extendedAt` marker so the row reads as a fresh
-                value rather than an extension. */}
+            <p className="text-[10px] font-bold text-brand-700 uppercase tracking-wider">VentureConnect · Edit</p>
             <div className="grid grid-cols-[1fr_1fr] gap-2">
               <label className="block">
                 <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Deadline date (ET)</span>
-                <input
-                  type="date"
-                  value={editDate}
-                  onChange={(e) => setEditDate(e.target.value)}
-                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm"
-                />
+                <input type="date" value={vcEditDate} onChange={(e) => setVcEditDate(e.target.value)}
+                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm" />
               </label>
               <label className="block">
                 <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Deadline time (ET)</span>
-                <input
-                  type="time"
-                  value={editTime}
-                  onChange={(e) => setEditTime(e.target.value)}
-                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm font-mono"
-                />
+                <input type="time" value={vcEditTime} onChange={(e) => setVcEditTime(e.target.value)}
+                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm font-mono" />
               </label>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <label className="block">
                 <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Cycle label</span>
-                <input
-                  type="text"
-                  value={cycleLabel}
-                  onChange={(e) => setCycleLabel(e.target.value)}
-                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm"
-                />
+                <input type="text" value={vcCycleLabel} onChange={(e) => setVcCycleLabel(e.target.value)}
+                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm" />
               </label>
               <label className="block">
                 <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Note</span>
-                <input
-                  type="text"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm"
-                />
+                <input type="text" value={vcNote} onChange={(e) => setVcNote(e.target.value)}
+                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm" />
               </label>
             </div>
             <div className="flex items-center justify-end gap-2">
-              <button type="button" onClick={() => setMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
-              <button
-                type="button"
+              <button type="button" onClick={() => setVcMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
+              <button type="button" disabled={vcPending}
                 onClick={() => {
-                  // Same noon-ET fast-path as the New-deadline +
-                  // Extend forms — 12:00 picks the daylight-saving-
-                  // aware noon helper, anything else lands at the
-                  // chosen wall-clock time in Eastern.
-                  const iso = editTime === "12:00"
-                    ? noonEasternIso(editDate)
-                    : new Date(`${editDate}T${editTime}:00-05:00`).toISOString();
-                  mutate({ action: "update_meta", cycleLabel, note, deadlineAt: iso });
+                  const iso = vcEditTime === "12:00"
+                    ? noonEasternIso(vcEditDate)
+                    : new Date(`${vcEditDate}T${vcEditTime}:00-05:00`).toISOString();
+                  vcMutate({ action: "update_meta", cycleLabel: vcCycleLabel, note: vcNote, deadlineAt: iso });
                 }}
-                disabled={pending}
-                className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
-              >
-                {pending ? <Loader2 size={11} className="animate-spin" /> : "Save"}
+                className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
+                {vcPending ? <Loader2 size={11} className="animate-spin" /> : "Save"}
               </button>
             </div>
           </div>
         </td></tr>
       )}
 
-      {mode === "delete" && (
-        <tr><td colSpan={5} className="px-5 pb-4 bg-rose-50/60">
+      {vcMode === "delete" && group.vc && (
+        <tr><td colSpan={3} className="px-5 pb-3 bg-rose-50/60">
           <div className="rounded-xl border border-rose-200 bg-card-solid p-3">
+            <p className="text-[10px] font-bold text-brand-700 uppercase tracking-wider mb-1">VentureConnect · Delete</p>
             <p className="text-[11px] text-rose-800 mb-2.5">
-              Permanently delete this deadline? The audit log entry is kept, but the deadline itself will be gone and auto-sync may recreate it on next page load if it is still in the canonical schedule.
+              Permanently delete this deadline? The audit log is kept, but auto-sync may recreate it on next page load if it remains in the canonical schedule.
             </p>
             <div className="flex items-center justify-end gap-2">
-              <button type="button" onClick={() => setMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
-              <button
-                type="button"
-                onClick={del}
-                disabled={pending}
-                className="bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5"
-              >
-                {pending ? <Loader2 size={11} className="animate-spin" /> : <><Trash2 size={11} /> Confirm delete</>}
+              <button type="button" onClick={() => setVcMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
+              <button type="button" onClick={vcDel} disabled={vcPending}
+                className="bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5">
+                {vcPending ? <Loader2 size={11} className="animate-spin" /> : <><Trash2 size={11} /> Confirm delete</>}
+              </button>
+            </div>
+          </div>
+        </td></tr>
+      )}
+
+      {/* ── VentureLift action panels ──────────────────────────── */}
+
+      {vlMode === "extend" && group.vl && (
+        <tr><td colSpan={3} className="px-5 pb-3 bg-elevated/30">
+          <div className="rounded-xl border border-emerald-200 bg-card-solid p-3 space-y-2">
+            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">VentureLift · Extend deadline</p>
+            <p className="text-[11px] text-subtle">New deadline (ET). Must be after the current deadline.</p>
+            <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 items-end">
+              <input type="date" value={vlNewDate} onChange={(e) => setVlNewDate(e.target.value)}
+                className="bg-card-solid border border-line rounded-lg px-2 py-1.5 text-sm" />
+              <input type="time" value={vlNewTime} onChange={(e) => setVlNewTime(e.target.value)}
+                className="bg-card-solid border border-line rounded-lg px-2 py-1.5 text-sm font-mono" />
+              <button type="button" disabled={vlPending}
+                onClick={() => {
+                  const iso = vlNewTime === "12:00"
+                    ? noonEasternIso(vlNewDate)
+                    : new Date(`${vlNewDate}T${vlNewTime}:00-05:00`).toISOString();
+                  vlMutate({ action: "extend", deadlineAt: iso });
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
+                {vlPending ? <Loader2 size={11} className="animate-spin" /> : "Extend"}
+              </button>
+              <button type="button" onClick={() => setVlMode("idle")} className="text-xs text-muted hover:text-fg">
+                <X size={11} />
+              </button>
+            </div>
+          </div>
+        </td></tr>
+      )}
+
+      {vlMode === "close" && group.vl && (
+        <tr><td colSpan={3} className="px-5 pb-3 bg-elevated/30">
+          <div className="rounded-xl border border-line bg-card-solid p-3 space-y-2">
+            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">VentureLift · Close window</p>
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Close note (optional)</span>
+              <input type="text" value={vlCloseNote} onChange={(e) => setVlCloseNote(e.target.value)}
+                placeholder="Reason for early close — applicants see this on /equip"
+                className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm" />
+            </label>
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setVlMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
+              <button type="button" disabled={vlPending}
+                onClick={() => vlMutate({ action: "close", note: vlCloseNote || undefined })}
+                className="bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
+                {vlPending ? <Loader2 size={11} className="animate-spin" /> : "Confirm close"}
+              </button>
+            </div>
+          </div>
+        </td></tr>
+      )}
+
+      {vlMode === "edit" && group.vl && (
+        <tr><td colSpan={3} className="px-5 pb-3 bg-elevated/30">
+          <div className="rounded-xl border border-line bg-card-solid p-3 space-y-2">
+            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">VentureLift · Edit</p>
+            <div className="grid grid-cols-[1fr_1fr] gap-2">
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Deadline date (ET)</span>
+                <input type="date" value={vlEditDate} onChange={(e) => setVlEditDate(e.target.value)}
+                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm" />
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Deadline time (ET)</span>
+                <input type="time" value={vlEditTime} onChange={(e) => setVlEditTime(e.target.value)}
+                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm font-mono" />
+              </label>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Cycle label</span>
+                <input type="text" value={vlCycleLabel} onChange={(e) => setVlCycleLabel(e.target.value)}
+                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm" />
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Note</span>
+                <input type="text" value={vlNote} onChange={(e) => setVlNote(e.target.value)}
+                  className="mt-1 w-full bg-card-solid border border-line rounded-lg px-3 py-1.5 text-sm" />
+              </label>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setVlMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
+              <button type="button" disabled={vlPending}
+                onClick={() => {
+                  const iso = vlEditTime === "12:00"
+                    ? noonEasternIso(vlEditDate)
+                    : new Date(`${vlEditDate}T${vlEditTime}:00-05:00`).toISOString();
+                  vlMutate({ action: "update_meta", cycleLabel: vlCycleLabel, note: vlNote, deadlineAt: iso });
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
+                {vlPending ? <Loader2 size={11} className="animate-spin" /> : "Save"}
+              </button>
+            </div>
+          </div>
+        </td></tr>
+      )}
+
+      {vlMode === "delete" && group.vl && (
+        <tr><td colSpan={3} className="px-5 pb-3 bg-rose-50/60">
+          <div className="rounded-xl border border-rose-200 bg-card-solid p-3">
+            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-1">VentureLift · Delete</p>
+            <p className="text-[11px] text-rose-800 mb-2.5">
+              Permanently delete this deadline? The audit log is kept, but auto-sync may recreate it on next page load if it remains in the canonical schedule.
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setVlMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
+              <button type="button" onClick={vlDel} disabled={vlPending}
+                className="bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5">
+                {vlPending ? <Loader2 size={11} className="animate-spin" /> : <><Trash2 size={11} /> Confirm delete</>}
               </button>
             </div>
           </div>

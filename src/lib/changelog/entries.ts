@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP deadline manager combined table — May 2026 ─────────────
+  {
+    title: "EQUIP Deadline Manager — combined month-view table",
+    body: "The List tab in Admin › EQUIP › Deadlines now shows VentureConnect and VentureLift side by side in a single month-by-month table instead of two separate stacked tables. Each row is one calendar month; both streams appear as columns. A 'Hide past' toggle collapses closed months. All inline actions (extend, close, edit, delete) remain available per cell with the same colour-coded confirmation panels.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Guided demo tour — May 2026 ──────────────────────────────────
   {
     title: "Demo Hub — live guided tour with animated cursor & spotlight",

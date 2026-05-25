@@ -33,6 +33,17 @@ export interface TourStep {
 export const TOUR_VERSION = "2026.05.25";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── EQUIP Deadline Manager combined table (May 2026) ───────────
+  {
+    id: "admin.equip-deadlines-month-view",
+    title: "EQUIP Deadlines — combined month view",
+    body: "The Deadline Manager List tab now shows VentureConnect and VentureLift side by side in one month-by-month table. Use the 'Hide past' toggle to focus on upcoming windows, and click any cell's action buttons to extend, close, edit, or delete that deadline inline.",
+    path: "/admin/equip/deadlines",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Deadline Manager", href: "/admin/equip/deadlines" },
+    since: "2026.05.25",
+  },
   // ─── Guided demo tour (May 2026) ─────────────────────────────────
   {
     id: "admin.demo-tour-live",
