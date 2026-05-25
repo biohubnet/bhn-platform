@@ -105,6 +105,14 @@ async function syncRoundsToDeadlines(actorId: string): Promise<number> {
     );
   }
 
+  // Prune pass: delete any rows beyond the schedule horizon (end of
+  // 2026). Handles rows written when the horizon was further out
+  // (e.g. VL Round 7, VC deadlines for 2027-2028). Runs after the
+  // insert so we never have a gap between delete + re-insert.
+  await prisma.equipDeadline.deleteMany({
+    where: { deadlineAt: { gte: new Date("2027-01-01T00:00:00.000Z") } },
+  });
+
   return toCreate.length;
 }
 

@@ -141,26 +141,8 @@ export const VL_ROUNDS: EquipRound[] = [
       { key: "funding_announcement",   label: "Funding announcement",         date: "2026-12-01", approximate: true, tone: "emerald" },
     ],
   },
-  {
-    stream: "venture_lift",
-    roundNumber: 7,
-    label: "Round 7",
-    year: 2027,
-    stages: [
-      // Round 7 starts after the December holiday break, following
-      // Round 6's ~Dec 1 funding announcement.
-      { key: "launch",                 label: "Launch",                       date: "2027-01-11", tone: "brand"   },
-      { key: "launch_reminder",        label: "Launch reminder",              date: "2027-02-02", tone: "neutral" },
-      { key: "pre_screening_deadline", label: "Pre-screening deadline",       date: "2027-02-19", tone: "amber"   },
-      { key: "consultations",          label: "Pre-screening consultations",  date: "2027-02-22", endDate: "2027-02-26", tone: "violet" },
-      { key: "invite_decision",        label: "Invite decision",              date: "2027-03-03", tone: "brand"   },
-      { key: "full_app_deadline",      label: "Full application deadline",    date: "2027-03-24", tone: "amber"   },
-      { key: "review_deadline",        label: "Review deadline",              date: "2027-04-13", tone: "violet"  },
-      { key: "adjudication",           label: "Adjudication window",          date: "2027-04-15", endDate: "2027-04-21", tone: "violet" },
-      { key: "funding_announcement",   label: "Funding announcement",         date: "2027-04-27", approximate: true, tone: "emerald" },
-    ],
-  },
 ];
+// Round 7 (2027) removed — schedule horizon is end of 2026.
 
 /** Return only stages with a hard deadline (pre-screening + full
  *  application). These are the rows that get synced into
@@ -194,7 +176,7 @@ export function deadlineStagesFromRound(r: EquipRound): EquipRoundStage[] {
 const VC_DEADLINES_START_YYYYMM = "2026-05";
 
 /** Inclusive end year for VC deadline generation. */
-const VC_DEADLINES_THROUGH_YEAR = 2028;
+const VC_DEADLINES_THROUGH_YEAR = 2026;
 
 /** Last Monday-on-or-before the given day-of-month. Walks back from
  *  the last day until we land on a Monday (getDay() === 1). All in
