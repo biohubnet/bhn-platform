@@ -18,6 +18,24 @@ import { EmployerEntityDemoBar } from "@/components/employer/EmployerEntityDemoB
 export const dynamic = "force-dynamic";
 
 export default async function EmployerTemplatesPage() {
+  try {
+    return await renderTemplatesPage();
+  } catch (err) {
+    // Last-resort guard: log the real error so it appears in Vercel
+    // function logs (visible at vercel.com → project → Logs) while
+    // showing a safe empty state to the user.
+    console.error("[EmployerTemplatesPage] unexpected error:", err);
+    return (
+      <div className="bg-card border border-line rounded-2xl p-12 text-center">
+        <p className="font-medium text-muted">
+          Templates are temporarily unavailable. Please try again in a moment.
+        </p>
+      </div>
+    );
+  }
+}
+
+async function renderTemplatesPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
