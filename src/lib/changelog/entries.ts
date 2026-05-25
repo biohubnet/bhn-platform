@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Story Bank builder — May 2026 ────────────────────────────────
+  {
+    title: "Story Bank — draft new stories inline with live coaching + worked examples",
+    body: "The /profile/stories page now opens with a Story Builder you can use to draft a new STAR story without going through the prep flow. Click 'Draft a new STAR story', and a two-column workspace expands: on the left, the four STAR textareas plus a title and tags; on the right, a live coaching column that updates on every keystroke — per-field word count (with the 30–80 / 15–50 / 60–150 / 25–80 target band shown alongside), traffic-light dots, top tips from the deterministic STAR validator, total word count, and a Ready / Almost / Needs-work readiness chip. Plus two binary sentinels: 'Has a number' (the Result section quantifies the outcome) and 'Uses I' (the Action section is in first person). Below the coaching panel sits a 'Worked examples' accordion with four polished READY-tier stories spanning wet-lab rescue, customer service, data crunch, and cross-team handoff. Each expands to show the full S/T/A/R and a 'Use as starting point' button that drops the text into the form — with an inline 'Replace your draft? · Keep mine' two-step confirm if you already have content typed.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Split-view retired — May 2026 ────────────────────────────────
   {
     title: "Admin / Split view retired",

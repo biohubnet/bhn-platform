@@ -55,6 +55,17 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Deadline Manager", href: "/admin/equip/deadlines" },
     since: "2026.05.25",
   },
+  // ─── Story Bank builder (May 2026) ───────────────────────────────
+  {
+    id: "trainee.story-bank-builder",
+    title: "New: Draft STAR stories with live coaching",
+    body: "Your Story Bank now has a builder at the top. Click 'Draft a new STAR story' to open it — type your four fields and a coaching column on the right grades your draft in real time. Word counts, top tips, and four worked examples you can borrow as a starting draft.",
+    path: "/profile/stories",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    cta: { label: "Open Story Bank", href: "/profile/stories" },
+    since: "2026.05.25d",
+  },
   // ─── Split-view retired (May 2026) ───────────────────────────────
   {
     id: "admin.split-view-retired",

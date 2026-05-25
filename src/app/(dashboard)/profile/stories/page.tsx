@@ -4,6 +4,7 @@ import { BookOpen, Plus, ArrowRight, Sparkles } from "lucide-react";
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { StoryBankClient } from "@/components/prep/StoryBankClient";
+import { StoryBuilder } from "@/components/prep/StoryBuilder";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 import { PageHero } from "@/components/ui/PageHero";
 
@@ -125,6 +126,17 @@ export default async function StoryBankPage() {
           </section>
         )}
 
+        {/* ── BUILDER ──────────────────────────────────────────── */}
+        <section
+          aria-label="Draft a new story"
+          className="px-6 sm:px-10 lg:px-14 pt-8 sm:pt-10 pb-2"
+        >
+          <SectionEyebrow>Story builder · live coaching</SectionEyebrow>
+          <div className="mt-4">
+            <StoryBuilder />
+          </div>
+        </section>
+
         {/* ── CONTENT ──────────────────────────────────────────── */}
         <section
           aria-label="Stories"
@@ -132,7 +144,7 @@ export default async function StoryBankPage() {
         >
           <SectionEyebrow>
             {stories.length === 0
-              ? "Get started"
+              ? "Your bank"
               : `${stories.length} ${stories.length === 1 ? "story" : "stories"} on file`}
           </SectionEyebrow>
           <div className="mt-5">
@@ -143,9 +155,9 @@ export default async function StoryBankPage() {
                 </span>
                 <p className="text-base font-semibold text-fg mt-3">No stories yet</p>
                 <p className="text-sm text-muted mt-1.5 max-w-md leading-relaxed">
-                  Find a posting you&apos;d like to apply to, click{" "}
-                  <strong>Prepare for this posting</strong>, walk through to Step 4,
-                  and save your first STAR story here.
+                  Use the Story builder above to draft your first one — or open a
+                  posting&apos;s <strong>Prepare for this posting</strong> flow and
+                  reach Step 4.
                 </p>
                 <Link
                   href="/internships"
