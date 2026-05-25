@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Demo Hub 8-bit dinos — May 2026 ──────────────────────────────
+  {
+    title: "Demo Hub — Rex/Vera/Max redrawn as big 8-bit pixel sprites",
+    body: "The three persona dinos on /admin/demo are now chunky 8-bit pixel-art sprites (currentColor body, crisp-edge rendering) shown on a fighter-select-style showcase stage with a soft floor shadow under each character. Each sprite has idle micro-movements that loop forever: a slow body bob (1.6 s), a tail wag (~0.95 s), and an occasional eye blink (~4 s). Phase offsets are staggered across Rex / Vera / Max so they don't all breathe in sync. Hovering a card speeds up the bob and tail like a roster character being highlighted. Honours prefers-reduced-motion — animations collapse for users with motion sensitivity.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── EQUIP Key Dates — merged round timeline — May 2026 ───────────
   {
     title: "EQUIP Deadlines — Key Dates with full VentureLift round timeline",

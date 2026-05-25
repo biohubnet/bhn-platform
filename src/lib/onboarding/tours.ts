@@ -55,6 +55,17 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Deadline Manager", href: "/admin/equip/deadlines" },
     since: "2026.05.25",
   },
+  // ─── 8-bit dino showcase (May 2026) ──────────────────────────────
+  {
+    id: "admin.demo-hub-pixel-dinos",
+    title: "New: Big 8-bit dinos with idle animations",
+    body: "Rex, Vera, and Max on the Demo Hub are now large pixel-art sprites on a fighter-select-style showcase stage. Each one idle-bobs, wags its tail, and blinks on a loop — out of sync with the others, like a game character roster. Hover a card to make the sprite breathe faster.",
+    path: "/admin/demo",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "See the dinos", href: "/admin/demo" },
+    since: "2026.05.25b",
+  },
   // ─── Guided demo tour (May 2026) ─────────────────────────────────
   {
     id: "admin.demo-tour-live",

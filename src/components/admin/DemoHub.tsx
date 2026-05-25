@@ -56,101 +56,217 @@ interface Character {
   phases: Record<PhaseKey, Phase>;
 }
 
-// ─── SVG Dinosaur Illustrations ───────────────────────────────────────────────
+// ─── 8-bit pixel-art dinos ────────────────────────────────────────────────────
+//
+// Each sprite is a string array where every character represents one pixel.
+// Legend:
+//   '.'  transparent
+//   '1'  body (currentColor — picked up from text-emerald-500 / -violet / -sky)
+//   '2'  body shadow (currentColor at 60% opacity)
+//   'H'  horn / claw (light grey)
+//   'W'  eye white
+//   'P'  pupil (black)
+//   'M'  mouth / smile (white at 80%)
+//   'S'  snout / glasses accent (white at 70%)
+//   'T'  tail (body color — placed in <g class="dino-tail"> so it wags)
+//   'G'  glasses lens (white at 50%)
+//
+// Pixels marked W/P/E live inside <g class="dino-eye"> so they blink.
+// The whole sprite lives inside <g class="dino-bob"> — the wrapper bobs
+// up and down like a game-menu character idle.
 
-function RexSVG({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" fill="currentColor" className={cn("overflow-visible", className)} aria-hidden>
-      <ellipse cx="62" cy="68" rx="26" ry="20" />
-      <ellipse cx="45" cy="55" rx="10" ry="13" />
-      <circle cx="26" cy="47" r="18" />
-      {/* Frill */}
-      <path d="M42 30 Q50 20 58 30 Q52 36 42 36 Z" opacity="0.60" />
-      {/* Three horns */}
-      <polygon points="14,33 18,14 22,33" />
-      <polygon points="22,29 27,11 32,29" />
-      <polygon points="30,35 35,18 40,35" />
-      {/* Eye */}
-      <circle cx="20" cy="43" r="4.5" fill="white" opacity="0.92" />
-      <circle cx="21" cy="42" r="2.2" fill="#1a1a1a" />
-      {/* Mouth */}
-      <path d="M14 52 Q18 57 23 52" stroke="white" strokeWidth="1.8" fill="none" opacity="0.70" />
-      {/* Legs */}
-      <ellipse cx="49" cy="86" rx="6" ry="4.5" />
-      <ellipse cx="61" cy="87" rx="6" ry="4.5" />
-      <ellipse cx="73" cy="87" rx="6" ry="4.5" />
-      <ellipse cx="83" cy="84" rx="5" ry="4" />
-      {/* Tail */}
-      <path d="M88 62 Q99 58 96 72" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round" />
-      {/* Backpack / books */}
-      <rect x="63" y="52" width="13" height="11" rx="3" opacity="0.55" />
-    </svg>
-  );
+const REX_SPRITE = [
+  "....H.H.H...........",  // 3 horn tips
+  "...HHHHHHH..........",  // horn bases merging into the head
+  "..1111111111........",  // head/frill top
+  ".111111111111.......",  // head + start of frill
+  ".11WP11111111111....",  // EYE row (W=white, P=pupil)
+  ".11WP11111111111....",  // double-height eye
+  ".11111111111111111..",  // head meets body
+  ".M.1111111111111111.",  // mouth tick
+  "...11111111111111TT.",  // body + tail nub
+  "...1111111111111TT..",
+  "...11111111111TT....",
+  "...1111111111.......",
+  "...11.11.11.11......",  // four legs (gaps between)
+  "...11.11.11.11......",
+];
+
+const VERA_SPRITE = [
+  "...111..............",  // top of head
+  "..1111..............",
+  ".11WP1..............",  // eye + pupil
+  "SS1111..............",  // snout pokes out left
+  ".M11................",  // mouth tick
+  "..111...............",  // neck
+  "..111...............",
+  "...111..............",
+  "....111.............",
+  ".....11111..........",  // shoulder
+  ".....111111111......",  // back
+  "....11111111111111TT",  // body + long tail trailing right
+  "....1111111111111TT.",
+  ".....11..1111111....",  // belly + raptor leg crouch
+  ".....11..11.........",  // back foot
+  ".....22..22.........",  // foot shadow
+];
+
+const MAX_SPRITE = [
+  "..............HH....",  // top of head
+  ".............1111...",
+  ".............WPG1...",  // eye + pupil + glasses lens
+  ".............1111...",
+  "............1111....",
+  "...........1111.....",  // long neck curving down-left
+  "..........1111......",
+  ".........1111.......",
+  "........11111.......",
+  ".....11111111111....",  // body starts
+  "....11111111111111..",
+  "...1111111111111111T",  // big round body + tail
+  "...111111111111111TT",
+  "...11.11..11.11.....",  // four stubby legs
+  "...11.11..11.11.....",
+  "...22.22..22.22.....",  // foot shadow
+];
+
+const SPRITES: Record<CharKey, string[]> = {
+  rex:  REX_SPRITE,
+  vera: VERA_SPRITE,
+  max:  MAX_SPRITE,
+};
+
+// One-time stylesheet (rendered once at the top of DemoHub).
+// All three idle animations live here so the SVGs themselves stay pure.
+const PIXEL_DINO_STYLE = `
+@keyframes dino-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
+}
+@keyframes dino-tail-wag {
+  0%, 100% { transform: rotate(-6deg); }
+  50%      { transform: rotate(6deg); }
+}
+@keyframes dino-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  94%, 98%      { transform: scaleY(0.05); }
+}
+@keyframes dino-step {
+  0%, 100% { transform: translateY(0); }
+  25%      { transform: translateY(0.4px); }
+  75%      { transform: translateY(-0.4px); }
+}
+.dino-sprite {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.dino-sprite .dino-bob {
+  animation: dino-bob 1.6s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.dino-sprite .dino-tail {
+  animation: dino-tail-wag 0.95s ease-in-out infinite;
+  transform-origin: 0% 60%;
+  transform-box: fill-box;
+}
+.dino-sprite .dino-eye {
+  animation: dino-blink 4.2s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.dino-sprite .dino-legs {
+  animation: dino-step 1.6s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+/* Slight phase offsets so the three dinos breathe out of sync */
+.dino-rex  .dino-bob { animation-delay: 0s;     }
+.dino-vera .dino-bob { animation-delay: -0.4s;  }
+.dino-max  .dino-bob { animation-delay: -0.85s; }
+.dino-rex  .dino-eye { animation-delay: -1.2s;  }
+.dino-vera .dino-eye { animation-delay: -2.6s;  }
+.dino-max  .dino-eye { animation-delay: 0s;     }
+.dino-rex  .dino-tail{ animation-delay: -0.1s;  }
+.dino-vera .dino-tail{ animation-delay: -0.5s;  }
+.dino-max  .dino-tail{ animation-delay: -0.7s;  }
+/* On hover the showcase speeds up — like a fighter selected on the roster */
+.dino-card:hover .dino-sprite .dino-bob  { animation-duration: 0.7s; }
+.dino-card:hover .dino-sprite .dino-tail { animation-duration: 0.45s; }
+@media (prefers-reduced-motion: reduce) {
+  .dino-sprite .dino-bob,
+  .dino-sprite .dino-tail,
+  .dino-sprite .dino-eye,
+  .dino-sprite .dino-legs { animation: none; }
+}
+`;
+
+// Maps a sprite character to (color, group). Group decides whether the
+// pixel lands in the body, the tail wag group, the eye blink group, or
+// the legs step group.
+type DinoGroup = "body" | "tail" | "eye" | "legs";
+function pixelMeta(
+  c: string,
+): { color: string; opacity?: number; group: DinoGroup } | null {
+  switch (c) {
+    case "1": return { color: "currentColor",                  group: "body" };
+    case "2": return { color: "currentColor", opacity: 0.55,   group: "body" };
+    case "H": return { color: "#f3f4f6",                       group: "body" };
+    case "G": return { color: "#ffffff",      opacity: 0.55,   group: "body" };
+    case "S": return { color: "currentColor", opacity: 0.75,   group: "body" };
+    case "M": return { color: "#ffffff",      opacity: 0.80,   group: "body" };
+    case "W": return { color: "#ffffff",                       group: "eye"  };
+    case "P": return { color: "#1a1a1a",                       group: "eye"  };
+    case "T": return { color: "currentColor",                  group: "tail" };
+    case "L": return { color: "currentColor",                  group: "legs" };
+    default:  return null;
+  }
 }
 
-function VeraSVG({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" fill="currentColor" className={cn("overflow-visible", className)} aria-hidden>
-      {/* Body — forward lean */}
-      <ellipse cx="54" cy="57" rx="18" ry="26" transform="rotate(-22 54 57)" />
-      {/* Neck */}
-      <path d="M40 44 L36 32" stroke="currentColor" strokeWidth="9" fill="none" strokeLinecap="round" />
-      {/* Head */}
-      <ellipse cx="30" cy="26" rx="13" ry="9" />
-      {/* Snout */}
-      <polygon points="17,24 8,28 17,32" />
-      {/* Eye */}
-      <circle cx="35" cy="22" r="3.5" fill="white" opacity="0.92" />
-      <circle cx="36" cy="21" r="1.8" fill="#1a1a1a" />
-      {/* Back legs */}
-      <ellipse cx="44" cy="86" rx="8" ry="5.5" />
-      <ellipse cx="60" cy="88" rx="8" ry="5.5" />
-      {/* Tiny arm */}
-      <path d="M46 54 L38 60" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" />
-      {/* Clipboard */}
-      <rect x="31" y="58" width="11" height="14" rx="2" opacity="0.65" />
-      <line x1="33" y1="62" x2="40" y2="62" stroke="white" strokeWidth="1" opacity="0.50" />
-      <line x1="33" y1="65" x2="40" y2="65" stroke="white" strokeWidth="1" opacity="0.50" />
-      <line x1="33" y1="68" x2="37" y2="68" stroke="white" strokeWidth="1" opacity="0.50" />
-      {/* Tail */}
-      <path d="M70 44 Q84 38 88 50 Q92 58 84 64" stroke="currentColor" strokeWidth="4.5" fill="none" strokeLinecap="round" />
-    </svg>
-  );
-}
+function PixelDino({ sprite, className }: { sprite: string[]; className?: string }) {
+  const width  = Math.max(...sprite.map((r) => r.length));
+  const height = sprite.length;
 
-function MaxSVG({ className }: { className?: string }) {
+  const cells: Record<DinoGroup, React.ReactNode[]> = {
+    body: [], tail: [], eye: [], legs: [],
+  };
+  for (let y = 0; y < height; y++) {
+    const row = sprite[y];
+    for (let x = 0; x < row.length; x++) {
+      const meta = pixelMeta(row[x]);
+      if (!meta) continue;
+      cells[meta.group].push(
+        <rect
+          key={`${x}-${y}-${meta.group}`}
+          x={x} y={y} width={1} height={1}
+          fill={meta.color}
+          {...(meta.opacity != null ? { opacity: meta.opacity } : {})}
+        />,
+      );
+    }
+  }
+
   return (
-    <svg viewBox="0 0 100 100" fill="currentColor" className={cn("overflow-visible", className)} aria-hidden>
-      {/* Body */}
-      <ellipse cx="58" cy="76" rx="30" ry="20" />
-      {/* Legs */}
-      <rect x="34" y="89" width="11" height="9" rx="3" />
-      <rect x="47" y="91" width="11" height="7" rx="3" />
-      <rect x="62" y="91" width="11" height="7" rx="3" />
-      <rect x="75" y="89" width="11" height="9" rx="3" />
-      {/* Neck */}
-      <path d="M38 62 Q26 50 22 34" stroke="currentColor" strokeWidth="13" fill="none" strokeLinecap="round" />
-      {/* Head */}
-      <ellipse cx="18" cy="26" rx="11" ry="9" />
-      {/* Glasses */}
-      <circle cx="13" cy="24" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.45" />
-      <circle cx="22" cy="24" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.45" />
-      <path d="M17 24 L18 24" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.45" />
-      {/* Eye */}
-      <circle cx="12" cy="23" r="2" fill="white" opacity="0.90" />
-      <circle cx="12" cy="23" r="1" fill="#1a1a1a" />
-      {/* Smile */}
-      <path d="M13 30 Q17 34 22 30" stroke="white" strokeWidth="1.3" fill="none" opacity="0.60" />
-      {/* Tail */}
-      <path d="M88 70 Q97 64 95 76" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round" />
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      shapeRendering="crispEdges"
+      className={cn("dino-sprite overflow-visible", className)}
+      aria-hidden
+    >
+      <g className="dino-bob">
+        {cells.body}
+        <g className="dino-legs">{cells.legs}</g>
+        <g className="dino-tail">{cells.tail}</g>
+        <g className="dino-eye">{cells.eye}</g>
+      </g>
     </svg>
   );
 }
 
 const DINO_SVG: Record<CharKey, (p: { className?: string }) => React.JSX.Element> = {
-  rex: RexSVG,
-  vera: VeraSVG,
-  max: MaxSVG,
+  rex:  (p) => <PixelDino sprite={SPRITES.rex}  className={cn("dino-rex",  p.className)} />,
+  vera: (p) => <PixelDino sprite={SPRITES.vera} className={cn("dino-vera", p.className)} />,
+  max:  (p) => <PixelDino sprite={SPRITES.max}  className={cn("dino-max",  p.className)} />,
 };
 
 // ─── Style maps ───────────────────────────────────────────────────────────────
@@ -378,6 +494,9 @@ export function DemoHub() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-16 space-y-8">
+      {/* Pixel-dino animations (idle bob, tail wag, blink) — injected once
+          for the whole hub so every sprite picks them up. */}
+      <style dangerouslySetInnerHTML={{ __html: PIXEL_DINO_STYLE }} />
 
       {/* ── Journey overview ─────────────────────────────────────── */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -410,18 +529,36 @@ export function DemoHub() {
                 key={char.key}
                 onClick={() => setActiveChar(char.key)}
                 className={cn(
-                  "relative text-left p-5 rounded-2xl border-2 transition-all duration-200 w-full group",
+                  "dino-card relative text-left p-5 rounded-2xl border-2 transition-all duration-200 w-full group",
                   isActive
                     ? cn("border-transparent ring-2", cs.ring, cs.bg)
-                    : "border-line bg-card hover:border-line-strong hover:shadow-sm"
+                    : "border-line bg-card hover:border-line-strong hover:shadow-sm",
                 )}
               >
-                <div className="flex justify-center mb-3">
-                  <DinoSVG className={cn(
-                    "w-20 h-20 transition-transform duration-200",
-                    cs.svgText,
-                    isActive ? "scale-110" : "group-hover:scale-105",
-                  )} />
+                {/* Showcase stage — like a fighter-select roster. The dino
+                    bobs idle; tail wags; eyes blink every few seconds. The
+                    floor is a soft elliptical shadow that hints at depth. */}
+                <div
+                  className={cn(
+                    "relative flex justify-center items-end mb-3 h-36 rounded-xl overflow-hidden ring-1 ring-inset",
+                    isActive ? cn(cs.bg, "ring-transparent") : "bg-elevated/40 ring-line/60",
+                  )}
+                >
+                  {/* Floor shadow — sits under the sprite */}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute bottom-3 left-1/2 -translate-x-1/2 h-2 w-20 rounded-full blur-[2px] opacity-40",
+                      cs.dot,
+                    )}
+                  />
+                  <DinoSVG
+                    className={cn(
+                      "relative w-32 h-32 transition-transform duration-200",
+                      cs.svgText,
+                      isActive ? "scale-110" : "group-hover:scale-105",
+                    )}
+                  />
                 </div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-bold text-base text-fg">{char.name}</span>
