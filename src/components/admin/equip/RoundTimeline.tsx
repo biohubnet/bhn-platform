@@ -23,14 +23,15 @@ function fmtRange(stage: EquipRoundStage): string {
   return `${startLabel} → ${endLabel}`;
 }
 
-function chipTone(stage: EquipRoundStage): string {
-  // Tailwind tone classes — mirrors the UI scheme used elsewhere.
-  switch (stage.tone) {
-    case "amber":   return "bg-amber-50 text-amber-800 ring-amber-200";
-    case "violet":  return "bg-violet-50 text-violet-800 ring-violet-200";
-    case "brand":   return "bg-brand-50 text-brand-800 ring-brand-200";
-    case "emerald": return "bg-emerald-50 text-emerald-800 ring-emerald-200";
-    default:        return "bg-elevated text-muted ring-line";
+/** Solid dot colour per stage tone — used as a row-level indicator
+ *  in the schedule table (replaces the old full-chip background). */
+function dotColor(tone: EquipRoundStage["tone"]): string {
+  switch (tone) {
+    case "amber":   return "bg-amber-400";
+    case "violet":  return "bg-violet-400";
+    case "brand":   return "bg-brand-500";
+    case "emerald": return "bg-emerald-400";
+    default:        return "bg-line";
   }
 }
 
@@ -44,15 +45,10 @@ export function RoundTimeline() {
   return (
     <section className="rounded-2xl border border-line bg-card overflow-hidden surface-shadow">
       <header className="px-5 py-3 border-b border-line flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle inline-flex items-center gap-1.5">
-            <CalendarClock size={11} className="text-brand-600" />
-            VentureLift round schedule
-          </p>
-          <p className="text-xs text-muted mt-1">
-            Published source — VentureLift_Key_Dates_2025-2026 spreadsheet. Each round has eight published stages from launch through funding announcement. Dates marked with <span className="font-mono">~</span> are approximate ("Early August" etc).
-          </p>
-        </div>
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle inline-flex items-center gap-1.5">
+          <CalendarClock size={11} className="text-brand-600" />
+          VentureLift round schedule
+        </p>
         <span className="text-[11px] text-subtle">{VL_ROUNDS.length} rounds</span>
       </header>
 
@@ -111,24 +107,59 @@ function RoundCard({ r, dimmed = false }: { r: EquipRound; dimmed?: boolean }) {
           </span>
         )}
       </div>
-      <ol className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-        {r.stages.map((s, i) => {
-          const isHighlighted = i === highlightedIdx;
-          return (
-            <li
-              key={s.key}
-              className={
-                "rounded-xl px-3 py-2 ring-1 ring-inset " +
-                chipTone(s) +
-                (isHighlighted ? " ring-2 ring-offset-1 shadow-sm" : "")
-              }
-            >
-              <p className="text-[10px] uppercase tracking-wider font-bold opacity-75">{s.label}</p>
-              <p className="text-xs font-bold tabular-nums mt-0.5">{fmtRange(s)}</p>
-            </li>
-          );
-        })}
-      </ol>
+      {/* Stage table — one row per stage, chronological, scannable */}
+      <div className="rounded-xl overflow-hidden border border-line">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-elevated/60 border-b border-line">
+              <th className="text-left text-[9px] uppercase tracking-[0.2em] font-bold text-subtle px-3 py-2 w-8 tabular-nums">#</th>
+              <th className="text-left text-[9px] uppercase tracking-[0.2em] font-bold text-subtle px-3 py-2">Stage</th>
+              <th className="text-left text-[9px] uppercase tracking-[0.2em] font-bold text-subtle px-3 py-2">Date</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {r.stages.map((s, i) => {
+              const isActive = i === highlightedIdx && highlightedIdx === activeIdx;
+              const isNext   = i === highlightedIdx && highlightedIdx === nextFutureIdx && activeIdx < 0;
+              const isHL     = isActive || isNext;
+              return (
+                <tr
+                  key={s.key}
+                  className={isHL ? "bg-emerald-50/70" : ""}
+                >
+                  {/* Row number */}
+                  <td className="px-3 py-2 text-subtle tabular-nums font-mono">{i + 1}</td>
+
+                  {/* Stage name + tone dot */}
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor(s.tone)}`} />
+                      <span className={`font-semibold ${isHL ? "text-emerald-900" : "text-fg"}`}>
+                        {s.label}
+                      </span>
+                      {isActive && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full ring-1 ring-emerald-200 ring-inset">
+                          now
+                        </span>
+                      )}
+                      {isNext && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full ring-1 ring-amber-200 ring-inset">
+                          next
+                        </span>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* Date(s) */}
+                  <td className={`px-3 py-2 font-mono tabular-nums ${isHL ? "font-bold text-emerald-900" : "text-fg"}`}>
+                    {fmtRange(s)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </li>
   );
 }
