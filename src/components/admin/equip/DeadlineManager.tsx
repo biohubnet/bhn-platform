@@ -307,6 +307,22 @@ function getStatusBadge(status: string) {
   return <Badge tone="neutral">{status}</Badge>;
 }
 
+/** Big pastel month abbreviation — abbr + Tailwind text-color class. */
+const MONTH_DISPLAY: Record<number, { abbr: string; color: string }> = {
+  1:  { abbr: "Jan", color: "text-sky-300"     },
+  2:  { abbr: "Feb", color: "text-violet-300"  },
+  3:  { abbr: "Mar", color: "text-emerald-300" },
+  4:  { abbr: "Apr", color: "text-teal-300"    },
+  5:  { abbr: "May", color: "text-green-400"   },
+  6:  { abbr: "Jun", color: "text-amber-300"   },
+  7:  { abbr: "Jul", color: "text-orange-300"  },
+  8:  { abbr: "Aug", color: "text-red-300"     },
+  9:  { abbr: "Sep", color: "text-pink-300"    },
+  10: { abbr: "Oct", color: "text-orange-400"  },
+  11: { abbr: "Nov", color: "text-blue-300"    },
+  12: { abbr: "Dec", color: "text-rose-400"    },
+};
+
 /** Subtle background tint keyed by VentureLift round number, extracted
  *  from the cycleLabel (e.g. "Round 6 · Pre-screening deadline"). */
 function vlRoundBg(cycleLabel: string | null | undefined): string {
@@ -403,7 +419,7 @@ function CombinedTable({ deadlines }: { deadlines: Deadline[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-line text-left text-[10px] text-muted uppercase tracking-wide">
-            <th className="px-5 py-3 w-28">Month</th>
+            <th className="px-4 py-3 w-16">Month</th>
             <th className="px-5 py-3">
               <span className="text-brand-700 font-bold normal-case tracking-normal">VentureConnect</span>
               <span className="text-subtle font-normal ml-1.5 normal-case tracking-normal">≤$5K · monthly</span>
@@ -553,8 +569,20 @@ function CombinedMonthRow({ group }: { group: MonthGroup }) {
       <tr className="align-top">
 
         {/* Month column */}
-        <td className="px-5 py-3 font-semibold text-xs text-fg whitespace-nowrap align-top">
-          {group.label}
+        <td className="px-4 py-3 align-top text-center w-16">
+          {(() => {
+            const monthNum = parseInt(group.monthKey.slice(5, 7), 10);
+            const year     = group.monthKey.slice(0, 4);
+            const m        = MONTH_DISPLAY[monthNum] ?? { abbr: group.label.slice(0, 3), color: "text-muted" };
+            return (
+              <>
+                <span className={`block text-3xl font-black leading-none tracking-tight ${m.color}`}>
+                  {m.abbr}
+                </span>
+                <span className="block text-[10px] text-muted mt-0.5 font-medium">{year}</span>
+              </>
+            );
+          })()}
         </td>
 
         {/* VentureConnect column */}
