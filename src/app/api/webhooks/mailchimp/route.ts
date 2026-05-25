@@ -34,6 +34,7 @@
  *   the natural key — re-delivering the same event is safe.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -41,11 +42,16 @@ export const runtime = "nodejs";
 // Force-dynamic so we always see the live secret query string.
 export const dynamic = "force-dynamic";
 
+/** Timing-safe secret comparison (PT-03 fix, May 2026 pen test).
+ *  Using === leaks the secret length and character values via timing.
+ *  timingSafeEqual requires same-length buffers — length mismatch
+ *  is returned as false before the constant-time comparison. */
 function checkSecret(req: NextRequest): boolean {
   const expected = process.env.MAILCHIMP_WEBHOOK_SECRET?.trim();
   if (!expected) return false; // Fail closed when the secret isn't set.
-  const provided = new URL(req.url).searchParams.get("secret");
-  return provided === expected;
+  const provided = new URL(req.url).searchParams.get("secret") ?? "";
+  if (provided.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
 }
 
 /** Mailchimp's setup ping is a GET; respond 200 so the form lets the

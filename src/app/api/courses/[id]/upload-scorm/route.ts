@@ -3,7 +3,7 @@ import { requireCourseOwner } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseManifest } from "@/lib/scorm-parser";
 import { putR2Object, deleteR2Prefix, R2_PUBLIC_URL } from "@/lib/r2";
-import path from "path";
+import path, { posix } from "path";
 import fs from "fs";
 import os from "os";
 import unzipper from "unzipper";
@@ -72,14 +72,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     walk(tmpDir);
 
-    // Upload in parallel batches of 8 to keep Vercel function memory reasonable
+    // Upload in parallel batches of 8 to keep Vercel function memory reasonable.
+    // Security (PT-05, May 2026 pen test): sanitise the extracted path
+    // before using it as an R2 key to prevent zip-slip attacks where a
+    // crafted SCORM ZIP embeds entries with "../" paths that would resolve
+    // outside the scorm/<courseId>/ prefix.
     const concurrency = 8;
     for (let i = 0; i < filesToUpload.length; i += concurrency) {
       const batch = filesToUpload.slice(i, i + concurrency);
       await Promise.all(
         batch.map(async ({ abs, rel }) => {
+          // posix.normalize collapses ".." segments; the replace strips
+          // any remaining leading "../" traversal sequences.
+          const safeRel = posix.normalize(rel).replace(/^(\.\.(\/|\\|$))+/, "");
+          if (!safeRel || safeRel === ".") return; // skip degenerate paths
           const body = fs.readFileSync(abs);
-          await putR2Object(`${r2Prefix}/${rel}`, body);
+          await putR2Object(`${r2Prefix}/${safeRel}`, body);
         })
       );
     }

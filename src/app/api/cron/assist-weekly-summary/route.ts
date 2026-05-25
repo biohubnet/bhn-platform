@@ -13,6 +13,7 @@
  * Auth: superadmin OR CRON_SECRET (same as the rollup cron).
  */
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { chat, AI_CONFIGURED } from "@/lib/ai";
@@ -53,8 +54,17 @@ function previousMonday(d: Date): Date {
 async function authorised(req: Request): Promise<boolean> {
   const secret = process.env.CRON_SECRET;
   if (secret) {
-    const got = req.headers.get("x-cron-secret") ?? req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-    if (got === secret) return true;
+    const got =
+      req.headers.get("x-cron-secret") ??
+      req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
+      "";
+    // Timing-safe comparison (PT-04 fix, May 2026 pen test).
+    if (
+      got.length === secret.length &&
+      timingSafeEqual(Buffer.from(got), Buffer.from(secret))
+    ) {
+      return true;
+    }
   }
   const session = await getSession();
   const role = (session?.user as { role?: string })?.role;

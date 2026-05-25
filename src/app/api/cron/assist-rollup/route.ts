@@ -11,6 +11,7 @@
  * called by Vercel Cron / GitHub Actions / curl-from-laptop.
  */
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 
@@ -25,12 +26,24 @@ function startOfDayUTC(d: Date): Date {
   return x;
 }
 
+/** Timing-safe secret check (PT-04 fix, May 2026 pen test).
+ *  Direct === comparison leaks secret length/value via response-time
+ *  analysis. timingSafeEqual requires same-length buffers — pad/length
+ *  mismatch is returned as false before entering the comparison. */
 async function authorised(req: Request): Promise<boolean> {
   // CRON secret short-circuit.
   const secret = process.env.CRON_SECRET;
   if (secret) {
-    const got = req.headers.get("x-cron-secret") ?? req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-    if (got === secret) return true;
+    const got =
+      req.headers.get("x-cron-secret") ??
+      req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
+      "";
+    if (
+      got.length === secret.length &&
+      timingSafeEqual(Buffer.from(got), Buffer.from(secret))
+    ) {
+      return true;
+    }
   }
   // Or: superadmin.
   const session = await getSession();
