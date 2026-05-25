@@ -143,7 +143,7 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "Application Builder",       labelKey: "nav.application", href: "/profile/application",      icon: FileText,
     featureId: "profile-application",
     description: "Build a reusable resume + 1-min video intro + elevator pitch. Made once; auto-attached to every application form." },
-  { label: "Master resume",             labelKey: "nav.masterResume", href: "/profile/master",       icon: Library,
+  { label: "Master Resume",             labelKey: "nav.masterResume", href: "/profile/master",       icon: Library,
     featureId: "profile-master",
     description: "Your library of every accomplishment bullet you've ever written. Tailored drafts pull from it; AI uses it to fit any posting. Version-locked + downloadable snapshots." },
   { label: "Resume Tailoring",           labelKey: "nav.resumeStructured", href: "/profile/resumes",       icon: FileText,
