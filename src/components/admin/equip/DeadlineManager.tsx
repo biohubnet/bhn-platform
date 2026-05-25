@@ -15,9 +15,10 @@ import { useRouter } from "next/navigation";
 import {
   Loader2, Plus, Trash2, Lock, Unlock, FastForward, Pencil, X,
   Calendar, List, AlertCircle, ChevronLeft, ChevronRight,
+  ExternalLink, Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { holidayDateSet } from "@/lib/equip/calendar";
+import { holidayDateSet, UOFT_HOLIDAYS } from "@/lib/equip/calendar";
 
 interface Deadline {
   id: string;
@@ -32,8 +33,23 @@ interface Deadline {
   createdAt: string | Date;
 }
 
+/** One stage from a VentureLift round — serialised plain object
+ *  (page.tsx flattens VL_ROUNDS constants into this shape). */
+interface VlRoundStage {
+  roundNumber: number;
+  roundLabel:  string;   // "Round 5"
+  roundYear:   number;
+  stageKey:    string;   // "pre_screening_deadline" | "full_app_deadline" | …
+  stageLabel:  string;   // "Pre-screening deadline"
+  date:        string;   // yyyy-mm-dd start date
+  endDate:     string | null;
+  approximate: boolean;
+  tone:        "amber" | "violet" | "brand" | "emerald" | "neutral";
+}
+
 interface Props {
   initial: Deadline[];
+  vlRoundStages: VlRoundStage[];
 }
 
 const STREAM_META: Record<string, { label: string; cap: string; tone: "brand" | "success" }> = {
@@ -112,7 +128,7 @@ function torontoTimeInput(dateLike: string | Date): string {
   return hhmm.replace(/^24/, "00");
 }
 
-export function DeadlineManager({ initial }: Props) {
+export function DeadlineManager({ initial, vlRoundStages }: Props) {
   const [tab, setTab] = useState<"list" | "calendar">("list");
 
   return (
@@ -144,7 +160,7 @@ export function DeadlineManager({ initial }: Props) {
 
       <NewDeadlineForm />
 
-      {tab === "list"     ? <ListView     deadlines={initial} /> : null}
+      {tab === "list"     ? <ListView     deadlines={initial} vlRoundStages={vlRoundStages} /> : null}
       {tab === "calendar" ? <CalendarView deadlines={initial} holidaysByDate={holidaysByDateRecord()} /> : null}
     </div>
   );
@@ -323,35 +339,65 @@ const MONTH_DISPLAY: Record<number, { abbr: string; color: string }> = {
   12: { abbr: "Dec", color: "text-rose-400"    },
 };
 
-/** Subtle background tint keyed by VentureLift round number, extracted
- *  from the cycleLabel (e.g. "Round 6 · Pre-screening deadline"). */
+/** Compact date label for a VL stage: "Sep 19" or "Sep 22–26". */
+function fmtStageDate(s: VlRoundStage): string {
+  const start = new Date(s.date + "T12:00:00-04:00");
+  const startStr = start.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (!s.endDate) return s.approximate ? `~${startStr}` : startStr;
+  const end = new Date(s.endDate + "T12:00:00-04:00");
+  const sameMonth = start.getMonth() === end.getMonth();
+  const endStr = sameMonth
+    ? end.toLocaleDateString("en-US", { day: "numeric" })
+    : end.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return `${startStr}–${endStr}`;
+}
+
+/** Filled dot colour per stage tone. */
+function vlStageDot(tone: VlRoundStage["tone"]): string {
+  switch (tone) {
+    case "amber":   return "bg-amber-400";
+    case "violet":  return "bg-violet-400";
+    case "brand":   return "bg-brand-500";
+    case "emerald": return "bg-emerald-500";
+    default:        return "bg-line-strong";
+  }
+}
+
+/** Subtle background tint keyed by VentureLift round number. */
+function vlRoundBgByNumber(n: number): string {
+  const palette: Record<number, string> = {
+    3: "bg-slate-100/70",
+    4: "bg-violet-50/70",
+    5: "bg-amber-50/70",
+    6: "bg-emerald-50/70",
+    7: "bg-sky-50/70",
+  };
+  return palette[n] ?? "";
+}
+
+/** Same as vlRoundBgByNumber but accepts the cycleLabel string used
+ *  on EquipDeadline rows (e.g. "Round 6 · Pre-screening deadline"). */
 function vlRoundBg(cycleLabel: string | null | undefined): string {
   if (!cycleLabel) return "";
   const m = cycleLabel.match(/Round (\d+)/i);
   if (!m) return "";
-  const palette: Record<string, string> = {
-    "3": "bg-slate-100/70",
-    "4": "bg-violet-50/70",
-    "5": "bg-amber-50/70",
-    "6": "bg-emerald-50/70",
-    "7": "bg-sky-50/70",
-  };
-  return palette[m[1]] ?? "";
+  return vlRoundBgByNumber(parseInt(m[1], 10));
 }
 
 type SideMode = "idle" | "extend" | "close" | "edit" | "delete";
 
 interface MonthGroup {
-  monthKey: string;  // "YYYY-MM"
-  label:    string;  // "January 2026"
-  vc:       Deadline | null;
-  vl:       Deadline | null;
+  monthKey:  string;          // "YYYY-MM"
+  label:     string;          // "January 2026"
+  vc:        Deadline | null;
+  vl:        Deadline | null; // actionable VL deadline (pre-screening or full app)
+  vlStages:  VlRoundStage[];  // ALL VL stages starting this month (for timeline)
 }
 
 // ── List view ─────────────────────────────────────────────────────────────────
 
-function ListView({ deadlines }: { deadlines: Deadline[] }) {
-  if (deadlines.length === 0) {
+function ListView({ deadlines, vlRoundStages }: { deadlines: Deadline[]; vlRoundStages: VlRoundStage[] }) {
+  if (deadlines.length === 0 && vlRoundStages.length === 0) {
     return (
       <div className="rounded-2xl border border-line bg-card p-12 text-center surface-shadow">
         <p className="font-medium text-fg">No deadlines yet</p>
@@ -359,50 +405,76 @@ function ListView({ deadlines }: { deadlines: Deadline[] }) {
       </div>
     );
   }
-  return <CombinedTable deadlines={deadlines} />;
+  return <CombinedTable deadlines={deadlines} vlRoundStages={vlRoundStages} />;
 }
 
-function CombinedTable({ deadlines }: { deadlines: Deadline[] }) {
+function CombinedTable({ deadlines, vlRoundStages }: { deadlines: Deadline[]; vlRoundStages: VlRoundStage[] }) {
   const [hidePast, setHidePast] = useState(true);
+  const today = new Date().toISOString().slice(0, 10);
 
   const groups = useMemo<MonthGroup[]>(() => {
     const map = new Map<string, MonthGroup>();
+
+    function ensureGroup(key: string, isoDate: string) {
+      if (!map.has(key)) {
+        // Build a label from the key directly ("2026-05" → "May 2026")
+        // using a dummy noon-UTC date so toLocaleDateString is stable.
+        const [y, m] = key.split("-").map(Number);
+        const label = new Date(Date.UTC(y, m - 1, 15))
+          .toLocaleDateString("en-US", { month: "long", year: "numeric" });
+        void isoDate; // used only when we need a real Date — key is enough
+        map.set(key, { monthKey: key, label, vc: null, vl: null, vlStages: [] });
+      }
+    }
+
+    // Bucket EquipDeadline rows by Toronto month
     for (const d of deadlines) {
       const key = torontoYYYYMM(d.deadlineAt);
-      if (!map.has(key)) {
-        const label = new Date(d.deadlineAt).toLocaleDateString("en-US", {
-          timeZone: "America/Toronto",
-          month: "long", year: "numeric",
-        });
-        map.set(key, { monthKey: key, label, vc: null, vl: null });
-      }
+      ensureGroup(key, typeof d.deadlineAt === "string" ? d.deadlineAt : d.deadlineAt.toISOString());
       const g = map.get(key)!;
-      // If multiple deadlines exist for the same stream in a month,
-      // keep the latest (highest deadlineAt) — edge-case safety.
       if (d.stream === "venture_connect") {
         if (!g.vc || new Date(d.deadlineAt) > new Date(g.vc.deadlineAt)) g.vc = d;
       } else if (d.stream === "venture_lift") {
         if (!g.vl || new Date(d.deadlineAt) > new Date(g.vl.deadlineAt)) g.vl = d;
       }
     }
+
+    // Bucket VL round stages by the stage's start-date month
+    for (const s of vlRoundStages) {
+      const key = s.date.slice(0, 7); // "yyyy-mm" directly from "yyyy-mm-dd"
+      ensureGroup(key, s.date + "T12:00:00Z");
+      map.get(key)!.vlStages.push(s);
+    }
+
+    // Sort stages within each group chronologically
+    for (const g of map.values()) {
+      g.vlStages.sort((a, b) => a.date.localeCompare(b.date));
+    }
+
     return Array.from(map.values()).sort((a, b) => a.monthKey.localeCompare(b.monthKey));
-  }, [deadlines]);
+  }, [deadlines, vlRoundStages]);
 
   const now = new Date();
   const isPast = (g: MonthGroup) => {
     const vcPast = !g.vc || new Date(g.vc.deadlineAt) < now;
-    const vlPast = !g.vl || new Date(g.vl.deadlineAt) < now;
-    return vcPast && vlPast;
+    const vlDeadlinePast = !g.vl || new Date(g.vl.deadlineAt) < now;
+    const hasUpcomingStage = g.vlStages.some((s) => (s.endDate ?? s.date) >= today);
+    return vcPast && vlDeadlinePast && !hasUpcomingStage;
   };
 
   const pastCount = groups.filter(isPast).length;
   const visible   = hidePast ? groups.filter((g) => !isPast(g)) : groups;
 
+  // ── UofT holiday legend (upcoming closures) ────────────────────
+  const upcomingHolidays = UOFT_HOLIDAYS.filter(
+    (h) => (h.endDate ?? h.date) >= today,
+  ).slice(0, 6);
+
   return (
     <section className="rounded-2xl border border-line bg-card overflow-hidden surface-shadow">
       <header className="px-5 py-3 border-b border-line flex items-center justify-between gap-3">
         <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-          Funding windows — month view
+          Key dates
         </p>
         {pastCount > 0 && (
           <button
@@ -432,22 +504,66 @@ function CombinedTable({ deadlines }: { deadlines: Deadline[] }) {
         </thead>
         <tbody className="divide-y divide-line">
           {visible.map((g) => (
-            <CombinedMonthRow key={g.monthKey} group={g} />
+            <CombinedMonthRow key={g.monthKey} group={g} today={today} />
           ))}
           {visible.length === 0 && (
             <tr>
               <td colSpan={3} className="px-5 py-8 text-center text-muted text-sm">
-                {hidePast ? "No upcoming deadlines." : "No deadlines."}
+                {hidePast ? "No upcoming dates." : "No dates."}
               </td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {/* U of T closure legend */}
+      {upcomingHolidays.length > 0 && (
+        <footer className="px-5 py-3 border-t border-line bg-elevated/30">
+          <div className="flex items-start gap-3 flex-wrap">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                U of T closures · upcoming
+              </p>
+              <p className="text-[11px] text-muted mt-0.5">
+                Reviewers don&apos;t schedule consults or reviews on these dates.{" "}
+                <a
+                  href="https://people.utoronto.ca/memos/holiday-schedule-2025-26-and-2026-27/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-brand-700 underline inline-flex items-center gap-1"
+                >
+                  Full schedule <ExternalLink size={9} />
+                </a>
+              </p>
+            </div>
+            <ul className="flex items-center gap-1.5 flex-wrap ml-auto">
+              {upcomingHolidays.map((h) => (
+                <li
+                  key={h.date + h.name}
+                  className={
+                    "text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ring-1 ring-inset inline-flex items-center gap-1 " +
+                    (h.presidential
+                      ? "bg-sky-50 text-sky-800 ring-sky-200"
+                      : "bg-rose-50 text-rose-800 ring-rose-200")
+                  }
+                  title={h.name}
+                >
+                  {new Date(h.date + "T12:00:00-04:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  {h.endDate && (
+                    <>–{new Date(h.endDate + "T12:00:00-04:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</>
+                  )}
+                  <span className="opacity-75">· {h.name}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </footer>
+      )}
     </section>
   );
 }
 
-function CombinedMonthRow({ group }: { group: MonthGroup }) {
+function CombinedMonthRow({ group, today }: { group: MonthGroup; today: string }) {
   const router = useRouter();
   const now    = new Date();
 
@@ -641,61 +757,198 @@ function CombinedMonthRow({ group }: { group: MonthGroup }) {
           )}
         </td>
 
-        {/* VentureLift column */}
-        <td className={"px-5 py-3 align-top " + vlRoundBg(group.vl?.cycleLabel) + (vlPast && group.vl && group.vl.status !== "closed" ? " opacity-70" : "")}>
-          {group.vl ? (
-            <>
-              <p className="font-medium text-fg text-xs">{formatShort(group.vl.deadlineAt)}</p>
-              {group.vl.extendedAt && (
-                <p className="text-[10px] text-subtle">Was {formatShort(group.vl.originalDeadlineAt)}</p>
+        {/* VentureLift column — full round timeline for this month */}
+        {(() => {
+          // Pick the cell background from the actionable deadline or the
+          // first stage's round number (whichever is available).
+          const cellBg = group.vl?.cycleLabel
+            ? vlRoundBg(group.vl.cycleLabel)
+            : group.vlStages.length > 0
+              ? vlRoundBgByNumber(group.vlStages[0].roundNumber)
+              : "";
+
+          // Build per-round groupings for the mini-timeline.
+          const roundNums = [...new Set(group.vlStages.map((s) => s.roundNumber))];
+
+          return (
+            <td className={"px-5 py-3 align-top " + cellBg + (vlPast && group.vl && group.vl.status !== "closed" && group.vlStages.length === 0 ? " opacity-70" : "")}>
+              {group.vlStages.length > 0 ? (
+                <div className="space-y-3">
+                  {roundNums.map((rn) => {
+                    const stages = group.vlStages.filter((s) => s.roundNumber === rn);
+                    const roundLabel = stages[0].roundLabel;
+                    // The first future stage in this group is "next".
+                    const firstFutureIdx = stages.findIndex((s) => s.date > today);
+
+                    return (
+                      <div key={rn}>
+                        {/* Round chip — only show when multiple rounds share a month */}
+                        {roundNums.length > 1 && (
+                          <span className="inline-block text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-elevated text-muted ring-1 ring-line mb-1.5">
+                            {roundLabel}
+                          </span>
+                        )}
+                        <div className="space-y-1">
+                          {stages.map((s, si) => {
+                            const isActive = s.date <= today && (s.endDate ?? s.date) >= today;
+                            const isNext   = !isActive && si === firstFutureIdx;
+                            const isDeadlineStage =
+                              s.stageKey === "pre_screening_deadline" ||
+                              s.stageKey === "full_app_deadline";
+                            // Match this stage to group.vl (the actionable deadline row).
+                            const isThisVlDeadline =
+                              isDeadlineStage &&
+                              !!group.vl &&
+                              (!group.vl.cycleLabel || group.vl.cycleLabel.includes(roundLabel));
+
+                            return (
+                              <div
+                                key={s.stageKey + rn}
+                                className={
+                                  "rounded-lg px-2 py-1 " +
+                                  (isActive
+                                    ? "bg-emerald-50 ring-1 ring-emerald-200"
+                                    : isNext
+                                      ? "bg-amber-50/60 ring-1 ring-amber-200/60"
+                                      : "")
+                                }
+                              >
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className={`w-2 h-2 rounded-full shrink-0 ${vlStageDot(s.tone)}`} />
+                                  <span className={
+                                    "text-xs font-semibold " +
+                                    (isActive ? "text-emerald-900" : isNext ? "text-amber-900" : "text-fg")
+                                  }>
+                                    {s.stageLabel}
+                                  </span>
+                                  {isActive && (
+                                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full ring-1 ring-emerald-200 ring-inset inline-flex items-center gap-1">
+                                      <Sparkles size={8} /> now
+                                    </span>
+                                  )}
+                                  {isNext && (
+                                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full ring-1 ring-amber-200 ring-inset">
+                                      next
+                                    </span>
+                                  )}
+                                  <span className={
+                                    "text-[10px] font-mono tabular-nums ml-auto " +
+                                    (isActive || isNext ? "font-bold " : "") +
+                                    (isActive ? "text-emerald-800" : isNext ? "text-amber-800" : "text-muted")
+                                  }>
+                                    {fmtStageDate(s)}
+                                  </span>
+                                </div>
+
+                                {/* Inline deadline actions for pre-screening / full-app stages */}
+                                {isThisVlDeadline && (
+                                  <>
+                                    {group.vl!.extendedAt && (
+                                      <p className="text-[10px] text-subtle mt-0.5 ml-3.5">
+                                        Was {formatShort(group.vl!.originalDeadlineAt)}
+                                      </p>
+                                    )}
+                                    <div className="mt-0.5 ml-3.5">{getStatusBadge(group.vl!.status)}</div>
+                                    {group.vl!.note && (
+                                      <p className="text-[10px] text-muted mt-0.5 ml-3.5 line-clamp-2">{group.vl!.note}</p>
+                                    )}
+                                    <div className="flex items-center gap-1 flex-wrap mt-1 ml-3.5">
+                                      {group.vl!.status !== "closed" && (
+                                        <button type="button"
+                                          onClick={() => setVlMode(vlMode === "extend" ? "idle" : "extend")}
+                                          className="text-xs text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1">
+                                          <FastForward size={11} /> Extend
+                                        </button>
+                                      )}
+                                      {group.vl!.status !== "closed" ? (
+                                        <button type="button"
+                                          onClick={() => setVlMode(vlMode === "close" ? "idle" : "close")}
+                                          className="text-xs text-rose-700 hover:text-rose-900 inline-flex items-center gap-1">
+                                          <Lock size={11} /> Close
+                                        </button>
+                                      ) : (
+                                        <button type="button" onClick={() => vlMutate({ action: "reopen" })} disabled={vlPending}
+                                          className="text-xs text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1 disabled:opacity-50">
+                                          {vlPending ? <Loader2 size={11} className="animate-spin" /> : <Unlock size={11} />}
+                                          {" "}Reopen
+                                        </button>
+                                      )}
+                                      <button type="button"
+                                        onClick={() => setVlMode(vlMode === "edit" ? "idle" : "edit")}
+                                        className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
+                                        <Pencil size={11} />
+                                      </button>
+                                      <button type="button"
+                                        onClick={() => setVlMode(vlMode === "delete" ? "idle" : "delete")}
+                                        disabled={vlPending}
+                                        className={"text-xs inline-flex items-center gap-1 disabled:opacity-50 " +
+                                          (vlMode === "delete" ? "text-rose-900 font-semibold" : "text-rose-700 hover:text-rose-900")}>
+                                        <Trash2 size={11} />{vlMode === "delete" && <span>Delete?</span>}
+                                      </button>
+                                    </div>
+                                    {vlError && (
+                                      <p className="text-[11px] text-rose-700 mt-0.5 ml-3.5 inline-flex items-center gap-1.5">
+                                        <AlertCircle size={11} /> {vlError}
+                                      </p>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : group.vl ? (
+                // No stage data for this month but an EquipDeadline row exists
+                // (e.g. admin-created one-off) — fall back to the old compact view.
+                <>
+                  <p className="font-medium text-fg text-xs">{formatShort(group.vl.deadlineAt)}</p>
+                  {group.vl.cycleLabel && <p className="text-[10px] text-muted">{group.vl.cycleLabel}</p>}
+                  <div className="mt-1">{getStatusBadge(group.vl.status)}</div>
+                  <div className="flex items-center gap-1 flex-wrap mt-1.5">
+                    {group.vl.status !== "closed" && (
+                      <button type="button" onClick={() => setVlMode(vlMode === "extend" ? "idle" : "extend")}
+                        className="text-xs text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1">
+                        <FastForward size={11} /> Extend
+                      </button>
+                    )}
+                    {group.vl.status !== "closed" ? (
+                      <button type="button" onClick={() => setVlMode(vlMode === "close" ? "idle" : "close")}
+                        className="text-xs text-rose-700 hover:text-rose-900 inline-flex items-center gap-1">
+                        <Lock size={11} /> Close
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => vlMutate({ action: "reopen" })} disabled={vlPending}
+                        className="text-xs text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1 disabled:opacity-50">
+                        {vlPending ? <Loader2 size={11} className="animate-spin" /> : <Unlock size={11} />}
+                        {" "}Reopen
+                      </button>
+                    )}
+                    <button type="button" onClick={() => setVlMode(vlMode === "edit" ? "idle" : "edit")}
+                      className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
+                      <Pencil size={11} />
+                    </button>
+                    <button type="button" onClick={() => setVlMode(vlMode === "delete" ? "idle" : "delete")} disabled={vlPending}
+                      className={"text-xs inline-flex items-center gap-1 disabled:opacity-50 " +
+                        (vlMode === "delete" ? "text-rose-900 font-semibold" : "text-rose-700 hover:text-rose-900")}>
+                      <Trash2 size={11} />{vlMode === "delete" && <span>Delete?</span>}
+                    </button>
+                  </div>
+                  {vlError && (
+                    <p className="text-[11px] text-rose-700 mt-1 inline-flex items-center gap-1.5">
+                      <AlertCircle size={11} /> {vlError}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <span className="text-subtle text-xs">—</span>
               )}
-              {group.vl.cycleLabel && <p className="text-[10px] text-muted">{group.vl.cycleLabel}</p>}
-              <div className="mt-1">{getStatusBadge(group.vl.status)}</div>
-              {group.vl.note && <p className="text-[10px] text-muted mt-1 line-clamp-2">{group.vl.note}</p>}
-              <div className="flex items-center gap-1 flex-wrap mt-1.5">
-                {group.vl.status !== "closed" && (
-                  <button type="button"
-                    onClick={() => setVlMode(vlMode === "extend" ? "idle" : "extend")}
-                    className="text-xs text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1">
-                    <FastForward size={11} /> Extend
-                  </button>
-                )}
-                {group.vl.status !== "closed" ? (
-                  <button type="button"
-                    onClick={() => setVlMode(vlMode === "close" ? "idle" : "close")}
-                    className="text-xs text-rose-700 hover:text-rose-900 inline-flex items-center gap-1">
-                    <Lock size={11} /> Close
-                  </button>
-                ) : (
-                  <button type="button" onClick={() => vlMutate({ action: "reopen" })} disabled={vlPending}
-                    className="text-xs text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1 disabled:opacity-50">
-                    {vlPending ? <Loader2 size={11} className="animate-spin" /> : <Unlock size={11} />}
-                    {" "}Reopen
-                  </button>
-                )}
-                <button type="button"
-                  onClick={() => setVlMode(vlMode === "edit" ? "idle" : "edit")}
-                  className="text-xs text-muted hover:text-fg inline-flex items-center gap-1">
-                  <Pencil size={11} />
-                </button>
-                <button type="button"
-                  onClick={() => setVlMode(vlMode === "delete" ? "idle" : "delete")}
-                  disabled={vlPending}
-                  className={"text-xs inline-flex items-center gap-1 disabled:opacity-50 " +
-                    (vlMode === "delete" ? "text-rose-900 font-semibold" : "text-rose-700 hover:text-rose-900")}>
-                  <Trash2 size={11} />{vlMode === "delete" && <span>Delete?</span>}
-                </button>
-              </div>
-              {vlError && (
-                <p className="text-[11px] text-rose-700 mt-1 inline-flex items-center gap-1.5">
-                  <AlertCircle size={11} /> {vlError}
-                </p>
-              )}
-            </>
-          ) : (
-            <span className="text-subtle text-xs">—</span>
-          )}
-        </td>
+            </td>
+          );
+        })()}
       </tr>
 
       {/* ── VentureConnect action panels ──────────────────────── */}

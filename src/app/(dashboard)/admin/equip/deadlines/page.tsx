@@ -15,10 +15,9 @@ import { ArrowLeft, CalendarClock } from "lucide-react";
 import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
 import { listDeadlines } from "@/lib/equip/deadlines";
-import { derivedDeadlineSpecs } from "@/lib/equip/calendar";
+import { derivedDeadlineSpecs, VL_ROUNDS } from "@/lib/equip/calendar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DeadlineManager } from "@/components/admin/equip/DeadlineManager";
-import { RoundTimeline } from "@/components/admin/equip/RoundTimeline";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +131,23 @@ export default async function AdminEquipDeadlinesPage() {
 
   const deadlines = await listDeadlines();
 
+  // Flatten VL_ROUNDS into plain serialisable stage items for the
+  // client component (server constants can't cross the boundary as-is
+  // when they contain non-serialisable values — plain objects are safe).
+  const vlRoundStages = VL_ROUNDS.flatMap((r) =>
+    r.stages.map((s) => ({
+      roundNumber: r.roundNumber,
+      roundLabel:  r.label,
+      roundYear:   r.year,
+      stageKey:    s.key as string,
+      stageLabel:  s.label,
+      date:        s.date,
+      endDate:     s.endDate ?? null,
+      approximate: s.approximate ?? false,
+      tone:        s.tone,
+    }))
+  );
+
   // Serialize Dates for the client component (Next.js doesn't
   // serialize Date instances across server/client; ISO strings
   // round-trip cleanly).
@@ -157,9 +173,7 @@ export default async function AdminEquipDeadlinesPage() {
         description="Funding windows for VentureConnect (monthly, $5K cap) and VentureLift (quarterly, $25K cap). The VentureLift round schedule below is the canonical published timeline — its pre-screening + full-application dates auto-sync into the deadlines table for the submit-gate. Use the New-deadline form for one-off VentureConnect windows and ad-hoc overrides."
       />
 
-      <RoundTimeline />
-
-      <DeadlineManager initial={initial} />
+      <DeadlineManager initial={initial} vlRoundStages={vlRoundStages} />
     </div>
   );
 }

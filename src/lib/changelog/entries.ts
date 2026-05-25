@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP Key Dates — merged round timeline — May 2026 ───────────
+  {
+    title: "EQUIP Deadlines — Key Dates with full VentureLift round timeline",
+    body: "The List tab now shows all eight VentureLift stages (Launch, Pre-screening, Consultations, Invite Decision, Full App, Review, Adjudication, Funding Announcement) inline in the VL column for each month — the separate Round Schedule section has been removed. Active stages glow green, the next upcoming stage highlights amber. Admin actions (Extend, Close, Edit, Delete) appear directly beneath the pre-screening and full-application deadline stages that carry EquipDeadline rows. The section header has been renamed from 'Funding windows — month view' to 'Key dates'. U of T holiday legend moved to the section footer.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── EQUIP deadline manager combined table — May 2026 ─────────────
   {
     title: "EQUIP Deadline Manager — combined month-view table",

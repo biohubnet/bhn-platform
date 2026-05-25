@@ -33,6 +33,17 @@ export interface TourStep {
 export const TOUR_VERSION = "2026.05.25";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── EQUIP Key Dates — full round timeline merged (May 2026) ─────
+  {
+    id: "admin.equip-deadlines-key-dates",
+    title: "EQUIP — Key Dates with full VL round timeline",
+    body: "The List tab now shows all eight VentureLift stages per month (Launch, Pre-screening, Consultations, Invite Decision, Full App, Review, Adjudication, Funding Announcement) directly in the table. Active stages glow green; the next upcoming stage is amber. Manage deadlines with Extend / Close / Edit buttons that appear inline beneath each submission-gate stage.",
+    path: "/admin/equip/deadlines",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Key Dates", href: "/admin/equip/deadlines" },
+    since: "2026.05.25",
+  },
   // ─── EQUIP Deadline Manager combined table (May 2026) ───────────
   {
     id: "admin.equip-deadlines-month-view",
