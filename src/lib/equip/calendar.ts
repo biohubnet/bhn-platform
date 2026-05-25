@@ -70,8 +70,10 @@ export interface EquipRound {
   stages: EquipRoundStage[];
 }
 
-/** Source of truth: VentureLift_Key_Dates_2025-2026 spreadsheet.
- *  Update this constant when a new round is published. */
+/** Rounds 3–5: sourced from the VentureLift_Key_Dates_2025-2026 spreadsheet.
+ *  Round 6: dates are ESTIMATED — stages spaced using Round 4's durations as
+ *  a template. Replace with actual spreadsheet values once Round 6 is
+ *  published by BHN. Update this constant when a new round is announced. */
 export const VL_ROUNDS: EquipRound[] = [
   {
     stream: "venture_lift",
@@ -128,8 +130,10 @@ export const VL_ROUNDS: EquipRound[] = [
     label: "Round 6",
     year: 2026,
     stages: [
-      // Round 6 starts after Round 5's ~Aug 5 funding announcement.
-      // Stages spaced using Round 4 as the duration template.
+      // ⚠️  ESTIMATED DATES — not yet confirmed in the BHN spreadsheet.
+      // Spaced from Round 5's Aug 5 funding announcement using Round 4
+      // stage-gap durations as a template. Update when BHN publishes
+      // the official Round 6 key-dates.
       { key: "launch",                 label: "Launch",                       date: "2026-08-17", tone: "brand"   },
       { key: "launch_reminder",        label: "Launch reminder",              date: "2026-09-08", tone: "neutral" },
       { key: "pre_screening_deadline", label: "Pre-screening deadline",       date: "2026-09-25", tone: "amber"   },
