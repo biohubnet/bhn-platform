@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { canComment, isCommentable } from "@/lib/talent-pool/comments";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
+import { EmployerEntityDemoBar } from "@/components/employer/EmployerEntityDemoBar";
 import { EligibilityBatchToolbar, RowCheckbox } from "@/components/talent-pool/EligibilityBatchToolbar";
 import { TalentPoolFilterBar } from "@/components/talent-pool/TalentPoolFilterBar";
 
@@ -57,6 +58,15 @@ export default async function TalentPoolPage({
   const isEmployer = role === "employer";
   // Staff can approve eligibility (admin/instructor); employers cannot.
   const canApproveEligibility = isAdmin || isInstructor;
+
+  // Check if there are any demo pool submissions for the employer bar.
+  let hasDemoPoolSubmissions = false;
+  if (isEmployer) {
+    const demoCount = await prisma.eventFormSubmission.count({
+      where: { formId: form.id, user: { accountKind: "demo" } },
+    });
+    hasDemoPoolSubmissions = demoCount > 0;
+  }
 
   // Skills filter: resolve skill names → userIds with matching UserSkill rows.
   // We do a case-insensitive partial match on skill name so "PCR" matches "PCR
@@ -207,6 +217,19 @@ export default async function TalentPoolPage({
             scope={{ formSlug: "talent-application" }}
             noun="demo applicants"
             clearHelp="Delete every talent-application submission from demo accounts. The submitters themselves stay (reusable for other tests). Real applicants are not touched."
+          />
+        </div>
+      )}
+
+      {isEmployer && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <EmployerEntityDemoBar
+            endpoint="/api/employer/demo/talent-pool"
+            description="Add six demo candidates with pre-approved eligibility so you can explore the talent pool without waiting for real applications."
+            hasExistingDemos={hasDemoPoolSubmissions}
+            seedSuccessFn={(j) =>
+              `Added ${j.created} demo candidate${j.created === 1 ? "" : "s"} to the talent pool.`
+            }
           />
         </div>
       )}

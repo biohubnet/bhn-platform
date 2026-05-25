@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { getActiveCompanyId } from "@/lib/employer/company";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { Card } from "@/components/ui/Card";
+import { DemoSeederBar } from "@/components/employer/DemoSeederBar";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +85,14 @@ export default async function EmployerAnalyticsPage() {
       </div>
     );
   }
+
+  // ── Demo seed check ────────────────────────────────────────────
+
+  const hasDemoPostings = companyId
+    ? (await prisma.internshipPosting.count({
+        where: { createdById: userId, isDemoSeed: true },
+      })) > 0
+    : false;
 
   // ── Fetch data ─────────────────────────────────────────────────
 
@@ -195,6 +204,8 @@ export default async function EmployerAnalyticsPage() {
           </a>
         }
       />
+
+      <DemoSeederBar hasExistingDemos={hasDemoPostings} />
 
       {/* Summary cards */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">

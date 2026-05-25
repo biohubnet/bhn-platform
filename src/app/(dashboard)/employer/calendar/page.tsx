@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { getActiveCompanyId } from "@/lib/employer/company";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { CalendarClient } from "@/components/employer/calendar/CalendarClient";
+import { DemoSeederBar } from "@/components/employer/DemoSeederBar";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,11 @@ export default async function EmployerCalendarPage() {
     );
   }
 
+  const hasDemoPostings =
+    (await prisma.internshipPosting.count({
+      where: { createdById: userId, isDemoSeed: true },
+    })) > 0;
+
   return (
     <div className="space-y-5">
       <DSPageHeader
@@ -82,6 +88,7 @@ export default async function EmployerCalendarPage() {
         title="Interview calendar"
         description="All upcoming interviews across your postings. Click any event to jump to the candidate in your workspace."
       />
+      <DemoSeederBar hasExistingDemos={hasDemoPostings} />
       <CalendarClient companyId={companyId} />
     </div>
   );

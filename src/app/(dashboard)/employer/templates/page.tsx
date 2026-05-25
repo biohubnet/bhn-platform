@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { getActiveCompanyId } from "@/lib/employer/company";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { TemplatesClient } from "@/components/employer/templates/TemplatesClient";
+import { EmployerEntityDemoBar } from "@/components/employer/EmployerEntityDemoBar";
 
 export const dynamic = "force-dynamic";
 
@@ -111,6 +112,8 @@ export default async function EmployerTemplatesPage() {
     createdAt: t.createdAt.toISOString(),
   }));
 
+  const hasDemoTemplates = templates.some((t) => t.name.startsWith("[Demo] "));
+
   return (
     <div className="space-y-5">
       <DSPageHeader
@@ -118,6 +121,14 @@ export default async function EmployerTemplatesPage() {
         icon={<Mail size={20} />}
         title="Email templates"
         description="Manage the messages sent to candidates at each hiring stage. Personalise with merge variables like {{candidateFirstName}} and {{postingTitle}}."
+      />
+      <EmployerEntityDemoBar
+        endpoint="/api/employer/demo/templates"
+        description="Populate your workspace with five example templates — one per hiring stage. Edit or delete them any time."
+        hasExistingDemos={hasDemoTemplates}
+        seedSuccessFn={(j) =>
+          `Created ${j.created} demo template${j.created === 1 ? "" : "s"}.`
+        }
       />
       <TemplatesClient
         companyId={companyId}
