@@ -472,7 +472,7 @@ function compareDeadlines(a: Deadline, b: Deadline, key: SortKey, dir: SortDir):
 function DeadlineRow({ d }: { d: Deadline }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [mode, setMode] = useState<"idle" | "extend" | "close" | "edit">("idle");
+  const [mode, setMode] = useState<"idle" | "extend" | "close" | "edit" | "delete">("idle");
   const [newDate, setNewDate] = useState(() => {
     const next = new Date(d.deadlineAt);
     next.setDate(next.getDate() + 7);
@@ -512,7 +512,6 @@ function DeadlineRow({ d }: { d: Deadline }) {
   }
 
   function del() {
-    if (!confirm("Delete this deadline? This is permanent. Any audit trail in the audit log survives.")) return;
     setError(null);
     startTransition(async () => {
       try {
@@ -593,12 +592,18 @@ function DeadlineRow({ d }: { d: Deadline }) {
             </button>
             <button
               type="button"
-              onClick={del}
+              onClick={() => setMode(mode === "delete" ? "idle" : "delete")}
               disabled={pending}
-              className="text-xs text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 disabled:opacity-50"
+              className={
+                "text-xs inline-flex items-center gap-1 disabled:opacity-50 " +
+                (mode === "delete"
+                  ? "text-rose-900 font-semibold"
+                  : "text-rose-700 hover:text-rose-900")
+              }
               title="Delete this deadline"
             >
               <Trash2 size={11} />
+              {mode === "delete" && <span>Delete?</span>}
             </button>
           </div>
           {error && (
@@ -733,6 +738,27 @@ function DeadlineRow({ d }: { d: Deadline }) {
                 className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
               >
                 {pending ? <Loader2 size={11} className="animate-spin" /> : "Save"}
+              </button>
+            </div>
+          </div>
+        </td></tr>
+      )}
+
+      {mode === "delete" && (
+        <tr><td colSpan={5} className="px-5 pb-4 bg-rose-50/60">
+          <div className="rounded-xl border border-rose-200 bg-card-solid p-3">
+            <p className="text-[11px] text-rose-800 mb-2.5">
+              Permanently delete this deadline? The audit log entry is kept, but the deadline itself will be gone and auto-sync may recreate it on next page load if it is still in the canonical schedule.
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setMode("idle")} className="text-xs text-muted hover:text-fg">Cancel</button>
+              <button
+                type="button"
+                onClick={del}
+                disabled={pending}
+                className="bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5"
+              >
+                {pending ? <Loader2 size={11} className="animate-spin" /> : <><Trash2 size={11} /> Confirm delete</>}
               </button>
             </div>
           </div>
