@@ -17,12 +17,110 @@
  *   5. Demo bar   — slim pill at the bottom of the screen showing tour
  *                   context and an Exit button at all times.
  *   6. Loading bar— thin progress bar at the top during page navigation.
+ *
+ * Adaptive layout
+ * ───────────────
+ * Tour-script coordinates are authored for a 1440 px reference viewport
+ * where the sidebar occupies ~17 % of width. The sidebar is actually
+ * w-64 (256 px fixed), so at other viewport widths that percentage
+ * changes. `useSidebarPct()` measures the real sidebar width every time
+ * the viewport resizes (ResizeObserver + window resize listener) and
+ * returns it as a viewport-width percentage. `remapX` then translates
+ * any authored X-percent into the actual viewport X-percent, keeping
+ * sidebar-zone and content-zone coordinates correct regardless of
+ * window size.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { useDemoTour } from "@/lib/demo/tourContext";
 import type { SpotlightRegion, CursorTarget, TourPersona, TourPhase } from "@/lib/demo/tourScripts";
+
+// ─── Adaptive coordinate remapping ────────────────────────────────────────────
+
+/**
+ * The sidebar width % assumed when the tour scripts were authored
+ * (1440 px viewport, sidebar = w-64 = 256 px → 17.78 %).
+ * We store it as 17.0 to match the script intent (scripts use xPct:17
+ * as the content-area start).
+ */
+const REF_SIDEBAR_PCT = 17.0;
+
+/**
+ * Re-map a single authored X% into the actual viewport X% based on the
+ * real sidebar width.
+ *
+ * Logic:
+ *   - Values in the sidebar zone (< REF_SIDEBAR_PCT) are scaled
+ *     proportionally within the actual sidebar width.
+ *   - Values in the content zone (≥ REF_SIDEBAR_PCT) are scaled
+ *     proportionally within the actual content width.
+ */
+function remapX(xPct: number, actualSidebarPct: number): number {
+  if (xPct < REF_SIDEBAR_PCT) {
+    return (xPct / REF_SIDEBAR_PCT) * actualSidebarPct;
+  }
+  const refContent = 100 - REF_SIDEBAR_PCT;
+  const actContent = 100 - actualSidebarPct;
+  return actualSidebarPct + ((xPct - REF_SIDEBAR_PCT) / refContent) * actContent;
+}
+
+function remapSpotlight(s: SpotlightRegion, sidebarPct: number): SpotlightRegion {
+  const x1 = remapX(s.xPct,           sidebarPct);
+  const x2 = remapX(s.xPct + s.wPct,  sidebarPct);
+  return { ...s, xPct: x1, wPct: x2 - x1 };
+}
+
+function remapCursor(c: CursorTarget, sidebarPct: number): CursorTarget {
+  return { ...c, xPct: remapX(c.xPct, sidebarPct) };
+}
+
+/**
+ * Measures the visible sidebar width as a viewport-% and keeps it live
+ * via ResizeObserver + window resize listener. Returns REF_SIDEBAR_PCT
+ * as the initial value so the first paint is close to correct even
+ * before the DOM measurement completes.
+ *
+ * When the sidebar is off-screen (mobile drawer closed) its left edge
+ * is negative — we treat it as 0 px wide so all spotlights expand from
+ * the left edge.
+ */
+function useSidebarPct(): number {
+  const [pct, setPct] = useState(REF_SIDEBAR_PCT);
+
+  const measure = useCallback(() => {
+    const sidebar = document.querySelector<HTMLElement>('aside[aria-label="Main navigation"]');
+    if (!sidebar) return;
+    const rect = sidebar.getBoundingClientRect();
+    const vw   = window.innerWidth;
+    if (vw <= 0) return;
+    // If the sidebar is translated off-screen (mobile closed state),
+    // rect.right will be ≤ 0 — treat as zero width.
+    const visibleWidth = Math.max(0, rect.right);
+    setPct((visibleWidth / vw) * 100);
+  }, []);
+
+  useLayoutEffect(() => {
+    measure();
+  }, [measure]);
+
+  useEffect(() => {
+    const sidebar = document.querySelector<HTMLElement>('aside[aria-label="Main navigation"]');
+    const ro = new ResizeObserver(measure);
+    if (sidebar) ro.observe(sidebar);
+
+    // Also observe the body for overall viewport changes (e.g. DevTools open/close)
+    ro.observe(document.body);
+    window.addEventListener("resize", measure);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [measure]);
+
+  return pct;
+}
 
 // ─── Style look-up tables (mirrors DemoHub's CHAR_STYLE + PHASES) ──────────────
 
@@ -238,6 +336,10 @@ export function DemoOverlay() {
   const [mounted, setMounted] = useState(false);
   const [showClick, setShowClick] = useState(false);
 
+  // Live sidebar-width measurement — keeps spotlight + cursor positions
+  // correct at any viewport width, not just the 1440 px reference size.
+  const sidebarPct = useSidebarPct();
+
   // SSR guard — createPortal needs document.body
   useEffect(() => { setMounted(true); }, []);
 
@@ -252,7 +354,11 @@ export function DemoOverlay() {
 
   if (!mounted || !active || !step) return null;
 
-  const { spotlight, cursor } = step;
+  // Remap authored coordinates from reference-layout space (1440 px,
+  // sidebar = 17 %) into actual viewport space based on the live
+  // sidebar measurement.
+  const spotlight = remapSpotlight(step.spotlight, sidebarPct);
+  const cursor    = remapCursor(step.cursor,    sidebarPct);
   const isLoading = stage === "loading";
 
   return createPortal(
