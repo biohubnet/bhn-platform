@@ -220,11 +220,21 @@ export function CourseCard({ course }: CourseCardProps) {
           })()}
         </div>
 
-        {/* RIGHT — metadata sidebar, bg-raised (the next-step darker
-            surface above bg-elevated). Gives stronger left/right
-            contrast so the metadata column reads as a distinct shelf
-            against the lighter content side. */}
-        <aside className="p-2.5 sm:p-3 flex flex-col gap-1 bg-raised border-l border-line">
+        {/* RIGHT — metadata sidebar.
+            Starts from --raised (the next-step darker surface above
+            bg-elevated) and mixes in 12 % black via color-mix so the
+            grey reads as a distinctly deeper shelf against the lighter
+            left side. color-mix is theme-aware: it derives from each
+            theme's own --raised, so every palette (Sakura, Voltage,
+            Greenwood, dark variants…) gets a proportionally deeper
+            sidebar instead of a hardcoded slate value that would
+            clash. */}
+        <aside
+          className={cn(
+            "p-2.5 sm:p-3 flex flex-col gap-1 border-l border-line",
+            "bg-[color-mix(in_srgb,var(--raised)_88%,#000)]",
+          )}
+        >
           <Chip
             tone="credit"
             label={isFree ? "Free" : `Credit ${course.creditCost.toLocaleString()}`}
