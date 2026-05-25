@@ -307,6 +307,22 @@ function getStatusBadge(status: string) {
   return <Badge tone="neutral">{status}</Badge>;
 }
 
+/** Subtle background tint keyed by VentureLift round number, extracted
+ *  from the cycleLabel (e.g. "Round 6 · Pre-screening deadline"). */
+function vlRoundBg(cycleLabel: string | null | undefined): string {
+  if (!cycleLabel) return "";
+  const m = cycleLabel.match(/Round (\d+)/i);
+  if (!m) return "";
+  const palette: Record<string, string> = {
+    "3": "bg-slate-100/70",
+    "4": "bg-violet-50/70",
+    "5": "bg-amber-50/70",
+    "6": "bg-emerald-50/70",
+    "7": "bg-sky-50/70",
+  };
+  return palette[m[1]] ?? "";
+}
+
 type SideMode = "idle" | "extend" | "close" | "edit" | "delete";
 
 interface MonthGroup {
@@ -598,7 +614,7 @@ function CombinedMonthRow({ group }: { group: MonthGroup }) {
         </td>
 
         {/* VentureLift column */}
-        <td className={"px-5 py-3 align-top " + (vlPast && group.vl && group.vl.status !== "closed" ? "opacity-70" : "")}>
+        <td className={"px-5 py-3 align-top " + vlRoundBg(group.vl?.cycleLabel) + (vlPast && group.vl && group.vl.status !== "closed" ? " opacity-70" : "")}>
           {group.vl ? (
             <>
               <p className="font-medium text-fg text-xs">{formatShort(group.vl.deadlineAt)}</p>
