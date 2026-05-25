@@ -146,10 +146,10 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "Master resume",             labelKey: "nav.masterResume", href: "/profile/master",       icon: Library,
     featureId: "profile-master",
     description: "Your library of every accomplishment bullet you've ever written. Tailored drafts pull from it; AI uses it to fit any posting. Version-locked + downloadable snapshots." },
-  { label: "↳ Resume tailoring",        labelKey: "nav.resumeStructured", href: "/profile/resumes",       icon: FileText,
+  { label: "Resume Tailoring",           labelKey: "nav.resumeStructured", href: "/profile/resumes",       icon: FileText,
     featureId: "profile-resumes",
     description: "Tailored drafts that pull from your master library. Each has its own version history, mentor comments, and PDF export." },
-  { label: "  ↳ Job folders",           labelKey: "nav.jobFolders", href: "/profile/job-folders",        icon: FolderOpen,
+  { label: "Job Folders",               labelKey: "nav.jobFolders", href: "/profile/job-folders",        icon: FolderOpen,
     featureId: "profile-job-folders",
     description: "One folder per role — JD, tailored resume, cover letter, interview prep. AI-generates cover letter + prep guide from your linked resume." },
   { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase,
@@ -161,7 +161,7 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "Matches for you",           labelKey: "nav.matches",     href: "/profile/matches",          icon: Sparkles,
     featureId: "experience-matches",
     description: "AI-ranked internship postings, scored against your skill profile + completed pathways. Each row shows the receipts — direct overlap, semantic similarity, pathway alignment, gaps, and honest caveats." },
-  { label: "RPG",                       labelKey: "nav.simulator",   href: "/simulator",                icon: Drama,
+  { label: "Career Simulator",          labelKey: "nav.simulator",   href: "/simulator",                icon: Drama,
     featureId: "experience-simulator",
     description: "Practise any role before you apply. Paste a job-posting URL and live through a 12-week quarter as that person — 1:1s, escalations, hiring, the QBR. Every choice moves five stats. End-of-quarter performance review from your VP." },
   { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList,
@@ -187,12 +187,12 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
 // — the place users actually engage with themes — rather than as a
 // sidebar item most trainees would scroll past.
 const miscItems: (NavItem & { labelKey: string })[] = [
-  { label: "Learning buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake,
+  { label: "Learning Buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake,
     featureId: "experience-buddy",
     description: "Pair up with someone for accountability — share a course or pathway, see each other's progress, leave async notes.",
     badgeKey: "buddy-invites" },
   // labelKey is overridden per-role at render time ("What's new" for trainees).
-  { label: "Change log",         labelKey: "nav.changelog",   href: "/changelog", icon: Bell,
+  { label: "Changelog",          labelKey: "nav.changelog",   href: "/changelog", icon: Bell,
     featureId: "engage-changelog",
     description: "What's shipped recently — features, fixes, and improvements." },
   // Roadmap moved to the admin Platform group on user request.
@@ -283,7 +283,7 @@ const adminEngageItems: NavItem[] = [
     description: "Every issued certificate. Revoke a credential or look it up by SHA hash." },
   { label: "Cover art",                 href: "/admin/cover-art",           icon: Sparkles,     minRole: "admin",
     description: "AI-rendered cover art and colour overlays for every course and pathway. Bulk regenerate topic-specific thumbnails or stamp a shared gradient treatment across a series." },
-  { label: "HQP Advisory committee",    href: "/admin/committees/hqp",      icon: Users2,       minRole: "admin",
+  { label: "HQP Advisory Committee",    href: "/admin/committees/hqp",      icon: Users2,       minRole: "admin",
     description: "HQP Advisory Committee hub — applications, open-call windows, feedback rounds, meetings, and roster. ENGAGE-pillar committee that oversees trainee perspectives + course feedback." },
 ];
 
@@ -337,7 +337,7 @@ const adminEquipItems: NavItem[] = [
     description: "Review queue for the EQUIP funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
   { label: "EQUIP deadlines",      href: "/admin/equip/deadlines",     icon: ClipboardList, minRole: "admin",
     description: "Schedule + manage the funding-window deadlines for VentureConnect (monthly) and VentureLift (quarterly). List + calendar views. Open / close / extend any window. Late submissions are blocked automatically." },
-  { label: "EQUIP Review committee", href: "/admin/committees/equip-review", icon: Users2, minRole: "admin",
+  { label: "EQUIP Review Committee", href: "/admin/committees/equip-review", icon: Users2, minRole: "admin",
     description: "Manage EQUIP Review Committee membership. Members get queue access without holding an admin role. Roster + a shortcut into the funding review queue." },
 ];
 
@@ -1542,7 +1542,7 @@ export function Sidebar({
                 return userRank >= required;
               })
               .map((item) => {
-                // Trainees see the changelog as "What's new"; staff as "Change log".
+                // Trainees see the changelog as "What's new"; staff as "Changelog".
                 const key = item.href === "/changelog" && !isStaff ? "nav.changelogTrainee" : item.labelKey;
                 const labeled = { ...item, label: t(key) };
                 return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
