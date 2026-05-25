@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.24c";
+export const TOUR_VERSION = "2026.05.25";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Guided demo tour (May 2026) ─────────────────────────────────
+  {
+    id: "admin.demo-tour-live",
+    title: "New: Live Guided Tour on the Demo Hub",
+    body: "The Demo Hub now has a 'Watch Guided Tour' button. Click it to launch a full overlay walkthrough on the real platform: animated cursor, spotlight curtain, click ripples, and tooltip explanations at each step — 29 steps across all three personas and pillars. Perfect for investor and board presentations.",
+    path: "/admin/demo",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Try it now", href: "/admin/demo" },
+    since: "2026.05.25",
+  },
   // ─── Platform Demo Hub (May 2026) ────────────────────────────────
   {
     id: "admin.demo-hub",

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Guided demo tour — May 2026 ──────────────────────────────────
+  {
+    title: "Demo Hub — live guided tour with animated cursor & spotlight",
+    body: "Clicking 'Watch Guided Tour' on the Demo Hub now launches a full overlay walkthrough on the real platform interface. A dark curtain spotlights the relevant UI region, an animated white cursor moves to the exact target element, a click-ripple animation fires on interactive steps, and a floating tooltip card explains each moment. Progress bar, Back/Next/Exit controls, and a persistent demo bar keep orientation throughout. Seven tour scripts cover all 29 steps across Rex × ENGAGE/EXPERIENCE/EQUIP, Vera × EXPERIENCE, and Max × ENGAGE/EXPERIENCE/EQUIP. The system navigates between pages automatically during the tour.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Platform Demo Hub — May 2026 ─────────────────────────────────
   {
     title: "Platform Demo Hub — interactive 3-persona walkthrough",

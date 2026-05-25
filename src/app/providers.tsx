@@ -9,6 +9,7 @@ import { ConsentProvider } from "@/components/consent/ConsentProvider";
 import { CookieBanner } from "@/components/consent/CookieBanner";
 import { GreenwoodAtmosphere } from "@/components/themes/GreenwoodAtmosphere";
 import { SakuraAtmosphere } from "@/components/themes/SakuraAtmosphere";
+import { DemoTourProvider } from "@/lib/demo/tourContext";
 import type { DesignSystemId } from "@/lib/design-system/registry";
 
 export function Providers({
@@ -40,8 +41,15 @@ export function Providers({
                   theme === "sakura". Returns null for every other
                   theme — free while inactive. */}
               <SakuraAtmosphere />
-              {children}
-              <CookieBanner />
+              {/* DemoTourProvider — global state + navigation side-effects
+                  for the guided platform demo (admin/demo). Wraps children
+                  so both the DemoHub launcher and the DemoOverlay visual
+                  layer share a single context instance. Zero cost when
+                  no tour is active (stage === "idle"). */}
+              <DemoTourProvider>
+                {children}
+                <CookieBanner />
+              </DemoTourProvider>
             </DesignSystemProvider>
           </ThemeProvider>
         </ConsentProvider>

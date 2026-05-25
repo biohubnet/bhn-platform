@@ -19,7 +19,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { BookOpen, Briefcase, Rocket, ExternalLink, Lock } from "lucide-react";
+import { BookOpen, Briefcase, Rocket, ExternalLink, Lock, Play } from "lucide-react";
+import { useDemoTour } from "@/lib/demo/tourContext";
+import type { TourPersona, TourPhase } from "@/lib/demo/tourScripts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -368,6 +370,7 @@ const CHARACTERS: Character[] = [
 export function DemoHub() {
   const [activeChar,  setActiveChar]  = useState<CharKey>("rex");
   const [activePhase, setActivePhase] = useState<PhaseKey>("engage");
+  const { startTour } = useDemoTour();
 
   const character    = CHARACTERS.find((c) => c.key === activeChar)!;
   const phaseContent = character.phases[activePhase];
@@ -480,7 +483,12 @@ export function DemoHub() {
       {/* ── Content panel ────────────────────────────────────────── */}
       <section>
         {phaseContent.available ? (
-          <AvailablePanel content={phaseContent} character={character} phaseCfg={phaseCfg} />
+          <AvailablePanel
+            content={phaseContent}
+            character={character}
+            phaseCfg={phaseCfg}
+            onStartTour={() => startTour(activeChar as TourPersona, activePhase as TourPhase)}
+          />
         ) : (
           <BlockedPanel content={phaseContent} />
         )}
@@ -509,10 +517,12 @@ function AvailablePanel({
   content,
   character,
   phaseCfg,
+  onStartTour,
 }: {
   content: PhaseAvailable;
   character: Character;
   phaseCfg: (typeof PHASES)[number];
+  onStartTour: () => void;
 }) {
   const cs = CHAR_STYLE[character.key];
 
@@ -594,18 +604,33 @@ function AvailablePanel({
         </div>
       </div>
 
-      {/* Live CTA */}
-      <div className="flex justify-end pt-1">
+      {/* CTAs — guided tour launcher + direct live link */}
+      <div className="flex items-center justify-between flex-wrap gap-3 pt-1 border-t border-line">
+        {/* Primary: guided tour */}
+        <button
+          onClick={onStartTour}
+          className={cn(
+            "inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all",
+            "shadow-sm hover:shadow-md active:scale-95",
+            cs.badge,
+            "hover:opacity-90",
+          )}
+        >
+          <Play size={13} className="fill-current" />
+          Watch Guided Tour
+        </button>
+
+        {/* Secondary: jump to live page */}
         <Link
           href={content.liveLink}
           className={cn(
-            "inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all",
-            "ring-1 ring-inset hover:shadow-sm",
-            phaseCfg.bg, phaseCfg.text, phaseCfg.ctaRing,
+            "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+            "ring-1 ring-inset hover:shadow-sm text-muted hover:text-fg",
+            phaseCfg.ctaRing,
           )}
         >
           {content.liveLinkLabel}
-          <ExternalLink size={13} />
+          <ExternalLink size={12} />
         </Link>
       </div>
 

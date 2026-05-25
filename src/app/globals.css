@@ -3205,3 +3205,34 @@ h1, h2, h3 {
     animation: none;
   }
 }
+
+/* ─── Demo Tour Overlay animations ──────────────────────────────────────────
+ * Used by DemoOverlay (src/components/demo/DemoOverlay.tsx).
+ * Three keyframes:
+ *   demo-click-ripple    — expanding ring that fades out at the cursor click point
+ *   demo-tooltip-enter   — tooltip card slides up + fades in
+ *   demo-spotlight-pulse — subtle opacity throb on the spotlight ring border
+ * All three are suppressed by prefers-reduced-motion below.
+ */
+@keyframes demo-click-ripple {
+  0%   { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+@keyframes demo-tooltip-enter {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+@keyframes demo-spotlight-pulse {
+  0%,  100% { opacity: 0.55; }
+  50%        { opacity: 1;    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="demo-click-ripple"],
+  [style*="demo-tooltip-enter"],
+  [style*="demo-spotlight-pulse"] {
+    animation: none !important;
+  }
+}

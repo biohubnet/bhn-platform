@@ -5,6 +5,7 @@ import { Onboarding } from "@/components/onboarding/Onboarding";
 import { TranslatorDock } from "@/components/translation/TranslatorDock";
 import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
 import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
+import { DemoOverlay } from "@/components/demo/DemoOverlay";
 import { AssistTracker } from "@/components/assist/AssistTracker";
 import { AssistHintDock } from "@/components/assist/AssistHintDock";
 import { prisma } from "@/lib/prisma";
@@ -135,6 +136,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Onboarding />
       <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
       <NavHighlightOverlay />
+      {/* Demo tour overlay — spotlight curtain, animated cursor, tooltip
+          card, and persistent demo bar. Renders only when a tour is
+          active (useDemoTour().stage !== "idle"). Portal-mounted onto
+          document.body to escape any stacking context. */}
+      <DemoOverlay />
       {/* AutoPipette (AI behaviour-watcher) — telemetry + hint chip.
           Both are no-ops for users who have opted out via the /profile
           toggle or the first-run notice. */}
