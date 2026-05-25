@@ -24,9 +24,13 @@ export interface EmployerEntityDemoBarProps {
    *  When true, shows "Add more" on the seed button and surfaces
    *  the Clear button. */
   hasExistingDemos: boolean;
-  /** Optional formatter for the success message after seeding.
-   *  Receives the raw JSON body; return a human-readable string. */
-  seedSuccessFn?: (j: Record<string, unknown>) => string;
+  /** Singular noun used in the success toast — e.g. "demo template",
+   *  "demo candidate". The component builds the plural by suffixing
+   *  "s". MUST be a string, not a function: this component is a Client
+   *  Component, and Next.js RSC forbids passing functions from Server
+   *  Components across the boundary (it surfaces as the page-wide
+   *  digest-only error). */
+  entityNoun?: string;
 }
 
 export function EmployerEntityDemoBar({
@@ -34,7 +38,7 @@ export function EmployerEntityDemoBar({
   description,
   seedLabel = "Seed demo data",
   hasExistingDemos,
-  seedSuccessFn,
+  entityNoun = "demo row",
 }: EmployerEntityDemoBarProps) {
   const router = useRouter();
   const [busy, setBusy] = useState<"seed" | "clear" | null>(null);
@@ -56,9 +60,11 @@ export function EmployerEntityDemoBar({
         setError((j.error as string | undefined) ?? "Seeding failed.");
         return;
       }
+      const createdRaw = j.created;
+      const created = typeof createdRaw === "number" ? createdRaw : null;
       setMsg(
-        seedSuccessFn
-          ? seedSuccessFn(j)
+        created != null
+          ? `Created ${created} ${entityNoun}${created === 1 ? "" : "s"}.`
           : "Demo data seeded successfully.",
       );
       router.refresh();

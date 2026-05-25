@@ -227,9 +227,7 @@ export default async function TalentPoolPage({
             endpoint="/api/employer/demo/talent-pool"
             description="Add six demo candidates with pre-approved eligibility so you can explore the talent pool without waiting for real applications."
             hasExistingDemos={hasDemoPoolSubmissions}
-            seedSuccessFn={(j) =>
-              `Added ${j.created} demo candidate${j.created === 1 ? "" : "s"} to the talent pool.`
-            }
+            entityNoun="demo candidate"
           />
         </div>
       )}

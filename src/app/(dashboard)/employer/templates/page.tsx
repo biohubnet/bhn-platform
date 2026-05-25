@@ -152,9 +152,7 @@ async function renderTemplatesPage() {
         endpoint="/api/employer/demo/templates"
         description="Populate your workspace with five example templates — one per hiring stage. Edit or delete them any time."
         hasExistingDemos={hasDemoTemplates}
-        seedSuccessFn={(j) =>
-          `Created ${j.created} demo template${j.created === 1 ? "" : "s"}.`
-        }
+        entityNoun="demo template"
       />
       <TemplatesClient
         companyId={companyId}
