@@ -167,7 +167,7 @@ export const COMPLIANCE_ITEMS: ComplianceItem[] = [
       "TOTP-based MFA available to every user (Settings → Security). Required for admin / superadmin seats — staff cannot opt out.",
       "Account lockout after 5 failed attempts (15-minute cooldown).",
       "Magic-link sign-in available for demo + showcase accounts only — never real accounts (the route refuses real-account tokens defence-in-depth).",
-      "Sandbox account spawning has been retired; admins use /admin/split-view to preview roles without leaving their seat.",
+      "Sandbox account spawning has been retired; admins use the sidebar View-as role-switcher to preview a different role from their own seat.",
     ],
     status: "met",
     evidenceHref: "/admin/security",

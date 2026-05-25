@@ -2,7 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight, ClipboardList,
   Building2, Briefcase, BookOpen, Inbox, Rocket,
-  Eye, Layers, Sparkles, Activity, Clock, Coins,
+  Layers, Sparkles, Activity, Clock, Coins,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
@@ -536,13 +536,6 @@ export async function AdminDashboard({
                 </div>
               </Link>
             )}
-            <Link href="/admin/split-view" className="qa qa-aside">
-              <Eye size={15} />
-              <div>
-                <p className="qa-t">Sit in another role</p>
-                <p className="qa-s">Empathy mode</p>
-              </div>
-            </Link>
           </aside>
         </div>
       </article>

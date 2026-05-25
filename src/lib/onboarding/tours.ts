@@ -55,6 +55,17 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Deadline Manager", href: "/admin/equip/deadlines" },
     since: "2026.05.25",
   },
+  // ─── Split-view retired (May 2026) ───────────────────────────────
+  {
+    id: "admin.split-view-retired",
+    title: "Heads-up: /admin/split-view is gone",
+    body: "We retired the two-iframe split-view tool. The sidebar's View-as role-switcher does the same job with a cleaner flow — pick a role and the whole UI re-renders as that role, no extra page or login round-trip. If you had bookmarks pointing at /admin/split-view, swap them for the role-switcher in the sidebar header.",
+    path: "/admin",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Got it", href: "/admin" },
+    since: "2026.05.25c",
+  },
   // ─── 8-bit dino showcase (May 2026) ──────────────────────────────
   {
     id: "admin.demo-hub-pixel-dinos",

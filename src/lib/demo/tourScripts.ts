@@ -57,8 +57,6 @@ const R = {
   pipeline:    { xPct: 17, yPct: 22, wPct: 82, hPct: 62,  radius: 12 },
   topStrip:    { xPct: 17, yPct: 22, wPct: 82, hPct: 32,  radius: 12 },
   configL:     { xPct: 17, yPct: 22, wPct: 44, hPct: 54,  radius: 12 },
-  splitLeft:   { xPct: 17, yPct: 20, wPct: 38, hPct: 68,  radius: 12 },
-  splitRight:  { xPct: 57, yPct: 20, wPct: 41, hPct: 68,  radius: 12 },
   sidebar:     { xPct: 1,  yPct: 8,  wPct: 15, hPct: 78,  radius: 8  },
 } satisfies Record<string, SpotlightRegion>;
 
@@ -77,7 +75,6 @@ const C = {
   pipelineOp: { xPct: 42, yPct: 48, click: true },
   sliderLeft: { xPct: 36, yPct: 44 },
   testerBtn:  { xPct: 74, yPct: 40, click: true },
-  splitR:     { xPct: 76, yPct: 48 },
   inviteBtn:  { xPct: 72, yPct: 38, click: true },
   queueClaim: { xPct: 43, yPct: 38, click: true },
   sidebarNav: { xPct: 8,  yPct: 35, click: true },
@@ -298,13 +295,6 @@ export const TOUR_SCRIPTS: TourScript[] = [
         cursor: C.testerBtn,
         title: "Live Match Tester",
         body: "Max selects Rex as candidate and Vera's posting as target — score 87. He nudges the skills weight from 35% to 40% and watches the score jump to 91. He saves the config; all scores update instantly platform-wide.",
-      },
-      {
-        page: "/admin/split-view",
-        spotlight: { xPct: 17, yPct: 20, wPct: 82, hPct: 68, radius: 12 },
-        cursor: C.splitR,
-        title: "Split View — Both Lenses at Once",
-        body: "Rex's trainee dashboard on the left, Vera's employer portal on the right — simultaneously. Max sees how a config change lands on both roles without leaving the admin seat or switching accounts.",
       },
       {
         page: "/admin/employer-invites",

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Split-view retired — May 2026 ────────────────────────────────
+  {
+    title: "Admin / Split view retired",
+    body: "The /admin/split-view page has been removed along with its sidebar entry, AdminDashboard 'Sit in another role' quick-action, and the Max × EXPERIENCE tour step that featured it. The View-as role-switcher in the sidebar covers the same need with a smoother flow — pick the role you want to preview and the entire UI re-renders in place. The SplitViewClient component, splitR/splitLeft/splitRight tour lookups, and the no-longer-needed Eye / Columns2 icon imports were dropped as part of the cleanup.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Demo Hub 8-bit dinos — May 2026 ──────────────────────────────
   {
     title: "Demo Hub — Rex/Vera/Max redrawn as big 8-bit pixel sprites",

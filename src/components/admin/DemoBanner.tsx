@@ -11,9 +11,9 @@ interface Props {
  * Persistent slim banner shown at the top of every dashboard page
  * when the signed-in account is a demo workspace (prospective partner
  * trial, magic-link spawned showcase trainee, etc.). The previous
- * SandboxBanner served both sandbox + demo; sandbox was retired in
- * favour of /admin/split-view, so this banner now handles the demo
- * case only.
+ * SandboxBanner served both sandbox + demo; sandbox-account spawning
+ * has since been retired, so this banner now handles the demo case
+ * only.
  */
 export function DemoBanner({ expiresAt }: Props) {
   const remaining = expiresAt ? formatRemaining(new Date(expiresAt)) : null;

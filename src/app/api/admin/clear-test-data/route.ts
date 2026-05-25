@@ -33,10 +33,10 @@ import { prisma } from "@/lib/prisma";
 export const runtime = "nodejs";
 
 // "sandbox" is intentionally absent — the sandbox account feature
-// was retired in favour of /admin/split-view, and the
-// 20260513100000_drop_sandbox_kind migration converted any leftover
-// rows to "demo". Listing it would let a stale UI pass it through
-// and quietly hit zero rows; better to reject early.
+// was retired (admins use the sidebar View-as role-switcher instead)
+// and the 20260513100000_drop_sandbox_kind migration converted any
+// leftover rows to "demo". Listing it would let a stale UI pass it
+// through and quietly hit zero rows; better to reject early.
 const KNOWN_KINDS = ["real", "demo", "showcase", "phantom"] as const;
 const DEFAULT_KINDS = ["demo"] as const;
 const VALID_ENTITIES = [
