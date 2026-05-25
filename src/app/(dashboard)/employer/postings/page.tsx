@@ -71,7 +71,7 @@ export default async function EmployerWorkspacePage() {
   // Resolve active company, stamp last-seen.
   const companyId = isAdmin
     ? null
-    : userId ? await getActiveCompanyId(userId) : null;
+    : userId ? await getActiveCompanyId(userId).catch(() => null) : null;
   if (companyId && userId) updateLastSeen(companyId, userId);
 
   // Company-scoped filter with legacy createdById fallback.

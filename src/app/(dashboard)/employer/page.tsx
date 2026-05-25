@@ -114,9 +114,12 @@ export default async function EmployerHomePage() {
   // scripts/backfillEmployerCompanies.ts); multi-seat users resolve
   // via getActiveCompanyId which respects a ?company= URL param once
   // the company-switcher UI ships.
+  // Wrapped in .catch() so a transient DB error (missing table on a
+  // fresh deployment, connection pool blip, etc.) degrades to the
+  // legacy createdById filter rather than crashing the whole page.
   const companyId = isAdmin
     ? null
-    : userId ? await getActiveCompanyId(userId) : null;
+    : userId ? await getActiveCompanyId(userId).catch(() => null) : null;
 
   // Stamp last-seen (fire-and-forget, non-blocking).
   if (companyId && userId) updateLastSeen(companyId, userId);

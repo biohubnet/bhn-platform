@@ -59,7 +59,7 @@ export default async function EmployerAnalyticsPage() {
   }
 
   // ── Resolve companyId ──────────────────────────────────────────
-  let companyId: string | null = isAdmin ? null : await getActiveCompanyId(userId);
+  let companyId: string | null = isAdmin ? null : await getActiveCompanyId(userId).catch(() => null);
 
   if (!companyId && isAdmin) {
     const existing = await prisma.company.findFirst({

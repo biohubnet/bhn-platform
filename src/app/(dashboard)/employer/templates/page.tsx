@@ -34,7 +34,7 @@ export default async function EmployerTemplatesPage() {
   }
 
   // ── Resolve companyId (3-tier fallback from team/page.tsx) ────────
-  let companyId: string | null = await getActiveCompanyId(userId);
+  let companyId: string | null = await getActiveCompanyId(userId).catch(() => null);
 
   if (!companyId && isAdmin) {
     const existing = await prisma.company.findFirst({

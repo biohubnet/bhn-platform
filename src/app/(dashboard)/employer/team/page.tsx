@@ -86,7 +86,7 @@ export default async function EmployerTeamPage() {
   //      deployment; this avoids a permanent error screen).
   //   4. Non-admin with no company → show the "not found" error (they
   //      need to go through the normal onboarding / invite flow).
-  let companyId: string | null = await getActiveCompanyId(userId);
+  let companyId: string | null = await getActiveCompanyId(userId).catch(() => null);
 
   if (!companyId && isAdmin) {
     const existing = await prisma.company.findFirst({

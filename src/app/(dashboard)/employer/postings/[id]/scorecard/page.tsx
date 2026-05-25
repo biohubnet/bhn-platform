@@ -49,7 +49,7 @@ export default async function ScorecardPage({
 
   // Access check: admin bypasses; employers must belong to the company
   if (!isAdmin) {
-    const companyId = await getActiveCompanyId(userId);
+    const companyId = await getActiveCompanyId(userId).catch(() => null);
     const isMember  = companyId && posting.companyId === companyId;
     const isCreator = posting.createdById === userId;
     if (!isMember && !isCreator) {
