@@ -37,33 +37,38 @@ export default async function EmployerTemplatesPage() {
   let companyId: string | null = await getActiveCompanyId(userId).catch(() => null);
 
   if (!companyId && isAdmin) {
-    const existing = await prisma.company.findFirst({
-      orderBy: { createdAt: "asc" },
-      select:  { id: true },
-    });
+    try {
+      const existing = await prisma.company.findFirst({
+        orderBy: { createdAt: "asc" },
+        select:  { id: true },
+      });
 
-    if (existing) {
-      companyId = existing.id;
-      await prisma.companyMember.upsert({
-        where:  { companyId_userId: { companyId, userId } },
-        create: { companyId, userId, role: "owner", joinedAt: new Date() },
-        update: {},
-      });
-    } else {
-      const profile = await prisma.user.findUnique({
-        where:  { id: userId },
-        select: { employerCompany: true },
-      });
-      const newCo = await prisma.company.create({
-        data: {
-          name:    profile?.employerCompany?.trim() || "My Company",
-          members: {
-            create: { userId, role: "owner", joinedAt: new Date() },
+      if (existing) {
+        companyId = existing.id;
+        await prisma.companyMember.upsert({
+          where:  { companyId_userId: { companyId, userId } },
+          create: { companyId, userId, role: "owner", joinedAt: new Date() },
+          update: {},
+        });
+      } else {
+        const profile = await prisma.user.findUnique({
+          where:  { id: userId },
+          select: { employerCompany: true },
+        });
+        const newCo = await prisma.company.create({
+          data: {
+            name:    profile?.employerCompany?.trim() || "My Company",
+            members: {
+              create: { userId, role: "owner", joinedAt: new Date() },
+            },
           },
-        },
-        select: { id: true },
-      });
-      companyId = newCo.id;
+          select: { id: true },
+        });
+        companyId = newCo.id;
+      }
+    } catch {
+      // DB error during bootstrap — fall through to "no company" empty state
+      companyId = null;
     }
   }
 
@@ -91,13 +96,16 @@ export default async function EmployerTemplatesPage() {
         isStarter: true,
         createdAt: true,
       },
-    }),
+    }).catch(() => [] as Array<{
+      id: string; name: string; kind: string; subject: string;
+      body: string; isStarter: boolean; createdAt: Date;
+    }>),
     isAdmin
       ? Promise.resolve(null)
       : prisma.companyMember.findUnique({
           where:  { companyId_userId: { companyId, userId } },
           select: { role: true },
-        }),
+        }).catch(() => null),
   ]);
 
   const callerRole = (

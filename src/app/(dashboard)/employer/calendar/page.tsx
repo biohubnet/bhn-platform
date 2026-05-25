@@ -36,32 +36,37 @@ export default async function EmployerCalendarPage() {
   let companyId: string | null = isAdmin ? null : await getActiveCompanyId(userId).catch(() => null);
 
   if (!companyId && isAdmin) {
-    const existing = await prisma.company.findFirst({
-      orderBy: { createdAt: "asc" },
-      select:  { id: true },
-    });
-    if (existing) {
-      companyId = existing.id;
-      await prisma.companyMember.upsert({
-        where:  { companyId_userId: { companyId, userId } },
-        create: { companyId, userId, role: "owner", joinedAt: new Date() },
-        update: {},
+    try {
+      const existing = await prisma.company.findFirst({
+        orderBy: { createdAt: "asc" },
+        select:  { id: true },
       });
-    } else {
-      const profile = await prisma.user.findUnique({
-        where:  { id: userId },
-        select: { employerCompany: true },
-      });
-      const newCo = await prisma.company.create({
-        data: {
-          name:    profile?.employerCompany?.trim() || "My Company",
-          members: {
-            create: { userId, role: "owner", joinedAt: new Date() },
+      if (existing) {
+        companyId = existing.id;
+        await prisma.companyMember.upsert({
+          where:  { companyId_userId: { companyId, userId } },
+          create: { companyId, userId, role: "owner", joinedAt: new Date() },
+          update: {},
+        });
+      } else {
+        const profile = await prisma.user.findUnique({
+          where:  { id: userId },
+          select: { employerCompany: true },
+        });
+        const newCo = await prisma.company.create({
+          data: {
+            name:    profile?.employerCompany?.trim() || "My Company",
+            members: {
+              create: { userId, role: "owner", joinedAt: new Date() },
+            },
           },
-        },
-        select: { id: true },
-      });
-      companyId = newCo.id;
+          select: { id: true },
+        });
+        companyId = newCo.id;
+      }
+    } catch {
+      // DB error during bootstrap — fall through to "no company" empty state
+      companyId = null;
     }
   }
 
@@ -78,7 +83,7 @@ export default async function EmployerCalendarPage() {
   const hasDemoPostings =
     (await prisma.internshipPosting.count({
       where: { createdById: userId, isDemoSeed: true },
-    })) > 0;
+    }).catch(() => 0)) > 0;
 
   return (
     <div className="space-y-5">

@@ -62,17 +62,22 @@ export default async function EmployerAnalyticsPage() {
   let companyId: string | null = isAdmin ? null : await getActiveCompanyId(userId).catch(() => null);
 
   if (!companyId && isAdmin) {
-    const existing = await prisma.company.findFirst({
-      orderBy: { createdAt: "asc" },
-      select:  { id: true },
-    });
-    if (existing) {
-      companyId = existing.id;
-      await prisma.companyMember.upsert({
-        where:  { companyId_userId: { companyId, userId } },
-        create: { companyId, userId, role: "owner", joinedAt: new Date() },
-        update: {},
+    try {
+      const existing = await prisma.company.findFirst({
+        orderBy: { createdAt: "asc" },
+        select:  { id: true },
       });
+      if (existing) {
+        companyId = existing.id;
+        await prisma.companyMember.upsert({
+          where:  { companyId_userId: { companyId, userId } },
+          create: { companyId, userId, role: "owner", joinedAt: new Date() },
+          update: {},
+        });
+      }
+    } catch {
+      // DB error during bootstrap — fall through to "no company" empty state
+      companyId = null;
     }
   }
 
@@ -91,7 +96,7 @@ export default async function EmployerAnalyticsPage() {
   const hasDemoPostings = companyId
     ? (await prisma.internshipPosting.count({
         where: { createdById: userId, isDemoSeed: true },
-      })) > 0
+      }).catch(() => 0)) > 0
     : false;
 
   // ── Fetch data ─────────────────────────────────────────────────
@@ -101,7 +106,7 @@ export default async function EmployerAnalyticsPage() {
       where:   { companyId },
       select:  { id: true, title: true, status: true },
       orderBy: { createdAt: "desc" },
-    }),
+    }).catch(() => [] as Array<{ id: string; title: string; status: string }>),
 
     // Per-posting, per-stage counts
     prisma.applicationStatus.groupBy({
