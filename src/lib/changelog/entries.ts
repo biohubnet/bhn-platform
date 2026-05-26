@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — transition cards now self-sufficient — May 2026
+  {
+    title: "Career paths — transition cards now carry source + target station previews",
+    body: "Honest follow-up. Yesterday's hover-to-highlight feature had a real flaw: the Cross-stream Mobility cards sit at the bottom of the page and the chart's station boxes sit at the top, so hovering a card highlighted boxes that were scrolled offscreen — the user saw nothing change.\n\nFixed by putting the from / to context INSIDE the transition card itself. Each card now carries two compact side-by-side station previews:\n  • **Starting here** — the source station's primary role, level + years, focus line (2-line clamp), and top 3 education gaps. Tinted in the source track's accent.\n  • **Landing here** — same shape for the target station, tinted in the target track's accent.\n\nThe card is now self-sufficient: you can read everything about a transition (where you start, where you land, why it works, what to learn) without ever scrolling to the chart. The card grid was switched from `md:grid-cols-2` to `xl:grid-cols-2` to give each card enough horizontal room for the side-by-side previews on common viewports.\n\nThe chart-highlight hover behaviour from yesterday's commit stays in place as a bonus when both the chart and the cards happen to be in view — it just isn't load-bearing anymore.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — two-way highlight between transition cards + chart — May 2026
   {
     title: "Career paths — hover a transition card to highlight the source + target boxes in the chart",

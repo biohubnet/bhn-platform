@@ -532,7 +532,10 @@ function CrossStreamMobility() {
         </p>
       </header>
 
-      <ol className="grid gap-3 md:grid-cols-2">
+      {/* Single-column on most viewports; each card carries side-by-
+          side station previews inside, so a one-column outer grid
+          keeps each card wide enough for the previews to read. */}
+      <ol className="grid gap-3 xl:grid-cols-2">
         {transitions.map((t, i) => (
           <li key={i}>
             <TransitionCard t={t} />
@@ -652,8 +655,31 @@ function TransitionCard({ t }: { t: Transition }) {
           </span>
         </div>
 
+        {/* Side-by-side station preview — same content the chart's
+            station boxes show. The from / to context lives INSIDE
+            the card so the card is self-sufficient: the user doesn't
+            need to scroll up to the chart to see what their starting
+            and landing roles look like. The chart hover-highlight
+            stays as a bonus when both are in view. */}
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 border-t border-line/60 pt-3">
+          <StationPreview
+            station={t.srcStation}
+            accent={t.srcTrack.accent}
+            label="Starting here"
+          />
+          <StationPreview
+            station={(() => {
+              const tgt = t.target.stations.find((s) => s.level === t.targetLevel);
+              return tgt!;
+            })()}
+            accent={t.target.accent}
+            label="Landing here"
+          />
+        </div>
+
         {/* Why */}
-        <p className="mt-2.5 text-[12px] text-fg-muted leading-relaxed">
+        <p className="mt-3 text-[12px] text-fg-muted leading-relaxed">
+          <span className="text-fg-subtle font-semibold">Why this works: </span>
           {t.reason}
         </p>
 
@@ -679,5 +705,61 @@ function TransitionCard({ t }: { t: Transition }) {
         )}
       </div>
     </article>
+  );
+}
+
+/** Compact preview of a station — used inside TransitionCard so each
+ *  card carries the from / to context in itself (no scrolling to the
+ *  chart required). Mirrors the StationBox content but at a smaller
+ *  scale: primary role + focus (2-line clamp) + top 3 education gaps. */
+function StationPreview({
+  station, accent, label,
+}: {
+  station: CareerStation;
+  accent: string;
+  label: string;
+}) {
+  return (
+    <div
+      className="rounded-lg bg-card-solid p-2.5 border border-line"
+      style={{
+        borderLeftWidth: "3px",
+        borderLeftColor: accent,
+        backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${accent} 5%, transparent) 0%, transparent 70%)`,
+      }}
+    >
+      <p
+        className="text-[9.5px] uppercase tracking-[0.16em] font-bold mb-1"
+        style={{ color: accent }}
+      >
+        {label}
+      </p>
+      <p className="text-[12px] font-semibold text-fg leading-snug">
+        {station.roles[0]}
+      </p>
+      <p className="text-[10px] text-fg-subtle leading-snug">
+        {station.label} · {station.yearsRange}
+      </p>
+      <p className="mt-1.5 text-[10.5px] text-fg-muted leading-relaxed line-clamp-2">
+        {station.focus}
+      </p>
+      <ul className="mt-1.5 space-y-0.5">
+        {station.educationGaps.slice(0, 3).map((g) => (
+          <li key={g} className="flex items-start gap-1.5 text-[10.5px] leading-snug">
+            <span
+              aria-hidden
+              className="inline-block w-1 h-1 rounded-full mt-[6.5px] shrink-0"
+              style={{ backgroundColor: accent }}
+            />
+            <span className="text-fg-muted">{g}</span>
+          </li>
+        ))}
+        {station.educationGaps.length > 3 && (
+          <li className="text-[9.5px] italic text-fg-subtle pl-3.5">
+            +{station.educationGaps.length - 3} more
+          </li>
+        )}
+      </ul>
+    </div>
   );
 }
