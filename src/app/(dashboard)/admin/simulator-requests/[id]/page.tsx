@@ -5,11 +5,12 @@
  */
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Theater } from "lucide-react";
+import { ArrowLeft, Pencil, Theater } from "lucide-react";
 import { getSession, ROLE_RANK } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { SimRequestActions } from "@/components/admin/SimRequestActions";
+import { TestAttemptButton } from "@/components/admin/TestAttemptButton";
 
 export const dynamic = "force-dynamic";
 
@@ -132,25 +133,33 @@ export default async function SimRequestDetailPage({
 
         {/* Already-fulfilled summary */}
         {request.status === "ready" && request.simulation && (
-          <div className="rounded-xl bg-emerald-50 ring-1 ring-inset ring-emerald-200 px-4 py-3 text-[12.5px] text-emerald-900">
-            <p className="font-semibold">
-              Fulfilled. Requester has been notified.
-            </p>
-            <p className="mt-0.5">
-              <strong>{request.simulation.jobTitle}</strong>
-              {request.simulation.companyName && ` · ${request.simulation.companyName}`}
-              {" · "}
-              model <span className="font-mono text-[11px]">{request.simulation.modelUsed}</span>
-              {request.processedBy?.name && ` · processed by ${request.processedBy.name}`}
-            </p>
-            <p className="mt-2">
+          <div className="rounded-2xl bg-emerald-50 ring-1 ring-inset ring-emerald-200 px-5 py-4 text-[12.5px] text-emerald-900 space-y-3">
+            <div>
+              <p className="font-semibold text-[14px]">
+                Fulfilled. Requester has been notified.
+              </p>
+              <p className="mt-0.5">
+                <strong>{request.simulation.jobTitle}</strong>
+                {request.simulation.companyName && ` · ${request.simulation.companyName}`}
+                {" · "}
+                model <span className="font-mono text-[11px]">{request.simulation.modelUsed}</span>
+                {request.processedBy?.name && ` · processed by ${request.processedBy.name}`}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
               <Link
                 href={`/admin/simulations/${request.simulation.id}/edit`}
-                className="inline-flex items-center gap-1 text-[12px] font-semibold text-emerald-800 underline-offset-2 hover:underline"
+                className="inline-flex items-center gap-2 rounded-md bg-emerald-600 text-white px-4 py-2.5 text-[13px] font-semibold shadow-sm transition hover:bg-emerald-700"
               >
-                Edit this simulation&apos;s payload →
+                <Pencil className="h-4 w-4" />
+                Edit simulation payload
               </Link>
-            </p>
+              <TestAttemptButton
+                simulationId={request.simulation.id}
+                variant="secondary"
+                label="Launch test attempt"
+              />
+            </div>
           </div>
         )}
 

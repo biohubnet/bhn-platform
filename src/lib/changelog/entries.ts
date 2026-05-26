@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator: big Edit button + test launch — May 2026
+  {
+    title: "Simulator — big Edit button + Launch test attempt",
+    body: "Two upgrades to the post-publish editing flow:\n\n**Bigger Edit button.** The 'Edit this simulation's payload' affordance on /admin/simulator-requests/[id] is now a proper green primary button with a pencil icon, sitting next to a complementary 'Launch test attempt' button. The old underlined text link was easy to miss.\n\n**Launch test attempt.** A new endpoint (POST /api/admin/simulations/[id]/test-attempt) spins up a fresh SimulationAttempt on the calling admin's own account and redirects them to the player. Available three places: (1) the fulfilled-state panel on the request detail, (2) the editor's action bar (disabled when there are unsaved changes — a test attempt runs the published payload, so the gate avoids confusion), and (3) the post-save flash inside the editor — the moment a save lands, a 'Launch test attempt to verify' CTA appears inline so the admin can immediately play through their changes. Each click creates a NEW attempt so the admin always sees the latest payload from week 1.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Simulator: post-ship payload editor — May 2026
   {
     title: "Simulator — edit a published payload from /admin/simulations/[id]/edit",

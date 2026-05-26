@@ -23,6 +23,7 @@ import {
   AlertCircle, CheckCircle2, ExternalLink, Loader2, RotateCcw, Save,
 } from "lucide-react";
 import Link from "next/link";
+import { TestAttemptButton } from "./TestAttemptButton";
 
 interface Props {
   simulationId: string;
@@ -110,11 +111,18 @@ export function SimPayloadEditor({ simulationId, initialJson }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <TestAttemptButton
+            simulationId={simulationId}
+            variant="secondary"
+            disabled={dirty}
+            disabledHint={dirty ? "Save your changes first — a test attempt runs the published payload." : undefined}
+            label="Launch test attempt"
+          />
           <button
             type="button"
             onClick={revertToSaved}
             disabled={!dirty || saving}
-            className="inline-flex items-center gap-1.5 rounded-md bg-card text-fg ring-1 ring-inset ring-line px-3 py-1.5 text-[12px] font-semibold hover:bg-elevated disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-md bg-card text-fg ring-1 ring-inset ring-line px-3 py-2 text-[12px] font-semibold hover:bg-elevated disabled:opacity-40"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Revert
@@ -123,7 +131,7 @@ export function SimPayloadEditor({ simulationId, initialJson }: Props) {
             type="button"
             onClick={save}
             disabled={!dirty || saving}
-            className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 text-white px-4 py-1.5 text-[12.5px] font-semibold hover:bg-brand-700 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 text-white px-4 py-2 text-[12.5px] font-semibold hover:bg-brand-700 disabled:opacity-40"
           >
             {saving ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -143,9 +151,18 @@ export function SimPayloadEditor({ simulationId, initialJson }: Props) {
           </div>
         )}
         {flash && (
-          <div className="rounded-xl bg-emerald-50 ring-1 ring-inset ring-emerald-200 px-3 py-2 text-[12.5px] text-emerald-900 flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>{flash}</span>
+          <div className="rounded-xl bg-emerald-50 ring-1 ring-inset ring-emerald-200 px-3.5 py-3 text-[12.5px] text-emerald-900 space-y-2.5">
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{flash}</span>
+            </div>
+            <div className="pl-6">
+              <TestAttemptButton
+                simulationId={simulationId}
+                variant="primary"
+                label="Launch test attempt to verify"
+              />
+            </div>
           </div>
         )}
         <textarea
