@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Course cards — dark right column + AAA white text — May 2026
+  {
+    title: "Course cards — darker right column + AAA white text",
+    body: "The metadata sidebar on every course card on /courses (the right column carrying Credit / Delivery / Provider chips + Enroll-by + Duration) went from a slightly-darker-than-card grey (color-mix of --raised + 12% black) to a properly deep `bg-slate-800` (#1e293b) with white text.\n\nContrast (WCAG):\n• White on slate-800 ≈ 14.5:1 — **AAA on every theme**.\n• White/70 on slate-800 ≈ 9.4:1 — **AAA** even on the micro 9 px uppercase labels.\n\nWhat changed:\n• Background: `bg-[color-mix(--raised 88%, #000)]` → `bg-slate-800 text-white`.\n• Label text (`Enroll by`, `Duration`): `text-fg-muted` → `text-white/70`.\n• Value text (the dates / durations themselves): `text-fg` → `text-white`.\n• Internal section dividers: `border-t border-line` → `border-t border-white/10` so the hairline is visible against the dark backdrop.\n• Left-vs-right column hairline (`border-l border-line`): dropped — the dark-to-light bg jump IS the divider.\n\nPastel chips (Credit / Delivery / Provider) were intentionally left untouched: each chip carries its own opaque pastel container so the contrast inside the chip is unaffected by the surrounding band; if anything the darker shelf crispens the chip silhouettes.\n\nTheme-stable by design: slate-800 is hardcoded rather than threaded through a theme token, so every palette (Daylight / Sakura / Voltage / Greenwood / dark variants…) gets the same dark shelf instead of a theme-conditional fg inversion that could break on dark themes.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Job folders — magazine-row redesign — May 2026
   {
     title: "Job folders — streamlined magazine-row cards",

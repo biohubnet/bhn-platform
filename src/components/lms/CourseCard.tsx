@@ -13,12 +13,12 @@
  *   ├──────────────────────────┬────────────────────┤
  *   │ CODE                 ♡   │ ◆ Credit 500       │  bg-card-solid (LEFT)
  *   │ Course title…            │ ◆ Hybrid           │  vs
- *   │ Short blurb under the    │ ◆ OBIO             │  bg-raised   (RIGHT)
- *   │ title, 3-line clamp…     │ ──────────         │  (stronger contrast)
- *   │                          │ Enroll by:         │
- *   │                          │ Jun 30, 2025       │
- *   │                          │ Duration:          │
- *   │                          │ Jul 23 / Aug 15    │
+ *   │ Short blurb under the    │ ◆ OBIO             │  bg-slate-800 (RIGHT)
+ *   │ title, 3-line clamp…     │ ──────────         │  (deep navy + white text,
+ *   │                          │ Enroll by:         │   white-on-slate-800 = 14.5:1,
+ *   │                          │ Jun 30, 2025       │   AAA on every theme; pale
+ *   │                          │ Duration:          │   pastel chips have their own
+ *   │                          │ Jul 23 / Aug 15    │   opaque container so they sit
  *   ├──────────────────────────┴────────────────────┤
  *   │      [ Request to Enroll → ] slim brand bar   │  CTA bar
  *   └───────────────────────────────────────────────┘
@@ -221,18 +221,29 @@ export function CourseCard({ course }: CourseCardProps) {
         </div>
 
         {/* RIGHT — metadata sidebar.
-            Starts from --raised (the next-step darker surface above
-            bg-elevated) and mixes in 12 % black via color-mix so the
-            grey reads as a distinctly deeper shelf against the lighter
-            left side. color-mix is theme-aware: it derives from each
-            theme's own --raised, so every palette (Sakura, Voltage,
-            Greenwood, dark variants…) gets a proportionally deeper
-            sidebar instead of a hardcoded slate value that would
-            clash. */}
+            Deep slate-800 backdrop (#1e293b) for high-contrast
+            "shelf" treatment. The earlier color-mix(--raised, +12%
+            black) made the right column a slightly darker grey but
+            still relied on dark text — readability fell apart at
+            the dim end of every theme. Going to a true dark navy +
+            white text gives us:
+              • white-on-slate-800 ≈ 14.5:1 contrast → AAA on body
+              • white/70 on slate-800 ≈ 9.4:1 → AAA on micro labels
+              • dark-to-light bg jump IS the divider — no border-l
+                hairline needed (it would have been invisible
+                against slate-800 anyway)
+              • theme-stable: hardcoded slate so every palette
+                (Sakura / Voltage / Greenwood / dark variants…)
+                gets the same dark shelf without a theme-conditional
+                inversion of fg colour
+            Pastel chips keep their light-fill backgrounds — each
+            chip carries its own opaque container so the contrast
+            inside the chip is unchanged; sitting them on a darker
+            band actually crispens the chip silhouettes. */}
         <aside
           className={cn(
-            "p-2.5 sm:p-3 flex flex-col gap-1 border-l border-line",
-            "bg-[color-mix(in_srgb,var(--raised)_88%,#000)]",
+            "p-2.5 sm:p-3 flex flex-col gap-1",
+            "bg-slate-800 text-white",
           )}
         >
           <Chip
@@ -246,11 +257,11 @@ export function CourseCard({ course }: CourseCardProps) {
 
           {/* Enroll by */}
           {course.enrollByDate && (
-            <div className="mt-2 pt-2 border-t border-line">
-              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-fg-muted leading-snug">
+            <div className="mt-2 pt-2 border-t border-white/10">
+              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/70 leading-snug">
                 Enroll by:
               </p>
-              <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
+              <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
                 {fmtShortDate(course.enrollByDate)}
               </p>
             </div>
@@ -262,27 +273,27 @@ export function CourseCard({ course }: CourseCardProps) {
             <div
               className={cn(
                 "mt-auto pt-2",
-                !course.enrollByDate && "border-t border-line",
+                !course.enrollByDate && "border-t border-white/10",
               )}
             >
-              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-fg-muted leading-snug">
+              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/70 leading-snug">
                 Duration:
               </p>
               {hasCohort ? (
                 <>
-                  <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
+                  <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
                     {fmtShortDate(course.cohortStartDate)}
                   </p>
-                  <p className="text-[10.5px] font-semibold text-fg leading-snug">
+                  <p className="text-[10.5px] font-semibold text-white leading-snug">
                     {fmtShortDate(course.cohortEndDate)}
                   </p>
                 </>
               ) : course.cohortStartDate ? (
-                <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
+                <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
                   {fmtShortDate(course.cohortStartDate)}
                 </p>
               ) : (
-                <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
+                <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
                   {fmtMinutes(course.duration)}
                 </p>
               )}
