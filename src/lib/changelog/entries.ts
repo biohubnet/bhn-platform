@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Daylight hero — teal-leaning, reversed direction — May 2026
+  {
+    title: "Daylight theme — teal-leaning hero, reversed direction",
+    body: "Small visual polish on the Daylight theme's editorial hero (cinematic design system). The royal-blue corner mesh stop was swapped for a teal-leaning sky-700, so the whole hero reads more teal instead of dipping toward blue at the bottom corner. The four radial gradient stops were also mirrored horizontally: the bright teal pop now lives on the LEFT (was top-right), the deeper teal-blue weight settles bottom-left (was bottom-right), and the calmer cyan flows out to the right. Net effect: the page reads left-to-right the opposite way it used to, and the overall stage is tealer.\n\nOnly Daylight is affected — every other theme (Rosalind, Sakura, Mist, Hitech, Icecream) defines its own `--hero-mesh-*` palette AND keeps the base position layout, so this override doesn't leak.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Job folders — Tier 3: AI rate-my-fit + folder templates — May 2026
   {
     title: "Job folders — AI rate-my-fit + folder templates",

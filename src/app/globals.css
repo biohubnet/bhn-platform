@@ -46,11 +46,16 @@
   --radius-lg: 22px;
   --radius-xl: 28px;
 
-  /* Dashboard hero gradient — Daylight: cyan + teal + deep blue. */
+  /* Dashboard hero gradient — Daylight: cyan + teal + teal-leaning blue.
+   * mesh-3 used to be a strong royal blue (#1d4ed8); swapped to sky-700
+   * so the whole hero leans teal instead of going blue at the corners.
+   * Companion `.hero-mesh-brand` X-position flip lives further down so
+   * the bright-teal pop sits on the LEFT (was right) — reversed
+   * direction for the daylight stage only. */
   --hero-bg:     #0d3a51;
   --hero-mesh-1: #0891b2;
   --hero-mesh-2: #2dd4bf;
-  --hero-mesh-3: #1d4ed8;
+  --hero-mesh-3: #0369a1;
   --hero-mesh-4: #0e7490;
 
   /* ── Shadow tokens ───────────────────────────────────────────
@@ -1023,6 +1028,21 @@ body {
     radial-gradient(at 88% 18%, var(--hero-mesh-2, #2dd4bf) 0%, transparent 55%),
     radial-gradient(at 95% 95%, var(--hero-mesh-3, #1d4ed8) 0%, transparent 55%),
     radial-gradient(at 25% 95%, var(--hero-mesh-4, #0e7490) 0%, transparent 55%);
+}
+/* Daylight-only — mirror the four radial stops horizontally. Bright
+ * teal pop moves top-right → top-left; teal-leaning blue moves
+ * bottom-right → bottom-left; calmer cyan settles on the right.
+ * Net effect: the hero's directional energy is reversed (L↔R) and the
+ * whole stage reads more teal vs the prior strong-blue corner. Every
+ * other theme redeclares `--hero-mesh-*` AND keeps the base position
+ * layout above, so this override doesn't leak. */
+:root .hero-mesh-brand,
+[data-theme="light"] .hero-mesh-brand {
+  background-image:
+    radial-gradient(at 90% 16%, var(--hero-mesh-1, #0891b2) 0%, transparent 55%),
+    radial-gradient(at 12% 18%, var(--hero-mesh-2, #2dd4bf) 0%, transparent 55%),
+    radial-gradient(at  5% 95%, var(--hero-mesh-3, #0369a1) 0%, transparent 55%),
+    radial-gradient(at 75% 95%, var(--hero-mesh-4, #0e7490) 0%, transparent 55%);
 }
 /* Bottom contrast scrim — universal fail-safe. Dark themes hide it
  * (the darken is invisible against an already-dark base); light
