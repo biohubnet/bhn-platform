@@ -14,6 +14,12 @@ interface ScormPlayerProps {
   suspendData: string | null;
   location: string | null;
   completionStatus: string;
+  /** Learner identity, passed through to the SCORM loader so packages
+   *  that read cmi.core.student_name / cmi.learner_name on init get a
+   *  real value instead of an empty string (which is what crashes
+   *  Articulate Storyline + iSpring + Captivate at boot). */
+  learnerId?: string | null;
+  learnerName?: string | null;
 }
 
 export function ScormPlayer({
@@ -25,6 +31,8 @@ export function ScormPlayer({
   suspendData,
   location,
   completionStatus,
+  learnerId,
+  learnerName,
 }: ScormPlayerProps) {
   const router = useRouter();
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -82,19 +90,36 @@ export function ScormPlayer({
       data[isScorm12 ? "cmi.core.lesson_status" : "cmi.completion_status"] = completionStatus;
     }
 
+    // Persistence-only message handler. As of this commit, the loader
+    // serves GetValue / LMSGetValue synchronously out of its own
+    // (URL-param-seeded) cache, so the parent no longer fields read
+    // requests — it only receives write pings (SetValue / Commit /
+    // Finish) and persists them. We still ack with a SCORM_RESULT for
+    // backward compatibility with the previous loader's async flow,
+    // but new loaders ignore the ack.
     function handleMessage(e: MessageEvent) {
       if (e.data?.type !== "SCORM_API") return;
       const { method, element, value } = e.data;
 
-      let result: string = "";
+      let result: string = "true";
 
       switch (method) {
         case "Initialize":
         case "LMSInitialize":
-          result = "true";
+        case "GetLastError":
+        case "LMSGetLastError":
+        case "GetErrorString":
+        case "LMSGetErrorString":
+        case "GetDiagnostic":
+        case "LMSGetDiagnostic":
+          // No-op — loader handles these locally now. Old loaders
+          // that still send these get a valid ack.
           break;
         case "GetValue":
         case "LMSGetValue":
+          // Old-loader path. New loader serves these locally; this
+          // arm stays for backward compatibility with any cached
+          // /scorm-loader.html still running.
           result = data[element] ?? "";
           break;
         case "SetValue":
@@ -102,12 +127,10 @@ export function ScormPlayer({
           data[element] = value;
           if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
           saveTimeoutRef.current = setTimeout(() => saveData({ ...data }), 1000);
-          result = "true";
           break;
         case "Commit":
         case "LMSCommit":
           saveData({ ...data });
-          result = "true";
           break;
         case "Finish":
         case "LMSFinish":
@@ -144,20 +167,7 @@ export function ScormPlayer({
             } else {
               saveData(finalSnapshot);
             }
-            result = "true";
           }
-          break;
-        case "GetLastError":
-        case "LMSGetLastError":
-          result = "0";
-          break;
-        case "GetErrorString":
-        case "LMSGetErrorString":
-          result = "";
-          break;
-        case "GetDiagnostic":
-        case "LMSGetDiagnostic":
-          result = "";
           break;
       }
 
@@ -170,6 +180,24 @@ export function ScormPlayer({
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
   }, [scormVersion, suspendData, location, completionStatus, courseId, router, saveData]);
+
+  // Build the loader URL — pass everything the SCORM content might
+  // ask for via LMSGetValue on init, so the loader can serve those
+  // reads synchronously without a postMessage round-trip. Without
+  // this, packages that read cmi.core.student_name / cmi.launch_data /
+  // etc. on boot got "" from the bridge and many of them silently
+  // aborted their init — presenting as "courses are not launching".
+  const loaderUrl = (() => {
+    const qs = new URLSearchParams();
+    qs.set("src", entryPoint);
+    qs.set("version", scormVersion);
+    if (suspendData) qs.set("suspendData", suspendData);
+    if (location) qs.set("location", location);
+    qs.set("completionStatus", completionStatus);
+    if (learnerId) qs.set("learnerId", learnerId);
+    if (learnerName) qs.set("learnerName", learnerName);
+    return `/scorm-loader.html?${qs.toString()}`;
+  })();
 
   return (
     <div className="flex flex-col h-screen bg-gray-900">
@@ -210,7 +238,7 @@ export function ScormPlayer({
        * in the top bar covers exit. */}
       <iframe
         ref={iframeRef}
-        src={`/scorm-loader.html?src=${encodeURIComponent(entryPoint)}&version=${scormVersion}`}
+        src={loaderUrl}
         className="flex-1 w-full border-0"
         title={courseTitle}
         allow="fullscreen"

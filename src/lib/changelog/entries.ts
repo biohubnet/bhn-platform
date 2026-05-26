@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Course launch fix — synchronous SCORM GetValue — May 2026
+  {
+    title: "Fixed: SCORM courses failing to launch (Articulate / Captivate / iSpring packages)",
+    body: "Authoring-tool SCORM packages were silently aborting their init sequence — \"course doesn't launch\" — because the LMS bridge was returning empty strings for every `LMSGetValue` / `GetValue` call.\n\n**Why it failed.** The SCORM 1.2 + 2004 specs require GetValue to return a value SYNCHRONOUSLY. Our bridge ran `callParent(...).then(v => r = v); return r;` which returned the empty string immediately (the promise resolved AFTER the return). Packages read `cmi.core.student_name`, `cmi.launch_data`, `cmi.core.entry`, etc. on boot and bailed when those came back blank — most authoring tools log \"no LMS connection\" or hang at \"Connecting…\" with no visible error to the trainee.\n\n**The platform's own hand-coded test courses kept working** because they tolerate empty reads — which made the bug invisible until real Articulate / Adobe Captivate / iSpring packages were uploaded.\n\n**What changed.**\n\n1. `public/scorm-loader.html` rewritten. The loader now seeds its own local CMI data store at startup from URL params passed by the player (suspendData, location, completionStatus, learnerId, learnerName, plus all the standard cmi.core.* defaults per spec). `LMSGetValue` / `GetValue` read from this store synchronously — no postMessage round-trip. `LMSSetValue` / `SetValue` write to the local store AND fire-and-forget post to the parent for persistence.\n\n2. `ScormPlayer.tsx` now passes the initial CMI state as URL params to the loader (`?suspendData=…&location=…&completionStatus=…&learnerId=…&learnerName=…`). The parent message-handler still receives SetValue / Commit / Finish for persistence (debounced PATCH to `/api/scorm/session`), but is no longer responsible for fielding reads.\n\n3. `/player/[courseId]/page.tsx` passes the user's id + name to ScormPlayer so the loader can answer `cmi.core.student_name` / `cmi.learner_name` queries.\n\n4. Loader gained an inner-iframe error guard: if the SCORM content fails to load (404 from R2, manifest pointed at the wrong file, network error), the loader shows a clear human-readable error box instead of a blank screen.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator catalog — every published sim playable by everyone — May 2026
   {
     title: "Simulator — every published sim is now playable by every user",

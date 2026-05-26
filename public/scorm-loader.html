@@ -3,66 +3,231 @@
 <head>
   <meta charset="utf-8">
   <title>SCORM Loader</title>
-  <style>body,html{margin:0;padding:0;height:100%;overflow:hidden;}iframe{width:100%;height:100%;border:none;}</style>
+  <style>
+    body,html{margin:0;padding:0;height:100%;overflow:hidden;background:#1f2937;color:#e5e7eb;font-family:system-ui,sans-serif;}
+    iframe{width:100%;height:100%;border:none;background:#fff;}
+    #fallback{
+      display:none;position:absolute;inset:0;align-items:center;justify-content:center;
+      padding:2rem;text-align:center;
+    }
+    #fallback.show{display:flex;}
+    #fallback .box{max-width:480px;background:#111827;border:1px solid #374151;border-radius:12px;padding:1.5rem;}
+    #fallback h1{font-size:1.1rem;margin:0 0 .5rem;color:#fff;}
+    #fallback p{font-size:.85rem;line-height:1.5;color:#9ca3af;margin:.25rem 0;}
+    #fallback code{background:#0f172a;padding:.15rem .4rem;border-radius:4px;font-size:.75rem;}
+  </style>
 </head>
 <body>
 <iframe id="scorm" allowfullscreen></iframe>
+<div id="fallback">
+  <div class="box">
+    <h1>Couldn't load the course package</h1>
+    <p>The SCORM package at <code id="failed-src"></code> didn't return a usable response.</p>
+    <p>This is usually one of: the file was removed from storage, the manifest's entry point points at the wrong file, or the LMS is temporarily unable to reach the storage bucket. Refresh to retry, or contact an admin.</p>
+  </div>
+</div>
 <script>
-  const params = new URLSearchParams(location.search);
-  const src = params.get('src');
-  const version = params.get('version') || 'SCORM_12';
-  const isScorm12 = version === 'SCORM_12';
+/**
+ * SCORM 1.2 + 2004 bridge. Sits between the SCORM content (inner iframe)
+ * and the LMS player page (parent window).
+ *
+ * Key design choice — synchronous GetValue
+ * ─────────────────────────────────────────
+ * The SCORM 1.2 + 2004 specs require LMSGetValue / GetValue to return a
+ * value SYNCHRONOUSLY. The previous version of this loader did
+ * `callParent(...).then(v => r = v); return r;` which always returned
+ * the empty string (the promise never resolved before the return). Real
+ * authoring-tool packages (Articulate Storyline, Adobe Captivate,
+ * iSpring) read keys like cmi.core.student_name and cmi.launch_data on
+ * boot and silently abort their init if those come back blank — which
+ * presented as "the course never launches".
+ *
+ * Fix: the player passes us the canonical CMI state (suspendData,
+ * location, completionStatus, learner name, learner id, score) as URL
+ * params, and we seed a local data store at startup. GetValue reads
+ * from that store synchronously. SetValue writes to the store AND
+ * fire-and-forgets a postMessage to the parent for persistence — the
+ * parent's existing /api/scorm/session PATCH is debounced there.
+ *
+ * The store is small + flat (a plain object keyed by CMI element
+ * names). For elements we haven't been seeded with we return the
+ * canonical default per the SCORM RTE spec ("" for strings, "0" for
+ * counts, "false" for booleans where applicable).
+ */
+(function () {
+  var params = new URLSearchParams(location.search);
+  var src = params.get('src');
+  var version = params.get('version') || 'SCORM_12';
+  var isScorm12 = version === 'SCORM_12';
+  var API_NAME = isScorm12 ? 'API' : 'API_1484_11';
 
-  // SCORM API shim — bridges iframe postMessage ↔ parent window
-  const API_NAME = isScorm12 ? 'API' : 'API_1484_11';
-  const parentOrigin = window.parent;
-
-  function callParent(method, element, value) {
-    return new Promise(resolve => {
-      const handler = (e) => {
-        if (e.data?.type === 'SCORM_RESULT' && e.data.method === method) {
-          window.removeEventListener('message', handler);
-          resolve(e.data.result);
-        }
-      };
-      window.addEventListener('message', handler);
-      parentOrigin.postMessage({ type: 'SCORM_API', method, element, value }, '*');
-      setTimeout(() => { window.removeEventListener('message', handler); resolve(''); }, 3000);
-    });
+  // ── 1. Build the local data store with everything we know up-front. ──
+  // The player passes its DB-tracked values via URL params; we map them
+  // onto the per-version CMI key names. Anything not seeded falls back
+  // to spec defaults via the `defaults` table when GetValue is called.
+  var data = {};
+  function seed(key, value) {
+    if (value != null && value !== '') data[key] = value;
   }
-
-  // Build the API object and inject into the SCORM content's window
-  const api = {};
+  var statusParam     = params.get('completionStatus');
+  var locationParam   = params.get('location');
+  var suspendParam    = params.get('suspendData');
+  var learnerIdParam  = params.get('learnerId');
+  var learnerName     = params.get('learnerName');
   if (isScorm12) {
-    api.LMSInitialize = (s) => { callParent('LMSInitialize'); return 'true'; };
-    api.LMSFinish = (s) => { callParent('LMSFinish'); return 'true'; };
-    api.LMSGetValue = (e) => { let r = ''; callParent('LMSGetValue', e).then(v => r = v); return r; };
-    api.LMSSetValue = (e, v) => { callParent('LMSSetValue', e, v); return 'true'; };
-    api.LMSCommit = (s) => { callParent('LMSCommit'); return 'true'; };
-    api.LMSGetLastError = () => '0';
-    api.LMSGetErrorString = () => '';
-    api.LMSGetDiagnostic = () => '';
+    seed('cmi.core.lesson_status',   statusParam);
+    seed('cmi.core.lesson_location', locationParam);
+    seed('cmi.suspend_data',         suspendParam);
+    seed('cmi.core.student_id',      learnerIdParam);
+    seed('cmi.core.student_name',    learnerName);
+    seed('cmi.core.entry',           suspendParam ? 'resume' : 'ab-initio');
+    seed('cmi.core.credit',          'credit');
+    seed('cmi.core.lesson_mode',     'normal');
   } else {
-    api.Initialize = (s) => { callParent('Initialize'); return 'true'; };
-    api.Terminate = (s) => { callParent('Finish'); return 'true'; };
-    api.GetValue = (e) => { let r = ''; callParent('GetValue', e).then(v => r = v); return r; };
-    api.SetValue = (e, v) => { callParent('SetValue', e, v); return 'true'; };
-    api.Commit = (s) => { callParent('Commit'); return 'true'; };
-    api.GetLastError = () => '0';
-    api.GetErrorString = () => '';
-    api.GetDiagnostic = () => '';
+    seed('cmi.completion_status', statusParam === 'not attempted' ? 'unknown' : statusParam);
+    seed('cmi.location',          locationParam);
+    seed('cmi.suspend_data',      suspendParam);
+    seed('cmi.learner_id',        learnerIdParam);
+    seed('cmi.learner_name',      learnerName);
+    seed('cmi.entry',             suspendParam ? 'resume' : 'ab-initio');
+    seed('cmi.credit',            'credit');
+    seed('cmi.mode',              'normal');
   }
 
-  const iframe = document.getElementById('scorm');
-  iframe.onload = function() {
-    try {
-      iframe.contentWindow[API_NAME] = api;
-    } catch(e) {}
-  };
-  iframe.src = src;
+  // ── 2. Sensible defaults for keys we weren't seeded with. ──
+  // Returning "" for every miss is correct per spec for strings but
+  // some authoring tools choke on "" for numeric counts; spec defaults
+  // there are "0" / "false". This table covers the well-known
+  // ones that show up most in the wild.
+  var defaults = isScorm12
+    ? {
+        'cmi.core.score.raw': '',
+        'cmi.core.score.min': '',
+        'cmi.core.score.max': '',
+        'cmi.core.session_time': '00:00:00',
+        'cmi.core.total_time': '00:00:00',
+        'cmi.core.exit': '',
+        'cmi.suspend_data': '',
+        'cmi.launch_data': '',
+        'cmi.core.lesson_status': 'not attempted',
+        'cmi.objectives._count': '0',
+        'cmi.interactions._count': '0',
+      }
+    : {
+        'cmi.score.raw': '',
+        'cmi.score.min': '',
+        'cmi.score.max': '',
+        'cmi.score.scaled': '',
+        'cmi.session_time': 'PT0H0M0S',
+        'cmi.total_time': 'PT0H0M0S',
+        'cmi.exit': '',
+        'cmi.suspend_data': '',
+        'cmi.launch_data': '',
+        'cmi.completion_status': 'unknown',
+        'cmi.success_status': 'unknown',
+        'cmi.objectives._count': '0',
+        'cmi.interactions._count': '0',
+      };
 
-  // Also expose on this window for same-origin SCORM content that walks up the tree
+  // ── 3. Fire-and-forget postMessage to the player for persistence. ──
+  // No await — the PATCH happens on the parent on its own debounce
+  // (1s in ScormPlayer.tsx). We don't need a round-trip; GetValue
+  // reads from the local cache that SetValue already updated.
+  function notifyParent(method, element, value) {
+    try {
+      window.parent.postMessage(
+        { type: 'SCORM_API', method: method, element: element, value: value },
+        '*'
+      );
+    } catch (e) { /* parent gone — ignore */ }
+  }
+
+  // ── 4. The synchronous API the SCORM content sees. ──
+  var initialized = false;
+  function get(key) {
+    if (key in data) return String(data[key]);
+    if (key in defaults) return defaults[key];
+    return '';
+  }
+  function set(key, value) {
+    data[key] = value;
+    notifyParent(isScorm12 ? 'LMSSetValue' : 'SetValue', key, value);
+    return 'true';
+  }
+  function init() {
+    initialized = true;
+    notifyParent(isScorm12 ? 'LMSInitialize' : 'Initialize');
+    return 'true';
+  }
+  function commit() {
+    notifyParent(isScorm12 ? 'LMSCommit' : 'Commit');
+    return 'true';
+  }
+  function finish() {
+    initialized = false;
+    notifyParent(isScorm12 ? 'LMSFinish' : 'Terminate');
+    return 'true';
+  }
+
+  var api = {};
+  if (isScorm12) {
+    api.LMSInitialize    = init;
+    api.LMSFinish        = finish;
+    api.LMSGetValue      = get;
+    api.LMSSetValue      = function (e, v) { return set(e, v); };
+    api.LMSCommit        = commit;
+    api.LMSGetLastError  = function () { return '0'; };
+    api.LMSGetErrorString= function () { return ''; };
+    api.LMSGetDiagnostic = function () { return ''; };
+    api.LMSIsInitialized = function () { return initialized ? 'true' : 'false'; };
+  } else {
+    api.Initialize       = init;
+    api.Terminate        = finish;
+    api.GetValue         = get;
+    api.SetValue         = function (e, v) { return set(e, v); };
+    api.Commit           = commit;
+    api.GetLastError     = function () { return '0'; };
+    api.GetErrorString   = function () { return ''; };
+    api.GetDiagnostic    = function () { return ''; };
+  }
+
+  // ── 5. Expose to every place a SCORM package might walk. ──
+  // (a) On this window — findAPI(window) from the inner iframe walks
+  //     win.parent (= this window) and finds API here.
+  // (b) On the iframe's contentWindow once it loads — covers packages
+  //     that probe their own window before walking the parent chain.
   window[API_NAME] = api;
+
+  var iframe = document.getElementById('scorm');
+  var fallback = document.getElementById('fallback');
+  var failedSrc = document.getElementById('failed-src');
+
+  iframe.addEventListener('load', function () {
+    try { iframe.contentWindow[API_NAME] = api; } catch (e) { /* cross-origin */ }
+    // Catch the "browser served us an error page" case: SCORM packages
+    // shipped as a single index.html plus an error 404/500 from R2
+    // would load with `about:blank` body. Detect that and show our
+    // own clearer error than a blank screen.
+    try {
+      var doc = iframe.contentDocument;
+      if (doc && doc.body && doc.body.children.length === 0 && doc.title === '') {
+        if (failedSrc) failedSrc.textContent = src || '(unknown)';
+        if (fallback) fallback.classList.add('show');
+      }
+    } catch (e) { /* cross-origin — assume it loaded */ }
+  });
+  iframe.addEventListener('error', function () {
+    if (failedSrc) failedSrc.textContent = src || '(unknown)';
+    if (fallback) fallback.classList.add('show');
+  });
+
+  if (!src) {
+    if (failedSrc) failedSrc.textContent = '(missing src param)';
+    if (fallback) fallback.classList.add('show');
+  } else {
+    iframe.src = src;
+  }
+})();
 </script>
 </body>
 </html>

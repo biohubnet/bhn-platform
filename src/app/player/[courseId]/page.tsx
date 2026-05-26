@@ -13,6 +13,11 @@ export default async function PlayerPage({
   if (!session) redirect("/login");
 
   const userId = (session.user as { id?: string }).id!;
+  // Learner identity — passed to ScormPlayer so the loader can seed
+  // cmi.core.student_name / cmi.learner_name synchronously. Authoring-
+  // tool packages (Articulate, Captivate, iSpring) read these on init
+  // and abort if blank.
+  const userName = (session.user as { name?: string }).name ?? null;
 
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId } },
@@ -63,6 +68,8 @@ export default async function PlayerPage({
       suspendData={existing?.suspendData ?? null}
       location={existing?.location ?? null}
       completionStatus={existing?.status ?? "not attempted"}
+      learnerId={userId}
+      learnerName={userName}
     />
   );
 }
