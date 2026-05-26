@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — fix root-line origin + cross-stream mobility section — May 2026
+  {
+    title: "Career paths — mind-map root lines start at the pill edge + cross-stream mobility section",
+    body: "Two follow-ups on /career-paths:\n\n**Root SVG lines.** The previous version absolute-positioned the radiating SVG with `bottom-0`, which put the top edge of the SVG behind the pill — the rays appeared to start from inside the pill text. Switched to in-flow layout: the pill renders on top, the SVG renders directly beneath in the normal document order. The path origin `M 50 0` is now exactly at the pill's bottom edge, so every ray emerges from the bottom centre of the pill rather than from behind the text.\n\n**Cross-stream mobility section.** A new \"What career transitions are possible across streams?\" panel below the flowchart aggregates every cross-tree link the data documents — 11 transitions in total covering Bioprocess → Quality / Project Leadership, Bioprocess → Business, Quality → CGT, Quality → Business, CGT → Clinical / Quality, Clinical → Project / Business, Business → Project, and Project → Bioprocess / Business / Quality. Each transition is a card carrying:\n  • A from → to header with both tracks' icons + the source level + the destination level hinge\n  • Why this move is credible (one sentence)\n  • What to learn before you move — 4 topic phrases, gap-style, no course names\n\nCards have a split top-edge accent (left half = source colour, right half = destination colour) and a horizontal gradient backdrop so the from → to direction reads visually as well as in text. The data schema gained an optional `learningNeeded?: string[]` on each crossLink so the section is fully data-driven; every existing crossLink was enriched with its specific learning gaps, and three new transitions (Quality Senior → Business, Clinical Senior → Business, Project Senior → Quality) were added on top of the original six.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — flowchart + mind-map layout — May 2026
   {
     title: "Career paths — flowchart + mind-map visualisation",

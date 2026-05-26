@@ -51,6 +51,11 @@ export interface CrossLink {
   when: string;
   /** Why it's a credible move. One sentence. */
   reason: string;
+  /** Skill / knowledge areas the candidate needs to acquire to make
+   *  the lateral credibly. Surfaced in the "Cross-stream mobility"
+   *  section below the main chart. No course names — same gap-phrase
+   *  vocabulary the station boxes use. */
+  learningNeeded?: string[];
 }
 
 export interface CareerStation {
@@ -171,12 +176,24 @@ const BIOPROCESS: CareerTrack = {
           when: "Senior → Lead",
           reason:
             "Strong process-engineering Seniors often pivot to Quality leadership — the floor experience makes for credible QA management.",
+          learningNeeded: [
+            "Quality system ownership",
+            "Internal audit + regulator-facing communication",
+            "Risk-based validation methodology",
+            "QA team mentoring frameworks",
+          ],
         },
         {
           trackId: "project-leadership",
           when: "Senior → Lead",
           reason:
             "Tech-transfer leaders frequently formalise their toolkit and move into multi-site project ownership.",
+          learningNeeded: [
+            "Multi-program portfolio management",
+            "Vendor + outsourcing strategy",
+            "PMO methodology selection",
+            "Programme-level executive communication",
+          ],
         },
       ],
     },
@@ -203,6 +220,12 @@ const BIOPROCESS: CareerTrack = {
           when: "Lead → VP",
           reason:
             "Manufacturing Directors with a commercial lens commonly cross into General Manager / commercial-operations VP roles.",
+          learningNeeded: [
+            "P&L ownership end-to-end",
+            "Strategic alliance management",
+            "Capital deployment + investor narratives",
+            "M&A diligence on operating assets",
+          ],
         },
       ],
     },
@@ -300,6 +323,24 @@ const QUALITY: CareerTrack = {
           when: "Senior → Lead",
           reason:
             "Quality leaders with CGT exposure are scarce — the move into ATMP-focused quality leadership opens up rapidly.",
+          learningNeeded: [
+            "ATMP-specific GMP standards",
+            "Living-drug analytics + release testing",
+            "Modality-specific regulatory writing",
+            "Comparability strategy for cell + gene products",
+          ],
+        },
+        {
+          trackId: "biotech-business",
+          when: "Senior → Lead",
+          reason:
+            "Regulatory leaders with a commercial lens move into BD as the deal-structuring partner — quality / RA depth de-risks every transaction.",
+          learningNeeded: [
+            "Deal negotiation + term-sheet literacy",
+            "Investor-facing narratives",
+            "M&A diligence",
+            "Strategic alliance management",
+          ],
         },
       ],
     },
@@ -413,12 +454,24 @@ const CGT: CareerTrack = {
           when: "Senior → Lead",
           reason:
             "Manufacturing-PD leaders with CGT depth are the most credible candidates for clinical-operations leadership at CGT sponsors.",
+          learningNeeded: [
+            "Trial-level operational leadership",
+            "CRO + vendor strategy",
+            "Biostatistics literacy",
+            "Regulator-facing presentations",
+          ],
         },
         {
           trackId: "quality-regulatory",
           when: "Senior → Lead",
           reason:
             "ATMP-experienced regulatory leads are vanishingly rare — the lateral into RA is a fast track to director-level visibility.",
+          learningNeeded: [
+            "ATMP quality system design",
+            "Inspection front-room skills",
+            "Comparability + lifecycle strategy",
+            "Modality-specific RA dossier authorship",
+          ],
         },
       ],
     },
@@ -530,6 +583,24 @@ const CLINICAL: CareerTrack = {
           when: "Senior → Lead",
           reason:
             "Senior clinical trial managers convert cleanly into multi-program portfolio leadership inside CRO or sponsor orgs.",
+          learningNeeded: [
+            "Multi-program portfolio management",
+            "Vendor strategy + tooling selection",
+            "PMO methodology frameworks",
+            "Cross-functional executive communication",
+          ],
+        },
+        {
+          trackId: "biotech-business",
+          when: "Senior → Lead",
+          reason:
+            "Clinical-operations leaders become the clinical-narrative architects for fundraising — IPO and Series-B pitches lean on the clinical story.",
+          learningNeeded: [
+            "Investor-facing narratives",
+            "IPO clinical positioning",
+            "Commercial + market-sizing modelling",
+            "Term-sheet + valuation literacy",
+          ],
         },
       ],
     },
@@ -641,6 +712,12 @@ const BUSINESS: CareerTrack = {
           when: "Senior → Lead",
           reason:
             "BD leaders running multiple deals at once frequently formalise into Portfolio / Programme leadership.",
+          learningNeeded: [
+            "PMO design + methodology",
+            "Portfolio prioritisation frameworks",
+            "Multi-stream resource modelling",
+            "Programme-level reporting cadence",
+          ],
         },
       ],
     },
@@ -752,12 +829,36 @@ const PROJECT: CareerTrack = {
           when: "Senior → Lead",
           reason:
             "Strong programme leads land manufacturing director seats by owning a tech-transfer or capacity-expansion to completion.",
+          learningNeeded: [
+            "Manufacturing operational depth",
+            "Capacity + demand planning",
+            "Inspection readiness",
+            "Capital project ownership",
+          ],
         },
         {
           trackId: "biotech-business",
           when: "Senior → Lead",
           reason:
             "Programme leaders with a commercial lens make natural Heads of Strategy / Chiefs of Staff at growth-stage biotechs.",
+          learningNeeded: [
+            "Deal negotiation",
+            "Cap-table literacy + M&A diligence",
+            "Strategic alliance management",
+            "Investor narratives",
+          ],
+        },
+        {
+          trackId: "quality-regulatory",
+          when: "Senior → Lead",
+          reason:
+            "PMs with deep regulated-industry exposure become credible Quality directors — the toolkit transfers and the regulator visibility is already there.",
+          learningNeeded: [
+            "Quality system ownership",
+            "Regulator-facing communication",
+            "Validation strategy",
+            "Inspection front-room skills",
+          ],
         },
       ],
     },
