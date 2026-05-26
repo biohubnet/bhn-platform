@@ -10,8 +10,7 @@
  * the reviews — they should be able to schedule the next cycle.
  */
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, CalendarClock } from "lucide-react";
+import { CalendarClock } from "lucide-react";
 import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
 import { listDeadlines } from "@/lib/equip/deadlines";
@@ -166,12 +165,33 @@ export default async function AdminEquipDeadlinesPage() {
 
   return (
     <div className="space-y-5">
-      {/* Back-link removed — the editorial hero owns the top of the
-          page; sidebar handles cross-page navigation. */}
-      <PageHeader
-        title={<span className="inline-flex items-center gap-2"><CalendarClock size={22} className="text-brand-600" /> Equip deadlines</span>}
-        description="Funding windows for VentureConnect (monthly, $5K cap) and VentureLift (quarterly, $25K cap). The VentureLift round schedule below is the canonical published timeline — its pre-screening + full-application dates auto-sync into the deadlines table for the submit-gate. Use the New-deadline form for one-off VentureConnect windows and ad-hoc overrides."
-      />
+      {/*
+        Surrounding the hero in a single gradient-washed card unifies
+        the page's visual identity around one brand-tinted family.
+        The thin hairline divider underneath the description acts as
+        the page's "this is the chrome, content starts now" beat —
+        ties the dense DeadlineManager below to the same column.
+      */}
+      <section
+        className="rounded-2xl border border-line/70 overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(180deg, color-mix(in srgb, var(--brand-50) 60%, var(--card)) 0%, var(--card) 70%)",
+        }}
+      >
+        <div className="px-5 sm:px-7 py-5 sm:py-6">
+          <PageHeader
+            title={
+              <span className="inline-flex items-center gap-2">
+                <CalendarClock size={22} className="text-brand-600" />
+                Equip deadlines
+              </span>
+            }
+            description="Funding windows for VentureConnect (monthly, $5K cap) and VentureLift (quarterly, $25K cap). The VentureLift round schedule below is the canonical published timeline — its pre-screening + full-application dates auto-sync into the deadlines table for the submit-gate. Use the New-deadline form for one-off VentureConnect windows and ad-hoc overrides."
+          />
+        </div>
+        <div className="h-px bg-gradient-to-r from-transparent via-brand-200/70 to-transparent" />
+      </section>
 
       <DeadlineManager initial={initial} vlRoundStages={vlRoundStages} />
     </div>

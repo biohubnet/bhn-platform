@@ -133,7 +133,14 @@ export function DeadlineManager({ initial, vlRoundStages }: Props) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-2">
+      {/*
+        View toggle. Underline-with-fade pattern (rather than the
+        old solid pills) so the page's tone stays consistent: brand
+        on the active tab, soft hairline between, slate muted on
+        the inactive one. The horizontal gradient rule under the
+        whole strip ties it into the hero's gradient bottom rule.
+      */}
+      <nav className="flex items-end gap-1 border-b border-line/70">
         {([
           { id: "list",     icon: List,     label: "List" },
           { id: "calendar", icon: Calendar, label: "Calendar" },
@@ -146,17 +153,17 @@ export function DeadlineManager({ initial, vlRoundStages }: Props) {
               type="button"
               onClick={() => setTab(t.id)}
               className={
-                "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors " +
+                "inline-flex items-center gap-1.5 text-[12.5px] font-semibold px-3 py-2 -mb-px border-b-2 transition-colors " +
                 (active
-                  ? "bg-brand-600 text-white border-brand-600"
-                  : "bg-card text-muted border-line hover:border-line-strong")
+                  ? "text-brand-700 border-brand-600"
+                  : "text-muted border-transparent hover:text-fg hover:border-line-strong")
               }
             >
               <Icon size={13} /> {t.label}
             </button>
           );
         })}
-      </div>
+      </nav>
 
       <NewDeadlineForm />
 
@@ -223,8 +230,22 @@ function NewDeadlineForm() {
   }
 
   return (
-    <section className="rounded-2xl border border-line bg-card p-5 surface-shadow">
-      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-3">Create a new funding window</p>
+    <section
+      className="rounded-2xl border border-line/70 p-5"
+      style={{
+        // Soft brand-tinted gradient so the form reads as the page's
+        // "input pane" without needing a heavy ring/shadow. Hairline
+        // border keeps it visually quiet relative to the table below.
+        background:
+          "linear-gradient(180deg, color-mix(in srgb, var(--brand-50) 30%, var(--card)) 0%, var(--card) 60%)",
+      }}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <span aria-hidden className="block h-px w-5 bg-gradient-to-r from-brand-300 to-transparent" />
+        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+          Create a new funding window
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_1fr_1fr_auto] gap-2 items-end">
         <label className="block">
           <span className="text-[10px] uppercase tracking-wider font-bold text-subtle">Stream</span>
@@ -323,20 +344,28 @@ function getStatusBadge(status: string) {
   return <Badge tone="neutral">{status}</Badge>;
 }
 
-/** Big pastel month abbreviation — abbr + Tailwind text-color class. */
+/**
+ * Month abbreviation marker.
+ *
+ * Previously twelve different pastel hues — one per month — which made
+ * the calendar look like a paint sample chart. Now the abbreviation
+ * carries the meaning; the colour is a single brand-tinted slate that
+ * stays consistent across the year so the visual rhythm comes from
+ * type and layout, not from a rainbow.
+ */
 const MONTH_DISPLAY: Record<number, { abbr: string; color: string }> = {
-  1:  { abbr: "Jan", color: "text-sky-300"     },
-  2:  { abbr: "Feb", color: "text-violet-300"  },
-  3:  { abbr: "Mar", color: "text-emerald-300" },
-  4:  { abbr: "Apr", color: "text-teal-300"    },
-  5:  { abbr: "May", color: "text-green-400"   },
-  6:  { abbr: "Jun", color: "text-amber-300"   },
-  7:  { abbr: "Jul", color: "text-orange-300"  },
-  8:  { abbr: "Aug", color: "text-red-300"     },
-  9:  { abbr: "Sep", color: "text-pink-300"    },
-  10: { abbr: "Oct", color: "text-orange-400"  },
-  11: { abbr: "Nov", color: "text-blue-300"    },
-  12: { abbr: "Dec", color: "text-rose-400"    },
+  1:  { abbr: "Jan", color: "text-brand-300/80" },
+  2:  { abbr: "Feb", color: "text-brand-300/80" },
+  3:  { abbr: "Mar", color: "text-brand-300/80" },
+  4:  { abbr: "Apr", color: "text-brand-300/80" },
+  5:  { abbr: "May", color: "text-brand-300/80" },
+  6:  { abbr: "Jun", color: "text-brand-300/80" },
+  7:  { abbr: "Jul", color: "text-brand-300/80" },
+  8:  { abbr: "Aug", color: "text-brand-300/80" },
+  9:  { abbr: "Sep", color: "text-brand-300/80" },
+  10: { abbr: "Oct", color: "text-brand-300/80" },
+  11: { abbr: "Nov", color: "text-brand-300/80" },
+  12: { abbr: "Dec", color: "text-brand-300/80" },
 };
 
 /** Compact date label for a VL stage: "Sep 19" or "Sep 22–26". */
@@ -352,25 +381,39 @@ function fmtStageDate(s: VlRoundStage): string {
   return `${startStr}–${endStr}`;
 }
 
-/** Filled dot colour per stage tone. */
+/**
+ * Filled dot colour per stage tone.
+ *
+ * Collapsed to the page's four-colour palette: amber for upcoming/
+ * scheduled stages, emerald for active windows, brand for
+ * informational, slate-toned line for default. The legacy "violet"
+ * tone now folds into brand to stay inside the palette.
+ */
 function vlStageDot(tone: VlRoundStage["tone"]): string {
   switch (tone) {
     case "amber":   return "bg-amber-400";
-    case "violet":  return "bg-violet-400";
+    case "violet":  return "bg-brand-500";
     case "brand":   return "bg-brand-500";
     case "emerald": return "bg-emerald-500";
     default:        return "bg-line-strong";
   }
 }
 
-/** Subtle background tint keyed by VentureLift round number. */
+/**
+ * Subtle background tint keyed by VentureLift round number.
+ *
+ * Used to be five different hues; now a single-hue gradient by
+ * intensity (brand-50/40 → brand-50/70 → brand-100/60 …). Reads as
+ * "different rounds, same family" — your eye still distinguishes
+ * them but the page doesn't look like a paint chart.
+ */
 function vlRoundBgByNumber(n: number): string {
   const palette: Record<number, string> = {
-    3: "bg-slate-100/70",
-    4: "bg-violet-50/70",
-    5: "bg-amber-50/70",
-    6: "bg-emerald-50/70",
-    7: "bg-sky-50/70",
+    3: "bg-brand-50/30",
+    4: "bg-brand-50/50",
+    5: "bg-brand-50/70",
+    6: "bg-brand-100/40",
+    7: "bg-brand-100/60",
   };
   return palette[n] ?? "";
 }
@@ -542,8 +585,13 @@ function CombinedTable({ deadlines, vlRoundStages }: { deadlines: Deadline[]; vl
                   key={h.date + h.name}
                   className={
                     "text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ring-1 ring-inset inline-flex items-center gap-1 " +
+                    // Presidential holiday vs U of T closure — both
+                    // are "don't schedule here" signals, so they live
+                    // in the same warning hue (amber). The label
+                    // (truncated to date in the chip) carries the
+                    // semantic distinction.
                     (h.presidential
-                      ? "bg-sky-50 text-sky-800 ring-sky-200"
+                      ? "bg-amber-50 text-amber-900 ring-amber-200"
                       : "bg-rose-50 text-rose-800 ring-rose-200")
                   }
                   title={h.name}
@@ -1254,13 +1302,14 @@ function CalendarView({ deadlines, holidaysByDate }: { deadlines: Deadline[]; ho
           const rows = byDay[key] ?? [];
           const isToday = c.date.toDateString() === new Date().toDateString();
           const holiday = holidaysByDate[key];
-          // Holiday cells get a soft rose/sky wash so they're
-          // visually distinct from working days. Presidential
-          // closures use sky (university-internal); statutory
-          // holidays use rose.
+          // Holiday cells get a soft wash so they're visually
+          // distinct from working days. Both presidential (U of T
+          // internal) and statutory closures fold into amber/rose
+          // pairs from the page's 4-colour palette — amber = soft
+          // "be aware", rose = harder "stat closed."
           const holidayBg = holiday
             ? (holiday.presidential
-              ? "border-sky-200 bg-sky-50/40"
+              ? "border-amber-200 bg-amber-50/40"
               : "border-rose-200 bg-rose-50/40")
             : "";
           return (
@@ -1276,11 +1325,11 @@ function CalendarView({ deadlines, holidaysByDate }: { deadlines: Deadline[]; ho
               }
               title={holiday ? holiday.name : undefined}
             >
-              <span className={"text-[11px] font-bold " + (isToday ? "text-brand-700" : holiday ? (holiday.presidential ? "text-sky-700" : "text-rose-700") : "text-fg")}>
+              <span className={"text-[11px] font-bold " + (isToday ? "text-brand-700" : holiday ? (holiday.presidential ? "text-amber-800" : "text-rose-700") : "text-fg")}>
                 {c.date.getDate()}
               </span>
               {holiday && (
-                <span className={"text-[9px] uppercase tracking-wider font-bold truncate " + (holiday.presidential ? "text-sky-700/70" : "text-rose-700/70")}>
+                <span className={"text-[9px] uppercase tracking-wider font-bold truncate " + (holiday.presidential ? "text-amber-800/80" : "text-rose-700/70")}>
                   {holiday.name}
                 </span>
               )}
