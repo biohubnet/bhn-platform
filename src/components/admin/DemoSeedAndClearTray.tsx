@@ -27,6 +27,10 @@ export type DemoSeedEntity =
   | "form_submission"
   | "credit_application"
   | "pool_exit_feedback"
+  // Platform-wide entity (no user scope) — seeded rows carry a [demo]
+  // title prefix so the clear pass can find them without touching
+  // real announcements posted by staff.
+  | "announcement"
   // Self-scoped — these write rows on the calling admin's own user
   // row, so they show up immediately on the admin's view of pages
   // like Application Tracker / My Skills / Interviews / Stories /
@@ -55,6 +59,7 @@ const DEFAULT_NOUNS: Record<DemoSeedEntity, string> = {
   form_submission:          "demo submissions",
   credit_application:       "demo applications",
   pool_exit_feedback:       "demo feedback",
+  announcement:             "demo announcements",
   user_application_status:  "demo application rows",
   user_skill:               "demo skills",
   user_interview:           "demo interviews",

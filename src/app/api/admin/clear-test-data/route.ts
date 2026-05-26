@@ -45,6 +45,10 @@ const VALID_ENTITIES = [
   "credit_application",
   "pool_exit_feedback",
   "event_registration",
+  // Platform-wide — every demo announcement carries a [demo] title
+  // prefix, scanned for here so real announcements posted by staff
+  // stay untouched.
+  "announcement",
   // Self-scoped — the matching demo-seed pass writes these to the
   // calling admin's own user id with a [demo] marker baked in.
   // Clear targets that marker so it can't reach real rows on the
@@ -338,6 +342,16 @@ export async function POST(req: NextRequest) {
       deleted = r.count;
       if (r.count > 0) byKind["self-demo"] = r.count;
     }
+  } else if (entity === "announcement") {
+    // Platform-wide entity, marker is [demo] prefix on the title.
+    // Authored-by check is *not* used as the guard — admins post real
+    // announcements under their own user id too, so the title prefix
+    // is the only thing that distinguishes seeded rows from real ones.
+    const r = await prisma.announcement.deleteMany({
+      where: { title: { startsWith: "[demo]" } },
+    });
+    deleted = r.count;
+    if (r.count > 0) byKind["platform-demo"] = r.count;
   }
 
   return NextResponse.json({ ok: true, deleted, byKind });

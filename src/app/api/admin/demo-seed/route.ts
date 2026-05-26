@@ -46,6 +46,10 @@ const VALID_ENTITIES = [
   "form_submission",
   "credit_application",
   "pool_exit_feedback",
+  // Platform-wide entity (no user scope) — every row is authored by
+  // the calling admin and carries a [demo] title prefix so the clear
+  // pass can pick it out without touching real announcements.
+  "announcement",
   // Self-scoped entities — attach rows to the calling admin's own
   // user id so the demo content shows up on the admin's own page
   // (Application Tracker / My Skills / Interviews / Stories / Buddies
@@ -1352,6 +1356,75 @@ function makeDemoResumeContent(summary: string): ResumeContent {
   };
 }
 
+// ── Announcement samples ─────────────────────────────────────────
+// Three platform-wide rows that exercise every Announcement render
+// path: pinned, course-scoped, and a plain note. Author is the
+// calling admin (real id) so the announcement reads as posted by a
+// human; the [demo] title prefix is what the clear pass scans for.
+
+const ANNOUNCEMENT_SAMPLES: Array<{
+  title: string;
+  body: string;
+  pinned: boolean;
+  /** When true, link to the first published course on the platform.
+   *  Falls back to platform-wide if none exists. */
+  attachToFirstCourse?: boolean;
+}> = [
+  {
+    title: "[demo] Platform maintenance window — Sunday 02:00–04:00 ET",
+    body: "We'll be running the next round of upgrades on Sunday morning. The platform stays available throughout, but you may briefly see stale dashboards. Live scoring will resume within ten minutes of the window closing. No action required.",
+    pinned: true,
+  },
+  {
+    title: "[demo] New cohort drop — winter intake applications open",
+    body: "Winter-intake applications are now live on the talent-pool form. The review queue typically clears within five business days; you'll receive an email when a decision lands. Industry partners have already been previewing the shortlist daily — strong portfolios are getting picked off fast.",
+    pinned: false,
+  },
+  {
+    title: "[demo] Course-scoped — new SCORM scenario for Aseptic Technique",
+    body: "Module 4 of the Aseptic Technique pathway has a new SCORM scenario landed today: a gowning-audit walk-through with an instructor-marked deviation report. Counts toward your completion certificate. Estimated time: 35 minutes.",
+    pinned: false,
+    attachToFirstCourse: true,
+  },
+];
+
+async function seedAnnouncements(authorId: string): Promise<SeedDetail> {
+  // Pull one published course as the course-scoped sample's target;
+  // if none exists, the third sample silently falls back to
+  // platform-wide so the seed never errors on a fresh DB.
+  const firstCourse = await prisma.course.findFirst({
+    where: { status: "published" },
+    select: { id: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  let created = 0;
+  const errors: string[] = [];
+  for (const a of ANNOUNCEMENT_SAMPLES) {
+    try {
+      await prisma.announcement.create({
+        data: {
+          title: a.title,
+          body: a.body,
+          pinned: a.pinned,
+          authorId,
+          courseId: a.attachToFirstCourse ? firstCourse?.id ?? null : null,
+        },
+      });
+      created++;
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
+  }
+  if (created === 0 && errors.length > 0) {
+    return { created: 0, note: `All ${errors.length} inserts failed: ${errors.slice(0, 2).join("; ")}` };
+  }
+  return {
+    created,
+    note: errors.length > 0 ? `${errors.length} row(s) failed` : undefined,
+  };
+}
+
 // ── Route handler ────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -1384,6 +1457,12 @@ export async function POST(req: NextRequest) {
       created = await seedFormSubmissions(formSlug);
     }
     else if (entity === "pool_exit_feedback") created = await seedPoolExitFeedback();
+    else if (entity === "announcement") {
+      if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
+      const detail = await seedAnnouncements(reviewerId);
+      created = detail.created;
+      note = detail.note;
+    }
     else if (entity === "user_application_status") {
       if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
       created = await seedUserApplicationStatuses(reviewerId);

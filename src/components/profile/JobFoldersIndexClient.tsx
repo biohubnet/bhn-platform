@@ -12,7 +12,7 @@ import { FOLDER_TEMPLATES } from "@/lib/job-folders/templates";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Plus, FolderOpen, Loader2, Archive, RotateCcw, Trash2, FileText, Mail, BookOpen, Briefcase, CheckSquare, Square, X, ExternalLink, Theater,
+  Plus, FolderOpen, Loader2, Archive, RotateCcw, Trash2, FileText, Mail, BookOpen, Briefcase, CheckSquare, Square, X, ExternalLink, Theater, Clock,
 } from "lucide-react";
 import { useInputDialog } from "@/components/ui/InputDialog";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -254,7 +254,10 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
           <summary className="text-[11px] uppercase tracking-[0.18em] font-bold text-fg-muted cursor-pointer select-none">
             Archived ({archived.length})
           </summary>
-          <ul className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Single-column grid — folder cards take the full content
+              width so the JD snippet, chips, and posting link all
+              read without ellipsis. */}
+          <ul className="mt-3 grid grid-cols-1 gap-4">
             {archived.map((f) => (
               <FolderCard
                 key={f.id}
@@ -274,6 +277,29 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
   );
 }
 
+/** Compact "x days ago" formatter used in the folder card meta row.
+ *  Stays client-side so SSR/CSR don't disagree on "now"; we accept
+ *  some imprecision in exchange for never hydration-mismatching.
+ *  Returns null for bad input rather than a confusing "NaN ago". */
+function formatUpdated(iso: string): string | null {
+  const ts = Date.parse(iso);
+  if (!Number.isFinite(ts)) return null;
+  const diffMs = Date.now() - ts;
+  if (diffMs < 0) return "just now";
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60)        return "just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60)        return `${min} min ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24)         return `${hr}h ago`;
+  const days = Math.floor(hr / 24);
+  if (days < 14)       return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 8)       return `${weeks}w ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
+
 function FolderCard({
   row, isSelected, onToggleSelect, onArchive, onRestore, onDelete,
 }: {
@@ -285,9 +311,16 @@ function FolderCard({
   onDelete: () => void;
 }) {
   const status = STATUS_META[row.status] ?? STATUS_META.drafting;
+  // Friendly relative-ish stamp for the meta row. We deliberately
+  // keep this client-side so SSR/CSR can't disagree on "now".
+  const updated = formatUpdated(row.updatedAt);
   return (
     <li className={
-      "relative rounded-xl border p-3 transition-colors " +
+      // Wider, taller card. The bump from p-3 → p-4 sm:p-5 + bigger
+      // icon disc + 4-line JD clamp lands the "~50% taller" feel the
+      // single-column layout asked for, without making short JDs
+      // float in dead space.
+      "relative rounded-xl border p-4 sm:p-5 transition-colors " +
       (isSelected
         ? "border-brand-400 bg-brand-50/60 ring-1 ring-brand-300"
         : row.isArchived
@@ -297,21 +330,41 @@ function FolderCard({
       <button
         type="button"
         onClick={onToggleSelect}
-        className="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-6 h-6 rounded text-fg-muted hover:text-fg hover:bg-elevated"
+        className="absolute top-3 right-3 z-10 inline-flex items-center justify-center w-7 h-7 rounded text-fg-muted hover:text-fg hover:bg-elevated"
         aria-label={isSelected ? "Deselect" : "Select"}
       >
-        {isSelected ? <CheckSquare size={16} className="text-brand-700" /> : <Square size={16} />}
+        {isSelected ? <CheckSquare size={18} className="text-brand-700" /> : <Square size={18} />}
       </button>
 
-      <div className="flex items-start gap-3 pr-7">
-        <span className="shrink-0 inline-flex w-10 h-10 rounded-xl bg-brand-50 text-brand-700 items-center justify-center ring-1 ring-inset ring-brand-200">
-          <FolderOpen size={18} />
+      <div className="flex items-start gap-3.5 pr-8">
+        <span className="shrink-0 inline-flex w-12 h-12 rounded-xl bg-brand-50 text-brand-700 items-center justify-center ring-1 ring-inset ring-brand-200">
+          <FolderOpen size={22} />
         </span>
         <div className="min-w-0 flex-1">
           <Link href={`/profile/job-folders/${row.id}`}>
-            <p className="text-sm font-semibold text-fg leading-tight hover:underline truncate">{row.title}</p>
+            <p className="text-[15px] font-semibold text-fg leading-tight hover:underline">{row.title}</p>
           </Link>
-          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+          {/* Meta row — sits between the title and the chip cluster.
+              Carries the linked posting title (the chip below only
+              shows the company name; the role itself is the missing
+              context) plus "Updated <relative>" so the card stops
+              looking like a bare placeholder. */}
+          <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[11.5px] text-fg-subtle">
+            {row.posting && (
+              <span className="inline-flex items-center gap-1 truncate max-w-[44ch]">
+                <Briefcase size={10} className="opacity-70" />
+                <span className="truncate">{row.posting.title}</span>
+              </span>
+            )}
+            {row.posting && updated && <span aria-hidden>·</span>}
+            {updated && (
+              <span className="inline-flex items-center gap-1">
+                <Clock size={10} className="opacity-70" />
+                Updated {updated}
+              </span>
+            )}
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
             <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-[0.14em] font-bold ring-1 ring-inset ${status.cls}`}>
               {status.label}
             </span>
@@ -343,12 +396,15 @@ function FolderCard({
       </div>
 
       {row.jdSnippet && (
-        <p className="mt-3 text-[12px] text-fg-muted line-clamp-2 leading-snug">
+        // 4-line clamp (was 2) — taller card gives the JD room to
+        // breathe so the trainee can scan the role without opening
+        // the folder for short JDs.
+        <p className="mt-3.5 text-[12.5px] text-fg-muted line-clamp-4 leading-relaxed">
           {row.jdSnippet}
         </p>
       )}
 
-      <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+      <div className="mt-4 flex items-center gap-1.5 flex-wrap">
         <Link
           href={`/profile/job-folders/${row.id}`}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-bold bg-brand-600 text-white hover:bg-brand-700"
@@ -553,7 +609,10 @@ function StatusGroupedList({
                 </span>
               </h2>
             </div>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Single-column grid — full-width cards so longer JD
+                snippets render without ellipsis and the chips/meta
+                row stays readable on dense statuses (Submitted etc.). */}
+            <ul className="grid grid-cols-1 gap-4">
               {bucket.map((f) => (
                 <FolderCard
                   key={f.id}

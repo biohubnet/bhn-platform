@@ -22,6 +22,21 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Admin announcements hero + seed/clear · job folder cards — May 2026
+  {
+    title: "Admin announcements — hero banner + seed/clear tray",
+    body: "/admin/announcements now leads with the same gradient-washed hero treatment as /admin/equip/deadlines (Megaphone icon · brand-tinted gradient · brand-200 hairline divider). A seed/clear tray sits immediately under the hero (per platform rule — hero always owns the top).\n\n**Seed** drops three plausible demo announcements authored by the admin's own user id: one pinned platform-wide maintenance note, one platform-wide cohort update, and one course-scoped scenario (linked to the first published course if any exists, otherwise platform-wide). Every demo row's title is prefixed `[demo]` so the matching clear pass can find them without touching real announcements.\n\n**Clear** removes every announcement whose title begins with `[demo]` — real rows you've posted (no prefix) are never touched. Same airtight pattern as the other self-scoped seed/clear pairs.\n\nUnder the hood: new `\"announcement\"` arm on the shared `DemoSeedEntity` union in DemoSeedAndClearTray, matching arms in /api/admin/demo-seed and /api/admin/clear-test-data.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
+    title: "Job folders — full-width cards, taller, more meta",
+    body: "The /profile/job-folders index switched from a 2-column desktop grid to a single full-width column, and bumped card padding (p-3 → p-4 sm:p-5) + JD-snippet clamp (2 lines → 4 lines) for ~50% more vertical space per card.\n\nNew meta row between the title and the chip cluster surfaces the linked posting title (the chip below only shows the company name; the role itself was missing context) and a relative \"Updated <n>d ago\" timestamp. Bigger folder-icon disc (40px → 48px) so the card silhouette holds up at the new width. Same chip vocabulary (Status / Posting / Resume / Letter / Prep / Sim) — only the layout grew, not the language.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Daylight hero — teal-leaning, reversed direction — May 2026
   {
     title: "Daylight theme — teal-leaning hero, reversed direction",
