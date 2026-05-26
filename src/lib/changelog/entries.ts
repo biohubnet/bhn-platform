@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator: post-ship payload editor — May 2026
+  {
+    title: "Simulator — edit a published payload from /admin/simulations/[id]/edit",
+    body: "Admins can now tweak the SimulationPayload of an already-published Simulation. The fulfilled-state panel on /admin/simulator-requests/[id] gets an \"Edit this simulation's payload →\" link; clicking it lands on a dedicated editor at /admin/simulations/[id]/edit with the current payload pretty-printed into a textarea. Save runs the JSON through the canonical validatePayload() — same checks the AI and hand-author paths use — and overwrites the row's payload AND its denormalised columns (jobTitle, companyName, location) in one transaction. An \"Unsaved changes\" pill surfaces in the action bar whenever the editor diverges from the last-saved snapshot; Revert restores to that snapshot in one click. A warning banner shows when N players are mid-quarter on this simulation so the admin knows the new payload will hit them on next render. New endpoints: GET /api/admin/simulations/[id] (read the payload) and PUT /api/admin/simulations/[id] (write).",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Simulator: universal copy + faceoff hero graphic — May 2026
   {
     title: "Simulator — universal language + faceoff hero graphic",

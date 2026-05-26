@@ -143,6 +143,14 @@ export default async function SimRequestDetailPage({
               model <span className="font-mono text-[11px]">{request.simulation.modelUsed}</span>
               {request.processedBy?.name && ` · processed by ${request.processedBy.name}`}
             </p>
+            <p className="mt-2">
+              <Link
+                href={`/admin/simulations/${request.simulation.id}/edit`}
+                className="inline-flex items-center gap-1 text-[12px] font-semibold text-emerald-800 underline-offset-2 hover:underline"
+              >
+                Edit this simulation&apos;s payload →
+              </Link>
+            </p>
           </div>
         )}
 

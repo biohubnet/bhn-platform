@@ -55,6 +55,17 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Deadline Manager", href: "/admin/equip/deadlines" },
     since: "2026.05.25",
   },
+  // ─── Sim payload editor (May 2026) ───────────────────────────────
+  {
+    id: "admin.simulation-payload-editor",
+    title: "New: Edit a published simulation's payload",
+    body: "From any ready SimulationRequest detail page you'll see an 'Edit this simulation's payload →' link. It opens a JSON editor at /admin/simulations/[id]/edit pre-loaded with the current payload. Save runs the same validator the AI and hand-author paths use. Useful for fixing a typo in a scenario, tweaking a teammate's playbook, or adjusting the review thresholds without rebuilding the whole sim.",
+    path: "/admin/simulator-requests",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open the queue", href: "/admin/simulator-requests" },
+    since: "2026.05.26c",
+  },
   // ─── Simulator text-only + welcome (May 2026) ────────────────────
   {
     id: "trainee.simulator-text-only-and-tour",
