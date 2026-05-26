@@ -1,41 +1,35 @@
 "use client";
 
 /**
- * CareerPathsExplorer — flowchart + mind-map of every career track.
+ * CareerPathsExplorer — flowchart × mind-map of every career track.
  *
- * Layout
- * ────────────────────────────────────────────────────────────────
- *                ╭─────────────────────────╮
- *                │   Your Career Journey   │  ← mind-map root
- *                ╰─────────────┬───────────╯
- *      ┌────┬────┬─────────────┼─────────────┬────┬────┐   ← SVG radiating curves
- *      │    │    │             │             │    │    │
- *   [Bioproc] [Quality] [CGT] [Clinical] [Biz] [Proj]      ← track headers
- *      │    │    │       │       │      │      │
- *      ▼    ▼    ▼       ▼       ▼      ▼      ▼            ← row arrows
- *   ╭─Junior row──────────────────────────────────────╮
- *   │ [box] [box] [box]   [box] [box] [box]            │
- *   ╰─────────────────────────────────────────────────╯
- *      │    │    │       │       │      │      │
- *      ▼    ▼    ▼       ▼       ▼      ▼      ▼
- *   ╭─Mid row─────────────────────────────────────────╮
- *      …                                                  ← repeats for Senior, Lead, VP
+ * Hover interaction (the headline feature)
+ * ────────────────────────────────────────
+ * Hovering a station box that has `crossLinks` draws SVG lines from
+ * that box to each cross-tree target box, and pops a small info
+ * card in between carrying the "when", the "why this works", and
+ * the top 3 "learn first" gaps for that lateral move.
  *
- * Each cell carries: level eyebrow + years pill, primary role, 3-line
- * focus, an "Education gaps" bulleted list (5 topic phrases, no
- * specific course names), and an inline cross-tree footer at branch
- * points ("→ Quality at Lead — quality lateral is fast-track here").
+ * Popover positioning has collision detection: it tries the midpoint
+ * between source and target first; if that overlaps the source or
+ * target box, it falls back to "below source between the rows",
+ * then "right of target", then "left of source". The popover is
+ * always at least 12 px clear of both station boxes.
  *
- * The connectors are curved SVG paths so the page reads as a mind-map
- * (organic) rather than a Gantt-style grid. The mind-map root at the
- * top reinforces "all roads start from the same place + diverge".
+ * The hover bypasses re-rendering the chart by using direct DOM
+ * positioning: the `CrossTreeOverlay` reads station positions via
+ * `getBoundingClientRect` (subtracted against the chart's inner
+ * container so coordinates stay valid through horizontal scroll +
+ * page scroll). The chart itself only re-renders when the hover
+ * state at the top of `CareerPathsExplorer` flips.
  *
- * Responsive: the chart needs ~1200 px horizontal to render the 6
- * columns legibly, so the whole thing sits inside an overflow-x-auto
- * wrapper. On phones the user pans horizontally to walk the map.
+ * Mobile / keyboard: the hover overlay is desktop / fine-pointer
+ * only. The cross-tree text footers inside each station box stay
+ * as the always-visible accessible fallback — they name the
+ * destination track + level in plain text.
  */
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   Briefcase,
   Dna,
@@ -48,12 +42,14 @@ import {
   Trophy,
   CornerDownRight,
   ArrowDown,
+  ChevronRight,
 } from "lucide-react";
 import {
   CAREER_TRACKS,
   TRACK_BY_ID,
   type CareerStation,
   type CareerTrack,
+  type CrossLink,
   type LevelId,
 } from "@/lib/career-paths/data";
 
@@ -75,65 +71,48 @@ const LEVEL_META: Record<LevelId, { label: string; years: string; icon: React.Re
   vp:     { label: "VP / Exec", years: "15+ yrs",  icon: <Trophy size={11} /> },
 };
 
+/** Shape carried from a station box up to CareerPathsExplorer when
+ *  hover fires. Identifies *which* station was hovered + carries its
+ *  track so the overlay can colour and label the source side. */
+interface HoverState {
+  track: CareerTrack;
+  station: CareerStation;
+}
+
 // ──────────────────────────────────────────────────────────────────
 // Top component
 // ──────────────────────────────────────────────────────────────────
 
 export function CareerPathsExplorer() {
+  const [hovered, setHovered] = useState<HoverState | null>(null);
   return (
     <div className="space-y-6">
-      {/* Legend (always wraps) */}
       <Legend />
 
-      {/* Chart + transitions sit side-by-side at 2xl+ so hovering a
-          card in the right sidebar visibly highlights the source +
-          target station boxes on the left chart at the same time —
-          both surfaces are on screen, the spatial reading lands.
-          Below 2xl this falls back to stacked: chart on top,
-          transitions below. The in-card previews in each
-          TransitionCard mean the cards are self-sufficient when
-          stacked. */}
-      <div className="2xl:grid 2xl:grid-cols-[minmax(0,1fr)_400px] 2xl:gap-6 2xl:items-start space-y-6 2xl:space-y-0">
-        {/* LEFT — the chart, with its own horizontal scroll for the
-            6 columns. `min-w-0` is critical inside a grid track: it
-            overrides the grid's default `min-width: auto` so the
-            overflow-x scroll actually engages instead of blowing the
-            grid out to the chart's intrinsic width. The bleed
-            (`-mx-4 sm:-mx-6 px-4 sm:px-6`) only applies in stacked
-            mode; in side-by-side mode the chart cell is constrained
-            to its grid column so the bleed is reset (`2xl:mx-0
-            2xl:px-0`). The `data-career-chart-scroll` hook is what
-            TransitionCard uses to pan this container horizontally
-            on hover. */}
-        <div
-          className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6 2xl:mx-0 2xl:px-0 min-w-0"
-          data-career-chart-scroll
-        >
-          <div className="min-w-[1180px] pb-4">
-            <MindMapRoot />
-            <TrackHeadersRow />
-            {LEVEL_ORDER.map((level, rowIdx) => (
-              <LevelRow
-                key={level}
-                level={level}
-                rowIdx={rowIdx}
-                isLast={rowIdx === LEVEL_ORDER.length - 1}
-              />
-            ))}
-          </div>
-        </div>
+      {/* Chart — horizontal scroll on narrow viewports. The inner
+          container is positioned `relative` so the absolute-positioned
+          CrossTreeOverlay anchors to it. The overlay scrolls along
+          with the boxes because it's the SAME parent. */}
+      <div
+        className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6"
+        data-career-chart-scroll
+      >
+        <div className="relative min-w-[1180px] pb-4">
+          <MindMapRoot />
+          <TrackHeadersRow />
+          {LEVEL_ORDER.map((level, rowIdx) => (
+            <LevelRow
+              key={level}
+              level={level}
+              rowIdx={rowIdx}
+              isLast={rowIdx === LEVEL_ORDER.length - 1}
+              onHoverChange={setHovered}
+            />
+          ))}
 
-        {/* RIGHT — transitions column. Sticky-pinned at the top of
-            the viewport while the chart scrolls past, with its own
-            vertical overflow so the 13 transition cards can be
-            scrolled through without losing the chart context. The
-            sticky reference is the parent grid wrapper, not the
-            page, so the column stops being sticky when the grid
-            wrapper itself scrolls out of view (e.g. user has
-            scrolled past the chart to the catalog hand-off below). */}
-        <aside className="min-w-0 2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)] 2xl:overflow-y-auto 2xl:pr-1">
-          <CrossStreamMobility />
-        </aside>
+          {/* Overlay — only shows on hover of a station with crossLinks */}
+          <CrossTreeOverlay hovered={hovered} />
+        </div>
       </div>
 
       {/* Catalog hand-off */}
@@ -143,7 +122,7 @@ export function CareerPathsExplorer() {
           <a href="/courses" className="font-semibold text-brand-700 hover:underline">
             /courses
           </a>
-          {" "}— once you've spotted the gaps you want to close, head there to find the specific offerings.
+          {" "}— once you&apos;ve spotted the gaps you want to close, head there to find the specific offerings.
         </p>
       </section>
     </div>
@@ -167,11 +146,11 @@ function Legend() {
         </li>
         <li className="inline-flex items-baseline gap-2">
           <ArrowDown size={11} className="opacity-70 translate-y-[1px]" />
-          Arrows show the typical progression. Education gaps inside each box describe what to learn at that level.
+          Each box shows typical roles, focus, and education gaps to close at that level.
         </li>
         <li className="inline-flex items-baseline gap-2">
           <CornerDownRight size={11} className="opacity-70 translate-y-[1px]" />
-          Cross-tree footers mark common branch points where careers fork.
+          Hover a box with a cross-tree footer to draw lines to its branch destinations.
         </li>
       </ul>
     </section>
@@ -179,31 +158,19 @@ function Legend() {
 }
 
 // ──────────────────────────────────────────────────────────────────
-// Mind-map root + radiating lines into the track headers
+// Mind-map root
 // ──────────────────────────────────────────────────────────────────
 
 function MindMapRoot() {
-  // Pill sits above the SVG in normal document flow. The SVG starts
-  // exactly at the pill's bottom edge — `M 50 0` in viewBox space
-  // is the SVG's top-centre, which equals the pill's bottom-centre.
-  // This deliberately avoids the previous absolute-positioning trick
-  // which laid the SVG over the pill, making lines appear to start
-  // from behind the pill text.
   const totalCols = CAREER_TRACKS.length;
   return (
     <div className="flex flex-col items-center pt-2">
-      {/* Root pill */}
       <div className="rounded-full px-5 py-2 bg-card-solid border border-line shadow-card-rest">
         <p className="text-[13px] font-semibold text-fg inline-flex items-center gap-2">
           <Sparkles size={14} className="text-brand-600" />
           Your career journey
         </p>
       </div>
-
-      {/* Radiating SVG lines — full-width strip that flows directly
-          beneath the pill. Each path starts at (50, 0) — the top-
-          centre of the SVG = the bottom-centre of the pill — and
-          curves out toward the matching track-header column below. */}
       <svg
         aria-hidden
         className="w-full h-16 pointer-events-none"
@@ -212,9 +179,6 @@ function MindMapRoot() {
       >
         {CAREER_TRACKS.map((track, i) => {
           const cx = ((i + 0.5) / totalCols) * 100;
-          // Cubic bezier: start at top-centre (50, 0), control points
-          // pull the line toward the destination's x so the curve
-          // bows outward like a mind-map ray.
           const d = `M 50 0 C ${50 + (cx - 50) * 0.35} 16, ${cx} 24, ${cx} 40`;
           return (
             <path
@@ -233,7 +197,7 @@ function MindMapRoot() {
 }
 
 // ──────────────────────────────────────────────────────────────────
-// Track headers row — one card per track
+// Track headers + Level rows
 // ──────────────────────────────────────────────────────────────────
 
 function TrackHeadersRow() {
@@ -268,26 +232,19 @@ function TrackHeadersRow() {
   );
 }
 
-// ──────────────────────────────────────────────────────────────────
-// One level row — connector arrows + 6 station boxes
-// ──────────────────────────────────────────────────────────────────
-
 function LevelRow({
-  level, rowIdx, isLast,
+  level, rowIdx, isLast, onHoverChange,
 }: {
   level: LevelId;
   rowIdx: number;
   isLast: boolean;
+  onHoverChange: (s: HoverState | null) => void;
 }) {
   const meta = LEVEL_META[level];
   return (
     <div className="mt-4">
-      {/* SVG arrow connectors from previous row (or from track
-          headers, on the first row) — six independent curved arrows,
-          one per track column. */}
       <ConnectorRow accents={CAREER_TRACKS.map((t) => t.accent)} />
 
-      {/* Level label band */}
       <div className="flex items-center gap-3 my-3">
         <span
           aria-hidden
@@ -308,8 +265,6 @@ function LevelRow({
         />
       </div>
 
-      {/* Station boxes — one per track, aligned to the same columns
-          as the headers above. */}
       <ol className="grid grid-cols-6 gap-3">
         {CAREER_TRACKS.map((track) => {
           const station = track.stations.find((s) => s.level === level);
@@ -321,13 +276,14 @@ function LevelRow({
                 accent={track.accent}
                 index={rowIdx}
                 stationId={`${track.id}-${station.level}`}
+                track={track}
+                onHoverChange={onHoverChange}
               />
             </li>
           );
         })}
       </ol>
 
-      {/* "Top of the ladder" cap under the VP row */}
       {isLast && (
         <div className="mt-6 flex justify-center">
           <span className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.18em] font-bold text-brand-700">
@@ -339,15 +295,7 @@ function LevelRow({
   );
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Connector row — 6 short curved SVG arrows between levels
-// ──────────────────────────────────────────────────────────────────
-
 function ConnectorRow({ accents }: { accents: string[] }) {
-  // One SVG per column. Each is a small downward-bowed curve with an
-  // arrowhead at the bottom, sized to slot between two level rows.
-  // We use 6 separate SVGs (grid-aligned) instead of one wide SVG so
-  // the layout breathes the same way the boxes do.
   return (
     <div className="grid grid-cols-6 gap-3 h-7">
       {accents.map((accent, i) => (
@@ -386,39 +334,38 @@ function ConnectorRow({ accents }: { accents: string[] }) {
 }
 
 // ──────────────────────────────────────────────────────────────────
-// Station box — one cell in the chart
+// Station box — one node in the chart. Pushes hover up to the root.
 // ──────────────────────────────────────────────────────────────────
 
 function StationBox({
-  station, accent, index, stationId,
+  station, accent, index, stationId, track, onHoverChange,
 }: {
   station: CareerStation;
   accent: string;
   index: number;
-  /** Unique key `<trackId>-<levelId>` — surfaced as a
-   *  `data-station-id` attribute so TransitionCard hover-handlers
-   *  can find the exact source + target boxes to highlight. */
   stationId: string;
+  track: CareerTrack;
+  onHoverChange: (s: HoverState | null) => void;
 }) {
   const intensity = 30 + index * 17;
+  const hasCrossLinks = (station.crossLinks?.length ?? 0) > 0;
   return (
     <article
       data-station-id={stationId}
-      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden transition-[outline-offset] duration-150"
+      onMouseEnter={hasCrossLinks ? () => onHoverChange({ track, station }) : undefined}
+      onMouseLeave={hasCrossLinks ? () => onHoverChange(null) : undefined}
+      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden"
       style={{
         boxShadow: "var(--shadow-card-rest)",
         backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${accent} 5%, transparent) 0%, transparent 50%)`,
       }}
     >
-      {/* Accent top strip — opacity scales with seniority so a column
-          reads as "growing" as you scan down. */}
       <span
         aria-hidden
         className="absolute top-0 left-0 right-0 h-[3px]"
         style={{ backgroundColor: `color-mix(in srgb, ${accent} ${intensity}%, transparent)` }}
       />
       <div className="p-3">
-        {/* Role title — the primary identity of this cell */}
         <p className="text-[12.5px] font-semibold text-fg leading-snug">
           {station.roles[0]}
         </p>
@@ -428,12 +375,10 @@ function StationBox({
           </p>
         )}
 
-        {/* Focus microcopy */}
         <p className="mt-2 text-[11px] text-fg-muted leading-relaxed line-clamp-3">
           {station.focus}
         </p>
 
-        {/* Education gaps */}
         <div className="mt-2.5 border-t border-line/60 pt-2">
           <p className="text-[9.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-1">
             Education gaps
@@ -452,20 +397,21 @@ function StationBox({
           </ul>
         </div>
 
-        {/* Cross-tree footer — inline annotation pointing at branch
-            points. Kept as text rather than SVG cross-arrows so the
-            chart's connector graph stays readable; the chip carries
-            the "when / why" copy that an SVG curve couldn't. The
-            full transition details (reason + learning needed) live
-            in the CrossStreamMobility section below the chart. */}
-        {station.crossLinks && station.crossLinks.length > 0 && (
+        {/* Cross-tree footer — always-visible accessible fallback.
+            On desktop the hover overlay adds the SVG line + popover
+            on top of this; on keyboard / touch it's the only path
+            to the cross-tree information. */}
+        {hasCrossLinks && (
           <div className="mt-2 border-t border-line/60 pt-2">
             <p className="text-[9.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle inline-flex items-center gap-1 mb-1">
               <CornerDownRight size={9} className="opacity-70" />
-              Cross-tree from here
+              Cross-tree
+              <span className="text-fg-subtle font-normal normal-case tracking-normal italic ml-0.5">
+                · hover for details
+              </span>
             </p>
             <ul className="space-y-1">
-              {station.crossLinks.map((cl) => {
+              {station.crossLinks!.map((cl) => {
                 const target = TRACK_BY_ID.get(cl.trackId);
                 if (!target) return null;
                 const TargetIcon = ICONS[target.iconKey];
@@ -491,299 +437,305 @@ function StationBox({
 }
 
 // ──────────────────────────────────────────────────────────────────
-// Cross-stream mobility — every transition the data documents,
-// surfaced in one scannable grid.
+// Cross-tree overlay — SVG lines + popovers on hover
 // ──────────────────────────────────────────────────────────────────
 
-interface Transition {
-  srcTrack: CareerTrack;
-  srcStation: CareerStation;
+interface LineEndpoint { x: number; y: number }
+interface RectBox { left: number; top: number; right: number; bottom: number }
+interface Layout {
+  crossLink: CrossLink;
   target: CareerTrack;
-  /** Destination level in the target track — paired with the source
-   *  level from `srcStation.level` so we can build the unique station
-   *  ids used by the hover-highlight handlers. */
-  targetLevel: LevelId;
-  when: string;
-  reason: string;
-  learningNeeded: string[];
+  src: RectBox;        // source box, container-relative coords
+  tgt: RectBox;        // target box, container-relative coords
+  line: { from: LineEndpoint; to: LineEndpoint };
+  popover: { x: number; y: number };
 }
 
-/** Pull every crossLink in the data into a flat list. Built once at
- *  render time; the underlying data is static. */
-function collectTransitions(): Transition[] {
-  const out: Transition[] = [];
-  for (const track of CAREER_TRACKS) {
-    for (const station of track.stations) {
-      if (!station.crossLinks) continue;
-      for (const cl of station.crossLinks) {
-        const target = TRACK_BY_ID.get(cl.trackId);
-        if (!target) continue;
-        out.push({
-          srcTrack: track,
-          srcStation: station,
-          target,
-          targetLevel: cl.targetLevel,
-          when: cl.when,
-          reason: cl.reason,
-          learningNeeded: cl.learningNeeded ?? [],
-        });
+/** Pixel size of the popover. Used for collision detection — the
+ *  actual rendered popover has these dimensions enforced via CSS. */
+const POPOVER_W = 260;
+const POPOVER_H = 180;
+const POPOVER_PAD = 12;  // min clearance from station boxes
+
+function CrossTreeOverlay({ hovered }: { hovered: HoverState | null }) {
+  const [layouts, setLayouts] = useState<Layout[] | null>(null);
+
+  // Measure positions whenever hover state changes. We also re-measure
+  // on resize/scroll so the overlay stays aligned with the boxes if
+  // the user scrolls the chart while their mouse is on a station.
+  useEffect(() => {
+    if (!hovered || !hovered.station.crossLinks?.length) {
+      setLayouts(null);
+      return;
+    }
+    const compute = () => {
+      const layouts = computeLayouts(hovered);
+      setLayouts(layouts);
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, [hovered]);
+
+  if (!hovered || !layouts || layouts.length === 0) return null;
+
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      <svg className="absolute inset-0 w-full h-full overflow-visible">
+        {layouts.map((layout, i) => (
+          <CrossTreeLine
+            key={i}
+            layout={layout}
+            sourceAccent={hovered.track.accent}
+          />
+        ))}
+      </svg>
+      {layouts.map((layout, i) => (
+        <CrossTreePopover
+          key={i}
+          layout={layout}
+          sourceTrack={hovered.track}
+        />
+      ))}
+    </div>
+  );
+}
+
+function computeLayouts(hovered: HoverState): Layout[] {
+  const srcId = `${hovered.track.id}-${hovered.station.level}`;
+  const srcEl = document.querySelector<HTMLElement>(`[data-station-id="${srcId}"]`);
+  if (!srcEl) return [];
+
+  // Find the chart's inner container so we can express all
+  // coordinates in its frame (instead of viewport frame). That way
+  // the overlay survives both chart horizontal scroll and page
+  // vertical scroll without drift.
+  const scrollerEl = srcEl.closest<HTMLElement>("[data-career-chart-scroll]");
+  if (!scrollerEl) return [];
+  const containerEl = scrollerEl.firstElementChild as HTMLElement | null;
+  if (!containerEl) return [];
+
+  const containerRect = containerEl.getBoundingClientRect();
+  const srcRect = toContainerRect(srcEl.getBoundingClientRect(), containerRect);
+
+  const out: Layout[] = [];
+  for (const cl of hovered.station.crossLinks!) {
+    const tgtId = `${cl.trackId}-${cl.targetLevel}`;
+    const tgtEl = document.querySelector<HTMLElement>(`[data-station-id="${tgtId}"]`);
+    if (!tgtEl) continue;
+    const tgtRect = toContainerRect(tgtEl.getBoundingClientRect(), containerRect);
+    const target = TRACK_BY_ID.get(cl.trackId);
+    if (!target) continue;
+
+    // Pick line endpoints — from the source edge closest to target,
+    // to the target edge closest to source.
+    const srcOnLeftOfTgt = srcRect.right < tgtRect.left;
+    const from: LineEndpoint = {
+      x: srcOnLeftOfTgt ? srcRect.right : srcRect.left,
+      y: (srcRect.top + srcRect.bottom) / 2,
+    };
+    const to: LineEndpoint = {
+      x: srcOnLeftOfTgt ? tgtRect.left : tgtRect.right,
+      y: (tgtRect.top + tgtRect.bottom) / 2,
+    };
+
+    out.push({
+      crossLink: cl,
+      target,
+      src: srcRect,
+      tgt: tgtRect,
+      line: { from, to },
+      popover: pickPopoverPosition(srcRect, tgtRect),
+    });
+  }
+  // If multiple popovers, do a simple second pass to push later
+  // popovers away from earlier ones (so two popovers from the same
+  // source don't overlap each other).
+  for (let i = 1; i < out.length; i++) {
+    for (let j = 0; j < i; j++) {
+      if (boxesOverlap(popBox(out[i].popover), popBox(out[j].popover))) {
+        // Shift down by popover height + padding
+        out[i].popover.y = popBox(out[j].popover).bottom + POPOVER_PAD;
       }
     }
   }
   return out;
 }
 
-function CrossStreamMobility() {
-  const transitions = collectTransitions();
-  return (
-    <section className="pt-2">
-      <header className="mb-4">
-        <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg inline-flex items-center gap-1.5">
-          <CornerDownRight size={11} /> Cross-stream mobility
-        </p>
-        <h2
-          className="mt-1 text-[20px] sm:text-[22px] font-semibold text-fg leading-tight tracking-tight"
-          style={{ fontFamily: "var(--font-display-theme, inherit)" }}
-        >
-          What career transitions are possible across streams?
-        </h2>
-        <p className="mt-1.5 text-[13px] text-fg-muted leading-relaxed max-w-3xl">
-          Careers don&apos;t run on rails. Most senior people in this industry have crossed streams at least once — manufacturing into quality, clinical into commercial, project leadership into anything. Here&apos;s a candid list of the moves we see most often, when each one tends to happen, why it&apos;s a credible jump, and what you&apos;ll need to learn to make it stick.
-        </p>
-      </header>
+function toContainerRect(rect: DOMRect, containerRect: DOMRect): RectBox {
+  return {
+    left:   rect.left   - containerRect.left,
+    top:    rect.top    - containerRect.top,
+    right:  rect.right  - containerRect.left,
+    bottom: rect.bottom - containerRect.top,
+  };
+}
 
-      {/* Always single-column. Two reasons:
-            • In side-by-side mode (2xl+) the cards live in a 400 px
-              sticky sidebar — there's no room for 2-col.
-            • In stacked mode the cards already carry side-by-side
-              station previews internally, so the outer grid is full-
-              width and single-column gives each card the room it
-              needs without re-wrapping the inner previews. */}
-      <ol className="grid gap-3">
-        {transitions.map((t, i) => (
-          <li key={i}>
-            <TransitionCard t={t} />
-          </li>
-        ))}
-      </ol>
-    </section>
+function popBox(p: { x: number; y: number }): RectBox {
+  return { left: p.x, top: p.y, right: p.x + POPOVER_W, bottom: p.y + POPOVER_H };
+}
+
+function boxesOverlap(a: RectBox, b: RectBox): boolean {
+  return !(a.right + POPOVER_PAD <= b.left || a.left >= b.right + POPOVER_PAD ||
+           a.bottom + POPOVER_PAD <= b.top || a.top >= b.bottom + POPOVER_PAD);
+}
+
+/** Find a position for the popover that doesn't touch source or
+ *  target. Tries midpoint → between-rows → right-of-target →
+ *  left-of-source. Falls back to midpoint if nothing fits cleanly.
+ *  All coordinates are container-relative (in pixels). */
+function pickPopoverPosition(src: RectBox, tgt: RectBox): { x: number; y: number } {
+  const midX = (src.left + src.right + tgt.left + tgt.right) / 4 - POPOVER_W / 2;
+  const midY = (src.top + src.bottom + tgt.top + tgt.bottom) / 4 - POPOVER_H / 2;
+
+  const candidates: { x: number; y: number }[] = [
+    // 1. Midpoint
+    { x: midX, y: midY },
+    // 2. Between rows — vertically below src if src is above tgt
+    src.bottom < tgt.top
+      ? { x: (src.left + tgt.right) / 2 - POPOVER_W / 2, y: src.bottom + POPOVER_PAD }
+      : { x: midX, y: tgt.bottom + POPOVER_PAD },
+    // 3. To the right of target
+    { x: tgt.right + POPOVER_PAD, y: (tgt.top + tgt.bottom) / 2 - POPOVER_H / 2 },
+    // 4. To the left of source
+    { x: src.left - POPOVER_W - POPOVER_PAD, y: (src.top + src.bottom) / 2 - POPOVER_H / 2 },
+    // 5. Below target
+    { x: (tgt.left + tgt.right) / 2 - POPOVER_W / 2, y: tgt.bottom + POPOVER_PAD },
+  ];
+
+  for (const c of candidates) {
+    const pBox = popBox(c);
+    if (!boxesOverlap(pBox, src) && !boxesOverlap(pBox, tgt)) {
+      // Also make sure the popover starts within the chart bounds
+      // (x >= 0). If it's been pushed off the left edge, skip.
+      if (c.x >= 0) return c;
+    }
+  }
+  // Fallback: midpoint (will overlap, but at least visible).
+  return { x: midX, y: midY };
+}
+
+// ──────────────────────────────────────────────────────────────────
+// SVG line — source-edge → target-edge with arrowhead
+// ──────────────────────────────────────────────────────────────────
+
+function CrossTreeLine({
+  layout, sourceAccent,
+}: {
+  layout: Layout;
+  sourceAccent: string;
+}) {
+  const { from, to } = layout.line;
+  // Cubic bezier with control points pulled along the horizontal axis
+  // for a smooth horizontal sweep.
+  const midX = (from.x + to.x) / 2;
+  const d = `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`;
+  const markerId = `xtree-arrow-${layout.target.id}-${layout.crossLink.targetLevel}`;
+  return (
+    <g>
+      <defs>
+        <marker
+          id={markerId}
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="8"
+          markerHeight="8"
+          orient="auto-start-reverse"
+        >
+          <path d="M 1 1 L 9 5 L 1 9 z" fill={layout.target.accent} />
+        </marker>
+      </defs>
+      <path
+        d={d}
+        stroke={layout.target.accent}
+        strokeWidth="2.5"
+        fill="none"
+        markerEnd={`url(#${markerId})`}
+        opacity="0.9"
+      />
+      {/* Source dot */}
+      <circle cx={from.x} cy={from.y} r="5" fill={sourceAccent} stroke="white" strokeWidth="1.5" />
+    </g>
   );
 }
 
-function TransitionCard({ t }: { t: Transition }) {
-  const SrcIcon = ICONS[t.srcTrack.iconKey];
-  const TgtIcon = ICONS[t.target.iconKey];
+// ──────────────────────────────────────────────────────────────────
+// Popover — info card between source and target
+// ──────────────────────────────────────────────────────────────────
 
-  // Station ids — match the `data-station-id` we stamped on each
-  // StationBox in the chart above.
-  const srcKey = `${t.srcTrack.id}-${t.srcStation.level}`;
-  const tgtKey = `${t.target.id}-${t.targetLevel}`;
-
-  // Direct DOM manipulation for the highlight: cheaper than lifting
-  // state through 4 levels of parents and re-rendering 60+ boxes on
-  // every hover. The `useEffect` cleanup unsets the outline if this
-  // card unmounts mid-highlight.
-  const cleanupRef = useRef<(() => void) | null>(null);
-
-  const setHighlight = useCallback((on: boolean) => {
-    const srcEl = document.querySelector<HTMLElement>(`[data-station-id="${srcKey}"]`);
-    const tgtEl = document.querySelector<HTMLElement>(`[data-station-id="${tgtKey}"]`);
-
-    if (on) {
-      // Apply outline (doesn't shift layout, unlike border) tinted to
-      // each track's accent so the from / to direction reads
-      // visually on the chart as it does on the card.
-      if (srcEl) {
-        srcEl.style.outline = `3px solid ${t.srcTrack.accent}`;
-        srcEl.style.outlineOffset = "3px";
-        srcEl.style.transition = "outline-offset 150ms ease-out";
-      }
-      if (tgtEl) {
-        tgtEl.style.outline = `3px solid ${t.target.accent}`;
-        tgtEl.style.outlineOffset = "3px";
-        tgtEl.style.transition = "outline-offset 150ms ease-out";
-      }
-
-      // Horizontal-only scroll within the chart's overflow-x-auto
-      // container — we deliberately do NOT touch page vertical scroll
-      // (would yank the user off the card they're hovering). If the
-      // source box is already roughly centred, skip the scroll
-      // altogether to avoid micro-jitter.
-      if (srcEl) {
-        const scroller = srcEl.closest("[data-career-chart-scroll]") as HTMLElement | null;
-        if (scroller) {
-          const srcRect = srcEl.getBoundingClientRect();
-          const containerRect = scroller.getBoundingClientRect();
-          const srcCentre = srcRect.left + srcRect.width / 2;
-          const containerCentre = containerRect.left + containerRect.width / 2;
-          const delta = srcCentre - containerCentre;
-          if (Math.abs(delta) > 80) {
-            scroller.scrollBy({ left: delta, behavior: "smooth" });
-          }
-        }
-      }
-
-      // Remember how to clean up, in case the card unmounts before
-      // the user moves the mouse off.
-      cleanupRef.current = () => {
-        if (srcEl) { srcEl.style.outline = ""; srcEl.style.outlineOffset = ""; }
-        if (tgtEl) { tgtEl.style.outline = ""; tgtEl.style.outlineOffset = ""; }
-      };
-    } else {
-      if (srcEl) { srcEl.style.outline = ""; srcEl.style.outlineOffset = ""; }
-      if (tgtEl) { tgtEl.style.outline = ""; tgtEl.style.outlineOffset = ""; }
-      cleanupRef.current = null;
-    }
-  }, [srcKey, tgtKey, t.srcTrack.accent, t.target.accent]);
-
-  // Cleanup on unmount — only fires the cleanup callback if we still
-  // have one (i.e. the card was actively highlighting at unmount).
-  useEffect(() => {
-    return () => { cleanupRef.current?.(); };
-  }, []);
-
+function CrossTreePopover({
+  layout, sourceTrack,
+}: {
+  layout: Layout;
+  sourceTrack: CareerTrack;
+}) {
+  const { x, y } = layout.popover;
+  const target = layout.target;
+  const cl = layout.crossLink;
+  const SrcIcon = ICONS[sourceTrack.iconKey];
+  const TgtIcon = ICONS[target.iconKey];
   return (
-    <article
-      tabIndex={0}
-      onMouseEnter={() => setHighlight(true)}
-      onMouseLeave={() => setHighlight(false)}
-      onFocus={() => setHighlight(true)}
-      onBlur={() => setHighlight(false)}
-      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 cursor-pointer"
+    <div
+      className="absolute rounded-xl bg-card-solid border border-line shadow-card-hover pointer-events-none animate-in fade-in zoom-in-95 duration-150"
       style={{
-        boxShadow: "var(--shadow-card-rest)",
-        backgroundImage: `linear-gradient(90deg, color-mix(in srgb, ${t.srcTrack.accent} 7%, transparent) 0%, color-mix(in srgb, ${t.target.accent} 7%, transparent) 100%)`,
+        left: x,
+        top: y,
+        width: POPOVER_W,
       }}
     >
-      {/* Top edge: split accent — left half = source, right half =
-          destination. Visually carries the "from → to" gradient
-          beat without writing it twice in copy. */}
-      <span aria-hidden className="absolute top-0 left-0 right-0 h-[3px] flex">
-        <span className="flex-1" style={{ backgroundColor: t.srcTrack.accent }} />
-        <span className="flex-1" style={{ backgroundColor: t.target.accent }} />
+      {/* Split top edge: left half source colour, right half target */}
+      <span aria-hidden className="absolute top-0 left-0 right-0 h-[3px] flex rounded-t-xl overflow-hidden">
+        <span className="flex-1" style={{ backgroundColor: sourceTrack.accent }} />
+        <span className="flex-1" style={{ backgroundColor: target.accent }} />
       </span>
 
-      <div className="p-4">
+      <div className="px-3 py-2.5">
         {/* From → To header */}
-        <div className="flex items-start gap-2 flex-wrap">
-          <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-fg">
-            <SrcIcon className="h-3.5 w-3.5" style={{ color: t.srcTrack.accent }} />
-            {t.srcTrack.title}
-            <span className="text-fg-subtle font-normal"> · {t.srcStation.label}</span>
-          </span>
-          <span className="text-fg-subtle px-1" aria-hidden>→</span>
-          <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-fg">
-            <TgtIcon className="h-3.5 w-3.5" style={{ color: t.target.accent }} />
-            {t.target.title}
-            <span className="text-fg-subtle font-normal"> · {t.when}</span>
-          </span>
+        <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-fg leading-tight flex-wrap">
+          <SrcIcon className="h-3.5 w-3.5 shrink-0" style={{ color: sourceTrack.accent }} />
+          <span>{sourceTrack.title}</span>
+          <span className="text-fg-subtle" aria-hidden>→</span>
+          <TgtIcon className="h-3.5 w-3.5 shrink-0" style={{ color: target.accent }} />
+          <span>{target.title}</span>
         </div>
 
-        {/* Side-by-side station preview — same content the chart's
-            station boxes show. The from / to context lives INSIDE
-            the card so the card is self-sufficient: the user doesn't
-            need to scroll up to the chart to see what their starting
-            and landing roles look like. The chart hover-highlight
-            stays as a bonus when both are in view. */}
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 border-t border-line/60 pt-3">
-          <StationPreview
-            station={t.srcStation}
-            accent={t.srcTrack.accent}
-            label="Starting here"
-          />
-          <StationPreview
-            station={(() => {
-              const tgt = t.target.stations.find((s) => s.level === t.targetLevel);
-              return tgt!;
-            })()}
-            accent={t.target.accent}
-            label="Landing here"
-          />
-        </div>
-
-        {/* Why */}
-        <p className="mt-3 text-[12px] text-fg-muted leading-relaxed">
-          <span className="text-fg-subtle font-semibold">Why this works: </span>
-          {t.reason}
+        {/* When */}
+        <p className="mt-1.5 text-[10px] uppercase tracking-[0.16em] font-bold" style={{ color: target.accent }}>
+          {cl.when}
         </p>
 
-        {/* What to learn before you move */}
-        {t.learningNeeded.length > 0 && (
-          <div className="mt-3 border-t border-line/60 pt-2.5">
-            <p className="text-[9.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-1">
-              What to learn before the move
+        {/* Why */}
+        <p className="mt-1.5 text-[11px] text-fg-muted leading-relaxed">
+          {cl.reason}
+        </p>
+
+        {/* Learn first */}
+        {cl.learningNeeded && cl.learningNeeded.length > 0 && (
+          <div className="mt-2 border-t border-line/60 pt-1.5">
+            <p className="text-[9.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-0.5 inline-flex items-center gap-1">
+              <ChevronRight size={9} /> Learn first
             </p>
             <ul className="space-y-0.5">
-              {t.learningNeeded.map((g) => (
-                <li key={g} className="flex items-start gap-1.5 text-[11.5px] leading-snug">
+              {cl.learningNeeded.slice(0, 3).map((g) => (
+                <li key={g} className="flex items-start gap-1.5 text-[10.5px] text-fg-muted leading-snug">
                   <span
                     aria-hidden
-                    className="inline-block w-1 h-1 rounded-full mt-[7px] shrink-0"
-                    style={{ backgroundColor: t.target.accent }}
+                    className="inline-block w-1 h-1 rounded-full mt-[6px] shrink-0"
+                    style={{ backgroundColor: target.accent }}
                   />
-                  <span className="text-fg-muted">{g}</span>
+                  <span>{g}</span>
                 </li>
               ))}
+              {cl.learningNeeded.length > 3 && (
+                <li className="text-[9.5px] italic text-fg-subtle pl-3.5">
+                  +{cl.learningNeeded.length - 3} more
+                </li>
+              )}
             </ul>
           </div>
         )}
       </div>
-    </article>
-  );
-}
-
-/** Compact preview of a station — used inside TransitionCard so each
- *  card carries the from / to context in itself (no scrolling to the
- *  chart required). Mirrors the StationBox content but at a smaller
- *  scale: primary role + focus (2-line clamp) + top 3 education gaps. */
-function StationPreview({
-  station, accent, label,
-}: {
-  station: CareerStation;
-  accent: string;
-  label: string;
-}) {
-  return (
-    <div
-      className="rounded-lg bg-card-solid p-2.5 border border-line"
-      style={{
-        borderLeftWidth: "3px",
-        borderLeftColor: accent,
-        backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${accent} 5%, transparent) 0%, transparent 70%)`,
-      }}
-    >
-      <p
-        className="text-[9.5px] uppercase tracking-[0.16em] font-bold mb-1"
-        style={{ color: accent }}
-      >
-        {label}
-      </p>
-      <p className="text-[12px] font-semibold text-fg leading-snug">
-        {station.roles[0]}
-      </p>
-      <p className="text-[10px] text-fg-subtle leading-snug">
-        {station.label} · {station.yearsRange}
-      </p>
-      <p className="mt-1.5 text-[10.5px] text-fg-muted leading-relaxed line-clamp-2">
-        {station.focus}
-      </p>
-      <ul className="mt-1.5 space-y-0.5">
-        {station.educationGaps.slice(0, 3).map((g) => (
-          <li key={g} className="flex items-start gap-1.5 text-[10.5px] leading-snug">
-            <span
-              aria-hidden
-              className="inline-block w-1 h-1 rounded-full mt-[6.5px] shrink-0"
-              style={{ backgroundColor: accent }}
-            />
-            <span className="text-fg-muted">{g}</span>
-          </li>
-        ))}
-        {station.educationGaps.length > 3 && (
-          <li className="text-[9.5px] italic text-fg-subtle pl-3.5">
-            +{station.educationGaps.length - 3} more
-          </li>
-        )}
-      </ul>
     </div>
   );
 }

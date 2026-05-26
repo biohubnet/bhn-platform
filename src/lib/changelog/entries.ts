@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — hover-to-draw cross-tree lines + popover — May 2026
+  {
+    title: "Career paths — hover a station box to draw cross-tree lines + see transition details",
+    body: "Rebuilt the cross-stream interaction the way it was originally pitched: hover a station box that has cross-tree links and the chart itself draws an SVG line from that box to each branch-destination box, with a small popover floating in the gap carrying the \"when\", \"why\", and top 3 \"learn first\" gaps for that lateral move.\n\n**Popover positioning has collision detection.** The popover tries the midpoint between source and target first; if that midpoint would overlap either box, it falls back through a candidate list (between rows, to the right of target, to the left of source, below target) until it finds a position that clears both boxes by at least 12 px. Multiple popovers from the same source are pushed down so they don't overlap each other.\n\n**Coordinates survive scroll.** Position is computed relative to the chart's inner container (subtracting that container's `getBoundingClientRect` from the source / target rects), so horizontal chart scroll and page vertical scroll don't drift the lines. Re-measure on resize.\n\n**Removed:** the previous 2xl side-by-side grid wrapper, the standalone Cross-stream Mobility section, the TransitionCard / StationPreview / aggregated-transitions code. Two failed iterations cleaned up.\n\n**Kept:** the cross-tree text footers inside each station box — they name the destination track + level in plain text, and act as the always-visible accessible fallback for keyboard users / mobile / users who don't hover.\n\nLines colour-coded to the target track. Source dot in the source track's accent.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — side-by-side chart + transitions on wide viewports — May 2026
   {
     title: "Career paths — chart on the left, transitions in a sticky right column (wide viewports)",
