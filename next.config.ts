@@ -3,8 +3,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // ── HTTP security headers (OWASP A05 hardening, May 2026) ───────
   // Applied to every route via a catch-all source pattern.
-  // X-Frame-Options: DENY — prevents click-jacking by refusing to
-  //   render the app inside any <frame> / <iframe>.
+  // X-Frame-Options: SAMEORIGIN — clickjacking protection that still
+  //   allows the LMS to embed its OWN pages in iframes. The SCORM
+  //   pipeline absolutely needs this:
+  //       /player/[courseId]  →  iframes /scorm-loader.html
+  //                            →  iframes /scorm-files/<courseId>/...
+  //   Using DENY (the previous value) blocked every one of those
+  //   same-origin iframe loads, presenting to the user as
+  //   "bhn-training-platform.vercel.app refused to connect" inside
+  //   the player chrome. SAMEORIGIN keeps the clickjacking guarantee
+  //   (no other origin can frame us) while unblocking our own.
   // X-Content-Type-Options: nosniff — stops browsers from MIME-sniffing
   //   a response away from the declared Content-Type.
   // Referrer-Policy: strict-origin-when-cross-origin — sends the full
@@ -18,7 +26,7 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           { key: "X-Content-Type-Options",  value: "nosniff" },
-          { key: "X-Frame-Options",          value: "DENY" },
+          { key: "X-Frame-Options",          value: "SAMEORIGIN" },
           { key: "Referrer-Policy",          value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy",       value: "camera=(), microphone=(), geolocation=()" },
         ],

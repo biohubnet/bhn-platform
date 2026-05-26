@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Course launch — actual root cause (X-Frame-Options) — May 2026
+  {
+    title: "Fixed: \"bhn-training-platform.vercel.app refused to connect\" inside the course player",
+    body: "**This was the real cause of the SCORM \"course doesn't launch\" issue, separate from the GetValue/Sync bridge fix in the previous changelog entry — both needed to land.**\n\nThe global `X-Frame-Options: DENY` header from next.config.ts (OWASP A05 hardening, May 2026) was applied to every response on the site, including the static `/scorm-loader.html` file and the R2-proxied `/scorm-files/[courseId]/...` route. `DENY` blocks **all** iframe embedding — even same-origin — so when `/player/[courseId]` tried to render its iframe pointing at `/scorm-loader.html`, the browser refused with the error message the user sees: \"bhn-training-platform.vercel.app refused to connect.\"\n\nChanged the global header from `DENY` to `SAMEORIGIN`. Clickjacking protection is preserved (no other origin can frame our pages) while same-origin iframe embedding works again. The SCORM pipeline (`/player/...` → `/scorm-loader.html` → `/scorm-files/...`) all lives on the same origin and now loads correctly.\n\n`DENY` was the right value only for sites with zero legitimate iframe embedding. We have several (SCORM, internal previews, the developer-mode embed views) so `SAMEORIGIN` is the correct level.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Sidebar EQUIP visible to all admins — May 2026
   {
     title: "Sidebar — EQUIP section always visible to admins",
