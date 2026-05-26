@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Sidebar labels + facilities auto-seed — May 2026
+  {
+    title: "Sidebar — proper labels for Career Paths + Facilities Map (and the map auto-populates)",
+    body: "Two small fixes on yesterday's additions:\n\n**1. Sidebar labels were showing the raw i18n key (`nav.careerPaths`, `nav.facilitiesMap`) instead of human strings** — those two `labelKey`s weren't registered in any locale dictionary so the translator returned the key itself. Added both keys to all 8 locales (en/es/fr/zh/hi/ko/pa/ar) with the English label \"Career Paths\" / \"Facilities Map\". Now the sidebar reads cleanly.\n\n**2. The facilities map was empty in production** because the `Facility` table got migrated (prisma migrate deploy runs in the build) but the seed had never been run against the deployed DB. Made the `/experience/facilities` page **self-seeding**: on first page-load, if `prisma.facility.findMany()` returns an empty array, the page auto-runs the same idempotent upsert the seed script does — 69 facilities populate themselves. Defensively wrapped in a try/catch so the page also survives the case where the table itself doesn't exist yet (table-doesn't-exist → in-memory fallback renders the dots from `seed-data.ts` directly with synthetic ids so the map is never blank).",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — restored staged branching animation — May 2026
   {
     title: "Career paths — restored the staged branching animation (darken → highlight → hold → lines → move)",
