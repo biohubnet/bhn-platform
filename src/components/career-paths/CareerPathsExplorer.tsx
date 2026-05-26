@@ -607,6 +607,12 @@ function BranchModal({
         highlighted={highlighted}
         accent={source.track.accent}
         zBoost={1}
+        compact={
+          <CompactCardContent
+            station={source.station}
+            accent={source.track.accent}
+          />
+        }
       >
         <BigStationCard
           station={source.station}
@@ -630,6 +636,12 @@ function BranchModal({
           accent={t.track.accent}
           moveDelayMs={i * 80}
           zBoost={1}
+          compact={
+            <CompactCardContent
+              station={t.station}
+              accent={t.track.accent}
+            />
+          }
         >
           <BigStationCard
             station={t.station}
@@ -681,7 +693,7 @@ function BranchModal({
 // ──────────────────────────────────────────────────────────────────
 
 function FlipCard({
-  fromRect, toRect, moving, highlighted, accent, moveDelayMs = 0, zBoost = 0, children,
+  fromRect, toRect, moving, highlighted, accent, moveDelayMs = 0, zBoost = 0, compact, children,
 }: {
   fromRect: DOMRect | { left: number; top: number; width: number; height: number };
   toRect:   { left: number; top: number; width: number; height: number };
@@ -690,6 +702,14 @@ function FlipCard({
   accent: string;
   moveDelayMs?: number;
   zBoost?: number;
+  /** "Compact" content — shown while the card is at its small/chart
+   *  dimensions. Matches the chart's StationBox content (role +
+   *  focus + gaps) so the small card looks like the chart box does,
+   *  no clipping. */
+  compact: React.ReactNode;
+  /** "Expanded" content — shown once the card has grown to focused
+   *  dimensions. Full station detail + crossLink section for
+   *  targets. */
   children: React.ReactNode;
 }) {
   const rect = moving ? toRect : fromRect;
@@ -702,7 +722,6 @@ function FlipCard({
         width:  rect.width,
         height: rect.height,
         zIndex: 100 + zBoost,
-        // Position + size all transition together over 800 ms.
         transition: `left 800ms cubic-bezier(0.4, 0, 0.2, 1) ${moveDelayMs}ms,
                      top 800ms cubic-bezier(0.4, 0, 0.2, 1) ${moveDelayMs}ms,
                      width 800ms cubic-bezier(0.4, 0, 0.2, 1) ${moveDelayMs}ms,
@@ -710,8 +729,6 @@ function FlipCard({
                      box-shadow 350ms ease-out,
                      border-color 350ms ease-out`,
         border: `2px solid ${highlighted ? accent : "var(--line)"}`,
-        // Glow scales with `highlighted`. Off during the darken stage
-        // so the card looks dim; ramps up once we're past darken.
         boxShadow: highlighted
           ? `0 0 0 6px color-mix(in srgb, ${accent} 18%, transparent),
              0 18px 50px color-mix(in srgb, ${accent} 25%, transparent),
@@ -719,7 +736,79 @@ function FlipCard({
           : "var(--shadow-card-rest)",
       }}
     >
-      {children}
+      {/* Compact layer — visible while !moving. Naturally sized for
+          the chart-box dimensions; no clipping during the dark /
+          highlight / lines phases. */}
+      <div
+        className="absolute inset-0 transition-opacity"
+        style={{
+          opacity: moving ? 0 : 1,
+          transitionDuration: "300ms",
+          transitionDelay: moving ? "0ms" : "400ms",
+        }}
+      >
+        {compact}
+      </div>
+      {/* Expanded layer — visible once we're moving. Naturally sized
+          for the focused dimensions; fades in 400 ms after the card
+          starts growing so the user sees the chart-box content first,
+          then the full detail. */}
+      <div
+        className="absolute inset-0 transition-opacity"
+        style={{
+          opacity: moving ? 1 : 0,
+          transitionDuration: "400ms",
+          transitionDelay: moving ? "400ms" : "0ms",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Compact card content — mirrors the chart's StationBox so the
+// FlipCard looks "the same" as the chart box while it's at small
+// dimensions. Shown during stages 0–3, then crossfades out.
+// ──────────────────────────────────────────────────────────────────
+
+function CompactCardContent({
+  station, accent,
+}: {
+  station: CareerStation;
+  accent: string;
+}) {
+  return (
+    <div className="h-full p-3 overflow-hidden">
+      <p className="text-[12.5px] font-semibold text-fg leading-snug">
+        {station.roles[0]}
+      </p>
+      {station.roles.length > 1 && (
+        <p className="text-[10.5px] text-fg-subtle leading-snug">
+          +{station.roles.length - 1} similar role{station.roles.length > 2 ? "s" : ""}
+        </p>
+      )}
+      <p className="mt-2 text-[11px] text-fg-muted leading-relaxed line-clamp-3">
+        {station.focus}
+      </p>
+      <div className="mt-2.5 border-t border-line/60 pt-2">
+        <p className="text-[9.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-1">
+          Education gaps
+        </p>
+        <ul className="space-y-0.5">
+          {station.educationGaps.slice(0, 4).map((g) => (
+            <li key={g} className="flex items-start gap-1.5 text-[11px] leading-snug">
+              <span
+                aria-hidden
+                className="inline-block w-1 h-1 rounded-full mt-[6.5px] shrink-0"
+                style={{ backgroundColor: accent }}
+              />
+              <span className="text-fg-muted">{g}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -824,13 +913,14 @@ function computeFocusLayout(
   numTargets: number,
   viewport: { w: number; h: number },
 ): { source: FocusedRect; targets: FocusedRect[] } {
-  // Card dimensions — chosen so source + targets fit comfortably
-  // on a typical desktop (~1280×800). Source slightly shorter than
-  // targets (no crossLink section inside it).
-  const SRC_W = 360;
-  const SRC_H = 320;
-  const TGT_W = 320;
-  const TGT_H = 420;
+  // Card dimensions — sized generously so the BigStationCard
+  // content fits in full without internal scrolling. Source is
+  // shorter (no crossLink section); target is taller (the reason
+  // + the 4 "learn first" gaps live in the bottom panel).
+  const SRC_W = 380;
+  const SRC_H = 420;
+  const TGT_W = 340;
+  const TGT_H = 620;
   const GAP   = 20;
 
   // Source — top centre, with a comfortable margin from the top
@@ -879,13 +969,11 @@ function BigStationCard({
    *  content. */
   crossLink?: CrossLink;
 }) {
-  // Rendered INSIDE FlipCard, which already supplies the rounded
-  // border + multi-layer glow + overflow-hidden. The content here
-  // is just the body. The h-full + overflow-y-auto lets content
-  // scroll INTERNALLY when the FlipCard's animated height is shorter
-  // than the natural content height (which happens at the start of
-  // the move animation when the card is sized to its original chart
-  // dimensions).
+  // Rendered INSIDE FlipCard's "expanded" layer, which is sized to
+  // the FOCUSED dimensions (chosen large enough to fit this content
+  // in full). Internal scrolling kept as a safety net for unusually
+  // long content, but in normal use the card "expands to accommodate"
+  // and no scrolling kicks in.
   return (
     <div
       className="h-full overflow-y-auto"

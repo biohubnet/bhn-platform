@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — fix content cutoff + larger final cards — May 2026
+  {
+    title: "Career paths — content no longer clips during the branch animation + cards sized to fit content",
+    body: "Two fixes on the staged branching animation:\n\n**1. Content was being clipped during the highlight / lines phases.** While the FlipCard was at the chart-box dimensions (small), the full BigStationCard content was already rendered inside but `overflow-hidden` chopped it. Fixed by giving each FlipCard TWO content layers and crossfading between them:\n\n  • **Compact layer** — a new `CompactCardContent` component that mirrors the chart's `StationBox` content (role + focus + top 4 education gaps). Sized naturally for the small chart-box dimensions, so no clipping during stages 0–2.\n  • **Expanded layer** — the existing `BigStationCard` with the full header, full education gaps, plus the cross-link section for target cards.\n\nDuring the move stage, the compact layer fades out (300 ms, no delay) and the expanded layer fades in (400 ms, +400 ms delay) — so the user sees chart-box content first, the card grows + slides, and the full detail appears as the card settles into the focused layout.\n\n**2. Final cards were sized too tight for the content.** Bumped focused dimensions so `BigStationCard` content fits in full without internal scrolling:\n  • Source: 360 × 320 → **380 × 420**\n  • Target: 320 × 420 → **340 × 620** (room for the cross-link reason + 4 learning-needed gaps)\n\nInternal scrolling is retained as a safety net for unusually long content, but the default content fits cleanly now.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — graceful staged FLIP animation — May 2026
   {
     title: "Career paths — graceful staged branching animation (darken → highlight → lines → move)",
