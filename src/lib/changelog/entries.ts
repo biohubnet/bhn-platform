@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — cards pop with full content + clarified "similar roles" — May 2026
+  {
+    title: "Career paths — branch cards pop with full content + clarified similar roles",
+    body: "Two issues you flagged on the branching modal:\n\n**1. The compact preview was misleading the user.** Before this commit, cards spent ~700 ms at chart-box dimensions showing a `CompactCardContent` preview that line-clamped the focus paragraph to 3 lines (your \"…scale-up from clinical to\" cut-off was line-clamp). The intent was that the compact phase would fade out into the full `BigStationCard` once the card grew — but it made the truncated preview the first thing you saw and read as the final state.\n\n  Fix: **killed the compact preview entirely.** Cards now pop in directly at their focused layout positions with the full `BigStationCard` content from the start. No size animation, no chart-to-focused slide, no compact-to-expanded crossfade. The new pop-in uses a 380 ms scale 0.92 → 1 + fade with a small bouncy ease (`cubic-bezier(0.34, 1.56, 0.64, 1)`), staggered 110 ms per target. Total sequence: backdrop 0–300 ms → cards pop in 300–1100 ms → SVG lines draw 1100–1900 ms → settled.\n\n**2. \"+2 similar roles\" was ambiguous.** Nobody knew what those 2 roles were. Replaced the cryptic count line with an actual list:\n\n  > **Also at this level**\n  > · Head of Vector Manufacturing\n  > · Director, ATMP Quality\n\n  So the user sees every role title at this seniority level explicitly, not just \"+2\".\n\n**Sized to fit.** Bumped focused dimensions again to make room for the new list and the un-clamped focus paragraph:\n  • Source: 380 × 420 → **380 × 460**\n  • Target: 340 × 620 → **340 × 660**\n\nThe in-chart `StationBox` cards (the ones you click to open the modal) still use the compact \"+N similar role(s)\" line, since they're constrained by the 6-column grid layout and don't have room for the full list. The full list appears in the modal where there's space.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — fix content cutoff + larger final cards — May 2026
   {
     title: "Career paths — content no longer clips during the branch animation + cards sized to fit content",
