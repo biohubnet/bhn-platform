@@ -31,6 +31,21 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy",       value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
+      // /scorm-loader.html — make it uncacheable. Browsers don't
+      // reliably re-evaluate X-Frame-Options on conditional 304
+      // revalidation for iframe targets, so any user whose browser
+      // cached the old loader (when the global header was DENY)
+      // continues to see "refused to connect" even after the
+      // server-side fix shipped. `no-store` forces a fresh response
+      // on every iframe load, side-stepping that class of cache
+      // staleness permanently. The loader is ~10 KB so the byte cost
+      // of skipping cache is negligible.
+      {
+        source: "/scorm-loader.html",
+        headers: [
+          { key: "Cache-Control", value: "no-store, max-age=0" },
+        ],
+      },
     ];
   },
   serverExternalPackages: ["unzipper", "archiver", "@prisma/client", "bcryptjs", "unpdf", "mammoth"],

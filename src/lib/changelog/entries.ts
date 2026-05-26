@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Course launch — bust the stale-cache holdouts — May 2026
+  {
+    title: "Course launch — bust stale browser caches still showing the old denial",
+    body: "Follow-up to the X-Frame-Options DENY → SAMEORIGIN fix. The server side was correct after that change, but browsers that had already cached the OLD `/scorm-loader.html` response (carrying the stale `X-Frame-Options: DENY` header) kept reusing the cached denial even on revalidation — most browsers don't re-evaluate X-Frame-Options on conditional 304 responses for iframe targets, so a cached denial sticks around until the cache entry is physically replaced.\n\nTwo coordinated changes to make sure no browser can keep showing the stale error:\n\n1. **`next.config.ts`** — `/scorm-loader.html` now serves with `Cache-Control: no-store, max-age=0`. Browsers never cache the loader. Every iframe load gets a fresh response with the current headers.\n\n2. **`ScormPlayer.tsx`** — the iframe URL now carries a `v=<commit-sha>` cache-busting param. Even if a browser has the old loader cached, the URL is different on every deploy, so it can't reuse the cached entry. Pairs with the no-store header for belt-and-suspenders.\n\nNo more user-side hard-refresh required.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Course launch — actual root cause (X-Frame-Options) — May 2026
   {
     title: "Fixed: \"bhn-training-platform.vercel.app refused to connect\" inside the course player",

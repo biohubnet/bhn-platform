@@ -187,6 +187,15 @@ export function ScormPlayer({
   // this, packages that read cmi.core.student_name / cmi.launch_data /
   // etc. on boot got "" from the bridge and many of them silently
   // aborted their init — presenting as "courses are not launching".
+  //
+  // The `v=<COMMIT_SHA>` param is a cache-buster: any browser that
+  // cached the OLD scorm-loader.html (back when the global X-Frame-
+  // Options was DENY) would otherwise reuse that cached response and
+  // continue showing "refused to connect" even after the server-side
+  // SAMEORIGIN fix shipped. Different URL = different cache key =
+  // forced refetch. We pair this with `Cache-Control: no-store` on
+  // /scorm-loader.html in next.config.ts so the response itself is
+  // also un-cacheable going forward.
   const loaderUrl = (() => {
     const qs = new URLSearchParams();
     qs.set("src", entryPoint);
@@ -196,6 +205,8 @@ export function ScormPlayer({
     qs.set("completionStatus", completionStatus);
     if (learnerId) qs.set("learnerId", learnerId);
     if (learnerName) qs.set("learnerName", learnerName);
+    const commitSha = process.env.NEXT_PUBLIC_COMMIT_SHA;
+    if (commitSha) qs.set("v", commitSha);
     return `/scorm-loader.html?${qs.toString()}`;
   })();
 
