@@ -22,6 +22,21 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator request delete + daylight hero readability — May 2026
+  {
+    title: "Simulator requests — delete affordance on the detail page",
+    body: "/admin/simulator-requests/[id] now has a Delete button at the bottom of the action bar (under a hairline divider so it reads as separate from the lifecycle actions). One click → useConfirmDialog → DELETE /api/admin/simulator-requests/[id] → redirect to the queue.\n\nLinked-row policy: deleting a request removes the request row only. The fulfilled Simulation (if any) stays — other requests with the same sourceHash may still be linked to it, and admins can delete the simulation separately from /admin/simulations. JobFolder.simulationRequestId is `onDelete: SetNull` in schema, so folders that linked to the request have their FK cleared but the folder itself and the linked Simulation are untouched.\n\nGuard rail: status `generating` blocks delete (both the button hides and the API returns 409) — deleting mid-AI-run would orphan the worker. Wait for the worker to settle to `ready` or `failed`, then delete.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  {
+    title: "Daylight hero — darkened the top-left teal pop for title readability",
+    body: "Follow-up to the daylight-theme hero tweak: the top-left teal pop (which was hero-mesh-2 #2dd4bf / teal-400 after the X-flip override) was too bright behind white title text. Swapped to teal-600 #0d9488 — same hue family, ~30 lower lightness — so the gradient still reads as the daylight 'left side has the bright teal punch' the prior commit established, but the title contrast clears AAA on the darkened patch.\n\nNo position changes — the four radial-gradient stops keep the layout from the last commit.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Admin announcements hero + seed/clear · job folder cards — May 2026
   {
     title: "Admin announcements — hero banner + seed/clear tray",

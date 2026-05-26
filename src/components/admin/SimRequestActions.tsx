@@ -18,8 +18,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle, ArrowRight, FileCode2, Loader2, PauseCircle,
-  PlayCircle, RotateCcw, Sparkles, X,
+  PlayCircle, RotateCcw, Sparkles, Trash2, X,
 } from "lucide-react";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface Props {
   requestId: string;
@@ -27,10 +28,11 @@ interface Props {
   existingSimulationId: string | null;
 }
 
-type Busy = "generate" | "hand-author" | "reject" | "reopen" | "link" | null;
+type Busy = "generate" | "hand-author" | "reject" | "reopen" | "link" | "delete" | null;
 
 export function SimRequestActions({ requestId, status, existingSimulationId }: Props) {
   const router = useRouter();
+  const { confirmDialog, node: confirmNode } = useConfirmDialog();
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,6 +108,44 @@ export function SimRequestActions({ requestId, status, existingSimulationId }: P
         return;
       }
       setShowReject(false);
+      router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function deleteRequest() {
+    // The dialog body explains the linked-row policy enforced server-
+    // side (Simulation stays, JobFolder FK clears) so the admin
+    // doesn't have to read the route comment to understand the blast
+    // radius. `generating` status is blocked at the API layer too;
+    // this client check is a UX shortcut to keep the button greyed
+    // out instead of relying on a 409.
+    const isFulfilled = status === "ready";
+    const ok = await confirmDialog({
+      title: "Delete this simulation request?",
+      description: isFulfilled
+        ? "Removes the request row from the queue. The fulfilled Simulation itself stays — delete it separately from /admin/simulations if you want it gone too. Any job folders linked to this request will have their link cleared but stay intact."
+        : "Removes the request row from the queue. Any job folders linked to this request will have their link cleared but stay intact. This can't be undone.",
+      confirmLabel: "Delete request",
+      cancelLabel: "Keep it",
+      tone: "destructive",
+    });
+    if (!ok) return;
+    setBusy("delete");
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/simulator-requests/${requestId}`, {
+        method: "DELETE",
+      });
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(j.error ?? `Delete failed (HTTP ${res.status}).`);
+        return;
+      }
+      // Back to the queue — the row is gone, no useful detail page
+      // state remains. router.refresh() on the same path would 404.
+      router.push("/admin/simulator-requests");
       router.refresh();
     } finally {
       setBusy(null);
@@ -270,6 +310,36 @@ export function SimRequestActions({ requestId, status, existingSimulationId }: P
           <span className="whitespace-pre-wrap break-words">{error}</span>
         </div>
       )}
+
+      {/* Delete affordance — separate row under a hairline so it
+          reads as a terminal "purge this row" action vs. the
+          lifecycle actions above. Hidden while a generation is in
+          flight (API also blocks it; this just hides the dead
+          button). Confirmation lives in useConfirmDialog so we don't
+          fall through to window.confirm (platform rule). */}
+      {status !== "generating" && (
+        <div className="border-t border-line pt-3 flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-[11px] text-fg-subtle italic leading-snug max-w-md">
+            Delete removes only the request row. The fulfilled Simulation
+            (if any) and linked job folders stay.
+          </p>
+          <button
+            type="button"
+            onClick={deleteRequest}
+            disabled={busy !== null}
+            className="inline-flex items-center gap-1.5 rounded-md bg-rose-600 text-white px-3.5 py-1.5 text-[12.5px] font-semibold hover:bg-rose-700 disabled:opacity-50"
+          >
+            {busy === "delete" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            Delete request
+          </button>
+        </div>
+      )}
+
+      {confirmNode}
 
       {/* Hand-author panel */}
       {showHandAuthor && (status === "pending" || status === "failed") && (

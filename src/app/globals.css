@@ -49,12 +49,16 @@
   /* Dashboard hero gradient — Daylight: cyan + teal + teal-leaning blue.
    * mesh-3 used to be a strong royal blue (#1d4ed8); swapped to sky-700
    * so the whole hero leans teal instead of going blue at the corners.
+   * mesh-2 darkened from teal-400 (#2dd4bf) to teal-600 (#0d9488) —
+   * same hue family, ~30 less lightness, so the daylight hero's
+   * top-left pop (mesh-2's position after the X-flip override) no
+   * longer washes out white-on-teal title text.
    * Companion `.hero-mesh-brand` X-position flip lives further down so
    * the bright-teal pop sits on the LEFT (was right) — reversed
    * direction for the daylight stage only. */
   --hero-bg:     #0d3a51;
   --hero-mesh-1: #0891b2;
-  --hero-mesh-2: #2dd4bf;
+  --hero-mesh-2: #0d9488;
   --hero-mesh-3: #0369a1;
   --hero-mesh-4: #0e7490;
 
