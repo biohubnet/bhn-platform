@@ -33,7 +33,7 @@ export default async function JobFolderDetailPage({ params }: PageProps) {
   const folder = await prisma.jobFolder.findUnique({
     where: { id },
     include: {
-      resume: { select: { id: true, name: true, version: true } },
+      resume: { select: { id: true, name: true, version: true, content: true } },
       simulationRequest: {
         select: {
           id: true,
@@ -54,6 +54,33 @@ export default async function JobFolderDetailPage({ params }: PageProps) {
     },
   });
   if (!folder || folder.userId !== userId) notFound();
+
+  // Past folders' cover letters → fuel the "Pull from past" sidebar
+  // on the cover-letter tab. Cap at 10 most-recent with non-empty
+  // letters so we don't ship hundreds of strings to the client.
+  const pastCoverLetters = await prisma.jobFolder.findMany({
+    where: {
+      userId,
+      id: { not: folder.id },
+      coverLetter: { not: "" },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 10,
+    select: { id: true, title: true, coverLetter: true, updatedAt: true },
+  });
+
+  // STAR stories from the trainee's Story Bank → fuel the cross-link
+  // sidebar on the interview-prep tab. Just titles + situation +
+  // skill tags so the panel can render previews without shipping the
+  // whole story body.
+  const starStories = await prisma.starStory.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    take: 20,
+    include: {
+      skills: { include: { skill: { select: { name: true } } } },
+    },
+  });
 
   // If the linked request has been fulfilled, resolve the user's most
   // recent attempt against the produced simulation so the "Play"
@@ -140,6 +167,23 @@ export default async function JobFolderDetailPage({ params }: PageProps) {
               kind: e.kind,
               body: e.body,
               createdAt: e.createdAt.toISOString(),
+            })),
+            // Skill-match reads JD body + the linked resume's
+            // structured content. Threading the raw payload through
+            // so the client-side scorer can run on every JD edit
+            // without a server round-trip.
+            resumeContent: (folder.resume?.content ?? null) as unknown,
+            pastCoverLetters: pastCoverLetters.map((p) => ({
+              id: p.id,
+              title: p.title,
+              coverLetter: p.coverLetter,
+              updatedAt: p.updatedAt.toISOString(),
+            })),
+            starStories: starStories.map((s) => ({
+              id: s.id,
+              title: s.title,
+              situation: s.situation,
+              skills: s.skills.map((ss) => ss.skill.name),
             })),
           }}
           resumes={resumes.map((r) => ({ id: r.id, name: r.name }))}

@@ -23,7 +23,9 @@ import { useRouter } from "next/navigation";
 import {
   FileText, Mail, BookOpen, Briefcase, Save, Loader2, CheckCircle2, Sparkles, X, ExternalLink, AlertTriangle,
   Theater, Hourglass, Play, RotateCcw, Download, Copy, Printer, StickyNote, Activity, Calendar, User as UserIcon, Link2,
+  Target, ArrowRightLeft, Inbox, Share2, Trash2,
 } from "lucide-react";
+import { scoreSkillMatch, type SkillMatchResult } from "@/lib/job-folders/skill-match";
 
 interface FolderInitial {
   id: string;
@@ -60,6 +62,26 @@ interface FolderInitial {
     kind: string;
     body: string;
     createdAt: string;
+  }>;
+  /** Raw ResumeContent JSON for the linked resume — drives client-
+   *  side skill-match scoring without a server round-trip on every
+   *  JD keystroke. Null when no resume is linked. */
+  resumeContent: unknown;
+  /** Other folders' cover letters (latest 10, non-empty) — fuel for
+   *  the "Pull from past" sidebar on the cover-letter tab. */
+  pastCoverLetters: Array<{
+    id: string;
+    title: string;
+    coverLetter: string;
+    updatedAt: string;
+  }>;
+  /** Trainee's Story Bank entries — fuel for the STAR cross-link
+   *  sidebar on the interview-prep tab. */
+  starStories: Array<{
+    id: string;
+    title: string;
+    situation: string;
+    skills: string[];
   }>;
 }
 
@@ -106,6 +128,7 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [duplicating, setDuplicating] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const isFirst = useRef(true);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -226,6 +249,15 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
             {duplicating ? <Loader2 size={13} className="animate-spin" /> : <Copy size={13} />}
             <span className="hidden sm:inline">Duplicate</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            title="Generate a read-only share link to send a mentor for review."
+            className="inline-flex items-center gap-1.5 rounded-md bg-elevated text-fg ring-1 ring-inset ring-line px-3 py-1.5 text-[12px] font-semibold hover:bg-line transition-colors"
+          >
+            <Share2 size={13} />
+            <span className="hidden sm:inline">Share</span>
+          </button>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -302,6 +334,8 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
           value={jdSnippet}
           onChange={setJdSnippet}
           posting={initialFolder.posting}
+          resumeContent={initialFolder.resumeContent}
+          resumeLinked={!!initialFolder.resume}
         />
       )}
       {tab === "resume" && (
@@ -313,26 +347,49 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
         />
       )}
       {tab === "cover" && (
-        <GeneratorPanel
-          kind="cover_letter"
-          folderId={initialFolder.id}
-          value={coverLetter}
-          onChange={setCoverLetter}
-          jdEmpty={!jdSnippet.trim()}
-          placeholder="Paste or write your cover letter here. Click 'AI generate' to draft from the JD + linked resume."
-          subtitle="3-4 paragraphs. Tone: professional, plain, no clichés."
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4">
+          <GeneratorPanel
+            kind="cover_letter"
+            folderId={initialFolder.id}
+            value={coverLetter}
+            onChange={setCoverLetter}
+            jdEmpty={!jdSnippet.trim()}
+            placeholder="Paste or write your cover letter here. Click 'AI generate' to draft from the JD + linked resume."
+            subtitle="3-4 paragraphs. Tone: professional, plain, no clichés."
+          />
+          <PullFromPastSidebar
+            pastCoverLetters={initialFolder.pastCoverLetters}
+            onInsert={(text) =>
+              setCoverLetter((cur) => (cur.trim() ? `${cur.trimEnd()}\n\n${text}` : text))
+            }
+          />
+        </div>
       )}
       {tab === "prep" && (
-        <GeneratorPanel
-          kind="interview_prep"
-          folderId={initialFolder.id}
-          value={interviewPrep}
-          onChange={setInterviewPrep}
-          jdEmpty={!jdSnippet.trim()}
-          placeholder="Your interview prep notes. Click 'AI generate' for a starter guide tailored to the JD + your resume."
-          subtitle="Likely questions, STAR-framed answers, questions to ask back."
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4">
+          <GeneratorPanel
+            kind="interview_prep"
+            folderId={initialFolder.id}
+            value={interviewPrep}
+            onChange={setInterviewPrep}
+            jdEmpty={!jdSnippet.trim()}
+            placeholder="Your interview prep notes. Click 'AI generate' for a starter guide tailored to the JD + your resume."
+            subtitle="Likely questions, STAR-framed answers, questions to ask back."
+          />
+          <StarStorySidebar
+            stories={initialFolder.starStories}
+            jd={jdSnippet}
+            onInsert={(story) =>
+              setInterviewPrep((cur) => {
+                const block =
+                  `### ${story.title}\n\n` +
+                  `**Situation.** ${story.situation}\n\n` +
+                  `*(Pulled from your Story Bank — flesh out Task / Action / Result inline.)*`;
+                return cur.trim() ? `${cur.trimEnd()}\n\n${block}` : block;
+              })
+            }
+          />
+        </div>
       )}
       {tab === "notes" && (
         <NotesPanel value={notes} onChange={setNotes} />
@@ -347,6 +404,250 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
       {tab === "timeline" && (
         <TimelinePanel events={initialFolder.events} />
       )}
+      {shareOpen && (
+        <ShareDialog
+          folderId={initialFolder.id}
+          folderTitle={initialFolder.title}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Share dialog ────────────────────────────────────────────────
+
+interface ShareTokenRow {
+  id: string;
+  token: string;
+  label: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+function ShareDialog({
+  folderId,
+  folderTitle,
+  onClose,
+}: {
+  folderId: string;
+  folderTitle: string;
+  onClose: () => void;
+}) {
+  const [tokens, setTokens] = useState<ShareTokenRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [label, setLabel] = useState("");
+  const [expiresInHours, setExpiresInHours] = useState<string>("");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [justCopied, setJustCopied] = useState<string | null>(null);
+
+  // Load tokens once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await fetch(`/api/profile/job-folders/${folderId}/share`);
+      const j = (await res.json().catch(() => null)) as { ok?: boolean; tokens?: ShareTokenRow[] } | null;
+      if (!cancelled) {
+        setTokens(j?.tokens ?? []);
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [folderId]);
+
+  // Lock scroll while open + ESC closes.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  async function createToken() {
+    setCreating(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/profile/job-folders/${folderId}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label: label.trim() || null,
+          expiresInHours: expiresInHours ? Number(expiresInHours) : null,
+        }),
+      });
+      const j = (await res.json().catch(() => null)) as { ok?: boolean; token?: ShareTokenRow; error?: string } | null;
+      if (!res.ok || !j?.ok || !j.token) {
+        setError(j?.error ?? "Couldn't generate link.");
+        return;
+      }
+      setTokens((cur) => [j.token!, ...cur]);
+      setLabel("");
+      setExpiresInHours("");
+    } finally { setCreating(false); }
+  }
+
+  async function revoke(id: string) {
+    await fetch(`/api/profile/job-folders/${folderId}/share?tokenId=${id}`, { method: "DELETE" });
+    setTokens((cur) => cur.filter((t) => t.id !== id));
+  }
+
+  function copyLink(token: string) {
+    const url = `${window.location.origin}/share/folder/${token}`;
+    navigator.clipboard.writeText(url).catch(() => null);
+    setJustCopied(token);
+    setTimeout(() => setJustCopied(null), 2000);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="w-full max-w-lg rounded-2xl bg-card-solid shadow-2xl ring-1 ring-line overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-start justify-between gap-3 px-5 py-4 border-b border-line">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-fg-subtle inline-flex items-center gap-1.5">
+              <Share2 size={11} /> Share folder
+            </p>
+            <h2 className="text-[16px] font-bold text-fg mt-0.5 truncate">{folderTitle}</h2>
+            <p className="text-[11.5px] text-fg-muted mt-0.5">
+              Read-only · no login required for the recipient
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 p-1.5 rounded-md hover:bg-elevated text-fg-subtle"
+          >
+            <X size={16} />
+          </button>
+        </header>
+
+        <div className="p-5 space-y-4">
+          {/* New link form */}
+          <div className="rounded-xl bg-elevated/40 ring-1 ring-inset ring-line p-3 space-y-2.5">
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-[0.16em] text-fg-subtle">
+                Label (optional)
+              </label>
+              <input
+                type="text"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="e.g. For Diane to review before Friday"
+                maxLength={80}
+                className="mt-1 w-full bg-card border border-line rounded px-2.5 py-1.5 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-brand-100"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-[0.16em] text-fg-subtle">
+                Expires after
+              </label>
+              <select
+                value={expiresInHours}
+                onChange={(e) => setExpiresInHours(e.target.value)}
+                className="mt-1 w-full bg-card border border-line rounded px-2.5 py-1.5 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-brand-100"
+              >
+                <option value="">Never (until I revoke)</option>
+                <option value="24">24 hours</option>
+                <option value="168">7 days</option>
+                <option value="720">30 days</option>
+              </select>
+            </div>
+            {error && (
+              <p className="text-[12px] text-rose-700">{error}</p>
+            )}
+            <button
+              type="button"
+              onClick={createToken}
+              disabled={creating}
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-md bg-brand-600 text-white px-3 py-2 text-[12.5px] font-semibold hover:bg-brand-700 disabled:opacity-50"
+            >
+              {creating ? <Loader2 size={13} className="animate-spin" /> : <Share2 size={13} />}
+              Generate new share link
+            </button>
+          </div>
+
+          {/* Existing links */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-fg-subtle mb-2">
+              Active links ({tokens.length})
+            </p>
+            {loading ? (
+              <div className="text-[12px] text-fg-muted inline-flex items-center gap-1.5">
+                <Loader2 size={12} className="animate-spin" /> Loading…
+              </div>
+            ) : tokens.length === 0 ? (
+              <p className="text-[12px] text-fg-muted italic">No active links. Generate one above.</p>
+            ) : (
+              <ul className="space-y-2">
+                {tokens.map((t) => {
+                  const url = `/share/folder/${t.token}`;
+                  const expired = t.expiresAt && new Date(t.expiresAt).getTime() < Date.now();
+                  return (
+                    <li
+                      key={t.id}
+                      className="rounded-md bg-card ring-1 ring-inset ring-line p-2.5 text-[12px]"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          {t.label && (
+                            <p className="font-semibold text-fg">{t.label}</p>
+                          )}
+                          <p className="text-[10.5px] font-mono text-fg-muted truncate">
+                            {url}
+                          </p>
+                          <p className="text-[10.5px] text-fg-subtle mt-0.5">
+                            Created {new Date(t.createdAt).toLocaleDateString()}
+                            {t.expiresAt
+                              ? ` · ${expired ? "EXPIRED" : `expires ${new Date(t.expiresAt).toLocaleDateString()}`}`
+                              : " · no expiry"}
+                          </p>
+                        </div>
+                        <div className="shrink-0 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => copyLink(t.token)}
+                            className="p-1.5 rounded hover:bg-elevated text-fg-muted hover:text-fg"
+                            title="Copy share URL"
+                          >
+                            {justCopied === t.token ? (
+                              <CheckCircle2 size={13} className="text-emerald-700" />
+                            ) : (
+                              <Copy size={13} />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => revoke(t.id)}
+                            className="p-1.5 rounded hover:bg-rose-50 text-rose-700"
+                            title="Revoke"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+          <p className="text-[10.5px] text-fg-subtle leading-relaxed">
+            Mentor sees JD, resume, cover letter, interview prep, and notes — no role-play sim. Anyone with the link can read; nobody can edit.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -860,15 +1161,304 @@ function TabButton({
 
 // ── Panels ───────────────────────────────────────────────────────
 
+// ── Pull-from-past sidebar (cover letter tab) ───────────────────
+
+function PullFromPastSidebar({
+  pastCoverLetters,
+  onInsert,
+}: {
+  pastCoverLetters: FolderInitial["pastCoverLetters"];
+  onInsert: (text: string) => void;
+}) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  if (pastCoverLetters.length === 0) {
+    return (
+      <aside className="rounded-2xl border border-dashed border-line bg-card-solid p-4 text-[12px] text-fg-muted h-fit">
+        <div className="inline-flex items-center gap-1.5 text-fg-subtle text-[10px] font-bold uppercase tracking-[0.18em] mb-2">
+          <ArrowRightLeft size={11} /> Pull from past
+        </div>
+        <p className="leading-relaxed">
+          Once you&apos;ve drafted other cover letters, paragraphs from them will surface here so you can re-use phrasings.
+        </p>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className="rounded-2xl border border-line bg-card-solid h-fit overflow-hidden">
+      <header className="px-3 py-2 border-b border-line bg-elevated/40">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-fg-subtle inline-flex items-center gap-1.5">
+          <ArrowRightLeft size={11} /> Pull from past
+        </p>
+        <p className="text-[11px] text-fg-muted mt-0.5">
+          {pastCoverLetters.length} cover letter{pastCoverLetters.length === 1 ? "" : "s"} you&apos;ve written
+        </p>
+      </header>
+      <ul className="divide-y divide-line max-h-[420px] overflow-y-auto">
+        {pastCoverLetters.map((p) => {
+          const isOpen = expandedId === p.id;
+          // Paragraph split — first non-empty paragraph as a preview;
+          // rest available on expand.
+          const paragraphs = p.coverLetter
+            .split(/\n{2,}/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+          return (
+            <li key={p.id} className="px-3 py-2.5">
+              <button
+                type="button"
+                onClick={() => setExpandedId(isOpen ? null : p.id)}
+                className="w-full text-left"
+              >
+                <p className="text-[12px] font-semibold text-fg line-clamp-1">{p.title}</p>
+                <p className="text-[11px] text-fg-muted line-clamp-2 mt-0.5">
+                  {paragraphs[0] ?? "(empty)"}
+                </p>
+              </button>
+              {isOpen && (
+                <div className="mt-2 space-y-1.5">
+                  {paragraphs.map((para, i) => (
+                    <div key={i} className="rounded-md bg-elevated/40 ring-1 ring-inset ring-line px-2 py-1.5">
+                      <p className="text-[11px] text-fg leading-relaxed line-clamp-4">{para}</p>
+                      <button
+                        type="button"
+                        onClick={() => onInsert(para)}
+                        className="mt-1 text-[10.5px] font-semibold text-brand-700 hover:underline"
+                      >
+                        Insert into draft →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </aside>
+  );
+}
+
+// ── STAR story sidebar (interview prep tab) ─────────────────────
+
+function StarStorySidebar({
+  stories,
+  jd,
+  onInsert,
+}: {
+  stories: FolderInitial["starStories"];
+  jd: string;
+  onInsert: (story: FolderInitial["starStories"][number]) => void;
+}) {
+  // Surface JD-relevant stories first by computing a simple overlap
+  // between the story's skill tags and any keyword in the JD.
+  const ranked = useMemo(() => {
+    if (stories.length === 0) return [];
+    const jdLower = jd.toLowerCase();
+    return [...stories]
+      .map((s) => {
+        const skillHits = s.skills.filter((sk) =>
+          jdLower.includes(sk.toLowerCase()),
+        ).length;
+        return { story: s, score: skillHits };
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [stories, jd]);
+
+  if (stories.length === 0) {
+    return (
+      <aside className="rounded-2xl border border-dashed border-line bg-card-solid p-4 text-[12px] text-fg-muted h-fit">
+        <div className="inline-flex items-center gap-1.5 text-fg-subtle text-[10px] font-bold uppercase tracking-[0.18em] mb-2">
+          <Inbox size={11} /> Story Bank
+        </div>
+        <p className="leading-relaxed">
+          STAR stories you save to{" "}
+          <Link href="/profile/stories" className="text-brand-700 hover:underline">
+            your Story Bank
+          </Link>{" "}
+          will surface here, sorted by how well they fit this JD.
+        </p>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className="rounded-2xl border border-line bg-card-solid h-fit overflow-hidden">
+      <header className="px-3 py-2 border-b border-line bg-elevated/40">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-fg-subtle inline-flex items-center gap-1.5">
+          <Inbox size={11} /> Story Bank
+        </p>
+        <p className="text-[11px] text-fg-muted mt-0.5">
+          {ranked.length} stories · top-ranked match this JD
+        </p>
+      </header>
+      <ul className="divide-y divide-line max-h-[460px] overflow-y-auto">
+        {ranked.map(({ story, score }) => (
+          <li key={story.id} className="px-3 py-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-[12px] font-semibold text-fg flex-1 min-w-0">
+                {story.title}
+              </p>
+              {score > 0 && (
+                <span
+                  title={`${score} skill tag${score === 1 ? "" : "s"} match this JD`}
+                  className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-900 ring-1 ring-inset ring-emerald-200"
+                >
+                  ✓ {score}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-fg-muted line-clamp-2 mt-0.5">
+              {story.situation}
+            </p>
+            {story.skills.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {story.skills.slice(0, 3).map((sk) => (
+                  <span
+                    key={sk}
+                    className="text-[9.5px] font-semibold uppercase tracking-[0.12em] px-1 py-0.5 rounded bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200"
+                  >
+                    {sk}
+                  </span>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => onInsert(story)}
+              className="mt-1.5 text-[10.5px] font-semibold text-brand-700 hover:underline"
+            >
+              Insert into prep →
+            </button>
+          </li>
+        ))}
+      </ul>
+      <footer className="px-3 py-2 border-t border-line bg-elevated/30">
+        <Link
+          href="/profile/stories"
+          className="text-[11px] font-semibold text-brand-700 hover:underline"
+        >
+          Manage Story Bank →
+        </Link>
+      </footer>
+    </aside>
+  );
+}
+
+// ── Skill match panel (JD tab) ───────────────────────────────────
+
+function SkillMatchPanel({
+  match,
+  resumeLinked,
+}: {
+  match: SkillMatchResult;
+  resumeLinked: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!resumeLinked) {
+    return (
+      <div className="rounded-xl border border-dashed border-line bg-card px-4 py-3 text-[12.5px] text-fg-muted flex items-start gap-2">
+        <Target size={14} className="shrink-0 mt-0.5 text-fg-subtle" />
+        <span>
+          Link a resume on the Resume tab to see how well it matches this JD&apos;s keywords.
+        </span>
+      </div>
+    );
+  }
+  if (match.total === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-line bg-card px-4 py-3 text-[12.5px] text-fg-muted flex items-start gap-2">
+        <Target size={14} className="shrink-0 mt-0.5 text-fg-subtle" />
+        <span>Paste a JD here and we&apos;ll surface the keywords + how many your resume covers.</span>
+      </div>
+    );
+  }
+
+  const tone =
+    match.percent >= 70
+      ? "bg-emerald-50 ring-emerald-200 text-emerald-900"
+      : match.percent >= 40
+        ? "bg-amber-50 ring-amber-200 text-amber-900"
+        : "bg-rose-50 ring-rose-200 text-rose-900";
+  const bar =
+    match.percent >= 70 ? "bg-emerald-500"
+      : match.percent >= 40 ? "bg-amber-500" : "bg-rose-500";
+  const missingCount = match.total - match.matched;
+  const sorted = [...match.skills].sort(
+    (a, b) => Number(b.present) - Number(a.present) || a.term.localeCompare(b.term),
+  );
+  const show = expanded ? sorted : sorted.slice(0, 12);
+
+  return (
+    <div className={`rounded-xl ring-1 ring-inset px-4 py-3 ${tone}`}>
+      <header className="flex items-baseline justify-between gap-3 flex-wrap">
+        <p className="text-[13px] font-semibold inline-flex items-center gap-2">
+          <Target size={14} />
+          Skill match · {match.matched}/{match.total} keywords covered
+          <span className="text-[11px] font-normal opacity-70">
+            ({missingCount} missing)
+          </span>
+        </p>
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className="text-[11px] font-semibold underline-offset-2 hover:underline"
+        >
+          {expanded ? "Show top 12" : `Show all ${match.total}`}
+        </button>
+      </header>
+      <div className="mt-2 h-1.5 w-full rounded-full bg-white/40 overflow-hidden">
+        <div className={`h-full rounded-full ${bar}`} style={{ width: `${match.percent}%` }} />
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {show.map((s) => (
+          <span
+            key={s.term}
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-semibold ring-1 ring-inset ${
+              s.present
+                ? "bg-emerald-100 text-emerald-900 ring-emerald-200"
+                : "bg-white/60 text-fg-muted ring-line"
+            }`}
+            title={s.present ? "Found in your resume" : "Not found — consider adding"}
+          >
+            {s.present ? "✓ " : ""}{s.term}
+          </span>
+        ))}
+      </div>
+      {missingCount > 0 && (
+        <p className="mt-2.5 text-[11px] leading-relaxed opacity-80">
+          Add the missing keywords as bullets on your linked resume, or tailor an existing
+          bullet to use the JD&apos;s phrasing.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function JdPanel({
-  value, onChange, posting,
+  value, onChange, posting, resumeContent, resumeLinked,
 }: {
   value: string;
   onChange: (v: string) => void;
   posting: FolderInitial["posting"];
+  resumeContent: unknown;
+  resumeLinked: boolean;
 }) {
+  // Recompute the skill match on every JD edit. The scorer is fast
+  // (regex tokenise + substring check) so doing it on every keystroke
+  // is fine and the user gets a live signal.
+  const skillMatch = useMemo(
+    () => scoreSkillMatch(value, resumeContent as Parameters<typeof scoreSkillMatch>[1]),
+    [value, resumeContent],
+  );
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {/* Skill-match summary — pops to the top so it stays visible
+          when the JD textarea gets long. */}
+      <SkillMatchPanel match={skillMatch} resumeLinked={resumeLinked} />
       {posting && (
         <div className="rounded-xl border border-cyan-200 bg-cyan-50/60 p-3 flex items-start justify-between gap-3">
           <div className="min-w-0">

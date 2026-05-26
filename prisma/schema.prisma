@@ -4121,11 +4121,38 @@ model JobFolder {
   /// Auto-logged + manual lifecycle events. Newest-first on the
   /// Timeline tab.
   events JobFolderEvent[]
+  /// Tokenised read-only share links for sending a mentor to view
+  /// this folder without an account.
+  shareTokens JobFolderShareToken[]
 
   @@index([userId, isArchived])
   @@index([resumeId])
   @@index([simulationRequestId])
   @@index([userId, deadline])
+}
+
+/// Read-only share token for a JobFolder. The trainee mints one
+/// from the Share menu; the URL /share/folder/[token] serves a
+/// clean view of the folder's documents (JD, resume, cover letter,
+/// interview prep, notes) with no platform chrome and no login
+/// requirement. Tokens expire on `expiresAt`; setting that to null
+/// = "until revoked." Revoke deletes the row.
+model JobFolderShareToken {
+  id        String   @id @default(cuid())
+  folderId  String
+  folder    JobFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  /// URL-safe random token, ~22 chars. Indexed unique for fast
+  /// lookups on the share page.
+  token     String   @unique
+  /// Optional label the trainee gave the link ("For Diane", "For
+  /// the mentor at ASCO"). Surfaced in the manage-links UI.
+  label     String?
+  /// null = no expiry, otherwise the share page returns 410 after
+  /// this timestamp.
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([folderId, createdAt])
 }
 
 /// Lifecycle event on a JobFolder. Auto-logged from the PATCH

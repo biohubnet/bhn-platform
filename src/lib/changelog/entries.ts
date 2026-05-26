@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Job folders — Tier 2: reuse + matching — May 2026
+  {
+    title: "Job folders — Skill match, STAR cross-link, Pull-from-past, Mentor share",
+    body: "Tier 2 of the job-folder improvement pass — make the folder learn from data you already have, and let mentors review it without an account.\n\n**Skill match panel (JD tab).** Heuristic scorer pulls candidate skill keywords from the JD (single tech-y tokens + capitalised bigrams + acronyms like 'GMP', 'CHO', 'HPLC'), checks each against the linked resume's structured content, and surfaces a 'matched / total' chip + visual progress bar + per-skill tags coloured by present/missing. Tone shifts emerald/amber/rose at 70%/40% thresholds. Recomputes on every JD keystroke, pure client-side, zero API calls. Tells the trainee 'add these N keywords to your resume before applying.'\n\n**Pull from past (cover letter tab).** New sidebar shows up to 10 most-recent cover letters you've written across other folders. Click any title to expand into paragraph cards; click 'Insert into draft →' on any paragraph to append it to the current cover letter. Stop writing the same opening twice.\n\n**Story Bank cross-link (interview prep tab).** New sidebar surfaces your existing STAR stories, sorted by how many of each story's skill tags appear in this JD. Each card shows title + situation preview + skill chips; click 'Insert into prep →' to drop a STAR block into the prep notes. Closes the loop between the Story Bank and the per-application prep.\n\n**Mentor share link.** New Share button in the folder header opens a dialog where you can mint tokenised read-only share URLs (optional label + expiry: never / 24h / 7d / 30d). URL pattern /share/folder/[token] serves a clean, login-free view of JD, resume, cover letter, interview prep, and notes for mentor review. Role-play sim never appears in shared views (it's interactive, not a document). Revoke any time. New JobFolderShareToken model + migration 20260526030000_jobfolder_share_tokens. Public share page sets robots: noindex/nofollow.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Job folders — Tier 1 of the improvement pass — May 2026
   {
     title: "Job folders — Notes, application tracker, timeline, duplicate, status-grouped index, print view",
