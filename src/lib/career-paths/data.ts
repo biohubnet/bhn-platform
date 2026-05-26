@@ -47,6 +47,12 @@ export interface CourseRef {
 export interface CrossLink {
   /** Target track id. The renderer resolves into the track title. */
   trackId: TrackId;
+  /** Destination level. Pairs with the source-station's level (which
+   *  the renderer reads off the parent CareerStation) so the
+   *  Cross-stream Mobility section can highlight the exact source +
+   *  target boxes in the chart above on hover. The `when` string is
+   *  the human-readable counterpart (e.g. "Senior → Lead"). */
+  targetLevel: LevelId;
   /** When this jump tends to happen (e.g. "Senior → Director"). */
   when: string;
   /** Why it's a credible move. One sentence. */
@@ -173,6 +179,7 @@ const BIOPROCESS: CareerTrack = {
       crossLinks: [
         {
           trackId: "quality-regulatory",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "Strong process-engineering Seniors often pivot to Quality leadership — the floor experience makes for credible QA management.",
@@ -185,6 +192,7 @@ const BIOPROCESS: CareerTrack = {
         },
         {
           trackId: "project-leadership",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "Tech-transfer leaders frequently formalise their toolkit and move into multi-site project ownership.",
@@ -217,6 +225,7 @@ const BIOPROCESS: CareerTrack = {
       crossLinks: [
         {
           trackId: "biotech-business",
+          targetLevel: "vp",
           when: "Lead → VP",
           reason:
             "Manufacturing Directors with a commercial lens commonly cross into General Manager / commercial-operations VP roles.",
@@ -320,6 +329,7 @@ const QUALITY: CareerTrack = {
       crossLinks: [
         {
           trackId: "cell-gene-therapy",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "Quality leaders with CGT exposure are scarce — the move into ATMP-focused quality leadership opens up rapidly.",
@@ -332,6 +342,7 @@ const QUALITY: CareerTrack = {
         },
         {
           trackId: "biotech-business",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "Regulatory leaders with a commercial lens move into BD as the deal-structuring partner — quality / RA depth de-risks every transaction.",
@@ -451,6 +462,7 @@ const CGT: CareerTrack = {
       crossLinks: [
         {
           trackId: "clinical-trials",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "Manufacturing-PD leaders with CGT depth are the most credible candidates for clinical-operations leadership at CGT sponsors.",
@@ -463,6 +475,7 @@ const CGT: CareerTrack = {
         },
         {
           trackId: "quality-regulatory",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "ATMP-experienced regulatory leads are vanishingly rare — the lateral into RA is a fast track to director-level visibility.",
@@ -580,6 +593,7 @@ const CLINICAL: CareerTrack = {
       crossLinks: [
         {
           trackId: "project-leadership",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "Senior clinical trial managers convert cleanly into multi-program portfolio leadership inside CRO or sponsor orgs.",
@@ -592,6 +606,7 @@ const CLINICAL: CareerTrack = {
         },
         {
           trackId: "biotech-business",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "Clinical-operations leaders become the clinical-narrative architects for fundraising — IPO and Series-B pitches lean on the clinical story.",
@@ -709,6 +724,7 @@ const BUSINESS: CareerTrack = {
       crossLinks: [
         {
           trackId: "project-leadership",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "BD leaders running multiple deals at once frequently formalise into Portfolio / Programme leadership.",
@@ -826,6 +842,7 @@ const PROJECT: CareerTrack = {
       crossLinks: [
         {
           trackId: "bioprocess",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "Strong programme leads land manufacturing director seats by owning a tech-transfer or capacity-expansion to completion.",
@@ -838,6 +855,7 @@ const PROJECT: CareerTrack = {
         },
         {
           trackId: "biotech-business",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "Programme leaders with a commercial lens make natural Heads of Strategy / Chiefs of Staff at growth-stage biotechs.",
@@ -850,6 +868,7 @@ const PROJECT: CareerTrack = {
         },
         {
           trackId: "quality-regulatory",
+          targetLevel: "lead",
           when: "Senior → Lead",
           reason:
             "PMs with deep regulated-industry exposure become credible Quality directors — the toolkit transfers and the regulator visibility is already there.",

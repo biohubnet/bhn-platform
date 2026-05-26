@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — two-way highlight between transition cards + chart — May 2026
+  {
+    title: "Career paths — hover a transition card to highlight the source + target boxes in the chart",
+    body: "The Cross-stream Mobility cards under the flowchart are now keyboard- + mouse-interactive. Hover a card (or Tab to it and focus) and the corresponding source station and target station up in the chart get a 3-px coloured outline in their respective track accents — source in the source track's hue, target in the target track's hue — so the spatial \"from here, you'd jump there\" reading is instant.\n\nThe chart's overflow-x-auto container ALSO pans horizontally to centre the source box if it's currently outside the viewport's horizontal middle. Importantly, we deliberately do NOT touch page vertical scroll position — that would yank the user off the card they're hovering. If the chart is vertically offscreen, the user scrolls up themselves; the outlines persist as long as they keep hovering.\n\nImplementation notes:\n  • Each station box is now stamped with `data-station-id=\"<trackId>-<level>\"`.\n  • Each `CrossLink` gained an explicit `targetLevel: LevelId` (so we know which destination station to highlight without parsing the human-readable \"Senior → Lead\" string).\n  • `TransitionCard` is tabbable (`tabIndex={0}`), with mouse + focus event handlers that toggle an inline `outline` style on the two station boxes. Direct DOM access avoids lifting state up through four parents and re-rendering 60+ boxes on every hover.\n  • `useEffect` cleanup clears the outline if the card unmounts mid-highlight.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — fix root-line origin + cross-stream mobility section — May 2026
   {
     title: "Career paths — mind-map root lines start at the pill edge + cross-stream mobility section",

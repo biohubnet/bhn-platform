@@ -35,6 +35,7 @@
  * wrapper. On phones the user pans horizontally to walk the map.
  */
 
+import { useEffect, useRef, useCallback } from "react";
 import {
   Briefcase,
   Dna,
@@ -84,8 +85,16 @@ export function CareerPathsExplorer() {
       {/* Legend (always wraps) */}
       <Legend />
 
-      {/* The chart — horizontal scroll on narrow viewports */}
-      <div className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
+      {/* The chart — horizontal scroll on narrow viewports.
+          The `data-career-chart-scroll` attribute lets TransitionCard
+          (in the Cross-stream Mobility section below) find this exact
+          scroll container and horizontally pan it to centre the
+          highlighted source box, WITHOUT touching the page's vertical
+          scroll position. */}
+      <div
+        className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6"
+        data-career-chart-scroll
+      >
         <div className="min-w-[1180px] pb-4">
           <MindMapRoot />
           <TrackHeadersRow />
@@ -287,7 +296,12 @@ function LevelRow({
           if (!station) return <li key={track.id} />;
           return (
             <li key={track.id}>
-              <StationBox station={station} accent={track.accent} index={rowIdx} />
+              <StationBox
+                station={station}
+                accent={track.accent}
+                index={rowIdx}
+                stationId={`${track.id}-${station.level}`}
+              />
             </li>
           );
         })}
@@ -356,16 +370,21 @@ function ConnectorRow({ accents }: { accents: string[] }) {
 // ──────────────────────────────────────────────────────────────────
 
 function StationBox({
-  station, accent, index,
+  station, accent, index, stationId,
 }: {
   station: CareerStation;
   accent: string;
   index: number;
+  /** Unique key `<trackId>-<levelId>` — surfaced as a
+   *  `data-station-id` attribute so TransitionCard hover-handlers
+   *  can find the exact source + target boxes to highlight. */
+  stationId: string;
 }) {
   const intensity = 30 + index * 17;
   return (
     <article
-      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden"
+      data-station-id={stationId}
+      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden transition-[outline-offset] duration-150"
       style={{
         boxShadow: "var(--shadow-card-rest)",
         backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${accent} 5%, transparent) 0%, transparent 50%)`,
@@ -460,6 +479,10 @@ interface Transition {
   srcTrack: CareerTrack;
   srcStation: CareerStation;
   target: CareerTrack;
+  /** Destination level in the target track — paired with the source
+   *  level from `srcStation.level` so we can build the unique station
+   *  ids used by the hover-highlight handlers. */
+  targetLevel: LevelId;
   when: string;
   reason: string;
   learningNeeded: string[];
@@ -479,6 +502,7 @@ function collectTransitions(): Transition[] {
           srcTrack: track,
           srcStation: station,
           target,
+          targetLevel: cl.targetLevel,
           when: cl.when,
           reason: cl.reason,
           learningNeeded: cl.learningNeeded ?? [],
@@ -522,9 +546,83 @@ function CrossStreamMobility() {
 function TransitionCard({ t }: { t: Transition }) {
   const SrcIcon = ICONS[t.srcTrack.iconKey];
   const TgtIcon = ICONS[t.target.iconKey];
+
+  // Station ids — match the `data-station-id` we stamped on each
+  // StationBox in the chart above.
+  const srcKey = `${t.srcTrack.id}-${t.srcStation.level}`;
+  const tgtKey = `${t.target.id}-${t.targetLevel}`;
+
+  // Direct DOM manipulation for the highlight: cheaper than lifting
+  // state through 4 levels of parents and re-rendering 60+ boxes on
+  // every hover. The `useEffect` cleanup unsets the outline if this
+  // card unmounts mid-highlight.
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  const setHighlight = useCallback((on: boolean) => {
+    const srcEl = document.querySelector<HTMLElement>(`[data-station-id="${srcKey}"]`);
+    const tgtEl = document.querySelector<HTMLElement>(`[data-station-id="${tgtKey}"]`);
+
+    if (on) {
+      // Apply outline (doesn't shift layout, unlike border) tinted to
+      // each track's accent so the from / to direction reads
+      // visually on the chart as it does on the card.
+      if (srcEl) {
+        srcEl.style.outline = `3px solid ${t.srcTrack.accent}`;
+        srcEl.style.outlineOffset = "3px";
+        srcEl.style.transition = "outline-offset 150ms ease-out";
+      }
+      if (tgtEl) {
+        tgtEl.style.outline = `3px solid ${t.target.accent}`;
+        tgtEl.style.outlineOffset = "3px";
+        tgtEl.style.transition = "outline-offset 150ms ease-out";
+      }
+
+      // Horizontal-only scroll within the chart's overflow-x-auto
+      // container — we deliberately do NOT touch page vertical scroll
+      // (would yank the user off the card they're hovering). If the
+      // source box is already roughly centred, skip the scroll
+      // altogether to avoid micro-jitter.
+      if (srcEl) {
+        const scroller = srcEl.closest("[data-career-chart-scroll]") as HTMLElement | null;
+        if (scroller) {
+          const srcRect = srcEl.getBoundingClientRect();
+          const containerRect = scroller.getBoundingClientRect();
+          const srcCentre = srcRect.left + srcRect.width / 2;
+          const containerCentre = containerRect.left + containerRect.width / 2;
+          const delta = srcCentre - containerCentre;
+          if (Math.abs(delta) > 80) {
+            scroller.scrollBy({ left: delta, behavior: "smooth" });
+          }
+        }
+      }
+
+      // Remember how to clean up, in case the card unmounts before
+      // the user moves the mouse off.
+      cleanupRef.current = () => {
+        if (srcEl) { srcEl.style.outline = ""; srcEl.style.outlineOffset = ""; }
+        if (tgtEl) { tgtEl.style.outline = ""; tgtEl.style.outlineOffset = ""; }
+      };
+    } else {
+      if (srcEl) { srcEl.style.outline = ""; srcEl.style.outlineOffset = ""; }
+      if (tgtEl) { tgtEl.style.outline = ""; tgtEl.style.outlineOffset = ""; }
+      cleanupRef.current = null;
+    }
+  }, [srcKey, tgtKey, t.srcTrack.accent, t.target.accent]);
+
+  // Cleanup on unmount — only fires the cleanup callback if we still
+  // have one (i.e. the card was actively highlighting at unmount).
+  useEffect(() => {
+    return () => { cleanupRef.current?.(); };
+  }, []);
+
   return (
     <article
-      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden"
+      tabIndex={0}
+      onMouseEnter={() => setHighlight(true)}
+      onMouseLeave={() => setHighlight(false)}
+      onFocus={() => setHighlight(true)}
+      onBlur={() => setHighlight(false)}
+      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 cursor-pointer"
       style={{
         boxShadow: "var(--shadow-card-rest)",
         backgroundImage: `linear-gradient(90deg, color-mix(in srgb, ${t.srcTrack.accent} 7%, transparent) 0%, color-mix(in srgb, ${t.target.accent} 7%, transparent) 100%)`,
