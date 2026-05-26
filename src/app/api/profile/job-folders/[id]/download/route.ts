@@ -61,8 +61,15 @@ export async function GET(
       jdSnippet: true,
       coverLetter: true,
       interviewPrep: true,
+      notes: true,
       status: true,
       postingId: true,
+      appliedAt: true,
+      deadline: true,
+      applicationUrl: true,
+      recruiterName: true,
+      recruiterEmail: true,
+      referredBy: true,
       createdAt: true,
       updatedAt: true,
       resume: {
@@ -110,7 +117,14 @@ function buildFolderMarkdown(folder: {
   jdSnippet: string;
   coverLetter: string;
   interviewPrep: string;
+  notes: string;
   status: string;
+  appliedAt: Date | null;
+  deadline: Date | null;
+  applicationUrl: string | null;
+  recruiterName: string | null;
+  recruiterEmail: string | null;
+  referredBy: string | null;
   createdAt: Date;
   updatedAt: Date;
   resume: {
@@ -130,6 +144,22 @@ function buildFolderMarkdown(folder: {
   parts.push(`> Status: **${folder.status}**`);
   parts.push(`> Last edited: ${folder.updatedAt.toLocaleString()}`);
   parts.push(`> Folder created: ${folder.createdAt.toLocaleString()}`);
+  if (folder.appliedAt) {
+    parts.push(`> Applied on: ${folder.appliedAt.toLocaleDateString()}`);
+  }
+  if (folder.deadline) {
+    parts.push(`> Deadline: ${folder.deadline.toLocaleDateString()}`);
+  }
+  if (folder.applicationUrl) {
+    parts.push(`> Application URL: ${folder.applicationUrl}`);
+  }
+  if (folder.recruiterName || folder.recruiterEmail) {
+    const r = [folder.recruiterName, folder.recruiterEmail].filter(Boolean).join(" · ");
+    parts.push(`> Recruiter: ${r}`);
+  }
+  if (folder.referredBy) {
+    parts.push(`> Referred by: ${folder.referredBy}`);
+  }
   if (folder.posting) {
     parts.push(`> Linked posting: ${folder.posting.title} @ ${folder.posting.companyName}`);
   }
@@ -180,6 +210,16 @@ function buildFolderMarkdown(folder: {
   parts.push("");
   parts.push("---");
   parts.push("");
+
+  // ── 5. Notes ──────────────────────────────────────────────────
+  if (folder.notes.trim()) {
+    parts.push("## 5. Notes");
+    parts.push("");
+    parts.push(folder.notes.trim());
+    parts.push("");
+    parts.push("---");
+    parts.push("");
+  }
 
   parts.push(
     "_Generated from your BHN job folder. Role-play simulation data is intentionally not included — it's an interactive experience, not a document._",

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Job folders — Tier 1 of the improvement pass — May 2026
+  {
+    title: "Job folders — Notes, application tracker, timeline, duplicate, status-grouped index, print view",
+    body: "Tier 1 of the job-folder improvement pass lands together.\n\n**Notes tab.** A new 6th tab — free-form markdown scratchpad for things that don't fit the structured fields. Recruiter conversations, salary band, things to remember before the interview. Auto-saves like the other doc tabs.\n\n**Application tracker fields.** A collapsible 'Application tracker' strip below the folder header carries six new optional fields: Applied on (date), Deadline (date), Application URL, Recruiter name + email, Referred by. Auto-saves. When the deadline is ≤7 days out, a coloured banner surfaces at the top of the folder (sky → amber → rose as it approaches / passes). The Applied-on field also auto-logs a timeline event when first set.\n\n**Timeline tab.** A new 7th tab renders the folder's lifecycle as a vertical event log: created · status_changed · sim_requested · sim_ready · sim_rejected · sim_failed · duplicated · applied · deadline_set / cleared. Auto-captured from the existing endpoints — no extra clicks. New JobFolderEvent table with cascade-delete on folder removal.\n\n**Duplicate folder button.** Header action that clones the JD, resume link, tracker fields, recruiter info, notes — but BLANKS the cover letter, interview prep, and resets status to drafting. The tailored parts are the ones you'd actually retype for a similar role elsewhere; the JD-shaped context isn't.\n\n**Status-grouped index.** The flat folder grid on /profile/job-folders now groups by status into pipeline-style sections: Interviewing → Submitted → Drafting → Offer → Rejected → Closed. Empty buckets collapse out. Same UI scales from 1 folder to 30.\n\n**Print view.** New route /profile/job-folders/[id]/print renders the cover letter + resume in a print-optimised single-column layout with @media print rules. Ctrl-P → PDF in any browser. JD, interview prep, and role-play sim are intentionally NOT included — this is what you'd attach to an application, not an archive.\n\n**Fixes.** SimPanel's hard window.location.reload() swapped for router.refresh() — preserves scroll and unsaved field state. Markdown download endpoint now includes the application-tracker fields in the header block AND the Notes section.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator: email notifications on state change — May 2026
   {
     title: "Simulator — email notifications when your sim is ready / rejected / failed",

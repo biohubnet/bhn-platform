@@ -4084,6 +4084,26 @@ model JobFolder {
   coverLetter   String   @default("")
   /// Interview prep guide (markdown). Auto-saved on the UI.
   interviewPrep String   @default("")
+  /// Free-form scratch notes — recruiter names, salary band, things
+  /// said in coffee chats, things to remember before the interview.
+  /// Markdown, auto-saved like the other doc fields.
+  notes         String   @default("")
+  /// ── Application tracker fields ─────────────────────────────────
+  /// Optional URL of the live posting / ATS application link the
+  /// trainee submitted to. Display only.
+  applicationUrl String?
+  /// When the trainee actually clicked Submit. Drives "applied N days
+  /// ago" on the dashboard.
+  appliedAt      DateTime?
+  /// When the posting closes. Drives "deadline in N days" banners.
+  deadline       DateTime?
+  /// Name of the recruiter or hiring manager the trainee is in
+  /// touch with — for the "who do I follow up with" question.
+  recruiterName  String?
+  recruiterEmail String?
+  /// Internal referral, if any — surfaces on the folder card and
+  /// in the cover-letter generator's prompt context.
+  referredBy     String?
   /// Optional linked SimulationRequest. When set, the folder has
   /// a role-play sim attached or queued — the linked request
   /// carries its own pending|generating|ready|failed|rejected
@@ -4098,7 +4118,36 @@ model JobFolder {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  /// Auto-logged + manual lifecycle events. Newest-first on the
+  /// Timeline tab.
+  events JobFolderEvent[]
+
   @@index([userId, isArchived])
   @@index([resumeId])
   @@index([simulationRequestId])
+  @@index([userId, deadline])
+}
+
+/// Lifecycle event on a JobFolder. Auto-logged from the PATCH
+/// endpoint (status changes), the sim-request endpoint (sim
+/// requested/ready/rejected), the duplicate endpoint, and the
+/// folder-create flow. Also accepts manual entries from the
+/// Timeline tab so the trainee can record offline events (phone
+/// call, coffee chat, etc.).
+model JobFolderEvent {
+  id        String   @id @default(cuid())
+  folderId  String
+  folder    JobFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  /// One of: "created" | "status_changed" | "applied" | "sim_requested" |
+  /// "sim_ready" | "sim_rejected" | "sim_failed" | "duplicated" |
+  /// "interview_scheduled" | "manual" | "deadline_set" | "applied_at_set"
+  kind      String
+  /// Free-text description shown in the timeline row. Kept readable
+  /// without needing the payload — payload is optional context for
+  /// future analytics / render variants.
+  body      String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([folderId, createdAt])
 }

@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logFolderEvent } from "@/lib/job-folders/events";
 
 export const runtime = "nodejs";
 
@@ -115,6 +116,13 @@ export async function POST(req: NextRequest) {
   const created = await prisma.jobFolder.create({
     data: { userId, title, jdSnippet, postingId, resumeId },
     select: { id: true, title: true, status: true, createdAt: true },
+  });
+
+  // First lifecycle event — anchors the timeline.
+  await logFolderEvent({
+    folderId: created.id,
+    kind: "created",
+    body: `Folder created${jdSnippet ? " with starter JD" : ""}`,
   });
 
   return NextResponse.json({ ok: true, folder: created });

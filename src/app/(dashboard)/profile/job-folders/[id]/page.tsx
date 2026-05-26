@@ -46,6 +46,11 @@ export default async function JobFolderDetailPage({ params }: PageProps) {
           },
         },
       },
+      events: {
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: { id: true, kind: true, body: true, createdAt: true },
+      },
     },
   });
   if (!folder || folder.userId !== userId) notFound();
@@ -108,11 +113,18 @@ export default async function JobFolderDetailPage({ params }: PageProps) {
             jdSnippet: folder.jdSnippet,
             coverLetter: folder.coverLetter,
             interviewPrep: folder.interviewPrep,
+            notes: folder.notes,
             status: folder.status,
             resumeId: folder.resumeId,
             postingId: folder.postingId,
             resume: folder.resume,
             posting,
+            applicationUrl: folder.applicationUrl,
+            appliedAt: folder.appliedAt?.toISOString() ?? null,
+            deadline: folder.deadline?.toISOString() ?? null,
+            recruiterName: folder.recruiterName,
+            recruiterEmail: folder.recruiterEmail,
+            referredBy: folder.referredBy,
             simulationRequest: folder.simulationRequest
               ? {
                   id: folder.simulationRequest.id,
@@ -123,6 +135,12 @@ export default async function JobFolderDetailPage({ params }: PageProps) {
                   attemptId: simAttemptId,
                 }
               : null,
+            events: folder.events.map((e) => ({
+              id: e.id,
+              kind: e.kind,
+              body: e.body,
+              createdAt: e.createdAt.toISOString(),
+            })),
           }}
           resumes={resumes.map((r) => ({ id: r.id, name: r.name }))}
         />

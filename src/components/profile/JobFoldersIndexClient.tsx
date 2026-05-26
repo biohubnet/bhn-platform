@@ -7,7 +7,7 @@
  * folder for the detail editor.
  */
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -230,18 +230,13 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
           </button>
         </div>
       ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {active.map((f) => (
-            <FolderCard
-              key={f.id}
-              row={f}
-              isSelected={selected.has(f.id)}
-              onToggleSelect={() => toggleSelected(f.id)}
-              onArchive={() => setArchived(f, true)}
-              onDelete={() => hardDelete(f)}
-            />
-          ))}
-        </ul>
+        <StatusGroupedList
+          rows={active}
+          selected={selected}
+          onToggleSelect={toggleSelected}
+          onArchive={(row) => setArchived(row, true)}
+          onDelete={hardDelete}
+        />
       )}
 
       {archived.length > 0 && (
@@ -382,6 +377,118 @@ function FolderCard({
         </div>
       )}
     </li>
+  );
+}
+
+// ── Status-grouped list ──────────────────────────────────────────
+
+/** Pipeline-style grouping of active folders by their `status`
+ *  field. Hidden-but-empty status groups collapse out — only
+ *  buckets with at least one folder render. Acts as a soft Kanban
+ *  view without the chrome of full Kanban (no drag-drop, just
+ *  collapsible sections), so it scales from 1 folder to 30 with
+ *  the same UI. */
+const STATUS_ORDER = [
+  "interviewing",
+  "submitted",
+  "drafting",
+  "offer",
+  "rejected",
+  "closed",
+] as const;
+
+const GROUP_META: Record<
+  string,
+  { label: string; accent: string; description: string }
+> = {
+  drafting: {
+    label: "Drafting",
+    accent: "bg-brand-50 text-brand-800 ring-brand-200",
+    description: "Still tailoring",
+  },
+  submitted: {
+    label: "Submitted",
+    accent: "bg-cyan-50 text-cyan-900 ring-cyan-200",
+    description: "Application sent, awaiting reply",
+  },
+  interviewing: {
+    label: "Interviewing",
+    accent: "bg-violet-50 text-violet-900 ring-violet-200",
+    description: "In the loop",
+  },
+  offer: {
+    label: "Offer",
+    accent: "bg-emerald-50 text-emerald-900 ring-emerald-200",
+    description: "Decision pending",
+  },
+  rejected: {
+    label: "Rejected",
+    accent: "bg-rose-50 text-rose-900 ring-rose-200",
+    description: "Onward",
+  },
+  closed: {
+    label: "Closed",
+    accent: "bg-amber-50 text-amber-900 ring-amber-200",
+    description: "Pulled / withdrawn",
+  },
+};
+
+function StatusGroupedList({
+  rows, selected, onToggleSelect, onArchive, onDelete,
+}: {
+  rows: FolderRow[];
+  selected: Set<string>;
+  onToggleSelect: (id: string) => void;
+  onArchive: (row: FolderRow) => void;
+  onDelete: (row: FolderRow) => void;
+}) {
+  const grouped = useMemo(() => {
+    const map = new Map<string, FolderRow[]>();
+    for (const r of rows) {
+      const bucket = map.get(r.status) ?? [];
+      bucket.push(r);
+      map.set(r.status, bucket);
+    }
+    return map;
+  }, [rows]);
+
+  return (
+    <div className="space-y-5">
+      {STATUS_ORDER.map((status) => {
+        const bucket = grouped.get(status);
+        if (!bucket || bucket.length === 0) return null;
+        const meta = GROUP_META[status];
+        return (
+          <section key={status}>
+            <div className="flex items-baseline justify-between mb-2.5">
+              <h2 className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] font-bold text-subtle">
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.14em] font-bold ring-1 ring-inset ${meta.accent}`}
+                >
+                  {meta.label}
+                </span>
+                <span className="text-fg-subtle font-normal normal-case tracking-normal">
+                  {bucket.length} {bucket.length === 1 ? "folder" : "folders"} ·{" "}
+                  <span className="italic">{meta.description}</span>
+                </span>
+              </h2>
+            </div>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {bucket.map((f) => (
+                <FolderCard
+                  key={f.id}
+                  row={f}
+                  isSelected={selected.has(f.id)}
+                  onToggleSelect={() => onToggleSelect(f.id)}
+                  onArchive={() => onArchive(f)}
+                  onDelete={() => onDelete(f)}
+                />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
   );
 }
 

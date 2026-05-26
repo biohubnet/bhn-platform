@@ -22,6 +22,7 @@ import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { extractJobDescriptionFromText } from "@/lib/simulator/jd-extractor";
 import { PROMPT_VERSION } from "@/lib/simulator/types";
+import { logFolderEvent } from "@/lib/job-folders/events";
 
 export const runtime = "nodejs";
 
@@ -131,6 +132,12 @@ export async function POST(
       data: { simulationRequestId: req.id },
     });
     return req;
+  });
+
+  await logFolderEvent({
+    folderId: folder.id,
+    kind: "sim_requested",
+    body: "Role-play simulation requested",
   });
 
   return NextResponse.json({

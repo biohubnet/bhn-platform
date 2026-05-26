@@ -19,9 +19,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   FileText, Mail, BookOpen, Briefcase, Save, Loader2, CheckCircle2, Sparkles, X, ExternalLink, AlertTriangle,
-  Theater, Hourglass, Play, RotateCcw, Download,
+  Theater, Hourglass, Play, RotateCcw, Download, Copy, Printer, StickyNote, Activity, Calendar, User as UserIcon, Link2,
 } from "lucide-react";
 
 interface FolderInitial {
@@ -30,11 +31,20 @@ interface FolderInitial {
   jdSnippet: string;
   coverLetter: string;
   interviewPrep: string;
+  notes: string;
   status: string;
   resumeId: string | null;
   postingId: string | null;
   resume: { id: string; name: string; version: number } | null;
   posting: { id: string; title: string; companyName: string; positionDetails: string | null } | null;
+  // Application tracker fields — all ISO strings on the wire,
+  // converted to / from native Date in the inputs.
+  applicationUrl: string | null;
+  appliedAt: string | null;
+  deadline: string | null;
+  recruiterName: string | null;
+  recruiterEmail: string | null;
+  referredBy: string | null;
   simulationRequest: {
     id: string;
     status: string;
@@ -45,6 +55,12 @@ interface FolderInitial {
      *  against the produced Simulation, if status === "ready". */
     attemptId: string | null;
   } | null;
+  events: Array<{
+    id: string;
+    kind: string;
+    body: string;
+    createdAt: string;
+  }>;
 }
 
 interface ResumeOption { id: string; name: string }
@@ -63,28 +79,90 @@ const STATUS_OPTIONS = [
   { value: "closed",       label: "Closed" },
 ];
 
-type TabId = "jd" | "resume" | "cover" | "prep" | "sim";
+type TabId = "jd" | "resume" | "cover" | "prep" | "notes" | "sim" | "timeline";
 
 const DEBOUNCE_MS = 700;
 
 export function JobFolderEditor({ initialFolder, resumes }: Props) {
+  const router = useRouter();
   const [title, setTitle] = useState(initialFolder.title);
   const [jdSnippet, setJdSnippet] = useState(initialFolder.jdSnippet);
   const [coverLetter, setCoverLetter] = useState(initialFolder.coverLetter);
   const [interviewPrep, setInterviewPrep] = useState(initialFolder.interviewPrep);
+  const [notes, setNotes] = useState(initialFolder.notes);
   const [status, setStatus] = useState(initialFolder.status);
   const [resumeId, setResumeId] = useState<string | null>(initialFolder.resumeId);
   const [tab, setTab] = useState<TabId>(jdSnippet ? (initialFolder.coverLetter ? "cover" : "jd") : "jd");
 
+  // Application tracker fields — held as local state so the meta strip
+  // auto-saves the same way the body fields do.
+  const [applicationUrl, setApplicationUrl] = useState(initialFolder.applicationUrl ?? "");
+  const [appliedAt, setAppliedAt] = useState(toDateInputValue(initialFolder.appliedAt));
+  const [deadline, setDeadline] = useState(toDateInputValue(initialFolder.deadline));
+  const [recruiterName, setRecruiterName] = useState(initialFolder.recruiterName ?? "");
+  const [recruiterEmail, setRecruiterEmail] = useState(initialFolder.recruiterEmail ?? "");
+  const [referredBy, setReferredBy] = useState(initialFolder.referredBy ?? "");
+
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [duplicating, setDuplicating] = useState(false);
   const isFirst = useRef(true);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Snapshot — used to PATCH only the diff.
-  const snapshot = useMemo(() => ({
-    title, jdSnippet, coverLetter, interviewPrep, status, resumeId,
-  }), [title, jdSnippet, coverLetter, interviewPrep, status, resumeId]);
+  const snapshot = useMemo(
+    () => ({
+      title,
+      jdSnippet,
+      coverLetter,
+      interviewPrep,
+      notes,
+      status,
+      resumeId,
+      applicationUrl: applicationUrl.trim() || null,
+      appliedAt: fromDateInputValue(appliedAt),
+      deadline: fromDateInputValue(deadline),
+      recruiterName: recruiterName.trim() || null,
+      recruiterEmail: recruiterEmail.trim() || null,
+      referredBy: referredBy.trim() || null,
+    }),
+    [title, jdSnippet, coverLetter, interviewPrep, notes, status, resumeId, applicationUrl, appliedAt, deadline, recruiterName, recruiterEmail, referredBy],
+  );
+
+  async function duplicate() {
+    if (duplicating) return;
+    setDuplicating(true);
+    try {
+      const res = await fetch(`/api/profile/job-folders/${initialFolder.id}/duplicate`, {
+        method: "POST",
+      });
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        folder?: { id: string };
+        error?: string;
+      };
+      if (res.ok && j.ok && j.folder) {
+        router.push(`/profile/job-folders/${j.folder.id}`);
+        return;
+      }
+      // Surface a soft error rather than throwing — user can retry.
+      console.error("[duplicate] failed:", j.error);
+      setDuplicating(false);
+    } catch (err) {
+      console.error("[duplicate] threw:", err);
+      setDuplicating(false);
+    }
+  }
+
+  // Days-until-deadline banner — shows when within 7 days.
+  const deadlineCountdown = useMemo(() => {
+    if (!deadline) return null;
+    const d = new Date(deadline);
+    if (Number.isNaN(d.getTime())) return null;
+    const days = Math.ceil((d.getTime() - Date.now()) / 86_400_000);
+    if (days < -1 || days > 7) return null;
+    return { date: d, days };
+  }, [deadline]);
 
   useEffect(() => {
     if (isFirst.current) { isFirst.current = false; return; }
@@ -123,12 +201,31 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
           <a
             href={`/api/profile/job-folders/${initialFolder.id}/download`}
             download
-            title="Download JD, Resume, Cover letter, and Interview prep as one Markdown file. Role-play sim is not included."
+            title="Download JD, Resume, Cover letter, Interview prep, and Notes as one Markdown file. Role-play sim is not included."
             className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200 px-3 py-1.5 text-[12px] font-semibold hover:bg-brand-100 transition-colors"
           >
             <Download size={13} />
-            <span className="hidden sm:inline">Download all</span>
+            <span className="hidden sm:inline">Download</span>
           </a>
+          <Link
+            href={`/profile/job-folders/${initialFolder.id}/print`}
+            target="_blank"
+            title="Print-ready view — cover letter + resume only, formatted for attaching to an application."
+            className="inline-flex items-center gap-1.5 rounded-md bg-elevated text-fg ring-1 ring-inset ring-line px-3 py-1.5 text-[12px] font-semibold hover:bg-line transition-colors"
+          >
+            <Printer size={13} />
+            <span className="hidden sm:inline">Print</span>
+          </Link>
+          <button
+            type="button"
+            onClick={duplicate}
+            disabled={duplicating}
+            title="Create a copy of this folder with the JD, resume link, and recruiter info — but with a blank cover letter and interview prep."
+            className="inline-flex items-center gap-1.5 rounded-md bg-elevated text-fg ring-1 ring-inset ring-line px-3 py-1.5 text-[12px] font-semibold hover:bg-line transition-colors disabled:opacity-50"
+          >
+            {duplicating ? <Loader2 size={13} className="animate-spin" /> : <Copy size={13} />}
+            <span className="hidden sm:inline">Duplicate</span>
+          </button>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -148,13 +245,55 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
         </div>
       </div>
 
+      {/* Deadline-soon banner */}
+      {deadlineCountdown && (
+        <div
+          className={`rounded-xl px-4 py-3 text-[13px] ring-1 ring-inset flex items-start gap-2 ${
+            deadlineCountdown.days < 0
+              ? "bg-rose-50 ring-rose-200 text-rose-900"
+              : deadlineCountdown.days <= 2
+                ? "bg-amber-50 ring-amber-200 text-amber-900"
+                : "bg-sky-50 ring-sky-200 text-sky-900"
+          }`}
+        >
+          <Calendar size={14} className="shrink-0 mt-0.5" />
+          <span>
+            {deadlineCountdown.days < 0
+              ? `Deadline was ${deadlineCountdown.date.toLocaleDateString()} — ${Math.abs(deadlineCountdown.days)} day${Math.abs(deadlineCountdown.days) === 1 ? "" : "s"} ago.`
+              : deadlineCountdown.days === 0
+                ? `Deadline is TODAY (${deadlineCountdown.date.toLocaleDateString()}). Submit if you're going to.`
+                : `Deadline ${deadlineCountdown.date.toLocaleDateString()} — ${deadlineCountdown.days} day${deadlineCountdown.days === 1 ? "" : "s"} out.`}
+          </span>
+        </div>
+      )}
+
+      {/* Application tracker strip */}
+      <TrackerStrip
+        applicationUrl={applicationUrl}
+        appliedAt={appliedAt}
+        deadline={deadline}
+        recruiterName={recruiterName}
+        recruiterEmail={recruiterEmail}
+        referredBy={referredBy}
+        onChange={{
+          applicationUrl: setApplicationUrl,
+          appliedAt: setAppliedAt,
+          deadline: setDeadline,
+          recruiterName: setRecruiterName,
+          recruiterEmail: setRecruiterEmail,
+          referredBy: setReferredBy,
+        }}
+      />
+
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-line">
-        <TabButton id="jd"     active={tab === "jd"}     onClick={() => setTab("jd")}     icon={FileText} label="Job description" />
-        <TabButton id="resume" active={tab === "resume"} onClick={() => setTab("resume")} icon={FileText} label="Resume" />
-        <TabButton id="cover"  active={tab === "cover"}  onClick={() => setTab("cover")}  icon={Mail}     label="Cover letter" />
-        <TabButton id="prep"   active={tab === "prep"}   onClick={() => setTab("prep")}   icon={BookOpen} label="Interview prep" />
-        <TabButton id="sim"    active={tab === "sim"}    onClick={() => setTab("sim")}    icon={Theater}  label="Role-play" />
+      <div className="flex items-center gap-1 border-b border-line overflow-x-auto">
+        <TabButton id="jd"       active={tab === "jd"}       onClick={() => setTab("jd")}       icon={FileText}   label="JD" />
+        <TabButton id="resume"   active={tab === "resume"}   onClick={() => setTab("resume")}   icon={FileText}   label="Resume" />
+        <TabButton id="cover"    active={tab === "cover"}    onClick={() => setTab("cover")}    icon={Mail}       label="Cover letter" />
+        <TabButton id="prep"     active={tab === "prep"}     onClick={() => setTab("prep")}     icon={BookOpen}   label="Interview prep" />
+        <TabButton id="notes"    active={tab === "notes"}    onClick={() => setTab("notes")}    icon={StickyNote} label="Notes" />
+        <TabButton id="sim"      active={tab === "sim"}      onClick={() => setTab("sim")}      icon={Theater}    label="Role-play" />
+        <TabButton id="timeline" active={tab === "timeline"} onClick={() => setTab("timeline")} icon={Activity}   label="Timeline" />
       </div>
 
       {/* Panels */}
@@ -195,6 +334,9 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
           subtitle="Likely questions, STAR-framed answers, questions to ask back."
         />
       )}
+      {tab === "notes" && (
+        <NotesPanel value={notes} onChange={setNotes} />
+      )}
       {tab === "sim" && (
         <SimPanel
           folderId={initialFolder.id}
@@ -202,6 +344,223 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
           jdEmpty={!jdSnippet.trim()}
         />
       )}
+      {tab === "timeline" && (
+        <TimelinePanel events={initialFolder.events} />
+      )}
+    </div>
+  );
+}
+
+// ── Date input helpers ──────────────────────────────────────────
+
+/** ISO string from DB → "YYYY-MM-DD" for <input type="date">. */
+function toDateInputValue(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
+/** "YYYY-MM-DD" from input → ISO string for the PATCH body, or null
+ *  when cleared. Treats date-only as local midnight so the date the
+ *  user picked doesn't drift across timezones. */
+function fromDateInputValue(v: string): string | null {
+  const trimmed = v.trim();
+  if (!trimmed) return null;
+  // Build at noon local to avoid the "saved as the day before" off-
+  // by-one when the user is east of UTC.
+  const d = new Date(trimmed + "T12:00:00");
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+// ── Application tracker strip ────────────────────────────────────
+
+function TrackerStrip({
+  applicationUrl, appliedAt, deadline, recruiterName, recruiterEmail, referredBy,
+  onChange,
+}: {
+  applicationUrl: string;
+  appliedAt: string;
+  deadline: string;
+  recruiterName: string;
+  recruiterEmail: string;
+  referredBy: string;
+  onChange: {
+    applicationUrl: (v: string) => void;
+    appliedAt: (v: string) => void;
+    deadline: (v: string) => void;
+    recruiterName: (v: string) => void;
+    recruiterEmail: (v: string) => void;
+    referredBy: (v: string) => void;
+  };
+}) {
+  return (
+    <details className="rounded-2xl border border-line bg-card-solid">
+      <summary className="cursor-pointer select-none px-4 py-2.5 flex items-center gap-2 text-[12px] text-fg-muted hover:bg-elevated/40 rounded-2xl">
+        <Activity size={12} />
+        <span className="font-semibold text-fg">Application tracker</span>
+        <span className="text-fg-subtle">— deadline, applied date, recruiter</span>
+      </summary>
+      <div className="px-4 pb-4 pt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-[12.5px]">
+        <FieldGroup label="Applied on" icon={Calendar}>
+          <input
+            type="date"
+            value={appliedAt}
+            onChange={(e) => onChange.appliedAt(e.target.value)}
+            className="trackerInput"
+          />
+        </FieldGroup>
+        <FieldGroup label="Deadline" icon={Calendar}>
+          <input
+            type="date"
+            value={deadline}
+            onChange={(e) => onChange.deadline(e.target.value)}
+            className="trackerInput"
+          />
+        </FieldGroup>
+        <FieldGroup label="Application URL" icon={Link2}>
+          <input
+            type="url"
+            value={applicationUrl}
+            onChange={(e) => onChange.applicationUrl(e.target.value)}
+            placeholder="https://…"
+            className="trackerInput"
+          />
+        </FieldGroup>
+        <FieldGroup label="Recruiter / hiring manager" icon={UserIcon}>
+          <input
+            type="text"
+            value={recruiterName}
+            onChange={(e) => onChange.recruiterName(e.target.value)}
+            placeholder="Name"
+            className="trackerInput"
+          />
+        </FieldGroup>
+        <FieldGroup label="Recruiter email" icon={Mail}>
+          <input
+            type="email"
+            value={recruiterEmail}
+            onChange={(e) => onChange.recruiterEmail(e.target.value)}
+            placeholder="name@example.com"
+            className="trackerInput"
+          />
+        </FieldGroup>
+        <FieldGroup label="Referred by" icon={UserIcon}>
+          <input
+            type="text"
+            value={referredBy}
+            onChange={(e) => onChange.referredBy(e.target.value)}
+            placeholder="(optional)"
+            className="trackerInput"
+          />
+        </FieldGroup>
+      </div>
+      <style>{`.trackerInput{display:block;width:100%;background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-radius:6px;padding:6px 9px;font-size:12.5px;color:var(--fg,#111);outline:none;}.trackerInput:focus{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.18);}`}</style>
+    </details>
+  );
+}
+
+function FieldGroup({
+  label, icon: Icon, children,
+}: {
+  label: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="text-[10px] uppercase tracking-[0.16em] font-bold text-subtle inline-flex items-center gap-1.5 mb-1">
+        <Icon size={10} /> {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+// ── Notes panel ──────────────────────────────────────────────────
+
+function NotesPanel({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="rounded-2xl border border-line bg-card px-5 py-5 sm:px-7 sm:py-7">
+      <div className="mb-3">
+        <h3 className="text-[14px] font-semibold text-fg">Folder notes</h3>
+        <p className="text-[12.5px] text-muted mt-1">
+          A scratchpad for things that don&apos;t fit anywhere else — recruiter conversations, salary band, things to remember before the interview. Markdown OK. Auto-saves.
+        </p>
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={16}
+        placeholder={"e.g.\n\n- Recruiter called Tuesday 3pm — agreed to phone screen May 28\n- Salary band: $74–82k + bonus, mentioned in 2nd round\n- They specifically asked about my Pichia work — emphasise that in cover letter\n- Met someone from the team at ESMO; they recommended I mention X"}
+        className="w-full rounded-md border border-line bg-card-solid px-3 py-2.5 text-sm font-mono resize-y min-h-[280px] focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
+      />
+    </div>
+  );
+}
+
+// ── Timeline panel ───────────────────────────────────────────────
+
+const EVENT_ACCENT: Record<string, string> = {
+  created:             "bg-brand-100   text-brand-800   ring-brand-200",
+  status_changed:      "bg-sky-100     text-sky-900     ring-sky-200",
+  applied:             "bg-emerald-100 text-emerald-900 ring-emerald-200",
+  sim_requested:       "bg-violet-100  text-violet-900  ring-violet-200",
+  sim_ready:           "bg-emerald-100 text-emerald-900 ring-emerald-200",
+  sim_rejected:        "bg-rose-100    text-rose-900    ring-rose-200",
+  sim_failed:          "bg-rose-100    text-rose-900    ring-rose-200",
+  duplicated:          "bg-amber-100   text-amber-900   ring-amber-200",
+  interview_scheduled: "bg-cyan-100    text-cyan-900    ring-cyan-200",
+  deadline_set:        "bg-amber-100   text-amber-900   ring-amber-200",
+  deadline_cleared:    "bg-card-solid  text-fg-muted    ring-line",
+  manual:              "bg-card-solid  text-fg-muted    ring-line",
+};
+
+function TimelinePanel({
+  events,
+}: {
+  events: FolderInitial["events"];
+}) {
+  if (events.length === 0) {
+    return (
+      <div className="rounded-2xl border border-line bg-card px-5 py-10 text-center">
+        <Activity size={20} className="mx-auto text-fg-subtle" />
+        <p className="mt-2 text-[13px] font-semibold text-fg">
+          No timeline events yet
+        </p>
+        <p className="text-[12px] text-muted mt-1 max-w-md mx-auto">
+          We auto-log status changes, sim requests, applied date, deadline updates,
+          and duplicates as you work. The history of this application will appear here.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-line bg-card overflow-hidden">
+      <header className="px-5 py-3 border-b border-line bg-elevated/40">
+        <h3 className="text-[13px] font-semibold text-fg inline-flex items-center gap-2">
+          <Activity size={13} /> Timeline ({events.length})
+        </h3>
+      </header>
+      <ul className="divide-y divide-line">
+        {events.map((e) => {
+          const accent = EVENT_ACCENT[e.kind] ?? EVENT_ACCENT.manual;
+          return (
+            <li key={e.id} className="px-5 py-3 flex items-start gap-3">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.14em] font-bold ring-1 ring-inset shrink-0 ${accent}`}>
+                {e.kind.replace(/_/g, " ")}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] text-fg">{e.body}</p>
+                <p className="text-[10.5px] text-fg-subtle mt-0.5">
+                  {new Date(e.createdAt).toLocaleString()}
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -228,6 +587,7 @@ function SimPanel({
   simulationRequest: FolderInitial["simulationRequest"];
   jdEmpty: boolean;
 }) {
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
@@ -251,9 +611,10 @@ function SimPanel({
         return;
       }
       setFlash(j.message ?? "Sim request submitted.");
-      // Soft-refresh by hard-reload — the folder page state needs the
-      // newly-linked SimulationRequest record to drive this panel.
-      setTimeout(() => window.location.reload(), 600);
+      // Server-side refresh — re-fetches the page's data including
+      // the new simulationRequest row without losing tab state or
+      // unsaved field edits.
+      router.refresh();
     } finally {
       setBusy(false);
     }
