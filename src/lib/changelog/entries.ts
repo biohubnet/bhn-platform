@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — click-to-branch modal — May 2026
+  {
+    title: "Career paths — click a pulsing fork icon to open a focused branching modal",
+    body: "Reset the cross-tree interaction. Hover is gone; the page is now click-driven and modal-based.\n\n**Branch-out icon.** Every station box that has cross-tree links now wears a small `GitFork` icon in its top-right corner, tinted in the track's accent. When the station has more than one branch, a tiny count badge sits over the icon. The icon breathes with a 2.4-second `careerBranchPulse` keyframe (scale 1 → 1.12, opacity 0.85 → 1) so it's clearly interactive.\n\n**Click animation sequence** (total run-time ~1.1 s):\n  • **0 ms** — full-screen backdrop fades in (`bg-black/75 backdrop-blur-sm`).\n  • **250 ms** — source station card slides + fades in at the top, centred, with a thick accent border and a multi-layer accent glow.\n  • **450 ms** — SVG cubic-bezier lines start drawing from the source's bottom edge to each target's top edge, with a stroke-dashoffset animation timed at 700 ms and staggered 120 ms per line. Each line carries an arrowhead in the target's accent and a soft outer glow.\n  • **750 ms** — target station cards slide + fade in at the line endpoints, each carrying its own station detail + the transition's reason + the 4 \"learn first\" gaps.\n  • **1100 ms** — \"Press Esc or click backdrop to close\" hint fades in.\n\nLayout adapts to the number of targets (1, 2, or 3 columns). The modal scrolls vertically when the content is taller than the viewport. Body scroll is locked while open. Click backdrop / Esc / close button all dismiss.\n\n**Removed:** the hover-line + popover overlay, the `dim others` mechanism, the `relatedIds` set, the band-based popover positioning code, and the in-box cross-tree text footer — all replaced by the single icon affordance + modal.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — branching polish: glow, dim, canvas-clamp, dynamic shape — May 2026
   {
     title: "Career paths — branching polish (glow, dim others, canvas-clamp, dynamic popover shape)",

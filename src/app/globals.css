@@ -997,6 +997,22 @@ body {
   overscroll-behavior: contain;
 }
 
+/* /career-paths interactions:
+ *   • `careerBranchPulse` — subtle breathing animation for the
+ *     branch-out icon on station boxes that have cross-tree links.
+ *     Tells the user "this is interactive" without being loud.
+ *   • `careerLineGrow` — the line draw animation for the branch
+ *     modal. The path renders with `stroke-dasharray: <length>;
+ *     stroke-dashoffset: <length>;` initially (hidden) and animates
+ *     dashoffset to 0 (drawn). */
+@keyframes careerBranchPulse {
+  0%, 100% { transform: scale(1);    opacity: 0.85; }
+  50%      { transform: scale(1.12); opacity: 1; }
+}
+@keyframes careerLineGrow {
+  to { stroke-dashoffset: 0; }
+}
+
 /* Hero mesh gradients — saturated multi-stop fills for full-bleed
  * hero bands. Driven by per-theme CSS variables (--hero-bg + four
  * --hero-mesh-{1..4} stops + --hero-fg for the text colour) so the
