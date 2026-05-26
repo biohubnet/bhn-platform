@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.26";
+export const TOUR_VERSION = "2026.05.26b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Graduate showcase admin (May 2026) ─────────────────────────
+  {
+    id: "admin.graduate-showcase",
+    title: "New: Graduate showcase admin",
+    body: "Under Admin you'll find Grad showcase. Public submissions from program graduates (name + LinkedIn + headshot) arrive here from /showcase/<program> — no login required for the public submitter. From the admin grid you can filter by program, hide already-processed rows, download the photo + LinkedIn in one click (which auto-stamps you as the downloader), and delete spam.",
+    path: "/admin/showcase",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Grad showcase", href: "/admin/showcase" },
+    since: "2026.05.26b",
+  },
   // ─── Career paths — Junior → VP journeys (May 2026) ──────────────
   {
     id: "trainee.career-paths-intro",

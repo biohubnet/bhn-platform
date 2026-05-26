@@ -4215,3 +4215,42 @@ model Facility {
   @@index([province])
   @@index([city])
 }
+
+/// Public "graduate showcase" submission — anyone (no login) can
+/// submit their name + LinkedIn handle + a headshot via
+/// /showcase/<programSlug>. Admins triage from /admin/showcase:
+/// download the photo + info pair, mark when last downloaded, or
+/// delete the row + drop the R2 object.
+///
+/// The first showcase we're shipping is "regulatory-affairs"; the
+/// `programSlug` field is here so additional programs (QA, GMP,
+/// CGT, …) can plug in later via /showcase/<other-slug> without a
+/// schema migration.
+model ShowcaseSubmission {
+  id                String    @id @default(cuid())
+  programSlug       String    @default("regulatory-affairs")
+  name              String
+  /// As the user typed it — may be "linkedin.com/in/foo" or just
+  /// "foo". The form normalises to a canonical URL stored in
+  /// `linkedinUrl`; the original raw input stays here for audit.
+  linkedinHandle    String
+  linkedinUrl       String?
+  /// Public R2 URL — `R2_PUBLIC_URL/showcase/<slug>/<id>.<ext>`.
+  photoUrl          String
+  /// R2 object key (without bucket / base URL) so the delete
+  /// endpoint can drop the file.
+  photoKey          String
+  /// IP + UA captured for basic abuse triage on the admin
+  /// dashboard. Not displayed to the public.
+  submittedFromIp   String?
+  submittedFromUa   String?
+  createdAt         DateTime  @default(now())
+  /// Updated every time an admin clicks "Download". Lets staff
+  /// track which rows have been processed vs are still to do.
+  lastDownloadedAt  DateTime?
+  /// Name / email of the admin who last downloaded.
+  lastDownloadedBy  String?
+  adminNote         String?
+
+  @@index([programSlug, createdAt])
+}

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Graduate showcase — May 2026
+  {
+    title: "Graduate showcase — public landing page + admin triage dashboard",
+    body: "Stand-alone surface for capturing program graduates' details for the public-facing showcase. **Anyone** (no login required) can land at **`/showcase/regulatory-affairs`** and submit:\n\n  • Their name (2–120 chars)\n  • Their LinkedIn handle — accepts a bare slug (\"priya-iyer\"), a partial URL (\"linkedin.com/in/priya-iyer\"), or a full URL. Normalised server-side to a canonical `https://www.linkedin.com/in/<slug>/`.\n  • A headshot (JPEG / PNG / WebP, under 5 MB). Live preview before submit; uploaded to R2 at `showcase/<programSlug>/<id>.<ext>`.\n\nBranded with the BioHubNet diamond mark + tri-tone wordmark + \"Transformative Talent Development\" tagline. Lives **outside** the `(dashboard)` group so no sidebar / no auth gate. IP + user-agent are captured for abuse triage. Errors are user-facing strings; size/type checks mirror the server gate so the upload never wastes bytes.\n\n**Admin side — `/admin/showcase`** (linked under Admin in the sidebar as \"Grad showcase\", GraduationCap icon):\n  • Grid of submission cards — headshot thumbnail, name, LinkedIn link (opens in new tab), submitted date, and \"Downloaded <date> by <admin>\" once processed.\n  • Filter bar: program tab + an \"Only show un-downloaded\" toggle for triage.\n  • Per-row actions: **Download** (opens photo + LinkedIn in new tabs, auto-marks the row as downloaded by the current admin), **Mark done / Mark undone** (manual toggle when downloaded out-of-band), **Delete** (confirms via the platform dialog, drops the R2 object + the row).\n\n**Foundation.** New `ShowcaseSubmission` Prisma model + raw SQL migration `20260722010000_showcase_submissions`. Three API routes: `POST /api/showcase/submit` (public), `POST /api/admin/showcase/[id]/mark-downloaded` (admin-only, accepts `{ mark: boolean }`), and `DELETE /api/admin/showcase/[id]` (admin-only, R2 cleanup first then row delete). The R2 deleter is best-effort so a stuck blob never blocks removing spam.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Sidebar labels + facilities auto-seed — May 2026
   {
     title: "Sidebar — proper labels for Career Paths + Facilities Map (and the map auto-populates)",

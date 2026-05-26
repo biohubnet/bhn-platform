@@ -321,6 +321,8 @@ const adminExperienceItems: NavItem[] = [
     description: "Time-limited demo workspaces for prospective partners. Auto-cleanup after expiry." },
   { label: "Showcase Trainee",    href: "/admin/showcases",           icon: Sparkles,     minRole: "admin",
     description: "Single global advanced-trainee demo account — completed coursework, both merch tiers earned, full profile, scheduled interviews. For sales calls and training-team demos." },
+  { label: "Grad showcase",       href: "/admin/showcase",            icon: GraduationCap, minRole: "admin",
+    description: "Public submissions from program graduates (name + LinkedIn + headshot) collected via /showcase/<program>. Download the photo, mark when processed, or delete spam. No login required on the public side." },
   { label: "Platform Demo Hub",  href: "/admin/demo",                icon: Drama,        minRole: "admin",
     description: "Interactive 3-persona walkthrough for senior management, investors, and board presentations. Rex (Trainee), Vera (Employer), and Max (Admin) each navigate ENGAGE · EXPERIENCE · EQUIP." },
   { label: "Sim requests",        href: "/admin/simulator-requests",  icon: Theater,      minRole: "admin",
