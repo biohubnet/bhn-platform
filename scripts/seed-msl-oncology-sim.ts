@@ -77,7 +77,15 @@ function normaliseJd(raw: string): string {
 }
 
 const PROMPT_VERSION = "v1";
-const SEED_VERSION = "msl-oncology-2026-05-25-v1"; // bump to force overwrite
+const SEED_VERSION = "msl-oncology-2026-05-26-v2"; // bump to force overwrite
+// v2 (2026-05-26): renamed stat keys leadershipTrust → vpTrust and
+//   craft → velocity to match the canonical keys hardcoded in
+//   engine.ts WEIGHTS + SimulatorPlayer STAT_ICONS. With the old
+//   keys the stat icons silently dropped and the review-score
+//   weighting fell back to the 20% default for the two renamed
+//   stats, so the live UI looked stripped-down compared to a sim
+//   built from a properly-keyed AI generation. Labels kept the
+//   IC-role wording ("TA-Head trust", "Scientific craft").
 
 const CONTENT = normaliseJd(JD_BODY);
 const JD_SNIPPET = CONTENT.slice(0, 800);
@@ -89,7 +97,7 @@ const SOURCE_HASH = crypto
 // ── 3. Hand-authored SimulationPayload ────────────────────────────
 // The MSL role is an individual contributor; replaced "direct reports"
 // with five peer collaborators. Stat keys stay as the runtime expects
-// (morale / leadershipTrust / craft / crossFunc / capacity) but the
+// (morale / vpTrust / velocity / crossFunc / capacity) but the
 // labels are re-cast: "Peer trust" instead of "Team morale", etc.
 
 const PAYLOAD: SimulationPayload = {
@@ -114,7 +122,7 @@ const PAYLOAD: SimulationPayload = {
       initialValue: 55,
     },
     {
-      key: "leadershipTrust",
+      key: "vpTrust",
       label: "TA-Head trust",
       short: "TAHead",
       description:
@@ -123,7 +131,7 @@ const PAYLOAD: SimulationPayload = {
       initialValue: 50,
     },
     {
-      key: "craft",
+      key: "velocity",
       label: "Scientific craft",
       short: "Sci",
       description:
@@ -317,7 +325,7 @@ const PAYLOAD: SimulationPayload = {
             "Start with the three KOLs who haven't been visited in over 6 months — re-establish the relationship first.",
           outcome:
             "Helen nods slowly. 'That's defensible. But two of those three have moved on to a competitor's compound; you're going to walk in cold and learn that the hard way. I'd have wanted you to ask first.' She makes a note.",
-          effects: { leadershipTrust: -3, craft: 0, crossFunc: 0, morale: 0, capacity: -2 },
+          effects: { vpTrust: -3, velocity: 0, crossFunc: 0, morale: 0, capacity: -2 },
           tag: "Plan looked safe; missed that two KOLs had already shifted.",
         },
         {
@@ -325,7 +333,7 @@ const PAYLOAD: SimulationPayload = {
             "Ask Helen to walk you through which 5 KOLs she'd prioritise herself and why — defer your own ranking by a week.",
           outcome:
             "Helen smiles for the first time. 'Good. I'd rather you spend the week reading their last five papers and joint-calling with Rafe than guessing.' She names the five and explains the political subtext on each.",
-          effects: { leadershipTrust: 6, craft: 3, crossFunc: 0, morale: 2, capacity: 0 },
+          effects: { vpTrust: 6, velocity: 3, crossFunc: 0, morale: 2, capacity: 0 },
           tag: "Deferred ranking to the manager; week one became real learning.",
         },
         {
@@ -333,7 +341,7 @@ const PAYLOAD: SimulationPayload = {
             "Present a confident ranking based on H-index + recent publication output you mined the night before.",
           outcome:
             "Helen lets you finish. 'H-index is a fine starting point. It's not a coverage plan. Coverage is about who actually moves prescribing in this province, and that isn't always the loudest publisher.' She doesn't reject the plan, but the gap shows.",
-          effects: { leadershipTrust: -1, craft: 4, crossFunc: 0, morale: 0, capacity: -3 },
+          effects: { vpTrust: -1, velocity: 4, crossFunc: 0, morale: 0, capacity: -3 },
           tag: "Bibliometric flex landed flat; energy spent on the wrong signal.",
         },
         {
@@ -341,7 +349,7 @@ const PAYLOAD: SimulationPayload = {
             "Propose a hybrid: confirm her top-5 priorities, then join Rafe on his Eastern visits in week 2 to calibrate.",
           outcome:
             "Helen approves. 'That's what I would have proposed if you hadn't. Rafe will text you tomorrow about Thursday.' Small win.",
-          effects: { leadershipTrust: 4, craft: 2, crossFunc: 2, morale: 4, capacity: -1 },
+          effects: { vpTrust: 4, velocity: 2, crossFunc: 2, morale: 4, capacity: -1 },
           tag: "Hybrid plan; bought a calibration week without looking passive.",
         },
       ],
@@ -361,7 +369,7 @@ const PAYLOAD: SimulationPayload = {
             "A polished 12-page deck with bibliometrics, gap analyses, and a colour-coded coverage map.",
           outcome:
             "Helen replies at 11pm: 'Beautiful. Cut to 3 pages by Wednesday. I want the thinking, not the deck.' Capacity dent for not a lot of return.",
-          effects: { leadershipTrust: 0, craft: 2, crossFunc: 0, morale: 0, capacity: -8 },
+          effects: { vpTrust: 0, velocity: 2, crossFunc: 0, morale: 0, capacity: -8 },
           tag: "Over-engineered week-2 deliverable.",
         },
         {
@@ -369,7 +377,7 @@ const PAYLOAD: SimulationPayload = {
             "A 2-page brief: top-10 KOL list with one-line rationale each, three compliance grey-zones you anticipate, and one open question for Helen.",
           outcome:
             "Helen replies Monday morning: 'Useful. Your three grey-zones are the right ones. Talk through the open question at the huddle.' A clean win.",
-          effects: { leadershipTrust: 5, craft: 2, crossFunc: 0, morale: 2, capacity: -2 },
+          effects: { vpTrust: 5, velocity: 2, crossFunc: 0, morale: 2, capacity: -2 },
           tag: "Right level of detail; raised one open question without manufacturing certainty.",
         },
         {
@@ -377,7 +385,7 @@ const PAYLOAD: SimulationPayload = {
             "Skip the written plan and request a verbal walk-through at the huddle instead.",
           outcome:
             "Helen: 'I asked for it in writing because the team needs a reference point, not because I doubted you could talk through it.' Mild reset.",
-          effects: { leadershipTrust: -4, craft: 0, crossFunc: -1, morale: 0, capacity: 2 },
+          effects: { vpTrust: -4, velocity: 0, crossFunc: -1, morale: 0, capacity: 2 },
           tag: "Treated a written ask as optional.",
         },
       ],
@@ -397,7 +405,7 @@ const PAYLOAD: SimulationPayload = {
             "Walk her through the most recent ASCO abstract you remember on the combination; promise to follow up with the references.",
           outcome:
             "Helen learns about this within 24 hours from her own KOL channel. 'That's not how we respond to unsolicited off-label requests, even when the data exists. You should know that on day-one.' Compliance event documented.",
-          effects: { leadershipTrust: -10, craft: -2, crossFunc: 0, morale: -3, capacity: 0 },
+          effects: { vpTrust: -10, velocity: -2, crossFunc: 0, morale: -3, capacity: 0 },
           tag: "Engaged off-label data verbally instead of routing the request.",
         },
         {
@@ -405,7 +413,7 @@ const PAYLOAD: SimulationPayload = {
             "Confirm the request is unsolicited, log it on the spot, and tell her you will route it through Medical Information Services who will respond with the appropriate evidence package.",
           outcome:
             "She nods — she's seen MSLs handle this both ways and respects the right answer. The MIS response goes out cleanly within 48 hours. Helen flags it in 1:1 as exactly right.",
-          effects: { leadershipTrust: 8, craft: 1, crossFunc: 1, morale: 2, capacity: -1 },
+          effects: { vpTrust: 8, velocity: 1, crossFunc: 1, morale: 2, capacity: -1 },
           tag: "Routed the off-label request correctly; built trust early.",
         },
         {
@@ -413,7 +421,7 @@ const PAYLOAD: SimulationPayload = {
             "Decline to discuss and pivot back to on-label topics, then call Diane (Legal) after the visit to confirm you handled it right.",
           outcome:
             "Diane confirms you did fine, but recommends you also log the request as an unsolicited request — without that, MIS can't follow up and the KOL feels stonewalled. Decent recovery.",
-          effects: { leadershipTrust: 2, craft: 1, crossFunc: 1, morale: 1, capacity: -1 },
+          effects: { vpTrust: 2, velocity: 1, crossFunc: 1, morale: 1, capacity: -1 },
           tag: "Defensive but recoverable; learned the logging step.",
         },
       ],
@@ -433,7 +441,7 @@ const PAYLOAD: SimulationPayload = {
             "Tell him you'd love to help and offer to write the first draft of the protocol yourself over the next two weeks.",
           outcome:
             "Rafe coughs. He'll explain on the drive back why MSLs don't author IIS protocols. Helen also picks this up; another flagged event.",
-          effects: { leadershipTrust: -8, morale: -2, craft: 0, crossFunc: 0, capacity: -5 },
+          effects: { vpTrust: -8, morale: -2, velocity: 0, crossFunc: 0, capacity: -5 },
           tag: "Volunteered MSL labour to author a KOL's IIS protocol.",
         },
         {
@@ -441,7 +449,7 @@ const PAYLOAD: SimulationPayload = {
             "Note the idea seriously, share the company's IIS submission portal, and offer to flag the proposal internally once it's been submitted.",
           outcome:
             "Clean handoff. The KOL submits within a month; the internal review committee picks it up. Helen sees the entry and notes it positively.",
-          effects: { leadershipTrust: 5, morale: 3, craft: 2, crossFunc: 3, capacity: -1 },
+          effects: { vpTrust: 5, morale: 3, velocity: 2, crossFunc: 3, capacity: -1 },
           tag: "Pointed the KOL at the right channel without taking on protocol authorship.",
         },
         {
@@ -449,7 +457,7 @@ const PAYLOAD: SimulationPayload = {
             "Politely decline and change the subject — IIS is HEOR's lane, not yours.",
           outcome:
             "It's not HEOR's lane either, and the KOL leaves the room slightly cooler. Rafe later: 'You don't have to write the protocol; you do have to know what the right next step is.'",
-          effects: { leadershipTrust: -2, morale: -1, craft: -1, crossFunc: -1, capacity: 0 },
+          effects: { vpTrust: -2, morale: -1, velocity: -1, crossFunc: -1, capacity: 0 },
           tag: "Reflexive 'not my job' cost a relationship point.",
         },
         {
@@ -457,7 +465,7 @@ const PAYLOAD: SimulationPayload = {
             "Buy time. Tell him you want to think about how to position the idea internally and will follow up Friday.",
           outcome:
             "Friday you come back with the IIS portal link and Jens's name as a publication-side contact. The KOL appreciates the structured response.",
-          effects: { leadershipTrust: 3, morale: 2, craft: 1, crossFunc: 2, capacity: -2 },
+          effects: { vpTrust: 3, morale: 2, velocity: 1, crossFunc: 2, capacity: -2 },
           tag: "Bought time, returned with a proper structured handoff.",
         },
       ],
@@ -477,7 +485,7 @@ const PAYLOAD: SimulationPayload = {
             "Push to keep both bureau speakers — they know the data cold and will move the discussion forward.",
           outcome:
             "Helen interjects after the call: 'Bureau status doesn't disqualify them but it does mean we double-check that they're invited for advisory insight, not for compatibility with Marketing's narrative.' Mild ding.",
-          effects: { leadershipTrust: -3, crossFunc: 1, craft: 0, morale: -1, capacity: 0 },
+          effects: { vpTrust: -3, crossFunc: 1, velocity: 0, morale: -1, capacity: 0 },
           tag: "Defended bureau speakers without raising the conflict.",
         },
         {
@@ -485,7 +493,7 @@ const PAYLOAD: SimulationPayload = {
             "Name the conflict explicitly in the meeting, propose dropping one of the two bureau speakers, and substitute a community oncologist who hasn't been on a deck.",
           outcome:
             "Samira pushes back briefly; Helen backs your call. The community oncologist later turns out to be the most useful voice in the room.",
-          effects: { leadershipTrust: 6, crossFunc: -1, craft: 3, morale: 2, capacity: -1 },
+          effects: { vpTrust: 6, crossFunc: -1, velocity: 3, morale: 2, capacity: -1 },
           tag: "Surfaced a brand-vs-medical tension cleanly in front of Marketing.",
         },
         {
@@ -493,7 +501,7 @@ const PAYLOAD: SimulationPayload = {
             "Stay quiet on the bureau question and let Helen drive that part of the agenda.",
           outcome:
             "Helen raises it herself, looks at you mid-sentence and asks 'You spotted that, right?' You say yes. She marks it as awareness but not yet voice.",
-          effects: { leadershipTrust: 1, crossFunc: 0, craft: 0, morale: 0, capacity: 0 },
+          effects: { vpTrust: 1, crossFunc: 0, velocity: 0, morale: 0, capacity: 0 },
           tag: "Saw the conflict, didn't lead on it.",
         },
       ],
@@ -513,7 +521,7 @@ const PAYLOAD: SimulationPayload = {
             "Build the deck. It's data you know; saves Samira a week.",
           outcome:
             "Helen finds out via the MLR queue when the deck arrives for review with your name on it. 'You don't author commercial decks. Even when they're factually correct, your name on it changes the regulatory shape of the document.'",
-          effects: { leadershipTrust: -9, crossFunc: 2, craft: 0, morale: -2, capacity: -6 },
+          effects: { vpTrust: -9, crossFunc: 2, velocity: 0, morale: -2, capacity: -6 },
           tag: "Authored a commercial deck off the side of the desk.",
         },
         {
@@ -521,7 +529,7 @@ const PAYLOAD: SimulationPayload = {
             "Decline the authorship cleanly. Offer to do a 30-minute MSL training session for the sales team on the same data instead.",
           outcome:
             "Samira accepts the alternative. The training session lands well and the sales team starts looping you in earlier on territory questions.",
-          effects: { leadershipTrust: 6, crossFunc: 3, craft: 3, morale: 2, capacity: -2 },
+          effects: { vpTrust: 6, crossFunc: 3, velocity: 3, morale: 2, capacity: -2 },
           tag: "Rerouted the ask into the MSL training lane; built sales-team trust.",
         },
         {
@@ -529,7 +537,7 @@ const PAYLOAD: SimulationPayload = {
             "Say yes but stipulate that Anika (Medical Reviewer) reviews every slide before Samira's team touches it.",
           outcome:
             "Anika says no — the workflow isn't designed for MSL-authored commercial content. The middle path collapses; you end up declining anyway, two days later than you should have.",
-          effects: { leadershipTrust: -2, crossFunc: 0, craft: 0, morale: -1, capacity: -3 },
+          effects: { vpTrust: -2, crossFunc: 0, velocity: 0, morale: -1, capacity: -3 },
           tag: "Tried a workflow that wasn't real; lost two days.",
         },
       ],
@@ -549,7 +557,7 @@ const PAYLOAD: SimulationPayload = {
             "Lead with the depth-of-engagement strength; explain coverage gap as a quality choice.",
           outcome:
             "Helen: 'I agree the quality is there. The coverage gap is real though — at 17 by week 6 you'll land at 24 by 12, and the target is 30. What's your plan?'",
-          effects: { leadershipTrust: 1, craft: 1, crossFunc: 0, morale: 0, capacity: 0 },
+          effects: { vpTrust: 1, velocity: 1, crossFunc: 0, morale: 0, capacity: 0 },
           tag: "Reframed coverage gap as quality; got pushed to make it concrete.",
         },
         {
@@ -557,7 +565,7 @@ const PAYLOAD: SimulationPayload = {
             "Lead with the coverage gap and your concrete plan to close it (two double-days in Manitoba, a Saskatoon swing, joint visits with Priya).",
           outcome:
             "Helen: 'That's a real plan. Keep me posted weekly on the Manitoba double-days; I want to know if they're working before week 10.'",
-          effects: { leadershipTrust: 6, craft: 1, crossFunc: 1, morale: 0, capacity: -2 },
+          effects: { vpTrust: 6, velocity: 1, crossFunc: 1, morale: 0, capacity: -2 },
           tag: "Owned the metric you were behind on; brought a plan.",
         },
         {
@@ -565,7 +573,7 @@ const PAYLOAD: SimulationPayload = {
             "Start with the compliance flag from week 3; ask how she'd like you to handle the next one differently.",
           outcome:
             "Helen appreciates the directness. 'The fact that you raised it first matters. You handled the follow-up correctly — let's spend our time on what's ahead, not what's behind.'",
-          effects: { leadershipTrust: 4, craft: 0, crossFunc: 0, morale: 1, capacity: 0 },
+          effects: { vpTrust: 4, velocity: 0, crossFunc: 0, morale: 1, capacity: 0 },
           tag: "Surfaced the compliance flag yourself; banked direct-communication points.",
         },
       ],
@@ -585,7 +593,7 @@ const PAYLOAD: SimulationPayload = {
             "Take the slot yourself; you're newer and the learning curve is steeper.",
           outcome:
             "Defensible but Priya is hurt — she lined up two KOL coffee chats at the congress that now collapse. Marcus reads the budget log and asks why you didn't bring Helen in on the call.",
-          effects: { leadershipTrust: -2, morale: -4, craft: 1, crossFunc: 0, capacity: -1 },
+          effects: { vpTrust: -2, morale: -4, velocity: 1, crossFunc: 0, capacity: -1 },
           tag: "Took the slot without consultation.",
         },
         {
@@ -593,7 +601,7 @@ const PAYLOAD: SimulationPayload = {
             "Loop Helen and Marcus in. Propose Priya goes (she has the KOL meetings lined up) and you attend the regional satellite instead.",
           outcome:
             "Helen approves. Priya's meetings produce two early KOL relationships in your territory. You attend the satellite virtually and the budget line stays clean.",
-          effects: { leadershipTrust: 5, morale: 5, craft: 2, crossFunc: 1, capacity: -1 },
+          effects: { vpTrust: 5, morale: 5, velocity: 2, crossFunc: 1, capacity: -1 },
           tag: "Routed the decision through the manager and the budget owner.",
         },
         {
@@ -601,7 +609,7 @@ const PAYLOAD: SimulationPayload = {
             "Suggest a coin-flip with Priya to keep things peer-fair.",
           outcome:
             "Priya laughs and agrees, then later tells Marcus what happened. Marcus, very polite: 'We don't allocate development budget by chance. Next time, bring it to me.'",
-          effects: { leadershipTrust: 0, morale: 1, craft: 0, crossFunc: -2, capacity: 0 },
+          effects: { vpTrust: 0, morale: 1, velocity: 0, crossFunc: -2, capacity: 0 },
           tag: "Coin-flipped a budget decision; FME noticed.",
         },
       ],
@@ -621,7 +629,7 @@ const PAYLOAD: SimulationPayload = {
             "Yes — that's exactly what the MSL function is for, that's the right hand-off.",
           outcome:
             "Technically right and the answer Helen would give. The room understands the routing.",
-          effects: { leadershipTrust: 3, craft: 2, crossFunc: 3, morale: 2, capacity: -1 },
+          effects: { vpTrust: 3, velocity: 2, crossFunc: 3, morale: 2, capacity: -1 },
           tag: "Drew the line correctly in front of sales: route, don't bridge.",
         },
         {
@@ -629,7 +637,7 @@ const PAYLOAD: SimulationPayload = {
             "Yes, but only if the doc asks unprompted — and you'll need to document the request like any other off-label query.",
           outcome:
             "The 'only if unprompted' caveat is the key detail every senior MSL adds. Helen later: 'I would have wanted exactly that nuance.'",
-          effects: { leadershipTrust: 6, craft: 4, crossFunc: 3, morale: 2, capacity: -1 },
+          effects: { vpTrust: 6, velocity: 4, crossFunc: 3, morale: 2, capacity: -1 },
           tag: "Drew the line with the unprompted-request nuance.",
         },
         {
@@ -637,7 +645,7 @@ const PAYLOAD: SimulationPayload = {
             "Sidestep — say the routing is good but you'd rather Helen confirm the workflow and circle back.",
           outcome:
             "Helen's reaction is mild: 'You know this answer — you should be willing to give it. If you don't trust yourself on the easy ones, the reps won't trust you on the hard ones.'",
-          effects: { leadershipTrust: -2, craft: -1, crossFunc: -1, morale: -1, capacity: 0 },
+          effects: { vpTrust: -2, velocity: -1, crossFunc: -1, morale: -1, capacity: 0 },
           tag: "Punted the easy compliance question.",
         },
       ],
@@ -657,7 +665,7 @@ const PAYLOAD: SimulationPayload = {
             "Write a strong endorsement — the KOL is a high-value relationship and a yes will cement it.",
           outcome:
             "Helen reads the memo and pulls you in. 'I want your honest read, not your political read. If the study isn't strong, that's the answer.'",
-          effects: { leadershipTrust: -3, craft: -1, crossFunc: 0, morale: -1, capacity: -1 },
+          effects: { vpTrust: -3, velocity: -1, crossFunc: 0, morale: -1, capacity: -1 },
           tag: "Wrote a politically-flavoured endorsement memo.",
         },
         {
@@ -665,7 +673,7 @@ const PAYLOAD: SimulationPayload = {
             "Write an honest assessment: methodology is mid, scientific question is real, sample size is the constraint. Recommend the committee engage the KOL on a power-calculation revision.",
           outcome:
             "The committee approves the revision route. The KOL receives detailed methodological feedback he later thanks you for. Helen notes the memo specifically at QBR.",
-          effects: { leadershipTrust: 7, craft: 4, crossFunc: 2, morale: 1, capacity: -2 },
+          effects: { vpTrust: 7, velocity: 4, crossFunc: 2, morale: 1, capacity: -2 },
           tag: "Wrote an honest, useful methodological memo.",
         },
         {
@@ -673,7 +681,7 @@ const PAYLOAD: SimulationPayload = {
             "Decline to write the memo — argue that the relationship makes you the wrong author.",
           outcome:
             "Anika gently corrects: the conflict isn't ownership, it's intent. The committee wanted your read precisely because you know the KOL. You end up writing it three days late.",
-          effects: { leadershipTrust: -2, craft: 0, crossFunc: -1, morale: 0, capacity: -2 },
+          effects: { vpTrust: -2, velocity: 0, crossFunc: -1, morale: 0, capacity: -2 },
           tag: "Confused conflict-of-interest with reasonable proximity.",
         },
       ],
@@ -693,7 +701,7 @@ const PAYLOAD: SimulationPayload = {
             "Acknowledge the competitor data accurately, walk him through your indirect-comparison evidence, and offer to bring Lin (HEOR) to a follow-up to discuss real-world evidence in his patient population.",
           outcome:
             "Exactly the play. The KOL responds well to HEOR involvement; the follow-up cements the relationship.",
-          effects: { leadershipTrust: 6, craft: 5, crossFunc: 3, morale: 2, capacity: -2 },
+          effects: { vpTrust: 6, velocity: 5, crossFunc: 3, morale: 2, capacity: -2 },
           tag: "Engaged competitor data honestly and pulled in HEOR to deepen the discussion.",
         },
         {
@@ -701,7 +709,7 @@ const PAYLOAD: SimulationPayload = {
             "Push back on the competitor result — point out a sub-group analysis you remember that complicates their headline number.",
           outcome:
             "He's heard the sub-group critique. He raises it himself sometimes. The pushback reads as defensive and you don't get a third coffee.",
-          effects: { leadershipTrust: -2, craft: -2, crossFunc: 0, morale: -2, capacity: -1 },
+          effects: { vpTrust: -2, velocity: -2, crossFunc: 0, morale: -2, capacity: -1 },
           tag: "Defensive competitor-data pushback closed the door.",
         },
         {
@@ -709,7 +717,7 @@ const PAYLOAD: SimulationPayload = {
             "Stay neutral, listen, and bring back the conversation to your data's strongest sub-population.",
           outcome:
             "Safe but unmemorable. He'll see another MSL next month. The relationship plateaus.",
-          effects: { leadershipTrust: 0, craft: 0, crossFunc: 0, morale: 0, capacity: 0 },
+          effects: { vpTrust: 0, velocity: 0, crossFunc: 0, morale: 0, capacity: 0 },
           tag: "Neutral pivot; relationship neither built nor damaged.",
         },
       ],
@@ -729,7 +737,7 @@ const PAYLOAD: SimulationPayload = {
             "Name the week-3 off-label handling moment — would have logged the request more carefully even on the recoverable path.",
           outcome:
             "Helen nods. 'That's a senior answer. The fact that you'd add the logging step on the recoverable path means you've internalised the system. Strong meets.'",
-          effects: { leadershipTrust: 5, craft: 2, crossFunc: 1, morale: 1, capacity: 0 },
+          effects: { vpTrust: 5, velocity: 2, crossFunc: 1, morale: 1, capacity: 0 },
           tag: "QBR opener showed honest self-assessment of a compliance grey-zone.",
         },
         {
@@ -737,7 +745,7 @@ const PAYLOAD: SimulationPayload = {
             "Name the week-2 written plan length — you would have started with 2 pages, not 12.",
           outcome:
             "Helen smiles. 'Style point. The substantive things you'd change are bigger.' She nudges you to go deeper.",
-          effects: { leadershipTrust: 1, craft: 0, crossFunc: 0, morale: 0, capacity: 0 },
+          effects: { vpTrust: 1, velocity: 0, crossFunc: 0, morale: 0, capacity: 0 },
           tag: "QBR opener picked a small thing.",
         },
         {
@@ -745,7 +753,7 @@ const PAYLOAD: SimulationPayload = {
             "Name a coverage-gap miss — the Saskatoon swing you should have made in week 6 instead of week 9.",
           outcome:
             "Helen: 'Good. Specific, operational, you can change it. That's the kind of self-reflection that compounds across quarters.'",
-          effects: { leadershipTrust: 4, craft: 1, crossFunc: 1, morale: 1, capacity: 0 },
+          effects: { vpTrust: 4, velocity: 1, crossFunc: 1, morale: 1, capacity: 0 },
           tag: "QBR opener picked a concrete operational miss.",
         },
       ],
