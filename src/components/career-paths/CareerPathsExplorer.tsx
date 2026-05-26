@@ -1,49 +1,40 @@
 "use client";
 
 /**
- * CareerPathsExplorer — tree-chart visualisation of one career track
- * at a time, with cross-tree branches you can click to jump.
+ * CareerPathsExplorer — single-page big-picture career map.
  *
- * Tree layout (active-track view)
- * ──────────────────────────────────────────────────────────────────
- *   [ Junior box ]
- *        │
- *        │  ← transition microcopy ("Around year 2…")
- *        ▼
- *   [ Mid box ]
- *        │
- *        ▼
- *   [ Senior box ] ── branch ──► [ side card: Quality track ]
- *        │                       [ side card: Project Lead    ]
- *        ▼
- *   [ Lead box ]   ── branch ──► [ side card: Business       ]
- *        │
- *        ▼
- *   [ VP box ]
+ * Six tracks rendered as parallel horizontal lanes (one section per
+ * track). Each lane carries five station boxes left-to-right (Junior →
+ * Mid → Senior → Lead → VP) connected by horizontal arrows, plus a
+ * track header on the left side.
  *
- *  • Boxes — proper rounded cards with a left-accent border in the
- *    track's hue, a soft shadow, level eyebrow, role list, focus
- *    microcopy, and 3 curated course links.
- *  • Trunk — a CSS vertical line connecting consecutive boxes.
- *    Gradient deepens from light at Junior to full accent at VP so
- *    the eye reads "climbing the track" as it scans down.
- *  • Connectors — between every adjacent pair of stations, a short
- *    transition microcopy explains what changes at that career hinge
- *    (year-2 unit-op ownership, year-5 workstream leadership, etc.).
- *  • Cross-tree branches — at stations that have crossLinks, an SVG
- *    curve grows out of the box's right edge to a small destination
- *    card carrying the target track's icon + a one-line "when / why"
- *    microcopy. Clicking the destination card swaps the active track
- *    so the journey for THAT track is immediately on screen.
+ *   ┌── Bioprocess Manufacturing ──────────────────────────────────┐
+ *   │  [Junior] → [Mid] → [Senior] → [Lead] → [VP]                  │
+ *   └───────────────────────────────────────────────────────────────┘
+ *   ┌── Quality & Regulatory ──────────────────────────────────────┐
+ *   │  [Junior] → [Mid] → [Senior] → [Lead] → [VP]                  │
+ *   └───────────────────────────────────────────────────────────────┘
+ *   …
  *
- * Responsiveness — at lg+ the cross-tree side cards sit to the right
- * of the trunk in a dedicated column. Below lg they collapse to a
- * stacked list beneath the parent station so the tree still reads
- * top-to-bottom on phones.
+ * Per station box, top-to-bottom:
+ *   • Level eyebrow ("Level 3 · Senior") + years-range pill
+ *   • Primary role title + "+N more" affordance for the others
+ *   • Focus microcopy (3-line clamp)
+ *   • Education-gaps list — short topic phrases, no course names,
+ *     no links. This is the "what kind of training do I need at this
+ *     level" lens, intentionally non-prescriptive.
+ *   • Cross-tree footer (when this station has crossLinks): name of
+ *     the destination track + the "when" hinge + a one-line reason.
+ *
+ * Suggested-course chips from the previous version are gone — the
+ * page is now a map, not a curriculum recommender. Course data is
+ * retained in lib/career-paths/data.ts for future use.
+ *
+ * Responsive: on lg+ each lane is a 5-column horizontal grid. Below
+ * lg the lane collapses to a single column so each station stacks
+ * vertically inside its track section.
  */
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
 import {
   Briefcase,
   Dna,
@@ -52,18 +43,16 @@ import {
   Shield,
   Stethoscope,
   type LucideIcon,
-  ArrowRight,
-  CornerDownRight,
+  ChevronRight,
   Sparkles,
   Trophy,
+  CornerDownRight,
 } from "lucide-react";
 import {
   CAREER_TRACKS,
   TRACK_BY_ID,
-  TRANSITION_MICROCOPY,
   type CareerStation,
   type CareerTrack,
-  type LevelId,
 } from "@/lib/career-paths/data";
 
 const ICONS: Record<CareerTrack["iconKey"], LucideIcon> = {
@@ -75,190 +64,43 @@ const ICONS: Record<CareerTrack["iconKey"], LucideIcon> = {
   network:     Network,
 };
 
-const LEVEL_ORDER: LevelId[] = ["junior", "mid", "senior", "lead", "vp"];
-
 export function CareerPathsExplorer() {
-  const [activeId, setActiveId] = useState<CareerTrack["id"]>(CAREER_TRACKS[0].id);
-  const active = useMemo(() => TRACK_BY_ID.get(activeId)!, [activeId]);
-  const ActiveIcon = ICONS[active.iconKey];
-
   return (
-    <div className="space-y-10">
-      {/* ── Track selector ── */}
-      <section aria-label="Career tracks">
-        <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg-subtle mb-3">
-          Pick a track
+    <div className="space-y-8">
+      {/* ── Map legend ── */}
+      <section className="rounded-xl border border-line/70 bg-card-solid px-5 py-4">
+        <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg mb-2">
+          How to read this map
         </p>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {CAREER_TRACKS.map((t) => {
-            const Icon = ICONS[t.iconKey];
-            const isActive = t.id === activeId;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setActiveId(t.id)}
-                className={
-                  "relative text-left pl-4 pr-3 py-3 transition-colors rounded-lg " +
-                  (isActive ? "bg-elevated/70" : "hover:bg-elevated/40")
-                }
-                aria-pressed={isActive}
-              >
-                <span
-                  aria-hidden
-                  className={`absolute left-0 top-3 bottom-3 rounded-r ${isActive ? "w-1" : "w-[2px]"}`}
-                  style={{ backgroundColor: t.accent }}
-                />
-                <div className="flex items-start gap-2.5">
-                  <Icon className="h-4 w-4 shrink-0 mt-0.5" style={{ color: t.accent }} />
-                  <div className="min-w-0">
-                    <p className="text-[13.5px] font-semibold text-fg leading-tight">{t.title}</p>
-                    <p className="text-[11.5px] text-fg-muted leading-snug mt-0.5">{t.tagline}</p>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        <ul className="space-y-1 text-[12.5px] text-fg-muted leading-relaxed">
+          <li className="inline-flex items-baseline gap-2">
+            <Sparkles size={11} className="opacity-70 translate-y-[1px]" />
+            Six career tracks. Read each row left-to-right: Junior → Mid → Senior → Lead → VP.
+          </li>
+          <li className="inline-flex items-baseline gap-2">
+            <ChevronRight size={11} className="opacity-70 translate-y-[1px]" />
+            Each box shows the typical roles, the focus at that level, and the education / skill gaps to close before the next step.
+          </li>
+          <li className="inline-flex items-baseline gap-2">
+            <CornerDownRight size={11} className="opacity-70 translate-y-[1px]" />
+            Cross-tree footers mark common branch points — where careers credibly fork into another track.
+          </li>
+        </ul>
       </section>
 
-      {/* ── Active track header ── */}
-      <section>
-        <div className="flex items-baseline gap-2.5 mb-2">
-          <span
-            aria-hidden
-            className="inline-block w-2 h-2 rounded-sm"
-            style={{ backgroundColor: active.accent }}
-          />
-          <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg">
-            Active track
-          </p>
-        </div>
-        <div className="flex items-start gap-3">
-          <ActiveIcon className="h-7 w-7 shrink-0 mt-1" style={{ color: active.accent }} />
-          <div className="min-w-0">
-            <h2
-              className="text-[24px] sm:text-[28px] font-semibold text-fg leading-tight tracking-tight"
-              style={{ fontFamily: "var(--font-display-theme, inherit)" }}
-            >
-              {active.title}
-            </h2>
-            <p className="mt-1 text-[14px] text-fg-muted leading-relaxed max-w-3xl">
-              {active.description}
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 h-px bg-gradient-to-r from-line/80 via-line/40 to-transparent" />
-      </section>
+      {/* ── Six lanes ── */}
+      {CAREER_TRACKS.map((track) => (
+        <TrackLane key={track.id} track={track} />
+      ))}
 
-      {/* ── Tree chart ── */}
-      <section aria-label={`${active.title} career tree`}>
-        {/* Tiny "you start here" flourish above the first box */}
-        <div className="flex flex-col items-center mb-2">
-          <p
-            className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.18em] font-bold"
-            style={{ color: active.accent }}
-          >
-            <Sparkles size={12} /> Start
-          </p>
-          <Trunk accent={active.accent} height={28} variant="start" />
-        </div>
-
-        <ol className="space-y-0">
-          {active.stations.map((s, idx) => {
-            const isLast = idx === active.stations.length - 1;
-            const nextLevel = active.stations[idx + 1]?.level;
-            const transitionKey = nextLevel ? `${s.level}→${nextLevel}` : null;
-            return (
-              <li key={s.level} className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(0,520px)_1fr] gap-x-6">
-                {/* LEFT GUTTER — reserved for symmetry; intentionally empty */}
-                <div className="hidden lg:block" />
-
-                {/* CENTER COLUMN — station box */}
-                <div className="relative">
-                  <StationBox station={s} index={idx} accent={active.accent} />
-                </div>
-
-                {/* RIGHT GUTTER — cross-tree branches (lg+) */}
-                <div className="hidden lg:flex flex-col justify-center gap-3 pt-2">
-                  {s.crossLinks?.map((cl) => {
-                    const target = TRACK_BY_ID.get(cl.trackId);
-                    if (!target) return null;
-                    return (
-                      <BranchToTrack
-                        key={cl.trackId + cl.when}
-                        target={target}
-                        when={cl.when}
-                        reason={cl.reason}
-                        accent={active.accent}
-                        onClick={() => setActiveId(target.id)}
-                      />
-                    );
-                  })}
-                </div>
-
-                {/* MOBILE: cross-tree branches stacked under the station */}
-                {s.crossLinks && s.crossLinks.length > 0 && (
-                  <div className="lg:hidden mt-4 space-y-2">
-                    <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg-subtle inline-flex items-center gap-1.5">
-                      <CornerDownRight size={11} className="opacity-70" /> Cross-tree from here
-                    </p>
-                    {s.crossLinks.map((cl) => {
-                      const target = TRACK_BY_ID.get(cl.trackId);
-                      if (!target) return null;
-                      return (
-                        <BranchToTrack
-                          key={cl.trackId + cl.when}
-                          target={target}
-                          when={cl.when}
-                          reason={cl.reason}
-                          accent={active.accent}
-                          onClick={() => setActiveId(target.id)}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* TRANSITION CONNECTOR — between this station and the next */}
-                {!isLast && transitionKey && (
-                  <>
-                    <div className="hidden lg:block" />
-                    <div className="flex flex-col items-center py-3 lg:py-4">
-                      <Trunk accent={active.accent} height={20} />
-                      <p className="text-[11.5px] italic text-fg-muted leading-snug text-center max-w-sm px-3">
-                        {TRANSITION_MICROCOPY[transitionKey]}
-                      </p>
-                      <Trunk accent={active.accent} height={20} variant="arrow" />
-                    </div>
-                    <div className="hidden lg:block" />
-                  </>
-                )}
-              </li>
-            );
-          })}
-        </ol>
-
-        {/* "You've made it" flourish below the last box */}
-        <div className="flex flex-col items-center mt-2">
-          <Trunk accent={active.accent} height={24} variant="end" />
-          <p
-            className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.18em] font-bold"
-            style={{ color: active.accent }}
-          >
-            <Trophy size={12} /> Top of the ladder
-          </p>
-        </div>
-      </section>
-
-      {/* ── Catalog link ── */}
+      {/* ── Catalog hand-off ── */}
       <section className="border-t border-line/60 pt-6">
         <p className="text-[12.5px] text-fg-muted leading-relaxed">
-          Looking for the full catalog instead of guided journeys? See every
-          course at{" "}
-          <Link href="/courses" className="font-semibold text-brand-700 hover:underline">
-            Courses →
-          </Link>
+          The full course catalog lives on{" "}
+          <a href="/courses" className="font-semibold text-brand-700 hover:underline">
+            /courses
+          </a>
+          {" "}— once you've spotted the gaps you want to close, head there to find the specific offerings.
         </p>
       </section>
     </div>
@@ -266,40 +108,116 @@ export function CareerPathsExplorer() {
 }
 
 // ──────────────────────────────────────────────────────────────────
-// Station box — one node on the tree
+// One track lane — header + horizontal row of 5 station boxes
+// ──────────────────────────────────────────────────────────────────
+
+function TrackLane({ track }: { track: CareerTrack }) {
+  const Icon = ICONS[track.iconKey];
+  return (
+    <section
+      aria-labelledby={`track-${track.id}`}
+      className="rounded-2xl border border-line/70 overflow-hidden"
+      style={{
+        // A faint accent-tinted gradient backdrop unifies the lane.
+        // Same recipe used on /admin/equip/deadlines + /admin/announcements.
+        backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${track.accent} 6%, var(--card)) 0%, var(--card) 70%)`,
+      }}
+    >
+      {/* Lane header */}
+      <header
+        className="px-5 sm:px-6 py-4 border-b"
+        style={{ borderColor: `color-mix(in srgb, ${track.accent} 18%, var(--line))` }}
+      >
+        <div className="flex items-start gap-3">
+          <Icon className="h-6 w-6 shrink-0 mt-0.5" style={{ color: track.accent }} />
+          <div className="min-w-0">
+            <h2
+              id={`track-${track.id}`}
+              className="text-[18px] sm:text-[20px] font-semibold text-fg leading-tight tracking-tight"
+              style={{ fontFamily: "var(--font-display-theme, inherit)" }}
+            >
+              {track.title}
+            </h2>
+            <p className="mt-0.5 text-[12.5px] text-fg-muted leading-snug">
+              {track.tagline}
+            </p>
+          </div>
+        </div>
+      </header>
+
+      {/* Station row */}
+      <div className="p-4 sm:p-5">
+        <ol className="grid grid-cols-1 lg:grid-cols-5 gap-3 lg:gap-2">
+          {track.stations.map((station, idx) => (
+            <li key={station.level} className="relative">
+              <StationBox station={station} index={idx} accent={track.accent} />
+
+              {/* Horizontal connector arrow between this station
+                  and the next. Desktop only — vertical stacking on
+                  mobile makes the arrow redundant. */}
+              {idx < track.stations.length - 1 && (
+                <span
+                  aria-hidden
+                  className="hidden lg:flex absolute -right-2 top-1/2 -translate-y-1/2 z-10 items-center justify-center w-5 h-5 rounded-full"
+                  style={{
+                    backgroundColor: `color-mix(in srgb, ${track.accent} 14%, var(--card))`,
+                    color: track.accent,
+                  }}
+                >
+                  <ChevronRight size={12} strokeWidth={2.5} />
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* Start → End markers under the lane to anchor the journey */}
+      <div className="px-5 sm:px-6 pb-4 -mt-1 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-bold" style={{ color: track.accent }}>
+        <span className="inline-flex items-center gap-1.5">
+          <Sparkles size={11} /> Start
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          Top of the ladder <Trophy size={11} />
+        </span>
+      </div>
+    </section>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Station box — one node in the lane
 // ──────────────────────────────────────────────────────────────────
 
 function StationBox({
-  station, index, accent,
+  station,
+  index,
+  accent,
 }: {
   station: CareerStation;
   index: number;
   accent: string;
 }) {
+  // Accent intensity grows with seniority — light at Junior, full at
+  // VP. The eye reads "climbing" as it scans left-to-right.
+  const intensity = 30 + index * 17; // 30% → 98%
   return (
-    <article
-      className="relative overflow-hidden rounded-2xl bg-card-solid border border-line shadow-card-rest"
-      style={{
-        // Subtle accent-tinted gradient backdrop — barely visible but
-        // ties the box to the track's hue.
-        backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${accent} 7%, transparent) 0%, transparent 60%)`,
-      }}
-    >
-      {/* Left accent bar — the colour cue for the track */}
+    <article className="relative h-full rounded-xl bg-card-solid border border-line shadow-card-rest overflow-hidden">
+      {/* Top accent strip — width is full, opacity scales with seniority */}
       <span
         aria-hidden
-        className="absolute left-0 top-0 bottom-0 w-1"
-        style={{ backgroundColor: accent }}
+        className="absolute top-0 left-0 right-0 h-1"
+        style={{
+          backgroundColor: `color-mix(in srgb, ${accent} ${intensity}%, transparent)`,
+        }}
       />
-
-      <div className="pl-5 pr-5 py-4">
-        {/* Eyebrow + level chip */}
-        <div className="flex items-baseline justify-between gap-3 flex-wrap">
-          <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg">
+      <div className="p-3.5">
+        <div className="flex items-baseline justify-between gap-2 flex-wrap">
+          <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-fg-subtle">
             Level {index + 1} · {station.label}
           </p>
           <span
-            className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full"
+            className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
             style={{
               backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)`,
               color: accent,
@@ -309,149 +227,71 @@ function StationBox({
           </span>
         </div>
 
-        {/* Roles — inline middot list, larger type so it's the
-            primary read alongside the level label. */}
-        <p className="mt-2 text-[14px] font-semibold text-fg leading-snug">
-          {station.roles.map((r, i) => (
-            <span key={r}>
-              {i > 0 && <span aria-hidden className="text-line mx-1.5 font-normal">·</span>}
-              {r}
+        {/* Primary role + "+N more" */}
+        <p className="mt-1.5 text-[13px] font-semibold text-fg leading-snug">
+          {station.roles[0]}
+          {station.roles.length > 1 && (
+            <span className="text-fg-subtle font-normal text-[11.5px]">
+              {" "}+{station.roles.length - 1} more
             </span>
-          ))}
+          )}
         </p>
 
         {/* Focus microcopy */}
-        <p className="mt-2 text-[12.5px] text-fg-muted leading-relaxed">
+        <p className="mt-1.5 text-[11.5px] text-fg-muted leading-relaxed line-clamp-3">
           {station.focus}
         </p>
 
-        {/* Courses — capped at 4 so the box height stays consistent */}
-        {station.courses.length > 0 && (
-          <div className="mt-3.5 border-t border-line/60 pt-3">
-            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-fg-subtle mb-1.5">
-              Suggested courses
+        {/* Education gaps */}
+        <div className="mt-3 border-t border-line/60 pt-2.5">
+          <p className="text-[9.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-1">
+            Education gaps
+          </p>
+          <ul className="space-y-0.5">
+            {station.educationGaps.map((g) => (
+              <li key={g} className="flex items-start gap-1.5 text-[11.5px] text-fg leading-snug">
+                <span
+                  aria-hidden
+                  className="inline-block w-1 h-1 rounded-full mt-[7px] shrink-0"
+                  style={{ backgroundColor: accent }}
+                />
+                <span className="text-fg-muted">{g}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Cross-tree footer */}
+        {station.crossLinks && station.crossLinks.length > 0 && (
+          <div className="mt-2.5 border-t border-line/60 pt-2.5">
+            <p className="text-[9.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle inline-flex items-center gap-1 mb-1">
+              <CornerDownRight size={10} className="opacity-70" />
+              Cross-tree from here
             </p>
-            <ul className="space-y-1">
-              {station.courses.slice(0, 4).map((c) => (
-                <li key={c.title}>
-                  <Link
-                    href={`/courses?q=${encodeURIComponent(c.title)}`}
-                    className="group inline-flex items-baseline gap-1.5 text-[12px] text-fg-muted hover:text-brand-700"
+            <ul className="space-y-1.5">
+              {station.crossLinks.map((cl) => {
+                const target = TRACK_BY_ID.get(cl.trackId);
+                if (!target) return null;
+                const TargetIcon = ICONS[target.iconKey];
+                return (
+                  <li
+                    key={cl.trackId + cl.when}
+                    className="text-[10.5px] leading-snug"
                   >
-                    <ArrowRight size={10} className="opacity-60 translate-y-[1px] shrink-0 group-hover:opacity-100" />
-                    <span className="group-hover:underline leading-snug">{c.title}</span>
-                  </Link>
-                </li>
-              ))}
-              {station.courses.length > 4 && (
-                <li className="text-[11px] italic text-fg-subtle pl-3.5">
-                  +{station.courses.length - 4} more — see catalog
-                </li>
-              )}
+                    <span className="inline-flex items-baseline gap-1.5">
+                      <TargetIcon className="h-3 w-3 translate-y-[2px] shrink-0" style={{ color: target.accent }} />
+                      <span>
+                        <span className="font-semibold text-fg">{target.title}</span>
+                        <span className="text-fg-subtle"> · {cl.when}</span>
+                      </span>
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
       </div>
     </article>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────
-// Branch to another track — small destination card on the side
-// ──────────────────────────────────────────────────────────────────
-
-function BranchToTrack({
-  target, when, reason, accent, onClick,
-}: {
-  target: CareerTrack;
-  when: string;
-  reason: string;
-  accent: string;
-  onClick: () => void;
-}) {
-  const Icon = ICONS[target.iconKey];
-  return (
-    <div className="relative">
-      {/* Connecting line — a small SVG curve from the parent
-          station's right edge to this card's left. Decorative
-          only — pointer-events none so clicks fall through to the
-          button. */}
-      <svg
-        aria-hidden
-        className="absolute -left-6 top-1/2 -translate-y-1/2 pointer-events-none hidden lg:block"
-        width="24"
-        height="48"
-        viewBox="0 0 24 48"
-      >
-        <path
-          d="M 0 24 Q 12 24, 12 12 L 24 12"
-          stroke={accent}
-          strokeWidth="1.5"
-          fill="none"
-          strokeDasharray="3 2"
-          opacity="0.6"
-        />
-      </svg>
-
-      <button
-        type="button"
-        onClick={onClick}
-        className="group relative w-full lg:w-[220px] text-left rounded-xl border border-line bg-card-solid px-3 py-2.5 hover:bg-elevated/60 transition-colors shadow-card-rest"
-        style={{ borderLeftWidth: "3px", borderLeftColor: target.accent }}
-      >
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 shrink-0" style={{ color: target.accent }} />
-          <p className="text-[12.5px] font-semibold text-fg leading-tight group-hover:underline truncate">
-            {target.title}
-          </p>
-        </div>
-        <p className="mt-1 text-[10.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle">
-          {when}
-        </p>
-        <p className="mt-1 text-[11.5px] text-fg-muted leading-snug">
-          {reason}
-        </p>
-      </button>
-    </div>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────
-// Trunk — vertical connecting line between station boxes
-// ──────────────────────────────────────────────────────────────────
-
-function Trunk({
-  accent,
-  height,
-  variant,
-}: {
-  accent: string;
-  height: number;
-  variant?: "start" | "end" | "arrow";
-}) {
-  // The trunk is a 2-px vertical bar with subtle gradient. The
-  // `variant` prop adds a cap (start tick / end tick / arrow head)
-  // so the journey has a clear "begin" and "advance" feel.
-  return (
-    <div className="relative flex flex-col items-center" style={{ height }}>
-      <span
-        aria-hidden
-        className="w-[2px] h-full"
-        style={{
-          background: `linear-gradient(180deg, ${accent} 0%, color-mix(in srgb, ${accent} 60%, transparent) 100%)`,
-        }}
-      />
-      {variant === "arrow" && (
-        <svg
-          aria-hidden
-          width="14"
-          height="10"
-          viewBox="0 0 14 10"
-          className="absolute -bottom-1 left-1/2 -translate-x-1/2"
-        >
-          <path d="M 1 1 L 7 8 L 13 1" stroke={accent} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
-    </div>
   );
 }

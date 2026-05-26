@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — big-picture map, education gaps instead of courses — May 2026
+  {
+    title: "Career paths — big-picture map with education gaps (not course names)",
+    body: "Pivot from the one-track-at-a-time tree chart to a single-page big-picture map showing all six tracks at once. And from \"suggested courses\" to \"education gaps\".\n\n**Layout** — six horizontal lanes (one per track), each with a track header on top and a 5-column grid of station boxes (Junior → Mid → Senior → Lead → VP). Stations connected by a horizontal ChevronRight pill between them. Sparkles \"Start\" marker on the left end of every lane, Trophy \"Top of the ladder\" marker on the right. Each lane has a subtle accent-tinted gradient backdrop so tracks are visually distinct without colour-fighting.\n\n**Inside each station box:**\n  • Level eyebrow + years-range pill in the track accent\n  • Primary role title + \"+N more\" affordance for the other roles at that level\n  • Focus microcopy (3-line clamp)\n  • **Education gaps** — 5 topic phrases describing the kind of training the trainee needs at this level. Intentionally non-prescriptive: no course names, no links. The point is \"what kind of muscles do I need to build\" rather than \"take this specific class\".\n  • Cross-tree footer when this station has cross-links — names the destination track + the \"when\" hinge.\n\n**Accent intensity grows with seniority** — the top-edge accent strip on each box goes from 30% opacity at Junior to ~98% at VP, so the eye reads \"climbing\" as it scans left-to-right.\n\n**Course chips are gone** from the rendered output (the data layer keeps the course suggestions for potential future use). The page is now a map for orienting yourself, not a curriculum recommender. The map ends with a hand-off line pointing to /courses for specific catalog offerings.\n\n**Responsive** — at lg+ each lane is a 5-column grid; below lg the stations stack vertically inside their lane so the full picture still reads on phones.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — tree-chart visualisation — May 2026
   {
     title: "Career paths — tree-chart visualisation with boxes, lines, and microcopies",

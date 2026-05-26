@@ -59,6 +59,15 @@ export interface CareerStation {
   yearsRange: string;
   roles: string[];
   focus: string;
+  /** Education + skill gaps to close at this level. Topic phrases,
+   *  intentionally generic — these don't link to platform courses and
+   *  aren't tied to specific catalogue titles. The point is "what
+   *  kind of training do I need" not "which course should I take".
+   *  Trainees go to /courses to find specific offerings. */
+  educationGaps: string[];
+  /** Course suggestions are kept on the type but no longer rendered
+   *  on /career-paths (the user wanted the visual to be about gaps,
+   *  not specific catalogue titles). Retained for future use. */
   courses: CourseRef[];
   crossLinks?: CrossLink[];
 }
@@ -104,12 +113,18 @@ const BIOPROCESS: CareerTrack = {
       roles: ["Manufacturing Associate", "Bioprocess Technician", "Cell Culture Operator", "Aseptic Operator"],
       focus:
         "Learn the protocols. Get aseptic-certified, learn batch records, follow SOPs cleanly, log deviations honestly. The job is reliability + curiosity, not heroics.",
+      educationGaps: [
+        "Aseptic technique fundamentals",
+        "Batch-record discipline",
+        "GMP basics + regulatory vocabulary",
+        "Lab safety + cleanroom behaviour",
+        "Microbiology awareness",
+      ],
       courses: [
         c("GMP Fundamentals"),
         c("Working in a GMP Environment 2-day In-Person Workshop"),
         c("Introduction to Bioprocessing (Online)"),
         c("BIS Program: Foundations"),
-        c("Industry-Readiness courses (R&D, business& commercialization, virtual clinical immersion training, professional development)"),
       ],
     },
     {
@@ -119,15 +134,17 @@ const BIOPROCESS: CareerTrack = {
       roles: ["Senior Manufacturing Associate", "Bioreactor Operator", "Cell Culture Specialist", "Aseptic Process Specialist"],
       focus:
         "Own a unit operation end-to-end. Troubleshoot deviations, draft SOP revisions, run training shadow-shifts, contribute to tech-transfer doc review.",
+      educationGaps: [
+        "Unit-op depth (bioreactor / cell culture)",
+        "Deviation investigation methodology",
+        "SOP authoring + change control",
+        "Statistical process control basics",
+        "Tech-transfer fundamentals",
+      ],
       courses: [
         c("Upstream Processing: Bioreactors in Bioprocessing"),
         c("Bioreactor Operations"),
         c("Cell Culture in Biopharmaceutical Manufacturing"),
-        c("Aseptic Processing: Contamination Control"),
-        c("Aseptic Processing: Decontamination and Sterilization Technologies"),
-        c("Microbiology 2-Day In-Person Training"),
-        c("4019 - Good Manufacturing Practice in Biomanufacturing"),
-        c("SCS 4099 Bioprocess Foundations"),
       ],
     },
     {
@@ -137,12 +154,16 @@ const BIOPROCESS: CareerTrack = {
       roles: ["Senior Process Engineer", "Manufacturing Supervisor", "Tech-Transfer Lead", "Production Lead"],
       focus:
         "Lead a shift, a campaign, or a tech-transfer. Write process characterisation reports, own CAPAs, set production schedules, mentor junior associates.",
+      educationGaps: [
+        "Tech-transfer ownership end-to-end",
+        "Process characterisation methodology",
+        "CAPA leadership + RCA discipline",
+        "Technical report writing",
+        "Mentoring + people-development frameworks",
+      ],
       courses: [
         c("Pharmaceutical Manufacturing Technology"),
-        c("Pharmaceutical Foundation Technology"),
         c("Meeting GMP Requirements Globally"),
-        c("Bioproduction Training course"),
-        c("Scientific Report Writing Fundamentals"),
       ],
       crossLinks: [
         {
@@ -166,10 +187,15 @@ const BIOPROCESS: CareerTrack = {
       roles: ["Manufacturing Manager", "Operations Director", "Site Engineering Director", "Plant Manager"],
       focus:
         "Own a value stream or a site. Capital project sign-off, capacity planning, hiring + headcount, regulator readiness, vendor strategy.",
+      educationGaps: [
+        "Capacity + demand planning",
+        "Capital project management",
+        "Vendor + outsourcing strategy",
+        "Regulatory inspection readiness",
+        "Cross-site coordination + hiring",
+      ],
       courses: [
         c("Assessment and Certification for Fundamentals of Effective Risk Management"),
-        c("Advanced Training Certification (ATC)"),
-        c("STERIS Master Class: Applied Cleaning Validation"),
       ],
       crossLinks: [
         {
@@ -187,10 +213,16 @@ const BIOPROCESS: CareerTrack = {
       roles: ["VP Manufacturing", "Chief Operations Officer", "SVP Biologics Operations"],
       focus:
         "Set network-wide strategy. Make / buy decisions, M&A integration, regulatory inspections at the executive level, board reporting on supply.",
+      educationGaps: [
+        "Network supply strategy",
+        "M&A operations diligence",
+        "Board-level communication",
+        "Make-vs-buy decisioning",
+        "Organisational design at scale",
+      ],
       courses: [
         c("miniMBA"),
         c("2235 - Program & Portfolio Management"),
-        c("Institute of Biomedical Entrepreneurship Certificate Program"),
       ],
     },
   ],
@@ -213,11 +245,16 @@ const QUALITY: CareerTrack = {
       roles: ["QC Technician", "QA Document Specialist", "Compliance Assistant"],
       focus:
         "Learn the language. SOPs, change-control, deviation forms, audit trails. The boring stuff that becomes the spine of every senior QA role.",
+      educationGaps: [
+        "GMP / GLP fundamentals",
+        "Change-control mechanics",
+        "Document control rigour",
+        "Audit-trail discipline",
+        "Regulatory vocabulary",
+      ],
       courses: [
         c("QA/QC Fundamentals"),
-        c("Good Laboratory Practice (GLP) Fundamentals"),
         c("GMP Fundamentals"),
-        c("Scientific Report Writing Fundamentals"),
       ],
     },
     {
@@ -227,11 +264,16 @@ const QUALITY: CareerTrack = {
       roles: ["QA Specialist", "Regulatory Affairs Associate", "Validation Engineer I", "CAPA Coordinator"],
       focus:
         "Own a system. Deviation investigations, internal audit prep, regulatory dossier sections, validation protocol authoring.",
+      educationGaps: [
+        "Deviation investigation + RCA",
+        "Validation protocol authoring",
+        "Internal audit preparation",
+        "Risk assessment frameworks",
+        "Regulatory dossier sections",
+      ],
       courses: [
         c("Pharmaceutical Quality Control"),
         c("Root Cause Analysis: Detangling laboratory ‘problems’ and identifying ways to prevent recurrence!"),
-        c("An Orientation to Canadian Regulations and Regulators"),
-        c("Microbiology 2-Day In-Person Training"),
       ],
     },
     {
@@ -241,13 +283,16 @@ const QUALITY: CareerTrack = {
       roles: ["Senior QA Specialist", "Regulatory Lead", "Validation Manager", "Audit Lead"],
       focus:
         "Lead inspections. Own the quality system for a product or site. Mentor specialists, write the executive risk briefings, sit on the change-control board.",
+      educationGaps: [
+        "Quality system ownership",
+        "Inspection front-room skills",
+        "Risk-based methodology",
+        "Validation strategy",
+        "Mentoring + change-control board chair-craft",
+      ],
       courses: [
         c("SCS 4023 Quality Assurance Management in Biomanufacturing"),
         c("Pharmaceutical Quality Assurance"),
-        c("Pharmaceutical Regulatory Compliance"),
-        c("STERIS Master Class: Applied Cleaning Validation"),
-        c("Advanced Training Certification (ATC)"),
-        c("Meeting GMP Requirements Globally"),
       ],
       crossLinks: [
         {
@@ -265,11 +310,15 @@ const QUALITY: CareerTrack = {
       roles: ["Director, Quality Assurance", "Director, Regulatory Affairs", "Head of Compliance"],
       focus:
         "Set the quality + regulatory roadmap. Build the team. Be the named point of contact for the inspector. Brief the CEO on inspection readiness.",
+      educationGaps: [
+        "Quality roadmap design",
+        "Regulator relationship management",
+        "Hiring + career-pathing",
+        "Continuous improvement programmes",
+        "Cross-functional executive alignment",
+      ],
       courses: [
         c("Assessment and Certification for Fundamentals of Effective Risk Management"),
-        c("Project Management for Non-Project Managers - Risk Management"),
-        c("Project Management for Non-Project Managers - Stakeholder Management"),
-        c("PSG Medical Devices Symposium"),
       ],
     },
     {
@@ -279,8 +328,14 @@ const QUALITY: CareerTrack = {
       roles: ["VP Quality", "Chief Quality Officer", "SVP Regulatory & Compliance"],
       focus:
         "Owns the licence to operate. Board-level audit committee, M&A diligence, global regulatory strategy, post-market surveillance frameworks.",
+      educationGaps: [
+        "Global regulatory strategy",
+        "Post-market surveillance frameworks",
+        "M&A quality diligence",
+        "Board-level risk reporting",
+        "Quality-of-supply governance",
+      ],
       courses: [
-        c("Masterclass: Navigating Licensing, IP & BD Partnerships in Therapeutics"),
         c("miniMBA"),
       ],
     },
@@ -304,11 +359,16 @@ const CGT: CareerTrack = {
       roles: ["Cell Therapy Operator", "Gene Therapy Process Trainee", "Viral Vector Production Tech"],
       focus:
         "Understand what's different about ATMPs vs. traditional biologics — autologous logistics, vector closure, the cleanroom intensity, the regulatory ambiguity.",
+      educationGaps: [
+        "ATMP regulatory landscape",
+        "Autologous chain-of-identity",
+        "Vector / cell-product basics",
+        "Cleanroom GMP intensity",
+        "Modality-specific safety practices",
+      ],
       courses: [
-        c("Introduction to Advanced Therapy Medicinal Products (ATMPs)Advanced Therapies GMP Onboarding"),
         c("Advanced Therapies GMP Onboarding"),
         c("GMP Fundamentals"),
-        c("Working in a GMP Environment 2-day In-Person Workshop"),
       ],
     },
     {
@@ -318,10 +378,16 @@ const CGT: CareerTrack = {
       roles: ["Cell Therapy Process Specialist", "Vector Process Engineer", "ATMP QC Specialist"],
       focus:
         "Own the process. iPSC expansion, CAR-T product release, vector titer methods — pick a niche and go deep. Comfortable with autologous chain-of-identity.",
+      educationGaps: [
+        "iPSC / CAR-T process expertise",
+        "Vector titer + analytics methods",
+        "Cold-chain + logistics for living drugs",
+        "ATMP-specific QC + release testing",
+        "Modality-specific deviation handling",
+      ],
       courses: [
         c("Cell Therapy Bootcamp: hPSC Biomanufacturing"),
         c("Essentials of Cell and Gene Therapy GMP Manufacturing"),
-        c("Aseptic Processing: Contamination Control"),
       ],
     },
     {
@@ -331,10 +397,15 @@ const CGT: CareerTrack = {
       roles: ["Senior Cell Therapy Engineer", "Process Development Lead — Gene Therapy", "ATMP Tech Transfer Lead"],
       focus:
         "Lead a process-development team. Own the IND/CTA filings on process. Hand off from PD to GMP. Train inspectors on what's different about your modality.",
+      educationGaps: [
+        "PD-to-GMP transfer methodology",
+        "IND / CTA process sections",
+        "Comparability planning",
+        "Process characterisation for living drugs",
+        "Modality-specific regulatory writing",
+      ],
       courses: [
         c("Adopting a Life-Cycle Approach to Cell & Gene Therapy Manufacturing"),
-        c("Planning for Cell Therapy Clinical Trial Applications"),
-        c("Meeting GMP Requirements Globally"),
       ],
       crossLinks: [
         {
@@ -358,10 +429,15 @@ const CGT: CareerTrack = {
       roles: ["Director, Cell Therapy Operations", "Head of Vector Manufacturing", "Director, ATMP Quality"],
       focus:
         "Network-level decisions. Outsourced vs. in-house manufacturing, comparability strategy, scale-up from clinical to commercial volumes.",
+      educationGaps: [
+        "Outsourcing vs in-house decisioning",
+        "Clinical-to-commercial scale-up",
+        "Modality-specific regulatory dialogue",
+        "Cost modelling for ATMP",
+        "Capacity planning under uncertainty",
+      ],
       courses: [
-        c("Assessment and Certification for Fundamentals of Effective Risk Management"),
         c("2235 - Program & Portfolio Management"),
-        c("Masterclass: Navigating Licensing, IP & BD Partnerships in Therapeutics"),
       ],
     },
     {
@@ -371,9 +447,15 @@ const CGT: CareerTrack = {
       roles: ["VP, ATMP Operations", "Chief Manufacturing Officer (CGT)", "SVP Cell Therapy"],
       focus:
         "Set the modality strategy across the portfolio. Capital allocation, M&A diligence on CGT assets, board reporting on the modality's economics.",
+      educationGaps: [
+        "Modality portfolio strategy",
+        "CGT capital allocation",
+        "M&A diligence on CGT assets",
+        "Regulator engagement at exec level",
+        "Industry standards-body participation",
+      ],
       courses: [
         c("miniMBA"),
-        c("Institute of Biomedical Entrepreneurship Certificate Program"),
       ],
     },
   ],
@@ -396,10 +478,15 @@ const CLINICAL: CareerTrack = {
       roles: ["Clinical Research Coordinator", "Clinical Trial Assistant", "Regulatory Document Coordinator"],
       focus:
         "Learn GCP cold. Source-document verification, ICF tracking, monitoring visit prep. The compliance scaffolding everything else hangs on.",
+      educationGaps: [
+        "GCP fundamentals",
+        "Source-document verification",
+        "ICH guidelines",
+        "Site-communication etiquette",
+        "Informed-consent process",
+      ],
       courses: [
         c("GCP Fundamentals"),
-        c("Good Laboratory Practice (GLP) Fundamentals"),
-        c("Scientific Report Writing Fundamentals"),
       ],
     },
     {
@@ -409,10 +496,15 @@ const CLINICAL: CareerTrack = {
       roles: ["Clinical Research Associate", "Senior CRC", "Regulatory Affairs Associate (Clinical)"],
       focus:
         "Own a portfolio of sites. Monitoring visits, query resolution, protocol deviation handling, site initiation visits.",
+      educationGaps: [
+        "Monitoring methodology",
+        "Protocol deviation management",
+        "Site initiation visits",
+        "Vendor coordination (CRO + labs)",
+        "Query management discipline",
+      ],
       courses: [
         c("CANTRAIN: Canadian Consortium of Clinical Trials Training Platform"),
-        c("An Orientation to Canadian Regulations and Regulators"),
-        c("Business Communication"),
       ],
     },
     {
@@ -422,11 +514,15 @@ const CLINICAL: CareerTrack = {
       roles: ["Senior CRA", "Clinical Trial Manager", "Clinical Project Lead"],
       focus:
         "Lead a trial. Cross-functional leadership across medical, ops, regulatory, biostatistics. First-meeting-with-the-FDA territory.",
+      educationGaps: [
+        "Cross-functional trial leadership",
+        "FDA / regulator interactions",
+        "Risk-based monitoring",
+        "Biostatistics literacy",
+        "Vendor performance management",
+      ],
       courses: [
-        c("Planning for Cell Therapy Clinical Trial Applications"),
-        c("PSG Medical Devices Symposium"),
         c("3401 - Practical Project Management - Part 1"),
-        c("3402 - Practical Project Management - Part 2"),
       ],
       crossLinks: [
         {
@@ -444,10 +540,15 @@ const CLINICAL: CareerTrack = {
       roles: ["Director, Clinical Operations", "Senior Clinical Project Director", "Head of Clinical Quality"],
       focus:
         "Multi-trial leadership. Vendor strategy (CROs, central labs), risk-based monitoring framework, inspection readiness, budgeting.",
+      educationGaps: [
+        "Multi-trial portfolio leadership",
+        "CRO selection + strategy",
+        "Inspection readiness",
+        "Budgeting + resource modelling",
+        "Cross-program prioritisation",
+      ],
       courses: [
         c("2235 - Program & Portfolio Management"),
-        c("2236 - Managing International Projects"),
-        c("Assessment and Certification for Fundamentals of Effective Risk Management"),
       ],
     },
     {
@@ -457,8 +558,14 @@ const CLINICAL: CareerTrack = {
       roles: ["VP Clinical Operations", "SVP Clinical Development", "Chief Development Officer"],
       focus:
         "Programme-level strategy. Phase 2 / 3 design partnerships with discovery, regulatory strategy, IPO-readiness for the clinical narrative.",
+      educationGaps: [
+        "Phase 2 / 3 design partnership",
+        "Programme-level regulatory strategy",
+        "IPO clinical narrative",
+        "Portfolio prioritisation",
+        "Strategic-alliance management",
+      ],
       courses: [
-        c("Masterclass: Navigating Licensing, IP & BD Partnerships in Therapeutics"),
         c("miniMBA"),
       ],
     },
@@ -482,11 +589,15 @@ const BUSINESS: CareerTrack = {
       roles: ["Commercial Analyst", "Business Development Analyst", "Founders-Programme Member"],
       focus:
         "Build the commercial vocabulary. Markets, P&Ls, deal terms, term sheets. The vocabulary that lets a bench scientist hold their own in a CEO's office.",
+      educationGaps: [
+        "Commercial vocabulary",
+        "Market sizing basics",
+        "Term-sheet literacy",
+        "Communication for scientists",
+        "Reading financial statements",
+      ],
       courses: [
         c("UofT: Summer by Design"),
-        c("Life Sciences Talent Accelerator"),
-        c("Business Communication"),
-        c("Scientific Report Writing Fundamentals"),
       ],
     },
     {
@@ -496,11 +607,15 @@ const BUSINESS: CareerTrack = {
       roles: ["Scientific Co-Founder", "Business Development Associate", "Commercial Strategy Analyst"],
       focus:
         "Run a workstream. Lead a fundraise prep, own a partnership thesis, build the first version of a commercial model. The first time the chart's on the wall and yours.",
+      educationGaps: [
+        "Fundraise prep + pitch",
+        "BD thesis development",
+        "Commercial + financial modelling",
+        "Partnership scoping",
+        "IP + licensing fundamentals",
+      ],
       courses: [
         c("Scientific Founders Program"),
-        c("Women in the Business of Health Science Bootcamp"),
-        c("UofT: Building a Biotech Venture"),
-        c("Data Science Certificate"),
       ],
     },
     {
@@ -510,11 +625,15 @@ const BUSINESS: CareerTrack = {
       roles: ["Senior BD Manager", "Director, Strategy", "Head of Commercial — Early Stage"],
       focus:
         "Run deals. Negotiate term sheets, lead BD pipelines, brief the board on commercial milestones. Scientific credibility + commercial chops in one room.",
+      educationGaps: [
+        "Deal negotiation",
+        "Board-level commercial briefings",
+        "Investor-facing narratives",
+        "Alliance management",
+        "Competitive-landscape mastery",
+      ],
       courses: [
-        c("Marketing and Sales in Health Sciences Bootcamp"),
         c("Institute of Biomedical Entrepreneurship Certificate Program"),
-        c("Life Sciences Entrepreneurship Development Program (LSEDP)"),
-        c("Masterclass: Navigating Licensing, IP & BD Partnerships in Therapeutics"),
       ],
       crossLinks: [
         {
@@ -532,10 +651,15 @@ const BUSINESS: CareerTrack = {
       roles: ["VP, Business Development", "Head of Commercial", "Chief Strategy Officer (mid-stage)"],
       focus:
         "Own the deal book. M&A diligence, licensing deal sign-off, alliance management, IPO process — and the cap table that goes with all of it.",
+      educationGaps: [
+        "M&A diligence",
+        "Cap-table management",
+        "IPO process",
+        "Strategic-partnership leadership",
+        "Multi-deal pipeline ownership",
+      ],
       courses: [
         c("miniMBA"),
-        c("2235 - Program & Portfolio Management"),
-        c("Masterclass: Navigating Licensing, IP & BD Partnerships in Therapeutics"),
       ],
     },
     {
@@ -545,8 +669,14 @@ const BUSINESS: CareerTrack = {
       roles: ["Chief Executive Officer", "Operating Partner (Life Sciences VC)", "Entrepreneur-in-Residence"],
       focus:
         "Set the company strategy. Or move into an investor-side seat — operating partner, EIR, scout — funding the next generation of the science you grew up in.",
+      educationGaps: [
+        "Company strategy formulation",
+        "VC / operator-partner skills",
+        "Board governance",
+        "Industry-network leverage",
+        "Long-horizon capital strategy",
+      ],
       courses: [
-        c("Institute of Biomedical Entrepreneurship Certificate Program"),
         c("miniMBA"),
       ],
     },
@@ -570,11 +700,15 @@ const PROJECT: CareerTrack = {
       roles: ["Project Coordinator", "Programme Assistant", "Scheduling Analyst"],
       focus:
         "Learn the toolkit. Gantt, dependency tracking, status reports, the rhythm of a stand-up. Earn trust by being the most-organised person in the room.",
+      educationGaps: [
+        "Gantt + dependency tracking",
+        "Status-report cadence",
+        "Stakeholder mapping",
+        "Stand-up facilitation",
+        "Documentation discipline",
+      ],
       courses: [
         c("Project Management for Non-Project Managers - Stakeholder Management"),
-        c("Project Management for Non-Project Managers - Planning and Scheduling"),
-        c("Business Communication"),
-        c("Scientific Report Writing Fundamentals"),
       ],
     },
     {
@@ -584,14 +718,15 @@ const PROJECT: CareerTrack = {
       roles: ["Project Manager", "Programme Coordinator", "Agile Delivery Lead"],
       focus:
         "Run a project end-to-end. Budget, risk, scope, stakeholders — own all of it. Become the person the science leader trusts to translate plans into milestones.",
+      educationGaps: [
+        "Budget / risk / scope ownership",
+        "Cross-functional negotiation",
+        "Agile methodology basics",
+        "Change management",
+        "Vendor coordination",
+      ],
       courses: [
-        c("Project Management for Non-Project Managers - Cost Management"),
-        c("Project Management for Non-Project Managers - Risk Management"),
-        c("Project Management for Non-Project Managers - Change Management"),
-        c("Women in Project Management Bootcamp"),
         c("3401 - Practical Project Management - Part 1"),
-        c("3523A - Agile Project Management Basics: Methods and Solutions"),
-        c("3523B - Agile Project Management Basics: Release Planning"),
       ],
     },
     {
@@ -601,12 +736,15 @@ const PROJECT: CareerTrack = {
       roles: ["Senior Project Manager", "Programme Lead", "Agile Coach", "Product Owner"],
       focus:
         "Own a programme. Multiple projects, multiple workstreams, vendor management. The board-trusted operator who can land a complex transition (eg. a tech-transfer or a SAP migration).",
+      educationGaps: [
+        "Multi-project programme leadership",
+        "Tech-transfer execution",
+        "Vendor strategy",
+        "Project recovery techniques",
+        "Programme-level communication",
+      ],
       courses: [
-        c("3402 - Practical Project Management - Part 2"),
         c("1952A - Project Leadership"),
-        c("1952B - Project Communication and Strategy"),
-        c("3043 - Project Recovery Methods"),
-        c("3841 - Product Management and Ownership – Creating Value"),
       ],
       crossLinks: [
         {
@@ -630,11 +768,15 @@ const PROJECT: CareerTrack = {
       roles: ["Director, Programme Management", "Head of PMO", "VP Operations (PMO-grown)"],
       focus:
         "Build + run the programme function. Methodology, tooling, hiring + career-pathing the team, exec-level reporting cadence.",
+      educationGaps: [
+        "PMO design + operation",
+        "Portfolio prioritisation",
+        "Methodology framework selection",
+        "Career-pathing the PM team",
+        "Exec-level reporting cadence",
+      ],
       courses: [
-        c("2235 - Program & Portfolio Management"),
-        c("2236 - Managing International Projects"),
         c("2799 - Project Management Office"),
-        c("3845 - Agile Leadership"),
       ],
     },
     {
@@ -644,9 +786,15 @@ const PROJECT: CareerTrack = {
       roles: ["VP, Programme Management", "Chief of Staff to CEO", "Chief Transformation Officer"],
       focus:
         "Operating partner to the CEO. Strategic-cadence ownership, M&A integration playbooks, the place where the company's biggest cross-cutting bets sit.",
+      educationGaps: [
+        "Strategic-cadence ownership",
+        "M&A integration playbook",
+        "CEO operator-partnership",
+        "Cross-cutting strategic bets",
+        "Capability building across orgs",
+      ],
       courses: [
         c("miniMBA"),
-        c("Institute of Biomedical Entrepreneurship Certificate Program"),
       ],
     },
   ],
