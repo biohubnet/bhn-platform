@@ -78,6 +78,22 @@ export function SimulatorPlayer({ attemptId, payload, initialState }: Props) {
   );
   const [error, setError] = useState<string | null>(null);
   const [briefingOpen, setBriefingOpen] = useState(false);
+  // First-visit welcome / mini-tour. Gated by localStorage per
+  // attemptId so a player who closed the modal mid-quarter doesn't
+  // see it again on reload. SSR-safe: starts false, the effect below
+  // promotes to true on the client only if no dismissal flag exists.
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = `sim:welcome:${attemptId}`;
+    if (!localStorage.getItem(key)) setWelcomeOpen(true);
+  }, [attemptId]);
+  function dismissWelcome() {
+    setWelcomeOpen(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`sim:welcome:${attemptId}`, "dismissed");
+    }
+  }
   const router = useRouter();
 
   const scenarios = payload.scenarios.filter((s) => s.week === state.week);
@@ -181,6 +197,21 @@ export function SimulatorPlayer({ attemptId, payload, initialState }: Props) {
         <BriefingModal
           payload={payload}
           onClose={() => setBriefingOpen(false)}
+        />
+      )}
+
+      {welcomeOpen && (
+        <WelcomeModal
+          payload={payload}
+          onClose={dismissWelcome}
+          onOpenBriefing={
+            payload.briefing
+              ? () => {
+                  dismissWelcome();
+                  setBriefingOpen(true);
+                }
+              : undefined
+          }
         />
       )}
 
@@ -289,17 +320,20 @@ function RoleHeader({
           {onOpenBriefing && (
             <button
               onClick={onOpenBriefing}
-              className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3 py-1.5 text-[12px] font-medium text-fg-muted transition hover:border-line-strong hover:text-fg"
+              className="group inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-[14px] font-semibold text-white shadow-md transition hover:bg-brand-700 hover:shadow-lg active:scale-[0.98]"
             >
-              <BookOpen className="h-3.5 w-3.5" />
-              Briefing
+              <BookOpen className="h-4 w-4" />
+              Read the briefing
+              <span className="ml-1 hidden text-[11px] font-normal text-white/75 sm:inline">
+                · hidden dynamics, failure modes, interview Qs
+              </span>
             </button>
           )}
           <button
             onClick={onReset}
             className="text-[11.5px] text-fg-subtle transition hover:text-fg-muted"
           >
-            Reset
+            Reset quarter
           </button>
         </div>
       </div>
@@ -854,6 +888,7 @@ function PersonPopup({
               {person.oneLiner}
             </p>
           </div>
+          {person.playbook && <PlaybookBlock playbook={person.playbook} />}
           <div className="divide-y divide-line/60">
             <Rhythm label="Daily" items={person.daily} />
             <Rhythm label="Weekly" items={person.weekly} />
@@ -882,6 +917,79 @@ function Rhythm({ label, items }: { label: string; items: string[] }) {
         {items.map((it, i) => (
           <li key={i} className="flex gap-2 text-[11.5px] leading-snug text-fg">
             <span className="mt-1.5 inline-block h-1 w-1 shrink-0 rounded-full bg-brand-500" />
+            <span>{it}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Per-person operating playbook — the substantive "how to work with
+ * them" section. Renders above the daily/weekly rhythms so the
+ * actionable guidance is the first thing the player reads.
+ */
+function PlaybookBlock({
+  playbook,
+}: {
+  playbook: NonNullable<Person["playbook"]>;
+}) {
+  return (
+    <div className="border-b border-line bg-brand-50/30 px-5 py-4 space-y-3">
+      <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-brand-700">
+        How to work with them
+      </div>
+      {playbook.howToWorkWith && (
+        <p className="text-[12px] leading-relaxed text-fg">
+          {playbook.howToWorkWith}
+        </p>
+      )}
+      {playbook.theyHelpWith.length > 0 && (
+        <PlaybookList
+          label="They can help with"
+          tone="positive"
+          items={playbook.theyHelpWith}
+        />
+      )}
+      {playbook.avoid.length > 0 && (
+        <PlaybookList label="Avoid" tone="negative" items={playbook.avoid} />
+      )}
+      {playbook.quickWin && (
+        <div className="rounded-md bg-emerald-50 ring-1 ring-inset ring-emerald-200 px-3 py-2">
+          <div className="text-[9.5px] font-bold uppercase tracking-[0.18em] text-emerald-800">
+            Quick win
+          </div>
+          <p className="mt-0.5 text-[11.5px] leading-snug text-emerald-900">
+            {playbook.quickWin}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PlaybookList({
+  label,
+  tone,
+  items,
+}: {
+  label: string;
+  tone: "positive" | "negative";
+  items: string[];
+}) {
+  const bulletColor = tone === "positive" ? "bg-emerald-500" : "bg-rose-500";
+  return (
+    <div>
+      <div className="mb-1 text-[9.5px] font-bold uppercase tracking-[0.18em] text-fg-muted">
+        {label}
+      </div>
+      <ul className="space-y-1">
+        {items.map((it, i) => (
+          <li key={i} className="flex gap-2 text-[11.5px] leading-snug text-fg">
+            <span
+              className={`mt-1.5 inline-block h-1 w-1 shrink-0 rounded-full ${bulletColor}`}
+            />
             <span>{it}</span>
           </li>
         ))}
@@ -1118,6 +1226,166 @@ function ReviewView({
       {briefingOpen && payload.briefing && (
         <BriefingModal payload={payload} onClose={() => setBriefingOpen(false)} />
       )}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Welcome modal — first-visit walkthrough
+// ────────────────────────────────────────────────────────────────────
+
+/**
+ * Five-pane welcome modal shown on first render of an attempt. The
+ * player can advance with the arrow buttons or jump straight to the
+ * sim by clicking Start. localStorage-gated per attemptId so a
+ * dismissal sticks across reloads.
+ */
+function WelcomeModal({
+  payload,
+  onClose,
+  onOpenBriefing,
+}: {
+  payload: SimulationPayload;
+  onClose: () => void;
+  onOpenBriefing?: () => void;
+}) {
+  const [step, setStep] = useState(0);
+  const steps = useMemo(
+    () => [
+      {
+        title: `Welcome to your ${payload.jobTitle} quarter`,
+        body: `You're the new ${payload.jobTitle.toLowerCase()} reporting to ${payload.vpName}. The next 12 weeks are a simulation — real-shaped decisions, no real consequences. Try the thing you'd be afraid to try at work.`,
+      },
+      {
+        title: "Five stats track how you're doing",
+        body: `Each decision moves ${payload.stats.length} stats (${payload.stats.map((s) => s.label).join(", ")}). Hover any choice before committing to see exactly how it'll move them. Your manager's trust and your scientific craft carry the most weight at the QBR.`,
+      },
+      {
+        title: "The roster is your safety net",
+        body: `You'll meet ${payload.team.length} teammates and ${payload.partners.length} cross-functional partners. Click any name to open their dossier — daily/weekly rhythm, how to work with them, what they can help unblock, what to avoid. Read the first three before you start week 1.`,
+      },
+      {
+        title: "Read the briefing before you decide",
+        body: payload.briefing
+          ? "The Briefing button (top-right) holds what the JD doesn't tell you: hidden power dynamics, failure modes new hires fall into, and the sharp questions to ask the hiring manager. Open it now — it'll change how you read week 1."
+          : "Each scenario has 3–4 choices. Hover one to preview the stat-effects chips, click to commit. Most options have a tempting-but-flawed flavour. The 'safe' answer is rarely the best one.",
+      },
+      {
+        title: "Twelve weeks. State auto-saves.",
+        body: "After each choice the state checkpoints — close the tab and come back later. At week 12 your TA Head gives a written performance review with a tier and per-stat narrative. You can reset and try a different path any time.",
+      },
+    ],
+    [payload],
+  );
+
+  const isLast = step === steps.length - 1;
+  const isFirst = step === 0;
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight" && !isLast) setStep((s) => s + 1);
+      if (e.key === "ArrowLeft" && !isFirst) setStep((s) => s - 1);
+    }
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose, isFirst, isLast]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Welcome to the simulator"
+    >
+      <div
+        className="relative w-full max-w-xl rounded-2xl border border-line bg-card-solid shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-fg-subtle hover:bg-elevated hover:text-fg"
+          aria-label="Close welcome"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div className="px-7 pt-9 pb-3">
+          <div className="mb-2.5 inline-flex items-center gap-2 rounded-full bg-brand-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-800 ring-1 ring-inset ring-brand-200">
+            <Sparkles className="h-3 w-3" />
+            Quick tour · {step + 1} of {steps.length}
+          </div>
+          <h2
+            className="mb-3 text-[22px] font-semibold leading-[1.2] tracking-tight text-fg"
+            style={{ fontFamily: "var(--font-display-theme, inherit)" }}
+          >
+            {steps[step].title}
+          </h2>
+          <p className="text-[14px] leading-[1.7] text-fg-muted">
+            {steps[step].body}
+          </p>
+        </div>
+
+        {/* Progress dots */}
+        <div className="flex items-center justify-center gap-1.5 pb-4 pt-2">
+          {steps.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setStep(i)}
+              aria-label={`Go to step ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all ${
+                i === step
+                  ? "w-6 bg-brand-600"
+                  : i < step
+                    ? "w-1.5 bg-brand-300"
+                    : "w-1.5 bg-line"
+              }`}
+            />
+          ))}
+        </div>
+
+        <footer className="flex items-center justify-between gap-3 border-t border-line bg-raised/20 px-6 py-3.5 rounded-b-2xl">
+          <button
+            onClick={() => setStep((s) => Math.max(0, s - 1))}
+            disabled={isFirst}
+            className="text-[12.5px] font-medium text-fg-muted hover:text-fg disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            ← Back
+          </button>
+          <div className="flex items-center gap-2">
+            {isLast && onOpenBriefing && (
+              <button
+                onClick={onOpenBriefing}
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3.5 py-2 text-[12.5px] font-semibold text-fg hover:border-line-strong"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                Open briefing
+              </button>
+            )}
+            {isLast ? (
+              <button
+                onClick={onClose}
+                className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-brand-700"
+              >
+                Start week 1 →
+              </button>
+            ) : (
+              <button
+                onClick={() => setStep((s) => s + 1)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-brand-700"
+              >
+                Next →
+              </button>
+            )}
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

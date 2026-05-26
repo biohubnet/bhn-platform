@@ -55,6 +55,17 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Deadline Manager", href: "/admin/equip/deadlines" },
     since: "2026.05.25",
   },
+  // ─── Simulator text-only + welcome (May 2026) ────────────────────
+  {
+    id: "trainee.simulator-text-only-and-tour",
+    title: "Simulator: text-only requests + welcome walkthrough",
+    body: "Two updates: (1) /simulator/new is text-only now — paste the JD body as plain text. We removed URL submission because postings expire and dead links break the workflow. (2) Your first time inside any simulation, a 5-pane welcome walks you through stats, the roster, and the briefing button. Skip it any time with ESC. Click any teammate to see how to work with them — what they can help unblock, what to avoid, and the highest-leverage week-1 move.",
+    path: "/simulator",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    cta: { label: "Open Role-play", href: "/simulator" },
+    since: "2026.05.26b",
+  },
   // ─── Simulator request workflow (May 2026) ───────────────────────
   {
     id: "trainee.simulator-request-flow",

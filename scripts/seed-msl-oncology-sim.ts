@@ -77,7 +77,7 @@ function normaliseJd(raw: string): string {
 }
 
 const PROMPT_VERSION = "v1";
-const SEED_VERSION = "msl-oncology-2026-05-26-v2"; // bump to force overwrite
+const SEED_VERSION = "msl-oncology-2026-05-26-v3"; // bump to force overwrite
 // v2 (2026-05-26): renamed stat keys leadershipTrust → vpTrust and
 //   craft → velocity to match the canonical keys hardcoded in
 //   engine.ts WEIGHTS + SimulatorPlayer STAT_ICONS. With the old
@@ -175,6 +175,24 @@ const PAYLOAD: SimulationPayload = {
       monthly: ["Pipeline literature review", "Compliance audit spot-checks"],
       quarterly: ["QBR with VP Medical", "MSL performance calibrations"],
       annual: ["Strategy retreat", "Annual KOL strategy refresh"],
+      playbook: {
+        howToWorkWith:
+          "Bring her the question, the option you'd pick, and the one thing that would change your mind. Don't bring her open-ended 'what should I do' asks — she reads those as you not having done the thinking. Honest self-assessment lands better than polish. Treat her Sunday-night reads as real reads — submit on Saturday if you want a buffer.",
+        theyHelpWith: [
+          "Reading the political subtext on the top-30 KOL list (she'll tell you who actually moves prescribing vs. who just publishes)",
+          "Calibrating your judgement on compliance grey-zones — she'll tell you fast if you're wrong",
+          "Backing your call when Marketing or Legal push back inappropriately",
+          "Stretch-assignment timing — she sees the broader Medical org's pipeline of opportunities",
+        ],
+        avoid: [
+          "Surprises in any direction — even good news she didn't see coming costs trust",
+          "Asking permission for things she'd want you to just decide and report",
+          "Padding a written update to look thorough — she reads for the thinking, not the page count",
+          "Quoting H-index or publication count as a proxy for KOL influence",
+        ],
+        quickWin:
+          "Week 1: send her your top-5 KOL priorities by Tuesday with a one-line rationale on each — shows you've done the reading without over-committing.",
+      },
     },
     {
       id: "rafe-okafor",
@@ -191,6 +209,23 @@ const PAYLOAD: SimulationPayload = {
       monthly: ["Joint regional advisory boards"],
       quarterly: ["Quarterly business review"],
       annual: ["ASCO + ESMO co-attendance"],
+      playbook: {
+        howToWorkWith:
+          "Text first, formal email second. He picks up the phone for any MSL who asks. Joint-visit him in Eastern Ontario for your first two weeks and you'll get five years of context in twenty hours of driving. Don't ask him to translate something Helen said — go back to Helen directly. He'll defend a peer's decision in front of Marketing if you brief him first.",
+        theyHelpWith: [
+          "Melanoma immuno-oncology data depth — he's the team's reference voice",
+          "Reading a KOL relationship you can't read yourself (he's met most of them)",
+          "Pushback on cross-functional asks that should never have reached you",
+          "Joint-call coverage when your Manitoba swings collide with his Eastern week",
+        ],
+        avoid: [
+          "Saying yes to a Marketing or Med Comms ask without warning him first",
+          "Asking him to validate something Helen has already weighed in on — it puts him in a bind",
+          "Treating the peer-MSL Slack channel as a place for philosophical compliance debates",
+        ],
+        quickWin:
+          "Week 2: join his Thursday Eastern field day. One drive between hospitals is worth three weeks of 1:1 onboarding.",
+      },
     },
     {
       id: "priya-natarajan",
@@ -207,6 +242,23 @@ const PAYLOAD: SimulationPayload = {
       monthly: ["Regional dinner programs"],
       quarterly: ["QBR"],
       annual: ["Genitourinary congress (ASCO GU)"],
+      playbook: {
+        howToWorkWith:
+          "She'll teach you genitourinary cancers; you teach her melanoma — the trade is real and explicit. Her Friday debriefs are the safe place to ask 'wait, is this compliant?' without it going on a record. She'll tell you the truth even when it's awkward. Reciprocate by being equally direct.",
+        theyHelpWith: [
+          "Genitourinary (prostate, bladder, kidney) data — her clinical background is the deepest on the team",
+          "Hospital-pharmacist's view of how prescribers actually make formulary decisions",
+          "Catching compliance ambiguities you'd otherwise rationalise past",
+          "Splitting Manitoba/Saskatchewan coverage cleanly so you're not double-booked",
+        ],
+        avoid: [
+          "Letting her carry the GU questions every quarter without you ramping up — she'll resent it by month four",
+          "Treating Friday debriefs as office hours where you're the senior — they're peer",
+          "Dismissing her 'wait, is this OK?' instincts because she's newer; her compass is good",
+        ],
+        quickWin:
+          "Week 1: schedule a recurring Friday 4 pm peer debrief with her and Rafe before anyone else fills the slot.",
+      },
     },
     {
       id: "marcus-de-villiers",
@@ -223,6 +275,23 @@ const PAYLOAD: SimulationPayload = {
       monthly: ["Curriculum updates"],
       quarterly: ["MSL competency reviews"],
       annual: ["Onboarding refresh"],
+      playbook: {
+        howToWorkWith:
+          "His templates are the team's institutional memory — use them as-given before you propose 'a better version'. CRM hygiene is his love language; log interactions the day they happen, not Friday. His office hours are unguarded and he'll tell you exactly where you'd be wrong on a competency framework. If he flags a CRM entry, fix it in 24 hours — he reads the response time as a proxy for how much you care.",
+        theyHelpWith: [
+          "Knowing which competency dimensions Helen actually weights at QBR — he wrote the rubric",
+          "CRM patterns that look fine but flag a quarterly audit (he'll show you which entries to tighten)",
+          "Budget justifications for conferences / training (he co-signs the requests)",
+          "Career-track conversations beyond your current TA — he sees what other TA Heads are hiring for",
+        ],
+        avoid: [
+          "Retroactive CRM logging (he'll see the timestamps; that's worse than gaps)",
+          "Proposing 'a better template' in week 4 — earn the right to redesign first",
+          "Asking him to bend a competency dimension for your case; he won't",
+        ],
+        quickWin:
+          "Week 1: drop into his Wednesday office hours, ask him which three CRM fields he cares about most, and start filling those that day.",
+      },
     },
     {
       id: "anika-shrestha",
@@ -239,6 +308,23 @@ const PAYLOAD: SimulationPayload = {
       monthly: ["Slide-library audit"],
       quarterly: ["Reviewer calibration"],
       annual: ["Reviewer training week"],
+      playbook: {
+        howToWorkWith:
+          "Submit clean. Read her rejection notes literally — she means what she writes, no subtext. Fix and resubmit; don't argue. If you genuinely think she's wrong on a substantive point, schedule a 15-minute call with the evidence ready, never push back in the MLR queue itself. Bring her into your KOL prep early — when she's seen the deck she'll approve it the same hour you submit.",
+        theyHelpWith: [
+          "Same-day MLR turnaround when you bring her clean submissions",
+          "Telling you BEFORE a deck goes to MLR which slides are likely to bounce — pre-review",
+          "Drawing the line cleanly between 'commercial deliverable' and 'scientific exchange'",
+          "Audit prep — she'll show you how an FDA-style inspector would read your CRM trail",
+        ],
+        avoid: [
+          "Arguing rejections in the queue (use a call instead)",
+          "Treating her as the bottleneck — she's the brake, that's her job",
+          "Asking her to greenlight a workflow that bends MSL rules; she will not, ever",
+        ],
+        quickWin:
+          "Week 1: ask for 30 minutes of her time to walk you through three slides she's recently rejected and why. Saves you weeks of bounced submissions.",
+      },
     },
   ],
 
@@ -258,6 +344,23 @@ const PAYLOAD: SimulationPayload = {
       monthly: ["Field pulse-check"],
       quarterly: ["Brand plan offsite"],
       annual: ["Annual brand plan"],
+      playbook: {
+        howToWorkWith:
+          "She is your most important non-medical relationship. Be cordial, be useful, be clear about what an MSL can and can't do. Offer alternatives, never just 'no'. Bring her field insights she can't get anywhere else and she'll bring you the launch context you need. Helen reads how you handle Samira as a real test of judgement.",
+        theyHelpWith: [
+          "Early visibility on brand launches, indication expansions, and competitive positioning",
+          "Connecting you to her sales counterparts who'll later route off-label questions to you",
+          "Insight on what the broader commercial team is seeing in your territory",
+          "Budget for advisory boards and KOL dinners (her line, not yours)",
+        ],
+        avoid: [
+          "Authoring or co-authoring a commercial deck — even when she frames it as a favour",
+          "Saying 'no' without offering the MSL-appropriate alternative (training, scientific exchange, insight share)",
+          "Sharing KOL identities or interaction notes that would let Marketing target individuals",
+        ],
+        quickWin:
+          "Week 2: offer her one MSL-led sales-training session per quarter. Reframes the relationship from 'asks' to 'partnership' inside the guardrails.",
+      },
     },
     {
       id: "jens-petersson",
@@ -274,6 +377,22 @@ const PAYLOAD: SimulationPayload = {
       monthly: ["Reviewer alignment"],
       quarterly: ["Publication scorecard"],
       annual: ["Congress strategy"],
+      playbook: {
+        howToWorkWith:
+          "Send him interesting unsolicited intel from your territory and he'll send you ten times more in return. He thinks in publication arcs (manuscript → poster → abstract → press release), so frame your asks in that vocabulary. He prefers email over Slack, longer-form over short bursts. He'll quietly become one of your best allies if you treat his publication plan as worth reading.",
+        theyHelpWith: [
+          "Heads-up on which KOLs are presenting what at upcoming congresses — before the abstract drops",
+          "Strategic insight on competitor publication strategy in melanoma / H&N / GU",
+          "Manuscript-review introductions when a KOL needs an internal sponsor",
+          "Booth content for congresses, which doubles as KOL conversation hooks",
+        ],
+        avoid: [
+          "Treating publication-plan meetings as something you can skip for field visits",
+          "Forwarding his publication drafts to KOLs — even with good intent, it'd embarrass him",
+        ],
+        quickWin:
+          "Week 3: subscribe to the publication-plan readout. One read a quarter pays off all year.",
+      },
     },
     {
       id: "lin-ouyang",
@@ -290,6 +409,22 @@ const PAYLOAD: SimulationPayload = {
       monthly: ["Payer advisory updates"],
       quarterly: ["Outcomes roundtable"],
       annual: ["Real-world evidence plan"],
+      playbook: {
+        howToWorkWith:
+          "Build the relationship before you need her. Bring her into a KOL meeting in week 4–5 even if there's no immediate payer angle — she'll learn your territory's prescribers, you'll learn her vocabulary. When a KOL starts citing competitor data, she's the trump card; you want her on speed-dial by then. She prefers structured asks: 'what evidence would convince a Manitoba payer of X in population Y?'",
+        theyHelpWith: [
+          "Reframing clinical data into payer-grade evidence a KOL will respect",
+          "Real-world evidence pulls from existing Canadian databases",
+          "Sub-population analyses when a KOL's patient mix differs from the trial population",
+          "Translating cost-effectiveness into language that lands in a clinical conversation",
+        ],
+        avoid: [
+          "Asking for ad-hoc analyses without a structured business question",
+          "Treating HEOR as a back-channel for promotional messaging — she'll flag it",
+        ],
+        quickWin:
+          "Week 4: invite her to your most receptive KOL's follow-up coffee. One co-call seeds three months of HEOR collaboration.",
+      },
     },
     {
       id: "diane-mcallister",
@@ -306,6 +441,23 @@ const PAYLOAD: SimulationPayload = {
       monthly: ["Compliance audit support"],
       quarterly: ["Annual update sweep"],
       annual: ["Code of conduct refresh"],
+      playbook: {
+        howToWorkWith:
+          "Call her BEFORE, not AFTER. Five minutes on the phone before a tricky interaction is worth 50 emails of cleanup afterwards. She reads literally — say what you mean. She'll never tell you the 'easy' answer is fine; if she's hedging, the right path is conservative. Helen counts the number of times you bring Diane in early as a positive signal in QBR.",
+        theyHelpWith: [
+          "Pre-call sanity checks: 'I'm about to do X with KOL Y — anything I should know?'",
+          "Reading what an unsolicited request actually requires (logging vs full MIS routing)",
+          "Drafting CRM language that holds up under inspection",
+          "Reviewing advisory-board invitee lists for hidden conflicts of interest",
+        ],
+        avoid: [
+          "Treating her office hours as theatre — show up with a real question",
+          "Routing around her by asking Helen things you should ask Diane",
+          "Saying 'just this once' to bend a rule — she has heard it before and the answer is no",
+        ],
+        quickWin:
+          "Week 1: book her Wednesday office hour for week 2. Have one pre-meeting compliance question ready. The habit you start now compounds for years.",
+      },
     },
   ],
 

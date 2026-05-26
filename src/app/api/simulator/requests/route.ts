@@ -26,10 +26,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  extractJobDescription,
-  extractJobDescriptionFromText,
-} from "@/lib/simulator/jd-extractor";
+import { extractJobDescriptionFromText } from "@/lib/simulator/jd-extractor";
 import { PROMPT_VERSION } from "@/lib/simulator/types";
 
 export const runtime = "nodejs";
@@ -50,23 +47,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Text-only as of 2026-05-26 — posting URLs expire, copies of the
+  // JD body don't. We still accept body.url for one release as a
+  // compatibility shim, but only to translate it into a clear error
+  // message for clients that haven't redeployed against the new
+  // form yet.
   const body = (await req.json().catch(() => ({}))) as {
     url?: string;
     text?: string;
   };
-  const url = (body.url ?? "").trim();
   const text = (body.text ?? "").trim();
-  if (!url && !text) {
+  if (!text && body.url) {
     return NextResponse.json(
-      { error: "Provide a job-posting URL or paste the JD body." },
+      {
+        error:
+          "Posting URLs aren't accepted any more — they expire and your sim becomes unactionable. Copy and paste the JD body text instead.",
+      },
+      { status: 400 },
+    );
+  }
+  if (!text) {
+    return NextResponse.json(
+      { error: "Paste the job-description body." },
       { status: 400 },
     );
   }
 
-  // 1. Same extraction path the AI generator used — same hash.
-  const extracted = url
-    ? await extractJobDescription(url, PROMPT_VERSION)
-    : extractJobDescriptionFromText(text, PROMPT_VERSION);
+  // Same normalisation path the generator uses → same sourceHash, so
+  // any future cache row keyed on this content can still be linked.
+  const extracted = extractJobDescriptionFromText(text, PROMPT_VERSION);
   if (!extracted.ok) {
     return NextResponse.json({ error: extracted.error }, { status: 400 });
   }
@@ -98,12 +107,12 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 3. Queue it. Always pending, even when a Simulation already exists
-  //    with this hash — admin must explicitly link per design choice.
+  // Queue it. Always pending, even when a Simulation already exists
+  // with this hash — admin must explicitly link per design choice.
   const created = await prisma.simulationRequest.create({
     data: {
       userId,
-      sourceUrl: url || null,
+      sourceUrl: null, // text-only flow
       jdBody: extracted.content,
       sourceHash: extracted.sourceHash,
       status: "pending",

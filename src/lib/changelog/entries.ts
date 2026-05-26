@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator: text-only submit + welcome tour + playbooks — May 2026
+  {
+    title: "Simulator — text-only requests, welcome walkthrough, per-teammate playbook",
+    body: "Three changes land together on the role-play surfaces:\n\n**Text-only submission.** /simulator/new no longer accepts URLs. Posting links expire — and when a Workday or ZipRecruiter URL 404s six months later, the simulation request becomes unactionable. Trainees copy and paste the JD body as plain text now. One textarea, ~300 character floor, character-count hint as you type. The server still accepts body.url for one release as a compatibility shim, but only to translate it into an explanatory error.\n\n**Welcome walkthrough.** First-time visitors to a simulation see a 5-pane modal — what the quarter is, what the five stats track, why the roster matters, why to open the briefing first, and how state auto-saves. Keyboard arrows to advance, ESC to dismiss. localStorage-gated per attemptId so a one-time dismissal sticks across reloads.\n\n**Per-teammate playbook.** Click any roster name and the dossier now carries a new \"How to work with them\" section with four substantive blocks: a 2–3 sentence operating-style brief, 'They can help with' (specific high-leverage asks), 'Avoid' (relationship-damaging mistakes), and a 'Quick win' (the highest-ROI move for week 1). Optional on the SimulationPayload type — older sims hide the section gracefully. The hand-authored MSD MSL-Oncology seed has been extended with full playbooks for all 5 teammates and 4 partners.\n\nAlso: the briefing button on the player is now a big primary action (\"Read the briefing · hidden dynamics, failure modes, interview Qs\") instead of a quiet outline button. Landing-page copy on /simulator and the 3-step \"How it works\" rewritten to reflect the request workflow.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator: request-then-publish — May 2026 ──────────────────
   {
     title: "Simulator — user request workflow replaces self-serve AI",

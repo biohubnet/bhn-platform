@@ -3,28 +3,23 @@
 /**
  * Simulation REQUEST form.
  *
- * As of 2026-05-26 the simulator no longer generates AI sims for users
- * synchronously. Instead the user submits a SimulationRequest, an
- * admin reviews + generates from /admin/simulator-requests, and the
- * sim shows up on /simulator under "Requested" once it's ready.
+ * Text-only as of 2026-05-26. The URL-extraction path was removed:
+ *   1. Posting links expire — pasting a Workday / ZipRecruiter URL
+ *      that 404s six months later means the request becomes
+ *      unactionable.
+ *   2. Auth-walls (LinkedIn, Workday) often bounce Jina Reader
+ *      anyway, leaving the trainee to paste the JD body manually as
+ *      a fallback. Better to make the fallback the only path.
+ *   3. Less surface area to maintain.
  *
- * The form keeps the same single-input pattern (URL or pasted JD) so
- * the muscle memory is identical. On success it doesn't redirect — it
- * shows a confirmation card pointing back to the dashboard.
+ * One textarea. The trainee copies whatever fits the spirit of "the
+ * job description" — preamble, qualifications, benefits — we don't
+ * try to clean it up beforehand. The admin reads it as posted.
  */
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Loader2, Send } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-
-function looksLikeUrl(input: string): boolean {
-  const trimmed = input.trim();
-  if (!trimmed) return false;
-  if (trimmed.includes("\n")) return false;
-  if (/^https?:\/\//i.test(trimmed)) return true;
-  if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(trimmed)) return true;
-  return false;
-}
 
 type SubmitResult = {
   duplicate: boolean;
@@ -33,15 +28,18 @@ type SubmitResult = {
   message?: string;
 };
 
+/** Lower-bound below which we tell the trainee they've pasted a fragment.
+ *  Matches MIN_CONTENT_CHARS on the server. */
+const MIN_PASTE_CHARS = 300;
+
 export function NewSimulationForm() {
   const [input, setInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SubmitResult | null>(null);
 
-  const detectedAsUrl = looksLikeUrl(input);
-  const tooShortForJd =
-    !detectedAsUrl && input.trim().length > 0 && input.trim().length < 300;
+  const charCount = input.trim().length;
+  const tooShort = charCount > 0 && charCount < MIN_PASTE_CHARS;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,14 +49,10 @@ export function NewSimulationForm() {
     setSubmitting(true);
 
     try {
-      const payload: { url?: string; text?: string } = detectedAsUrl
-        ? { url: input.trim() }
-        : { text: input.trim() };
-
       const res = await fetch("/api/simulator/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ text: input.trim() }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
@@ -103,7 +97,7 @@ export function NewSimulationForm() {
             </p>
             <p className="mt-1.5 text-sm leading-relaxed text-muted">
               {result.message ??
-                "An admin will review the JD and publish the simulation to your dashboard. You'll see it appear under \"Requested\" on the Role-play page."}
+                "Our team will review the JD and publish your simulation to your dashboard. You'll see it under \"Requested\" on the Role-play page; once it's ready it slides up into \"In progress\"."}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Link
@@ -134,38 +128,37 @@ export function NewSimulationForm() {
             htmlFor="jd-input"
             className="mb-2 block text-sm font-medium text-fg"
           >
-            Job posting URL{" "}
-            <span className="font-normal text-muted">or pasted JD</span>
+            Paste the job description
           </label>
+          <p className="mb-3 text-[12.5px] text-muted leading-relaxed">
+            Copy whatever the posting page shows — title, company, full body,
+            qualifications, even the benefits boilerplate. We&apos;ll handle
+            the cleanup. <strong className="font-semibold text-fg">No links
+            please</strong> — postings expire and a dead URL means we can&apos;t
+            build your sim.
+          </p>
           <textarea
             id="jd-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              "https://jobs.example.com/posting/12345\n\n" +
-              "— or paste the full job description text here (about 300+ characters)"
+              "Paste the full job description here.\n\n" +
+              "Include the role title, the company, the responsibilities, the qualifications — whatever the posting shows. The more context, the richer the simulation."
             }
             disabled={submitting}
             required
-            rows={5}
-            className="w-full resize-y rounded-md border border-line bg-card-solid px-3 py-2.5 text-sm font-mono min-h-[120px] placeholder:text-muted/60 placeholder:font-sans focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-60"
+            rows={14}
+            className="w-full resize-y rounded-md border border-line bg-card-solid px-3 py-2.5 text-sm font-mono min-h-[240px] placeholder:text-muted/60 placeholder:font-sans focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-60"
           />
-          <p className="mt-2 text-xs text-muted">
-            We build each simulation by hand or with AI assistance after
-            review, so the result fits the posting and the company. Most
-            requests are published within 24 hours of submission. You can
-            paste the JD text directly if the URL is auth-walled (LinkedIn /
-            Workday).
-          </p>
           {input.trim().length > 0 && (
             <p className="mt-2 text-[11px] text-muted">
-              Detected as:{" "}
-              <span className="font-semibold text-fg">
-                {detectedAsUrl ? "URL" : "pasted JD"}
-              </span>
-              {tooShortForJd && (
+              <span className={tooShort ? "text-amber-700 font-semibold" : "text-fg font-semibold"}>
+                {charCount.toLocaleString()}
+              </span>{" "}
+              characters
+              {tooShort && (
                 <span className="ml-2 text-amber-700">
-                  · {input.trim().length} chars — JDs typically need ≥300
+                  · paste more of the posting — JDs typically need ≥{MIN_PASTE_CHARS} characters to generate a worthwhile quarter
                 </span>
               )}
             </p>

@@ -24,13 +24,32 @@ export type Person = {
   role: string;        // 'Sr UX Designer'
   shortRole: string;   // 'Sr UX' — for the compact roster strip
   group: "team" | "partner";
-  tenure: string;      // '6 yrs at RBC' — short, readable
+  tenure: string;      // '6 yrs as engineer, 2 as TL' — short, readable
   oneLiner: string;    // 1–2 sentence characterization (incl personality quirks)
   daily: string[];
   weekly: string[];
   monthly: string[];
   quarterly: string[];
   annual: string[];
+  /// Per-person operating playbook — substantive guidance on how to
+  /// actually work with this teammate. Surfaced in the roster popup
+  /// under "How to work with them" with four labelled sections.
+  /// Optional for backward-compatibility; older payloads simply hide
+  /// the playbook section.
+  playbook?: {
+    /// 2–3 sentences on the right way to approach them, what they
+    /// reward, how they like updates, common stumbling blocks.
+    howToWorkWith: string;
+    /// 2–4 high-leverage things this person can unblock or amplify
+    /// for the player. Specific, named asks.
+    theyHelpWith: string[];
+    /// 2–4 things to NOT do with this person. Common new-hire
+    /// mistakes that damage the relationship.
+    avoid: string[];
+    /// One sentence — the highest-ROI thing to do in week 1 to start
+    /// the relationship on the right foot.
+    quickWin: string;
+  };
 };
 
 export type ScenarioType =

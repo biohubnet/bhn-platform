@@ -136,6 +136,20 @@ function validatePerson(raw: unknown, group: "team" | "partner"): Person | null 
   const name = nonEmptyString(raw.name, "");
   const role = nonEmptyString(raw.role, "");
   if (!id || !name || !role) return null;
+  // Optional per-person playbook. We accept it when the payload
+  // provides one; missing fields silently default so a malformed
+  // playbook doesn't tank the whole person.
+  let playbook: Person["playbook"];
+  if (isRecord(raw.playbook)) {
+    const howToWorkWith = nonEmptyString(raw.playbook.howToWorkWith, "");
+    const theyHelpWith = stringArray(raw.playbook.theyHelpWith);
+    const avoid = stringArray(raw.playbook.avoid);
+    const quickWin = nonEmptyString(raw.playbook.quickWin, "");
+    if (howToWorkWith || theyHelpWith.length || avoid.length || quickWin) {
+      playbook = { howToWorkWith, theyHelpWith, avoid, quickWin };
+    }
+  }
+
   return {
     id,
     name,
@@ -150,6 +164,7 @@ function validatePerson(raw: unknown, group: "team" | "partner"): Person | null 
     monthly: stringArray(raw.monthly),
     quarterly: stringArray(raw.quarterly),
     annual: stringArray(raw.annual),
+    playbook,
   };
 }
 

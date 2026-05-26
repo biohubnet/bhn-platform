@@ -16,8 +16,8 @@ export default function NewSimulationPage() {
     <div className="space-y-6">
       <PageHero
         eyebrow="Request a simulation"
-        title="Pick a posting we'll build a quarter around"
-        description="Submit a job-posting URL — LinkedIn, Indeed, ZipRecruiter, a company careers page — or paste the JD body directly when the URL is auth-walled. Our team reviews each request and publishes the simulation to your dashboard, usually within 24 hours."
+        title="Paste a job description, get a 12-week quarter"
+        description="Copy the job description from any posting — LinkedIn, Indeed, ZipRecruiter, a company careers page — and paste it here as plain text. No URLs (links expire, simulations don't), no cleanup needed. Our team reviews each request and publishes the simulation to your dashboard, usually within 24 hours."
       />
       <NewSimulationForm />
     </div>

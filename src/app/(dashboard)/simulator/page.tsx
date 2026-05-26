@@ -143,12 +143,13 @@ function Hero({ hasAttempts }: { hasAttempts: boolean }) {
             Practice the job before you apply for it.
           </h1>
           <p className="max-w-xl text-[15px] leading-[1.7] text-fg-muted md:text-[16px]">
-            Paste a job-posting URL. You&apos;ll get a tailored 12-week quarter
-            — a team of colleagues with daily and weekly rhythms, real
-            scenarios you&apos;ll face in that role, and a performance review
-            from your VP at the end. Every decision moves five stats. Most
-            options have a tempting-but-flawed flavour. Try things you&apos;d
-            never risk in real life.
+            Copy a job description from anywhere — LinkedIn, Indeed, ZipRecruiter,
+            a careers page — and paste it as plain text. We&apos;ll build you a
+            tailored 12-week quarter: a team of colleagues with their own
+            daily rhythms, the scenarios you&apos;ll actually face in that
+            role, and a performance review from your VP at the end. Every
+            decision moves five stats. Try things you&apos;d never risk at
+            work.
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-4">
@@ -156,11 +157,11 @@ function Hero({ hasAttempts }: { hasAttempts: boolean }) {
               href="/simulator/new"
               className="inline-flex items-center gap-2 rounded-md bg-brand-600 px-5 py-2.5 text-[14px] font-medium text-white transition hover:bg-brand-700"
             >
-              {hasAttempts ? "Start a new simulation" : "Start your first simulation"}
+              {hasAttempts ? "Request a new simulation" : "Request your first simulation"}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <span className="text-[12px] text-fg-subtle">
-              15–25 seconds for a fresh job.
+              We publish each one to your dashboard, usually within 24 hours.
             </span>
           </div>
         </div>
@@ -216,18 +217,18 @@ function HowItWorks() {
   const steps = [
     {
       n: "01",
-      label: "Paste a URL",
-      body: "Any public job posting — LinkedIn, Indeed, a company careers page. Or paste the JD text directly when the URL is auth-walled.",
+      label: "Paste the JD body",
+      body: "Copy the job description text from any posting and paste it in. No URLs — links expire, copies of text don't. No cleanup needed; we read what you paste.",
     },
     {
       n: "02",
-      label: "AI casts your world",
-      body: "Generates a team of 5–7 reports, 2–4 cross-functional partners, and ~10 scenarios specific to the role. Cached across trainees — the same posting only generates once.",
+      label: "We build your world",
+      body: "Our team reviews the JD and publishes a tailored simulation to your dashboard — a manager, a team of 5–7 colleagues with daily and weekly rhythms, 3–4 cross-functional partners, and 12 weeks of scenarios specific to the role. Usually ready within 24 hours.",
     },
     {
       n: "03",
       label: "Live the quarter",
-      body: "Twelve weeks. Decisions move five stats. State checkpoints after each choice so you can close the tab and resume. End with a performance review from your VP.",
+      body: "Twelve weeks. Decisions move five stats. State auto-saves after each choice so you can close the tab and resume. End with a performance review from your VP, a tier (Exceeds / Strong / Meets / Below / Concerns), and a per-stat narrative.",
     },
   ];
 
