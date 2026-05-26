@@ -149,6 +149,7 @@ export const FEATURES: FeatureDef[] = [
   { id: "experience-talent-pool",  label: "Talent pool",             description: "If you're admin: the shared employer-facing pool. If you're a trainee: nothing.", group: "experience", defaultEnabled: false },
   { id: "experience-simulator",    label: "Role-play (RPG)",         description: "AI role-play simulator for interview + workplace scenarios.",                      group: "experience", defaultEnabled: true },
   { id: "experience-career-paths", label: "Career paths",            description: "Six tracks mapping Junior → VP journeys with course recommendations + cross-tree branch points.", group: "experience", defaultEnabled: true },
+  { id: "experience-facilities",   label: "Facilities map",          description: "Map of Canadian biomanufacturing facilities — every dot is a real plant or institute. Zoom + click for details.", group: "experience", defaultEnabled: true },
   { id: "experience-equip-page",   label: "Equip me",                description: "Personal-development equipment grants.",                                           group: "experience", defaultEnabled: false },
   { id: "experience-buddy",        label: "Buddy hub",               description: "Find a study/accountability buddy.",                                               group: "experience", defaultEnabled: false },
 

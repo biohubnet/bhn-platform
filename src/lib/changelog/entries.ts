@@ -22,6 +22,21 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Facilities map + compact Branch pill — May 2026
+  {
+    title: "Facilities map — Canadian biomanufacturing companies + plants on an interactive map",
+    body: "New page at **`/experience/facilities`** under the Experience group. Every Canadian biomanufacturing facility we know of, pinned to a city on a Leaflet map (OpenStreetMap tiles).\n\n**What's there.**\n  • **69 facilities** seeded from a curated xlsx (AbCellera Biologics, Acuitas Therapeutics, NRC Biologics Manufacturing Centre, Resilience, OmniaBio, Sanofi, Moderna, STEMCELL Technologies, Zymeworks, BIOVECTRA, and 59 others) — names, source URLs, province / city, status (Already built vs Being built), address where known, specialisation, scale (headcount / sq-ft), and free-text notes.\n  • Dots colour-coded by status: **teal** for already built, **amber** for being built, **grey** for unknown / informational.\n  • **Province filter** chips above the map — \"All / British Columbia / Ontario / Quebec / …\" with counts.\n  • Dot **radius scales with zoom** — compact when looking at all of Canada, larger as you zoom into a specific metro so individual dots stay clickable.\n  • Click any dot → Leaflet popup with the headline info + an \"open site\" link. The page also pins a stable detail panel **below the map** carrying the full record (specialisation, scale, notes, description) so the info persists after the popup closes.\n\n**Rescan tool (staff-only).** Each facility's detail panel shows a \"Rescan facility\" button for instructors / admins / superadmins. One click hits `POST /api/admin/facilities/[id]/rescan` which:\n  1. Fetches the source URL through Jina Reader (clean markdown extraction — same pipeline the simulator uses for JD ingestion).\n  2. Passes the page content to the chat() AI adapter with a prompt that asks for an updated one-line `specialization` + a ~120-word `description`.\n  3. Persists both back to the row + stamps `lastScannedAt`. Errors stored in `scanError` and surfaced on the detail panel.\n\n**Foundation.** New Prisma `Facility` model + raw SQL migration `20260722000000_facilities`. Seed script at `scripts/seed-facilities.ts` is idempotent — `npx tsx scripts/seed-facilities.ts` upserts on the unique `name` index, so re-running after an xlsx refresh updates existing rows without duplicating.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Career paths — Branch icon now has a 'Branch' label so it's discoverable",
+    body: "The bottom-right branch-out icon on cross-tree station boxes was just a `GitFork` glyph + a count badge — users couldn't tell at a glance what it did. Widened it slightly to a pill that carries the icon + the word **Branch** + a tiny count badge for stations with multiple branches. Still ~80 px wide, still bottom-right, still pulses every 2.4 s.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — cards pop with full content + clarified "similar roles" — May 2026
   {
     title: "Career paths — branch cards pop with full content + clarified similar roles",

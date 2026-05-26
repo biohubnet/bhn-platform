@@ -4178,3 +4178,40 @@ model JobFolderEvent {
 
   @@index([folderId, createdAt])
 }
+
+/// Canadian biomanufacturing facility (company / plant / institute).
+///
+/// Seeded from a curated xlsx (see `lib/facilities/seed-data.ts`).
+/// The `/experience/facilities` map page reads from this table. The
+/// optional rescan endpoint refetches `url` via Jina Reader + asks
+/// the AI to produce an updated `description` / `specialization`;
+/// `lastScannedAt` / `scanError` capture that state.
+model Facility {
+  id             String   @id @default(cuid())
+  name           String
+  url            String?
+  /// "Being built" | "Already built" | null
+  status         String?
+  province       String?
+  city           String?
+  address        String?
+  specialization String?
+  /// Headcount / sq-ft hint, free-text from the source data.
+  scale          String?
+  notes          String?
+  /// Longer-form description added by the rescan job. Null on first
+  /// import; the map UI falls back to `specialization`.
+  description    String?
+  lat            Float
+  lng            Float
+  /// When the rescan tool last ran successfully on this row.
+  lastScannedAt  DateTime?
+  /// Error string from the last rescan attempt, if any.
+  scanError      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([name])
+  @@index([province])
+  @@index([city])
+}

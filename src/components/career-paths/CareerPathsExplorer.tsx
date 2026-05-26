@@ -391,23 +391,20 @@ function StationBox({
         style={{ backgroundColor: `color-mix(in srgb, ${accent} ${intensity}%, transparent)` }}
       />
 
-      {/* Branch-out icon — bottom-right. Subtle infinite pulse to
-          advertise its interactive-ness. Click opens the branching
-          modal. The pulse animation only changes transform/opacity
-          (no layout), so click hit-detection on the button stays
-          stable while the pulse plays. */}
+      {/* Branch-out pill — bottom-right. Compact pill (icon + tiny
+          label + count) so the user knows what the button does
+          without it eating the box. Subtle infinite pulse advertises
+          interactivity. */}
       {hasCrossLinks && (
         <button
           type="button"
           onClick={(e) => {
-            // Stop bubbling defensively in case any parent decides to
-            // grow a click handler later.
             e.stopPropagation();
             onBranchOpen({ track, station });
           }}
           aria-label={`Show ${crossLinks.length} branch transition${crossLinks.length > 1 ? "s" : ""} from ${station.label}`}
           title={`Show ${crossLinks.length} branch transition${crossLinks.length > 1 ? "s" : ""}`}
-          className="absolute bottom-2 right-2 z-20 inline-flex items-center justify-center w-7 h-7 rounded-full cursor-pointer transition-transform hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          className="absolute bottom-2 right-2 z-20 inline-flex items-center gap-1 cursor-pointer rounded-full px-2 py-0.5 transition-transform hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
           style={{
             backgroundColor: `color-mix(in srgb, ${accent} 18%, var(--card))`,
             color: accent,
@@ -416,16 +413,15 @@ function StationBox({
             pointerEvents: "auto",
           }}
         >
-          <GitFork size={13} />
-          {/* Tiny count badge so users know how many branches exist */}
+          <GitFork size={10} />
+          <span className="text-[10px] font-bold uppercase tracking-wider leading-none">
+            Branch
+          </span>
           {crossLinks.length > 1 && (
             <span
               aria-hidden
-              className="absolute -top-1 -right-1 inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold leading-none"
-              style={{
-                backgroundColor: accent,
-                color: "white",
-              }}
+              className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-1 rounded-full text-[9px] font-bold leading-none"
+              style={{ backgroundColor: accent, color: "white" }}
             >
               {crossLinks.length}
             </span>
