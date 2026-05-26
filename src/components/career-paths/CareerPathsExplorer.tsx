@@ -85,36 +85,56 @@ export function CareerPathsExplorer() {
       {/* Legend (always wraps) */}
       <Legend />
 
-      {/* The chart — horizontal scroll on narrow viewports.
-          The `data-career-chart-scroll` attribute lets TransitionCard
-          (in the Cross-stream Mobility section below) find this exact
-          scroll container and horizontally pan it to centre the
-          highlighted source box, WITHOUT touching the page's vertical
-          scroll position. */}
-      <div
-        className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6"
-        data-career-chart-scroll
-      >
-        <div className="min-w-[1180px] pb-4">
-          <MindMapRoot />
-          <TrackHeadersRow />
-          {LEVEL_ORDER.map((level, rowIdx) => (
-            <LevelRow
-              key={level}
-              level={level}
-              rowIdx={rowIdx}
-              isLast={rowIdx === LEVEL_ORDER.length - 1}
-            />
-          ))}
+      {/* Chart + transitions sit side-by-side at 2xl+ so hovering a
+          card in the right sidebar visibly highlights the source +
+          target station boxes on the left chart at the same time —
+          both surfaces are on screen, the spatial reading lands.
+          Below 2xl this falls back to stacked: chart on top,
+          transitions below. The in-card previews in each
+          TransitionCard mean the cards are self-sufficient when
+          stacked. */}
+      <div className="2xl:grid 2xl:grid-cols-[minmax(0,1fr)_400px] 2xl:gap-6 2xl:items-start space-y-6 2xl:space-y-0">
+        {/* LEFT — the chart, with its own horizontal scroll for the
+            6 columns. `min-w-0` is critical inside a grid track: it
+            overrides the grid's default `min-width: auto` so the
+            overflow-x scroll actually engages instead of blowing the
+            grid out to the chart's intrinsic width. The bleed
+            (`-mx-4 sm:-mx-6 px-4 sm:px-6`) only applies in stacked
+            mode; in side-by-side mode the chart cell is constrained
+            to its grid column so the bleed is reset (`2xl:mx-0
+            2xl:px-0`). The `data-career-chart-scroll` hook is what
+            TransitionCard uses to pan this container horizontally
+            on hover. */}
+        <div
+          className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6 2xl:mx-0 2xl:px-0 min-w-0"
+          data-career-chart-scroll
+        >
+          <div className="min-w-[1180px] pb-4">
+            <MindMapRoot />
+            <TrackHeadersRow />
+            {LEVEL_ORDER.map((level, rowIdx) => (
+              <LevelRow
+                key={level}
+                level={level}
+                rowIdx={rowIdx}
+                isLast={rowIdx === LEVEL_ORDER.length - 1}
+              />
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Cross-stream mobility — aggregated view of every cross-tree
-          link in the data, with the destination, the when/why, and
-          the learning gaps the lateral demands. Surfaced as its own
-          section so the answer to "what can I jump into?" doesn't
-          require squinting at the in-box footers. */}
-      <CrossStreamMobility />
+        {/* RIGHT — transitions column. Sticky-pinned at the top of
+            the viewport while the chart scrolls past, with its own
+            vertical overflow so the 13 transition cards can be
+            scrolled through without losing the chart context. The
+            sticky reference is the parent grid wrapper, not the
+            page, so the column stops being sticky when the grid
+            wrapper itself scrolls out of view (e.g. user has
+            scrolled past the chart to the catalog hand-off below). */}
+        <aside className="min-w-0 2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)] 2xl:overflow-y-auto 2xl:pr-1">
+          <CrossStreamMobility />
+        </aside>
+      </div>
 
       {/* Catalog hand-off */}
       <section className="border-t border-line/60 pt-6">
@@ -532,10 +552,14 @@ function CrossStreamMobility() {
         </p>
       </header>
 
-      {/* Single-column on most viewports; each card carries side-by-
-          side station previews inside, so a one-column outer grid
-          keeps each card wide enough for the previews to read. */}
-      <ol className="grid gap-3 xl:grid-cols-2">
+      {/* Always single-column. Two reasons:
+            • In side-by-side mode (2xl+) the cards live in a 400 px
+              sticky sidebar — there's no room for 2-col.
+            • In stacked mode the cards already carry side-by-side
+              station previews internally, so the outer grid is full-
+              width and single-column gives each card the room it
+              needs without re-wrapping the inner previews. */}
+      <ol className="grid gap-3">
         {transitions.map((t, i) => (
           <li key={i}>
             <TransitionCard t={t} />

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — side-by-side chart + transitions on wide viewports — May 2026
+  {
+    title: "Career paths — chart on the left, transitions in a sticky right column (wide viewports)",
+    body: "On 2xl+ viewports (1536 px and wider), the page now splits into a two-column grid:\n  • **Left** — the flowchart-mind-map of all six tracks, with its own horizontal scroll for the 6 columns.\n  • **Right** — the cross-stream transition cards, in a 400-px column that's sticky-pinned at the viewport top and scrolls vertically inside itself.\n\nBoth surfaces are visible at the same time, so hovering a transition card actually highlights the corresponding source + target boxes in the chart without requiring the user to scroll up to the chart. The spatial reading the hover interaction was always meant to provide finally lands.\n\nBelow 2xl the layout falls back to stacked (chart on top, transitions below). The in-card station previews shipped earlier this week mean each card stays self-sufficient there — the user doesn't need the chart-highlight to understand a transition.\n\nImplementation notes:\n  • Outer wrapper is a `2xl:grid 2xl:grid-cols-[minmax(0,1fr)_400px]` with `2xl:items-start` so the sticky right column references the grid wrapper rather than the page.\n  • The chart's horizontal-bleed margins (`-mx-4 sm:-mx-6 px-4 sm:px-6`) are reset (`2xl:mx-0 2xl:px-0`) inside the grid so the chart cell stays within its column.\n  • `min-w-0` on both grid children — the chart needs it for `overflow-x-auto` to actually engage; the aside needs it so the card-content doesn't blow the grid column out.\n  • Right column uses `2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)] 2xl:overflow-y-auto` for the sticky + internal-scroll combo.\n  • Transition card grid collapsed to single-column always (no `xl:grid-cols-2`) — 400 px sidebar can't hold 2-col, and below 2xl the in-card previews already make each card wide.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — transition cards now self-sufficient — May 2026
   {
     title: "Career paths — transition cards now carry source + target station previews",
