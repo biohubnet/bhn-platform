@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator catalog — every published sim playable by everyone — May 2026
+  {
+    title: "Simulator — every published sim is now playable by every user",
+    body: "Before today, /simulator only showed two things: your own attempts (in-progress and completed) and your own requests. There was no way to discover or play a Simulation that someone else had requested — even though the underlying Simulation rows are platform content with no per-user gate. The hand-authored MSL Oncology sim (RPG · Q1 — Medical Scientific Liaison — Oncology) sat in the database invisible to anyone but its original requester.\n\nFixed by adding a new \"Available simulations\" catalog section to /simulator. The section sits between the hero and your in-progress attempts; it pulls every published Simulation row (`prisma.simulation.findMany`, up to 60 most-recent) and renders each as a card with the job title, company, location, and a 3-line JD-snippet preview.\n\nEach card's CTA reads the right thing based on what the calling user has already done with this sim:\n  • No prior attempt → **Start** — POST `/api/simulator/play/[simulationId]` creates a fresh SimulationAttempt and redirects to the player.\n  • Unfinished attempt exists → **Resume** — deep-link to your in-progress attempt at the week you left off.\n  • Finished attempt exists, no active → **Replay** (same Start endpoint, new Attempt) + a secondary \"Review last run →\" link to the finished attempt's summary.\n\nNew endpoint at `/api/simulator/play/[simulationId]` — open to any signed-in user, gated only by session. Distinct from `/api/simulator/start` (admin-only AI generation) and from `/api/admin/simulations/[id]/test-attempt` (admin-only smoke-test). Every call creates a new Attempt; the client surfaces Resume / Replay framing before the user reaches the endpoint.\n\nNet effect: trainees and superadmins (and everyone else) now see the full library of role-play sims the moment they land on /simulator, instead of staring at an empty dashboard until they paste a JD of their own.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator default-on in sidebar — May 2026
   {
     title: "Career Simulator — default-on in the sidebar",

@@ -12,11 +12,14 @@ import {
   CheckCircle2,
   Clock,
   Hourglass,
+  Play,
+  Theater,
   XCircle,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
+import { CatalogPlayButton } from "@/components/simulator/CatalogPlayButton";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +28,7 @@ export default async function SimulatorLandingPage() {
   if (!session) redirect("/auth/signin");
   const userId = (session.user as { id?: string }).id!;
 
-  const [attempts, requests] = await Promise.all([
+  const [attempts, requests, catalog] = await Promise.all([
     prisma.simulationAttempt.findMany({
       where: { userId },
       orderBy: { updatedAt: "desc" },
@@ -58,6 +61,23 @@ export default async function SimulatorLandingPage() {
         },
       },
     }).catch(() => []),
+    // ── Catalog: every published Simulation, browseable by every
+    // signed-in user. Decoupled from who originally requested it —
+    // once a Simulation row exists, it's platform content, and any
+    // user can launch their own Attempt against it. The catalog is
+    // what makes "all already-created sims visible to everyone" true.
+    prisma.simulation.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 60,
+      select: {
+        id: true,
+        jobTitle: true,
+        companyName: true,
+        location: true,
+        jdSnippet: true,
+        createdAt: true,
+      },
+    }).catch(() => []),
   ]);
 
   const active = attempts.filter((a) => !a.finished);
@@ -66,9 +86,50 @@ export default async function SimulatorLandingPage() {
   // surfaced via the auto-created Attempt in "In progress" above.
   const openRequests = requests.filter((r) => r.status !== "ready");
 
+  // For each catalog item, work out the calling user's relationship
+  // to it so the CTA reads correctly: "Resume" if they have an
+  // unfinished attempt, "Replay" if they have a finished one,
+  // otherwise "Start".
+  const activeAttemptBySimId = new Map<string, string>();
+  const finishedAttemptBySimId = new Map<string, string>();
+  for (const a of attempts) {
+    const simId = a.simulation.id;
+    if (!a.finished && !activeAttemptBySimId.has(simId)) {
+      activeAttemptBySimId.set(simId, a.id);
+    } else if (a.finished && !finishedAttemptBySimId.has(simId)) {
+      finishedAttemptBySimId.set(simId, a.id);
+    }
+  }
+
   return (
     <div className="space-y-10 pb-12">
       <Hero hasAttempts={attempts.length > 0} />
+
+      {/* CATALOG — every published Simulation, browseable by every
+          signed-in user. Sits above active attempts so newcomers
+          (zero attempts of their own) see something to play
+          immediately; returning users see what's been added since
+          their last visit and can replay anything they've already
+          finished. */}
+      {catalog.length > 0 && (
+        <section>
+          <SectionHeading
+            label="Available simulations"
+            count={catalog.length}
+            hint="Built by the team — start or replay anyone"
+          />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {catalog.map((sim) => (
+              <CatalogCard
+                key={sim.id}
+                sim={sim}
+                activeAttemptId={activeAttemptBySimId.get(sim.id) ?? null}
+                finishedAttemptId={finishedAttemptBySimId.get(sim.id) ?? null}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {openRequests.length > 0 && (
         <section>
@@ -115,8 +176,93 @@ export default async function SimulatorLandingPage() {
         </section>
       )}
 
-      {attempts.length === 0 && <HowItWorks />}
+      {/* HowItWorks fires only when there's truly nothing to show —
+          no attempts AND no catalog AND no requests. With the catalog
+          fetch in place, this is now the "fresh DB" case, not the
+          "new user" case. */}
+      {attempts.length === 0 && catalog.length === 0 && openRequests.length === 0 && <HowItWorks />}
     </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Catalog card — one per published Simulation
+// ────────────────────────────────────────────────────────────────────
+
+type CatalogSim = {
+  id: string;
+  jobTitle: string;
+  companyName: string | null;
+  location: string | null;
+  jdSnippet: string;
+  createdAt: Date;
+};
+
+function CatalogCard({
+  sim,
+  activeAttemptId,
+  finishedAttemptId,
+}: {
+  sim: CatalogSim;
+  activeAttemptId: string | null;
+  finishedAttemptId: string | null;
+}) {
+  // CTA precedence: resume > replay > start. Resume jumps the user
+  // straight to their unfinished week; Replay launches a brand-new
+  // attempt; Start (no prior attempt) also launches a new attempt.
+  return (
+    <Card className="relative flex h-full flex-col p-5">
+      <div className="mb-2.5 flex items-start justify-between gap-2">
+        <Theater className="h-3.5 w-3.5 text-fg-subtle" />
+        <span className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg-subtle">
+          RPG · 12 weeks
+        </span>
+      </div>
+      <h3
+        className="mb-1 text-[16px] font-medium leading-[1.25] tracking-tight text-fg line-clamp-2"
+        style={{ fontFamily: "var(--font-display-theme, inherit)" }}
+      >
+        {sim.jobTitle}
+      </h3>
+      {(sim.companyName || sim.location) && (
+        <p className="text-[12.5px] text-fg-muted">
+          {sim.companyName}
+          {sim.companyName && sim.location && " · "}
+          {sim.location}
+        </p>
+      )}
+      {sim.jdSnippet && (
+        <p className="mt-3 text-[11.5px] leading-relaxed text-fg-muted line-clamp-3">
+          {sim.jdSnippet}
+        </p>
+      )}
+
+      <div className="mt-auto pt-4 flex items-center justify-between gap-3">
+        {activeAttemptId ? (
+          // Already in progress → Resume link, no new Attempt needed
+          <Link
+            href={`/simulator/${activeAttemptId}`}
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-brand-700"
+          >
+            <Play className="h-3.5 w-3.5" /> Resume
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        ) : (
+          <CatalogPlayButton
+            simulationId={sim.id}
+            label={finishedAttemptId ? "Replay" : "Start"}
+          />
+        )}
+        {finishedAttemptId && !activeAttemptId && (
+          <Link
+            href={`/simulator/${finishedAttemptId}`}
+            className="text-[11.5px] text-fg-subtle hover:text-fg"
+          >
+            Review last run →
+          </Link>
+        )}
+      </div>
+    </Card>
   );
 }
 
