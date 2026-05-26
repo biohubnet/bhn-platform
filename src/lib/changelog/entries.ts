@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator default-on in sidebar — May 2026
+  {
+    title: "Career Simulator — default-on in the sidebar",
+    body: "The Career Simulator (`/simulator`) entry in the Experience group was registered with `defaultEnabled: false`, which meant trainees and superadmins both had to manually flip it on under /profile/preferences before they could even see the link. They didn't know to.\n\nFlipped to `defaultEnabled: true` in the preferences registry. Effect: every signed-in user (trainee, superadmin, and the others) now sees Career Simulator in the Experience group by default. Roles for whom it's irrelevant can still toggle it off from the switchboard — the registry only changes the default for users who haven't touched their preferences.\n\nThe page itself was already open at the route level (only a session is required, no role gate), so this is purely a sidebar-default flip.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Course cards — dark right column + AAA white text — May 2026
   {
     title: "Course cards — darker right column + AAA white text",
