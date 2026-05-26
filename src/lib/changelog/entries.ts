@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — guided Junior → VP journeys — May 2026
+  {
+    title: "Career paths — guided Junior → VP journeys across six tracks",
+    body: "New page at `/career-paths` (Experience group, sidebar default-on) that turns the platform's training catalog into six career maps.\n\n**Tracks** — Bioprocess Manufacturing · Quality & Regulatory · Cell & Gene Therapy · Clinical & Trials · Biotech Business & Entrepreneurship · Project Leadership.\n\n**Each track** carries a five-station journey: Junior (0–2 yrs) → Mid (2–5) → Senior (5–10) → Lead (10–15) → VP (15+). At every station you see typical role titles, the focus + muscles you build there, the 2–4 platform courses that fit most cleanly, and any cross-tree branch points where careers commonly fork (e.g. Bioprocess Senior → Quality Lead, Cell & Gene Senior → Clinical Lead, Manufacturing Lead → Business VP).\n\n**Visual design** matches the recent magazine-row aesthetic: track selector at top with a thin left-accent bar per track, then a single vertical timeline with stations connected by a dashed line in the active track's accent colour. Course chips are flat ghost text with a chevron — hover-only underline — so the eye reads the journey first and the courses as supporting detail. Cross-tree branch chips are buttons: click one and the explorer switches to that track so you can see the destination journey without leaving the page.\n\n**Course curation** — we picked the 2–4 highest-signal courses per station rather than dumping the full catalog at each rung. The full catalog stays at /courses; this page is the \"WHY am I taking this\" lens. Each course chip deep-links to /courses?q=<title> so you can jump from the map to the detail.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Course launch — bust the stale-cache holdouts — May 2026
   {
     title: "Course launch — bust stale browser caches still showing the old denial",

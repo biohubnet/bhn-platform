@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.25";
+export const TOUR_VERSION = "2026.05.26";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Career paths — Junior → VP journeys (May 2026) ──────────────
+  {
+    id: "trainee.career-paths-intro",
+    title: "Career paths — six Junior → VP journeys",
+    body: "New under Experience. Pick a track (Bioprocess, Quality, Cell & Gene Therapy, Clinical, Business, Project Leadership) and see the five career stations from Junior to VP — typical roles, focus areas, the 2–4 platform courses that fit each rung, and cross-tree branch points where careers commonly fork. Map of the journey, not a curriculum.",
+    path: "/career-paths",
+    placement: "center",
+    cta: { label: "Open Career paths", href: "/career-paths" },
+    since: "2026.05.26",
+  },
   // ─── EQUIP Key Dates — full round timeline merged (May 2026) ─────
   {
     id: "admin.equip-deadlines-key-dates",
