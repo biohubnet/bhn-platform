@@ -10,12 +10,8 @@ import {
   ArrowRight,
   Briefcase,
   CheckCircle2,
-  ClipboardList,
   Clock,
-  Compass,
   Hourglass,
-  Sparkles,
-  Theater,
   XCircle,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
@@ -130,25 +126,24 @@ export default async function SimulatorLandingPage() {
 
 function Hero({ hasAttempts }: { hasAttempts: boolean }) {
   return (
-    <section className="rounded-[var(--radius-lg)] border border-line/70 bg-card-solid">
-      <div className="grid gap-10 px-6 py-10 md:grid-cols-[1.5fr_1fr] md:px-10 md:py-14 lg:gap-14">
+    <section className="rounded-[var(--radius-lg)] border border-line/70 bg-card-solid overflow-hidden">
+      <div className="grid gap-10 px-6 py-10 md:grid-cols-[1.4fr_1fr] md:px-10 md:py-14 lg:gap-14">
         <div className="max-w-2xl">
           <div className="mb-3 text-[12px] text-fg-subtle">
             RPG · role-play game
           </div>
           <h1
-            className="mb-5 text-[38px] font-semibold leading-[1.1] tracking-tight text-fg md:text-[48px]"
+            className="mb-5 text-[38px] font-semibold leading-[1.05] tracking-tight text-fg md:text-[48px]"
             style={{ fontFamily: "var(--font-display-theme, inherit)" }}
           >
-            Practice the job before you apply for it.
+            Meet the colleagues you don&apos;t have yet.
           </h1>
           <p className="max-w-xl text-[15px] leading-[1.7] text-fg-muted md:text-[16px]">
-            Copy a job description from anywhere — LinkedIn, Indeed, ZipRecruiter,
-            a careers page — and paste it as plain text. We&apos;ll build you a
-            tailored 12-week quarter: a team of colleagues with their own
-            daily rhythms, the scenarios you&apos;ll actually face in that
-            role, and a performance review from your VP at the end. Every
-            decision moves five stats. Try things you&apos;d never risk at
+            Paste a job description. We&apos;ll build the twelve weeks that
+            follow — the team you&apos;d work with, the meetings that
+            actually bite, the politics nobody put in the JD, and the
+            9pm message from the person who hired you. Every decision
+            moves five stats. Try the thing you&apos;d never risk at
             work.
           </p>
 
@@ -161,51 +156,184 @@ function Hero({ hasAttempts }: { hasAttempts: boolean }) {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <span className="text-[12px] text-fg-subtle">
-              We publish each one to your dashboard, usually within 24 hours.
+              Built by hand, usually within 24 hours.
             </span>
           </div>
         </div>
 
-        <div className="hidden md:block">
-          <div className="rounded-md border border-line/60 bg-raised/20 p-5">
-            <div className="mb-4 text-[12.5px] font-medium text-fg">
-              What you&apos;ll get
-            </div>
-            <ul className="space-y-4 text-[13.5px] leading-[1.65] text-fg-muted">
-              <FeatureRow icon={Theater}>
-                <span className="text-fg">Role-played meetings.</span> VP 1:1s,
-                critiques, escalations, hiring, the QBR. Each scenario ends
-                with 3–4 choices and a real tradeoff.
-              </FeatureRow>
-              <FeatureRow icon={Compass}>
-                <span className="text-fg">Hover to preview deltas.</span> See
-                how a choice moves all five stats before committing.
-              </FeatureRow>
-              <FeatureRow icon={ClipboardList}>
-                <span className="text-fg">Quarterly review.</span> Tiered
-                score, per-stat narrative, highlights and lowlights, and a
-                closing line from your VP.
-              </FeatureRow>
-            </ul>
-          </div>
+        <div className="hidden md:flex md:items-center md:justify-center">
+          <FaceoffGraphic />
         </div>
       </div>
     </section>
   );
 }
 
-function FeatureRow({
-  icon: Icon,
+/**
+ * Three-character faceoff illustration — the heart of the hero on
+ * /simulator. Captures the dark-comic premise of the sim: you, the
+ * teammate who's seen this before, and the person you report to.
+ * Each character has a public speech bubble + a smaller parenthetical
+ * "what they're actually thinking" line in italics underneath.
+ *
+ * Pure inline SVG — no image assets, deterministic across themes,
+ * and uses currentColor for the body fills so the brand/violet/amber
+ * palette stays theme-aware. Decorative — aria-hidden + screen
+ * readers get the textual hero copy above.
+ */
+function FaceoffGraphic() {
+  return (
+    <div
+      className="grid w-full max-w-[460px] grid-cols-3 gap-3"
+      aria-hidden
+    >
+      <FaceoffPanel
+        accent="brand"
+        publicLine="I&rsquo;ve got this."
+        privateLine="(...what week is the QBR)"
+      >
+        <CharYou />
+      </FaceoffPanel>
+
+      <FaceoffPanel
+        accent="violet"
+        publicLine="Welcome aboard!"
+        privateLine="(...not another one)"
+      >
+        <CharTeammate />
+      </FaceoffPanel>
+
+      <FaceoffPanel
+        accent="amber"
+        publicLine="Take your time settling in."
+        privateLine="(Sunday-night reads continue)"
+      >
+        <CharBoss />
+      </FaceoffPanel>
+    </div>
+  );
+}
+
+function FaceoffPanel({
+  accent,
+  publicLine,
+  privateLine,
   children,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  accent: "brand" | "violet" | "amber";
+  publicLine: string;
+  privateLine: string;
   children: React.ReactNode;
 }) {
+  const accentMap = {
+    brand:
+      "bg-brand-50 text-brand-800 ring-brand-200 dark:bg-brand-900/30 dark:text-brand-100",
+    violet:
+      "bg-violet-50 text-violet-800 ring-violet-200 dark:bg-violet-900/30 dark:text-violet-100",
+    amber:
+      "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-100",
+  };
   return (
-    <li className="flex gap-3">
-      <Icon className="mt-1 h-3.5 w-3.5 shrink-0 text-fg-subtle" />
-      <span className="flex-1">{children}</span>
-    </li>
+    <div className="flex flex-col items-center text-center">
+      <div className="mb-2 flex h-20 w-20 items-center justify-center rounded-full bg-raised/30 ring-1 ring-inset ring-line">
+        {children}
+      </div>
+      <div
+        className={`relative w-full rounded-xl px-2.5 py-2 text-[11px] font-semibold leading-snug ring-1 ring-inset ${accentMap[accent]}`}
+        dangerouslySetInnerHTML={{ __html: `&ldquo;${publicLine}&rdquo;` }}
+      />
+      <p className="mt-1.5 text-[10px] italic leading-snug text-fg-subtle">
+        {privateLine}
+      </p>
+    </div>
+  );
+}
+
+/** YOU — the candidate. Wide eyes, faint sweat bead. */
+function CharYou() {
+  return (
+    <svg viewBox="0 0 64 64" className="h-16 w-16 text-brand-500">
+      {/* shoulders */}
+      <path
+        d="M 8 60 Q 8 44 32 44 Q 56 44 56 60 Z"
+        fill="currentColor"
+        opacity="0.85"
+      />
+      {/* neck */}
+      <rect x="28" y="38" width="8" height="8" fill="currentColor" opacity="0.7" />
+      {/* head */}
+      <circle cx="32" cy="26" r="15" fill="#fbe6cf" stroke="currentColor" strokeWidth="1.5" />
+      {/* hair tuft */}
+      <path d="M 19 18 Q 32 9 45 18 L 45 23 Q 32 18 19 23 Z" fill="#5e3a1a" />
+      {/* eyes — wide */}
+      <circle cx="27" cy="27" r="2" fill="#1a1a1a" />
+      <circle cx="37" cy="27" r="2" fill="#1a1a1a" />
+      <circle cx="27.5" cy="26.5" r="0.7" fill="white" />
+      <circle cx="37.5" cy="26.5" r="0.7" fill="white" />
+      {/* nervous smile */}
+      <path d="M 27 33 Q 32 35 37 33" stroke="#1a1a1a" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      {/* sweat bead */}
+      <path d="M 44 22 Q 46 18 48 22 Q 47 25 44 22 Z" fill="#7dd3fc" stroke="#0ea5e9" strokeWidth="0.6" />
+    </svg>
+  );
+}
+
+/** TEAMMATE — seen this movie before. Smirk + coffee. */
+function CharTeammate() {
+  return (
+    <svg viewBox="0 0 64 64" className="h-16 w-16 text-violet-500">
+      {/* shoulders */}
+      <path d="M 8 60 Q 8 44 32 44 Q 56 44 56 60 Z" fill="currentColor" opacity="0.85" />
+      <rect x="28" y="38" width="8" height="8" fill="currentColor" opacity="0.7" />
+      {/* head */}
+      <circle cx="32" cy="26" r="15" fill="#f0d2b6" stroke="currentColor" strokeWidth="1.5" />
+      {/* short side-part hair */}
+      <path d="M 17 22 Q 19 13 32 12 Q 45 12 47 22 Q 46 18 38 17 Q 30 17 25 20 Q 21 22 17 22 Z" fill="#1f1f1f" />
+      {/* eyes — half-lidded */}
+      <path d="M 25 27 L 29 27" stroke="#1a1a1a" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M 35 27 L 39 27" stroke="#1a1a1a" strokeWidth="1.8" strokeLinecap="round" />
+      {/* smirk — asymmetric */}
+      <path d="M 27 33 Q 30 35 36 33 L 38 34" stroke="#1a1a1a" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      {/* coffee mug to side */}
+      <rect x="46" y="34" width="9" height="9" rx="1.5" fill="#a78bfa" stroke="#5b21b6" strokeWidth="0.8" />
+      <path d="M 55 36 Q 58 37 58 39 Q 58 41 55 41" stroke="#5b21b6" strokeWidth="0.8" fill="none" />
+      {/* steam */}
+      <path d="M 48 32 Q 49 30 50 32" stroke="#cbd5e1" strokeWidth="0.8" fill="none" />
+      <path d="M 51 32 Q 52 30 53 32" stroke="#cbd5e1" strokeWidth="0.8" fill="none" />
+    </svg>
+  );
+}
+
+/** BOSS — the person you report to. Glasses, arched brow, clipboard. */
+function CharBoss() {
+  return (
+    <svg viewBox="0 0 64 64" className="h-16 w-16 text-amber-600">
+      {/* shoulders */}
+      <path d="M 8 60 Q 8 44 32 44 Q 56 44 56 60 Z" fill="currentColor" opacity="0.85" />
+      <rect x="28" y="38" width="8" height="8" fill="currentColor" opacity="0.7" />
+      {/* head */}
+      <circle cx="32" cy="26" r="15" fill="#e8c5a0" stroke="currentColor" strokeWidth="1.5" />
+      {/* slicked hair */}
+      <path d="M 18 19 Q 22 11 32 11 Q 42 11 46 19 Q 36 16 28 16 Q 23 17 18 19 Z" fill="#2c1810" />
+      {/* glasses */}
+      <circle cx="26" cy="27" r="3.5" fill="none" stroke="#1a1a1a" strokeWidth="1.2" />
+      <circle cx="38" cy="27" r="3.5" fill="none" stroke="#1a1a1a" strokeWidth="1.2" />
+      <line x1="29.5" y1="27" x2="34.5" y2="27" stroke="#1a1a1a" strokeWidth="1.2" />
+      {/* eyes through glasses */}
+      <circle cx="26" cy="27" r="0.9" fill="#1a1a1a" />
+      <circle cx="38" cy="27" r="0.9" fill="#1a1a1a" />
+      {/* arched brow — left side raised */}
+      <path d="M 22 21 Q 26 19 30 22" stroke="#1a1a1a" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      <path d="M 35 22 Q 38 21 42 22" stroke="#1a1a1a" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      {/* flat mouth */}
+      <path d="M 28 34 L 36 34" stroke="#1a1a1a" strokeWidth="1.4" strokeLinecap="round" />
+      {/* clipboard */}
+      <rect x="46" y="32" width="9" height="13" rx="1" fill="#fef3c7" stroke="#92400e" strokeWidth="0.8" />
+      <rect x="49" y="30.5" width="3" height="2.5" rx="0.5" fill="#92400e" />
+      <line x1="48" y1="36" x2="53" y2="36" stroke="#92400e" strokeWidth="0.6" />
+      <line x1="48" y1="39" x2="53" y2="39" stroke="#92400e" strokeWidth="0.6" />
+      <line x1="48" y1="42" x2="52" y2="42" stroke="#92400e" strokeWidth="0.6" />
+    </svg>
   );
 }
 
@@ -217,18 +345,18 @@ function HowItWorks() {
   const steps = [
     {
       n: "01",
-      label: "Paste the JD body",
-      body: "Copy the job description text from any posting and paste it in. No URLs — links expire, copies of text don't. No cleanup needed; we read what you paste.",
+      label: "Paste the JD",
+      body: "Drop the posting text into the box. No links — they expire, your sim doesn't. We read what you wrote, no cleanup needed.",
     },
     {
       n: "02",
       label: "We build your world",
-      body: "Our team reviews the JD and publishes a tailored simulation to your dashboard — a manager, a team of 5–7 colleagues with daily and weekly rhythms, 3–4 cross-functional partners, and 12 weeks of scenarios specific to the role. Usually ready within 24 hours.",
+      body: "Real-shaped people. Specific scenarios. A 12-week arc with the politics, the tradeoffs, and the colleague who keeps citing competitor data. Usually published to your dashboard within 24 hours.",
     },
     {
       n: "03",
       label: "Live the quarter",
-      body: "Twelve weeks. Decisions move five stats. State auto-saves after each choice so you can close the tab and resume. End with a performance review from your VP, a tier (Exceeds / Strong / Meets / Below / Concerns), and a per-stat narrative.",
+      body: "Twelve weeks. Hover any choice to see how it moves your stats before you commit. State auto-saves so you can close the tab. End with a written performance review and a tier — Exceeds, Meets, or “HR has been looped in.”",
     },
   ];
 

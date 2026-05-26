@@ -513,8 +513,15 @@ function StatRow({
 // Scenario card — the centerpiece
 // ────────────────────────────────────────────────────────────────────
 
+// Scenario-type labels are surfaced as chips on every scenario card.
+// "VP 1:1" used to be the label for the manager-meeting scenario type
+// but the simulator covers all role types now (an MSL meets a TA
+// Head, a nurse meets a Director of Nursing, etc.). "Manager 1:1"
+// works for every JD without losing recognisability — and the
+// underlying type key (vp_1on1) stays unchanged for compatibility
+// with every Simulation already in the database.
 const SCENARIO_TYPE_LABEL: Record<string, string> = {
-  vp_1on1: "VP 1:1",
+  vp_1on1: "Manager 1:1",
   team: "Team",
   cross_func: "Cross-Functional",
   escalation: "Escalation",
@@ -1272,7 +1279,7 @@ function WelcomeModal({
       },
       {
         title: "Twelve weeks. State auto-saves.",
-        body: "After each choice the state checkpoints — close the tab and come back later. At week 12 your TA Head gives a written performance review with a tier and per-stat narrative. You can reset and try a different path any time.",
+        body: `After each choice the state checkpoints — close the tab and come back later. At week 12 the person you report to (${payload.vpName}) writes you a performance review with a tier and a per-stat narrative. You can reset and try a different path any time.`,
       },
     ],
     [payload],

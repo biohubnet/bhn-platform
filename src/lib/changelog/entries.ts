@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator: universal copy + faceoff hero graphic — May 2026
+  {
+    title: "Simulator — universal language + faceoff hero graphic",
+    body: "VP-specific language is gone from every shared surface. \"VP 1:1\" → \"Manager 1:1\" on the scenario-type chip; \"performance review from your VP\" → \"the person who hired you\" in the landing copy; \"your TA Head gives a written performance review\" → \"the person you report to (`payload.vpName`)\" in the welcome modal. The role-play game now talks the same way to an MSL applicant, a nurse applicant, an engineer applicant, or any other JD type — without losing the specificity of the simulation itself (each sim still carries its own vpName/vpRole derived from the JD).\n\nHero copy on /simulator rewritten to be snappier and on-brand:\n  • New title: \"Meet the colleagues you don't have yet.\"\n  • New body emphasises the dark-comic premise — the team you'd work with, the meetings that actually bite, the politics nobody puts in the JD, and the 9pm message from the person who hired you.\n  • The right column dropped the \"What you'll get\" feature list and now shows a faceoff illustration: three character portraits (you / a teammate / the person you report to) each with a public speech bubble and an italic parenthetical \"what they're actually thinking.\" Pure inline SVG, theme-aware, decorative.\n  • \"How it works\" 3-step section rewritten with sharper copy. The tier line ends with \"Exceeds, Meets, or 'HR has been looped in'\" instead of the bureaucratic-sounding 5-tier ladder.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator: text-only submit + welcome tour + playbooks — May 2026
   {
     title: "Simulator — text-only requests, welcome walkthrough, per-teammate playbook",
