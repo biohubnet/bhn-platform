@@ -37,13 +37,19 @@ interface Props {
   initialFolders: FolderRow[];
 }
 
-const STATUS_META: Record<string, { label: string; cls: string }> = {
-  drafting:     { label: "Drafting",     cls: "bg-card-solid text-fg-muted ring-line" },
-  submitted:    { label: "Submitted",    cls: "bg-cyan-50 text-cyan-900 ring-cyan-200" },
-  interviewing: { label: "Interviewing", cls: "bg-violet-50 text-violet-900 ring-violet-200" },
-  offer:        { label: "Offer",        cls: "bg-emerald-50 text-emerald-900 ring-emerald-200" },
-  rejected:     { label: "Rejected",     cls: "bg-rose-50 text-rose-900 ring-rose-200" },
-  closed:       { label: "Closed",       cls: "bg-amber-50 text-amber-900 ring-amber-200" },
+/** Status presentation is now a single value per row: a 3-px vertical
+ *  bar pinned to the row's left edge, in one of six hues. The pill +
+ *  ring + fill combination was carrying four colours of visual weight
+ *  per card; this trims that to one thin line of colour per row, plus
+ *  an uppercase eyebrow label using the platform's standard muted
+ *  text — no per-status fills, no rounded chip pills. */
+const STATUS_META: Record<string, { label: string; bar: string }> = {
+  drafting:     { label: "Drafting",     bar: "var(--brand-400)" },
+  submitted:    { label: "Submitted",    bar: "#06b6d4" }, // cyan-500
+  interviewing: { label: "Interviewing", bar: "#8b5cf6" }, // violet-500
+  offer:        { label: "Offer",        bar: "#10b981" }, // emerald-500
+  rejected:     { label: "Rejected",     bar: "#f43f5e" }, // rose-500
+  closed:       { label: "Closed",       bar: "var(--fg-subtle)" },
 };
 
 export function JobFoldersIndexClient({ initialFolders }: Props) {
@@ -250,14 +256,14 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
       )}
 
       {archived.length > 0 && (
-        <details className="rounded-xl border border-dashed border-line p-3 mt-6">
-          <summary className="text-[11px] uppercase tracking-[0.18em] font-bold text-fg-muted cursor-pointer select-none">
+        <details className="mt-8">
+          <summary className="text-[11px] uppercase tracking-[0.18em] font-bold text-fg-muted cursor-pointer select-none pb-2 border-b border-line/60">
             Archived ({archived.length})
           </summary>
-          {/* Single-column grid — folder cards take the full content
-              width so the JD snippet, chips, and posting link all
-              read without ellipsis. */}
-          <ul className="mt-3 grid grid-cols-1 gap-4">
+          {/* Hairline-separated rows — same flat magazine-row layout
+              as the active list, just dimmed via the row's own
+              isArchived branch. No rounded box wrapper. */}
+          <ul className="mt-2 divide-y divide-line/60">
             {archived.map((f) => (
               <FolderCard
                 key={f.id}
@@ -314,134 +320,151 @@ function FolderCard({
   // Friendly relative-ish stamp for the meta row. We deliberately
   // keep this client-side so SSR/CSR can't disagree on "now".
   const updated = formatUpdated(row.updatedAt);
+
+  // Build the inline content-indicator list ("Resume · Letter · Prep ·
+  // Sim ready") as a single string of fragments separated by middots.
+  // Only filled-in pieces are shown — the absence of e.g. "Letter"
+  // already communicates "not written yet", same as the old chip
+  // showing/hiding pattern, but without the per-piece pill colour.
+  const indicators: { key: string; icon: React.ReactNode; label: string }[] = [];
+  if (row.resume)           indicators.push({ key: "resume",  icon: <FileText size={11} className="opacity-70" />, label: "Resume" });
+  if (row.hasCoverLetter)   indicators.push({ key: "letter",  icon: <Mail size={11} className="opacity-70" />,     label: "Letter" });
+  if (row.hasInterviewPrep) indicators.push({ key: "prep",    icon: <BookOpen size={11} className="opacity-70" />, label: "Prep"   });
+  if (row.simStatus)        indicators.push({ key: "sim",     icon: <Theater size={11} className="opacity-70" />, label: `Sim ${row.simStatus}` });
+
   return (
     <li className={
-      // Wider, taller card. The bump from p-3 → p-4 sm:p-5 + bigger
-      // icon disc + 4-line JD clamp lands the "~50% taller" feel the
-      // single-column layout asked for, without making short JDs
-      // float in dead space.
-      "relative rounded-xl border p-4 sm:p-5 transition-colors " +
+      // No rounded box, no ring — just a flat horizontal row. Hairlines
+      // come from the parent's `divide-y`. Padding inside the row is
+      // generous so the card still reads as a card-shaped band.
+      "group relative pl-5 pr-3 py-5 transition-colors " +
       (isSelected
-        ? "border-brand-400 bg-brand-50/60 ring-1 ring-brand-300"
+        ? "bg-brand-50/40"
         : row.isArchived
-          ? "border-line bg-bg/30"
-          : "border-line bg-card-solid hover:bg-elevated")
+          ? "opacity-70"
+          : "hover:bg-elevated/40")
     }>
+      {/* Status accent — 3 px vertical bar pinned to the row's left
+          edge. The one and only saturated colour on each card. Bumps
+          to 4 px on selected so the multi-select state is legible
+          without recolouring the background. */}
+      <span
+        aria-hidden
+        className={`absolute top-4 bottom-4 left-0 rounded-r ${isSelected ? "w-1" : "w-[3px]"}`}
+        style={{ backgroundColor: status.bar }}
+      />
+
+      {/* Select toggle — minimal, top-right. No background, just an
+          icon swap on hover. */}
       <button
         type="button"
         onClick={onToggleSelect}
-        className="absolute top-3 right-3 z-10 inline-flex items-center justify-center w-7 h-7 rounded text-fg-muted hover:text-fg hover:bg-elevated"
+        className="absolute top-4 right-3 z-10 inline-flex items-center justify-center w-7 h-7 rounded text-fg-muted hover:text-fg"
         aria-label={isSelected ? "Deselect" : "Select"}
       >
         {isSelected ? <CheckSquare size={18} className="text-brand-700" /> : <Square size={18} />}
       </button>
 
-      <div className="flex items-start gap-3.5 pr-8">
-        <span className="shrink-0 inline-flex w-12 h-12 rounded-xl bg-brand-50 text-brand-700 items-center justify-center ring-1 ring-inset ring-brand-200">
-          <FolderOpen size={22} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <Link href={`/profile/job-folders/${row.id}`}>
-            <p className="text-[15px] font-semibold text-fg leading-tight hover:underline">{row.title}</p>
-          </Link>
-          {/* Meta row — sits between the title and the chip cluster.
-              Carries the linked posting title (the chip below only
-              shows the company name; the role itself is the missing
-              context) plus "Updated <relative>" so the card stops
-              looking like a bare placeholder. */}
-          <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[11.5px] text-fg-subtle">
-            {row.posting && (
-              <span className="inline-flex items-center gap-1 truncate max-w-[44ch]">
+      <div className="pr-9">
+        {/* Status eyebrow + role line. Replaces the old status pill +
+            posting-title pill: same information, no rounded chip
+            backgrounds, no per-status fills. Just uppercase tracking
+            on the status label tied to a middot list. */}
+        <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg-subtle inline-flex items-center gap-2">
+          <span>{status.label}</span>
+          {row.posting && (
+            <>
+              <span aria-hidden className="text-line">·</span>
+              <span className="normal-case tracking-normal font-semibold text-fg-muted inline-flex items-center gap-1.5 truncate max-w-[48ch]">
                 <Briefcase size={10} className="opacity-70" />
-                <span className="truncate">{row.posting.title}</span>
+                <span className="truncate">{row.posting.title} · {row.posting.companyName}</span>
               </span>
-            )}
-            {row.posting && updated && <span aria-hidden>·</span>}
-            {updated && (
-              <span className="inline-flex items-center gap-1">
-                <Clock size={10} className="opacity-70" />
-                Updated {updated}
-              </span>
-            )}
-          </div>
-          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-[0.14em] font-bold ring-1 ring-inset ${status.cls}`}>
-              {status.label}
-            </span>
-            {row.posting && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-cyan-50 text-cyan-900 ring-1 ring-inset ring-cyan-200">
-                <Briefcase size={9} /> {row.posting.companyName}
-              </span>
-            )}
-            {row.resume && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200">
-                <FileText size={9} /> Resume
-              </span>
-            )}
-            {row.hasCoverLetter && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-violet-50 text-violet-900 ring-1 ring-inset ring-violet-200">
-                <Mail size={9} /> Letter
-              </span>
-            )}
-            {row.hasInterviewPrep && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-900 ring-1 ring-inset ring-emerald-200">
-                <BookOpen size={9} /> Prep
-              </span>
-            )}
-            {row.simStatus && (
-              <SimStatusChip status={row.simStatus} />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {row.jdSnippet && (
-        // 4-line clamp (was 2) — taller card gives the JD room to
-        // breathe so the trainee can scan the role without opening
-        // the folder for short JDs.
-        <p className="mt-3.5 text-[12.5px] text-fg-muted line-clamp-4 leading-relaxed">
-          {row.jdSnippet}
+            </>
+          )}
         </p>
-      )}
 
-      <div className="mt-4 flex items-center gap-1.5 flex-wrap">
-        <Link
-          href={`/profile/job-folders/${row.id}`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-bold bg-brand-600 text-white hover:bg-brand-700"
-        >
-          <FolderOpen size={11} /> Open folder
+        {/* Title — the visual anchor of the row. Plain hyperlink, no
+            disc icon next to it. */}
+        <Link href={`/profile/job-folders/${row.id}`} className="block mt-1.5">
+          <h3 className="text-[16px] font-semibold text-fg leading-snug hover:underline">
+            {row.title}
+          </h3>
         </Link>
-        {onArchive && (
-          <button
-            type="button"
-            onClick={onArchive}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200 hover:bg-amber-50"
-          >
-            <Archive size={11} /> Archive
-          </button>
+
+        {/* Updated-at meta */}
+        {updated && (
+          <p className="mt-1 text-[11.5px] text-fg-subtle inline-flex items-center gap-1">
+            <Clock size={10} className="opacity-70" /> Updated {updated}
+          </p>
         )}
-        {onRestore && (
-          <button
-            type="button"
-            onClick={onRestore}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold text-brand-700 ring-1 ring-brand-200 hover:bg-brand-50"
-          >
-            <RotateCcw size={11} /> Restore
-          </button>
+
+        {/* JD snippet — 4-line clamp, breathable line-height. */}
+        {row.jdSnippet && (
+          <p className="mt-3.5 text-[12.5px] text-fg-muted line-clamp-4 leading-relaxed">
+            {row.jdSnippet}
+          </p>
         )}
-        <button
-          type="button"
-          onClick={onDelete}
-          className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold text-rose-700 ring-1 ring-rose-200 hover:bg-rose-50"
-        >
-          <Trash2 size={11} /> Delete
-        </button>
-      </div>
-      {row.posting && (
-        <div className="absolute bottom-3 right-3 text-[10px] text-fg-subtle inline-flex items-center gap-1">
-          <ExternalLink size={9} />
+
+        {/* Footer band — content indicators on the left as middot-
+            separated text (no per-indicator pill colour), actions on
+            the right as ghost-style text links. The whole row stays
+            on one line on desktop; wraps gracefully on narrow. */}
+        <div className="mt-4 flex items-center justify-between gap-4 flex-wrap text-[12px]">
+          {/* Filled-in content indicators. Uniform muted colour — the
+              point is "here's what's in the folder", not five different
+              hues of category. */}
+          {indicators.length > 0 ? (
+            <span className="inline-flex items-center flex-wrap gap-x-2 gap-y-1 text-fg-muted">
+              {indicators.map((ind, i) => (
+                <span key={ind.key} className="inline-flex items-center gap-1.5">
+                  {i > 0 && <span aria-hidden className="text-line mr-1">·</span>}
+                  {ind.icon}
+                  <span>{ind.label}</span>
+                </span>
+              ))}
+            </span>
+          ) : (
+            <span className="text-fg-subtle italic">Nothing filled in yet</span>
+          )}
+
+          {/* Actions — text-style links, no pill backgrounds. The
+              primary "Open folder" affordance is signalled by the
+              brand-toned chevron rather than a coloured fill. */}
+          <span className="inline-flex items-center gap-x-4 gap-y-1 flex-wrap">
+            <Link
+              href={`/profile/job-folders/${row.id}`}
+              className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:underline"
+            >
+              Open folder <ExternalLink size={11} />
+            </Link>
+            {onArchive && (
+              <button
+                type="button"
+                onClick={onArchive}
+                className="inline-flex items-center gap-1 text-fg-subtle hover:text-fg"
+              >
+                <Archive size={11} /> Archive
+              </button>
+            )}
+            {onRestore && (
+              <button
+                type="button"
+                onClick={onRestore}
+                className="inline-flex items-center gap-1 text-fg-subtle hover:text-fg"
+              >
+                <RotateCcw size={11} /> Restore
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onDelete}
+              className="inline-flex items-center gap-1 text-fg-subtle hover:text-rose-700"
+            >
+              <Trash2 size={11} /> Delete
+            </button>
+          </span>
         </div>
-      )}
+      </div>
     </li>
   );
 }
@@ -533,40 +556,16 @@ const STATUS_ORDER = [
   "closed",
 ] as const;
 
-const GROUP_META: Record<
-  string,
-  { label: string; accent: string; description: string }
-> = {
-  drafting: {
-    label: "Drafting",
-    accent: "bg-brand-50 text-brand-800 ring-brand-200",
-    description: "Still tailoring",
-  },
-  submitted: {
-    label: "Submitted",
-    accent: "bg-cyan-50 text-cyan-900 ring-cyan-200",
-    description: "Application sent, awaiting reply",
-  },
-  interviewing: {
-    label: "Interviewing",
-    accent: "bg-violet-50 text-violet-900 ring-violet-200",
-    description: "In the loop",
-  },
-  offer: {
-    label: "Offer",
-    accent: "bg-emerald-50 text-emerald-900 ring-emerald-200",
-    description: "Decision pending",
-  },
-  rejected: {
-    label: "Rejected",
-    accent: "bg-rose-50 text-rose-900 ring-rose-200",
-    description: "Onward",
-  },
-  closed: {
-    label: "Closed",
-    accent: "bg-amber-50 text-amber-900 ring-amber-200",
-    description: "Pulled / withdrawn",
-  },
+/** Per-group descriptive label. The colour for each group's section
+ *  header now comes from the row-level status bar (same hue), not a
+ *  pill background — so this map only carries the words. */
+const GROUP_META: Record<string, { label: string; description: string }> = {
+  drafting:     { label: "Drafting",     description: "Still tailoring" },
+  submitted:    { label: "Submitted",    description: "Application sent, awaiting reply" },
+  interviewing: { label: "Interviewing", description: "In the loop" },
+  offer:        { label: "Offer",        description: "Decision pending" },
+  rejected:     { label: "Rejected",     description: "Onward" },
+  closed:       { label: "Closed",       description: "Pulled / withdrawn" },
 };
 
 function StatusGroupedList({
@@ -589,30 +588,40 @@ function StatusGroupedList({
   }, [rows]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       {STATUS_ORDER.map((status) => {
         const bucket = grouped.get(status);
         if (!bucket || bucket.length === 0) return null;
         const meta = GROUP_META[status];
+        const statusMeta = STATUS_META[status] ?? STATUS_META.drafting;
         return (
           <section key={status}>
-            <div className="flex items-baseline justify-between mb-2.5">
-              <h2 className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] font-bold text-subtle">
+            {/* Section header — flat uppercase label + descriptor on
+                one line, with a soft brand-tinted gradient underline
+                replacing the old pill background. The status hue
+                lives only in the 2-px tick to the left of the label
+                (same colour as each row's vertical bar). */}
+            <header className="mb-1">
+              <div className="flex items-baseline gap-2.5">
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.14em] font-bold ring-1 ring-inset ${meta.accent}`}
-                >
+                  aria-hidden
+                  className="inline-block w-2 h-2 rounded-sm"
+                  style={{ backgroundColor: statusMeta.bar }}
+                />
+                <h2 className="text-[11px] uppercase tracking-[0.18em] font-bold text-fg">
                   {meta.label}
-                </span>
-                <span className="text-fg-subtle font-normal normal-case tracking-normal">
+                </h2>
+                <span className="text-[11.5px] text-fg-subtle">
                   {bucket.length} {bucket.length === 1 ? "folder" : "folders"} ·{" "}
                   <span className="italic">{meta.description}</span>
                 </span>
-              </h2>
-            </div>
-            {/* Single-column grid — full-width cards so longer JD
-                snippets render without ellipsis and the chips/meta
-                row stays readable on dense statuses (Submitted etc.). */}
-            <ul className="grid grid-cols-1 gap-4">
+              </div>
+              <div className="mt-2 h-px bg-gradient-to-r from-line/80 via-line/40 to-transparent" />
+            </header>
+            {/* Hairline-separated folder rows — flat, no rounded box,
+                no per-row ring. The whole stack reads as a single
+                magazine-row list. */}
+            <ul className="divide-y divide-line/60 border-b border-line/60">
               {bucket.map((f) => (
                 <FolderCard
                   key={f.id}
@@ -631,21 +640,3 @@ function StatusGroupedList({
   );
 }
 
-/** Status chip rendered alongside the other folder-content chips
- *  (Resume / Letter / Prep) when this folder has a linked
- *  SimulationRequest. Five states map to five visual tones. */
-function SimStatusChip({ status }: { status: NonNullable<FolderRow["simStatus"]> }) {
-  const meta: Record<typeof status, { cls: string; label: string }> = {
-    pending:    { cls: "bg-amber-50 text-amber-900 ring-amber-200",   label: "Sim queued"      },
-    generating: { cls: "bg-sky-50 text-sky-900 ring-sky-200",         label: "Sim generating"  },
-    ready:      { cls: "bg-emerald-50 text-emerald-900 ring-emerald-200", label: "Sim ready"   },
-    failed:     { cls: "bg-rose-50 text-rose-900 ring-rose-200",      label: "Sim failed"      },
-    rejected:   { cls: "bg-rose-50 text-rose-900 ring-rose-200",      label: "Sim rejected"    },
-  };
-  const m = meta[status];
-  return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ring-1 ring-inset ${m.cls}`}>
-      <Theater size={9} /> {m.label}
-    </span>
-  );
-}

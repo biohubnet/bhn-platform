@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Job folders — magazine-row redesign — May 2026
+  {
+    title: "Job folders — streamlined magazine-row cards",
+    body: "The /profile/job-folders index dropped its rounded card boxes (and the box-in-box folder-icon disc) in favour of a flat magazine-row layout — same information, a fraction of the visual weight.\n\n**What changed:**\n\n• **No more rounded card per folder.** Each folder is a flat row inside a `divide-y` hairline list. The outer rounded-xl + ring + colour-fill is gone; the dashed border around the archived section is gone too.\n\n• **One colour per row, on a 3 px vertical bar.** Status (drafting / submitted / interviewing / offer / rejected / closed) is now a thin coloured line pinned to the row's left edge — same six hues as the old pills, but at < 1% of the visual area. Selected rows bump the bar to 4 px; no other background change.\n\n• **No more chip pills.** The five Resume / Letter / Prep / Sim / Status pills (each carrying a different colour fill, ring, and text colour) became inline middot-separated text in the platform's standard muted colour: `Resume · Letter · Prep · Sim ready`. Filled-in pieces only — the absence of a label communicates the absence of content. Status moved into an uppercase tracking eyebrow above the title.\n\n• **No more folder-icon disc.** The 48-px rounded-xl brand-50 tile next to the title is gone. The title is the visual anchor on its own.\n\n• **Action buttons are now ghost text links.** Open folder is a brand-700 text link with an external-link icon; Archive / Restore / Delete are fg-subtle text buttons that pick up colour only on hover. The amber / brand / rose pill backgrounds are gone.\n\n• **Section headers (Interviewing / Submitted / etc.) lost their pills too.** Replaced with a 2-px coloured tick + uppercase label + descriptive subtitle, with a soft hairline gradient underline (line/80 → transparent). The descriptive italic subtitle and folder count stay.\n\nNet: roughly four fewer colour fills per card, one fewer rounded box, and ~30% less density — without dropping any information.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator request delete + daylight hero readability — May 2026
   {
     title: "Simulator requests — delete affordance on the detail page",
