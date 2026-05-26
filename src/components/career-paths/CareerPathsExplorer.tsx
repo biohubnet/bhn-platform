@@ -29,7 +29,7 @@
  * destination track + level in plain text.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Briefcase,
   Dna,
@@ -85,6 +85,21 @@ interface HoverState {
 
 export function CareerPathsExplorer() {
   const [hovered, setHovered] = useState<HoverState | null>(null);
+
+  // When a station is hovered, the set of "related" station ids is
+  // the source + all of its cross-link targets. Other boxes are
+  // dimmed (opacity-only, no blur) so the focused branch reads as a
+  // figure-against-ground without obscuring the rest of the chart.
+  const relatedIds = useMemo<Set<string> | null>(() => {
+    if (!hovered) return null;
+    const ids = new Set<string>();
+    ids.add(`${hovered.track.id}-${hovered.station.level}`);
+    for (const cl of hovered.station.crossLinks ?? []) {
+      ids.add(`${cl.trackId}-${cl.targetLevel}`);
+    }
+    return ids;
+  }, [hovered]);
+
   return (
     <div className="space-y-6">
       <Legend />
@@ -107,6 +122,7 @@ export function CareerPathsExplorer() {
               rowIdx={rowIdx}
               isLast={rowIdx === LEVEL_ORDER.length - 1}
               onHoverChange={setHovered}
+              relatedIds={relatedIds}
             />
           ))}
 
@@ -233,12 +249,15 @@ function TrackHeadersRow() {
 }
 
 function LevelRow({
-  level, rowIdx, isLast, onHoverChange,
+  level, rowIdx, isLast, onHoverChange, relatedIds,
 }: {
   level: LevelId;
   rowIdx: number;
   isLast: boolean;
   onHoverChange: (s: HoverState | null) => void;
+  /** When a hover is active, the set of station ids that are NOT
+   *  dimmed (source + targets). null = no hover active, no dimming. */
+  relatedIds: Set<string> | null;
 }) {
   const meta = LEVEL_META[level];
   return (
@@ -269,15 +288,18 @@ function LevelRow({
         {CAREER_TRACKS.map((track) => {
           const station = track.stations.find((s) => s.level === level);
           if (!station) return <li key={track.id} />;
+          const stationId = `${track.id}-${station.level}`;
+          const isDimmed = relatedIds !== null && !relatedIds.has(stationId);
           return (
             <li key={track.id}>
               <StationBox
                 station={station}
                 accent={track.accent}
                 index={rowIdx}
-                stationId={`${track.id}-${station.level}`}
+                stationId={stationId}
                 track={track}
                 onHoverChange={onHoverChange}
+                isDimmed={isDimmed}
               />
             </li>
           );
@@ -338,7 +360,7 @@ function ConnectorRow({ accents }: { accents: string[] }) {
 // ──────────────────────────────────────────────────────────────────
 
 function StationBox({
-  station, accent, index, stationId, track, onHoverChange,
+  station, accent, index, stationId, track, onHoverChange, isDimmed,
 }: {
   station: CareerStation;
   accent: string;
@@ -346,6 +368,10 @@ function StationBox({
   stationId: string;
   track: CareerTrack;
   onHoverChange: (s: HoverState | null) => void;
+  /** When another station's branching is active, unrelated boxes
+   *  receive a slight opacity drop (no blur, per user). Keeps the
+   *  focused branch as figure-against-ground. */
+  isDimmed: boolean;
 }) {
   const intensity = 30 + index * 17;
   const hasCrossLinks = (station.crossLinks?.length ?? 0) > 0;
@@ -354,7 +380,10 @@ function StationBox({
       data-station-id={stationId}
       onMouseEnter={hasCrossLinks ? () => onHoverChange({ track, station }) : undefined}
       onMouseLeave={hasCrossLinks ? () => onHoverChange(null) : undefined}
-      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden"
+      className={
+        "relative h-full rounded-xl bg-card-solid border border-line overflow-hidden transition-opacity duration-200 " +
+        (isDimmed ? "opacity-40" : "opacity-100")
+      }
       style={{
         boxShadow: "var(--shadow-card-rest)",
         backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${accent} 5%, transparent) 0%, transparent 50%)`,
@@ -448,14 +477,22 @@ interface Layout {
   src: RectBox;        // source box, container-relative coords
   tgt: RectBox;        // target box, container-relative coords
   line: { from: LineEndpoint; to: LineEndpoint };
-  popover: { x: number; y: number };
+  /** Popover bounding box, container-relative. Both position and
+   *  dimensions are computed dynamically so the box fits in the
+   *  vertical band between source and target rows + stays inside
+   *  the canvas + doesn't overlap previously-placed popovers. */
+  popover: { x: number; y: number; w: number; h: number };
 }
 
-/** Pixel size of the popover. Used for collision detection — the
- *  actual rendered popover has these dimensions enforced via CSS. */
-const POPOVER_W = 260;
-const POPOVER_H = 180;
-const POPOVER_PAD = 12;  // min clearance from station boxes
+/** Default popover dimensions. The actual rendered box may shrink
+ *  (height to fit the row-gap band, width to fit the canvas).
+ *  POPOVER_MIN_H is the hard floor — below this we still render
+ *  but content is heavily abbreviated. */
+const POPOVER_DEFAULT_W = 280;
+const POPOVER_DEFAULT_H = 160;
+const POPOVER_MIN_W     = 200;
+const POPOVER_MIN_H     = 56;
+const POPOVER_PAD       = 12;  // min clearance from src/tgt and canvas edges
 
 function CrossTreeOverlay({ hovered }: { hovered: HoverState | null }) {
   const [layouts, setLayouts] = useState<Layout[] | null>(null);
@@ -507,17 +544,20 @@ function computeLayouts(hovered: HoverState): Layout[] {
   if (!srcEl) return [];
 
   // Find the chart's inner container so we can express all
-  // coordinates in its frame (instead of viewport frame). That way
-  // the overlay survives both chart horizontal scroll and page
-  // vertical scroll without drift.
+  // coordinates in its frame (instead of viewport frame). Survives
+  // chart horizontal scroll AND page vertical scroll.
   const scrollerEl = srcEl.closest<HTMLElement>("[data-career-chart-scroll]");
   if (!scrollerEl) return [];
   const containerEl = scrollerEl.firstElementChild as HTMLElement | null;
   if (!containerEl) return [];
 
   const containerRect = containerEl.getBoundingClientRect();
+  // Canvas bounds — popovers must stay inside.
+  const canvasW = containerEl.offsetWidth;
+  const canvasH = containerEl.offsetHeight;
   const srcRect = toContainerRect(srcEl.getBoundingClientRect(), containerRect);
 
+  // First pass — compute line + tentative popover for each crossLink.
   const out: Layout[] = [];
   for (const cl of hovered.station.crossLinks!) {
     const tgtId = `${cl.trackId}-${cl.targetLevel}`;
@@ -527,8 +567,8 @@ function computeLayouts(hovered: HoverState): Layout[] {
     const target = TRACK_BY_ID.get(cl.trackId);
     if (!target) continue;
 
-    // Pick line endpoints — from the source edge closest to target,
-    // to the target edge closest to source.
+    // Line endpoints — from source edge closest to target, to target
+    // edge closest to source.
     const srcOnLeftOfTgt = srcRect.right < tgtRect.left;
     const from: LineEndpoint = {
       x: srcOnLeftOfTgt ? srcRect.right : srcRect.left,
@@ -539,23 +579,34 @@ function computeLayouts(hovered: HoverState): Layout[] {
       y: (tgtRect.top + tgtRect.bottom) / 2,
     };
 
+    const popover = pickPopoverBox({ src: srcRect, tgt: tgtRect, line: { from, to }, canvasW, canvasH });
+
     out.push({
       crossLink: cl,
       target,
       src: srcRect,
       tgt: tgtRect,
       line: { from, to },
-      popover: pickPopoverPosition(srcRect, tgtRect),
+      popover,
     });
   }
-  // If multiple popovers, do a simple second pass to push later
-  // popovers away from earlier ones (so two popovers from the same
-  // source don't overlap each other).
+
+  // Second pass — for multiple cross-links from the same source,
+  // greedy-shift later popovers vertically to avoid overlapping the
+  // ones placed before them. Stays within canvas.
   for (let i = 1; i < out.length; i++) {
     for (let j = 0; j < i; j++) {
-      if (boxesOverlap(popBox(out[i].popover), popBox(out[j].popover))) {
-        // Shift down by popover height + padding
-        out[i].popover.y = popBox(out[j].popover).bottom + POPOVER_PAD;
+      const iBox = out[i].popover;
+      const jBox = out[j].popover;
+      if (popoverOverlap(iBox, jBox)) {
+        // Shift i below j (or above if no room below).
+        const shiftDown = jBox.y + jBox.h + POPOVER_PAD;
+        if (shiftDown + iBox.h + POPOVER_PAD <= canvasH) {
+          iBox.y = shiftDown;
+        } else {
+          // Fall back: shift right within canvas.
+          iBox.x = Math.min(canvasW - iBox.w - POPOVER_PAD, jBox.x + jBox.w + POPOVER_PAD);
+        }
       }
     }
   }
@@ -571,48 +622,104 @@ function toContainerRect(rect: DOMRect, containerRect: DOMRect): RectBox {
   };
 }
 
-function popBox(p: { x: number; y: number }): RectBox {
-  return { left: p.x, top: p.y, right: p.x + POPOVER_W, bottom: p.y + POPOVER_H };
+function popoverOverlap(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+): boolean {
+  return !(
+    a.x + a.w + POPOVER_PAD <= b.x ||
+    a.x >= b.x + b.w + POPOVER_PAD ||
+    a.y + a.h + POPOVER_PAD <= b.y ||
+    a.y >= b.y + b.h + POPOVER_PAD
+  );
 }
 
-function boxesOverlap(a: RectBox, b: RectBox): boolean {
-  return !(a.right + POPOVER_PAD <= b.left || a.left >= b.right + POPOVER_PAD ||
-           a.bottom + POPOVER_PAD <= b.top || a.top >= b.bottom + POPOVER_PAD);
+function rectOverlap(a: RectBox, b: { x: number; y: number; w: number; h: number }): boolean {
+  return !(
+    a.right + POPOVER_PAD <= b.x ||
+    a.left >= b.x + b.w + POPOVER_PAD ||
+    a.bottom + POPOVER_PAD <= b.y ||
+    a.top >= b.y + b.h + POPOVER_PAD
+  );
 }
 
-/** Find a position for the popover that doesn't touch source or
- *  target. Tries midpoint → between-rows → right-of-target →
- *  left-of-source. Falls back to midpoint if nothing fits cleanly.
- *  All coordinates are container-relative (in pixels). */
-function pickPopoverPosition(src: RectBox, tgt: RectBox): { x: number; y: number } {
-  const midX = (src.left + src.right + tgt.left + tgt.right) / 4 - POPOVER_W / 2;
-  const midY = (src.top + src.bottom + tgt.top + tgt.bottom) / 4 - POPOVER_H / 2;
+/** Compute a popover box: position (x, y) + dynamic dimensions (w, h).
+ *
+ *  Strategy:
+ *    1. Identify the vertical band between source-row and target-row
+ *       (the gap that contains the connector row + level-label band).
+ *    2. Height: clamp to (band height - 2*PAD), bounded by
+ *       [POPOVER_MIN_H, POPOVER_DEFAULT_H]. So the popover is exactly
+ *       as tall as the gap allows.
+ *    3. Width: clamp DEFAULT_W to (canvas width - 2*PAD).
+ *    4. Position: centre on the line's midpoint x, vertically in the
+ *       middle of the band. Then clamp the box inside the canvas.
+ *    5. If the box still overlaps source or target (e.g. extreme
+ *       diagonal cases where the band ended up zero-height), shrink
+ *       further or fall back to a position outside the line. */
+function pickPopoverBox({
+  src, tgt, line, canvasW, canvasH,
+}: {
+  src: RectBox;
+  tgt: RectBox;
+  line: { from: LineEndpoint; to: LineEndpoint };
+  canvasW: number;
+  canvasH: number;
+}): { x: number; y: number; w: number; h: number } {
+  // Line midpoint — popover stays centred on this x by default.
+  const midX = (line.from.x + line.to.x) / 2;
 
-  const candidates: { x: number; y: number }[] = [
-    // 1. Midpoint
-    { x: midX, y: midY },
-    // 2. Between rows — vertically below src if src is above tgt
-    src.bottom < tgt.top
-      ? { x: (src.left + tgt.right) / 2 - POPOVER_W / 2, y: src.bottom + POPOVER_PAD }
-      : { x: midX, y: tgt.bottom + POPOVER_PAD },
-    // 3. To the right of target
-    { x: tgt.right + POPOVER_PAD, y: (tgt.top + tgt.bottom) / 2 - POPOVER_H / 2 },
-    // 4. To the left of source
-    { x: src.left - POPOVER_W - POPOVER_PAD, y: (src.top + src.bottom) / 2 - POPOVER_H / 2 },
-    // 5. Below target
-    { x: (tgt.left + tgt.right) / 2 - POPOVER_W / 2, y: tgt.bottom + POPOVER_PAD },
-  ];
+  // Vertical band between the two rows.
+  const srcAbove = src.bottom <= tgt.top;
+  const bandTop    = srcAbove ? src.bottom + POPOVER_PAD : tgt.bottom + POPOVER_PAD;
+  const bandBottom = srcAbove ? tgt.top - POPOVER_PAD : src.top - POPOVER_PAD;
+  const bandHeight = Math.max(0, bandBottom - bandTop);
 
-  for (const c of candidates) {
-    const pBox = popBox(c);
-    if (!boxesOverlap(pBox, src) && !boxesOverlap(pBox, tgt)) {
-      // Also make sure the popover starts within the chart bounds
-      // (x >= 0). If it's been pushed off the left edge, skip.
-      if (c.x >= 0) return c;
-    }
+  // Dynamic dimensions. Height adapts to band.
+  let w = Math.min(POPOVER_DEFAULT_W, canvasW - 2 * POPOVER_PAD);
+  let h = Math.min(POPOVER_DEFAULT_H, Math.max(POPOVER_MIN_H, bandHeight));
+  if (w < POPOVER_MIN_W) w = POPOVER_MIN_W;
+
+  // Centre x on line midpoint; centre y in the band.
+  let x = midX - w / 2;
+  let y = bandTop + (bandHeight - h) / 2;
+
+  // Canvas clamp — popover must stay inside the chart container.
+  x = Math.max(POPOVER_PAD, Math.min(canvasW - w - POPOVER_PAD, x));
+  y = Math.max(POPOVER_PAD, Math.min(canvasH - h - POPOVER_PAD, y));
+
+  // Sanity guard — if the box still hits src/tgt (e.g. same-row
+  // transition with no vertical band), prefer the candidate-list
+  // fallback so it's at least not blocking the boxes.
+  const popoverBox = { x, y, w, h };
+  if (rectOverlap(src, popoverBox) || rectOverlap(tgt, popoverBox)) {
+    const fallback = fallbackPosition(src, tgt, w, h, canvasW, canvasH);
+    if (fallback) return { ...fallback, w, h };
   }
-  // Fallback: midpoint (will overlap, but at least visible).
-  return { x: midX, y: midY };
+  return popoverBox;
+}
+
+function fallbackPosition(
+  src: RectBox, tgt: RectBox, w: number, h: number, canvasW: number, canvasH: number,
+): { x: number; y: number } | null {
+  const candidates: { x: number; y: number }[] = [
+    // Right of target
+    { x: tgt.right + POPOVER_PAD, y: (tgt.top + tgt.bottom) / 2 - h / 2 },
+    // Left of source
+    { x: src.left - w - POPOVER_PAD, y: (src.top + src.bottom) / 2 - h / 2 },
+    // Below target
+    { x: (tgt.left + tgt.right) / 2 - w / 2, y: tgt.bottom + POPOVER_PAD },
+    // Above source
+    { x: (src.left + src.right) / 2 - w / 2, y: src.top - h - POPOVER_PAD },
+  ];
+  for (const c of candidates) {
+    if (c.x < POPOVER_PAD || c.y < POPOVER_PAD) continue;
+    if (c.x + w > canvasW - POPOVER_PAD) continue;
+    if (c.y + h > canvasH - POPOVER_PAD) continue;
+    const box = { x: c.x, y: c.y, w, h };
+    if (!rectOverlap(src, box) && !rectOverlap(tgt, box)) return c;
+  }
+  return null;
 }
 
 // ──────────────────────────────────────────────────────────────────
@@ -670,27 +777,44 @@ function CrossTreePopover({
   layout: Layout;
   sourceTrack: CareerTrack;
 }) {
-  const { x, y } = layout.popover;
+  const { x, y, w, h } = layout.popover;
   const target = layout.target;
   const cl = layout.crossLink;
   const SrcIcon = ICONS[sourceTrack.iconKey];
   const TgtIcon = ICONS[target.iconKey];
+
+  // Adaptive content level. When the popover ended up squat (band
+  // was small), we drop the "Learn first" gap list — the header +
+  // when + reason is what fits. When the popover is taller, we show
+  // the full gap list.
+  const isCompact = h < 120;
+
   return (
     <div
-      className="absolute rounded-xl bg-card-solid border border-line shadow-card-hover pointer-events-none animate-in fade-in zoom-in-95 duration-150"
+      className="absolute rounded-xl bg-card-solid border border-line pointer-events-none animate-in fade-in zoom-in-95 duration-150 overflow-hidden"
       style={{
         left: x,
         top: y,
-        width: POPOVER_W,
+        width: w,
+        height: h,
+        // Glow stack — soft outer halo + a tighter ring around the
+        // edge — both tinted in the target track's accent so the
+        // popover reads as belonging to the destination branch.
+        boxShadow: `
+          0 0 0 1px color-mix(in srgb, ${target.accent} 35%, transparent),
+          0 0 0 4px color-mix(in srgb, ${target.accent} 16%, transparent),
+          0 12px 38px color-mix(in srgb, ${target.accent} 30%, transparent),
+          0 4px 12px rgba(0,0,0,0.10)
+        `,
       }}
     >
       {/* Split top edge: left half source colour, right half target */}
-      <span aria-hidden className="absolute top-0 left-0 right-0 h-[3px] flex rounded-t-xl overflow-hidden">
+      <span aria-hidden className="absolute top-0 left-0 right-0 h-[3px] flex overflow-hidden">
         <span className="flex-1" style={{ backgroundColor: sourceTrack.accent }} />
         <span className="flex-1" style={{ backgroundColor: target.accent }} />
       </span>
 
-      <div className="px-3 py-2.5">
+      <div className={isCompact ? "px-3 py-1.5" : "px-3 py-2.5"}>
         {/* From → To header */}
         <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-fg leading-tight flex-wrap">
           <SrcIcon className="h-3.5 w-3.5 shrink-0" style={{ color: sourceTrack.accent }} />
@@ -698,20 +822,21 @@ function CrossTreePopover({
           <span className="text-fg-subtle" aria-hidden>→</span>
           <TgtIcon className="h-3.5 w-3.5 shrink-0" style={{ color: target.accent }} />
           <span>{target.title}</span>
+          <span
+            className="ml-1 text-[10px] uppercase tracking-[0.16em] font-bold"
+            style={{ color: target.accent }}
+          >
+            {cl.when}
+          </span>
         </div>
 
-        {/* When */}
-        <p className="mt-1.5 text-[10px] uppercase tracking-[0.16em] font-bold" style={{ color: target.accent }}>
-          {cl.when}
-        </p>
-
         {/* Why */}
-        <p className="mt-1.5 text-[11px] text-fg-muted leading-relaxed">
+        <p className={(isCompact ? "mt-1 line-clamp-2" : "mt-1.5") + " text-[11px] text-fg-muted leading-relaxed"}>
           {cl.reason}
         </p>
 
-        {/* Learn first */}
-        {cl.learningNeeded && cl.learningNeeded.length > 0 && (
+        {/* Learn first — only when popover is tall enough */}
+        {!isCompact && cl.learningNeeded && cl.learningNeeded.length > 0 && (
           <div className="mt-2 border-t border-line/60 pt-1.5">
             <p className="text-[9.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-0.5 inline-flex items-center gap-1">
               <ChevronRight size={9} /> Learn first

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — branching polish: glow, dim, canvas-clamp, dynamic shape — May 2026
+  {
+    title: "Career paths — branching polish (glow, dim others, canvas-clamp, dynamic popover shape)",
+    body: "Four refinements to the cross-tree hover interaction:\n\n**Glow on the popover.** The popover now wears a multi-layer box-shadow tinted to the destination track's accent — a 1-px inner ring at 35 % accent, a 4-px soft ring at 16 %, a 38-px outer halo at 30 %, plus a faint black drop-shadow. Reads as \"this card belongs to the destination branch\" without being loud.\n\n**Dim unrelated cards.** When a station with cross-links is hovered, every other station box (the ones that aren't the source or one of the targets) fades to `opacity-40` with a 200 ms transition. No blur — the boxes are still readable, just de-emphasised. The set of \"related\" station ids is computed at the top of CareerPathsExplorer and threaded down through LevelRow → StationBox as a Set.\n\n**Stay inside the canvas.** The popover position is now clamped to the chart's inner container — `Math.max(PAD, Math.min(canvasW - w - PAD, x))` on the x axis and the same on y. So the popover never falls off the left/right/top/bottom edges of the chart, even when the source is in the first or last column.\n\n**Centred on the line + dynamic shape.** Replaced the candidate-list positioning with band-based positioning: the popover sits in the vertical gap between the source row and the target row, with its **x centred on the line's midpoint** and its **height adapted to the band's height** (clamped between 56 and 160 px). Width clamps to canvas minus padding. When the popover would overlap source or target anyway (rare same-row case), the candidate-list fallback kicks in. For multiple cross-links from one source (Project Senior has 3), each subsequent popover is greedy-shifted down (or right, if it would fall off the canvas bottom) to avoid stacking on top of earlier popovers.\n\n**Adaptive content.** When the band is small and the popover ends up under 120 px tall, the \"Learn first\" gap list is dropped — only the from→to header + when + reason is rendered. When the band is taller, the full content shows.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — hover-to-draw cross-tree lines + popover — May 2026
   {
     title: "Career paths — hover a station box to draw cross-tree lines + see transition details",
