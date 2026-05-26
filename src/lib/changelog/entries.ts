@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Sidebar EQUIP visible to all admins — May 2026
+  {
+    title: "Sidebar — EQUIP section always visible to admins",
+    body: "Both EQUIP learner-side menu items (`equip-funding`, `equip-tracker`) are registered with `defaultEnabled: false` in the preferences registry because most trainees don't apply for funding. The side-effect was that admins also had the EQUIP section hidden from their sidebar until they manually opted in via /profile/preferences — even though admins use those routes constantly to navigate the review pillar.\n\nFixed by adding an admin-bypass on the EQUIP section's render: admin role (and above — superadmin) always sees `equipItems` directly; non-admin roles keep the existing preference-respecting `visibleByPrefs(equipItems)` filter. No registry default changes — trainees / employers still see EQUIP only after opting in.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Course launch fix — synchronous SCORM GetValue — May 2026
   {
     title: "Fixed: SCORM courses failing to launch (Articulate / Captivate / iSpring packages)",

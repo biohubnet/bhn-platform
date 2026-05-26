@@ -1447,7 +1447,18 @@ export function Sidebar({
               },
             ]}
           >
-            {visibleByPrefs(equipItems).map((item) => {
+            {/* Admin+ always see the EQUIP learner section regardless of
+                their per-user preferences. The registry has both equip
+                learner items (`equip-funding`, `equip-tracker`) at
+                `defaultEnabled: false` because most trainees don't apply
+                for funding — but admins need the menu to navigate the
+                trainee-side funding surfaces (review queues, deadlines
+                management, application context for the review pillar)
+                without having to flip individual toggles in
+                /profile/preferences first.
+                Non-admin roles keep the preference-respecting
+                `visibleByPrefs(equipItems)` behaviour. */}
+            {(isAdmin ? equipItems : visibleByPrefs(equipItems)).map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
             })}
