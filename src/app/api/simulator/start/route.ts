@@ -47,9 +47,24 @@ import { PROMPT_VERSION, type SimulationPayload } from "@/lib/simulator/types";
 export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
+  // Locked to admins as of 2026-05-26. User-facing path moved to
+  // POST /api/simulator/requests, which queues a SimulationRequest
+  // for admin review. This endpoint is preserved so admins (or
+  // internal scripts) can still trigger synchronous generation, e.g.
+  // from /admin/simulator-requests/[id]/generate.
   const session = await requireSession().catch(() => null);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const role = (session.user as { role?: string }).role ?? "trainee";
+  if (role !== "admin" && role !== "superadmin") {
+    return NextResponse.json(
+      {
+        error:
+          "Self-serve AI generation has been retired. Submit a request at /simulator/new — an admin will publish your sim from /admin/simulator-requests.",
+      },
+      { status: 410 },
+    );
   }
   const userId = (session.user as { id?: string }).id!;
 

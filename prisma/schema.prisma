@@ -357,8 +357,10 @@ model User {
 
   // Role-play simulator — generated templates and per-trainee attempts.
   // SetNull on user delete preserves the generated template for reuse.
-  simulationsCreated Simulation[]        @relation("SimulationCreator")
-  simulationAttempts SimulationAttempt[]
+  simulationsCreated   Simulation[]        @relation("SimulationCreator")
+  simulationAttempts   SimulationAttempt[]
+  simulationRequests   SimulationRequest[] @relation("SimulationRequestRequester")
+  simulationsProcessed SimulationRequest[] @relation("SimulationRequestProcessor")
 
   /// Job folders — per-application bundles owned by this user. Each
   /// folder ties together a JD snippet (or full posting), a tailored
@@ -3717,9 +3719,60 @@ model Simulation {
 
   createdBy User?               @relation("SimulationCreator", fields: [createdById], references: [id], onDelete: SetNull)
   attempts  SimulationAttempt[]
+  requests  SimulationRequest[]
 
   @@index([sourceUrl])
   @@index([createdAt])
+}
+
+/// User-submitted request for an admin to generate a simulation.
+///
+/// Replaces the synchronous self-serve generation path that used to
+/// live on /api/simulator/start. Now the user posts a request, an
+/// admin runs the AI (or hand-authors a payload) on their schedule,
+/// and the requester is notified when the sim is ready. Decouples
+/// the user-facing UX from AI quota / cache outages.
+///
+/// status state machine:
+///   pending   ──generate──► generating ──ok──► ready
+///                                       ──err─► failed
+///             ──hand-author─► ready
+///             ──reject──────► rejected
+///   failed    ──retry──► generating
+///             ──hand-author─► ready
+///             ──reject──────► rejected
+///   rejected  ──reopen─► pending
+model SimulationRequest {
+  id            String      @id @default(cuid())
+  /// Trainee who submitted the request.
+  userId        String
+  user          User        @relation("SimulationRequestRequester", fields: [userId], references: [id], onDelete: Cascade)
+  /// Source URL the trainee pasted, if any. Display only.
+  sourceUrl     String?
+  /// Cleaned JD body (after extractJobDescriptionFromText whitespace
+  /// normalisation). What the admin reads + what the AI prompt uses.
+  jdBody        String
+  /// sha256("v1::" + jdBody) — matches Simulation.sourceHash so we can
+  /// dedup against the existing payload cache when an admin chooses
+  /// "Link existing simulation".
+  sourceHash    String
+  /// pending | generating | ready | rejected | failed
+  status        String      @default("pending")
+  /// FK to the produced Simulation once an admin attaches one.
+  simulationId  String?
+  simulation    Simulation? @relation(fields: [simulationId], references: [id], onDelete: SetNull)
+  /// Admin's reason on rejection / the AI error on failure.
+  adminNotes    String?
+  /// Admin who last acted on this request.
+  processedById String?
+  processedBy   User?       @relation("SimulationRequestProcessor", fields: [processedById], references: [id], onDelete: SetNull)
+  processedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId, status])
+  @@index([sourceHash])
 }
 
 /// One per trainee per simulation. State is checkpointed after every

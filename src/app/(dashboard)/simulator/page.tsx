@@ -9,10 +9,14 @@ import { redirect } from "next/navigation";
 import {
   ArrowRight,
   Briefcase,
+  CheckCircle2,
   ClipboardList,
+  Clock,
   Compass,
+  Hourglass,
   Sparkles,
   Theater,
+  XCircle,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -25,28 +29,65 @@ export default async function SimulatorLandingPage() {
   if (!session) redirect("/auth/signin");
   const userId = (session.user as { id?: string }).id!;
 
-  const attempts = await prisma.simulationAttempt.findMany({
-    where: { userId },
-    orderBy: { updatedAt: "desc" },
-    take: 20,
-    include: {
-      simulation: {
-        select: {
-          id: true,
-          jobTitle: true,
-          companyName: true,
-          location: true,
+  const [attempts, requests] = await Promise.all([
+    prisma.simulationAttempt.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+      take: 20,
+      include: {
+        simulation: {
+          select: {
+            id: true,
+            jobTitle: true,
+            companyName: true,
+            location: true,
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.simulationRequest.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+      select: {
+        id: true,
+        sourceUrl: true,
+        jdBody: true,
+        status: true,
+        adminNotes: true,
+        createdAt: true,
+        updatedAt: true,
+        simulation: {
+          select: { id: true, jobTitle: true, companyName: true },
+        },
+      },
+    }).catch(() => []),
+  ]);
 
   const active = attempts.filter((a) => !a.finished);
   const finished = attempts.filter((a) => a.finished);
+  // Only show non-ready statuses here — ready requests are already
+  // surfaced via the auto-created Attempt in "In progress" above.
+  const openRequests = requests.filter((r) => r.status !== "ready");
 
   return (
     <div className="space-y-10 pb-12">
       <Hero hasAttempts={attempts.length > 0} />
+
+      {openRequests.length > 0 && (
+        <section>
+          <SectionHeading
+            label="Requested"
+            count={openRequests.length}
+            hint="Awaiting admin review or generation"
+          />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {openRequests.map((r) => (
+              <RequestCard key={r.id} request={r} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {active.length > 0 && (
         <section>
@@ -348,6 +389,107 @@ function WeekProgress({ current }: { current: number }) {
 // ────────────────────────────────────────────────────────────────────
 // Section heading
 // ────────────────────────────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────────────
+// Request card (pending / generating / rejected / failed)
+// ────────────────────────────────────────────────────────────────────
+
+const REQUEST_STATUS_META: Record<
+  string,
+  { label: string; cls: string; Icon: typeof Hourglass; hint: string }
+> = {
+  pending: {
+    label: "Pending",
+    cls: "bg-amber-50 text-amber-800 ring-amber-200",
+    Icon: Hourglass,
+    hint: "An admin will review and publish your simulation, usually within 24 hours.",
+  },
+  generating: {
+    label: "Generating",
+    cls: "bg-sky-50 text-sky-800 ring-sky-200",
+    Icon: Clock,
+    hint: "Admin is running the generation right now.",
+  },
+  rejected: {
+    label: "Rejected",
+    cls: "bg-rose-50 text-rose-800 ring-rose-200",
+    Icon: XCircle,
+    hint: "See the admin's note below.",
+  },
+  failed: {
+    label: "Failed",
+    cls: "bg-rose-50 text-rose-800 ring-rose-200",
+    Icon: XCircle,
+    hint: "Generation didn't complete — an admin will retry or write you a note.",
+  },
+  ready: {
+    label: "Ready",
+    cls: "bg-emerald-50 text-emerald-800 ring-emerald-200",
+    Icon: CheckCircle2,
+    hint: "Open the simulation from \"In progress\" above.",
+  },
+};
+
+type RequestSummary = {
+  id: string;
+  sourceUrl: string | null;
+  jdBody: string;
+  status: string;
+  adminNotes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  simulation: { id: string; jobTitle: string; companyName: string | null } | null;
+};
+
+function RequestCard({ request }: { request: RequestSummary }) {
+  const meta = REQUEST_STATUS_META[request.status] ?? REQUEST_STATUS_META.pending;
+  const title = request.simulation?.jobTitle
+    ?? snippetTitle(request.jdBody);
+  return (
+    <Card className="relative h-full p-5">
+      <div className="mb-2.5 flex items-start justify-between gap-2">
+        <Briefcase className="h-3.5 w-3.5 text-fg-subtle" />
+        <span
+          className={[
+            "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset",
+            meta.cls,
+          ].join(" ")}
+        >
+          <meta.Icon className="h-3 w-3" /> {meta.label}
+        </span>
+      </div>
+      <h3
+        className="mb-1 text-[15px] font-medium leading-[1.3] tracking-tight text-fg line-clamp-2"
+        style={{ fontFamily: "var(--font-display-theme, inherit)" }}
+      >
+        {title}
+      </h3>
+      {request.simulation?.companyName && (
+        <p className="mb-3 text-[12px] text-fg-muted">
+          {request.simulation.companyName}
+        </p>
+      )}
+      <p className="text-[11.5px] leading-relaxed text-fg-muted">{meta.hint}</p>
+      {request.adminNotes && (
+        <p className="mt-2 text-[11px] leading-relaxed text-fg-muted italic">
+          “{request.adminNotes}”
+        </p>
+      )}
+      <div className="mt-4 text-[11px] text-fg-subtle">
+        Submitted {new Date(request.createdAt).toLocaleDateString()}
+      </div>
+    </Card>
+  );
+}
+
+/** Pull a usable title out of the first non-empty line of the JD body
+ *  when no Simulation has been linked yet. Keeps the card readable
+ *  even when an admin hasn't touched the request. */
+function snippetTitle(jd: string): string {
+  const firstLine = jd.split("\n").map((l) => l.trim()).find((l) => l.length > 0);
+  if (!firstLine) return "Submitted posting";
+  return firstLine.length > 80 ? `${firstLine.slice(0, 78)}…` : firstLine;
+}
 
 function SectionHeading({
   label,

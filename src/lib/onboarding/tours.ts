@@ -55,6 +55,27 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Deadline Manager", href: "/admin/equip/deadlines" },
     since: "2026.05.25",
   },
+  // ─── Simulator request workflow (May 2026) ───────────────────────
+  {
+    id: "trainee.simulator-request-flow",
+    title: "Heads-up: simulations are now a request workflow",
+    body: "Submitting a posting at /simulator/new no longer runs the AI immediately. We review each request and publish the simulation to your dashboard — usually within 24 hours. You'll see a 'Requested' section on the Role-play page tracking each one; once it's ready, it slides up into 'In progress'.",
+    path: "/simulator",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    cta: { label: "Open Role-play", href: "/simulator" },
+    since: "2026.05.26",
+  },
+  {
+    id: "admin.simulator-requests",
+    title: "New: Simulator request queue",
+    body: "Users submit simulation requests through /simulator/new now — they no longer hit the AI directly. Open /admin/simulator-requests to triage. Generate with AI, hand-author a payload JSON (validated the same way), or reject with a reason. Pending count appears as a sidebar badge.",
+    path: "/admin/simulator-requests",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open queue", href: "/admin/simulator-requests" },
+    since: "2026.05.26",
+  },
   // ─── Job-folder demo seeder (May 2026) ───────────────────────────
   {
     id: "staff.job-folder-demo-tray",

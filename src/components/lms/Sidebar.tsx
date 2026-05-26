@@ -58,6 +58,7 @@ import {
   Sliders, SlidersHorizontal, FolderOpen, Library,
   Eye,
   Drama,
+  Theater,
 } from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationInbox";
 
@@ -314,6 +315,8 @@ const adminExperienceItems: NavItem[] = [
     description: "Single global advanced-trainee demo account — completed coursework, both merch tiers earned, full profile, scheduled interviews. For sales calls and training-team demos." },
   { label: "Platform Demo Hub",  href: "/admin/demo",                icon: Drama,        minRole: "admin",
     description: "Interactive 3-persona walkthrough for senior management, investors, and board presentations. Rex (Trainee), Vera (Employer), and Max (Admin) each navigate ENGAGE · EXPERIENCE · EQUIP." },
+  { label: "Sim requests",        href: "/admin/simulator-requests",  icon: Theater,      minRole: "admin",
+    description: "User-submitted requests for role-play simulations. Review each JD, run the AI generator, hand-author a payload, or reject with a note." },
   { label: "Talent pool",         href: "/talent-pool",               icon: Users,        minRole: "admin",
     description: "Approved talent-application members — same surface employers see, with full submission data + comment threads. Use this to coordinate with employer reviewers." },
   // Visible to instructors + industrial mentors as well as admins —

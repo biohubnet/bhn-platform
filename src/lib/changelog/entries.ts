@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator: request-then-publish — May 2026 ──────────────────
+  {
+    title: "Simulator — user request workflow replaces self-serve AI",
+    body: "Self-serve AI generation on /simulator/new is retired. Users were hitting Gemini quota and Cloudflare validator errors with no clean recovery — so the user flow now SUBMITS a request that an admin reviews and publishes, the same pattern most editorial features on the platform use. What changed:\n\n• /simulator/new — same single-input form, but the submit button now creates a SimulationRequest. The page shows 'Request submitted — typical turnaround 24 hours' with a link back to the dashboard.\n• /simulator — new 'Requested' section above 'In progress' showing each pending / generating / rejected / failed request with status chip and admin notes (if any). Ready requests don't appear here — they're already in 'In progress' via the auto-created Attempt.\n• /admin/simulator-requests — new admin queue with tabs (Pending · Generating · Ready · Failed · Rejected · All) and per-status counts. FIFO ordering for in-flight, LIFO for terminal states.\n• /admin/simulator-requests/[id] — detail page with the full JD, requester info, and a state-driven action bar: Generate with AI, Hand-author payload (JSON, runs through the same validator the AI uses), Reject with reason, Reopen rejected/failed back to pending. When a Simulation with the same sourceHash already exists in the cache, a 'Link existing simulation' shortcut appears so admins can attach instead of regenerating.\n• /api/simulator/start — locked to admin-only. Self-serve POSTs from trainees now return HTTP 410 with a redirect message.\n• New endpoints: POST /api/simulator/requests (user submits), GET /api/simulator/requests (user lists own), GET /api/admin/simulator-requests (admin list with counts), POST .../[id]/{generate,hand-author,reject,reopen}.\n\nNew Prisma model SimulationRequest with state machine: pending → generating → (ready | failed); pending → rejected; rejected|failed → pending (reopen). Indexes on (status, createdAt), (userId, status), (sourceHash). Migration 20260526000000_simulation_requests.\n\nSidebar gets a new 'Sim requests' admin entry under Cross-pillar tools. Admin sees pending count at a glance.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Job-folder demo seeder — May 2026 ────────────────────────────
   {
     title: "Job folders — admin Seed / Clear demo tray on /profile/job-folders",
