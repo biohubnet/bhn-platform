@@ -17,7 +17,7 @@ import {
   LayoutBannerProvider,
   type LayoutBannerData,
 } from "@/components/layout/LayoutBanners";
-import { foldEffective, parsePrefs } from "@/lib/preferences/active";
+import { resolveSidebarHiddenSet, parsePrefs } from "@/lib/preferences/active";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -111,7 +111,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
         allowPlatformContent={userRow?.allowPlatformContent ?? false}
         queueCounts={queueCounts}
         committees={committeeSlugs}
-        hiddenFeatures={foldEffective(parsePrefs(userRow?.featurePrefs)).hiddenSet}
+        hiddenFeatures={resolveSidebarHiddenSet(
+          // realRole is the user's true role even when they're acting
+          // as another. Staff (admin + superadmin) always see every
+          // sidebar item their role allows — see active.ts for the
+          // rationale and the centralised rule.
+          realRole ?? role,
+          parsePrefs(userRow?.featurePrefs),
+        )}
         initialUnreadCount={unreadCount}
       />
       <main className="flex-1 overflow-y-auto relative">

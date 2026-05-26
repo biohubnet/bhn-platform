@@ -17,9 +17,34 @@
  * the result to filter + reorder its nav items.
  */
 import { prisma } from "@/lib/prisma";
+import { ROLE_RANK } from "@/lib/auth";
 import {
   FEATURES, FEATURES_BY_ID, MINIMAL_PRESET, DEFAULT_PRESET, FULL_PRESET,
 } from "./registry";
+
+/** Staff (admin + superadmin) always see every sidebar item their role
+ *  allows — the preferences switchboard never hides menu items from
+ *  them. Rationale:
+ *
+ *  • Admins administrate the platform. Discovering a menu item missing
+ *    because they once toggled it off in /profile/preferences (or
+ *    because it's `defaultEnabled: false` in the registry, like
+ *    `equip-funding` or `learn-credits`) is a confusing UX paper-cut
+ *    and a recurring support ticket.
+ *  • The switchboard's purpose is trainee curation ("I don't use the
+ *    credits feature, hide it"). Staff use it for testing what other
+ *    roles see, not for trimming their own navigation.
+ *  • Role-rank filtering (`minRole`) still applies — staff don't see
+ *    items below their rank, and impersonation (`actingAs`) still
+ *    drops admin items when acting as a trainee.
+ *
+ *  Callers that compute the sidebar's `hiddenFeatures` prop should use
+ *  `resolveSidebarHiddenSet` below rather than calling `foldEffective`
+ *  directly, so this rule lives in one place. */
+export function isPlatformStaffRole(role: string | null | undefined): boolean {
+  if (!role) return false;
+  return (ROLE_RANK[role] ?? 0) >= ROLE_RANK.admin;
+}
 
 export interface FeaturePrefs {
   hidden: string[];
@@ -60,6 +85,23 @@ export async function getEffectivePrefs(userId: string): Promise<EffectivePrefs>
   });
   const raw = parsePrefs(user?.featurePrefs);
   return foldEffective(raw);
+}
+
+/** Resolve the set of feature ids the sidebar should HIDE for this
+ *  viewing user. Staff (admin + superadmin) get an empty set — see
+ *  `isPlatformStaffRole` above for why. Everyone else gets their
+ *  effective hidden set (registry defaults + their own toggles).
+ *
+ *  `realRole` is the true role of the signed-in user (not the
+ *  impersonated `actingAs` value): a superadmin acting as a trainee
+ *  is still a superadmin and should still see the full sidebar minus
+ *  what `minRole` strips out. */
+export function resolveSidebarHiddenSet(
+  realRole: string | null | undefined,
+  raw: FeaturePrefs,
+): Set<string> {
+  if (isPlatformStaffRole(realRole)) return new Set<string>();
+  return foldEffective(raw).hiddenSet;
 }
 
 /** Pure version — used by the switchboard page which has the raw

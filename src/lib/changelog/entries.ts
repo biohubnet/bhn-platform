@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Staff sidebar always-full — May 2026
+  {
+    title: "Sidebar — admins and superadmins now always see every menu item their role allows",
+    body: "Staff were occasionally reporting \"a menu item disappeared\" — usually after they toggled features off in `/profile/preferences` while testing what trainees see, or because the registry marks some features `defaultEnabled: false` (e.g. **My Credits**, **Rewards**, **Buddies**, **EQUIP Funding / Tracker / Deadlines**, **Roadmap**, **Themes**, **Talent pool** for trainee-view) so a fresh staff account never saw them in the first place. The preferences switchboard is a trainee-curation tool, not an admin navigation gate; hiding admin tools from admins is a confusing UX bug.\n\n**Permanent fix.** Centralised the rule in `src/lib/preferences/active.ts` as `resolveSidebarHiddenSet(realRole, raw)` + `isPlatformStaffRole(role)`. When the viewing user's **real** role is admin or superadmin, the sidebar receives an empty hidden set so every item their role allows shows up — regardless of what they've toggled in their switchboard or what the registry's `defaultEnabled` flag is set to. Role-rank filtering (`minRole`) still applies, so trainee accounts don't suddenly see admin menus; and impersonation (`actingAs`) still strips admin items when a superadmin acts as a trainee.\n\n**On the switchboard page** (`/profile/preferences`), staff now see an amber heads-up banner explaining that their toggles save (and are useful for testing) but won't change their own sidebar — no more \"is this toggle broken?\" tickets.",
+    kind: "fix",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
   // ── Graduate showcase — May 2026
   {
     title: "Graduate showcase — public landing page + admin triage dashboard",
