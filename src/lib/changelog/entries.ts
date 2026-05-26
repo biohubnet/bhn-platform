@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — graceful staged FLIP animation — May 2026
+  {
+    title: "Career paths — graceful staged branching animation (darken → highlight → lines → move)",
+    body: "Replaced the \"appears instantly\" modal with a properly sequenced FLIP animation. Click the branch-out icon on any station and watch:\n\n  • **0–300 ms** — backdrop fades to 80 % black + blur. Source + target cards remain visible above the backdrop, still at their original chart positions.\n  • **350–700 ms** — source + target cards highlight: thick accent border + multi-layer accent glow ramp in (350 ms transition on box-shadow + border-color).\n  • **700–1500 ms** — SVG cubic-bezier lines grow from source's bottom-centre to each target's top-centre via `stroke-dashoffset` animation, staggered 120 ms per line. Lines carry a coloured drop-shadow glow + a circle marker at each endpoint.\n  • **1500–2300 ms** — cards FLIP from their original chart positions to a centred focused layout — `left`, `top`, `width`, `height` all transition together over 800 ms with `cubic-bezier(0.4, 0, 0.2, 1)`. The line endpoints track the moving card positions because the `<path>` `d` attribute also transitions.\n  • **2300 ms+** — settled state. Close button + Esc hint visible. Cards content scrollable internally if they overflow their final box.\n\n**Implementation notes.** The click handler in `CareerPathsExplorer` now captures the source + every target station box's `getBoundingClientRect` at click time and passes the rect bundle to `BranchModal`. The modal's new `FlipCard` component is a fixed-positioned wrapper whose `left/top/width/height` switch between `fromRect` (original chart position) and `toRect` (focused layout slot) when the stage flips to `\"moving\"` — CSS transitions on all four properties handle the actual interpolation. The `BranchLines` component re-anchors its path coords to whichever rect set is current, so the lines stay connected as the cards move.\n\n**The focused layout** is computed by `computeFocusLayout(numTargets, viewport)`: source card 360×320 centred at top, targets 320×420 in a row below, shrinking to fit if more than 3 targets or narrow viewport.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — fix branch icon click + move to bottom-right — May 2026
   {
     title: "Career paths — branch-out icon moved to bottom-right + click actually works now",
