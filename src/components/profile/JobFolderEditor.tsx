@@ -8,6 +8,9 @@
  *   • Resume        — pick the tailored resume linked to this folder
  *   • Cover letter  — long-form letter, AI-generate from JD + resume
  *   • Interview prep— prep guide, AI-generate from JD + resume
+ *   • Role-play     — request, track, and launch the sim built from
+ *                     this folder's JD (uses the SimulationRequest
+ *                     queue under the hood)
  *
  * All fields auto-save (debounced) via PATCH /api/profile/job-folders/[id].
  * AI generate endpoints return a draft; user previews + accepts
@@ -18,6 +21,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   FileText, Mail, BookOpen, Briefcase, Save, Loader2, CheckCircle2, Sparkles, X, ExternalLink, AlertTriangle,
+  Theater, Hourglass, Play, RotateCcw,
 } from "lucide-react";
 
 interface FolderInitial {
@@ -31,6 +35,16 @@ interface FolderInitial {
   postingId: string | null;
   resume: { id: string; name: string; version: number } | null;
   posting: { id: string; title: string; companyName: string; positionDetails: string | null } | null;
+  simulationRequest: {
+    id: string;
+    status: string;
+    adminNotes: string | null;
+    createdAt: string;
+    simulation: { id: string; jobTitle: string; companyName: string | null } | null;
+    /** Resolved server-side: the calling user's most recent attempt
+     *  against the produced Simulation, if status === "ready". */
+    attemptId: string | null;
+  } | null;
 }
 
 interface ResumeOption { id: string; name: string }
@@ -49,7 +63,7 @@ const STATUS_OPTIONS = [
   { value: "closed",       label: "Closed" },
 ];
 
-type TabId = "jd" | "resume" | "cover" | "prep";
+type TabId = "jd" | "resume" | "cover" | "prep" | "sim";
 
 const DEBOUNCE_MS = 700;
 
@@ -131,6 +145,7 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
         <TabButton id="resume" active={tab === "resume"} onClick={() => setTab("resume")} icon={FileText} label="Resume" />
         <TabButton id="cover"  active={tab === "cover"}  onClick={() => setTab("cover")}  icon={Mail}     label="Cover letter" />
         <TabButton id="prep"   active={tab === "prep"}   onClick={() => setTab("prep")}   icon={BookOpen} label="Interview prep" />
+        <TabButton id="sim"    active={tab === "sim"}    onClick={() => setTab("sim")}    icon={Theater}  label="Role-play" />
       </div>
 
       {/* Panels */}
@@ -171,6 +186,276 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
           subtitle="Likely questions, STAR-framed answers, questions to ask back."
         />
       )}
+      {tab === "sim" && (
+        <SimPanel
+          folderId={initialFolder.id}
+          simulationRequest={initialFolder.simulationRequest}
+          jdEmpty={!jdSnippet.trim()}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Sim panel ────────────────────────────────────────────────────
+
+/**
+ * Role-play simulator tab. State-driven:
+ *   • no request yet      → "Build a sim from this JD" CTA
+ *   • pending / generating→ waiting state, soft refresh link
+ *   • ready               → "Play your simulation" CTA + open the player
+ *   • failed / rejected   → admin note + "Try again" button
+ *
+ * Submits to POST /api/profile/job-folders/[id]/sim-request which
+ * either reuses the user's existing recent request for this JD (cache
+ * hit) or creates a new one and atomically links the folder to it.
+ */
+function SimPanel({
+  folderId,
+  simulationRequest,
+  jdEmpty,
+}: {
+  folderId: string;
+  simulationRequest: FolderInitial["simulationRequest"];
+  jdEmpty: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+
+  async function buildSim() {
+    setBusy(true);
+    setError(null);
+    setFlash(null);
+    try {
+      const res = await fetch(
+        `/api/profile/job-folders/${folderId}/sim-request`,
+        { method: "POST" },
+      );
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!res.ok || !j.ok) {
+        setError(j.error ?? `Couldn't request the sim (HTTP ${res.status}).`);
+        return;
+      }
+      setFlash(j.message ?? "Sim request submitted.");
+      // Soft-refresh by hard-reload — the folder page state needs the
+      // newly-linked SimulationRequest record to drive this panel.
+      setTimeout(() => window.location.reload(), 600);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ── 1. No request yet ─────────────────────────────────────────
+  if (!simulationRequest) {
+    return (
+      <div className="rounded-2xl border border-line bg-card px-5 py-7 sm:px-8 sm:py-10">
+        <div className="max-w-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-800 ring-1 ring-inset ring-brand-200">
+            <Theater className="h-3 w-3" />
+            Role-play game
+          </div>
+          <h3 className="mt-3 text-[18px] font-semibold tracking-tight text-fg">
+            Build a 12-week role-play sim from this folder
+          </h3>
+          <p className="mt-2 text-[13.5px] leading-relaxed text-fg-muted">
+            We&apos;ll use your JD as the source. Our team builds the team,
+            the scenarios, and the manager who hired you — usually within
+            24 hours. You&apos;ll see it land on the Role-play page; this
+            tab will switch to a Play button when it&apos;s ready.
+          </p>
+
+          {jdEmpty && (
+            <div className="mt-4 rounded-md bg-amber-50 ring-1 ring-inset ring-amber-200 px-3 py-2 text-[12px] text-amber-900">
+              Paste the JD body in the first tab first — sims need ≥300 characters of source text to build.
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-4 rounded-md bg-rose-50 ring-1 ring-inset ring-rose-200 px-3 py-2 text-[12px] text-rose-900 flex items-start gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+          {flash && (
+            <div className="mt-4 rounded-md bg-emerald-50 ring-1 ring-inset ring-emerald-200 px-3 py-2 text-[12px] text-emerald-900 flex items-start gap-2">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>{flash}</span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={buildSim}
+            disabled={busy || jdEmpty}
+            className="mt-5 inline-flex items-center gap-2 rounded-md bg-brand-600 px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            Build a role-play sim from this JD
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── 2. Pending / generating ───────────────────────────────────
+  const status = simulationRequest.status;
+  if (status === "pending" || status === "generating") {
+    return (
+      <SimStatePanel
+        accent="amber"
+        icon={Hourglass}
+        title={status === "generating" ? "Sim is being generated" : "Sim request submitted"}
+        body={
+          status === "generating"
+            ? "An admin is generating the simulation right now. Refresh in a minute."
+            : "An admin will publish your simulation to this folder soon — usually within 24 hours. We'll surface a Play button here once it's ready."
+        }
+        secondary={`Submitted ${new Date(simulationRequest.createdAt).toLocaleDateString()}`}
+      />
+    );
+  }
+
+  // ── 3. Ready ──────────────────────────────────────────────────
+  if (status === "ready" && simulationRequest.simulation) {
+    const sim = simulationRequest.simulation;
+    return (
+      <div className="rounded-2xl border border-line bg-card px-5 py-7 sm:px-8 sm:py-10">
+        <div className="max-w-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800 ring-1 ring-inset ring-emerald-200">
+            <CheckCircle2 className="h-3 w-3" />
+            Sim ready
+          </div>
+          <h3 className="mt-3 text-[18px] font-semibold tracking-tight text-fg">
+            {sim.jobTitle}
+          </h3>
+          {sim.companyName && (
+            <p className="text-[12.5px] text-fg-muted">{sim.companyName}</p>
+          )}
+          <p className="mt-2 text-[13.5px] leading-relaxed text-fg-muted">
+            Twelve weeks of decisions tailored to this folder&apos;s JD.
+            Decisions move five stats. End with a written performance review.
+          </p>
+
+          <div className="mt-5 flex flex-wrap items-center gap-2.5">
+            {simulationRequest.attemptId ? (
+              <Link
+                href={`/simulator/${simulationRequest.attemptId}`}
+                className="inline-flex items-center gap-2 rounded-md bg-brand-600 px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition hover:bg-brand-700"
+              >
+                <Play className="h-4 w-4 fill-current" />
+                Resume your simulation
+              </Link>
+            ) : (
+              <Link
+                href="/simulator"
+                className="inline-flex items-center gap-2 rounded-md bg-brand-600 px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition hover:bg-brand-700"
+              >
+                <Play className="h-4 w-4 fill-current" />
+                Open the player
+              </Link>
+            )}
+            <Link
+              href="/simulator"
+              className="text-[12.5px] font-medium text-fg-muted hover:text-fg"
+            >
+              All simulations →
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── 4. Rejected / failed ──────────────────────────────────────
+  return (
+    <div className="rounded-2xl border border-line bg-card px-5 py-7 sm:px-8 sm:py-10">
+      <div className="max-w-2xl">
+        <div className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-rose-800 ring-1 ring-inset ring-rose-200">
+          <X className="h-3 w-3" />
+          {status === "rejected" ? "Request rejected" : "Generation failed"}
+        </div>
+        <h3 className="mt-3 text-[18px] font-semibold tracking-tight text-fg">
+          {status === "rejected"
+            ? "An admin sent your request back"
+            : "The sim couldn't be built"}
+        </h3>
+        {simulationRequest.adminNotes && (
+          <p className="mt-3 rounded-md bg-amber-50 ring-1 ring-inset ring-amber-200 px-3 py-2 text-[12.5px] italic text-amber-900">
+            &ldquo;{simulationRequest.adminNotes}&rdquo;
+          </p>
+        )}
+        <p className="mt-3 text-[13.5px] leading-relaxed text-fg-muted">
+          Adjust the JD in the first tab — adding more of the posting body, more
+          requirements, or more of the role responsibilities usually helps — and
+          submit a new request.
+        </p>
+
+        {error && (
+          <div className="mt-4 rounded-md bg-rose-50 ring-1 ring-inset ring-rose-200 px-3 py-2 text-[12px] text-rose-900 flex items-start gap-2">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={buildSim}
+          disabled={busy || jdEmpty}
+          className="mt-5 inline-flex items-center gap-2 rounded-md bg-brand-600 px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RotateCcw className="h-4 w-4" />
+          )}
+          Submit a new request
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SimStatePanel({
+  accent,
+  icon: Icon,
+  title,
+  body,
+  secondary,
+}: {
+  accent: "amber" | "emerald" | "rose";
+  icon: React.ElementType;
+  title: string;
+  body: string;
+  secondary?: string;
+}) {
+  const accentMap = {
+    amber: "bg-amber-50 text-amber-900 ring-amber-200",
+    emerald: "bg-emerald-50 text-emerald-900 ring-emerald-200",
+    rose: "bg-rose-50 text-rose-900 ring-rose-200",
+  };
+  return (
+    <div className={`rounded-2xl px-5 py-7 sm:px-8 sm:py-10 ring-1 ring-inset ${accentMap[accent]}`}>
+      <div className="max-w-2xl flex items-start gap-3">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/70 ring-1 ring-inset ring-current/15">
+          <Icon className="h-5 w-5" />
+        </span>
+        <div>
+          <h3 className="text-[16px] font-semibold tracking-tight">{title}</h3>
+          <p className="mt-1 text-[13.5px] leading-relaxed opacity-90">{body}</p>
+          {secondary && (
+            <p className="mt-2 text-[11.5px] opacity-70">{secondary}</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

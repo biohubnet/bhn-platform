@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Job folders ↔ role-play sim — May 2026
+  {
+    title: "Job folders — add a role-play simulation alongside JD / Resume / Cover letter / Prep",
+    body: "Job folders now hold five things instead of four. The detail editor at /profile/job-folders/[id] has a new 'Role-play' tab that lets you request, track, and launch a 12-week simulation built from the same JD you typed in tab #1.\n\nState-driven panel:\n  • No request yet → 'Build a role-play sim from this JD' CTA. Requires ≥300 chars of JD body (the same floor /simulator/new uses).\n  • Pending / generating → soft waiting state with timestamp and copy explaining an admin will publish within 24 hours.\n  • Ready → 'Resume your simulation' button deep-links straight to your most recent attempt (the server resolves the latest SimulationAttempt for this user×simulation pair). If you haven't started yet, the button reads 'Open the player' and lands on /simulator.\n  • Rejected / failed → admin's rejection note surfaces in an amber quote box, with a 'Submit a new request' button to retry after editing the JD.\n\nFolder index card chips: a new 'Sim queued / generating / ready / rejected / failed' chip joins the existing Resume / Letter / Prep chips so you can see at a glance which folders have a sim attached.\n\nUnder the hood: new optional FK on JobFolder pointing at SimulationRequest (set null on request delete). New endpoint POST /api/profile/job-folders/[id]/sim-request handles cache hits (links to an existing request for the same hash), prevents duplicates, and atomically creates+links a fresh request when needed. Migration 20260526010000_jobfolder_simulation_link.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator: big Edit button + test launch — May 2026
   {
     title: "Simulator — big Edit button + Launch test attempt",

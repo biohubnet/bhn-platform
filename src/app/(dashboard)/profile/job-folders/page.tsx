@@ -39,6 +39,7 @@ export default async function JobFoldersIndexPage() {
       interviewPrep: true,
       updatedAt: true,
       resume: { select: { id: true, name: true } },
+      simulationRequest: { select: { status: true } },
     },
   });
   const postingIds = Array.from(
@@ -57,7 +58,7 @@ export default async function JobFoldersIndexPage() {
       <PageHero
         eyebrow={<><FolderOpen size={11} /> Profile · Job folders</>}
         title="Your job folders"
-        description="One folder per role you're pursuing. Each holds the JD, your tailored resume, a cover letter, and an interview prep guide — generated, tailored, and stored together."
+        description="One folder per role you're pursuing. Each holds the JD, your tailored resume, a cover letter, an interview prep guide, and (optionally) a 12-week role-play simulation built from the same JD — bundled in one workspace."
       />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-5">
@@ -87,6 +88,9 @@ export default async function JobFoldersIndexPage() {
             posting: f.postingId ? (postingById.get(f.postingId) ?? null) : null,
             hasCoverLetter: f.coverLetter.trim().length > 0,
             hasInterviewPrep: f.interviewPrep.trim().length > 0,
+            simStatus: (f.simulationRequest?.status as
+              | "pending" | "generating" | "ready" | "rejected" | "failed"
+              | undefined) ?? null,
           }))}
         />
       </div>

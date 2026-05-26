@@ -3769,6 +3769,10 @@ model SimulationRequest {
   processedAt   DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  /// Folders that point at this request. Usually 0 or 1 — modelled
+  /// as a list so multiple folders can share a request if a trainee
+  /// duplicates a folder in the future.
+  jobFolders    JobFolder[] @relation("JobFolderSimRequest")
 
   @@index([status, createdAt])
   @@index([userId, status])
@@ -4080,6 +4084,14 @@ model JobFolder {
   coverLetter   String   @default("")
   /// Interview prep guide (markdown). Auto-saved on the UI.
   interviewPrep String   @default("")
+  /// Optional linked SimulationRequest. When set, the folder has
+  /// a role-play sim attached or queued — the linked request
+  /// carries its own pending|generating|ready|failed|rejected
+  /// status. Once status=ready, request.simulationId points at
+  /// the played Simulation and we resolve the user's most recent
+  /// attempt against it for the "Play" button.
+  simulationRequestId String?
+  simulationRequest   SimulationRequest? @relation("JobFolderSimRequest", fields: [simulationRequestId], references: [id], onDelete: SetNull)
   /// drafting | submitted | interviewing | offer | rejected | closed
   status        String   @default("drafting")
   isArchived    Boolean  @default(false)
@@ -4088,4 +4100,5 @@ model JobFolder {
 
   @@index([userId, isArchived])
   @@index([resumeId])
+  @@index([simulationRequestId])
 }

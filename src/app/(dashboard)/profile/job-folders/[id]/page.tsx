@@ -34,9 +34,40 @@ export default async function JobFolderDetailPage({ params }: PageProps) {
     where: { id },
     include: {
       resume: { select: { id: true, name: true, version: true } },
+      simulationRequest: {
+        select: {
+          id: true,
+          status: true,
+          adminNotes: true,
+          createdAt: true,
+          simulationId: true,
+          simulation: {
+            select: { id: true, jobTitle: true, companyName: true },
+          },
+        },
+      },
     },
   });
   if (!folder || folder.userId !== userId) notFound();
+
+  // If the linked request has been fulfilled, resolve the user's most
+  // recent attempt against the produced simulation so the "Play"
+  // button on the Role-play tab can deep-link to the right attempt.
+  let simAttemptId: string | null = null;
+  if (
+    folder.simulationRequest?.status === "ready" &&
+    folder.simulationRequest.simulationId
+  ) {
+    const attempt = await prisma.simulationAttempt.findFirst({
+      where: {
+        userId,
+        simulationId: folder.simulationRequest.simulationId,
+      },
+      orderBy: { updatedAt: "desc" },
+      select: { id: true, finished: true, week: true },
+    });
+    simAttemptId = attempt?.id ?? null;
+  }
 
   // Sibling resumes for the resume-picker on the detail page.
   const resumes = await prisma.resume.findMany({
@@ -82,6 +113,16 @@ export default async function JobFolderDetailPage({ params }: PageProps) {
             postingId: folder.postingId,
             resume: folder.resume,
             posting,
+            simulationRequest: folder.simulationRequest
+              ? {
+                  id: folder.simulationRequest.id,
+                  status: folder.simulationRequest.status,
+                  adminNotes: folder.simulationRequest.adminNotes,
+                  createdAt: folder.simulationRequest.createdAt.toISOString(),
+                  simulation: folder.simulationRequest.simulation,
+                  attemptId: simAttemptId,
+                }
+              : null,
           }}
           resumes={resumes.map((r) => ({ id: r.id, name: r.name }))}
         />

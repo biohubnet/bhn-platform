@@ -55,6 +55,17 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Deadline Manager", href: "/admin/equip/deadlines" },
     since: "2026.05.25",
   },
+  // ─── Job folder ↔ sim (May 2026) ─────────────────────────────────
+  {
+    id: "trainee.job-folder-roleplay-tab",
+    title: "New: Role-play tab inside each job folder",
+    body: "Open any job folder and you'll see a fifth tab: Role-play. It builds a 12-week simulation from the same JD you typed in the first tab. Click 'Build a role-play sim from this JD' and the request lands in the admin queue. Once it's published, this tab turns into a Play button that deep-links to your simulation — no copy-paste between pages.",
+    path: "/profile/job-folders",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    cta: { label: "Open Job folders", href: "/profile/job-folders" },
+    since: "2026.05.26d",
+  },
   // ─── Sim payload editor (May 2026) ───────────────────────────────
   {
     id: "admin.simulation-payload-editor",

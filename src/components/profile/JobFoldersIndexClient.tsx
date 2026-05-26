@@ -11,7 +11,7 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Plus, FolderOpen, Loader2, Archive, RotateCcw, Trash2, FileText, Mail, BookOpen, Briefcase, CheckSquare, Square, X, ExternalLink,
+  Plus, FolderOpen, Loader2, Archive, RotateCcw, Trash2, FileText, Mail, BookOpen, Briefcase, CheckSquare, Square, X, ExternalLink, Theater,
 } from "lucide-react";
 import { useInputDialog } from "@/components/ui/InputDialog";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -27,6 +27,9 @@ interface FolderRow {
   posting: { id: string; title: string; companyName: string } | null;
   hasCoverLetter: boolean;
   hasInterviewPrep: boolean;
+  /** Status of the linked SimulationRequest, if any. Powers the
+   *  "Sim: …" chip on each card. */
+  simStatus: "pending" | "generating" | "ready" | "rejected" | "failed" | null;
 }
 
 interface Props {
@@ -327,6 +330,9 @@ function FolderCard({
                 <BookOpen size={9} /> Prep
               </span>
             )}
+            {row.simStatus && (
+              <SimStatusChip status={row.simStatus} />
+            )}
           </div>
         </div>
       </div>
@@ -376,5 +382,24 @@ function FolderCard({
         </div>
       )}
     </li>
+  );
+}
+
+/** Status chip rendered alongside the other folder-content chips
+ *  (Resume / Letter / Prep) when this folder has a linked
+ *  SimulationRequest. Five states map to five visual tones. */
+function SimStatusChip({ status }: { status: NonNullable<FolderRow["simStatus"]> }) {
+  const meta: Record<typeof status, { cls: string; label: string }> = {
+    pending:    { cls: "bg-amber-50 text-amber-900 ring-amber-200",   label: "Sim queued"      },
+    generating: { cls: "bg-sky-50 text-sky-900 ring-sky-200",         label: "Sim generating"  },
+    ready:      { cls: "bg-emerald-50 text-emerald-900 ring-emerald-200", label: "Sim ready"   },
+    failed:     { cls: "bg-rose-50 text-rose-900 ring-rose-200",      label: "Sim failed"      },
+    rejected:   { cls: "bg-rose-50 text-rose-900 ring-rose-200",      label: "Sim rejected"    },
+  };
+  const m = meta[status];
+  return (
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ring-1 ring-inset ${m.cls}`}>
+      <Theater size={9} /> {m.label}
+    </span>
   );
 }
