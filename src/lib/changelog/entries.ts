@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — restored staged branching animation — May 2026
+  {
+    title: "Career paths — restored the staged branching animation (darken → highlight → hold → lines → move)",
+    body: "The previous commit had cards popping straight into the focused layout — fast but lost the spatial \"here's where you were, here's where you'd jump to\" reading. Brought the staged FLIP back with explicit hold-times between each visual event.\n\n**Sequence** (~3.1 s end-to-end):\n  • **0–300 ms** — backdrop fades to 80 % black + blur. The unrelated chart cards underneath dim automatically through the backdrop's opacity.\n  • **350–700 ms** — source + target cards (cloned above the backdrop at their CHART positions, showing compact chart-box content) light up: thick accent border + multi-layer accent glow ramp in via 350 ms CSS transition.\n  • **~800 ms HOLD** — nothing else moves. The user gets time to actually see WHICH boxes are being highlighted and WHERE they are on the chart.\n  • **1500–2300 ms** — SVG cubic-bezier lines grow from source's bottom-centre to each target's top-centre, all at CHART positions. Staggered 120 ms per line, 700 ms each. Drop-shadow glow + endpoint circles.\n  • **2300–3100 ms** — cards FLIP from chart positions to focused-layout positions. `left/top/width/height` all transition together over 800 ms. Lines visibly stretch as endpoints follow the moving cards (the SVG path `d` attribute also has a CSS transition). Card content crossfades from `CompactCardContent` (chart-box style) to `BigStationCard` (full detail) — compact fades out 300 ms immediately, expanded fades in 400 ms with a 400 ms delay so the card has grown before the full content appears.\n  • **3100 ms+** — settled. Close button + Esc hint fade in.\n\nThe long hold after the highlight is the load-bearing change — it gives the eye time to register the source and target boxes in their chart context before they start moving.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Facilities map + compact Branch pill — May 2026
   {
     title: "Facilities map — Canadian biomanufacturing companies + plants on an interactive map",

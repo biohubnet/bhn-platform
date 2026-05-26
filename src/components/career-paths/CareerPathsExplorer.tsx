@@ -487,17 +487,28 @@ function StationBox({
 // the small initial state reveals progressively more content as the
 // card grows during the move.
 
-// Animation stages. Cards now POP in at their focused positions
-// directly (no chart-to-focused slide, no compact-to-expanded
-// crossfade), so the timing is simpler: backdrop, then cards, then
-// lines, then settled.
-type Stage = "darken" | "cards" | "lines" | "settled";
+// Staged FLIP animation with explicit hold-times between visual
+// events so the user can SEE each stage. Sequence:
+//
+//   darken    →  highlight  →  lines     →  moving    →  settled
+//   backdrop      glow ramps   SVG draws    cards FLIP   final UI
+//   fades in      on source +  source→tgt   from chart   ready,
+//   (300 ms)      target,      at CHART     pos+size to  Esc hint
+//                 OTHER chart  positions    focused      visible
+//                 cards stay   (700 ms)     positions
+//                 dim under                 (800 ms),
+//                 backdrop;                 content
+//                 HOLD ~800ms              crossfades
+//                 here                      compact →
+//                                           expanded
+type Stage = "darken" | "highlight" | "lines" | "moving" | "settled";
 
 const STAGE_TIMINGS: Record<Stage, number> = {
-  darken:   0,    // backdrop starts fading in
-  cards:    300,  // cards pop in (staggered via their own popDelayMs)
-  lines:    1100, // source + all targets visible, lines start drawing
-  settled:  1900, // lines done, full UI ready
+  darken:    0,    // backdrop starts fading in
+  highlight: 350,  // backdrop in, glow ramps up on source + targets
+  lines:     1500, // ~800 ms hold so the user sees what's highlighted
+  moving:    2300, // lines have ~800 ms to draw
+  settled:   3100, // cards have ~800 ms to move + content crossfade
 };
 
 interface TargetData {
@@ -534,7 +545,7 @@ function BranchModal({
   const [stage, setStage] = useState<Stage>("darken");
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
-    const stages: Stage[] = ["cards", "lines", "settled"];
+    const stages: Stage[] = ["highlight", "lines", "moving", "settled"];
     for (const s of stages) {
       timers.push(setTimeout(() => setStage(s), STAGE_TIMINGS[s]));
     }
@@ -570,8 +581,7 @@ function BranchModal({
   const layout = useMemo(() => computeFocusLayout(targets.length, viewport), [targets.length, viewport]);
 
   // Visibility flags driven by the stage state machine.
-  const cardsVisible = stage === "cards" || stage === "lines" || stage === "settled";
-  const linesActive = stage === "lines" || stage === "settled";
+  const linesActive = stage === "lines" || stage === "moving" || stage === "settled";
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-auto">
@@ -583,43 +593,59 @@ function BranchModal({
         aria-hidden
       />
 
-      {/* Close button — appears once cards do */}
+      {/* Close button — fades in alongside the cards */}
       <button
         type="button"
         onClick={onClose}
         aria-label="Close"
         className="fixed top-4 right-4 z-[110] inline-flex items-center justify-center w-10 h-10 rounded-full bg-white text-fg hover:bg-elevated shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 transition-opacity duration-300"
-        style={{ opacity: cardsVisible ? 1 : 0 }}
+        style={{ opacity: stage === "darken" ? 0 : 1 }}
       >
         <X size={18} />
       </button>
 
-      {/* SOURCE — pops in at the focused position, full content */}
-      {cardsVisible && (
-        <FlipCard
-          toRect={layout.source}
-          highlighted
-          accent={source.track.accent}
-          zBoost={1}
-        >
-          <BigStationCard
+      {/* SOURCE — starts at its chart-box position (cloned above the
+          backdrop) with compact content, glow ramps in during
+          highlight, then animates to focused layout + content
+          crossfades to BigStationCard. */}
+      <FlipCard
+        fromRect={source.sourceRect}
+        toRect={layout.source}
+        stage={stage}
+        accent={source.track.accent}
+        zBoost={1}
+        compact={
+          <CompactCardContent
             station={source.station}
-            track={source.track}
-            label="Where you are"
-            Icon={ICONS[source.track.iconKey]}
+            accent={source.track.accent}
           />
-        </FlipCard>
-      )}
+        }
+      >
+        <BigStationCard
+          station={source.station}
+          track={source.track}
+          label="Where you are"
+          Icon={ICONS[source.track.iconKey]}
+        />
+      </FlipCard>
 
-      {/* TARGETS — pop in at their focused positions, staggered */}
-      {cardsVisible && targets.map((t, i) => (
+      {/* TARGETS — same FLIP path from their chart-box positions to
+          the focused row below the source. */}
+      {targets.map((t, i) => (
         <FlipCard
           key={`${t.track.id}-${t.station.level}`}
+          fromRect={t.fromRect}
           toRect={layout.targets[i]}
-          highlighted
+          stage={stage}
           accent={t.track.accent}
-          popDelayMs={120 + i * 110}
+          moveDelayMs={i * 80}
           zBoost={1}
+          compact={
+            <CompactCardContent
+              station={t.station}
+              accent={t.track.accent}
+            />
+          }
         >
           <BigStationCard
             station={t.station}
@@ -631,21 +657,26 @@ function BranchModal({
         </FlipCard>
       ))}
 
-      {/* SVG lines between the source card's bottom and each target
-          card's top. Drawn only at the focused positions — no
-          source-chart-position-to-target-focused-position trickery,
-          since the cards now appear directly at focused positions. */}
+      {/* SVG lines — anchored to whichever rect set is current.
+          During the "lines" stage they draw between the CHART
+          positions (source.sourceRect → each target.fromRect). When
+          stage flips to "moving", they smoothly re-anchor to the
+          focused-layout endpoints (the CSS path-data transition
+          keeps the lines glued to the moving cards). */}
       <BranchLines
+        sourceFrom={source.sourceRect}
         sourceTo={layout.source}
         targets={targets.map((t, i) => ({
+          fromRect: t.fromRect,
           toRect: layout.targets[i],
           color: t.track.accent,
         }))}
         sourceAccent={source.track.accent}
         active={linesActive}
+        cardsMoving={stage === "moving" || stage === "settled"}
       />
 
-      {/* Footer hint — after lines */}
+      {/* Footer hint — only once the cards have settled */}
       <p
         className="fixed bottom-6 left-1/2 -translate-x-1/2 text-[11.5px] text-white/75 z-[110] transition-opacity duration-300 pointer-events-none"
         style={{ opacity: stage === "settled" ? 1 : 0 }}
@@ -666,43 +697,122 @@ function BranchModal({
 // ──────────────────────────────────────────────────────────────────
 
 function FlipCard({
-  toRect, highlighted, accent, popDelayMs = 0, zBoost = 0, children,
+  fromRect, toRect, stage, accent, moveDelayMs = 0, zBoost = 0, compact, children,
 }: {
-  toRect: { left: number; top: number; width: number; height: number };
-  highlighted: boolean;
+  fromRect: DOMRect | { left: number; top: number; width: number; height: number };
+  toRect:   { left: number; top: number; width: number; height: number };
+  stage: Stage;
   accent: string;
-  /** Delay before the card pops in. Targets stagger so multiple
-   *  cards don't all appear in lock-step. */
-  popDelayMs?: number;
+  /** Targets stagger the move delay so multiple cards don't all
+   *  slide in lock-step. Source uses 0. */
+  moveDelayMs?: number;
   zBoost?: number;
+  /** Chart-box-style content rendered while the card is at its
+   *  fromRect dimensions. */
+  compact: React.ReactNode;
+  /** Full BigStationCard content rendered after the move. */
   children: React.ReactNode;
 }) {
+  const moving = stage === "moving" || stage === "settled";
+  const highlighted = stage !== "darken";
+  const rect = moving ? toRect : fromRect;
   return (
     <div
       className="fixed overflow-hidden rounded-xl bg-card-solid pointer-events-auto"
       style={{
-        left:   toRect.left,
-        top:    toRect.top,
-        width:  toRect.width,
-        height: toRect.height,
+        left:   rect.left,
+        top:    rect.top,
+        width:  rect.width,
+        height: rect.height,
         zIndex: 100 + zBoost,
-        // Only the box-shadow + border transition. No size / position
-        // animation — cards land at their focused position directly
-        // and the content inside is shown in full from the start
-        // (no compact preview, no truncation).
-        transition: `box-shadow 350ms ease-out, border-color 350ms ease-out`,
+        // Position + size all interpolate together; the highlight
+        // ring transitions on its own faster timing.
+        transition: `left 800ms cubic-bezier(0.4, 0, 0.2, 1) ${moveDelayMs}ms,
+                     top 800ms cubic-bezier(0.4, 0, 0.2, 1) ${moveDelayMs}ms,
+                     width 800ms cubic-bezier(0.4, 0, 0.2, 1) ${moveDelayMs}ms,
+                     height 800ms cubic-bezier(0.4, 0, 0.2, 1) ${moveDelayMs}ms,
+                     box-shadow 350ms ease-out,
+                     border-color 350ms ease-out`,
         border: `2px solid ${highlighted ? accent : "var(--line)"}`,
         boxShadow: highlighted
           ? `0 0 0 6px color-mix(in srgb, ${accent} 18%, transparent),
              0 18px 50px color-mix(in srgb, ${accent} 25%, transparent),
              0 8px 24px rgba(0,0,0,0.30)`
           : "var(--shadow-card-rest)",
-        // Pop-in animation — fade + slight zoom from 92 % so the card
-        // visibly "lands" rather than instantly appearing.
-        animation: `careerCardPopIn 380ms cubic-bezier(0.34, 1.56, 0.64, 1) ${popDelayMs}ms backwards`,
       }}
     >
-      {children}
+      {/* Compact layer — chart-box content, visible while the card
+          is at its fromRect dimensions. Fades out as the move
+          starts. */}
+      <div
+        className="absolute inset-0 transition-opacity"
+        style={{
+          opacity: moving ? 0 : 1,
+          transitionDuration: "300ms",
+          transitionDelay: moving ? "0ms" : "400ms",
+        }}
+      >
+        {compact}
+      </div>
+      {/* Expanded layer — full BigStationCard. Fades in 400 ms into
+          the move so the card has time to grow first; otherwise the
+          big content would overflow the still-small card. */}
+      <div
+        className="absolute inset-0 transition-opacity"
+        style={{
+          opacity: moving ? 1 : 0,
+          transitionDuration: "400ms",
+          transitionDelay: moving ? "400ms" : "0ms",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Compact card content — chart-box-sized preview so the FlipCard
+// looks visually identical to the chart's StationBox while it's
+// still at its fromRect dimensions.
+// ──────────────────────────────────────────────────────────────────
+
+function CompactCardContent({
+  station, accent,
+}: {
+  station: CareerStation;
+  accent: string;
+}) {
+  return (
+    <div className="h-full p-3 overflow-hidden">
+      <p className="text-[12.5px] font-semibold text-fg leading-snug">
+        {station.roles[0]}
+      </p>
+      {station.roles.length > 1 && (
+        <p className="text-[10.5px] text-fg-subtle leading-snug">
+          +{station.roles.length - 1} similar role{station.roles.length > 2 ? "s" : ""}
+        </p>
+      )}
+      <p className="mt-2 text-[11px] text-fg-muted leading-relaxed line-clamp-3">
+        {station.focus}
+      </p>
+      <div className="mt-2.5 border-t border-line/60 pt-2">
+        <p className="text-[9.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-1">
+          Education gaps
+        </p>
+        <ul className="space-y-0.5">
+          {station.educationGaps.slice(0, 4).map((g) => (
+            <li key={g} className="flex items-start gap-1.5 text-[11px] leading-snug">
+              <span
+                aria-hidden
+                className="inline-block w-1 h-1 rounded-full mt-[6.5px] shrink-0"
+                style={{ backgroundColor: accent }}
+              />
+              <span className="text-fg-muted">{g}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -713,29 +823,39 @@ function FlipCard({
 // ──────────────────────────────────────────────────────────────────
 
 function BranchLines({
-  sourceTo, targets, sourceAccent, active,
+  sourceFrom, sourceTo, targets, sourceAccent, active, cardsMoving,
 }: {
+  sourceFrom: DOMRect;
   sourceTo: { left: number; top: number; width: number; height: number };
   targets: Array<{
+    fromRect: DOMRect;
     toRect: { left: number; top: number; width: number; height: number };
     color: string;
   }>;
   sourceAccent: string;
   active: boolean;
+  cardsMoving: boolean;
 }) {
-  const srcCx = sourceTo.left + sourceTo.width / 2;
-  const srcBy = sourceTo.top + sourceTo.height;
+  // Endpoints follow whichever rect set is current — the chart
+  // positions during the "lines" stage, then the focused positions
+  // once "moving" kicks in. Each endpoint coordinate also has its
+  // own CSS transition so the lines smoothly stretch with the
+  // cards as they slide into the focused layout.
+  const srcRect = cardsMoving ? sourceTo : sourceFrom;
+  const srcCx = srcRect.left + srcRect.width / 2;
+  const srcBy = srcRect.top + srcRect.height;
   return (
     <svg
       aria-hidden
       className="fixed inset-0 w-full h-full pointer-events-none z-[105]"
     >
       {targets.map((t, i) => {
-        const tgtCx = t.toRect.left + t.toRect.width / 2;
-        const tgtTy = t.toRect.top;
+        const tgt = cardsMoving ? t.toRect : t.fromRect;
+        const tgtCx = tgt.left + tgt.width / 2;
+        const tgtTy = tgt.top;
         const midY = (srcBy + tgtTy) / 2;
         const d = `M ${srcCx} ${srcBy} C ${srcCx} ${midY}, ${tgtCx} ${midY}, ${tgtCx} ${tgtTy}`;
-        const length = Math.hypot(tgtCx - srcCx, tgtTy - srcBy) * 1.3;
+        const length = Math.hypot(tgtCx - srcCx, tgtTy - srcBy) * 1.4;
         return (
           <g key={i}>
             <path
@@ -747,7 +867,8 @@ function BranchLines({
               style={{
                 strokeDasharray: length,
                 strokeDashoffset: active ? 0 : length,
-                transition: `stroke-dashoffset 700ms cubic-bezier(0.4, 0, 0.2, 1) ${i * 120}ms`,
+                transition: `stroke-dashoffset 700ms cubic-bezier(0.4, 0, 0.2, 1) ${i * 120}ms,
+                             d 800ms cubic-bezier(0.4, 0, 0.2, 1)`,
                 filter: `drop-shadow(0 0 8px color-mix(in srgb, ${t.color} 55%, transparent))`,
               }}
             />
@@ -760,7 +881,9 @@ function BranchLines({
               strokeWidth="1.5"
               style={{
                 opacity: active ? 1 : 0,
-                transition: `opacity 250ms ease-out ${i * 120 + 600}ms`,
+                transition: `opacity 250ms ease-out ${i * 120 + 600}ms,
+                             cx 800ms cubic-bezier(0.4, 0, 0.2, 1),
+                             cy 800ms cubic-bezier(0.4, 0, 0.2, 1)`,
               }}
             />
             <circle
@@ -772,7 +895,9 @@ function BranchLines({
               strokeWidth="2"
               style={{
                 opacity: active ? 1 : 0,
-                transition: `opacity 250ms ease-out ${i * 120 + 200}ms`,
+                transition: `opacity 250ms ease-out ${i * 120 + 200}ms,
+                             cx 800ms cubic-bezier(0.4, 0, 0.2, 1),
+                             cy 800ms cubic-bezier(0.4, 0, 0.2, 1)`,
               }}
             />
           </g>
