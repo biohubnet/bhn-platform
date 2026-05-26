@@ -17,7 +17,6 @@ import {
   Calendar, List, AlertCircle, ChevronLeft, ChevronRight,
   ExternalLink, Sparkles,
 } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
 import { holidayDateSet, UOFT_HOLIDAYS } from "@/lib/equip/calendar";
 
 interface Deadline {
@@ -336,12 +335,32 @@ function formatShort(dateLike: string | Date): string {
   });
 }
 
+/**
+ * Flat status indicator — dot + small caps label, no pill.
+ *
+ * Replaces the design-system Badge for the deadlines page only.
+ * Badge pills were the densest visual element on the page; flattening
+ * to "dot + label" matches the rest of the minimalist treatment
+ * (left-border accents instead of card fills, hairline dividers
+ * instead of rings).
+ *
+ * Dot colours stay inside the 4-colour palette: emerald (open),
+ * brand (extended/info), rose (closed), slate (scheduled / unknown).
+ */
 function getStatusBadge(status: string) {
-  if (status === "open")      return <Badge tone="success">Open</Badge>;
-  if (status === "extended")  return <Badge tone="brand">Extended</Badge>;
-  if (status === "closed")    return <Badge tone="danger">Closed</Badge>;
-  if (status === "scheduled") return <Badge tone="neutral">Scheduled</Badge>;
-  return <Badge tone="neutral">{status}</Badge>;
+  const map: Record<string, { dot: string; text: string; label: string }> = {
+    open:      { dot: "bg-emerald-600", text: "text-emerald-700", label: "Open"      },
+    extended:  { dot: "bg-brand-500",   text: "text-brand-700",   label: "Extended"  },
+    closed:    { dot: "bg-rose-500",    text: "text-rose-700",    label: "Closed"    },
+    scheduled: { dot: "bg-slate-400",   text: "text-slate-600",   label: "Scheduled" },
+  };
+  const m = map[status] ?? { dot: "bg-slate-400", text: "text-slate-600", label: status };
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.14em]">
+      <span aria-hidden className={`w-1.5 h-1.5 rounded-full ${m.dot}`} />
+      <span className={m.text}>{m.label}</span>
+    </span>
+  );
 }
 
 /**
@@ -384,17 +403,16 @@ function fmtStageDate(s: VlRoundStage): string {
 /**
  * Filled dot colour per stage tone.
  *
- * Collapsed to the page's four-colour palette: amber for upcoming/
- * scheduled stages, emerald for active windows, brand for
- * informational, slate-toned line for default. The legacy "violet"
- * tone now folds into brand to stay inside the palette.
+ * Collapsed to the page's four-colour palette + muted one step
+ * toward the darker end (-600/-500) so the dots feel calm rather
+ * than vibrant. The legacy "violet" tone folds into brand.
  */
 function vlStageDot(tone: VlRoundStage["tone"]): string {
   switch (tone) {
-    case "amber":   return "bg-amber-400";
+    case "amber":   return "bg-amber-500";
     case "violet":  return "bg-brand-500";
     case "brand":   return "bg-brand-500";
-    case "emerald": return "bg-emerald-500";
+    case "emerald": return "bg-emerald-600";
     default:        return "bg-line-strong";
   }
 }
@@ -584,15 +602,15 @@ function CombinedTable({ deadlines, vlRoundStages }: { deadlines: Deadline[]; vl
                 <li
                   key={h.date + h.name}
                   className={
-                    "text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ring-1 ring-inset inline-flex items-center gap-1 " +
-                    // Presidential holiday vs U of T closure — both
-                    // are "don't schedule here" signals, so they live
-                    // in the same warning hue (amber). The label
-                    // (truncated to date in the chip) carries the
-                    // semantic distinction.
+                    "text-[10px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 inline-flex items-center gap-1 border-l-2 " +
+                    // Holidays are now flat hairline markers — a 2 px
+                    // left border in muted amber/rose carries the
+                    // semantic without a rounded chip. Date label sits
+                    // on neutral text so the page stops looking like
+                    // a chip cloud.
                     (h.presidential
-                      ? "bg-amber-50 text-amber-900 ring-amber-200"
-                      : "bg-rose-50 text-rose-800 ring-rose-200")
+                      ? "border-amber-500 text-amber-800"
+                      : "border-rose-400 text-rose-700")
                   }
                   title={h.name}
                 >
@@ -852,37 +870,48 @@ function CombinedMonthRow({ group, today }: { group: MonthGroup; today: string }
                             return (
                               <div
                                 key={s.stageKey + rn}
+                                // Minimalist treatment — a 2 px left border in
+                                // muted emerald/amber replaces the old pill-
+                                // shaped card. No background fill, no ring. The
+                                // accent is a line, not a chip; eye picks up
+                                // "active vs next" by edge colour + label tone.
                                 className={
-                                  "rounded-lg px-2 py-1 " +
+                                  "px-2 py-1 border-l-2 " +
                                   (isActive
-                                    ? "bg-emerald-50 ring-1 ring-emerald-200"
+                                    ? "border-emerald-600"
                                     : isNext
-                                      ? "bg-amber-50/60 ring-1 ring-amber-200/60"
-                                      : "")
+                                      ? "border-amber-500"
+                                      : "border-transparent")
                                 }
                               >
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className={`w-2 h-2 rounded-full shrink-0 ${vlStageDot(s.tone)}`} />
                                   <span className={
                                     "text-xs font-semibold " +
-                                    (isActive ? "text-emerald-900" : isNext ? "text-amber-900" : "text-fg")
+                                    (isActive ? "text-emerald-800" : isNext ? "text-amber-800" : "text-fg")
                                   }>
                                     {s.stageLabel}
                                   </span>
+                                  {/*
+                                    "Active" / "Next" markers as text-with-dot
+                                    instead of pills. Muted emerald/amber tone,
+                                    uppercase letter-spacing carries the eye
+                                    without a chip wrapper.
+                                  */}
                                   {isActive && (
-                                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full ring-1 ring-emerald-200 ring-inset inline-flex items-center gap-1">
-                                      <Sparkles size={8} /> now
+                                    <span className="text-[9.5px] font-bold uppercase tracking-[0.16em] text-emerald-700 inline-flex items-center gap-1">
+                                      <Sparkles size={9} /> now
                                     </span>
                                   )}
                                   {isNext && (
-                                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full ring-1 ring-amber-200 ring-inset">
+                                    <span className="text-[9.5px] font-bold uppercase tracking-[0.16em] text-amber-700">
                                       next
                                     </span>
                                   )}
                                   <span className={
                                     "text-[10px] font-mono tabular-nums ml-auto " +
                                     (isActive || isNext ? "font-bold " : "") +
-                                    (isActive ? "text-emerald-800" : isNext ? "text-amber-800" : "text-muted")
+                                    (isActive ? "text-emerald-700" : isNext ? "text-amber-700" : "text-muted")
                                   }>
                                     {fmtStageDate(s)}
                                   </span>
@@ -1338,13 +1367,18 @@ function CalendarView({ deadlines, holidaysByDate }: { deadlines: Deadline[]; ho
                 return (
                   <span
                     key={r.id}
+                    // Calendar-cell deadline label — flat hairline
+                    // accent on the left edge in the role colour, no
+                    // filled chip. Closed deadlines retain the line-
+                    // through; otherwise the colour comes from text
+                    // tone only.
                     className={
-                      "text-[10px] font-semibold rounded px-1 py-0.5 truncate " +
+                      "text-[10px] font-semibold px-1 py-0.5 truncate border-l-2 " +
                       (r.status === "closed"
-                        ? "bg-rose-100 text-rose-700 line-through"
+                        ? "border-rose-400 text-rose-700 line-through"
                         : meta.tone === "success"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-brand-100 text-brand-700")
+                          ? "border-emerald-600 text-emerald-700"
+                          : "border-brand-500 text-brand-700")
                     }
                     title={`${meta.label} · ${r.cycleLabel ?? ""}`}
                   >
