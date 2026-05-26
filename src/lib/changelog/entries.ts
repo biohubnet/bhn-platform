@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — fix branch icon click + move to bottom-right — May 2026
+  {
+    title: "Career paths — branch-out icon moved to bottom-right + click actually works now",
+    body: "Two fixes on the click-to-branch interaction shipped earlier today:\n\n**1. Click was hanging the page (real bug).** The `BranchModal`'s `targets` array was recomputed inline in the function body on every render, producing a fresh array reference each time. The `useLayoutEffect([targets])` saw a \"new\" dep on every render, re-ran, called `setLines(...)`, triggered another render, ran the effect again — infinite loop. The modal mounted but immediately locked up before the user saw anything change, which is why the icon appeared to do nothing on click. Fixed by wrapping `targets` in `useMemo([source])` so the reference is stable across re-renders.\n\n**2. Branch-out icon moved from the top-right to the bottom-right** of each station box. Content padding flipped from `pr-10` (right-only) to `pb-10` (bottom-only) so the last education-gap line doesn't slide under the floating button. Added `cursor-pointer` + `active:scale-95` + an explicit `pointer-events: auto` to the button for extra defensive feedback.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — click-to-branch modal — May 2026
   {
     title: "Career paths — click a pulsing fork icon to open a focused branching modal",

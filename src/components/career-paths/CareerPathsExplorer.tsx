@@ -26,7 +26,7 @@
  *     backdrop covers them).
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Briefcase,
   Dna,
@@ -356,20 +356,29 @@ function StationBox({
         style={{ backgroundColor: `color-mix(in srgb, ${accent} ${intensity}%, transparent)` }}
       />
 
-      {/* Branch-out icon — top-right. Subtle infinite pulse to advertise
-          its interactive-ness. Click opens the branching modal. */}
+      {/* Branch-out icon — bottom-right. Subtle infinite pulse to
+          advertise its interactive-ness. Click opens the branching
+          modal. The pulse animation only changes transform/opacity
+          (no layout), so click hit-detection on the button stays
+          stable while the pulse plays. */}
       {hasCrossLinks && (
         <button
           type="button"
-          onClick={() => onBranchOpen({ track, station })}
+          onClick={(e) => {
+            // Stop bubbling defensively in case any parent decides to
+            // grow a click handler later.
+            e.stopPropagation();
+            onBranchOpen({ track, station });
+          }}
           aria-label={`Show ${crossLinks.length} branch transition${crossLinks.length > 1 ? "s" : ""} from ${station.label}`}
           title={`Show ${crossLinks.length} branch transition${crossLinks.length > 1 ? "s" : ""}`}
-          className="absolute top-1.5 right-1.5 z-10 inline-flex items-center justify-center w-7 h-7 rounded-full transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          className="absolute bottom-2 right-2 z-20 inline-flex items-center justify-center w-7 h-7 rounded-full cursor-pointer transition-transform hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
           style={{
-            backgroundColor: `color-mix(in srgb, ${accent} 16%, var(--card))`,
+            backgroundColor: `color-mix(in srgb, ${accent} 18%, var(--card))`,
             color: accent,
-            border: `1px solid color-mix(in srgb, ${accent} 35%, transparent)`,
+            border: `1px solid color-mix(in srgb, ${accent} 40%, transparent)`,
             animation: "careerBranchPulse 2.4s ease-in-out infinite",
+            pointerEvents: "auto",
           }}
         >
           <GitFork size={13} />
@@ -389,7 +398,9 @@ function StationBox({
         </button>
       )}
 
-      <div className="p-3 pr-10">
+      {/* Bottom padding clears the floating branch-out button so the
+          last education-gap line doesn't slide under it. */}
+      <div className={"p-3 " + (hasCrossLinks ? "pb-10" : "")}>
         <p className="text-[12.5px] font-semibold text-fg leading-snug">
           {station.roles[0]}
         </p>
@@ -441,14 +452,23 @@ function BranchModal({
   source: BranchOpen;
   onClose: () => void;
 }) {
-  // Resolve target tracks + stations once.
-  const targets: TargetData[] = (source.station.crossLinks ?? [])
-    .map((cl) => {
-      const track = TRACK_BY_ID.get(cl.trackId);
-      const station = track?.stations.find((s) => s.level === cl.targetLevel);
-      return track && station ? { cl, track, station } : null;
-    })
-    .filter((t): t is TargetData => t !== null);
+  // Resolve target tracks + stations once per source. useMemo gives
+  // the array a stable reference across re-renders — without it the
+  // `useLayoutEffect([targets])` below ran on every render (new
+  // array ref every time), `setLines` fired, the component re-
+  // rendered, the effect re-ran… and the modal hung in an infinite
+  // loop the moment it mounted. Which is what was making the icon
+  // "not work" — the click set state correctly, but the modal that
+  // mounted immediately locked up.
+  const targets: TargetData[] = useMemo(() => {
+    return (source.station.crossLinks ?? [])
+      .map((cl) => {
+        const track = TRACK_BY_ID.get(cl.trackId);
+        const station = track?.stations.find((s) => s.level === cl.targetLevel);
+        return track && station ? { cl, track, station } : null;
+      })
+      .filter((t): t is TargetData => t !== null);
+  }, [source]);
 
   // Refs for measuring source + each target so we can draw the
   // connecting lines after layout.
