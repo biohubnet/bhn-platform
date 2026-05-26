@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation";
 import {
   FileText, Mail, BookOpen, Briefcase, Save, Loader2, CheckCircle2, Sparkles, X, ExternalLink, AlertTriangle,
   Theater, Hourglass, Play, RotateCcw, Download, Copy, Printer, StickyNote, Activity, Calendar, User as UserIcon, Link2,
-  Target, ArrowRightLeft, Inbox, Share2, Trash2,
+  Target, ArrowRightLeft, Inbox, Share2, Trash2, Gauge,
 } from "lucide-react";
 import { scoreSkillMatch, type SkillMatchResult } from "@/lib/job-folders/skill-match";
 
@@ -331,6 +331,7 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
       {/* Panels */}
       {tab === "jd" && (
         <JdPanel
+          folderId={initialFolder.id}
           value={jdSnippet}
           onChange={setJdSnippet}
           posting={initialFolder.posting}
@@ -1437,9 +1438,149 @@ function SkillMatchPanel({
   );
 }
 
-function JdPanel({
-  value, onChange, posting, resumeContent, resumeLinked,
+// ── Rate-my-fit panel (JD tab) ──────────────────────────────────
+
+interface FitAssessment {
+  score: number;
+  verdict: string;
+  strengths: string[];
+  gaps: string[];
+  nextMove: string;
+}
+
+function RateMyFitPanel({
+  folderId, resumeLinked, jdEmpty,
 }: {
+  folderId: string;
+  resumeLinked: boolean;
+  jdEmpty: boolean;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [assessment, setAssessment] = useState<FitAssessment | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function runRating() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/profile/job-folders/${folderId}/rate-fit`, {
+        method: "POST",
+      });
+      const j = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        assessment?: FitAssessment;
+        error?: string;
+      } | null;
+      if (!res.ok || !j?.ok || !j.assessment) {
+        setError(j?.error ?? `Rating failed (HTTP ${res.status}).`);
+        return;
+      }
+      setAssessment(j.assessment);
+    } finally { setLoading(false); }
+  }
+
+  const tone =
+    assessment === null ? "neutral"
+      : assessment.score >= 75 ? "emerald"
+      : assessment.score >= 55 ? "amber"
+      : "rose";
+  const toneClasses = {
+    neutral: "bg-card ring-line",
+    emerald: "bg-emerald-50 ring-emerald-200",
+    amber:   "bg-amber-50 ring-amber-200",
+    rose:    "bg-rose-50 ring-rose-200",
+  }[tone];
+  const scoreColor = {
+    neutral: "text-fg",
+    emerald: "text-emerald-900",
+    amber:   "text-amber-900",
+    rose:    "text-rose-900",
+  }[tone];
+
+  return (
+    <div className={`rounded-xl px-4 py-3 ring-1 ring-inset ${toneClasses}`}>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold inline-flex items-center gap-2">
+            <Gauge size={14} /> Rate my fit
+          </p>
+          <p className="text-[11.5px] text-fg-muted mt-0.5">
+            Honest AI read of your resume vs this JD — strengths, gaps, and the highest-leverage next move.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={runRating}
+          disabled={loading || jdEmpty || !resumeLinked}
+          title={
+            !resumeLinked ? "Link a resume on the Resume tab first."
+              : jdEmpty   ? "Paste a JD first."
+              : undefined
+          }
+          className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 text-white px-3 py-1.5 text-[12px] font-semibold hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+          {assessment ? "Re-rate" : "Run rating"}
+        </button>
+      </div>
+      {error && (
+        <p className="mt-2 text-[12px] text-rose-700">{error}</p>
+      )}
+      {assessment && (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-start">
+          <div className="flex flex-col items-center justify-center sm:min-w-[110px]">
+            <div className={`text-[44px] font-bold tabular-nums leading-none ${scoreColor}`}>
+              {assessment.score}
+            </div>
+            <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-fg-subtle mt-1">
+              / 100 fit
+            </div>
+          </div>
+          <div className="text-[13px] leading-relaxed">
+            <p className="font-semibold">{assessment.verdict}</p>
+            {assessment.strengths.length > 0 && (
+              <div className="mt-2">
+                <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-emerald-800 mb-1">Strengths</p>
+                <ul className="space-y-0.5">
+                  {assessment.strengths.map((s, i) => (
+                    <li key={i} className="flex gap-2 text-[12.5px]">
+                      <span className="text-emerald-600 mt-0.5">✓</span>
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {assessment.gaps.length > 0 && (
+              <div className="mt-2">
+                <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-rose-800 mb-1">Gaps</p>
+                <ul className="space-y-0.5">
+                  {assessment.gaps.map((g, i) => (
+                    <li key={i} className="flex gap-2 text-[12.5px]">
+                      <span className="text-rose-600 mt-0.5">·</span>
+                      <span>{g}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {assessment.nextMove && (
+              <div className="mt-2 rounded-md bg-white/60 ring-1 ring-inset ring-line px-2.5 py-1.5">
+                <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-fg-muted mb-0.5">Next move</p>
+                <p className="text-[12.5px]">{assessment.nextMove}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function JdPanel({
+  folderId, value, onChange, posting, resumeContent, resumeLinked,
+}: {
+  folderId: string;
   value: string;
   onChange: (v: string) => void;
   posting: FolderInitial["posting"];
@@ -1459,6 +1600,7 @@ function JdPanel({
       {/* Skill-match summary — pops to the top so it stays visible
           when the JD textarea gets long. */}
       <SkillMatchPanel match={skillMatch} resumeLinked={resumeLinked} />
+      <RateMyFitPanel folderId={folderId} resumeLinked={resumeLinked} jdEmpty={!value.trim()} />
       {posting && (
         <div className="rounded-xl border border-cyan-200 bg-cyan-50/60 p-3 flex items-start justify-between gap-3">
           <div className="min-w-0">

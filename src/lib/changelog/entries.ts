@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Job folders — Tier 3: AI rate-my-fit + folder templates — May 2026
+  {
+    title: "Job folders — AI rate-my-fit + folder templates",
+    body: "Tier 3 of the improvement pass.\n\n**Rate-my-fit (JD tab).** A new AI panel sits under the skill-match block. Click 'Run rating' and the AI reads your resume against this JD and returns: a 0–100 fit score (rubric: 85+ strong, 70–84 solid, 55–69 mixed, 40–54 stretch, <40 significant gap), a one-sentence verdict, 3–5 grounded strengths (each tied to a specific resume bullet), 3–5 specific gaps the JD requires that your resume doesn't cover, and a 1–2 sentence 'next move' recommendation. The system prompt is explicit about being candid — no cheerleading, no inventing strengths the resume doesn't support. The panel's tone shifts emerald/amber/rose by score. Re-rateable any time the JD or resume changes. Powered by the existing chat() adapter; no new keys needed.\n\n**Folder templates.** New 'From template' dropdown next to 'New job folder'. Pick from five archetypes — Engineering, Product management, Biotech / wet lab, Sales / business development, Consulting. Each archetype pre-populates the new folder's Interview prep tab with archetype-specific Likely questions, Questions to ask them, and Gotchas + research notes (substantive, not generic). JD and cover letter tabs stay empty — those are tailored per posting. Saves the cold-start; new trainees stop staring at a blank prep tab. Static data in lib/job-folders/templates.ts — easy to add domains by appending to the list.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Job folders — Tier 2: reuse + matching — May 2026
   {
     title: "Job folders — Skill match, STAR cross-link, Pull-from-past, Mentor share",

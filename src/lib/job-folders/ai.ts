@@ -134,3 +134,109 @@ export async function generateInterviewPrep(args: BuildPromptInput & { userId?: 
   }
   return { ok: true, text: result.text.trim() };
 }
+
+// ── Rate-my-fit assessment ──────────────────────────────────────
+
+/**
+ * Honest "you-vs-JD" fit assessment. Returns a 0–100 score plus
+ * three strengths and three gaps. The goal is calibration, not
+ * cheerleading — the system prompt asks the model to be candid,
+ * specific, and to never invent strengths the resume doesn't
+ * support.
+ */
+export interface FitAssessment {
+  score: number;
+  /** 1-sentence verdict shown next to the score. */
+  verdict: string;
+  /** 3-5 concrete strengths the resume supports. */
+  strengths: string[];
+  /** 3-5 specific gaps the candidate should address. */
+  gaps: string[];
+  /** 1-2 sentences of recommended next move. */
+  nextMove: string;
+}
+
+const RATE_FIT_SYSTEM = `You are a candid recruiting coach.
+
+Given a job description and a candidate resume, produce an HONEST fit assessment. Be specific. Don't cheerlead. Don't invent strengths the resume doesn't actually support.
+
+OUTPUT: STRICT JSON. No markdown, no commentary, no code fences. Exact schema:
+{
+  "score": 0–100 integer (overall fit; 50 = mixed, 70 = solid, 85+ = strong),
+  "verdict": "single sentence summary",
+  "strengths": [3–5 short bullets, each grounded in a specific resume item — quote it],
+  "gaps": [3–5 short bullets, each naming a JD requirement the resume doesn't cover or covers weakly],
+  "nextMove": "1–2 sentences — the most useful thing this candidate should do before applying"
+}
+
+Scoring rubric:
+  85–100: clear strong-meets on the named requirements + obvious depth.
+  70–84: solid fit, 1–2 gaps that are addressable.
+  55–69: mixed — half the requirements covered, half visibly missing or weak.
+  40–54: stretch — likely not yet ready, but applying isn't a waste.
+  Below 40: significant gap; better to use this JD to learn what to build than to apply blind.`;
+
+export async function rateFit(args: {
+  jdSnippet: string;
+  resumeContent: unknown;
+  candidateName?: string | null;
+  userId?: string | null;
+}): Promise<{ ok: true; assessment: FitAssessment } | { ok: false; error: string }> {
+  if (!args.jdSnippet.trim()) {
+    return { ok: false, error: "Add a job description first — the AI needs something to rate against." };
+  }
+  // resumeAsText is typed for the structured ResumeContent shape; we
+  // accept unknown at the boundary and trust the same runtime checks
+  // it uses internally for malformed input.
+  const resume = resumeAsText(
+    args.resumeContent as Parameters<typeof resumeAsText>[0],
+    args.candidateName,
+  );
+  if (!resume) {
+    return { ok: false, error: "Link a resume first — the AI needs the candidate side too." };
+  }
+  const user = [
+    "JOB DESCRIPTION:",
+    args.jdSnippet.slice(0, 8000),
+    "",
+    "CANDIDATE RESUME:",
+    resume,
+    "",
+    "Return the JSON now.",
+  ].join("\n");
+  const result = await chat(
+    [
+      { role: "system", content: RATE_FIT_SYSTEM },
+      { role: "user", content: user },
+    ],
+    { userId: args.userId, feature: "job_folder_rate_fit", maxTokens: 1200, temperature: 0.3 },
+  );
+  if (!result.ok || !result.text.trim()) {
+    return { ok: false, error: result.ok ? "Empty AI response." : result.error };
+  }
+  const cleaned = result.text.replace(/```json/g, "").replace(/```/g, "").trim();
+  try {
+    const parsed = JSON.parse(cleaned) as Partial<FitAssessment>;
+    if (
+      typeof parsed.score !== "number" ||
+      typeof parsed.verdict !== "string" ||
+      !Array.isArray(parsed.strengths) ||
+      !Array.isArray(parsed.gaps) ||
+      typeof parsed.nextMove !== "string"
+    ) {
+      return { ok: false, error: "Model returned a malformed assessment." };
+    }
+    return {
+      ok: true,
+      assessment: {
+        score: Math.max(0, Math.min(100, Math.round(parsed.score))),
+        verdict: parsed.verdict.slice(0, 300),
+        strengths: parsed.strengths.filter((s) => typeof s === "string").slice(0, 6) as string[],
+        gaps: parsed.gaps.filter((s) => typeof s === "string").slice(0, 6) as string[],
+        nextMove: parsed.nextMove.slice(0, 400),
+      },
+    };
+  } catch {
+    return { ok: false, error: "Couldn't parse the AI response." };
+  }
+}

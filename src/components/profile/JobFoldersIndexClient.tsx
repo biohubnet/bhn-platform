@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { FOLDER_TEMPLATES } from "@/lib/job-folders/templates";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -83,14 +84,14 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
     });
   }
 
-  async function createFolder() {
+  async function createFolder(opts?: { templateId?: string; defaultTitle?: string }) {
     setError(null);
     const title = await inputDialog({
-      title: "New job folder",
+      title: opts?.templateId ? "New folder from template" : "New job folder",
       description: "One folder per role you're pursuing — usually \"Company · Role\".",
       label: "Folder name",
       placeholder: "STEMCELL · Process Engineer Intern",
-      defaultValue: "New job folder",
+      defaultValue: opts?.defaultTitle ?? "New job folder",
       confirmLabel: "Create",
     });
     if (title === null) return;
@@ -98,7 +99,10 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
       const r = await fetch("/api/profile/job-folders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim() || "New job folder" }),
+        body: JSON.stringify({
+          title: title.trim() || "New job folder",
+          ...(opts?.templateId ? { templateId: opts.templateId } : {}),
+        }),
       });
       const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string; folder?: { id: string } };
       if (!r.ok || !j.ok || !j.folder) {
@@ -175,15 +179,21 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
         <p className="text-sm text-fg-muted">
           {active.length} active{archived.length > 0 && ` · ${archived.length} archived`}
         </p>
-        <button
-          type="button"
-          onClick={createFolder}
-          disabled={creating}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 disabled:opacity-50 transition-colors"
-        >
-          {creating ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-          New job folder
-        </button>
+        <div className="flex items-center gap-2">
+          <TemplatePicker
+            disabled={creating}
+            onPick={(t) => createFolder({ templateId: t.id, defaultTitle: t.defaultFolderTitle })}
+          />
+          <button
+            type="button"
+            onClick={() => createFolder()}
+            disabled={creating}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 disabled:opacity-50 transition-colors"
+          >
+            {creating ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+            New job folder
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -223,7 +233,7 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
           <p>No folders yet. Start one for each role you&apos;re applying to — the folder will hold the JD, your tailored resume, a cover letter, and an interview prep guide.</p>
           <button
             type="button"
-            onClick={createFolder}
+            onClick={() => { void createFolder(); }}
             className="inline-flex items-center gap-1.5 mt-4 px-3 py-2 rounded-md bg-brand-600 text-white text-xs font-bold hover:bg-brand-700"
           >
             <Plus size={11} /> Create your first folder
@@ -377,6 +387,76 @@ function FolderCard({
         </div>
       )}
     </li>
+  );
+}
+
+// ── Template picker ──────────────────────────────────────────────
+
+function TemplatePicker({
+  disabled,
+  onPick,
+}: {
+  disabled: boolean;
+  onPick: (t: { id: string; defaultFolderTitle: string }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  // Click-outside to close. Lightweight — no portal.
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!(e.target instanceof Element)) return;
+      if (!e.target.closest("[data-template-picker]")) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  return (
+    <div className="relative" data-template-picker>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled}
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-elevated text-fg ring-1 ring-inset ring-line text-sm font-semibold hover:bg-line disabled:opacity-50 transition-colors"
+      >
+        <FileText size={13} />
+        From template
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-[280px] rounded-xl bg-card-solid shadow-2xl ring-1 ring-line z-20 overflow-hidden">
+          <div className="px-3 py-2 border-b border-line bg-elevated/40">
+            <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-fg-subtle">
+              Pick an archetype
+            </p>
+          </div>
+          <ul className="max-h-[360px] overflow-y-auto">
+            {FOLDER_TEMPLATES.map((t) => (
+              <li key={t.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onPick({ id: t.id, defaultFolderTitle: t.defaultFolderTitle });
+                  }}
+                  className="w-full text-left px-3 py-2.5 hover:bg-elevated/60 flex items-start gap-2.5 border-b border-line last:border-b-0"
+                >
+                  <span className="text-[18px] leading-none mt-0.5">{t.glyph}</span>
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-semibold text-fg">
+                      {t.title}
+                    </span>
+                    <span className="block text-[11px] text-fg-muted leading-snug">
+                      {t.description}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 

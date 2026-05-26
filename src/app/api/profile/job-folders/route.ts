@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logFolderEvent } from "@/lib/job-folders/events";
+import { FOLDER_TEMPLATES } from "@/lib/job-folders/templates";
 
 export const runtime = "nodejs";
 
@@ -91,13 +92,25 @@ export async function POST(req: NextRequest) {
     jdSnippet?: unknown;
     postingId?: unknown;
     resumeId?: unknown;
+    /** Optional template id from FOLDER_TEMPLATES — pre-populates
+     *  the title + interview prep tab with archetype-specific
+     *  questions, questions-to-ask, and research notes. */
+    templateId?: unknown;
   };
+
+  // If a template was picked, resolve it and let its defaults fill
+  // in where the request body didn't explicitly set something.
+  const template = typeof body.templateId === "string"
+    ? FOLDER_TEMPLATES.find((t) => t.id === body.templateId) ?? null
+    : null;
+
   const title = typeof body.title === "string" && body.title.trim()
     ? body.title.trim().slice(0, 160)
-    : "New job folder";
+    : (template?.defaultFolderTitle ?? "New job folder");
   const jdSnippet = typeof body.jdSnippet === "string"
     ? body.jdSnippet.slice(0, 20_000)
     : "";
+  const interviewPrep = template?.interviewPrep ?? "";
   const postingId = typeof body.postingId === "string" ? body.postingId : null;
   const resumeId = typeof body.resumeId === "string" ? body.resumeId : null;
 
@@ -114,7 +127,7 @@ export async function POST(req: NextRequest) {
   // Posting reference can be any platform posting — read-anyone.
 
   const created = await prisma.jobFolder.create({
-    data: { userId, title, jdSnippet, postingId, resumeId },
+    data: { userId, title, jdSnippet, interviewPrep, postingId, resumeId },
     select: { id: true, title: true, status: true, createdAt: true },
   });
 
@@ -122,7 +135,10 @@ export async function POST(req: NextRequest) {
   await logFolderEvent({
     folderId: created.id,
     kind: "created",
-    body: `Folder created${jdSnippet ? " with starter JD" : ""}`,
+    body: template
+      ? `Folder created from the "${template.title}" template`
+      : `Folder created${jdSnippet ? " with starter JD" : ""}`,
+    payload: template ? { templateId: template.id } : undefined,
   });
 
   return NextResponse.json({ ok: true, folder: created });
