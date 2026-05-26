@@ -366,25 +366,26 @@ function getStatusBadge(status: string) {
 /**
  * Month abbreviation marker.
  *
- * Previously twelve different pastel hues — one per month — which made
- * the calendar look like a paint sample chart. Now the abbreviation
- * carries the meaning; the colour is a single brand-tinted slate that
- * stays consistent across the year so the visual rhythm comes from
- * type and layout, not from a rainbow.
+ * The month cell renders as a filled deep-slate block with inverted
+ * (light) text — visually anchors the row from the left edge and
+ * separates the timeline rhythm from the per-stream data on its
+ * right. Single colour family (slate-800 fill + slate-100 abbr +
+ * slate-400 year) so it stays inside the page's tonal contract
+ * without introducing a new accent hue.
  */
 const MONTH_DISPLAY: Record<number, { abbr: string; color: string }> = {
-  1:  { abbr: "Jan", color: "text-brand-300/80" },
-  2:  { abbr: "Feb", color: "text-brand-300/80" },
-  3:  { abbr: "Mar", color: "text-brand-300/80" },
-  4:  { abbr: "Apr", color: "text-brand-300/80" },
-  5:  { abbr: "May", color: "text-brand-300/80" },
-  6:  { abbr: "Jun", color: "text-brand-300/80" },
-  7:  { abbr: "Jul", color: "text-brand-300/80" },
-  8:  { abbr: "Aug", color: "text-brand-300/80" },
-  9:  { abbr: "Sep", color: "text-brand-300/80" },
-  10: { abbr: "Oct", color: "text-brand-300/80" },
-  11: { abbr: "Nov", color: "text-brand-300/80" },
-  12: { abbr: "Dec", color: "text-brand-300/80" },
+  1:  { abbr: "Jan", color: "text-slate-100" },
+  2:  { abbr: "Feb", color: "text-slate-100" },
+  3:  { abbr: "Mar", color: "text-slate-100" },
+  4:  { abbr: "Apr", color: "text-slate-100" },
+  5:  { abbr: "May", color: "text-slate-100" },
+  6:  { abbr: "Jun", color: "text-slate-100" },
+  7:  { abbr: "Jul", color: "text-slate-100" },
+  8:  { abbr: "Aug", color: "text-slate-100" },
+  9:  { abbr: "Sep", color: "text-slate-100" },
+  10: { abbr: "Oct", color: "text-slate-100" },
+  11: { abbr: "Nov", color: "text-slate-100" },
+  12: { abbr: "Dec", color: "text-slate-100" },
 };
 
 /** Compact date label for a VL stage: "Sep 19" or "Sep 22–26". */
@@ -552,7 +553,12 @@ function CombinedTable({ deadlines, vlRoundStages }: { deadlines: Deadline[]; vl
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-line text-left text-[10px] text-muted uppercase tracking-wide">
-            <th className="px-4 py-3 w-16">Month</th>
+            {/* Month-column header matches the inverted slate slab
+                in the body cells — keeps the column visually
+                continuous from header to last row. */}
+            <th className="px-4 py-3 w-16 bg-slate-800 text-center text-slate-200">
+              Month
+            </th>
             <th className="px-5 py-3">
               <span className="text-brand-700 font-bold normal-case tracking-normal">VentureConnect</span>
               <span className="text-subtle font-normal ml-1.5 normal-case tracking-normal">≤$5K · monthly</span>
@@ -750,18 +756,25 @@ function CombinedMonthRow({ group, today }: { group: MonthGroup; today: string }
       {/* ── Main data row ─────────────────────────────────────── */}
       <tr className="align-top">
 
-        {/* Month column */}
-        <td className="px-4 py-3 align-top text-center w-16">
+        {/*
+          Month column — deep slate fill anchors the row from the
+          left edge. Inverted text (slate-100 abbr, slate-400 year)
+          reads cleanly on dark. The cell extends row-tall so the
+          slab visually groups the VC + VL columns to its right.
+        */}
+        <td className="px-4 py-4 align-middle text-center w-16 bg-slate-800">
           {(() => {
             const monthNum = parseInt(group.monthKey.slice(5, 7), 10);
             const year     = group.monthKey.slice(0, 4);
-            const m        = MONTH_DISPLAY[monthNum] ?? { abbr: group.label.slice(0, 3), color: "text-muted" };
+            const m        = MONTH_DISPLAY[monthNum] ?? { abbr: group.label.slice(0, 3), color: "text-slate-100" };
             return (
               <>
                 <span className={`block text-3xl font-black leading-none tracking-tight ${m.color}`}>
                   {m.abbr}
                 </span>
-                <span className="block text-[10px] text-muted mt-0.5 font-medium">{year}</span>
+                <span className="block text-[10px] text-slate-400 mt-1 font-medium tracking-wider uppercase">
+                  {year}
+                </span>
               </>
             );
           })()}
