@@ -28,6 +28,16 @@
 
 export type LevelId = "junior" | "mid" | "senior" | "lead" | "vp";
 
+/** Short transition microcopy rendered between two adjacent station
+ *  boxes on the tree chart. Captures the "what changes around year X"
+ *  beat that the boxes themselves don't have room for. */
+export const TRANSITION_MICROCOPY: Record<string, string> = {
+  "junior→mid":  "Around year 2 — you stop following SOPs and start owning a unit op.",
+  "mid→senior":  "Around year 5 — strong ICs become workstream leaders. The first time the chart's yours.",
+  "senior→lead": "Around year 10 — the work shifts from doing it to designing the system that does it.",
+  "lead→vp":     "Year 15+ — set portfolio strategy, answer to the board, hire your replacement.",
+};
+
 export interface CourseRef {
   title: string;
   /** Optional short tag/credential the catalog ships under. */

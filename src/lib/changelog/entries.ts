@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — tree-chart visualisation — May 2026
+  {
+    title: "Career paths — tree-chart visualisation with boxes, lines, and microcopies",
+    body: "Follow-up to yesterday's career-paths landing. The previous version rendered the journey as a flat magazine-row list; this version turns it into a proper tree chart.\n\n**What changed:**\n\n• **Station boxes.** Each level is now a real rounded card with a soft shadow, a left-edge accent bar in the track's hue, a level eyebrow + years pill, the role list, the focus microcopy, and 3–4 suggested courses. Subtle accent-tinted gradient backdrop ties the box to its track without becoming a colour wash.\n\n• **Trunk connecting line.** A 2-px vertical bar runs between consecutive station boxes, with a gradient that deepens from light at Junior to full accent at VP — the eye reads \"climbing\" as it scans down. The trunk has a Sparkles cap at the top (Start), an arrow chevron between every pair of stations, and a Trophy cap at the bottom (Top of the ladder).\n\n• **Transition microcopies.** Between every pair of stations sits a one-line italic note explaining what changes at that career hinge: \"Around year 2 — you stop following SOPs and start owning a unit op,\" \"Around year 5 — strong ICs become workstream leaders,\" \"Around year 10 — the work shifts from doing it to designing the system,\" \"Year 15+ — set portfolio strategy, answer to the board.\"\n\n• **Cross-tree branches.** At stations that have cross-links, an SVG dashed curve grows out of the box's right edge to a small destination card carrying the target track's icon, the \"when\" microcopy (e.g. \"Senior → Lead\"), and a one-line \"why\" reason. Clicking the destination card swaps the active track so that journey is immediately on screen. On lg+ the side cards sit in their own column; below lg they collapse to a stacked list under the parent station.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — guided Junior → VP journeys — May 2026
   {
     title: "Career paths — guided Junior → VP journeys across six tracks",
