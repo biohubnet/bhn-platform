@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — flowchart + mind-map layout — May 2026
+  {
+    title: "Career paths — flowchart + mind-map visualisation",
+    body: "Pivot from the horizontal-lanes big-picture layout to a proper flowchart × mind-map.\n\n**Mind-map root.** A central \"Your career journey\" pill sits at the top of the chart, with six curved SVG rays radiating downward to the six track headers — every road starts in the same place + diverges.\n\n**Track headers row.** Six cards across the top, one per track, each with an accent-tinted gradient backdrop, the icon, the track name, and the tagline. The grid columns here lock the alignment for everything below.\n\n**Flowchart body.** Five level rows (Junior → VP). Each row contains six station boxes — one per track, in the same column order as the headers above. Between every pair of rows, six curved SVG down-arrows (one per column, each in the track's accent colour) carry the flow downward. Level label bands separate the rows so the seniority context is always visible.\n\n**Station boxes** are unchanged from the previous big-picture version: role title, focus microcopy, education gaps list, cross-tree footer at branch points. Accent intensity scales from light at Junior to full at VP so each column reads as growth.\n\n**Trophy cap** under the VP row marks the top of every ladder.\n\nNeeds ~1180 px horizontal to render all six columns legibly, so the whole chart sits inside `overflow-x-auto` — phones get a horizontal pan rather than a forced reflow. The mind-map root + the SVG radiating curves + the per-column flow arrows give the page a much more diagrammatic feel than the previous horizontal-lanes treatment.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — big-picture map, education gaps instead of courses — May 2026
   {
     title: "Career paths — big-picture map with education gaps (not course names)",
