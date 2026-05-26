@@ -7,7 +7,7 @@
  * folder for the detail editor.
  */
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -50,6 +50,24 @@ export function JobFoldersIndexClient({ initialFolders }: Props) {
   const [creating, startCreate] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Sync prop → state when the server re-renders the page with a
+  // fresh list. Without this, the admin Seed / Clear tray fires
+  // router.refresh(), the page re-fetches on the server with the
+  // new rows, but the client snapshot frozen in useState above
+  // wins on render — so the admin saw nothing new until they hit
+  // F5. We watch the prop and overwrite local state when the
+  // server-side identity of the list changes (new id appears,
+  // existing id disappears, or any updatedAt moves).
+  useEffect(() => {
+    setFolders(initialFolders);
+    setSelected((s) => {
+      const live = new Set(initialFolders.map((f) => f.id));
+      const next = new Set<string>();
+      s.forEach((id) => { if (live.has(id)) next.add(id); });
+      return next;
+    });
+  }, [initialFolders]);
 
   const active = folders.filter((f) => !f.isArchived);
   const archived = folders.filter((f) => f.isArchived);
