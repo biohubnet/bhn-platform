@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Job folders — download all documents — May 2026
+  {
+    title: "Job folders — Download all documents as a single Markdown file",
+    body: "New 'Download all' button in the editor header (brand-tinted pill next to the status dropdown). Hits GET /api/profile/job-folders/[id]/download which bundles four documents into a single Markdown file: (1) the JD body, (2) the linked resume rendered from its structured content into readable markdown sections/items/bullets, (3) the cover letter, (4) the interview prep guide. The role-play simulation is intentionally excluded — it's an interactive experience, not a document.\n\nMarkdown was picked over PDF/zip because it (a) needs zero new dependencies, (b) opens in any text editor, Obsidian, Notion, Google Docs, or Marked, (c) plays nicely with the platform — cover letter and interview prep are already stored as markdown, (d) the user can export to PDF from their tool of choice.\n\nFilename is the slugified folder title plus the folder's last-edited ISO date, e.g. `msd-msl-oncology-2026-05-26.md`. Empty sections render an italic placeholder so the structure is honest about what's still TODO. Resume rendering walks the ResumeContent JSON: header block (name/email/phone) → sections by `position` → items with title/subtitle/dates/metric/url → bullets, all hyperlinkable.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Job folders ↔ role-play sim — May 2026
   {
     title: "Job folders — add a role-play simulation alongside JD / Resume / Cover letter / Prep",

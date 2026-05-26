@@ -21,7 +21,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   FileText, Mail, BookOpen, Briefcase, Save, Loader2, CheckCircle2, Sparkles, X, ExternalLink, AlertTriangle,
-  Theater, Hourglass, Play, RotateCcw,
+  Theater, Hourglass, Play, RotateCcw, Download,
 } from "lucide-react";
 
 interface FolderInitial {
@@ -120,6 +120,15 @@ export function JobFolderEditor({ initialFolder, resumes }: Props) {
           />
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={`/api/profile/job-folders/${initialFolder.id}/download`}
+            download
+            title="Download JD, Resume, Cover letter, and Interview prep as one Markdown file. Role-play sim is not included."
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200 px-3 py-1.5 text-[12px] font-semibold hover:bg-brand-100 transition-colors"
+          >
+            <Download size={13} />
+            <span className="hidden sm:inline">Download all</span>
+          </a>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
