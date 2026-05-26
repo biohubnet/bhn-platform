@@ -1572,14 +1572,6 @@ export function Sidebar({
               </AdminSubgroup>
             )}
 
-            {visibleOperationsAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.operations} label="Operations">
-                {visibleOperationsAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-                ))}
-              </AdminSubgroup>
-            )}
-
             {visibleExperienceAdmin.length > 0 && (
               <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Experience">
                 {visibleExperienceAdmin.map((item) => (
@@ -1591,6 +1583,21 @@ export function Sidebar({
             {visibleEquipAdmin.length > 0 && (
               <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.equip} label="Equip">
                 {visibleEquipAdmin.map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+                ))}
+              </AdminSubgroup>
+            )}
+
+            {/*
+              Operations sits between Equip and Insights — the three
+              pillars (Engage / Experience / Equip) are pipeline-shaped
+              work that happens IN the platform, then Operations is the
+              cross-pillar mechanics that keep the platform running,
+              and Insights is what you look at after the work is done.
+            */}
+            {visibleOperationsAdmin.length > 0 && (
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.operations} label="Operations">
+                {visibleOperationsAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}
               </AdminSubgroup>
