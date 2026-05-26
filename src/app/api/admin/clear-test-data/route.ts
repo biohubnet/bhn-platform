@@ -58,6 +58,7 @@ const VALID_ENTITIES = [
   "user_matches",
   "user_resume",
   "user_resumes_10",
+  "user_job_folder",
 ] as const;
 type Entity = (typeof VALID_ENTITIES)[number];
 
@@ -324,6 +325,18 @@ export async function POST(req: NextRequest) {
       deleted = r1.count + r2.count;
       if (r1.count > 0) byKind["self-demo-skills"] = r1.count;
       if (r2.count > 0) byKind["demo-posting-skills"] = r2.count;
+    }
+  } else if (entity === "user_job_folder") {
+    // Self-scoped, marker is [demo] prefix on the title (mirrors
+    // user_star_story). Real folders the staff member created
+    // themselves don't carry the prefix, so they're safe.
+    const meId = (session.user as { id?: string }).id;
+    if (meId) {
+      const r = await prisma.jobFolder.deleteMany({
+        where: { userId: meId, title: { startsWith: "[demo]" } },
+      });
+      deleted = r.count;
+      if (r.count > 0) byKind["self-demo"] = r.count;
     }
   }
 

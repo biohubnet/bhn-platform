@@ -55,6 +55,17 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Deadline Manager", href: "/admin/equip/deadlines" },
     since: "2026.05.25",
   },
+  // ─── Job-folder demo seeder (May 2026) ───────────────────────────
+  {
+    id: "staff.job-folder-demo-tray",
+    title: "New: Seed / clear demo job folders",
+    body: "/profile/job-folders now has the standard admin demo tray at the top. Seed spawns four fully-populated folders (drafting → offer) onto your account so the index renders with real content. Clear targets only rows whose title starts with [demo] — your real folders are safe.",
+    path: "/profile/job-folders",
+    placement: "center",
+    roles: ["instructor", "admin", "superadmin"],
+    cta: { label: "Open Job folders", href: "/profile/job-folders" },
+    since: "2026.05.25e",
+  },
   // ─── Story Bank builder (May 2026) ───────────────────────────────
   {
     id: "trainee.story-bank-builder",

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Job-folder demo seeder — May 2026 ────────────────────────────
+  {
+    title: "Job folders — admin Seed / Clear demo tray on /profile/job-folders",
+    body: "Staff (admin, instructor, superadmin) now see the standard demo tray at the top of /profile/job-folders, exactly like the one on the Story Bank page. 'Seed demo' spawns four fully-populated demo folders on the calling staff member's own account spanning the pipeline (drafting · submitted · interviewing · offer), each with a realistic JD snippet, a draft cover letter, and an interview-prep guide — so the page has live status chips and real card content without going through the full prep flow. 'Clear demo' deletes only JobFolder rows whose title starts with [demo], so real folders on the same account are never touched. Wires through the same demo-seed and clear-test-data endpoints as the rest of the self-scoped entities (user_star_story, user_resume, etc).",
+    kind: "feature",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
   // ── Story Bank builder — May 2026 ────────────────────────────────
   {
     title: "Story Bank — draft new stories inline with live coaching + worked examples",

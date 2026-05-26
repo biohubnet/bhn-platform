@@ -59,6 +59,7 @@ const VALID_ENTITIES = [
   "user_matches",
   "user_resume",
   "user_resumes_10",
+  "user_job_folder",
 ] as const;
 type Entity = (typeof VALID_ENTITIES)[number];
 
@@ -630,6 +631,89 @@ async function seedUserStarStories(userId: string): Promise<SeedDetail> {
           action: s.action,
           result: s.result,
           tags: s.tags,
+        },
+      });
+      created++;
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
+  }
+  if (created === 0 && errors.length > 0) {
+    return { created: 0, note: `All ${errors.length} inserts failed: ${errors.slice(0, 2).join("; ")}` };
+  }
+  return { created, note: errors.length > 0 ? `${errors.length} row(s) failed` : undefined };
+}
+
+// ── Job-folder samples ───────────────────────────────────────────
+// Four fully-populated folders that span the pipeline (drafting →
+// offer) so the index has live status chips, real cover-letter and
+// interview-prep text in each row, and feels like a real workspace
+// when a staff reviewer opens the page. Every title is prefixed
+// "[demo]" so the matching clear pass can find them with a startsWith
+// filter and never accidentally touch a real folder.
+
+const JOB_FOLDER_SAMPLES: Array<{
+  title: string;
+  jdSnippet: string;
+  coverLetter: string;
+  interviewPrep: string;
+  status: "drafting" | "submitted" | "interviewing" | "offer";
+}> = [
+  {
+    title: "[demo] Veridiom Therapeutics · Manufacturing Process Associate",
+    status: "drafting",
+    jdSnippet:
+      "Veridiom is hiring a Manufacturing Process Associate (16-week co-op) to support our cell-therapy manufacturing suite. You'll run aseptic operations, support batch records under cGMP, troubleshoot bioreactor parameters, and contribute to deviation investigations. Required: aseptic technique, basic bioprocess familiarity, attention to documentation. Nice to have: GMP coursework, hands-on bioreactor experience, root-cause analysis exposure.",
+    coverLetter:
+      "Dear Veridiom Hiring Team,\n\nI'm writing to apply for the Manufacturing Process Associate co-op. Two of my courses last term — Bioprocess Engineering and Quality Systems in GMP — map directly to what your posting calls out, and a summer placement at a cell-culture lab gave me 12 weeks of aseptic-technique muscle memory.\n\nThe part of your posting that pulled me in was deviation investigations. In my placement I ran the root-cause exercise after three back-to-back shake-flask contaminations and traced the issue to a short autoclave cycle. The fix became a daily watch metric. I'd like to bring that same patience for the paper trail to your floor.\n\nI'm available the full 16 weeks starting in May and can relocate to Toronto for the term.\n\nThank you for the consideration,\nDemo Trainee",
+    interviewPrep:
+      "## Likely questions\n\n1. Walk me through your aseptic gowning protocol.\n2. Tell me about a time you caught a deviation.\n3. What's the difference between cGMP and GLP — and which applies here?\n4. How do you keep a batch record clean when you're rushed?\n\n## STAR moments to lead with\n\n- **Cell-culture contamination root-cause** — three flasks → autoclave-cycle deviation → daily watch metric. Lands the GMP + investigations angle.\n- **Aseptic gowning audit** — paired-shadow protocol for two new trainees, zero fails. Lands the mentoring + SOP fluency angle.\n\n## Questions to ask them\n\n- How does the suite split between cell-therapy and gene-therapy lines?\n- Who owns deviation review — is there a CAPA board I'd sit on as an associate?\n- What's the cadence on batch-record review training?",
+  },
+  {
+    title: "[demo] LumenBio · Cell Culture Scientist Intern",
+    status: "submitted",
+    jdSnippet:
+      "LumenBio is looking for a Cell Culture Scientist Intern (12 weeks, hybrid) to support our discovery pipeline. The intern will run shake-flask and small-scale bioreactor cultures, perform cell-viability and metabolite assays, and help develop a fed-batch process for a new cell line. Required: cell culture coursework, basic statistics, comfort in BSL-2. Nice to have: Pichia or CHO experience, DoE familiarity, Python for data clean-up.",
+    coverLetter:
+      "Hi LumenBio team,\n\nI'm applying for the Cell Culture Scientist Intern role. My final-year thesis was a Pichia pastoris fed-batch optimisation, so the small-scale bioreactor work you describe is the work I've been training toward.\n\nA few specifics from the posting that I can speak to:\n\n- **DoE** — I ran a small two-factor design comparing methanol feed rate against agitation. Modest sample size, but the analysis taught me how to write a clean response-surface report.\n- **Python for clean-up** — I wrote the pandas pipeline that took our 18,400-row metabolite-assay export and turned it into a usable weekly chart for the PI.\n- **BSL-2 fluency** — full year of supervised work; my supervisor cleared me to run unsupervised the second term.\n\nHappy to interview on short notice — I've already blocked the next two Tuesdays.\n\nBest,\nDemo Trainee",
+    interviewPrep:
+      "## Likely questions\n\n1. What's the difference between batch, fed-batch, and perfusion — and when would you pick each?\n2. Walk me through your Pichia fed-batch.\n3. How do you decide a culture has crashed vs. just drifted?\n4. Tell me about a time you used a DoE.\n\n## STAR moments to lead with\n\n- **Bioreactor failed mid-run** — pH probe drift → manual recalibration → batch saved within 3% of historical yield. Lands the troubleshooting + decision-under-pressure angle.\n- **Dataset clean-up** — pandas pipeline → grant figure → cited in the conference poster. Lands the Python + DoE-adjacent angle.\n\n## Questions to ask them\n\n- Is the new cell line CHO, Pichia, or something else?\n- How do interns plug into the DoE planning — observer or running their own factor?\n- What's the hand-off between discovery and process development?",
+  },
+  {
+    title: "[demo] PolarMed Devices · Quality Engineer Intern",
+    status: "interviewing",
+    jdSnippet:
+      "PolarMed Devices is hiring a Quality Engineer Intern (8 months, on-site Mississauga) to support our 510(k) submission cycle and post-market surveillance. The intern will draft and update SOPs, support design-control documentation, participate in CAPA investigations, and help with internal audit prep. Required: ISO 13485 awareness, technical writing, attention to detail. Nice to have: medical-device coursework, MDSAP exposure, statistical-process-control basics.",
+    coverLetter:
+      "Dear PolarMed,\n\nI'm applying for the Quality Engineer Intern position. The 8-month length and the mix of 510(k) work, CAPA, and audit prep is exactly the kind of cycle I want to live through before deciding whether QA/RA is my path.\n\nFrom the posting:\n\n- **SOP authoring** — I coordinated 40 GMP SOP migrations to an electronic QMS on a 6-week deadline. All 40 were live with seven days to spare and the next inspection passed clean.\n- **ISO 13485** — I took a 12-week course last fall and shadowed a real internal audit at my placement; happy to talk through what I saw.\n- **Technical writing** — most of my placement deliverables were SOPs, deviation reports, and one CAPA investigation summary. The CAPA was 11 pages; I can bring a redacted copy if useful.\n\nMy on-site availability is the full 8 months from January.\n\nThanks for the consideration,\nDemo Trainee",
+    interviewPrep:
+      "## Likely questions\n\n1. What's the difference between a deviation and a CAPA?\n2. Walk me through ISO 13485 clause 8.2.\n3. How do you decide whether a corrective action needs to escalate to a CAPA?\n4. Have you ever written an SOP that someone else had to follow — what did you change after their feedback?\n\n## STAR moments to lead with\n\n- **40 SOP rollover** — change-control board, three-times-a-week standup, 12 highest-risk SOPs personally owned, clean inspection. Lands the project-management + QMS angle.\n- **Cell-culture contamination CAPA** — root-cause + written brief format that the lead later adopted as the team standard. Lands the technical-writing + RCA angle.\n\n## Questions to ask them\n\n- Where is the team in the 510(k) cycle right now — drafting, response to FDA, or post-clearance?\n- Are interns involved in MDR investigations or only design-control?\n- What's the cadence on internal audits in an 8-month window — would I see a full cycle?",
+  },
+  {
+    title: "[demo] BioFen Analytics · Data Science Intern",
+    status: "offer",
+    jdSnippet:
+      "BioFen Analytics builds remote-monitoring software for inhaled-medication adherence. We're hiring a Data Science Intern (16 weeks, remote-friendly) to clean a large device-telemetry export, build a weekly adherence dashboard, and prototype a drop-off predictor. Required: Python (pandas, numpy, matplotlib), basic statistics, comfort owning a messy dataset end-to-end. Nice to have: scikit-learn, public-health exposure, Git fluency.",
+    coverLetter:
+      "Hi BioFen team,\n\nI'm writing to apply for the Data Science Intern role. Your posting describes almost exactly the work I did on placement last summer — except the dataset I cleaned was about half the size, so I'm hungry to work on a bigger one.\n\nThe specifics:\n\n- **Pandas + matplotlib** — 18,400-row telemetry export → cleaned, deduplicated, forward-filled small gaps, rejected long-gap participants → weekly adherence chart used in a $215K grant.\n- **Owning the messy end-to-end** — the lab's PI didn't have a Python person, so the cleaning script was mine to author and document. The next placement student inherited it; my notes are why they could pick it up in a week.\n- **scikit-learn** — comfortable with the basics (logistic regression, train/test split, a confusion matrix). Not a research-grade modeller yet — but I'd love this internship to be the one where I get there under proper supervision.\n\nThank you,\nDemo Trainee",
+    interviewPrep:
+      "## Likely questions\n\n1. How do you decide whether to forward-fill, interpolate, or drop a gap?\n2. Walk me through how you'd build a baseline drop-off predictor.\n3. What's the difference between AUC and accuracy — and which would you report to a clinical-team stakeholder?\n4. Tell me about a dataset you owned end-to-end.\n\n## STAR moments to lead with\n\n- **Dataset clean-up** — 18,400 rows, 6% test-fires dropped, 50-row sanity check against device logs, weekly rolling-mean chart, grant awarded. Lands the end-to-end + clinical-comms angle.\n- **Cross-team handoff** — diff document to break a stuck handoff. Lands the communication + ownership angle in case they pivot away from pure-technical questions.\n\n## Questions to ask them\n\n- Is the drop-off predictor expected to ship to production or stay internal?\n- What's the team's stack — Jupyter notebooks, scripts, or something more structured?\n- How is intern work reviewed — pair review, async PR, or stand-alone?",
+  },
+];
+
+async function seedUserJobFolders(userId: string): Promise<SeedDetail> {
+  let created = 0;
+  const errors: string[] = [];
+  for (const f of JOB_FOLDER_SAMPLES) {
+    try {
+      await prisma.jobFolder.create({
+        data: {
+          userId,
+          title:         f.title,
+          jdSnippet:     f.jdSnippet,
+          coverLetter:   f.coverLetter,
+          interviewPrep: f.interviewPrep,
+          status:        f.status,
         },
       });
       created++;
@@ -1345,6 +1429,12 @@ export async function POST(req: NextRequest) {
       // listing renders them in last-edited order.
       if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
       const detail = await seedTenUserResumes(reviewerId);
+      created = detail.created;
+      note = detail.note;
+    }
+    else if (entity === "user_job_folder") {
+      if (!reviewerId) return NextResponse.json({ error: "Session missing user id." }, { status: 400 });
+      const detail = await seedUserJobFolders(reviewerId);
       created = detail.created;
       note = detail.note;
     }
