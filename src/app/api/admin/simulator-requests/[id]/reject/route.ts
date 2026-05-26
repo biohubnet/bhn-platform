@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifySimRejected } from "@/lib/simulator/notify";
 
 export const runtime = "nodejs";
 
@@ -38,7 +39,12 @@ export async function POST(
 
   const request = await prisma.simulationRequest.findUnique({
     where: { id },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      jdBody: true,
+      user: { select: { email: true, name: true } },
+    },
   });
   if (!request) {
     return NextResponse.json({ error: "Request not found." }, { status: 404 });
@@ -59,6 +65,17 @@ export async function POST(
       processedAt: new Date(),
     },
   });
+
+  // Notify the requester so they can revise + resubmit. Silent on
+  // SMTP failure — the in-app status flip already happened.
+  if (request.user.email) {
+    await notifySimRejected({
+      to: request.user.email,
+      recipientName: request.user.name,
+      jdSnippet: request.jdBody,
+      reason,
+    });
+  }
 
   return NextResponse.json({ ok: true, status: "rejected" });
 }

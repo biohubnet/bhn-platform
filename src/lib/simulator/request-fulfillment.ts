@@ -22,22 +22,32 @@ import { prisma } from "@/lib/prisma";
 import { initialState } from "./engine";
 import type { SimulationPayload } from "./types";
 import { PROMPT_VERSION } from "./types";
+import { notifySimReady } from "./notify";
 
-// v1 ships without a notification row. The existing Notification
-// table is employer-scoped (requires companyId + activityLogId), so
-// adding a generic-user notification is its own piece of work. For
-// now the user sees status transitions when they reload /simulator
-// — that page renders the "Requested" section by reading
-// SimulationRequest.status directly. A follow-up commit can wire in
-// either email or a generic user-notification model.
-//
-// Keep this helper as a single touch-point so the upgrade is local.
-async function notifyRequester(_args: {
+/**
+ * Email the requester that their simulation is live, with a deep-
+ * link to the freshly-created attempt. Loads the user's email+name
+ * inline so callers don't have to thread it through. Silent on SMTP
+ * failure — never break the fulfillment because email broke.
+ */
+async function notifyRequester(args: {
   requesterId: string;
   jobTitle: string;
+  companyName: string | null;
   attemptId: string;
 }) {
-  // intentionally a no-op in v1
+  const user = await prisma.user.findUnique({
+    where: { id: args.requesterId },
+    select: { email: true, name: true },
+  });
+  if (!user?.email) return;
+  await notifySimReady({
+    to: user.email,
+    recipientName: user.name,
+    jobTitle: args.jobTitle,
+    companyName: args.companyName,
+    attemptId: args.attemptId,
+  });
 }
 
 export async function fulfillWithExistingSimulation(args: {
@@ -56,7 +66,7 @@ export async function fulfillWithExistingSimulation(args: {
 
   const simulation = await prisma.simulation.findUnique({
     where: { id: args.simulationId },
-    select: { id: true, jobTitle: true, payload: true },
+    select: { id: true, jobTitle: true, companyName: true, payload: true },
   });
   if (!simulation) return { ok: false, error: "Simulation not found." };
 
@@ -89,6 +99,7 @@ export async function fulfillWithExistingSimulation(args: {
   await notifyRequester({
     requesterId: request.userId,
     jobTitle: simulation.jobTitle,
+    companyName: simulation.companyName,
     attemptId: attempt.id,
   });
 
@@ -174,6 +185,7 @@ export async function fulfillWithNewPayload(args: {
   await notifyRequester({
     requesterId: request.userId,
     jobTitle: args.payload.jobTitle,
+    companyName: args.payload.companyName,
     attemptId: attempt.id,
   });
 

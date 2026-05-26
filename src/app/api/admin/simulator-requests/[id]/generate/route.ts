@@ -13,6 +13,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateSimulation } from "@/lib/simulator/generator";
 import { fulfillWithNewPayload } from "@/lib/simulator/request-fulfillment";
+import { notifySimFailed } from "@/lib/simulator/notify";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -33,7 +34,13 @@ export async function POST(
   const { id } = await params;
   const request = await prisma.simulationRequest.findUnique({
     where: { id },
-    select: { id: true, status: true, jdBody: true, sourceHash: true },
+    select: {
+      id: true,
+      status: true,
+      jdBody: true,
+      sourceHash: true,
+      user: { select: { email: true, name: true } },
+    },
   });
   if (!request) {
     return NextResponse.json({ error: "Request not found." }, { status: 404 });
@@ -73,6 +80,17 @@ export async function POST(
         processedAt: new Date(),
       },
     });
+    // Tell the requester so they're not left wondering. Failure is
+    // usually an AI quota issue — retry-able by an admin and worth
+    // surfacing so the user understands the delay.
+    if (request.user.email) {
+      await notifySimFailed({
+        to: request.user.email,
+        recipientName: request.user.name,
+        jdSnippet: request.jdBody,
+        reason: gen.error,
+      });
+    }
     return NextResponse.json(
       { ok: false, status: "failed", error: gen.error },
       { status: 502 },

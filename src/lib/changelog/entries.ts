@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator: email notifications on state change — May 2026
+  {
+    title: "Simulator — email notifications when your sim is ready / rejected / failed",
+    body: "When you submit a sim request (from /simulator/new or from a job folder's Role-play tab) you now get an email the moment its state changes:\n\n• Ready → subject 'Your role-play simulation is ready: …' with a prominent CTA button linking straight to your week-1 attempt.\n• Rejected → subject 'Your sim request needs adjustments' with the admin's written reason in an amber quote box and a link back to your dashboard so you can revise + resubmit.\n• Failed → subject 'Sim generation hit a snag — we'll retry' with the technical reason (usually an AI quota / validator hiccup) so you understand the delay.\n\nPending → generating transitions are intentionally NOT emailed — that's internal admin progress and doesn't need to ping you.\n\nUses the platform's existing SMTP send helper, silently no-ops if SMTP isn't configured (dev / preview deployments without secrets) rather than blocking the admin's save action. Email body is plain text + an HTML version with brand-coloured buttons.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Job folders — download all documents — May 2026
   {
     title: "Job folders — Download all documents as a single Markdown file",
