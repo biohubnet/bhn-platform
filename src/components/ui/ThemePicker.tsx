@@ -150,7 +150,10 @@ function ThemeMenu({
 
   return (
     <div
-      className="absolute bottom-full left-0 right-0 mb-2 popover p-1.5 z-30 min-w-[280px] max-h-[70vh] overflow-y-auto animate-fade-in"
+      // Wider (440px) so the now-one-line descriptions don't wrap
+      // and pad row height. max-w-[92vw] keeps the menu inside the
+      // viewport on narrow screens.
+      className="absolute bottom-full left-0 mb-2 popover p-1.5 z-30 w-[440px] max-w-[92vw] max-h-[70vh] overflow-y-auto animate-fade-in"
       role="menu"
       aria-label="Choose theme"
     >
@@ -165,15 +168,14 @@ function ThemeMenu({
         if (items.length === 0) return null;
         const meta = THEME_CATEGORIES[cat];
         return (
-          <div key={cat} className="mb-2 last:mb-0">
-            <div className="px-2 pt-1.5 pb-1">
-              <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
-                {meta.label}
-              </p>
-              <p className="text-[10px] text-subtle/80 leading-tight">
-                {meta.subtitle}
-              </p>
-            </div>
+          <div key={cat} className="mb-1.5 last:mb-0">
+            {/* Single-line category header — subtitle dropped to halve
+                the per-section vertical cost. Section meta.subtitle
+                still appears on /themes if anyone wants the longer
+                framing. */}
+            <p className="px-2 pt-1 pb-0.5 text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+              {meta.label}
+            </p>
             {items.map((t) => {
               const active = theme === t.id;
               const isLimited = "limited" in t && t.limited;
@@ -185,14 +187,14 @@ function ThemeMenu({
                   role="menuitemradio"
                   aria-checked={active}
                   className={cn(
-                    "group/themerow w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                    "group/themerow w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
                     active ? "bg-brand-50 ring-1 ring-brand-200" : "hover:bg-elevated"
                   )}
                 >
-                  <Swatch id={t.id} size={26} />
+                  <Swatch id={t.id} size={22} />
                   <span className="flex-1 min-w-0">
                     <span className={cn(
-                      "flex items-center gap-1.5 text-[13px] font-medium leading-tight",
+                      "flex items-center gap-1.5 text-[12.5px] font-medium leading-tight",
                       active ? "text-brand-700" : "text-fg"
                     )}>
                       {t.name}
@@ -205,13 +207,9 @@ function ThemeMenu({
                         </span>
                       )}
                     </span>
-                    {/* Description wraps naturally on multiple lines —
-                        each theme's blurb now carries the inspiration
-                        behind it, so a truncated headline would hide
-                        the whole point. Rows stretch as needed; the
-                        menu's overflow-y-auto handles the case where
-                        the open dropdown gets taller than the viewport. */}
-                    <span className="block text-[10.5px] text-subtle leading-snug mt-0.5 whitespace-normal">
+                    {/* Description clamped to one line — short on
+                        purpose; longer-form inspo lives on /themes. */}
+                    <span className="block text-[10.5px] text-subtle leading-tight mt-0.5 line-clamp-1">
                       {t.description}
                     </span>
                   </span>
@@ -228,16 +226,15 @@ function ThemeMenu({
         );
       })}
 
-      {/* Discovery link — lives below the theme list so the
-          dropdown reads as "themes first, preferences underneath". */}
-      <div className="border-t border-line mt-2 pt-2 px-1">
+      {/* Discovery link — compact, single-line. */}
+      <div className="border-t border-line mt-1.5 pt-1.5 px-1">
         <Link
           href="/themes"
-          className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium text-muted hover:bg-elevated hover:text-fg transition-colors"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[11.5px] font-medium text-muted hover:bg-elevated hover:text-fg transition-colors"
         >
-          <Sparkles size={12} className="text-brand-600 shrink-0" />
+          <Sparkles size={11} className="text-brand-600 shrink-0" />
           <span className="flex-1">Vote on themes &amp; suggest a new one</span>
-          <ArrowRight size={12} className="text-subtle shrink-0" />
+          <ArrowRight size={11} className="text-subtle shrink-0" />
         </Link>
       </div>
     </div>
@@ -299,50 +296,47 @@ function FeaturedLimitedPromo({
         style={{ background: fg }}
       />
 
-      <div className="relative p-3.5">
-        <div className="flex items-start gap-3">
-          {/* Bigger swatch — the visual hero of the card */}
-          <span
-            className="relative shrink-0 inline-block overflow-hidden border border-line shadow-sm"
-            style={{
-              width: 52, height: 52,
-              background: card,
-              borderRadius: SWATCH_RADIUS[t.id],
-            }}
-            aria-hidden
-          >
-            <span className="absolute inset-y-0 left-0" style={{ width: "45%", background: accent }} />
-            <span className="absolute right-2 top-2 w-2 h-2 rounded-full" style={{ background: fg }} />
-          </span>
+      {/* Single-row layout: swatch · name + tagline · Try CTA.
+          Half the height of the previous stacked card; works because
+          the wider dropdown gives horizontal room for the lockup. */}
+      <div className="relative p-2.5 flex items-center gap-2.5">
+        <span
+          className="relative shrink-0 inline-block overflow-hidden border border-line shadow-sm"
+          style={{
+            width: 38, height: 38,
+            background: card,
+            borderRadius: SWATCH_RADIUS[t.id],
+          }}
+          aria-hidden
+        >
+          <span className="absolute inset-y-0 left-0" style={{ width: "45%", background: accent }} />
+          <span className="absolute right-1.5 top-1.5 w-1.5 h-1.5 rounded-full" style={{ background: fg }} />
+        </span>
 
-          <div className="min-w-0 flex-1">
-            {/* Limited-time pip is the only rose accent now — small
-                enough to read as a tag, not as the card's mood. */}
-            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
-              <Sparkles size={9} aria-hidden /> Limited time
-            </span>
-            <h3 className="text-sm font-bold text-fg leading-tight mt-1.5">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-[12.5px] font-bold text-fg leading-tight truncate">
               Try {t.name}
             </h3>
-            <p className="text-[11px] text-muted leading-snug mt-0.5">
-              {t.description}
-            </p>
+            <span className="inline-flex items-center gap-0.5 text-[8.5px] font-bold uppercase tracking-[0.16em] px-1 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 shrink-0">
+              <Sparkles size={8} aria-hidden /> Limited
+            </span>
           </div>
+          <p className="text-[10.5px] text-muted leading-tight mt-0.5 line-clamp-1">
+            {t.description}
+          </p>
         </div>
 
         <button
           type="button"
           onClick={() => onPick(t.id)}
-          // Now uses the BRAND tone so the CTA harmonises with the
-          // rest of the picker's chrome (the active-theme highlight
-          // is also brand-flavored).
-          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1"
+          className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-bold bg-brand-600 hover:bg-brand-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1"
         >
-          <Sparkles size={11} aria-hidden />
-          <span>Try {t.name}</span>
+          <Sparkles size={10} aria-hidden />
+          Try
           {daysLeft != null && (
             <span className="font-mono font-normal opacity-80">
-              · {daysLeft === 0 ? "last day" : `${daysLeft}d left`}
+              · {daysLeft === 0 ? "last day" : `${daysLeft}d`}
             </span>
           )}
         </button>

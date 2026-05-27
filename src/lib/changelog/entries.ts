@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Theme picker — condensed: wider + half height — May 2026
+  {
+    title: "Theme picker — wider and roughly half the height after the inspo blurbs got too tall",
+    body: "Yesterday's inspo paragraphs were the right intent but the wrong surface — the picker dropdown ballooned to ~3-4 line rows per theme. Condensed:\n\n  • **Theme descriptions** are now one punchy sentence each (e.g. *Rosalind — \"Parchment, sage, italic serif. Named for Rosalind Franklin — the crystallographer behind Photograph 51.\"*). Same inspo lead, less wall-of-text.\n  • **Description row** is `line-clamp-1` so anything slightly long still stays one line.\n  • **Dropdown width** bumped from `min-w-[280px]` to **`w-[440px]`** so one-liners actually fit without wrapping. `max-w-[92vw]` keeps it inside the viewport on narrow screens.\n  • **Row padding** tightened `px-2.5 py-2` → `px-2 py-1.5`. Swatch from 26 → 22 px. Title from `text-[13px]` → `text-[12.5px]`.\n  • **Category subtitle** (e.g. *\"The foundation library\"*) dropped — only the main label (CLASSIC / FLAVOURS / LIMITED TIME) stays.\n  • **Featured limited-time card** (Sakura promo at the top) restructured from a stacked block (swatch + heading + paragraph + full-width Try button = ~120 px tall) to a **single-row lockup** (swatch · name + tagline · compact *Try* button), about half the height.\n  • **Discovery link** at the bottom (*Vote on themes…*) padding tightened to match.\n\nLong-form inspo migrates to `/themes` if anyone wants the longer framing — the picker stays a tight, scannable look-and-feel switcher.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Login-floaters — 16 new SVG glyphs, every category now ≥6 — May 2026
   {
     title: "Login-floaters — 16 new SVG process glyphs, every gallery category now fills its row",
