@@ -106,6 +106,17 @@ import { PkPdModeling } from "@/components/branding/PkPdModeling";
 import { SingleCellAtacSeq } from "@/components/branding/SingleCellAtacSeq";
 import { TregExpansion } from "@/components/branding/TregExpansion";
 import { ZebrafishToxScreen } from "@/components/branding/ZebrafishToxScreen";
+// ── 2026-05-29 batch: bring every category to a multiple of 6 ───
+import { AlphafoldStructure } from "@/components/branding/AlphafoldStructure";
+import { ContinuousManufacturing } from "@/components/branding/ContinuousManufacturing";
+import { DnaEncodedLibrary } from "@/components/branding/DnaEncodedLibrary";
+import { DsmbReview } from "@/components/branding/DsmbReview";
+import { FragmentScreening } from "@/components/branding/FragmentScreening";
+import { MasterProtocolTrial } from "@/components/branding/MasterProtocolTrial";
+import { PatientReportedOutcomes } from "@/components/branding/PatientReportedOutcomes";
+import { QualityRiskManagement } from "@/components/branding/QualityRiskManagement";
+import { SingleUseBioreactor } from "@/components/branding/SingleUseBioreactor";
+import { TangentialFlowFiltration } from "@/components/branding/TangentialFlowFiltration";
 
 type FloaterComponent = React.ComponentType<{ size?: number; className?: string }>;
 
@@ -867,6 +878,97 @@ export const FLOATER_REGISTRY: Record<string, FloaterDef> = {
     Component: DisinfectionEfficacy,
     defaultSize: 170,
     defaultColorClass: "text-amber-200/28",
+  },
+
+  // ── 2026-05-29 batch ────────────────────────────────────────────
+  // Bring the three largest categories to a clean multiple of 6:
+  // Discovery 9 → 12, Clinical 9 → 12, Manufacturing 14 → 18.
+  // Same 4-stage useStageCycle pattern as the rest of the registry.
+
+  // Discovery (+3 → 12)
+  "fragment-screening": {
+    id: "fragment-screening",
+    displayName: "Fragment screening (FBDD)",
+    category: "Discovery",
+    Component: FragmentScreening,
+    defaultSize: 170,
+    defaultColorClass: "text-emerald-300/30",
+  },
+  "dna-encoded-library": {
+    id: "dna-encoded-library",
+    displayName: "DNA-encoded library",
+    category: "Discovery",
+    Component: DnaEncodedLibrary,
+    defaultSize: 170,
+    defaultColorClass: "text-emerald-300/30",
+  },
+  "alphafold-structure": {
+    id: "alphafold-structure",
+    displayName: "AlphaFold structure",
+    category: "Discovery",
+    Component: AlphafoldStructure,
+    defaultSize: 170,
+    defaultColorClass: "text-violet-300/30",
+  },
+
+  // Clinical (+3 → 12)
+  "master-protocol-trial": {
+    id: "master-protocol-trial",
+    displayName: "Master protocol / umbrella",
+    category: "Clinical",
+    Component: MasterProtocolTrial,
+    defaultSize: 170,
+    defaultColorClass: "text-sky-300/30",
+  },
+  "patient-reported-outcomes": {
+    id: "patient-reported-outcomes",
+    displayName: "Patient-reported outcomes",
+    category: "Clinical",
+    Component: PatientReportedOutcomes,
+    defaultSize: 170,
+    defaultColorClass: "text-sky-300/30",
+  },
+  "dsmb-review": {
+    id: "dsmb-review",
+    displayName: "DSMB review",
+    category: "Clinical",
+    Component: DsmbReview,
+    defaultSize: 170,
+    defaultColorClass: "text-amber-300/30",
+  },
+
+  // Manufacturing (+4 → 18)
+  "single-use-bioreactor": {
+    id: "single-use-bioreactor",
+    displayName: "Single-use bioreactor",
+    category: "Manufacturing",
+    Component: SingleUseBioreactor,
+    defaultSize: 170,
+    defaultColorClass: "text-sky-300/30",
+  },
+  "tangential-flow-filtration": {
+    id: "tangential-flow-filtration",
+    displayName: "Tangential-flow filtration",
+    category: "Manufacturing",
+    Component: TangentialFlowFiltration,
+    defaultSize: 170,
+    defaultColorClass: "text-emerald-300/30",
+  },
+  "quality-risk-management": {
+    id: "quality-risk-management",
+    displayName: "Quality risk management (ICH Q9)",
+    category: "Manufacturing",
+    Component: QualityRiskManagement,
+    defaultSize: 170,
+    defaultColorClass: "text-amber-300/30",
+  },
+  "continuous-manufacturing": {
+    id: "continuous-manufacturing",
+    displayName: "Continuous manufacturing",
+    category: "Manufacturing",
+    Component: ContinuousManufacturing,
+    defaultSize: 170,
+    defaultColorClass: "text-emerald-300/30",
   },
 };
 
