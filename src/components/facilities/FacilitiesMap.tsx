@@ -196,6 +196,84 @@ export function FacilitiesMap({ initialFacilities, canRescan }: Props) {
 // Inner map — only renders once react-leaflet is loaded.
 // ──────────────────────────────────────────────────────────────────
 
+/** Group facilities into clusters of geographically near neighbours and
+ *  compute a display position for each: singletons keep their true
+ *  lat/lng, multi-member clusters get arranged on a small ring around
+ *  the cluster centroid so they don't pile onto the same pixel.
+ *
+ *  Why per-cluster ring layout instead of a Leaflet.markercluster plugin?
+ *  At Canada-zoom-out, the spread between sites in the same metro is
+ *  already small but legible (e.g. AbCellera Yukon St vs Precision
+ *  NanoSystems Vernon Dr — 4 km apart). What kills the map is
+ *  shared-building cases: MaRS has 5+ tenant facilities at one
+ *  postal address. Arranging them on a ring of ~80m radius around
+ *  the building means at zoom 14+ they fan out into clickable
+ *  individuals, while at low zoom the ring is sub-pixel and the
+ *  group reads as a single denser dot. Cheap, no extra deps.
+ *
+ *  The ring radius is in degrees lat/lng, not metres — Leaflet plots
+ *  CircleMarker at fixed coords, so we accept a small longitudinal
+ *  distortion (a degree of longitude is ~80 km at Toronto's latitude
+ *  vs 111 km at the equator) in exchange for cheap pre-computation. */
+type FacilityWithDisplay = FacilityRow & { displayLat: number; displayLng: number; clusterSize: number };
+
+function spiderfy(facilities: FacilityRow[]): FacilityWithDisplay[] {
+  // Two facilities within CLUSTER_RADIUS degrees of each other are
+  // treated as one cluster. 0.005° ≈ 550 m at Toronto's latitude — wide
+  // enough to catch same-building / same-complex cases (MaRS, NRC
+  // Royalmount, UBC) without absorbing unrelated nearby sites.
+  const CLUSTER_RADIUS = 0.005;
+  // Ring radius for spiderfied positions. 0.0008° ≈ 88 m: at zoom 14
+  // that's ~3 pixels (visible but tight), at zoom 17 it's ~25 pixels
+  // (fully clickable), at zoom 6 it's sub-pixel (cluster reads as a
+  // single dot — which is what we want at country scale).
+  const SPIDER_RADIUS = 0.0008;
+
+  const out: FacilityWithDisplay[] = [];
+  const assigned = new Set<string>();
+
+  for (let i = 0; i < facilities.length; i++) {
+    const anchor = facilities[i];
+    if (assigned.has(anchor.id)) continue;
+    const group: FacilityRow[] = [anchor];
+    assigned.add(anchor.id);
+    // Greedy O(N²) cluster build — N is ~120 in the wild, fine.
+    for (let j = i + 1; j < facilities.length; j++) {
+      const cand = facilities[j];
+      if (assigned.has(cand.id)) continue;
+      const dx = anchor.lat - cand.lat;
+      const dy = anchor.lng - cand.lng;
+      if (dx * dx + dy * dy <= CLUSTER_RADIUS * CLUSTER_RADIUS) {
+        group.push(cand);
+        assigned.add(cand.id);
+      }
+    }
+    if (group.length === 1) {
+      out.push({ ...anchor, displayLat: anchor.lat, displayLng: anchor.lng, clusterSize: 1 });
+      continue;
+    }
+    // Cluster centroid — places the ring at the group's centre of mass
+    // so a coordinate fix to any one member nudges the whole ring.
+    let cLat = 0, cLng = 0;
+    for (const m of group) { cLat += m.lat; cLng += m.lng; }
+    cLat /= group.length; cLng /= group.length;
+    // Arrange members on the ring starting at the top (12 o'clock),
+    // sweeping clockwise. Sort by id first so the layout is stable
+    // across renders even if the input order shuffles.
+    const ordered = [...group].sort((a, b) => a.id.localeCompare(b.id));
+    for (let k = 0; k < ordered.length; k++) {
+      const angle = (k / ordered.length) * Math.PI * 2 - Math.PI / 2;
+      out.push({
+        ...ordered[k],
+        displayLat: cLat + Math.cos(angle) * SPIDER_RADIUS,
+        displayLng: cLng + Math.sin(angle) * SPIDER_RADIUS,
+        clusterSize: ordered.length,
+      });
+    }
+  }
+  return out;
+}
+
 function MapInner({
   Lib, facilities, onSelect,
 }: {
@@ -203,7 +281,7 @@ function MapInner({
   facilities: FacilityRow[];
   onSelect: (f: FacilityRow | null) => void;
 }) {
-  const { MapContainer, TileLayer, CircleMarker, Popup, useMapEvents } = Lib;
+  const { MapContainer, TileLayer, CircleMarker, Popup, Polyline, useMap, useMapEvents } = Lib;
   // Track zoom so we can scale marker radius. Higher zoom = more
   // detail = larger markers; lower zoom = compact dots.
   const [zoom, setZoom] = useState(5);
@@ -215,6 +293,54 @@ function MapInner({
     return null;
   }
 
+  // Imperative "fly to" handle — populated by a small effect-only
+  // child component that has access to the Leaflet map instance.
+  const flyToRef = useRef<((lat: number, lng: number, zoom: number) => void) | null>(null);
+  function MapBinder() {
+    const map = useMap();
+    useEffect(() => {
+      flyToRef.current = (lat, lng, z) => map.flyTo([lat, lng], z, { duration: 0.6 });
+      return () => { flyToRef.current = null; };
+    }, [map]);
+    return null;
+  }
+
+  // Spiderfy clustered markers. Memoised on the facilities array
+  // identity so we don't recompute every render — only when the
+  // visible-facilities set changes (e.g. when the province filter
+  // flips).
+  const positioned = useMemo(() => spiderfy(facilities), [facilities]);
+
+  // For each cluster, also derive a "leg" line from the centroid out
+  // to each spiderfied member. Only drawn when zoomed in (≥13) — at
+  // lower zoom the ring is too small for the legs to read.
+  const clusterLegs = useMemo(() => {
+    if (zoom < 13) return [] as Array<{ from: [number, number]; to: [number, number]; id: string }>;
+    const legs: Array<{ from: [number, number]; to: [number, number]; id: string }> = [];
+    // Re-derive centroid from spiderfied positions: the displayLat/Lng
+    // of cluster members average back to the cluster centroid because
+    // they were placed on a symmetric ring.
+    const byClusterKey = new Map<string, FacilityWithDisplay[]>();
+    for (const f of positioned) {
+      if (f.clusterSize === 1) continue;
+      // Round-key by display centroid so all members of a cluster share a key.
+      // We reuse the average of all members to derive the key inside the loop below.
+      const k = `${f.clusterSize}:${Math.round(f.displayLat * 10000) % 10000}`; // weak grouping ok for small N
+      const cur = byClusterKey.get(k) ?? [];
+      cur.push(f);
+      byClusterKey.set(k, cur);
+    }
+    for (const members of byClusterKey.values()) {
+      let cLat = 0, cLng = 0;
+      for (const m of members) { cLat += m.displayLat; cLng += m.displayLng; }
+      cLat /= members.length; cLng /= members.length;
+      for (const m of members) {
+        legs.push({ from: [cLat, cLng], to: [m.displayLat, m.displayLng], id: m.id });
+      }
+    }
+    return legs;
+  }, [positioned, zoom]);
+
   // Default view — Canada-wide.
   const center: [number, number] = [55.0, -97.0];
 
@@ -223,23 +349,43 @@ function MapInner({
       center={center}
       zoom={4}
       minZoom={3}
-      maxZoom={14}
+      // OSM tiles go to zoom 19; capping at 18 keeps one level of headroom
+      // for tile-server safety and gives plenty of street-level detail.
+      // The earlier cap of 14 was too tight — at zoom 14 a single pixel
+      // covers ~10 m, which makes shared-building MaRS-style clusters
+      // unreadable even after spiderfying.
+      maxZoom={18}
       scrollWheelZoom
       style={{ height: "100%", width: "100%" }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxZoom={19}
       />
       <ZoomTracker />
-      {facilities.map((f) => {
+      <MapBinder />
+      {/* Cluster connector lines — only at higher zoom */}
+      {clusterLegs.map((leg) => (
+        <Polyline
+          key={`leg-${leg.id}`}
+          positions={[leg.from, leg.to]}
+          pathOptions={{
+            color: "#6b7280",
+            weight: 1,
+            opacity: 0.45,
+            dashArray: "2,3",
+          }}
+        />
+      ))}
+      {positioned.map((f) => {
         const accent = statusAccent(f.status);
-        // Radius scales with zoom — 5 at zoom 4, up to 11 at zoom 12.
+        // Radius scales with zoom — 5 at zoom 4, up to 11 at zoom 12+.
         const radius = Math.max(5, Math.min(11, 4 + (zoom - 3)));
         return (
           <CircleMarker
             key={f.id}
-            center={[f.lat, f.lng]}
+            center={[f.displayLat, f.displayLng]}
             radius={radius}
             pathOptions={{
               color: "white",
@@ -248,11 +394,21 @@ function MapInner({
               fillOpacity: 0.85,
             }}
             eventHandlers={{
-              click: () => onSelect(f),
+              click: () => {
+                onSelect(f);
+                // If this facility belongs to a multi-member cluster and
+                // the user is zoomed out enough that the ring is
+                // sub-pixel, auto-fly closer so the cluster expands into
+                // individually clickable dots. The selected marker
+                // stays under the cursor.
+                if (f.clusterSize > 1 && zoom < 14 && flyToRef.current) {
+                  flyToRef.current(f.displayLat, f.displayLng, 15);
+                }
+              },
             }}
           >
             <Popup>
-              <FacilityPopupContent facility={f} accent={accent} />
+              <FacilityPopupContent facility={f} accent={accent} clusterSize={f.clusterSize} />
             </Popup>
           </CircleMarker>
         );
@@ -266,10 +422,11 @@ function MapInner({
 // ──────────────────────────────────────────────────────────────────
 
 function FacilityPopupContent({
-  facility, accent,
+  facility, accent, clusterSize = 1,
 }: {
   facility: FacilityRow;
   accent: string;
+  clusterSize?: number;
 }) {
   return (
     <div className="space-y-1.5" style={{ minWidth: 220, maxWidth: 280 }}>
@@ -283,6 +440,11 @@ function FacilityPopupContent({
       {(facility.city || facility.province) && (
         <p className="text-[11.5px] text-fg-muted m-0">
           {[facility.city, facility.province].filter(Boolean).join(", ")}
+        </p>
+      )}
+      {clusterSize > 1 && (
+        <p className="text-[10.5px] text-fg-subtle italic m-0">
+          1 of {clusterSize} facilities sharing this location — zoom in to see the rest.
         </p>
       )}
       {facility.specialization && (
