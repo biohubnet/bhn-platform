@@ -21,7 +21,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Building2, Factory, ExternalLink, MapPin, RefreshCcw, X, Filter, Navigation, Globe2 } from "lucide-react";
+import { Building2, ExternalLink, MapPin, RefreshCcw, X, Filter, Navigation, Globe2 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 
 interface FacilityRow {
@@ -416,7 +416,7 @@ function MapInner({
   onSelect: (f: FacilityRow | null) => void;
   onMapReady?: (map: unknown) => void;
 }) {
-  const { MapContainer, TileLayer, CircleMarker, Popup, Marker, Polyline, useMap, useMapEvents } = Lib;
+  const { MapContainer, TileLayer, CircleMarker, Marker, Polyline, useMap, useMapEvents } = Lib;
 
   // Leaflet's full namespace — dynamic-imported to dodge SSR's "window
   // is not defined" trap. We need `L.divIcon` for rendering label HTML
@@ -694,11 +694,7 @@ function MapInner({
             eventHandlers={{
               click: () => onSelect(f),
             }}
-          >
-            <Popup>
-              <FacilityPopupContent facility={f} accent={accent} clusterSize={f.clusterSize} />
-            </Popup>
-          </CircleMarker>
+          />
         );
       })}
       {/* Label markers — DivIcon HTML rendered in the marker pane (z
@@ -729,54 +725,11 @@ function MapInner({
   );
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Popup content — what shows up inside the Leaflet popup.
-// ──────────────────────────────────────────────────────────────────
-
-function FacilityPopupContent({
-  facility, accent, clusterSize = 1,
-}: {
-  facility: FacilityRow;
-  accent: string;
-  clusterSize?: number;
-}) {
-  return (
-    <div className="space-y-1.5" style={{ minWidth: 220, maxWidth: 280 }}>
-      <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold inline-flex items-center gap-1.5" style={{ color: accent }}>
-        <Factory size={10} />
-        {facility.status ?? "Facility"}
-      </p>
-      <p className="text-[14px] font-semibold text-fg leading-tight m-0">
-        {facility.name}
-      </p>
-      {(facility.city || facility.province) && (
-        <p className="text-[11.5px] text-fg-muted m-0">
-          {[facility.city, facility.province].filter(Boolean).join(", ")}
-        </p>
-      )}
-      {clusterSize > 1 && (
-        <p className="text-[10.5px] text-fg-subtle italic m-0">
-          1 of {clusterSize} facilities sharing this location — zoom in to see the rest.
-        </p>
-      )}
-      {facility.specialization && (
-        <p className="text-[11.5px] text-fg-muted leading-snug m-0">
-          {facility.specialization}
-        </p>
-      )}
-      {facility.url && (
-        <a
-          href={facility.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-brand-700 hover:underline"
-        >
-          Visit site <ExternalLink size={10} />
-        </a>
-      )}
-    </div>
-  );
-}
+// (FacilityPopupContent removed — clicking a dot now opens the
+// FacilityDetailPanel below the map directly, no in-map Leaflet
+// popup. Leaflet's document-level "close popup on outside click"
+// handler was eating the user's next click on sidebar / region
+// chips, which made the page feel half-frozen after every dot tap.)
 
 // ──────────────────────────────────────────────────────────────────
 // Detail panel — the stable below-map surface (so users don't lose
