@@ -44,8 +44,8 @@ export default async function CareerPathsPathwaysPage() {
             <GraduationCap size={11} /> Career paths · By learning pathway
           </>
         }
-        title="Follow your BHN pathway, year by year."
-        description="The seven BHN learning pathways mapped to careers. Each row is one pathway — Aseptic Cell Culture, CAR-T Manufacturing, Biologics Manufacturing, QA/QC Microbiology, QA/QC Analytics, Regulatory Affairs, Medical Affairs — with the five career stations (Junior → VP) that the training feeds into. Cross-links show common pivots between pathways at senior levels."
+        title="Follow your BHN stream, year by year."
+        description="The seven BHN learning-pathway streams mapped to careers. Each row is one stream — Biomanufacturing (Aseptic / CAR-T / Biologics), QA/QC (Microbiology / Analytics), Regulatory Affairs, Medical Affairs, Entrepreneurship, plus R&D and Clinical Trials (both in development) — with the five career stations (Junior → VP) that the training feeds into. Cross-links show common pivots between streams at senior levels."
       />
       <div className="flex justify-end">
         <Link

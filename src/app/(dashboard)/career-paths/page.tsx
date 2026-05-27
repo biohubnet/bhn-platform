@@ -78,13 +78,13 @@ export default async function CareerPathsLandingPage() {
           href="/career-paths/pathways"
           icon={<GraduationCap size={20} />}
           accent="#7c3aed"
-          eyebrow="By learning pathway"
-          title="Seven BHN pathways"
-          description="Aseptic Cell Culture Basics · CAR-T Cell Manufacturing · Biologics Manufacturing · QA/QC Microbiology · QA/QC Analytics · Regulatory Affairs · Medical Affairs."
-          tagline="Shaped like the training BHN runs. Best if you've picked your pathway and want to know what's downstream."
+          eyebrow="By learning-pathway stream"
+          title="Seven BHN streams"
+          description="Biomanufacturing · Quality Assurance / Quality Control · Regulatory Affairs · Medical Affairs · Entrepreneurship · R&D · Clinical Trials. R&D and Clinical Trials are still in development on BHN's side; the career ladder still maps."
+          tagline="Shaped like BHN's announced learning-pathway streams. Best if you've picked a stream and want to know what's downstream."
           rowCount={BHN_PATHWAYS.length}
-          chips={BHN_PATHWAYS.slice(0, 7).map((p) => ({
-            label: p.title.replace(/ for Advanced Therapies/, "").replace(/ for Biologics/, "").replace(/ Basics/, "").replace(/ Cell Manufacturing/, ""),
+          chips={BHN_PATHWAYS.map((p) => ({
+            label: p.title.replace("Quality Assurance / Quality Control", "QA/QC").replace("Research & Development", "R&D"),
             Icon: GraduationCap,
           }))}
         />

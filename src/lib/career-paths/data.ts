@@ -120,6 +120,27 @@ export interface CareerTrack {
    *  4-colour palette the platform's recent redesigns settled on. */
   accent: string;
   stations: CareerStation[];
+  /** Optional "in development" marker for streams whose training
+   *  content BHN hasn't shipped yet (R&D, Clinical Trials as of
+   *  May 2026). The career chart still shows the stream — career
+   *  ladders are real even if the training program isn't live — but
+   *  the chart head renders a yellow "In development" chip so users
+   *  know the BHN training isn't bookable for that one yet. Defaults
+   *  to "active" when omitted. */
+  status?: "active" | "in-development";
+  /** Optional sub-programs that sit UNDER this stream (e.g. the
+   *  Biomanufacturing stream contains Aseptic Cell Culture Basics +
+   *  CAR-T Cell Manufacturing + Biologics Manufacturing as three
+   *  separate training programs). Surfaced in the pathway header as
+   *  small chips so the user can see which trainings feed the
+   *  stream. Single-program streams (Reg Affairs, Med Affairs, etc.)
+   *  leave this empty. */
+  subPrograms?: string[];
+  /** Optional delivery partner footnote (e.g. "Delivered by CATTI +
+   *  CASTL", "Delivered by Seneca Polytechnic"). Drawn from the
+   *  BHN learning-pathway announcement; rendered as small italic
+   *  text in the stream header. */
+  deliveredBy?: string;
 }
 
 // ── Helpers — keep the inline data terse ──────────────────────────

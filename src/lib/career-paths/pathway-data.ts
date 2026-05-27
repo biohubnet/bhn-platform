@@ -2,229 +2,75 @@
  * BHN learning-pathway career data — the spine of
  * /career-paths/pathways.
  *
- * Where /career-paths/tracks is organised by JOB FUNCTION (Bioprocess,
- * Quality, CGT, Clinical, Business, Project Leadership), this file
- * mirrors BHN's seven announced LEARNING PATHWAYS:
- *
- *   1. Aseptic Cell Culture Basics
- *   2. CAR-T Cell Manufacturing
- *   3. Biologics Manufacturing
- *   4. QA/QC Microbiology for Advanced Therapies
- *   5. QA/QC Analytics for Biologics
- *   6. Regulatory Affairs
- *   7. Medical Affairs
- *
+ * Mirrors BHN's seven announced LEARNING-PATHWAY STREAMS (not the
+ * individual training programs — those sit UNDER the streams).
  * Source: https://biohubnet.ca/learning-pathway-announcement/
  *
- * Each pathway carries the same five-station spine (Junior → Mid →
- * Senior → Lead → VP) used in the tracks view, so a trainee who
- * picks a pathway can see "where this training takes me, year by
- * year". The CareerTrack/CareerStation/CrossLink interfaces are
- * reused from src/lib/career-paths/data.ts — only the data is new.
+ *   1. Biomanufacturing               (active)
+ *       └─ Aseptic Cell Culture Basics
+ *       └─ CAR-T Cell Manufacturing
+ *       └─ Biologics Manufacturing
+ *       Delivered by CATTI + CASTL, 30 hrs
  *
- * Cross-links here connect PATHWAYS to OTHER PATHWAYS (e.g. CAR-T
- * Senior → Regulatory Affairs Senior, because CMC-experienced manu
- * leads frequently pivot into reg-affairs CMC roles). They use the
- * same crossLinks: CrossLink[] shape as data.ts but reference
- * pathway ids instead of track ids.
+ *   2. Quality Assurance / Quality Control  (active)
+ *       └─ QA/QC Microbiology for advanced therapies
+ *       └─ QA/QC Analytics for biologics
+ *       Delivered by CATTI + CASTL, 30 hrs
  *
- * The (in development) BHN pathways — Entrepreneurship, R&D,
- * Clinical Trials — are deliberately omitted here. Add them when
- * BHN announces them.
+ *   3. Regulatory Affairs             (active)
+ *       Delivered by Seneca Polytechnic, 30 hrs
+ *
+ *   4. Medical Affairs                (active)
+ *       Delivered by Agilis Health, 24 hrs
+ *
+ *   5. Entrepreneurship               (active)
+ *       Delivered by OBIO, 40 hrs
+ *
+ *   6. R&D                            (in development)
+ *
+ *   7. Clinical Trials                (in development)
+ *
+ * Each stream carries the same five-station spine as the
+ * /career-paths/tracks view (Junior → Mid → Senior → Lead → VP),
+ * so a trainee who picks a BHN stream can read junior-to-VP, year
+ * by year. Sub-program names + delivery partner appear in the
+ * stream header as small chips. In-development streams render
+ * with a yellow "In development" pill but still show their
+ * career stations — the underlying career ladder is real even
+ * if BHN's training program isn't shipped yet.
+ *
+ * Cross-links connect streams to other streams (e.g. Senior
+ * Biomanufacturing → Senior QA/QC; Senior Reg-Affairs → Senior
+ * Medical Affairs). They reuse the CrossLink shape from data.ts.
  */
-import type { CareerTrack, CareerStation } from "./data";
+import type { CareerTrack } from "./data";
 
-// ── 1. Aseptic Cell Culture Basics ───────────────────────────────
-const ASEPTIC: CareerTrack = {
-  id: "aseptic-cell-culture",
-  title: "Aseptic Cell Culture Basics",
-  tagline: "From cleanroom apprentice to aseptic-operations leadership.",
+// ── 1. Biomanufacturing ──────────────────────────────────────────
+const BIOMANUFACTURING: CareerTrack = {
+  id: "biomanufacturing",
+  title: "Biomanufacturing",
+  tagline: "From cleanroom floor to plant leadership.",
   description:
-    "Cell culture is one of the highest-stakes operations in biologics — one stray particle voids a multi-million-dollar batch. This pathway is the floor-to-ceiling craft of growing cells without contaminating them.",
+    "The full GMP biologics floor — upstream cell culture, downstream purification, fill-finish, plus the personalised CAR-T workflow. Three BHN training programs feed this stream.",
   iconKey: "flask",
   accent: "#0d9488",
-  stations: [
-    {
-      level: "junior",
-      label: "Aseptic Operator",
-      yearsRange: "0–2 yrs",
-      roles: ["Cell Culture Operator", "Aseptic Filling Operator", "Cleanroom Associate"],
-      focus: "Gown like a surgeon, move like a dancer. Pass aseptic qualification, run gowning audits cleanly, log every intervention without flinching.",
-      educationGaps: [
-        "Cleanroom gowning + behaviour",
-        "Aseptic technique fundamentals",
-        "Media + buffer prep",
-        "Particle / microbial contamination basics",
-      ],
-      courses: [],
-    },
-    {
-      level: "mid",
-      label: "Cell Culture Specialist",
-      yearsRange: "2–5 yrs",
-      roles: ["Cell Culture Specialist", "Aseptic Process Specialist"],
-      focus: "Own a process step end-to-end — thaw, expansion, harvest. Troubleshoot contaminations, draft SOP revisions, mentor a new operator.",
-      educationGaps: [
-        "Mammalian cell biology",
-        "Aseptic process risk assessment",
-        "Deviation investigation",
-        "SOP authoring + change control",
-      ],
-      courses: [],
-    },
-    {
-      level: "senior",
-      label: "Senior Cell Culture Scientist",
-      yearsRange: "5–10 yrs",
-      roles: ["Senior Cell Culture Scientist", "Aseptic Process Engineer"],
-      focus: "Lead campaigns. Author process characterisation reports, own CAPAs from contamination events, sign off on tech-transfer batches.",
-      educationGaps: [
-        "Process characterisation methodology",
-        "Contamination control strategy (CCS)",
-        "QbD / DoE for cell culture",
-        "Tech-transfer leadership",
-      ],
-      crossLinks: [
-        { trackId: "qa-qc-microbiology", targetLevel: "senior", when: "Senior → Senior", reason: "Sterility-event experts often jump to QC Micro leadership.", learningNeeded: ["Compendial micro methods", "Environmental monitoring strategy"] },
-        { trackId: "regulatory-affairs", targetLevel: "mid", when: "Senior → Mid", reason: "CMC reg-affairs roles love a process-knowledgeable hire.", learningNeeded: ["Regulatory CMC sections", "ICH Q-series fluency"] },
-      ],
-      courses: [],
-    },
-    {
-      level: "lead",
-      label: "Aseptic Manufacturing Lead",
-      yearsRange: "10–15 yrs",
-      roles: ["Cell Culture Manufacturing Lead", "Aseptic Operations Manager"],
-      focus: "Design the cleanroom strategy. Hire + train operators, set the contamination-control program, own regulatory inspections of the aseptic suite.",
-      educationGaps: [
-        "Cleanroom design + qualification",
-        "Inspection readiness (Annex 1)",
-        "People leadership at scale",
-        "Site investment cases",
-      ],
-      courses: [],
-    },
-    {
-      level: "vp",
-      label: "VP, Aseptic Manufacturing",
-      yearsRange: "15+ yrs",
-      roles: ["VP Manufacturing — Sterile Operations", "Head of Aseptic Operations"],
-      focus: "Network strategy. Pick the next site, the next product, the next CDMO. Answer for sterility assurance at the board level.",
-      educationGaps: [
-        "Multi-site manufacturing strategy",
-        "CDMO selection + governance",
-        "Sterility-assurance executive reporting",
-      ],
-      courses: [],
-    },
+  status: "active",
+  subPrograms: [
+    "Aseptic Cell Culture Basics",
+    "CAR-T Cell Manufacturing",
+    "Biologics Manufacturing",
   ],
-};
-
-// ── 2. CAR-T Cell Manufacturing ──────────────────────────────────
-const CAR_T: CareerTrack = {
-  id: "car-t-manufacturing",
-  title: "CAR-T Cell Manufacturing",
-  tagline: "From autologous-cell technician to ATMP programme leadership.",
-  description:
-    "The work of harvesting, engineering, and re-infusing a patient's own T-cells. Personalised manufacturing at its hardest — every batch is one patient, every batch has to work.",
-  iconKey: "dna",
-  accent: "#7c3aed",
-  stations: [
-    {
-      level: "junior",
-      label: "CAR-T Manufacturing Technician",
-      yearsRange: "0–2 yrs",
-      roles: ["CAR-T Manufacturing Technician", "Autologous Cell Therapy Operator"],
-      focus: "Run the per-patient batch. Chain of identity, chain of custody, no mix-ups. Aseptic technique under pressure — patients are waiting.",
-      educationGaps: [
-        "Aseptic + cleanroom basics",
-        "Chain-of-identity protocols",
-        "T-cell biology fundamentals",
-        "Viral-vector handling safety",
-      ],
-      courses: [],
-    },
-    {
-      level: "mid",
-      label: "CAR-T Process Engineer",
-      yearsRange: "2–5 yrs",
-      roles: ["CAR-T Process Engineer", "CGT Manufacturing Specialist"],
-      focus: "Own a unit op — activation, transduction, expansion, fill. Troubleshoot patient-specific yield problems. First-pass investigations on deviations.",
-      educationGaps: [
-        "Lentiviral / retroviral transduction",
-        "T-cell expansion kinetics",
-        "Closed-system bioreactors (G-Rex, Prodigy, etc.)",
-        "Per-patient deviation methodology",
-      ],
-      courses: [],
-    },
-    {
-      level: "senior",
-      label: "Senior CAR-T Scientist",
-      yearsRange: "5–10 yrs",
-      roles: ["Senior CAR-T Scientist", "ATMP Manufacturing Lead"],
-      focus: "Lead process development — increase yield, shorten vein-to-vein time, design the next-gen process. Author the tech-transfer package to commercial.",
-      educationGaps: [
-        "QbD / DoE for cell therapy",
-        "Process intensification for autologous workflows",
-        "Comparability + commercial readiness",
-        "Vein-to-vein logistics design",
-      ],
-      crossLinks: [
-        { trackId: "qa-qc-microbiology", targetLevel: "senior", when: "Senior → Senior", reason: "ATMP sterility experts are scarce — micro QC leadership reaches for them.", learningNeeded: ["Compendial vs rapid micro methods", "ATMP-specific environmental monitoring"] },
-        { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "CMC reg-affairs for ATMPs is a critical-skills role; experienced CGT scientists frequently move in.", learningNeeded: ["FDA / Health Canada ATMP guidance", "BLA/CTA submissions"] },
-      ],
-      courses: [],
-    },
-    {
-      level: "lead",
-      label: "CAR-T Manufacturing Director",
-      yearsRange: "10–15 yrs",
-      roles: ["CAR-T Manufacturing Director", "Director — Cell Therapy Operations"],
-      focus: "Network the manufacturing fleet — academic GMP sites, central CDMO, decentralised model. Build the inspection-ready culture across all of them.",
-      educationGaps: [
-        "Multi-site ATMP network design",
-        "Apheresis-collection logistics + COI",
-        "Regulatory submission strategy (BLA, MAA)",
-        "Programmatic leadership for autologous workflows",
-      ],
-      courses: [],
-    },
-    {
-      level: "vp",
-      label: "VP, Cell Therapy",
-      yearsRange: "15+ yrs",
-      roles: ["VP Cell Therapy Operations", "Chief Cell Therapy Officer"],
-      focus: "Programme-level decisions. Outsourced vs in-house manufacturing, comparability strategy, scale-up from clinical to commercial. Hire your replacement.",
-      educationGaps: [
-        "Cell-therapy commercial economics",
-        "Decentralised vs centralised manufacturing strategy",
-        "Executive-level regulatory negotiation",
-      ],
-      courses: [],
-    },
-  ],
-};
-
-// ── 3. Biologics Manufacturing ───────────────────────────────────
-const BIOLOGICS: CareerTrack = {
-  id: "biologics-manufacturing",
-  title: "Biologics Manufacturing",
-  tagline: "From floor associate to plant leadership.",
-  description:
-    "The factory floor of biologics — recombinant proteins, monoclonal antibodies, vaccines. Upstream cell culture, downstream purification, fill-finish, the full cGMP machine.",
-  iconKey: "flask",
-  accent: "#0ea5e9",
+  deliveredBy: "CATTI + CASTL · 30 hrs",
   stations: [
     {
       level: "junior",
       label: "Manufacturing Associate",
       yearsRange: "0–2 yrs",
-      roles: ["Manufacturing Associate", "Bioprocess Technician", "Downstream Operator"],
-      focus: "Learn the protocols. GMP basics, batch records, gowning, deviation logging. Reliability + curiosity, not heroics.",
+      roles: ["Manufacturing Associate", "Cell Culture Operator", "Aseptic Filling Operator", "CAR-T Manufacturing Technician"],
+      focus: "Learn the protocols. Pass aseptic qualification, run batch records cleanly, log deviations honestly. Reliability + curiosity, not heroics.",
       educationGaps: [
         "GMP basics + regulatory vocabulary",
-        "Aseptic technique fundamentals",
+        "Aseptic technique + cleanroom behaviour",
         "Batch-record discipline",
         "Microbiology awareness",
       ],
@@ -234,11 +80,11 @@ const BIOLOGICS: CareerTrack = {
       level: "mid",
       label: "Process Specialist",
       yearsRange: "2–5 yrs",
-      roles: ["Senior Manufacturing Associate", "Downstream Specialist", "Upstream Specialist"],
-      focus: "Own a unit op — bioreactor train, chromatography, viral inactivation, UF/DF. Troubleshoot deviations, draft SOP revisions, run training shadow-shifts.",
+      roles: ["Senior Manufacturing Associate", "Cell Culture Specialist", "CAR-T Process Engineer", "Downstream Specialist"],
+      focus: "Own a unit op — bioreactor train, chromatography, CAR-T expansion, fill-finish. Troubleshoot deviations, draft SOP revisions, mentor a new operator.",
       educationGaps: [
         "Unit-op depth (chosen specialty)",
-        "Deviation investigation methodology",
+        "Deviation + OOS investigation",
         "SOP authoring + change control",
         "Tech-transfer fundamentals",
       ],
@@ -246,223 +92,145 @@ const BIOLOGICS: CareerTrack = {
     },
     {
       level: "senior",
-      label: "Process Engineer",
+      label: "Process Engineer / Scientist",
       yearsRange: "5–10 yrs",
-      roles: ["Senior Process Engineer", "Manufacturing Supervisor", "Tech-Transfer Lead"],
-      focus: "Lead campaigns + tech-transfers. Write process characterisation reports, own CAPAs, set production schedules, mentor associates.",
+      roles: ["Senior Process Engineer", "Senior CAR-T Scientist", "Manufacturing Supervisor", "Tech-Transfer Lead"],
+      focus: "Lead campaigns + tech-transfers. Author process characterisation reports, own CAPAs, set production schedules, sign off on commercial release lots.",
       educationGaps: [
         "Tech-transfer ownership end-to-end",
         "Process characterisation methodology",
-        "CAPA leadership + RCA discipline",
-        "Technical report writing",
+        "Contamination control strategy (Annex 1)",
+        "QbD / DoE for biologics + cell therapy",
       ],
       crossLinks: [
-        { trackId: "qa-qc-analytics", targetLevel: "senior", when: "Senior → Senior", reason: "Manufacturing engineers with analytical depth often pivot into QC ownership.", learningNeeded: ["Compendial analytics (HPLC, MS, CE)", "Method validation"] },
-        { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Manufacturing experience is the strongest single qualifier for CMC reg-affairs.", learningNeeded: ["ICH Q-series", "CMC sections of BLA/MAA"] },
+        { trackId: "qa-qc", targetLevel: "senior", when: "Senior → Senior", reason: "Manufacturing engineers with method-validation depth often pivot into QC leadership.", learningNeeded: ["Compendial micro + analytics", "Method validation (ICH Q2)"] },
+        { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Manufacturing experience is the strongest single qualifier for CMC reg-affairs.", learningNeeded: ["ICH Q-series fluency", "CMC sections of BLA/MAA"] },
       ],
       courses: [],
     },
     {
       level: "lead",
-      label: "Manufacturing Manager",
+      label: "Manufacturing Director",
       yearsRange: "10–15 yrs",
-      roles: ["Manufacturing Manager", "Site Operations Lead"],
-      focus: "Run a building. Hire + develop the team, own inspections, manage the operating budget. The day-to-day is people + delivery, not process science.",
+      roles: ["Manufacturing Director", "Site Operations Lead", "CAR-T Manufacturing Director"],
+      focus: "Run a building (or the cell-therapy network). Hire + develop the team, own inspections, manage the budget, sign off on capital plans.",
       educationGaps: [
         "People leadership at scale",
-        "Operations budgeting",
+        "Operations budgeting + capital planning",
         "Inspection readiness",
-        "Capital planning",
+        "Multi-site / decentralised network design",
       ],
       courses: [],
     },
     {
       level: "vp",
-      label: "VP, Biomanufacturing",
+      label: "VP, Manufacturing",
       yearsRange: "15+ yrs",
-      roles: ["VP Biomanufacturing", "Site Head", "Chief Operating Officer"],
-      focus: "Network strategy — which sites, which products, which CDMO partners. Capital deployment, M&A integration, board-level reporting.",
+      roles: ["VP Biomanufacturing", "Site Head", "Chief Operating Officer", "VP Cell Therapy Operations"],
+      focus: "Network strategy. Which sites, which products, which CDMOs. Capital deployment, M&A integration, board-level reporting on sterility assurance and supply.",
       educationGaps: [
         "Multi-site manufacturing strategy",
         "CDMO selection + governance",
         "M&A operational diligence",
+        "Cell-therapy commercial economics",
       ],
       courses: [],
     },
   ],
 };
 
-// ── 4. QA/QC Microbiology for Advanced Therapies ─────────────────
-const QA_QC_MICRO: CareerTrack = {
-  id: "qa-qc-microbiology",
-  title: "QA/QC Microbiology for Advanced Therapies",
-  tagline: "From sample-running to head of QC micro.",
+// ── 2. Quality Assurance / Quality Control ───────────────────────
+const QA_QC: CareerTrack = {
+  id: "qa-qc",
+  title: "Quality Assurance / Quality Control",
+  tagline: "From bench analyst to head of quality.",
   description:
-    "The microbial sentry of biologics + ATMPs. Sterility, endotoxin, environmental monitoring, mycoplasma, adventitious agents. The person who decides if a batch ships.",
+    "The data the regulator reads when they decide whether to approve. Identity, purity, potency, sterility — analytics on biologics + microbiology on advanced therapies. Two BHN training programs feed this stream.",
   iconKey: "shield",
   accent: "#f59e0b",
+  status: "active",
+  subPrograms: [
+    "QA/QC Microbiology for Advanced Therapies",
+    "QA/QC Analytics for Biologics",
+  ],
+  deliveredBy: "CATTI + CASTL · 30 hrs",
   stations: [
     {
       level: "junior",
-      label: "QC Microbiology Technician",
+      label: "QC Technician",
       yearsRange: "0–2 yrs",
-      roles: ["QC Microbiology Technician", "EM Sampler", "QC Associate — Micro"],
-      focus: "Run the routine — environmental monitoring, sterility, bioburden, endotoxin. Plate accurately, log honestly, escalate excursions promptly.",
+      roles: ["QC Analyst I", "QC Microbiology Technician", "EM Sampler"],
+      focus: "Run the routine — environmental monitoring, sterility, HPLC, UV. Plate accurately, log honestly, escalate excursions promptly.",
       educationGaps: [
         "Compendial micro methods (USP, EP, JP)",
+        "Compendial analytics — HPLC, UV, ELISA basics",
         "Aseptic technique + gowning",
-        "Environmental monitoring fundamentals",
-        "Endotoxin (LAL) assay basics",
+        "LIMS data entry hygiene",
       ],
       courses: [],
     },
     {
       level: "mid",
-      label: "QC Microbiologist",
+      label: "QC Analyst / Microbiologist",
       yearsRange: "2–5 yrs",
-      roles: ["QC Microbiologist", "EM Lead", "Sterility Assurance Specialist"],
-      focus: "Own a method. Investigate excursions, lead OOS investigations, draft + execute method validations.",
+      roles: ["QC Analyst II", "QC Microbiologist", "Sterility Assurance Specialist", "Stability Lead"],
+      focus: "Own a method. Author + execute method validations, lead troubleshooting, draft OOS / excursion investigations.",
       educationGaps: [
-        "Excursion / OOS investigation methodology",
-        "Method validation (USP <1225>)",
-        "Trending + alert / action limit setting",
+        "Method validation (USP <1225>, ICH Q2)",
+        "OOS / OOT / excursion investigation methodology",
+        "Trending + alert / action limits",
         "Rapid micro methods (BacT/ALERT, Bactec)",
       ],
       courses: [],
     },
     {
       level: "senior",
-      label: "Senior QC Microbiologist",
+      label: "Senior QC Scientist",
       yearsRange: "5–10 yrs",
-      roles: ["Senior QC Microbiologist", "Sterility Assurance Lead"],
-      focus: "Own the contamination-control strategy (CCS). Author validation master plans, present to auditors, sign off on commercial release lots.",
+      roles: ["Senior QC Microbiologist", "Senior Analytical Scientist", "Sterility Assurance Lead"],
+      focus: "Own the contamination-control strategy (CCS) AND the analytical comparability package. Sign off on commercial release lots, brief auditors.",
       educationGaps: [
-        "Contamination control strategy (CCS) — Annex 1",
-        "Validation master plan authoring",
-        "Auditor / inspector liaison",
-        "ATMP-specific microbial risk assessment",
-      ],
-      crossLinks: [
-        { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Sterility-experienced micro leaders often pivot to reg-affairs CMC.", learningNeeded: ["Sterility submissions language", "Inspection / 483 response drafting"] },
-      ],
-      courses: [],
-    },
-    {
-      level: "lead",
-      label: "QC Microbiology Manager",
-      yearsRange: "10–15 yrs",
-      roles: ["QC Microbiology Manager", "Head of Sterility Assurance"],
-      focus: "Run the lab. Hire microbiologists, own the CCS across the site, lead regulatory inspections of the QC org.",
-      educationGaps: [
-        "Lab budgeting + staffing models",
-        "Multi-product CCS coordination",
-        "Inspection leadership",
-        "QC strategy roadmapping",
-      ],
-      courses: [],
-    },
-    {
-      level: "vp",
-      label: "VP, Quality Microbiology",
-      yearsRange: "15+ yrs",
-      roles: ["VP Quality", "Head of Quality Operations"],
-      focus: "Programme-level quality. Defend sterility assurance to the board, set the global QC microbiology direction, own the regulatory relationship.",
-      educationGaps: [
-        "Executive-level quality reporting",
-        "Global regulatory relationship management",
-        "Quality programme design (Annex 1, ICH Q10)",
-      ],
-      courses: [],
-    },
-  ],
-};
-
-// ── 5. QA/QC Analytics for Biologics ─────────────────────────────
-const QA_QC_ANALYTICS: CareerTrack = {
-  id: "qa-qc-analytics",
-  title: "QA/QC Analytics for Biologics",
-  tagline: "From analyst at the bench to head of analytical development.",
-  description:
-    "The chemical fingerprint of a biologic — identity, purity, potency, stability. HPLC, mass spec, CE-SDS, bioassays. The data the regulator reads when they decide whether to approve.",
-  iconKey: "shield",
-  accent: "#dc2626",
-  stations: [
-    {
-      level: "junior",
-      label: "QC Analyst I",
-      yearsRange: "0–2 yrs",
-      roles: ["QC Analyst I", "Analytical Chemistry Technician"],
-      focus: "Run the methods clean. Prepare standards, run HPLC + UV + binding assays, log results into LIMS without typos.",
-      educationGaps: [
-        "Compendial analytics — HPLC, UV, ELISA basics",
-        "Sample prep + standards",
-        "LIMS data entry hygiene",
-        "Analytical lab safety",
-      ],
-      courses: [],
-    },
-    {
-      level: "mid",
-      label: "QC Analyst II",
-      yearsRange: "2–5 yrs",
-      roles: ["QC Analyst II", "Bioanalytical Scientist", "Stability Lead"],
-      focus: "Own a method. Author + execute method validations, lead troubleshooting, draft OOS investigations for chromatography failures.",
-      educationGaps: [
-        "Method validation (USP <1225>, ICH Q2)",
-        "OOS / OOT investigation methodology",
-        "Mass-spec characterisation basics",
-        "Stability program management",
-      ],
-      courses: [],
-    },
-    {
-      level: "senior",
-      label: "Senior Analytical Scientist",
-      yearsRange: "5–10 yrs",
-      roles: ["Senior Analytical Scientist", "Analytical Development Lead"],
-      focus: "Design + transfer methods. Own the analytical comparability package for tech-transfer. Sign off on commercial release lots.",
-      educationGaps: [
+        "Contamination control strategy (Annex 1)",
         "Analytical method development (orthogonal panels)",
-        "Comparability protocols",
-        "Statistical analysis (multivariate, capability)",
+        "Validation master plan authoring",
         "Reference-standard management",
       ],
       crossLinks: [
-        { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Analytical-fluent reg-affairs hires are scarce and prized.", learningNeeded: ["ICH Q6 specifications", "CMC sections of BLA/MAA"] },
+        { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Sterility- + analytical-fluent leaders are scarce and prized in reg-affairs CMC.", learningNeeded: ["ICH Q6 specifications", "Sterility submissions language"] },
       ],
       courses: [],
     },
     {
       level: "lead",
-      label: "QC Analytics Manager",
+      label: "QC Manager",
       yearsRange: "10–15 yrs",
-      roles: ["QC Analytics Manager", "Analytical Development Director"],
-      focus: "Run the lab. Hire + develop analysts, own the analytical strategy across products, lead inspections of the analytical org.",
+      roles: ["QC Microbiology Manager", "QC Analytics Manager", "Head of Sterility Assurance"],
+      focus: "Run the lab. Hire microbiologists + analysts, own the CCS + analytical strategy, lead regulatory inspections of the QC org.",
       educationGaps: [
-        "Lab budgeting + staffing",
-        "Multi-product analytical strategy",
-        "Inspection readiness",
+        "Lab budgeting + staffing models",
+        "Multi-product CCS coordination",
         "Method-transfer governance",
+        "Inspection leadership",
       ],
       courses: [],
     },
     {
       level: "vp",
-      label: "VP, Analytical Sciences",
+      label: "VP, Quality",
       yearsRange: "15+ yrs",
-      roles: ["VP Analytical Sciences", "Head of Quality Control"],
-      focus: "Set the analytical roadmap. Decide which platforms to invest in, defend specifications at FDA / EMA pre-approval inspections.",
+      roles: ["VP Quality", "Head of Quality Operations", "VP Analytical Sciences"],
+      focus: "Programme-level quality. Defend sterility + analytical strategy to the board, set the global QC direction, own the regulatory relationship.",
       educationGaps: [
+        "Executive-level quality reporting",
+        "Global regulatory relationship management",
         "Platform investment cases",
-        "Executive-level regulatory negotiation",
-        "Global QC programme design",
       ],
       courses: [],
     },
   ],
 };
 
-// ── 6. Regulatory Affairs ────────────────────────────────────────
+// ── 3. Regulatory Affairs ────────────────────────────────────────
 const REGULATORY: CareerTrack = {
   id: "regulatory-affairs",
   title: "Regulatory Affairs",
@@ -471,10 +239,12 @@ const REGULATORY: CareerTrack = {
     "Translate the science into something a regulator approves. Pre-IND, IND, CTA, BLA, MAA — the documents that turn a molecule into a medicine.",
   iconKey: "shield",
   accent: "#0369a1",
+  status: "active",
+  deliveredBy: "Seneca Polytechnic · 30 hrs",
   stations: [
     {
       level: "junior",
-      label: "Regulatory Affairs Coordinator",
+      label: "RA Coordinator",
       yearsRange: "0–2 yrs",
       roles: ["Regulatory Affairs Coordinator", "Regulatory Specialist I"],
       focus: "Submission mechanics. Compile + format docs, run gap-analyses, track agency correspondence, learn the eCTD structure inside out.",
@@ -488,10 +258,10 @@ const REGULATORY: CareerTrack = {
     },
     {
       level: "mid",
-      label: "Regulatory Affairs Specialist",
+      label: "RA Specialist",
       yearsRange: "2–5 yrs",
       roles: ["Regulatory Affairs Specialist", "Submissions Manager"],
-      focus: "Own a section. Author CMC or non-clinical or clinical chapters, respond to agency questions, plan the next amendment.",
+      focus: "Own a section. Author CMC / non-clinical / clinical chapters, respond to agency questions, plan the next amendment.",
       educationGaps: [
         "Chapter authoring (CMC, non-clinical, or clinical)",
         "ICH guideline fluency",
@@ -513,7 +283,7 @@ const REGULATORY: CareerTrack = {
         "Lifecycle / post-market planning",
       ],
       crossLinks: [
-        { trackId: "medical-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Reg-affairs leaders who've sat in label-negotiation meetings move smoothly into medical affairs.", learningNeeded: ["Field-medical evidence generation", "MSL-style stakeholder engagement"] },
+        { trackId: "medical-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "RA leaders who've negotiated labels move smoothly into Medical Affairs leadership.", learningNeeded: ["Field-medical evidence generation", "MSL-style stakeholder engagement"] },
       ],
       courses: [],
     },
@@ -547,7 +317,7 @@ const REGULATORY: CareerTrack = {
   ],
 };
 
-// ── 7. Medical Affairs ───────────────────────────────────────────
+// ── 4. Medical Affairs ───────────────────────────────────────────
 const MEDICAL_AFFAIRS: CareerTrack = {
   id: "medical-affairs",
   title: "Medical Affairs",
@@ -556,6 +326,8 @@ const MEDICAL_AFFAIRS: CareerTrack = {
     "The bridge between a clinical asset and the doctors who'll prescribe it. MSLs, advisory boards, evidence generation, scientific platform. Field-facing + strategic at once.",
   iconKey: "stethoscope",
   accent: "#9333ea",
+  status: "active",
+  deliveredBy: "Agilis Health · 24 hrs",
   stations: [
     {
       level: "junior",
@@ -581,7 +353,7 @@ const MEDICAL_AFFAIRS: CareerTrack = {
         "KOL engagement frameworks",
         "Advisory board facilitation",
         "Field insight reporting + analytics",
-        "Therapeutic-area depth (your TA)",
+        "Therapeutic-area depth",
       ],
       courses: [],
     },
@@ -598,7 +370,7 @@ const MEDICAL_AFFAIRS: CareerTrack = {
         "Evidence-generation strategy",
       ],
       crossLinks: [
-        { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Senior MSLs with label-negotiation exposure are credible reg-affairs hires.", learningNeeded: ["Label / promotional review", "Variation strategy"] },
+        { trackId: "clinical-trials", targetLevel: "lead", when: "Senior → Lead", reason: "Senior MSLs with trial-design fluency are credible clinical-operations leaders.", learningNeeded: ["Phase 2/3 design", "Protocol authoring + amendments"] },
       ],
       courses: [],
     },
@@ -632,10 +404,277 @@ const MEDICAL_AFFAIRS: CareerTrack = {
   ],
 };
 
+// ── 5. Entrepreneurship ──────────────────────────────────────────
+const ENTREPRENEURSHIP: CareerTrack = {
+  id: "entrepreneurship",
+  title: "Entrepreneurship",
+  tagline: "From scientific founder to operator-VC bridge.",
+  description:
+    "Turning a discovery into a company. Intellectual property, financing, product strategy, the pitch. Less of a ladder than the other streams — founder-track careers branch wider — but the same five-station spine still maps.",
+  iconKey: "briefcase",
+  accent: "#dc2626",
+  status: "active",
+  deliveredBy: "OBIO · 40 hrs",
+  stations: [
+    {
+      level: "junior",
+      label: "Co-founder / Builder",
+      yearsRange: "0–2 yrs",
+      roles: ["Scientific Co-founder", "Founding Engineer / Scientist", "Early-stage Operator"],
+      focus: "Get the company off the ground — incorporate, IP-protect, write the first pitch deck, find the first cheque. The job is honest experiments + a clear narrative.",
+      educationGaps: [
+        "Intellectual property basics (provisional, PCT)",
+        "Pre-seed financing instruments (SAFE, convertible)",
+        "Co-founder agreements + cap-table fundamentals",
+        "Lean experimentation + customer discovery",
+      ],
+      courses: [],
+    },
+    {
+      level: "mid",
+      label: "Operator",
+      yearsRange: "2–5 yrs",
+      roles: ["Founder — Head of R&D", "Head of Operations (early-stage)", "VP Product (seed → Series A)"],
+      focus: "Build the team + product. Hire engineers + scientists, manage the first burn-rate, run the seed → A milestones. The pitch becomes a board meeting.",
+      educationGaps: [
+        "Hiring + early-stage org design",
+        "Seed → Series A milestone setting",
+        "Financial modelling + runway management",
+        "Board meeting authoring + governance basics",
+      ],
+      courses: [],
+    },
+    {
+      level: "senior",
+      label: "Head of Strategy / Ops",
+      yearsRange: "5–10 yrs",
+      roles: ["Co-founder / Head of Strategy", "VP Operations", "Founding Commercial Lead"],
+      focus: "Series A → B. Hit clinical or product milestones, professionalise the org, defend the company to the next round of investors.",
+      educationGaps: [
+        "Series A → B operational readiness",
+        "Term-sheet negotiation",
+        "Org-design at 30–80 employees",
+        "Partnership / BD strategy",
+      ],
+      crossLinks: [
+        { trackId: "regulatory-affairs", targetLevel: "lead", when: "Senior → Lead", reason: "Founders who own the FDA / Health Canada interaction become strong RA leaders.", learningNeeded: ["IND / CTA strategy", "Agency meeting facilitation"] },
+      ],
+      courses: [],
+    },
+    {
+      level: "lead",
+      label: "CEO",
+      yearsRange: "10–15 yrs",
+      roles: ["Chief Executive Officer", "President & Founder"],
+      focus: "Run the company. Set strategy, raise growth rounds, prepare for IPO or acquisition. The job is signal + decisions, not heroics.",
+      educationGaps: [
+        "Growth financing (Series C / pre-IPO)",
+        "Executive recruiting + board composition",
+        "M&A negotiation",
+        "Investor narrative + earnings discipline",
+      ],
+      courses: [],
+    },
+    {
+      level: "vp",
+      label: "Serial Founder / Operator-VC",
+      yearsRange: "15+ yrs",
+      roles: ["Serial Biotech Founder", "Operating Partner — Life-Sciences VC", "Investor / Board Director"],
+      focus: "Build the next one, or back the next ten. Operator-VC roles, board portfolios, repeat-founder syndromes. The hard-won pattern-recognition becomes the asset.",
+      educationGaps: [
+        "Portfolio thinking — across companies",
+        "Board governance at scale",
+        "Long-form investment thesis writing",
+      ],
+      courses: [],
+    },
+  ],
+};
+
+// ── 6. R&D — in development ──────────────────────────────────────
+const RD: CareerTrack = {
+  id: "rd",
+  title: "Research & Development",
+  tagline: "From bench scientist to chief scientific officer.",
+  description:
+    "Discovery + early development — target ID, lead optimisation, IND-enabling studies. The career exists today even though BHN's training pathway for it is still in development; the ladder below reflects the working world.",
+  iconKey: "dna",
+  accent: "#7c3aed",
+  status: "in-development",
+  stations: [
+    {
+      level: "junior",
+      label: "Research Associate",
+      yearsRange: "0–2 yrs",
+      roles: ["Research Associate", "Discovery Scientist I", "Lab Technician — R&D"],
+      focus: "Run the experiments cleanly. Bench technique, lab-notebook discipline, learn the platform inside out (small molecule, antibody, mRNA, CRISPR — whichever).",
+      educationGaps: [
+        "Discovery platform fluency (SM / mAb / mRNA / cell)",
+        "Lab-notebook + ELN discipline",
+        "Statistical analysis basics",
+        "Literature reading + critique",
+      ],
+      courses: [],
+    },
+    {
+      level: "mid",
+      label: "Scientist",
+      yearsRange: "2–5 yrs",
+      roles: ["Scientist", "Senior Discovery Scientist", "Research Investigator"],
+      focus: "Drive a workstream. Design + run a screen, generate the first IP, present at internal review.",
+      educationGaps: [
+        "Experimental design + screen architecture",
+        "Patent-quality data generation",
+        "Scientific presentation",
+        "Cross-functional collaboration (DMPK, safety, CMC)",
+      ],
+      courses: [],
+    },
+    {
+      level: "senior",
+      label: "Senior Scientist",
+      yearsRange: "5–10 yrs",
+      roles: ["Senior Scientist", "Principal Investigator", "Group Leader — Discovery"],
+      focus: "Lead a programme. Set the lab strategy, hire + mentor scientists, defend the discovery story at portfolio review, prep IND-enabling.",
+      educationGaps: [
+        "Programme leadership",
+        "IND-enabling study design",
+        "Portfolio prioritisation",
+        "Translational biology / clinical bridge",
+      ],
+      crossLinks: [
+        { trackId: "clinical-trials", targetLevel: "senior", when: "Senior → Senior", reason: "Senior scientists who've taken an asset through IND-enabling are credible clinical-development leaders.", learningNeeded: ["Phase 1 design", "First-in-human safety strategy"] },
+        { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "PIs with IND experience cross to RA CMC + non-clinical roles.", learningNeeded: ["ICH M3", "Non-clinical sections of IND"] },
+      ],
+      courses: [],
+    },
+    {
+      level: "lead",
+      label: "Director — R&D",
+      yearsRange: "10–15 yrs",
+      roles: ["Director — Research", "Head of Discovery", "Therapeutic Area Lead — R&D"],
+      focus: "Own a therapeutic area or platform. Set the discovery portfolio, manage budgets + headcount, sign off on candidate selection.",
+      educationGaps: [
+        "TA portfolio strategy",
+        "R&D budgeting + headcount planning",
+        "Candidate selection criteria",
+        "External innovation / licensing strategy",
+      ],
+      courses: [],
+    },
+    {
+      level: "vp",
+      label: "Chief Scientific Officer",
+      yearsRange: "15+ yrs",
+      roles: ["VP Research", "Chief Scientific Officer", "Chief Technology Officer"],
+      focus: "Set the company's scientific direction. Pick platforms, defend the discovery engine to the board, recruit the next generation of leaders.",
+      educationGaps: [
+        "Scientific strategy at board level",
+        "Platform investment cases",
+        "Scientific advisory board composition",
+      ],
+      courses: [],
+    },
+  ],
+};
+
+// ── 7. Clinical Trials — in development ──────────────────────────
+const CLINICAL_TRIALS: CareerTrack = {
+  id: "clinical-trials",
+  title: "Clinical Trials",
+  tagline: "From study coordinator to chief medical officer.",
+  description:
+    "Designing + running the studies that prove a drug works. CRC, CRA, study lead, programme lead. As with R&D, the BHN training is still being built but the career below is fully real.",
+  iconKey: "stethoscope",
+  accent: "#0ea5e9",
+  status: "in-development",
+  stations: [
+    {
+      level: "junior",
+      label: "Clinical Research Coordinator",
+      yearsRange: "0–2 yrs",
+      roles: ["Clinical Research Coordinator", "Study Coordinator", "Clinical Trial Associate"],
+      focus: "Run the site visits. Manage patient schedules, source documents, IRB submissions, regulatory binders. The job is meticulous coordination.",
+      educationGaps: [
+        "GCP fundamentals (ICH E6)",
+        "Source documentation discipline",
+        "IRB / ethics submission workflow",
+        "Patient-facing communication",
+      ],
+      courses: [],
+    },
+    {
+      level: "mid",
+      label: "Clinical Research Associate",
+      yearsRange: "2–5 yrs",
+      roles: ["Clinical Research Associate (CRA)", "Lead Study Coordinator", "Clinical Trial Manager I"],
+      focus: "Own a site (or a few). Monitor enrollment, query resolution, source-document verification, protocol-deviation triage.",
+      educationGaps: [
+        "Risk-based monitoring",
+        "Query / SDV efficiency",
+        "Site-relationship management",
+        "Protocol-deviation classification",
+      ],
+      courses: [],
+    },
+    {
+      level: "senior",
+      label: "Clinical Trial Manager",
+      yearsRange: "5–10 yrs",
+      roles: ["Senior CRA", "Clinical Trial Manager", "Clinical Operations Lead"],
+      focus: "Run a study. Own the timeline + budget, manage the CRO relationship, lead the data-cleaning push to database lock.",
+      educationGaps: [
+        "Study budget + vendor management",
+        "CRO oversight + governance",
+        "Database lock + data-cleaning operations",
+        "Cross-functional study leadership",
+      ],
+      crossLinks: [
+        { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "CTM-fluent staff with IND / CTA experience cross to RA clinical-strategy roles.", learningNeeded: ["Clinical sections of IND / CTA", "End-of-Phase-2 meeting prep"] },
+        { trackId: "medical-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Clinical leads with KOL exposure pivot into Medical Affairs at the same level.", learningNeeded: ["MSL-style engagement", "Advisory board facilitation"] },
+      ],
+      courses: [],
+    },
+    {
+      level: "lead",
+      label: "Director — Clinical Operations",
+      yearsRange: "10–15 yrs",
+      roles: ["Director — Clinical Operations", "Head of Clinical Development", "Senior Clinical Programme Lead"],
+      focus: "Own a programme — Phase 1 to NDA. Set the clinical strategy, hire the team, defend the design to the steering committee + agencies.",
+      educationGaps: [
+        "Phase 2 / 3 design",
+        "Programme-level budgeting + timeline",
+        "Agency meeting strategy (EoP2, pre-NDA)",
+        "Risk-based programme governance",
+      ],
+      courses: [],
+    },
+    {
+      level: "vp",
+      label: "VP Clinical Development / CMO",
+      yearsRange: "15+ yrs",
+      roles: ["VP Clinical Development", "Chief Medical Officer"],
+      focus: "Defend the clinical strategy at board level. Recruit the chief medical office, set the trial portfolio, own the safety + efficacy narrative to investors + regulators.",
+      educationGaps: [
+        "Board-level clinical reporting",
+        "Multi-asset portfolio governance",
+        "Safety / efficacy narrative + investor comms",
+      ],
+      courses: [],
+    },
+  ],
+};
+
 // ── Export ───────────────────────────────────────────────────────
 
 export const BHN_PATHWAYS: CareerTrack[] = [
-  ASEPTIC, CAR_T, BIOLOGICS, QA_QC_MICRO, QA_QC_ANALYTICS, REGULATORY, MEDICAL_AFFAIRS,
+  BIOMANUFACTURING,
+  QA_QC,
+  REGULATORY,
+  MEDICAL_AFFAIRS,
+  ENTREPRENEURSHIP,
+  RD,
+  CLINICAL_TRIALS,
 ];
 
 export const PATHWAY_BY_ID = new Map(BHN_PATHWAYS.map((p) => [p.id, p] as const));

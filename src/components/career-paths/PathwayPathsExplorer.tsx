@@ -388,12 +388,46 @@ function TrackHeadersRow({
                 <div className="flex items-start gap-2 pr-5">
                   <Icon className="h-4 w-4 shrink-0 mt-0.5" style={{ color: track.accent }} />
                   <div className="min-w-0">
-                    <p className="text-[12.5px] font-semibold text-fg leading-tight">
-                      {track.title}
-                    </p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-[12.5px] font-semibold text-fg leading-tight">
+                        {track.title}
+                      </p>
+                      {track.status === "in-development" && (
+                        <span className="inline-flex items-center text-[9px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-900 ring-1 ring-inset ring-amber-200">
+                          In dev
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10.5px] text-fg-muted leading-snug mt-0.5 line-clamp-2">
                       {track.tagline}
                     </p>
+                    {/* Sub-programs (Biomanufacturing has 3, QA/QC has 2,
+                        single-program streams skip this). Rendered as
+                        small chips so users see which BHN training
+                        programs feed the stream. */}
+                    {track.subPrograms && track.subPrograms.length > 0 && (
+                      <ul className="mt-1.5 flex flex-wrap gap-1">
+                        {track.subPrograms.map((sp) => (
+                          <li
+                            key={sp}
+                            className="text-[9.5px] leading-none px-1.5 py-0.5 rounded-md font-semibold"
+                            style={{
+                              color: track.accent,
+                              backgroundColor: `color-mix(in srgb, ${track.accent} 12%, var(--card))`,
+                            }}
+                          >
+                            {sp}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {/* Delivery-partner footnote. Mirrors what BHN's
+                        learning-pathway-announcement page lists. */}
+                    {track.deliveredBy && (
+                      <p className="mt-1.5 text-[9.5px] italic text-fg-subtle leading-snug">
+                        {track.deliveredBy}
+                      </p>
+                    )}
                   </div>
                 </div>
               </>
