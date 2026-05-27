@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Facilities map — merged province filter + jump-to navigation — May 2026
+  {
+    title: "Facilities map — provinces and metro clusters live in one Jump-to card now",
+    body: "The facilities map page used to carry **two separate horizontal bars** above the map: a Province filter (province chips + status legend) and a Jump-to row (Canada + metro-cluster chips). Same shape, same chip styling, two slightly different meanings — and they each only did half of what a user wanted (province chips filtered but didn't fly; cluster chips flew but couldn't filter).\n\n**Merged into one Jump-to card with three rows.**\n\n  • **Row 1** — `Jump to` label · `Canada` reset button (clears the province filter AND zooms back to the country-wide view) · status legend right-aligned (Already built / Being built / Other, with live counts).\n\n  • **Row 2** — `Provinces`. One chip per province present in the data (full names where they fit: Ontario, Québec, Alberta, Manitoba, Saskatchewan, Nova Scotia, Newfoundland, PEI, Yukon, Nunavut; 2-letter codes for BC, NB, NWT). Clicking a province now does BOTH jobs at once: narrows the facility list to that province AND flies the map to that province's actual bounding box (computed from the facilities' coords, so empty wilderness isn't framed — Ontario flies to the GTA-Ottawa-Sault corridor, not Hudson Bay).\n\n  • **Row 3** — `Clusters`. The existing metro-cluster chips (GTA & Hamilton, Greater Montréal, Ottawa, Québec City, Vancouver Metro, Calgary–Edmonton, Prairies, Victoria, Atlantic). Counts respect the active province filter; clusters with zero visible facilities auto-hide. If filtering to Saskatchewan empties every cluster, the whole Clusters row disappears so the page doesn't carry dead chrome.\n\n**Hierarchy makes the logic readable:** provinces are large categories you'd land on first; clusters are sub-province zoom targets sitting beneath. The active state of a province chip and a cluster chip can co-exist (filter to Ontario + zoom into GTA = both lit), which matches their independent meanings.\n\nNothing about the map itself (dots, collision-avoiding labels, popups, the staff Rescan button) changed — this is purely a navigation-bar restructure.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Branch-animation lines now track the side-by-side layout — May 2026
   {
     title: "Career paths — branch-animation lines now follow the cards when the focused layout flips side-by-side",

@@ -79,6 +79,25 @@ const MAP_REGIONS: MapRegion[] = [
   { id: "yyj", label: "Victoria",          swLat: 48.35, swLng: -123.55, neLat: 48.55, neLng: -123.25 },
 ];
 
+/** Friendlier labels for the 2-letter province codes used in the
+ *  data. Codes (BC, NB, NL, NT) kept where the full name would be
+ *  unwieldy on a chip. */
+const PROVINCE_LABELS: Record<string, string> = {
+  BC: "British Columbia",
+  AB: "Alberta",
+  SK: "Saskatchewan",
+  MB: "Manitoba",
+  ON: "Ontario",
+  QC: "Québec",
+  NB: "New Brunswick",
+  NS: "Nova Scotia",
+  PE: "PEI",
+  NL: "Newfoundland",
+  YT: "Yukon",
+  NT: "NWT",
+  NU: "Nunavut",
+};
+
 /** Status → colour map. Sticks to four hues max (brand-aware, not
  *  theme-specific) so the legend stays legible. */
 function statusAccent(status: string | null): string {
@@ -133,6 +152,7 @@ export function FacilitiesMap({ initialFacilities, canRescan }: Props) {
 
   function jumpToCanada() {
     setActiveRegion(null);
+    setProvinceFilter(null);
     const map = mapRef.current;
     if (!map) return;
     map.flyTo([55.0, -97.0], 4, { duration: 0.8 });
@@ -146,6 +166,46 @@ export function FacilitiesMap({ initialFacilities, canRescan }: Props) {
     }
     return Array.from(set).sort();
   }, [facilities]);
+
+  // Per-province bounding box, computed from the actual facility
+  // coords so flyToBounds frames the dots rather than empty
+  // wilderness. We use the FULL facilities list (not `visible`) so
+  // a province's bbox is stable as the filter changes — clicking
+  // "Ontario" should always frame the same area regardless of what
+  // was previously filtered.
+  const provinceBounds = useMemo(() => {
+    const m: Record<string, { swLat: number; swLng: number; neLat: number; neLng: number }> = {};
+    for (const f of facilities) {
+      if (!f.province) continue;
+      const cur = m[f.province];
+      if (!cur) {
+        m[f.province] = { swLat: f.lat, swLng: f.lng, neLat: f.lat, neLng: f.lng };
+      } else {
+        cur.swLat = Math.min(cur.swLat, f.lat);
+        cur.swLng = Math.min(cur.swLng, f.lng);
+        cur.neLat = Math.max(cur.neLat, f.lat);
+        cur.neLng = Math.max(cur.neLng, f.lng);
+      }
+    }
+    return m;
+  }, [facilities]);
+
+  function jumpToProvince(province: string) {
+    // Province click does double duty: filter the data to that
+    // province AND fly the map there. Clearing the cluster active
+    // state because a province is the broader category — keeping a
+    // metro-cluster pill highlighted while flying out to province
+    // scale would be misleading.
+    setProvinceFilter(province);
+    setActiveRegion(null);
+    const b = provinceBounds[province];
+    const map = mapRef.current;
+    if (!b || !map) return;
+    map.flyToBounds(
+      [[b.swLat, b.swLng], [b.neLat, b.neLng]],
+      { padding: [60, 60], duration: 0.8, maxZoom: 9 },
+    );
+  }
 
   const visible = useMemo(() => {
     if (!provinceFilter) return facilities;
@@ -177,104 +237,126 @@ export function FacilitiesMap({ initialFacilities, canRescan }: Props) {
     return counts;
   }, [visible]);
 
+  // Cluster chips visible against the current province filter.
+  // Computed up here so the JSX can know whether to render the
+  // "Clusters" row at all (suppress the row entirely when every
+  // cluster comes up empty for the current filter, instead of
+  // showing a label with no chips).
+  const visibleRegions = MAP_REGIONS.filter((r) => (regionCounts[r.id] ?? 0) > 0);
+
   return (
     <div className="space-y-3">
-      {/* Filter / legend bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card-solid px-4 py-2.5">
-        <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] font-bold text-fg-subtle">
-          <Filter size={11} /> Province
-        </div>
-        <button
-          type="button"
-          onClick={() => setProvinceFilter(null)}
-          className={
-            "text-[11.5px] px-2 py-1 rounded-md transition-colors " +
-            (provinceFilter === null
-              ? "bg-brand-600 text-white font-semibold"
-              : "text-fg-muted hover:text-fg hover:bg-elevated")
-          }
-        >
-          All ({facilities.length})
-        </button>
-        {provinces.map((p) => {
-          const n = facilities.filter((f) => f.province === p).length;
-          return (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setProvinceFilter(p)}
-              className={
-                "text-[11.5px] px-2 py-1 rounded-md transition-colors " +
-                (provinceFilter === p
-                  ? "bg-brand-600 text-white font-semibold"
-                  : "text-fg-muted hover:text-fg hover:bg-elevated")
-              }
-            >
-              {p} ({n})
-            </button>
-          );
-        })}
+      {/* Unified navigation. Three rows in one card:
+            1. Heading + Canada reset + status legend (right-aligned).
+            2. Provinces — broad geographic targets. Clicking a
+               province both narrows the facility list to that
+               province AND flies the map to the province's bbox
+               (filter + fly = one click instead of two).
+            3. Metro clusters — finer-grained targets sitting under
+               provinces, since clusters are sub-province regions
+               (GTA in ON, Montréal in QC, etc.). Counts respect the
+               active province filter; empty clusters auto-hide and
+               the whole row disappears if all clusters are empty. */}
+      <div className="rounded-xl border border-line/70 bg-card-solid px-4 py-3 space-y-2.5">
+        {/* Row 1 — heading + Canada reset + legend */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] font-bold text-fg-subtle">
+            <Navigation size={11} /> Jump to
+          </div>
+          <button
+            type="button"
+            onClick={jumpToCanada}
+            className={
+              "inline-flex items-center gap-1 text-[11.5px] px-2 py-1 rounded-md transition-colors " +
+              (provinceFilter === null && activeRegion === null
+                ? "bg-brand-600 text-white font-semibold"
+                : "text-fg-muted hover:text-fg hover:bg-elevated")
+            }
+            title="Reset to Canada-wide view (clears province filter)"
+          >
+            <Globe2 size={11} /> Canada ({facilities.length})
+          </button>
 
-        <div className="flex-1" />
+          <div className="flex-1" />
 
-        {/* Status legend */}
-        <div className="inline-flex items-center gap-3 text-[11px] text-fg-muted">
-          <span className="inline-flex items-center gap-1">
-            <span aria-hidden className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#0d9488" }} />
-            Already built ({counts.built})
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span aria-hidden className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#d97706" }} />
-            Being built ({counts.building})
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span aria-hidden className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#6b7280" }} />
-            Other ({counts.unknown})
-          </span>
+          <div className="inline-flex items-center gap-3 text-[11px] text-fg-muted">
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#0d9488" }} />
+              Already built ({counts.built})
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#d97706" }} />
+              Being built ({counts.building})
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#6b7280" }} />
+              Other ({counts.unknown})
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* Jump-to / region shortcuts. One-click zoom into a metro cluster
-          instead of scroll-zooming from the Canada-wide view. The chips
-          drive the map's flyToBounds imperatively via mapRef — no
-          re-render of the marker layer needed. */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line/70 bg-card-solid px-4 py-2.5">
-        <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] font-bold text-fg-subtle">
-          <Navigation size={11} /> Jump to
+        {/* Row 2 — Provinces. Click filters + flies. */}
+        <div className="flex flex-wrap items-start gap-x-2 gap-y-1.5 border-t border-line/60 pt-2">
+          <div className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.14em] font-semibold text-fg-subtle w-[86px] pt-1 shrink-0">
+            <Filter size={10} /> Provinces
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 flex-1">
+            {provinces.map((p) => {
+              const n = facilities.filter((f) => f.province === p).length;
+              const label = PROVINCE_LABELS[p] ?? p;
+              const isActive = provinceFilter === p;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => jumpToProvince(p)}
+                  className={
+                    "text-[11.5px] px-2 py-1 rounded-md transition-colors " +
+                    (isActive
+                      ? "bg-brand-600 text-white font-semibold"
+                      : "text-fg-muted hover:text-fg hover:bg-elevated")
+                  }
+                  title={`Filter and fly to ${label}`}
+                >
+                  {label} ({n})
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={jumpToCanada}
-          className={
-            "inline-flex items-center gap-1 text-[11.5px] px-2 py-1 rounded-md transition-colors " +
-            (activeRegion === null
-              ? "bg-brand-600 text-white font-semibold"
-              : "text-fg-muted hover:text-fg hover:bg-elevated")
-          }
-          title="Reset to Canada-wide view"
-        >
-          <Globe2 size={11} /> Canada
-        </button>
-        {MAP_REGIONS.map((r) => {
-          const n = regionCounts[r.id] ?? 0;
-          if (n === 0) return null;
-          const isActive = activeRegion === r.id;
-          return (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => jumpToRegion(r)}
-              className={
-                "text-[11.5px] px-2 py-1 rounded-md transition-colors " +
-                (isActive
-                  ? "bg-brand-600 text-white font-semibold"
-                  : "text-fg-muted hover:text-fg hover:bg-elevated")
-              }
-            >
-              {r.label} ({n})
-            </button>
-          );
-        })}
+
+        {/* Row 3 — Metro clusters. Empty clusters auto-hide via
+            regionCounts (which respects the active province filter),
+            and the whole row hides when nothing's left to jump to. */}
+        {visibleRegions.length > 0 && (
+          <div className="flex flex-wrap items-start gap-x-2 gap-y-1.5 border-t border-line/60 pt-2">
+            <div className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.14em] font-semibold text-fg-subtle w-[86px] pt-1 shrink-0">
+              <MapPin size={10} /> Clusters
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 flex-1">
+              {visibleRegions.map((r) => {
+                const n = regionCounts[r.id] ?? 0;
+                const isActive = activeRegion === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => jumpToRegion(r)}
+                    className={
+                      "text-[11.5px] px-2 py-1 rounded-md transition-colors " +
+                      (isActive
+                        ? "bg-brand-600 text-white font-semibold"
+                        : "text-fg-muted hover:text-fg hover:bg-elevated")
+                    }
+                    title={`Zoom into ${r.label}`}
+                  >
+                    {r.label} ({n})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Map */}
