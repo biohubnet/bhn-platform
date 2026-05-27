@@ -706,14 +706,23 @@ function SectionGroup({
       // globals.css.
       data-section-tone={tone}
       className={cn(
-        "relative mt-5 mb-2 rounded-xl transition-[padding,border-color,background-color] duration-300 ease-out",
-        // When collapsed, drop the border / background / padding so
-        // the user just sees the chip + chevron floating on the
-        // sidebar background. Otherwise the empty container leaves
-        // a grey "ghost box" where the section would render.
+        "relative rounded-xl transition-[padding,border-color,background-color] duration-300 ease-out",
+        // Two-mode layout:
+        //   • EXPANDED — full bordered/painted container with the chip
+        //     absolutely positioned to overlap the top border on the
+        //     seam (the editorial "tab on a box" look). Tight margins.
+        //   • COLLAPSED — chip renders IN FLOW inside the container
+        //     (the absolute -top-[10px] overlap trick has nothing to
+        //     overlap when there's no border, and made consecutive
+        //     collapsed chips overlap each other by ~4 px because
+        //     the chip extends 10 px above its container and the
+        //     20-px margin-collapse between sections wasn't enough
+        //     clearance for the chip's ~24-px height). Wider vertical
+        //     margins (mt-3/mb-3) give the floating chips clear breathing
+        //     room as the section is just a chip.
         collapsed
-          ? "p-0 border border-transparent bg-transparent"
-          : cn("border p-1.5 pt-3 space-y-0.5", toneStyles.container),
+          ? "mt-3 mb-3 p-0 border border-transparent bg-transparent"
+          : cn("mt-5 mb-2 border p-1.5 pt-3 space-y-0.5", toneStyles.container),
       )}
     >
       {/* Title chip — wrapped in a tiny hover-group that opens a tooltip
@@ -721,21 +730,23 @@ function SectionGroup({
           padding bridges the gap so the cursor can travel into the
           tooltip without losing hover.
 
-          The wrapper is fully transparent now — the chip + chevron
-          sit directly on the section's tint with no page-colour
-          notch behind them. The chip's own opaque fill covers the
-          section's top border where they overlap, so the chip still
-          reads as anchored to the border line. Tightened the `top`
-          offset from -11px to -10px so the chip sits flush against
-          the border edge without that visible gap that used to read
-          as a grey block under it.
-
-          left-5 (was left-3) keeps the chevron clear of the section's
-          rounded corner — at left-3 the chevron landed right where
-          the rounded-xl border curves away, making it read as a
-          floating glyph rather than anchored to the section. */}
+          Positioning differs by state:
+            • EXPANDED → `absolute -top-[10px] left-5` so the chip
+              overlaps the container's top border (the "tab on a box"
+              editorial look). The chip's own opaque fill covers the
+              border behind it.
+            • COLLAPSED → `relative ml-5` so the chip flows normally
+              inside the container, with proper vertical spacing
+              against neighbouring collapsed sections. Without this
+              flow positioning, the chip extends 10 px above its
+              container and consecutive collapsed chips overlap. */}
       <div
-        className="group/section absolute -top-[10px] left-5 z-20 px-1.5"
+        className={cn(
+          "group/section z-20 px-1.5",
+          collapsed
+            ? "relative flex pl-5"
+            : "absolute -top-[10px] left-5",
+        )}
         onMouseEnter={hasTooltip ? placeTooltip : undefined}
         onFocus={hasTooltip ? placeTooltip : undefined}
       >

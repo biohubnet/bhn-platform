@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Sidebar — collapsed section chips no longer overlap each other — May 2026
+  {
+    title: "Sidebar — collapsed section chips no longer overlap each other (the line cutting through them was the chip above bleeding down)",
+    body: "When sidebar sections (ENGAGE / EXPERIENCE / EQUIP / HR PREVIEW / ADMINISTRATION) were all collapsed at once, the chips visibly cut into each other — a horizontal line ran through every chip's text.\n\n**Diagnosis.** The chip is positioned `absolute -top-[10px]` so it sits on the seam of the section's top border (the editorial \"tab on a box\" look). When the section is EXPANDED that works — the chip overlaps a visible 1-px border. When the section is COLLAPSED, the border is removed and the chip is left floating with no anchor; but the absolute positioning kept extending the chip 10 px above its (now empty) container. The container itself had a 20-px margin to the next section (after margin-collapse from `mb-2` + `mt-5`), but the chip's ~24-px height meant consecutive collapsed chips overlapped by about 4 px. The line you saw was the previous chip's bottom edge cutting across the next chip's text.\n\n**Fix.** Two-mode layout:\n  • **Expanded** — chip stays `absolute -top-[10px] left-5` so it still overlaps the visible section border. The editorial tab look is preserved.\n  • **Collapsed** — chip renders **in flow** inside its now-borderless container (`relative flex pl-5`) so it contributes to its own container's height instead of dangling above it. Container margins bumped from `mt-5 mb-2` to `mt-3 mb-3` to give the floating chips even clearer breathing room — adjacent collapsed sections now sit ~24 px apart with no overlap on any theme.\n\nNo theme-specific overrides — the layout change applies everywhere, so the same fix benefits Daydream / Voltage / Rosalind / Sakura / Summer Ice Cream / Greenwood at every time-of-day.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Role-switch feedback — overlay + tighter shortcut window — May 2026
   {
     title: "Role switch — visible \"Switching to …\" overlay + tighter x-shortcut window so the lag stops feeling like nothing's happening",
