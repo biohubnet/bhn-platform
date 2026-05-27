@@ -606,7 +606,17 @@ export default async function DashboardPage() {
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   href={inProgress > 0 ? "/my-courses" : "/courses"}
-                  className="inline-flex items-center gap-1.5 bg-white text-slate-900 hover:bg-white/90 font-bold text-xs px-4 py-2.5 rounded-full shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                  // `text-[#0f172a]` is a literal hex (Tailwind arbitrary
+                  // value), NOT `text-slate-900`. Voltage theme globally
+                  // overrides `.text-slate-900` to lift it to slate-100 so
+                  // unscoped slate-900 text stays readable against the
+                  // dark page bg — but the override silently breaks any
+                  // white pill that wanted slate-900 to MEAN slate-900
+                  // (Continue button = white background + dark text →
+                  // override turned the text near-white = invisible).
+                  // Arbitrary-value Tailwind classes don't match
+                  // `.text-slate-900` so they survive the override.
+                  className="inline-flex items-center gap-1.5 bg-white text-[#0f172a] hover:bg-white/90 font-bold text-xs px-4 py-2.5 rounded-full shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                 >
                   {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={13} />
                 </Link>

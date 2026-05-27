@@ -550,7 +550,17 @@
  * on Voltage's near-black surfaces. Values use 400-range brights for -600
  * and 300-range pales for -700+; each passes ≥4.5:1 on the darkest surface
  * (raised, L≈0.029). Previously missing -600 lifts for emerald/rose/amber
- * are also included here — those were silent 2–4:1 failures in the old set. */
+ * are also included here — those were silent 2–4:1 failures in the old set.
+ *
+ * GOTCHA — these lifts assume the text sits on a Voltage page surface
+ * (page / card / raised). If a component uses Tailwind's `bg-white`
+ * literal as its OWN background (e.g. a hero CTA pill) and pairs it
+ * with `text-slate-900`, the lift turns the text near-white against
+ * its own white pill — silent contrast collapse. The fix in those
+ * call sites is to write `text-[#0f172a]` (or any arbitrary-value
+ * Tailwind class) instead — that selector doesn't match the lift
+ * rule, so slate-900 stays slate-900. See dashboard Continue button
+ * (`/dashboard`) and CellSplitGame action button for the pattern. */
 [data-theme="hitech"] .text-emerald-600 { color: #34d399; }  /* was 2.03:1 on card */
 [data-theme="hitech"] .text-rose-600    { color: #fb7185; }  /* was 4.01:1 on card */
 [data-theme="hitech"] .text-amber-600   { color: #fbbf24; }  /* was 4.29:1 on raised */

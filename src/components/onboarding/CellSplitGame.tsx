@@ -393,7 +393,13 @@ export function CellSplitGame({ firstName, replayMode }: Props) {
               "mt-6 inline-flex items-center gap-2",
               "px-5 py-3 rounded-full",
               "text-sm font-bold tracking-tight",
-              "bg-white text-slate-900 hover:bg-white/90 active:bg-white/80",
+              // text-[#0f172a] (arbitrary-value Tailwind class) — NOT
+              // text-slate-900. Voltage theme globally lifts
+              // .text-slate-900 to slate-100 for contrast against the
+              // dark page background; on a WHITE pill that lift
+              // becomes near-invisible. Arbitrary values bypass the
+              // override. Same fix as dashboard Continue button.
+              "bg-white text-[#0f172a] hover:bg-white/90 active:bg-white/80",
               "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white",
               "shadow-lg shadow-cyan-500/20",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
