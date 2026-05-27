@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — bigger labeled Collapse button + integrated fold toolbar — May 2026
+  {
+    title: "Career paths — labeled \"Collapse\" button on each card + a tighter fold-view toolbar",
+    body: "Two polish passes on `/career-paths/pathways`:\n\n**1. Per-card Collapse button — bigger, labeled, pinned to the bottom.** Was a 20×20-px chevron-only icon in the top-right corner with the label hidden behind a tooltip. Replaced with a proper labeled `Collapse` chip pinned to the bottom-right of each pathway header card, mirroring the `Expand` affordance on collapsed cards — symmetric design, so the same kind of action sits in the same place whether the card is folded or unfolded. Larger hit target, function is readable at a glance.\n\n**2. Fold-view toolbar — four buttons collapsed into a segmented control.** Was a row of four separate controls: a *Fold* label, *Collapse pathways* button, *Collapse levels* button, and *Expand all* reset. New layout uses **two stateful axis toggles** + a reset:\n\n  • **Pathways** — click to fold every pathway column to a compact card; click again to unfold them all.\n  • **Levels** — click to fold every level row; click again to unfold.\n\nEach toggle reflects its current state visually — filled brand accent when fully folded, muted hairline outline when fully expanded, with a tiny accent dot in the corner when the axis is partially folded (some columns / rows folded individually via their own per-card buttons). The **Reset** button only appears when something is currently folded — it doesn't need to be present when there's nothing to reset.\n\nNet: 4 controls of mixed semantics (label + 3 action buttons) became 1 label + 2 stateful toggles + 1 conditional reset. Same capabilities, less visual weight, and the toolbar reads as one segmented control rather than a sprawl.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Login-floaters admin — 6-up gallery + Floater Aquarium screensaver — May 2026
   {
     title: "Login-floaters admin — 6-up gallery and a Floater Aquarium screensaver at the bottom",

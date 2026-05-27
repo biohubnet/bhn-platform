@@ -44,6 +44,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronsRight,
+  ChevronsLeft,
   Maximize2,
   Minimize2,
 } from "lucide-react";
@@ -285,38 +286,71 @@ export function PathwayPathsExplorer() {
     <div className="space-y-6">
       <Legend />
 
-      {/* Fold toolbar — sits above the chart. Per-level and per-
-          pathway fold buttons; an Expand-all reset. */}
-      <div className="flex flex-wrap items-center gap-2 border border-line/70 bg-card-solid px-4 py-2.5 text-[11.5px]">
-        <span className="inline-flex items-center gap-1.5 uppercase tracking-[0.16em] font-bold text-fg-subtle text-[10.5px]">
-          <Minimize2 size={11} /> Fold
-        </span>
-        <button
-          type="button"
-          onClick={collapseAllPathways}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-fg-muted hover:text-fg hover:bg-elevated transition-colors"
-          title="Collapse every pathway column to a thin strip"
-        >
-          <ChevronsRight size={11} /> Collapse pathways
-        </button>
-        <button
-          type="button"
-          onClick={collapseAllLevels}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-fg-muted hover:text-fg hover:bg-elevated transition-colors"
-          title="Collapse every level row, keep only the level banners"
-        >
-          <ChevronDown size={11} /> Collapse levels
-        </button>
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={expandAll}
-          disabled={!anyCollapsed}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-brand-700 font-semibold hover:bg-brand-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
-        >
-          <Maximize2 size={11} /> Expand all
-        </button>
-      </div>
+      {/* Fold toolbar — one segmented control. Each axis (pathways
+          / level rows) is a stateful toggle: clicking the chip
+          folds everything on that axis when expanded, unfolds when
+          folded. State is visible from the chip's appearance (filled
+          accent when folded, muted hairline when expanded). A Reset
+          button appears to the right only when something's currently
+          folded — collapses are reversible per-card, so a global
+          reset is only useful as an "undo" once you've folded
+          something. */}
+      {(() => {
+        const allPathwaysFolded = collapsedPathways.size === BHN_PATHWAYS.length;
+        const allLevelsFolded   = collapsedLevels.size === LEVEL_ORDER.length;
+        function togglePathwaysAxis() {
+          setCollapsedPathways((prev) => (
+            prev.size === BHN_PATHWAYS.length ? new Set() : new Set(BHN_PATHWAYS.map((p) => p.id))
+          ));
+        }
+        function toggleLevelsAxis() {
+          setCollapsedLevels((prev) => (
+            prev.size === LEVEL_ORDER.length ? new Set() : new Set(LEVEL_ORDER)
+          ));
+        }
+        return (
+          <div className="flex flex-wrap items-center gap-2 border border-line/70 bg-card-solid px-4 py-2.5 text-[11.5px]">
+            <span className="inline-flex items-center gap-1.5 uppercase tracking-[0.16em] font-bold text-fg-subtle text-[10.5px]">
+              <Minimize2 size={11} /> Fold view
+            </span>
+            <div className="inline-flex items-center gap-1.5">
+              <FoldAxisToggle
+                label="Pathways"
+                folded={allPathwaysFolded}
+                onToggle={togglePathwaysAxis}
+                someFolded={collapsedPathways.size > 0 && !allPathwaysFolded}
+                title={
+                  allPathwaysFolded
+                    ? "Unfold every pathway column"
+                    : "Fold every pathway column to a compact card"
+                }
+              />
+              <FoldAxisToggle
+                label="Levels"
+                folded={allLevelsFolded}
+                onToggle={toggleLevelsAxis}
+                someFolded={collapsedLevels.size > 0 && !allLevelsFolded}
+                title={
+                  allLevelsFolded
+                    ? "Unfold every level row"
+                    : "Fold every level row, keep only the level banners"
+                }
+              />
+            </div>
+            <div className="flex-1" />
+            {anyCollapsed && (
+              <button
+                type="button"
+                onClick={expandAll}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-brand-700 font-semibold hover:bg-brand-50 transition-colors"
+                title="Expand everything — both axes"
+              >
+                <Maximize2 size={11} /> Reset
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       <div
         className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6"
@@ -385,6 +419,49 @@ export function PathwayPathsExplorer() {
 // ──────────────────────────────────────────────────────────────────
 // Legend
 // ──────────────────────────────────────────────────────────────────
+
+/** Toggle chip used inside the fold toolbar. Two visual states:
+ *  • folded   — filled accent (brand-50 + brand text + dot ring)
+ *  • expanded — muted hairline (subtle text + box outline)
+ *  When the axis is partially folded (some columns expanded, some
+ *  collapsed via individual card buttons), we show a small accent
+ *  dot so the user knows the global state isn't either of the two
+ *  pure cases. */
+function FoldAxisToggle({
+  label, folded, someFolded, onToggle, title,
+}: {
+  label: string;
+  folded: boolean;
+  someFolded: boolean;
+  onToggle: () => void;
+  title: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      title={title}
+      aria-pressed={folded}
+      className={
+        "relative inline-flex items-center gap-1.5 px-2.5 py-1 text-[11.5px] font-semibold transition-colors " +
+        (folded
+          ? "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200"
+          : "text-fg-muted hover:text-fg hover:bg-elevated ring-1 ring-inset ring-line/70")
+      }
+    >
+      {folded ? <ChevronsRight size={11} /> : <ChevronsLeft size={11} />}
+      {label}
+      {someFolded && (
+        // Mixed state — neither fully folded nor fully expanded.
+        // Tiny accent dot in the top-right corner signals "partial".
+        <span
+          aria-hidden
+          className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-brand-600"
+        />
+      )}
+    </button>
+  );
+}
 
 function Legend() {
   return (
@@ -543,17 +620,16 @@ function TrackHeadersRow({
                 </span>
               </button>
             ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => togglePathway(track.id)}
-                  title="Collapse this pathway column"
-                  className="absolute top-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-md text-fg-subtle hover:text-fg hover:bg-elevated"
-                  aria-label={`Collapse ${track.title}`}
-                >
-                  <ChevronsRight size={11} />
-                </button>
-                <div className="flex items-start gap-2 pr-5">
+              // Expanded pathway card. The "Collapse" button used to
+              // be a tiny chevron-only icon in the top-right corner
+              // — discoverable as an icon but the label was hidden
+              // behind a title attribute. Moved to the bottom of the
+              // card as a labeled button, mirroring the "Expand"
+              // affordance on the collapsed card. Symmetric design:
+              // expand pinned bottom on collapsed cards, collapse
+              // pinned bottom on expanded cards.
+              <div className="flex flex-col h-full">
+                <div className="flex items-start gap-2">
                   <Icon className="h-4 w-4 shrink-0 mt-0.5" style={{ color: track.accent }} />
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -598,7 +674,22 @@ function TrackHeadersRow({
                     )}
                   </div>
                 </div>
-              </>
+                {/* Collapse affordance — pinned bottom-right of the
+                    card, mirrors the Expand affordance on the
+                    collapsed state. Bigger than the previous corner
+                    chevron and carries the word "Collapse" so the
+                    function is readable without a tooltip. */}
+                <button
+                  type="button"
+                  onClick={() => togglePathway(track.id)}
+                  title={`Collapse ${track.title} to a compact card`}
+                  aria-label={`Collapse ${track.title}`}
+                  className="mt-auto pt-1.5 self-end inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-fg-subtle hover:text-brand-700 transition-colors"
+                >
+                  <ChevronsRight size={11} />
+                  Collapse
+                </button>
+              </div>
             )}
           </li>
         );
