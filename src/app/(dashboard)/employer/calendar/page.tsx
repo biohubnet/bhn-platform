@@ -10,6 +10,7 @@ import { CalendarDays } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getActiveCompanyId } from "@/lib/employer/company";
+import { ensureAdminPreviewCompany } from "@/lib/employer/admin-preview";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { CalendarClient } from "@/components/employer/calendar/CalendarClient";
 import { DemoSeederBar } from "@/components/employer/DemoSeederBar";
@@ -32,43 +33,15 @@ export default async function EmployerCalendarPage() {
     );
   }
 
-  // ── Resolve companyId (3-tier fallback) ────────────────────────
-  let companyId: string | null = isAdmin ? null : await getActiveCompanyId(userId).catch(() => null);
-
-  if (!companyId && isAdmin) {
-    try {
-      const existing = await prisma.company.findFirst({
-        orderBy: { createdAt: "asc" },
-        select:  { id: true },
-      });
-      if (existing) {
-        companyId = existing.id;
-        await prisma.companyMember.upsert({
-          where:  { companyId_userId: { companyId, userId } },
-          create: { companyId, userId, role: "owner", joinedAt: new Date() },
-          update: {},
-        });
-      } else {
-        const profile = await prisma.user.findUnique({
-          where:  { id: userId },
-          select: { employerCompany: true },
-        });
-        const newCo = await prisma.company.create({
-          data: {
-            name:    profile?.employerCompany?.trim() || "My Company",
-            members: {
-              create: { userId, role: "owner", joinedAt: new Date() },
-            },
-          },
-          select: { id: true },
-        });
-        companyId = newCo.id;
-      }
-    } catch {
-      // DB error during bootstrap — fall through to "no company" empty state
-      companyId = null;
-    }
-  }
+  // ── Resolve companyId ──────────────────────────────────────────
+  // Real employers go through their CompanyMember row. Admins get a
+  // PRIVATE single-member preview workspace via ensureAdminPreviewCompany
+  // — see src/lib/employer/admin-preview.ts for why this matters
+  // (the old "auto-add to the FIRST company" bootstrap leaked data
+  // between admins; every superadmin ended up sharing Cytiva).
+  let companyId: string | null = isAdmin
+    ? await ensureAdminPreviewCompany(userId).catch(() => null)
+    : await getActiveCompanyId(userId).catch(() => null);
 
   if (!companyId) {
     return (

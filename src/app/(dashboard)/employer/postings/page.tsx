@@ -74,9 +74,13 @@ export default async function EmployerWorkspacePage() {
     : userId ? await getActiveCompanyId(userId).catch(() => null) : null;
   if (companyId && userId) updateLastSeen(companyId, userId);
 
-  // Company-scoped filter with legacy createdById fallback.
+  // Company-scoped filter. Admins / superadmins get a private preview
+  // workspace scoped to their own createdById (the platform-wide `{}`
+  // filter used to leak postings between admin accounts — see the
+  // header comment on (dashboard)/employer/page.tsx for the full
+  // isolation contract).
   const postingsFilter = isAdmin
-    ? {}
+    ? { createdById: userId ?? "_" }
     : companyId
     ? { companyId }
     : { createdById: userId ?? "_" };
@@ -233,7 +237,10 @@ export default async function EmployerWorkspacePage() {
   // content using a small layout shim.
   return (
     <HrWorkspace
-      firstName={me?.name?.split(" ")[0] ?? null}
+      // Full name — splitting on the first space chops multi-word given
+      // names ("Yoo Jin" → "Yoo"). See EmployerDashboard.tsx for the
+      // rationale; want a true first-name, add a preferredName column.
+      firstName={me?.name ?? null}
       companyName={me?.employerCompany ?? null}
       isAdmin={isAdmin}
       isFresh={isFresh}

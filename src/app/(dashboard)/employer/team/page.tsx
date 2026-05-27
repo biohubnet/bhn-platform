@@ -17,6 +17,7 @@ import { Users, Users2, Shield, ShieldCheck, Eye, UserCog } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getActiveCompanyId, meetsMinRole } from "@/lib/employer/company";
+import { ensureAdminPreviewCompany } from "@/lib/employer/admin-preview";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { Card } from "@/components/ui/Card";
 import { MemberList } from "@/components/employer/team/MemberList";
@@ -76,52 +77,23 @@ export default async function EmployerTeamPage() {
     );
   }
 
-  // Resolve (or bootstrap) the company workspace.
+  // Resolve the company workspace.
   //
-  // Priority order:
-  //   1. User already has a CompanyMember row → use that company.
-  //   2. Admin + existing Company in DB → adopt it, upsert a member row.
-  //   3. Admin + no Company in DB at all → auto-create one from their
-  //      employer profile (backfill script may not have run yet on this
-  //      deployment; this avoids a permanent error screen).
-  //   4. Non-admin with no company → show the "not found" error (they
-  //      need to go through the normal onboarding / invite flow).
-  let companyId: string | null = await getActiveCompanyId(userId).catch(() => null);
-
-  if (!companyId && isAdmin) {
-    const existing = await prisma.company.findFirst({
-      orderBy: { createdAt: "asc" },
-      select:  { id: true },
-    });
-
-    if (existing) {
-      // Adopt the existing company. Upsert a member row so this admin
-      // can use all management controls (seeder, invite, etc.).
-      companyId = existing.id;
-      await prisma.companyMember.upsert({
-        where:  { companyId_userId: { companyId, userId } },
-        create: { companyId, userId, role: "owner", joinedAt: new Date() },
-        update: {},
-      });
-    } else {
-      // No companies exist at all — auto-create a workspace using
-      // whatever employer profile the admin has (may be empty strings).
-      const profile = await prisma.user.findUnique({
-        where:  { id: userId },
-        select: { employerCompany: true },
-      });
-      const newCo = await prisma.company.create({
-        data: {
-          name:    profile?.employerCompany?.trim() || "My Company",
-          members: {
-            create: { userId, role: "owner", joinedAt: new Date() },
-          },
-        },
-        select: { id: true },
-      });
-      companyId = newCo.id;
-    }
-  }
+  // Real employers go through their CompanyMember row. Admins get a
+  // PRIVATE single-member preview workspace via ensureAdminPreviewCompany
+  // — never adopt or share a real employer's company (the old
+  // "auto-add admin to the FIRST company" bootstrap leaked data
+  // between admins; see src/lib/employer/admin-preview.ts).
+  //
+  // For admins we call the helper UNCONDITIONALLY rather than after
+  // getActiveCompanyId — if an admin had been auto-membered into
+  // someone else's company by the old bootstrap, getActiveCompanyId
+  // would still surface that company, defeating the isolation goal.
+  // The helper looks specifically for a sole-member company belonging
+  // to the admin and ignores shared memberships.
+  let companyId: string | null = isAdmin
+    ? await ensureAdminPreviewCompany(userId).catch(() => null)
+    : await getActiveCompanyId(userId).catch(() => null);
 
   if (!companyId) {
     return (

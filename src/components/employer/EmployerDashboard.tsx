@@ -33,7 +33,16 @@ export async function EmployerDashboard({
    *  pushing the editorial hero off the top of the page. */
   committeeBadge?: React.ReactNode;
 }) {
-  const firstName = user.name?.split(" ")[0] ?? "there";
+  // Use the full name, not just the first token before a space.
+  // Korean / Chinese / Japanese given names are frequently two words
+  // ("Yoo Jin", "Mei Ling", "Ji-hoon Lee"), and splitting on the first
+  // space truncates them — the user gets greeted as "Yoo" when their
+  // name is "Yoo Jin". The greeting reads slightly more formal for
+  // Western "First Last" names but that's a small papercut next to
+  // chopping someone's given name in half. If we want a true
+  // first-name later, add a preferredName / displayName column on
+  // User — don't infer it from a space split.
+  const firstName = user.name ?? "there";
   const companyName = user.employerCompany ?? "your company";
 
   // Profile completeness — six fields total. Used for the gentle nudge

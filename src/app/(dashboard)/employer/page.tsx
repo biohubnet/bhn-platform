@@ -109,14 +109,29 @@ export default async function EmployerHomePage() {
     : null;
 
   // Resolve the company this session is acting on behalf of.
-  // Admins bypass company scoping and see the full platform.
-  // Single-seat employers have exactly one company (backfilled by
-  // scripts/backfillEmployerCompanies.ts); multi-seat users resolve
-  // via getActiveCompanyId which respects a ?company= URL param once
-  // the company-switcher UI ships.
-  // Wrapped in .catch() so a transient DB error (missing table on a
-  // fresh deployment, connection pool blip, etc.) degrades to the
-  // legacy createdById filter rather than crashing the whole page.
+  //
+  // Per-user isolation contract (Y2026-05-27):
+  //   • Real employers (role === "employer") are scoped to their
+  //     CompanyMember row — getActiveCompanyId returns the company,
+  //     postings/applicants/etc. all filter by `{ companyId }`. Real
+  //     employers never see another company's data.
+  //   • Admins / superadmins (no CompanyMember rows) get a PRIVATE
+  //     preview workspace scoped to `createdById: userId`. The /employer
+  //     page used to grant admins a global view (postingsWhere =
+  //     undefined → see every posting on the platform), which meant
+  //     two admins looking at /employer would see each other's demo
+  //     postings + applicants + queue — and the company profile section
+  //     showed whoever had filled in the User row's employerCompany
+  //     field. Yoo Jin saw Cytiva because the page didn't isolate.
+  //
+  // Admin/superadmin company-profile fields (employerCompany,
+  // companyLogo, …) live on the admin's OWN User row already — that
+  // part was always per-user, just the postings + queue queries were
+  // global. Scoping by createdById fixes the leak: an admin sees only
+  // postings they personally created on their own account.
+  //
+  // Wrapped in .catch() so a transient DB error degrades to the
+  // createdById filter rather than crashing the whole page.
   const companyId = isAdmin
     ? null
     : userId ? await getActiveCompanyId(userId).catch(() => null) : null;
@@ -124,13 +139,12 @@ export default async function EmployerHomePage() {
   // Stamp last-seen (fire-and-forget, non-blocking).
   if (companyId && userId) updateLastSeen(companyId, userId);
 
-  // Filter shape for InternshipPosting. Admins see the full platform;
-  // employers are scoped to their company. We fall back to the legacy
-  // createdById filter if companyId hasn't been backfilled yet (early
-  // transition period) so existing single-seat employers never see an
-  // empty page mid-rollout.
+  // Filter shape for InternshipPosting. Real employers → companyId.
+  // Admins → their own createdById (private preview workspace).
+  // The createdById fallback for non-admin without companyId is
+  // legacy backstop from before the multi-seat backfill ran.
   const postingsWhere = isAdmin
-    ? undefined
+    ? { createdById: userId ?? "_" }
     : companyId
     ? { companyId }
     : { createdById: userId ?? "_" };

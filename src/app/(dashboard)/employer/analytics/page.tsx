@@ -10,6 +10,7 @@ import { BarChart3, Download, Users, UserCheck, Percent, Briefcase } from "lucid
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getActiveCompanyId } from "@/lib/employer/company";
+import { ensureAdminPreviewCompany } from "@/lib/employer/admin-preview";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { Card } from "@/components/ui/Card";
 import { DemoSeederBar } from "@/components/employer/DemoSeederBar";
@@ -59,27 +60,12 @@ export default async function EmployerAnalyticsPage() {
   }
 
   // ── Resolve companyId ──────────────────────────────────────────
-  let companyId: string | null = isAdmin ? null : await getActiveCompanyId(userId).catch(() => null);
-
-  if (!companyId && isAdmin) {
-    try {
-      const existing = await prisma.company.findFirst({
-        orderBy: { createdAt: "asc" },
-        select:  { id: true },
-      });
-      if (existing) {
-        companyId = existing.id;
-        await prisma.companyMember.upsert({
-          where:  { companyId_userId: { companyId, userId } },
-          create: { companyId, userId, role: "owner", joinedAt: new Date() },
-          update: {},
-        });
-      }
-    } catch {
-      // DB error during bootstrap — fall through to "no company" empty state
-      companyId = null;
-    }
-  }
+  // Real employers go through their CompanyMember row. Admins get a
+  // PRIVATE single-member preview workspace via ensureAdminPreviewCompany
+  // — see src/lib/employer/admin-preview.ts for why this matters.
+  let companyId: string | null = isAdmin
+    ? await ensureAdminPreviewCompany(userId).catch(() => null)
+    : await getActiveCompanyId(userId).catch(() => null);
 
   if (!companyId) {
     return (
