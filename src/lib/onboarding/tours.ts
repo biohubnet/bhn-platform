@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.26b";
+export const TOUR_VERSION = "2026.05.27";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Theme picker — Daylight renamed, descriptions now carry the
+  //     inspiration behind each look (May 2026) ────────────────────
+  {
+    id: "trainee.theme-picker-inspo",
+    title: "Themes now tell you the story behind them",
+    body: "Daylight is now Daydream. Every theme in the picker also carries a paragraph on what inspired it — who Rosalind Franklin was (and why the herbarium palette honours her), why Voltage is the cyberpunk-hour dark mode, what Greenwood does at dusk vs. dawn, the hanami tradition behind Sakura. The page-translation toggle moved out of the theme dropdown to keep the surface focused on look-and-feel.",
+    selector: "[aria-label=\"Change theme\"]",
+    placement: "right",
+    since: "2026.05.27",
+  },
   // ─── Graduate showcase admin (May 2026) ─────────────────────────
   {
     id: "admin.graduate-showcase",

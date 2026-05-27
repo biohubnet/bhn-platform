@@ -1,11 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Palette, Check, Sparkles, ArrowRight, Languages } from "lucide-react";
-import {
-  usePageTranslationEnabled,
-  setPageTranslationEnabled,
-} from "@/components/translation/usePageTranslationEnabled";
+import { Palette, Check, Sparkles, ArrowRight } from "lucide-react";
 import {
   useTheme, THEMES, activeThemes, THEME_CATEGORIES,
   type ThemeId, type ThemeCategory,
@@ -209,18 +205,14 @@ function ThemeMenu({
                         </span>
                       )}
                     </span>
-                    {/* Rolling description: at rest, the text is clipped by
-                        overflow-hidden so long blurbs (Cold Brew, Retro 8-bit
-                        — the ones that got truncated before) read as a
-                        truncated headline. On hover/focus, the inline-flex
-                        wrapper rolls left at a steady pace, and because the
-                        text is duplicated the loop is seamless. Reduced-
-                        motion users see the static truncated head. */}
-                    <span className="block overflow-hidden text-[10px] text-subtle leading-tight mt-0.5">
-                      <span className="inline-flex whitespace-nowrap group-hover/themerow:animate-roll-x group-focus-within/themerow:animate-roll-x">
-                        <span className="pr-10">{t.description}</span>
-                        <span className="pr-10" aria-hidden>{t.description}</span>
-                      </span>
+                    {/* Description wraps naturally on multiple lines —
+                        each theme's blurb now carries the inspiration
+                        behind it, so a truncated headline would hide
+                        the whole point. Rows stretch as needed; the
+                        menu's overflow-y-auto handles the case where
+                        the open dropdown gets taller than the viewport. */}
+                    <span className="block text-[10.5px] text-subtle leading-snug mt-0.5 whitespace-normal">
+                      {t.description}
                     </span>
                   </span>
                   {active && (
@@ -236,11 +228,9 @@ function ThemeMenu({
         );
       })}
 
-      {/* Settings rail — translation toggle + discovery link.
-          Lives below the theme list so the dropdown reads as
-          "themes first, preferences underneath". */}
-      <div className="border-t border-line mt-2 pt-2 px-1 space-y-0.5">
-        <PageTranslationToggle />
+      {/* Discovery link — lives below the theme list so the
+          dropdown reads as "themes first, preferences underneath". */}
+      <div className="border-t border-line mt-2 pt-2 px-1">
         <Link
           href="/themes"
           className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium text-muted hover:bg-elevated hover:text-fg transition-colors"
@@ -251,42 +241,6 @@ function ThemeMenu({
         </Link>
       </div>
     </div>
-  );
-}
-
-/** Page translation on/off toggle — sits inside the ThemePicker
- *  dropdown. Reads + writes the shared
- *  `usePageTranslationEnabled` flag; the floating translator
- *  dock at the top-right of the dashboard layout shows/hides
- *  immediately when this flips (CustomEvent reactivity). */
-function PageTranslationToggle() {
-  const enabled = usePageTranslationEnabled();
-  return (
-    <button
-      type="button"
-      onClick={() => setPageTranslationEnabled(!enabled)}
-      aria-pressed={enabled}
-      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium text-muted hover:bg-elevated hover:text-fg transition-colors"
-    >
-      <Languages size={12} className="text-brand-600 shrink-0" />
-      <span className="flex-1 text-left">Page translation</span>
-      {/* Compact pill switch — green ON, slate OFF. Click anywhere
-          in the row flips it, but the pill is the visual affordance. */}
-      <span
-        className={cn(
-          "relative inline-flex items-center h-4 w-7 rounded-full transition-colors shrink-0",
-          enabled ? "bg-emerald-500" : "bg-slate-400/50",
-        )}
-        aria-hidden
-      >
-        <span
-          className={cn(
-            "absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform",
-            enabled && "translate-x-3",
-          )}
-        />
-      </span>
-    </button>
   );
 }
 
@@ -370,7 +324,7 @@ function FeaturedLimitedPromo({
             <h3 className="text-sm font-bold text-fg leading-tight mt-1.5">
               Try {t.name}
             </h3>
-            <p className="text-[11px] text-muted leading-snug mt-0.5 line-clamp-2">
+            <p className="text-[11px] text-muted leading-snug mt-0.5">
               {t.description}
             </p>
           </div>

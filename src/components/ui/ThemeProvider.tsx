@@ -14,13 +14,38 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
  */
 export const THEMES = [
   // Classic — foundational themes, always present.
-  { id: "light",      name: "Daylight",   description: "Calm, near-white tech surfaces", category: "classic" },
-  { id: "hitech",     name: "Voltage",    description: "Neon cyan on near-black. Editorial dark mode for late-night focus — the platform's default for users on a system dark preference.", category: "classic" },
-  { id: "rosalind",   name: "Rosalind",   description: "Parchment, sage, italic serif — herbarium-academic", category: "classic" },
+  {
+    id: "light",
+    name: "Daydream",
+    description: "Calm, near-white tech surfaces with ink-blue accents — the platform's default light theme. Made for the kind of focus where you forget you're using a website: fresh paper, soft contrast, nothing in the way. Lives up to its name on the days you want the screen to disappear and let the work breathe.",
+    category: "classic",
+  },
+  {
+    id: "hitech",
+    name: "Voltage",
+    description: "Neon cyan on near-black — editorial dark mode for late-night focus, and the platform's default for users on a system dark preference. Inspired by the cyberpunk hour: the office goes quiet, the building hums, and the only light source is the monitor in front of you. Designed to keep your eyes happy past midnight without sacrificing colour fidelity.",
+    category: "classic",
+  },
+  {
+    id: "rosalind",
+    name: "Rosalind",
+    description: "Parchment, sage, italic serif — the herbarium-academic theme. Named for Rosalind Franklin, the X-ray crystallographer whose Photograph 51 cracked the structure of DNA in 1952 — and whose name was kept off the 1962 Nobel that crystallised her work. The palette is her era and her discipline: lab-notebook paper, the sage-green of botanical fieldwork, considered italics, the careful observation of mid-20th-century biology. Built for trainees who treat science as a craft.",
+    category: "classic",
+  },
 
   // Flavours — sensory / atmospheric themes.
-  { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright", category: "flavour" },
-  { id: "greenwood",  name: "Greenwood",  description: "A forest that shifts with your local hour — mist at dawn, dappled noon, golden dusk, fireflies after dark. Auto-snaps to its night palette + fireflies the moment your OS goes dark, regardless of the hour. Leaves drift across the page all day; a quiet scene caption reports what the forest is doing right now.", category: "flavour" },
+  {
+    id: "icecream",
+    name: "Summer Ice Cream",
+    description: "Pastel scoops on a vanilla cone — playful and bright. Made for the days when work shouldn't look like work: strawberry pinks, mint greens, lilac and peach, all on a soft cream canvas. Inspired by the parlor counter on the hottest afternoon of the year — a reminder that the platform you spend your day in can be a place that makes you smile.",
+    category: "flavour",
+  },
+  {
+    id: "greenwood",
+    name: "Greenwood",
+    description: "A forest that shifts with your local hour — mist at dawn, dappled noon, golden dusk, fireflies after dark. Auto-snaps to its night palette and starts fireflies the moment your OS goes dark, regardless of the clock. Leaves drift across the page all day; a quiet scene caption reports what the forest is doing right now. Built because we wanted a theme that remembers there's a world outside the screen — and brings a little of it back in.",
+    category: "flavour",
+  },
   // Removed (2026-05-27): "atompunk" (Atom Punk) and "aurora" (Aurora)
   // themes. The registry filters them out of the picker, and the
   // localStorage migration in resolveSavedTheme below drops anyone
@@ -33,7 +58,7 @@ export const THEMES = [
   {
     id: "sakura",
     name: "Sakura",
-    description: "Cherry-blossom blush + cream — limited time, expires end of May 2026",
+    description: "Cherry-blossom blush and cream — hanami in the browser. Inspired by the Japanese tradition of stopping everything for a few weeks each spring to sit under blooming sakura trees and remember that beautiful things are fleeting. Pink-on-cream, warm wine accents, a soft pulse of petals. Limited time on purpose, like the blossoms — expires end of May 2026.",
     category: "limited",
     endsOn: "2026-05-31",
     limited: true,
