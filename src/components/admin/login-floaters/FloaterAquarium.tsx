@@ -36,15 +36,32 @@ const POP_PANEL       = 14;     // swimmers in the embedded panel
 const POP_SCREENSAVER = 26;     // swimmers in the fullscreen overlay
 const MIN_SIZE        = 70;     // smallest swimmer (px)
 const MAX_SIZE        = 150;    // largest swimmer (px)
-const MIN_LIFE_MS     = 30_000; // shortest lifespan
-const MAX_LIFE_MS     = 90_000; // longest lifespan
-const FADE_IN_MS      = 1_400;  // fade-in window at birth
-const FADE_OUT_MS     = 2_400;  // fade-out window before death
-const MAX_SPEED       = 0.7;    // velocity clamp (px/frame ~ 42 px/s)
-const BROWNIAN_KICK   = 0.018;  // random velocity nudge per frame
+const MIN_LIFE_MS     = 40_000; // shortest lifespan (was 30s)
+const MAX_LIFE_MS     = 110_000;// longest lifespan (was 90s) — longer
+                                // because everything moves slower now
+                                // and we want fish on screen longer
+const FADE_IN_MS      = 1_800;  // gentle fade-in (was 1.4s)
+const FADE_OUT_MS     = 2_800;  // gentle fade-out (was 2.4s)
+const MAX_SPEED       = 0.32;   // velocity clamp (was 0.7) — half-
+                                // speed, so the tank feels calm
+                                // rather than frantic
+const BROWNIAN_KICK   = 0.008;  // random velocity nudge per frame
+                                // (was 0.018) — less jittery
 const FLEE_RADIUS     = 140;    // cursor flee radius (screensaver)
-const FLEE_STRENGTH   = 0.14;   // velocity push per frame inside radius
+const FLEE_STRENGTH   = 0.10;   // velocity push per frame inside radius
+                                // (was 0.14) — proportional to lower
+                                // speed clamp
 const CLICK_BURST     = 3;      // swimmers spawned per click in screensaver
+
+// 无厘头 fishing — every so often, a fishing line drops from the
+// top of the tank, hooks a random swimmer, and lifts it out.
+// Sequence: drop (1 s) → hook + wiggle (1 s) → rise out (3 s).
+const FISH_INTERVAL_MIN_MS = 25_000; // earliest a new fishing can fire
+const FISH_INTERVAL_MAX_MS = 50_000; // latest
+const FISH_DROP_MS         = 1_000;  // line descends from above
+const FISH_WIGGLE_MS       = 1_100;  // hooked-and-squirming
+const FISH_RISE_MS         = 2_800;  // line + fish rise off the top
+const FISH_TOTAL_MS        = FISH_DROP_MS + FISH_WIGGLE_MS + FISH_RISE_MS;
 
 // Pre-pick a palette of theme-friendly tint classes. Each swimmer
 // is born with one of these; rotates through them over its
@@ -84,23 +101,25 @@ const AQUARIUM_PLANTS: {
   { leftPct: 90, shape: "ribbon", scale: 0.90, swayDurSec: 6.4, swayDelaySec: 0.9, color: "#1d6b4a" },
 ];
 
-// Bubble columns. Each rises from its own random x position; the
-// duration + delay are tuned so the panel sees ~3 bubbles in motion
-// at any moment, not all eight at once.
+// Bubble columns. Each rises from its own random x position. The
+// rise durations are deliberately slow (16-32 s end-to-end) so the
+// bubbles drift up calmly — real-aquarium-bubble cadence, not
+// effervescent-soda speed. Delays staggered so the panel sees ~3
+// bubbles in motion at any moment, never all eight in sync.
 const AQUARIUM_BUBBLES: {
   leftPct: number;
   sizePx: number;
   durationSec: number;
   delaySec: number;
 }[] = [
-  { leftPct: 12, sizePx:  6, durationSec:  9, delaySec: 0   },
-  { leftPct: 24, sizePx:  4, durationSec:  7, delaySec: 1.8 },
-  { leftPct: 38, sizePx:  8, durationSec: 12, delaySec: 3.4 },
-  { leftPct: 54, sizePx:  5, durationSec:  8, delaySec: 0.9 },
-  { leftPct: 68, sizePx:  3, durationSec:  6, delaySec: 2.6 },
-  { leftPct: 80, sizePx:  7, durationSec: 10, delaySec: 4.2 },
-  { leftPct: 92, sizePx:  4, durationSec:  8, delaySec: 1.2 },
-  { leftPct: 30, sizePx:  3, durationSec:  7, delaySec: 5.0 },
+  { leftPct: 12, sizePx:  6, durationSec: 22, delaySec:  0   },
+  { leftPct: 24, sizePx:  4, durationSec: 18, delaySec:  4.6 },
+  { leftPct: 38, sizePx:  8, durationSec: 30, delaySec:  8.4 },
+  { leftPct: 54, sizePx:  5, durationSec: 20, delaySec:  2.5 },
+  { leftPct: 68, sizePx:  3, durationSec: 16, delaySec:  6.4 },
+  { leftPct: 80, sizePx:  7, durationSec: 26, delaySec: 10.2 },
+  { leftPct: 92, sizePx:  4, durationSec: 20, delaySec:  3.1 },
+  { leftPct: 30, sizePx:  3, durationSec: 18, delaySec: 12.5 },
 ];
 
 /** SVG silhouettes for the three plant shapes. All anchored at
@@ -199,6 +218,14 @@ export function FloaterAquarium() {
   const [caption, setCaption] = useState<string>("");
   const [bgPhase, setBgPhase] = useState(0); // 0..1 — slow day/night cycle
 
+  // ── 无厘头 fishing event ───────────────────────────────────────
+  // Periodically a fishing line drops in, hooks a random swimmer,
+  // and lifts it out of the top of the tank. Tracked through a ref
+  // (for the RAF loop to read each frame without re-rendering) and
+  // a parallel state (so React knows when to render the line).
+  const fishingRef = useRef<{ key: number; startedAt: number; anchorY: number } | null>(null);
+  const [fishingKey, setFishingKey] = useState<number | null>(null);
+
   const targetPop = fullscreen ? POP_SCREENSAVER : POP_PANEL;
 
   // ── Initial population + reseed on mode change ────────────────
@@ -227,8 +254,49 @@ export function FloaterAquarium() {
         return;
       }
       const w = el.clientWidth, h = el.clientHeight;
+      const now = performance.now();
+      const fishing = fishingRef.current;
       // Update motions + write transforms imperatively.
       for (const [key, m] of motionRef.current) {
+        // ── Fishing event override ─────────────────────────────
+        // If THIS swimmer is the one being fished, hand its motion
+        // entirely to the fishing animation. Three phases:
+        //   1. DROP   — fish stays put while the line descends.
+        //   2. WIGGLE — fish oscillates left/right "on the hook".
+        //   3. RISE   — fish + line lift smoothly off the top edge.
+        if (fishing && key === fishing.key) {
+          const t = now - fishing.startedAt;
+          if (t < FISH_DROP_MS) {
+            // Phase 1 — line falling, fish hovering in place.
+            m.vx *= 0.85;
+            m.vy *= 0.85;
+            m.x += m.vx;
+            m.y += m.vy;
+          } else if (t < FISH_DROP_MS + FISH_WIGGLE_MS) {
+            // Phase 2 — hooked. Sine wiggle around its anchor.
+            const localT = (t - FISH_DROP_MS) / 1000;
+            m.vx = Math.cos(localT * 14) * 0.5;
+            m.vy = Math.sin(localT * 9) * 0.18;
+            m.x += m.vx;
+            m.y = fishing.anchorY + m.vy * 4;
+          } else if (t < FISH_TOTAL_MS) {
+            // Phase 3 — rising out of the tank. Easing-out so the
+            // very last beats are faster than the initial lift.
+            const localT = (t - FISH_DROP_MS - FISH_WIGGLE_MS) / FISH_RISE_MS;
+            const eased = 1 - Math.pow(1 - localT, 2);
+            m.vx = 0;
+            m.vy = 0;
+            m.y = fishing.anchorY - eased * (fishing.anchorY + MAX_SIZE + 40);
+          }
+          // Write transform and skip the normal Brownian/flee path.
+          const node = nodeRef.current.get(key);
+          if (node) {
+            node.style.transform = `translate3d(${m.x}px, ${m.y}px, 0)`;
+          }
+          continue;
+        }
+
+        // ── Normal swimmer motion ──────────────────────────────
         // Brownian nudge so motion never settles into perfect lines.
         m.vx += (Math.random() - 0.5) * BROWNIAN_KICK;
         m.vy += (Math.random() - 0.5) * BROWNIAN_KICK;
@@ -267,18 +335,34 @@ export function FloaterAquarium() {
   }, [fullscreen]);
 
   // ── Birth / death cycle — runs every 2 s, the only React-state
-  //     update path. Drops expired swimmers, tops up to target. ──
+  //     update path. Drops expired swimmers, tops up to target.
+  //     Also handles the FISHING phase-3 completion: when a fished
+  //     swimmer has finished its rise (FISH_TOTAL_MS has elapsed),
+  //     remove it from the swimmer list and clear the fishing ref
+  //     so the next fishing event can fire. ──
   useEffect(() => {
     const interval = window.setInterval(() => {
       const now = performance.now();
       const el = containerRef.current;
       if (!el) return;
       const w = el.clientWidth, h = el.clientHeight;
+      // Check if a fishing event has completed.
+      const fishing = fishingRef.current;
+      const fishingFinished = fishing && now - fishing.startedAt >= FISH_TOTAL_MS;
+      if (fishingFinished && fishing) {
+        motionRef.current.delete(fishing.key);
+        fishingRef.current = null;
+        setFishingKey(null);
+      }
       setSwimmers((cur) => {
-        const alive = cur.filter((s) => now - s.born < s.lifespan);
+        const removedKey = fishingFinished ? fishing!.key : null;
+        const alive = cur.filter((s) => {
+          if (s.key === removedKey) return false;
+          return now - s.born < s.lifespan;
+        });
         // Remove motion entries for the departed.
         for (const s of cur) {
-          if (now - s.born >= s.lifespan) {
+          if (s.key !== removedKey && now - s.born >= s.lifespan) {
             motionRef.current.delete(s.key);
           }
         }
@@ -292,6 +376,59 @@ export function FloaterAquarium() {
     }, 2000);
     return () => window.clearInterval(interval);
   }, [targetPop]);
+
+  // ── Random fishing event ───────────────────────────────────────
+  // Every 25-50 s, drop a fishing line and hook a random swimmer.
+  // Only fires if there's no fishing event already in progress AND
+  // there's at least one swimmer to fish. The animation itself is
+  // driven from the RAF loop above; this effect just decides WHEN.
+  // Disabled for users who prefer reduced motion — the surprise
+  // pop-out animation is exactly the kind of thing that preference
+  // is set to suppress.
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia) {
+      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+      if (mq.matches) return;
+    }
+    function scheduleNext() {
+      const delay = FISH_INTERVAL_MIN_MS +
+        Math.random() * (FISH_INTERVAL_MAX_MS - FISH_INTERVAL_MIN_MS);
+      return window.setTimeout(() => {
+        if (fishingRef.current) {
+          // Already fishing — try again later.
+          timeoutId = scheduleNext();
+          return;
+        }
+        const liveSwimmers = swimmers;
+        if (liveSwimmers.length === 0) {
+          timeoutId = scheduleNext();
+          return;
+        }
+        // Pick a random swimmer that has a motion entry (skip any
+        // mid-deletion).
+        const candidates = liveSwimmers.filter((s) => motionRef.current.has(s.key));
+        if (candidates.length === 0) {
+          timeoutId = scheduleNext();
+          return;
+        }
+        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+        const motion = motionRef.current.get(chosen.key);
+        if (!motion) {
+          timeoutId = scheduleNext();
+          return;
+        }
+        fishingRef.current = {
+          key: chosen.key,
+          startedAt: performance.now(),
+          anchorY: motion.y,
+        };
+        setFishingKey(chosen.key);
+        timeoutId = scheduleNext();
+      }, delay);
+    }
+    let timeoutId = scheduleNext();
+    return () => window.clearTimeout(timeoutId);
+  }, [swimmers]);
 
   // ── Slow day/night cycle for the screensaver backdrop (90 s
   //     full cycle so it's noticeable but not distracting) ──────
@@ -382,25 +519,31 @@ export function FloaterAquarium() {
 
   // ── Aquarium water tint — vertical gradient (lighter at the
   //     surface, darker in the depths) plus a day/night cycle that
-  //     sweeps the palette in fullscreen mode.            ──
+  //     sweeps the palette in fullscreen mode.
+  //
+  //     The palette is intentionally DARKER than a real-life
+  //     aquarium because the floater glyphs are rendered in pastel
+  //     /40-opacity tints (text-sky-300/40 etc.) — they need a deep
+  //     backdrop to read clearly. Think "deep-sea tank at night",
+  //     not "tropical reef at noon".                          ──
   const bgGradient = useMemo(() => {
     if (!fullscreen) {
-      // Static aquarium: bright cyan at the surface, deep teal at
-      // the bottom. Reads as "looking into a well-lit tank."
-      return "linear-gradient(180deg, #1e6890 0%, #154a72 30%, #0d2f55 70%, #0b1f3a 100%)";
+      // Static deep-tank palette: cyan-tinged near-black at the top,
+      // even darker at the floor. Reads as "looking into a deep
+      // glass tank" with floaters that pop against the depth.
+      return "linear-gradient(180deg, #082238 0%, #061a2e 30%, #04111f 70%, #020910 100%)";
     }
-    // Day/night aquarium cycle. Surface always lighter than depths;
-    // the palette shifts so a 90-second cycle reads as a tank lit
-    // by the sun overhead (or moonlight after dark).
+    // Day/night cycle, all palettes deepened so pastel floaters
+    // keep their contrast at every phase.
     //   surface = top-of-tank colour
     //   middle  = mid-water
     //   depth   = bottom (where the sand sits)
     const palette = [
-      { surface: "#0a1f38", middle: "#0a182e", depth: "#070f1f" }, // pre-dawn — deep navy, faint
-      { surface: "#1f6e92", middle: "#154a72", depth: "#0d2f55" }, // morning — sunlight breaks the surface
-      { surface: "#37a8d8", middle: "#1f70b0", depth: "#0e3a66" }, // midday — bright tropical blue
-      { surface: "#825a8a", middle: "#3a285a", depth: "#1a1438" }, // dusk — magenta-tinged water
-      { surface: "#0a1f38", middle: "#0a182e", depth: "#070f1f" }, // back to pre-dawn
+      { surface: "#050d18", middle: "#040912", depth: "#02060c" }, // pre-dawn — near-black
+      { surface: "#0b324a", middle: "#082238", depth: "#040f1f" }, // morning — deep teal
+      { surface: "#0e4f7a", middle: "#0a345a", depth: "#051a30" }, // midday — deep tropical
+      { surface: "#3a1a48", middle: "#1f1030", depth: "#0c0820" }, // dusk — deep magenta water
+      { surface: "#050d18", middle: "#040912", depth: "#02060c" }, // back to pre-dawn
     ];
     const seg = bgPhase * (palette.length - 1);
     const i = Math.floor(seg);
@@ -567,6 +710,122 @@ export function FloaterAquarium() {
         {swimmers.map((s) => (
           <Swimmer key={s.key} swimmer={s} nodeMap={nodeRef} />
         ))}
+
+        {/* Fishing line — visible only when fishingKey is set, i.e.
+            a swimmer is currently being lifted out of the tank.
+            Drawn imperatively in the RAF loop above (line height
+            tracks the fished swimmer's y position). */}
+        {fishingKey != null && (
+          <FishingLine
+            fishingKey={fishingKey}
+            motionRef={motionRef}
+            fishingRef={fishingRef}
+          />
+        )}
+      </div>
+    </>
+  );
+}
+
+/** Fishing line + hook + tiny floating speech bubble. Refs back to
+ *  the parent's motion map so the line tracks the fished swimmer
+ *  frame-perfectly without re-rendering React each frame. Uses its
+ *  own RAF loop to read motion + paint imperatively. */
+function FishingLine({
+  fishingKey,
+  motionRef,
+  fishingRef,
+}: {
+  fishingKey: number;
+  motionRef: React.MutableRefObject<Map<number, Motion>>;
+  fishingRef: React.MutableRefObject<{ key: number; startedAt: number; anchorY: number } | null>;
+}) {
+  const lineRef = useRef<HTMLDivElement | null>(null);
+  const hookRef = useRef<HTMLDivElement | null>(null);
+  const bubbleRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    let raf = 0;
+    function paint() {
+      const m = motionRef.current.get(fishingKey);
+      const fishing = fishingRef.current;
+      if (m && fishing) {
+        const t = performance.now() - fishing.startedAt;
+        // During DROP phase, the line descends from -8 px (above
+        // the tank top) down to the swimmer's current y. We map
+        // local-t (0..1) to the y position with an ease-in so the
+        // line slows as it nears the fish.
+        let lineEndY = m.y;
+        if (t < FISH_DROP_MS) {
+          const localT = t / FISH_DROP_MS;
+          const eased = localT * localT * (3 - 2 * localT); // smoothstep
+          lineEndY = -8 + (m.y + 8) * eased;
+        }
+        // The line is a thin vertical bar from top to lineEndY.
+        if (lineRef.current) {
+          lineRef.current.style.height = `${Math.max(0, lineEndY)}px`;
+          lineRef.current.style.transform = `translate3d(${m.x}px, 0, 0)`;
+        }
+        // Hook sits at the bottom of the line, just above the fish.
+        if (hookRef.current) {
+          hookRef.current.style.transform = `translate3d(${m.x}px, ${lineEndY}px, 0)`;
+        }
+        // Speech bubble appears during the wiggle phase only.
+        const showBubble = t > FISH_DROP_MS && t < FISH_DROP_MS + FISH_WIGGLE_MS;
+        if (bubbleRef.current) {
+          bubbleRef.current.style.opacity = showBubble ? "1" : "0";
+          bubbleRef.current.style.transform = `translate3d(${m.x + 22}px, ${lineEndY - 12}px, 0)`;
+        }
+      }
+      raf = requestAnimationFrame(paint);
+    }
+    raf = requestAnimationFrame(paint);
+    return () => cancelAnimationFrame(raf);
+  }, [fishingKey, motionRef, fishingRef]);
+
+  return (
+    <>
+      {/* Vertical line, descending from top of tank */}
+      <div
+        ref={lineRef}
+        aria-hidden
+        className="absolute top-0 left-0 pointer-events-none"
+        style={{
+          width: 1.5,
+          background: "linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.55) 30%, rgba(255,255,255,0.65) 100%)",
+          marginLeft: -0.75,
+          willChange: "transform, height",
+        }}
+      />
+      {/* Hook glyph at the bottom of the line */}
+      <div
+        ref={hookRef}
+        aria-hidden
+        className="absolute top-0 left-0 pointer-events-none"
+        style={{
+          width: 10,
+          height: 14,
+          marginLeft: -5,
+          willChange: "transform",
+        }}
+      >
+        <svg viewBox="0 0 10 14" width="10" height="14" fill="none" stroke="white" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
+          <path d="M 5 0 L 5 7 q 0 5 -3 5 q -3 0 -3 -3" />
+        </svg>
+      </div>
+      {/* Speech bubble during wiggle phase — "!?" reaction */}
+      <div
+        ref={bubbleRef}
+        aria-hidden
+        className="absolute top-0 left-0 pointer-events-none transition-opacity duration-200"
+        style={{
+          opacity: 0,
+          willChange: "transform, opacity",
+        }}
+      >
+        <span className="inline-block px-1.5 py-0.5 rounded-md bg-white/90 text-[11px] font-bold text-slate-900 shadow">
+          !?
+        </span>
       </div>
     </>
   );

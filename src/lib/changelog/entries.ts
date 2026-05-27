@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Floater Aquarium — slower motion, darker water, occasional fishing — May 2026
+  {
+    title: "Floater Aquarium — calmer pace, deeper water for contrast, and occasionally something gets fished out of the tank",
+    body: "Three tuning passes on the redesigned aquarium:\n\n**1. Slower motion.** Everything in the tank moved at frantic-arcade speed. Halved the swimmer velocity clamp (0.7 → 0.32 px/frame), more than halved the Brownian random-walk (0.018 → 0.008), and slowed the bubble columns 2-3× (was 6-12 s end-to-end; now 16-32 s). Cursor flee tuned proportionally so the same nudge still works at half-speed. Net: the tank now feels like an aquarium at rest rather than a snow globe being shaken.\n\n**2. Darker water for swimmer contrast.** The previous tropical-blue palette washed out the pastel `text-{color}-300/40` floater tints. Dropped the entire palette into deep-tank territory:\n  • Panel: surface `#082238`, depth `#020910` (was `#1e6890` → `#0b1f3a` — about 60 % darker).\n  • Fullscreen day/night cycle palettes all deepened in lockstep: pre-dawn near-black → morning deep teal → midday deep tropical → dusk deep magenta. Surface stays lighter than depths at every phase but every phase is darker overall, so the pastel swimmers actually pop now.\n\n**3. 无厘头 fishing event.** Every 25-50 seconds (random) a fishing line drops from the top of the tank, hooks a random swimmer, and lifts it out:\n  • **Drop (1 s)** — thin white line descends from above to the chosen swimmer's position with a smoothstep ease.\n  • **Wiggle (1.1 s)** — the hook locks; the fish oscillates side-to-side as if struggling. A small **\"!?\" speech bubble** pops up next to the hooked floater for the duration.\n  • **Rise (2.8 s)** — the line + fish lift smoothly off the top edge with an ease-out curve so the last beats are fastest. Swimmer leaves the swimmer list once it clears the tank.\n\nA new swimmer immediately spawns to replace it on the next 2-second tick of the birth/death cycle, so population stays at target. Disabled for `prefers-reduced-motion` users (the surprise pop-out is exactly what that preference is set to suppress). Net effect: the tank now has a tiny ongoing comedy — most of the time it's a calm, dark aquarium with bubbles and plants, and every so often a single fish vanishes upward with a comic-strip reaction.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Floater Aquarium — proper aquarium design (sand, plants, bubbles, light beams) — May 2026
   {
     title: "Floater Aquarium — redesigned as an actual aquarium (sand, plants, bubbles, light beams, water surface)",
