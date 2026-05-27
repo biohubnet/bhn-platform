@@ -1211,7 +1211,7 @@ function BranchModal({
           pointerEvents: "none",
         }}
       >
-        <div ref={sourceMeasureRef} style={{ width: 360 }}>
+        <div ref={sourceMeasureRef} style={{ width: 420 }}>
           <BigStationCard
             station={source.station}
             track={source.track}
@@ -1223,7 +1223,7 @@ function BranchModal({
           <div
             key={`measure-${i}`}
             ref={(el) => { targetMeasureRefs.current[i] = el; }}
-            style={{ width: 320 }}
+            style={{ width: 380 }}
           >
             <BigStationCard
               station={t.station}
@@ -1714,18 +1714,37 @@ function computeFocusLayout(
   const SIDE_PAD         = 24;
   const SRC_TGT_GAP      = 120;
   const TGT_GAP          = 28;
-  const SRC_INTRINSIC_W  = 360;
-  const SRC_INTRINSIC_H_FALLBACK  = 420;
-  const TGT_INTRINSIC_W  = 320;
-  const TGT_INTRINSIC_H_FALLBACK  = 440;
+  // Card widths bumped from 360/320 → 420/380 (Dec '26). The previous
+  // tight columns squished long phrases like "Method validation (USP
+  // <1225>, ICH Q2)" onto extra lines, busting the measured-height
+  // safety net. Wider intrinsic widths give content room to breathe at
+  // scale=1 (single-column case, which is most stations). Multi-column
+  // layouts still downscale but the wider baseline means the scaled
+  // width is closer to where the measurement happened — less reflow,
+  // less clipping risk. The +28 px height safety buffer below catches
+  // any residual reflow gap from downscale.
+  const SRC_INTRINSIC_W  = 420;
+  const SRC_INTRINSIC_H_FALLBACK  = 440;
+  const TGT_INTRINSIC_W  = 380;
+  const TGT_INTRINSIC_H_FALLBACK  = 460;
+
+  // Safety buffer added on top of measured heights. Protects against
+  // the case where the card renders at a slightly narrower width than
+  // it was measured at (due to uniform downscale on multi-column
+  // layouts), which can push a long phrase onto an extra line. 28 px
+  // ≈ two lines of body text at 12 px leading-relaxed — generous but
+  // not so much that wide viewports get distracting empty space.
+  const HEIGHT_SAFETY    = 28;
 
   // Use measured content heights when available (post-render
   // measurement), else fall back to intrinsic constants. For targets,
   // use the MAX of measured heights so grid rows align and short
   // cards don't end up with a different height than their neighbours.
-  const SRC_INTRINSIC_H = contentHeights?.source ?? SRC_INTRINSIC_H_FALLBACK;
+  const SRC_INTRINSIC_H = contentHeights?.source != null
+    ? contentHeights.source + HEIGHT_SAFETY
+    : SRC_INTRINSIC_H_FALLBACK;
   const TGT_INTRINSIC_H = contentHeights?.targets && contentHeights.targets.length > 0
-    ? Math.max(TGT_INTRINSIC_H_FALLBACK / 2, ...contentHeights.targets)
+    ? Math.max(TGT_INTRINSIC_H_FALLBACK / 2, ...contentHeights.targets) + HEIGHT_SAFETY
     : TGT_INTRINSIC_H_FALLBACK;
 
   const availH = Math.max(360, viewport.h - TOP_PAD - BOTTOM_PAD);
@@ -2001,6 +2020,37 @@ function BigStationCard({
             )}
           </div>
         )}
+
+        {/* End-of-card marker — a chapter-break-style separator so
+            readers get visual confirmation they've seen everything in
+            the card and aren't missing content below an invisible
+            scroll-cliff. Accent-tinted lines so the marker reads as
+            part of the card rather than a foreign element; the small
+            "END" text is muted enough not to compete with the actual
+            content above it. Always last; renders on source AND
+            target cards (no crossLink check). */}
+        <div
+          className="mt-4 -mx-1 px-1 flex items-center gap-3"
+          aria-hidden
+        >
+          <div
+            className="h-px flex-1"
+            style={{
+              background: `linear-gradient(to right, transparent, color-mix(in srgb, ${track.accent} 35%, transparent), color-mix(in srgb, ${track.accent} 35%, transparent))`,
+            }}
+          />
+          <span
+            className="text-[9px] uppercase tracking-[0.22em] font-bold text-fg-subtle select-none"
+          >
+            end
+          </span>
+          <div
+            className="h-px flex-1"
+            style={{
+              background: `linear-gradient(to left, transparent, color-mix(in srgb, ${track.accent} 35%, transparent), color-mix(in srgb, ${track.accent} 35%, transparent))`,
+            }}
+          />
+        </div>
       </div>
     </div>
   );

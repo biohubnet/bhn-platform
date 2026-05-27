@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.29c";
+export const TOUR_VERSION = "2026.05.29d";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Pathways — wider cards + end-marker on branch modal (May 2026)
+  {
+    id: "trainee.pathways-end-marker",
+    title: "Career pathways — wider branch cards with a clear END marker",
+    body: "On /career-paths/pathways, the branched-out cards are now wider (380/420 px instead of 320/360) so long phrases like 'Method validation (USP <1225>, ICH Q2)' don't bust the layout. Every card also ends with a chapter-break-style END marker so you can see at a glance that you've read everything in the card — no more wondering if there's content hidden below an invisible scroll-cliff.",
+    path: "/career-paths/pathways",
+    placement: "center",
+    cta: { label: "Open pathways", href: "/career-paths/pathways" },
+    since: "2026.05.29d",
+  },
   // ─── Admin events — New event creation form (May 2026)
   {
     id: "admin.events-new-form",
