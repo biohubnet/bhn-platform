@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Voltage sidebar — section title chips no longer cut by border — May 2026
+  {
+    title: "Voltage theme — sidebar section title chips (ENGAGE / EXPERIENCE / EQUIP / HR PREVIEW) no longer cut by the section border running through them",
+    body: "Two bugs working together on the Voltage (Hi-tech) theme produced a visible horizontal line cutting through every sidebar section title chip:\n\n**1. Selector mismatch.** When the sidebar section chip became a `<button>` (in the collapsible-groups refactor) the per-theme overrides in `globals.css` were left targeting `span[data-section-tone=\"…\"]`. So the Voltage-specific re-tints weren't applying to the new button element at all — chips were rendering with the default light-theme Tailwind tones on the inky-black sidebar.\n\n**2. Translucent chip background.** The Voltage chip overrides used `rgba(<colour>, 0.18)` — only 18% opaque. The section container's top border passes through the lower portion of the chip (the chip sits at `-top-[10px]` and overlaps the container's border line), and an 18 %-opaque fill let that border render *through* the chip text as a horizontal line cutting the label.\n\n**Fix:**\n  • Selectors updated to match both `span[data-section-tone]` (historical) AND `button[data-section-tone]` (current, after the click-to-collapse refactor) — so the per-theme styling stays applied regardless of which element houses the chip.\n  • Chip background switched from `rgba(<colour>, 0.18)` to `linear-gradient(<tint>, <tint>), var(--card-solid)` — two stacked backgrounds, a flat tinted colour painted on top of the sidebar's fully opaque card surface. Visually identical to the old tinted look, but the lower layer is opaque so nothing behind the chip can leak through.\n  • Applied to all five section tones on Voltage: engage / experience / equip / electric / hr-preview / neutral.\n\nLight themes (Daydream, Rosalind, Summer Ice Cream, Sakura, Greenwood) were unaffected — their default Tailwind `bg-{tone}-100` chip backgrounds are already fully opaque so the border has never shown through them.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — level banners read as buttons now — May 2026
   {
     title: "Career paths — level banners now read unmistakably as click-to-expand buttons",

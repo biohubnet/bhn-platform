@@ -629,23 +629,33 @@
 [data-theme="hitech"] .text-fuchsia-800 { color: #f5d0fe; }
 [data-theme="hitech"] .text-fuchsia-900 { color: #fae8ff; }
 
-/* Sidebar section title chips + container overrides for Hi-tech.
- * The default Tailwind tones (bg-sky-100, text-sky-900, …)
- * paired with the Hi-tech text-color inversions above produce
- * invisible labels on the inky-black background — light text on
- * light chip bg. Also the violet / sky container washes glow too
- * bright on inky black. Re-tint each tone with a TRON-cyan-
- * adjacent dim background + a bright tonal foreground so every
- * section header reads cleanly without losing per-section
- * identity, AND tone down the containers so they don't strobe.
+/* Sidebar section title chips + container overrides for Hi-tech
+ * (Voltage). Two-fold purpose: re-tint the chip + container for the
+ * neon-on-near-black aesthetic, AND make the chip fully OPAQUE so
+ * the section container's top border (which the chip overlaps at
+ * `-top-[10px]`) doesn't show through the chip text as a horizontal
+ * line — a bug the previous `rgba(..., 0.18)` chip bg produced
+ * because translucent fills let the underlying border render
+ * through.
+ *
+ * Each chip uses `linear-gradient(<tint>, <tint>), var(--card)` —
+ * two stacked layers: a flat tinted colour painted on top of the
+ * sidebar's opaque card surface. Visually identical to the old
+ * rgba tint, but the lower layer is opaque, so nothing behind the
+ * chip leaks through.
+ *
+ * Selectors cover both `span` (historical) and `button` (current,
+ * after the chip became click-to-collapse) so the rule applies
+ * regardless of which element houses the chip in JS.
  *
  * Selector pairs by element type:
- *   span[data-section-tone] = the title chip
- *   div[data-section-tone]  = the section container wrapping the
- *                              chip + nav items
+ *   span / button[data-section-tone] = the title chip
+ *   div[data-section-tone]            = the section container
+ *                                       wrapping the chip + items
  */
-[data-theme="hitech"] span[data-section-tone="engage"] {
-  background: rgba(16, 185, 129, 0.18) !important;
+[data-theme="hitech"] span[data-section-tone="engage"],
+[data-theme="hitech"] button[data-section-tone="engage"] {
+  background: linear-gradient(rgba(16, 185, 129, 0.22), rgba(16, 185, 129, 0.22)), var(--card-solid) !important;
   color: #34d399 !important;
   box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.5);
 }
@@ -653,8 +663,9 @@
   background: rgba(16, 185, 129, 0.04) !important;
   border-color: rgba(16, 185, 129, 0.25) !important;
 }
-[data-theme="hitech"] span[data-section-tone="experience"] {
-  background: rgba(245, 158, 11, 0.18) !important;
+[data-theme="hitech"] span[data-section-tone="experience"],
+[data-theme="hitech"] button[data-section-tone="experience"] {
+  background: linear-gradient(rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.22)), var(--card-solid) !important;
   color: #fbbf24 !important;
   box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.5);
 }
@@ -662,8 +673,9 @@
   background: rgba(245, 158, 11, 0.04) !important;
   border-color: rgba(245, 158, 11, 0.25) !important;
 }
-[data-theme="hitech"] span[data-section-tone="equip"] {
-  background: rgba(244, 63, 94, 0.18) !important;
+[data-theme="hitech"] span[data-section-tone="equip"],
+[data-theme="hitech"] button[data-section-tone="equip"] {
+  background: linear-gradient(rgba(244, 63, 94, 0.22), rgba(244, 63, 94, 0.22)), var(--card-solid) !important;
   color: #fb7185 !important;
   box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.5);
 }
@@ -671,8 +683,9 @@
   background: rgba(244, 63, 94, 0.04) !important;
   border-color: rgba(244, 63, 94, 0.25) !important;
 }
-[data-theme="hitech"] span[data-section-tone="electric"] {
-  background: rgba(0, 212, 255, 0.18) !important;
+[data-theme="hitech"] span[data-section-tone="electric"],
+[data-theme="hitech"] button[data-section-tone="electric"] {
+  background: linear-gradient(rgba(0, 212, 255, 0.22), rgba(0, 212, 255, 0.22)), var(--card-solid) !important;
   color: #00d4ff !important;
   box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.55);
 }
@@ -681,8 +694,9 @@
   border-color: rgba(0, 212, 255, 0.28) !important;
   box-shadow: none !important;
 }
-[data-theme="hitech"] span[data-section-tone="hr-preview"] {
-  background: rgba(139, 92, 246, 0.20) !important;
+[data-theme="hitech"] span[data-section-tone="hr-preview"],
+[data-theme="hitech"] button[data-section-tone="hr-preview"] {
+  background: linear-gradient(rgba(139, 92, 246, 0.26), rgba(139, 92, 246, 0.26)), var(--card-solid) !important;
   color: #c4b5fd !important;
   box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.55);
 }
@@ -691,8 +705,9 @@
   border-color: rgba(139, 92, 246, 0.28) !important;
   box-shadow: none !important;
 }
-[data-theme="hitech"] span[data-section-tone="neutral"] {
-  background: rgba(0, 212, 255, 0.08) !important;
+[data-theme="hitech"] span[data-section-tone="neutral"],
+[data-theme="hitech"] button[data-section-tone="neutral"] {
+  background: linear-gradient(rgba(0, 212, 255, 0.12), rgba(0, 212, 255, 0.12)), var(--card-solid) !important;
   color: #8ecfe8 !important;
   box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.30);
 }
