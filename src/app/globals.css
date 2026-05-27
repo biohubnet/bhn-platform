@@ -3307,10 +3307,17 @@ h1, h2, h3 {
  * on the Marker, Leaflet still attaches the wrapper DOM to the
  * marker-pane, and absent an explicit pointer-events override the
  * wrapper's bounding box can intercept clicks/taps from elements
- * that visually sit beneath it (Leaflet's pane stacking order + the
- * wrapper's 200-px width means a label can shadow a much larger
- * area than the visible pill suggests). Disable it explicitly. */
-.leaflet-div-icon.facility-label-divicon {
+ * that visually sit beneath it.
+ *
+ * IMPORTANT: Leaflet renders DivIcon Markers with className
+ * `leaflet-marker-icon` (NOT `leaflet-div-icon`) — see
+ * Icon._setIconStyles in leaflet/src/layer/marker/Icon.js. The
+ * previous selector .leaflet-div-icon.facility-label-divicon never
+ * matched the rendered DOM, so this style was a no-op for the past
+ * two commits. Fixed by selecting on the class that actually
+ * appears + the custom one our code adds. */
+.leaflet-marker-icon.facility-label-divicon,
+.facility-label-divicon {
   background: transparent;
   border: 0;
   box-shadow: none;
