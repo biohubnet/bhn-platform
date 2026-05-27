@@ -89,6 +89,23 @@ import { ToxDoseEscalation } from "@/components/branding/ToxDoseEscalation";
 import { ValidationIQOQPQ } from "@/components/branding/ValidationIQOQPQ";
 import { VcDiligenceCycle } from "@/components/branding/VcDiligenceCycle";
 import { WesternBlotRun } from "@/components/branding/WesternBlotRun";
+// ── 2026-05-28 batch: fill out sparse categories to ≥6 each ─────
+import { AcademicTechTransfer } from "@/components/branding/AcademicTechTransfer";
+import { CompetitiveIntelligence } from "@/components/branding/CompetitiveIntelligence";
+import { CongressEngagementPlan } from "@/components/branding/CongressEngagementPlan";
+import { DisinfectionEfficacy } from "@/components/branding/DisinfectionEfficacy";
+import { EfficacyXenograftModel } from "@/components/branding/EfficacyXenograftModel";
+import { InvestigatorSponsoredTrial } from "@/components/branding/InvestigatorSponsoredTrial";
+import { IrbReviewCycle } from "@/components/branding/IrbReviewCycle";
+import { KolAdvisoryBoard } from "@/components/branding/KolAdvisoryBoard";
+import { LentivirusVectorProduction } from "@/components/branding/LentivirusVectorProduction";
+import { MarketAccessLaunch } from "@/components/branding/MarketAccessLaunch";
+import { MedicalLiteratureSurveillance } from "@/components/branding/MedicalLiteratureSurveillance";
+import { PatientRegistryEnrollment } from "@/components/branding/PatientRegistryEnrollment";
+import { PkPdModeling } from "@/components/branding/PkPdModeling";
+import { SingleCellAtacSeq } from "@/components/branding/SingleCellAtacSeq";
+import { TregExpansion } from "@/components/branding/TregExpansion";
+import { ZebrafishToxScreen } from "@/components/branding/ZebrafishToxScreen";
 
 type FloaterComponent = React.ComponentType<{ size?: number; className?: string }>;
 
@@ -701,6 +718,155 @@ export const FLOATER_REGISTRY: Record<string, FloaterDef> = {
     Component: PatientSupportProgram,
     defaultSize: 170,
     defaultColorClass: "text-rose-200/28",
+  },
+
+  // ── 2026-05-28 batch ────────────────────────────────────────────
+  // Sixteen additions to bring every category to ≥6 entries so the
+  // /admin/login-floaters gallery (6-cols-per-row at lg+) renders
+  // full rows rather than partial trailing rows. Each glyph evokes
+  // a real BHN-curriculum process; not invented filler.
+
+  // Patient & Academia (+4 → 6) — registries, ethics review, tech
+  // transfer, investigator-sponsored trials.
+  "patient-registry-enrollment": {
+    id: "patient-registry-enrollment",
+    displayName: "Patient registry enrollment",
+    category: "Patient & Academia",
+    Component: PatientRegistryEnrollment,
+    defaultSize: 170,
+    defaultColorClass: "text-emerald-200/28",
+  },
+  "irb-review-cycle": {
+    id: "irb-review-cycle",
+    displayName: "IRB / REB review cycle",
+    category: "Patient & Academia",
+    Component: IrbReviewCycle,
+    defaultSize: 170,
+    defaultColorClass: "text-sky-200/28",
+  },
+  "academic-tech-transfer": {
+    id: "academic-tech-transfer",
+    displayName: "Academic tech transfer",
+    category: "Patient & Academia",
+    Component: AcademicTechTransfer,
+    defaultSize: 170,
+    defaultColorClass: "text-violet-200/28",
+  },
+  "investigator-sponsored-trial": {
+    id: "investigator-sponsored-trial",
+    displayName: "Investigator-sponsored trial",
+    category: "Patient & Academia",
+    Component: InvestigatorSponsoredTrial,
+    defaultSize: 170,
+    defaultColorClass: "text-amber-200/28",
+  },
+
+  // Preclinical (+3 → 6) — zebrafish tox, PK/PD modeling, xenograft.
+  "zebrafish-tox-screen": {
+    id: "zebrafish-tox-screen",
+    displayName: "Zebrafish tox screen",
+    category: "Preclinical",
+    Component: ZebrafishToxScreen,
+    defaultSize: 170,
+    defaultColorClass: "text-emerald-200/28",
+  },
+  "pk-pd-modeling": {
+    id: "pk-pd-modeling",
+    displayName: "PK/PD modeling",
+    category: "Preclinical",
+    Component: PkPdModeling,
+    defaultSize: 170,
+    defaultColorClass: "text-amber-200/28",
+  },
+  "efficacy-xenograft-model": {
+    id: "efficacy-xenograft-model",
+    displayName: "Xenograft efficacy",
+    category: "Preclinical",
+    Component: EfficacyXenograftModel,
+    defaultSize: 170,
+    defaultColorClass: "text-rose-200/28",
+  },
+
+  // Medical Affairs (+3 → 6) — KOL boards, congress plans, literature.
+  "kol-advisory-board": {
+    id: "kol-advisory-board",
+    displayName: "KOL advisory board",
+    category: "Medical Affairs",
+    Component: KolAdvisoryBoard,
+    defaultSize: 170,
+    defaultColorClass: "text-sky-200/28",
+  },
+  "congress-engagement-plan": {
+    id: "congress-engagement-plan",
+    displayName: "Congress engagement plan",
+    category: "Medical Affairs",
+    Component: CongressEngagementPlan,
+    defaultSize: 170,
+    defaultColorClass: "text-amber-200/28",
+  },
+  "medical-literature-surveillance": {
+    id: "medical-literature-surveillance",
+    displayName: "Literature surveillance",
+    category: "Medical Affairs",
+    Component: MedicalLiteratureSurveillance,
+    defaultSize: 170,
+    defaultColorClass: "text-violet-200/28",
+  },
+
+  // Commercial (+2 → 6) — market access, competitive intelligence.
+  "market-access-launch": {
+    id: "market-access-launch",
+    displayName: "Market access launch",
+    category: "Commercial",
+    Component: MarketAccessLaunch,
+    defaultSize: 170,
+    defaultColorClass: "text-emerald-200/28",
+  },
+  "competitive-intelligence": {
+    id: "competitive-intelligence",
+    displayName: "Competitive intelligence",
+    category: "Commercial",
+    Component: CompetitiveIntelligence,
+    defaultSize: 170,
+    defaultColorClass: "text-sky-200/28",
+  },
+
+  // Cell / Process (+2 → 6) — lentiviral vectors, Treg expansion.
+  "lentivirus-vector-production": {
+    id: "lentivirus-vector-production",
+    displayName: "Lentivirus vector production",
+    category: "Cell / Process",
+    Component: LentivirusVectorProduction,
+    defaultSize: 170,
+    defaultColorClass: "text-violet-200/28",
+  },
+  "treg-expansion": {
+    id: "treg-expansion",
+    displayName: "Treg expansion",
+    category: "Cell / Process",
+    Component: TregExpansion,
+    defaultSize: 170,
+    defaultColorClass: "text-emerald-200/28",
+  },
+
+  // Omics (+1 → 6) — single-cell ATAC-seq.
+  "single-cell-atac-seq": {
+    id: "single-cell-atac-seq",
+    displayName: "Single-cell ATAC-seq",
+    category: "Omics",
+    Component: SingleCellAtacSeq,
+    defaultSize: 170,
+    defaultColorClass: "text-sky-200/28",
+  },
+
+  // QC Micro (+1 → 6) — disinfection efficacy.
+  "disinfection-efficacy": {
+    id: "disinfection-efficacy",
+    displayName: "Disinfectant efficacy",
+    category: "QC Micro",
+    Component: DisinfectionEfficacy,
+    defaultSize: 170,
+    defaultColorClass: "text-amber-200/28",
   },
 };
 

@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.27b";
+export const TOUR_VERSION = "2026.05.28";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Sixteen new login-floater glyphs (May 2026) ─────────────────
+  {
+    id: "admin.login-floaters-batch-16",
+    title: "16 new login-floater glyphs — every category now fills a full row",
+    body: "Added 16 new SVG process-animation glyphs to /admin/login-floaters, bringing the registry from 75 to 91. Patient & Academia, Preclinical, Medical Affairs, Commercial, Cell/Process, Omics, and QC Micro all now have at least 6 entries each, so the 6-cols-per-row gallery shows full rows instead of half-empty trailing ones. New glyphs: patient registry enrollment, IRB review cycle, academic tech transfer, investigator-sponsored trial, zebrafish tox screen, PK/PD modeling, xenograft efficacy, KOL advisory board, congress engagement plan, literature surveillance, market access launch, competitive intelligence, lentivirus vector production, Treg expansion, single-cell ATAC-seq, and disinfectant efficacy.",
+    path: "/admin/login-floaters",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open the gallery", href: "/admin/login-floaters" },
+    since: "2026.05.28",
+  },
   // ─── Floater Aquarium on /admin/login-floaters (May 2026) ────────
   {
     id: "admin.floater-aquarium",

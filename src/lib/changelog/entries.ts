@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Login-floaters — 16 new SVG glyphs, every category now ≥6 — May 2026
+  {
+    title: "Login-floaters — 16 new SVG process glyphs, every gallery category now fills its row",
+    body: "The 6-cols-per-row gallery on `/admin/login-floaters` had seven sparse categories that showed a half-empty trailing row. Built **16 new SVG-animation floater components** to bring each one up to at least six entries. Total registry: 75 → **91 glyphs**.\n\n**Additions by category:**\n\n  • **Patient & Academia** (+4 → 6): *Patient registry enrollment* (real-world evidence cycle), *IRB / REB review cycle* (submit → review → revise → approve), *Academic tech transfer* (discover → disclose → patent → license), *Investigator-sponsored trial* (clinical question → protocol → fund → FPI).\n  • **Preclinical** (+3 → 6): *Zebrafish tox screen* (24-well plate · log-titration · 5 dpf), *PK/PD modeling* (concentration-time data → compartmental fit → Monte-Carlo simulation → human dose prediction), *Xenograft efficacy* (implant → tumour grow → q3d dosing → 78 % TGI on the treatment arm vs. control curve).\n  • **Medical Affairs** (+3 → 6): *KOL advisory board* (recruit · brief · discuss · synthesise), *Congress engagement plan* (abstracts → posters → satellite symposium → 48-h follow-up), *Literature surveillance* (PubMed run → 188 → 14 titles → topic-tagged → digest sent).\n  • **Commercial** (+2 → 6): *Market access launch* (HTA dossier → payer meetings → formulary tier 2 → claims live), *Competitive intelligence* (radar scan → SWOT → exec brief → option-B response).\n  • **Cell / Process** (+2 → 6): *Lentivirus vector production* (HEK293T transfect → harvest → ultracentrifuge → p24 titer 8.2 × 10⁸ TU/mL), *Treg expansion* (CD4⁺CD25⁺ sort → α-CD3/CD28 + IL-2 activation → 300× expansion → cryopreserve vials).\n  • **Omics** (+1 → 6): *Single-cell ATAC-seq* (nuclei → Tn5 tagmentation → paired-end sequencing → 124 k accessibility peaks).\n  • **QC Micro** (+1 → 6): *Disinfectant efficacy* (challenge 10⁶ CFU coupon → 70 % IPA · 30 s → swab-and-neutralise → 3.4-log reduction PASS).\n\nEvery new glyph follows the same pattern as the original registry: 4-stage looping animation via `useStageCycle`, pure SVG with `currentColor` strokes so the floater inherits its tint, stage label + dot progress at the bottom with proper `role=\"progressbar\"` accessibility, ~100-line components. They mirror real BHN-curriculum vocabulary (no invented processes) — drop them onto `/login` from the same admin gallery as any other floater.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Career paths — bigger labeled Collapse button + integrated fold toolbar — May 2026
   {
     title: "Career paths — labeled \"Collapse\" button on each card + a tighter fold-view toolbar",
