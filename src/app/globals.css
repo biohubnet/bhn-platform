@@ -3007,6 +3007,158 @@ body {
   .icecream-atmosphere .icecream-caption-text { animation: none !important; }
 }
 
+/* ╔══════════════════════════════════════════════════════════════════╗
+ * ║ Floater Aquarium — water-surface, light beams, sand, plants,     ║
+ * ║ bubbles. Used by /admin/login-floaters bottom panel + its        ║
+ * ║ fullscreen screensaver. Pointer-events-none on every layer so    ║
+ * ║ click-to-spawn-burst still falls through to the container.       ║
+ * ╚══════════════════════════════════════════════════════════════════╝ */
+
+/* Surface shimmer — pale horizontal band at the very top of the
+ * tank that ripples gently. Reads as sunlight refracting on the
+ * underside of the water surface. */
+@keyframes aquarium-surface-shimmer {
+  0%, 100% { transform: translateX(-2%);  opacity: 0.55; }
+  50%      { transform: translateX( 2%);  opacity: 0.85; }
+}
+.aquarium-surface {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 14%;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 60%, transparent 100%),
+    linear-gradient(90deg,
+      transparent 0%,
+      rgba(255,255,255,0.10) 20%,
+      transparent 40%,
+      rgba(255,255,255,0.12) 60%,
+      transparent 80%,
+      rgba(255,255,255,0.10) 100%);
+  filter: blur(2px);
+  animation: aquarium-surface-shimmer 8s ease-in-out infinite;
+}
+
+/* Light beams — diagonal pale streaks that pierce the water from
+ * above. Two beams at different angles + speeds so the "lit from
+ * overhead" feel reads even on a small panel. */
+@keyframes aquarium-beam-drift {
+  0%, 100% { transform: translate3d(-3%,  0%, 0) rotate(8deg);  opacity: 0.30; }
+  50%      { transform: translate3d( 3%, -2%, 0) rotate(10deg); opacity: 0.55; }
+}
+.aquarium-light-beam {
+  position: absolute;
+  top: -10%;
+  width: 30%;
+  height: 130%;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.18) 0%,
+    rgba(255,255,255,0.10) 30%,
+    rgba(255,255,255,0.04) 70%,
+    transparent 100%);
+  mix-blend-mode: screen;
+  filter: blur(8px);
+  pointer-events: none;
+}
+.aquarium-light-beam-a {
+  left: 18%;
+  animation: aquarium-beam-drift 22s ease-in-out infinite;
+}
+.aquarium-light-beam-b {
+  left: 60%;
+  width: 24%;
+  animation: aquarium-beam-drift 28s ease-in-out -7s infinite reverse;
+  opacity: 0.5;
+}
+
+/* Sand / gravel bed at the bottom of the tank. Layered radial
+ * highlights give the band a pebbled feel without needing a noise
+ * image. The dark-to-light vertical gradient sells "ground" rather
+ * than "another stripe of water." */
+.aquarium-sand {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 9%;
+  background:
+    radial-gradient(ellipse 8% 50% at 14% 40%, rgba(220, 200, 160, 0.45), transparent 70%),
+    radial-gradient(ellipse 6% 40% at 32% 65%, rgba(230, 210, 170, 0.32), transparent 70%),
+    radial-gradient(ellipse 10% 55% at 56% 50%, rgba(220, 200, 160, 0.40), transparent 70%),
+    radial-gradient(ellipse 7% 45% at 78% 40%, rgba(230, 210, 170, 0.32), transparent 70%),
+    radial-gradient(ellipse 8% 50% at 92% 60%, rgba(220, 200, 160, 0.40), transparent 70%),
+    linear-gradient(180deg, rgba(80, 60, 40, 0.55) 0%, rgba(120, 90, 60, 0.85) 60%, rgba(140, 110, 70, 0.95) 100%);
+}
+
+/* Plant fronds anchored in the sand. Each plant gets its own sway
+ * timing via inline custom properties (--plant-sway-dur,
+ * --plant-sway-delay, --plant-scale, color: …). The transform-origin
+ * is at the bottom of the plant (50% 100%) so the sway pivots from
+ * the seabed, not the middle of the frond. */
+@keyframes aquarium-plant-sway {
+  0%, 100% { transform: translateX(-50%) scale(var(--plant-scale, 1)) rotate(-3deg); }
+  50%      { transform: translateX(-50%) scale(var(--plant-scale, 1)) rotate( 3deg); }
+}
+.aquarium-plants {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+}
+.aquarium-plant {
+  position: absolute;
+  bottom: 4%;                  /* roots sit just above the sand */
+  transform: translateX(-50%) scale(var(--plant-scale, 1));
+  transform-origin: 50% 100%;
+  animation:
+    aquarium-plant-sway var(--plant-sway-dur, 6s) ease-in-out infinite;
+  animation-delay: var(--plant-sway-delay, 0s);
+  line-height: 0;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.30));
+}
+
+/* Bubbles rising from the sand. Each bubble runs the same vertical
+ * rise but with its own duration + delay via inline style. We
+ * scale slightly + add a tiny horizontal wobble so the column
+ * never looks like a perfect vertical line. */
+@keyframes aquarium-bubble-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.5);
+    opacity: 0;
+  }
+  10% { opacity: 0.8; }
+  50% {
+    transform: translate3d(6px, -50%, 0) scale(0.9);
+  }
+  90% { opacity: 0.7; }
+  100% {
+    transform: translate3d(-4px, -100vh, 0) scale(1.05);
+    opacity: 0;
+  }
+}
+.aquarium-bubbles {
+  position: absolute;
+  inset: 0;
+}
+.aquarium-bubble {
+  position: absolute;
+  bottom: 4%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.65) 0%, rgba(200, 230, 255, 0.30) 55%, rgba(150, 200, 240, 0.10) 100%);
+  box-shadow: inset 0 0 1px rgba(255, 255, 255, 0.45);
+  animation: aquarium-bubble-rise linear infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aquarium-surface,
+  .aquarium-light-beam,
+  .aquarium-plant,
+  .aquarium-bubble { animation: none !important; }
+}
+
 /* Tame Tailwind tints for the dark Dry Ice. Same approach as the
  * Nightfall theme — desaturate rose / amber / emerald base tints so
  * cards using bg-rose-50 etc. don't blast the cool palette. */

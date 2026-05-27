@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Floater Aquarium — proper aquarium design (sand, plants, bubbles, light beams) — May 2026
+  {
+    title: "Floater Aquarium — redesigned as an actual aquarium (sand, plants, bubbles, light beams, water surface)",
+    body: "The aquarium on `/admin/login-floaters` used to be a flat dark-blue panel with glyphs floating around. That worked but didn't feel like *an aquarium*. Redesigned with all the visual cues of a real glass tank:\n\n  • **Aquatic water tint** — vertical gradient from a bright cyan surface to a deep teal floor (was a flat navy diagonal). In screensaver mode, the day/night cycle now sweeps a tank-friendly palette: pre-dawn navy → morning sun-broken blue → tropical midday → magenta dusk → back to navy. Surface stays lighter than depths at every phase, so the \"looking into a lit tank\" feel reads regardless of time.\n  • **Sub-surface shimmer** at the very top — pale horizontal band with a slow horizontal ripple keyframe, reads as sunlight refracting on the underside of the water surface.\n  • **Diagonal light beams** piercing down through the water from above. Two beams at different angles drift on slow independent cycles via `mix-blend-mode: screen` so they brighten the water without overpowering it.\n  • **Sand / gravel bed** at the bottom — layered radial highlights for the pebbled texture, dark-to-light vertical gradient that sells \"ground\" rather than \"another stripe of water.\"\n  • **Seven swaying plants** anchored in the sand. Three frond shapes — narrow ribbon vallisneria, broad-bladed Anubias fan, bushy foxtail tassel — mixed across the bed so it doesn't read as a row of clones. Each plant has its own sway duration + delay + scale + colour; transform-origin pivots from the bottom of the frond so the motion looks rooted, not floating.\n  • **Eight bubble columns** rising from the sand. Each on its own duration + delay so the panel sees ~3 bubbles in motion at any moment, never all eight in sync. Subtle horizontal wobble + scale on the way up, fades at the surface.\n  • **Front-glass vignette** — inset shadow at the bottom + a thin highlight at the top edge so the panel reads as a sheet of glass with water behind it, not a back-lit screen.\n\nThe glyphs (the \"fish\") still drift around with cursor flee + click-burst + 30-90 s lifespan; everything they had before still works, they're just now swimming through an actual tank. Reduced-motion users get a static aquarium — all keyframes are gated by `prefers-reduced-motion`.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Login-floaters — 10 more glyphs, every category a multiple of 6 — May 2026
   {
     title: "Login-floaters — 10 new glyphs so every category is a clean multiple of 6 (18 / 12 / 12 / 6 × 9)",
