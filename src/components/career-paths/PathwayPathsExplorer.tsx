@@ -44,7 +44,6 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronsRight,
-  ChevronLeft,
   Maximize2,
   Minimize2,
 } from "lucide-react";
@@ -101,8 +100,18 @@ interface BranchOpenWithRects extends BranchOpen {
  *  the chart (header row, level row, connector row) so they all
  *  stay perfectly aligned. */
 function gridTemplateColumns(pathways: { id: string }[], collapsed: Set<string>): string {
+  // Collapsed columns are 140 px — wide enough to fit a horizontal
+  // title + tagline + sub-programs (instead of the old 44-px strip
+  // with rotated text). 7 × 140 + 6 × 12 = 1052 px, which lives
+  // inside the 1100-px min-width chart container with ~48 px slack
+  // each side, and `justify-content: center` on the grid containers
+  // (header / level / connector rows) distributes that slack so the
+  // all-collapsed row sits centred on the canvas instead of bunched
+  // to the left. When ANY column is expanded its `1fr` absorbs the
+  // slack and justify-content has no effect, so the centring only
+  // kicks in when every column is collapsed.
   return pathways
-    .map((p) => (collapsed.has(p.id) ? "44px" : "minmax(150px, 1fr)"))
+    .map((p) => (collapsed.has(p.id) ? "140px" : "minmax(150px, 1fr)"))
     .join(" ");
 }
 
@@ -416,7 +425,7 @@ function TrackHeadersRow({
   columnRefSetters: Record<string, (el: HTMLElement | null) => void>;
 }) {
   return (
-    <ol className="grid gap-3" style={{ gridTemplateColumns: gridTemplate }}>
+    <ol className="grid gap-3 justify-center" style={{ gridTemplateColumns: gridTemplate }}>
       {BHN_PATHWAYS.map((track) => {
         const Icon = ICONS[track.iconKey];
         const isCollapsed = collapsedPathways.has(track.id);
@@ -426,7 +435,7 @@ function TrackHeadersRow({
             ref={columnRefSetters[track.id]}
             className={
               "relative rounded-xl border bg-card-solid shadow-card-rest " +
-              (isCollapsed ? "px-1 py-2 overflow-hidden" : "px-3 py-2.5")
+              (isCollapsed ? "px-2 py-2.5" : "px-3 py-2.5")
             }
             style={{
               borderColor: `color-mix(in srgb, ${track.accent} 30%, var(--line))`,
@@ -434,28 +443,52 @@ function TrackHeadersRow({
             }}
           >
             {isCollapsed ? (
+              // Horizontal compact card. The collapsed state used to
+              // be a 44-px-wide strip with the title set in
+              // writing-mode: vertical-rl — unreadable at a glance.
+              // Now it's a 140-px card with a normal horizontal
+              // layout: icon + status pill on the top row, title + a
+              // 2-line tagline + sub-programs (joined with " · " to
+              // fit the narrow column) underneath, and an expand
+              // affordance pinned to the bottom. Whole card is the
+              // expand button.
               <button
                 type="button"
                 onClick={() => togglePathway(track.id)}
                 title={`Expand ${track.title}`}
-                className="w-full h-full flex flex-col items-center gap-1.5 text-fg hover:text-brand-700"
+                className="w-full h-full flex flex-col items-start gap-1 text-left group/collapsed"
               >
-                <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: track.accent }} />
-                {/* Rotated title — written sideways in the thin
-                    collapsed strip. writing-mode is the cleanest CSS
-                    primitive for this; the Latin glyphs orient
-                    sideways which reads top-to-bottom up the column. */}
-                <span
-                  className="text-[10px] font-semibold tracking-tight whitespace-nowrap leading-none"
-                  style={{
-                    writingMode: "vertical-rl",
-                    transform: "rotate(180deg)",
-                    color: track.accent,
-                  }}
+                <div className="flex items-center gap-1.5 w-full">
+                  <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: track.accent }} />
+                  {track.status === "in-development" && (
+                    <span className="inline-flex items-center text-[8.5px] uppercase tracking-[0.14em] font-bold px-1 py-0.5 rounded-full bg-amber-100 text-amber-900 ring-1 ring-inset ring-amber-200">
+                      In dev
+                    </span>
+                  )}
+                </div>
+                <p
+                  className="text-[11px] font-semibold leading-tight line-clamp-2 mt-0.5"
+                  style={{ color: track.accent }}
                 >
                   {track.title}
+                </p>
+                <p className="text-[9.5px] text-fg-muted leading-snug line-clamp-3">
+                  {track.tagline}
+                </p>
+                {track.subPrograms && track.subPrograms.length > 0 && (
+                  <p className="text-[8.5px] italic text-fg-subtle leading-snug line-clamp-2 mt-0.5">
+                    {track.subPrograms.join(" · ")}
+                  </p>
+                )}
+                {track.deliveredBy && (
+                  <p className="text-[8.5px] italic text-fg-subtle leading-snug line-clamp-1">
+                    {track.deliveredBy}
+                  </p>
+                )}
+                <span className="mt-auto pt-1 inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-fg-subtle group-hover/collapsed:text-brand-700">
+                  <ChevronRight size={10} />
+                  Expand
                 </span>
-                <ChevronLeft size={10} className="opacity-60 mt-auto" />
               </button>
             ) : (
               <>
@@ -583,7 +616,7 @@ function LevelRow({
       {!isCollapsed && (
         <ol
           id={`level-stations-${level}`}
-          className="grid gap-3"
+          className="grid gap-3 justify-center"
           style={{ gridTemplateColumns: gridTemplate }}
         >
           {BHN_PATHWAYS.map((track) => {
@@ -638,13 +671,14 @@ function ConnectorRow({
   collapsedPathways: Set<string>;
 }) {
   return (
-    <div className="grid gap-3 h-7" style={{ gridTemplateColumns: gridTemplate }}>
+    <div className="grid gap-3 h-7 justify-center" style={{ gridTemplateColumns: gridTemplate }}>
       {accents.map((accent, i) => {
         const pathwayId = BHN_PATHWAYS[i]?.id;
         // Skip drawing the swoopy connector inside collapsed columns —
-        // the column itself is only 44 px wide so the arrow would look
-        // out of place. Render an empty cell so the grid keeps its
-        // column count.
+        // when collapsed the column carries its own compact header so
+        // the arrow would compete with it. Render an empty cell so the
+        // grid keeps its column count and the surviving connectors stay
+        // aligned with their expanded columns.
         if (pathwayId && collapsedPathways.has(pathwayId)) {
           return <div key={i} aria-hidden />;
         }

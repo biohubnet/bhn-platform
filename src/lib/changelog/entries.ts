@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — collapsed pathway cards redesigned — May 2026
+  {
+    title: "Career paths — collapsed pathway cards now read horizontally, sit centred on the canvas, and carry more detail",
+    body: "Three follow-up fixes on the `/career-paths/pathways` collapsed state:\n\n**1. Horizontal text.** The collapsed pathway header used to be a 44-px-wide strip with the title set in `writing-mode: vertical-rl` — readable in principle, awkward in practice (you had to tilt your head). Replaced with a normal 140-px-wide horizontal card: icon + status pill on the top row, accent-coloured title underneath, then the tagline and sub-programs (joined with `·` to fit the narrow column) and the BHN delivery-partner footnote. Whole card is the expand button; the `Expand` affordance with chevron sits pinned to the bottom.\n\n**2. Centred on the canvas.** With seven 140-px cards plus six 12-px gaps the row totals 1052 px, which is narrower than the 1100-px-minimum chart container. The three grid containers that share the column template (header row, level rows, connector row) all got `justify-content: center` so the slack distributes evenly — when every pathway is collapsed the row sits centred on the canvas instead of bunched against the left edge. When ANY column is expanded its `1fr` track absorbs the slack and `justify-content` has no effect, so this centring only kicks in for the all-collapsed view.\n\n**3. More detail to start.** Previous collapsed card only showed the icon + rotated title + a chevron. New card carries the title, the 2-3 line tagline, the sub-program chips (joined inline as text to save space), the In-dev status pill where applicable, and the delivery-partner footnote — basically everything the expanded header carries, just compressed.\n\nBonus: the previous commit's measurement-driven SVG fan-out lines already track actual column centres via `useLayoutEffect` + `ResizeObserver`, so the lines from *Your career journey with BHN Learning Pathways* down to each column re-route automatically as the columns slide into their new centred positions.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Facilities map — seven mis-located dots fixed — May 2026
   {
     title: "Facilities map — seven facility dots were sitting hundreds of km from where they actually are; fixed",
