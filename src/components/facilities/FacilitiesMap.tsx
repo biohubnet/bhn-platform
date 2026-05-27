@@ -281,7 +281,7 @@ function MapInner({
   facilities: FacilityRow[];
   onSelect: (f: FacilityRow | null) => void;
 }) {
-  const { MapContainer, TileLayer, CircleMarker, Popup, Polyline, useMap, useMapEvents } = Lib;
+  const { MapContainer, TileLayer, CircleMarker, Popup, Tooltip, Polyline, useMap, useMapEvents } = Lib;
   // Track zoom so we can scale marker radius. Higher zoom = more
   // detail = larger markers; lower zoom = compact dots.
   const [zoom, setZoom] = useState(5);
@@ -410,6 +410,22 @@ function MapInner({
             <Popup>
               <FacilityPopupContent facility={f} accent={accent} clusterSize={f.clusterSize} />
             </Popup>
+            {/* Always-on name label. Rendered as a permanent Leaflet
+                Tooltip above the dot. Only shown once the user has
+                zoomed in to roughly metro level (z ≥ 11) — at country
+                or provincial zoom the labels for 100+ facilities would
+                overlap into noise. On hover at lower zoom, the popup
+                still surfaces the name + details. */}
+            {zoom >= 11 && (
+              <Tooltip
+                permanent
+                direction="top"
+                offset={[0, -radius - 2]}
+                className="facility-name-tag"
+              >
+                {f.name}
+              </Tooltip>
+            )}
           </CircleMarker>
         );
       })}
