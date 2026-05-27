@@ -19,6 +19,7 @@ import {
   Pencil,
   Ticket,
   Wrench,
+  Video,
 } from "lucide-react";
 
 /* ─── Metadata ───────────────────────────────────────────────────── */
@@ -126,6 +127,29 @@ export default async function EventLandingPage(
     ? `linear-gradient(180deg, rgba(15,29,61,0.55) 0%, rgba(15,29,61,0.85) 100%), url(${event.coverImageUrl})`
     : "linear-gradient(135deg, var(--color-brand-900, #0b1b3b), var(--color-brand-700, #2d4cb8) 60%, var(--color-brand-600, #3b6cef))";
 
+  // Detect online events via the convention established in
+  // /admin/events/new: online events store the platform name in
+  // mainVenueName (default "Online", overridable to e.g. "Zoom
+  // Webinar") and the meeting URL in mainVenueMapUrl, leaving the
+  // address blank. The hero chip + venue card both gate on this so
+  // an online event doesn't say "In person".
+  const isOnline =
+    event.mainVenueName === "Online" ||
+    (!!event.mainVenueMapUrl && !event.mainVenueAddress);
+
+  // Section sequence — gives editorial "01 / 02 / ..." numbering to
+  // the eyebrows so the page reads as chapters rather than as a
+  // generic landing. Only count sections that actually render.
+  const seq: string[] = [];
+  if (event.workshops.length > 0) seq.push("workshops");
+  if (event.symposiumSessions.length > 0) seq.push("agenda");
+  if (event.speakers.length > 0) seq.push("speakers");
+  if (event.sponsors.length > 0) seq.push("sponsors");
+  function sectionNo(key: string): string | undefined {
+    const idx = seq.indexOf(key);
+    return idx >= 0 ? String(idx + 1).padStart(2, "0") : undefined;
+  }
+
   return (
     <>
       {/* ───── Admin edit bar ──────────────────────────────────────
@@ -167,6 +191,13 @@ export default async function EventLandingPage(
       )}
 
       {/* ───── Hero ─────────────────────────────────────────────── */}
+      {/* Editorial treatment (Dec '26 redesign per taste-skill audit):
+          left-aligned (not the LLM-default centered-over-dark-mesh
+          pattern), oversized date as a mono eyebrow, large display
+          title with negative leading for confidence, slim hr below the
+          tagline acting as a chapter break before the meta row + CTAs.
+          The brand-gradient backdrop stays — that's our existing
+          identity. The composition inside is what changes. */}
       <section
         className="relative text-white"
         style={{
@@ -175,30 +206,51 @@ export default async function EventLandingPage(
           backgroundPosition: "center",
         }}
       >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
-          {/* Eyebrow removed Dec '26 — was hardcoded "Annual Symposium
-              & Training Week" which only made sense for the original
-              demo event. Now that events are admin-created from
-              /admin/events/new with arbitrary titles, the eyebrow
-              would lie. The event title alone reads cleanly without
-              it; if a per-event eyebrow ever matters we'd add a
-              dedicated column rather than re-hardcoding. */}
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+          <p className="text-[11px] sm:text-xs font-mono uppercase tracking-[0.28em] text-white/65">
+            {formatDateRange(event.startDate, event.endDate)}
+          </p>
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[0.95] mt-5 max-w-4xl">
             {event.title}
           </h1>
           {event.tagline && (
-            <p className="text-base sm:text-xl text-white/85 mt-5 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-xl text-white/85 mt-6 max-w-2xl leading-relaxed font-light">
               {event.tagline}
             </p>
           )}
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 text-sm">
-            <Chip dark icon={Calendar}>{formatDateRange(event.startDate, event.endDate)}</Chip>
-            {event.mainVenueName && (
-              <Chip dark icon={MapPin}>{event.mainVenueName}</Chip>
+
+          {/* Chapter-break rule — editorial pause before the meta + CTAs. */}
+          <div aria-hidden className="h-px bg-white/15 max-w-2xl mt-9" />
+
+          {/* Meta — venue + mode. Flat row, no chip-on-chip stacking.
+              "In person" / "Online · Platform" gates on isOnline so
+              admin-created online events read correctly. */}
+          <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/85">
+            {event.mainVenueName && !isOnline && (
+              <span className="inline-flex items-center gap-2">
+                <MapPin size={14} className="text-white/65" />
+                <span className="font-semibold">{event.mainVenueName}</span>
+              </span>
             )}
-            <Chip dark icon={Users}>In person</Chip>
+            {isOnline ? (
+              <span className="inline-flex items-center gap-2">
+                <Video size={14} className="text-white/65" />
+                <span className="font-semibold">
+                  Online
+                  {event.mainVenueName && event.mainVenueName !== "Online" && (
+                    <> <span className="text-white/55">·</span> {event.mainVenueName}</>
+                  )}
+                </span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 text-white/65">
+                <Users size={14} />
+                <span>In person</span>
+              </span>
+            )}
           </div>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
               href={ctaHref}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-brand-900 text-sm font-bold hover:bg-brand-50 transition-colors shadow-lg"
@@ -249,6 +301,7 @@ export default async function EventLandingPage(
         <section id="workshops" className="bg-elevated">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
             <SectionHeader
+              number={sectionNo("workshops")}
               eyebrow="Training Week"
               title="Workshops, tours, and bootcamps"
               description="Hands-on programming with partner organizations. Each slot has a hard capacity; book early. Attendees can pick up to 2 workshops across the whole Training Week."
@@ -277,6 +330,7 @@ export default async function EventLandingPage(
         <section id="agenda">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
             <SectionHeader
+              number={sectionNo("agenda")}
               eyebrow="Symposium Day"
               title="Full-day agenda"
               description="One day at the main venue: keynote, two panels, parallel breakouts, pitch competition, and a networking reception. Registered attendees pick one of the afternoon breakouts in advance."
@@ -306,6 +360,7 @@ export default async function EventLandingPage(
         <section className="bg-elevated">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
             <SectionHeader
+              number={sectionNo("speakers")}
               eyebrow="Featured"
               title="Speakers, panellists, and facilitators"
               description="Industry leaders, scientists, and BHN trainees sharing real-world experience."
@@ -325,6 +380,7 @@ export default async function EventLandingPage(
         <section>
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
             <SectionHeader
+              number={sectionNo("sponsors")}
               eyebrow="Made possible by"
               title="Partners &amp; funders"
               description="Delivery partners run the workshops and tours. Funders make the whole programme possible."
@@ -346,16 +402,18 @@ export default async function EventLandingPage(
             <div className="rounded-2xl bg-card border border-line p-5 sm:p-6 surface-shadow">
               <div className="flex items-start gap-3 mb-2">
                 <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-                  <Building2 size={18} />
+                  {isOnline ? <Video size={18} /> : <Building2 size={18} />}
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Venue</p>
+                  <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                    {isOnline ? "Online via" : "Venue"}
+                  </p>
                   <p className="text-base font-bold text-fg tracking-tight mt-0.5">
                     {event.mainVenueName}
                   </p>
                 </div>
               </div>
-              {event.mainVenueAddress && (
+              {event.mainVenueAddress && !isOnline && (
                 <p className="text-sm text-muted leading-snug mt-3 font-mono">
                   {event.mainVenueAddress}
                 </p>
@@ -367,8 +425,13 @@ export default async function EventLandingPage(
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 mt-3 hover:underline"
                 >
-                  Open in maps <ExternalLink size={11} />
+                  {isOnline ? <>Open meeting link <ExternalLink size={11} /></> : <>Open in maps <ExternalLink size={11} /></>}
                 </a>
+              )}
+              {isOnline && !event.mainVenueMapUrl && (
+                <p className="text-xs text-muted mt-3">
+                  The meeting link will be sent to confirmed registrants closer to the event.
+                </p>
               )}
             </div>
           )}
@@ -393,24 +456,38 @@ export default async function EventLandingPage(
       </section>
 
       {/* ───── Footer CTA ──────────────────────────────────────── */}
-      {/* Boilerplate copy ("Ready to join us?" / "Reserve your spot
-          for the symposium and pick your training-week workshops...")
-          removed Dec '26. It read as canned demo-event marketing for
-          generic events created from /admin/events/new. The button
-          + close-date line stay — they're the actionable part. */}
-      <section className="relative text-white" style={{ background: heroBg, backgroundSize: "cover", backgroundPosition: "center" }}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
-          <Link
-            href={ctaHref}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-brand-900 text-sm font-bold hover:bg-brand-50 transition-colors shadow-lg"
-          >
-            {ctaFooter} <CtaIcon size={14} />
-          </Link>
-          {event.registrationClosesAt && (
-            <p className="text-xs text-white/70 mt-4">
-              Registration closes {formatDay(event.registrationClosesAt)}
-            </p>
-          )}
+      {/* Editorial footer (Dec '26 redesign per taste-skill audit):
+          replaced the duplicated heroBg gradient — reusing the same
+          backdrop top + bottom read as lazy. Now a dark fg-tone band
+          with the event title surfaced again (people scrolled past
+          the hero; reminding them what they're registering for makes
+          the CTA feel grounded), date in mono eyebrow, and a balanced
+          two-column composition on desktop with the CTA on the right
+          rather than centered. */}
+      <section className="relative bg-fg text-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] md:items-end gap-y-8 gap-x-10">
+            <div>
+              <p className="text-[11px] sm:text-xs font-mono uppercase tracking-[0.28em] text-white/55">
+                {formatDateRange(event.startDate, event.endDate)}
+              </p>
+              <p className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-[1.05] mt-3 max-w-xl">
+                {event.title}
+              </p>
+              {event.registrationClosesAt && (
+                <p className="text-xs text-white/55 mt-4 inline-flex items-center gap-1.5">
+                  <Clock size={11} />
+                  Registration closes {formatDay(event.registrationClosesAt)}
+                </p>
+              )}
+            </div>
+            <Link
+              href={ctaHref}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-fg text-sm font-bold hover:bg-white/90 transition-colors shadow-lg shrink-0"
+            >
+              {ctaFooter} <CtaIcon size={14} />
+            </Link>
+          </div>
         </div>
       </section>
     </>
@@ -420,18 +497,25 @@ export default async function EventLandingPage(
 /* ─── Section helpers ────────────────────────────────────────────── */
 
 function SectionHeader({
-  eyebrow, title, description,
+  eyebrow, title, description, number,
 }: {
   eyebrow: string;
   title: string;
   description?: string;
+  /** Optional "01" / "02" / ... section number rendered in front of
+   *  the eyebrow. Adds editorial chapter-break rhythm to the page. */
+  number?: string;
 }) {
   return (
     <div className="max-w-3xl">
-      <p className="text-[10px] sm:text-xs uppercase tracking-[0.22em] font-bold text-brand-700">
-        {eyebrow}
+      <p className="text-[10px] sm:text-xs uppercase tracking-[0.22em] font-bold text-brand-700 inline-flex items-baseline gap-2">
+        {number && (
+          <span className="font-mono text-fg-subtle tracking-normal">{number}</span>
+        )}
+        {number && <span aria-hidden className="text-fg-subtle">·</span>}
+        <span>{eyebrow}</span>
       </p>
-      <h2 className="text-2xl sm:text-3xl font-bold text-fg tracking-tight mt-2">{title}</h2>
+      <h2 className="text-2xl sm:text-3xl font-bold text-fg tracking-tight mt-2 leading-[1.1]">{title}</h2>
       {description && (
         <p className="text-sm sm:text-base text-muted leading-relaxed mt-3">{description}</p>
       )}
