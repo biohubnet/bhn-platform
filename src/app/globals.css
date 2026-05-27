@@ -968,6 +968,62 @@ body {
 .animate-fade-in { animation: fade-in 200ms ease-out; }
 .animate-slide-up-in { animation: slide-up-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 
+/* ── RoleSwitchOverlay — entrance + staggered text + arrow loop + done pop.
+ * Used by src/components/system/RoleSwitchOverlay.tsx when the x / xx
+ * keyboard shortcuts (or the sidebar dropdown) flip the acting-as role.
+ * The card pops in with a slight overshoot (cubic-bezier with > 1 at
+ * the end), then `from` and `to` labels slide in from their respective
+ * sides on a short stagger so the transition reads visually as a
+ * movement from left → right. The arrow gets a perpetual subtle nudge
+ * to hint at directionality. When the server refresh returns, the
+ * spinner morphs to a checkmark via the role-switch-done-pop pop-in. */
+@keyframes role-switch-card-pop {
+  0%   { opacity: 0; transform: scale(0.86) translateY(10px); }
+  100% { opacity: 1; transform: scale(1)    translateY(0); }
+}
+@keyframes role-switch-from {
+  0%   { opacity: 0; transform: translateX(-14px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes role-switch-to {
+  0%   { opacity: 0; transform: translateX(14px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes role-switch-arrow-pulse {
+  0%, 100% { transform: translateX(0);  opacity: 0.85; }
+  50%      { transform: translateX(5px); opacity: 1;    }
+}
+@keyframes role-switch-done-pop {
+  0%   { opacity: 0; transform: scale(0.4) rotate(-30deg); }
+  55%  { opacity: 1; transform: scale(1.25) rotate(5deg); }
+  100% { opacity: 1; transform: scale(1)   rotate(0deg); }
+}
+.animate-role-switch-card-pop {
+  animation: role-switch-card-pop 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.animate-role-switch-from {
+  animation: role-switch-from 280ms 100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-role-switch-to {
+  animation: role-switch-to 320ms 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-role-switch-arrow {
+  animation: role-switch-arrow-pulse 1.6s ease-in-out infinite;
+  animation-delay: 600ms;
+}
+.animate-role-switch-done {
+  animation: role-switch-done-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-role-switch-card-pop,
+  .animate-role-switch-from,
+  .animate-role-switch-to,
+  .animate-role-switch-arrow,
+  .animate-role-switch-done {
+    animation: none;
+  }
+}
+
 /* Marquee-style rolling text. Used in the theme picker so long
  * descriptions can be read without truncation: at rest, the text
  * sits in its container clipped by overflow-hidden; on hover, the

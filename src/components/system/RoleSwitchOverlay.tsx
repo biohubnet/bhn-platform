@@ -121,7 +121,7 @@ export function RoleSwitchOverlay() {
 
   if (!data) return null;
 
-  const StatusIcon = phase === "done" ? Check : Loader2;
+  const isDone = phase === "done";
 
   return (
     <div
@@ -136,31 +136,79 @@ export function RoleSwitchOverlay() {
     >
       <div
         aria-hidden
-        className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
+        className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
       />
-      <div className="relative pointer-events-auto inline-flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-card-solid border border-line shadow-elevated-heavy">
+
+      {/* Card — substantially bigger than the old compact pill so
+          the transition feels like an announcement, not a passing
+          toast. Brand-tinted glow + pop-in animation announce it
+          confidently; the staggered "from → to" text reinforces the
+          directional read. */}
+      <div
+        className="animate-role-switch-card-pop relative pointer-events-auto flex items-center gap-5 px-7 py-5 rounded-3xl bg-card-solid border border-line min-w-[340px] max-w-[520px]"
+        style={{
+          boxShadow: isDone
+            ? "0 0 0 8px color-mix(in srgb, var(--color-emerald-500, #10b981) 14%, transparent), 0 24px 60px rgba(0,0,0,0.30), 0 8px 24px rgba(0,0,0,0.20)"
+            : "0 0 0 8px color-mix(in srgb, var(--color-brand-500, #3b6cef) 16%, transparent), 0 24px 60px rgba(0,0,0,0.30), 0 8px 24px rgba(0,0,0,0.20)",
+          transition: "box-shadow 360ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        {/* Icon — bigger square with a soft brand gradient. Switches
+            to a subtle emerald wash when the switch lands. */}
         <span
           aria-hidden
-          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-brand-600 text-white shrink-0"
+          className="inline-flex items-center justify-center w-14 h-14 rounded-2xl shrink-0 text-white relative overflow-hidden"
+          style={{
+            background: isDone
+              ? "linear-gradient(135deg, var(--color-emerald-500, #10b981), var(--color-emerald-700, #047857))"
+              : "linear-gradient(135deg, var(--color-brand-500, #3b6cef), var(--color-brand-700, #2d4cb8))",
+            transition: "background 360ms cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
         >
-          <Eye size={16} />
+          {/* Done state: pop-in check. Switching state: eye icon
+              that gently breathes. */}
+          {isDone ? (
+            <Check size={26} className="animate-role-switch-done relative z-10" strokeWidth={2.6} />
+          ) : (
+            <Eye size={22} className="relative z-10" />
+          )}
         </span>
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-subtle leading-none">
-            {phase === "done" ? "Role switched" : "Switching role"}
+
+        {/* Text stack. From + arrow + to are each animated separately
+            so the sequence reads visually as a movement from left to
+            right. */}
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] uppercase tracking-[0.24em] font-bold text-fg-subtle leading-none">
+            {isDone ? "Role switched" : "Switching role"}
           </p>
-          <p className="text-sm leading-tight mt-1 inline-flex items-center gap-2 flex-wrap">
-            <span className="text-fg-muted">{data.from}</span>
-            <ArrowRight size={13} className="text-fg-subtle shrink-0" />
-            <span className="font-semibold text-brand-700">{data.to}</span>
-            <StatusIcon
-              size={13}
-              className={
-                phase === "done"
-                  ? "text-emerald-600 shrink-0"
-                  : "animate-spin text-brand-600 shrink-0"
-              }
+          <div className="mt-2 flex items-center gap-2.5 flex-wrap text-base leading-tight">
+            <span className="animate-role-switch-from text-fg-muted font-medium">
+              {data.from}
+            </span>
+            <ArrowRight
+              size={18}
+              className="animate-role-switch-arrow text-fg-subtle shrink-0"
+              strokeWidth={2.4}
             />
+            <span className="animate-role-switch-to font-bold text-brand-700 text-lg">
+              {data.to}
+            </span>
+          </div>
+          {/* Status indicator on its own line so it doesn't compete
+              with the from→to read. Spinner during switching, a small
+              "Done." line in emerald once the refresh lands. */}
+          <p className="mt-2.5 text-[11px] inline-flex items-center gap-1.5 leading-none">
+            {isDone ? (
+              <>
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="font-semibold text-emerald-700">Done.</span>
+              </>
+            ) : (
+              <>
+                <Loader2 size={12} className="animate-spin text-brand-600" />
+                <span className="font-medium text-fg-subtle">Updating your view…</span>
+              </>
+            )}
           </p>
         </div>
       </div>
