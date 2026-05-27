@@ -629,6 +629,63 @@
 [data-theme="hitech"] .text-fuchsia-800 { color: #f5d0fe; }
 [data-theme="hitech"] .text-fuchsia-900 { color: #fae8ff; }
 
+/* Sidebar section title chips — opaque-by-design (generic, all themes).
+ *
+ * Background: many themes redefine `--color-emerald-100`,
+ * `--color-amber-100`, `--color-rose-100`, `--color-sky-200`,
+ * `--color-violet-200` to translucent rgba so page-level cards using
+ * `bg-emerald-50` etc. harmonise with the theme palette (Rosalind's
+ * parchment, Sakura's blush, Aurora's near-black, etc.). The
+ * sidebar section chip uses those exact Tailwind classes as its
+ * background — and a translucent fill lets the section container's
+ * top border render *through* the chip text as a horizontal line
+ * cutting the label.
+ *
+ * Fix: layer the theme's chosen tint over `var(--card-solid)` so the
+ * chip is always visually opaque while still reading as tinted. The
+ * tint variable (e.g. `--color-emerald-100`) is theme-aware so each
+ * theme keeps its preferred chip hue; the opaque base layer ensures
+ * the section border can never bleed through.
+ *
+ * Selectors cover both span (historical) and button (current,
+ * after the chip became click-to-collapse) so the rule applies
+ * regardless of which element houses the chip.
+ *
+ * The Hi-tech overrides below stay in place — they win via higher
+ * theme-scoped specificity and provide neon-friendly tints that
+ * the generic --color-* variables don't carry.
+ */
+span[data-section-tone="engage"],
+button[data-section-tone="engage"] {
+  background:
+    linear-gradient(var(--color-emerald-100), var(--color-emerald-100)),
+    var(--card-solid);
+}
+span[data-section-tone="experience"],
+button[data-section-tone="experience"] {
+  background:
+    linear-gradient(var(--color-amber-100), var(--color-amber-100)),
+    var(--card-solid);
+}
+span[data-section-tone="equip"],
+button[data-section-tone="equip"] {
+  background:
+    linear-gradient(var(--color-rose-100), var(--color-rose-100)),
+    var(--card-solid);
+}
+span[data-section-tone="electric"],
+button[data-section-tone="electric"] {
+  background:
+    linear-gradient(var(--color-sky-200), var(--color-sky-200)),
+    var(--card-solid);
+}
+span[data-section-tone="hr-preview"],
+button[data-section-tone="hr-preview"] {
+  background:
+    linear-gradient(var(--color-violet-200), var(--color-violet-200)),
+    var(--card-solid);
+}
+
 /* Sidebar section title chips + container overrides for Hi-tech
  * (Voltage). Two-fold purpose: re-tint the chip + container for the
  * neon-on-near-black aesthetic, AND make the chip fully OPAQUE so

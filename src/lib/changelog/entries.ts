@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Sidebar — expanded section chips no longer cut by border on Rosalind / Sakura / etc. — May 2026
+  {
+    title: "Sidebar — expanded section chips now opaque on every theme (no more border line cutting through ENGAGE / EXPERIENCE / EQUIP labels)",
+    body: "Earlier this week we fixed the Voltage version of this bug (rgba 18% chip backgrounds letting the section's top border show through). Same root cause has been showing up on **Rosalind, Sakura, Mist, and a few other themes** — different mechanism though:\n\nThose themes deliberately redefine Tailwind's `--color-emerald-100`, `--color-amber-100`, `--color-rose-100`, `--color-sky-200`, and `--color-violet-200` to **translucent rgba values** (16-28% opacity) so page-level cards using `bg-emerald-50` etc. blend into the parchment / blush / mist canvas instead of fighting it. Reasonable design choice — except the sidebar section chip uses those exact Tailwind classes (`bg-emerald-100`, `bg-amber-100`, etc.) as its background, and a translucent fill lets the container's 1-px top border render *through* the chip text as a horizontal line cutting the label.\n\n**Generic fix** — applies to every theme, not theme-by-theme. Replaced the chip's `background-color: var(--color-X-100)` (which inherits each theme's translucent rgba) with a layered `background: linear-gradient(var(--color-X-100), var(--color-X-100)), var(--card-solid)`. Two stacked layers: the theme's chosen tint on top, the theme's opaque card-solid surface underneath. Visually identical tinted appearance, but the bottom layer is fully opaque so the section border can never bleed through.\n\nApplies to all six chip tones: engage / experience / equip / electric / hr-preview / (and neutral which uses bg-card-solid directly, already opaque). The Hi-tech overrides shipped earlier this week stay in place — they win via theme-scoped specificity and provide neon-friendly tints that the generic `--color-X-100` variables don't carry.\n\nNet: every theme — Daydream / Voltage / Rosalind / Sakura / Summer Ice Cream / Greenwood — now renders the expanded section chip as a fully opaque, properly tinted pill with no border bleeding through.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Sidebar — collapsed section chips no longer overlap each other — May 2026
   {
     title: "Sidebar — collapsed section chips no longer overlap each other (the line cutting through them was the chip above bleeding down)",
