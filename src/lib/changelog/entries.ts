@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Branch-animation lines now track the side-by-side layout — May 2026
+  {
+    title: "Career paths — branch-animation lines now follow the cards when the focused layout flips side-by-side",
+    body: "Follow-up on the previous \"branch modal adapts to viewport\" fix. After `computeFocusLayout` learned to put the source card on the LEFT and the targets to its RIGHT on viewports ≥ 1100 px wide, the SVG connector lines were still using the original hardcoded geometry — they drew a vertical bezier from the source's bottom-centre down through a midpoint then up to each target's top-centre. With source-on-the-left + targets-on-the-right that meant the lines dove uselessly downward and arrived at the wrong edges; the line endpoints no longer kissed the actual card edges as the FLIP played out.\n\n**Fix:** new `bezierBetween(src, tgt)` helper inside `PathwayPathsExplorer.tsx`. It compares `|dx|` to `|dy|` between the two rect centres and picks anchor edges accordingly:\n  • **Horizontal layout** (target more to the side than up/down) → anchor on the source's right (or left) edge, target's opposite vertical edge, with a horizontal bezier whose control points sit on the midline-x.\n  • **Vertical layout** (target more up/down than side-to-side) → original geometry: bottom-edge → top-edge, vertical bezier with control points on the midline-y.\n\n`BranchLines` now calls `bezierBetween` per target and uses the returned `(srcX, srcY, tgtX, tgtY)` for the endpoint dots too — so the source dot and target arrowhead also land on the correct edges instead of being stuck to the bottom / top centres. The `d` attribute still has its 800 ms CSS transition, so the lines smoothly re-route as the cards FLIP from their chart positions (vertical relationship) to the focused layout (often horizontal at wide viewports).\n\nNet effect: open the branch modal on a laptop and the connector lines now genuinely glue to the moving card edges all the way through the animation, instead of pointing at coordinates that used to be card edges three layout-revisions ago.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths reorganised around BHN learning pathways — May 2026
   {
     title: "Career paths — second lens added: by BHN learning pathway",

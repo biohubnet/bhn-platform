@@ -1099,6 +1099,46 @@ function CompactCardContent({
 // card positions through the move animation.
 // ──────────────────────────────────────────────────────────────────
 
+// Pick anchor edges + control points for the bezier connecting a
+// source rect to a target rect. Direction-aware: if the target is
+// further to the side than up/down, we anchor on the source's right
+// (or left) edge and the target's opposite vertical edge, with a
+// horizontal bezier. Otherwise we use the original vertical bezier
+// off the bottom (or top) edge. This keeps the line glued to the
+// actual edges of the cards in both the side-by-side focused layout
+// (where targets sit to the right of the source) and the stacked
+// layout / chart positions (where targets sit below the source).
+function bezierBetween(
+  src: { left: number; top: number; width: number; height: number },
+  tgt: { left: number; top: number; width: number; height: number },
+): { d: string; srcX: number; srcY: number; tgtX: number; tgtY: number } {
+  const srcCx = src.left + src.width / 2;
+  const srcCy = src.top + src.height / 2;
+  const tgtCx = tgt.left + tgt.width / 2;
+  const tgtCy = tgt.top + tgt.height / 2;
+  const dx = tgtCx - srcCx;
+  const dy = tgtCy - srcCy;
+  const horizontal = Math.abs(dx) > Math.abs(dy);
+
+  if (horizontal) {
+    const srcX = dx > 0 ? src.left + src.width : src.left;
+    const tgtX = dx > 0 ? tgt.left : tgt.left + tgt.width;
+    const srcY = srcCy;
+    const tgtY = tgtCy;
+    const midX = (srcX + tgtX) / 2;
+    const d = `M ${srcX} ${srcY} C ${midX} ${srcY}, ${midX} ${tgtY}, ${tgtX} ${tgtY}`;
+    return { d, srcX, srcY, tgtX, tgtY };
+  }
+
+  const srcY = dy > 0 ? src.top + src.height : src.top;
+  const tgtY = dy > 0 ? tgt.top : tgt.top + tgt.height;
+  const srcX = srcCx;
+  const tgtX = tgtCx;
+  const midY = (srcY + tgtY) / 2;
+  const d = `M ${srcX} ${srcY} C ${srcX} ${midY}, ${tgtX} ${midY}, ${tgtX} ${tgtY}`;
+  return { d, srcX, srcY, tgtX, tgtY };
+}
+
 function BranchLines({
   sourceFrom, sourceTo, targets, sourceAccent, active, cardsMoving,
 }: {
@@ -1117,10 +1157,12 @@ function BranchLines({
   // positions during the "lines" stage, then the focused positions
   // once "moving" kicks in. Each endpoint coordinate also has its
   // own CSS transition so the lines smoothly stretch with the
-  // cards as they slide into the focused layout.
+  // cards as they slide into the focused layout. Anchor selection is
+  // direction-aware (see bezierBetween) so the line always meets the
+  // adjacent edges of the source and target cards — not a fixed
+  // bottom-to-top connection that breaks when the layout flips
+  // side-by-side.
   const srcRect = cardsMoving ? sourceTo : sourceFrom;
-  const srcCx = srcRect.left + srcRect.width / 2;
-  const srcBy = srcRect.top + srcRect.height;
   return (
     <svg
       aria-hidden
@@ -1128,11 +1170,10 @@ function BranchLines({
     >
       {targets.map((t, i) => {
         const tgt = cardsMoving ? t.toRect : t.fromRect;
-        const tgtCx = tgt.left + tgt.width / 2;
-        const tgtTy = tgt.top;
-        const midY = (srcBy + tgtTy) / 2;
-        const d = `M ${srcCx} ${srcBy} C ${srcCx} ${midY}, ${tgtCx} ${midY}, ${tgtCx} ${tgtTy}`;
-        const length = Math.hypot(tgtCx - srcCx, tgtTy - srcBy) * 1.4;
+        const { d, srcX, srcY, tgtX, tgtY } = bezierBetween(srcRect, tgt);
+        // Length estimate for the dash animation; 1.4× chord covers
+        // the extra arc from the bezier curvature.
+        const length = Math.hypot(tgtX - srcX, tgtY - srcY) * 1.4;
         return (
           <g key={i}>
             <path
@@ -1150,8 +1191,8 @@ function BranchLines({
               }}
             />
             <circle
-              cx={tgtCx}
-              cy={tgtTy}
+              cx={tgtX}
+              cy={tgtY}
               r="5"
               fill={t.color}
               stroke="white"
@@ -1164,8 +1205,8 @@ function BranchLines({
               }}
             />
             <circle
-              cx={srcCx}
-              cy={srcBy}
+              cx={srcX}
+              cy={srcY}
               r="6"
               fill={sourceAccent}
               stroke="white"
