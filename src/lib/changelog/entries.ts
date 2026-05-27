@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Admin events — New event creation form ships — May 2026
+  {
+    title: "Admin events — create real events from the UI (no more dropping into Prisma Studio for the first row)",
+    body: "Until today, creating a real (non-demo) event meant either editing `prisma/seed-events.ts` and running `npx tsx`, or opening Prisma Studio and inserting a `BhnEvent` row by hand. The admin UI only let you edit existing events. That made onboarding new editions slow and intimidating.\n\nNow there's a **New event** button at the top of `/admin/events` that opens a focused create form at `/admin/events/new`. The form covers the minimum-viable shape:\n\n  • **Identity** — title + URL slug (auto-derived from title until you type into it yourself; kebab-case enforced; the `demo-` prefix is reserved for the demo seed and rejected here) + optional tagline + optional markdown description.\n  • **When** — start/end as `datetime-local` pickers + IANA timezone (defaults to `America/Toronto`). End auto-drags to match start if you move the start past it. Validation rejects end-before-start.\n  • **Where** — venue name + address. Both optional; map URL and cover image are filled in afterward on the detail page.\n  • **Registration policy** — `requiresApproval` checkbox (on by default — new registrations land as `pending` until you approve them) + initial status picker (Draft / Published). Draft is the default so you can iterate before going live.\n\nOn save the form POSTs to the new **`POST /api/admin/events`** endpoint, which validates slug format + uniqueness + date logic + status enum, then creates a `BhnEvent` row. The browser redirects to `/admin/events/<slug>` where the existing `EventBasicsEditor` takes over for the long tail of edits (cover image, accommodation copy, registration window, etc.). The two surfaces compose cleanly — the create form intentionally only handles fields that *require* a value at creation time; everything else is editable inline afterward.\n\n**What's still seed-file-only**: Workshop, SymposiumSession, Speaker, Sponsor records. Those compose into the event detail page (`/events/<slug>`) and registration form, but they're managed via `prisma/seed-events.ts` until dedicated CRUD UIs ship. The empty-state disclaimer at the bottom of `/admin/events` explains this and points to the seed template.\n\nThe empty-state for the events list also got an upgrade — instead of just \"run npx tsx\", it now has a primary CTA to the new form.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Career paths — comprehensive cross-link expansion across every station — May 2026
   {
     title: "Career paths — comprehensive cross-link expansion: every level on every stream now has cross-pathway branches (10 → 48 cross-links)",

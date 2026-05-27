@@ -70,10 +70,13 @@ export default async function AdminEventsListPage() {
       />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
       <header className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="hidden">
-          <p>
-          </p>
-        </div>
+        <Link
+          href="/admin/events/new"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 text-white font-bold text-sm hover:bg-brand-700 transition-colors"
+        >
+          <Plus size={15} />
+          New event
+        </Link>
         <DemoEventsControls />
       </header>
 
@@ -94,9 +97,16 @@ export default async function AdminEventsListPage() {
           </div>
           <p className="font-medium text-muted">No events yet</p>
           <p className="text-sm text-muted mt-1 max-w-md mx-auto">
-            Run <code className="font-mono text-fg bg-elevated px-1.5 py-0.5 rounded">npx tsx prisma/seed-events.ts</code> to populate the demo event,
-            or insert rows manually via Prisma Studio.
+            Click <span className="font-semibold text-fg">New event</span> above to create your first edition,
+            or run <code className="font-mono text-fg bg-elevated px-1.5 py-0.5 rounded">npx tsx prisma/seed-events.ts</code> to populate the demo event.
           </p>
+          <Link
+            href="/admin/events/new"
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl bg-brand-600 text-white font-bold text-sm hover:bg-brand-700 transition-colors"
+          >
+            <Plus size={14} />
+            Create your first event
+          </Link>
         </div>
       ) : (
         <ul className="space-y-3">
@@ -153,15 +163,16 @@ export default async function AdminEventsListPage() {
       <section className="rounded-2xl border border-dashed border-line bg-card p-5 text-sm">
         <h2 className="font-bold text-fg mb-2 inline-flex items-center gap-2">
           <Plus size={14} className="text-brand-600" />
-          Add a new event
+          What about workshops, sessions, speakers, sponsors?
         </h2>
         <p className="text-muted leading-relaxed">
-          Phase 1 ships event-basics editing but not full new-event creation
-          via UI. To add an edition: copy <code className="font-mono text-fg bg-elevated px-1 rounded">prisma/seed-events.ts</code> as a starting point,
-          tweak slug + dates + content, and run with <code className="font-mono text-fg bg-elevated px-1 rounded">npx tsx</code>. The
-          seed is idempotent so running it twice is harmless. A "New event"
-          form will land alongside workshop / session CRUD UIs in a future
-          phase.
+          The <span className="font-semibold text-fg">New event</span> button above creates the event itself —
+          title, dates, venue, registration policy. The companion records (Workshop,
+          SymposiumSession, Speaker, Sponsor) are still managed via the seed file at
+          <code className="font-mono text-fg bg-elevated px-1 rounded mx-1">prisma/seed-events.ts</code> until
+          dedicated CRUD UIs ship. The seed is idempotent — copy the template,
+          tweak the IDs to your new event's slug, and run
+          <code className="font-mono text-fg bg-elevated px-1 rounded mx-1">npx tsx prisma/seed-events.ts</code> to wire them up.
         </p>
       </section>
       </div>

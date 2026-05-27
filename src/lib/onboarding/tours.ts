@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.29b";
+export const TOUR_VERSION = "2026.05.29c";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Admin events — New event creation form (May 2026)
+  {
+    id: "admin.events-new-form",
+    title: "Create real events from the admin — no more Prisma Studio detours",
+    body: "/admin/events now has a New event button at the top that opens a focused create form. Fill in title + slug + dates + venue + registration policy and you'll land on the event's detail page to polish the cover image and registration window. Workshops, sessions, speakers, and sponsors are still managed in prisma/seed-events.ts — copy the template and run npx tsx after creating your event.",
+    path: "/admin/events",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open admin events", href: "/admin/events" },
+    since: "2026.05.29c",
+  },
   // ─── Pathways — comprehensive cross-link expansion (May 2026)
   {
     id: "trainee.pathways-comprehensive-branches",
