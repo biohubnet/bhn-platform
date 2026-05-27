@@ -26,7 +26,7 @@
  *     backdrop covers them).
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Briefcase,
   Dna,
@@ -152,6 +152,51 @@ export function PathwayPathsExplorer() {
 
   const gridTemplate = gridTemplateColumns(BHN_PATHWAYS, collapsedPathways);
 
+  // Column centre tracking — keeps the SVG fan-out lines (in
+  // MindMapRoot) pinned to whatever horizontal position each pathway
+  // column has actually settled on. Without this, the lines fan to
+  // evenly-distributed x-positions regardless of how many columns
+  // are collapsed; with everything collapsed the boxes shrink to
+  // 44-px strips while the lines still aim at empty space.
+  //
+  // We measure each <li> from TrackHeadersRow's grid, normalised
+  // against the chart container's width (the same parent the SVG
+  // stretches to via preserveAspectRatio="none"), so the resulting
+  // fractions can be multiplied by viewBox=100 directly.
+  const chartRef = useRef<HTMLDivElement | null>(null);
+  const columnRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const columnRefSetters = useMemo(() => {
+    const map: Record<string, (el: HTMLElement | null) => void> = {};
+    for (const p of BHN_PATHWAYS) {
+      map[p.id] = (el) => {
+        if (el) columnRefs.current.set(p.id, el);
+        else columnRefs.current.delete(p.id);
+      };
+    }
+    return map;
+  }, []);
+  const [columnXs, setColumnXs] = useState<number[]>([]);
+
+  useLayoutEffect(() => {
+    function measure() {
+      const containerEl = chartRef.current;
+      if (!containerEl) return;
+      const containerRect = containerEl.getBoundingClientRect();
+      if (containerRect.width <= 0) return;
+      const xs = BHN_PATHWAYS.map((p) => {
+        const el = columnRefs.current.get(p.id);
+        if (!el) return (BHN_PATHWAYS.indexOf(p) + 0.5) / BHN_PATHWAYS.length;
+        const r = el.getBoundingClientRect();
+        return (r.left + r.width / 2 - containerRect.left) / containerRect.width;
+      });
+      setColumnXs(xs);
+    }
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (chartRef.current) ro.observe(chartRef.current);
+    return () => ro.disconnect();
+  }, [collapsedPathways]);
+
   // Click handler — captures the source station's bounding rect plus
   // every target station's bounding rect from the chart, then hands
   // the bundle off to the modal. The rects let the modal animate
@@ -223,12 +268,13 @@ export function PathwayPathsExplorer() {
             min-w stays modest, the horizontal scroll bar handles
             the overflow case, and collapsing one or two pathways
             brings the chart back into viewport-friendly width. */}
-        <div className="relative min-w-[1100px] pb-4">
-          <MindMapRoot />
+        <div className="relative min-w-[1100px] pb-4" ref={chartRef}>
+          <MindMapRoot columnXs={columnXs} />
           <TrackHeadersRow
             gridTemplate={gridTemplate}
             collapsedPathways={collapsedPathways}
             togglePathway={togglePathway}
+            columnRefSetters={columnRefSetters}
           />
           {LEVEL_ORDER.map((level, rowIdx) => (
             <LevelRow
@@ -307,14 +353,14 @@ function Legend() {
 // Mind-map root
 // ──────────────────────────────────────────────────────────────────
 
-function MindMapRoot() {
+function MindMapRoot({ columnXs }: { columnXs: number[] }) {
   const totalCols = BHN_PATHWAYS.length;
   return (
     <div className="flex flex-col items-center pt-2">
       <div className="rounded-full px-5 py-2 bg-card-solid border border-line shadow-card-rest">
         <p className="text-[13px] font-semibold text-fg inline-flex items-center gap-2">
           <Sparkles size={14} className="text-brand-600" />
-          Your career journey
+          Your career journey with BHN Learning Pathways
         </p>
       </div>
       <svg
@@ -324,7 +370,21 @@ function MindMapRoot() {
         preserveAspectRatio="none"
       >
         {BHN_PATHWAYS.map((track, i) => {
-          const cx = ((i + 0.5) / totalCols) * 100;
+          // columnXs[i] is the actual measured horizontal centre of
+          // this column as a fraction of the chart container's width,
+          // and the SVG stretches to that same width via
+          // preserveAspectRatio="none" — so multiplying by 100 (the
+          // viewBox width) lands the path exactly on the box. Fall
+          // back to even distribution until the first useLayoutEffect
+          // measurement comes back (very brief, first paint).
+          const fallback = (i + 0.5) / totalCols;
+          const fraction = columnXs[i] ?? fallback;
+          const cx = fraction * 100;
+          // Control points bend the curve gracefully outward — the
+          // 0.35 factor on the first control point produces a soft
+          // initial fan, then the curve straightens to drop into the
+          // box vertically (so the line meets the top of the column
+          // head-on regardless of how wide or narrow the column is).
           const d = `M 50 0 C ${50 + (cx - 50) * 0.35} 16, ${cx} 24, ${cx} 40`;
           return (
             <path
@@ -334,6 +394,7 @@ function MindMapRoot() {
               strokeWidth="0.6"
               fill="none"
               opacity="0.6"
+              style={{ transition: "d 350ms cubic-bezier(0.4, 0, 0.2, 1)" }}
             />
           );
         })}
@@ -347,11 +408,12 @@ function MindMapRoot() {
 // ──────────────────────────────────────────────────────────────────
 
 function TrackHeadersRow({
-  gridTemplate, collapsedPathways, togglePathway,
+  gridTemplate, collapsedPathways, togglePathway, columnRefSetters,
 }: {
   gridTemplate: string;
   collapsedPathways: Set<string>;
   togglePathway: (id: string) => void;
+  columnRefSetters: Record<string, (el: HTMLElement | null) => void>;
 }) {
   return (
     <ol className="grid gap-3" style={{ gridTemplateColumns: gridTemplate }}>
@@ -361,6 +423,7 @@ function TrackHeadersRow({
         return (
           <li
             key={track.id}
+            ref={columnRefSetters[track.id]}
             className={
               "relative rounded-xl border bg-card-solid shadow-card-rest " +
               (isCollapsed ? "px-1 py-2 overflow-hidden" : "px-3 py-2.5")

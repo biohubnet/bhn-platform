@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — mind-map lines now pin to actual column centres — May 2026
+  {
+    title: "Career paths — pathways view: mind-map lines pin to the real boxes, no matter how many columns are collapsed",
+    body: "Two fixes on `/career-paths/pathways`:\n\n**1. The headline now names the lens.** Changed *Your career journey* → **Your career journey with BHN Learning Pathways**, so it's obvious at a glance that this view is organised around BHN's announced pathways (vs. the job-function lens at `/career-paths/tracks`).\n\n**2. The fan-out lines from the headline pill no longer drift off the boxes when you collapse columns.** Before this fix, the SVG that draws the seven lines from *Your career journey* down to each pathway header used a hardcoded even distribution — line `i` always landed at horizontal position `(i + 0.5) / 7` of the chart width. That works when all seven columns are the same width, but the moment you click Collapse pathways (or fold a few columns individually) the boxes shrink to 44-px strips, bunch up to the left, and the lines stay aimed at empty space far to the right.\n\nFix: `MindMapRoot` now receives an array of measured column centres from the parent. The parent attaches refs to every `<li>` in `TrackHeadersRow` and, in a `useLayoutEffect` + `ResizeObserver`, captures each column's actual horizontal centre as a fraction of the chart container's width. Those fractions are fed straight into the SVG path's control-point arithmetic, so every line now ends precisely on its box's centre.\n\nResult: collapse all seven pathways, or collapse three and leave four expanded, or fold one — the seven lines always trace cleanly down to the boxes that actually exist. Added a 350 ms CSS transition on the path `d` attribute so the lines glide to their new positions as you toggle columns, rather than snapping.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Facilities map — merged province filter + jump-to navigation — May 2026
   {
     title: "Facilities map — provinces and metro clusters live in one Jump-to card now",
