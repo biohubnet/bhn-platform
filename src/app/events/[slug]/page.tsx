@@ -150,6 +150,31 @@ export default async function EventLandingPage(
     return idx >= 0 ? String(idx + 1).padStart(2, "0") : undefined;
   }
 
+  // Event-shape detection — drives several conditional decisions
+  // below. A "simple session" is an event with no workshops AND no
+  // symposium sessions (typical for an online info session, a single
+  // talk, an open house). For those events:
+  //   - skip the at-a-glance card (its workshop / agenda slots would
+  //     read empty and feel like dead scaffolding)
+  //   - hide the "See the agenda" button in the hero
+  //   - show start TIME alongside date in the hero eyebrow + footer
+  //     CTA (time matters more than date for a one-hour session)
+  //   - relabel the speakers section as "Hosted by" when there's a
+  //     single host
+  // Full-shape events (multi-day symposium with workshops + agenda
+  // + speakers + sponsors) get the full scaffolding as before.
+  const isSimpleSession =
+    event.workshops.length === 0 && event.symposiumSessions.length === 0;
+  const sameCalendarDay =
+    event.startDate.toLocaleDateString("en-CA", { timeZone: TZ }) ===
+    event.endDate.toLocaleDateString("en-CA", { timeZone: TZ });
+  /** Hero / footer date eyebrow — adds the time range when the event
+   *  is a same-day session, since time matters more than just the
+   *  date for a short event. */
+  const heroDateLine = sameCalendarDay
+    ? `${formatDateRange(event.startDate, event.endDate)} · ${formatTime(event.startDate)}–${formatTime(event.endDate)}`
+    : formatDateRange(event.startDate, event.endDate);
+
   return (
     <>
       {/* ───── Admin edit bar ──────────────────────────────────────
@@ -208,7 +233,7 @@ export default async function EventLandingPage(
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
           <p className="text-[11px] sm:text-xs font-mono uppercase tracking-[0.28em] text-white/65">
-            {formatDateRange(event.startDate, event.endDate)}
+            {heroDateLine}
           </p>
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[0.95] mt-5 max-w-4xl">
             {event.title}
@@ -257,35 +282,54 @@ export default async function EventLandingPage(
             >
               {ctaPrimary} <CtaIcon size={14} />
             </Link>
-            <a
-              href="#agenda"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white ring-1 ring-inset ring-white/40 hover:bg-white/10 transition-colors"
-            >
-              See the agenda
-            </a>
+            {/* "See the agenda" only renders when an agenda actually
+                exists. For single-session events (e.g. an online info
+                session) the section doesn't render, so the button
+                would scroll-to-nothing. */}
+            {event.symposiumSessions.length > 0 && (
+              <a
+                href="#agenda"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white ring-1 ring-inset ring-white/40 hover:bg-white/10 transition-colors"
+              >
+                See the agenda
+              </a>
+            )}
           </div>
         </div>
       </section>
 
       {/* ───── At-a-glance ─────────────────────────────────────── */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 -mt-8 relative z-10">
-        <div className="bg-card border border-line rounded-2xl surface-shadow p-5 sm:p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Stat icon={Calendar} label="Dates">
-            {formatDateRange(event.startDate, event.endDate)}
-          </Stat>
-          <Stat icon={MapPin} label="Main venue">
-            {event.mainVenueName ?? "—"}
-          </Stat>
-          <Stat icon={Sparkles} label="Workshops &amp; tours">
-            {event.workshops.length} on offer
-          </Stat>
-          <Stat icon={Mic} label="Symposium day">
-            {event.symposiumSessions.length > 0
-              ? formatDay(event.symposiumSessions[event.symposiumSessions.length - 1].startTime)
-              : "TBD"}
-          </Stat>
-        </div>
-      </section>
+      {/* Only renders for full-shape events (any of workshops /
+          sessions / speakers / sponsors). For a simple online session
+          the stats would either repeat the hero or read "0 on offer"
+          / "TBD" — dead scaffolding. Better to omit and let the
+          description section breathe directly under the hero. */}
+      {!isSimpleSession && (
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 -mt-8 relative z-10">
+          <div className={`bg-card border border-line rounded-2xl surface-shadow p-5 sm:p-6 grid grid-cols-2 gap-4 ${
+            event.workshops.length > 0 && event.symposiumSessions.length > 0
+              ? "md:grid-cols-4"
+              : "md:grid-cols-3"
+          }`}>
+            <Stat icon={Calendar} label="Dates">
+              {formatDateRange(event.startDate, event.endDate)}
+            </Stat>
+            <Stat icon={isOnline ? Video : MapPin} label={isOnline ? "Format" : "Venue"}>
+              {event.mainVenueName ?? (isOnline ? "Online" : "—")}
+            </Stat>
+            {event.workshops.length > 0 && (
+              <Stat icon={Sparkles} label="Workshops &amp; tours">
+                {event.workshops.length} on offer
+              </Stat>
+            )}
+            {event.symposiumSessions.length > 0 && (
+              <Stat icon={Mic} label="Symposium day">
+                {formatDay(event.symposiumSessions[event.symposiumSessions.length - 1].startTime)}
+              </Stat>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ───── About / description ─────────────────────────────── */}
       {event.description && (
@@ -361,9 +405,17 @@ export default async function EventLandingPage(
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
             <SectionHeader
               number={sectionNo("speakers")}
-              eyebrow="Featured"
-              title="Speakers, panellists, and facilitators"
-              description="Industry leaders, scientists, and BHN trainees sharing real-world experience."
+              eyebrow={event.speakers.length === 1 ? "Hosted by" : "Featured"}
+              title={
+                event.speakers.length === 1
+                  ? "Your host"
+                  : "Speakers, panellists, and facilitators"
+              }
+              description={
+                event.speakers.length === 1
+                  ? undefined
+                  : "Industry leaders, scientists, and BHN trainees sharing real-world experience."
+              }
             />
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-10">
@@ -443,8 +495,12 @@ export default async function EventLandingPage(
                   <Hotel size={18} />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">Accommodation</p>
-                  <p className="text-base font-bold text-fg tracking-tight mt-0.5">Hotel block</p>
+                  <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+                    {isOnline ? "Logistics" : "Accommodation"}
+                  </p>
+                  <p className="text-base font-bold text-fg tracking-tight mt-0.5">
+                    {isOnline ? "What to know" : "Stay nearby"}
+                  </p>
                 </div>
               </div>
               <p className="text-sm text-muted leading-relaxed whitespace-pre-line mt-3">
@@ -469,7 +525,7 @@ export default async function EventLandingPage(
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] md:items-end gap-y-8 gap-x-10">
             <div>
               <p className="text-[11px] sm:text-xs font-mono uppercase tracking-[0.28em] text-white/55">
-                {formatDateRange(event.startDate, event.endDate)}
+                {heroDateLine}
               </p>
               <p className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-[1.05] mt-3 max-w-xl">
                 {event.title}
