@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Login-floaters admin — 6-up gallery + Floater Aquarium screensaver — May 2026
+  {
+    title: "Login-floaters admin — 6-up gallery and a Floater Aquarium screensaver at the bottom",
+    body: "Two changes on `/admin/login-floaters`:\n\n**1. Gallery is now 6 cards per row at large viewports.** Was an `auto-fill, minmax(220px, 1fr)` track template that drifted between 4 and 5 cards per row depending on browser width. Now an explicit responsive grid: 2 cols on mobile, 3 on small, 4 on medium, **6 on large**. Categories with fewer than 6 entries (Patient & Academia: 2, Preclinical: 3, Medical Affairs: 3, Commercial: 4, Cell / Process: 4, Omics: 5, QC Micro: 5) show a partial row — adding more floater components to fill those out is a follow-up.\n\n**2. *Floater Aquarium* — a self-sustaining tank at the bottom of the page.** New section under the editor. A 320-px-tall band hosts ~14 random floater glyphs drifting on their own velocities, with Brownian nudges so motion never settles into perfect lines. Click anywhere on the tank (or the *Screensaver* button) to enter full-viewport mode: ~26 swimmers, a 90-second day/night gradient cycle on the backdrop (pre-dawn → morning teal → midday cyan → dusk magenta → back), cursor flee inside 140 px radius, click anywhere to spawn a 3-swimmer burst at the click point with outward velocity, and a rotating *Spotted: …* caption naming a random current swimmer's process. Esc or the *Exit* button leaves screensaver mode.\n\n**Self-sustaining** is the key trick: every swimmer is born with a random lifespan between 30 s and 90 s. As they age out they fade over 2.4 s, get GC'd, and a brand-new swimmer (different floater id, different position, different velocity, different tint) spawns to keep population at target. The tank never empties and never repeats exactly — the floater registry has 75 components, so the parade rotates more or less indefinitely.\n\n**Performance**: per-frame motion is written to the DOM imperatively (each swimmer's wrapper gets `transform: translate3d(x, y, 0)` directly via ref) so 60-fps motion doesn't trigger React renders. React only re-renders the swimmer LIST every 2 s when births / deaths happen. The opacity fade-in / fade-out also writes directly to the DOM through a 100 ms interval — at 26 swimmers that's 260 inline-style writes per second, vs. 1560 React state updates per second if we'd used setState. GPU-accelerated translate3d keeps CPU low.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Theme picker — Daylight → Daydream + descriptions carry inspo — May 2026
   {
     title: "Theme picker — Daylight is now Daydream, every theme description carries the story behind it, and the translation toggle moved out",

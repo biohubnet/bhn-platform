@@ -19,6 +19,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { getActiveLoginFloaters } from "@/lib/login-floaters/config";
 import { SWIM_CLASSES } from "@/lib/login-floaters/registry";
 import { LoginFloatersEditor } from "@/components/admin/login-floaters/LoginFloatersEditor";
+import { FloaterAquarium } from "@/components/admin/login-floaters/FloaterAquarium";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,16 @@ export default async function AdminLoginFloatersPage() {
         initialFloaters={floaters}
         swimClasses={[...SWIM_CLASSES]}
       />
+
+      {/* Floater Aquarium — a self-sustaining tank of process glyphs.
+          Sits at the bottom of the page; click to enter screensaver
+          mode (full-viewport, cursor flee, click bursts, slow
+          day/night cycle on the backdrop). Each swimmer lives 30-90 s
+          then fades out and is replaced — population stays at target
+          forever. */}
+      <section className="pt-2">
+        <FloaterAquarium />
+      </section>
     </div>
   );
 }

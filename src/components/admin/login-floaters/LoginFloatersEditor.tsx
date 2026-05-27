@@ -210,7 +210,7 @@ export function LoginFloatersEditor({
                 </h3>
                 <div className="mt-2 h-px w-16 bg-gradient-to-r from-cyan-300/60 to-transparent" />
               </div>
-              <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+              <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                 {entries.map((reg) => {
                   const inUse = usedIds.has(reg.id);
                   // ATCAP applies only when adding — active cards

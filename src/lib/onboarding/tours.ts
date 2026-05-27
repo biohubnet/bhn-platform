@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.27";
+export const TOUR_VERSION = "2026.05.27b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Floater Aquarium on /admin/login-floaters (May 2026) ────────
+  {
+    id: "admin.floater-aquarium",
+    title: "New: a Floater Aquarium screensaver on /admin/login-floaters",
+    body: "Scroll to the bottom of /admin/login-floaters and you'll find a self-sustaining tank of process glyphs. ~14 random floaters drift on their own velocities; each lives 30-90 s then fades out and is replaced. Click the tank (or the Screensaver button) to enter full-viewport mode — the swimmer count doubles, the backdrop slow-cycles through pre-dawn → midday → dusk, your cursor scares nearby glyphs away, and click anywhere to spawn a burst. Esc to exit. The gallery above is now 6 cards per row at large viewports.",
+    path: "/admin/login-floaters",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open the aquarium", href: "/admin/login-floaters" },
+    since: "2026.05.27b",
+  },
   // ─── Theme picker — Daylight renamed, descriptions now carry the
   //     inspiration behind each look (May 2026) ────────────────────
   {
