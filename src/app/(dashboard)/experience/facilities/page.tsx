@@ -63,25 +63,66 @@ export default async function FacilitiesPage() {
       orderBy: [{ province: "asc" }, { city: "asc" }, { name: "asc" }],
       select: FACILITY_FIELDS,
     });
-    // Auto-seed gap-filling — runs on every page load and inserts
-    // any facility from FACILITY_SEED that isn't already in the DB.
-    // Previously we only seeded when the table was empty, which meant
-    // expanding seed-data.ts later (e.g. adding more sites from a web
-    // scan) wouldn't actually propagate to the deployed DB. Now we
-    // diff seed names against existing names → upsert just the
-    // missing ones. Existing rows are never overwritten — admins can
-    // hand-edit a facility's description via the rescan flow without
-    // worrying about a deploy clobbering their work.
-    const existingNames = new Set(facilities.map((f) => f.name));
-    const missing = FACILITY_SEED.filter((f) => !existingNames.has(f.name));
-    if (missing.length > 0) {
+    // Auto-seed reconciliation — runs on every page load.
+    //
+    // Two kinds of work happen here:
+    //   1. INSERT missing names (a fresh seed-data.ts entry was added
+    //      since the last load — e.g. a web-scan pass for new sites).
+    //   2. UPDATE structural fields (lat / lng / address / url /
+    //      status / province / city) for existing rows when the seed
+    //      value has drifted from what's in the DB.
+    //
+    // Structural vs narrative split — why update some fields but not
+    // others?
+    //   • STRUCTURAL fields (location, source URL, build status,
+    //     province, city) are ground truth from the seed / research
+    //     pass. If the seed gets a coordinate fix or an updated
+    //     address, that should propagate to the deployed DB. There's
+    //     no admin UI to edit these, so there's no admin work to
+    //     overwrite.
+    //   • NARRATIVE fields (specialization, scale, notes, description)
+    //     ARE admin-editable: the `/api/admin/facilities/[id]/rescan`
+    //     endpoint writes specialization + description, and admins
+    //     would reasonably want to hand-correct the rest. We leave
+    //     them alone after the initial create.
+    //
+    // Diff-then-upsert keeps the cost negligible on a steady-state
+    // load: one SELECT, a tiny in-memory diff, then a write only
+    // when something actually changed.
+    const byName = new Map(facilities.map((f) => [f.name, f]));
+    const seedsToWrite = FACILITY_SEED.filter((f) => {
+      const existing = byName.get(f.name);
+      if (!existing) return true; // INSERT
+      // Compare structural fields. Any difference → UPDATE.
+      return (
+        Math.abs(existing.lat - f.lat) > 1e-4 ||
+        Math.abs(existing.lng - f.lng) > 1e-4 ||
+        existing.address !== f.address ||
+        existing.url !== f.url ||
+        existing.status !== f.status ||
+        existing.province !== f.province ||
+        existing.city !== f.city
+      );
+    });
+    if (seedsToWrite.length > 0) {
       try {
         await Promise.all(
-          missing.map((f) =>
+          seedsToWrite.map((f) =>
             prisma.facility.upsert({
               where: { name: f.name },
               create: { ...f },
-              update: {}, // never overwrite once seeded
+              // Update only structural fields — admin-editable
+              // narrative fields (specialization, scale, notes,
+              // description) are preserved.
+              update: {
+                lat: f.lat,
+                lng: f.lng,
+                address: f.address,
+                url: f.url,
+                status: f.status,
+                province: f.province,
+                city: f.city,
+              },
             }),
           ),
         );
