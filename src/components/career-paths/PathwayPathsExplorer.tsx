@@ -1194,43 +1194,103 @@ function computeFocusLayout(
   numTargets: number,
   viewport: { w: number; h: number },
 ): { source: FocusedRect; targets: FocusedRect[] } {
-  // Card dimensions — sized so the full BigStationCard content
-  // (now including the "Also at this level" role list) fits without
-  // internal scrolling. Source is shorter (no crossLink section);
-  // target is taller because the cross-link reason + 4-item learn-
-  // first list live in the bottom panel.
-  const SRC_W = 380;
-  const SRC_H = 460;
-  const TGT_W = 340;
-  const TGT_H = 660;
-  const GAP   = 20;
+  // Viewport-adaptive focused layout. Earlier versions hard-coded a
+  // 380×460 source on top of a 340×660 target row — a 1180-px stack
+  // that overflowed most laptops, cutting the bottom of the target
+  // cards off the screen.
+  //
+  // New behaviour:
+  //   • Reserve a top + bottom safe area (close button up top, "Esc
+  //     to close" hint at the bottom).
+  //   • On WIDE viewports (≥ 1100 px), use a side-by-side layout:
+  //     source on the left, targets gridded on the right. Cards
+  //     get full available height, content has horizontal room to
+  //     breathe, and nothing stacks vertically past the fold.
+  //   • On NARROW viewports, fall back to the stacked layout but
+  //     constrain heights so source + targets fit inside the
+  //     available space — BigStationCard's internal
+  //     overflow-y-auto handles any residual overflow.
+  //   • Target grid adapts to count: 1 target → single card; 2 → 2-up
+  //     row; 3-4 → 2×2 grid; 5+ → 3×n grid. Targets never wrap into a
+  //     row count that would re-introduce the overflow problem.
+  const TOP_PAD    = 80; // close button + a bit of air
+  const BOTTOM_PAD = 56; // Esc hint room
+  const SIDE_PAD   = 24;
+  const GAP        = 16;
+  const availH = Math.max(360, viewport.h - TOP_PAD - BOTTOM_PAD);
+  const availW = Math.max(320, viewport.w - 2 * SIDE_PAD);
 
-  // Source — top centre, with a comfortable margin from the top
-  // edge so the close button + breadcrumb don't crowd it.
-  const sourceTop = Math.max(90, viewport.h / 2 - (SRC_H + GAP + TGT_H) / 2);
+  // ── Mode A: side-by-side (wide screens) ────────────────────────
+  if (viewport.w >= 1100) {
+    // Source takes ~36 % of width, capped between 320 px and 440 px.
+    const srcW = Math.max(320, Math.min(440, availW * 0.36));
+    const tgtsAreaW = availW - srcW - GAP;
+
+    // Target grid: pick column count by target count.
+    let cols: number;
+    if (numTargets <= 1)      cols = 1;
+    else if (numTargets <= 4) cols = 2;
+    else                       cols = 3;
+    const rows = Math.ceil(numTargets / cols);
+
+    const tgtW = (tgtsAreaW - GAP * (cols - 1)) / cols;
+    const tgtH = (availH - GAP * (rows - 1)) / rows;
+
+    const source: FocusedRect = {
+      left: SIDE_PAD,
+      top: TOP_PAD,
+      width: srcW,
+      height: availH,
+    };
+
+    const targetsLeft = SIDE_PAD + srcW + GAP;
+    const targets: FocusedRect[] = Array.from({ length: numTargets }, (_, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      return {
+        left: targetsLeft + col * (tgtW + GAP),
+        top: TOP_PAD + row * (tgtH + GAP),
+        width: tgtW,
+        height: tgtH,
+      };
+    });
+
+    return { source, targets };
+  }
+
+  // ── Mode B: stacked (narrow screens) ───────────────────────────
+  // Source on top, targets gridded below. Heights split so the
+  // total fits inside availH.
+  const cols = Math.min(numTargets || 1, 2);
+  const rows = Math.ceil((numTargets || 1) / cols);
+  // Source gets ~38 % of the vertical, targets the rest.
+  const srcH = Math.max(280, availH * 0.38);
+  const tgtsAreaH = availH - srcH - GAP;
+  const tgtH = Math.max(220, (tgtsAreaH - GAP * (rows - 1)) / rows);
+
+  const srcW = Math.min(440, availW);
   const source: FocusedRect = {
-    left: viewport.w / 2 - SRC_W / 2,
-    top: sourceTop,
-    width: SRC_W,
-    height: SRC_H,
+    left: viewport.w / 2 - srcW / 2,
+    top: TOP_PAD,
+    width: srcW,
+    height: srcH,
   };
 
-  // Targets — row below source. Total row width capped to viewport
-  // minus side padding; per-card width may shrink if there are many.
-  const cols = Math.max(1, Math.min(numTargets, 3));
-  const sidePad = 24;
-  const maxRowW = Math.max(TGT_W, viewport.w - 2 * sidePad);
-  const effTgtW = Math.min(TGT_W, (maxRowW - GAP * (cols - 1)) / cols);
-  const rowW = cols * effTgtW + (cols - 1) * GAP;
+  const tgtW = (availW - GAP * (cols - 1)) / cols;
+  const rowW = cols * tgtW + (cols - 1) * GAP;
   const rowLeft = viewport.w / 2 - rowW / 2;
-  const targetsTop = source.top + source.height + GAP * 3;
+  const targetsTop = TOP_PAD + srcH + GAP;
 
-  const targets: FocusedRect[] = Array.from({ length: numTargets }, (_, i) => ({
-    left: rowLeft + i * (effTgtW + GAP),
-    top: targetsTop,
-    width: effTgtW,
-    height: TGT_H,
-  }));
+  const targets: FocusedRect[] = Array.from({ length: numTargets }, (_, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    return {
+      left: rowLeft + col * (tgtW + GAP),
+      top: targetsTop + row * (tgtH + GAP),
+      width: tgtW,
+      height: tgtH,
+    };
+  });
 
   return { source, targets };
 }
