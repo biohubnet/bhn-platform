@@ -1151,9 +1151,12 @@ function BranchModal({
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-auto">
-      {/* Backdrop — fades in over 300 ms; click to dismiss */}
+      {/* Backdrop — fades in over 300 ms; click to dismiss. Lightened
+          from 80 % black + sm blur to 45 % black + md blur so the
+          chart underneath stays legibly visible (user can still see
+          the source and target station boxes through the wash). */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300"
+        className="absolute inset-0 bg-black/45 backdrop-blur-md transition-opacity duration-300"
         style={{ opacity: stage === "darken" ? 0 : 1 }}
         onClick={onClose}
         aria-hidden
@@ -1236,6 +1239,7 @@ function BranchModal({
           fromRect: t.fromRect,
           toRect: layout.targets[i],
           color: t.track.accent,
+          arcOffset: layout.targets[i].arcOffset,
         }))}
         sourceAccent={source.track.accent}
         active={linesActive}
@@ -1400,6 +1404,11 @@ function CompactCardContent({
 function bezierBetween(
   src: { left: number; top: number; width: number; height: number },
   tgt: { left: number; top: number; width: number; height: number },
+  /** Vertical deflection applied to the bezier control points so
+   *  the line arcs around obstacles. Negative = arc UP (line goes
+   *  above any near-column targets); positive = arc DOWN. Only
+   *  meaningful in horizontal layouts (side-by-side). */
+  arcOffset = 0,
 ): { d: string; srcX: number; srcY: number; tgtX: number; tgtY: number } {
   const srcCx = src.left + src.width / 2;
   const srcCy = src.top + src.height / 2;
@@ -1415,7 +1424,13 @@ function bezierBetween(
     const srcY = srcCy;
     const tgtY = tgtCy;
     const midX = (srcX + tgtX) / 2;
-    const d = `M ${srcX} ${srcY} C ${midX} ${srcY}, ${midX} ${tgtY}, ${tgtX} ${tgtY}`;
+    // Two control points at the midline-X. arcOffset pulls them
+    // both vertically by the same amount, producing a curve that
+    // BOWS up (negative offset) or down (positive offset). With
+    // offset = 0 this matches the original simple S-curve.
+    const c1y = srcY + arcOffset;
+    const c2y = tgtY + arcOffset;
+    const d = `M ${srcX} ${srcY} C ${midX} ${c1y}, ${midX} ${c2y}, ${tgtX} ${tgtY}`;
     return { d, srcX, srcY, tgtX, tgtY };
   }
 
@@ -1437,6 +1452,10 @@ function BranchLines({
     fromRect: DOMRect;
     toRect: { left: number; top: number; width: number; height: number };
     color: string;
+    /** Vertical deflection for the bezier control points so this
+     *  target's line arcs around any near-column targets. Computed
+     *  by computeFocusLayout based on the target's column/row. */
+    arcOffset?: number;
   }>;
   sourceAccent: string;
   active: boolean;
@@ -1459,13 +1478,26 @@ function BranchLines({
     >
       {targets.map((t, i) => {
         const tgt = cardsMoving ? t.toRect : t.fromRect;
-        const { d, srcX, srcY, tgtX, tgtY } = bezierBetween(srcRect, tgt);
+        // Apply arc routing only once cards are in their focused
+        // positions — during the chart-position phase, arcOffset
+        // would deflect the line away from the actual chart card
+        // and look wrong.
+        const arcOffset = cardsMoving ? (t.arcOffset ?? 0) : 0;
+        const { d, srcX, srcY, tgtX, tgtY } = bezierBetween(srcRect, tgt, arcOffset);
         // Length estimate for the dash animation; 1.4× chord covers
         // the extra arc from the bezier curvature.
         const length = Math.hypot(tgtX - srcX, tgtY - srcY) * 1.4;
+        // Stable id so <animateMotion> can reference the same path
+        // its <path> draws. Index-based — fine since the same modal
+        // session renders the same set of targets in the same order.
+        const pathId = `branch-line-path-${i}`;
+        // Travel duration scales with line length so longer lines
+        // don't feel like the light is rushing along them.
+        const travelDur = Math.max(2, Math.min(4, length / 220));
         return (
           <g key={i}>
             <path
+              id={pathId}
               d={d}
               stroke={t.color}
               strokeWidth="2.5"
@@ -1479,6 +1511,31 @@ function BranchLines({
                 filter: `drop-shadow(0 0 8px color-mix(in srgb, ${t.color} 55%, transparent))`,
               }}
             />
+            {/* Light-travelling effect — a bright glowing dot that
+                rides along the bezier path on a continuous loop.
+                Only fires once the line is fully drawn (active) so
+                the comet doesn't fly through an invisible path
+                during the initial draw. The <animateMotion> follows
+                the <mpath> reference to the path's `d` attribute,
+                so when the path morphs (e.g. on card movement) the
+                comet's track morphs with it. */}
+            {active && (
+              <>
+                <circle r="4" fill="white" opacity="0.95" style={{ filter: `drop-shadow(0 0 8px ${t.color})` }}>
+                  <animateMotion dur={`${travelDur}s`} repeatCount="indefinite" rotate="auto">
+                    <mpath href={`#${pathId}`} />
+                  </animateMotion>
+                </circle>
+                {/* Trailing glow — slightly larger, more diffuse,
+                    offset by a small delay so it reads as a comet
+                    tail behind the bright head. */}
+                <circle r="7" fill={t.color} opacity="0.45" style={{ filter: `blur(2px)` }}>
+                  <animateMotion dur={`${travelDur}s`} repeatCount="indefinite" begin={`${travelDur * 0.04}s`}>
+                    <mpath href={`#${pathId}`} />
+                  </animateMotion>
+                </circle>
+              </>
+            )}
             <circle
               cx={tgtX}
               cy={tgtY}
@@ -1519,11 +1576,20 @@ function BranchLines({
 // ──────────────────────────────────────────────────────────────────
 
 interface FocusedRect { left: number; top: number; width: number; height: number }
+/** A target rect with optional bezier-routing metadata. `arcOffset`
+ *  is a vertical deflection applied to the bezier control points
+ *  for this target's line — non-zero when the target sits in a far
+ *  column (col > 0) and its line would otherwise cross a near
+ *  column. Positive = arc DOWN under the near column, negative =
+ *  arc UP over the near column. Always 0 for col=0 targets and for
+ *  single-column layouts where lines fan from one source point and
+ *  geometrically cannot cross each other. */
+interface FocusedTargetRect extends FocusedRect { arcOffset?: number }
 
 function computeFocusLayout(
   numTargets: number,
   viewport: { w: number; h: number },
-): { source: FocusedRect; targets: FocusedRect[] } {
+): { source: FocusedRect; targets: FocusedTargetRect[] } {
   // Content-sized cards. Both WIDTH and HEIGHT are capped at
   // intrinsic values so cards never balloon to fill a wide viewport
   // — empty space wraps the block on the canvas, not inside each
@@ -1544,12 +1610,18 @@ function computeFocusLayout(
   // viewport (so a 4K monitor doesn't give every target 700-px-wide
   // cards full of horizontal whitespace).
   //
-  // The 24-px GAP between source and targets is for the SVG bezier
-  // connecting lines — they need visible room to curve.
+  // Two separate gap measures:
+  //   • SRC_TGT_GAP — distance between the source card and the
+  //     target group. Generous so the connecting bezier lines have
+  //     visible room to curve and read as long, flowing paths.
+  //   • TGT_GAP — distance between target cards (column-to-column
+  //     and row-to-row inside the target group). Tighter because
+  //     targets are visually a unit.
   const TOP_PAD          = 80;
   const BOTTOM_PAD       = 56;
   const SIDE_PAD         = 24;
-  const GAP              = 24;
+  const SRC_TGT_GAP      = 120;
+  const TGT_GAP          = 28;
   const SRC_INTRINSIC_W  = 360;
   const SRC_INTRINSIC_H  = 420;
   const TGT_INTRINSIC_W  = 320;
@@ -1559,30 +1631,40 @@ function computeFocusLayout(
 
   // ── Mode A: side-by-side (wide screens) ────────────────────────
   if (viewport.w >= 1100) {
+    // Cols policy. Single column for ≤ 4 targets keeps lines fanned
+    // out vertically from one source point → mathematically impossible
+    // for lines to cross other cards (they all radiate from the
+    // source's right edge to different y's). Beyond 4, multi-column
+    // is unavoidable; we route those with vertical arcs (see
+    // arcOffset below). Most stations have 1-3 cross-links, so the
+    // single-column path is the common case.
     let cols: number;
-    if (numTargets <= 1)      cols = 1;
-    else if (numTargets <= 4) cols = 2;
+    if (numTargets <= 4)      cols = 1;
+    else if (numTargets <= 6) cols = 2;
     else                       cols = 3;
     const rows = Math.ceil(numTargets / cols);
 
-    // Intrinsic block dimensions before any downscale
-    const tgtsBlockW = cols * TGT_INTRINSIC_W + (cols - 1) * GAP;
-    const tgtsBlockH = rows * TGT_INTRINSIC_H + (rows - 1) * GAP;
-    const blockW = SRC_INTRINSIC_W + GAP + tgtsBlockW;
+    // Intrinsic block dimensions before any downscale. Note the
+    // mixed gap: SRC_TGT_GAP between source and target group,
+    // TGT_GAP within the target group.
+    const tgtsBlockW = cols * TGT_INTRINSIC_W + (cols - 1) * TGT_GAP;
+    const tgtsBlockH = rows * TGT_INTRINSIC_H + (rows - 1) * TGT_GAP;
+    const blockW = SRC_INTRINSIC_W + SRC_TGT_GAP + tgtsBlockW;
     const blockH = Math.max(SRC_INTRINSIC_H, tgtsBlockH);
 
     // Uniform downscale: 1 (no shrink) if the block fits, smaller
     // otherwise. Min keeps both axes in bounds.
     const scale = Math.min(1, availW / blockW, availH / blockH);
-    const srcW = Math.floor(SRC_INTRINSIC_W * scale);
-    const srcH = Math.floor(SRC_INTRINSIC_H * scale);
-    const tgtW = Math.floor(TGT_INTRINSIC_W * scale);
-    const tgtH = Math.floor(TGT_INTRINSIC_H * scale);
-    const gap  = Math.floor(GAP * scale);
+    const srcW       = Math.floor(SRC_INTRINSIC_W * scale);
+    const srcH       = Math.floor(SRC_INTRINSIC_H * scale);
+    const tgtW       = Math.floor(TGT_INTRINSIC_W * scale);
+    const tgtH       = Math.floor(TGT_INTRINSIC_H * scale);
+    const srcTgtGap  = Math.floor(SRC_TGT_GAP * scale);
+    const tgtGap     = Math.floor(TGT_GAP * scale);
 
-    const scaledTgtsBlockW = cols * tgtW + (cols - 1) * gap;
-    const scaledTgtsBlockH = rows * tgtH + (rows - 1) * gap;
-    const scaledBlockW     = srcW + gap + scaledTgtsBlockW;
+    const scaledTgtsBlockW = cols * tgtW + (cols - 1) * tgtGap;
+    const scaledTgtsBlockH = rows * tgtH + (rows - 1) * tgtGap;
+    const scaledBlockW     = srcW + srcTgtGap + scaledTgtsBlockW;
     const scaledBlockH     = Math.max(srcH, scaledTgtsBlockH);
 
     // Centre the block horizontally on the viewport, vertically in
@@ -1600,15 +1682,25 @@ function computeFocusLayout(
     };
 
     const tgtsTop  = blockTop + Math.floor((scaledBlockH - scaledTgtsBlockH) / 2);
-    const tgtsLeft = blockLeft + srcW + gap;
-    const targets: FocusedRect[] = Array.from({ length: numTargets }, (_, i) => {
+    const tgtsLeft = blockLeft + srcW + srcTgtGap;
+    // arcOffset routing — used by BranchLines to deflect bezier
+    // control points vertically for far-column targets so their
+    // lines arc OVER (top half) or UNDER (bottom half) the near
+    // columns instead of crossing them. Near column (col=0) keeps
+    // arcOffset=0 since direct paths there don't need deflection.
+    const targets: Array<FocusedRect & { arcOffset?: number }> = Array.from({ length: numTargets }, (_, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
+      const inUpperHalf = row < rows / 2;
+      const arcOffset = col === 0
+        ? 0
+        : (inUpperHalf ? -(srcH * 0.55) : (srcH * 0.55)) * col;
       return {
-        left: tgtsLeft + col * (tgtW + gap),
-        top: tgtsTop + row * (tgtH + gap),
+        left: tgtsLeft + col * (tgtW + tgtGap),
+        top: tgtsTop + row * (tgtH + tgtGap),
         width: tgtW,
         height: tgtH,
+        arcOffset,
       };
     });
 
@@ -1621,21 +1713,22 @@ function computeFocusLayout(
   const cols = Math.min(numTargets || 1, 2);
   const rows = Math.ceil((numTargets || 1) / cols);
 
-  const tgtsBlockW = cols * TGT_INTRINSIC_W + (cols - 1) * GAP;
-  const tgtsBlockH = rows * TGT_INTRINSIC_H + (rows - 1) * GAP;
+  const tgtsBlockW = cols * TGT_INTRINSIC_W + (cols - 1) * TGT_GAP;
+  const tgtsBlockH = rows * TGT_INTRINSIC_H + (rows - 1) * TGT_GAP;
   const blockW = Math.max(SRC_INTRINSIC_W, tgtsBlockW);
-  const blockH = SRC_INTRINSIC_H + GAP + tgtsBlockH;
+  const blockH = SRC_INTRINSIC_H + SRC_TGT_GAP + tgtsBlockH;
 
   const scale = Math.min(1, availW / blockW, availH / blockH);
-  const srcW = Math.floor(SRC_INTRINSIC_W * scale);
-  const srcH = Math.floor(SRC_INTRINSIC_H * scale);
-  const tgtW = Math.floor(TGT_INTRINSIC_W * scale);
-  const tgtH = Math.floor(TGT_INTRINSIC_H * scale);
-  const gap  = Math.floor(GAP * scale);
+  const srcW       = Math.floor(SRC_INTRINSIC_W * scale);
+  const srcH       = Math.floor(SRC_INTRINSIC_H * scale);
+  const tgtW       = Math.floor(TGT_INTRINSIC_W * scale);
+  const tgtH       = Math.floor(TGT_INTRINSIC_H * scale);
+  const srcTgtGap  = Math.floor(SRC_TGT_GAP * scale);
+  const tgtGap     = Math.floor(TGT_GAP * scale);
 
-  const scaledTgtsBlockW = cols * tgtW + (cols - 1) * gap;
-  const scaledTgtsBlockH = rows * tgtH + (rows - 1) * gap;
-  const scaledBlockH     = srcH + gap + scaledTgtsBlockH;
+  const scaledTgtsBlockW = cols * tgtW + (cols - 1) * tgtGap;
+  const scaledTgtsBlockH = rows * tgtH + (rows - 1) * tgtGap;
+  const scaledBlockH     = srcH + srcTgtGap + scaledTgtsBlockH;
 
   const blockTop = TOP_PAD + Math.max(0, Math.floor((availH - scaledBlockH) / 2));
 
@@ -1647,13 +1740,13 @@ function computeFocusLayout(
   };
 
   const tgtsLeft  = Math.floor((viewport.w - scaledTgtsBlockW) / 2);
-  const tgtsTop   = blockTop + srcH + gap;
-  const targets: FocusedRect[] = Array.from({ length: numTargets }, (_, i) => {
+  const tgtsTop   = blockTop + srcH + srcTgtGap;
+  const targets: Array<FocusedRect & { arcOffset?: number }> = Array.from({ length: numTargets }, (_, i) => {
     const col = i % cols;
     const row = Math.floor(i / cols);
     return {
-      left: tgtsLeft + col * (tgtW + gap),
-      top: tgtsTop + row * (tgtH + gap),
+      left: tgtsLeft + col * (tgtW + tgtGap),
+      top: tgtsTop + row * (tgtH + tgtGap),
       width: tgtW,
       height: tgtH,
     };
