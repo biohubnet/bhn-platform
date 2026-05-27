@@ -12,7 +12,9 @@ import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanne
 import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
 import { LogoMark } from "@/components/ui/Logo";
 import { CreditUsageScoreboard } from "@/components/dashboards/CreditUsageScoreboard";
+import { CreditApplicationCallout } from "@/components/dashboards/CreditApplicationCallout";
 import { RewardsDistanceCard } from "@/components/dashboards/RewardsDistanceCard";
+import { CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
 import { LatestNewsCard } from "@/components/dashboards/LatestNewsCard";
 import { getDisplayName } from "@/lib/user/display-name";
 import { PreferredNameEditor } from "@/components/profile/PreferredNameEditor";
@@ -171,6 +173,22 @@ export default async function DashboardPage() {
     bookmarkId: b.id,
     question: b.question,
   }));
+
+  // Latest ENGAGE credit application — surfaces in the prominent
+  // callout right under the hero. The callout's own render logic
+  // decides what to show based on status (CTA / pending / rejected /
+  // hidden-when-approved); we just hand it the freshest row.
+  const latestCreditApp = await prisma.creditApplication.findFirst({
+    where: { userId },
+    orderBy: { submittedAt: "desc" },
+    select: {
+      status: true,
+      submittedAt: true,
+      reviewedAt: true,
+      reviewerNote: true,
+      approvedAmount: true,
+    },
+  });
 
   // Saved-internship deadline nudge — shown when the trainee has any
   // saved postings whose deadline lands in the next 7 days. Cheaper
@@ -642,6 +660,26 @@ export default async function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {/* ── ENGAGE training credits — prominent dashboard callout ──
+          Sits directly under the hero so a trainee who's never
+          applied for the 5,000-credit grant can't miss it. The
+          callout's render state is internal: a big brand CTA when
+          they've never applied; an amber "under review" chip while
+          pending; a rose re-apply prompt if rejected; and entirely
+          HIDDEN once they've been approved (since the credits are
+          already in their balance — no point repeating the pitch).
+          Also renders for users in the `evaluating` role, who can
+          apply but aren't full trainees yet. */}
+      {(role === "trainee" || role === "evaluating") && (
+        <div className="max-w-screen-2xl mx-auto px-6 mt-6">
+          <CreditApplicationCallout
+            latestApp={latestCreditApp}
+            ttlDays={CREDIT_GRANT_TTL_DAYS}
+            variant="prominent"
+          />
+        </div>
+      )}
 
       {/* First-time prompt — only shows for users who haven't picked
           a preferredName yet. Smart suggestion chips derived from

@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.28";
+export const TOUR_VERSION = "2026.05.28b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── ENGAGE credit application moved to dashboard hero (May 2026)
+  {
+    id: "trainee.engage-credit-application-callout",
+    title: "Apply for ENGAGE training credits — now front-and-centre",
+    body: "Trainees can apply for up to 5,000 free ENGAGE training credits if they're Highly Qualified Personnel at one of the 14 partner Ontario institutions. The application asks for a supporting document (transcript + grad-office verification for grad students; employment letter for postdocs / research associates / lab techs). An admin reviews each one personally. The CTA now sits directly under your dashboard hero so it's impossible to miss. Self-aware: once approved, the card disappears.",
+    path: "/dashboard",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    cta: { label: "Open my dashboard", href: "/dashboard" },
+    since: "2026.05.28b",
+  },
   // ─── Sixteen new login-floater glyphs (May 2026) ─────────────────
   {
     id: "admin.login-floaters-batch-16",

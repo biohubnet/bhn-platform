@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── ENGAGE credit application — promoted to dashboard hero — May 2026
+  {
+    title: "ENGAGE training-credit application — now front-and-centre on the trainee dashboard",
+    body: "The ENGAGE credit-application flow has been live for a while (sidebar: *ENGAGE → My Credits → Start application*; routes: `/credits/apply` with the doc-upload form, `/api/credits/applications` for submission, `/api/admin/credit-applications` for admin review). But the entry point was buried — a trainee had to click *My Credits* in the sidebar first, then scroll to the application card on that page, then click *Start application*. New trainees were missing it entirely.\n\n**Now the application sits directly under the dashboard hero**, visible the moment a trainee lands on `/dashboard` after login. It's a self-aware callout that adapts to the user's current state:\n\n  • **Never applied** → big brand-coloured banner with the headline *\"Apply for up to 5,000 free training credits\"*, eligibility criteria (HQP at partner Ontario institutions: grad students, postdocs, research associates, lab techs), the supporting documents they'll need (transcript + grad-office verification, or employment letter), a note that admins review each application personally, and a prominent *Start application* button.\n  • **Pending** → amber chip explaining the application is under review.\n  • **Rejected** → rose chip with the reviewer's note and a *Submit a new application* button.\n  • **Approved** → callout is hidden entirely (the credits are already in the user's balance — no need to repeat the pitch).\n\nThe banner shows for both `trainee` and `evaluating` roles. Reusable component at `src/components/dashboards/CreditApplicationCallout.tsx` ships both a *prominent* (dashboard) and *compact* (in-page) variant; same render logic, same copy, different visual density.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Voltage sidebar — section title chips no longer cut by border — May 2026
   {
     title: "Voltage theme — sidebar section title chips (ENGAGE / EXPERIENCE / EQUIP / HR PREVIEW) no longer cut by the section border running through them",
