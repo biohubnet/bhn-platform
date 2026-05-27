@@ -146,23 +146,21 @@ export default async function FormPage({
 
   return (
     <>
-      {/* Staff-only seed / clear tray — drops a few demo submissions
-          attached to demo accounts so admins can preview the
-          /admin/forms/[slug] review surface without hand-filling the
-          form. Same component the admin-forms admin page uses; both
-          surfaces target the same API, so a Clear on either side
-          removes everything seeded on the other too. Rendered above
-          the marketing content + the form so admins see it on first
-          view; trainees never see it. */}
+      {/* Staff-only seed / clear tray. Same component the admin-forms
+          admin page uses; both surfaces target the same API, so a
+          Clear on either side removes everything seeded on the other.
+          The tray PORTALS itself to #bhn-demo-tray-slot at the bottom
+          of <main> in the (dashboard) layout, so even though we mount
+          it here at the top of the page, the actual rendered DOM
+          lives below the page content — never above the hero
+          (project rule: feedback_bhn_hero_top_rule.md). */}
       {isStaff && (
-        <div className="mb-4">
-          <DemoSeedAndClearTray
-            entity="form_submission"
-            scope={{ formSlug: slug }}
-            noun="demo submissions"
-            clearHelp={`Delete every "${slug}" submission from demo accounts. The users themselves stay (reusable for other tests). Real applicants and phantoms are not touched.`}
-          />
-        </div>
+        <DemoSeedAndClearTray
+          entity="form_submission"
+          scope={{ formSlug: slug }}
+          noun="demo submissions"
+          clearHelp={`Delete every "${slug}" submission from demo accounts. The users themselves stay (reusable for other tests). Real applicants and phantoms are not touched.`}
+        />
       )}
 
       {/* PageHero owns the editorial top — keep it visually first.

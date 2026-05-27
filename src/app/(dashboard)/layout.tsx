@@ -132,6 +132,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <LayoutBannerProvider data={bannerData}>
           <div className="max-w-screen-2xl mx-auto px-6 py-8 pt-16">
             {children}
+            {/* Portal target for <DemoSeedAndClearTray />. The tray
+                component uses createPortal to render itself here no
+                matter where in the page's JSX it's mounted — that
+                makes it STRUCTURALLY IMPOSSIBLE for a page to render
+                the seeder above its hero (project rule:
+                feedback_bhn_hero_top_rule.md). Multiple trays on the
+                same page stack vertically.
+
+                If a page wants the seeder to appear elsewhere, it
+                still can: the portal only fires once this element is
+                in the DOM, so pages outside (dashboard) (e.g. public
+                /showcase/...) get a no-op tray. */}
+            <div
+              id="bhn-demo-tray-slot"
+              data-bhn-demo-slot
+              className="mt-8 space-y-3 empty:hidden"
+            />
           </div>
         </LayoutBannerProvider>
       </main>

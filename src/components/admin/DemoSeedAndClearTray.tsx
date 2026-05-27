@@ -1,5 +1,6 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Sparkles, Trash2, CheckCircle2, AlertTriangle } from "lucide-react";
 
@@ -21,6 +22,22 @@ import { Sparkles, Trash2, CheckCircle2, AlertTriangle } from "lucide-react";
  * tray into any admin page that has a Clear button today, point
  * `entity` (+ optional `scope`) at the right rows, and the page
  * gets a matching Seed button for free.
+ *
+ * --- Hero-rule guarantee --------------------------------------------
+ * Project rule (feedback_bhn_hero_top_rule.md): nothing renders
+ * ABOVE a page's hero. To prevent the tray from accidentally landing
+ * above the hero — which has happened multiple times because pages
+ * naturally place admin tools near the imports at the top of the JSX —
+ * this component PORTALS itself into a dedicated slot at the bottom
+ * of <main> in the (dashboard) layout. The page can write
+ * <DemoSeedAndClearTray /> anywhere; the rendered DOM always lives in
+ * the slot. Hero ownership is structurally enforced, not relying on
+ * each page's author remembering to place the tray correctly.
+ *
+ * If the slot is missing (e.g. the component is rendered outside
+ * (dashboard) — unusual but possible on a future public page), the
+ * tray renders nothing in production and logs a dev-mode warning so
+ * the missing wrapper gets fixed early.
  */
 export type DemoSeedEntity =
   | "internship_posting"
@@ -77,6 +94,30 @@ export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) 
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  // Portal target — the <div id="bhn-demo-tray-slot"> rendered at the
+  // bottom of <main> in the (dashboard) layout. Resolved after mount
+  // so SSR (which has no DOM) renders nothing — the portal fills in
+  // on hydration.
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = document.getElementById("bhn-demo-tray-slot");
+    if (el) {
+      setPortalTarget(el);
+    } else if (process.env.NODE_ENV !== "production") {
+      // Loud in dev so the missing slot gets fixed early. Silent in
+      // production because the user-facing impact is just "the demo
+      // tray didn't render" which is rarely a release-blocker.
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[DemoSeedAndClearTray] No #bhn-demo-tray-slot found in the DOM. " +
+        "This component portals itself there to enforce the project's " +
+        "hero-owns-top rule. If you're rendering it from outside the " +
+        "(dashboard) layout, the slot needs to be added to whichever " +
+        "layout wraps the page.",
+      );
+    }
+  }, []);
 
   const nounLabel = noun ?? DEFAULT_NOUNS[entity];
 
@@ -157,7 +198,13 @@ export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) 
     }
   }
 
-  return (
+  // No portal target yet → SSR pass, or rendered outside (dashboard).
+  // Returning null is the safe default — pages can't accidentally
+  // render the tray above their hero this way, and the dev-mode
+  // warning above surfaces the missing-slot case loudly.
+  if (!portalTarget) return null;
+
+  return createPortal(
     <div className="admin-glow rounded-xl border border-dashed border-amber-300 bg-amber-50/60 p-3 flex flex-wrap items-center gap-2 text-xs">
       <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-amber-900">
         Admin · Demo data
@@ -194,6 +241,7 @@ export function DemoSeedAndClearTray({ entity, scope, noun, clearHelp }: Props) 
       <span className="ml-auto text-[10px] text-amber-800/80">
         Seed creates rows on demo accounts so Clear can find them.
       </span>
-    </div>
+    </div>,
+    portalTarget,
   );
 }

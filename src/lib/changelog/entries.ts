@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Demo tray hero-rule enforcement — May 2026
+  {
+    title: "Demo seed/clear tray — moved to a portal slot so it can never sit above the hero",
+    body: "Surfaced via /forms/talent-application: the staff demo seeder was rendering ABOVE the page's editorial hero, breaking the platform rule that the hero owns the top of every page. The hero rule was previously enforced by convention — each page author had to remember to place the tray below `<PageHero>`. After ~17 usage sites that convention broke down.\n\n**Structural fix.** `DemoSeedAndClearTray` now portals itself into a dedicated `#bhn-demo-tray-slot` div rendered at the bottom of `<main>` inside the (dashboard) layout. Pages can write `<DemoSeedAndClearTray entity=… />` anywhere in their JSX — the actual rendered DOM always lands in the slot. It is now structurally impossible for a page to place the tray above its hero, even by mistake. If the slot is missing (e.g. someone mounts the tray outside the dashboard layout in the future), the component renders nothing in production and logs a loud dev-mode warning so the missing wrapper gets fixed.\n\n**Bonus:** with all trays now stacking in the same slot at the bottom of the page, admins working through the page content scroll past the form first and find the demo tools waiting at the bottom — closer to the 'tools at end' pattern users expect. The amber pill styling is unchanged.",
+    kind: "fix",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
   // ── Facilities map — May 2026 web scan
   {
     title: "Facilities map — 44 more biomanufacturing sites added (69 → 113)",
