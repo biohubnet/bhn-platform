@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Facilities map — May 2026 web scan
+  {
+    title: "Facilities map — 44 more biomanufacturing sites added (69 → 113)",
+    body: "Web-scan pass across BIOTECanada's directory, ISED's Biomanufacturing Projects list, adMare BioInnovations' portfolio, BioCanRx-affiliated facilities, and individual company sites pulled 44 additional Canadian biomanufacturing facilities into the map at `/experience/facilities`.\n\n**Notable additions.** BlueRock Therapeutics + CCRM + Sunnybrook GMP at MaRS; AbCellera's new Mission Critical GMP campus in Vancouver; Precision NanoSystems' 75,000 sq ft RNA medicine biomanufacturing centre (False Creek Flats); adMare's M4 Innovation Centre + UBC HQ; the Advanced Therapeutics Manufacturing Facility (ATMF) at UBC; BC Cancer's Conconi Family Immunotherapy Lab + Genome Sciences Centre CAR-T platforms; Fusion Pharmaceuticals (now AstraZeneca) + the Centre for Probe Development and Commercialization for radiopharmaceuticals in Hamilton; Eli Lilly's POINT Biopharma Toronto site; Pharmascience Candiac; Sterinova (B.Braun) at Saint-Hyacinthe; the BC Cancer / VIDO BSL-3 vaccine facility at the University of Saskatchewan; Providence Therapeutics' mRNA platform in Calgary; CASTL Charlottetown; the Critical Medicines Production Centre at the U Alberta Research Park; BIOVECTRA's new Windsor (NS) microbial fermentation site; plus Repare, Inversago (Novo Nordisk), Sernova, Triumvira, BioLyse, Edesa, PlantForm, Vasomune, IMV, 3D BioFibR, Avivagen, Symvivo, PnuVax, Inspire Bio Innovations / Ability Biotherapeutics, BioPharma Services, AmacaThera, Avir, BioSyent, Vetoquinol/Bioniche, Vetio Animal Health, and BioVaxys.\n\n**Plumbing fix on the auto-seed path.** The page used to upsert seed data only when the Facility table was empty — meaning new entries added to `src/lib/facilities/seed-data.ts` after the initial seed would never propagate to the deployed DB. The page now **diffs** seed names against existing names every load and upserts just the missing ones (the upsert is by-name unique with `update: {}`, so existing rows are never overwritten and admin-edited descriptions survive). Cost on a steady-state load is one SELECT + a tiny set diff.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Staff sidebar always-full — May 2026
   {
     title: "Sidebar — admins and superadmins now always see every menu item their role allows",

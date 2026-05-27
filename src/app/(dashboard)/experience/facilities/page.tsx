@@ -63,11 +63,21 @@ export default async function FacilitiesPage() {
       orderBy: [{ province: "asc" }, { city: "asc" }, { name: "asc" }],
       select: FACILITY_FIELDS,
     });
-    // Auto-seed on first page-load — idempotent, upserts by name.
-    if (facilities.length === 0) {
+    // Auto-seed gap-filling — runs on every page load and inserts
+    // any facility from FACILITY_SEED that isn't already in the DB.
+    // Previously we only seeded when the table was empty, which meant
+    // expanding seed-data.ts later (e.g. adding more sites from a web
+    // scan) wouldn't actually propagate to the deployed DB. Now we
+    // diff seed names against existing names → upsert just the
+    // missing ones. Existing rows are never overwritten — admins can
+    // hand-edit a facility's description via the rescan flow without
+    // worrying about a deploy clobbering their work.
+    const existingNames = new Set(facilities.map((f) => f.name));
+    const missing = FACILITY_SEED.filter((f) => !existingNames.has(f.name));
+    if (missing.length > 0) {
       try {
         await Promise.all(
-          FACILITY_SEED.map((f) =>
+          missing.map((f) =>
             prisma.facility.upsert({
               where: { name: f.name },
               create: { ...f },
