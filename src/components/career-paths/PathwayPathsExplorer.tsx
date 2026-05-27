@@ -109,6 +109,14 @@ function gridTemplateColumns(pathways: { id: string }[], collapsed: Set<string>)
 export function PathwayPathsExplorer() {
   const [branch, setBranch] = useState<BranchOpenWithRects | null>(null);
 
+  // Station-detail popup — shows the FULL contents of a single
+  // station (all roles, full focus paragraph, every education gap)
+  // sized to the content. The card itself is intentionally compact
+  // (clamps focus to 3 lines, shows "first role + N more" instead
+  // of every title) so the chart fits 7 columns × 5 rows on one
+  // screen. The popup is the place to actually read everything.
+  const [detail, setDetail] = useState<BranchOpen | null>(null);
+
   // Foldability — two independent axes.
   //
   // collapsedLevels — Levels whose station-card row is hidden. The
@@ -229,6 +237,7 @@ export function PathwayPathsExplorer() {
               rowIdx={rowIdx}
               isLast={rowIdx === LEVEL_ORDER.length - 1}
               onBranchOpen={handleBranchOpen}
+              onCardClick={(b) => setDetail(b)}
               gridTemplate={gridTemplate}
               collapsedLevels={collapsedLevels}
               collapsedPathways={collapsedPathways}
@@ -251,6 +260,17 @@ export function PathwayPathsExplorer() {
       {/* Branch modal — only mounted when a branch action is active.
           Renders into a portal-like fixed overlay. */}
       {branch && <BranchModal source={branch} onClose={() => setBranch(null)} />}
+
+      {/* Station-detail popup — full card content, dynamically sized
+          to the data. Click anywhere on a station card (outside the
+          Branch pill, which has its own click handler) to open. */}
+      {detail && (
+        <StationDetailModal
+          track={detail.track}
+          station={detail.station}
+          onClose={() => setDetail(null)}
+        />
+      )}
     </div>
   );
 }
@@ -440,13 +460,14 @@ function TrackHeadersRow({
 }
 
 function LevelRow({
-  level, rowIdx, isLast, onBranchOpen,
+  level, rowIdx, isLast, onBranchOpen, onCardClick,
   gridTemplate, collapsedLevels, collapsedPathways, toggleLevel,
 }: {
   level: LevelId;
   rowIdx: number;
   isLast: boolean;
   onBranchOpen: (b: BranchOpen) => void;
+  onCardClick: (b: BranchOpen) => void;
   gridTemplate: string;
   collapsedLevels: Set<LevelId>;
   collapsedPathways: Set<string>;
@@ -527,6 +548,7 @@ function LevelRow({
                   index={rowIdx}
                   track={track}
                   onBranchOpen={onBranchOpen}
+                  onCardClick={onCardClick}
                 />
               </li>
             );
@@ -605,13 +627,14 @@ function ConnectorRow({
 // ──────────────────────────────────────────────────────────────────
 
 function StationBox({
-  station, accent, index, track, onBranchOpen,
+  station, accent, index, track, onBranchOpen, onCardClick,
 }: {
   station: CareerStation;
   accent: string;
   index: number;
   track: CareerTrack;
   onBranchOpen: (b: BranchOpen) => void;
+  onCardClick: (b: BranchOpen) => void;
 }) {
   const intensity = 30 + index * 17;
   const crossLinks = station.crossLinks ?? [];
@@ -623,7 +646,17 @@ function StationBox({
   return (
     <article
       data-station-id={stationId}
-      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden"
+      onClick={() => onCardClick({ track, station })}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onCardClick({ track, station });
+        }
+      }}
+      title={`See full details for ${station.label}`}
+      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden cursor-pointer hover:border-line-strong transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
       style={{
         boxShadow: "var(--shadow-card-rest)",
         backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${accent} 5%, transparent) 0%, transparent 50%)`,
@@ -1343,6 +1376,188 @@ function BigStationCard({
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Station detail modal — the full card content, dynamically sized
+// to whatever the data needs. The compact cards in the chart clamp
+// the focus paragraph and hide all-but-the-first role title to keep
+// the 7×5 chart on one screen; this popup is the place to read
+// everything without scrolling.
+// ──────────────────────────────────────────────────────────────────
+
+function StationDetailModal({
+  track, station, onClose,
+}: {
+  track: CareerTrack;
+  station: CareerStation;
+  onClose: () => void;
+}) {
+  // Esc to close. Modal mounts at most once per click, so attaching
+  // here directly is cheap and tears down with the component.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    // Lock body scroll while the modal is open so the page behind
+    // doesn't drift if the user wheel-scrolls inside the popup.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  const Icon = ICONS[track.iconKey];
+  const intensity = 30 + LEVEL_ORDER.indexOf(station.level) * 17;
+  const levelMeta = LEVEL_META[station.level];
+  const crossLinks = station.crossLinks ?? [];
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Career details — ${station.label}`}
+      onClick={onClose}
+      className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6 bg-backdrop animate-fade-in"
+    >
+      {/* Content card. width = auto up to max-w; height = auto up to
+          max-h. If content somehow exceeds viewport (very long focus
+          + many gaps + many cross-links), overflow-auto kicks in as a
+          fallback — but for the data we ship today the card always
+          fits comfortably without inner scrolling. */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-[640px] max-h-[90vh] overflow-auto rounded-2xl bg-card-solid border shadow-elevated"
+        style={{
+          borderColor: `color-mix(in srgb, ${track.accent} 35%, var(--line))`,
+          backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${track.accent} 6%, var(--card)) 0%, var(--card) 30%)`,
+        }}
+      >
+        {/* Accent strip + close button */}
+        <span
+          aria-hidden
+          className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
+          style={{ backgroundColor: `color-mix(in srgb, ${track.accent} ${intensity}%, transparent)` }}
+        />
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-2.5 right-2.5 inline-flex items-center justify-center w-8 h-8 rounded-md text-fg-subtle hover:text-fg hover:bg-elevated z-10"
+        >
+          <X size={14} />
+        </button>
+
+        <div className="px-5 sm:px-7 py-5 sm:py-6">
+          {/* Header — pathway / stream + level */}
+          <div className="flex items-center gap-2 text-[10.5px] uppercase tracking-[0.18em] font-bold" style={{ color: track.accent }}>
+            <Icon size={12} />
+            <span>{track.title}</span>
+            <span className="text-fg-subtle">·</span>
+            <span className="text-fg">{levelMeta.label} · {station.yearsRange}</span>
+          </div>
+
+          <h2 className="mt-2 text-[22px] sm:text-[26px] font-bold tracking-tight text-fg leading-tight">
+            {station.label}
+          </h2>
+
+          {/* Full focus paragraph — no line clamp here. */}
+          <p className="mt-3 text-[13px] sm:text-[14px] text-fg-muted leading-relaxed">
+            {station.focus}
+          </p>
+
+          {/* All role titles — every alternative, not just "+N similar". */}
+          <section className="mt-5">
+            <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg-subtle mb-1.5">
+              Typical roles at this level
+            </p>
+            <ul className="flex flex-wrap gap-1.5">
+              {station.roles.map((r) => (
+                <li
+                  key={r}
+                  className="text-[12px] px-2 py-1 rounded-md font-semibold leading-none"
+                  style={{
+                    color: track.accent,
+                    backgroundColor: `color-mix(in srgb, ${track.accent} 10%, var(--card))`,
+                    border: `1px solid color-mix(in srgb, ${track.accent} 30%, transparent)`,
+                  }}
+                >
+                  {r}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Education gaps — full list, with the accent bullet. */}
+          <section className="mt-5">
+            <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg-subtle mb-1.5">
+              Education gaps to close here
+            </p>
+            <ul className="space-y-1">
+              {station.educationGaps.map((g) => (
+                <li key={g} className="flex items-start gap-2 text-[12.5px] leading-relaxed">
+                  <span
+                    aria-hidden
+                    className="inline-block w-1.5 h-1.5 rounded-full mt-[7px] shrink-0"
+                    style={{ backgroundColor: track.accent }}
+                  />
+                  <span className="text-fg-muted">{g}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Cross-links — full list with the "when" + reason. The
+              compact card just shows the Branch pill with a count;
+              the popup spells out where each pivot leads + what to
+              learn to make it. */}
+          {crossLinks.length > 0 && (
+            <section className="mt-5 border-t border-line/60 pt-4">
+              <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg-subtle mb-2 inline-flex items-center gap-1.5">
+                <GitFork size={11} /> Cross-pathway branch{crossLinks.length > 1 ? "es" : ""}
+              </p>
+              <ul className="space-y-3">
+                {crossLinks.map((cl) => {
+                  const targetTrack = PATHWAY_BY_ID.get(cl.trackId);
+                  return (
+                    <li key={`${cl.trackId}-${cl.targetLevel}`} className="rounded-lg border border-line/70 bg-card p-3">
+                      <p className="text-[12.5px] font-semibold text-fg leading-tight">
+                        → {targetTrack?.title ?? cl.trackId}
+                        <span className="ml-1.5 text-[10.5px] font-normal text-fg-subtle">
+                          ({cl.when})
+                        </span>
+                      </p>
+                      <p className="mt-1 text-[12px] text-fg-muted leading-relaxed">
+                        {cl.reason}
+                      </p>
+                      {cl.learningNeeded && cl.learningNeeded.length > 0 && (
+                        <ul className="mt-2 flex flex-wrap gap-1">
+                          {cl.learningNeeded.map((ln) => (
+                            <li
+                              key={ln}
+                              className="text-[10.5px] px-1.5 py-0.5 rounded-md font-medium leading-none bg-elevated text-fg-muted"
+                            >
+                              {ln}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {/* Hint footer */}
+          <p className="mt-5 text-[10.5px] text-fg-subtle italic">
+            Press <kbd className="px-1 py-0.5 rounded bg-elevated text-fg-muted text-[10px] font-mono">Esc</kbd> or click outside to close.
+          </p>
+        </div>
       </div>
     </div>
   );
