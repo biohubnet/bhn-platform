@@ -21,8 +21,13 @@ export const THEMES = [
   // Flavours — sensory / atmospheric themes.
   { id: "icecream",   name: "Summer Ice Cream", description: "Pastel scoops on a vanilla cone — playful and bright", category: "flavour" },
   { id: "greenwood",  name: "Greenwood",  description: "A forest that shifts with your local hour — mist at dawn, dappled noon, golden dusk, fireflies after dark. Auto-snaps to its night palette + fireflies the moment your OS goes dark, regardless of the hour. Leaves drift across the page all day; a quiet scene caption reports what the forest is doing right now.", category: "flavour" },
-  { id: "atompunk",   name: "Atom Punk",  description: "1950s atomic age, Googie diner aesthetic. Aged paper cream + atomic teal + tangerine sunset + canary pop. Slab-serif headlines, electron-orbit decorations, sunset-over-the-test-site hero gradient. Reads like a vintage Tomorrowland brochure.", category: "flavour" },
-  { id: "aurora",     name: "Aurora",     description: "Late-night editorial — deep near-black-navy stage with the original cinematic gradient (navy → indigo → royal purple → rose) and four dreamy aurora blooms (cyan, pink, canary, green) dancing across it. The look from a luxury magazine cover at midnight.", category: "flavour" },
+  // Removed (2026-05-27): "atompunk" (Atom Punk) and "aurora" (Aurora)
+  // themes. The registry filters them out of the picker, and the
+  // localStorage migration in resolveSavedTheme below drops anyone
+  // whose saved value points at one of the retired ids — they fall
+  // back to the default theme on next load. CSS for both themes
+  // remains in globals.css for now (harmless dead style blocks) until
+  // a follow-up cleanup pass.
 
   // Limited-time / seasonal.
   {
