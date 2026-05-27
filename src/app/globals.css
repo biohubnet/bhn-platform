@@ -2867,6 +2867,94 @@ body {
   .sakura-atmosphere .sakura-caption-text { animation: none !important; }
 }
 
+/* ╔══════════════════════════════════════════════════════════════════╗
+ * ║ Summer Ice Cream atmosphere — falling treats + snow              ║
+ * ╠══════════════════════════════════════════════════════════════════╣
+ * ║ Ice creams, popsicles, snowflakes, and ice cubes drift across    ║
+ * ║ the viewport when theme === "icecream". Same drive train as the  ║
+ * ║ Greenwood and Sakura atmospheres: one shared `icecream-fall-     ║
+ * ║ drift` keyframe, per-element CSS custom properties for sway,     ║
+ * ║ rotation, and scale.                                             ║
+ * ║                                                                  ║
+ * ║   --ic-sway       horizontal wander in px                        ║
+ * ║   --ic-start-rot  initial rotation in deg                        ║
+ * ║   --ic-scale      per-element size multiplier                    ║
+ * ╚══════════════════════════════════════════════════════════════════╝
+ */
+@keyframes icecream-fall-drift {
+  0% {
+    transform:
+      translate3d(0, -14vh, 0)
+      rotate(var(--ic-start-rot, 0deg))
+      scale(var(--ic-scale, 1));
+    opacity: 0;
+  }
+  6% { opacity: 1; }
+  25% {
+    transform:
+      translate3d(calc(var(--ic-sway, 80px) *  0.40), 25vh, 0)
+      rotate(calc(var(--ic-start-rot, 0deg) + 90deg))
+      scale(var(--ic-scale, 1));
+  }
+  50% {
+    transform:
+      translate3d(calc(var(--ic-sway, 80px) * -0.55), 50vh, 0)
+      rotate(calc(var(--ic-start-rot, 0deg) + 200deg))
+      scale(var(--ic-scale, 1));
+  }
+  75% {
+    transform:
+      translate3d(calc(var(--ic-sway, 80px) *  0.35), 75vh, 0)
+      rotate(calc(var(--ic-start-rot, 0deg) + 320deg))
+      scale(var(--ic-scale, 1));
+  }
+  94% { opacity: 1; }
+  100% {
+    transform:
+      translate3d(calc(var(--ic-sway, 80px) * -0.20), 116vh, 0)
+      rotate(calc(var(--ic-start-rot, 0deg) + 460deg))
+      scale(var(--ic-scale, 1));
+    opacity: 0;
+  }
+}
+
+.icecream-atmosphere .icecream-fall {
+  position: absolute;
+  top: 0;
+  display: inline-block;
+  line-height: 0;
+  animation-name: icecream-fall-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* Per-shape shadow tweaks — cones / popsicles get a warm-ish drop
+ * so they feel like physical treats; snowflakes / ice cubes get a
+ * cool icy glow that pops on the cream canvas without looking like
+ * a separate decal pasted on top. */
+.icecream-atmosphere .icecream-fall-cone-strawberry,
+.icecream-atmosphere .icecream-fall-cone-mint,
+.icecream-atmosphere .icecream-fall-cone-vanilla,
+.icecream-atmosphere .icecream-fall-popsicle-lemon,
+.icecream-atmosphere .icecream-fall-popsicle-raspberry,
+.icecream-atmosphere .icecream-fall-popsicle-blueberry {
+  filter: drop-shadow(0 2px 2px rgba(190, 80, 100, 0.18));
+}
+.icecream-atmosphere .icecream-fall-snowflake {
+  filter: drop-shadow(0 0 4px rgba(160, 210, 245, 0.85));
+}
+.icecream-atmosphere .icecream-fall-icecube {
+  filter: drop-shadow(0 1px 3px rgba(100, 170, 210, 0.35));
+}
+
+/* Reduced-motion safety net — defence-in-depth. Component already
+ * returns null when prefers-reduced-motion is set; this catches any
+ * edge case where the DOM persists. */
+@media (prefers-reduced-motion: reduce) {
+  .icecream-atmosphere .icecream-fall { animation: none !important; }
+}
+
 /* Tame Tailwind tints for the dark Dry Ice. Same approach as the
  * Nightfall theme — desaturate rose / amber / emerald base tints so
  * cards using bg-rose-50 etc. don't blast the cool palette. */

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Summer Ice Cream theme — falling treats + snow — May 2026
+  {
+    title: "Summer Ice Cream theme — falling ice creams, popsicles, snowflakes, and ice cubes",
+    body: "Just like Greenwood drops leaves and Sakura drops cherry-blossom petals, the **Summer Ice Cream** theme now has its own atmospheric layer. Twelve frozen things drift across the viewport on randomised paths whenever the theme is active:\n\n  • **Three ice-cream cones** — strawberry pink, mint green, and vanilla cream scoops on a waffle cone.\n  • **Three popsicles** — lemon yellow, raspberry pink, blueberry blue, each on a wooden stick.\n  • **Snowflakes** — pale-blue six-armed crystals with branchlets and a soft icy glow filter.\n  • **Ice cubes** — translucent cyan with a top-left highlight where the light catches the corner.\n\nEach falling item has its own delay, duration, sway amplitude, rotation rhythm, and scale — pre-randomised at mount and stable for the page lifetime so React keys don't churn. Snowflakes and ice cubes drift slower and rotate less (they're crystals, not tumbling treats); cones and popsicles tumble more dramatically. Sparse population (12 elements) so the canvas reads as \"a breeze on a hot day\" rather than a deluge.\n\n**Drive train identical to Greenwood / Sakura**: one shared CSS keyframe (`icecream-fall-drift`) consumes per-element CSS custom properties for sway, start-rotation, and scale, so per-element variation costs nothing at runtime — no per-element keyframes, all driven by `--ic-*` vars on inline style. Fixed-position, pointer-events-none, aria-hidden. Returns null for every other theme so it's free while inactive. Respects `prefers-reduced-motion` (component bails entirely, plus a defence-in-depth `animation: none` in the CSS).",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Sidebar — expanded section chips no longer cut by border on Rosalind / Sakura / etc. — May 2026
   {
     title: "Sidebar — expanded section chips now opaque on every theme (no more border line cutting through ENGAGE / EXPERIENCE / EQUIP labels)",

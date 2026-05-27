@@ -9,6 +9,7 @@ import { ConsentProvider } from "@/components/consent/ConsentProvider";
 import { CookieBanner } from "@/components/consent/CookieBanner";
 import { GreenwoodAtmosphere } from "@/components/themes/GreenwoodAtmosphere";
 import { SakuraAtmosphere } from "@/components/themes/SakuraAtmosphere";
+import { IceCreamAtmosphere } from "@/components/themes/IceCreamAtmosphere";
 import { DemoTourProvider } from "@/lib/demo/tourContext";
 import type { DesignSystemId } from "@/lib/design-system/registry";
 
@@ -41,6 +42,12 @@ export function Providers({
                   theme === "sakura". Returns null for every other
                   theme — free while inactive. */}
               <SakuraAtmosphere />
+              {/* Falling ice creams / popsicles / snowflakes /
+                  ice cubes when theme === "icecream". Same
+                  pre-randomised drift pattern as the other
+                  atmospheres; returns null for every other
+                  theme — free while inactive. */}
+              <IceCreamAtmosphere />
               {/* DemoTourProvider — global state + navigation side-effects
                   for the guided platform demo (admin/demo). Wraps children
                   so both the DemoHub launcher and the DemoOverlay visual
