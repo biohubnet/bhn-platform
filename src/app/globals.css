@@ -3302,13 +3302,21 @@ h1, h2, h3 {
  * Used by /experience/facilities — labels render once zoom ≥ 11.
  * ────────────────────────────────────────────────────────────── */
 
-/* Strip Leaflet's default DivIcon chrome — no border, no background. */
+/* Strip Leaflet's default DivIcon chrome — no border, no background.
+ * `pointer-events: none` is critical here: even with `interactive: false`
+ * on the Marker, Leaflet still attaches the wrapper DOM to the
+ * marker-pane, and absent an explicit pointer-events override the
+ * wrapper's bounding box can intercept clicks/taps from elements
+ * that visually sit beneath it (Leaflet's pane stacking order + the
+ * wrapper's 200-px width means a label can shadow a much larger
+ * area than the visible pill suggests). Disable it explicitly. */
 .leaflet-div-icon.facility-label-divicon {
   background: transparent;
   border: 0;
   box-shadow: none;
   width: auto !important;
   height: auto !important;
+  pointer-events: none !important;
 }
 
 .facility-name-tag {
