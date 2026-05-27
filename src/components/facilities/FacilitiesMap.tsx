@@ -21,7 +21,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Building2, Factory, ExternalLink, MapPin, RefreshCcw, X, Filter } from "lucide-react";
+import { Building2, Factory, ExternalLink, MapPin, RefreshCcw, X, Filter, Navigation, Globe2 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 
 interface FacilityRow {
@@ -47,6 +47,38 @@ interface Props {
   canRescan: boolean;
 }
 
+/** Pre-defined metro / regional shortcuts. Clicking a chip flies the
+ *  map to that bounding box so users don't have to scroll-zoom in
+ *  several times from the country-wide view. Bounds are deliberately
+ *  loose — Leaflet's flyToBounds adds padding + caps zoom for tiny
+ *  boxes so single-facility regions don't end up at street-level
+ *  zoom. Order: roughly east-to-west by relevance.
+ *
+ *  New region? Add it here, pick a bounding box that contains the
+ *  facilities you want grouped, give it a unique id. The "Jump to"
+ *  row renders chips in the order below; counts are computed per
+ *  region against the current visible-facilities set so empty
+ *  regions auto-hide. */
+interface MapRegion {
+  id: string;
+  label: string;
+  swLat: number;
+  swLng: number;
+  neLat: number;
+  neLng: number;
+}
+const MAP_REGIONS: MapRegion[] = [
+  { id: "atl", label: "Atlantic",          swLat: 44.50, swLng: -64.40, neLat: 46.40, neLng: -62.50 },
+  { id: "qc",  label: "Québec City",       swLat: 46.65, swLng: -71.50, neLat: 46.95, neLng: -70.95 },
+  { id: "mtl", label: "Greater Montréal",  swLat: 45.28, swLng: -73.95, neLat: 45.75, neLng: -72.85 },
+  { id: "ott", label: "Ottawa",            swLat: 45.20, swLng: -76.50, neLat: 45.55, neLng: -75.40 },
+  { id: "gta", label: "GTA & Hamilton",    swLat: 43.10, swLng: -80.35, neLat: 44.20, neLng: -78.80 },
+  { id: "pra", label: "Prairies",          swLat: 49.50, swLng: -107.50, neLat: 52.50, neLng: -96.50 },
+  { id: "yyc", label: "Calgary–Edmonton",  swLat: 50.85, swLng: -114.30, neLat: 53.70, neLng: -113.20 },
+  { id: "yvr", label: "Vancouver Metro",   swLat: 49.10, swLng: -123.35, neLat: 49.40, neLng: -122.80 },
+  { id: "yyj", label: "Victoria",          swLat: 48.35, swLng: -123.55, neLat: 48.55, neLng: -123.25 },
+];
+
 /** Status → colour map. Sticks to four hues max (brand-aware, not
  *  theme-specific) so the legend stays legible. */
 function statusAccent(status: string | null): string {
@@ -61,6 +93,7 @@ export function FacilitiesMap({ initialFacilities, canRescan }: Props) {
   const [facilities, setFacilities] = useState<FacilityRow[]>(initialFacilities);
   const [selected, setSelected] = useState<FacilityRow | null>(null);
   const [provinceFilter, setProvinceFilter] = useState<string | null>(null);
+  const [activeRegion, setActiveRegion] = useState<string | null>(null);
 
   // Dynamic import of react-leaflet — it pulls in `leaflet` which
   // calls `window` at import time. Stored in state so the map only
@@ -74,6 +107,36 @@ export function FacilitiesMap({ initialFacilities, canRescan }: Props) {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Imperative handle to the Leaflet map instance. MapInner registers
+  // it via the onMapReady callback once the inner MapContainer has
+  // mounted; we use it from the "Jump to" chips to flyToBounds without
+  // having to route through React state on every click.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
+  const handleMapReady = (m: unknown) => { mapRef.current = m; };
+
+  function jumpToRegion(region: MapRegion) {
+    setActiveRegion(region.id);
+    const map = mapRef.current;
+    if (!map) return;
+    // padding leaves a little air around the marker cluster so dots
+    // near the bounds aren't pressed against the viewport edge.
+    // maxZoom: 13 prevents single-facility regions (like Victoria,
+    // which currently has one site) from zooming all the way in to
+    // street-level — we want metro context, not a satellite snap.
+    map.flyToBounds(
+      [[region.swLat, region.swLng], [region.neLat, region.neLng]],
+      { padding: [44, 44], duration: 0.8, maxZoom: 13 },
+    );
+  }
+
+  function jumpToCanada() {
+    setActiveRegion(null);
+    const map = mapRef.current;
+    if (!map) return;
+    map.flyTo([55.0, -97.0], 4, { duration: 0.8 });
+  }
 
   // Provinces available, sorted alphabetically with an "All" option.
   const provinces = useMemo(() => {
@@ -99,6 +162,19 @@ export function FacilitiesMap({ initialFacilities, canRescan }: Props) {
       else c.unknown++;
     }
     return c;
+  }, [visible]);
+
+  // Per-region facility counts against the CURRENT visible set
+  // (province filter respected). Regions with zero facilities are
+  // suppressed in the chip row below.
+  const regionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of MAP_REGIONS) {
+      counts[r.id] = visible.filter(
+        (f) => f.lat >= r.swLat && f.lat <= r.neLat && f.lng >= r.swLng && f.lng <= r.neLng,
+      ).length;
+    }
+    return counts;
   }, [visible]);
 
   return (
@@ -158,6 +234,49 @@ export function FacilitiesMap({ initialFacilities, canRescan }: Props) {
         </div>
       </div>
 
+      {/* Jump-to / region shortcuts. One-click zoom into a metro cluster
+          instead of scroll-zooming from the Canada-wide view. The chips
+          drive the map's flyToBounds imperatively via mapRef — no
+          re-render of the marker layer needed. */}
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line/70 bg-card-solid px-4 py-2.5">
+        <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] font-bold text-fg-subtle">
+          <Navigation size={11} /> Jump to
+        </div>
+        <button
+          type="button"
+          onClick={jumpToCanada}
+          className={
+            "inline-flex items-center gap-1 text-[11.5px] px-2 py-1 rounded-md transition-colors " +
+            (activeRegion === null
+              ? "bg-brand-600 text-white font-semibold"
+              : "text-fg-muted hover:text-fg hover:bg-elevated")
+          }
+          title="Reset to Canada-wide view"
+        >
+          <Globe2 size={11} /> Canada
+        </button>
+        {MAP_REGIONS.map((r) => {
+          const n = regionCounts[r.id] ?? 0;
+          if (n === 0) return null;
+          const isActive = activeRegion === r.id;
+          return (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => jumpToRegion(r)}
+              className={
+                "text-[11.5px] px-2 py-1 rounded-md transition-colors " +
+                (isActive
+                  ? "bg-brand-600 text-white font-semibold"
+                  : "text-fg-muted hover:text-fg hover:bg-elevated")
+              }
+            >
+              {r.label} ({n})
+            </button>
+          );
+        })}
+      </div>
+
       {/* Map */}
       <div className="relative rounded-xl border border-line/70 overflow-hidden" style={{ height: "min(72vh, 720px)" }}>
         {Lib ? (
@@ -165,6 +284,7 @@ export function FacilitiesMap({ initialFacilities, canRescan }: Props) {
             Lib={Lib}
             facilities={visible}
             onSelect={setSelected}
+            onMapReady={handleMapReady}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-fg-subtle text-[12.5px]">
@@ -275,11 +395,12 @@ function spiderfy(facilities: FacilityRow[]): FacilityWithDisplay[] {
 }
 
 function MapInner({
-  Lib, facilities, onSelect,
+  Lib, facilities, onSelect, onMapReady,
 }: {
   Lib: typeof import("react-leaflet");
   facilities: FacilityRow[];
   onSelect: (f: FacilityRow | null) => void;
+  onMapReady?: (map: unknown) => void;
 }) {
   const { MapContainer, TileLayer, CircleMarker, Popup, Tooltip, Polyline, useMap, useMapEvents } = Lib;
   // Track zoom so we can scale marker radius. Higher zoom = more
@@ -300,6 +421,10 @@ function MapInner({
     const map = useMap();
     useEffect(() => {
       flyToRef.current = (lat, lng, z) => map.flyTo([lat, lng], z, { duration: 0.6 });
+      // Hand the live map back up to the parent so the "Jump to"
+      // chips can call flyToBounds. We don't need a teardown — the
+      // map dies with the MapContainer.
+      onMapReady?.(map);
       return () => { flyToRef.current = null; };
     }, [map]);
     return null;
