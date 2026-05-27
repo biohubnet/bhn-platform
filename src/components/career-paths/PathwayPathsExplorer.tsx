@@ -1188,6 +1188,22 @@ function BranchModal({
   // Visibility flags driven by the stage state machine.
   const linesActive = stage === "lines" || stage === "moving" || stage === "settled";
 
+  // Required content height for the scrollable inner container.
+  // Cards now use absolute positioning within a tall container; if
+  // the block extends beyond viewport (e.g. 2 stacked tall target
+  // cards on a 900px-tall laptop), the modal scrolls vertically so
+  // every card stays at its full natural height. Without this,
+  // vertical compression would scale cards (and their content)
+  // smaller than measured, clipping the END marker / last bullet.
+  const layoutContentBottom = Math.max(
+    layout.source.top + layout.source.height,
+    ...layout.targets.map((t) => t.top + t.height),
+    0,
+  );
+  // 56 px = BOTTOM_PAD baseline so the last card has visible breathing
+  // room before the bottom of the scroll area.
+  const requiredContentHeight = Math.max(viewport.h, layoutContentBottom + 56);
+
   return (
     <div className="fixed inset-0 z-[100] pointer-events-auto">
       {/* ── Hidden measuring layer ──────────────────────────────
@@ -1240,8 +1256,10 @@ function BranchModal({
           from 80 % black + sm blur to 45 % black + md blur so the
           chart underneath stays legibly visible (user can still see
           the source and target station boxes through the wash). */}
+      {/* Backdrop — FIXED (not absolute) so it always covers the
+          viewport even when the user scrolls the inner card area. */}
       <div
-        className="absolute inset-0 bg-black/45 backdrop-blur-md transition-opacity duration-300"
+        className="fixed inset-0 bg-black/45 backdrop-blur-md transition-opacity duration-300 z-[101]"
         style={{ opacity: stage === "darken" ? 0 : 1 }}
         onClick={onClose}
         aria-hidden
@@ -1258,78 +1276,107 @@ function BranchModal({
         <X size={18} />
       </button>
 
-      {/* SOURCE — starts at its chart-box position (cloned above the
-          backdrop) with compact content, glow ramps in during
-          highlight, then animates to focused layout + content
-          crossfades to BigStationCard. */}
-      <FlipCard
-        fromRect={source.sourceRect}
-        toRect={layout.source}
-        stage={stage}
-        accent={source.track.accent}
-        zBoost={1}
-        compact={
-          <CompactCardContent
-            station={source.station}
-            accent={source.track.accent}
-          />
-        }
+      {/* ── Scrollable card area ──────────────────────────────────
+          Cards + SVG branch lines live inside this tall container.
+          With the Dec '26 width-only scaling policy, the layout's
+          block can be taller than the viewport — this scroll
+          container lets the user reach every card at its full
+          natural height. Cards themselves never scroll internally;
+          only the modal container does, so the no-scrollbars-on-
+          cards rule still holds. The container starts at viewport
+          top-left when modalScroll=0, so the FlipCard absolute
+          coords (viewport-relative when generated) work as expected
+          for both the initial animation from chart and the settled
+          focused layout. */}
+      <div
+        className="absolute inset-0 overflow-y-auto overflow-x-hidden z-[102]"
+        // Click-through enabled so the backdrop click-to-close still
+        // works on empty areas; FlipCards stop the propagation
+        // themselves via pointer-events-auto on the card div.
+        style={{ pointerEvents: "auto" }}
+        onClick={(e) => {
+          // Only close when clicking directly on the scroll area
+          // background (not a card or descendant).
+          if (e.target === e.currentTarget) onClose();
+        }}
       >
-        <BigStationCard
-          station={source.station}
-          track={source.track}
-          label="Where you are"
-          Icon={ICONS[source.track.iconKey]}
-        />
-      </FlipCard>
-
-      {/* TARGETS — same FLIP path from their chart-box positions to
-          the focused row below the source. */}
-      {targets.map((t, i) => (
-        <FlipCard
-          key={`${t.track.id}-${t.station.level}`}
-          fromRect={t.fromRect}
-          toRect={layout.targets[i]}
-          stage={stage}
-          accent={t.track.accent}
-          moveDelayMs={i * 80}
-          zBoost={1}
-          compact={
-            <CompactCardContent
-              station={t.station}
-              accent={t.track.accent}
-            />
-          }
+        <div
+          className="relative w-full"
+          style={{ minHeight: "100vh", height: `${requiredContentHeight}px` }}
         >
-          <BigStationCard
-            station={t.station}
-            track={t.track}
-            label="Where you'd land"
-            Icon={ICONS[t.track.iconKey]}
-            crossLink={t.cl}
-          />
-        </FlipCard>
-      ))}
+          {/* SOURCE — starts at its chart-box position (cloned above
+              the backdrop) with compact content, glow ramps in during
+              highlight, then animates to focused layout + content
+              crossfades to BigStationCard. */}
+          <FlipCard
+            fromRect={source.sourceRect}
+            toRect={layout.source}
+            stage={stage}
+            accent={source.track.accent}
+            zBoost={1}
+            compact={
+              <CompactCardContent
+                station={source.station}
+                accent={source.track.accent}
+              />
+            }
+          >
+            <BigStationCard
+              station={source.station}
+              track={source.track}
+              label="Where you are"
+              Icon={ICONS[source.track.iconKey]}
+            />
+          </FlipCard>
 
-      {/* SVG lines — anchored to whichever rect set is current.
-          During the "lines" stage they draw between the CHART
-          positions (source.sourceRect → each target.fromRect). When
-          stage flips to "moving", they smoothly re-anchor to the
-          focused-layout endpoints (the CSS path-data transition
-          keeps the lines glued to the moving cards). */}
-      <BranchLines
-        sourceFrom={source.sourceRect}
-        sourceTo={layout.source}
-        targets={targets.map((t, i) => ({
-          fromRect: t.fromRect,
-          toRect: layout.targets[i],
-          color: t.track.accent,
-          arcOffset: layout.targets[i].arcOffset,
-        }))}
-        sourceAccent={source.track.accent}
-        active={linesActive}
-        cardsMoving={stage === "moving" || stage === "settled"}
-      />
+          {/* TARGETS — same FLIP path from their chart-box positions
+              to the focused row below the source. */}
+          {targets.map((t, i) => (
+            <FlipCard
+              key={`${t.track.id}-${t.station.level}`}
+              fromRect={t.fromRect}
+              toRect={layout.targets[i]}
+              stage={stage}
+              accent={t.track.accent}
+              moveDelayMs={i * 80}
+              zBoost={1}
+              compact={
+                <CompactCardContent
+                  station={t.station}
+                  accent={t.track.accent}
+                />
+              }
+            >
+              <BigStationCard
+                station={t.station}
+                track={t.track}
+                label="Where you'd land"
+                Icon={ICONS[t.track.iconKey]}
+                crossLink={t.cl}
+              />
+            </FlipCard>
+          ))}
+
+          {/* SVG lines — anchored to whichever rect set is current.
+              During the "lines" stage they draw between the CHART
+              positions (source.sourceRect → each target.fromRect).
+              When stage flips to "moving", they smoothly re-anchor
+              to the focused-layout endpoints. */}
+          <BranchLines
+            sourceFrom={source.sourceRect}
+            sourceTo={layout.source}
+            targets={targets.map((t, i) => ({
+              fromRect: t.fromRect,
+              toRect: layout.targets[i],
+              color: t.track.accent,
+              arcOffset: layout.targets[i].arcOffset,
+            }))}
+            sourceAccent={source.track.accent}
+            active={linesActive}
+            cardsMoving={stage === "moving" || stage === "settled"}
+          />
+        </div>
+      </div>
 
       {/* Footer hint — only once the cards have settled */}
       <p
@@ -1373,7 +1420,7 @@ function FlipCard({
   const rect = moving ? toRect : fromRect;
   return (
     <div
-      className="fixed overflow-hidden bg-card-solid pointer-events-auto"
+      className="absolute overflow-hidden bg-card-solid pointer-events-auto"
       style={{
         left:   rect.left,
         top:    rect.top,
@@ -1559,7 +1606,7 @@ function BranchLines({
   return (
     <svg
       aria-hidden
-      className="fixed inset-0 w-full h-full pointer-events-none z-[105]"
+      className="absolute inset-0 w-full h-full pointer-events-none z-[105]"
     >
       {targets.map((t, i) => {
         const tgt = cardsMoving ? t.toRect : t.fromRect;
@@ -1773,9 +1820,21 @@ function computeFocusLayout(
     const blockW = SRC_INTRINSIC_W + SRC_TGT_GAP + tgtsBlockW;
     const blockH = Math.max(SRC_INTRINSIC_H, tgtsBlockH);
 
-    // Uniform downscale: 1 (no shrink) if the block fits, smaller
-    // otherwise. Min keeps both axes in bounds.
-    const scale = Math.min(1, availW / blockW, availH / blockH);
+    // Width-only scale (Dec '26). Previously we used a uniform
+    // scale = min(width-fit, height-fit), which meant if viewport
+    // height was tight, the WHOLE layout (including widths) shrank.
+    // Narrower cards reflow text to more lines → real content height
+    // grows beyond measured-at-intrinsic-width → END marker (and
+    // sometimes the last bullet) clipped at the bottom.
+    //
+    // New policy: scale ONLY to fit width. Vertical block size stays
+    // at natural content height. If block height exceeds viewport,
+    // the modal's outer container scrolls so users can reach every
+    // card without losing any of its content. No vertical clipping
+    // ever, by construction. The "no scrollbars on cards themselves"
+    // rule still holds — only the MODAL container scrolls; each
+    // card stays sized to fit its own content.
+    const scale = Math.min(1, availW / blockW);
     const srcW       = Math.floor(SRC_INTRINSIC_W * scale);
     const srcH       = Math.floor(SRC_INTRINSIC_H * scale);
     const tgtW       = Math.floor(TGT_INTRINSIC_W * scale);
@@ -1829,8 +1888,9 @@ function computeFocusLayout(
   }
 
   // ── Mode B: stacked (narrow screens) ───────────────────────────
-  // Source on top, targets in a grid underneath. Same intrinsic-
-  // sized-then-uniformly-downscaled philosophy as Mode A.
+  // Source on top, targets in a grid underneath. Width-only scaling
+  // (same Dec '26 policy as Mode A) — vertical overflow is handled
+  // by the modal's outer scroll container, not by squashing cards.
   const cols = Math.min(numTargets || 1, 2);
   const rows = Math.ceil((numTargets || 1) / cols);
 
@@ -1839,7 +1899,7 @@ function computeFocusLayout(
   const blockW = Math.max(SRC_INTRINSIC_W, tgtsBlockW);
   const blockH = SRC_INTRINSIC_H + SRC_TGT_GAP + tgtsBlockH;
 
-  const scale = Math.min(1, availW / blockW, availH / blockH);
+  const scale = Math.min(1, availW / blockW);
   const srcW       = Math.floor(SRC_INTRINSIC_W * scale);
   const srcH       = Math.floor(SRC_INTRINSIC_H * scale);
   const tgtW       = Math.floor(TGT_INTRINSIC_W * scale);

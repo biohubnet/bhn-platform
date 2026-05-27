@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.29d";
+export const TOUR_VERSION = "2026.05.29e";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Pathways — modal scrolls instead of compressing cards (May 2026)
+  {
+    id: "trainee.pathways-modal-scroll",
+    title: "Career pathways — branch modal scrolls instead of squishing cards",
+    body: "Final round of the branch-modal-clipping saga. The previous uniform-scale layout shrank cards both ways when the viewport was tight vertically, so even with wider cards and a height buffer the END marker could drop off the bottom. Now the modal scales cards only to fit width (never to fit height). If the layout is taller than the viewport, the modal scrolls vertically so every card stays at its full natural height and shows its END marker. Cards themselves never scroll internally — only the modal does.",
+    path: "/career-paths/pathways",
+    placement: "center",
+    cta: { label: "Open pathways", href: "/career-paths/pathways" },
+    since: "2026.05.29e",
+  },
   // ─── Pathways — wider cards + end-marker on branch modal (May 2026)
   {
     id: "trainee.pathways-end-marker",
