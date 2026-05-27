@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Facilities map — seven mis-located dots fixed — May 2026
+  {
+    title: "Facilities map — seven facility dots were sitting hundreds of km from where they actually are; fixed",
+    body: "You spotted dots floating in **northern Quebec** that shouldn't have been there. Checking the seed data, four Quebec facilities had latitudes around 52–53° N (≈ Lac Mistassini territory) instead of the ~45.5° N Montreal metro band where they actually operate. Coords had been pulled from a wrong source at seed time. Corrected, with everything pinned back to the real city centres:\n\n  • **Delpharm** (Boucherville) — was 52.87 / -73.42, now **45.5912 / -73.4365**\n  • **Jubilant HollisterStier** (Kirkland) — was 52.88 / -73.62, now **45.4500 / -73.8651**\n  • **Laboratoires Confab** (Longueuil / Saint-Hubert) — was 52.85 / -73.42, now **45.5176 / -73.4174**\n  • **Qeen Biotechnologies** (Gatineau) — was 53.08 / -73.44, now **45.4765 / -75.7013**\n\n**Double-check sweep caught three more in other provinces** while we were in there:\n\n  • **Bausch Health Steinbach** (MB) — was 53.90 / -98.86 (deep in northern Manitoba), now **49.5260 / -96.6839** (the real Steinbach, south-east of Winnipeg).\n  • **PBG BioPharma** (AB) — `city` field was the company name (`\"PBG BioPharma\"`), and coords pointed near Whitecourt. Fixed to city **Leduc** at **53.2683 / -113.5499** (the actual Edmonton International airport biotech park).\n  • **Resonetics** (BC) — `city` is Surrey, but coords pointed to Houston BC, ~900 km north. Fixed to **49.1913 / -122.8490**.\n\nThe page's auto-seed differ already compares lat/lng with a 1e-4 tolerance (≈ 10 metres) and upserts on mismatch, so these corrections propagate to the deployed DB on the next page load — no manual seed run needed.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — mind-map lines now pin to actual column centres — May 2026
   {
     title: "Career paths — pathways view: mind-map lines pin to the real boxes, no matter how many columns are collapsed",
