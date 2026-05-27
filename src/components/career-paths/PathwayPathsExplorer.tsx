@@ -1475,82 +1475,89 @@ function computeFocusLayout(
   numTargets: number,
   viewport: { w: number; h: number },
 ): { source: FocusedRect; targets: FocusedRect[] } {
-  // Viewport-adaptive focused layout — content-sized cards, NOT
-  // viewport-stretched. The previous iteration stretched cards to
-  // fill every available pixel which produced enormous empty cards
-  // on large monitors (source 800 px tall with 400 px of empty space
-  // under the content). Principles now:
+  // Content-sized cards. Both WIDTH and HEIGHT are capped at
+  // intrinsic values so cards never balloon to fill a wide viewport
+  // — empty space wraps the block on the canvas, not inside each
+  // card.
   //
-  //   • Pick INTRINSIC heights that fit BigStationCard's content
-  //     without internal scrolling (~440 px source, ~460 px target).
-  //   • If the viewport can't fit the intrinsic block, scale source
-  //     + targets proportionally so they shrink together;
-  //     BigStationCard's overflow-y-auto handles any residual.
-  //   • Centre the block vertically and horizontally — empty space
-  //     wraps the cards rather than living inside them.
-  //   • 24-px GAP between source and targets so the SVG bezier
-  //     connecting lines have visible room to curve.
-  //   • Target grid adapts to count: 1 → single card; 2-4 → 2-up;
-  //     5+ → 3-wide.
+  // The block (source + target grid) is sized by:
+  //   • Compute the intrinsic block size from card intrinsics + gaps.
+  //   • If the viewport can fit it, use intrinsic sizes verbatim.
+  //   • Otherwise pick a uniform downscale factor — the smaller of
+  //     `availW / blockW` and `availH / blockH` — and apply it to
+  //     every card and gap so the whole composition shrinks together
+  //     (no card-stretches-while-neighbour-shrinks).
+  //   • Centre the result on the canvas both axes.
+  //
+  // Card intrinsics chosen to fit BigStationCard's content without
+  // internal scrolling and without wide empty rails. These are an
+  // UPPER BOUND — cards never get bigger than this, regardless of
+  // viewport (so a 4K monitor doesn't give every target 700-px-wide
+  // cards full of horizontal whitespace).
+  //
+  // The 24-px GAP between source and targets is for the SVG bezier
+  // connecting lines — they need visible room to curve.
   const TOP_PAD          = 80;
   const BOTTOM_PAD       = 56;
   const SIDE_PAD         = 24;
   const GAP              = 24;
-  const SRC_INTRINSIC_H  = 440;
-  const TGT_INTRINSIC_H  = 460;
+  const SRC_INTRINSIC_W  = 360;
+  const SRC_INTRINSIC_H  = 420;
+  const TGT_INTRINSIC_W  = 320;
+  const TGT_INTRINSIC_H  = 440;
   const availH = Math.max(360, viewport.h - TOP_PAD - BOTTOM_PAD);
   const availW = Math.max(320, viewport.w - 2 * SIDE_PAD);
 
   // ── Mode A: side-by-side (wide screens) ────────────────────────
   if (viewport.w >= 1100) {
-    const srcW = Math.max(320, Math.min(440, availW * 0.36));
-    const tgtsAreaW = availW - srcW - GAP;
-
     let cols: number;
     if (numTargets <= 1)      cols = 1;
     else if (numTargets <= 4) cols = 2;
     else                       cols = 3;
     const rows = Math.ceil(numTargets / cols);
 
-    const tgtW = (tgtsAreaW - GAP * (cols - 1)) / cols;
+    // Intrinsic block dimensions before any downscale
+    const tgtsBlockW = cols * TGT_INTRINSIC_W + (cols - 1) * GAP;
+    const tgtsBlockH = rows * TGT_INTRINSIC_H + (rows - 1) * GAP;
+    const blockW = SRC_INTRINSIC_W + GAP + tgtsBlockW;
+    const blockH = Math.max(SRC_INTRINSIC_H, tgtsBlockH);
 
-    // Pick intrinsic heights; scale down (preserving the ratio of
-    // source-to-target-block) only if the viewport is too short.
-    const tgtBlockIdealH = TGT_INTRINSIC_H * rows + GAP * (rows - 1);
-    const blockIdealH = Math.max(SRC_INTRINSIC_H, tgtBlockIdealH);
-    let srcH: number;
-    let tgtH: number;
-    if (blockIdealH <= availH) {
-      srcH = SRC_INTRINSIC_H;
-      tgtH = TGT_INTRINSIC_H;
-    } else {
-      const scale = availH / blockIdealH;
-      srcH = Math.floor(SRC_INTRINSIC_H * scale);
-      tgtH = Math.floor(TGT_INTRINSIC_H * scale);
-    }
-    const tgtBlockH = tgtH * rows + GAP * (rows - 1);
-    const blockH = Math.max(srcH, tgtBlockH);
-    // Centre the whole block vertically inside the safe area.
-    const blockTop = TOP_PAD + Math.max(0, Math.floor((availH - blockH) / 2));
+    // Uniform downscale: 1 (no shrink) if the block fits, smaller
+    // otherwise. Min keeps both axes in bounds.
+    const scale = Math.min(1, availW / blockW, availH / blockH);
+    const srcW = Math.floor(SRC_INTRINSIC_W * scale);
+    const srcH = Math.floor(SRC_INTRINSIC_H * scale);
+    const tgtW = Math.floor(TGT_INTRINSIC_W * scale);
+    const tgtH = Math.floor(TGT_INTRINSIC_H * scale);
+    const gap  = Math.floor(GAP * scale);
 
-    // Centre the source vertically within the block (it's usually
-    // shorter than the target stack); centre the target stack
-    // vertically too.
+    const scaledTgtsBlockW = cols * tgtW + (cols - 1) * gap;
+    const scaledTgtsBlockH = rows * tgtH + (rows - 1) * gap;
+    const scaledBlockW     = srcW + gap + scaledTgtsBlockW;
+    const scaledBlockH     = Math.max(srcH, scaledTgtsBlockH);
+
+    // Centre the block horizontally on the viewport, vertically in
+    // the safe area (between TOP_PAD and viewport.h - BOTTOM_PAD).
+    const blockLeft = Math.floor((viewport.w - scaledBlockW) / 2);
+    const blockTop  = TOP_PAD + Math.max(0, Math.floor((availH - scaledBlockH) / 2));
+
+    // Source vertically centred within its block-height slot
+    // (usually shorter than the target stack); target stack ditto.
     const source: FocusedRect = {
-      left: SIDE_PAD,
-      top: blockTop + Math.floor((blockH - srcH) / 2),
+      left: blockLeft,
+      top: blockTop + Math.floor((scaledBlockH - srcH) / 2),
       width: srcW,
       height: srcH,
     };
 
-    const tgtsTop = blockTop + Math.floor((blockH - tgtBlockH) / 2);
-    const targetsLeft = SIDE_PAD + srcW + GAP;
+    const tgtsTop  = blockTop + Math.floor((scaledBlockH - scaledTgtsBlockH) / 2);
+    const tgtsLeft = blockLeft + srcW + gap;
     const targets: FocusedRect[] = Array.from({ length: numTargets }, (_, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
       return {
-        left: targetsLeft + col * (tgtW + GAP),
-        top: tgtsTop + row * (tgtH + GAP),
+        left: tgtsLeft + col * (tgtW + gap),
+        top: tgtsTop + row * (tgtH + gap),
         width: tgtW,
         height: tgtH,
       };
@@ -1560,42 +1567,44 @@ function computeFocusLayout(
   }
 
   // ── Mode B: stacked (narrow screens) ───────────────────────────
+  // Source on top, targets in a grid underneath. Same intrinsic-
+  // sized-then-uniformly-downscaled philosophy as Mode A.
   const cols = Math.min(numTargets || 1, 2);
   const rows = Math.ceil((numTargets || 1) / cols);
 
-  const idealBlockH = SRC_INTRINSIC_H + GAP + TGT_INTRINSIC_H * rows + GAP * (rows - 1);
-  let srcH: number;
-  let tgtH: number;
-  if (idealBlockH <= availH) {
-    srcH = SRC_INTRINSIC_H;
-    tgtH = TGT_INTRINSIC_H;
-  } else {
-    const scale = availH / idealBlockH;
-    srcH = Math.floor(SRC_INTRINSIC_H * scale);
-    tgtH = Math.floor(TGT_INTRINSIC_H * scale);
-  }
-  const blockH = srcH + GAP + tgtH * rows + GAP * (rows - 1);
-  const blockTop = TOP_PAD + Math.max(0, Math.floor((availH - blockH) / 2));
+  const tgtsBlockW = cols * TGT_INTRINSIC_W + (cols - 1) * GAP;
+  const tgtsBlockH = rows * TGT_INTRINSIC_H + (rows - 1) * GAP;
+  const blockW = Math.max(SRC_INTRINSIC_W, tgtsBlockW);
+  const blockH = SRC_INTRINSIC_H + GAP + tgtsBlockH;
 
-  const srcW = Math.min(440, availW);
+  const scale = Math.min(1, availW / blockW, availH / blockH);
+  const srcW = Math.floor(SRC_INTRINSIC_W * scale);
+  const srcH = Math.floor(SRC_INTRINSIC_H * scale);
+  const tgtW = Math.floor(TGT_INTRINSIC_W * scale);
+  const tgtH = Math.floor(TGT_INTRINSIC_H * scale);
+  const gap  = Math.floor(GAP * scale);
+
+  const scaledTgtsBlockW = cols * tgtW + (cols - 1) * gap;
+  const scaledTgtsBlockH = rows * tgtH + (rows - 1) * gap;
+  const scaledBlockH     = srcH + gap + scaledTgtsBlockH;
+
+  const blockTop = TOP_PAD + Math.max(0, Math.floor((availH - scaledBlockH) / 2));
+
   const source: FocusedRect = {
-    left: viewport.w / 2 - srcW / 2,
+    left: Math.floor((viewport.w - srcW) / 2),
     top: blockTop,
     width: srcW,
     height: srcH,
   };
 
-  const tgtW = (availW - GAP * (cols - 1)) / cols;
-  const rowW = cols * tgtW + (cols - 1) * GAP;
-  const rowLeft = viewport.w / 2 - rowW / 2;
-  const targetsTop = blockTop + srcH + GAP;
-
+  const tgtsLeft  = Math.floor((viewport.w - scaledTgtsBlockW) / 2);
+  const tgtsTop   = blockTop + srcH + gap;
   const targets: FocusedRect[] = Array.from({ length: numTargets }, (_, i) => {
     const col = i % cols;
     const row = Math.floor(i / cols);
     return {
-      left: rowLeft + col * (tgtW + GAP),
-      top: targetsTop + row * (tgtH + GAP),
+      left: tgtsLeft + col * (tgtW + gap),
+      top: tgtsTop + row * (tgtH + gap),
       width: tgtW,
       height: tgtH,
     };

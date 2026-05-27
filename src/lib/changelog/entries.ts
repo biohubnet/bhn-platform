@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — branch modal cards capped on both axes — May 2026
+  {
+    title: "Career paths — branch-modal cards now cap their width too, so wide viewports don't pad them with empty space",
+    body: "Previous fix capped card HEIGHT at content-friendly intrinsics (440 px source, 460 px target) but still let WIDTH stretch to fill `tgtsAreaW / cols` — on a 1920-px monitor that produced 690-px-wide target cards with the content sitting in the leftmost ~340 px and a huge empty rail to the right. Fixed:\n\n  • Added **intrinsic widths**: 360 px source, 320 px target.\n  • New logic computes the **intrinsic block size** (source width + GAP + target-grid width × target-grid height) up front.\n  • If the viewport fits the intrinsic block: cards render at intrinsic size, full stop. No stretching.\n  • If the viewport is too narrow OR too short: pick a **uniform downscale factor** — the smaller of `availW/blockW` and `availH/blockH` — and apply it to every card and gap. The composition shrinks together, preserving proportions, instead of one card stretching while its neighbour shrinks.\n  • The resulting block **centres on the canvas** both axes — empty space wraps the cards, not lives inside them.\n\nNet on a typical laptop: a 2-target branch animation now lands as a ~744 × 440 block (source + 2 targets + gaps) sitting centred in a 1280-px viewport with ~270 px of slack on each side. On a 4K monitor: same 744 × 440 block sitting centred in a 3840-px viewport with ~1500 px of slack each side. Cards are the same size regardless — empty space is OUTSIDE the cards, where it should be.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Theme picker — condensed: wider + half height — May 2026
   {
     title: "Theme picker — wider and roughly half the height after the inspo blurbs got too tall",
