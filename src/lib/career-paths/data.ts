@@ -83,13 +83,31 @@ export interface CareerStation {
   crossLinks?: CrossLink[];
 }
 
-export type TrackId =
-  | "bioprocess"
-  | "quality-regulatory"
-  | "cell-gene-therapy"
-  | "clinical-trials"
-  | "biotech-business"
-  | "project-leadership";
+/**
+ * Track identifier.
+ *
+ * Originally a strict union of the six job-function tracks. Widened
+ * to `string` when the parallel `pathway-data.ts` was added — that
+ * file uses BHN-pathway-shaped ids ("aseptic-cell-culture", "car-t-
+ * manufacturing", etc.) but reuses the same CareerTrack /
+ * CareerStation / CrossLink shapes. Keeping TrackId narrow would
+ * have forced a fork of the type system; widening is the smaller
+ * trade.
+ *
+ * The runtime data still uses well-known string constants; just the
+ * compiler doesn't enforce them. The six original ids are documented
+ * here as named constants so other code can still reference them
+ * by symbol if useful.
+ */
+export type TrackId = string;
+export const TRACK_IDS = {
+  bioprocess:         "bioprocess",
+  qualityRegulatory:  "quality-regulatory",
+  cellGeneTherapy:    "cell-gene-therapy",
+  clinicalTrials:     "clinical-trials",
+  biotechBusiness:    "biotech-business",
+  projectLeadership:  "project-leadership",
+} as const;
 
 export interface CareerTrack {
   id: TrackId;

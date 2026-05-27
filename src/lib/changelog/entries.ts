@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths reorganised around BHN learning pathways — May 2026
+  {
+    title: "Career paths — second lens added: by BHN learning pathway",
+    body: "The career-paths explorer used to live at `/career-paths` as one fixed view: six job-function tracks (Bioprocess, Quality, CGT, Clinical, Business, Project Leadership) × five career stations (Junior → VP). Useful — but shaped like HR thinks, not like our training.\n\n**Two views now, with a chooser.**\n\n`/career-paths` (the URL stays the same) is now a small landing page that asks which lens you want, then routes you to:\n\n  • **`/career-paths/tracks`** — the original six-job-function view, unchanged. If you came here knowing the role you want (Process Engineer → VP Manufacturing, say), this is your view.\n\n  • **`/career-paths/pathways`** *(new)* — organised by BHN's seven announced learning pathways: Aseptic Cell Culture Basics, CAR-T Cell Manufacturing, Biologics Manufacturing, QA/QC Microbiology for Advanced Therapies, QA/QC Analytics for Biologics, Regulatory Affairs, Medical Affairs. Same five-station spine, same branch animations, same chart treatment — but the rows are pathways instead of functions. If you picked a BHN pathway and want to see what your career looks like five and ten years later, this is your view.\n\n**Why both.** The seven pathways are TRAINING units. The six tracks are JOB units. The mapping between them is many-to-many — Aseptic + CAR-T + Biologics all feed Bioprocess; QA/QC Micro + Analytics + Reg Affairs all feed Quality & Regulatory; and Medical Affairs is a whole new track that wasn't in the original six. Rather than pick one lens and lose the other's signal, both ship.\n\n**Source for the pathways:** [biohubnet.ca/learning-pathway-announcement](https://biohubnet.ca/learning-pathway-announcement/). The three in-development pathways (Entrepreneurship, R&D, Clinical Trials) are deliberately omitted until BHN announces them — adding them later is a single-file edit in `src/lib/career-paths/pathway-data.ts`.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Preferred-name feature — May 2026
   {
     title: "Tell us how you'd like to be addressed — pick once, edit anytime",
