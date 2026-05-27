@@ -30,9 +30,17 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.28b";
+export const TOUR_VERSION = "2026.05.29";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Summer Ice Cream theme — falling treats + scene caption (May 2026)
+  {
+    id: "trainee.icecream-atmosphere",
+    title: "Summer Ice Cream theme — now with falling treats",
+    body: "Switch to the Summer Ice Cream theme (palette icon, bottom-left) and you'll see ice creams, popsicles, snowflakes, and ice cubes drifting across the screen. A rotating scene caption in the bottom-right reports parlor moments throughout the day. Mirrors the falling-leaves layer on Greenwood and the falling-petals layer on Sakura. Respects prefers-reduced-motion.",
+    placement: "center",
+    since: "2026.05.29",
+  },
   // ─── ENGAGE credit application moved to dashboard hero (May 2026)
   {
     id: "trainee.engage-credit-application-callout",

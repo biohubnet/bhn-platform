@@ -54,11 +54,36 @@ const SHAPE_POOL: Shape[] = [
  *  one is noticeable. */
 const FALLING_COUNT = 12;
 
+/** Rotating scene captions — short playful observations from an ice
+ *  cream parlor on a hot afternoon. Cycled randomly so a single
+ *  session shows several before they repeat. Kept lower-case, no
+ *  punctuation, single phrase — same voice as Greenwood / Sakura
+ *  captions. */
+const SCENE_CAPTIONS: string[] = [
+  "the parlor is busy today",
+  "kids line up for the sprinkle bar",
+  "a popsicle drips in the heat",
+  "the freezer hums",
+  "vanilla sells out by three",
+  "a cone tips and lands soft side down",
+  "rainbow sherbet runs low",
+  "the cold case fogs from across the room",
+  "mint chip wins, again",
+  "someone asks for two scoops",
+  "a snow cone melts on the sidewalk",
+  "the bell over the door doesn't stop",
+];
+
 export function IceCreamAtmosphere() {
   const { theme } = useTheme();
   const isActive = theme === "icecream";
 
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [captionIdx, setCaptionIdx] = useState(0);
+  /** captionEpoch flips on every rotation; used as the React key on
+   *  the caption span so the CSS fade-in keyframe restarts. Same
+   *  trick as GreenwoodAtmosphere + SakuraAtmosphere. */
+  const [captionEpoch, setCaptionEpoch] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -68,6 +93,25 @@ export function IceCreamAtmosphere() {
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, []);
+
+  // Caption rotation — every 18 s pick a new caption, never the
+  // same one twice in a row.
+  useEffect(() => {
+    if (!isActive || reducedMotion) return;
+    const id = setInterval(() => {
+      setCaptionIdx((prev) => {
+        if (SCENE_CAPTIONS.length <= 1) return 0;
+        let next = Math.floor(Math.random() * SCENE_CAPTIONS.length);
+        let guard = 0;
+        while (next === prev && guard++ < 5) {
+          next = Math.floor(Math.random() * SCENE_CAPTIONS.length);
+        }
+        return next;
+      });
+      setCaptionEpoch((e) => e + 1);
+    }, 18_000);
+    return () => clearInterval(id);
+  }, [isActive, reducedMotion]);
 
   // Pre-randomise once at mount. Stable for the lifetime of the
   // component so React keys don't churn and the browser keeps the
@@ -104,11 +148,21 @@ export function IceCreamAtmosphere() {
   if (!isActive) return null;
   if (reducedMotion) return null;
 
+  const caption = SCENE_CAPTIONS[captionIdx % SCENE_CAPTIONS.length];
+
   return (
     <div
       aria-hidden
       className="icecream-atmosphere pointer-events-none fixed inset-0 z-[1] overflow-hidden"
     >
+      {/* Cold-mist overlay — soft frosty wash that drifts slowly
+          across the bottom of the viewport. Reads as the air in
+          front of an open freezer or a heat-haze-meets-cold breeze.
+          Always on; very subtle so it doesn't fight the falling
+          treats. */}
+      <div className="icecream-mist" />
+
+      {/* Falling treats */}
       {items.map((it) => (
         <span
           key={it.id}
@@ -126,6 +180,17 @@ export function IceCreamAtmosphere() {
           <FallingShape shape={it.shape} />
         </span>
       ))}
+
+      {/* Scene caption — bottom-right, rotates every 18 s. Each
+          new caption gets a fresh React key (via captionEpoch) so
+          the CSS fade-in keyframe restarts cleanly. Mirrors the
+          Greenwood / Sakura caption pattern. */}
+      <div className="icecream-caption">
+        <span aria-hidden className="icecream-caption-marker" />
+        <span key={captionEpoch} className="icecream-caption-text">
+          {caption}
+        </span>
+      </div>
     </div>
   );
 }

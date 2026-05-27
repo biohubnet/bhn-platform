@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Summer Ice Cream — scene caption + cold mist + reduced-motion polish — May 2026
+  {
+    title: "Summer Ice Cream theme — added rotating scene caption + cold mist drift to match Greenwood / Sakura",
+    body: "Polish pass on yesterday's falling-treats layer to bring it to full parity with the Greenwood and Sakura atmospheres:\n\n  • **Rotating scene caption** in the bottom-right, just like the other two atmospheres. Twelve playful parlor moments cycle every 18 seconds: *\"the parlor is busy today\"*, *\"kids line up for the sprinkle bar\"*, *\"a popsicle drips in the heat\"*, *\"the freezer hums\"*, *\"vanilla sells out by three\"*, *\"a cone tips and lands soft side down\"*, *\"rainbow sherbet runs low\"*, *\"mint chip wins, again\"*, *\"someone asks for two scoops\"*, *\"a snow cone melts on the sidewalk\"*, *\"the bell over the door doesn't stop\"*. Never the same caption twice in a row; fades up cleanly via a React-key trick that restarts the CSS keyframe on every rotation.\n  • **Cold-mist drift overlay** at the bottom of the viewport — soft frosty wash in pale-peach + mint + lilac, drifts very slowly across (60-second cycle) so it reads as the air in front of an open freezer rather than as a separate layer pasted on top. Always on while the theme is active.\n  • Reduced-motion safety net widened to cover the mist + caption too — `prefers-reduced-motion` users see a static palette with no animations, on every layer.\n\nNet: Summer Ice Cream now has the same full atmospheric kit as the other two flavours — falling elements + ambient mist + rotating editorial caption.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Summer Ice Cream theme — falling treats + snow — May 2026
   {
     title: "Summer Ice Cream theme — falling ice creams, popsicles, snowflakes, and ice cubes",
