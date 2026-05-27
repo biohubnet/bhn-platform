@@ -41,6 +41,12 @@ import {
   ArrowDown,
   GitFork,
   X,
+  ChevronDown,
+  ChevronRight,
+  ChevronsRight,
+  ChevronLeft,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import {
   BHN_PATHWAYS,
@@ -88,8 +94,55 @@ interface BranchOpenWithRects extends BranchOpen {
 // Top component
 // ──────────────────────────────────────────────────────────────────
 
+/** Grid-template helper — produces a CSS gridTemplateColumns string
+ *  with collapsed pathways shown as 44 px strips and expanded pathways
+ *  flexing within minmax(150 px, 1 fr). Returning the value as a
+ *  string lets us drop it straight into inline style on every grid in
+ *  the chart (header row, level row, connector row) so they all
+ *  stay perfectly aligned. */
+function gridTemplateColumns(pathways: { id: string }[], collapsed: Set<string>): string {
+  return pathways
+    .map((p) => (collapsed.has(p.id) ? "44px" : "minmax(150px, 1fr)"))
+    .join(" ");
+}
+
 export function PathwayPathsExplorer() {
   const [branch, setBranch] = useState<BranchOpenWithRects | null>(null);
+
+  // Foldability — two independent axes.
+  //
+  // collapsedLevels — Levels whose station-card row is hidden. The
+  //   level-banner strip stays visible (with a chevron) so the user
+  //   can still see which level it is and re-expand it.
+  // collapsedPathways — Pathways whose column collapses to a thin
+  //   44-px vertical strip. The strip shows the pathway icon + a
+  //   rotated title and an expand chevron; clicking re-expands the
+  //   column to full width.
+  const [collapsedLevels, setCollapsedLevels] = useState<Set<LevelId>>(new Set());
+  const [collapsedPathways, setCollapsedPathways] = useState<Set<string>>(new Set());
+
+  function toggleLevel(level: LevelId) {
+    setCollapsedLevels((prev) => {
+      const next = new Set(prev);
+      if (next.has(level)) next.delete(level); else next.add(level);
+      return next;
+    });
+  }
+  function togglePathway(id: string) {
+    setCollapsedPathways((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function collapseAllPathways() { setCollapsedPathways(new Set(BHN_PATHWAYS.map((p) => p.id))); }
+  function collapseAllLevels()   { setCollapsedLevels(new Set(LEVEL_ORDER)); }
+  function expandAll() {
+    setCollapsedPathways(new Set());
+    setCollapsedLevels(new Set());
+  }
+
+  const gridTemplate = gridTemplateColumns(BHN_PATHWAYS, collapsedPathways);
 
   // Click handler — captures the source station's bounding rect plus
   // every target station's bounding rect from the chart, then hands
@@ -112,17 +165,63 @@ export function PathwayPathsExplorer() {
     setBranch({ ...o, sourceRect, targetRects });
   }
 
+  const anyCollapsed = collapsedLevels.size > 0 || collapsedPathways.size > 0;
+
   return (
     <div className="space-y-6">
       <Legend />
+
+      {/* Fold toolbar — sits above the chart. Per-level and per-
+          pathway fold buttons; an Expand-all reset. */}
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line/70 bg-card-solid px-4 py-2.5 text-[11.5px]">
+        <span className="inline-flex items-center gap-1.5 uppercase tracking-[0.16em] font-bold text-fg-subtle text-[10.5px]">
+          <Minimize2 size={11} /> Fold
+        </span>
+        <button
+          type="button"
+          onClick={collapseAllPathways}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-fg-muted hover:text-fg hover:bg-elevated transition-colors"
+          title="Collapse every pathway column to a thin strip"
+        >
+          <ChevronsRight size={11} /> Collapse pathways
+        </button>
+        <button
+          type="button"
+          onClick={collapseAllLevels}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-fg-muted hover:text-fg hover:bg-elevated transition-colors"
+          title="Collapse every level row, keep only the level banners"
+        >
+          <ChevronDown size={11} /> Collapse levels
+        </button>
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={expandAll}
+          disabled={!anyCollapsed}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-brand-700 font-semibold hover:bg-brand-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+        >
+          <Maximize2 size={11} /> Expand all
+        </button>
+      </div>
 
       <div
         className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6"
         data-career-chart-scroll
       >
-        <div className="relative min-w-[1180px] pb-4">
+        {/* Chart-width policy: 1100 px is the minimum before pathway
+            columns squeeze below useful. With 7 pathways at full
+            expansion we'd want ~1350 px; once columns start
+            collapsing, the inline grid template handles it. So:
+            min-w stays modest, the horizontal scroll bar handles
+            the overflow case, and collapsing one or two pathways
+            brings the chart back into viewport-friendly width. */}
+        <div className="relative min-w-[1100px] pb-4">
           <MindMapRoot />
-          <TrackHeadersRow />
+          <TrackHeadersRow
+            gridTemplate={gridTemplate}
+            collapsedPathways={collapsedPathways}
+            togglePathway={togglePathway}
+          />
           {LEVEL_ORDER.map((level, rowIdx) => (
             <LevelRow
               key={level}
@@ -130,6 +229,10 @@ export function PathwayPathsExplorer() {
               rowIdx={rowIdx}
               isLast={rowIdx === LEVEL_ORDER.length - 1}
               onBranchOpen={handleBranchOpen}
+              gridTemplate={gridTemplate}
+              collapsedLevels={collapsedLevels}
+              collapsedPathways={collapsedPathways}
+              toggleLevel={toggleLevel}
             />
           ))}
         </div>
@@ -223,31 +326,78 @@ function MindMapRoot() {
 // Track headers + Level rows
 // ──────────────────────────────────────────────────────────────────
 
-function TrackHeadersRow() {
+function TrackHeadersRow({
+  gridTemplate, collapsedPathways, togglePathway,
+}: {
+  gridTemplate: string;
+  collapsedPathways: Set<string>;
+  togglePathway: (id: string) => void;
+}) {
   return (
-    <ol className="grid grid-cols-6 gap-3">
+    <ol className="grid gap-3" style={{ gridTemplateColumns: gridTemplate }}>
       {BHN_PATHWAYS.map((track) => {
         const Icon = ICONS[track.iconKey];
+        const isCollapsed = collapsedPathways.has(track.id);
         return (
           <li
             key={track.id}
-            className="relative rounded-xl border bg-card-solid px-3 py-2.5 shadow-card-rest"
+            className={
+              "relative rounded-xl border bg-card-solid shadow-card-rest " +
+              (isCollapsed ? "px-1 py-2 overflow-hidden" : "px-3 py-2.5")
+            }
             style={{
               borderColor: `color-mix(in srgb, ${track.accent} 30%, var(--line))`,
               backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${track.accent} 10%, var(--card)) 0%, var(--card) 90%)`,
             }}
           >
-            <div className="flex items-start gap-2">
-              <Icon className="h-4 w-4 shrink-0 mt-0.5" style={{ color: track.accent }} />
-              <div className="min-w-0">
-                <p className="text-[12.5px] font-semibold text-fg leading-tight">
+            {isCollapsed ? (
+              <button
+                type="button"
+                onClick={() => togglePathway(track.id)}
+                title={`Expand ${track.title}`}
+                className="w-full h-full flex flex-col items-center gap-1.5 text-fg hover:text-brand-700"
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: track.accent }} />
+                {/* Rotated title — written sideways in the thin
+                    collapsed strip. writing-mode is the cleanest CSS
+                    primitive for this; the Latin glyphs orient
+                    sideways which reads top-to-bottom up the column. */}
+                <span
+                  className="text-[10px] font-semibold tracking-tight whitespace-nowrap leading-none"
+                  style={{
+                    writingMode: "vertical-rl",
+                    transform: "rotate(180deg)",
+                    color: track.accent,
+                  }}
+                >
                   {track.title}
-                </p>
-                <p className="text-[10.5px] text-fg-muted leading-snug mt-0.5 line-clamp-2">
-                  {track.tagline}
-                </p>
-              </div>
-            </div>
+                </span>
+                <ChevronLeft size={10} className="opacity-60 mt-auto" />
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => togglePathway(track.id)}
+                  title="Collapse this pathway column"
+                  className="absolute top-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-md text-fg-subtle hover:text-fg hover:bg-elevated"
+                  aria-label={`Collapse ${track.title}`}
+                >
+                  <ChevronsRight size={11} />
+                </button>
+                <div className="flex items-start gap-2 pr-5">
+                  <Icon className="h-4 w-4 shrink-0 mt-0.5" style={{ color: track.accent }} />
+                  <div className="min-w-0">
+                    <p className="text-[12.5px] font-semibold text-fg leading-tight">
+                      {track.title}
+                    </p>
+                    <p className="text-[10.5px] text-fg-muted leading-snug mt-0.5 line-clamp-2">
+                      {track.tagline}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </li>
         );
       })}
@@ -257,24 +407,48 @@ function TrackHeadersRow() {
 
 function LevelRow({
   level, rowIdx, isLast, onBranchOpen,
+  gridTemplate, collapsedLevels, collapsedPathways, toggleLevel,
 }: {
   level: LevelId;
   rowIdx: number;
   isLast: boolean;
   onBranchOpen: (b: BranchOpen) => void;
+  gridTemplate: string;
+  collapsedLevels: Set<LevelId>;
+  collapsedPathways: Set<string>;
+  toggleLevel: (level: LevelId) => void;
 }) {
   const meta = LEVEL_META[level];
+  const isCollapsed = collapsedLevels.has(level);
   return (
     <div className="mt-4">
-      <ConnectorRow accents={BHN_PATHWAYS.map((t) => t.accent)} />
+      {/* Hide the connector arrows when the level is collapsed — the
+          banner-with-chevron carries enough visual hint that the row
+          is foldable without the arrows competing for attention. */}
+      {!isCollapsed && (
+        <ConnectorRow
+          accents={BHN_PATHWAYS.map((t) => t.accent)}
+          gridTemplate={gridTemplate}
+          collapsedPathways={collapsedPathways}
+        />
+      )}
 
-      <div className="flex items-center gap-3 my-3">
+      {/* Clickable level-banner strip — chevron + label. Click anywhere
+          on the strip to fold / unfold the row. */}
+      <button
+        type="button"
+        onClick={() => toggleLevel(level)}
+        className="my-3 w-full flex items-center gap-3 group"
+        aria-expanded={!isCollapsed}
+        aria-controls={`level-stations-${level}`}
+      >
         <span
           aria-hidden
           className="flex-1 h-px"
           style={{ background: "linear-gradient(to right, transparent, var(--line) 30%, var(--line) 70%, transparent)" }}
         />
-        <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-bold text-fg">
+        <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-bold text-fg group-hover:text-brand-700 transition-colors">
+          {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
           {meta.icon}
           Level {rowIdx + 1} · {meta.label}
           <span className="text-fg-subtle font-normal normal-case tracking-normal ml-1">
@@ -286,27 +460,47 @@ function LevelRow({
           className="flex-1 h-px"
           style={{ background: "linear-gradient(to left, transparent, var(--line) 30%, var(--line) 70%, transparent)" }}
         />
-      </div>
+      </button>
 
-      <ol className="grid grid-cols-6 gap-3">
-        {BHN_PATHWAYS.map((track) => {
-          const station = track.stations.find((s) => s.level === level);
-          if (!station) return <li key={track.id} />;
-          return (
-            <li key={track.id}>
-              <StationBox
-                station={station}
-                accent={track.accent}
-                index={rowIdx}
-                track={track}
-                onBranchOpen={onBranchOpen}
-              />
-            </li>
-          );
-        })}
-      </ol>
+      {!isCollapsed && (
+        <ol
+          id={`level-stations-${level}`}
+          className="grid gap-3"
+          style={{ gridTemplateColumns: gridTemplate }}
+        >
+          {BHN_PATHWAYS.map((track) => {
+            const station = track.stations.find((s) => s.level === level);
+            // Collapsed pathway column: render a thin empty placeholder
+            // so the grid stays aligned and the connector arrows above
+            // line up with their (visible) columns. A dashed border
+            // keeps the column readable as "still there, just folded".
+            if (collapsedPathways.has(track.id)) {
+              return (
+                <li
+                  key={track.id}
+                  aria-hidden
+                  className="border border-dashed rounded-lg"
+                  style={{ borderColor: `color-mix(in srgb, ${track.accent} 25%, var(--line))` }}
+                />
+              );
+            }
+            if (!station) return <li key={track.id} />;
+            return (
+              <li key={track.id}>
+                <StationBox
+                  station={station}
+                  accent={track.accent}
+                  index={rowIdx}
+                  track={track}
+                  onBranchOpen={onBranchOpen}
+                />
+              </li>
+            );
+          })}
+        </ol>
+      )}
 
-      {isLast && (
+      {isLast && !isCollapsed && (
         <div className="mt-6 flex justify-center">
           <span className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.18em] font-bold text-brand-700">
             <Trophy size={12} /> Top of the ladder
@@ -317,40 +511,56 @@ function LevelRow({
   );
 }
 
-function ConnectorRow({ accents }: { accents: string[] }) {
+function ConnectorRow({
+  accents, gridTemplate, collapsedPathways,
+}: {
+  accents: string[];
+  gridTemplate: string;
+  collapsedPathways: Set<string>;
+}) {
   return (
-    <div className="grid grid-cols-6 gap-3 h-7">
-      {accents.map((accent, i) => (
-        <svg
-          key={i}
-          aria-hidden
-          viewBox="0 0 24 28"
-          className="mx-auto h-full"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <defs>
-            <marker
-              id={`arrow-${i}`}
-              viewBox="0 0 8 8"
-              refX="4"
-              refY="4"
-              markerWidth="5"
-              markerHeight="5"
-              orient="auto-start-reverse"
-            >
-              <path d="M 1 1 L 7 4 L 1 7 z" fill={accent} />
-            </marker>
-          </defs>
-          <path
-            d="M 12 0 C 18 8, 6 18, 12 26"
-            stroke={accent}
-            strokeWidth="1.4"
-            fill="none"
-            markerEnd={`url(#arrow-${i})`}
-            opacity="0.75"
-          />
-        </svg>
-      ))}
+    <div className="grid gap-3 h-7" style={{ gridTemplateColumns: gridTemplate }}>
+      {accents.map((accent, i) => {
+        const pathwayId = BHN_PATHWAYS[i]?.id;
+        // Skip drawing the swoopy connector inside collapsed columns —
+        // the column itself is only 44 px wide so the arrow would look
+        // out of place. Render an empty cell so the grid keeps its
+        // column count.
+        if (pathwayId && collapsedPathways.has(pathwayId)) {
+          return <div key={i} aria-hidden />;
+        }
+        return (
+          <svg
+            key={i}
+            aria-hidden
+            viewBox="0 0 24 28"
+            className="mx-auto h-full"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <defs>
+              <marker
+                id={`arrow-${i}`}
+                viewBox="0 0 8 8"
+                refX="4"
+                refY="4"
+                markerWidth="5"
+                markerHeight="5"
+                orient="auto-start-reverse"
+              >
+                <path d="M 1 1 L 7 4 L 1 7 z" fill={accent} />
+              </marker>
+            </defs>
+            <path
+              d="M 12 0 C 18 8, 6 18, 12 26"
+              stroke={accent}
+              strokeWidth="1.4"
+              fill="none"
+              markerEnd={`url(#arrow-${i})`}
+              opacity="0.75"
+            />
+          </svg>
+        );
+      })}
     </div>
   );
 }
