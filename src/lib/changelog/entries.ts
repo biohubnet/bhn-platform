@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Role-switch feedback — overlay + tighter shortcut window — May 2026
+  {
+    title: "Role switch — visible \"Switching to …\" overlay + tighter x-shortcut window so the lag stops feeling like nothing's happening",
+    body: "Hitting **x** (or the dropdown in the sidebar) to switch viewing-roles looked like nothing was happening for 1-2 seconds — the keypress fires a fetch, then `router.refresh()` re-renders every server component in the dashboard chrome before the new role's view appears. The user couldn't tell whether the keypress had registered, and often double-tapped trying to wake it up, ending up on the wrong role.\n\nTwo changes:\n\n  • **New `RoleSwitchOverlay`** — a small centred *\"Switching to <role> view…\"* panel with a spinning indicator pops up the instant a switch is triggered, then dismisses itself once the server refresh completes. Both the **x / xx keyboard shortcuts** and the **sidebar RoleSwitcher dropdown** now fire it (via a shared `bhn:role-switch-start` event so the overlay doesn't need wiring per trigger). Auto-dismisses after 3 s as a safety net if the done event never fires.\n  • **Double-tap window shortened** from 320 ms → 220 ms. Was conservative to leave plenty of room for a deliberate double-tap, but the overlay now provides the missing feedback, so single-tap can feel as snappy as possible. 220 ms is still comfortable for `xx` — both presses register reliably.\n\nThe underlying `router.refresh()` cost can't be eliminated without skipping the full server re-render (which is what makes the new role take effect everywhere — sidebar, badges, dashboard, gates). What we *can* do is make the wait clearly attributable to a user action.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── ENGAGE credit application — promoted to dashboard hero — May 2026
   {
     title: "ENGAGE training-credit application — now front-and-centre on the trainee dashboard",

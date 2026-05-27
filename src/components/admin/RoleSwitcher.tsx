@@ -3,6 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  dispatchRoleSwitchStart,
+  dispatchRoleSwitchDone,
+} from "@/components/system/RoleSwitchOverlay";
 
 const TARGETS: { id: string; label: string; description: string }[] = [
   { id: "trainee",              label: "Trainee",              description: "Default learner experience" },
@@ -44,15 +48,22 @@ export function RoleSwitcher({ actingAs }: Props) {
 
   async function pick(id: string) {
     setBusy(true);
+    // Fire the overlay IMMEDIATELY so the user sees feedback before
+    // the fetch + server re-render starts. Label looked up from
+    // TARGETS so the overlay reads "Switching to Employer HR…"
+    // instead of "Switching to employer…".
+    const label = TARGETS.find((t) => t.id === id)?.label ?? id;
+    dispatchRoleSwitchStart(label);
+    setOpen(false);
     try {
       await fetch("/api/admin/act-as", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: id }),
       });
-      setOpen(false);
       // Hard-refresh so every server-rendered nav, badge, gate re-runs.
       router.refresh();
+      dispatchRoleSwitchDone();
     } finally {
       setBusy(false);
     }
@@ -60,10 +71,12 @@ export function RoleSwitcher({ actingAs }: Props) {
 
   async function stop() {
     setBusy(true);
+    dispatchRoleSwitchStart("your real seat");
+    setOpen(false);
     try {
       await fetch("/api/admin/act-as", { method: "DELETE" });
-      setOpen(false);
       router.refresh();
+      dispatchRoleSwitchDone();
     } finally {
       setBusy(false);
     }

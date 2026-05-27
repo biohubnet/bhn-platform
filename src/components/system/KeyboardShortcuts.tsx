@@ -10,6 +10,10 @@ import {
   loadShortcuts,
   STORAGE_KEY,
 } from "@/lib/shortcuts";
+import {
+  dispatchRoleSwitchStart,
+  dispatchRoleSwitchDone,
+} from "@/components/system/RoleSwitchOverlay";
 
 /**
  * Document-level keyboard handler.
@@ -50,11 +54,22 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
     };
   }, []);
 
+  // Friendly labels for the overlay, so the user sees "Trainee" not
+  // "trainee" while the role switch is in flight. Mirrors the
+  // labels in RoleSwitcher's TARGETS list.
+  const ROLE_LABEL: Record<string, string> = {
+    trainee:    "Trainee",
+    employer:   "Employer HR",
+    real:       "your real seat",
+  };
+
   // Single press of the role-toggle key — flips trainee on/off.
   //   • acting as trainee  → clear, return to real seat
   //   • anything else      → switch to trainee
   const fireSingleToggleRole = useCallback(async () => {
     if (!canActAs) return;
+    const target = actingAs === "trainee" ? "real" : "trainee";
+    dispatchRoleSwitchStart(ROLE_LABEL[target] ?? target);
     try {
       if (actingAs === "trainee") {
         await fetch("/api/admin/act-as", { method: "DELETE" });
@@ -66,9 +81,18 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
         });
       }
       router.refresh();
+      // router.refresh() is fire-and-forget; we don't have a promise
+      // to await. Fire the done event after a tick so the overlay
+      // clears once the new HTML lands (the actingAs-watching effect
+      // also clears it).
+      dispatchRoleSwitchDone();
     } catch {
       // swallow — the user will see the role unchanged and retry
+      dispatchRoleSwitchDone();
     }
+    // ROLE_LABEL is a module-level constant in spirit; safe to
+    // omit from deps. canActAs / actingAs / router covered below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canActAs, actingAs, router]);
 
   // Double-tap of the role-toggle key — flips HR on, or escapes to
@@ -79,6 +103,8 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
   // back to real (the sequence the request described).
   const fireDoubleToggleRole = useCallback(async () => {
     if (!canActAs) return;
+    const target = actingAs ? "real" : "employer";
+    dispatchRoleSwitchStart(ROLE_LABEL[target] ?? target);
     try {
       if (actingAs) {
         await fetch("/api/admin/act-as", { method: "DELETE" });
@@ -90,19 +116,22 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
         });
       }
       router.refresh();
+      dispatchRoleSwitchDone();
     } catch {
       // swallow
+      dispatchRoleSwitchDone();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canActAs, actingAs, router]);
 
   // Double-tap detection for the role key. We delay the single-tap
   // action by DOUBLE_TAP_WINDOW_MS so a fast second press can promote
   // the press to a double-tap without firing the single-tap first
   // (which would otherwise cause a flicker — switch to trainee, then
-  // immediately switch to HR). 320 ms is the sweet spot — long enough
-  // for a deliberate double-tap, short enough that single x still
-  // feels snappy.
-  const DOUBLE_TAP_WINDOW_MS = 320;
+  // immediately switch to HR). Reduced from 320 ms → 220 ms because
+  // the overlay now reassures the user that the switch is happening,
+  // so we want single-tap to feel as snappy as possible.
+  const DOUBLE_TAP_WINDOW_MS = 220;
   const xPendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {

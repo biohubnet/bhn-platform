@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/lms/Sidebar";
 import { Onboarding } from "@/components/onboarding/Onboarding";
 import { TranslatorDock } from "@/components/translation/TranslatorDock";
 import { KeyboardShortcuts } from "@/components/system/KeyboardShortcuts";
+import { RoleSwitchOverlay } from "@/components/system/RoleSwitchOverlay";
 import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
 import { DemoOverlay } from "@/components/demo/DemoOverlay";
 import { AssistTracker } from "@/components/assist/AssistTracker";
@@ -159,6 +160,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <TranslatorDock platformEnabled={translationPlatformEnabled} />
       <Onboarding />
       <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
+      <RoleSwitchOverlay />
       <NavHighlightOverlay />
       {/* Demo tour overlay — spotlight curtain, animated cursor, tooltip
           card, and persistent demo bar. Renders only when a tour is
