@@ -56,12 +56,31 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
 
   // Friendly labels for the overlay, so the user sees "Trainee" not
   // "trainee" while the role switch is in flight. Mirrors the
-  // labels in RoleSwitcher's TARGETS list.
+  // labels in RoleSwitcher's TARGETS list. Extended Dec '26 to
+  // include every role the user can be coming FROM so the overlay
+  // can show "Trainee → Employer HR" with both ends humanised.
   const ROLE_LABEL: Record<string, string> = {
-    trainee:    "Trainee",
-    employer:   "Employer HR",
-    real:       "your real seat",
+    trainee:              "Trainee",
+    evaluating:           "Evaluating",
+    employer:             "Employer HR",
+    industrial_mentor:    "Industrial Mentor",
+    engage_hqp_advisor:   "ENGAGE HQP Advisor",
+    equip_grant_reviewer: "EQUIP Grant Reviewer",
+    instructor:           "Instructor",
+    admin:                "Admin",
+    superadmin:           "Superadmin",
+    real:                 "your real seat",
   };
+
+  // Resolve the FROM label — the role the user is currently in.
+  // When actingAs is null they're at their real seat (could be
+  // admin or superadmin); we use realRole if known, else the
+  // generic "your real seat" copy.
+  function fromLabel(): string {
+    if (actingAs) return ROLE_LABEL[actingAs] ?? actingAs;
+    if (realRole) return ROLE_LABEL[realRole] ?? realRole;
+    return "your real seat";
+  }
 
   // Single press of the role-toggle key — flips trainee on/off.
   //   • acting as trainee  → clear, return to real seat
@@ -69,7 +88,7 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
   const fireSingleToggleRole = useCallback(async () => {
     if (!canActAs) return;
     const target = actingAs === "trainee" ? "real" : "trainee";
-    dispatchRoleSwitchStart(ROLE_LABEL[target] ?? target);
+    dispatchRoleSwitchStart(fromLabel(), ROLE_LABEL[target] ?? target);
     try {
       if (actingAs === "trainee") {
         await fetch("/api/admin/act-as", { method: "DELETE" });
@@ -104,7 +123,7 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
   const fireDoubleToggleRole = useCallback(async () => {
     if (!canActAs) return;
     const target = actingAs ? "real" : "employer";
-    dispatchRoleSwitchStart(ROLE_LABEL[target] ?? target);
+    dispatchRoleSwitchStart(fromLabel(), ROLE_LABEL[target] ?? target);
     try {
       if (actingAs) {
         await fetch("/api/admin/act-as", { method: "DELETE" });

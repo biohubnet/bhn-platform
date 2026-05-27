@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Role switch overlay — from → to + 1.5s floor — May 2026
+  {
+    title: "Role switch overlay now shows from → to and stays on screen for at least 1.5 seconds",
+    body: "Two related fixes on the overlay that surfaces when you hit `x` or `xx` (or pick from the sidebar dropdown) to switch viewing-roles.\n\n**1. Now shows the transition, not just the destination.** Before: *\"Switching role — Now viewing as Employer HR\"*. After: *\"Switching role — Trainee → Employer HR\"* with the destination highlighted in brand colour. You can see at a glance what you switched FROM as well as TO, which is useful when you've been chaining role-switches and lose track. The FROM is humanised — `actingAs=\"trainee\"` becomes \"Trainee\", and when you're at your real seat the copy reads \"your real seat\" (no role exposure).\n\n**2. Stays on screen for at least 1.5 seconds.** Before: the overlay dismissed as soon as `router.refresh()` returned, which on fast routes was sub-second — too quick to read. Now there's a **min-display floor of 1500 ms**: if the server refresh returns in 300 ms, the overlay still stays for the remaining 1200 ms so the user has time to register the transition. If the refresh returns AFTER 1.5 s (slow route), it dismisses immediately as before. The 3-second safety-net dismiss for stuck refreshes still applies.\n\n**Bonus polish**: when the refresh completes BEFORE the 1.5 s floor, the spinner flips to a green check (and the eyebrow swaps from \"Switching role\" to \"Role switched\") so the user can see the work actually finished — they're just being given a beat to read it. Once 1.5 s has elapsed the overlay dismisses cleanly.\n\nBoth keyboard shortcut callers (`x` and `xx` in `KeyboardShortcuts`) and the sidebar `RoleSwitcher` dropdown were updated to pass the FROM label through the new `dispatchRoleSwitchStart(from, to)` signature.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Event flow polish — new-event form + public page + dashboard pill — May 2026
   {
     title: "Event flow polish — split date/time + one-day toggle + online mode on the new-event form; removed canned copy on the public event page; gave the committee pill its own space on the dashboard",

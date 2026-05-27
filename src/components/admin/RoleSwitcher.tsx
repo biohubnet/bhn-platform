@@ -46,14 +46,25 @@ export function RoleSwitcher({ actingAs }: Props) {
     return () => document.removeEventListener("mousedown", onClick);
   }, [open]);
 
+  // Resolve a friendly label for the FROM side of the overlay.
+  // When actingAs is set, look it up in TARGETS so we say "Trainee"
+  // not "trainee". When it's null the user is at their real seat —
+  // we don't know if that's admin or superadmin from this component,
+  // so we use the generic "your real seat" copy (matches the
+  // KeyboardShortcuts fallback).
+  function fromLabel(): string {
+    if (!actingAs) return "your real seat";
+    return TARGETS.find((t) => t.id === actingAs)?.label ?? actingAs;
+  }
+
   async function pick(id: string) {
     setBusy(true);
     // Fire the overlay IMMEDIATELY so the user sees feedback before
-    // the fetch + server re-render starts. Label looked up from
-    // TARGETS so the overlay reads "Switching to Employer HR…"
-    // instead of "Switching to employer…".
-    const label = TARGETS.find((t) => t.id === id)?.label ?? id;
-    dispatchRoleSwitchStart(label);
+    // the fetch + server re-render starts. Labels looked up from
+    // TARGETS so the overlay reads "Trainee → Employer HR" with
+    // both ends humanised.
+    const toLabel = TARGETS.find((t) => t.id === id)?.label ?? id;
+    dispatchRoleSwitchStart(fromLabel(), toLabel);
     setOpen(false);
     try {
       await fetch("/api/admin/act-as", {
@@ -71,7 +82,7 @@ export function RoleSwitcher({ actingAs }: Props) {
 
   async function stop() {
     setBusy(true);
-    dispatchRoleSwitchStart("your real seat");
+    dispatchRoleSwitchStart(fromLabel(), "your real seat");
     setOpen(false);
     try {
       await fetch("/api/admin/act-as", { method: "DELETE" });
