@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Floater Aquarium — collisions + random mass — May 2026
+  {
+    title: "Floater Aquarium — fish now bump into each other and bounce off, with per-spawn random mass",
+    body: "Two physics upgrades on the aquarium:\n\n**1. Pairwise collisions between swimmers.** Every frame, the RAF loop checks every pair of swimmers (O(n²) with n ≤ 26 = max 325 checks per frame — trivially cheap on modern hardware). When two fish overlap, an elastic-collision response runs:\n  • Compute the collision normal between centres.\n  • Project relative velocity onto the normal. Only respond if they're moving *toward* each other (skip when they happen to overlap while drifting apart, so we don't glue them back together).\n  • Apply a mass-weighted impulse to both: `J = 2 * relVel / (1/mA + 1/mB)`.\n  • Separate them along the normal by the overlap amount, split inversely to mass so the lighter fish moves more.\n\nCollision radius is `(sizeA + sizeB) × 0.30` — the 0.30 factor accounts for the SVG floater glyphs having a lot of empty space around the visible content; using full radius would trigger collisions while the glyphs still look apart on screen. The fished swimmer is excluded from collisions during its hook/rise sequence.\n\n**2. Random per-spawn mass.** Each swimmer's `Motion` now carries a random `mass` between **0.5 and 2.0** assigned at spawn. A 2.0-mass fish has ~4× the inertia of a 0.5-mass fish, so collisions visibly favour the heavier swimmer — a heavy slow-drifter crashing into a small light fish sends the light one flying ~4× as much as the heavy one even notices. Mass is intentionally NOT a property of the floater registry — the same registry component (e.g. *Antibody binding*) can appear as a \"heavy\" swimmer in one spawn and a \"light\" one in another, because mass is an emergent property of *this particular fish in the tank*, not the floater's identity.\n\n**Restructured the RAF loop into three passes** to support this cleanly:\n  • **Pass 1** — per-swimmer motion (Brownian, flee, integrate).\n  • **Pass 2** — pairwise collision detection + response.\n  • **Pass 3** — write transforms imperatively to the DOM.\n\nAll three passes happen inside the same RAF frame so nothing tears.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Floater Aquarium — slower motion, darker water, occasional fishing — May 2026
   {
     title: "Floater Aquarium — calmer pace, deeper water for contrast, and occasionally something gets fished out of the tank",

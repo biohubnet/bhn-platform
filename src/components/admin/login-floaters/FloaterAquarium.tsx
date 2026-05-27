@@ -179,6 +179,16 @@ interface Swimmer {
 interface Motion {
   x: number; y: number;
   vx: number; vy: number;
+  /** Per-swimmer mass for elastic collisions. Random 0.5-2.0 at
+   *  spawn so heavy fish push light fish around more than the
+   *  reverse. NOT a property of the floater registry — assigned
+   *  here at the aquarium level so the same registry component
+   *  can appear as a "light" fish in one spawn and a "heavy" one
+   *  in another. */
+  mass: number;
+  /** Radius used by collision detection. Copied from the parent
+   *  Swimmer so the RAF loop can read it without joining maps. */
+  size: number;
 }
 
 function randomFloater(): FloaterDef {
@@ -198,12 +208,17 @@ function makeSwimmer(idCounter: { v: number }): Swimmer {
   };
 }
 
-function makeMotion(width: number, height: number, atX?: number, atY?: number): Motion {
+function makeMotion(width: number, height: number, size: number, atX?: number, atY?: number): Motion {
   return {
     x: atX ?? Math.random() * width,
     y: atY ?? Math.random() * height,
     vx: (Math.random() - 0.5) * MAX_SPEED * 0.8,
     vy: (Math.random() - 0.5) * MAX_SPEED * 0.8,
+    // Random mass per spawn. Range 0.5 → 2.0 so a heavy fish has
+    // 4× the inertia of a light one — collisions visibly favour
+    // the heavier swimmer.
+    mass: 0.5 + Math.random() * 1.5,
+    size,
   };
 }
 
@@ -239,7 +254,7 @@ export function FloaterAquarium() {
     for (let i = 0; i < targetPop; i++) {
       const s = makeSwimmer(idCounterRef.current);
       fresh.push(s);
-      motionRef.current.set(s.key, makeMotion(w, h));
+      motionRef.current.set(s.key, makeMotion(w, h, s.size));
     }
     setSwimmers(fresh);
   }, [targetPop]);
@@ -256,7 +271,8 @@ export function FloaterAquarium() {
       const w = el.clientWidth, h = el.clientHeight;
       const now = performance.now();
       const fishing = fishingRef.current;
-      // Update motions + write transforms imperatively.
+      // ── Pass 1 — per-swimmer motion update (no transform write
+      //     yet; the collision pass below may adjust positions). ──
       for (const [key, m] of motionRef.current) {
         // ── Fishing event override ─────────────────────────────
         // If THIS swimmer is the one being fished, hand its motion
@@ -288,11 +304,9 @@ export function FloaterAquarium() {
             m.vy = 0;
             m.y = fishing.anchorY - eased * (fishing.anchorY + MAX_SIZE + 40);
           }
-          // Write transform and skip the normal Brownian/flee path.
-          const node = nodeRef.current.get(key);
-          if (node) {
-            node.style.transform = `translate3d(${m.x}px, ${m.y}px, 0)`;
-          }
+          // Transform-write happens in Pass 3 below — just skip the
+          // normal Brownian / flee / collision path here so the fish
+          // is on rails.
           continue;
         }
 
@@ -322,7 +336,75 @@ export function FloaterAquarium() {
         if (m.x > w + margin) m.x = -margin;
         if (m.y < -margin) m.y = h + margin;
         if (m.y > h + margin) m.y = -margin;
-        // Write transform — translate3d to land on GPU compositor.
+      }
+
+      // ── Pass 2 — pairwise collisions ─────────────────────────
+      // Elastic collision response between every pair of swimmers
+      // (the fished swimmer is excluded — it's on rails, off the
+      // physics simulation). O(n²) but n ≤ 26 = max 325 checks per
+      // frame, trivially cheap.
+      //
+      // Collision radius: (sizeA + sizeB) * 0.30. The 0.30 factor
+      // accounts for the SVG floaters having a lot of empty space
+      // around the visible content — using full radius (0.5) would
+      // trigger collisions while glyphs still look apart on screen.
+      //
+      // Mass-weighted impulse: heavier fish push lighter fish harder
+      // than vice-versa, so the random per-spawn mass actually reads
+      // in the motion (a 2.0-mass swimmer crashing into a 0.5-mass
+      // one sends the lighter one flying ~4× as much as it itself
+      // gets nudged).
+      const entries = Array.from(motionRef.current.entries());
+      for (let i = 0; i < entries.length; i++) {
+        const [keyA, mA] = entries[i];
+        if (fishing && keyA === fishing.key) continue;
+        for (let j = i + 1; j < entries.length; j++) {
+          const [keyB, mB] = entries[j];
+          if (fishing && keyB === fishing.key) continue;
+          const dx = mB.x - mA.x;
+          const dy = mB.y - mA.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist === 0) continue;
+          const collideAt = (mA.size + mB.size) * 0.30;
+          if (dist >= collideAt) continue;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          // Relative velocity projected along the collision normal.
+          const dvx = mA.vx - mB.vx;
+          const dvy = mA.vy - mB.vy;
+          const relVel = dvx * nx + dvy * ny;
+          // Only respond if they're moving TOWARD each other — if
+          // they happen to overlap while moving apart (e.g. just
+          // after a separation push), skip the impulse so we don't
+          // glue them back together.
+          if (relVel > 0) {
+            const invMassA = 1 / mA.mass;
+            const invMassB = 1 / mB.mass;
+            const impulse = (2 * relVel) / (invMassA + invMassB);
+            mA.vx -= impulse * invMassA * nx;
+            mA.vy -= impulse * invMassA * ny;
+            mB.vx += impulse * invMassB * nx;
+            mB.vy += impulse * invMassB * ny;
+          }
+          // Positional separation — split the overlap proportionally
+          // to inverse mass so the lighter fish moves more. Stops
+          // swimmers from sinking into each other and triggering the
+          // same collision repeatedly across frames.
+          const overlap = collideAt - dist;
+          const invMassA2 = 1 / mA.mass;
+          const invMassB2 = 1 / mB.mass;
+          const totalInv = invMassA2 + invMassB2;
+          const pushA = overlap * (invMassA2 / totalInv);
+          const pushB = overlap * (invMassB2 / totalInv);
+          mA.x -= nx * pushA;
+          mA.y -= ny * pushA;
+          mB.x += nx * pushB;
+          mB.y += ny * pushB;
+        }
+      }
+
+      // ── Pass 3 — write transforms imperatively ───────────────
+      for (const [key, m] of motionRef.current) {
         const node = nodeRef.current.get(key);
         if (node) {
           node.style.transform = `translate3d(${m.x}px, ${m.y}px, 0)`;
@@ -369,7 +451,7 @@ export function FloaterAquarium() {
         while (alive.length < targetPop) {
           const s = makeSwimmer(idCounterRef.current);
           alive.push(s);
-          motionRef.current.set(s.key, makeMotion(w, h));
+          motionRef.current.set(s.key, makeMotion(w, h, s.size));
         }
         return alive;
       });
@@ -498,6 +580,8 @@ export function FloaterAquarium() {
             x, y,
             vx: Math.cos(angle) * (MAX_SPEED + 0.4),
             vy: Math.sin(angle) * (MAX_SPEED + 0.4),
+            mass: 0.5 + Math.random() * 1.5,
+            size: s.size,
           });
         }
         return [...cur, ...burst];
