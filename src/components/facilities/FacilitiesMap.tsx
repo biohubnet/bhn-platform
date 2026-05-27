@@ -20,7 +20,7 @@
  * which is well-behaved when client-rendered.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Building2, Factory, ExternalLink, MapPin, RefreshCcw, X, Filter, Navigation, Globe2 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 
@@ -408,6 +408,182 @@ interface PlacedLabel {
   height: number;
 }
 
+/** Effect-only helpers — defined at MODULE LEVEL, not inside MapInner.
+ *
+ *  These are CRUCIAL: a previous version of this file defined these
+ *  three components nested inside MapInner. That made their function
+ *  identity unstable across renders (a new function object every
+ *  render), which React treats as a DIFFERENT component type — so
+ *  every MapInner render unmounted-and-remounted each helper. The
+ *  helpers' on-mount useEffects then re-fired unconditionally, and
+ *  LabelLayoutComputer's effect called setLabelLayout, which
+ *  triggered another MapInner render, which remounted the helper,
+ *  which re-fired the effect, which called setLabelLayout, …
+ *  Infinite render loop. The main thread became saturated to the
+ *  point Next.js's router couldn't process Link clicks — clicking a
+ *  sidebar item would call preventDefault but the resulting
+ *  router.push had no slack to actually navigate.
+ *
+ *  Lifting these to module scope gives them stable identities so
+ *  React preserves the instance across MapInner renders, and the
+ *  effects only run when their actual dependencies change. */
+
+function FacilitiesZoomTracker({
+  Lib, onZoom,
+}: {
+  Lib: typeof import("react-leaflet");
+  onZoom: (z: number) => void;
+}) {
+  Lib.useMapEvents({
+    zoomend: (e) => onZoom(e.target.getZoom()),
+  });
+  return null;
+}
+
+function FacilitiesMapBinder({
+  Lib, flyToRef, onMapReady,
+}: {
+  Lib: typeof import("react-leaflet");
+  flyToRef: React.MutableRefObject<((lat: number, lng: number, zoom: number) => void) | null>;
+  onMapReady?: (map: unknown) => void;
+}) {
+  const map = Lib.useMap();
+  useEffect(() => {
+    flyToRef.current = (lat, lng, z) => map.flyTo([lat, lng], z, { duration: 0.6 });
+    // Hand the live map back up to the parent so the "Jump to" chips
+    // can call flyToBounds. We don't need a teardown — the map dies
+    // with the MapContainer.
+    onMapReady?.(map);
+    return () => { flyToRef.current = null; };
+  }, [map, flyToRef, onMapReady]);
+  return null;
+}
+
+/** Runs the collision-avoidance pass for facility labels.
+ *
+ *  Algorithm: greedy placement.
+ *   1. Get each facility's screen position (container-pixel space).
+ *   2. Compute the label's bounding box for each candidate offset
+ *      around the dot (top, NE, E, SE, S, SW, W, NW, plus farther
+ *      fallbacks).
+ *   3. Place the label at the first offset whose bounding box
+ *      doesn't intersect any already-placed label's box.
+ *   4. If no offset fits, drop that label — the popup-on-click still
+ *      surfaces the name.
+ *   5. Convert the chosen pixel position back to lat/lng and persist.
+ *      Polylines (leader lines) and Markers (labels) then render
+ *      against the resolved lat/lng so panning is free.
+ *
+ *  Order matters — we sort facilities top-to-bottom by screen y so
+ *  northernmost labels get first pick of "above the dot" slots; the
+ *  layout is also stable across zoom levels as long as the input
+ *  order doesn't shuffle. */
+function FacilitiesLabelLayoutComputer({
+  Lib, positioned, onLayout,
+}: {
+  Lib: typeof import("react-leaflet");
+  positioned: FacilityWithDisplay[];
+  onLayout: (layout: PlacedLabel[]) => void;
+}) {
+  const map = Lib.useMap();
+
+  // recompute is a useCallback so its identity is stable across
+  // renders that don't change positioned/map/onLayout — otherwise
+  // the useEffect below would re-fire on every render even after the
+  // component-identity fix.
+  const recompute = React.useCallback(() => {
+    // Read zoom from the map, not from React state — when zoomend
+    // fires both ZoomTracker and this computer subscribe to the same
+    // event, but React's setZoom is async, so the state value inside
+    // any closure is one tick stale. map.getZoom() is always live.
+    const z = map.getZoom();
+    if (z < 11) { onLayout([]); return; }
+
+    // Pixel width estimate: ~6.4 px per char at 10.5px semibold +
+    // 14 px of horizontal padding. Capped at 200 px — longer names
+    // are CSS-truncated.
+    const widthOf = (s: string) => Math.min(s.length * 6.4 + 14, 200);
+    const H = 18;
+
+    type Item = { f: FacilityWithDisplay; x: number; y: number; w: number };
+    const items: Item[] = positioned.map((f) => {
+      const pt = map.latLngToContainerPoint([f.displayLat, f.displayLng]);
+      return { f, x: pt.x, y: pt.y, w: widthOf(f.name) };
+    });
+
+    // Filter to those actually inside the viewport — labels for
+    // off-screen facilities are wasted compute.
+    const size = map.getSize();
+    const onScreen = items.filter(
+      (it) => it.x > -200 && it.x < size.x + 200 && it.y > -100 && it.y < size.y + 100,
+    );
+
+    // North-to-south, then west-to-east — stable, gives "above" slot
+    // priority to facilities closer to the top of the viewport.
+    onScreen.sort((a, b) => a.y - b.y || a.x - b.x);
+
+    // Candidate label-centre offsets relative to the dot. Order is
+    // the placement preference — "above the dot" is tried first.
+    // Each [dx, dy] is the offset from the dot to the LABEL CENTRE.
+    const OFFSETS: Array<[number, number]> = [
+      [0, -18],
+      [22, -10], [-22, -10],
+      [26, 0],   [-26, 0],
+      [22, 12],  [-22, 12],
+      [0, 22],
+      [0, -38],
+      [44, 0],   [-44, 0],
+      [0, 40],
+    ];
+
+    const placed: Array<{ left: number; top: number; right: number; bottom: number }> = [];
+    const out: PlacedLabel[] = [];
+
+    for (const it of onScreen) {
+      for (const [dx, dy] of OFFSETS) {
+        const cx = it.x + dx;
+        const cy = it.y + dy;
+        const left = cx - it.w / 2;
+        const top = cy - H / 2;
+        const right = cx + it.w / 2;
+        const bottom = cy + H / 2;
+        const M = 2;
+        const overlap = placed.some(
+          (r) => !(r.right + M < left || r.left - M > right || r.bottom + M < top || r.top - M > bottom),
+        );
+        if (overlap) continue;
+        placed.push({ left, top, right, bottom });
+        const labelLatLng = map.containerPointToLatLng([cx, cy]);
+        out.push({
+          id: it.f.id,
+          name: it.f.name,
+          dotLat: it.f.displayLat,
+          dotLng: it.f.displayLng,
+          labelLat: labelLatLng.lat,
+          labelLng: labelLatLng.lng,
+          width: it.w,
+          height: H,
+        });
+        break;
+      }
+    }
+    onLayout(out);
+  }, [map, positioned, onLayout]);
+
+  // Recompute on:
+  //   - zoomend → pixel offsets change with zoom
+  //   - moveend → viewport content changes, new facilities slide in
+  Lib.useMapEvents({
+    zoomend: () => recompute(),
+    moveend: () => recompute(),
+  });
+
+  // Run on mount + whenever positioned changes (province filter)
+  useEffect(() => { recompute(); }, [recompute]);
+
+  return null;
+}
+
 function MapInner({
   Lib, facilities, onSelect, onMapReady,
 }: {
@@ -438,28 +614,9 @@ function MapInner({
   // detail = larger markers; lower zoom = compact dots.
   const [zoom, setZoom] = useState(5);
 
-  function ZoomTracker() {
-    useMapEvents({
-      zoomend: (e) => setZoom(e.target.getZoom()),
-    });
-    return null;
-  }
-
   // Imperative "fly to" handle — populated by a small effect-only
   // child component that has access to the Leaflet map instance.
   const flyToRef = useRef<((lat: number, lng: number, zoom: number) => void) | null>(null);
-  function MapBinder() {
-    const map = useMap();
-    useEffect(() => {
-      flyToRef.current = (lat, lng, z) => map.flyTo([lat, lng], z, { duration: 0.6 });
-      // Hand the live map back up to the parent so the "Jump to"
-      // chips can call flyToBounds. We don't need a teardown — the
-      // map dies with the MapContainer.
-      onMapReady?.(map);
-      return () => { flyToRef.current = null; };
-    }, [map]);
-    return null;
-  }
 
   // Spiderfy clustered markers. Memoised on the facilities array
   // identity so we don't recompute every render — only when the
@@ -473,125 +630,11 @@ function MapInner({
   // anchored to lat/lng, not pixel offsets — but we DO need to recompute
   // pixel-space positions on zoom because the projection changes.
   const [labelLayout, setLabelLayout] = useState<PlacedLabel[]>([]);
-
-  /** Inline child component — runs the collision-avoidance pass.
-   *
-   *  Algorithm: greedy placement.
-   *   1. Get each facility's screen position (container-pixel space).
-   *   2. Compute the label's bounding box for each candidate offset
-   *      around the dot (top, NE, E, SE, S, SW, W, NW, plus farther
-   *      fallbacks).
-   *   3. Place the label at the first offset whose bounding box
-   *      doesn't intersect any already-placed label's box.
-   *   4. If no offset fits, drop that label — the popup-on-click still
-   *      surfaces the name.
-   *   5. Convert the chosen pixel position back to lat/lng and persist.
-   *      Polylines (leader lines) and Markers (labels) then render
-   *      against the resolved lat/lng so panning is free.
-   *
-   *  Order matters — we sort facilities top-to-bottom by screen y so
-   *  northernmost labels get first pick of "above the dot" slots; the
-   *  layout is also stable across zoom levels as long as the input
-   *  order doesn't shuffle. */
-  function LabelLayoutComputer() {
-    const map = useMap();
-    // Recompute on:
-    //   - zoomend → pixel offsets change with zoom
-    //   - moveend → viewport content changes, new facilities slide in
-    //   - positioned change → province filter altered the set
-    useMapEvents({
-      zoomend: () => recompute(),
-      moveend: () => recompute(),
-    });
-    useEffect(() => { recompute(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [positioned]);
-
-    function recompute() {
-      // Read zoom from the map, not from React state — when zoomend
-      // fires both ZoomTracker and LabelLayoutComputer subscribe to
-      // the same event, but React's setZoom is async, so the state
-      // value inside this closure is one tick stale. map.getZoom() is
-      // always live.
-      const z = map.getZoom();
-      if (z < 11) { setLabelLayout([]); return; }
-
-      // Pixel width estimate: ~6.4 px per char at 10.5px semibold +
-      // 14 px of horizontal padding. Capped at 200 px — longer names
-      // are CSS-truncated.
-      const widthOf = (s: string) => Math.min(s.length * 6.4 + 14, 200);
-      const H = 18;
-
-      type Item = { f: FacilityWithDisplay; x: number; y: number; w: number };
-      const items: Item[] = positioned.map((f) => {
-        const pt = map.latLngToContainerPoint([f.displayLat, f.displayLng]);
-        return { f, x: pt.x, y: pt.y, w: widthOf(f.name) };
-      });
-
-      // Filter to those actually inside the viewport — labels for
-      // off-screen facilities are wasted compute.
-      const size = map.getSize();
-      const onScreen = items.filter(
-        (it) => it.x > -200 && it.x < size.x + 200 && it.y > -100 && it.y < size.y + 100,
-      );
-
-      // North-to-south, then west-to-east — stable, gives "above" slot
-      // priority to facilities closer to the top of the viewport.
-      onScreen.sort((a, b) => a.y - b.y || a.x - b.x);
-
-      // Candidate label-centre offsets relative to the dot. Order is
-      // the placement preference — "above the dot" is tried first.
-      // Each [dx, dy] is the offset from the dot to the LABEL CENTRE.
-      const OFFSETS: Array<[number, number]> = [
-        [0, -18],            // top
-        [22, -10], [-22, -10], // top-right, top-left
-        [26, 0],   [-26, 0],   // right, left
-        [22, 12],  [-22, 12],  // bottom-right, bottom-left
-        [0, 22],               // bottom
-        [0, -38],              // farther top
-        [44, 0],   [-44, 0],   // farther right, left
-        [0, 40],               // farther bottom
-      ];
-
-      const placed: Array<{ left: number; top: number; right: number; bottom: number }> = [];
-      const out: PlacedLabel[] = [];
-
-      for (const it of onScreen) {
-        for (const [dx, dy] of OFFSETS) {
-          const cx = it.x + dx;
-          const cy = it.y + dy;
-          const left = cx - it.w / 2;
-          const top = cy - H / 2;
-          const right = cx + it.w / 2;
-          const bottom = cy + H / 2;
-          // 2 px margin so neighbours don't visually touch.
-          const M = 2;
-          const overlap = placed.some(
-            (r) => !(r.right + M < left || r.left - M > right || r.bottom + M < top || r.top - M > bottom),
-          );
-          if (overlap) continue;
-          placed.push({ left, top, right, bottom });
-          // Convert label-centre pixel back to lat/lng so Leaflet keeps
-          // it positioned correctly during pans (no per-pan recompute).
-          const labelLatLng = map.containerPointToLatLng([cx, cy]);
-          out.push({
-            id: it.f.id,
-            name: it.f.name,
-            dotLat: it.f.displayLat,
-            dotLng: it.f.displayLng,
-            labelLat: labelLatLng.lat,
-            labelLng: labelLatLng.lng,
-            width: it.w,
-            height: H,
-          });
-          break;
-        }
-        // No clean spot → omit the label. Popup-on-click still works.
-      }
-
-      setLabelLayout(out);
-    }
-
-    return null;
-  }
+  // Wrap setLabelLayout in a stable callback for the
+  // FacilitiesLabelLayoutComputer's effect dependency array.
+  const handleLabelLayout = useCallback((layout: PlacedLabel[]) => setLabelLayout(layout), []);
+  // Same for the zoom tracker.
+  const handleZoom = useCallback((z: number) => setZoom(z), []);
 
   // For each cluster, also derive a "leg" line from the centroid out
   // to each spiderfied member. Only drawn when zoomed in (≥13) — at
@@ -645,9 +688,9 @@ function MapInner({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={19}
       />
-      <ZoomTracker />
-      <MapBinder />
-      <LabelLayoutComputer />
+      <FacilitiesZoomTracker Lib={Lib} onZoom={handleZoom} />
+      <FacilitiesMapBinder Lib={Lib} flyToRef={flyToRef} onMapReady={onMapReady} />
+      <FacilitiesLabelLayoutComputer Lib={Lib} positioned={positioned} onLayout={handleLabelLayout} />
       {/* Cluster connector lines — only at higher zoom. Non-interactive
           so they don't intercept marker clicks when the user clicks
           near the line (Leaflet's hit-testing happens against the
