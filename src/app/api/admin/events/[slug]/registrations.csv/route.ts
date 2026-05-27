@@ -64,8 +64,8 @@ export async function GET(
   });
 
   const rows = registrations.map((r) => [
-    csvEscape(r.user.email),
-    csvEscape(r.user.name),
+    csvEscape(r.user?.email ?? r.guestEmail ?? ""),
+    csvEscape(r.user?.name ?? r.guestName ?? ""),
     csvEscape(r.attendeeType),
     csvEscape(r.registrationStatus),
     csvEscape(r.paymentStatus),

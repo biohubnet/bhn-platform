@@ -62,26 +62,31 @@ export async function POST(
   if (!registration || registration.eventId !== event.id) {
     return NextResponse.json({ error: "Registration not found for this event" }, { status: 404 });
   }
-  if (!registration.user.email) {
+  // Resolve recipient email + display name — user-path uses the
+  // session-backed User row, guest-path uses the guest* fields
+  // captured at registration time.
+  const recipientEmail = registration.user?.email ?? registration.guestEmail ?? null;
+  const recipientName  = registration.user?.name  ?? registration.guestName  ?? null;
+  if (!recipientEmail) {
     return NextResponse.json({ error: "Attendee has no email on file." }, { status: 400 });
   }
 
   // Re-fetch workshop bookings so the resent email reflects current
-  // bookings (which the admin may have edited on their behalf).
-  const bookings = await prisma.workshopBooking.findMany({
-    where: {
-      userId: registration.userId,
-      status: { not: "cancelled" },
-      workshop: { eventId: event.id },
-    },
-    include: { workshop: { select: { title: true } } },
-    orderBy: { bookedAt: "asc" },
-  });
+  // bookings. Skip for guest registrations — they can't have any.
+  const bookings = registration.userId
+    ? await prisma.workshopBooking.findMany({
+        where: {
+          userId: registration.userId,
+          status: { not: "cancelled" },
+          workshop: { eventId: event.id },
+        },
+        include: { workshop: { select: { title: true } } },
+        orderBy: { bookedAt: "asc" },
+      })
+    : [];
 
   const eventDates = formatEventDates(event.startDate, event.endDate, event.timezone);
-  const greeting = registration.user.name
-    ? `Hi ${registration.user.name.split(/\s+/)[0]},`
-    : "Hi,";
+  const greeting = recipientName ? `Hi ${recipientName.split(/\s+/)[0]},` : "Hi,";
 
   const workshopLines = bookings.map((b) => {
     const title = b.workshop.title;
@@ -103,17 +108,17 @@ export async function POST(
     workshopBlock +
     `Your check-in code: ${registration.qrToken}\n` +
     `(We'll scan this at the door — bring this email or open the page below on your phone.)\n\n` +
-    `Find everything at: /events/${event.slug}/me\n\n` +
-    `Questions? Reply to this email or contact the BHN team at support@biohubnet.ca.\n\n` +
+    (registration.userId ? `Find everything at: /events/${event.slug}/me\n\n` : "") +
+    `Questions? Reply to this email or contact the BHN team at info@biohubnet.ca.\n\n` +
     `— BioHubNet`;
 
   try {
     await sendMail({
-      to: registration.user.email,
+      to: recipientEmail,
       subject: `Your registration for ${event.title}`,
       text,
     });
-    return NextResponse.json({ ok: true, sentTo: registration.user.email });
+    return NextResponse.json({ ok: true, sentTo: recipientEmail });
   } catch (err) {
     console.error("Admin resend-email failed:", (err as Error).message);
     return NextResponse.json(

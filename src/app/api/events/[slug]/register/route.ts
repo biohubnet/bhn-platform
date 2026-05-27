@@ -1,40 +1,47 @@
 /**
- * Event registration.
+ * Event registration — supports BOTH signed-in users AND anonymous guests.
  *
  *   POST /api/events/[slug]/register
- *     body: { attendeeType, dietaryRestrictions?, accessibilityNeeds?,
- *             includesSymposiumDay?, workshopIds?: string[] }
+ *     body (signed-in): {
+ *       attendeeType, dietaryRestrictions?, accessibilityNeeds?,
+ *       includesSymposiumDay?, workshopIds?: string[]
+ *     }
+ *     body (guest): {
+ *       guestName, guestEmail, guestOrganization?,
+ *       attendeeType, dietaryRestrictions?, accessibilityNeeds?,
+ *       includesSymposiumDay?
+ *       (workshopIds not allowed — workshop booking requires an account)
+ *     }
  *
  * Behaviour
- *   • Auth-gated. Anonymous → 401 (the form should redirect through
- *     /login before posting, but we re-check server-side).
+ *   • Two paths gated by session presence:
+ *     - Session present → user-registration path (original behaviour).
+ *     - No session → guest-registration path. Requires guestName +
+ *       guestEmail in the body. workshopIds is rejected here because
+ *       the workshop-booking model assumes a User row.
  *   • Slug must resolve to a published BhnEvent. Otherwise 404.
  *   • Registration window honoured when set (registrationOpensAt /
  *     registrationClosesAt). Outside window → 403.
- *   • Idempotent. If a Registration already exists for (event, user),
- *     return it as-is and DO NOT touch their existing workshop
- *     bookings — they have a dedicated UI at /me/workshops for that.
- *     The (eventId, userId) unique constraint guarantees one row per
- *     pair; we surface it instead of crashing on a P2002.
+ *   • Idempotent on both paths:
+ *     - signed-in: (eventId, userId) — return existing row.
+ *     - guest: (eventId, guestEmail-lowercased) — return existing row.
  *   • qrToken is 128-bit hex generated server-side, never reused.
- *   • workshopIds (optional) lets the registration form double as a
- *     workshop-pick form. Every workshop is booked inside the same
- *     transaction as the Registration insert — partial failures roll
- *     back the whole thing. Capacity-full slots become waitlist
- *     bookings; the caller gets the per-workshop status back so the
- *     UI can show "confirmed × 2" / "1 confirmed, 1 waitlisted".
- *     Max length: MAX_WORKSHOPS_PER_USER (2).
  *   • Confirmation email is best-effort. SMTP failures don't fail the
  *     registration — the user can still see their QR on the success
  *     page even if the email never lands.
  */
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { requireSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendMail, mailConfigured } from "@/lib/mail";
 import { bookWorkshopInTx } from "@/lib/events/bookings";
 import { MAX_WORKSHOPS_PER_USER } from "@/lib/events/constants";
+
+// Bare-bones RFC-5322-ish email regex. Not a full parse — guard
+// against obvious typos / missing @ on the guest path. Real validation
+// happens when we try to send the confirmation.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const runtime = "nodejs";
 
@@ -56,14 +63,13 @@ export async function POST(
   req: Request,
   ctx: { params: Promise<{ slug: string }> },
 ) {
-  const session = await requireSession().catch(() => null);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const userId = (session.user as { id?: string }).id ?? null;
-  const userEmail = (session.user as { email?: string }).email ?? null;
-  const userName = (session.user as { name?: string }).name ?? null;
-  if (!userId || !userEmail) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Soft session lookup — present → user path, absent → guest path.
+  // Neither rejects upfront.
+  const session = await getSession().catch(() => null);
+  const sessionUserId = (session?.user as { id?: string } | undefined)?.id ?? null;
+  const sessionUserEmail = (session?.user as { email?: string } | undefined)?.email ?? null;
+  const sessionUserName = (session?.user as { name?: string } | undefined)?.name ?? null;
+  const isGuestPath = !sessionUserId || !sessionUserEmail;
 
   const { slug } = await ctx.params;
   const event = await prisma.bhnEvent.findUnique({
@@ -111,18 +117,8 @@ export async function POST(
     );
   }
 
-  // Idempotency — surface the existing registration if any.
-  const existing = await prisma.registration.findUnique({
-    where: { eventId_userId: { eventId: event.id, userId } },
-  });
-  if (existing) {
-    return NextResponse.json({
-      ok: true,
-      alreadyRegistered: true,
-      registration: { id: existing.id, qrToken: existing.qrToken },
-    });
-  }
-
+  // Parse the body first — both paths need it, and the guest path
+  // depends on it for the idempotency check.
   let body: unknown;
   try {
     body = await req.json();
@@ -138,7 +134,61 @@ export async function POST(
     accessibilityNeeds,
     includesSymposiumDay,
     workshopIds: rawWorkshopIds,
+    guestName: rawGuestName,
+    guestEmail: rawGuestEmail,
+    guestOrganization: rawGuestOrg,
   } = body as Record<string, unknown>;
+
+  // Guest path needs name + email. Validate up front so we fail
+  // cheap before touching the DB.
+  let guestName: string | null = null;
+  let guestEmail: string | null = null;
+  let guestOrganization: string | null = null;
+  if (isGuestPath) {
+    if (typeof rawGuestName !== "string" || rawGuestName.trim().length === 0) {
+      return NextResponse.json(
+        { error: "guestName is required when not signed in." },
+        { status: 400 },
+      );
+    }
+    if (typeof rawGuestEmail !== "string" || !EMAIL_RE.test(rawGuestEmail.trim())) {
+      return NextResponse.json(
+        { error: "guestEmail must be a valid email address." },
+        { status: 400 },
+      );
+    }
+    guestName = rawGuestName.trim().slice(0, 120);
+    // Lower-case the email so duplicate detection is case-insensitive.
+    guestEmail = rawGuestEmail.trim().toLowerCase().slice(0, 200);
+    if (typeof rawGuestOrg === "string" && rawGuestOrg.trim().length > 0) {
+      guestOrganization = rawGuestOrg.trim().slice(0, 160);
+    }
+    // Workshop booking requires a User row; not available on the
+    // guest path. Reject early rather than silently dropping the field.
+    if (rawWorkshopIds !== undefined && Array.isArray(rawWorkshopIds) && rawWorkshopIds.length > 0) {
+      return NextResponse.json(
+        { error: "Workshop bookings require a platform account. Sign in to pick workshops." },
+        { status: 400 },
+      );
+    }
+  }
+
+  // Idempotency — surface the existing registration if any. Different
+  // unique constraint per path: (event, userId) vs (event, guestEmail).
+  const existing = isGuestPath
+    ? await prisma.registration.findUnique({
+        where: { eventId_guestEmail: { eventId: event.id, guestEmail: guestEmail! } },
+      })
+    : await prisma.registration.findUnique({
+        where: { eventId_userId: { eventId: event.id, userId: sessionUserId! } },
+      });
+  if (existing) {
+    return NextResponse.json({
+      ok: true,
+      alreadyRegistered: true,
+      registration: { id: existing.id, qrToken: existing.qrToken },
+    });
+  }
 
   if (!isAttendeeType(attendeeType)) {
     return NextResponse.json(
@@ -147,11 +197,12 @@ export async function POST(
     );
   }
 
-  // workshopIds validation. Optional; if present must be an array of
-  // strings up to the per-user cap. Dedupe defensively in case the
-  // client double-toggled the same option.
+  // workshopIds validation — signed-in path only. Optional; if
+  // present must be an array of strings up to the per-user cap.
+  // Dedupe defensively in case the client double-toggled the same
+  // option. Guest path rejected this above already.
   let workshopIds: string[] = [];
-  if (rawWorkshopIds !== undefined) {
+  if (!isGuestPath && rawWorkshopIds !== undefined) {
     if (!Array.isArray(rawWorkshopIds) || !rawWorkshopIds.every((id) => typeof id === "string")) {
       return NextResponse.json(
         { error: "workshopIds must be an array of strings" },
@@ -220,7 +271,11 @@ export async function POST(
       const reg = await tx.registration.create({
         data: {
           eventId: event.id,
-          userId,
+          // Either userId OR guest fields — never both populated.
+          userId: isGuestPath ? null : sessionUserId,
+          guestEmail: isGuestPath ? guestEmail : null,
+          guestName: isGuestPath ? guestName : null,
+          guestOrganization: isGuestPath ? guestOrganization : null,
           attendeeType,
           registrationStatus: initialRegistrationStatus,
           // Stamp approvedAt only when we auto-confirm — keeps the
@@ -239,20 +294,21 @@ export async function POST(
       });
 
       const outcomes: WorkshopBookingOutcome[] = [];
-      for (const wId of workshopIds) {
-        const r = await bookWorkshopInTx(tx, userId, wId);
-        if (!r.ok) {
-          // Surface the booking-service error verbatim so the user
-          // sees something actionable ("you can book at most 2…",
-          // etc.). Throwing aborts the transaction and rolls back
-          // the registration insert above.
-          throw new Error(`booking_failed:${r.code}:${r.error}`);
+      // Guest path can't book workshops (no userId for the workshop
+      // booking row). The guard above already rejects guestIds with
+      // workshopIds, so workshopIds is empty here on the guest path.
+      if (!isGuestPath && sessionUserId) {
+        for (const wId of workshopIds) {
+          const r = await bookWorkshopInTx(tx, sessionUserId, wId);
+          if (!r.ok) {
+            throw new Error(`booking_failed:${r.code}:${r.error}`);
+          }
+          outcomes.push({
+            workshopId: wId,
+            status: r.status,
+            waitlistPosition: r.waitlistPosition,
+          });
         }
-        outcomes.push({
-          workshopId: wId,
-          status: r.status,
-          waitlistPosition: r.waitlistPosition,
-        });
       }
       return { reg, outcomes };
     });
@@ -281,11 +337,14 @@ export async function POST(
 
   // Best-effort confirmation email — don't fail the registration if
   // SMTP isn't configured (dev / preview deploys) or if the send
-  // itself throws.
+  // itself throws. Email recipient + display name resolve from
+  // whichever path created this row.
+  const recipientEmail = isGuestPath ? guestEmail! : sessionUserEmail!;
+  const recipientName  = isGuestPath ? guestName  : sessionUserName;
   const isPending = registration.registrationStatus === "pending";
   if (mailConfigured()) {
     const eventDates = formatEventDates(event.startDate, event.endDate, event.timezone);
-    const greeting = userName ? `Hi ${userName.split(/\s+/)[0]},` : "Hi,";
+    const greeting = recipientName ? `Hi ${recipientName.split(/\s+/)[0]},` : "Hi,";
 
     const workshopLines = workshopOutcomes.map((o) => {
       const title = titleById.get(o.workshopId) ?? "Workshop";
@@ -307,6 +366,18 @@ export async function POST(
         `as soon as it's approved (usually within 1–2 business days).\n\n`
       : "";
 
+    // "What's next" lines are user-path only (workshop top-ups +
+    // breakout pick live on /me, which requires an account). Guest
+    // path gets a shorter footer pointing at the public event page.
+    const nextStepsBlock = isGuestPath
+      ? `Save this email so you have your check-in code on the day.\n\n`
+      : `What's next:\n` +
+        (workshopOutcomes.length < 2
+          ? `• Pick ${2 - workshopOutcomes.length} more workshop${2 - workshopOutcomes.length === 1 ? "" : "s"} from the Training Week\n`
+          : "") +
+        `• Choose which afternoon breakout you'll attend on the symposium day\n` +
+        `• Find everything at: /events/${event.slug}/me\n\n`;
+
     const text =
       `${greeting}\n\n` +
       `${isPending ? "Thanks for registering for" : "You're registered for"} ${event.title}.\n\n` +
@@ -318,18 +389,13 @@ export async function POST(
       workshopBlock +
       `Your check-in code: ${qrToken}\n` +
       `(We'll scan this at the door — bring the confirmation page or this email on your phone.)\n\n` +
-      `What's next:\n` +
-      (workshopOutcomes.length < 2
-        ? `• Pick ${2 - workshopOutcomes.length} more workshop${2 - workshopOutcomes.length === 1 ? "" : "s"} from the Training Week\n`
-        : "") +
-      `• Choose which afternoon breakout you'll attend on the symposium day\n` +
-      `• Find everything at: /events/${event.slug}/me\n\n` +
-      `Questions? Reply to this email or contact the BHN team at support@biohubnet.ca.\n\n` +
+      nextStepsBlock +
+      `Questions? Reply to this email or contact the BHN team at info@biohubnet.ca.\n\n` +
       `— BioHubNet`;
 
     try {
       await sendMail({
-        to: userEmail,
+        to: recipientEmail,
         subject: isPending
           ? `Registration received — ${event.title} (pending approval)`
           : `You're registered for ${event.title}`,

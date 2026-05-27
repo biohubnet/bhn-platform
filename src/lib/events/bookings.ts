@@ -443,13 +443,12 @@ export async function cancelWorkshopBooking(
  */
 export async function cancelRegistration(
   prisma: PrismaClient,
-  eventId: string,
-  userId: string,
+  registrationId: string,
 ): Promise<{ ok: true; cancelledBookings: number; promoted: number } | BookingErr> {
   return prisma.$transaction(async (tx) => {
     const registration = await tx.registration.findUnique({
-      where: { eventId_userId: { eventId, userId } },
-      select: { id: true, registrationStatus: true },
+      where: { id: registrationId },
+      select: { id: true, eventId: true, userId: true, registrationStatus: true },
     });
     if (!registration) {
       return { ok: false as const, error: "Registration not found.", code: "not_found" };
@@ -463,31 +462,36 @@ export async function cancelRegistration(
       data: { registrationStatus: "cancelled" },
     });
 
-    // Find every active booking for this attendee on this event and
-    // cancel each — cascade-promoting waitlisters per booking.
-    const activeBookings = await tx.workshopBooking.findMany({
-      where: {
-        userId,
-        status: { not: "cancelled" },
-        workshop: { eventId },
-      },
-      select: { workshopId: true },
-    });
-
+    // Workshop bookings + personal agenda entries are user-keyed. Guest
+    // registrations (userId === null) can't have any, so skip those
+    // cleanup loops entirely.
+    let cancelledBookings = 0;
     let promoted = 0;
-    for (const b of activeBookings) {
-      const r = await cancelWorkshopBookingInTx(tx, userId, b.workshopId);
-      if (r.ok && r.promoted) promoted++;
-    }
+    if (registration.userId) {
+      const activeBookings = await tx.workshopBooking.findMany({
+        where: {
+          userId: registration.userId,
+          status: { not: "cancelled" },
+          workshop: { eventId: registration.eventId },
+        },
+        select: { workshopId: true },
+      });
 
-    // Also clear any personal-agenda entries (breakout picks).
-    await tx.personalAgendaEntry.deleteMany({
-      where: { userId, session: { eventId } },
-    });
+      for (const b of activeBookings) {
+        const r = await cancelWorkshopBookingInTx(tx, registration.userId, b.workshopId);
+        if (r.ok && r.promoted) promoted++;
+      }
+      cancelledBookings = activeBookings.length;
+
+      // Also clear any personal-agenda entries (breakout picks).
+      await tx.personalAgendaEntry.deleteMany({
+        where: { userId: registration.userId, session: { eventId: registration.eventId } },
+      });
+    }
 
     return {
       ok: true as const,
-      cancelledBookings: activeBookings.length,
+      cancelledBookings,
       promoted,
     };
   });
@@ -500,13 +504,12 @@ export async function cancelRegistration(
  */
 export async function approveRegistration(
   prisma: PrismaClient,
-  eventId: string,
-  userId: string,
+  registrationId: string,
   adminUserId: string,
 ): Promise<{ ok: true; alreadyConfirmed: boolean } | BookingErr> {
   return prisma.$transaction(async (tx) => {
     const registration = await tx.registration.findUnique({
-      where: { eventId_userId: { eventId, userId } },
+      where: { id: registrationId },
       select: { id: true, registrationStatus: true },
     });
     if (!registration) {

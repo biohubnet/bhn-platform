@@ -18,39 +18,33 @@ import { PrintLink } from "@/components/events/PrintLink";
 /**
  * Post-registration confirmation page.
  *
+ * Dual access path (Dec '26):
+ *   • Signed-in users — looked up by (eventId, userId).
+ *   • Guests — looked up by qrToken passed on the URL: `?token=...`.
+ *     The link is also embedded in the confirmation email so guests
+ *     can return here later. No auth bounce on this page anymore.
+ *
  * Shows the attendee:
  *   • A check-in QR (server-rendered SVG using qrcode-svg). The
  *     payload is the qrToken from the Registration row — admins
  *     scan it at the door to mark checkedInAt.
- *   • The token in plain text as a fallback for printing / when
- *     a phone camera can't render the SVG.
+ *   • The token in plain text as a fallback.
  *   • Event details (dates, venue, what they registered for).
- *   • Two "next steps" cards — pick workshops + pick breakout.
- *     Both go to /events/[slug]/me which lands in chunk 4. For
- *     now those cards are marked "coming soon" so the soft-404
- *     isn't surprising.
- *
- * Anyone landing here without a registration gets a 404 — we
- * never render a half-page; if they meant to register they should
- * be on /events/[slug]/register, which redirects HERE once they
- * have a row.
+ *   • "Next steps" cards (signed-in only — guest path skips these).
  */
 export default async function RegistrationSuccessPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ token?: string }>;
 }) {
   const { slug } = await params;
+  const { token } = await searchParams;
 
   const session = await getSession();
-  if (!session) {
-    redirect(`/login?callbackUrl=${encodeURIComponent(`/events/${slug}/register/success`)}`);
-  }
-  const userId = (session.user as { id?: string }).id ?? null;
-  const userName = (session.user as { name?: string }).name ?? null;
-  if (!userId) {
-    redirect(`/login?callbackUrl=${encodeURIComponent(`/events/${slug}/register/success`)}`);
-  }
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+  const userName = (session?.user as { name?: string } | undefined)?.name ?? null;
 
   const event = await prisma.bhnEvent.findUnique({
     where: { slug },
@@ -68,38 +62,63 @@ export default async function RegistrationSuccessPage({
   });
   if (!event) notFound();
 
-  const registration = await prisma.registration.findUnique({
-    where: { eventId_userId: { eventId: event.id, userId } },
-    select: {
-      qrToken: true,
-      attendeeType: true,
-      includesSymposiumDay: true,
-      registrationStatus: true,
-      dietaryRestrictions: true,
-      accessibilityNeeds: true,
-      createdAt: true,
-    },
-  });
+  // Resolve the registration. Token wins when provided (guest access);
+  // otherwise fall back to the signed-in user's registration. If
+  // neither path resolves, 404.
+  const registration = token
+    ? await prisma.registration.findFirst({
+        where: { eventId: event.id, qrToken: token },
+        select: {
+          qrToken: true,
+          attendeeType: true,
+          includesSymposiumDay: true,
+          registrationStatus: true,
+          dietaryRestrictions: true,
+          accessibilityNeeds: true,
+          guestName: true,
+          guestEmail: true,
+          userId: true,
+          createdAt: true,
+        },
+      })
+    : userId
+      ? await prisma.registration.findUnique({
+          where: { eventId_userId: { eventId: event.id, userId } },
+          select: {
+            qrToken: true,
+            attendeeType: true,
+            includesSymposiumDay: true,
+            registrationStatus: true,
+            dietaryRestrictions: true,
+            accessibilityNeeds: true,
+            guestName: true,
+            guestEmail: true,
+            userId: true,
+            createdAt: true,
+          },
+        })
+      : null;
   if (!registration) notFound();
 
-  // Workshop bookings the user holds for this event. Drives:
-  //   • the "pending workshop bookings" notice list
-  //   • the cross-prompt that nudges users to pick a tour/workshop
-  //     when they registered for the symposium but didn't pick any
-  const workshopBookings = await prisma.workshopBooking.findMany({
-    where: {
-      userId,
-      workshop: { eventId: event.id },
-      status: { not: "cancelled" },
-    },
-    select: {
-      id: true,
-      status: true,
-      waitlistPosition: true,
-      workshop: { select: { title: true, kind: true } },
-    },
-    orderBy: { bookedAt: "asc" },
-  });
+  // Workshop bookings only apply to signed-in users registered via
+  // the rich form (guest path can't book workshops).
+  const isGuestReg = registration.userId === null;
+  const workshopBookings = isGuestReg
+    ? []
+    : await prisma.workshopBooking.findMany({
+        where: {
+          userId: registration.userId!,
+          workshop: { eventId: event.id },
+          status: { not: "cancelled" },
+        },
+        select: {
+          id: true,
+          status: true,
+          waitlistPosition: true,
+          workshop: { select: { title: true, kind: true } },
+        },
+        orderBy: { bookedAt: "asc" },
+      });
   const isRegistrationPending = registration.registrationStatus === "pending";
   const anyPendingBooking = workshopBookings.some((b) => b.status === "pending");
   const showApprovalBanner = isRegistrationPending || anyPendingBooking;
@@ -117,7 +136,10 @@ export default async function RegistrationSuccessPage({
     ecl: "M",
   }).svg();
 
-  const firstName = userName ? userName.split(/\s+/)[0] : "";
+  // First-name resolution: prefer session name for signed-in, fall
+  // back to guestName for guest registrations.
+  const displayName = userName ?? registration.guestName ?? "";
+  const firstName = displayName ? displayName.split(/\s+/)[0] : "";
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16 print:py-6 print:max-w-full">
@@ -208,10 +230,9 @@ export default async function RegistrationSuccessPage({
       )}
 
       {/* Cross-prompt: registered for symposium but didn't pick any
-          tour/workshop. Workshops are independent from the symposium
-          registration; the events team specifically wants this nudge
-          to make sure people don't miss the tour opportunity. */}
-      {workshopBookings.length === 0 && registration.includesSymposiumDay && (
+          tour/workshop. Signed-in users only — guests can't book
+          workshops (those require a User row). */}
+      {!isGuestReg && workshopBookings.length === 0 && registration.includesSymposiumDay && (
         <Link
           href={`/events/${slug}/me/workshops`}
           className="block rounded-2xl bg-brand-50 ring-1 ring-inset ring-brand-200 p-5 mb-6 print:hidden hover:bg-brand-100 transition-colors group"
@@ -300,33 +321,38 @@ export default async function RegistrationSuccessPage({
         </dl>
       </section>
 
-      {/* Next steps */}
-      <section className="rounded-2xl border border-line bg-card surface-shadow p-5 sm:p-6 mb-6 print:hidden">
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-3">
-          What's next
-        </p>
-        <ul className="space-y-3">
-          <NextStep
-            icon={ListChecks}
-            title="Pick your workshops"
-            body="Choose up to 2 from the Training Week. Some have small caps; the popular ones fill quickly."
-            href={`/events/${slug}/me/workshops`}
-            comingSoon
-          />
-          {registration.includesSymposiumDay && (
+      {/* Next steps — signed-in users only. Guest registrations can't
+          book workshops or pick breakouts (those require a User row),
+          so we skip the section entirely rather than showing affordances
+          they can't use. */}
+      {!isGuestReg && (
+        <section className="rounded-2xl border border-line bg-card surface-shadow p-5 sm:p-6 mb-6 print:hidden">
+          <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-3">
+            What's next
+          </p>
+          <ul className="space-y-3">
             <NextStep
-              icon={Calendar}
-              title="Choose your afternoon breakout"
-              body="Two breakouts run in parallel on the symposium day; pick the one you want."
-              href={`/events/${slug}/me`}
+              icon={ListChecks}
+              title="Pick your workshops"
+              body="Choose up to 2 from the Training Week. Some have small caps; the popular ones fill quickly."
+              href={`/events/${slug}/me/workshops`}
               comingSoon
             />
-          )}
-        </ul>
-        <p className="text-[11px] text-muted mt-4 leading-snug">
-          Workshop selection opens soon. We'll email you the moment it goes live.
-        </p>
-      </section>
+            {registration.includesSymposiumDay && (
+              <NextStep
+                icon={Calendar}
+                title="Choose your afternoon breakout"
+                body="Two breakouts run in parallel on the symposium day; pick the one you want."
+                href={`/events/${slug}/me`}
+                comingSoon
+              />
+            )}
+          </ul>
+          <p className="text-[11px] text-muted mt-4 leading-snug">
+            Workshop selection opens soon. We'll email you the moment it goes live.
+          </p>
+        </section>
+      )}
 
       {/* Footer links */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm print:hidden">

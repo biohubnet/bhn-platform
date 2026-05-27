@@ -53,23 +53,43 @@ export default async function AdminAttendeeDetailPage({
   // Workshops the attendee currently has (any non-cancelled
   // booking), plus the full list of available workshops they could
   // still book (filtered to the event, active only).
+  // Guest registrations (userId === null) can't book workshops, so
+  // we skip the bookings query for them — workshop slots require a
+  // User row at the booking-service layer.
+  const isGuestReg = registration.userId === null;
   const [bookings, allWorkshops] = await Promise.all([
-    prisma.workshopBooking.findMany({
-      where: {
-        userId: registration.userId,
-        workshop: { eventId: event.id },
-      },
-      include: {
-        workshop: {
-          select: {
-            id: true, title: true, kind: true, partnerOrganization: true,
-            startDateTime: true, endDateTime: true, locationName: true,
-            capacity: true,
+    isGuestReg
+      ? Promise.resolve(
+          [] as Array<{
+            id: string;
+            status: string;
+            waitlistPosition: number | null;
+            bookedAt: Date;
+            workshop: {
+              id: string; title: string; kind: string;
+              partnerOrganization: string | null;
+              startDateTime: Date; endDateTime: Date;
+              locationName: string | null;
+              capacity: number;
+            };
+          }>,
+        )
+      : prisma.workshopBooking.findMany({
+          where: {
+            userId: registration.userId!,
+            workshop: { eventId: event.id },
           },
-        },
-      },
-      orderBy: { bookedAt: "desc" },
-    }),
+          include: {
+            workshop: {
+              select: {
+                id: true, title: true, kind: true, partnerOrganization: true,
+                startDateTime: true, endDateTime: true, locationName: true,
+                capacity: true,
+              },
+            },
+          },
+          orderBy: { bookedAt: "desc" },
+        }),
     prisma.workshop.findMany({
       where: { eventId: event.id, isActive: true },
       orderBy: [{ startDateTime: "asc" }, { displayOrder: "asc" }],
@@ -130,12 +150,15 @@ export default async function AdminAttendeeDetailPage({
       };
     });
 
-  // Personal-agenda picks (symposium-day breakouts).
-  const agendaEntries = await prisma.personalAgendaEntry.findMany({
-    where: { userId: registration.userId, session: { eventId: event.id } },
-    include: { session: { select: { id: true, title: true, startTime: true, endTime: true } } },
-    orderBy: { session: { startTime: "asc" } },
-  });
+  // Personal-agenda picks (symposium-day breakouts). Same guest-skip
+  // rationale as workshop bookings — agenda picks need a User row.
+  const agendaEntries = isGuestReg
+    ? []
+    : await prisma.personalAgendaEntry.findMany({
+        where: { userId: registration.userId!, session: { eventId: event.id } },
+        include: { session: { select: { id: true, title: true, startTime: true, endTime: true } } },
+        orderBy: { session: { startTime: "asc" } },
+      });
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -153,8 +176,18 @@ export default async function AdminAttendeeDetailPage({
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold text-fg tracking-tight mt-1 inline-flex items-center gap-2 flex-wrap">
             <User size={22} className="text-brand-600" />
-            {registration.user.name ?? <span className="italic text-muted">No name</span>}
+            {(registration.user?.name ?? registration.guestName) || (
+              <span className="italic text-muted">No name</span>
+            )}
             <RegStatusChip status={registration.registrationStatus} />
+            {isGuestReg && (
+              <span
+                className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full bg-violet-100 text-violet-800 ring-1 ring-inset ring-violet-200"
+                title="Registered as a guest without a platform account"
+              >
+                Guest
+              </span>
+            )}
             {registration.checkedInAt && (
               <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-emerald-200 gap-1">
                 <CheckCircle2 size={11} /> Checked in
@@ -163,13 +196,23 @@ export default async function AdminAttendeeDetailPage({
           </h1>
           <p className="text-sm text-muted mt-2 inline-flex items-center gap-2">
             <Mail size={12} />
-            <a href={`mailto:${registration.user.email}`} className="hover:text-fg">
-              {registration.user.email}
-            </a>
+            {(() => {
+              const email = registration.user?.email ?? registration.guestEmail;
+              return email ? (
+                <a href={`mailto:${email}`} className="hover:text-fg">
+                  {email}
+                </a>
+              ) : (
+                <span className="italic text-muted">No email</span>
+              );
+            })()}
           </p>
-          {registration.user.organization && (
+          {(registration.user?.organization || registration.guestOrganization) && (
             <p className="text-xs text-muted mt-0.5">
-              {registration.user.organization} · role: <span className="font-mono">{registration.user.role}</span>
+              {registration.user?.organization ?? registration.guestOrganization}
+              {registration.user?.role && (
+                <> · role: <span className="font-mono">{registration.user.role}</span></>
+              )}
             </p>
           )}
         </div>
@@ -177,7 +220,13 @@ export default async function AdminAttendeeDetailPage({
         <AttendeeActions
           slug={slug}
           registrationId={registration.id}
-          attendeeName={registration.user.name ?? registration.user.email}
+          attendeeName={
+            registration.user?.name ??
+            registration.user?.email ??
+            registration.guestName ??
+            registration.guestEmail ??
+            "Attendee"
+          }
           initialCheckedInAt={registration.checkedInAt?.toISOString() ?? null}
           initialStatus={registration.registrationStatus as "pending" | "confirmed" | "cancelled"}
         />

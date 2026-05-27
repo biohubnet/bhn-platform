@@ -103,7 +103,7 @@ export async function PATCH(
     body.registrationStatus === "cancelled" &&
     registration.registrationStatus !== "cancelled"
   ) {
-    const r = await cancelRegistration(prisma, event.id, registration.userId);
+    const r = await cancelRegistration(prisma, rid);
     if (!r.ok) {
       return NextResponse.json({ error: r.error, code: r.code }, { status: 400 });
     }
@@ -194,7 +194,7 @@ export async function DELETE(
   // returns ok with zeros).
   let cancelMeta: { cancelledBookings: number; promoted: number } | null = null;
   if (registration.registrationStatus !== "cancelled") {
-    const r = await cancelRegistration(prisma, event.id, registration.userId);
+    const r = await cancelRegistration(prisma, rid);
     if (!r.ok) {
       return NextResponse.json({ error: r.error, code: r.code }, { status: 400 });
     }

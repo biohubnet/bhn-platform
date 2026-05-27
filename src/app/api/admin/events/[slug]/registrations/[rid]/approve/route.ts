@@ -44,7 +44,7 @@ export async function POST(
     );
   }
 
-  const r = await approveRegistration(prisma, event.id, registration.userId, adminUserId);
+  const r = await approveRegistration(prisma, rid, adminUserId);
   if (!r.ok) {
     const statusByCode: Record<string, number> = {
       not_found: 404,

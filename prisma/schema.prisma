@@ -2560,7 +2560,23 @@ model SymposiumSessionSpeaker {
 model Registration {
   id                   String    @id @default(cuid())
   eventId              String
-  userId               String
+  /// FK to User when the registrant has a platform account, NULL
+  /// when they registered as a guest. Nullability added Dec '26 to
+  /// support public registration without sign-in (important for
+  /// info sessions where requiring an account would be a barrier).
+  /// When userId is null, the guest* fields below carry the
+  /// contact info instead.
+  userId               String?
+  /// When userId is null, the email we'll send the confirmation to.
+  /// Lower-cased + trimmed at insert time so duplicate detection
+  /// isn't case-sensitive. Unique per event via the @@unique below.
+  guestEmail           String?
+  /// Display name for badge + attendee list. Required when
+  /// registering as a guest; ignored when userId is set (we use
+  /// User.fullName).
+  guestName            String?
+  /// Optional org / institution affiliation for the guest.
+  guestOrganization    String?
   /// "trainee" | "industry" | "academic" | "student" | "sponsor" | "guest"
   attendeeType         String    @default("trainee") // trainee | industry | academic | student | sponsor | guest
   /// "pending" | "confirmed" | "cancelled"
@@ -2597,10 +2613,18 @@ model Registration {
   updatedAt            DateTime  @updatedAt
 
   event      BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Restrict)
   approvedBy User?    @relation("RegistrationApprover", fields: [approvedById], references: [id], onDelete: SetNull)
 
+  /// Idempotency for signed-in registrants — one row per (event, user).
+  /// Per SQL standard NULL != NULL, so multiple guest rows (userId=null)
+  /// for the same event don't violate this; they're constrained by the
+  /// separate (eventId, guestEmail) unique below.
   @@unique([eventId, userId])
+  /// Idempotency for guest registrants — one row per (event, guestEmail).
+  /// Guest emails are lower-cased + trimmed at insert so case variants
+  /// (Foo@Bar vs foo@bar) can't sneak past the constraint.
+  @@unique([eventId, guestEmail])
   /// Supports the admin attendee list — "show me all confirmed
   /// registrations for this event".
   @@index([eventId, registrationStatus])

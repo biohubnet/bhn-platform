@@ -4,23 +4,31 @@ import { ArrowLeft, AlertCircle, Clock } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { RegistrationForm, type WorkshopOption } from "@/components/events/RegistrationForm";
+import { SimpleRegistrationForm } from "@/components/events/SimpleRegistrationForm";
 
 /**
- * /events/[slug]/register — auth-gated registration form for the
- * symposium.
+ * /events/[slug]/register — registration form for the event.
  *
  * Behaviour
- *   • Anonymous visitor → bounce to /login with a callbackUrl that
- *     returns here after sign-in. The landing-page "Register" CTA
- *     already wires this path; we re-check server-side so a direct
- *     deep-link can't bypass.
+ *   • Public-by-default (Dec '26 change). Anonymous visitors no
+ *     longer get bounced through /login — they fill in name + email
+ *     in the form and a guest Registration is created without a
+ *     User row. Signed-in users skip the contact-collection bit and
+ *     submit straight from session info.
  *   • Event must be published. Slug mismatch → 404 page.
- *   • Already registered? Redirect to /register/success — same
- *     destination as a fresh submission. No duplicate form
- *     submissions, no confusing "you have a registration" banner;
- *     they just see the confirmation.
+ *   • Already registered (signed-in only)? Redirect to /register/
+ *     success — same destination as a fresh submission. We can't do
+ *     this pre-check for guests (we don't know their email yet); the
+ *     POST handler enforces guest idempotency via (eventId, guestEmail)
+ *     and returns the existing row's qrToken if any.
  *   • Outside registration window? Render a friendly "not open yet"
  *     or "closed" panel instead of the form.
+ *
+ * Form variants
+ *   • Rich RegistrationForm (workshops + breakouts) — only when the
+ *     visitor is signed in AND the event has workshops to offer.
+ *   • SimpleRegistrationForm — everyone else (guests on any event,
+ *     signed-in users on simple-session events).
  */
 export default async function RegisterPage({
   params,
@@ -29,13 +37,9 @@ export default async function RegisterPage({
 }) {
   const { slug } = await params;
   const session = await getSession();
-  if (!session) {
-    redirect(`/login?callbackUrl=${encodeURIComponent(`/events/${slug}/register`)}`);
-  }
-  const userId = (session.user as { id?: string }).id ?? null;
-  if (!userId) {
-    redirect(`/login?callbackUrl=${encodeURIComponent(`/events/${slug}/register`)}`);
-  }
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+  const userEmail = (session?.user as { email?: string } | undefined)?.email ?? null;
+  const userName = (session?.user as { name?: string } | undefined)?.name ?? null;
 
   const event = await prisma.bhnEvent.findUnique({
     where: { slug },
@@ -56,13 +60,17 @@ export default async function RegisterPage({
   });
   if (!event || event.status !== "published") notFound();
 
-  // Already registered? Bounce to success.
-  const existing = await prisma.registration.findUnique({
-    where: { eventId_userId: { eventId: event.id, userId } },
-    select: { id: true },
-  });
-  if (existing) {
-    redirect(`/events/${slug}/register/success`);
+  // Already registered? Bounce to success — but only for signed-in
+  // users (we know their userId here). Guest idempotency runs at the
+  // POST handler since we don't have their email until they submit.
+  if (userId) {
+    const existing = await prisma.registration.findUnique({
+      where: { eventId_userId: { eventId: event.id, userId } },
+      select: { qrToken: true },
+    });
+    if (existing) {
+      redirect(`/events/${slug}/register/success?token=${encodeURIComponent(existing.qrToken)}`);
+    }
   }
 
   // Registration window.
@@ -221,11 +229,27 @@ export default async function RegisterPage({
             </>
           }
         />
-      ) : (
+      ) : userId && userEmail && workshops.length > 0 ? (
+        // Signed-in user registering for a full-shape event with
+        // workshops → the rich RegistrationForm with workshop pickers.
         <RegistrationForm
           slug={slug}
           workshops={workshops}
           symposiumRequiresApproval={event.requiresApproval}
+        />
+      ) : (
+        // Everyone else gets the simple form:
+        //   • Guests on any event (no account; collect name + email).
+        //   • Signed-in users on simple-session events (no workshops
+        //     to pick — the rich form would be overkill).
+        <SimpleRegistrationForm
+          slug={slug}
+          requiresApproval={event.requiresApproval}
+          signedInUser={
+            userId && userEmail
+              ? { name: userName, email: userEmail }
+              : null
+          }
         />
       )}
     </div>

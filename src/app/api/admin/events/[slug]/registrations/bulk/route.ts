@@ -139,7 +139,7 @@ export async function POST(
         });
         results.push({ id, ok: true, checkedInAt: null });
       } else if (body.action === "cancel") {
-        const r = await cancelRegistration(prisma, event.id, row.userId);
+        const r = await cancelRegistration(prisma, id);
         if (!r.ok) {
           results.push({ id, ok: false, error: r.error });
         } else {

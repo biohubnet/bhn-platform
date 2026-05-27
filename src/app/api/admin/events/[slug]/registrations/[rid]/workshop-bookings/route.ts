@@ -37,6 +37,16 @@ export async function POST(
   if (!registration || registration.eventId !== event.id) {
     return NextResponse.json({ error: "Registration not found for this event" }, { status: 404 });
   }
+  // Guest registrations (no User row) can't book workshops — the
+  // WorkshopBooking model requires a userId. The events team would
+  // need to ask the guest to create an account if they want to add
+  // a workshop after registering as a guest.
+  if (!registration.userId) {
+    return NextResponse.json(
+      { error: "This is a guest registration — workshop bookings require a platform account." },
+      { status: 409 },
+    );
+  }
 
   const body = (await req.json().catch(() => ({}))) as { workshopId?: string };
   if (typeof body.workshopId !== "string" || !body.workshopId) {

@@ -42,8 +42,12 @@ export default async function AdminEventRegistrationsPage({
 
   const rows: RegistrationRow[] = registrations.map((r) => ({
     id: r.id,
-    name: r.user.name,
-    email: r.user.email,
+    // Guest registrations have a null user; fall back to guestName /
+    // guestEmail captured at registration time. Email coerces to ""
+    // for the truly-missing case (shouldn't happen in practice —
+    // both paths require an email at registration).
+    name: r.user?.name ?? r.guestName ?? null,
+    email: r.user?.email ?? r.guestEmail ?? "",
     attendeeType: r.attendeeType,
     registrationStatus: r.registrationStatus,
     paymentStatus: r.paymentStatus,
