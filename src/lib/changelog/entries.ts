@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — level banners read as buttons now — May 2026
+  {
+    title: "Career paths — level banners now read unmistakably as click-to-expand buttons",
+    body: "The Level 1 · Junior, Level 2 · Mid-level, … banners on the pathway chart used to be a bare chevron + uppercase label with a thin hairline either side — clickable, but didn't LOOK clickable. Users were missing that clicking the strip toggles the whole station row underneath. Redesigned:\n\n  • **Visible bordered chip** wraps the centre lockup (bg-card-solid, border, drop-shadow when collapsed; subtler bg-elevated + hairline when expanded).\n  • **Chevron in its own outlined square** — reads as a toggle indicator (think macOS disclosure triangle) rather than a decorative arrow. Filled brand-600 background when collapsed so the call-to-action pops; muted neutral when expanded.\n  • **Explicit verb chip** appended after the years: *\"▸ Show stations →\"* in brand colour when collapsed (loud — the user might not realise there's hidden content), *\"Hide\"* in subdued grey when expanded (quieter — the visible content below makes the toggle's purpose obvious).\n  • **Hover state** lifts the chip with a brand-coloured border, brighter background, and a 2 px translate-up so the whole row feels physically pressable.\n  • Cursor pointer + `title` attribute carrying the action so screen-reader users and hover-tooltip users get the affordance too.\n\nThe collapsed state is intentionally MORE prominent than the expanded one because the collapsed case is when discoverability matters most. Once expanded, the visible stations below already advertise that the whole thing is interactive.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — branch modal cards capped on both axes — May 2026
   {
     title: "Career paths — branch-modal cards now cap their width too, so wide viewports don't pad them with empty space",

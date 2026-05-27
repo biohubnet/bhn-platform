@@ -727,26 +727,75 @@ function LevelRow({
         />
       )}
 
-      {/* Clickable level-banner strip — chevron + label. Click anywhere
-          on the strip to fold / unfold the row. */}
+      {/* Clickable level-banner strip — chevron + label + explicit
+          Show/Hide verb chip. Was previously a bare chevron-and-text
+          row that didn't read as a button; users weren't catching that
+          they could click to expand. New design wraps the centre in a
+          visible bordered chip with bg-card-solid, an outlined chevron
+          square that mimics a checkbox/toggle, and an explicit
+          "▾ Hide" / "▸ Show stations" verb so the affordance is
+          unmistakable. Hover lifts the chip with a brand-coloured
+          border + brighter background.
+
+          The collapsed state is intentionally MORE prominent
+          (bg-card-solid + shadow-card-rest, "Show stations" verb,
+          brand-700 accent) because that's when the user might miss
+          the row entirely — once expanded, the visible content below
+          makes the toggle's purpose obvious. */}
       <button
         type="button"
         onClick={() => toggleLevel(level)}
-        className="my-3 w-full flex items-center gap-3 group"
+        className="my-3 w-full flex items-center gap-3 group cursor-pointer"
         aria-expanded={!isCollapsed}
         aria-controls={`level-stations-${level}`}
+        title={isCollapsed ? `Show ${meta.label} stations` : `Hide ${meta.label} stations`}
       >
         <span
           aria-hidden
           className="flex-1 h-px"
           style={{ background: "linear-gradient(to right, transparent, var(--line) 30%, var(--line) 70%, transparent)" }}
         />
-        <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-bold text-fg group-hover:text-brand-700 transition-colors">
-          {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-          {meta.icon}
-          Level {rowIdx + 1} · {meta.label}
-          <span className="text-fg-subtle font-normal normal-case tracking-normal ml-1">
+        <span
+          className={
+            "inline-flex items-center gap-2 px-3 py-1.5 border transition-all " +
+            (isCollapsed
+              ? "bg-card-solid border-line shadow-card-rest group-hover:border-brand-500 group-hover:bg-brand-50 group-hover:shadow-elevated group-hover:-translate-y-0.5"
+              : "bg-elevated border-line/70 group-hover:border-brand-400 group-hover:bg-card-solid")
+          }
+        >
+          {/* Chevron in its own square frame — reads as a toggle
+              indicator rather than a decorative arrow. Filled accent
+              when collapsed so it pops as the call-to-action. */}
+          <span
+            aria-hidden
+            className={
+              "inline-flex items-center justify-center w-5 h-5 border transition-colors " +
+              (isCollapsed
+                ? "bg-brand-600 border-brand-700 text-white group-hover:bg-brand-700"
+                : "bg-card-solid border-line text-fg-muted group-hover:border-brand-400 group-hover:text-brand-700")
+            }
+          >
+            {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-bold text-fg group-hover:text-brand-700 transition-colors">
+            {meta.icon}
+            Level {rowIdx + 1} · {meta.label}
+          </span>
+          <span className="text-[11px] text-fg-subtle font-normal normal-case tracking-normal">
             {meta.years}
+          </span>
+          {/* Verb chip — "Show stations" when collapsed (loud), or
+              "Hide" when expanded (quieter). Removes any ambiguity
+              about whether the row is an action or a label. */}
+          <span
+            className={
+              "ml-1 inline-flex items-center text-[9.5px] uppercase tracking-[0.16em] font-bold transition-colors " +
+              (isCollapsed
+                ? "text-brand-700 group-hover:text-brand-800"
+                : "text-fg-subtle group-hover:text-brand-700")
+            }
+          >
+            {isCollapsed ? "Show stations →" : "Hide"}
           </span>
         </span>
         <span
