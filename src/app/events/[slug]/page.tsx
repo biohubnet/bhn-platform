@@ -176,10 +176,14 @@ export default async function EventLandingPage(
         }}
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
-          <p className="text-[11px] sm:text-xs uppercase tracking-[0.22em] font-bold text-white/85">
-            Annual Symposium &amp; Training Week
-          </p>
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight mt-3 leading-[1.05]">
+          {/* Eyebrow removed Dec '26 — was hardcoded "Annual Symposium
+              & Training Week" which only made sense for the original
+              demo event. Now that events are admin-created from
+              /admin/events/new with arbitrary titles, the eyebrow
+              would lie. The event title alone reads cleanly without
+              it; if a per-event eyebrow ever matters we'd add a
+              dedicated column rather than re-hardcoding. */}
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
             {event.title}
           </h1>
           {event.tagline && (
@@ -389,23 +393,19 @@ export default async function EventLandingPage(
       </section>
 
       {/* ───── Footer CTA ──────────────────────────────────────── */}
+      {/* Boilerplate copy ("Ready to join us?" / "Reserve your spot
+          for the symposium and pick your training-week workshops...")
+          removed Dec '26. It read as canned demo-event marketing for
+          generic events created from /admin/events/new. The button
+          + close-date line stay — they're the actionable part. */}
       <section className="relative text-white" style={{ background: heroBg, backgroundSize: "cover", backgroundPosition: "center" }}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Ready to join us?
-          </h2>
-          <p className="text-base text-white/85 mt-3 leading-relaxed">
-            Reserve your spot for the symposium and pick your training-week
-            workshops. Registration is free for BioHubNet trainees.
-          </p>
-          <div className="mt-6">
-            <Link
-              href={ctaHref}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-brand-900 text-sm font-bold hover:bg-brand-50 transition-colors shadow-lg"
-            >
-              {ctaFooter} <CtaIcon size={14} />
-            </Link>
-          </div>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
+          <Link
+            href={ctaHref}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-brand-900 text-sm font-bold hover:bg-brand-50 transition-colors shadow-lg"
+          >
+            {ctaFooter} <CtaIcon size={14} />
+          </Link>
           {event.registrationClosesAt && (
             <p className="text-xs text-white/70 mt-4">
               Registration closes {formatDay(event.registrationClosesAt)}

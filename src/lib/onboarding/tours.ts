@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.29e";
+export const TOUR_VERSION = "2026.05.29f";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Event flow polish — May 2026
+  {
+    id: "admin.event-flow-polish",
+    title: "Event flow polish — separated date/time, online mode, and a cleaner public page",
+    body: "/admin/events/new now has separate date + time inputs with a one-day event checkbox (on by default — uncheck for multi-day editions). The Where section toggles between In-person (venue name + address) and Online (platform name + optional meeting link — leave blank to share manually later). On the public side, the canned 'Annual Symposium & Training Week' eyebrow and 'Ready to join us? / Reserve your spot...' boilerplate were removed — events now read as themselves rather than variants of one demo event.",
+    path: "/admin/events/new",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open the new-event form", href: "/admin/events/new" },
+    since: "2026.05.29f",
+  },
   // ─── Pathways — modal scrolls instead of compressing cards (May 2026)
   {
     id: "trainee.pathways-modal-scroll",

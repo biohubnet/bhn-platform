@@ -12,6 +12,8 @@ import {
   TextCursorInput,
   CheckCircle2,
   Info,
+  Video,
+  Building2,
 } from "lucide-react";
 
 /**
@@ -24,10 +26,16 @@ import {
  * "new" flow short and focused — the goal is to land on the detail
  * page with a row to edit, not to fill in every field on day one.
  *
- * Slug auto-derives from title (lowercase, hyphenate, strip non-
- * alphanumerics) but is editable in case the auto-slug collides or
- * the admin wants a different shape. The auto-derive stops as soon
- * as the user manually edits the slug field — a one-way handshake.
+ * Date / time inputs are SPLIT (not a single datetime-local) so the
+ * UI can offer a "one-day event" checkbox next to the end side that
+ * collapses the end-date field and reuses the start date.
+ *
+ * Venue UI toggles between IN-PERSON (name + address) and ONLINE
+ * (meeting URL — optional, can be left blank and shared later). The
+ * data model doesn't carry an explicit "isOnline" column; instead
+ * online events store venue name = "Online" and the meeting link
+ * goes into `mainVenueMapUrl`. Downstream pages can detect online
+ * mode by looking at the venue name.
  */
 function slugify(s: string): string {
   return s
@@ -39,35 +47,25 @@ function slugify(s: string): string {
     .slice(0, 80);
 }
 
-function defaultStart(): string {
-  // Default to ~6 weeks out, 9am — a sensible "blank slate" event time.
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** Pick a "blank-slate" default — ~6 weeks out at 09:00 local time. */
+function defaultStartParts(): { date: string; time: string } {
   const d = new Date();
   d.setDate(d.getDate() + 42);
-  d.setHours(9, 0, 0, 0);
-  return toLocalISO(d);
+  return {
+    date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
+    time: "09:00",
+  };
 }
 
-function defaultEnd(start: string): string {
-  // Default end = same day, 5pm
-  const d = new Date(start);
-  d.setHours(17, 0, 0, 0);
-  return toLocalISO(d);
-}
-
-/** Format a Date as `YYYY-MM-DDTHH:mm` for <input type="datetime-local">. */
-function toLocalISO(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return (
-    d.getFullYear() +
-    "-" +
-    pad(d.getMonth() + 1) +
-    "-" +
-    pad(d.getDate()) +
-    "T" +
-    pad(d.getHours()) +
-    ":" +
-    pad(d.getMinutes())
-  );
+/** Combine date + time strings (YYYY-MM-DD + HH:mm) into an ISO string
+ *  using the user's local timezone interpretation. */
+function combineToISO(date: string, time: string): string | null {
+  if (!date || !time) return null;
+  const dt = new Date(`${date}T${time}`);
+  if (Number.isNaN(dt.getTime())) return null;
+  return dt.toISOString();
 }
 
 export function NewEventForm() {
@@ -77,12 +75,26 @@ export function NewEventForm() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [tagline, setTagline] = useState("");
   const [description, setDescription] = useState("");
-  const startInit = defaultStart();
-  const [startDate, setStartDate] = useState(startInit);
-  const [endDate, setEndDate] = useState(defaultEnd(startInit));
+
+  // Date / time — separated so we can offer a one-day-event toggle
+  // that hides the end date field and reuses the start date.
+  const startInit = defaultStartParts();
+  const [startDateOnly, setStartDateOnly] = useState(startInit.date);
+  const [startTime, setStartTime] = useState(startInit.time);
+  const [endDateOnly, setEndDateOnly] = useState(startInit.date);
+  const [endTime, setEndTime] = useState("17:00");
+  const [oneDayEvent, setOneDayEvent] = useState(true);
+
   const [timezone, setTimezone] = useState("America/Toronto");
+
+  // Venue — in-person vs. online. Online events store the meeting
+  // link in mainVenueMapUrl and set venue name to "Online" by default
+  // (overridable by the user, e.g. "Zoom Webinar" or "Microsoft Teams").
+  const [venueMode, setVenueMode] = useState<"in-person" | "online">("in-person");
   const [mainVenueName, setMainVenueName] = useState("");
   const [mainVenueAddress, setMainVenueAddress] = useState("");
+  const [meetingUrl, setMeetingUrl] = useState("");
+
   const [requiresApproval, setRequiresApproval] = useState(true);
   const [status, setStatus] = useState<"draft" | "published">("draft");
 
@@ -94,18 +106,33 @@ export function NewEventForm() {
     if (!slugTouched) setSlug(slugify(title));
   }, [title, slugTouched]);
 
-  // If the user shortens startDate past endDate, drag endDate along.
+  // When one-day event is ON, force endDateOnly to mirror startDateOnly.
   useEffect(() => {
-    if (new Date(endDate).getTime() < new Date(startDate).getTime()) {
-      setEndDate(defaultEnd(startDate));
+    if (oneDayEvent) setEndDateOnly(startDateOnly);
+  }, [oneDayEvent, startDateOnly]);
+
+  // If user moves startDate past endDate, drag endDate along (multi-day case).
+  useEffect(() => {
+    if (oneDayEvent) return;
+    if (
+      endDateOnly &&
+      startDateOnly &&
+      new Date(`${endDateOnly}T${endTime || "00:00"}`).getTime() <
+        new Date(`${startDateOnly}T${startTime || "00:00"}`).getTime()
+    ) {
+      setEndDateOnly(startDateOnly);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate]);
+  }, [startDateOnly, startTime]);
 
+  const startISO = combineToISO(startDateOnly, startTime);
+  const endISO = combineToISO(oneDayEvent ? startDateOnly : endDateOnly, endTime);
   const slugValid = slug.length >= 3 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
   const titleValid = title.trim().length > 0;
   const datesValid =
-    startDate && endDate && new Date(endDate).getTime() >= new Date(startDate).getTime();
+    !!startISO &&
+    !!endISO &&
+    new Date(endISO).getTime() >= new Date(startISO).getTime();
   const canSubmit = slugValid && titleValid && datesValid && !saving;
 
   async function submit(e: React.FormEvent) {
@@ -113,16 +140,36 @@ export function NewEventForm() {
     if (!canSubmit) return;
     setSaving(true);
     setError(null);
+
+    // Venue payload — in-person uses name+address as before; online
+    // routes the meeting link into mainVenueMapUrl and defaults the
+    // visible name to "Online" if the admin didn't customise it.
+    let venuePayload: {
+      mainVenueName?: string;
+      mainVenueAddress?: string;
+      mainVenueMapUrl?: string;
+    } = {};
+    if (venueMode === "in-person") {
+      venuePayload = {
+        mainVenueName: mainVenueName.trim() || undefined,
+        mainVenueAddress: mainVenueAddress.trim() || undefined,
+      };
+    } else {
+      venuePayload = {
+        mainVenueName: mainVenueName.trim() || "Online",
+        mainVenueMapUrl: meetingUrl.trim() || undefined,
+      };
+    }
+
     const body = {
       slug,
       title: title.trim(),
       tagline: tagline.trim() || undefined,
       description: description.trim() || undefined,
-      startDate: new Date(startDate).toISOString(),
-      endDate: new Date(endDate).toISOString(),
+      startDate: startISO,
+      endDate: endISO,
       timezone: timezone.trim() || undefined,
-      mainVenueName: mainVenueName.trim() || undefined,
-      mainVenueAddress: mainVenueAddress.trim() || undefined,
+      ...venuePayload,
       requiresApproval,
       status,
     };
@@ -133,15 +180,16 @@ export function NewEventForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const json = (await res.json().catch(() => ({}))) as { ok?: boolean; slug?: string; error?: string };
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        slug?: string;
+        error?: string;
+      };
       if (!res.ok || !json.ok) {
         setError(json.error || `Failed to create event (${res.status})`);
         setSaving(false);
         return;
       }
-      // Land on the detail page so the admin can continue editing
-      // cover image / accommodation copy / etc. via the existing
-      // EventBasicsEditor.
       router.push(`/admin/events/${json.slug}`);
       router.refresh();
     } catch (err) {
@@ -187,7 +235,10 @@ export function NewEventForm() {
             </p>
           )}
         </Field>
-        <Field label="Tagline" hint="One-line marketing description shown on the hero. Optional.">
+        <Field
+          label="Tagline"
+          hint="One-line marketing description shown on the hero. Optional."
+        >
           <input
             type="text"
             value={tagline}
@@ -196,7 +247,10 @@ export function NewEventForm() {
             className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
-        <Field label="Description" hint="Markdown. Optional — edit after creation if you want to compose it later.">
+        <Field
+          label="Description"
+          hint="Markdown. Optional — edit after creation if you want to compose it later."
+        >
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -211,34 +265,77 @@ export function NewEventForm() {
       <Section
         icon={Calendar}
         title="When"
-        hint="Dates and timezone. Multi-day events: set startDate to day one's morning and endDate to the last day's evening."
+        hint="Date and time, separated so you can use the one-day toggle on the end side. Tick the one-day box for single-day events to skip filling in the end date."
       >
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Start" required>
+        {/* Start — date + time side by side */}
+        <Field label="Start date and time" required>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
             <input
-              type="datetime-local"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              type="date"
+              value={startDateOnly}
+              onChange={(e) => setStartDateOnly(e.target.value)}
               className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
               required
             />
-          </Field>
-          <Field label="End" required>
             <input
-              type="datetime-local"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="bg-bg border border-line rounded-lg px-3 py-2 text-sm"
               required
             />
-          </Field>
+          </div>
+        </Field>
+
+        {/* End — date + time, with one-day toggle that hides the end date */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5 gap-3">
+            <div className="text-xs font-semibold text-muted uppercase tracking-wider flex items-center gap-1.5">
+              End date and time <span className="text-red-600 normal-case tracking-normal">*</span>
+            </div>
+            <label className="inline-flex items-center gap-1.5 text-[11px] text-muted cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={oneDayEvent}
+                onChange={(e) => setOneDayEvent(e.target.checked)}
+                className="rounded"
+              />
+              <span>One-day event</span>
+            </label>
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <input
+              type="date"
+              value={oneDayEvent ? startDateOnly : endDateOnly}
+              onChange={(e) => setEndDateOnly(e.target.value)}
+              disabled={oneDayEvent}
+              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm disabled:bg-elevated disabled:text-subtle disabled:cursor-not-allowed"
+              required={!oneDayEvent}
+            />
+            <input
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className="bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              required
+            />
+          </div>
+          {oneDayEvent && (
+            <p className="text-xs text-subtle mt-1.5 font-mono">
+              End date locked to start date — uncheck above for multi-day events.
+            </p>
+          )}
         </div>
-        {!datesValid && (
+
+        {!datesValid && startISO && endISO && (
           <p className="text-xs text-red-600 mt-2 inline-flex items-center gap-1.5">
             <AlertTriangle size={12} /> End must be on or after start.
           </p>
         )}
-        <Field label="Timezone" hint="IANA timezone identifier — defaults to America/Toronto.">
+        <Field
+          label="Timezone"
+          hint="IANA timezone identifier — defaults to America/Toronto."
+        >
           <input
             type="text"
             value={timezone}
@@ -253,26 +350,76 @@ export function NewEventForm() {
       <Section
         icon={MapPin}
         title="Where"
-        hint="Main venue. Workshop locations are managed per-workshop later — this is just the event-level headline location."
+        hint="In-person at a venue, or online via meeting link. The meeting link is optional — leave it blank and share it manually later if you prefer."
       >
-        <Field label="Venue name">
-          <input
-            type="text"
-            value={mainVenueName}
-            onChange={(e) => setMainVenueName(e.target.value)}
-            placeholder="MaRS Discovery District, Toronto"
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+        <div className="flex gap-2">
+          <VenueModeOption
+            mode="in-person"
+            current={venueMode}
+            onClick={() => setVenueMode("in-person")}
+            label="In-person"
+            hint="At a physical venue. Asks for venue name + address."
+            Icon={Building2}
           />
-        </Field>
-        <Field label="Venue address">
-          <input
-            type="text"
-            value={mainVenueAddress}
-            onChange={(e) => setMainVenueAddress(e.target.value)}
-            placeholder="101 College Street, Toronto, ON M5G 1L7"
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+          <VenueModeOption
+            mode="online"
+            current={venueMode}
+            onClick={() => setVenueMode("online")}
+            label="Online"
+            hint="Virtual event. Optional meeting link — add later if not ready."
+            Icon={Video}
           />
-        </Field>
+        </div>
+
+        {venueMode === "in-person" ? (
+          <>
+            <Field label="Venue name">
+              <input
+                type="text"
+                value={mainVenueName}
+                onChange={(e) => setMainVenueName(e.target.value)}
+                placeholder="MaRS Discovery District, Toronto"
+                className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              />
+            </Field>
+            <Field label="Venue address">
+              <input
+                type="text"
+                value={mainVenueAddress}
+                onChange={(e) => setMainVenueAddress(e.target.value)}
+                placeholder="101 College Street, Toronto, ON M5G 1L7"
+                className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field
+              label="Platform name"
+              hint="What attendees see for the location. Defaults to &quot;Online&quot; if left blank."
+            >
+              <input
+                type="text"
+                value={mainVenueName}
+                onChange={(e) => setMainVenueName(e.target.value)}
+                placeholder="Zoom Webinar"
+                className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              />
+            </Field>
+            <Field
+              label="Meeting link"
+              hint="Optional. Leave blank to add later or send to attendees manually."
+            >
+              <input
+                type="url"
+                value={meetingUrl}
+                onChange={(e) => setMeetingUrl(e.target.value)}
+                placeholder="https://zoom.us/j/123456789"
+                className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+              />
+            </Field>
+          </>
+        )}
       </Section>
 
       {/* Registration policy */}
@@ -289,11 +436,17 @@ export function NewEventForm() {
             className="mt-0.5"
           />
           <span className="text-sm">
-            <span className="font-semibold text-fg">Require admin approval for each registration</span>
+            <span className="font-semibold text-fg">
+              Require admin approval for each registration
+            </span>
             <span className="block text-xs text-muted mt-0.5">
-              When on, new registrations land as <code className="font-mono bg-elevated px-1 rounded">pending</code> until an
-              admin approves them on <code className="font-mono bg-elevated px-1 rounded">/admin/events/{slug || "&lt;slug&gt;"}/registrations</code>.
-              When off, registrations confirm immediately.
+              When on, new registrations land as{" "}
+              <code className="font-mono bg-elevated px-1 rounded">pending</code> until an
+              admin approves them on{" "}
+              <code className="font-mono bg-elevated px-1 rounded">
+                /admin/events/{slug || "&lt;slug&gt;"}/registrations
+              </code>
+              . When off, registrations confirm immediately.
             </span>
           </span>
         </label>
@@ -321,11 +474,14 @@ export function NewEventForm() {
       <div className="rounded-2xl border border-line bg-elevated p-4 text-xs text-muted flex gap-2.5">
         <Info size={14} className="text-brand-600 shrink-0 mt-0.5" />
         <p>
-          After creating the event you'll land on <span className="font-mono text-fg">/admin/events/{slug || "&lt;slug&gt;"}</span> to
-          edit cover image, accommodation info, and the registration window.
+          After creating the event you'll land on{" "}
+          <span className="font-mono text-fg">
+            /admin/events/{slug || "&lt;slug&gt;"}
+          </span>{" "}
+          to edit cover image, accommodation info, and the registration window.
           Workshops, sessions, speakers, and sponsors are still managed through the
-          seed file (<span className="font-mono text-fg">prisma/seed-events.ts</span>) until
-          dedicated CRUD UIs ship.
+          seed file (<span className="font-mono text-fg">prisma/seed-events.ts</span>)
+          until dedicated CRUD UIs ship.
         </p>
       </div>
 
@@ -429,7 +585,48 @@ function StatusOption({
           : "border-line bg-card hover:border-brand-200"
       }`}
     >
-      <span className={`font-bold text-sm ${active ? "text-brand-700" : "text-fg"}`}>{label}</span>
+      <span className={`font-bold text-sm ${active ? "text-brand-700" : "text-fg"}`}>
+        {label}
+      </span>
+      <span className="block text-xs text-muted mt-0.5 leading-snug">{hint}</span>
+    </button>
+  );
+}
+
+function VenueModeOption({
+  mode,
+  current,
+  onClick,
+  label,
+  hint,
+  Icon,
+}: {
+  mode: "in-person" | "online";
+  current: "in-person" | "online";
+  onClick: () => void;
+  label: string;
+  hint: string;
+  Icon: React.ElementType;
+}) {
+  const active = current === mode;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex-1 text-left rounded-xl border-2 p-3 transition-colors ${
+        active
+          ? "border-brand-500 bg-brand-50"
+          : "border-line bg-card hover:border-brand-200"
+      }`}
+    >
+      <span
+        className={`inline-flex items-center gap-1.5 font-bold text-sm ${
+          active ? "text-brand-700" : "text-fg"
+        }`}
+      >
+        <Icon size={14} />
+        {label}
+      </span>
       <span className="block text-xs text-muted mt-0.5 leading-snug">{hint}</span>
     </button>
   );

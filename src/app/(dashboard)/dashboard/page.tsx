@@ -697,8 +697,15 @@ export default async function DashboardPage() {
       </div>
 
       {/* Committee badge — recognition surface. Auto-hides for
-          non-members. */}
-      <CommitteeBadgeStrip userId={userId} />
+          non-members. Wrapped in the standard dashboard width +
+          padding container so the "Also member of" pill has its
+          own visual space and doesn't crowd the credit-application
+          callout above it or the editorial blurb below. The mt-4
+          gives a clear breath between the callout's bottom border
+          and the first committee badge / chip row. */}
+      <div className="max-w-screen-2xl mx-auto px-6 mt-4">
+        <CommitteeBadgeStrip userId={userId} />
+      </div>
 
       {/* ── A NOTE FROM THE TEAM ────────────────────────────────────
             Hand-set editorial blurb from the BHN founders to the
