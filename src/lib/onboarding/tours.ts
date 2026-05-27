@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.29";
+export const TOUR_VERSION = "2026.05.29b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Pathways — comprehensive cross-link expansion (May 2026)
+  {
+    id: "trainee.pathways-comprehensive-branches",
+    title: "Career pathways — branching now goes both ways at every level",
+    body: "Every station on /career-paths/pathways — Junior, Mid, Senior, Lead, and VP — now carries realistic cross-pathway branches with concrete \"learn first\" prerequisites. A Junior R&D associate sees how to slide to Biomanufacturing or QA/QC. A VP Clinical Development sees the CMO consolidations that happen at lean biotechs. The pathway data jumped from 10 cross-links (all at Senior) to 48 across every level. Click any \"Branch out\" button to see the full set of pivots from that station.",
+    path: "/career-paths/pathways",
+    placement: "center",
+    cta: { label: "Open pathways", href: "/career-paths/pathways" },
+    since: "2026.05.29b",
+  },
   // ─── Summer Ice Cream theme — falling treats + scene caption (May 2026)
   {
     id: "trainee.icecream-atmosphere",

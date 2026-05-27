@@ -74,6 +74,9 @@ const BIOMANUFACTURING: CareerTrack = {
         "Batch-record discipline",
         "Microbiology awareness",
       ],
+      crossLinks: [
+        { trackId: "qa-qc", targetLevel: "junior", when: "Junior → Junior", reason: "Cleanroom operators who find the analytical / problem-solving side more rewarding often jump to QC. Lab notebook discipline transfers directly.", learningNeeded: ["Pharmacopoeia methods (USP/EP)", "Chromatographic data review"] },
+      ],
       courses: [],
     },
     {
@@ -87,6 +90,10 @@ const BIOMANUFACTURING: CareerTrack = {
         "Deviation + OOS investigation",
         "SOP authoring + change control",
         "Tech-transfer fundamentals",
+      ],
+      crossLinks: [
+        { trackId: "qa-qc", targetLevel: "mid", when: "Mid → Mid", reason: "Process specialists with deep method-validation work pivot to QC validation manager roles.", learningNeeded: ["Method validation (ICH Q2)", "Critical-quality-attribute (CQA) frameworks"] },
+        { trackId: "rnd", targetLevel: "mid", when: "Mid → Mid", reason: "Scale-up engineers move back to R&D as process-development scientists when they want bench-to-clinic exposure.", learningNeeded: ["DOE (design of experiments)", "Tech-transfer documentation"] },
       ],
       courses: [],
     },
@@ -105,6 +112,7 @@ const BIOMANUFACTURING: CareerTrack = {
       crossLinks: [
         { trackId: "qa-qc", targetLevel: "senior", when: "Senior → Senior", reason: "Manufacturing engineers with method-validation depth often pivot into QC leadership.", learningNeeded: ["Compendial micro + analytics", "Method validation (ICH Q2)"] },
         { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Manufacturing experience is the strongest single qualifier for CMC reg-affairs.", learningNeeded: ["ICH Q-series fluency", "CMC sections of BLA/MAA"] },
+        { trackId: "rnd", targetLevel: "senior", when: "Senior → Senior", reason: "Senior process engineers with tech-transfer ownership pivot to R&D as process-development leaders bridging bench to plant.", learningNeeded: ["Late-stage CMC strategy", "DOE for biologics process design"] },
       ],
       courses: [],
     },
@@ -120,6 +128,9 @@ const BIOMANUFACTURING: CareerTrack = {
         "Inspection readiness",
         "Multi-site / decentralised network design",
       ],
+      crossLinks: [
+        { trackId: "qa-qc", targetLevel: "lead", when: "Lead → Lead", reason: "Manufacturing directors with strong inspection track records are the most common pipeline for Director of Quality / Site QA Head roles.", learningNeeded: ["Quality system architecture", "Inspection-response leadership"] },
+      ],
       courses: [],
     },
     {
@@ -133,6 +144,9 @@ const BIOMANUFACTURING: CareerTrack = {
         "CDMO selection + governance",
         "M&A operational diligence",
         "Cell-therapy commercial economics",
+      ],
+      crossLinks: [
+        { trackId: "entrepreneurship", targetLevel: "vp", when: "VP → VP", reason: "VPs of manufacturing are sought-after COOs at new-venture biotechs scaling their first commercial product.", learningNeeded: ["Capital raising for ops", "Board-level governance"] },
       ],
       courses: [],
     },
@@ -167,6 +181,9 @@ const QA_QC: CareerTrack = {
         "Aseptic technique + gowning",
         "LIMS data entry hygiene",
       ],
+      crossLinks: [
+        { trackId: "biomanufacturing", targetLevel: "junior", when: "Junior → Junior", reason: "QC analysts who'd rather build product than test it move to the manufacturing floor; the GMP discipline and aseptic basics are already there.", learningNeeded: ["Batch-record execution", "Cleanroom-floor SOPs"] },
+      ],
       courses: [],
     },
     {
@@ -180,6 +197,9 @@ const QA_QC: CareerTrack = {
         "OOS / OOT / excursion investigation methodology",
         "Trending + alert / action limits",
         "Rapid micro methods (BacT/ALERT, Bactec)",
+      ],
+      crossLinks: [
+        { trackId: "regulatory-affairs", targetLevel: "mid", when: "Mid → Mid", reason: "Mid-career QC analysts with method-validation packages already authored translate directly to RA CMC specialist roles.", learningNeeded: ["CMC sections (S.4, S.7) of BLA/MAA", "ICH Q-series essentials"] },
       ],
       courses: [],
     },
@@ -197,6 +217,7 @@ const QA_QC: CareerTrack = {
       ],
       crossLinks: [
         { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Sterility- + analytical-fluent leaders are scarce and prized in reg-affairs CMC.", learningNeeded: ["ICH Q6 specifications", "Sterility submissions language"] },
+        { trackId: "biomanufacturing", targetLevel: "senior", when: "Senior → Senior", reason: "Senior QC scientists who've owned the CCS for a product often cross to manufacturing as senior process engineers — the contamination-control mindset transfers.", learningNeeded: ["Process characterisation methodology", "Tech-transfer ownership"] },
       ],
       courses: [],
     },
@@ -212,6 +233,9 @@ const QA_QC: CareerTrack = {
         "Method-transfer governance",
         "Inspection leadership",
       ],
+      crossLinks: [
+        { trackId: "regulatory-affairs", targetLevel: "lead", when: "Lead → Lead", reason: "Heads of QC are the most common pipeline for VP RA roles at companies where quality and reg-affairs sit under one operating officer.", learningNeeded: ["Reg-affairs strategy across submissions", "Agency interaction at director level"] },
+      ],
       courses: [],
     },
     {
@@ -224,6 +248,10 @@ const QA_QC: CareerTrack = {
         "Executive-level quality reporting",
         "Global regulatory relationship management",
         "Platform investment cases",
+      ],
+      crossLinks: [
+        { trackId: "regulatory-affairs", targetLevel: "vp", when: "VP → VP", reason: "At smaller biotechs the VP Quality and VP RA seats are often combined under a single quality-and-compliance officer.", learningNeeded: ["Submission-strategy oversight", "Agency-relationship at C-suite level"] },
+        { trackId: "biomanufacturing", targetLevel: "vp", when: "VP → VP", reason: "VPs of Quality with site-leadership track records pivot to VP Manufacturing when operations and quality unify under a single officer at growing biotechs.", learningNeeded: ["Operations P&L ownership", "Capital-deployment for manufacturing"] },
       ],
       courses: [],
     },
@@ -254,6 +282,9 @@ const REGULATORY: CareerTrack = {
         "Regulatory vocabulary (IND, CTA, BLA, MAA)",
         "Document QC + version control",
       ],
+      crossLinks: [
+        { trackId: "medical-affairs", targetLevel: "junior", when: "Junior → Junior", reason: "Junior RA coordinators commonly move to Medical Information Specialist roles — same document-rigour, but reading clinical literature instead of agency filings.", learningNeeded: ["Therapeutic-area literature scanning", "Medical-information request handling"] },
+      ],
       courses: [],
     },
     {
@@ -267,6 +298,9 @@ const REGULATORY: CareerTrack = {
         "ICH guideline fluency",
         "Health-authority interaction planning",
         "Variation / amendment strategy",
+      ],
+      crossLinks: [
+        { trackId: "medical-affairs", targetLevel: "mid", when: "Mid → Mid", reason: "Mid-career RA specialists who've negotiated label language pivot to MA Manager roles — they already know which claims are defensible.", learningNeeded: ["Publication planning fundamentals", "Advisory-board facilitation basics"] },
       ],
       courses: [],
     },
@@ -299,6 +333,9 @@ const REGULATORY: CareerTrack = {
         "Multi-region (US / EU / Canada / Asia) strategy",
         "Agency-relationship management",
       ],
+      crossLinks: [
+        { trackId: "medical-affairs", targetLevel: "lead", when: "Lead → Lead", reason: "Heads of RA who've owned label negotiations are the canonical CMO-track candidates at small-to-mid biotechs.", learningNeeded: ["Field-medical leadership", "Publication-strategy oversight"] },
+      ],
       courses: [],
     },
     {
@@ -311,6 +348,9 @@ const REGULATORY: CareerTrack = {
         "Board-level regulatory reporting",
         "Cross-product regulatory portfolio governance",
         "Crisis response (483, warning letters, recalls)",
+      ],
+      crossLinks: [
+        { trackId: "medical-affairs", targetLevel: "vp", when: "VP → VP", reason: "At smaller biotechs the CRO and CMO roles merge — Chief Regulatory Officers with strong medical fluency often take the combined seat.", learningNeeded: ["Chief Medical Officer scope", "External medical-leadership communication"] },
       ],
       courses: [],
     },
@@ -341,6 +381,10 @@ const MEDICAL_AFFAIRS: CareerTrack = {
         "Medical information response standards",
         "Field-medical compliance",
       ],
+      crossLinks: [
+        { trackId: "regulatory-affairs", targetLevel: "junior", when: "Junior → Junior", reason: "Med-info specialists with strong document-rigour move to RA coordinator roles — both jobs reward meticulous referencing and version control.", learningNeeded: ["eCTD structure basics", "Health-authority submission portals"] },
+        { trackId: "clinical-trials", targetLevel: "junior", when: "Junior → Junior", reason: "Med-info trainees who want patient contact pivot to Clinical Research Coordinator roles — therapeutic-area knowledge transfers; the rest is GCP.", learningNeeded: ["ICH E6 GCP fundamentals", "Source-documentation discipline"] },
+      ],
       courses: [],
     },
     {
@@ -354,6 +398,10 @@ const MEDICAL_AFFAIRS: CareerTrack = {
         "Advisory board facilitation",
         "Field insight reporting + analytics",
         "Therapeutic-area depth",
+      ],
+      crossLinks: [
+        { trackId: "clinical-trials", targetLevel: "mid", when: "Mid → Mid", reason: "MSLs with strong PI relationships often cross into Clinical Trial Manager roles — they already know the investigators, just need the operational rigour.", learningNeeded: ["Risk-based monitoring", "Site management + budget oversight"] },
+        { trackId: "regulatory-affairs", targetLevel: "mid", when: "Mid → Mid", reason: "MSLs with deep therapeutic-area data pivot to RA specialists handling clinical sections + labeling negotiations.", learningNeeded: ["Label / SmPC negotiation language", "Clinical section authoring"] },
       ],
       courses: [],
     },
@@ -371,6 +419,7 @@ const MEDICAL_AFFAIRS: CareerTrack = {
       ],
       crossLinks: [
         { trackId: "clinical-trials", targetLevel: "lead", when: "Senior → Lead", reason: "Senior MSLs with trial-design fluency are credible clinical-operations leaders.", learningNeeded: ["Phase 2/3 design", "Protocol authoring + amendments"] },
+        { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Field Medical Leads who've owned label-discussion materials cross to RA leadership where they own those negotiations directly.", learningNeeded: ["Pre-meeting briefing books", "Label negotiation"] },
       ],
       courses: [],
     },
@@ -386,6 +435,10 @@ const MEDICAL_AFFAIRS: CareerTrack = {
         "Real-world evidence (RWE) design",
         "Publication strategy",
       ],
+      crossLinks: [
+        { trackId: "clinical-trials", targetLevel: "lead", when: "Lead → Lead", reason: "Medical Affairs Directors with strong evidence-generation track records become Heads of Clinical Operations — the RWE + Phase IV experience translates directly to programme leadership.", learningNeeded: ["Phase 2/3 design", "Programme-level budgeting"] },
+        { trackId: "regulatory-affairs", targetLevel: "lead", when: "Lead → Lead", reason: "Heads of Medical Affairs who've owned label + publication strategy are well-positioned for Director of RA roles at small-to-mid biotechs where label is the strategic asset.", learningNeeded: ["Portfolio regulatory strategy", "Inspection / 483 response"] },
+      ],
       courses: [],
     },
     {
@@ -398,6 +451,10 @@ const MEDICAL_AFFAIRS: CareerTrack = {
         "Board + investor medical communication",
         "Multi-product medical-affairs governance",
         "Payer + HEOR strategy",
+      ],
+      crossLinks: [
+        { trackId: "clinical-trials", targetLevel: "vp", when: "VP → VP", reason: "VP Medical Affairs and VP Clinical Development frequently merge into a single Chief Medical Officer seat — the medical voice and the clinical strategy converge at C-suite.", learningNeeded: ["Multi-asset clinical portfolio governance", "Safety / efficacy narrative for investors"] },
+        { trackId: "regulatory-affairs", targetLevel: "vp", when: "VP → VP", reason: "Chief Medical Officers with negotiated-label depth occasionally take the combined CMO/CRO seat at lean biotechs.", learningNeeded: ["Cross-product regulatory governance", "Agency relationship at board level"] },
       ],
       courses: [],
     },
@@ -428,6 +485,9 @@ const ENTREPRENEURSHIP: CareerTrack = {
         "Co-founder agreements + cap-table fundamentals",
         "Lean experimentation + customer discovery",
       ],
+      crossLinks: [
+        { trackId: "rnd", targetLevel: "junior", when: "Junior → Junior", reason: "Failed-startup scientists land softly as Research Associates — bench skills from the founding-engineer phase transfer; pace and structure improve.", learningNeeded: ["Lab-notebook + ELN discipline at scale", "Statistical analysis basics"] },
+      ],
       courses: [],
     },
     {
@@ -441,6 +501,10 @@ const ENTREPRENEURSHIP: CareerTrack = {
         "Seed → Series A milestone setting",
         "Financial modelling + runway management",
         "Board meeting authoring + governance basics",
+      ],
+      crossLinks: [
+        { trackId: "biomanufacturing", targetLevel: "mid", when: "Mid → Mid", reason: "When the start-up reaches the first GMP batch, founder-operators often spin into a Process Specialist seat at a larger biotech to deepen scale-up reps.", learningNeeded: ["Unit-op depth (chosen specialty)", "Tech-transfer fundamentals"] },
+        { trackId: "rnd", targetLevel: "mid", when: "Mid → Mid", reason: "Heads of R&D at seed-stage start-ups often slot in as Scientists at mid-stage biotechs when the original company stalls.", learningNeeded: ["Experimental design + screen architecture", "Cross-functional collaboration (DMPK, safety)"] },
       ],
       courses: [],
     },
@@ -473,6 +537,9 @@ const ENTREPRENEURSHIP: CareerTrack = {
         "M&A negotiation",
         "Investor narrative + earnings discipline",
       ],
+      crossLinks: [
+        { trackId: "regulatory-affairs", targetLevel: "lead", when: "Lead → Lead", reason: "CEOs of biotechs whose company stalls at clinical milestones frequently become Heads of RA at larger acquirers — the agency-relationship and submission-strategy reps are deep.", learningNeeded: ["Multi-region (US/EU/Canada/Asia) strategy", "Agency-relationship management"] },
+      ],
       courses: [],
     },
     {
@@ -485,6 +552,10 @@ const ENTREPRENEURSHIP: CareerTrack = {
         "Portfolio thinking — across companies",
         "Board governance at scale",
         "Long-form investment thesis writing",
+      ],
+      crossLinks: [
+        { trackId: "biomanufacturing", targetLevel: "vp", when: "VP → VP", reason: "Serial founders with operations depth often return to large biotechs as VP Manufacturing or COO when their portfolio companies exit — the operator pattern-recognition is rare.", learningNeeded: ["Multi-site manufacturing strategy", "CDMO selection + governance"] },
+        { trackId: "rnd", targetLevel: "vp", when: "VP → VP", reason: "Founder-CSOs whose start-ups get acquired often take the CSO seat at the acquirer — the platform thesis and scientific judgment transfer.", learningNeeded: ["Scientific strategy at board level", "Platform investment cases"] },
       ],
       courses: [],
     },
@@ -514,6 +585,10 @@ const RD: CareerTrack = {
         "Statistical analysis basics",
         "Literature reading + critique",
       ],
+      crossLinks: [
+        { trackId: "biomanufacturing", targetLevel: "junior", when: "Junior → Junior", reason: "Research Associates who prefer process to discovery move to manufacturing — bench technique transfers, the production cadence is steadier than R&D.", learningNeeded: ["GMP basics + regulatory vocabulary", "Aseptic technique + cleanroom behaviour"] },
+        { trackId: "qa-qc", targetLevel: "junior", when: "Junior → Junior", reason: "RAs who enjoy the analytical side over the experimental design side find a natural home in QC.", learningNeeded: ["Compendial micro methods (USP, EP, JP)", "LIMS data entry hygiene"] },
+      ],
       courses: [],
     },
     {
@@ -527,6 +602,10 @@ const RD: CareerTrack = {
         "Patent-quality data generation",
         "Scientific presentation",
         "Cross-functional collaboration (DMPK, safety, CMC)",
+      ],
+      crossLinks: [
+        { trackId: "biomanufacturing", targetLevel: "mid", when: "Mid → Mid", reason: "Scientists at the IND-prep stage often cross into process-development as the lab molecule becomes a manufacturable product.", learningNeeded: ["Tech-transfer fundamentals", "Unit-op depth"] },
+        { trackId: "clinical-trials", targetLevel: "mid", when: "Mid → Mid", reason: "Scientists with translational-biology depth move to CRA / Trial Manager roles to follow the molecule into humans — biomarker thinking transfers.", learningNeeded: ["GCP fundamentals", "Risk-based monitoring"] },
       ],
       courses: [],
     },
@@ -545,6 +624,7 @@ const RD: CareerTrack = {
       crossLinks: [
         { trackId: "clinical-trials", targetLevel: "senior", when: "Senior → Senior", reason: "Senior scientists who've taken an asset through IND-enabling are credible clinical-development leaders.", learningNeeded: ["Phase 1 design", "First-in-human safety strategy"] },
         { trackId: "regulatory-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "PIs with IND experience cross to RA CMC + non-clinical roles.", learningNeeded: ["ICH M3", "Non-clinical sections of IND"] },
+        { trackId: "medical-affairs", targetLevel: "senior", when: "Senior → Senior", reason: "Principal Investigators with deep MoA fluency cross into Field Medical leadership — they're already the asset's strongest internal explainer.", learningNeeded: ["KOL engagement frameworks", "Medical engagement plan authoring"] },
       ],
       courses: [],
     },
@@ -560,6 +640,10 @@ const RD: CareerTrack = {
         "Candidate selection criteria",
         "External innovation / licensing strategy",
       ],
+      crossLinks: [
+        { trackId: "clinical-trials", targetLevel: "lead", when: "Lead → Lead", reason: "Heads of Discovery with strong translational programmes often cross to Head of Clinical Development — owning the molecule's full bench-to-clinic arc.", learningNeeded: ["Phase 2/3 design", "Programme-level budgeting + timeline"] },
+        { trackId: "entrepreneurship", targetLevel: "lead", when: "Lead → Lead", reason: "Heads of Discovery whose platform has internal champions spin out as founding CSOs or CEOs — they own the science thesis and the IP map.", learningNeeded: ["Term-sheet negotiation", "Founding-team economics"] },
+      ],
       courses: [],
     },
     {
@@ -572,6 +656,10 @@ const RD: CareerTrack = {
         "Scientific strategy at board level",
         "Platform investment cases",
         "Scientific advisory board composition",
+      ],
+      crossLinks: [
+        { trackId: "clinical-trials", targetLevel: "vp", when: "VP → VP", reason: "CSOs with deep translational + clinical platform reps are credible Chief Development Officers when companies split the CSO and CMO seats.", learningNeeded: ["Multi-asset clinical portfolio governance", "Safety / efficacy narrative for investors"] },
+        { trackId: "entrepreneurship", targetLevel: "vp", when: "VP → VP", reason: "CSOs whose platform thesis matures into a spinout become founder-CEOs or Operating Partners at life-sciences VCs — platform pattern-recognition is the asset.", learningNeeded: ["Long-form investment thesis writing", "Board governance at scale"] },
       ],
       courses: [],
     },
@@ -601,6 +689,10 @@ const CLINICAL_TRIALS: CareerTrack = {
         "IRB / ethics submission workflow",
         "Patient-facing communication",
       ],
+      crossLinks: [
+        { trackId: "regulatory-affairs", targetLevel: "junior", when: "Junior → Junior", reason: "CRCs who prefer documents-and-strategy to patient-facing work move to RA Coordinator roles — IRB submission rigour transfers directly to eCTD.", learningNeeded: ["eCTD structure + assembly tools", "Health Canada / FDA / EMA submission portals"] },
+        { trackId: "medical-affairs", targetLevel: "junior", when: "Junior → Junior", reason: "CRCs with deep protocol knowledge often move to Medical Information Specialist roles — therapeutic-area depth transfers, the rest is product training.", learningNeeded: ["Medical information response standards", "Promotional vs non-promotional boundaries"] },
+      ],
       courses: [],
     },
     {
@@ -614,6 +706,10 @@ const CLINICAL_TRIALS: CareerTrack = {
         "Query / SDV efficiency",
         "Site-relationship management",
         "Protocol-deviation classification",
+      ],
+      crossLinks: [
+        { trackId: "medical-affairs", targetLevel: "mid", when: "Mid → Mid", reason: "CRAs with deep investigator relationships often pivot to MSL roles — the peer-to-peer credibility with PIs is the hardest part of MSL hiring.", learningNeeded: ["KOL engagement frameworks", "Therapeutic-area depth"] },
+        { trackId: "regulatory-affairs", targetLevel: "mid", when: "Mid → Mid", reason: "CRAs with strong protocol + amendment authorship move to RA Specialist roles owning clinical sections.", learningNeeded: ["Clinical section authoring", "ICH guideline fluency"] },
       ],
       courses: [],
     },
@@ -647,6 +743,10 @@ const CLINICAL_TRIALS: CareerTrack = {
         "Agency meeting strategy (EoP2, pre-NDA)",
         "Risk-based programme governance",
       ],
+      crossLinks: [
+        { trackId: "medical-affairs", targetLevel: "lead", when: "Lead → Lead", reason: "Heads of Clinical Development with launch experience often cross to Head of Medical Affairs once the asset transitions from approval to commercialisation.", learningNeeded: ["Medical strategy authoring", "Publication strategy"] },
+        { trackId: "regulatory-affairs", targetLevel: "lead", when: "Lead → Lead", reason: "Directors of Clinical Ops with EoP2 + pre-NDA reps cross to Head of RA — the agency-relationship and protocol-defence experience is exactly what RA leadership needs.", learningNeeded: ["Portfolio regulatory strategy", "Agency-relationship management"] },
+      ],
       courses: [],
     },
     {
@@ -659,6 +759,10 @@ const CLINICAL_TRIALS: CareerTrack = {
         "Board-level clinical reporting",
         "Multi-asset portfolio governance",
         "Safety / efficacy narrative + investor comms",
+      ],
+      crossLinks: [
+        { trackId: "medical-affairs", targetLevel: "vp", when: "VP → VP", reason: "VP Clinical Development and VP Medical Affairs frequently merge into a single Chief Medical Officer seat — both report up through the same medical voice at smaller biotechs.", learningNeeded: ["Multi-product medical-affairs governance", "Payer + HEOR strategy"] },
+        { trackId: "regulatory-affairs", targetLevel: "vp", when: "VP → VP", reason: "VPs of Clinical Development with negotiated-approval reps occasionally take the combined CMO/CRO seat — clinical + regulatory live under one chief.", learningNeeded: ["Cross-product regulatory portfolio governance", "Crisis response (483, warning letters)"] },
       ],
       courses: [],
     },
