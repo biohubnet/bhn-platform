@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career paths — branch modal cards now measure their own content, no scrollbars — May 2026
+  {
+    title: "Career paths — branch-modal cards now sized to fit their content exactly (no more scrollbars at the settled stage)",
+    body: "Previously the focused branch-modal cards used a single intrinsic height (440 px source, 460 px target) regardless of how much content each card actually carried. Targets with a cross-link reason + a long \"learn first\" list overflowed and triggered a vertical scrollbar at the settled stage. Fixed:\n\n**1. Hidden measure-then-layout pass.** The BranchModal now renders an off-screen copy of every card (source + each target) at its intrinsic width, with no height constraint. A `useLayoutEffect` reads each card's natural `offsetHeight` synchronously before paint, and feeds the measurements into `computeFocusLayout`. The visible FlipCards size to those measurements — exactly tall enough, no scrollbar ever appears in the common case.\n\n**2. Source uses its measured height directly.** It's a single card, no grid alignment to worry about.\n\n**3. Targets share the MAX of all measured heights.** Grid rows stay aligned across the target group — short cards have a little headroom at the bottom rather than being stranded at a different height from their tall neighbours. (Empty space inside a card is acceptable; mis-aligned grid rows are not.)\n\n**4. `overflow-y-auto` removed from BigStationCard.** Since the FlipCard is now correctly sized, there's nothing to scroll. Removed the safety-net scrollbar so it can never appear. If a content edge case somehow exceeds the card height on a tiny viewport, the FlipCard's outer `overflow-hidden` clips it cleanly (better than a perpetual scrollbar that's only there for the 0.5 % case).\n\nGuard against infinite re-render loops: the measurement setState only fires when the read values actually change.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career paths — branch animation polish (lighter backdrop, longer lines, smart routing, comet trail) — May 2026
   {
     title: "Career paths — branch animation: lighter backdrop, longer connector lines with a travelling comet, and smart routing so lines no longer cross cards",

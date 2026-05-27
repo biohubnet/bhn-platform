@@ -1144,13 +1144,98 @@ function BranchModal({
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  const layout = useMemo(() => computeFocusLayout(targets.length, viewport), [targets.length, viewport]);
+  // ── Measure natural content height of each BigStationCard ───
+  // The cards need to be SIZED to fit their content so no scrollbar
+  // ever appears at the settled stage. We render each card off-screen
+  // first (hidden layer below) at its intrinsic width, then measure
+  // the natural height via offsetHeight. useLayoutEffect runs
+  // synchronously after the hidden render but before paint, so the
+  // measured-and-laid-out cards are what the user actually sees.
+  //
+  // `contentHeights` is the measurement output: optional source
+  // height + optional per-target heights. computeFocusLayout falls
+  // back to intrinsic constants for any null entries (initial render
+  // before measure, or measure failed).
+  const sourceMeasureRef = useRef<HTMLDivElement | null>(null);
+  const targetMeasureRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [contentHeights, setContentHeights] = useState<{ source: number | null; targets: number[] }>(
+    { source: null, targets: [] },
+  );
+  useLayoutEffect(() => {
+    if (targets.length === 0 && contentHeights.source !== null) return;
+    const srcH = sourceMeasureRef.current?.offsetHeight ?? null;
+    const tgtHs: number[] = [];
+    for (let i = 0; i < targets.length; i++) {
+      const el = targetMeasureRefs.current[i];
+      tgtHs.push(el?.offsetHeight ?? 0);
+    }
+    // Only update state if something actually changed (avoid
+    // infinite re-render loop).
+    const changed =
+      srcH !== contentHeights.source ||
+      tgtHs.length !== contentHeights.targets.length ||
+      tgtHs.some((h, i) => h !== contentHeights.targets[i]);
+    if (changed) {
+      setContentHeights({ source: srcH, targets: tgtHs });
+    }
+  });
+
+  const layout = useMemo(
+    () => computeFocusLayout(targets.length, viewport, contentHeights),
+    [targets.length, viewport, contentHeights],
+  );
 
   // Visibility flags driven by the stage state machine.
   const linesActive = stage === "lines" || stage === "moving" || stage === "settled";
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-auto">
+      {/* ── Hidden measuring layer ──────────────────────────────
+          Renders an off-screen copy of each BigStationCard at its
+          intrinsic width with NO height constraint, so we can read
+          its natural content height via offsetHeight. useLayoutEffect
+          above picks up those measurements and feeds them into
+          computeFocusLayout, which sizes the visible FlipCards just
+          tall enough that no scrollbar ever appears at the settled
+          stage. visibility:hidden keeps the layer invisible but still
+          subject to layout (so dimensions are real). aria-hidden +
+          tabIndex=-1-equivalent (no interactive children fire) keeps
+          it out of the a11y tree. */}
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          top: -99999,
+          left: -99999,
+          visibility: "hidden",
+          pointerEvents: "none",
+        }}
+      >
+        <div ref={sourceMeasureRef} style={{ width: 360 }}>
+          <BigStationCard
+            station={source.station}
+            track={source.track}
+            label="WHERE YOU ARE"
+            Icon={ICONS[source.track.iconKey]}
+          />
+        </div>
+        {targets.map((t, i) => (
+          <div
+            key={`measure-${i}`}
+            ref={(el) => { targetMeasureRefs.current[i] = el; }}
+            style={{ width: 320 }}
+          >
+            <BigStationCard
+              station={t.station}
+              track={t.track}
+              label="WHERE YOU'D LAND"
+              Icon={ICONS[t.track.iconKey]}
+              crossLink={t.cl}
+            />
+          </div>
+        ))}
+      </div>
+
       {/* Backdrop — fades in over 300 ms; click to dismiss. Lightened
           from 80 % black + sm blur to 45 % black + md blur so the
           chart underneath stays legibly visible (user can still see
@@ -1589,6 +1674,13 @@ interface FocusedTargetRect extends FocusedRect { arcOffset?: number }
 function computeFocusLayout(
   numTargets: number,
   viewport: { w: number; h: number },
+  /** Optional content heights measured from a hidden render of each
+   *  BigStationCard. When provided, the layout uses these instead of
+   *  the intrinsic constants — so the FlipCard's final size matches
+   *  its content exactly and no scrollbar appears at the settled
+   *  stage. Targets share a single uniform height (the MAX of all
+   *  measured target heights) so grid rows stay aligned. */
+  contentHeights?: { source: number | null; targets: number[] },
 ): { source: FocusedRect; targets: FocusedTargetRect[] } {
   // Content-sized cards. Both WIDTH and HEIGHT are capped at
   // intrinsic values so cards never balloon to fill a wide viewport
@@ -1623,9 +1715,19 @@ function computeFocusLayout(
   const SRC_TGT_GAP      = 120;
   const TGT_GAP          = 28;
   const SRC_INTRINSIC_W  = 360;
-  const SRC_INTRINSIC_H  = 420;
+  const SRC_INTRINSIC_H_FALLBACK  = 420;
   const TGT_INTRINSIC_W  = 320;
-  const TGT_INTRINSIC_H  = 440;
+  const TGT_INTRINSIC_H_FALLBACK  = 440;
+
+  // Use measured content heights when available (post-render
+  // measurement), else fall back to intrinsic constants. For targets,
+  // use the MAX of measured heights so grid rows align and short
+  // cards don't end up with a different height than their neighbours.
+  const SRC_INTRINSIC_H = contentHeights?.source ?? SRC_INTRINSIC_H_FALLBACK;
+  const TGT_INTRINSIC_H = contentHeights?.targets && contentHeights.targets.length > 0
+    ? Math.max(TGT_INTRINSIC_H_FALLBACK / 2, ...contentHeights.targets)
+    : TGT_INTRINSIC_H_FALLBACK;
+
   const availH = Math.max(360, viewport.h - TOP_PAD - BOTTOM_PAD);
   const availW = Math.max(320, viewport.w - 2 * SIDE_PAD);
 
@@ -1772,13 +1874,16 @@ function BigStationCard({
   crossLink?: CrossLink;
 }) {
   // Rendered INSIDE FlipCard's "expanded" layer, which is sized to
-  // the FOCUSED dimensions (chosen large enough to fit this content
-  // in full). Internal scrolling kept as a safety net for unusually
-  // long content, but in normal use the card "expands to accommodate"
-  // and no scrolling kicks in.
+  // this card's MEASURED natural content height (the BranchModal
+  // pre-renders each card off-screen and reads its offsetHeight, then
+  // feeds those numbers into computeFocusLayout). So in normal use
+  // the FlipCard is exactly tall enough — no overflow, no scrollbar.
+  // Removed `overflow-y-auto` entirely: if a content edge case
+  // somehow exceeds the card height, the FlipCard's outer
+  // `overflow-hidden` clips it (better than a perpetual scrollbar).
   return (
     <div
-      className="h-full overflow-y-auto"
+      className="h-full"
       style={{
         // Subtle accent-tinted background so the card reads as part
         // of the track even before the glow lights up.
