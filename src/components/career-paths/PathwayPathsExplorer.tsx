@@ -206,26 +206,78 @@ export function PathwayPathsExplorer() {
     return () => ro.disconnect();
   }, [collapsedPathways]);
 
-  // Click handler — captures the source station's bounding rect plus
-  // every target station's bounding rect from the chart, then hands
-  // the bundle off to the modal. The rects let the modal animate
-  // from "in the chart" positions to "centered modal" positions
-  // (the FLIP technique).
+  // Click handler — auto-expands any collapsed pathway columns or
+  // level rows that the branch animation needs to see, then captures
+  // source + target rects from the chart and hands them off to the
+  // modal. The rects let the modal animate from "in the chart"
+  // positions to "centered modal" positions (the FLIP technique).
+  //
+  // Why auto-expand: if a target cross-link sits inside a collapsed
+  // pathway (or a collapsed level row), its station box isn't even
+  // rendered to the DOM — getBoundingClientRect would have nothing
+  // to read, so the target would silently drop from the animation.
+  // Expanding first guarantees every relevant card exists in the DOM
+  // before we measure.
+  //
+  // Why the pendingBranchOpen useEffect: setState is async, and we
+  // need to measure rects AFTER React commits the expansion and the
+  // browser lays out the newly-visible columns. We stash the request
+  // in pendingBranchOpen, let React render with the new collapse
+  // state, then the effect's requestAnimationFrame waits one frame
+  // for layout to settle and finally fires setBranch.
+  const [pendingBranchOpen, setPendingBranchOpen] = useState<BranchOpen | null>(null);
+
   function handleBranchOpen(o: BranchOpen) {
-    const srcId = `${o.track.id}-${o.station.level}`;
-    const srcEl = document.querySelector<HTMLElement>(`[data-station-id="${srcId}"]`);
-    if (!srcEl) return;
-    const sourceRect = srcEl.getBoundingClientRect();
+    const pathwayIds = new Set<string>([
+      o.track.id,
+      ...(o.station.crossLinks ?? []).map((cl) => cl.trackId),
+    ]);
+    const levelIds = new Set<LevelId>([
+      o.station.level,
+      ...(o.station.crossLinks ?? []).map((cl) => cl.targetLevel),
+    ]);
+    const pathwaysToExpand = Array.from(pathwayIds).filter((id) => collapsedPathways.has(id));
+    const levelsToExpand = Array.from(levelIds).filter((id) => collapsedLevels.has(id));
 
-    const targetRects = new Map<string, DOMRect>();
-    for (const cl of o.station.crossLinks ?? []) {
-      const tgtId = `${cl.trackId}-${cl.targetLevel}`;
-      const tgtEl = document.querySelector<HTMLElement>(`[data-station-id="${tgtId}"]`);
-      if (tgtEl) targetRects.set(tgtId, tgtEl.getBoundingClientRect());
+    if (pathwaysToExpand.length > 0) {
+      setCollapsedPathways((prev) => {
+        const next = new Set(prev);
+        for (const id of pathwaysToExpand) next.delete(id);
+        return next;
+      });
     }
-
-    setBranch({ ...o, sourceRect, targetRects });
+    if (levelsToExpand.length > 0) {
+      setCollapsedLevels((prev) => {
+        const next = new Set(prev);
+        for (const id of levelsToExpand) next.delete(id);
+        return next;
+      });
+    }
+    setPendingBranchOpen(o);
   }
+
+  useEffect(() => {
+    if (!pendingBranchOpen) return;
+    const raf = requestAnimationFrame(() => {
+      const o = pendingBranchOpen;
+      const srcId = `${o.track.id}-${o.station.level}`;
+      const srcEl = document.querySelector<HTMLElement>(`[data-station-id="${srcId}"]`);
+      if (!srcEl) {
+        setPendingBranchOpen(null);
+        return;
+      }
+      const sourceRect = srcEl.getBoundingClientRect();
+      const targetRects = new Map<string, DOMRect>();
+      for (const cl of o.station.crossLinks ?? []) {
+        const tgtId = `${cl.trackId}-${cl.targetLevel}`;
+        const tgtEl = document.querySelector<HTMLElement>(`[data-station-id="${tgtId}"]`);
+        if (tgtEl) targetRects.set(tgtId, tgtEl.getBoundingClientRect());
+      }
+      setBranch({ ...o, sourceRect, targetRects });
+      setPendingBranchOpen(null);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [pendingBranchOpen, collapsedPathways, collapsedLevels]);
 
   const anyCollapsed = collapsedLevels.size > 0 || collapsedPathways.size > 0;
 
@@ -235,7 +287,7 @@ export function PathwayPathsExplorer() {
 
       {/* Fold toolbar — sits above the chart. Per-level and per-
           pathway fold buttons; an Expand-all reset. */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line/70 bg-card-solid px-4 py-2.5 text-[11.5px]">
+      <div className="flex flex-wrap items-center gap-2 border border-line/70 bg-card-solid px-4 py-2.5 text-[11.5px]">
         <span className="inline-flex items-center gap-1.5 uppercase tracking-[0.16em] font-bold text-fg-subtle text-[10.5px]">
           <Minimize2 size={11} /> Fold
         </span>
@@ -336,7 +388,7 @@ export function PathwayPathsExplorer() {
 
 function Legend() {
   return (
-    <section className="rounded-xl border border-line/70 bg-card-solid px-5 py-4">
+    <section className="border border-line/70 bg-card-solid px-5 py-4">
       <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-fg mb-2">
         How to read this map
       </p>
@@ -434,7 +486,7 @@ function TrackHeadersRow({
             key={track.id}
             ref={columnRefSetters[track.id]}
             className={
-              "relative rounded-xl border bg-card-solid shadow-card-rest " +
+              "relative border bg-card-solid shadow-card-rest " +
               (isCollapsed ? "px-2 py-2.5" : "px-3 py-2.5")
             }
             style={{
@@ -630,7 +682,7 @@ function LevelRow({
                 <li
                   key={track.id}
                   aria-hidden
-                  className="border border-dashed rounded-lg"
+                  className="border border-dashed"
                   style={{ borderColor: `color-mix(in srgb, ${track.accent} 25%, var(--line))` }}
                 />
               );
@@ -753,7 +805,7 @@ function StationBox({
         }
       }}
       title={`See full details for ${station.label}`}
-      className="relative h-full rounded-xl bg-card-solid border border-line overflow-hidden cursor-pointer hover:border-line-strong transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+      className="relative h-full bg-card-solid border border-line overflow-hidden cursor-pointer hover:border-line-strong transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
       style={{
         boxShadow: "var(--shadow-card-rest)",
         backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${accent} 5%, transparent) 0%, transparent 50%)`,
@@ -1092,7 +1144,7 @@ function FlipCard({
   const rect = moving ? toRect : fromRect;
   return (
     <div
-      className="fixed overflow-hidden rounded-xl bg-card-solid pointer-events-auto"
+      className="fixed overflow-hidden bg-card-solid pointer-events-auto"
       style={{
         left:   rect.left,
         top:    rect.top,
@@ -1332,39 +1384,37 @@ function computeFocusLayout(
   numTargets: number,
   viewport: { w: number; h: number },
 ): { source: FocusedRect; targets: FocusedRect[] } {
-  // Viewport-adaptive focused layout. Earlier versions hard-coded a
-  // 380×460 source on top of a 340×660 target row — a 1180-px stack
-  // that overflowed most laptops, cutting the bottom of the target
-  // cards off the screen.
+  // Viewport-adaptive focused layout — content-sized cards, NOT
+  // viewport-stretched. The previous iteration stretched cards to
+  // fill every available pixel which produced enormous empty cards
+  // on large monitors (source 800 px tall with 400 px of empty space
+  // under the content). Principles now:
   //
-  // New behaviour:
-  //   • Reserve a top + bottom safe area (close button up top, "Esc
-  //     to close" hint at the bottom).
-  //   • On WIDE viewports (≥ 1100 px), use a side-by-side layout:
-  //     source on the left, targets gridded on the right. Cards
-  //     get full available height, content has horizontal room to
-  //     breathe, and nothing stacks vertically past the fold.
-  //   • On NARROW viewports, fall back to the stacked layout but
-  //     constrain heights so source + targets fit inside the
-  //     available space — BigStationCard's internal
-  //     overflow-y-auto handles any residual overflow.
-  //   • Target grid adapts to count: 1 target → single card; 2 → 2-up
-  //     row; 3-4 → 2×2 grid; 5+ → 3×n grid. Targets never wrap into a
-  //     row count that would re-introduce the overflow problem.
-  const TOP_PAD    = 80; // close button + a bit of air
-  const BOTTOM_PAD = 56; // Esc hint room
-  const SIDE_PAD   = 24;
-  const GAP        = 16;
+  //   • Pick INTRINSIC heights that fit BigStationCard's content
+  //     without internal scrolling (~440 px source, ~460 px target).
+  //   • If the viewport can't fit the intrinsic block, scale source
+  //     + targets proportionally so they shrink together;
+  //     BigStationCard's overflow-y-auto handles any residual.
+  //   • Centre the block vertically and horizontally — empty space
+  //     wraps the cards rather than living inside them.
+  //   • 24-px GAP between source and targets so the SVG bezier
+  //     connecting lines have visible room to curve.
+  //   • Target grid adapts to count: 1 → single card; 2-4 → 2-up;
+  //     5+ → 3-wide.
+  const TOP_PAD          = 80;
+  const BOTTOM_PAD       = 56;
+  const SIDE_PAD         = 24;
+  const GAP              = 24;
+  const SRC_INTRINSIC_H  = 440;
+  const TGT_INTRINSIC_H  = 460;
   const availH = Math.max(360, viewport.h - TOP_PAD - BOTTOM_PAD);
   const availW = Math.max(320, viewport.w - 2 * SIDE_PAD);
 
   // ── Mode A: side-by-side (wide screens) ────────────────────────
   if (viewport.w >= 1100) {
-    // Source takes ~36 % of width, capped between 320 px and 440 px.
     const srcW = Math.max(320, Math.min(440, availW * 0.36));
     const tgtsAreaW = availW - srcW - GAP;
 
-    // Target grid: pick column count by target count.
     let cols: number;
     if (numTargets <= 1)      cols = 1;
     else if (numTargets <= 4) cols = 2;
@@ -1372,22 +1422,44 @@ function computeFocusLayout(
     const rows = Math.ceil(numTargets / cols);
 
     const tgtW = (tgtsAreaW - GAP * (cols - 1)) / cols;
-    const tgtH = (availH - GAP * (rows - 1)) / rows;
 
+    // Pick intrinsic heights; scale down (preserving the ratio of
+    // source-to-target-block) only if the viewport is too short.
+    const tgtBlockIdealH = TGT_INTRINSIC_H * rows + GAP * (rows - 1);
+    const blockIdealH = Math.max(SRC_INTRINSIC_H, tgtBlockIdealH);
+    let srcH: number;
+    let tgtH: number;
+    if (blockIdealH <= availH) {
+      srcH = SRC_INTRINSIC_H;
+      tgtH = TGT_INTRINSIC_H;
+    } else {
+      const scale = availH / blockIdealH;
+      srcH = Math.floor(SRC_INTRINSIC_H * scale);
+      tgtH = Math.floor(TGT_INTRINSIC_H * scale);
+    }
+    const tgtBlockH = tgtH * rows + GAP * (rows - 1);
+    const blockH = Math.max(srcH, tgtBlockH);
+    // Centre the whole block vertically inside the safe area.
+    const blockTop = TOP_PAD + Math.max(0, Math.floor((availH - blockH) / 2));
+
+    // Centre the source vertically within the block (it's usually
+    // shorter than the target stack); centre the target stack
+    // vertically too.
     const source: FocusedRect = {
       left: SIDE_PAD,
-      top: TOP_PAD,
+      top: blockTop + Math.floor((blockH - srcH) / 2),
       width: srcW,
-      height: availH,
+      height: srcH,
     };
 
+    const tgtsTop = blockTop + Math.floor((blockH - tgtBlockH) / 2);
     const targetsLeft = SIDE_PAD + srcW + GAP;
     const targets: FocusedRect[] = Array.from({ length: numTargets }, (_, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
       return {
         left: targetsLeft + col * (tgtW + GAP),
-        top: TOP_PAD + row * (tgtH + GAP),
+        top: tgtsTop + row * (tgtH + GAP),
         width: tgtW,
         height: tgtH,
       };
@@ -1397,19 +1469,27 @@ function computeFocusLayout(
   }
 
   // ── Mode B: stacked (narrow screens) ───────────────────────────
-  // Source on top, targets gridded below. Heights split so the
-  // total fits inside availH.
   const cols = Math.min(numTargets || 1, 2);
   const rows = Math.ceil((numTargets || 1) / cols);
-  // Source gets ~38 % of the vertical, targets the rest.
-  const srcH = Math.max(280, availH * 0.38);
-  const tgtsAreaH = availH - srcH - GAP;
-  const tgtH = Math.max(220, (tgtsAreaH - GAP * (rows - 1)) / rows);
+
+  const idealBlockH = SRC_INTRINSIC_H + GAP + TGT_INTRINSIC_H * rows + GAP * (rows - 1);
+  let srcH: number;
+  let tgtH: number;
+  if (idealBlockH <= availH) {
+    srcH = SRC_INTRINSIC_H;
+    tgtH = TGT_INTRINSIC_H;
+  } else {
+    const scale = availH / idealBlockH;
+    srcH = Math.floor(SRC_INTRINSIC_H * scale);
+    tgtH = Math.floor(TGT_INTRINSIC_H * scale);
+  }
+  const blockH = srcH + GAP + tgtH * rows + GAP * (rows - 1);
+  const blockTop = TOP_PAD + Math.max(0, Math.floor((availH - blockH) / 2));
 
   const srcW = Math.min(440, availW);
   const source: FocusedRect = {
     left: viewport.w / 2 - srcW / 2,
-    top: TOP_PAD,
+    top: blockTop,
     width: srcW,
     height: srcH,
   };
@@ -1417,7 +1497,7 @@ function computeFocusLayout(
   const tgtW = (availW - GAP * (cols - 1)) / cols;
   const rowW = cols * tgtW + (cols - 1) * GAP;
   const rowLeft = viewport.w / 2 - rowW / 2;
-  const targetsTop = TOP_PAD + srcH + GAP;
+  const targetsTop = blockTop + srcH + GAP;
 
   const targets: FocusedRect[] = Array.from({ length: numTargets }, (_, i) => {
     const col = i % cols;
@@ -1534,7 +1614,7 @@ function BigStationCard({
         {/* Transition details — only on target cards */}
         {crossLink && (
           <div
-            className="mt-4 -mx-1 px-3 py-2.5 rounded-lg"
+            className="mt-4 -mx-1 px-3 py-2.5"
             style={{
               backgroundColor: `color-mix(in srgb, ${track.accent} 7%, transparent)`,
               border: `1px solid color-mix(in srgb, ${track.accent} 25%, transparent)`,
@@ -1629,7 +1709,7 @@ function StationDetailModal({
           fits comfortably without inner scrolling. */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[640px] max-h-[90vh] overflow-auto rounded-2xl bg-card-solid border shadow-elevated"
+        className="relative w-full max-w-[640px] max-h-[90vh] overflow-auto bg-card-solid border shadow-elevated"
         style={{
           borderColor: `color-mix(in srgb, ${track.accent} 35%, var(--line))`,
           backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${track.accent} 6%, var(--card)) 0%, var(--card) 30%)`,
@@ -1722,7 +1802,7 @@ function StationDetailModal({
                 {crossLinks.map((cl) => {
                   const targetTrack = PATHWAY_BY_ID.get(cl.trackId);
                   return (
-                    <li key={`${cl.trackId}-${cl.targetLevel}`} className="rounded-lg border border-line/70 bg-card p-3">
+                    <li key={`${cl.trackId}-${cl.targetLevel}`} className="border border-line/70 bg-card p-3">
                       <p className="text-[12.5px] font-semibold text-fg leading-tight">
                         → {targetTrack?.title ?? cl.trackId}
                         <span className="ml-1.5 text-[10.5px] font-normal text-fg-subtle">
