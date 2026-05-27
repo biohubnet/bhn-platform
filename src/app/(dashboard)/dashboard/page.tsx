@@ -677,10 +677,10 @@ export default async function DashboardPage() {
           <SectionEyebrow tone="brand">A note from the team</SectionEyebrow>
           <p className="mt-3 font-serif italic text-base sm:text-lg text-fg leading-relaxed">
             Welcome, <span className="not-italic font-bold">{firstName}</span>. We hope
-            BHN does what we built it for — keeps the next move within reach. We hope you
-            find a course that surprises you, a placement that opens a door, a funding
-            round that gets your idea moving, and a few people whose company you&apos;d
-            keep beyond the platform.{" "}
+            BHN does what we built it for — keeps the next move within reach. We hope a
+            course re-frames something you thought you knew, a placement that opens a
+            door, a funding round that gets your idea moving, and a few people whose
+            company you&apos;d keep beyond the platform.{" "}
             <span className="not-italic font-bold">We&apos;re rooting for you.</span>
           </p>
           <div className="mt-4 flex items-center gap-2.5">
