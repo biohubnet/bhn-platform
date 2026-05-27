@@ -61,7 +61,7 @@ export default async function EmployerWorkspacePage() {
     ? await prisma.user.findUnique({
         where: { id: userId },
         select: {
-          id: true, name: true, password: true,
+          id: true, name: true, preferredName: true, password: true,
           employerCompany: true, companyDescription: true, companyIndustry: true,
           companyLocation: true, companyLogo: true,
         },
@@ -237,10 +237,14 @@ export default async function EmployerWorkspacePage() {
   // content using a small layout shim.
   return (
     <HrWorkspace
-      // Full name — splitting on the first space chops multi-word given
-      // names ("Yoo Jin" → "Yoo"). See EmployerDashboard.tsx for the
-      // rationale; want a true first-name, add a preferredName column.
-      firstName={me?.name ?? null}
+      // Greeting form: preferredName (if user chose one) → full name.
+      // Helper in src/lib/user/display-name.ts encapsulates the
+      // fall-back chain; we inline a smaller version here because
+      // server components can't import getDisplayName cleanly across
+      // server/client boundaries without adding "server-only".
+      firstName={(me?.preferredName?.trim() || me?.name) ?? null}
+      fullName={me?.name ?? null}
+      preferredName={me?.preferredName ?? null}
       companyName={me?.employerCompany ?? null}
       isAdmin={isAdmin}
       isFresh={isFresh}

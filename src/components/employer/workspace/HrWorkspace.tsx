@@ -37,6 +37,7 @@ import {
   Briefcase, Building2, Users, Loader2, Copy, Mail,
 } from "lucide-react";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
+import { PreferredNameEditor } from "@/components/profile/PreferredNameEditor";
 import { ApplicantPanel } from "@/components/employer/workspace/ApplicantPanel";
 import { NewPostingInline } from "@/components/employer/workspace/NewPostingInline";
 import { PostingTeamPanel } from "@/components/employer/workspace/PostingTeamPanel";
@@ -103,6 +104,11 @@ interface Props {
   isFresh: boolean;
   postings: PostingSummary[];
   actionQueue: QueueItem[];
+  /** Full name (for the preferred-name editor's suggestion chips).
+   *  Distinct from `firstName` which is what we currently call them. */
+  fullName?: string | null;
+  /** Current preferred name (null when never set). */
+  preferredName?: string | null;
   /** Optional content rendered AFTER the hero strip and BEFORE the
    *  workspace body. Used by the page shell to hang things like the
    *  admin DemoSeederBar or a "Set your password" notice without
@@ -145,6 +151,7 @@ export interface ApplicantData {
 
 export function HrWorkspace({
   firstName, companyName, isAdmin, isFresh, postings, actionQueue,
+  fullName, preferredName,
   slotAboveContent,
 }: Props) {
   // ── Expansion state ──────────────────────────────────────
@@ -261,9 +268,16 @@ export function HrWorkspace({
         eyebrow="My postings"
         icon={<Building2 size={20} />}
         title={
-          firstName
-            ? `Welcome back, ${firstName}.`
-            : companyName ?? "Employer overview"
+          firstName ? (
+            <span className="inline-flex items-baseline gap-1 flex-wrap">
+              <span>Welcome back, {firstName}.</span>
+              <PreferredNameEditor
+                mode="pencil"
+                fullName={fullName ?? null}
+                initial={preferredName ?? null}
+              />
+            </span>
+          ) : (companyName ?? "Employer overview")
         }
         description={
           isFresh

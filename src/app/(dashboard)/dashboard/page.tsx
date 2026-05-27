@@ -14,6 +14,8 @@ import { LogoMark } from "@/components/ui/Logo";
 import { CreditUsageScoreboard } from "@/components/dashboards/CreditUsageScoreboard";
 import { RewardsDistanceCard } from "@/components/dashboards/RewardsDistanceCard";
 import { LatestNewsCard } from "@/components/dashboards/LatestNewsCard";
+import { getDisplayName } from "@/lib/user/display-name";
+import { PreferredNameEditor } from "@/components/profile/PreferredNameEditor";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -38,7 +40,19 @@ export default async function DashboardPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
   const role = (session!.user as { role?: string }).role ?? "trainee";
-  const firstName = session!.user?.name?.split(" ")[0] ?? "Learner";
+
+  // Fetch the user's preferredName for the greeting. Falls back to
+  // `name`, then email local-part, then "Learner". See
+  // src/lib/user/display-name.ts for the resolver and the rationale
+  // behind not auto-splitting multi-word given names ("Yoo Jin" was
+  // being chopped to "Yoo" before this).
+  const meForGreeting = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true, preferredName: true, email: true },
+  }).catch(() => null);
+  const firstName = getDisplayName(meForGreeting) || "Learner";
+  const fullName = meForGreeting?.name ?? null;
+  const preferredName = meForGreeting?.preferredName ?? null;
 
   // Per-role dashboards. Each fetches its own data; we do a tiny User
   // lookup here just to grab name + role-specific fields.
@@ -554,7 +568,7 @@ export default async function DashboardPage() {
                 Welcome back,
               </p>
               <h1
-                className="mt-2 font-serif italic text-5xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-tight"
+                className="mt-2 font-serif italic text-5xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-tight inline-flex items-baseline gap-1 flex-wrap"
                 style={{
                   backgroundImage:
                     "linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.85) 50%, #bae6fd 100%)",
@@ -565,7 +579,19 @@ export default async function DashboardPage() {
                   color: "#ffffff",
                 }}
               >
-                {firstName}.
+                <span>{firstName}.</span>
+                {/* Pencil-only edit affordance — the popover panels
+                    cancel the text gradient with their own backgrounds,
+                    so the button reads clearly against the midnight
+                    hero. The white opacity here keeps the icon legible
+                    on the gradient. */}
+                <span style={{ WebkitTextFillColor: "rgba(255,255,255,0.6)" }} className="not-italic">
+                  <PreferredNameEditor
+                    mode="pencil"
+                    fullName={fullName}
+                    initial={preferredName}
+                  />
+                </span>
               </h1>
 
               {/* Mid-rule + lead sentence — tightened spacing */}
@@ -606,6 +632,21 @@ export default async function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {/* First-time prompt — only shows for users who haven't picked
+          a preferredName yet. Smart suggestion chips derived from
+          their full name + a custom field. Dismissible (skip for
+          now). After they save or dismiss, the card disappears on
+          subsequent loads. The pencil next to the welcome above
+          stays available for later edits. */}
+      <div className="max-w-screen-2xl mx-auto px-6 -mt-2">
+        <PreferredNameEditor
+          mode="card"
+          fullName={fullName}
+          initial={preferredName}
+          dismissKey={userId}
+        />
+      </div>
 
       {/* Committee badge — recognition surface. Auto-hides for
           non-members. */}

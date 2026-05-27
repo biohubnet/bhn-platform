@@ -6,10 +6,14 @@ import {
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { GreetingTagline } from "@/components/lms/GreetingTagline";
+import { getDisplayName } from "@/lib/user/display-name";
+import { PreferredNameEditor } from "@/components/profile/PreferredNameEditor";
 
 interface UserShape {
   id: string;
   name: string | null;
+  preferredName: string | null;
+  email?: string | null;
   employerCompany: string | null;
   companyWebsite: string | null;
   companyLogo: string | null;
@@ -33,16 +37,11 @@ export async function EmployerDashboard({
    *  pushing the editorial hero off the top of the page. */
   committeeBadge?: React.ReactNode;
 }) {
-  // Use the full name, not just the first token before a space.
-  // Korean / Chinese / Japanese given names are frequently two words
-  // ("Yoo Jin", "Mei Ling", "Ji-hoon Lee"), and splitting on the first
-  // space truncates them — the user gets greeted as "Yoo" when their
-  // name is "Yoo Jin". The greeting reads slightly more formal for
-  // Western "First Last" names but that's a small papercut next to
-  // chopping someone's given name in half. If we want a true
-  // first-name later, add a preferredName / displayName column on
-  // User — don't infer it from a space split.
-  const firstName = user.name ?? "there";
+  // Greeting form: preferredName (if user has chosen one) → full
+  // name → email local-part → "there". See src/lib/user/display-name.ts
+  // for the contract and the rationale behind not auto-splitting
+  // multi-word given names.
+  const firstName = getDisplayName(user);
   const companyName = user.employerCompany ?? "your company";
 
   // Profile completeness — six fields total. Used for the gentle nudge
@@ -101,8 +100,13 @@ export async function EmployerDashboard({
               <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
                 <Building2 size={12} /> Employer portal
               </span>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mt-3">
-                Hi, <span className="gradient-text">{firstName}</span> at {companyName}.
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mt-3 inline-flex items-baseline gap-2 flex-wrap">
+                <span>Hi, <span className="gradient-text">{firstName}</span> at {companyName}.</span>
+                <PreferredNameEditor
+                  mode="pencil"
+                  fullName={user.name}
+                  initial={user.preferredName}
+                />
               </h1>
               <GreetingTagline tone="dark" />
               <p className="mt-4 text-white/85 leading-relaxed text-base md:text-lg max-w-2xl">

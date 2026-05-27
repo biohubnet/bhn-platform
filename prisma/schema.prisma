@@ -167,6 +167,17 @@ model User {
   /// 21 CFR Part 11 §11.300(b) — periodic password revisions.
   /// Backfilled from createdAt for existing accounts.
   passwordUpdatedAt      DateTime?
+  /// How the user wants to be addressed in greetings ("Welcome
+  /// back, X."). Independent from `name` (their legal/full name) so
+  /// users can be greeted by their preferred form — first name,
+  /// first + middle, Dr./Mr./Mrs./Prof. + last, or any custom
+  /// string — without changing how their name appears in records,
+  /// emails, certificates, etc. Null until the user has chosen
+  /// (after first login the dashboard surfaces a small prompt;
+  /// they can change later via the pencil-icon next to the
+  /// greeting). When null, the greeting falls back to the full
+  /// `name`.
+  preferredName          String?
   /// Trainee-facing "My Application" artifacts. Stored on the user
   /// so they survive across talent-application submissions; the
   /// trainee manages them from /profile/application.

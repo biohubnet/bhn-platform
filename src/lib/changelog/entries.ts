@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Preferred-name feature — May 2026
+  {
+    title: "Tell us how you'd like to be addressed — pick once, edit anytime",
+    body: "Greetings across the platform used to come from the first word of your `name` field (the part before the first space). That works fine for \"Sarah Connor\" → \"Sarah\", but it sliced Korean / Chinese / Japanese given names in half (\"Yoo Jin\" → \"Yoo\", \"Mei Ling\" → \"Mei\") and ignored titles people use professionally (Dr., Prof., Mr., Mrs.).\n\n**What's new.** A new `preferredName` field on your profile, independent from your full / legal name. The full name still lives on your records and certificates; the preferred name only changes how we GREET you.\n\n**At first dashboard visit**, you'll see a small card under the welcome — \"How should we address you?\" — with one-click chips derived from your full name plus a custom field:\n  • **First** — just the first word\n  • **Full** — the whole name as-is (good for two-word given names)\n  • **First + middle** — for three-token names\n  • **First + last**\n  • **Dr. / Prof. / Mr. / Ms. / Mrs. / Mx. + last name** — six honorific options\n  • **Or type your own** — nickname, mononym, anything you want\n\nThe card can be dismissed (\"Skip for now\"). It only appears once — set or dismissed, it stays gone.\n\n**Edit anytime** via a pencil ✎ icon next to your greeting on the dashboard and the employer overview. Same smart chips, same custom field, plus a \"Reset (use my full name)\" link.\n\nFoundation: schema migration `20260727000000_preferred_name`, helper at `src/lib/user/display-name.ts` (`getDisplayName` resolver + `suggestDisplayNames` chip generator), endpoint `PATCH /api/profile/preferred-name`, client component `<PreferredNameEditor mode=\"pencil\"|\"card\">`. The resolver falls back to full name → email local-part → \"there\" so the greeting is never empty.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Demo tray hero-rule enforcement — May 2026
   {
     title: "Demo seed/clear tray — moved to a portal slot so it can never sit above the hero",
