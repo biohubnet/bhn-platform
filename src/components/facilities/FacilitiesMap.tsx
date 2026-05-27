@@ -394,6 +394,20 @@ function spiderfy(facilities: FacilityRow[]): FacilityWithDisplay[] {
   return out;
 }
 
+/** A single placed label after collision-avoidance: dot position +
+ *  resolved label centre (both in layer-pixel space at the zoom level
+ *  of computation) + the facility's id and name. */
+interface PlacedLabel {
+  id: string;
+  name: string;
+  dotLat: number;
+  dotLng: number;
+  labelLat: number;
+  labelLng: number;
+  width: number;
+  height: number;
+}
+
 function MapInner({
   Lib, facilities, onSelect, onMapReady,
 }: {
@@ -402,7 +416,24 @@ function MapInner({
   onSelect: (f: FacilityRow | null) => void;
   onMapReady?: (map: unknown) => void;
 }) {
-  const { MapContainer, TileLayer, CircleMarker, Popup, Tooltip, Polyline, useMap, useMapEvents } = Lib;
+  const { MapContainer, TileLayer, CircleMarker, Popup, Marker, Polyline, useMap, useMapEvents } = Lib;
+
+  // Leaflet's full namespace — dynamic-imported to dodge SSR's "window
+  // is not defined" trap. We need `L.divIcon` for rendering label HTML
+  // as a real Marker; react-leaflet doesn't re-export that constructor.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [L, setL] = useState<any>(null);
+  useEffect(() => {
+    let cancelled = false;
+    import("leaflet").then((mod) => {
+      if (cancelled) return;
+      // Leaflet's default export is the namespace; some bundlers strip
+      // the .default, so fall through.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setL((mod as any).default ?? mod);
+    });
+    return () => { cancelled = true; };
+  }, []);
   // Track zoom so we can scale marker radius. Higher zoom = more
   // detail = larger markers; lower zoom = compact dots.
   const [zoom, setZoom] = useState(5);
@@ -435,6 +466,132 @@ function MapInner({
   // visible-facilities set changes (e.g. when the province filter
   // flips).
   const positioned = useMemo(() => spiderfy(facilities), [facilities]);
+
+  // Collision-resolved label layout. Recomputed whenever zoom changes
+  // (label pixel offsets depend on zoom) or the visible set changes.
+  // Pan is handled automatically by Leaflet because labels are
+  // anchored to lat/lng, not pixel offsets — but we DO need to recompute
+  // pixel-space positions on zoom because the projection changes.
+  const [labelLayout, setLabelLayout] = useState<PlacedLabel[]>([]);
+
+  /** Inline child component — runs the collision-avoidance pass.
+   *
+   *  Algorithm: greedy placement.
+   *   1. Get each facility's screen position (container-pixel space).
+   *   2. Compute the label's bounding box for each candidate offset
+   *      around the dot (top, NE, E, SE, S, SW, W, NW, plus farther
+   *      fallbacks).
+   *   3. Place the label at the first offset whose bounding box
+   *      doesn't intersect any already-placed label's box.
+   *   4. If no offset fits, drop that label — the popup-on-click still
+   *      surfaces the name.
+   *   5. Convert the chosen pixel position back to lat/lng and persist.
+   *      Polylines (leader lines) and Markers (labels) then render
+   *      against the resolved lat/lng so panning is free.
+   *
+   *  Order matters — we sort facilities top-to-bottom by screen y so
+   *  northernmost labels get first pick of "above the dot" slots; the
+   *  layout is also stable across zoom levels as long as the input
+   *  order doesn't shuffle. */
+  function LabelLayoutComputer() {
+    const map = useMap();
+    // Recompute on:
+    //   - zoomend → pixel offsets change with zoom
+    //   - moveend → viewport content changes, new facilities slide in
+    //   - positioned change → province filter altered the set
+    useMapEvents({
+      zoomend: () => recompute(),
+      moveend: () => recompute(),
+    });
+    useEffect(() => { recompute(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [positioned]);
+
+    function recompute() {
+      // Read zoom from the map, not from React state — when zoomend
+      // fires both ZoomTracker and LabelLayoutComputer subscribe to
+      // the same event, but React's setZoom is async, so the state
+      // value inside this closure is one tick stale. map.getZoom() is
+      // always live.
+      const z = map.getZoom();
+      if (z < 11) { setLabelLayout([]); return; }
+
+      // Pixel width estimate: ~6.4 px per char at 10.5px semibold +
+      // 14 px of horizontal padding. Capped at 200 px — longer names
+      // are CSS-truncated.
+      const widthOf = (s: string) => Math.min(s.length * 6.4 + 14, 200);
+      const H = 18;
+
+      type Item = { f: FacilityWithDisplay; x: number; y: number; w: number };
+      const items: Item[] = positioned.map((f) => {
+        const pt = map.latLngToContainerPoint([f.displayLat, f.displayLng]);
+        return { f, x: pt.x, y: pt.y, w: widthOf(f.name) };
+      });
+
+      // Filter to those actually inside the viewport — labels for
+      // off-screen facilities are wasted compute.
+      const size = map.getSize();
+      const onScreen = items.filter(
+        (it) => it.x > -200 && it.x < size.x + 200 && it.y > -100 && it.y < size.y + 100,
+      );
+
+      // North-to-south, then west-to-east — stable, gives "above" slot
+      // priority to facilities closer to the top of the viewport.
+      onScreen.sort((a, b) => a.y - b.y || a.x - b.x);
+
+      // Candidate label-centre offsets relative to the dot. Order is
+      // the placement preference — "above the dot" is tried first.
+      // Each [dx, dy] is the offset from the dot to the LABEL CENTRE.
+      const OFFSETS: Array<[number, number]> = [
+        [0, -18],            // top
+        [22, -10], [-22, -10], // top-right, top-left
+        [26, 0],   [-26, 0],   // right, left
+        [22, 12],  [-22, 12],  // bottom-right, bottom-left
+        [0, 22],               // bottom
+        [0, -38],              // farther top
+        [44, 0],   [-44, 0],   // farther right, left
+        [0, 40],               // farther bottom
+      ];
+
+      const placed: Array<{ left: number; top: number; right: number; bottom: number }> = [];
+      const out: PlacedLabel[] = [];
+
+      for (const it of onScreen) {
+        for (const [dx, dy] of OFFSETS) {
+          const cx = it.x + dx;
+          const cy = it.y + dy;
+          const left = cx - it.w / 2;
+          const top = cy - H / 2;
+          const right = cx + it.w / 2;
+          const bottom = cy + H / 2;
+          // 2 px margin so neighbours don't visually touch.
+          const M = 2;
+          const overlap = placed.some(
+            (r) => !(r.right + M < left || r.left - M > right || r.bottom + M < top || r.top - M > bottom),
+          );
+          if (overlap) continue;
+          placed.push({ left, top, right, bottom });
+          // Convert label-centre pixel back to lat/lng so Leaflet keeps
+          // it positioned correctly during pans (no per-pan recompute).
+          const labelLatLng = map.containerPointToLatLng([cx, cy]);
+          out.push({
+            id: it.f.id,
+            name: it.f.name,
+            dotLat: it.f.displayLat,
+            dotLng: it.f.displayLng,
+            labelLat: labelLatLng.lat,
+            labelLng: labelLatLng.lng,
+            width: it.w,
+            height: H,
+          });
+          break;
+        }
+        // No clean spot → omit the label. Popup-on-click still works.
+      }
+
+      setLabelLayout(out);
+    }
+
+    return null;
+  }
 
   // For each cluster, also derive a "leg" line from the centroid out
   // to each spiderfied member. Only drawn when zoomed in (≥13) — at
@@ -490,6 +647,7 @@ function MapInner({
       />
       <ZoomTracker />
       <MapBinder />
+      <LabelLayoutComputer />
       {/* Cluster connector lines — only at higher zoom */}
       {clusterLegs.map((leg) => (
         <Polyline
@@ -501,6 +659,21 @@ function MapInner({
             opacity: 0.45,
             dashArray: "2,3",
           }}
+        />
+      ))}
+      {/* Label leader lines — rendered BEFORE the dots so the dots
+          paint over the line's endpoint at the dot side. The label
+          side is the line's natural terminus inside the label pill. */}
+      {labelLayout.map((p) => (
+        <Polyline
+          key={`leader-${p.id}`}
+          positions={[[p.dotLat, p.dotLng], [p.labelLat, p.labelLng]]}
+          pathOptions={{
+            color: "#6b7280",
+            weight: 1,
+            opacity: 0.55,
+          }}
+          interactive={false}
         />
       ))}
       {positioned.map((f) => {
@@ -519,39 +692,37 @@ function MapInner({
               fillOpacity: 0.85,
             }}
             eventHandlers={{
-              click: () => {
-                onSelect(f);
-                // If this facility belongs to a multi-member cluster and
-                // the user is zoomed out enough that the ring is
-                // sub-pixel, auto-fly closer so the cluster expands into
-                // individually clickable dots. The selected marker
-                // stays under the cursor.
-                if (f.clusterSize > 1 && zoom < 14 && flyToRef.current) {
-                  flyToRef.current(f.displayLat, f.displayLng, 15);
-                }
-              },
+              click: () => onSelect(f),
             }}
           >
             <Popup>
               <FacilityPopupContent facility={f} accent={accent} clusterSize={f.clusterSize} />
             </Popup>
-            {/* Always-on name label. Rendered as a permanent Leaflet
-                Tooltip above the dot. Only shown once the user has
-                zoomed in to roughly metro level (z ≥ 11) — at country
-                or provincial zoom the labels for 100+ facilities would
-                overlap into noise. On hover at lower zoom, the popup
-                still surfaces the name + details. */}
-            {zoom >= 11 && (
-              <Tooltip
-                permanent
-                direction="top"
-                offset={[0, -radius - 2]}
-                className="facility-name-tag"
-              >
-                {f.name}
-              </Tooltip>
-            )}
           </CircleMarker>
+        );
+      })}
+      {/* Label markers — DivIcon HTML rendered in the marker pane (z
+          600), so labels paint above everything in the overlay pane
+          (tiles, dot CircleMarkers, polylines). Each label is a tiny
+          Marker positioned at its resolved collision-free lat/lng. */}
+      {L && labelLayout.map((p) => {
+        const html = `<div class="facility-name-tag" style="width:${p.width}px;">` +
+                     p.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") +
+                     `</div>`;
+        const icon = L.divIcon({
+          html,
+          className: "facility-label-divicon",
+          iconSize: [p.width, p.height],
+          iconAnchor: [p.width / 2, p.height / 2],
+        });
+        return (
+          <Marker
+            key={`label-${p.id}`}
+            position={[p.labelLat, p.labelLng]}
+            icon={icon}
+            interactive={false}
+            keyboard={false}
+          />
         );
       })}
     </MapContainer>
