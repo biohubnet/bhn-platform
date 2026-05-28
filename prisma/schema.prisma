@@ -271,6 +271,9 @@ model User {
   // of `pending`. SetNull on User delete so the audit row survives.
   approvedRegistrations    Registration[]          @relation("RegistrationApprover")
   approvedWorkshopBookings WorkshopBooking[]       @relation("WorkshopBookingApprover")
+  // Event-host attribution + broadcast authorship (Phase 3).
+  hostedEvents             EventHost[]             @relation("UserEventHost")
+  authoredBroadcasts       EventBroadcast[]        @relation("UserEventBroadcast")
 
   // Research synthesis authoring — per-period "what users told us"
   // notes on /admin/insights. SetNull on delete keeps the synthesis
@@ -2381,6 +2384,9 @@ model BhnEvent {
   sponsors          Sponsor[]
   registrations     Registration[]
   reminders         EventReminder[]
+  hosts             EventHost[]
+  customQuestions   CustomRegQuestion[]
+  broadcasts        EventBroadcast[]
 
   /// Supports admin filtering by status (draft / published / archived).
   @@index([status])
@@ -2414,6 +2420,119 @@ model EventReminder {
 
   @@unique([eventId, kind])
   @@index([scheduledAt, sentAt])
+}
+
+/// A platform user attached as a host / co-host / moderator on an
+/// event. Display order drives the order they appear in the public
+/// "Hosted by" section. Role is free-text so events can use whatever
+/// label fits ("host", "co-host", "moderator", "MC", etc.).
+///
+/// Hosts also receive admin notifications for new registrations
+/// (queued — Phase 4) and have admin access to the event's
+/// registrations page (Phase 3 ships display-only).
+model EventHost {
+  id           String   @id @default(cuid())
+  eventId      String
+  userId       String
+  role         String   @default("host")
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  event BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User     @relation("UserEventHost", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId, displayOrder])
+}
+
+/// An admin-defined question added to the public registration form
+/// for a specific event. Answers are stored in CustomRegAnswer; the
+/// pair is queried + displayed in admin views + CSV exports.
+///
+/// kind values drive the form widget:
+///   • "text"        — single-line input
+///   • "longtext"    — textarea
+///   • "select"      — radio cards (options[] required)
+///   • "multiselect" — checkbox group (options[] required)
+///   • "checkbox"    — single yes/no acknowledgement
+model CustomRegQuestion {
+  id           String   @id @default(cuid())
+  eventId      String
+  /// Stable lowercase-hyphen identifier used in CSV export headers
+  /// and admin URLs. Unique per event.
+  key          String
+  /// Question text shown above the input on the registration form.
+  label        String
+  /// Optional helper text shown below the input.
+  hint         String?
+  /// Widget kind — see file comment.
+  kind         String   @default("text")
+  /// JSON array of options for select / multiselect kinds. Each
+  /// option is an object `{ value: string; label: string }`. Other
+  /// kinds leave this null.
+  options      Json?
+  /// When true, the form blocks submission until an answer is provided.
+  required     Boolean  @default(false)
+  /// Render order on the form + admin list.
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  event   BhnEvent          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  answers CustomRegAnswer[]
+
+  @@unique([eventId, key])
+  @@index([eventId, displayOrder])
+}
+
+/// An answer to a CustomRegQuestion for one Registration. One row
+/// per (registration, question). Stored as a plain string per the
+/// question's kind:
+///   • text / longtext  — raw input
+///   • select           — chosen option's value
+///   • multiselect      — comma-joined list of chosen values
+///   • checkbox         — "yes" or "no"
+model CustomRegAnswer {
+  id                  String @id @default(cuid())
+  registrationId      String
+  customRegQuestionId String
+  value               String
+
+  registration Registration      @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  question     CustomRegQuestion @relation(fields: [customRegQuestionId], references: [id], onDelete: Cascade)
+
+  @@unique([registrationId, customRegQuestionId])
+  @@index([customRegQuestionId])
+}
+
+/// An email broadcast sent by an event host to a slice of attendees.
+/// Recorded for audit + ability to re-send to specific recipients
+/// later. Kept lightweight — body is stored as markdown, the send
+/// loop renders to HTML at dispatch time using the existing
+/// markdown helper.
+model EventBroadcast {
+  id            String   @id @default(cuid())
+  eventId       String
+  /// User who composed + sent the broadcast.
+  sentById      String
+  subject       String
+  /// Markdown body. Rendered to HTML at send time.
+  body          String
+  /// "all" | "confirmed" | "pending" | "waitlist" | "checked_in"
+  audienceFilter String
+  /// Number of recipients the send loop actually attempted.
+  recipientCount Int     @default(0)
+  /// Number of attempts that returned successfully from SMTP.
+  sentCount     Int      @default(0)
+  /// Set when the send loop finishes (failures are also recorded
+  /// in sentCount mismatch). Kept null while in flight.
+  sentAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  event  BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sentBy User     @relation("UserEventBroadcast", fields: [sentById], references: [id], onDelete: Restrict)
+
+  @@index([eventId, createdAt])
 }
 
 /// One bookable workshop, tour, or bootcamp slot. The "slot" framing
@@ -2668,6 +2787,7 @@ model Registration {
   event      BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user       User?    @relation(fields: [userId], references: [id], onDelete: Restrict)
   approvedBy User?    @relation("RegistrationApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  customAnswers CustomRegAnswer[]
 
   /// Idempotency for signed-in registrants — one row per (event, user).
   /// Per SQL standard NULL != NULL, so multiple guest rows (userId=null)

@@ -80,6 +80,18 @@ export default async function RegisterPage({
   const closed =
     event.registrationClosesAt !== null && event.registrationClosesAt < now;
 
+  // Custom event-specific questions (Phase 3). Same skip-when-form-
+  // is-disabled rationale as workshops.
+  let customQuestionRows: Array<{
+    id: string;
+    key: string;
+    label: string;
+    hint: string | null;
+    kind: "text" | "longtext" | "select" | "multiselect" | "checkbox";
+    options: Array<{ value: string; label: string }> | null;
+    required: boolean;
+  }> = [];
+
   // Workshops + per-workshop confirmed counts. Loaded once SSR-side
   // and threaded into the form so the user can pick during sign-up.
   // We deliberately skip workshops when the registration form is
@@ -87,6 +99,21 @@ export default async function RegisterPage({
   // then.
   let workshops: WorkshopOption[] = [];
   if (!notYetOpen && !closed) {
+    // Fetch custom questions in parallel with workshop data.
+    const customQs = await prisma.customRegQuestion.findMany({
+      where: { eventId: event.id },
+      orderBy: { displayOrder: "asc" },
+    });
+    customQuestionRows = customQs.map((q) => ({
+      id: q.id,
+      key: q.key,
+      label: q.label,
+      hint: q.hint,
+      kind: q.kind as "text" | "longtext" | "select" | "multiselect" | "checkbox",
+      options: q.options as unknown as Array<{ value: string; label: string }> | null,
+      required: q.required,
+    }));
+
     const [activeWorkshops, allBookings] = await Promise.all([
       prisma.workshop.findMany({
         where: { eventId: event.id, isActive: true },
@@ -250,6 +277,7 @@ export default async function RegisterPage({
               ? { name: userName, email: userEmail }
               : null
           }
+          customQuestions={customQuestionRows}
         />
       )}
     </div>

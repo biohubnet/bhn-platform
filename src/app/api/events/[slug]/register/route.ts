@@ -143,6 +143,7 @@ export async function POST(
     guestName: rawGuestName,
     guestEmail: rawGuestEmail,
     guestOrganization: rawGuestOrg,
+    customAnswers: rawCustomAnswers,
   } = body as Record<string, unknown>;
 
   // Guest path needs name + email. Validate up front so we fail
@@ -321,6 +322,33 @@ export async function POST(
   };
   let workshopOutcomes: WorkshopBookingOutcome[] = [];
 
+  // Validate custom-question answers against the event's question
+  // set. Required questions must have a non-empty answer; unknown
+  // question IDs are ignored (they came from a stale form).
+  const eventQuestions = await prisma.customRegQuestion.findMany({
+    where: { eventId: event.id },
+    select: { id: true, required: true, kind: true },
+  });
+  const validQuestionIds = new Set(eventQuestions.map((q) => q.id));
+  const customAnswerMap = new Map<string, string>();
+  if (rawCustomAnswers !== null && typeof rawCustomAnswers === "object") {
+    for (const [qId, raw] of Object.entries(rawCustomAnswers as Record<string, unknown>)) {
+      if (!validQuestionIds.has(qId)) continue;
+      if (typeof raw !== "string") continue;
+      const v = raw.trim().slice(0, 4000);
+      if (v.length === 0) continue;
+      customAnswerMap.set(qId, v);
+    }
+  }
+  for (const q of eventQuestions) {
+    if (q.required && !customAnswerMap.has(q.id)) {
+      return NextResponse.json(
+        { error: `A required question is missing an answer.`, code: "missing_required_question", questionId: q.id },
+        { status: 400 },
+      );
+    }
+  }
+
   try {
     const result = await prisma.$transaction(async (tx) => {
       const reg = await tx.registration.create({
@@ -348,6 +376,18 @@ export async function POST(
         },
         select: { id: true, qrToken: true, registrationStatus: true, waitlistPosition: true },
       });
+
+      // Persist any custom-question answers in the same transaction.
+      // Unknown / non-validated question IDs were dropped above.
+      if (customAnswerMap.size > 0) {
+        await tx.customRegAnswer.createMany({
+          data: Array.from(customAnswerMap.entries()).map(([questionId, value]) => ({
+            registrationId: reg.id,
+            customRegQuestionId: questionId,
+            value,
+          })),
+        });
+      }
 
       const outcomes: WorkshopBookingOutcome[] = [];
       // Guest path can't book workshops (no userId for the workshop

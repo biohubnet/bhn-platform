@@ -96,6 +96,18 @@ export default async function AdminEventDetailPage({
         >
           <Ticket size={14} /> Registrations &amp; check-in
         </Link>
+        <Link
+          href={`/admin/events/${event.slug}/messages`}
+          className="inline-flex items-center gap-2 rounded-xl border border-line bg-card px-4 py-2 text-sm font-bold text-fg hover:border-brand-300"
+        >
+          Send a message
+        </Link>
+        <Link
+          href={`/admin/events/${event.slug}/questions`}
+          className="inline-flex items-center gap-2 rounded-xl border border-line bg-card px-4 py-2 text-sm font-bold text-fg hover:border-brand-300"
+        >
+          Custom questions
+        </Link>
         {event.status === "published" && (
           <Link
             href={`/events/${event.slug}`}

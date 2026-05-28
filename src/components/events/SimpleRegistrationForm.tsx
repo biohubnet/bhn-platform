@@ -34,6 +34,17 @@ interface Props {
    *  fields and switches the form to the signed-in submission path.
    *  Null = guest path: collect name + email up front. */
   signedInUser: { name: string | null; email: string } | null;
+  /** Admin-defined custom questions for this event. Rendered below
+   *  the standard fields, in displayOrder. */
+  customQuestions?: Array<{
+    id: string;
+    key: string;
+    label: string;
+    hint: string | null;
+    kind: "text" | "longtext" | "select" | "multiselect" | "checkbox";
+    options: Array<{ value: string; label: string }> | null;
+    required: boolean;
+  }>;
 }
 
 const ATTENDEE_TYPES = [
@@ -45,7 +56,9 @@ const ATTENDEE_TYPES = [
   { value: "sponsor",  label: "Sponsor / partner", description: "Representing a sponsoring organization" },
 ] as const;
 
-export function SimpleRegistrationForm({ slug, requiresApproval, signedInUser }: Props) {
+export function SimpleRegistrationForm({
+  slug, requiresApproval, signedInUser, customQuestions = [],
+}: Props) {
   const router = useRouter();
   const isGuest = !signedInUser;
 
@@ -57,12 +70,25 @@ export function SimpleRegistrationForm({ slug, requiresApproval, signedInUser }:
   const [dietary, setDietary] = useState("");
   const [accessibility, setAccessibility] = useState("");
 
+  // Custom-question answers keyed by questionId. Multiselect stores
+  // an array; everything else stores a string.
+  const [customAnswers, setCustomAnswers] = useState<Record<string, string | string[]>>({});
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  // Required custom questions must have at least one answer.
+  const customAnswersValid = customQuestions.every((q) => {
+    if (!q.required) return true;
+    const v = customAnswers[q.id];
+    if (Array.isArray(v)) return v.length > 0;
+    return typeof v === "string" && v.trim().length > 0;
+  });
   const canSubmit =
-    !submitting && (!isGuest || (name.trim().length > 0 && emailValid));
+    !submitting &&
+    (!isGuest || (name.trim().length > 0 && emailValid)) &&
+    customAnswersValid;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,10 +96,31 @@ export function SimpleRegistrationForm({ slug, requiresApproval, signedInUser }:
     setSubmitting(true);
     setError(null);
     try {
+      // Serialise custom-question answers to the shape the API
+      // expects: { questionId: stringValue }. Multiselect values are
+      // joined as comma-separated; checkboxes are "yes"/"no".
+      const customAnswersPayload: Record<string, string> = {};
+      for (const q of customQuestions) {
+        const v = customAnswers[q.id];
+        if (q.kind === "checkbox") {
+          customAnswersPayload[q.id] = v === "yes" ? "yes" : "no";
+          continue;
+        }
+        if (Array.isArray(v)) {
+          if (v.length > 0) customAnswersPayload[q.id] = v.join(",");
+          continue;
+        }
+        if (typeof v === "string" && v.trim()) {
+          customAnswersPayload[q.id] = v.trim();
+        }
+      }
+
       const body: Record<string, unknown> = {
         attendeeType,
         dietaryRestrictions: dietary.trim() || undefined,
         accessibilityNeeds: accessibility.trim() || undefined,
+        customAnswers:
+          Object.keys(customAnswersPayload).length > 0 ? customAnswersPayload : undefined,
       };
       // Guest path → add the three guest fields. Signed-in path
       // doesn't send these; the API uses session info.
@@ -222,6 +269,25 @@ export function SimpleRegistrationForm({ slug, requiresApproval, signedInUser }:
         </div>
       </fieldset>
 
+      {/* Custom event-specific questions. Rendered inline (not in
+          the optional details block) since they're explicitly opted
+          in per event by the admin. */}
+      {customQuestions.length > 0 && (
+        <fieldset className="space-y-4">
+          <legend className="text-xs uppercase tracking-[0.18em] font-bold text-fg-subtle">
+            A few more questions
+          </legend>
+          {customQuestions.map((q) => (
+            <CustomQuestionField
+              key={q.id}
+              question={q}
+              value={customAnswers[q.id]}
+              onChange={(v) => setCustomAnswers((prev) => ({ ...prev, [q.id]: v }))}
+            />
+          ))}
+        </fieldset>
+      )}
+
       {/* Optional accessibility + dietary fields. Hidden behind a
           short summary so the form doesn't look heavy for events
           where they don't matter (most info sessions). */}
@@ -275,6 +341,131 @@ export function SimpleRegistrationForm({ slug, requiresApproval, signedInUser }:
       </div>
     </form>
   );
+}
+
+function CustomQuestionField({
+  question,
+  value,
+  onChange,
+}: {
+  question: NonNullable<Props["customQuestions"]>[number];
+  value: string | string[] | undefined;
+  onChange: (v: string | string[]) => void;
+}) {
+  const baseInputClass =
+    "w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm";
+
+  if (question.kind === "text") {
+    return (
+      <Field label={question.label} required={question.required} hint={question.hint ?? undefined}>
+        <input
+          type="text"
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          className={baseInputClass}
+          required={question.required}
+        />
+      </Field>
+    );
+  }
+  if (question.kind === "longtext") {
+    return (
+      <Field label={question.label} required={question.required} hint={question.hint ?? undefined}>
+        <textarea
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          rows={4}
+          className={`${baseInputClass} resize-y leading-relaxed`}
+          required={question.required}
+        />
+      </Field>
+    );
+  }
+  if (question.kind === "checkbox") {
+    const checked = value === "yes";
+    return (
+      <label className="flex items-start gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked ? "yes" : "no")}
+          className="mt-0.5"
+        />
+        <span className="text-sm">
+          <span className="font-semibold text-fg">
+            {question.label}
+            {question.required && <span className="text-rose-700 ml-1">*</span>}
+          </span>
+          {question.hint && <span className="block text-xs text-muted mt-0.5">{question.hint}</span>}
+        </span>
+      </label>
+    );
+  }
+  if (question.kind === "select" && question.options) {
+    return (
+      <Field label={question.label} required={question.required} hint={question.hint ?? undefined}>
+        <div className="space-y-2">
+          {question.options.map((opt) => (
+            <label
+              key={opt.value}
+              className={`flex items-center gap-2.5 rounded-xl border-2 p-2.5 cursor-pointer transition-colors ${
+                value === opt.value
+                  ? "border-brand-500 bg-brand-50"
+                  : "border-line bg-card hover:border-brand-200"
+              }`}
+            >
+              <input
+                type="radio"
+                name={`q-${question.id}`}
+                value={opt.value}
+                checked={value === opt.value}
+                onChange={() => onChange(opt.value)}
+                required={question.required}
+              />
+              <span className={`text-sm font-semibold ${value === opt.value ? "text-brand-700" : "text-fg"}`}>
+                {opt.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </Field>
+    );
+  }
+  if (question.kind === "multiselect" && question.options) {
+    const arr = Array.isArray(value) ? value : [];
+    return (
+      <Field label={question.label} required={question.required} hint={question.hint ?? undefined}>
+        <div className="space-y-2">
+          {question.options.map((opt) => {
+            const checked = arr.includes(opt.value);
+            return (
+              <label
+                key={opt.value}
+                className={`flex items-center gap-2.5 rounded-xl border-2 p-2.5 cursor-pointer transition-colors ${
+                  checked
+                    ? "border-brand-500 bg-brand-50"
+                    : "border-line bg-card hover:border-brand-200"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => {
+                    if (checked) onChange(arr.filter((v) => v !== opt.value));
+                    else onChange([...arr, opt.value]);
+                  }}
+                />
+                <span className={`text-sm font-semibold ${checked ? "text-brand-700" : "text-fg"}`}>
+                  {opt.label}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </Field>
+    );
+  }
+  return null;
 }
 
 function Field({

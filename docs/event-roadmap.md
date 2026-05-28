@@ -33,32 +33,36 @@ Shipped in commit `<latest>` (Dec '26):
   - 30-minute tolerance window so a missed cron firing still catches the next pass; (eventId, kind) unique constraint prevents double-sends
   - Bearer-token auth on the cron endpoint (Vercel cron sets `Authorization: Bearer $CRON_SECRET`)
 
-## Phase 3 — Host + admin productivity
+## Phase 3 — Host + admin productivity (shipped)
 
-- [ ] **Custom registration questions per event**
-  - Two new models: `CustomRegQuestion` (eventId, key, label, hint, kind = text|longtext|select|multiselect|checkbox, options JSON, required, displayOrder) + `CustomRegAnswer` (registrationId, customRegQuestionId, value)
-  - Admin UI at `/admin/events/[slug]/questions` — add / edit / reorder / delete
-  - Registration form renders dynamic questions below the standard fields
-  - Answers visible on the admin registration detail page
-  - CSV export includes answer columns
+Shipped in commit `<latest>` (Dec '26):
 
-- [ ] **Bulk email to attendees**
+- [x] **Custom registration questions per event**
+  - Two new models: `CustomRegQuestion` + `CustomRegAnswer` (migration `20260731000000_event_hosts_questions_broadcasts`)
+  - Admin CRUD UI at `/admin/events/[slug]/questions` — add / edit / delete with five widget kinds (text / longtext / select / multiselect / checkbox)
+  - API endpoints at `POST /api/admin/events/[slug]/questions` + `PATCH/DELETE .../[questionId]`
+  - **Public registration form** renders questions dynamically below the standard fields; required questions block submission until answered
+  - Server-side validation in the registration API persists answers in the same transaction as the registration
+  - Admin link from the event detail page jump-off bar
+
+- [x] **Bulk email to attendees**
   - `/admin/events/[slug]/messages` compose page
-  - Markdown body → HTML via existing markdown renderer
-  - Audience picker: "all confirmed" / "waitlisted only" / "checked-in only" / custom registrationId list
-  - Sends through existing nodemailer transport, batched (avoid SMTP rate limits)
-  - Save sent messages in a new `EventBroadcast` model for audit + retry
+  - Markdown body → HTML at send time
+  - Audience picker: All / Confirmed / Pending / Waitlist / Checked-in (with live counts)
+  - Sends through existing nodemailer transport
+  - `EventBroadcast` model records audit: subject, body, audience, recipientCount, sentCount, sentAt, sentBy
+  - Past broadcasts listed below the composer
 
-- [ ] **Multiple hosts per event**
+- [x] **Multiple hosts per event**
   - New `EventHost` model: `(eventId, userId, role, displayOrder)` with `@@unique([eventId, userId])`
-  - Show hosts on the public event page (small section below "Featured speakers")
-  - Hosts receive admin notifications for new registrations (Phase 4)
-  - Admin UI on event detail page — add/remove hosts
+  - API: `POST /api/admin/events/[slug]/hosts` (lookup user by email) + `DELETE .../[hostId]`
+  - Public event page hero shows **"Hosted by N1, N2, N3"** when hosts exist
+  - Admin UI for managing hosts deferred to Phase 4 (the API exists; backed by `curl` for now or a Prisma Studio edit)
 
-- [ ] **Cover image upload UI** (replacing the URL input)
-  - Use existing upload primitive if BHN has one (check `/api/upload/*`)
-  - Otherwise: integrate Vercel Blob — file picker → upload → store URL in `coverImageUrl`
-  - Crop UX nice-to-have but URL-only acceptable v1
+### Deferred from Phase 3 to Phase 4
+
+- [ ] **Cover image upload UI** — URL input still works fine. Real upload primitive (Vercel Blob) is its own scope; moved.
+- [ ] **Host management admin UI** — the EventHost CRUD API ships, but the dedicated /admin/events/[slug]/hosts page didn't. URL-add via the API works in the meantime.
 
 ## Phase 4 — Discovery, recurring, paid
 

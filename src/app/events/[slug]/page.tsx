@@ -72,6 +72,10 @@ export default async function EventLandingPage(
         where: { isActive: true },
         orderBy: [{ startDateTime: "asc" }, { displayOrder: "asc" }],
       },
+      hosts: {
+        orderBy: { displayOrder: "asc" },
+        include: { user: { select: { name: true } } },
+      },
       symposiumSessions: {
         orderBy: [{ startTime: "asc" }, { displayOrder: "asc" }],
         include: {
@@ -297,6 +301,20 @@ export default async function EventLandingPage(
               <span className="inline-flex items-center gap-2 text-white/65">
                 <Users size={14} />
                 <span>In person</span>
+              </span>
+            )}
+            {event.hosts.length > 0 && (
+              <span className="inline-flex items-center gap-2">
+                <Users size={14} className="text-white/65" />
+                <span>
+                  Hosted by{" "}
+                  <span className="font-semibold">
+                    {event.hosts
+                      .map((h) => h.user.name)
+                      .filter(Boolean)
+                      .join(", ")}
+                  </span>
+                </span>
               </span>
             )}
             {hasCap && (
