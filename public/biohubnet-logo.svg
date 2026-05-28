@@ -1,43 +1,119 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 240" role="img" aria-label="BioHubNet — Transformative Talent Development">
-  <title>BioHubNet — Transformative Talent Development</title>
-
-  <!-- Stripe pattern. Each repeat is 16 units tall — 10 colored + 6
-       transparent so the bg shows through and the diamond reads with
-       venetian-blind cuts. currentColor carries the per-diamond hue. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 920" role="img" aria-label="BioHubNet — Transformative Talent Development">
+  <title>BioHubNet</title>
   <defs>
-    <pattern id="bhn-stripe" patternUnits="userSpaceOnUse" width="16" height="16">
-      <rect width="16" height="10" fill="currentColor"/>
-    </pattern>
+    <!-- Four gradient ramps so each petal reads as a distinct facet
+         while staying inside the brand's blue → green palette. -->
+    <linearGradient id="bhn-top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d4f8b"/>
+      <stop offset="55%" stop-color="#2c8aa3"/>
+      <stop offset="100%" stop-color="#3fa86a"/>
+    </linearGradient>
+    <linearGradient id="bhn-right" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#52b066"/>
+      <stop offset="55%" stop-color="#3aa28a"/>
+      <stop offset="100%" stop-color="#1e6d9c"/>
+    </linearGradient>
+    <linearGradient id="bhn-bottom" x1="1" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#1d4f8b"/>
+      <stop offset="50%" stop-color="#2674a0"/>
+      <stop offset="100%" stop-color="#48a25f"/>
+    </linearGradient>
+    <linearGradient id="bhn-left" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#173d6f"/>
+      <stop offset="55%" stop-color="#226d9a"/>
+      <stop offset="100%" stop-color="#3c9c63"/>
+    </linearGradient>
+
+    <!-- Highlight + shadow overlays sit on top of each petal to
+         suggest the ribbon-fold the original artwork carries. -->
+    <radialGradient id="bhn-shine" cx="0.35" cy="0.3" r="0.55">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bhn-depth" cx="0.65" cy="0.75" r="0.6">
+      <stop offset="0%" stop-color="#0b1c3a" stop-opacity="0.28"/>
+      <stop offset="70%" stop-color="#0b1c3a" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#0b1c3a" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Soft halo behind the whole emblem so it sits on a glassy disc
+         the way the original does. -->
+    <radialGradient id="bhn-halo" cx="0.5" cy="0.5" r="0.55">
+      <stop offset="0%" stop-color="#dfe7ee"/>
+      <stop offset="65%" stop-color="#eef2f4"/>
+      <stop offset="100%" stop-color="#f4f6f7"/>
+    </radialGradient>
+
+    <!-- One petal, drawn pointing up. A rounded lozenge with a tucked
+         inner edge so when four are arranged rotationally they meet
+         at a 4-pointed star at the centre. -->
+    <symbol id="bhn-petal" viewBox="-200 -360 400 360" overflow="visible">
+      <path d="
+        M 0 -340
+        C 130 -340 215 -250 215 -130
+        C 215 -60 175 -10 95 25
+        C 55 5 22 -5 0 -5
+        C -22 -5 -55 5 -95 25
+        C -175 -10 -215 -60 -215 -130
+        C -215 -250 -130 -340 0 -340
+        Z" />
+    </symbol>
   </defs>
 
-  <!-- Mark: four overlapping striped diamonds in a 200x200 box. -->
-  <g transform="translate(20, 20)">
-    <!-- Top-left teal -->
-    <g color="#2D7872">
-      <polygon points="50,4 100,54 50,104 0,54" fill="url(#bhn-stripe)"/>
+  <!-- ─── Soft background halo ─── -->
+  <circle cx="400" cy="360" r="330" fill="url(#bhn-halo)"/>
+
+  <!-- ─── Emblem (4 petals + central star + light/shadow overlays) ─── -->
+  <g transform="translate(400 360)">
+    <!-- TOP petal -->
+    <g>
+      <use href="#bhn-petal" fill="url(#bhn-top)"/>
+      <use href="#bhn-petal" fill="url(#bhn-shine)"/>
+      <use href="#bhn-petal" fill="url(#bhn-depth)"/>
     </g>
-    <!-- Top-right mint -->
-    <g color="#7DC495">
-      <polygon points="150,4 200,54 150,104 100,54" fill="url(#bhn-stripe)"/>
+
+    <!-- RIGHT petal (rotate 90°) -->
+    <g transform="rotate(90)">
+      <use href="#bhn-petal" fill="url(#bhn-right)"/>
+      <use href="#bhn-petal" fill="url(#bhn-shine)"/>
+      <use href="#bhn-petal" fill="url(#bhn-depth)"/>
     </g>
-    <!-- Bottom-left blue (overlaps top-left) -->
-    <g color="#187FB0">
-      <polygon points="50,84 100,134 50,184 0,134" fill="url(#bhn-stripe)"/>
+
+    <!-- BOTTOM petal (rotate 180°) -->
+    <g transform="rotate(180)">
+      <use href="#bhn-petal" fill="url(#bhn-bottom)"/>
+      <use href="#bhn-petal" fill="url(#bhn-shine)"/>
+      <use href="#bhn-petal" fill="url(#bhn-depth)"/>
     </g>
-    <!-- Bottom-right mint -->
-    <g color="#7DC495">
-      <polygon points="150,84 200,134 150,184 100,134" fill="url(#bhn-stripe)"/>
+
+    <!-- LEFT petal (rotate 270°) -->
+    <g transform="rotate(270)">
+      <use href="#bhn-petal" fill="url(#bhn-left)"/>
+      <use href="#bhn-petal" fill="url(#bhn-shine)"/>
+      <use href="#bhn-petal" fill="url(#bhn-depth)"/>
+    </g>
+
+    <!-- Central 4-pointed star (negative-space cut-out, drawn as a
+         white fill on top so it doesn't depend on path subtraction). -->
+    <path
+      d="M 0 -110 C 18 -50 50 -18 110 0 C 50 18 18 50 0 110 C -18 50 -50 18 -110 0 C -50 -18 -18 -50 0 -110 Z"
+      fill="#ffffff"/>
+
+    <!-- Tiny sparkle stamp bottom-right — echoes the original's
+         decorative glint. -->
+    <g transform="translate(285 285)" fill="#76a4c4" opacity="0.75">
+      <path d="M 0 -10 C 2 -3 7 -2 12 0 C 7 2 2 3 0 10 C -2 3 -7 2 -12 0 C -7 -2 -2 -3 0 -10 Z"/>
     </g>
   </g>
 
-  <!-- Wordmark + tagline -->
-  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
-    <text x="260" y="130" font-size="100" font-weight="900" letter-spacing="-2">
-      <tspan fill="#2D7872">Bio</tspan><tspan fill="#187FB0">Hub</tspan><tspan fill="#7DC495">Net</tspan>
+  <!-- ─── Wordmark ─── -->
+  <g text-anchor="middle" font-family="'Helvetica Neue','Inter','Arial',sans-serif">
+    <text x="400" y="800" font-size="92" font-weight="700" fill="#1d3a7a" letter-spacing="-1">
+      <tspan>Bio</tspan><tspan fill="#246b9a">Hub</tspan><tspan fill="#3fa86a">Net</tspan>
     </text>
-    <text x="262" y="170" font-size="22" font-weight="700" letter-spacing="3.2" fill="#2D7872">
-      TRANSFORMATIVE TALENT DEVELOPMENT
+    <text x="400" y="860" font-size="26" font-weight="400" fill="#6f7a85" letter-spacing="2">
+      Transformative Talent Development
     </text>
   </g>
 </svg>

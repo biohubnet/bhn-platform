@@ -1,37 +1,24 @@
 import { ImageResponse } from "next/og";
 
 /**
- * Favicon — BioHubNet four-diamond mark at 64×64. Mirrors the inline
- * <LogoMark> in src/components/ui/Logo.tsx and the standalone SVG at
- * /public/biohubnet-logo.svg.
+ * Favicon — BioHubNet four-petal mark at 64×64. Mirrors the
+ * geometry of <LogoMark> in src/components/ui/Logo.tsx and the
+ * standalone /public/biohubnet-logo.svg. Four rotated petals
+ * around a central 4-pointed star.
  *
- * Satori (next/og's renderer) supports a limited SVG subset — no
- * <pattern>, no <use>, no advanced clipPath. The stripes here are
- * therefore drawn as explicit <rect> bars individually clipped to
- * each diamond's polygon. Verbose but renders the same composition
- * as the runtime <LogoMark>.
+ * Note: ImageResponse renders via Satori, which doesn't support
+ * SVG `<symbol>` / `<use>` (we use those in the inline LogoMark
+ * because they trim duplication, but the runtime needs the path
+ * spelled out four times here).
  */
 export const size = { width: 64, height: 64 };
 export const contentType = "image/png";
 
-const COLOR_TEAL = "#2D7872";
-const COLOR_BLUE = "#187FB0";
-const COLOR_MINT = "#7DC495";
+const PETAL_PATH =
+  "M 24 2 C 35 2 43 9 43 19 C 43 24 39 26 33 25 C 28 23 26 23 24 23 C 22 23 20 23 15 25 C 9 26 5 24 5 19 C 5 9 13 2 24 2 Z";
 
-// Diamond polygons in a 100×100 viewBox. Top row at y≈2–52, bottom
-// row at y≈42–92 — the 10-unit vertical overlap is what makes the
-// cluster read as connected.
-const DIAMONDS: Array<{ id: string; points: string; color: string }> = [
-  { id: "d-tl", points: "25,2 50,27 25,52 0,27",   color: COLOR_TEAL },
-  { id: "d-tr", points: "75,2 100,27 75,52 50,27", color: COLOR_MINT },
-  { id: "d-bl", points: "25,42 50,67 25,92 0,67",  color: COLOR_BLUE },
-  { id: "d-br", points: "75,42 100,67 75,92 50,67", color: COLOR_MINT },
-];
-
-// Horizontal stripe y-positions (5 stripes per diamond, each 5
-// units tall, gap 3 units). Mapped to the diamond's local bounds.
-const STRIPE_Y_OFFSETS = [4, 12, 20, 28, 36];
-const STRIPE_HEIGHT = 5;
+const STAR_PATH =
+  "M 24 16 C 25 20 28 23 32 24 C 28 25 25 28 24 32 C 23 28 20 25 16 24 C 20 23 23 20 24 16 Z";
 
 export default function Icon() {
   return new ImageResponse(
@@ -43,38 +30,44 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg,#eef2f4 0%,#dfe7ee 100%)",
+          background:
+            "linear-gradient(135deg,#eef2f4 0%,#dfe7ee 100%)",
         }}
       >
-        <svg width="56" height="56" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <svg width="64" height="64" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {DIAMONDS.map((d) => (
-              <clipPath id={d.id} key={d.id}>
-                <polygon points={d.points} />
-              </clipPath>
-            ))}
+            <linearGradient id="ic-top" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#1d4f8b" />
+              <stop offset="55%" stopColor="#2c8aa3" />
+              <stop offset="100%" stopColor="#3fa86a" />
+            </linearGradient>
+            <linearGradient id="ic-right" x1="1" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#52b066" />
+              <stop offset="55%" stopColor="#3aa28a" />
+              <stop offset="100%" stopColor="#1e6d9c" />
+            </linearGradient>
+            <linearGradient id="ic-bottom" x1="1" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor="#1d4f8b" />
+              <stop offset="50%" stopColor="#2674a0" />
+              <stop offset="100%" stopColor="#48a25f" />
+            </linearGradient>
+            <linearGradient id="ic-left" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0%" stopColor="#173d6f" />
+              <stop offset="55%" stopColor="#226d9a" />
+              <stop offset="100%" stopColor="#3c9c63" />
+            </linearGradient>
           </defs>
-          {DIAMONDS.map((d) => {
-            // Diamond's top tip y = stripe origin. Compute it from the
-            // polygon points so the stripes anchor correctly per row.
-            const topY = Math.min(
-              ...d.points.split(" ").map((p) => Number(p.split(",")[1])),
-            );
-            return (
-              <g key={d.id} clipPath={`url(#${d.id})`}>
-                {STRIPE_Y_OFFSETS.map((dy) => (
-                  <rect
-                    key={dy}
-                    x="0"
-                    y={topY + dy}
-                    width="100"
-                    height={STRIPE_HEIGHT}
-                    fill={d.color}
-                  />
-                ))}
-              </g>
-            );
-          })}
+          <path d={PETAL_PATH} fill="url(#ic-top)" />
+          <g transform="rotate(90 24 24)">
+            <path d={PETAL_PATH} fill="url(#ic-right)" />
+          </g>
+          <g transform="rotate(180 24 24)">
+            <path d={PETAL_PATH} fill="url(#ic-bottom)" />
+          </g>
+          <g transform="rotate(270 24 24)">
+            <path d={PETAL_PATH} fill="url(#ic-left)" />
+          </g>
+          <path d={STAR_PATH} fill="#ffffff" />
         </svg>
       </div>
     ),
