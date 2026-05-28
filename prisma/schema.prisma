@@ -2776,6 +2776,14 @@ model Registration {
   guestName            String?
   /// Optional org / institution affiliation for the guest.
   guestOrganization    String?
+  /// Optional phone number captured at registration for SMS
+  /// reminders. E.164 format (e.g. "+14165551234"). NULL means the
+  /// attendee didn't provide a number; the cron skips SMS for them.
+  guestPhone           String?
+  /// Explicit opt-in for SMS reminders. Even with a phone on file,
+  /// the cron only sends SMS when this is true (avoids ambushing
+  /// people who typed their number in for some other reason).
+  smsOptIn             Boolean   @default(false)
   /// "trainee" | "industry" | "academic" | "student" | "sponsor" | "guest"
   attendeeType         String    @default("trainee") // trainee | industry | academic | student | sponsor | guest
   /// "pending" | "confirmed" | "waitlist" | "cancelled"

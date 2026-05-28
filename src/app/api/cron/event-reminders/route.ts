@@ -25,6 +25,8 @@ import {
   renderEventReminder,
   type ReminderKind,
 } from "@/lib/email/templates/event-reminder";
+import { sendSms, smsConfigured } from "@/lib/sms";
+import { renderReminderSms } from "@/lib/sms/templates";
 
 export const runtime = "nodejs";
 // Force dynamic — cron requests must not be cached.
@@ -144,7 +146,9 @@ export async function GET(req: Request) {
           userId: true,
           guestEmail: true,
           guestName: true,
-          user: { select: { email: true, name: true } },
+          guestPhone: true,
+          smsOptIn: true,
+          user: { select: { email: true, name: true, phone: true } },
         },
       });
 
@@ -180,6 +184,36 @@ export async function GET(req: Request) {
         } catch (err) {
           console.error("Reminder send failed:", to, (err as Error).message);
           skipped++;
+        }
+
+        // SMS fan-out — only for the day-of + hour-of reminders, only
+        // when Twilio is configured AND the registrant explicitly
+        // opted in AND a phone is on file. Costs are small ($0.0075
+        // per send) so failures don't gate the cron — just log.
+        if ((kind === "one_day" || kind === "one_hour") && smsConfigured() && r.smsOptIn) {
+          const phone = r.user?.phone ?? r.guestPhone ?? null;
+          if (phone) {
+            // Quick "starts in 60 min" / "tomorrow at 7 PM" summary.
+            const whenSummary = kind === "one_hour"
+              ? "starting in about an hour"
+              : `tomorrow at ${event.startDate.toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: event.timezone })}`;
+            const venueOrMeeting = isOnline
+              ? (event.mainVenueMapUrl ?? event.mainVenueName ?? "Online")
+              : (event.mainVenueName ?? null);
+            const shortLink = successPageUrl;
+            const body = renderReminderSms({
+              kind,
+              eventTitle: event.title,
+              whenSummary,
+              venueOrMeeting,
+              shortLink,
+            });
+            try {
+              await sendSms({ to: phone, body });
+            } catch (err) {
+              console.error("Reminder SMS failed:", phone, (err as Error).message);
+            }
+          }
         }
       }
 

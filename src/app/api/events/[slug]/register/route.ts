@@ -39,6 +39,7 @@ import { bookWorkshopInTx } from "@/lib/events/bookings";
 import { MAX_WORKSHOPS_PER_USER } from "@/lib/events/constants";
 import { renderRegistrationConfirmation } from "@/lib/email/templates/registration-confirmation";
 import { buildIcs } from "@/lib/events/ics";
+import { toE164 } from "@/lib/sms";
 
 // Bare-bones RFC-5322-ish email regex. Not a full parse — guard
 // against obvious typos / missing @ on the guest path. Real validation
@@ -143,8 +144,20 @@ export async function POST(
     guestName: rawGuestName,
     guestEmail: rawGuestEmail,
     guestOrganization: rawGuestOrg,
+    guestPhone: rawGuestPhone,
+    smsOptIn: rawSmsOptIn,
     customAnswers: rawCustomAnswers,
   } = body as Record<string, unknown>;
+
+  // SMS opt-in + phone — accepted on both paths. We only store the
+  // phone when smsOptIn is true AND the number normalises to E.164.
+  // Invalid numbers are dropped (not an error) so a typo doesn't
+  // block the registration.
+  const smsOptIn = rawSmsOptIn === true;
+  let normalisedPhone: string | null = null;
+  if (smsOptIn && typeof rawGuestPhone === "string") {
+    normalisedPhone = toE164(rawGuestPhone);
+  }
 
   // Guest path needs name + email. Validate up front so we fail
   // cheap before touching the DB.
@@ -359,6 +372,8 @@ export async function POST(
           guestEmail: isGuestPath ? guestEmail : null,
           guestName: isGuestPath ? guestName : null,
           guestOrganization: isGuestPath ? guestOrganization : null,
+          guestPhone: normalisedPhone,
+          smsOptIn: smsOptIn && normalisedPhone !== null,
           attendeeType,
           registrationStatus: initialRegistrationStatus,
           waitlistPosition: nextWaitlistPosition,

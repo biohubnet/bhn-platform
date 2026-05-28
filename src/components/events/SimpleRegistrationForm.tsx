@@ -66,6 +66,8 @@ export function SimpleRegistrationForm({
   const [name, setName] = useState(signedInUser?.name ?? "");
   const [email, setEmail] = useState(signedInUser?.email ?? "");
   const [organization, setOrganization] = useState("");
+  const [phone, setPhone] = useState("");
+  const [smsOptIn, setSmsOptIn] = useState(false);
   const [attendeeType, setAttendeeType] = useState<string>("guest");
   const [dietary, setDietary] = useState("");
   const [accessibility, setAccessibility] = useState("");
@@ -128,6 +130,13 @@ export function SimpleRegistrationForm({
         body.guestName = name.trim();
         body.guestEmail = email.trim();
         if (organization.trim()) body.guestOrganization = organization.trim();
+      }
+      // SMS opt-in + phone — sent regardless of guest / signed-in
+      // path. The API normalises to E.164 and only stores when both
+      // phone is valid AND smsOptIn is true.
+      if (phone.trim() && smsOptIn) {
+        body.guestPhone = phone.trim();
+        body.smsOptIn = true;
       }
       const res = await fetch(`/api/events/${slug}/register`, {
         method: "POST",
@@ -234,6 +243,46 @@ export function SimpleRegistrationForm({
           </Field>
         </fieldset>
       )}
+
+      {/* SMS reminders — opt-in only. The phone field is enabled
+          regardless, but the API only stores it + sends SMS when
+          the checkbox is ticked. Available to both guests + signed-
+          in users; for signed-in users with a User.phone already on
+          file, the cron uses that fallback if this field is blank. */}
+      <fieldset className="rounded-xl border border-line bg-card p-4 space-y-3">
+        <legend className="text-xs uppercase tracking-[0.18em] font-bold text-fg-subtle px-1">
+          Text reminders
+        </legend>
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={smsOptIn}
+            onChange={(e) => setSmsOptIn(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span className="text-sm">
+            <span className="font-semibold text-fg">Text me 1 day and 1 hour before the event</span>
+            <span className="block text-xs text-muted mt-0.5">
+              Optional. We'll only text these two reminders — no other messages, ever.
+            </span>
+          </span>
+        </label>
+        {smsOptIn && (
+          <Field
+            label="Mobile number"
+            hint="Include country code (e.g. +1 416 555 1234). Standard carrier rates may apply."
+          >
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1 416 555 1234"
+              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+              autoComplete="tel"
+            />
+          </Field>
+        )}
+      </fieldset>
 
       {/* Attendee type */}
       <fieldset className="space-y-3">

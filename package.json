@@ -57,6 +57,7 @@
     "scorm-again": "^3.0.4",
     "stripe": "^22.2.0",
     "tailwind-merge": "^3.5.0",
+    "twilio": "^6.0.2",
     "unpdf": "^1.6.2",
     "unzipper": "^0.12.3",
     "uuid": "^14.0.0",

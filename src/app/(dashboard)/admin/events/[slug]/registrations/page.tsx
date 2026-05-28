@@ -4,6 +4,7 @@ import { ArrowLeft, Download, Ticket, CheckCircle2, Hourglass } from "lucide-rea
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { RegistrationsTable, type RegistrationRow } from "@/components/admin/events/RegistrationsTable";
+import { LiveAttendeeFeed } from "@/components/admin/events/LiveAttendeeFeed";
 
 /**
  * /admin/events/[slug]/registrations — attendee list with check-in
@@ -62,6 +63,8 @@ export default async function AdminEventRegistrationsPage({
   const checkedInCount = rows.filter((r) => r.checkedInAt !== null).length;
   const confirmedCount = rows.filter((r) => r.registrationStatus === "confirmed").length;
   const pendingCount = rows.filter((r) => r.registrationStatus === "pending").length;
+  const waitlistCount = rows.filter((r) => r.registrationStatus === "waitlist").length;
+  const totalActive = rows.filter((r) => r.registrationStatus !== "cancelled").length;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -114,6 +117,17 @@ export default async function AdminEventRegistrationsPage({
           icon={<CheckCircle2 size={12} className="text-emerald-700" />}
         />
       </div>
+
+      <LiveAttendeeFeed
+        slug={slug}
+        initialCounts={{
+          total: totalActive,
+          confirmed: confirmedCount,
+          pending: pendingCount,
+          waitlist: waitlistCount,
+          checkedIn: checkedInCount,
+        }}
+      />
 
       <RegistrationsTable slug={slug} rows={rows} />
     </div>
