@@ -75,22 +75,26 @@ Shipped in commit `<latest>` (Dec '26):
   - New page at `/admin/events/[slug]/hosts`
   - `HostsManager` component — list current hosts, add by email, role label, remove
 
-- [x] **Stripe paid ticketing — base flow shipped Dec '26**
-  - New `TicketType` model (migration `20260801000000_ticket_types`) — `name`, `description`, `priceCents`, `currency`, `capacity`, `isActive`, `displayOrder`, `stripePriceId` cache
-  - Admin CRUD UI at `/admin/events/[slug]/tickets`
-  - **Stripe helper** at `src/lib/stripe.ts` — lazy client, `stripeConfigured()` predicate, `createCheckoutSessionForTicket()` with on-the-fly Product+Price creation, `verifyWebhook()`
-  - **Checkout endpoint** `POST /api/events/[slug]/checkout` — resolves attendee identity (signed-in or guest), creates Stripe Checkout session with metadata for the webhook to reconstruct
-  - **Webhook handler** `POST /api/webhooks/stripe` — signature-verified, handles `checkout.session.completed`, creates the Registration row (with capacity / waitlist / approval logic applied at write-time)
-  - Success page resolves Stripe-paid registrations via `?session_id=…`
-  - Documentation at `docs/stripe-setup.md` — Stripe account → API key → webhook endpoint → env vars → ticket tier UI
-  - Free tiers (priceCents=0) still defined as TicketType but short-circuit to the regular registration flow (no Stripe round-trip)
+- [x] **Stripe paid ticketing — infrastructure shipped, public activation deferred per team decision (Dec '26)**
 
-- [ ] **Stripe — remaining work** (independently shippable)
-  - Branded confirmation email send from the webhook handler (currently only the registration row is created; mirror the template send from `/api/events/[slug]/register`)
-  - Public ticket picker on `/events/[slug]/register` when ticket types exist (currently only the API exists; the form integration with the free-vs-paid fork is the missing piece)
-  - Refund automation via `charge.refunded` webhook
-  - Multiple tickets per checkout (currently each Checkout buys 1 ticket)
-  - Coupon codes
+  Team decision: **all events run as free registration for now**. The Stripe schema + APIs + webhook handler are shipped and dormant; the **public ticket picker on the registration form is NOT wired in**. Defining tiers in the admin UI is fine — they just won't be surfaced to attendees until activation lands as its own (small) follow-up.
+
+  **Shipped + dormant**:
+  - New `TicketType` model (migration `20260801000000_ticket_types`) — `name`, `description`, `priceCents`, `currency`, `capacity`, `isActive`, `displayOrder`, `stripePriceId` cache
+  - Admin CRUD UI at `/admin/events/[slug]/tickets` with an always-on "queued, not active" banner
+  - **Stripe helper** at `src/lib/stripe.ts` — lazy client, `stripeConfigured()` predicate, `createCheckoutSessionForTicket()` with on-the-fly Product+Price creation, `verifyWebhook()`
+  - **Checkout endpoint** `POST /api/events/[slug]/checkout` — exists, callable, but unreferenced from the public form
+  - **Webhook handler** `POST /api/webhooks/stripe` — signature-verified, handles `checkout.session.completed`, creates Registration with capacity/waitlist/approval logic; never fires because the checkout endpoint isn't called from the form
+  - Success page already accepts `?session_id=…` for the future activation
+  - Setup doc at `docs/stripe-setup.md`
+
+  **To activate paid checkout later**, the missing pieces are:
+  - Public ticket picker on `/events/[slug]/register` — fork between the free `SimpleRegistrationForm` (current path) and a "select tier → POST /checkout" path when ticket types exist with `priceCents > 0`
+  - Branded confirmation email send from the webhook handler (mirror the template send from `/api/events/[slug]/register`)
+  - Set Stripe env vars on Vercel (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) per `docs/stripe-setup.md`
+  - Refund automation via `charge.refunded` webhook (out of scope for activation; admin handles via Stripe Dashboard until then)
+
+  Free tiers (priceCents=0) would short-circuit Stripe regardless. The current free flow stays the canonical path until the team flips the switch.
 
 - [ ] **Series / recurring events**
   - New `EventSeries` model: `(slug, title, tagline, description, coverImageUrl)`

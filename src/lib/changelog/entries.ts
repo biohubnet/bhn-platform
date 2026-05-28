@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Events — Stripe paid checkout dormant per team decision — May 2026
+  {
+    title: "Events — Stripe paid checkout kept dormant; all events run as free registration for now (team decision)",
+    body: "Status clarification on the Stripe paid-ticketing infrastructure that shipped earlier this batch.\n\n**Team decision**: all events run as **free registration** for now. The Stripe schema (`TicketType`), Stripe SDK helper, public checkout endpoint, and webhook handler are all shipped and dormant. **The public ticket picker is intentionally NOT wired into the registration form** — `SimpleRegistrationForm` continues to be the single canonical path for both signed-in users and guests, free across the board.\n\n**What this means in practice**:\n  • Defining ticket tiers in `/admin/events/<slug>/tickets` is fine — but they aren't surfaced to attendees yet. A new always-on banner on that page makes this explicit.\n  • Public registration flows are unchanged. No attendee will see a ticket picker or a Stripe Checkout redirect.\n  • The Stripe env vars don't need to be set on Vercel. Until activation, the infrastructure stays dormant regardless of Stripe configuration.\n  • Capacity + waitlist + .ics + reminders + custom questions + bulk email + co-hosts all keep working as before.\n\n**Why hold**: keeping registration free for the launch phase removes a category of friction (payment confusion, refund operations, support tickets). Stripe is ready to activate as a small follow-up when we want it — the path is documented at `docs/event-roadmap.md`.\n\n**To activate later**, the missing pieces are:\n  • Public ticket picker on `/events/<slug>/register` that forks between the free `SimpleRegistrationForm` and a paid \"select tier → POST /checkout\" path when ticket types exist with `priceCents > 0`\n  • Branded confirmation email send from the webhook handler\n  • Stripe env vars on Vercel (see `docs/stripe-setup.md`)",
+    kind: "note",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Events — Phase 4 batch 1: cover upload + hosts admin + Stripe — May 2026
   {
     title: "Events — cover image upload + hosts admin UI + Stripe paid ticketing (Phase 4 batch 1)",

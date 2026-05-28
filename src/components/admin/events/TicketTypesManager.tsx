@@ -61,11 +61,34 @@ export function TicketTypesManager({
 
   return (
     <div className="space-y-4">
+      {/* Always-on activation banner. Paid public checkout is shipped
+          in the schema + APIs but intentionally NOT wired into the
+          public registration form yet (the form remains free-only).
+          The team decision is to keep events free for now and
+          activate paid checkout in a follow-up. Defining tiers here
+          is fine — they just won't be surfaced to attendees until the
+          activation lands. */}
+      <div className="rounded-xl border border-brand-200 bg-brand-50 p-3.5 text-xs text-fg inline-flex items-start gap-2.5">
+        <AlertCircle size={14} className="shrink-0 mt-0.5 text-brand-700" />
+        <div>
+          <p className="font-bold text-brand-900">
+            Paid checkout is queued — not active yet
+          </p>
+          <p className="mt-1 leading-snug text-fg-muted">
+            All events run as <strong>free registration</strong> for now per team decision. Tiers
+            defined on this page <strong>aren't surfaced to attendees yet</strong> — the public
+            registration form still uses the free flow. The Stripe infrastructure (schema, APIs,
+            webhook handler) is in place and dormant; flipping the activation switch is its own
+            small follow-up. See <code className="font-mono bg-card-solid px-1 rounded">docs/event-roadmap.md</code>.
+          </p>
+        </div>
+      </div>
+
       {!stripeConfigured && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-900 inline-flex items-start gap-2">
           <AlertCircle size={14} className="shrink-0 mt-0.5" />
           <span>
-            <strong>Stripe isn't configured yet.</strong> You can still define ticket tiers, but paid checkout won't run until <code className="font-mono">STRIPE_SECRET_KEY</code> and <code className="font-mono">STRIPE_WEBHOOK_SECRET</code> are set on Vercel. Free ($0) tiers always work without Stripe. See <code className="font-mono">docs/stripe-setup.md</code>.
+            Separately: <strong>Stripe SDK is installed but env vars aren't set.</strong> When activation comes you'll also need <code className="font-mono">STRIPE_SECRET_KEY</code> and <code className="font-mono">STRIPE_WEBHOOK_SECRET</code> on Vercel. Free ($0) tiers don't need either. See <code className="font-mono">docs/stripe-setup.md</code>.
           </span>
         </div>
       )}
