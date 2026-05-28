@@ -39,10 +39,23 @@ const WINDOW_MS = {
 } as const satisfies Record<ReminderKind, number>;
 
 // Tolerance — a reminder fires if the now-cursor crossed its trigger
-// time within this window. 30 minutes covers a 15-minute cron cadence
-// + missed firings (e.g. deploy outage). The (eventId, kind) unique
-// constraint guarantees no double-send regardless.
-const FIRE_TOLERANCE_MS = 30 * 60 * 1000;
+// time within this window.
+//
+// On Vercel Hobby the cron runs once per day, so the window has to
+// span 24 h + a buffer to catch every event the daily run is
+// responsible for. On Pro (where we'd flip vercel.json to `*/15 * *
+// * *`) a 30-minute window would be tighter and more correct, but the
+// (eventId, kind) unique constraint makes double-sends impossible
+// regardless of the window size, so erring wide is safe.
+//
+// Practical impact on Hobby:
+//   • one_week reminders fire within ~24 h of the 7-day mark
+//   • one_day  reminders fire within ~24 h of the 1-day mark
+//   • one_hour reminders are effectively NEVER timely on Hobby — the
+//     trigger time is missed by the time the next daily poll runs.
+//     For accurate one-hour reminders, upgrade Vercel to Pro and set
+//     the cron back to */15 * * * * in vercel.json.
+const FIRE_TOLERANCE_MS = 25 * 60 * 60 * 1000;
 
 export async function GET(req: Request) {
   // Auth gate. Vercel cron uses Bearer CRON_SECRET; CRON_SECRET=""
