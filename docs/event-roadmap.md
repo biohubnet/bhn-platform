@@ -66,6 +66,32 @@ Shipped in commit `<latest>` (Dec '26):
 
 ## Phase 4 — Discovery, recurring, paid
 
+- [x] **Cover image upload UI** (shipped Dec '26 in the same batch as Stripe)
+  - New `POST /api/admin/events/[slug]/cover-image` endpoint — multipart upload to R2 (PNG/JPG/WebP/AVIF, ≤ 8 MB)
+  - Token-prefixed R2 key so re-uploads don't collide; best-effort delete of previous object
+  - `CoverImageInput` widget in `EventBasicsEditor` — file picker + URL fallback + preview + remove
+
+- [x] **Hosts admin UI** (shipped Dec '26)
+  - New page at `/admin/events/[slug]/hosts`
+  - `HostsManager` component — list current hosts, add by email, role label, remove
+
+- [x] **Stripe paid ticketing — base flow shipped Dec '26**
+  - New `TicketType` model (migration `20260801000000_ticket_types`) — `name`, `description`, `priceCents`, `currency`, `capacity`, `isActive`, `displayOrder`, `stripePriceId` cache
+  - Admin CRUD UI at `/admin/events/[slug]/tickets`
+  - **Stripe helper** at `src/lib/stripe.ts` — lazy client, `stripeConfigured()` predicate, `createCheckoutSessionForTicket()` with on-the-fly Product+Price creation, `verifyWebhook()`
+  - **Checkout endpoint** `POST /api/events/[slug]/checkout` — resolves attendee identity (signed-in or guest), creates Stripe Checkout session with metadata for the webhook to reconstruct
+  - **Webhook handler** `POST /api/webhooks/stripe` — signature-verified, handles `checkout.session.completed`, creates the Registration row (with capacity / waitlist / approval logic applied at write-time)
+  - Success page resolves Stripe-paid registrations via `?session_id=…`
+  - Documentation at `docs/stripe-setup.md` — Stripe account → API key → webhook endpoint → env vars → ticket tier UI
+  - Free tiers (priceCents=0) still defined as TicketType but short-circuit to the regular registration flow (no Stripe round-trip)
+
+- [ ] **Stripe — remaining work** (independently shippable)
+  - Branded confirmation email send from the webhook handler (currently only the registration row is created; mirror the template send from `/api/events/[slug]/register`)
+  - Public ticket picker on `/events/[slug]/register` when ticket types exist (currently only the API exists; the form integration with the free-vs-paid fork is the missing piece)
+  - Refund automation via `charge.refunded` webhook
+  - Multiple tickets per checkout (currently each Checkout buys 1 ticket)
+  - Coupon codes
+
 - [ ] **Series / recurring events**
   - New `EventSeries` model: `(slug, title, tagline, description, coverImageUrl)`
   - `BhnEvent.seriesId` nullable FK
@@ -77,13 +103,6 @@ Shipped in commit `<latest>` (Dec '26):
   - Filter chips on `/events` (in-person / online / upcoming / past)
   - Search by title + tagline
   - Per-organizer subscribable page (use EventHost relation): `/events/by/<userSlug>` with all events they're hosting + an RSS / ICS feed
-
-- [ ] **Stripe paid ticketing**
-  - New `TicketType` model: `(eventId, name, description, priceCents, currency, capacity, displayOrder)` — supersedes the existing `paymentProvider` columns on Registration for the multi-tier case
-  - Stripe Checkout integration — POST a session before showing the form
-  - Webhook handler `/api/webhooks/stripe` to confirm payment + create Registration
-  - Refund flow from admin detail page
-  - Free tier (`priceCents=0`) keeps the existing public-form flow
 
 ## Explicitly NOT scoped
 

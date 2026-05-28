@@ -108,6 +108,18 @@ export default async function AdminEventDetailPage({
         >
           Custom questions
         </Link>
+        <Link
+          href={`/admin/events/${event.slug}/hosts`}
+          className="inline-flex items-center gap-2 rounded-xl border border-line bg-card px-4 py-2 text-sm font-bold text-fg hover:border-brand-300"
+        >
+          Hosts
+        </Link>
+        <Link
+          href={`/admin/events/${event.slug}/tickets`}
+          className="inline-flex items-center gap-2 rounded-xl border border-line bg-card px-4 py-2 text-sm font-bold text-fg hover:border-brand-300"
+        >
+          Tickets
+        </Link>
         {event.status === "published" && (
           <Link
             href={`/events/${event.slug}`}

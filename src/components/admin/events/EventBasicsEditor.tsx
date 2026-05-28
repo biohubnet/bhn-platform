@@ -142,13 +142,11 @@ export function EventBasicsEditor({
             className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono leading-relaxed"
           />
         </Field>
-        <Field label="Cover image URL" hint="Optional hero image. Leave blank for the default gradient.">
-          <input
-            type="url"
+        <Field label="Cover image" hint="Optional hero image. Upload a file (PNG/JPG/WebP, ≤ 8 MB) or paste any URL. Leave blank for the default brand gradient.">
+          <CoverImageInput
+            slug={slug}
             value={form.coverImageUrl}
-            onChange={(e) => update("coverImageUrl", e.target.value)}
-            placeholder="https://…"
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            onChange={(url) => update("coverImageUrl", url)}
           />
         </Field>
       </Card>
@@ -295,6 +293,96 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
       </legend>
       {children}
     </fieldset>
+  );
+}
+
+/**
+ * Cover-image input — drag-and-drop file upload + URL fallback. The
+ * upload endpoint persists immediately (bypassing the form's dirty/
+ * save flow) so the new image is visible without an extra click; the
+ * URL field then reflects the uploaded URL so the form save handler
+ * treats it like a normal text change.
+ */
+function CoverImageInput({
+  slug, value, onChange,
+}: {
+  slug: string;
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleFiles(file: File) {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/admin/events/${slug}/cover-image`, {
+        method: "POST",
+        body: fd,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        setUploadError(json.error ?? `Upload failed (${res.status})`);
+        return;
+      }
+      onChange(json.url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2.5">
+      {value && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={value}
+          alt="Cover preview"
+          className="w-full max-w-md rounded-lg border border-line object-cover"
+          style={{ aspectRatio: "16 / 9" }}
+        />
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="inline-flex items-center gap-1.5 cursor-pointer rounded-lg border border-line bg-card px-3 py-1.5 text-xs font-semibold text-fg hover:border-brand-300">
+          {uploading ? "Uploading…" : "Upload file"}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/avif"
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFiles(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {value && (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-rose-700 hover:underline"
+            onClick={() => onChange("")}
+          >
+            Remove
+          </button>
+        )}
+      </div>
+      <input
+        type="url"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="…or paste an image URL"
+        className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+      />
+      {uploadError && (
+        <p className="text-xs text-rose-700">{uploadError}</p>
+      )}
+    </div>
   );
 }
 

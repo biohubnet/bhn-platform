@@ -37,10 +37,10 @@ export default async function RegistrationSuccessPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; session_id?: string }>;
 }) {
   const { slug } = await params;
-  const { token } = await searchParams;
+  const { token, session_id } = await searchParams;
 
   const session = await getSession();
   const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
@@ -62,42 +62,40 @@ export default async function RegistrationSuccessPage({
   });
   if (!event) notFound();
 
-  // Resolve the registration. Token wins when provided (guest access);
-  // otherwise fall back to the signed-in user's registration. If
-  // neither path resolves, 404.
-  const registration = token
+  // Resolve the registration. Lookup priority:
+  //   1. ?session_id — used when redirected from Stripe Checkout.
+  //   2. ?token — guest access from the email link.
+  //   3. session.userId — signed-in user's own registration.
+  // The Stripe path may race the webhook on very fast returns; if we
+  // don't find a row immediately, the page renders an in-progress
+  // banner instead of a 404.
+  const baseSelect = {
+    qrToken: true,
+    attendeeType: true,
+    includesSymposiumDay: true,
+    registrationStatus: true,
+    waitlistPosition: true,
+    dietaryRestrictions: true,
+    accessibilityNeeds: true,
+    guestName: true,
+    guestEmail: true,
+    userId: true,
+    createdAt: true,
+  } as const;
+  const registration = session_id
+    ? await prisma.registration.findFirst({
+        where: { eventId: event.id, externalPaymentId: session_id },
+        select: baseSelect,
+      })
+    : token
     ? await prisma.registration.findFirst({
         where: { eventId: event.id, qrToken: token },
-        select: {
-          qrToken: true,
-          attendeeType: true,
-          includesSymposiumDay: true,
-          registrationStatus: true,
-          waitlistPosition: true,
-          dietaryRestrictions: true,
-          accessibilityNeeds: true,
-          guestName: true,
-          guestEmail: true,
-          userId: true,
-          createdAt: true,
-        },
+        select: baseSelect,
       })
     : userId
       ? await prisma.registration.findUnique({
           where: { eventId_userId: { eventId: event.id, userId } },
-          select: {
-            qrToken: true,
-            attendeeType: true,
-            includesSymposiumDay: true,
-            registrationStatus: true,
-            waitlistPosition: true,
-            dietaryRestrictions: true,
-            accessibilityNeeds: true,
-            guestName: true,
-            guestEmail: true,
-            userId: true,
-            createdAt: true,
-          },
+          select: baseSelect,
         })
       : null;
   if (!registration) notFound();

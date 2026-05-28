@@ -2387,6 +2387,7 @@ model BhnEvent {
   hosts             EventHost[]
   customQuestions   CustomRegQuestion[]
   broadcasts        EventBroadcast[]
+  ticketTypes       TicketType[]
 
   /// Supports admin filtering by status (draft / published / archived).
   @@index([status])
@@ -2503,6 +2504,42 @@ model CustomRegAnswer {
 
   @@unique([registrationId, customRegQuestionId])
   @@index([customRegQuestionId])
+}
+
+/// A bookable ticket tier on a paid event. Multiple tiers per event
+/// (e.g. "Standard $40", "Student $20", "Industry $100"). priceCents
+/// = 0 + currency = "CAD" keeps the existing free-registration flow
+/// intact even when the event has paid ticket types.
+///
+/// Capacity is per-tier (NULL = uncapped, falls back to the event-
+/// level maxAttendees). The TicketType is selected on the public
+/// registration form when the event has any active ticket types
+/// configured; otherwise the free flow runs as before.
+model TicketType {
+  id           String   @id @default(cuid())
+  eventId      String
+  name         String
+  description  String?
+  /// Price in cents (CAD). 0 = free. Lookups in the registration
+  /// flow short-circuit Stripe Checkout when the chosen tier is free.
+  priceCents   Int      @default(0)
+  currency     String   @default("CAD")
+  /// Optional per-tier capacity. NULL = uncapped (only event-level
+  /// maxAttendees applies).
+  capacity     Int?
+  /// When false, the tier is hidden from the public form but
+  /// existing registrations against it stay intact.
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  /// Stripe Price ID — created lazily on first checkout and cached
+  /// here so subsequent purchases re-use it.
+  stripePriceId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  event BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, displayOrder])
 }
 
 /// An email broadcast sent by an event host to a slice of attendees.
