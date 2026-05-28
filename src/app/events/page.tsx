@@ -58,8 +58,8 @@ export default async function EventsIndexPage() {
     }),
   ]);
 
-  const titleDefault = "Symposium, Training Week & more";
-  const introDefault = "The BioHubNet Annual Symposium + Training Week is the flagship gathering for biomanufacturing trainees, faculty, and industry partners across Canada. Browse upcoming editions below and register from the event page.";
+  const titleDefault = "Upcoming events";
+  const introDefault = "BioHubNet hosts a mix of info sessions, training workshops, networking nights, and the Annual Symposium + Training Week — our flagship gathering for biomanufacturing trainees, faculty, and industry partners across Canada. Browse what's coming up below and register from any event's page.";
   const copy = await getCopyMap(["events.indexHeader.title", "events.indexHeader.intro"]);
   const headerTitle = copy["events.indexHeader.title"] ?? titleDefault;
   const headerIntro = copy["events.indexHeader.intro"] ?? introDefault;
