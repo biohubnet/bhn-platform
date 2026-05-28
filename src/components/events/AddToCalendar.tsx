@@ -29,6 +29,9 @@ interface Props {
   /** Tone for the trigger button — "dark" on the hero (white on
    *  brand-blue), "light" elsewhere. */
   tone?: "dark" | "light";
+  /** Event slug — drives the standalone .ics download URL for
+   *  Apple/iCal/desktop-Outlook/Thunderbird users. */
+  slug: string;
 }
 
 export function AddToCalendar({
@@ -38,6 +41,7 @@ export function AddToCalendar({
   startISO,
   endISO,
   tone = "light",
+  slug,
 }: Props) {
   const [open, setOpen] = useState(false);
   const input: CalendarLinkInput = {
@@ -48,9 +52,13 @@ export function AddToCalendar({
     end: new Date(endISO),
   };
   const items = [
-    { label: "Google Calendar", href: googleCalendarUrl(input) },
-    { label: "Outlook (web)",   href: outlookCalendarUrl(input) },
-    { label: "Yahoo Calendar",  href: yahooCalendarUrl(input) },
+    { label: "Google Calendar",     href: googleCalendarUrl(input),                 newTab: true  },
+    { label: "Outlook (web)",       href: outlookCalendarUrl(input),                newTab: true  },
+    { label: "Yahoo Calendar",      href: yahooCalendarUrl(input),                  newTab: true  },
+    // Apple / iCal / Thunderbird / desktop Outlook all import .ics
+    // files natively. Same-tab download (no `target=_blank`) so the
+    // browser hands it directly to the OS-default calendar app.
+    { label: "Apple / iCal (.ics)", href: `/events/${slug}/calendar.ics`,           newTab: false },
   ];
 
   const triggerClass =
@@ -87,8 +95,7 @@ export function AddToCalendar({
               <a
                 key={it.label}
                 href={it.href}
-                target="_blank"
-                rel="noopener noreferrer"
+                {...(it.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 onClick={() => setOpen(false)}
                 className="block px-4 py-2.5 text-sm text-fg hover:bg-elevated transition-colors"
                 role="menuitem"

@@ -2380,9 +2380,40 @@ model BhnEvent {
   speakers          Speaker[]
   sponsors          Sponsor[]
   registrations     Registration[]
+  reminders         EventReminder[]
 
   /// Supports admin filtering by status (draft / published / archived).
   @@index([status])
+}
+
+/// Tracks the timed email reminders the cron has dispatched for a
+/// given event. The cron iterates upcoming published events, computes
+/// the three reminder windows relative to startDate, and looks for a
+/// missing EventReminder row per (event, kind). When found missing
+/// AND the window has just passed, it sends the appropriate template
+/// to every active registrant and inserts the row to mark sent.
+///
+/// "kind" values:
+///   • "one_week"  — fires ~7 days before startDate
+///   • "one_day"   — fires ~24 hours before startDate
+///   • "one_hour"  — fires ~1 hour before startDate
+///
+/// The @@unique([eventId, kind]) constraint guarantees we never
+/// double-send for the same window. sentCount is informational —
+/// captures how many recipients we tried (for ops + audit).
+model EventReminder {
+  id          String   @id @default(cuid())
+  eventId     String
+  kind        String   // one_week | one_day | one_hour
+  scheduledAt DateTime
+  sentAt      DateTime?
+  sentCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  event BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, kind])
+  @@index([scheduledAt, sentAt])
 }
 
 /// One bookable workshop, tour, or bootcamp slot. The "slot" framing

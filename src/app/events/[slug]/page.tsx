@@ -358,6 +358,7 @@ export default async function EventLandingPage(
                 URL deep-links. .ics file attachment is queued for
                 Phase 2 (will become a fourth "Apple / iCal" entry). */}
             <AddToCalendar
+              slug={event.slug}
               title={event.title}
               description={event.tagline ?? event.description ?? null}
               location={event.mainVenueName ?? null}

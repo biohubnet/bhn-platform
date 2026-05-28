@@ -20,37 +20,18 @@ Shipped in commit `<latest>` (Dec '26):
 - [x] **Add-to-calendar dropdown** on event hero: Google Calendar / Outlook (web) / Yahoo Calendar URL-only deep links
 - [x] **Calendar-link helpers** at `src/lib/events/calendar-links.ts`
 
-## Phase 2 — Email polish + reminders
+## Phase 2 — Email polish + reminders (shipped)
 
-**Priority**: highest external-visibility upgrades after capacity. Bridges the
-"Luma looks like a printed ticket" vs "BHN sends plain text" gap.
+Shipped in commit `<latest>` (Dec '26):
 
-- [ ] **HTML branded confirmation email**
-  - New `src/lib/email/templates/registration-confirmation.tsx` (or .ts with template literals — keeping it dependency-free, no React-DOM-to-string)
-  - Header band with event title + cover image (if set)
-  - Status banner — "You're registered" / "Waitlisted #N" / "Pending approval"
-  - Event details card (when, where, attendee type)
-  - QR code embedded as `<img>` with a `data:image/svg+xml;base64,...` URL — avoids attachment complexity, renders inline in Gmail / Apple Mail
-  - CTA button "View your registration" → success page with `?token=`
-  - Footer: BHN brand + unsubscribe (Phase 3)
-  - Plain-text fallback for accessibility / spam filters
-  - Wire into `/api/events/[slug]/register` send + `/api/admin/events/.../resend-email`
-
-- [ ] **`.ics` calendar attachment** in the confirmation email
-  - New `src/lib/events/ics.ts` — RFC 5545 builder (VCALENDAR, VEVENT, ORGANIZER, ATTENDEE, UID via event.id + reg.id, DTSTAMP, X-WR-TIMEZONE)
-  - Attach via nodemailer's `attachments: [{ filename: "event.ics", content: text, contentType: "text/calendar; method=REQUEST" }]`
-  - Also serve the .ics standalone at `/events/<slug>/calendar.ics` for the public "Apple/iCal" calendar download button (added to `AddToCalendar` dropdown)
-
-- [ ] **Timed reminder emails** (1 week / 1 day / 1 hour before)
-  - New `EventReminder` model: `(eventId, kind, scheduledAt, sentAt, sentCount)` with `@@unique([eventId, kind])`
-  - New cron endpoint `/api/cron/event-reminders` (Vercel cron, fires every 15 min)
-  - For each published event with confirmed/pending registrants:
-    - Compute the three reminder windows from `event.startDate`
-    - Find missing `EventReminder` rows for any due (event, kind) tuple
-    - Send appropriate template variant (save-the-date / day-of / starting-soon)
-    - Record sent
-  - `vercel.json` cron config
-  - Three template variants — same chrome, different copy + CTA
+- [x] **HTML branded confirmation email** at `src/lib/email/templates/registration-confirmation.ts` — table-based layout, inline CSS, status banner that adapts to registered / waitlisted / pending, embedded QR code as inline SVG data URL, event details card, CTA, footer. Plain-text fallback preserved.
+- [x] **`.ics` calendar attachment** in the confirmation email. Builder at `src/lib/events/ics.ts` (RFC 5545 compliant — UID, DTSTAMP, ORGANIZER, ATTENDEE, line folding at 75 octets, text-escape rules). Attached via nodemailer's `attachments`. Standalone download endpoint at `/events/<slug>/calendar.ics` powers the new "Apple / iCal (.ics)" entry in the AddToCalendar dropdown.
+- [x] **Timed reminder emails** (1 week / 1 day / 1 hour before).
+  - New `EventReminder` model + migration `20260730000000_event_reminders`
+  - Cron endpoint `/api/cron/event-reminders` fires every 15 minutes (see `vercel.json`)
+  - Reminder template at `src/lib/email/templates/event-reminder.ts` with three kind-specific variants — "Save the date" / "Tomorrow" / "Starting soon"
+  - 30-minute tolerance window so a missed cron firing still catches the next pass; (eventId, kind) unique constraint prevents double-sends
+  - Bearer-token auth on the cron endpoint (Vercel cron sets `Authorization: Bearer $CRON_SECRET`)
 
 ## Phase 3 — Host + admin productivity
 

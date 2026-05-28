@@ -37,6 +37,8 @@ import { prisma } from "@/lib/prisma";
 import { sendMail, mailConfigured } from "@/lib/mail";
 import { bookWorkshopInTx } from "@/lib/events/bookings";
 import { MAX_WORKSHOPS_PER_USER } from "@/lib/events/constants";
+import { renderRegistrationConfirmation } from "@/lib/email/templates/registration-confirmation";
+import { buildIcs } from "@/lib/events/ics";
 
 // Bare-bones RFC-5322-ish email regex. Not a full parse — guard
 // against obvious typos / missing @ on the guest path. Real validation
@@ -79,11 +81,13 @@ export async function POST(
       slug: true,
       title: true,
       tagline: true,
+      description: true,
       status: true,
       startDate: true,
       endDate: true,
       mainVenueName: true,
       mainVenueAddress: true,
+      mainVenueMapUrl: true,
       timezone: true,
       registrationOpensAt: true,
       registrationClosesAt: true,
@@ -396,75 +400,83 @@ export async function POST(
   const isPending     = registration.registrationStatus === "pending";
   const isWaitlisted  = registration.registrationStatus === "waitlist";
   if (mailConfigured()) {
-    const eventDates = formatEventDates(event.startDate, event.endDate, event.timezone);
-    const greeting = recipientName ? `Hi ${recipientName.split(/\s+/)[0]},` : "Hi,";
-
+    // Workshop summary lines for the email body (signed-in users
+    // only; guest path has zero workshop outcomes by design).
     const workshopLines = workshopOutcomes.map((o) => {
       const title = titleById.get(o.workshopId) ?? "Workshop";
-      if (o.status === "pending") {
-        return `  • ${title} — request received (pending admin approval)`;
-      }
+      if (o.status === "pending") return `${title} — request received (pending admin approval)`;
       return o.status === "confirmed"
-        ? `  ✓ ${title} — confirmed`
-        : `  • ${title} — waitlisted (position ${o.waitlistPosition ?? "?"})`;
+        ? `${title} — confirmed`
+        : `${title} — waitlisted (position ${o.waitlistPosition ?? "?"})`;
     });
 
-    const workshopBlock = workshopLines.length
-      ? `Your workshop picks:\n${workshopLines.join("\n")}\n\n`
-      : "";
+    // Compose the public URLs the email links to. Vercel exposes the
+    // deploy hostname via VERCEL_URL (without protocol); fall back to
+    // a sensible local default for dev/preview.
+    const proto = process.env.VERCEL_URL ? "https" : "http";
+    const host  = process.env.VERCEL_URL ?? process.env.HOST ?? "localhost:3000";
+    const eventPageUrl   = `${proto}://${host}/events/${event.slug}`;
+    const successPageUrl = `${proto}://${host}/events/${event.slug}/register/success?token=${encodeURIComponent(qrToken)}`;
 
-    const approvalNotice = isWaitlisted
-      ? `The event is currently full, so you're on the **waitlist at ` +
-        `position #${registration.waitlistPosition ?? "?"}**. We'll email you ` +
-        `the moment a confirmed seat opens up — usually when someone cancels.\n\n`
-      : isPending
-        ? `Your registration is **pending admin approval**. Your spot is not ` +
-          `guaranteed until the BHN events team confirms it — we'll email you ` +
-          `as soon as it's approved (usually within 1–2 business days).\n\n`
-        : "";
+    // Detect online events (matches the public-page logic).
+    const isOnline =
+      event.mainVenueName === "Online" ||
+      (!!event.mainVenueMapUrl && !event.mainVenueAddress);
 
-    // "What's next" lines are user-path only (workshop top-ups +
-    // breakout pick live on /me, which requires an account). Guest
-    // path gets a shorter footer pointing at the public event page.
-    const nextStepsBlock = isGuestPath
-      ? `Save this email so you have your check-in code on the day.\n\n`
-      : `What's next:\n` +
-        (workshopOutcomes.length < 2
-          ? `• Pick ${2 - workshopOutcomes.length} more workshop${2 - workshopOutcomes.length === 1 ? "" : "s"} from the Training Week\n`
-          : "") +
-        `• Choose which afternoon breakout you'll attend on the symposium day\n` +
-        `• Find everything at: /events/${event.slug}/me\n\n`;
+    // Render the branded HTML email + plain-text fallback.
+    const { subject, text, html } = renderRegistrationConfirmation({
+      recipientName: recipientName,
+      recipientEmail,
+      eventTitle: event.title,
+      eventStart: event.startDate,
+      eventEnd: event.endDate,
+      eventTimezone: event.timezone,
+      venueName: event.mainVenueName,
+      venueAddress: event.mainVenueAddress,
+      meetingUrl: event.mainVenueMapUrl,
+      isOnline,
+      qrToken,
+      status: isWaitlisted ? "waitlisted" : isPending ? "pending" : "registered",
+      waitlistPosition: registration.waitlistPosition,
+      workshopLines,
+      eventPageUrl,
+      successPageUrl,
+      contactEmail: process.env.SMTP_FROM_EMAIL ?? "info@biohubnet.ca",
+    });
 
-    const headline = isWaitlisted
-      ? "You're on the waitlist for"
-      : isPending
-        ? "Thanks for registering for"
-        : "You're registered for";
-    const text =
-      `${greeting}\n\n` +
-      `${headline} ${event.title}.\n\n` +
-      approvalNotice +
-      `When: ${eventDates}\n` +
-      `Where: ${event.mainVenueName ?? "TBA"}` +
-      (event.mainVenueAddress ? ` · ${event.mainVenueAddress}` : "") +
-      `\n\n` +
-      workshopBlock +
-      `Your check-in code: ${qrToken}\n` +
-      `(We'll scan this at the door — bring the confirmation page or this email on your phone.)\n\n` +
-      nextStepsBlock +
-      `Questions? Reply to this email or contact the BHN team at info@biohubnet.ca.\n\n` +
-      `— BioHubNet`;
+    // Build the .ics attachment so the email itself imports cleanly
+    // into Apple Mail / Gmail / Outlook calendar apps via the
+    // attachment's native "add to calendar" affordance. UID combines
+    // event + registration so re-sends update the existing entry.
+    const icsBody = buildIcs({
+      uid: `event-${event.id}-reg-${registration.id}@biohubnet.ca`,
+      title: event.title,
+      description: event.tagline ?? event.description ?? null,
+      location: isOnline
+        ? event.mainVenueName ?? "Online"
+        : [event.mainVenueName, event.mainVenueAddress].filter(Boolean).join(", ") || null,
+      start: event.startDate,
+      end: event.endDate,
+      url: eventPageUrl,
+      organizerEmail: process.env.SMTP_FROM_EMAIL ?? "info@biohubnet.ca",
+      organizerName: "BioHubNet",
+      attendeeEmail: recipientEmail,
+      attendeeName: recipientName ?? undefined,
+    });
 
     try {
-      const subject = isWaitlisted
-        ? `Waitlisted — ${event.title} (position #${registration.waitlistPosition ?? "?"})`
-        : isPending
-          ? `Registration received — ${event.title} (pending approval)`
-          : `You're registered for ${event.title}`;
       await sendMail({
         to: recipientEmail,
         subject,
         text,
+        html,
+        attachments: [
+          {
+            filename: `${event.slug}.ics`,
+            content: icsBody,
+            contentType: "text/calendar; charset=utf-8; method=REQUEST",
+          },
+        ],
       });
     } catch (err) {
       // Swallow — email is best-effort. Surface in logs so ops can
@@ -494,12 +506,3 @@ export async function POST(
   });
 }
 
-function formatEventDates(start: Date, end: Date, timeZone: string): string {
-  const fmt = (d: Date) =>
-    d.toLocaleDateString("en-CA", { month: "short", day: "numeric", timeZone });
-  const startStr = fmt(start);
-  const endStr = fmt(end);
-  const year = end.toLocaleDateString("en-CA", { year: "numeric", timeZone });
-  if (startStr === endStr) return `${startStr}, ${year}`;
-  return `${startStr}–${endStr.replace(/^[A-Za-z]+\s+/, "")}, ${year}`;
-}

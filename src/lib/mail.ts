@@ -30,11 +30,23 @@ function transporter(): Transporter {
   return cached;
 }
 
+export interface MailAttachment {
+  filename: string;
+  /** Plain string or Buffer. */
+  content: string | Buffer;
+  /** e.g. "text/calendar; charset=utf-8; method=REQUEST" for .ics. */
+  contentType?: string;
+}
+
 export async function sendMail(opts: {
   to: string;
   subject: string;
   text: string;
   html?: string;
+  /** Optional file attachments — passed through to nodemailer. Used
+   *  by the registration-confirmation flow to ship a .ics calendar
+   *  invite alongside the HTML body. */
+  attachments?: MailAttachment[];
 }) {
   const t = transporter();
   await t.sendMail({
@@ -43,5 +55,6 @@ export async function sendMail(opts: {
     subject: opts.subject,
     text: opts.text,
     html: opts.html,
+    attachments: opts.attachments,
   });
 }
