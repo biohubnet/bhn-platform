@@ -22,29 +22,18 @@ export default function ShowcaseRegulatoryAffairsPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#f0f7f7] via-[#e6f0f1] to-[#dfecee]">
       <div className="max-w-2xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
-        {/* Logo + tagline ─ matches the BioHubNet brand the user
-            uploaded. The svg already in /public renders the diamond
-            mark; the wordmark + tagline are typeset below to match
-            the look of the supplied PNG. */}
+        {/* BioHubNet brand lock-up — the official PNG the user supplied
+            (public/biohubnet-logo.png). It already contains the diamond
+            mark + "BioHubNet" wordmark + "Transformative Talent
+            Development" tagline, so we render it as a single image and
+            don't re-typeset the wordmark below (that would duplicate). */}
         <header className="flex flex-col items-center text-center mb-10 sm:mb-12">
-          {/* Diamond mark from the existing brand asset */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/biohubnet-logo.svg"
-            alt=""
-            aria-hidden
-            className="h-16 sm:h-20 mb-3"
+            src="/biohubnet-logo.png"
+            alt="BioHubNet — Transformative Talent Development"
+            className="w-full max-w-md h-auto"
           />
-          <h1
-            className="text-[28px] sm:text-[36px] font-bold leading-tight tracking-tight"
-            style={{ color: "#2a6d7a" }}
-          >
-            <span>Bio</span>
-            <span style={{ color: "#0e7da3" }}>Hub</span>
-            <span style={{ color: "#67b094" }}>Net</span>
-          </h1>
-          <p className="mt-1 text-[14px] font-semibold tracking-wide" style={{ color: "#2a6d7a" }}>
-            Transformative Talent Development
-          </p>
         </header>
 
         {/* Showcase title */}
