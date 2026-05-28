@@ -73,6 +73,7 @@ export default async function RegistrationSuccessPage({
           attendeeType: true,
           includesSymposiumDay: true,
           registrationStatus: true,
+          waitlistPosition: true,
           dietaryRestrictions: true,
           accessibilityNeeds: true,
           guestName: true,
@@ -89,6 +90,7 @@ export default async function RegistrationSuccessPage({
             attendeeType: true,
             includesSymposiumDay: true,
             registrationStatus: true,
+            waitlistPosition: true,
             dietaryRestrictions: true,
             accessibilityNeeds: true,
             guestName: true,
@@ -99,6 +101,7 @@ export default async function RegistrationSuccessPage({
         })
       : null;
   if (!registration) notFound();
+  const isWaitlisted = registration.registrationStatus === "waitlist";
 
   // Workshop bookings only apply to signed-in users registered via
   // the rich form (guest path can't book workshops).
@@ -121,7 +124,9 @@ export default async function RegistrationSuccessPage({
       });
   const isRegistrationPending = registration.registrationStatus === "pending";
   const anyPendingBooking = workshopBookings.some((b) => b.status === "pending");
-  const showApprovalBanner = isRegistrationPending || anyPendingBooking;
+  // The "we got it, but it's not a confirmed seat yet" banner. Covers
+  // pending approval, pending workshop bookings, AND waitlist rows.
+  const showApprovalBanner = isRegistrationPending || anyPendingBooking || isWaitlisted;
 
   // Server-rendered QR. qrcode-svg returns a plain string we inject
   // via dangerouslySetInnerHTML on a wrapper div — there's no XSS
@@ -159,19 +164,33 @@ export default async function RegistrationSuccessPage({
             showApprovalBanner ? "text-amber-700" : "text-emerald-700"
           }`}
         >
-          {showApprovalBanner ? "Submitted — pending approval" : "You're registered"}
+          {isWaitlisted
+            ? `Waitlisted — position #${registration.waitlistPosition ?? "?"}`
+            : showApprovalBanner
+              ? "Submitted — pending approval"
+              : "You're registered"}
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold text-fg tracking-tight mt-1.5">
-          {showApprovalBanner
+          {isWaitlisted
             ? firstName
-              ? `Thanks for registering, ${firstName}.`
-              : "Thanks for registering."
-            : firstName
-              ? `See you in ${event.mainVenueName ?? "Toronto"}, ${firstName}.`
-              : "You're in."}
+              ? `You're on the waitlist, ${firstName}.`
+              : "You're on the waitlist."
+            : showApprovalBanner
+              ? firstName
+                ? `Thanks for registering, ${firstName}.`
+                : "Thanks for registering."
+              : firstName
+                ? `See you in ${event.mainVenueName ?? "Toronto"}, ${firstName}.`
+                : "You're in."}
         </h1>
         <p className="text-sm text-muted mt-3 leading-relaxed max-w-md mx-auto">
-          {showApprovalBanner ? (
+          {isWaitlisted ? (
+            <>
+              The event is currently full. We'll email you the moment a seat
+              opens — usually when someone cancels. Your position{" "}
+              <span className="font-bold">won't change</span> until then.
+            </>
+          ) : showApprovalBanner ? (
             <>
               Your request is in the admin queue. We'll email you within 1–2
               business days once it's approved — your spot is{" "}

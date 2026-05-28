@@ -88,6 +88,8 @@ export async function POST(
       registrationOpensAt: true,
       registrationClosesAt: true,
       requiresApproval: true,
+      maxAttendees: true,
+      waitlistEnabled: true,
     },
   });
   if (!event || event.status !== "published") {
@@ -257,12 +259,61 @@ export async function POST(
     waitlistPosition: number | null;
   };
 
-  const initialRegistrationStatus = event.requiresApproval ? "pending" : "confirmed";
+  // Capacity check — only when the event has a maxAttendees cap set.
+  // Count rows that occupy a seat: pending + confirmed. Waitlisted +
+  // cancelled rows don't count against capacity.
+  let goingToWaitlist = false;
+  let nextWaitlistPosition: number | null = null;
+  if (event.maxAttendees !== null) {
+    const activeCount = await prisma.registration.count({
+      where: {
+        eventId: event.id,
+        registrationStatus: { in: ["pending", "confirmed"] },
+      },
+    });
+    if (activeCount >= event.maxAttendees) {
+      if (!event.waitlistEnabled) {
+        return NextResponse.json(
+          {
+            error: "This event is full and the waitlist is closed.",
+            code: "full",
+          },
+          { status: 403 },
+        );
+      }
+      goingToWaitlist = true;
+      // Position = highest existing waitlist position + 1.
+      // Leaves gaps when middle positions cancel — by design (we
+      // promise the person they're "#3" and don't want to renumber
+      // them later).
+      const highest = await prisma.registration.findFirst({
+        where: {
+          eventId: event.id,
+          registrationStatus: "waitlist",
+          waitlistPosition: { not: null },
+        },
+        orderBy: { waitlistPosition: "desc" },
+        select: { waitlistPosition: true },
+      });
+      nextWaitlistPosition = (highest?.waitlistPosition ?? 0) + 1;
+    }
+  }
+
+  // initialRegistrationStatus priority order:
+  //   1. waitlist (event at capacity + waitlist on)
+  //   2. pending (event.requiresApproval)
+  //   3. confirmed (auto-confirm)
+  const initialRegistrationStatus = goingToWaitlist
+    ? "waitlist"
+    : event.requiresApproval
+      ? "pending"
+      : "confirmed";
 
   let registration: {
     id: string;
     qrToken: string;
     registrationStatus: string;
+    waitlistPosition: number | null;
   };
   let workshopOutcomes: WorkshopBookingOutcome[] = [];
 
@@ -278,6 +329,7 @@ export async function POST(
           guestOrganization: isGuestPath ? guestOrganization : null,
           attendeeType,
           registrationStatus: initialRegistrationStatus,
+          waitlistPosition: nextWaitlistPosition,
           // Stamp approvedAt only when we auto-confirm — keeps the
           // pending-queue admin view honest.
           approvedAt: initialRegistrationStatus === "confirmed" ? new Date() : null,
@@ -290,7 +342,7 @@ export async function POST(
           dietaryRestrictions: clean(dietaryRestrictions, 500),
           accessibilityNeeds: clean(accessibilityNeeds, 1000),
         },
-        select: { id: true, qrToken: true, registrationStatus: true },
+        select: { id: true, qrToken: true, registrationStatus: true, waitlistPosition: true },
       });
 
       const outcomes: WorkshopBookingOutcome[] = [];
@@ -341,7 +393,8 @@ export async function POST(
   // whichever path created this row.
   const recipientEmail = isGuestPath ? guestEmail! : sessionUserEmail!;
   const recipientName  = isGuestPath ? guestName  : sessionUserName;
-  const isPending = registration.registrationStatus === "pending";
+  const isPending     = registration.registrationStatus === "pending";
+  const isWaitlisted  = registration.registrationStatus === "waitlist";
   if (mailConfigured()) {
     const eventDates = formatEventDates(event.startDate, event.endDate, event.timezone);
     const greeting = recipientName ? `Hi ${recipientName.split(/\s+/)[0]},` : "Hi,";
@@ -360,11 +413,15 @@ export async function POST(
       ? `Your workshop picks:\n${workshopLines.join("\n")}\n\n`
       : "";
 
-    const approvalNotice = isPending
-      ? `Your registration is **pending admin approval**. Your spot is not ` +
-        `guaranteed until the BHN events team confirms it — we'll email you ` +
-        `as soon as it's approved (usually within 1–2 business days).\n\n`
-      : "";
+    const approvalNotice = isWaitlisted
+      ? `The event is currently full, so you're on the **waitlist at ` +
+        `position #${registration.waitlistPosition ?? "?"}**. We'll email you ` +
+        `the moment a confirmed seat opens up — usually when someone cancels.\n\n`
+      : isPending
+        ? `Your registration is **pending admin approval**. Your spot is not ` +
+          `guaranteed until the BHN events team confirms it — we'll email you ` +
+          `as soon as it's approved (usually within 1–2 business days).\n\n`
+        : "";
 
     // "What's next" lines are user-path only (workshop top-ups +
     // breakout pick live on /me, which requires an account). Guest
@@ -378,9 +435,14 @@ export async function POST(
         `• Choose which afternoon breakout you'll attend on the symposium day\n` +
         `• Find everything at: /events/${event.slug}/me\n\n`;
 
+    const headline = isWaitlisted
+      ? "You're on the waitlist for"
+      : isPending
+        ? "Thanks for registering for"
+        : "You're registered for";
     const text =
       `${greeting}\n\n` +
-      `${isPending ? "Thanks for registering for" : "You're registered for"} ${event.title}.\n\n` +
+      `${headline} ${event.title}.\n\n` +
       approvalNotice +
       `When: ${eventDates}\n` +
       `Where: ${event.mainVenueName ?? "TBA"}` +
@@ -394,11 +456,14 @@ export async function POST(
       `— BioHubNet`;
 
     try {
+      const subject = isWaitlisted
+        ? `Waitlisted — ${event.title} (position #${registration.waitlistPosition ?? "?"})`
+        : isPending
+          ? `Registration received — ${event.title} (pending approval)`
+          : `You're registered for ${event.title}`;
       await sendMail({
         to: recipientEmail,
-        subject: isPending
-          ? `Registration received — ${event.title} (pending approval)`
-          : `You're registered for ${event.title}`,
+        subject,
         text,
       });
     } catch (err) {
@@ -412,10 +477,13 @@ export async function POST(
     ok: true,
     alreadyRegistered: false,
     pendingApproval: isPending,
+    waitlisted: isWaitlisted,
+    waitlistPosition: registration.waitlistPosition,
     registration: {
       id: registration.id,
       qrToken: registration.qrToken,
       registrationStatus: registration.registrationStatus,
+      waitlistPosition: registration.waitlistPosition,
     },
     workshops: workshopOutcomes.map((o) => ({
       workshopId: o.workshopId,

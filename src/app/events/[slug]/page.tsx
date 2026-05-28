@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
+import { AddToCalendar } from "@/components/events/AddToCalendar";
 import {
   Calendar,
   MapPin,
@@ -119,6 +120,10 @@ export default async function EventLandingPage(
   const ctaPrimary = isConfirmed ? "Open my event dashboard" : "Register";
   const ctaFooter = isConfirmed ? "Open my event dashboard" : "Register now";
   const CtaIcon = isConfirmed ? CheckCircle2 : ArrowRight;
+  // Capacity is loaded a few lines down (depends on event being
+  // available). We compute the final CTA label below where it's
+  // actually used so we can override "Register" → "Join the waitlist"
+  // when the event is full + waitlist is open.
 
   // ── derived data ──
   const workshopDays = groupWorkshopsByDay(event.workshops);
@@ -136,6 +141,26 @@ export default async function EventLandingPage(
   const isOnline =
     event.mainVenueName === "Online" ||
     (!!event.mainVenueMapUrl && !event.mainVenueAddress);
+
+  // Capacity / waitlist state for the public-facing badge. Counted
+  // server-side so the public page tells the truth as of THIS
+  // pageload; small race window between page render and the user's
+  // POST /register is acceptable — the registration API does its
+  // own count at submit time and re-applies the waitlist gate.
+  const hasCap = event.maxAttendees !== null;
+  const activeCount = hasCap
+    ? await prisma.registration.count({
+        where: {
+          eventId: event.id,
+          registrationStatus: { in: ["pending", "confirmed"] },
+        },
+      })
+    : 0;
+  const spotsLeft = hasCap
+    ? Math.max(0, (event.maxAttendees ?? 0) - activeCount)
+    : null;
+  const isFull = hasCap && spotsLeft === 0;
+  const waitlistOpen = isFull && event.waitlistEnabled;
 
   // Section sequence — gives editorial "01 / 02 / ..." numbering to
   // the eyebrows so the page reads as chapters rather than as a
@@ -247,9 +272,10 @@ export default async function EventLandingPage(
           {/* Chapter-break rule — editorial pause before the meta + CTAs. */}
           <div aria-hidden className="h-px bg-white/15 max-w-2xl mt-9" />
 
-          {/* Meta — venue + mode. Flat row, no chip-on-chip stacking.
-              "In person" / "Online · Platform" gates on isOnline so
-              admin-created online events read correctly. */}
+          {/* Meta — venue + mode + capacity. Flat row, no chip-on-chip
+              stacking. Capacity badge appears only when the event has
+              a maxAttendees cap and shows spots-left / waitlist /
+              full status. */}
           <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/85">
             {event.mainVenueName && !isOnline && (
               <span className="inline-flex items-center gap-2">
@@ -273,19 +299,74 @@ export default async function EventLandingPage(
                 <span>In person</span>
               </span>
             )}
+            {hasCap && (
+              <span className="inline-flex items-center gap-2">
+                <Ticket size={14} className="text-white/65" />
+                {isFull && waitlistOpen ? (
+                  <span className="font-semibold inline-flex items-center gap-2">
+                    <span>Full</span>
+                    <span className="text-[10px] uppercase tracking-[0.18em] font-bold px-2 py-0.5 rounded-full bg-amber-300/20 text-amber-200 ring-1 ring-inset ring-amber-300/40">
+                      Waitlist open
+                    </span>
+                  </span>
+                ) : isFull ? (
+                  <span className="font-semibold inline-flex items-center gap-2">
+                    <span>Sold out</span>
+                  </span>
+                ) : spotsLeft !== null && spotsLeft <= 10 ? (
+                  <span className="font-semibold inline-flex items-center gap-2">
+                    <span>{spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left</span>
+                    <span className="text-[10px] uppercase tracking-[0.18em] font-bold px-2 py-0.5 rounded-full bg-rose-300/20 text-rose-200 ring-1 ring-inset ring-rose-300/40">
+                      Almost full
+                    </span>
+                  </span>
+                ) : (
+                  <span className="font-semibold">
+                    {activeCount} / {event.maxAttendees} registered
+                  </span>
+                )}
+              </span>
+            )}
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href={ctaHref}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-brand-900 text-sm font-bold hover:bg-brand-50 transition-colors shadow-lg"
-            >
-              {ctaPrimary} <CtaIcon size={14} />
-            </Link>
+            {/* Primary CTA — relabels to "Join the waitlist" when the
+                event is full but waitlist is open. Stays disabled
+                ("Event full") when waitlist is closed too. */}
+            {isFull && !waitlistOpen && !isConfirmed ? (
+              <button
+                type="button"
+                disabled
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/30 text-white/70 text-sm font-bold cursor-not-allowed shadow-lg"
+              >
+                Event full
+              </button>
+            ) : (
+              <Link
+                href={ctaHref}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-brand-900 text-sm font-bold hover:bg-brand-50 transition-colors shadow-lg"
+              >
+                {isConfirmed
+                  ? ctaPrimary
+                  : isFull && waitlistOpen
+                    ? "Join the waitlist"
+                    : ctaPrimary}{" "}
+                <CtaIcon size={14} />
+              </Link>
+            )}
+            {/* Add-to-calendar dropdown — Google / Outlook / Yahoo
+                URL deep-links. .ics file attachment is queued for
+                Phase 2 (will become a fourth "Apple / iCal" entry). */}
+            <AddToCalendar
+              title={event.title}
+              description={event.tagline ?? event.description ?? null}
+              location={event.mainVenueName ?? null}
+              startISO={event.startDate.toISOString()}
+              endISO={event.endDate.toISOString()}
+              tone="dark"
+            />
             {/* "See the agenda" only renders when an agenda actually
-                exists. For single-session events (e.g. an online info
-                session) the section doesn't render, so the button
-                would scroll-to-nothing. */}
+                exists. */}
             {event.symposiumSessions.length > 0 && (
               <a
                 href="#agenda"

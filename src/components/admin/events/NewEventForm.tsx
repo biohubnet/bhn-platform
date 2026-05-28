@@ -98,6 +98,11 @@ export function NewEventForm() {
   const [requiresApproval, setRequiresApproval] = useState(true);
   const [status, setStatus] = useState<"draft" | "published">("draft");
 
+  // Capacity — empty string means "uncapped" (no maxAttendees set).
+  // Numeric strings become integers at submit time.
+  const [maxAttendees, setMaxAttendees] = useState<string>("");
+  const [waitlistEnabled, setWaitlistEnabled] = useState(true);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -161,6 +166,15 @@ export function NewEventForm() {
       };
     }
 
+    // Capacity — empty / 0 / non-numeric → null (uncapped).
+    const maxAttendeesNum = (() => {
+      const t = maxAttendees.trim();
+      if (!t) return null;
+      const n = parseInt(t, 10);
+      if (Number.isNaN(n) || n <= 0) return null;
+      return n;
+    })();
+
     const body = {
       slug,
       title: title.trim(),
@@ -172,6 +186,8 @@ export function NewEventForm() {
       ...venuePayload,
       requiresApproval,
       status,
+      maxAttendees: maxAttendeesNum,
+      waitlistEnabled,
     };
 
     try {
@@ -468,6 +484,47 @@ export function NewEventForm() {
             />
           </div>
         </Field>
+      </Section>
+
+      {/* Capacity + waitlist */}
+      <Section
+        icon={CheckCircle2}
+        title="Capacity"
+        hint="Optional. Set a cap so registrations beyond it land on the waitlist (or are rejected outright). Leave blank for uncapped events like a typical symposium."
+      >
+        <Field
+          label="Max attendees"
+          hint="Leave blank for no cap. Workshops have their own per-slot caps regardless of this."
+        >
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={maxAttendees}
+            onChange={(e) => setMaxAttendees(e.target.value)}
+            placeholder="100"
+            className="w-full sm:max-w-xs bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+          />
+        </Field>
+        {maxAttendees.trim() && (
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={waitlistEnabled}
+              onChange={(e) => setWaitlistEnabled(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span className="text-sm">
+              <span className="font-semibold text-fg">Open a waitlist when the cap is reached</span>
+              <span className="block text-xs text-muted mt-0.5">
+                When on, new registrations after the cap land as{" "}
+                <code className="font-mono bg-elevated px-1 rounded">waitlist</code> with a position
+                number — and auto-promote to confirmed when someone cancels. When off, those
+                registrations are rejected with "event full".
+              </span>
+            </span>
+          </label>
+        )}
       </Section>
 
       {/* Note about what's next */}

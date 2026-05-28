@@ -62,6 +62,8 @@ interface Body {
   registrationClosesAt?: string;
   requiresApproval?: boolean;
   status?: Status;
+  maxAttendees?: number | null;
+  waitlistEnabled?: boolean;
 }
 
 function parseDate(key: string, v: string | undefined): Date | undefined {
@@ -174,6 +176,11 @@ export async function POST(req: NextRequest) {
       registrationClosesAt: registrationClosesAt ?? null,
       requiresApproval: body.requiresApproval ?? true,
       status,
+      maxAttendees:
+        typeof body.maxAttendees === "number" && body.maxAttendees > 0
+          ? Math.floor(body.maxAttendees)
+          : null,
+      waitlistEnabled: body.waitlistEnabled ?? true,
     },
   });
 

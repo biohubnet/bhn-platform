@@ -2360,6 +2360,18 @@ model BhnEvent {
   /// false to allow auto-confirm (e.g. paid-event flows where Stripe
   /// settlement is the only gate).
   requiresApproval     Boolean   @default(true)
+  /// Symposium-day capacity. NULL = uncapped (default — symposium
+  /// scale). When set, the registration API counts active rows
+  /// (pending + confirmed); a new registration that would push past
+  /// the cap either lands on the waitlist (waitlistEnabled=true) or
+  /// is rejected with "event full" (waitlistEnabled=false).
+  /// Workshops have their own per-slot caps; this is the event-
+  /// level gate.
+  maxAttendees         Int?
+  /// Default true. When the event is at capacity and a new
+  /// registration comes in, true → set registrationStatus="waitlist"
+  /// + waitlistPosition; false → reject with 403 "event full".
+  waitlistEnabled      Boolean   @default(true)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
@@ -2579,8 +2591,18 @@ model Registration {
   guestOrganization    String?
   /// "trainee" | "industry" | "academic" | "student" | "sponsor" | "guest"
   attendeeType         String    @default("trainee") // trainee | industry | academic | student | sponsor | guest
-  /// "pending" | "confirmed" | "cancelled"
-  registrationStatus   String    @default("pending") // pending | confirmed | cancelled
+  /// "pending" | "confirmed" | "waitlist" | "cancelled"
+  /// Added "waitlist" Dec '26 to support event-level capacity caps.
+  /// When BhnEvent.maxAttendees is reached and waitlistEnabled is
+  /// true, new registrations land here with waitlistPosition set.
+  /// cancelRegistration auto-promotes position 1 on confirmed-seat
+  /// cancellations.
+  registrationStatus   String    @default("pending") // pending | confirmed | waitlist | cancelled
+  /// 1 = next-in-line. Null for pending / confirmed / cancelled rows.
+  /// Auto-promotion fills the gap when position 1 cancels — we leave
+  /// numeric gaps (don't decrement remaining positions) to keep the
+  /// "you were #N" promise stable across cancellations.
+  waitlistPosition     Int?
   /// Some attendees register only for the Training Week workshops
   /// and skip the symposium day. Default true.
   includesSymposiumDay Boolean   @default(true)

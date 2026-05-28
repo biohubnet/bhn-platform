@@ -444,7 +444,7 @@ export async function cancelWorkshopBooking(
 export async function cancelRegistration(
   prisma: PrismaClient,
   registrationId: string,
-): Promise<{ ok: true; cancelledBookings: number; promoted: number } | BookingErr> {
+): Promise<{ ok: true; cancelledBookings: number; promoted: number; waitlistPromoted: boolean } | BookingErr> {
   return prisma.$transaction(async (tx) => {
     const registration = await tx.registration.findUnique({
       where: { id: registrationId },
@@ -454,7 +454,7 @@ export async function cancelRegistration(
       return { ok: false as const, error: "Registration not found.", code: "not_found" };
     }
     if (registration.registrationStatus === "cancelled") {
-      return { ok: true as const, cancelledBookings: 0, promoted: 0 };
+      return { ok: true as const, cancelledBookings: 0, promoted: 0, waitlistPromoted: false };
     }
 
     await tx.registration.update({
@@ -489,10 +489,52 @@ export async function cancelRegistration(
       });
     }
 
+    // Event-level waitlist promotion. When a CONFIRMED (or pending)
+    // seat is freed, look for the lowest waitlistPosition for this
+    // event and promote them to confirmed (or pending if the event
+    // requires approval — keeps the audit story honest). Positions
+    // above the promoted one are left as-is, gaps and all, so
+    // attendees keep their "you're #N" promise stable.
+    const wasOccupyingSeat =
+      registration.registrationStatus === "confirmed" ||
+      registration.registrationStatus === "pending";
+    let waitlistPromoted = false;
+    if (wasOccupyingSeat) {
+      const eventForPromotion = await tx.bhnEvent.findUnique({
+        where: { id: registration.eventId },
+        select: { requiresApproval: true, maxAttendees: true },
+      });
+      if (eventForPromotion?.maxAttendees) {
+        const nextUp = await tx.registration.findFirst({
+          where: {
+            eventId: registration.eventId,
+            registrationStatus: "waitlist",
+            waitlistPosition: { not: null },
+          },
+          orderBy: { waitlistPosition: "asc" },
+          select: { id: true },
+        });
+        if (nextUp) {
+          await tx.registration.update({
+            where: { id: nextUp.id },
+            data: {
+              registrationStatus: eventForPromotion.requiresApproval
+                ? "pending"
+                : "confirmed",
+              approvedAt: eventForPromotion.requiresApproval ? null : new Date(),
+              waitlistPosition: null,
+            },
+          });
+          waitlistPromoted = true;
+        }
+      }
+    }
+
     return {
       ok: true as const,
       cancelledBookings,
       promoted,
+      waitlistPromoted,
     };
   });
 }
