@@ -37,6 +37,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveCompanyId } from "@/lib/employer/company";
 
 export const runtime = "nodejs";
 
@@ -152,6 +153,16 @@ export async function POST() {
   const companyName = me?.employerCompany?.trim()
     || (me?.email?.split("@")[1]?.split(".")[0] ?? "Acme Bio");
 
+  // Resolve the caller's active company so the seeded postings carry
+  // the SAME companyId the /employer/postings read path filters by.
+  // Without this, the read path's company-scoped filter
+  // (`{ companyId }`, used whenever the viewer has an active company —
+  // including admins acting-as employer) never matches the seeded
+  // rows and the list stays empty after refresh. When there's no
+  // active company, companyId stays null and the read path falls back
+  // to `{ createdById }`, which still matches.
+  const activeCompanyId = await getActiveCompanyId(userId).catch(() => null);
+
   // 8 demo applicants → enough variety across 3 postings.
   const applicants = await ensureDemoApplicants(APPLICANT_NAMES.length);
 
@@ -181,6 +192,10 @@ export async function POST() {
         status: "active",
         deadline: daysAgo(-21), // 21 days in the future
         createdById: userId,
+        // Stamp the active company so the company-scoped read filter
+        // on /employer/postings returns these rows. Null when the
+        // caller has no company (read path then uses createdById).
+        companyId: activeCompanyId,
         createdAt,
       },
       select: { id: true },
@@ -284,8 +299,21 @@ export async function DELETE() {
 
   // Cascades down: ApplicationStatus → Interview / Offer / etc. all
   // FK to the posting with onDelete: Cascade.
+  //
+  // Clear by BOTH createdById (legacy seeds + the caller's own) AND
+  // the active companyId (so a teammate's company-scoped demo seeds
+  // are also swept, and so seeds created after the companyId fix are
+  // caught regardless of who in the company created them). Always
+  // gated by isDemoSeed so real postings are never touched.
+  const activeCompanyId = await getActiveCompanyId(userId).catch(() => null);
   const result = await prisma.internshipPosting.deleteMany({
-    where: { createdById: userId, isDemoSeed: true },
+    where: {
+      isDemoSeed: true,
+      OR: [
+        { createdById: userId },
+        ...(activeCompanyId ? [{ companyId: activeCompanyId }] : []),
+      ],
+    },
   });
 
   return NextResponse.json({ ok: true, deleted: result.count });

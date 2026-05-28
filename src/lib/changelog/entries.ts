@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Employer demo seeder — fix: postings now appear after seeding — May 2026
+  {
+    title: "Employer workspace — fix: \"Seed demo postings\" now actually shows postings (was silently empty)",
+    body: "Bug: on `/employer/postings`, clicking **Seed demo postings** — including when an admin views-as the HR/employer role — created the postings in the database but the list stayed empty even after a refresh.\n\n**Root cause.** When the employer-team-portal shipped, the postings list switched to *company-scoped* reads: whenever the viewer has an active company, the page queries `WHERE companyId = <their company>`. But the demo seeder was never updated to match — it still wrote postings with only `createdById` + `companyName` set, leaving `companyId` null. So the company-scoped read filter never matched the freshly-seeded rows, and the workspace looked empty.\n\n**Fix.** The seed route now resolves the caller's active company (the same `getActiveCompanyId` the read path uses) and stamps `companyId` on every seeded posting. This lines the write up with the read in both cases:\n  • Viewer has a company → seeded postings carry that `companyId` → the `{ companyId }` filter returns them.\n  • Viewer has no company → `companyId` stays null, `createdById` is set → the read path's fallback `{ createdById }` filter returns them.\n\nThe **Clear demo postings** path was also made symmetric — it now sweeps demo seeds by both `createdById` and the active `companyId` (gated by `isDemoSeed` so real postings are never touched), so it catches both legacy null-company seeds and any company-scoped seeds a teammate created.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Events — SMS reminders (Twilio) + real-time admin feed — May 2026
   {
     title: "Events — Twilio SMS reminders (opt-in) + real-time admin attendee feed",
