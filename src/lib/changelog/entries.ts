@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Experience map — CLI activity vignettes — May 2026
+  {
+    title: "Experience map — the Admin review & Talent Pool cards now show live activity vignettes",
+    body: "On the Experience overview, two stages don't flow to a next page along a connecting line — Admin review and Talent Pool are where work happens *to* your application rather than a step you click through. Those two cards now carry a small terminal-style panel in their empty space that loops through what's going on, so the stage reads as alive instead of static.\n\nAdmin review shows the gate in motion — reading the application, leaving a comment, scoring it, then approving it through to the pool. Talent Pool shows the employer side — viewing the profile, leaving a private comment, sending an intro message, shortlisting for a role. The vignettes are purely decorative (screen-reader–hidden) and hold still for anyone who's set reduced-motion.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Showcase page — eyebrow contrast — May 2026
   {
     title: "Showcase (Regulatory Affairs) — fix: the eyebrow label now meets AA contrast",

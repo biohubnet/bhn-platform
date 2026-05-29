@@ -246,6 +246,12 @@ function FlowChart() {
           icon={Users}
           tone="amber"
           hint="Approved ⇒ visible to employers"
+          cli={[
+            { c: "▸", t: "reading application…" },
+            { c: "✎", t: "comment: strong STAR video" },
+            { c: "★", t: "scored 4.6 / 5" },
+            { c: "✓", t: "approved → talent pool" },
+          ]}
         />
 
         {/* Two parallel tracks */}
@@ -258,6 +264,12 @@ function FlowChart() {
               icon={Users}
               tone="neutral"
               hint="Employers comment + reach out"
+              cli={[
+                { c: "◆", t: "employer viewing profile" },
+                { c: "✎", t: "left a private comment" },
+                { c: "✉", t: "intro message sent" },
+                { c: "↗", t: "shortlisted for a role" },
+              ]}
             />
           </div>
           <div className="hidden sm:flex items-center justify-center text-subtle text-xs font-semibold uppercase tracking-[0.18em]">
@@ -300,7 +312,7 @@ function FlowChart() {
 }
 
 function FlowBox({
-  step, title, href, icon: Icon, tone, hint,
+  step, title, href, icon: Icon, tone, hint, cli,
 }: {
   step: string;
   title: string;
@@ -308,6 +320,9 @@ function FlowBox({
   icon: React.ElementType;
   tone: "brand" | "neutral" | "amber" | "success";
   hint?: string;
+  /** A line-less box (no nav curve) can carry a CLI-style activity
+   *  vignette in its body to show "work happening" instead. */
+  cli?: { c: string; t: string }[];
 }) {
   const toneClasses = {
     brand:   "border-brand-200 bg-brand-50 text-brand-900",
@@ -319,7 +334,7 @@ function FlowBox({
   // so give the icon a gentle wobble — keeps the page alive and
   // signals "this is a process step, not a click target." Boxes
   // with an href use the curve hover, no animation needed.
-  const iconAnim = href ? "" : "animate-icon-wobble";
+  const iconAnim = href || cli ? "" : "animate-icon-wobble";
   const inner = (
     <div className={`rounded-xl border-2 px-4 py-3 transition-colors hover:shadow-md ${toneClasses}`}>
       <div className="flex items-start gap-3">
@@ -332,6 +347,7 @@ function FlowBox({
           </p>
           <h4 className="text-sm font-bold tracking-tight">{title}</h4>
           {hint && <p className="text-xs opacity-80 mt-0.5">{hint}</p>}
+          {cli && <CliVignette lines={cli} />}
         </div>
         {href && <ArrowRight size={14} className="opacity-60 shrink-0 mt-1" />}
       </div>
@@ -339,6 +355,37 @@ function FlowBox({
   );
   if (href) return <NavHighlightZone href={href}>{inner}</NavHighlightZone>;
   return inner;
+}
+
+/**
+ * CLI-style activity vignette — a tiny dark terminal panel that loops a
+ * few monospace "log" lines so a line-less box (Admin review, Talent
+ * Pool) reads as live work happening rather than a static label. Lines
+ * reveal in sequence (staggered .cli-line delay) with a blinking cursor.
+ * Purely decorative (aria-hidden); dark by design regardless of theme.
+ */
+function CliVignette({ lines }: { lines: { c: string; t: string }[] }) {
+  return (
+    <div
+      aria-hidden
+      className="mt-2.5 rounded-lg px-2.5 py-2 font-mono text-[10.5px] leading-[1.55] ring-1 ring-white/10 overflow-hidden"
+      style={{ background: "#0b1220" }}
+    >
+      {lines.map((ln, i) => (
+        <div
+          key={i}
+          className="cli-line flex items-center gap-1.5 whitespace-nowrap"
+          style={{ animationDelay: `${(i * 1.1).toFixed(2)}s` }}
+        >
+          <span className="shrink-0 w-3 text-center" style={{ color: "#5eead4" }}>{ln.c}</span>
+          <span className="truncate" style={{ color: "#cbd5e1" }}>{ln.t}</span>
+          {i === lines.length - 1 && (
+            <span className="cli-cursor shrink-0" style={{ color: "#5eead4" }}>▋</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function FlowArrow() {
