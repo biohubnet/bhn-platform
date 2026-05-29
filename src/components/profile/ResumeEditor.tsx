@@ -1102,8 +1102,9 @@ export function ResumeEditor({
         />
       )}
 
-      {/* Header block */}
-      <section className="bg-card-solid border border-line rounded-2xl p-5">
+      {/* Header block — open (no card box); a thin neutral left rule +
+          whitespace separate it, matching the section rules below. */}
+      <section className="border-l-2 border-line/70 pl-5">
         <h2 className="text-[10px] font-mono uppercase tracking-[0.28em] font-bold text-fg-muted mb-3">Header</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Field label="Name"     value={content.header?.name     ?? ""} onChange={(v) => updateHeader({ name:     v })} />
@@ -1140,7 +1141,7 @@ export function ResumeEditor({
       {content.sections.map((section, sIdx) => (
         <section
           key={section.id}
-          className="bg-card-solid border border-line border-l-4 rounded-2xl p-5"
+          className="border-l-2 pl-5"
           style={{ borderLeftColor: SECTION_KIND_COLOR[section.kind] }}
         >
           {/* Section heading row.
@@ -1526,7 +1527,7 @@ function ResumePicker({
 }) {
   const others = siblings.filter((s) => s.id !== currentResumeId);
   return (
-    <div className="flex items-center justify-between gap-3 flex-wrap rounded-xl border border-line bg-card-solid px-3 py-2">
+    <div className="flex items-center justify-between gap-3 flex-wrap border-b border-line/60 px-1 py-2">
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <span className="inline-flex w-7 h-7 rounded-md bg-brand-50 text-brand-700 items-center justify-center shrink-0">
           <FileText size={13} />
@@ -1592,10 +1593,10 @@ function PrimaryActionCard({
       type="button"
       onClick={onClick}
       className={
-        "group flex items-start gap-3 rounded-xl px-3.5 py-3 text-left transition-colors " +
+        "group flex items-start gap-3 rounded-lg px-3.5 py-3 text-left transition-colors text-fg " +
         (active
-          ? "bg-brand-100 ring-1 ring-inset ring-brand-300 text-brand-900"
-          : "bg-brand-50 ring-1 ring-inset ring-brand-200 text-brand-900 hover:bg-brand-100")
+          ? "bg-brand-50 ring-1 ring-inset ring-brand-300"
+          : "ring-1 ring-inset ring-line/60 hover:bg-brand-50/50")
       }
     >
       <span className="shrink-0 inline-flex w-9 h-9 rounded-lg bg-brand-600 text-white items-center justify-center">
@@ -1623,7 +1624,7 @@ function PrimaryActionLink({
   return (
     <Link
       href={href}
-      className="group flex items-start gap-3 rounded-xl px-3.5 py-3 text-left transition-colors bg-brand-50 ring-1 ring-inset ring-brand-200 text-brand-900 hover:bg-brand-100"
+      className="group flex items-start gap-3 rounded-lg px-3.5 py-3 text-left transition-colors text-fg ring-1 ring-inset ring-line/60 hover:bg-brand-50/50"
     >
       <span className="shrink-0 inline-flex w-9 h-9 rounded-lg bg-brand-600 text-white items-center justify-center">
         <Icon size={16} />
