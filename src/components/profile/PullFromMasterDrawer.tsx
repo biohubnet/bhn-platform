@@ -107,6 +107,16 @@ export function PullFromMasterDrawer({ open, onClose, content, onSendToTarget }:
     return () => { alive = false; };
   }, [open]);
 
+  // While open, mark <body> so the resume page content (master bar +
+  // editor) can reserve room on the right and not sit behind this fixed
+  // drawer. Cleared on close / unmount. CSS lives in globals.css
+  // (.resume-reflow, lg-only).
+  useEffect(() => {
+    if (!open) return;
+    document.body.setAttribute("data-master-drawer", "open");
+    return () => { document.body.removeAttribute("data-master-drawer"); };
+  }, [open]);
+
   // Close on Escape — standard drawer behaviour.
   useEffect(() => {
     if (!open) return;

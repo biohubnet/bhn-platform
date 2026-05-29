@@ -969,7 +969,7 @@ export function ResumeEditor({
       // shift the editor content left on wide screens so the two sit
       // side-by-side and you can drag straight across — nothing hidden
       // behind the drawer.
-      className={`space-y-5 transition-[padding] duration-200 ${masterDrawerOpen ? "lg:pr-[420px]" : ""}`}
+      className="space-y-5"
     >
       {/* Resume picker — multi-resume aware. Shows the current
           resume's name as the selected value; the dropdown lists

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Resume builder — whole page clears the pull drawer — May 2026
+  {
+    title: "Resume builder — the master-resume bar no longer hides behind the Pull-from-master drawer",
+    body: "When you opened “Pull from master”, only the editor below shifted over to make room — the master-resume bar above it stayed full width, so its right-hand action (Promote edits to master) got covered by the drawer. Now the whole resume page — master bar, editor, and back link — reserves room for the drawer while it's open, so nothing sits behind it. (Desktop only; on smaller screens the drawer still overlays and you use the Send-to picker.)",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Resume builder — minimalist, lines-not-boxes — May 2026
   {
     title: "Resume builder — a cleaner, less boxy editor",

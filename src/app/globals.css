@@ -3687,6 +3687,17 @@ h1, h2, h3 {
 }
 .cli-cursor { animation: cli-blink 1s step-end infinite; }
 
+/* Resume page reflow — when the "Pull from master" drawer is open it
+ * sets data-master-drawer="open" on <body>. Each .resume-reflow wrapper
+ * (the master bar, the editor column, the back-link) then reserves room
+ * on the right so the fixed drawer doesn't cover the content. lg+ only;
+ * below that the drawer overlays full-width and the Send-to picker is
+ * the path, so no reflow there. */
+.resume-reflow { transition: padding 200ms ease; }
+@media (min-width: 1024px) {
+  body[data-master-drawer="open"] .resume-reflow { padding-right: 420px; }
+}
+
 /* Sidebar nav-badge pulse — used for urgent-from-one trainee badges
  * (incoming interview request, offer waiting, buddy invite). Subtle
  * shadow ramp + tiny scale so it catches the eye without thrashing. */
