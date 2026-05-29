@@ -26,7 +26,8 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActiveCompanyId, updateLastSeen } from "@/lib/employer/company";
+import { updateLastSeen } from "@/lib/employer/company";
+import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
 import { ELIGIBLE_APPLICANT_FILTER } from "@/lib/talent-pool/eligibility";
 import {
   HrWorkspace,
@@ -47,6 +48,7 @@ export default async function EmployerWorkspacePage() {
   if (!session) redirect("/login");
 
   const role = (session.user as { role?: string }).role ?? "trainee";
+  const realRole = (session.user as { realRole?: string }).realRole ?? role;
   const userId = (session.user as { id?: string }).id ?? null;
   const isAdmin = role === "admin" || role === "superadmin";
   if (role !== "employer" && !isAdmin) {
@@ -68,21 +70,27 @@ export default async function EmployerWorkspacePage() {
       }).catch(() => null)
     : null;
 
-  // Resolve active company, stamp last-seen.
-  const companyId = isAdmin
-    ? null
-    : userId ? await getActiveCompanyId(userId).catch(() => null) : null;
+  // Resolve the workspace company via the SHARED resolver (keyed on
+  // REAL role) — the same one the demo seed routes + every other
+  // /employer surface use, so seed-writes and this read always land
+  // on the same company. Critically this fixes superadmin
+  // view-as-employer: the old `getActiveCompanyId` here returned a
+  // leaked/shared company while the seed wrote to the private preview
+  // company, so seeded postings never appeared.
+  const companyId = userId
+    ? await resolveWorkspaceCompanyId(userId, realRole).catch(() => null)
+    : null;
   if (companyId && userId) updateLastSeen(companyId, userId);
 
-  // Company-scoped filter. Admins / superadmins get a private preview
-  // workspace scoped to their own createdById (the platform-wide `{}`
-  // filter used to leak postings between admin accounts — see the
-  // header comment on (dashboard)/employer/page.tsx for the full
-  // isolation contract).
-  const postingsFilter = isAdmin
-    ? { createdById: userId ?? "_" }
-    : companyId
-    ? { companyId }
+  // Show postings in the resolved company OR created by this user.
+  // The OR keeps two cases covered without regressing either:
+  //   • demo seeds (companyId = preview company AND createdById = me)
+  //   • legacy postings created before companyId backfill (companyId
+  //     null, createdById = me) — still visible via createdById.
+  // Falls back to createdById-only when no company resolves (a brand-
+  // new employer with no company yet).
+  const postingsFilter = companyId
+    ? { OR: [{ companyId }, { createdById: userId ?? "_" }] }
     : { createdById: userId ?? "_" };
 
   const postingsRaw = await prisma.internshipPosting.findMany({
@@ -224,9 +232,16 @@ export default async function EmployerWorkspacePage() {
 
   // Has the operator already populated some demo data? Drives the
   // "Add more" vs "Seed demo data" label + whether the Clear button
-  // shows. Cheap COUNT — no risk of pulling all rows.
+  // shows. Cheap COUNT — no risk of pulling all rows. Uses the same
+  // company-OR-creator scope as the postings filter so the Clear
+  // button reflects exactly what's listed above.
   const demoCount = await prisma.internshipPosting.count({
-    where: { createdById: userId ?? "_", isDemoSeed: true },
+    where: {
+      isDemoSeed: true,
+      ...(companyId
+        ? { OR: [{ companyId }, { createdById: userId ?? "_" }] }
+        : { createdById: userId ?? "_" }),
+    },
   }).catch(() => 0);
 
   // Hero always sits at the very top of the page — never let any

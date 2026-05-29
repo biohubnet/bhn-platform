@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Employer postings — final piece: migrate to the shared resolver too — May 2026
+  {
+    title: "Employer postings — fix: view-as-HR seeding now appears (the one surface still on the old company resolution)",
+    body: "Last-mile fix on the demo-seeding saga. The previous pass unified analytics / calendar / templates / team onto the shared `resolveWorkspaceCompanyId`, but I'd deliberately left the **postings** page on its old `getActiveCompanyId` resolution, reasoning it still worked via a `createdById` fallback. That reasoning was wrong for the exact case the user hit.\n\n**Why postings was still broken for view-as-HR.** When a superadmin uses view-as-employer, the postings page computed `companyId = getActiveCompanyId(userId)` — which returns the superadmin's *first* CompanyMember row, often a leaked/shared company (the very thing `ensureAdminPreviewCompany` exists to avoid). The seed, meanwhile, writes to the *private preview* company. Different companies → the `createdById` fallback never engaged (it only fires when `companyId` is null, and `getActiveCompanyId` returned a non-null *wrong* company) → seeded postings stayed invisible.\n\n**Fix.** Migrated the postings page + its Clear-button count to the same `resolveWorkspaceCompanyId(userId, realRole)` every other surface uses, and broadened the filter to `{ OR: [{ companyId }, { createdById }] }` so it shows both the resolved company's postings AND anything the caller created (covering demo seeds + legacy null-company postings without regressing real admins). All six employer surfaces — postings, analytics, calendar, templates, team, and the seed routes — now resolve the workspace company identically.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Employer demo seeders — unified company resolution (analytics/calendar/templates/team fixed) — May 2026
   {
     title: "Employer demo seeding — fixed across analytics, calendar, templates & team (seed-write and page-read now resolve the same company)",
