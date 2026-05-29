@@ -1386,24 +1386,13 @@ function BranchModal({
         </div>
       </div>
 
-      {/* Footer — saturation legend + close hint, once settled */}
-      <div
-        className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[110] transition-opacity duration-300 pointer-events-none flex flex-col items-center gap-2"
+      {/* Footer — close hint, once settled */}
+      <p
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] text-[11px] text-white/70 transition-opacity duration-300 pointer-events-none"
         style={{ opacity: stage === "settled" ? 1 : 0 }}
       >
-        <div className="flex items-center gap-2 text-[10.5px] text-white/85 bg-black/40 backdrop-blur-sm rounded-full px-3.5 py-1.5">
-          <span>Less likely</span>
-          <span
-            className="h-1.5 w-24 rounded-full"
-            style={{ background: "linear-gradient(90deg, color-mix(in srgb, #94a3b8 35%, transparent) 0%, #22d3ee 100%)" }}
-          />
-          <span>More likely</span>
-          <span className="text-white/45">· line saturation = transition affinity</span>
-        </div>
-        <p className="text-[11px] text-white/65">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-white/15 text-white/90 text-[10px] font-mono mx-0.5">Esc</kbd> or click the backdrop to close
-        </p>
-      </div>
+        Press <kbd className="px-1.5 py-0.5 rounded bg-white/15 text-white/90 text-[10px] font-mono mx-0.5">Esc</kbd> or click the backdrop to close
+      </p>
     </div>
   );
 }
@@ -1664,6 +1653,10 @@ function BranchLines({
         const sat = (0.25 + strength * 1.25).toFixed(2);
         const glowPx = Math.round(3 + strength * 9);
         const glowPct = Math.round(26 + strength * 48);
+        // Comet dots encode likelihood by COUNT + SPEED: strong = 3 fast
+        // dots, mid = 2 medium, weak = 1 slow.
+        const cometCount = strength >= 0.66 ? 3 : strength >= 0.42 ? 2 : 1;
+        const cometDur = Math.max(1.1, Math.min(7, travelDur * (strength >= 0.66 ? 0.55 : strength >= 0.42 ? 0.95 : 1.7)));
         return (
           <g key={i}>
             <path
@@ -1683,31 +1676,24 @@ function BranchLines({
                 filter: `saturate(${sat}) drop-shadow(0 0 ${glowPx}px color-mix(in srgb, ${t.color} ${glowPct}%, transparent))`,
               }}
             />
-            {/* Light-travelling effect — a bright glowing dot that
-                rides along the bezier path on a continuous loop.
-                Only fires once the line is fully drawn (active) so
-                the comet doesn't fly through an invisible path
-                during the initial draw. The <animateMotion> follows
-                the <mpath> reference to the path's `d` attribute,
-                so when the path morphs (e.g. on card movement) the
-                comet's track morphs with it. */}
-            {active && strength >= 0.5 && (
-              <>
-                <circle r="4" fill="white" opacity="0.95" style={{ filter: `drop-shadow(0 0 8px ${t.color})` }}>
-                  <animateMotion dur={`${travelDur}s`} repeatCount="indefinite" rotate="auto">
+            {/* Light-travelling comet(s) on EVERY connecting line. Count
+                + speed encode the branch likelihood (3 fast / 2 medium /
+                1 slow). Each rides the bezier on a phase-shifted loop
+                (negative begin) so multiple dots stay evenly spaced. Only
+                fires once the line is drawn (active). */}
+            {active &&
+              Array.from({ length: cometCount }).map((_, k) => (
+                <circle key={k} r="3.5" fill="white" opacity="0.95" style={{ filter: `drop-shadow(0 0 7px ${t.color})` }}>
+                  <animateMotion
+                    dur={`${cometDur}s`}
+                    repeatCount="indefinite"
+                    rotate="auto"
+                    begin={`-${((cometDur * k) / cometCount).toFixed(2)}s`}
+                  >
                     <mpath href={`#${pathId}`} />
                   </animateMotion>
                 </circle>
-                {/* Trailing glow — slightly larger, more diffuse,
-                    offset by a small delay so it reads as a comet
-                    tail behind the bright head. */}
-                <circle r="7" fill={t.color} opacity="0.45" style={{ filter: `blur(2px)` }}>
-                  <animateMotion dur={`${travelDur}s`} repeatCount="indefinite" begin={`${travelDur * 0.04}s`}>
-                    <mpath href={`#${pathId}`} />
-                  </animateMotion>
-                </circle>
-              </>
-            )}
+              ))}
             <circle
               cx={tgtX}
               cy={tgtY}
