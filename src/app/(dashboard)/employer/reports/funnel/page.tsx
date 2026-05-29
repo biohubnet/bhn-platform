@@ -33,6 +33,7 @@ export default async function FunnelReportPage({ searchParams }: { searchParams:
       title="Recruiting funnel & conversion"
       description={`Snapshot pipeline and true-cohort conversion for ${range.label}.`}
       periodKey={range.key}
+      companyId={access.companyId}
       csvHref={`/api/employer/reports/funnel/export?${qs}`}
     >
       <Card className="p-5">

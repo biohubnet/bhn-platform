@@ -38,6 +38,7 @@ export default async function OffersReportPage({ searchParams }: { searchParams:
       title="Offer analytics"
       description={`Acceptance, response time, and decline reasons for ${range.label}.`}
       periodKey={range.key}
+      companyId={access.companyId}
       csvHref={`/api/employer/reports/offers/export?${qs}`}
     >
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">

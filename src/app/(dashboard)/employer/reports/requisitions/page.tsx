@@ -37,6 +37,7 @@ export default async function RequisitionsReportPage({ searchParams }: { searchP
       title="Requisition status & aging"
       description="Open roles, how long they've been open, and which are going stale."
       periodKey={range.key}
+      companyId={access.companyId}
       csvHref={`/api/employer/reports/requisitions/export?${qs}`}
     >
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">

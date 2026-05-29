@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Settings2, ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
+import { DemoSeederBar } from "@/components/employer/DemoSeederBar";
 import { ReportAccessError } from "@/components/employer/reports/ReportFrame";
 import { ReportSettingsClient } from "@/components/employer/reports/ReportSettingsClient";
 import { resolveReportAccess } from "@/lib/employer/reporting/access";
@@ -54,6 +55,10 @@ export default async function ReportSettingsPage() {
   }));
   const metricOptions = TARGET_METRICS.map((m) => ({ key: m.key, label: m.label, unit: m.unit, comparator: m.comparator, hint: m.hint }));
   const isOwner = membership?.role === "owner" || realRole === "admin" || realRole === "superadmin";
+  const hasDemo = await prisma.internshipPosting
+    .count({ where: { companyId, isDemoSeed: true } })
+    .then((n) => n > 0)
+    .catch(() => false);
 
   return (
     <div className="space-y-5">
@@ -66,6 +71,7 @@ export default async function ReportSettingsPage() {
       <Link href="/employer/reports" className="no-print inline-flex items-center gap-1 text-xs font-semibold text-muted hover:text-fg transition-colors">
         <ArrowLeft size={13} /> All reports
       </Link>
+      <DemoSeederBar hasExistingDemos={hasDemo} />
       <ReportSettingsClient
         metricOptions={metricOptions}
         targets={targets}

@@ -5,16 +5,19 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, Download } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
+import { DemoSeederBar } from "@/components/employer/DemoSeederBar";
 import { PeriodPicker } from "./PeriodPicker";
 
-export function ReportFrame({
+export async function ReportFrame({
   eyebrow,
   icon,
   title,
   description,
   periodKey,
   csvHref,
+  companyId,
   children,
 }: {
   eyebrow: string;
@@ -23,8 +26,14 @@ export function ReportFrame({
   description: string;
   periodKey: string;
   csvHref?: string;
+  /** Company whose demo-seed state drives the seed/clear bar. */
+  companyId: string;
   children: ReactNode;
 }) {
+  const hasDemo = await prisma.internshipPosting
+    .count({ where: { companyId, isDemoSeed: true } })
+    .then((n) => n > 0)
+    .catch(() => false);
   return (
     <div className="space-y-5">
       <DSPageHeader
@@ -53,6 +62,7 @@ export function ReportFrame({
       >
         <ArrowLeft size={13} /> All reports
       </Link>
+      <DemoSeederBar hasExistingDemos={hasDemo} />
       {children}
     </div>
   );

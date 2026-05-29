@@ -30,6 +30,7 @@ export default async function SourcesReportPage({ searchParams }: { searchParams
       title="Source effectiveness"
       description={`Where applicants & hires come from for ${range.label}, and how each channel converts.`}
       periodKey={range.key}
+      companyId={access.companyId}
       csvHref={`/api/employer/reports/sources/export?${qs}`}
     >
       <Card className="p-5">

@@ -38,6 +38,7 @@ export default async function CostReportPage({ searchParams }: { searchParams: P
       title="Cost per hire"
       description={`Recruiting spend and cost-per-hire for ${range.label}. Add cost lines in report settings.`}
       periodKey={range.key}
+      companyId={access.companyId}
       csvHref={`/api/employer/reports/cost/export?${qs}`}
     >
       <section className="grid grid-cols-2 md:grid-cols-3 gap-3">

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Talent Reports — seed/clear on every report — May 2026
+  {
+    title: "Talent Reports — seed/clear demo data is now on every report, not just the hub",
+    body: "The demo **Seed demo data / Clear** bar now sits at the top of every report — Funnel, Time to fill, Offers, Requisitions, Team productivity, Quality of hire, Source effectiveness, Cost per hire, Diversity — and the Report settings page, so you can populate or wipe the demo company from wherever you are instead of returning to the hub. It's the same seeder, so one click fills (or clears) every report at once; the bar shows Clear only once demo data exists.",
+    kind: "improvement",
+    visibleTo: ["employer", "admin", "superadmin"],
+    daysAgo: 0,
+  },
   // ── Career pathways — branch likelihood vector selector — May 2026
   {
     title: "Career pathways — branch-out now shows ALL possible moves, ranked by likelihood",

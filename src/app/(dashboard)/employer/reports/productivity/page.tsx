@@ -31,6 +31,7 @@ export default async function ProductivityReportPage({ searchParams }: { searchP
       title="Recruiter & team productivity"
       description={`Who did what for ${range.label} — activity volume, interviews, scorecards, and hires per teammate.`}
       periodKey={range.key}
+      companyId={access.companyId}
       csvHref={`/api/employer/reports/productivity/export?${qs}`}
     >
       <Card className="p-5">

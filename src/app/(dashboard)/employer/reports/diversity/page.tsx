@@ -33,6 +33,7 @@ export default async function DiversityReportPage({ searchParams }: { searchPara
       title="Diversity / DEI pipeline"
       description="Voluntary, self-reported representation by stage — aggregate-only and small-count suppressed."
       periodKey={range.key}
+      companyId={access.companyId}
       csvHref={enabled ? `/api/employer/reports/diversity/export?${qs}` : undefined}
     >
       {!enabled ? (

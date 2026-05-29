@@ -38,6 +38,7 @@ export default async function TimeToFillReportPage({ searchParams }: { searchPar
       title="Time to fill & cycle time"
       description={`How long hiring takes for ${range.label} — req open → hire, apply → hire, and time in each stage.`}
       periodKey={range.key}
+      companyId={access.companyId}
       csvHref={`/api/employer/reports/time-to-fill/export?${qs}`}
     >
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">

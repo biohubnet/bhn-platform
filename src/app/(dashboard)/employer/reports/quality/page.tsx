@@ -31,6 +31,7 @@ export default async function QualityReportPage({ searchParams }: { searchParams
       title="Quality of hire"
       description={`Interview scorecard signal for ${range.label} — average scores, recommendation mix, and completion.`}
       periodKey={range.key}
+      companyId={access.companyId}
       csvHref={`/api/employer/reports/quality/export?${qs}`}
     >
       <section className="grid grid-cols-2 md:grid-cols-3 gap-3">
