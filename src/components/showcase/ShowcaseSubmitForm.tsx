@@ -217,9 +217,17 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
         </div>
       </div>
 
-      {/* Error */}
+      {/* Error.
+          text-[#881337] (rose-900 literal), NOT the `text-rose-900`
+          utility: globals.css redefines `.text-rose-900` per dark theme
+          to a LIGHT shade (hitech #fca5a5, dryice #fecdd3, …) for
+          contrast on dark cards. Those rules match via the <html>
+          [data-theme] ancestor, so the page-level `data-theme="light"`
+          pin can't neutralise them — light-rose text would land on this
+          light bg-rose-50 box. An arbitrary-value class has no per-theme
+          override, so the error stays dark-on-light for every visitor. */}
       {errorMsg && (
-        <div className="flex items-start gap-2 rounded-lg bg-rose-50 ring-1 ring-inset ring-rose-200 px-3 py-2 text-[12px] text-rose-900">
+        <div className="flex items-start gap-2 rounded-lg bg-rose-50 ring-1 ring-inset ring-rose-200 px-3 py-2 text-[12px] text-[#881337]">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>{errorMsg}</span>
         </div>

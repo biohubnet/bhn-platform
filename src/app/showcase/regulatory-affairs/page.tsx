@@ -20,7 +20,17 @@ export const metadata: Metadata = {
 
 export default function ShowcaseRegulatoryAffairsPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#f0f7f7] via-[#e6f0f1] to-[#dfecee]">
+    // data-theme="light" pins this PUBLIC, brand-controlled page to the
+    // light palette regardless of the visitor's chosen theme. The page
+    // hardcodes a light gradient + white form cards, but the form's text
+    // / border colours use theme tokens (--fg, --fg-subtle, --line). On
+    // a dark theme like Voltage (hitech), --fg resolves to near-white
+    // (#e3f7ff) → near-white text on white fields → unreadable. Pinning
+    // the subtree to light resets those tokens to dark-on-light for the
+    // whole page in one place, so the form stays high-contrast for every
+    // visitor. (Themes are a logged-in personalisation; a public intake
+    // form should be brand-consistent, not adopt the viewer's theme.)
+    <main data-theme="light" className="min-h-screen bg-gradient-to-b from-[#f0f7f7] via-[#e6f0f1] to-[#dfecee]">
       <div className="max-w-2xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
         {/* BioHubNet brand lock-up — the official PNG the user supplied
             (public/biohubnet-logo.png). It already contains the diamond

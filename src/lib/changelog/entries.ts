@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Showcase submission form — contrast regression fix — May 2026
+  {
+    title: "Showcase entry form — fix: text contrast restored (public page now renders in the brand light palette regardless of the visitor's theme)",
+    body: "Reported: the submission form on `/showcase/regulatory-affairs` had washed-out, low-contrast text — \"but it was not an issue before.\"\n\n**What changed — the theme system.** The showcase page is a public, brand-controlled surface: it hardcodes a light teal gradient background and **white** form cards/inputs. But the form coloured its text, borders and placeholders with **theme tokens** (`--fg`, `--fg-subtle`, `--line`, `--elevated`, `--brand-400`). Public pages inherit whatever theme the *visitor* has active, and the palette has since grown a family of **dark** themes (Voltage/hitech, Dry Ice, Cold Brew, Chilli, Aurora, …) that redefine `--fg` to a near-**white** value (e.g. hitech `#e3f7ff`). So a visitor on a dark theme got near-white text on the form's hardcoded white fields → barely legible. Before those themes existed, `--fg` was always dark and the form looked fine — hence \"it wasn't an issue before.\"\n\n**Fix — pin the public page to the light palette.** The showcase page root now carries `data-theme=\"light\"`. CSS custom properties resolve from the nearest ancestor that defines them, so every token-based colour inside the page (`text-fg`, `text-fg-subtle`, `border-line`, `bg-elevated`, the `var(--line)`/`var(--elevated)` inline styles on the headshot preview, etc.) snaps back to dark-on-light for the whole subtree — in one place, without rewriting each utility. This is also the semantically correct behaviour: a public intake form should be brand-consistent for every visitor, not adopt the logged-in viewer's personal theme.\n\n**Plus a belt-and-braces fix for the error box.** The inline validation error used the `text-rose-900` utility, which globals.css redefines per dark theme to a *light* rose (hitech `#fca5a5`, Dry Ice `#fecdd3`, …) so errors stay readable on dark cards. Those rules match via the `<html data-theme>` ancestor, so the page-level light pin can't override them — light-rose text would have landed on the light `bg-rose-50` box. Swapped to the arbitrary-value class `text-[#881337]` (rose-900 literal), which has no per-theme override and therefore stays dark-on-light everywhere.\n\nNet: the form is high-contrast and legible for every visitor, on any theme. No change to the form's fields, layout, or the teal submit button (which was already a hardcoded gradient).",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Employer team — additive demo seeding — May 2026
   {
     title: "Employer team — demo seeding is now additive (each click adds 3 more members; Clear sweeps them all)",
