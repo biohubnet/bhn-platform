@@ -1835,92 +1835,61 @@ function computeFocusLayout(
 
   // ── Mode A: side-by-side (wide screens) ────────────────────────
   if (viewport.w >= 1100) {
-    // ALWAYS a single column. The source sits to the left; targets
-    // stack in ONE column on the right, and every line fans from the
-    // source's right edge to a target's left edge. Lines that share one
-    // origin can't cross each other, and they travel only in the empty
-    // gutter between source and column, so they never cross a card. A
-    // taller stack just scrolls the modal — clean beats compact.
-    // (Previously 5-6 targets went multi-column with arc-routing, which
-    // is exactly what crossed boxes + lines.)
-    const cols = 1;
-    const rows = numTargets;
+    // ── Flanking tree ──────────────────────────────────────────────
+    // Source in the CENTRE; destinations split into a RIGHT column
+    // (even-indexed = strongest first) and a LEFT column (odd-indexed).
+    // Every line fans from the source's right edge to right targets and
+    // its left edge to left targets — each side shares ONE origin, so
+    // lines can't cross each other, and each routes only in its own
+    // gutter, so they never cross a card. Two sides ≈ half the scroll of
+    // a single column. Per-card heights keep each column only as tall as
+    // its own content (shorter exploratory cards don't pad the column).
+    const allIdx = Array.from({ length: numTargets }, (_, i) => i);
+    const rightIdx = allIdx.filter((i) => i % 2 === 0);
+    const leftIdx  = allIdx.filter((i) => i % 2 === 1);
+    const hasLeft  = leftIdx.length > 0;
 
-    // Intrinsic block dimensions before any downscale. Note the
-    // mixed gap: SRC_TGT_GAP between source and target group,
-    // TGT_GAP within the target group.
-    const tgtsBlockW = cols * TGT_INTRINSIC_W + (cols - 1) * TGT_GAP;
-    const tgtsBlockH = rows * TGT_INTRINSIC_H + (rows - 1) * TGT_GAP;
-    const blockW = SRC_INTRINSIC_W + SRC_TGT_GAP + tgtsBlockW;
-    const blockH = Math.max(SRC_INTRINSIC_H, tgtsBlockH);
-
-    // Width-only scale (Dec '26). Previously we used a uniform
-    // scale = min(width-fit, height-fit), which meant if viewport
-    // height was tight, the WHOLE layout (including widths) shrank.
-    // Narrower cards reflow text to more lines → real content height
-    // grows beyond measured-at-intrinsic-width → END marker (and
-    // sometimes the last bullet) clipped at the bottom.
-    //
-    // New policy: scale ONLY to fit width. Vertical block size stays
-    // at natural content height. If block height exceeds viewport,
-    // the modal's outer container scrolls so users can reach every
-    // card without losing any of its content. No vertical clipping
-    // ever, by construction. The "no scrollbars on cards themselves"
-    // rule still holds — only the MODAL container scrolls; each
-    // card stays sized to fit its own content.
-    const scale = Math.min(1, availW / blockW);
-    const srcW       = Math.floor(SRC_INTRINSIC_W * scale);
-    const srcH       = Math.floor(SRC_INTRINSIC_H * scale);
-    const tgtW       = Math.floor(TGT_INTRINSIC_W * scale);
-    const tgtH       = Math.floor(TGT_INTRINSIC_H * scale);
-    const srcTgtGap  = Math.floor(SRC_TGT_GAP * scale);
-    const tgtGap     = Math.floor(TGT_GAP * scale);
-
-    const scaledTgtsBlockW = cols * tgtW + (cols - 1) * tgtGap;
-    const scaledTgtsBlockH = rows * tgtH + (rows - 1) * tgtGap;
-    const scaledBlockW     = srcW + srcTgtGap + scaledTgtsBlockW;
-    const scaledBlockH     = Math.max(srcH, scaledTgtsBlockH);
-
-    // Centre the block horizontally on the viewport, vertically in
-    // the safe area (between TOP_PAD and viewport.h - BOTTOM_PAD).
-    const blockLeft = Math.floor((viewport.w - scaledBlockW) / 2);
-    const blockTop  = TOP_PAD + Math.max(0, Math.floor((availH - scaledBlockH) / 2));
-
-    // Source vertically centred within its block-height slot
-    // (usually shorter than the target stack); target stack ditto.
-    // Top-aligned (not vertically centred): with a single tall column
-    // the source must stay visible when the modal opens, and a top
-    // anchor makes every line fan DOWNWARD from the source's right edge
-    // — no upward lines, nothing to cross.
-    const source: FocusedRect = {
-      left: blockLeft,
-      top: blockTop,
-      width: srcW,
-      height: srcH,
-    };
-
-    const tgtsTop  = blockTop;
-    const tgtsLeft = blockLeft + srcW + srcTgtGap;
-    // arcOffset routing — used by BranchLines to deflect bezier
-    // control points vertically for far-column targets so their
-    // lines arc OVER (top half) or UNDER (bottom half) the near
-    // columns instead of crossing them. Near column (col=0) keeps
-    // arcOffset=0 since direct paths there don't need deflection.
-    const targets: Array<FocusedRect & { arcOffset?: number }> = Array.from({ length: numTargets }, (_, i) => {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const inUpperHalf = row < rows / 2;
-      const arcOffset = col === 0
-        ? 0
-        : (inUpperHalf ? -(srcH * 0.55) : (srcH * 0.55)) * col;
-      return {
-        left: tgtsLeft + col * (tgtW + tgtGap),
-        top: tgtsTop + row * (tgtH + tgtGap),
-        width: tgtW,
-        height: tgtH,
-        arcOffset,
-      };
+    const tgtHeightsRaw = Array.from({ length: numTargets }, (_, i) => {
+      const m = contentHeights?.targets?.[i];
+      return (m != null && m > 0 ? m : TGT_INTRINSIC_H_FALLBACK) + HEIGHT_SAFETY;
     });
+
+    // Width-only scale to fit; vertical overflow scrolls the modal.
+    const blockWIntrinsic =
+      (hasLeft ? TGT_INTRINSIC_W + SRC_TGT_GAP : 0) + SRC_INTRINSIC_W + SRC_TGT_GAP + TGT_INTRINSIC_W;
+    const scale = Math.min(1, availW / blockWIntrinsic);
+    const srcW      = Math.floor(SRC_INTRINSIC_W * scale);
+    const srcH      = Math.floor(SRC_INTRINSIC_H * scale);
+    const tgtW      = Math.floor(TGT_INTRINSIC_W * scale);
+    const srcTgtGap = Math.floor(SRC_TGT_GAP * scale);
+    const tgtGap    = Math.floor(TGT_GAP * scale);
+    const tgtHeights = tgtHeightsRaw.map((h) => Math.floor(h * scale));
+
+    const colH = (idxs: number[]) =>
+      idxs.reduce((s, i) => s + tgtHeights[i], 0) + Math.max(0, idxs.length - 1) * tgtGap;
+    const blockH = Math.max(srcH, colH(rightIdx), colH(leftIdx));
+
+    const scaledBlockW = (hasLeft ? tgtW + srcTgtGap : 0) + srcW + srcTgtGap + tgtW;
+    const blockLeft = Math.floor((viewport.w - scaledBlockW) / 2);
+    const blockTop  = TOP_PAD + Math.max(0, Math.floor((availH - blockH) / 2));
+
+    // Source top-aligned + centred between the columns: it stays visible
+    // on open and lines fan symmetrically out to both sides.
+    const srcLeft = blockLeft + (hasLeft ? tgtW + srcTgtGap : 0);
+    const source: FocusedRect = { left: srcLeft, top: blockTop, width: srcW, height: srcH };
+
+    const rightLeft = srcLeft + srcW + srcTgtGap;
+    const targets: Array<FocusedRect & { arcOffset?: number }> = new Array(numTargets);
+    let yR = blockTop;
+    for (const i of rightIdx) {
+      targets[i] = { left: rightLeft, top: yR, width: tgtW, height: tgtHeights[i], arcOffset: 0 };
+      yR += tgtHeights[i] + tgtGap;
+    }
+    let yL = blockTop;
+    for (const i of leftIdx) {
+      targets[i] = { left: blockLeft, top: yL, width: tgtW, height: tgtHeights[i], arcOffset: 0 };
+      yL += tgtHeights[i] + tgtGap;
+    }
 
     return { source, targets };
   }
@@ -2040,7 +2009,7 @@ function BigStationCard({
         {/* All other roles at this level, listed explicitly. Previous
             "+N similar roles" was ambiguous — now you can see the
             actual titles. */}
-        {station.roles.length > 1 && (
+        {!crossLink && station.roles.length > 1 && (
           <div className="mt-1.5">
             <p className="text-[9.5px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-0.5">
               Also at this level
@@ -2059,23 +2028,25 @@ function BigStationCard({
           {station.focus}
         </p>
 
-        <div className="mt-3 border-t border-line/60 pt-3">
-          <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-1.5">
-            Education gaps
-          </p>
-          <ul className="space-y-0.5">
-            {station.educationGaps.map((g) => (
-              <li key={g} className="flex items-start gap-1.5 text-[11.5px] leading-snug">
-                <span
-                  aria-hidden
-                  className="inline-block w-1 h-1 rounded-full mt-[7px] shrink-0"
-                  style={{ backgroundColor: track.accent }}
-                />
-                <span className="text-fg-muted">{g}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {!crossLink && (
+          <div className="mt-3 border-t border-line/60 pt-3">
+            <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-1.5">
+              Education gaps
+            </p>
+            <ul className="space-y-0.5">
+              {station.educationGaps.map((g) => (
+                <li key={g} className="flex items-start gap-1.5 text-[11.5px] leading-snug">
+                  <span
+                    aria-hidden
+                    className="inline-block w-1 h-1 rounded-full mt-[7px] shrink-0"
+                    style={{ backgroundColor: track.accent }}
+                  />
+                  <span className="text-fg-muted">{g}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Transition details — only on target cards */}
         {crossLink && (
