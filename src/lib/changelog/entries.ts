@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Talent Reports — P2: six drill-down reports — May 2026
+  {
+    title: "Talent Reports — six drill-down reports: funnel, time-to-fill, offers, requisitions, productivity, quality",
+    body: "The Reports hub now has its first wave of detailed reports (each period-filtered, with a CSV export and an \"All reports\" nav grid on the hub):\n\n• **Funnel & conversion** — the snapshot pipeline AND a **true-cohort funnel**: of everyone who applied in the window, the share that ever reached each stage (computed from the new transition history, not just the current-stage snapshot) + stage pass rates + biggest drop-off.\n• **Time to fill & cycle time** — median time-to-fill (req open → hire) with p25/p75, time-to-hire (apply → hire), median **time in each stage**, and the bottleneck stage.\n• **Offer analytics** — acceptance %, median response time, the sent/accepted/declined/expired/outstanding breakdown, and decline reasons.\n• **Requisitions** — active/closed/draft/expired counts, aging buckets, stale-req flagging, and a per-posting table.\n• **Team productivity** — activity volume, interviews, scorecards, and hires per teammate (from the activity log).\n• **Quality of hire** — average scorecard score (overall + hired), the recommendation mix, and scorecard completion rate.\n\nExec tiles on the hub now link straight to the matching report, carrying your selected period. The demo seeder was extended so all of these render believably: it now seeds transition-history chains (so the cohort funnel + cycle time aren't empty), interview scorecards + submissions, and an attributable activity log. Source effectiveness, cost-per-hire, and the diversity report are the remaining \"Soon\" tiles.",
+    kind: "feature",
+    visibleTo: ["employer", "admin", "superadmin"],
+    daysAgo: 0,
+  },
   // ── Talent Reports suite — P1: exec summary + hub — May 2026
   {
     title: "New — Talent Reports: a leadership KPI & OKR hub for hiring (/employer/reports)",

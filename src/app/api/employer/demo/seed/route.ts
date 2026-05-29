@@ -225,6 +225,47 @@ function pickSource(): string {
   return SOURCE_POOL[Math.floor(Math.random() * SOURCE_POOL.length)];
 }
 
+// ── Reporting demo: transition history + scorecards + activity ──
+const HISTORY_ORDER = ["new", "reviewing", "shortlisted", "phone_screen", "onsite", "offer", "hired"];
+
+const SCORECARD_CRITERIA = [
+  { id: "c_tech", label: "Technical / domain skills", scale: 5 },
+  { id: "c_comm", label: "Communication",             scale: 5 },
+  { id: "c_fit",  label: "Team / culture fit",        scale: 5 },
+  { id: "c_prob", label: "Problem solving",           scale: 5 },
+];
+
+interface ChainEvent { fromStage: string | null; toStage: string; changedAt: Date; }
+
+/** new → … → current stage, final event at `enteredAt`, earlier events
+ *  spaced back a few days. Rejected apps walk to a weighted rejection
+ *  point then drop — so cohort "furthest stage reached" is realistic. */
+function buildChain(status: string, enteredAt: Date): ChainEvent[] {
+  let path: string[];
+  if (status === "rejected") {
+    const rejFrom = ["reviewing", "shortlisted", "phone_screen"][Math.floor(Math.random() * 3)];
+    path = HISTORY_ORDER.slice(0, HISTORY_ORDER.indexOf(rejFrom) + 1).concat(["rejected"]);
+  } else {
+    const idx = HISTORY_ORDER.indexOf(status);
+    path = idx < 0 ? ["new", status] : HISTORY_ORDER.slice(0, idx + 1);
+  }
+  const out: ChainEvent[] = [];
+  let cur = enteredAt.getTime();
+  for (let i = path.length - 1; i >= 0; i--) {
+    out.unshift({ fromStage: i === 0 ? null : path[i - 1], toStage: path[i], changedAt: new Date(cur) });
+    cur -= (2 + Math.floor(Math.random() * 4)) * 86_400_000;
+  }
+  return out;
+}
+
+/** Scorecard scores keyed by SCORECARD_CRITERIA; skews higher for hires. */
+function buildScores(hired: boolean): Record<string, { score: number }> {
+  const lo = hired ? 4 : 3;
+  const out: Record<string, { score: number }> = {};
+  for (const c of SCORECARD_CRITERIA) out[c.id] = { score: Math.min(5, lo + Math.floor(Math.random() * 2)) };
+  return out;
+}
+
 export async function POST() {
   const session = await getSession();
   const role = (session?.user as { role?: string })?.role ?? "";
@@ -262,6 +303,7 @@ export async function POST() {
   let applicationsCreated = 0;
   let interviewsCreated = 0;
   let offersCreated = 0;
+  const createdPostingIds: string[] = [];
 
   for (let i = 0; i < POSTING_TEMPLATES.length; i++) {
     const tpl = POSTING_TEMPLATES[i];
@@ -289,6 +331,7 @@ export async function POST() {
       select: { id: true },
     });
     postingsCreated++;
+    createdPostingIds.push(posting.id);
 
     // Walk the funnel, handing each slot the NEXT applicant from the
     // pool (offset per posting so different roles draw overlapping-but-
@@ -408,6 +451,85 @@ export async function POST() {
         },
       });
       offersCreated++;
+    }
+  }
+
+  // ── Reporting demo: transition history, scorecards, activity ──
+  // Powers cohort funnel + cycle time (history), quality-of-hire
+  // (scorecards), and recruiter productivity (activity log) on the
+  // seeded data. Scoped to the postings created in THIS batch so it
+  // never double-writes across additive re-seeds.
+  if (createdPostingIds.length) {
+    const newApps = await prisma.applicationStatus.findMany({
+      where: { postingId: { in: createdPostingIds } },
+      select: { id: true, postingId: true, applicantId: true, status: true, stageEnteredAt: true },
+    });
+
+    // (a) One scorecard rubric per new posting.
+    await prisma.interviewScorecard.createMany({
+      data: createdPostingIds.map((postingId) => ({ postingId, criteria: SCORECARD_CRITERIA })),
+      skipDuplicates: true,
+    });
+    const scorecards = await prisma.interviewScorecard.findMany({
+      where: { postingId: { in: createdPostingIds } },
+      select: { id: true, postingId: true },
+    });
+    const scorecardByPosting = new Map(scorecards.map((s) => [s.postingId, s.id]));
+
+    // Actors/interviewers: the company's demo team members if seeded,
+    // else the seeding account.
+    const demoMembers = activeCompanyId
+      ? await prisma.companyMember
+          .findMany({ where: { companyId: activeCompanyId, user: { accountKind: "demo" } }, select: { userId: true } })
+          .catch(() => [] as { userId: string }[])
+      : [];
+    const actorIds = demoMembers.length ? demoMembers.map((m) => m.userId) : [userId];
+    const pickActor = (i: number) => actorIds[i % actorIds.length];
+
+    // (b) Transition-history chains.
+    const historyRows = newApps.flatMap((a) =>
+      buildChain(a.status, a.stageEnteredAt).map((e) => ({
+        applicationStatusId: a.id,
+        postingId:           a.postingId,
+        fromStage:           e.fromStage,
+        toStage:             e.toStage,
+        changedAt:           e.changedAt,
+        isDemoSeed:          true,
+      })),
+    );
+    if (historyRows.length) await prisma.applicationStatusHistory.createMany({ data: historyRows });
+
+    // (c) Scorecard submissions for advanced-stage candidates.
+    const ADVANCED = new Set(["onsite", "offer", "hired"]);
+    const scoreRows: Prisma.ScorecardSubmissionCreateManyInput[] = newApps
+      .filter((a) => ADVANCED.has(a.status) && scorecardByPosting.has(a.postingId))
+      .map((a, i) => ({
+        scorecardId:         scorecardByPosting.get(a.postingId)!,
+        applicationStatusId: a.id,
+        interviewerId:       pickActor(i),
+        scores:              buildScores(a.status === "hired"),
+        recommendation:      a.status === "hired" ? "strong_yes" : a.status === "offer" ? "yes" : i % 2 ? "yes" : "no_decision",
+        status:              "submitted",
+        submittedAt:         a.stageEnteredAt,
+      }));
+    if (scoreRows.length) await prisma.scorecardSubmission.createMany({ data: scoreRows, skipDuplicates: true });
+
+    // (d) Activity log → recruiter productivity. A spread of kinds.
+    if (activeCompanyId) {
+      const acts: Prisma.EmployerActivityLogCreateManyInput[] = [];
+      let ai = 0;
+      for (const postingId of createdPostingIds) {
+        acts.push({ companyId: activeCompanyId, actorId: pickActor(ai++), kind: "posting_created", payload: {}, postingId, createdAt: daysAgo(38) });
+      }
+      for (const a of newApps) {
+        const actor = pickActor(ai++);
+        if (a.status !== "new") acts.push({ companyId: activeCompanyId, actorId: actor, kind: "stage_changed", payload: { to: a.status }, postingId: a.postingId, applicantId: a.applicantId, createdAt: a.stageEnteredAt });
+        if (a.status === "phone_screen" || a.status === "onsite") acts.push({ companyId: activeCompanyId, actorId: actor, kind: "interview_scheduled", payload: {}, postingId: a.postingId, applicantId: a.applicantId, createdAt: a.stageEnteredAt });
+        if (ADVANCED.has(a.status)) acts.push({ companyId: activeCompanyId, actorId: actor, kind: "scorecard_submitted", payload: {}, postingId: a.postingId, applicantId: a.applicantId, createdAt: a.stageEnteredAt });
+        if (a.status === "offer" || a.status === "hired") acts.push({ companyId: activeCompanyId, actorId: actor, kind: "offer_sent", payload: {}, postingId: a.postingId, applicantId: a.applicantId, createdAt: a.stageEnteredAt });
+        if (a.status === "hired") acts.push({ companyId: activeCompanyId, actorId: actor, kind: "applicant_hired", payload: {}, postingId: a.postingId, applicantId: a.applicantId, createdAt: a.stageEnteredAt });
+      }
+      if (acts.length) await prisma.employerActivityLog.createMany({ data: acts });
     }
   }
 

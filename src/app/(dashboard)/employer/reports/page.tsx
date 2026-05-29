@@ -6,7 +6,8 @@
  * (funnel, time-to-fill, offers, …) land under /employer/reports/*.
  */
 import { redirect } from "next/navigation";
-import { FileBarChart } from "lucide-react";
+import Link from "next/link";
+import { FileBarChart, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { Card } from "@/components/ui/Card";
@@ -19,6 +20,18 @@ import { execSummary } from "@/lib/employer/reporting/summary";
 import { funnelReport } from "@/lib/employer/reporting/funnel";
 
 export const dynamic = "force-dynamic";
+
+const REPORTS: { href: string; label: string; desc: string; live: boolean }[] = [
+  { href: "/employer/reports/funnel",        label: "Funnel & conversion", desc: "Snapshot + true-cohort conversion", live: true },
+  { href: "/employer/reports/time-to-fill",  label: "Time to fill",        desc: "Velocity + stage cycle time",       live: true },
+  { href: "/employer/reports/offers",        label: "Offer analytics",     desc: "Acceptance, response, declines",    live: true },
+  { href: "/employer/reports/requisitions",  label: "Requisitions",        desc: "Status + aging + stale reqs",       live: true },
+  { href: "/employer/reports/productivity",  label: "Team productivity",   desc: "Activity by recruiter",             live: true },
+  { href: "/employer/reports/quality",       label: "Quality of hire",     desc: "Scorecard signal",                  live: true },
+  { href: "/employer/reports/sources",       label: "Source effectiveness",desc: "Where applicants & hires come from",live: false },
+  { href: "/employer/reports/cost",          label: "Cost per hire",       desc: "Spend per hire + breakdown",        live: false },
+  { href: "/employer/reports/diversity",     label: "Diversity (DEI)",     desc: "Representation by stage (opt-in)",   live: false },
+];
 
 export default async function ReportsHubPage({
   searchParams,
@@ -41,6 +54,8 @@ export default async function ReportsHubPage({
 
   const sp = await searchParams;
   const range = resolvePeriod(sp);
+  const qs = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]).toString();
+  const withQs = (href: string) => `${href}${qs ? `?${qs}` : ""}`;
   const { companyId } = access;
 
   const [summary, funnel, hasDemoPostings] = await Promise.all([
@@ -66,7 +81,12 @@ export default async function ReportsHubPage({
       {/* Exec summary tiles */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {summary.tiles.map((t) => (
-          <KpiTile key={t.key} label={t.label} result={t.result} />
+          <KpiTile
+            key={t.key}
+            label={t.label}
+            result={t.result}
+            href={t.key === "cost_per_hire" ? undefined : withQs(t.href)}
+          />
         ))}
       </section>
 
@@ -115,9 +135,33 @@ export default async function ReportsHubPage({
         )}
       </Card>
 
-      <p className="text-[11px] text-muted text-center no-print">
-        More detailed reports (funnel, time-to-fill, offers, sources, diversity, cost) are rolling out under this section.
-      </p>
+      {/* All reports nav */}
+      <section>
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-subtle mb-3 px-1">All reports</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {REPORTS.map((r) =>
+            r.live ? (
+              <Link key={r.href} href={withQs(r.href)} className="group block rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-400">
+                <Card className="px-4 py-3.5 h-full">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-fg group-hover:text-brand-600 transition-colors">{r.label}</span>
+                    <ArrowRight size={14} className="text-muted group-hover:text-brand-600 transition-colors" />
+                  </div>
+                  <p className="text-[11px] text-muted mt-0.5">{r.desc}</p>
+                </Card>
+              </Link>
+            ) : (
+              <Card key={r.href} className="px-4 py-3.5 h-full opacity-60">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-fg">{r.label}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted ring-1 ring-inset ring-line rounded px-1.5 py-0.5">Soon</span>
+                </div>
+                <p className="text-[11px] text-muted mt-0.5">{r.desc}</p>
+              </Card>
+            ),
+          )}
+        </div>
+      </section>
     </div>
   );
 }
