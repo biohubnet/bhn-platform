@@ -1653,10 +1653,19 @@ function BranchLines({
         const sat = (0.25 + strength * 1.25).toFixed(2);
         const glowPx = Math.round(3 + strength * 9);
         const glowPct = Math.round(26 + strength * 48);
-        // Comet dots encode likelihood by COUNT + SPEED: strong = 3 fast
-        // dots, mid = 2 medium, weak = 1 slow.
+        // Travelling "spindle" markers encode likelihood by COUNT + SPEED
+        // (no label): strong = 3, mid = 2, weak = 1. All move SLOWLY now
+        // (the old fast dots were distracting). And the animation is
+        // skipped on very short connectors — there's no room for a marker
+        // to read, and on near-adjacent cards it just flickers.
         const cometCount = strength >= 0.66 ? 3 : strength >= 0.42 ? 2 : 1;
-        const cometDur = Math.max(1.1, Math.min(7, travelDur * (strength >= 0.66 ? 0.55 : strength >= 0.42 ? 0.95 : 1.7)));
+        const cometDur = Math.max(2.4, Math.min(9, travelDur * (strength >= 0.66 ? 1.05 : strength >= 0.42 ? 1.6 : 2.5)));
+        const showAnim = active && length >= 150;
+        // A spindle (pointed-both-ends lens), sized up a touch for
+        // stronger fits; rotate="auto" orients it along the path.
+        const spLen = (6 + strength * 4).toFixed(1);
+        const spW = (2 + strength * 1.4).toFixed(1);
+        const spindle = `M -${spLen} 0 Q 0 -${spW} ${spLen} 0 Q 0 ${spW} -${spLen} 0 Z`;
         return (
           <g key={i}>
             <path
@@ -1676,14 +1685,13 @@ function BranchLines({
                 filter: `saturate(${sat}) drop-shadow(0 0 ${glowPx}px color-mix(in srgb, ${t.color} ${glowPct}%, transparent))`,
               }}
             />
-            {/* Light-travelling comet(s) on EVERY connecting line. Count
-                + speed encode the branch likelihood (3 fast / 2 medium /
-                1 slow). Each rides the bezier on a phase-shifted loop
-                (negative begin) so multiple dots stay evenly spaced. Only
-                fires once the line is drawn (active). */}
-            {active &&
+            {/* Travelling spindle(s) on each long-enough connector. Count
+                + speed encode likelihood (3 / 2 / 1, all slow). Each rides
+                the bezier on a phase-shifted loop (negative begin) so they
+                stay evenly spaced. Skipped on short connectors (showAnim). */}
+            {showAnim &&
               Array.from({ length: cometCount }).map((_, k) => (
-                <circle key={k} r="3.5" fill="white" opacity="0.95" style={{ filter: `drop-shadow(0 0 7px ${t.color})` }}>
+                <path key={k} d={spindle} fill="white" opacity="0.9" style={{ filter: `drop-shadow(0 0 6px ${t.color})` }}>
                   <animateMotion
                     dur={`${cometDur}s`}
                     repeatCount="indefinite"
@@ -1692,7 +1700,7 @@ function BranchLines({
                   >
                     <mpath href={`#${pathId}`} />
                   </animateMotion>
-                </circle>
+                </path>
               ))}
             <circle
               cx={tgtX}
