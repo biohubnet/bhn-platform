@@ -135,7 +135,7 @@ export default async function ResumeStructurePage({ searchParams }: PageProps) {
           deliberate exit, not an afterthought. The matching bottom
           variant lives below the editor so users on a long page can
           leave from either end. */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="max-w-[1800px] px-4 sm:px-6 lg:px-8">
         <Link
           href="/profile/resumes"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold text-fg ring-1 ring-line bg-card-solid hover:bg-elevated transition-colors"
@@ -148,11 +148,11 @@ export default async function ResumeStructurePage({ searchParams }: PageProps) {
           library + quick-actions. See docs/plans/master-resume.md
           for the full design. Loads + fetches lazily so the
           tailoring page isn't blocked. */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="max-w-[1800px] px-4 sm:px-6 lg:px-8">
         <MasterResumeBanner resumeId={activeBasic.id} />
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="max-w-[1800px] px-4 sm:px-6 lg:px-8">
         {/* Admin-only demo seed/clear. Seed replaces the calling admin's
             Resume with a multi-section demo tree + 3 mentor comments;
             Clear deletes the admin's Resume row (cascades comments +

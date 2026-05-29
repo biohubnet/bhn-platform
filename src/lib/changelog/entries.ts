@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Resume builder — wider, left-aligned editor — May 2026
+  {
+    title: "Resume builder — the editor now fills the width instead of a narrow centered column",
+    body: "The structured resume editor was capped to a narrow centered column, leaving big empty margins — especially with the “Pull from master” drawer open, where the editor floated in the middle with dead space on both sides. It's now left-aligned and uses the full width, so there's room to actually work. With the drawer open, the editor reflows to sit beside it (not behind it), so you get a clean two-pane: your resume on the left, your master bullets on the right, drag straight across.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Resume builder — floating save badge overlap fix — May 2026
   {
     title: "Resume builder — the floating “auto-saves” badge no longer overlaps the hint chip",
