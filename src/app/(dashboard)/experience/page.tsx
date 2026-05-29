@@ -284,6 +284,12 @@ function FlowChart() {
               icon={Briefcase}
               tone="neutral"
               hint="Live job board · apply directly"
+              cli={[
+                { c: "⟳", t: "refreshing open roles…" },
+                { c: "✦", t: "QA Associate · Toronto" },
+                { c: "✦", t: "CGT Technician · remote" },
+                { c: "↗", t: "apply on the company site" },
+              ]}
             />
           </div>
         </div>
@@ -320,8 +326,10 @@ function FlowBox({
   icon: React.ElementType;
   tone: "brand" | "neutral" | "amber" | "success";
   hint?: string;
-  /** A line-less box (no nav curve) can carry a CLI-style activity
-   *  vignette in its body to show "work happening" instead. */
+  /** Optional CLI-style activity vignette in the box body. Used to
+   *  show "work happening" on line-less boxes (Admin review, Talent
+   *  Pool), and to give the Self-apply box equal height to its taller
+   *  Pool-track neighbour via a parallel live-board stream. */
   cli?: { c: string; t: string }[];
 }) {
   const toneClasses = {

@@ -22,6 +22,22 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career pathways — spindle timing — May 2026
+  {
+    title: "Career pathways — branch spindles wait until the cards settle",
+    body: "The travelling spindles on the branch-out lines used to start gliding while the connectors were still drawing and the cards were still sliding into place, which looked premature. They now hold off until the final \"settled\" stage — once every card has reached its position — so the lines draw, the cards move, and only then do the spindles begin their loop.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  // ── Experience map — self-apply card height — May 2026
+  {
+    title: "Experience map — the Self-apply card now matches its neighbour's height",
+    body: "In the two parallel tracks (Talent Pool vs Self-apply), the Talent Pool card grew taller once it gained its activity vignette, leaving the Self-apply card stranded short with empty space beside it. The Self-apply card now carries a matching live-board vignette — open roles refreshing, a couple of example postings, and the apply-on-the-company's-site step — so the two tracks line up evenly.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career pathways — drop branch-card END marker — May 2026
   {
     title: "Career pathways — branch cards are tighter (the END divider is gone)",

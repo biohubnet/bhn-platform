@@ -1382,6 +1382,7 @@ function BranchModal({
             sourceAccent={source.track.accent}
             active={linesActive}
             cardsMoving={stage === "moving" || stage === "settled"}
+            settled={stage === "settled"}
           />
         </div>
       </div>
@@ -1589,7 +1590,7 @@ function bezierBetween(
 }
 
 function BranchLines({
-  sourceFrom, sourceTo, targets, sourceAccent, active, cardsMoving,
+  sourceFrom, sourceTo, targets, sourceAccent, active, cardsMoving, settled,
 }: {
   sourceFrom: DOMRect;
   sourceTo: { left: number; top: number; width: number; height: number };
@@ -1610,6 +1611,11 @@ function BranchLines({
   sourceAccent: string;
   active: boolean;
   cardsMoving: boolean;
+  /** True only at the final "settled" stage — once every card has
+   *  finished sliding into place. The travelling spindles are gated on
+   *  this (not `active`) so they don't start gliding along lines that
+   *  are still drawing or re-anchoring to moving cards. */
+  settled: boolean;
 }) {
   // Endpoints follow whichever rect set is current — the chart
   // positions during the "lines" stage, then the focused positions
@@ -1660,7 +1666,7 @@ function BranchLines({
         // to read, and on near-adjacent cards it just flickers.
         const cometCount = strength >= 0.66 ? 3 : strength >= 0.42 ? 2 : 1;
         const cometDur = Math.max(2.4, Math.min(9, travelDur * (strength >= 0.66 ? 1.05 : strength >= 0.42 ? 1.6 : 2.5)));
-        const showAnim = active && length >= 150;
+        const showAnim = settled && length >= 150;
         // A spindle (pointed-both-ends lens), sized up a touch for
         // stronger fits; rotate="auto" orients it along the path.
         const spLen = (6 + strength * 4).toFixed(1);
