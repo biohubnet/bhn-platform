@@ -901,9 +901,10 @@ export function getBranchTargets(track: CareerTrack, station: CareerStation): Br
   }
   exploratory.sort((a, b) => b.strength - a.strength);
 
-  // Curated + enough exploratory to reach ~6 (but always ≥2 exploratory,
-  // so the "less likely" options are visible even on rich stations).
-  const room = Math.max(2, 6 - curated.length);
+  // Curated + enough exploratory to reach ~5 (always ≥2 exploratory so
+  // the "less likely" options show even on rich stations). Capped so the
+  // single-column branch view stays a sane height.
+  const room = Math.max(2, 5 - curated.length);
   return [...curated, ...exploratory.slice(0, room)];
 }
 

@@ -1559,6 +1559,11 @@ function bezierBetween(
    *  above any near-column targets); positive = arc DOWN. Only
    *  meaningful in horizontal layouts (side-by-side). */
   arcOffset = 0,
+  /** Force the horizontal (side-by-side) anchoring + curve even when the
+   *  target is mostly above/below the source — so in the single-column
+   *  branch view every line leaves the source's RIGHT edge and enters
+   *  the target's LEFT edge, fanning cleanly from one origin. */
+  forceHorizontal = false,
 ): { d: string; srcX: number; srcY: number; tgtX: number; tgtY: number } {
   const srcCx = src.left + src.width / 2;
   const srcCy = src.top + src.height / 2;
@@ -1566,7 +1571,7 @@ function bezierBetween(
   const tgtCy = tgt.top + tgt.height / 2;
   const dx = tgtCx - srcCx;
   const dy = tgtCy - srcCy;
-  const horizontal = Math.abs(dx) > Math.abs(dy);
+  const horizontal = forceHorizontal || Math.abs(dx) > Math.abs(dy);
 
   if (horizontal) {
     const srcX = dx > 0 ? src.left + src.width : src.left;
@@ -1630,12 +1635,11 @@ function BranchLines({
     >
       {targets.map((t, i) => {
         const tgt = cardsMoving ? t.toRect : t.fromRect;
-        // Apply arc routing only once cards are in their focused
-        // positions — during the chart-position phase, arcOffset
-        // would deflect the line away from the actual chart card
-        // and look wrong.
-        const arcOffset = cardsMoving ? (t.arcOffset ?? 0) : 0;
-        const { d, srcX, srcY, tgtX, tgtY } = bezierBetween(srcRect, tgt, arcOffset);
+        // Single-column layout → force horizontal anchoring so every
+        // line leaves the source's right edge and enters the target's
+        // left edge: a clean fan from one origin that never crosses a
+        // card or another line.
+        const { d, srcX, srcY, tgtX, tgtY } = bezierBetween(srcRect, tgt, 0, true);
         // Length estimate for the dash animation; 1.4× chord covers
         // the extra arc from the bezier curvature.
         const length = Math.hypot(tgtX - srcX, tgtY - srcY) * 1.4;
@@ -1791,7 +1795,7 @@ function computeFocusLayout(
   const TOP_PAD          = 80;
   const BOTTOM_PAD       = 56;
   const SIDE_PAD         = 24;
-  const SRC_TGT_GAP      = 120;
+  const SRC_TGT_GAP      = 180;
   const TGT_GAP          = 28;
   // Card widths bumped from 360/320 → 420/380 (Dec '26). The previous
   // tight columns squished long phrases like "Method validation (USP
@@ -1831,18 +1835,16 @@ function computeFocusLayout(
 
   // ── Mode A: side-by-side (wide screens) ────────────────────────
   if (viewport.w >= 1100) {
-    // Cols policy. Single column for ≤ 4 targets keeps lines fanned
-    // out vertically from one source point → mathematically impossible
-    // for lines to cross other cards (they all radiate from the
-    // source's right edge to different y's). Beyond 4, multi-column
-    // is unavoidable; we route those with vertical arcs (see
-    // arcOffset below). Most stations have 1-3 cross-links, so the
-    // single-column path is the common case.
-    let cols: number;
-    if (numTargets <= 4)      cols = 1;
-    else if (numTargets <= 6) cols = 2;
-    else                       cols = 3;
-    const rows = Math.ceil(numTargets / cols);
+    // ALWAYS a single column. The source sits to the left; targets
+    // stack in ONE column on the right, and every line fans from the
+    // source's right edge to a target's left edge. Lines that share one
+    // origin can't cross each other, and they travel only in the empty
+    // gutter between source and column, so they never cross a card. A
+    // taller stack just scrolls the modal — clean beats compact.
+    // (Previously 5-6 targets went multi-column with arc-routing, which
+    // is exactly what crossed boxes + lines.)
+    const cols = 1;
+    const rows = numTargets;
 
     // Intrinsic block dimensions before any downscale. Note the
     // mixed gap: SRC_TGT_GAP between source and target group,
@@ -1886,14 +1888,18 @@ function computeFocusLayout(
 
     // Source vertically centred within its block-height slot
     // (usually shorter than the target stack); target stack ditto.
+    // Top-aligned (not vertically centred): with a single tall column
+    // the source must stay visible when the modal opens, and a top
+    // anchor makes every line fan DOWNWARD from the source's right edge
+    // — no upward lines, nothing to cross.
     const source: FocusedRect = {
       left: blockLeft,
-      top: blockTop + Math.floor((scaledBlockH - srcH) / 2),
+      top: blockTop,
       width: srcW,
       height: srcH,
     };
 
-    const tgtsTop  = blockTop + Math.floor((scaledBlockH - scaledTgtsBlockH) / 2);
+    const tgtsTop  = blockTop;
     const tgtsLeft = blockLeft + srcW + srcTgtGap;
     // arcOffset routing — used by BranchLines to deflect bezier
     // control points vertically for far-column targets so their

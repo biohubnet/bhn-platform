@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career pathways — clean branch lines — May 2026
+  {
+    title: "Career pathways — fix: branch-out lines no longer cross each other or the cards",
+    body: "Adding the exploratory branches pushed some roles to 5–6 options, which tipped the branch-out view into a multi-column layout whose connector lines arced over the cards and tangled with each other.\n\nThe branch view is now **always a single column** — the source on the left, every destination stacked in one column on the right. Each line fans from the **source's right edge** to a destination's left edge, so (a) lines that share one origin can't cross each other, and (b) they travel only in the empty gutter between the source and the column, so they never cross a card. The gutter is wider for a gentler fan, the source stays visible when the view opens, and options are capped so the column stays a sensible height. Clean by construction, not by tuning.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Talent Reports — seed/clear on every report — May 2026
   {
     title: "Talent Reports — seed/clear demo data is now on every report, not just the hub",
