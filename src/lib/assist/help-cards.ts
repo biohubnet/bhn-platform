@@ -129,9 +129,13 @@ export const HELP_CARDS: HelpCard[] = [
   },
   // ── Universal stuck-states ─────────────────────────────────
   {
+    // Fallback only — when AI is configured, the events route replaces
+    // this with a generative, intent-aware suggestion (see infer.ts).
     key: "stuck.rage-click",
-    title: "Something not responding?",
-    body: "The button you tapped a few times either disabled itself or fired silently. Refreshing the page usually unblocks the next step.",
+    title: "That button isn't budging?",
+    body: "It may be waiting on a required field higher up the page, or it already ran. Scan for an unfilled field above — or tell us what you expected.",
+    ctaLabel: "Tell us what broke",
+    ctaHref: "/feedback",
     defaultTrigger: "rule:rage-click",
   },
   {

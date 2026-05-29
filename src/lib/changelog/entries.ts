@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── AutoPipette — AI-written stuck help — May 2026
+  {
+    title: "AutoPipette — stuck-help now reads your intent instead of saying \"refresh the page\"",
+    body: "When AutoPipette notices you're stuck — clicking a control repeatedly, looping on an error — it used to pop a generic \"Something not responding?\" card that just suggested refreshing. It now asks the AI to read what you were actually trying to do (including the button you kept tapping) and writes a specific next step — e.g. \"Trying to submit? There's a required field above\" — with a one-click shortcut when a sensible destination exists. The suggestion's link is restricted to known in-app routes, so it can't point anywhere odd. If you brush a nudge off, the same one won't keep returning; and if AI isn't configured on a deployment, it falls back to a clearer, more useful card. As always, everything AutoPipette notes is visible — and wipeable — at Profile › AutoPipette · my history.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Career pathways — spindle timing — May 2026
   {
     title: "Career pathways — branch spindles wait until the cards settle",
