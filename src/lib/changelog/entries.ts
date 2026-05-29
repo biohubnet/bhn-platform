@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Fit-rating matrix — trainee job-app pipeline — May 2026
+  {
+    title: "New: a fit-rating matrix for your job applications",
+    body: "When you're working a role, you can now get an honest, requirement-by-requirement read of how your resume stacks up. Open a job folder's JD tab — or any internship's detail page — and click Build matrix. The AI pulls the 5–9 most important requirements out of the posting and rates each one Strong / Partial / Gap, showing the evidence it found in your resume (or what's missing) and one concrete way to close every gap, topped with an overall fit score and the single highest-leverage move to make before you apply. It uses the resume linked to that folder (or your most recent resume on an internship page), so it's specific to you — not a generic keyword match.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── AutoPipette history — how-it-works chart + tidier events — May 2026
   {
     title: "AutoPipette · my history — added a “how it works” chart and tidied the events list",

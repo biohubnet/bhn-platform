@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.29i";
+export const TOUR_VERSION = "2026.05.29j";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Fit-rating matrix — job-app pipeline — May 2026
+  {
+    id: "trainee.fit-rating-matrix",
+    title: "New: a fit-rating matrix for your job applications",
+    body: "On any job folder's JD tab — or any internship's detail page — hit Build matrix. The AI reads your resume against each key requirement in the posting and rates it Strong / Partial / Gap, showing the evidence it found and a concrete way to close every gap — plus an overall score and the single highest-leverage move to make before you apply.",
+    path: "/profile/job-folders",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    cta: { label: "Open job folders", href: "/profile/job-folders" },
+    since: "2026.05.29j",
+  },
   // ─── Career pathways — likelihood vector selector — May 2026
   {
     id: "trainee.pathways-vector-branch",

@@ -240,3 +240,133 @@ export async function rateFit(args: {
     return { ok: false, error: "Couldn't parse the AI response." };
   }
 }
+
+// ── Fit-rating matrix ───────────────────────────────────────────
+
+/**
+ * Requirement-by-requirement fit matrix — the richer sibling of
+ * rateFit(). Pulls the key requirements out of the JD and rates the
+ * candidate against EACH one (strong / partial / gap) with grounded
+ * evidence and a concrete way to close it. This is the "fit-rating
+ * matrix" trainees use to decide whether (and how) to apply.
+ */
+export type FitRowRating = "strong" | "partial" | "gap";
+
+export interface FitMatrixRow {
+  /** The JD requirement / criterion, short. */
+  requirement: string;
+  rating: FitRowRating;
+  /** Resume evidence for a met requirement, or what's missing for a gap. */
+  evidence: string;
+  /** One concrete way to close or strengthen this before applying. */
+  tip: string;
+}
+
+export interface FitMatrix {
+  /** 0–100 overall fit. */
+  score: number;
+  /** 1-sentence headline verdict. */
+  verdict: string;
+  /** 5–9 requirements, most important first. */
+  rows: FitMatrixRow[];
+  /** Highest-leverage next move before applying. */
+  nextMove: string;
+}
+
+const FIT_MATRIX_SYSTEM = `You are a candid recruiting coach. Build a requirement-by-requirement FIT MATRIX for a candidate against a specific job.
+
+Extract the 5–9 MOST IMPORTANT requirements/criteria from the JD (skills, experience, education, certifications, domain knowledge). For EACH, judge how the candidate's resume measures up. Be specific and honest — never invent evidence the resume doesn't support.
+
+OUTPUT: STRICT JSON. No markdown, no commentary, no code fences. Exact schema:
+{
+  "score": 0–100 integer (overall fit; 50 = mixed, 70 = solid, 85+ = strong),
+  "verdict": "single sentence summary",
+  "rows": [
+    {
+      "requirement": "the JD requirement, short (≤70 chars)",
+      "rating": "strong" | "partial" | "gap",
+      "evidence": "what in the resume supports it — name/quote the bullet or role; for a gap, say what's missing (≤160 chars)",
+      "tip": "one concrete way to close or strengthen this before applying (≤140 chars)"
+    }
+  ],
+  "nextMove": "1–2 sentences — the single highest-leverage thing to do before applying"
+}
+
+Ratings: "strong" = clearly meets, with evidence. "partial" = some or adjacent evidence, not a clean match. "gap" = not evidenced at all. Provide 5–9 rows, ordered by importance to the role. Score should reconcile with the rows (mostly strong → high; several gaps → low).`;
+
+export async function rateFitMatrix(args: {
+  jdSnippet: string;
+  resumeContent: unknown;
+  candidateName?: string | null;
+  userId?: string | null;
+}): Promise<{ ok: true; matrix: FitMatrix } | { ok: false; error: string }> {
+  if (!args.jdSnippet.trim()) {
+    return { ok: false, error: "Add a job description first — the AI needs something to rate against." };
+  }
+  const resume = resumeAsText(
+    args.resumeContent as Parameters<typeof resumeAsText>[0],
+    args.candidateName,
+  );
+  if (!resume) {
+    return { ok: false, error: "Link a resume first — the AI needs the candidate side too." };
+  }
+  const user = [
+    "JOB DESCRIPTION:",
+    args.jdSnippet.slice(0, 8000),
+    "",
+    "CANDIDATE RESUME:",
+    resume,
+    "",
+    "Return the JSON now.",
+  ].join("\n");
+  const result = await chat(
+    [
+      { role: "system", content: FIT_MATRIX_SYSTEM },
+      { role: "user", content: user },
+    ],
+    { userId: args.userId, feature: "job_folder_fit_matrix", maxTokens: 1800, temperature: 0.3 },
+  );
+  if (!result.ok || !result.text.trim()) {
+    return { ok: false, error: result.ok ? "Empty AI response." : result.error };
+  }
+  const cleaned = result.text.replace(/```json/g, "").replace(/```/g, "").trim();
+  try {
+    const parsed = JSON.parse(cleaned) as Partial<FitMatrix>;
+    if (
+      typeof parsed.score !== "number" ||
+      typeof parsed.verdict !== "string" ||
+      !Array.isArray(parsed.rows) ||
+      typeof parsed.nextMove !== "string"
+    ) {
+      return { ok: false, error: "Model returned a malformed matrix." };
+    }
+    const validRatings: FitRowRating[] = ["strong", "partial", "gap"];
+    const rows: FitMatrixRow[] = parsed.rows
+      .filter((r): r is FitMatrixRow => !!r && typeof r === "object")
+      .map((r) => {
+        const rr = r as Partial<FitMatrixRow>;
+        return {
+          requirement: typeof rr.requirement === "string" ? rr.requirement.slice(0, 90) : "",
+          rating: validRatings.includes(rr.rating as FitRowRating) ? (rr.rating as FitRowRating) : "partial",
+          evidence: typeof rr.evidence === "string" ? rr.evidence.slice(0, 220) : "",
+          tip: typeof rr.tip === "string" ? rr.tip.slice(0, 180) : "",
+        };
+      })
+      .filter((r) => r.requirement.length > 0)
+      .slice(0, 10);
+    if (rows.length === 0) {
+      return { ok: false, error: "Model returned no requirement rows." };
+    }
+    return {
+      ok: true,
+      matrix: {
+        score: Math.max(0, Math.min(100, Math.round(parsed.score))),
+        verdict: parsed.verdict.slice(0, 300),
+        rows,
+        nextMove: parsed.nextMove.slice(0, 400),
+      },
+    };
+  } catch {
+    return { ok: false, error: "Couldn't parse the AI response." };
+  }
+}

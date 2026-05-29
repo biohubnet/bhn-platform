@@ -26,6 +26,8 @@ import {
   Target, ArrowRightLeft, Inbox, Share2, Trash2, Gauge,
 } from "lucide-react";
 import { scoreSkillMatch, type SkillMatchResult } from "@/lib/job-folders/skill-match";
+import { FitMatrixView } from "@/components/jobs/FitMatrixView";
+import type { FitMatrix } from "@/lib/job-folders/ai";
 
 interface FolderInitial {
   id: string;
@@ -1438,15 +1440,7 @@ function SkillMatchPanel({
   );
 }
 
-// ── Rate-my-fit panel (JD tab) ──────────────────────────────────
-
-interface FitAssessment {
-  score: number;
-  verdict: string;
-  strengths: string[];
-  gaps: string[];
-  nextMove: string;
-}
+// ── Fit-rating matrix panel (JD tab) ────────────────────────────
 
 function RateMyFitPanel({
   folderId, resumeLinked, jdEmpty,
@@ -1456,7 +1450,7 @@ function RateMyFitPanel({
   jdEmpty: boolean;
 }) {
   const [loading, setLoading] = useState(false);
-  const [assessment, setAssessment] = useState<FitAssessment | null>(null);
+  const [matrix, setMatrix] = useState<FitMatrix | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function runRating() {
@@ -1468,44 +1462,26 @@ function RateMyFitPanel({
       });
       const j = (await res.json().catch(() => null)) as {
         ok?: boolean;
-        assessment?: FitAssessment;
+        matrix?: FitMatrix;
         error?: string;
       } | null;
-      if (!res.ok || !j?.ok || !j.assessment) {
+      if (!res.ok || !j?.ok || !j.matrix) {
         setError(j?.error ?? `Rating failed (HTTP ${res.status}).`);
         return;
       }
-      setAssessment(j.assessment);
+      setMatrix(j.matrix);
     } finally { setLoading(false); }
   }
 
-  const tone =
-    assessment === null ? "neutral"
-      : assessment.score >= 75 ? "emerald"
-      : assessment.score >= 55 ? "amber"
-      : "rose";
-  const toneClasses = {
-    neutral: "bg-card ring-line",
-    emerald: "bg-emerald-50 ring-emerald-200",
-    amber:   "bg-amber-50 ring-amber-200",
-    rose:    "bg-rose-50 ring-rose-200",
-  }[tone];
-  const scoreColor = {
-    neutral: "text-fg",
-    emerald: "text-emerald-900",
-    amber:   "text-amber-900",
-    rose:    "text-rose-900",
-  }[tone];
-
   return (
-    <div className={`rounded-xl px-4 py-3 ring-1 ring-inset ${toneClasses}`}>
+    <div className="rounded-xl px-4 py-3 ring-1 ring-inset ring-line bg-card">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <p className="text-[13px] font-semibold inline-flex items-center gap-2">
-            <Gauge size={14} /> Rate my fit
+            <Gauge size={14} /> Fit-rating matrix
           </p>
           <p className="text-[11.5px] text-fg-muted mt-0.5">
-            Honest AI read of your resume vs this JD — strengths, gaps, and the highest-leverage next move.
+            Honest AI read of your resume against each key requirement in this JD — rated, with evidence and how to close every gap.
           </p>
         </div>
         <button
@@ -1520,57 +1496,24 @@ function RateMyFitPanel({
           className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 text-white px-3 py-1.5 text-[12px] font-semibold hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-          {assessment ? "Re-rate" : "Run rating"}
+          {matrix ? "Re-rate" : "Build matrix"}
         </button>
       </div>
       {error && (
         <p className="mt-2 text-[12px] text-rose-700">{error}</p>
       )}
-      {assessment && (
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-start">
-          <div className="flex flex-col items-center justify-center sm:min-w-[110px]">
-            <div className={`text-[44px] font-bold tabular-nums leading-none ${scoreColor}`}>
-              {assessment.score}
-            </div>
-            <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-fg-subtle mt-1">
-              / 100 fit
-            </div>
-          </div>
-          <div className="text-[13px] leading-relaxed">
-            <p className="font-semibold">{assessment.verdict}</p>
-            {assessment.strengths.length > 0 && (
-              <div className="mt-2">
-                <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-emerald-800 mb-1">Strengths</p>
-                <ul className="space-y-0.5">
-                  {assessment.strengths.map((s, i) => (
-                    <li key={i} className="flex gap-2 text-[12.5px]">
-                      <span className="text-emerald-600 mt-0.5">✓</span>
-                      <span>{s}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {assessment.gaps.length > 0 && (
-              <div className="mt-2">
-                <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-rose-800 mb-1">Gaps</p>
-                <ul className="space-y-0.5">
-                  {assessment.gaps.map((g, i) => (
-                    <li key={i} className="flex gap-2 text-[12.5px]">
-                      <span className="text-rose-600 mt-0.5">·</span>
-                      <span>{g}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {assessment.nextMove && (
-              <div className="mt-2 rounded-md bg-white/60 ring-1 ring-inset ring-line px-2.5 py-1.5">
-                <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-fg-muted mb-0.5">Next move</p>
-                <p className="text-[12.5px]">{assessment.nextMove}</p>
-              </div>
-            )}
-          </div>
+      {!matrix && !error && !loading && (
+        <p className="mt-2 text-[11.5px] text-fg-subtle">
+          {!resumeLinked
+            ? "Link a resume on the Resume tab, then build the matrix."
+            : jdEmpty
+              ? "Paste the JD below, then build the matrix."
+              : "Build it to see a requirement-by-requirement breakdown of where you're strong, partial, or have a gap."}
+        </p>
+      )}
+      {matrix && (
+        <div className="mt-3">
+          <FitMatrixView matrix={matrix} />
         </div>
       )}
     </div>

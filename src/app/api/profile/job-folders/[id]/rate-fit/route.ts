@@ -1,18 +1,18 @@
 /**
  * POST /api/profile/job-folders/[id]/rate-fit
  *
- * Sends the folder's JD body + linked resume content to the AI for
- * an honest fit assessment. Returns { score, verdict, strengths,
- * gaps, nextMove }. Owner-only.
+ * Sends the folder's JD body + linked resume content to the AI for a
+ * requirement-by-requirement fit MATRIX. Returns { score, verdict,
+ * rows: [{requirement, rating, evidence, tip}], nextMove }. Owner-only.
  *
- * No persistence — assessments are ephemeral. If we want history
- * later we'd store them in a sibling table; for now the trainee
- * gets a fresh read each time they ask.
+ * No persistence — the matrix is ephemeral. If we want history later
+ * we'd store it in a sibling table; for now the trainee gets a fresh
+ * read each time they ask (resume / JD edits change the answer).
  */
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { rateFit } from "@/lib/job-folders/ai";
+import { rateFitMatrix } from "@/lib/job-folders/ai";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -40,7 +40,7 @@ export async function POST(
     return NextResponse.json({ error: "Folder not found." }, { status: 404 });
   }
 
-  const result = await rateFit({
+  const result = await rateFitMatrix({
     jdSnippet: folder.jdSnippet,
     resumeContent: folder.resume?.content ?? null,
     candidateName,
@@ -49,5 +49,5 @@ export async function POST(
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 502 });
   }
-  return NextResponse.json({ ok: true, assessment: result.assessment });
+  return NextResponse.json({ ok: true, matrix: result.matrix });
 }

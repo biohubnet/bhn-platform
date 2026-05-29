@@ -32,6 +32,7 @@ import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/Badge";
 import { scoreFitForTrainee } from "@/lib/matching/fit";
 import { FitExplain } from "@/components/matching/FitExplain";
+import { InternshipFitMatrix } from "@/components/internships/InternshipFitMatrix";
 import { PostingActions } from "@/components/lms/PostingActions";
 import { PostingDetailsMarkdown } from "@/components/lms/PostingDetailsMarkdown";
 import { ApplyDialog } from "@/components/lms/ApplyDialog";
@@ -289,6 +290,15 @@ export default async function InternshipDetailPage({
         <div className="px-6 sm:px-8 py-6">
           <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle mb-3">Position details</p>
           <PostingDetailsMarkdown content={posting.positionDetails} />
+
+          {/* AI fit-rating matrix — trainee-only, on-demand. Reads the
+              trainee's most recent resume against this JD requirement by
+              requirement. Distinct from the semantic FitExplain above. */}
+          {!isStaff && userId && (
+            <div className="mt-6">
+              <InternshipFitMatrix postingId={posting.id} />
+            </div>
+          )}
 
           {/* No standalone fallback CTA here — the unified
               ApplyDialog in the page header handles every case
