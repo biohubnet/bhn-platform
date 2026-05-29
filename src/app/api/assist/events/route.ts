@@ -39,6 +39,7 @@ import {
   emptyStateCard,
 } from "@/lib/assist/rules";
 import { inferStuckHint, aiBudgetState } from "@/lib/assist/infer";
+import { resolveStuckQueue, dedupeStatusesFor } from "@/lib/assist/stuck-logic";
 import { AI_CONFIGURED } from "@/lib/ai";
 import type { AssistEventInput } from "@/lib/assist/types";
 import type { Role } from "@/lib/auth";
@@ -135,104 +136,55 @@ export async function POST(req: Request) {
       !prefs.hintsDisabled &&
       !(prefs.suppressUntil && prefs.suppressUntil.getTime() > Date.now());
 
-    // Resolve the single hint to queue, in priority order:
-    //   1. empty-state pre-stuck card (cross-table, rule-based)
-    //   2. AI-generated, intent-aware suggestion — the smart path,
-    //      when the user is clearly stuck, AI is configured, and we're
-    //      within the per-user LLM budget
-    //   3. the canned rule card, as a graceful fallback
-    let queued: {
-      key: string;
-      title: string;
-      body: string;
-      ctaLabel: string | null;
-      ctaHref: string | null;
-      triggeredBy: string;
-      confidence: number;
-      /** Stuck-state hints suppress recently dismissed/ignored repeats
-       *  so a brushed-off nudge doesn't immediately return; pre-stuck
-       *  cards only de-dupe against still-active ones. */
-      stuckKind: boolean;
-    } | null = null;
+    // Gather the inputs the (pure, unit-tested) planner needs — doing
+    // the async work (empty-state lookup, budget check, the LLM call)
+    // only when it can actually change the outcome — then let
+    // resolveStuckQueue pick exactly one hint, or none.
+    const aiEligible = hintsLive && AI_CONFIGURED.chat && score.score >= AI_ESCALATE;
+    let emptyHint: Awaited<ReturnType<typeof emptyStateCard>> = null;
+    let ruleCard: ReturnType<typeof pickRuleCard> = null;
+    let budgetOk = false;
+    let gen: Awaited<ReturnType<typeof inferStuckHint>> = null;
 
     if (hintsLive) {
-      const emptyHint = await emptyStateCard({ userId, role, surface: lastSurface });
-      if (emptyHint) {
-        queued = {
-          key: emptyHint.key,
-          title: emptyHint.title,
-          body: emptyHint.body,
-          ctaLabel: emptyHint.ctaLabel ?? null,
-          ctaHref: emptyHint.ctaHref ?? null,
-          triggeredBy: "rule:empty-state",
-          confidence: 0.8,
-          stuckKind: false,
-        };
-      } else if (score.score >= STUCK_QUEUE_FLOOR) {
-        // When AI is configured and the user is clearly stuck, the
-        // generative path OWNS this stuck state: it either queues a
-        // smart suggestion, or — if rate-limited / budget-spent —
-        // stays quiet so the recent AI hint isn't doubled by a canned
-        // one under a different key. The canned card only fires when
-        // AI is off, or it ran and had nothing useful to add.
-        const aiEligible = AI_CONFIGURED.chat && score.score >= AI_ESCALATE;
-        let aiOwns = false;
+      emptyHint = await emptyStateCard({ userId, role, surface: lastSurface });
+      if (!emptyHint && score.score >= STUCK_QUEUE_FLOOR) {
+        ruleCard = pickRuleCard(score, lastSurface);
         if (aiEligible) {
-          aiOwns = true;
-          if ((await aiBudgetState(userId)).ok) {
-            const gen = await inferStuckHint({
+          budgetOk = (await aiBudgetState(userId)).ok;
+          // Only spend the LLM call when it can win (eligible + budget).
+          if (budgetOk) {
+            gen = await inferStuckHint({
               userId,
               role: role as Role,
               surface: lastSurface,
               events: behaviour.events,
               topSignal: score.topSignal,
             });
-            if (gen) {
-              queued = {
-                key: `ai.stuck.${score.topSignal}`,
-                title: gen.title,
-                body: gen.body,
-                ctaLabel: gen.ctaLabel,
-                ctaHref: gen.ctaHref,
-                triggeredBy: "ai:stuck",
-                // Rule scorer already flagged stuck; show at the
-                // stronger of the two confidences.
-                confidence: Math.max(gen.confidence, score.score),
-                stuckKind: true,
-              };
-            } else {
-              // AI ran but had nothing useful — let the card fall back.
-              aiOwns = false;
-            }
-          }
-        }
-        if (!queued && !aiOwns) {
-          const rc = pickRuleCard(score, lastSurface);
-          if (rc) {
-            queued = {
-              key: rc.key,
-              title: rc.title,
-              body: rc.body,
-              ctaLabel: rc.ctaLabel ?? null,
-              ctaHref: rc.ctaHref ?? null,
-              triggeredBy: `rule:${score.topSignal}`,
-              confidence: score.score,
-              stuckKind: true,
-            };
           }
         }
       }
     }
 
+    const queued = resolveStuckQueue({
+      hintsLive,
+      emptyHint,
+      score,
+      aiConfigured: AI_CONFIGURED.chat,
+      queueFloor: STUCK_QUEUE_FLOOR,
+      escalate: AI_ESCALATE,
+      budgetOk,
+      gen,
+      ruleCard,
+    });
+
     if (queued) {
-      const statuses = queued.stuckKind
-        ? ["pending", "shown", "dismissed", "ignored"]
-        : ["pending", "shown"];
+      // De-dupe within the last hour, then honour per-user prefs.
       const recentSameKey = await prisma.assistHint.findFirst({
         where: {
           userId,
           helpKey: queued.key,
-          status: { in: statuses },
+          status: { in: dedupeStatusesFor(queued.stuckKind) },
           createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
         },
         select: { id: true },
