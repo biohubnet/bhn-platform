@@ -48,7 +48,11 @@ export default function ShowcaseRegulatoryAffairsPage() {
 
         {/* Showcase title */}
         <section className="mb-7 text-center">
-          <p className="text-[10.5px] uppercase tracking-[0.22em] font-bold" style={{ color: "#0e7da3" }}>
+          {/* #0b6f90, not the brand #0e7da3: at 10.5px bold on the light
+              teal gradient the original was only ~4.0:1 (AA needs 4.5 at
+              this size). This darker teal clears 4.5:1 across the whole
+              gradient while reading the same. */}
+          <p className="text-[10.5px] uppercase tracking-[0.22em] font-bold" style={{ color: "#0b6f90" }}>
             Learning Pathway · Regulatory Affairs
           </p>
           <h2 className="mt-2 text-[24px] sm:text-[30px] font-bold text-fg leading-tight">

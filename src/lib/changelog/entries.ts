@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Showcase page — eyebrow contrast — May 2026
+  {
+    title: "Showcase (Regulatory Affairs) — fix: the eyebrow label now meets AA contrast",
+    body: "Contrast audit of the public `/showcase/regulatory-affairs` page: the small \"Learning Pathway · Regulatory Affairs\" eyebrow used the brand teal `#0e7da3`, which on the light teal gradient measured only ~4.0:1 — under the 4.5:1 AA threshold for text at that size (10.5px bold). Nudged it to a marginally darker teal (`#0b6f90`, ~4.9:1 across the whole gradient) that reads the same. Everything else on the page passes AA or AAA: heading 14.6:1, body 6.2:1, form labels/placeholders 6.7:1, input text 17:1, error text 8.7:1, and the submit button 4.7:1.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Career pathways — clean branch lines — May 2026
   {
     title: "Career pathways — fix: branch-out lines no longer cross each other or the cards",
