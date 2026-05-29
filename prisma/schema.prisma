@@ -422,6 +422,12 @@ model User {
   statusesLastTouched        ApplicationStatus[]      @relation("StatusLastTouch")
   employerPresencePings      EmployerPresencePing[]   @relation("EmployerPresenceUser")
 
+  // Reporting suite — back-relations.
+  hiringTargetsOwned      HiringTarget[]             @relation("HiringTargetOwner")
+  hiringTargetsAuthored   HiringTarget[]             @relation("HiringTargetAuthor")
+  recruitingCostsAuthored RecruitingCost[]           @relation("RecruitingCostAuthor")
+  statusHistoryActions    ApplicationStatusHistory[] @relation("StatusHistoryActor")
+
   @@index([newsletterStatus, newsletterExportedAt])
 }
 
@@ -664,6 +670,13 @@ model ApplicationStatus {
   /// Internal-only note the employer team uses for deliberation.
   /// Never surfaced to the trainee.
   employerNote    String?
+  /// Reporting: where this application originated. Captured at apply
+  /// time; null on pre-existing rows + imports → reported as "Unknown".
+  /// "bhn_board" | "direct_email" | "employer_site" | "referral" |
+  /// "talent_pool" | "import" | "unknown".
+  source          String?
+  /// Free-text qualifier for `source` (referrer name, campaign tag).
+  sourceDetail    String?
   updatedById     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -686,9 +699,14 @@ model ApplicationStatus {
   teamComments  ApplicantTeamComment[]
   scorecards    ScorecardSubmission[]  @relation("ApplicationStatusScorecards")
 
+  // Reporting back-relations.
+  statusHistory ApplicationStatusHistory[]
+  demographics  ApplicationDemographics?
+
   @@unique([postingId, applicantId])
   @@index([status])
   @@index([postingId, status, stageEnteredAt])
+  @@index([postingId, source])
 }
 
 /// Phase 5 interview scheduling. Lightweight: employer proposes time
@@ -765,6 +783,12 @@ model Company {
   kind          String    @default("real")
   demoExpiresAt DateTime?
 
+  /// Gates the Diversity/DEI pipeline report. OFF until voluntary
+  /// self-ID capture + legal/compliance sign-off are in place. When
+  /// false, /employer/reports/diversity shows a gated empty state and
+  /// no demographics are collected at apply time.
+  deiReportingEnabled Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -776,6 +800,8 @@ model Company {
   templates         EmailTemplate[]
   notifications     Notification[]
   notificationPrefs NotificationPreference[]
+  hiringTargets     HiringTarget[]
+  recruitingCosts   RecruitingCost[]
 
   @@index([domain])
   @@index([kind, demoExpiresAt])
@@ -1208,6 +1234,11 @@ model InternshipPosting {
   teamMembers   PostingTeamMember[]
   scorecard     InterviewScorecard?
   activityLogs  EmployerActivityLog[] @relation("PostingActivity")
+
+  // Reporting back-relations.
+  hiringTargets   HiringTarget[]
+  recruitingCosts RecruitingCost[]
+  statusHistory   ApplicationStatusHistory[]
 
   @@index([status, createdAt])
   @@index([companyId, status, createdAt])
@@ -4506,4 +4537,125 @@ model ShowcaseSubmission {
   adminNote         String?
 
   @@index([programSlug, createdAt])
+}
+
+// ───────────────────────────────────────────────────────────────
+// Reporting suite — HR/Talent reports (/employer/reports).
+// Targets/OKRs, cost tracking, voluntary DEI self-ID, and a typed
+// stage-transition history (so cohort funnels + cycle-time are fast
+// and seedable, vs. parsing the untyped AuditLog).
+// ───────────────────────────────────────────────────────────────
+
+/// A settable hiring goal (OKR). Reports resolve actual-vs-target and
+/// render a RAG status. Company-wide when postingId is null; otherwise
+/// scoped to one requisition (a posting-scoped target overrides the
+/// company-wide one for the same metricKey).
+model HiringTarget {
+  id          String   @id @default(cuid())
+  companyId   String
+  postingId   String?
+  /// Stable key the metrics lib looks up. e.g. "time_to_fill_days" |
+  /// "offer_accept_rate" | "cost_per_hire" | "apply_to_hire_rate" |
+  /// "hires" | "applications" | "stage_sla_<stage>_days".
+  metricKey   String
+  /// Target in the metric's native unit (days, %, dollars, count).
+  /// Percentages stored 0–100 to match the metrics lib output.
+  targetValue Decimal  @db.Decimal(12, 2)
+  /// "gte" (higher is better) | "lte" (lower is better).
+  comparator  String   @default("gte")
+  /// Within-band fraction for "at risk" (0.1 = within 10% of goal).
+  atRiskBand  Decimal? @db.Decimal(4, 3)
+  /// "quarter" | "year" | "month" | "rolling_90".
+  period      String   @default("quarter")
+  ownerId     String?
+  note        String?
+  isDemoSeed  Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  posting   InternshipPosting? @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  owner     User?              @relation("HiringTargetOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User?              @relation("HiringTargetAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, postingId, metricKey, period])
+  @@index([companyId, metricKey])
+}
+
+/// A recruiting cost line — drives cost-per-hire. Company-wide overhead
+/// when postingId is null; otherwise attributed to one requisition.
+model RecruitingCost {
+  id          String   @id @default(cuid())
+  companyId   String
+  postingId   String?
+  /// "advertising" | "agency_fee" | "referral_bonus" | "tooling" |
+  /// "events" | "relocation" | "other".
+  costType    String
+  amount      Decimal  @db.Decimal(12, 2)
+  currency    String   @default("CAD")
+  incurredAt  DateTime
+  note        String?
+  isDemoSeed  Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  posting   InternshipPosting? @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  createdBy User?              @relation("RecruitingCostAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([companyId, incurredAt])
+  @@index([postingId])
+}
+
+/// Voluntary, self-reported demographic self-ID for employment-equity
+/// reporting. STRICTLY aggregate-use only — never surfaced at row level
+/// in any report; always k-anonymity suppressed (cells < K hidden).
+/// A row exists ONLY when the applicant consented. Canada employment-
+/// equity context: voluntary self-ID, never inferred. Requires
+/// legal/compliance/privacy sign-off before enabling in production.
+model ApplicationDemographics {
+  id                  String    @id @default(cuid())
+  applicationStatusId String    @unique
+  /// Hard gate — a row is written ONLY when this is true.
+  consent             Boolean   @default(false)
+  /// All optional. "prefer not to say" / unanswered = null.
+  gender              String?
+  raceEthnicity       String?
+  disabilityStatus    String?
+  veteranStatus       String?
+  indigenousStatus    String?
+  consentedAt         DateTime?
+  /// Version of the consent copy shown when captured.
+  consentVersion      String?
+  isDemoSeed          Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+
+  applicationStatus ApplicationStatus @relation(fields: [applicationStatusId], references: [id], onDelete: Cascade)
+}
+
+/// Typed per-candidate stage-transition history. Written by the
+/// transition service inside the same transaction as the AuditLog row
+/// (AuditLog stays the compliance trail; this is the query-optimised
+/// analytics stream). Powers true-cohort funnel conversion + per-stage
+/// cycle time. `postingId` is denormalised so company-scoped queries
+/// join through the posting without a second hop.
+model ApplicationStatusHistory {
+  id                  String   @id @default(cuid())
+  applicationStatusId String
+  postingId           String
+  /// null for the synthetic "entered the pipeline" first row.
+  fromStage           String?
+  toStage             String
+  actorId             String?
+  isDemoSeed          Boolean  @default(false)
+  changedAt           DateTime @default(now())
+
+  applicationStatus ApplicationStatus @relation(fields: [applicationStatusId], references: [id], onDelete: Cascade)
+  posting           InternshipPosting @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  actor             User?             @relation("StatusHistoryActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([postingId, toStage, changedAt])
+  @@index([applicationStatusId, changedAt])
 }

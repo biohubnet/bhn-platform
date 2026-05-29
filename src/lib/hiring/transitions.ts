@@ -238,6 +238,22 @@ async function runTransition(
     },
   });
 
+  // Typed transition stream for the reporting suite — powers true-cohort
+  // funnel conversion + per-stage cycle time. Written in the SAME
+  // transaction as the AuditLog row (AuditLog stays the compliance trail;
+  // this is the query-optimised, indexable analytics stream). postingId
+  // is denormalised so company-scoped report queries join through the
+  // posting in one hop.
+  await tx.applicationStatusHistory.create({
+    data: {
+      applicationStatusId: row.id,
+      postingId:           row.postingId,
+      fromStage,
+      toStage,
+      actorId:             input.actorUserId,
+    },
+  });
+
   return { ok: true as const, fromStage, toStage, status: updated };
 }
 
