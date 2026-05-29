@@ -1198,7 +1198,7 @@ function BranchModal({
   // cards on a 900px-tall laptop), the modal scrolls vertically so
   // every card stays at its full natural height. Without this,
   // vertical compression would scale cards (and their content)
-  // smaller than measured, clipping the END marker / last bullet.
+  // smaller than measured, clipping the last bullet.
   const layoutContentBottom = Math.max(
     layout.source.top + layout.source.height,
     ...layout.targets.map((t) => t.top + t.height),
@@ -2148,37 +2148,6 @@ function BigStationCard({
             )}
           </div>
         )}
-
-        {/* End-of-card marker — a chapter-break-style separator so
-            readers get visual confirmation they've seen everything in
-            the card and aren't missing content below an invisible
-            scroll-cliff. Accent-tinted lines so the marker reads as
-            part of the card rather than a foreign element; the small
-            "END" text is muted enough not to compete with the actual
-            content above it. Always last; renders on source AND
-            target cards (no crossLink check). */}
-        <div
-          className="mt-4 -mx-1 px-1 flex items-center gap-3"
-          aria-hidden
-        >
-          <div
-            className="h-px flex-1"
-            style={{
-              background: `linear-gradient(to right, transparent, color-mix(in srgb, ${track.accent} 35%, transparent), color-mix(in srgb, ${track.accent} 35%, transparent))`,
-            }}
-          />
-          <span
-            className="text-[9px] uppercase tracking-[0.22em] font-bold text-fg-subtle select-none"
-          >
-            end
-          </span>
-          <div
-            className="h-px flex-1"
-            style={{
-              background: `linear-gradient(to left, transparent, color-mix(in srgb, ${track.accent} 35%, transparent), color-mix(in srgb, ${track.accent} 35%, transparent))`,
-            }}
-          />
-        </div>
       </div>
     </div>
   );

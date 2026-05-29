@@ -69,7 +69,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "trainee.pathways-modal-scroll",
     title: "Career pathways — branch modal scrolls instead of squishing cards",
-    body: "Final round of the branch-modal-clipping saga. The previous uniform-scale layout shrank cards both ways when the viewport was tight vertically, so even with wider cards and a height buffer the END marker could drop off the bottom. Now the modal scales cards only to fit width (never to fit height). If the layout is taller than the viewport, the modal scrolls vertically so every card stays at its full natural height and shows its END marker. Cards themselves never scroll internally — only the modal does.",
+    body: "Final round of the branch-modal-clipping saga. The previous uniform-scale layout shrank cards both ways when the viewport was tight vertically, so even with wider cards and a height buffer the last card could drop off the bottom. Now the modal scales cards only to fit width (never to fit height). If the layout is taller than the viewport, the modal scrolls vertically so every card stays at its full natural height. Cards themselves never scroll internally — only the modal does.",
     path: "/career-paths/pathways",
     placement: "center",
     cta: { label: "Open pathways", href: "/career-paths/pathways" },
@@ -78,8 +78,8 @@ export const TOUR_STEPS: TourStep[] = [
   // ─── Pathways — wider cards + end-marker on branch modal (May 2026)
   {
     id: "trainee.pathways-end-marker",
-    title: "Career pathways — wider branch cards with a clear END marker",
-    body: "On /career-paths/pathways, the branched-out cards are now wider (380/420 px instead of 320/360) so long phrases like 'Method validation (USP <1225>, ICH Q2)' don't bust the layout. Every card also ends with a chapter-break-style END marker so you can see at a glance that you've read everything in the card — no more wondering if there's content hidden below an invisible scroll-cliff.",
+    title: "Career pathways — wider branch cards",
+    body: "On /career-paths/pathways, the branched-out cards are now wider (380/420 px instead of 320/360) so long phrases like 'Method validation (USP <1225>, ICH Q2)' don't bust the layout.",
     path: "/career-paths/pathways",
     placement: "center",
     cta: { label: "Open pathways", href: "/career-paths/pathways" },

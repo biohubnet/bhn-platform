@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career pathways — drop branch-card END marker — May 2026
+  {
+    title: "Career pathways — branch cards are tighter (the END divider is gone)",
+    body: "The branch-out cards used to close with a small \"END\" divider. With the cards measured to their own content height, that divider — plus the gap above it — added height to every card and pushed the layout taller than it needed to be. Removed it: each card now ends right after its content, so the whole branch view packs tighter and there's less scrolling to reach the lower cards.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Experience map — CLI activity vignettes — May 2026
   {
     title: "Experience map — the Admin review & Talent Pool cards now show live activity vignettes",
