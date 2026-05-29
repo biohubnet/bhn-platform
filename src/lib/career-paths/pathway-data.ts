@@ -783,6 +783,40 @@ export const BHN_PATHWAYS: CareerTrack[] = [
 
 export const PATHWAY_BY_ID = new Map(BHN_PATHWAYS.map((p) => [p.id, p] as const));
 
+/**
+ * Estimated transition affinity for a cross-link — a 0..1 "how likely is
+ * this branch" score used to saturation-rank the branch options in the
+ * vector selector. There's no per-edge probability in the data, so this
+ * is the deterministic, cosine-similarity-*like* heuristic the selector
+ * asks for:
+ *   • a peer-level move (e.g. "Senior → Senior") is the most natural
+ *     pivot; a level change costs affinity;
+ *   • fewer "learn first" prerequisites ⇒ closer adjacency ⇒ higher;
+ *   • a small stable hash spreads equal-signal edges apart so the
+ *     saturation ladder reads cleanly.
+ * Deterministic (no Math.random / Date) so SSR and client agree.
+ */
+export function crossLinkStrength(cl: { when?: string | null; learningNeeded?: string[] | null }): number {
+  const m = /([a-z]+)\s*(?:→|->)\s*([a-z]+)/i.exec(cl.when ?? "");
+  const sameLevel = m ? m[1].toLowerCase() === m[2].toLowerCase() : true;
+  let s = sameLevel ? 0.8 : 0.58;
+  const ln = cl.learningNeeded?.length ?? 2;
+  s += ln <= 1 ? 0.13 : ln === 2 ? 0.04 : -0.07;
+  const key = `${cl.when ?? ""}|${cl.learningNeeded?.join(",") ?? ""}`;
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  s += ((h % 17) - 8) / 100; // ±0.08 stable jitter
+  return Math.max(0.25, Math.min(0.97, s));
+}
+
+/** Human tier label for a strength score (drives the likelihood chip). */
+export function strengthTier(s: number): string {
+  if (s >= 0.78) return "Strong fit";
+  if (s >= 0.6) return "Likely";
+  if (s >= 0.45) return "Possible";
+  return "Stretch";
+}
+
 // Re-export the shared types so callers can import everything from
 // one module (mirrors how data.ts is consumed today).
 export type { CareerStation, CareerTrack, CrossLink, LevelId, CourseRef, TrackId } from "./data";

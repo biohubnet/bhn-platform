@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Career pathways — branch likelihood vector selector — May 2026
+  {
+    title: "Career pathways — branch-out now shows ALL possible moves, ranked by likelihood",
+    body: "On `/career-paths/pathways`, clicking a role's branch icon (⑂) used to surface cross-moves as equals. It's now a **vector selector**: every place that role can branch to is drawn at once, and each connector line's **saturation, thickness, and glow scale with how likely the move is** — the most natural pivots are vivid and bold, longer-shot moves are thin and desaturated (the brightest also get the travelling-light comet). Each destination card carries a **likelihood chip** — Strong fit / Likely / Possible / Stretch — with a 0–100 affinity bar.\n\nLikelihood is an estimated **transition affinity** (a cosine-similarity-style heuristic, since there's no per-edge probability in the data): peer-level moves score highest, and fewer “learn first” prerequisites mean closer adjacency. A legend at the bottom of the expanded view explains the saturation scale.\n\nThe page also gained a **guide**: on a first visit it auto-opens the richest branch as a quick hands-free demo (the expanded view) then collapses it, so you can see how branching works. Replay it any time from the **Guide** button in the chart toolbar.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Talent Reports — P6: print one-pager + export-all — May 2026
   {
     title: "Talent Reports — Print → PDF one-pager + Export-all CSV (the suite is complete)",

@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.29h";
+export const TOUR_VERSION = "2026.05.29i";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Career pathways — likelihood vector selector — May 2026
+  {
+    id: "trainee.pathways-vector-branch",
+    title: "Pathways — branch-out is now a likelihood vector selector",
+    body: "On the pathways chart, click a role's ⑂ branch icon: every move it can make fans out at once, and each line's saturation shows how likely it is — vivid = strong fit, faint = a stretch. Each destination shows a likelihood chip + affinity bar. Your first visit auto-plays a quick demo; replay it any time from the Guide button in the toolbar.",
+    path: "/career-paths/pathways",
+    placement: "center",
+    cta: { label: "Open pathways", href: "/career-paths/pathways" },
+    since: "2026.05.29i",
+  },
   // ─── Talent Reports suite — P1 — May 2026
   {
     id: "employer.talent-reports-hub",

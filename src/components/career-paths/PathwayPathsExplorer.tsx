@@ -47,6 +47,7 @@ import {
   ChevronsLeft,
   Maximize2,
   Minimize2,
+  HelpCircle,
 } from "lucide-react";
 import {
   BHN_PATHWAYS,
@@ -55,6 +56,8 @@ import {
   type CareerTrack,
   type CrossLink,
   type LevelId,
+  crossLinkStrength,
+  strengthTier,
 } from "@/lib/career-paths/pathway-data";
 
 const ICONS: Record<CareerTrack["iconKey"], LucideIcon> = {
@@ -74,6 +77,20 @@ const LEVEL_META: Record<LevelId, { label: string; years: string; icon: React.Re
   lead:   { label: "Lead",      years: "10–15 yrs", icon: null },
   vp:     { label: "VP / Exec", years: "15+ yrs",  icon: <Trophy size={11} /> },
 };
+
+/** The station the first-visit guide auto-opens — whichever has the most
+ *  cross-links, so the demo shows a rich vector selector. Computed once. */
+const GUIDE_SOURCE: { track: CareerTrack; station: CareerStation } | null = (() => {
+  let best: { track: CareerTrack; station: CareerStation } | null = null;
+  let bestN = 0;
+  for (const track of BHN_PATHWAYS) {
+    for (const station of track.stations) {
+      const n = station.crossLinks?.length ?? 0;
+      if (n > bestN) { bestN = n; best = { track, station }; }
+    }
+  }
+  return best;
+})();
 
 /** Argument carried up when the user clicks a station's branch-out
  *  icon. Identifies the source station + its parent track. */
@@ -118,6 +135,10 @@ function gridTemplateColumns(pathways: { id: string }[], collapsed: Set<string>)
 
 export function PathwayPathsExplorer() {
   const [branch, setBranch] = useState<BranchOpenWithRects | null>(null);
+  // First-visit guide: auto-opens the richest branch as a silent demo
+  // (expanded vector selector) then collapses it. See runGuide below.
+  const [guideActive, setGuideActive] = useState(false);
+  const guideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Station-detail popup — shows the FULL contents of a single
   // station (all roles, full focus paragraph, every education gap)
@@ -280,6 +301,36 @@ export function PathwayPathsExplorer() {
     return () => cancelAnimationFrame(raf);
   }, [pendingBranchOpen, collapsedPathways, collapsedLevels]);
 
+  // ── First-visit guide ──────────────────────────────────────────
+  // Auto-opens the richest branch (GUIDE_SOURCE) as a hands-free demo so
+  // a newcomer sees the expanded vector selector — then collapses it.
+  // Also replayable from the "Guide" button. localStorage-gated so it
+  // only auto-plays once per browser.
+  function runGuide() {
+    if (!GUIDE_SOURCE) return;
+    if (guideTimer.current) clearTimeout(guideTimer.current);
+    setGuideActive(true);
+    handleBranchOpen(GUIDE_SOURCE);
+    guideTimer.current = setTimeout(() => {
+      setBranch(null);
+      setGuideActive(false);
+    }, 5200);
+  }
+  useEffect(() => {
+    if (typeof window === "undefined" || !GUIDE_SOURCE) return;
+    try {
+      if (localStorage.getItem("bhn-pathways-branch-guide-v1")) return;
+      localStorage.setItem("bhn-pathways-branch-guide-v1", "1");
+    } catch {
+      /* private mode — just skip the auto-play */
+      return;
+    }
+    const t = setTimeout(() => runGuide(), 1100);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => () => { if (guideTimer.current) clearTimeout(guideTimer.current); }, []);
+
   const anyCollapsed = collapsedLevels.size > 0 || collapsedPathways.size > 0;
 
   return (
@@ -338,6 +389,14 @@ export function PathwayPathsExplorer() {
               />
             </div>
             <div className="flex-1" />
+            <button
+              type="button"
+              onClick={runGuide}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-brand-700 font-semibold hover:bg-brand-50 transition-colors"
+              title="Replay the branching guide"
+            >
+              <HelpCircle size={11} /> Guide
+            </button>
             {anyCollapsed && (
               <button
                 type="button"
@@ -400,7 +459,31 @@ export function PathwayPathsExplorer() {
 
       {/* Branch modal — only mounted when a branch action is active.
           Renders into a portal-like fixed overlay. */}
-      {branch && <BranchModal source={branch} onClose={() => setBranch(null)} />}
+      {branch && (
+        <BranchModal
+          source={branch}
+          onClose={() => {
+            setBranch(null);
+            setGuideActive(false);
+            if (guideTimer.current) clearTimeout(guideTimer.current);
+          }}
+        />
+      )}
+
+      {/* Guide caption — floats over the modal while the demo plays. */}
+      {guideActive && branch && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[120] pointer-events-none max-w-md px-4">
+          <div className="rounded-xl bg-black/70 backdrop-blur-sm text-white px-4 py-2.5 text-center shadow-xl">
+            <p className="text-[12.5px] font-semibold inline-flex items-center gap-1.5">
+              <GitFork size={13} /> Branching out
+            </p>
+            <p className="text-[11.5px] text-white/80 mt-0.5 leading-snug">
+              Click the <GitFork size={11} className="inline -translate-y-px mx-0.5" /> on any role to see where it can branch.
+              The more saturated a line, the more likely that move.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Station-detail popup — full card content, dynamically sized
           to the data. Click anywhere on a station card (outside the
@@ -1247,6 +1330,7 @@ function BranchModal({
               label="WHERE YOU'D LAND"
               Icon={ICONS[t.track.iconKey]}
               crossLink={t.cl}
+              strength={crossLinkStrength(t.cl)}
             />
           </div>
         ))}
@@ -1353,6 +1437,7 @@ function BranchModal({
                 label="Where you'd land"
                 Icon={ICONS[t.track.iconKey]}
                 crossLink={t.cl}
+                strength={crossLinkStrength(t.cl)}
               />
             </FlipCard>
           ))}
@@ -1369,6 +1454,7 @@ function BranchModal({
               fromRect: t.fromRect,
               toRect: layout.targets[i],
               color: t.track.accent,
+              strength: crossLinkStrength(t.cl),
               arcOffset: layout.targets[i].arcOffset,
             }))}
             sourceAccent={source.track.accent}
@@ -1378,13 +1464,24 @@ function BranchModal({
         </div>
       </div>
 
-      {/* Footer hint — only once the cards have settled */}
-      <p
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 text-[11.5px] text-white/75 z-[110] transition-opacity duration-300 pointer-events-none"
+      {/* Footer — saturation legend + close hint, once settled */}
+      <div
+        className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[110] transition-opacity duration-300 pointer-events-none flex flex-col items-center gap-2"
         style={{ opacity: stage === "settled" ? 1 : 0 }}
       >
-        Press <kbd className="px-1.5 py-0.5 rounded bg-white/15 text-white/90 text-[10px] font-mono mx-0.5">Esc</kbd> or click the backdrop to close
-      </p>
+        <div className="flex items-center gap-2 text-[10.5px] text-white/85 bg-black/40 backdrop-blur-sm rounded-full px-3.5 py-1.5">
+          <span>Less likely</span>
+          <span
+            className="h-1.5 w-24 rounded-full"
+            style={{ background: "linear-gradient(90deg, color-mix(in srgb, #94a3b8 35%, transparent) 0%, #22d3ee 100%)" }}
+          />
+          <span>More likely</span>
+          <span className="text-white/45">· line saturation = transition affinity</span>
+        </div>
+        <p className="text-[11px] text-white/65">
+          Press <kbd className="px-1.5 py-0.5 rounded bg-white/15 text-white/90 text-[10px] font-mono mx-0.5">Esc</kbd> or click the backdrop to close
+        </p>
+      </div>
     </div>
   );
 }
@@ -1584,6 +1681,8 @@ function BranchLines({
     fromRect: DOMRect;
     toRect: { left: number; top: number; width: number; height: number };
     color: string;
+    /** 0..1 branch likelihood — drives line saturation, width + glow. */
+    strength: number;
     /** Vertical deflection for the bezier control points so this
      *  target's line arcs around any near-column targets. Computed
      *  by computeFocusLayout based on the target's column/row. */
@@ -1626,21 +1725,33 @@ function BranchLines({
         // Travel duration scales with line length so longer lines
         // don't feel like the light is rushing along them.
         const travelDur = Math.max(2, Math.min(4, length / 220));
+        // Likelihood → visual weight. The more likely the branch, the
+        // more SATURATED, thicker, brighter, and opaque the line reads
+        // (the user's ask: "more saturated = more likely"). Low-strength
+        // edges are thin, desaturated, and faint — clearly secondary.
+        const strength = t.strength;
+        const lineW = (1.1 + strength * 2.7).toFixed(2);
+        const lineOpacity = 0.3 + strength * 0.7;
+        const sat = (0.25 + strength * 1.25).toFixed(2);
+        const glowPx = Math.round(3 + strength * 9);
+        const glowPct = Math.round(26 + strength * 48);
         return (
           <g key={i}>
             <path
               id={pathId}
               d={d}
               stroke={t.color}
-              strokeWidth="2.5"
+              strokeWidth={lineW}
               fill="none"
               strokeLinecap="round"
               style={{
                 strokeDasharray: length,
                 strokeDashoffset: active ? 0 : length,
+                opacity: active ? lineOpacity : 0,
                 transition: `stroke-dashoffset 700ms cubic-bezier(0.4, 0, 0.2, 1) ${i * 120}ms,
+                             opacity 500ms ease-out ${i * 120}ms,
                              d 800ms cubic-bezier(0.4, 0, 0.2, 1)`,
-                filter: `drop-shadow(0 0 8px color-mix(in srgb, ${t.color} 55%, transparent))`,
+                filter: `saturate(${sat}) drop-shadow(0 0 ${glowPx}px color-mix(in srgb, ${t.color} ${glowPct}%, transparent))`,
               }}
             />
             {/* Light-travelling effect — a bright glowing dot that
@@ -1651,7 +1762,7 @@ function BranchLines({
                 the <mpath> reference to the path's `d` attribute,
                 so when the path morphs (e.g. on card movement) the
                 comet's track morphs with it. */}
-            {active && (
+            {active && strength >= 0.5 && (
               <>
                 <circle r="4" fill="white" opacity="0.95" style={{ filter: `drop-shadow(0 0 8px ${t.color})` }}>
                   <animateMotion dur={`${travelDur}s`} repeatCount="indefinite" rotate="auto">
@@ -1671,7 +1782,7 @@ function BranchLines({
             <circle
               cx={tgtX}
               cy={tgtY}
-              r="5"
+              r={(3.5 + strength * 2.5).toFixed(1)}
               fill={t.color}
               stroke="white"
               strokeWidth="1.5"
@@ -1941,7 +2052,7 @@ function computeFocusLayout(
 // ──────────────────────────────────────────────────────────────────
 
 function BigStationCard({
-  station, track, label, Icon, crossLink,
+  station, track, label, Icon, crossLink, strength,
 }: {
   station: CareerStation;
   track: CareerTrack;
@@ -1951,6 +2062,8 @@ function BigStationCard({
    *  transition's reason + learn-first gaps below the station's own
    *  content. */
   crossLink?: CrossLink;
+  /** 0..1 branch likelihood — drives the saturation chip on target cards. */
+  strength?: number;
 }) {
   // Rendered INSIDE FlipCard's "expanded" layer, which is sized to
   // this card's MEASURED natural content height (the BranchModal
@@ -2053,6 +2166,30 @@ function BigStationCard({
               <CornerDownRight size={10} />
               {crossLink.when}
             </p>
+            {typeof strength === "number" && (
+              <div className="mb-2 flex items-center gap-2" title="Estimated transition affinity — how natural this branch is">
+                <span
+                  className="text-[9px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 rounded shrink-0"
+                  style={{
+                    color: track.accent,
+                    backgroundColor: `color-mix(in srgb, ${track.accent} ${Math.round(14 + strength * 16)}%, transparent)`,
+                  }}
+                >
+                  {strengthTier(strength)}
+                </span>
+                <span className="flex-1 h-1.5 rounded-full bg-fg/10 overflow-hidden">
+                  <span
+                    className="block h-full rounded-full"
+                    style={{
+                      width: `${Math.round(strength * 100)}%`,
+                      backgroundColor: track.accent,
+                      filter: `saturate(${(0.3 + strength * 1.1).toFixed(2)})`,
+                    }}
+                  />
+                </span>
+                <span className="text-[10px] font-semibold tabular-nums text-fg-subtle shrink-0">{Math.round(strength * 100)}</span>
+              </div>
+            )}
             <p className="text-[11.5px] text-fg-muted leading-relaxed">
               {crossLink.reason}
             </p>
