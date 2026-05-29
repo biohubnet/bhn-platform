@@ -35,7 +35,7 @@ import {
   Library, ArrowUp,
 } from "lucide-react";
 import type { ResumeContent, ResumeSection, ResumeItem, ResumeBullet, ResumeSectionKind } from "@/lib/resume/types";
-import { SECTION_LABEL, SECTION_HINTS, rid } from "@/lib/resume/types";
+import { SECTION_LABEL, SECTION_HINTS, SECTION_KIND_COLOR, rid } from "@/lib/resume/types";
 import { cn } from "@/lib/utils";
 import { ResumeItemEditor } from "./ResumeItemEditor";
 import { RewriteableTextarea } from "./RewriteableTextarea";
@@ -1138,7 +1138,11 @@ export function ResumeEditor({
 
       {/* Sections */}
       {content.sections.map((section, sIdx) => (
-        <section key={section.id} className="bg-card-solid border border-line rounded-2xl p-5">
+        <section
+          key={section.id}
+          className="bg-card-solid border border-line border-l-4 rounded-2xl p-5"
+          style={{ borderLeftColor: SECTION_KIND_COLOR[section.kind] }}
+        >
           {/* Section heading row.
            *
            * Two controls that confuse users until they understand the
@@ -1160,6 +1164,12 @@ export function ResumeEditor({
            * don't read the helper line below. */}
           <div className="flex items-start justify-between gap-2 mb-1.5 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
+              <span
+                aria-hidden
+                className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: SECTION_KIND_COLOR[section.kind] }}
+                title={`${SECTION_LABEL[section.kind]} section`}
+              />
               <select
                 value={section.kind}
                 onChange={(e) => updateSection(sIdx, { kind: e.target.value as ResumeSectionKind })}

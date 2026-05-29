@@ -19,7 +19,7 @@ import { useInputDialog } from "@/components/ui/InputDialog";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import type { ResumeContent, ResumeSectionKind } from "@/lib/resume/types";
-import { SECTION_LABEL } from "@/lib/resume/types";
+import { SECTION_LABEL, SECTION_KIND_COLOR } from "@/lib/resume/types";
 
 /** Shape of a row from GET /api/profile/master/bullets/[id]/revisions. */
 interface RevisionRow {
@@ -529,9 +529,17 @@ function SectionGroup({
   }, [bullets]);
 
   return (
-    <section className="rounded-2xl border border-line bg-card-solid p-5">
+    <section
+      className="rounded-2xl border border-line border-l-4 bg-card-solid p-5"
+      style={{ borderLeftColor: SECTION_KIND_COLOR[kind] }}
+    >
       <header className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <h2 className="text-[11px] font-mono uppercase tracking-[0.22em] font-bold text-fg-muted">
+        <h2 className="text-[11px] font-mono uppercase tracking-[0.22em] font-bold text-fg-muted inline-flex items-center gap-1.5">
+          <span
+            aria-hidden
+            className="inline-block w-2 h-2 rounded-full shrink-0"
+            style={{ backgroundColor: SECTION_KIND_COLOR[kind] }}
+          />
           {SECTION_LABEL[kind]} · {bullets.length}
         </h2>
         {/* "Add bullet" without an anchor — useful for skills / other

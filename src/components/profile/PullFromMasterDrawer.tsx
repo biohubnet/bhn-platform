@@ -33,7 +33,7 @@ import {
   X, Library, Loader2, Send, ArrowDown, GripVertical,
 } from "lucide-react";
 import type { ResumeContent, ResumeSectionKind } from "@/lib/resume/types";
-import { SECTION_LABEL } from "@/lib/resume/types";
+import { SECTION_LABEL, SECTION_KIND_COLOR } from "@/lib/resume/types";
 
 interface MasterBulletRow {
   id: string;
@@ -240,14 +240,23 @@ export function PullFromMasterDrawer({ open, onClose, content, onSendToTarget }:
 
           {grouped.map(([sectionKind, sectionBullets]) => (
             <section key={sectionKind} className="space-y-1.5">
-              <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-subtle px-1">
+              <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-subtle px-1 inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: SECTION_KIND_COLOR[sectionKind] }}
+                />
                 {SECTION_LABEL[sectionKind] ?? sectionKind} · {sectionBullets.length}
               </h3>
               <ul className="space-y-1.5">
                 {sectionBullets.map((b) => {
                   const isPickerOpen = pickerForBulletId === b.id;
                   return (
-                    <li key={b.id} className="rounded-md bg-bg/40 ring-1 ring-line/60 p-2.5">
+                    <li
+                      key={b.id}
+                      className="rounded-md bg-bg/40 ring-1 ring-line/60 border-l-4 p-2.5"
+                      style={{ borderLeftColor: SECTION_KIND_COLOR[sectionKind] }}
+                    >
                       <div className="flex items-start gap-2">
                         <span
                           draggable

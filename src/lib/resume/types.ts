@@ -320,6 +320,24 @@ export const SECTION_LABEL: Record<ResumeSectionKind, string> = {
   other:          "Other",
 };
 
+/** Per-kind accent colour (hex) so each section type is visually
+ *  distinct — a coloured left border + dot — on the editor AND the
+ *  master library / pull drawer. Applied via inline style + a
+ *  `border-l-4` width class: fixed mid-tone hexes that read on both
+ *  light and dark themes and always beat the neutral `border-line`. */
+export const SECTION_KIND_COLOR: Record<ResumeSectionKind, string> = {
+  summary:        "#64748b", // slate-500
+  experience:     "#38bdf8", // sky-400
+  skills:         "#34d399", // emerald-400
+  education:      "#a78bfa", // violet-400
+  projects:       "#fbbf24", // amber-400
+  certifications: "#22d3ee", // cyan-400
+  publications:   "#818cf8", // indigo-400
+  awards:         "#fb7185", // rose-400
+  volunteering:   "#fb923c", // orange-400
+  other:          "#cbd5e1", // slate-300
+};
+
 /** Empty-state resume content used when a user opens /profile/resume
  *  without an uploaded file.
  *

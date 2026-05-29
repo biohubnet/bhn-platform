@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Resume builder — colour-coded sections — May 2026
+  {
+    title: "Resume builder — each section type now has its own colour",
+    body: "Sections are now colour-coded by type — a coloured left border and a matching dot, consistent everywhere: Experience (sky), Skills (emerald), Education (violet), Projects (amber), Certifications (cyan), Publications (indigo), Awards (rose), Volunteering (orange). The same colours run across the resume you're editing, the “Pull from master” drawer, and the master library, so a skill always reads as a skill and an experience as an experience at a glance — handy when you're dragging bullets from master into the right place.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Resume builder — wider, left-aligned editor — May 2026
   {
     title: "Resume builder — the editor now fills the width instead of a narrow centered column",
