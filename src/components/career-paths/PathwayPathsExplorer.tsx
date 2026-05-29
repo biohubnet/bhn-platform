@@ -1792,8 +1792,8 @@ function computeFocusLayout(
   //   • TGT_GAP — distance between target cards (column-to-column
   //     and row-to-row inside the target group). Tighter because
   //     targets are visually a unit.
-  const TOP_PAD          = 80;
-  const BOTTOM_PAD       = 56;
+  const TOP_PAD          = 52;
+  const BOTTOM_PAD       = 40;
   const SIDE_PAD         = 24;
   const SRC_TGT_GAP      = 180;
   const TGT_GAP          = 28;
@@ -1844,10 +1844,7 @@ function computeFocusLayout(
     // gutter, so they never cross a card. Two sides ≈ half the scroll of
     // a single column. Per-card heights keep each column only as tall as
     // its own content (shorter exploratory cards don't pad the column).
-    const allIdx = Array.from({ length: numTargets }, (_, i) => i);
-    const rightIdx = allIdx.filter((i) => i % 2 === 0);
-    const leftIdx  = allIdx.filter((i) => i % 2 === 1);
-    const hasLeft  = leftIdx.length > 0;
+    const hasLeft = numTargets >= 2;
 
     const tgtHeightsRaw = Array.from({ length: numTargets }, (_, i) => {
       const m = contentHeights?.targets?.[i];
@@ -1864,6 +1861,23 @@ function computeFocusLayout(
     const srcTgtGap = Math.floor(SRC_TGT_GAP * scale);
     const tgtGap    = Math.floor(TGT_GAP * scale);
     const tgtHeights = tgtHeightsRaw.map((h) => Math.floor(h * scale));
+
+    // Greedy HEIGHT-balanced split: each destination (strongest first)
+    // joins whichever column is currently shorter, so the taller column
+    // — which is what drives the scroll — is kept as short as possible.
+    const rightIdx: number[] = [];
+    const leftIdx: number[] = [];
+    let rH = 0;
+    let lH = 0;
+    for (let i = 0; i < numTargets; i++) {
+      if (!hasLeft || rH <= lH) {
+        rightIdx.push(i);
+        rH += tgtHeights[i] + tgtGap;
+      } else {
+        leftIdx.push(i);
+        lH += tgtHeights[i] + tgtGap;
+      }
+    }
 
     const colH = (idxs: number[]) =>
       idxs.reduce((s, i) => s + tgtHeights[i], 0) + Math.max(0, idxs.length - 1) * tgtGap;
@@ -2024,9 +2038,11 @@ function BigStationCard({
           </div>
         )}
 
-        <p className="mt-2.5 text-[12px] text-fg-muted leading-relaxed">
-          {station.focus}
-        </p>
+        {!crossLink && (
+          <p className="mt-2.5 text-[12px] text-fg-muted leading-relaxed">
+            {station.focus}
+          </p>
+        )}
 
         {!crossLink && (
           <div className="mt-3 border-t border-line/60 pt-3">
@@ -2097,7 +2113,7 @@ function BigStationCard({
                   Learn first
                 </p>
                 <ul className="space-y-0.5">
-                  {crossLink.learningNeeded.map((g) => (
+                  {crossLink.learningNeeded.slice(0, 2).map((g) => (
                     <li
                       key={g}
                       className="flex items-start gap-1.5 text-[11px] leading-snug"
