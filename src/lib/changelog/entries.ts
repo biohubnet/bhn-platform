@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Employer team — fix: preview company survives demo members — May 2026
+  {
+    title: "Employer team — fix: demo-team seeding now sticks (preview workspace no longer disqualified by its own demo members)",
+    body: "Reported: on `/employer/team` (view-as-HR), \"Add demo team\" did nothing and no Clear button appeared.\n\n**Root cause — a self-defeating heuristic.** `ensureAdminPreviewCompany` identifies an admin's private preview workspace as the company where they're the **sole member**. But the team seeder's whole job is to ADD members (Manager, Generalist, Viewer). So the sequence was:\n  1. Seed postings → creates preview company `P` (admin is sole member).\n  2. Seed team → adds 3 demo members to `P`.\n  3. Next page load → `ensureAdminPreviewCompany` sees `P` now has 3 \"other members\" → disqualifies it → spins up a **brand-new empty company `P2`**.\n  4. Team page reads `P2` → empty roster, no demo members detected → no Clear button, and re-seeding just repeats the cycle.\n\nThe preview company could never hold a demo team, because holding a team is exactly what disqualified it.\n\n**Fix.** The sole-member check now ignores **demo accounts** (`accountKind = \"demo\"`). A company where the admin is the only *real* member stays their preview no matter how many demo teammates live in it. (`accountKind` is non-nullable with default `\"real\"`, so the `{ not: \"demo\" }` filter is null-safe.)\n\nNet: demo team members now persist in the same preview company as the seeded postings/analytics/calendar/templates data, the roster shows them, and the Clear button appears. Any stray empty preview company created by the old behaviour is harmless — the resolver returns the oldest company where the admin is the sole real member (the one that actually holds the data).",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Employer postings — final piece: migrate to the shared resolver too — May 2026
   {
     title: "Employer postings — fix: view-as-HR seeding now appears (the one surface still on the old company resolution)",

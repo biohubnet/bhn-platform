@@ -80,11 +80,19 @@ export async function ensureAdminPreviewCompany(
   userId: string,
   fallbackName?: string | null,
 ): Promise<string> {
-  // Find a Company where this admin is the sole member — that's the
-  // admin's existing private preview, if any. We sort by joinedAt asc
-  // so if the admin somehow has multiple sole-member companies (rare
-  // — e.g. they used to be an owner, the other member left), we
-  // return the oldest one consistently.
+  // Find a Company where this admin is the sole *real* member — that's
+  // the admin's existing private preview, if any. We sort by joinedAt
+  // asc so if the admin has multiple qualifying companies we return
+  // the oldest one consistently.
+  //
+  // CRITICAL: "sole member" ignores DEMO accounts. The team demo
+  // seeder adds Manager/Generalist/Viewer demo members (accountKind
+  // = "demo") to this very company — so a naive "no other members"
+  // check would disqualify the preview company the instant you seed a
+  // demo team, and the next resolve would spin up a fresh EMPTY
+  // company (roster empty, no Clear button, "can't seed"). By
+  // counting only NON-demo other members, a company stays the admin's
+  // preview no matter how many demo teammates live in it.
   const myMemberships = await prisma.companyMember.findMany({
     where: { userId },
     select: { companyId: true },
@@ -92,10 +100,14 @@ export async function ensureAdminPreviewCompany(
   });
 
   for (const m of myMemberships) {
-    const others = await prisma.companyMember.count({
-      where: { companyId: m.companyId, userId: { not: userId } },
+    const realOthers = await prisma.companyMember.count({
+      where: {
+        companyId: m.companyId,
+        userId: { not: userId },
+        user: { accountKind: { not: "demo" } },
+      },
     });
-    if (others === 0) return m.companyId;
+    if (realOthers === 0) return m.companyId;
   }
 
   // No private preview yet — make one. The Company.name is required
