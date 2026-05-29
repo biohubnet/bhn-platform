@@ -243,7 +243,7 @@ export function MasterResumeBanner({ resumeId: resumeIdProp }: BannerProps = {})
                 )}
                 <Link
                   href="/profile/master"
-                  className="group inline-flex items-start gap-3 px-3.5 py-3 rounded-xl bg-card-solid ring-1 ring-inset ring-line hover:ring-brand-300 hover:bg-brand-50/60 transition-colors"
+                  className="group inline-flex items-start gap-3 px-3.5 py-3 rounded-lg ring-1 ring-inset ring-line/60 hover:ring-brand-300 hover:bg-brand-50/50 transition-colors"
                 >
                   <span className="shrink-0 inline-flex w-9 h-9 rounded-lg bg-elevated text-brand-700 items-center justify-center">
                     <Library size={15} />
@@ -279,7 +279,7 @@ export function MasterResumeBanner({ resumeId: resumeIdProp }: BannerProps = {})
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-3">
               <Link
                 href="/profile/master"
-                className="group inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid ring-1 ring-inset ring-line hover:ring-brand-300 hover:bg-brand-50/60 transition-colors"
+                className="group inline-flex items-start gap-2.5 px-3 py-2.5 rounded-lg ring-1 ring-inset ring-line/60 hover:ring-brand-300 hover:bg-brand-50/50 transition-colors"
               >
                 <ArrowUpRight size={13} className="text-brand-700 mt-0.5 shrink-0" />
                 <span className="min-w-0">
@@ -293,7 +293,7 @@ export function MasterResumeBanner({ resumeId: resumeIdProp }: BannerProps = {})
                   window.dispatchEvent(new CustomEvent(OPEN_MASTER_DRAWER_EVENT));
                 }}
                 title="Open the master library in a right-side drawer — drag a bullet onto any entry to insert it, or use Send to → from each card"
-                className="group inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid ring-1 ring-inset ring-line hover:ring-brand-300 hover:bg-brand-50/60 transition-colors text-left"
+                className="group inline-flex items-start gap-2.5 px-3 py-2.5 rounded-lg ring-1 ring-inset ring-line/60 hover:ring-brand-300 hover:bg-brand-50/50 transition-colors text-left"
               >
                 <ArrowDown size={13} className="text-brand-700 mt-0.5 shrink-0" />
                 <span className="min-w-0">
@@ -305,7 +305,7 @@ export function MasterResumeBanner({ resumeId: resumeIdProp }: BannerProps = {})
                 <button
                   type="button"
                   onClick={() => setTailorOpen(true)}
-                  className="group inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid ring-1 ring-inset ring-line hover:ring-brand-300 hover:bg-brand-50/60 transition-colors text-left"
+                  className="group inline-flex items-start gap-2.5 px-3 py-2.5 rounded-lg ring-1 ring-inset ring-line/60 hover:ring-brand-300 hover:bg-brand-50/50 transition-colors text-left"
                   title={`Pick the 12 best bullets from your ${stats.bulletCount}-bullet library + light-rewrite to match the role.`}
                 >
                   <Wand2 size={13} className="text-brand-700 mt-0.5 shrink-0" />
@@ -328,7 +328,7 @@ export function MasterResumeBanner({ resumeId: resumeIdProp }: BannerProps = {})
               )}
               <div
                 title="Once you edit a bullet that came from your master library, a chip appears beneath it offering to push the improved wording back to the master."
-                className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-card-solid ring-1 ring-inset ring-line text-fg"
+                className="inline-flex items-start gap-2.5 px-3 py-2.5 rounded-lg ring-1 ring-inset ring-line/60 text-fg"
               >
                 <ArrowUp size={13} className="text-brand-700 mt-0.5 shrink-0" />
                 <span className="min-w-0">

@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Resume builder — minimalist, lines-not-boxes — May 2026
   {
     title: "Resume builder — a cleaner, less boxy editor",
-    body: "The editor was a stack of heavy bordered cards. It's now minimalist: the header and each section are open blocks marked by a thin left rule (the section ones in their type colour) instead of a full box; the resume picker is a simple underlined row; and the Tailor / Versions / Preview action tiles are flattened to light outlines. The gradients stay where they earn their keep — the page hero and the master-resume bar — so the page reads as clean lines + a couple of rich accents rather than a grid of boxes.",
+    body: "The editor was a stack of heavy bordered cards. It's now minimalist: the header and each section are open blocks marked by a thin left rule (the section ones in their type colour) instead of a full box; the resume picker is a simple underlined row; and the Tailor / Versions / Preview action tiles are flattened to light outlines. Header fields are now underline-style inputs rather than boxed fields, and the master-resume bar's action tiles (Open library / Pull from master / AI tailor / Promote) are flattened to match. The gradients stay where they earn their keep — the page hero and the master-resume bar — so the page reads as clean lines + a couple of rich accents rather than a grid of boxes.",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,

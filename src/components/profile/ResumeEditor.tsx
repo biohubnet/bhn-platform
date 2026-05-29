@@ -1751,14 +1751,14 @@ function Field({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             rows={3}
-            className="w-full bg-card border border-line rounded-md px-2 py-1.5 text-sm focus:outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+            className="w-full bg-transparent border-b border-line rounded-none px-0 py-1.5 text-sm focus:outline-none focus:border-brand-400 transition-colors"
           />
         ) : (
           <input
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full bg-card border border-line rounded-md px-2 py-1.5 text-sm focus:outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+            className="w-full bg-transparent border-b border-line rounded-none px-0 py-1.5 text-sm focus:outline-none focus:border-brand-400 transition-colors"
           />
         )}
       </div>
