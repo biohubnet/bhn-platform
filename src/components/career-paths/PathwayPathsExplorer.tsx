@@ -1377,6 +1377,7 @@ function BranchModal({
               color: t.track.accent,
               strength: t.cl.strength,
               arcOffset: layout.targets[i].arcOffset,
+              forceHorizontal: !layout.targets[i].center,
             }))}
             sourceAccent={source.track.accent}
             active={linesActive}
@@ -1609,6 +1610,9 @@ function BranchLines({
     color: string;
     /** 0..1 branch likelihood — drives line saturation, width + glow. */
     strength: number;
+    /** Force source-edge (left/right) anchoring. Centre-lane cards pass
+     *  false so their line drops straight down from the source's bottom. */
+    forceHorizontal: boolean;
     /** Vertical deflection for the bezier control points so this
      *  target's line arcs around any near-column targets. Computed
      *  by computeFocusLayout based on the target's column/row. */
@@ -1639,7 +1643,7 @@ function BranchLines({
         // line leaves the source's right edge and enters the target's
         // left edge: a clean fan from one origin that never crosses a
         // card or another line.
-        const { d, srcX, srcY, tgtX, tgtY } = bezierBetween(srcRect, tgt, 0, true);
+        const { d, srcX, srcY, tgtX, tgtY } = bezierBetween(srcRect, tgt, 0, t.forceHorizontal);
         // Length estimate for the dash animation; 1.4× chord covers
         // the extra arc from the bezier curvature.
         const length = Math.hypot(tgtX - srcX, tgtY - srcY) * 1.4;
@@ -1752,7 +1756,7 @@ interface FocusedRect { left: number; top: number; width: number; height: number
  *  arc UP over the near column. Always 0 for col=0 targets and for
  *  single-column layouts where lines fan from one source point and
  *  geometrically cannot cross each other. */
-interface FocusedTargetRect extends FocusedRect { arcOffset?: number }
+interface FocusedTargetRect extends FocusedRect { arcOffset?: number; center?: boolean }
 
 function computeFocusLayout(
   numTargets: number,
@@ -1862,47 +1866,66 @@ function computeFocusLayout(
     const tgtGap    = Math.floor(TGT_GAP * scale);
     const tgtHeights = tgtHeightsRaw.map((h) => Math.floor(h * scale));
 
-    // Greedy HEIGHT-balanced split: each destination (strongest first)
-    // joins whichever column is currently shorter, so the taller column
-    // — which is what drives the scroll — is kept as short as possible.
-    const rightIdx: number[] = [];
-    const leftIdx: number[] = [];
-    let rH = 0;
-    let lH = 0;
+    // Greedy 3-LANE height balance. Lanes: a LEFT column, a RIGHT
+    // column, and the SOURCE's own column — where ONE destination can be
+    // tucked into the empty space directly below the source (a 2nd card
+    // there would make the source's straight-down line cross the 1st).
+    // The centre lane starts "pre-loaded" with the source's height (the
+    // source sits atop it). Each destination joins the shortest lane
+    // with spare capacity — so a 5th option fills the centre gap instead
+    // of pushing a side column off-screen.
+    const lanes: { h: number; cap: number; idx: number[] }[] = [
+      { h: 0,             cap: Infinity,               idx: [] }, // 0 = right
+      { h: 0,             cap: hasLeft ? Infinity : 0, idx: [] }, // 1 = left
+      { h: srcH + tgtGap, cap: 1,                      idx: [] }, // 2 = centre (below source)
+    ];
     for (let i = 0; i < numTargets; i++) {
-      if (!hasLeft || rH <= lH) {
-        rightIdx.push(i);
-        rH += tgtHeights[i] + tgtGap;
-      } else {
-        leftIdx.push(i);
-        lH += tgtHeights[i] + tgtGap;
-      }
+      const open = lanes.filter((l) => l.idx.length < l.cap);
+      const lane = open.reduce((a, b) => (b.h < a.h ? b : a));
+      lane.idx.push(i);
+      lane.h += tgtHeights[i] + tgtGap;
     }
+    const rightLane = lanes[0].idx;
+    const leftLane = lanes[1].idx;
+    const centerLane = lanes[2].idx;
 
-    const colH = (idxs: number[]) =>
+    const stackH = (idxs: number[]) =>
       idxs.reduce((s, i) => s + tgtHeights[i], 0) + Math.max(0, idxs.length - 1) * tgtGap;
-    const blockH = Math.max(srcH, colH(rightIdx), colH(leftIdx));
+    const blockH = Math.max(
+      srcH,
+      stackH(leftLane),
+      stackH(rightLane),
+      srcH + (centerLane.length ? tgtGap + stackH(centerLane) : 0),
+    );
 
     const scaledBlockW = (hasLeft ? tgtW + srcTgtGap : 0) + srcW + srcTgtGap + tgtW;
     const blockLeft = Math.floor((viewport.w - scaledBlockW) / 2);
     const blockTop  = TOP_PAD + Math.max(0, Math.floor((availH - blockH) / 2));
 
-    // Source top-aligned + centred between the columns: it stays visible
-    // on open and lines fan symmetrically out to both sides.
+    // Source top-aligned + centred between the side columns; it stays
+    // visible on open and lines fan out from it to all three lanes.
     const srcLeft = blockLeft + (hasLeft ? tgtW + srcTgtGap : 0);
     const source: FocusedRect = { left: srcLeft, top: blockTop, width: srcW, height: srcH };
 
-    const rightLeft = srcLeft + srcW + srcTgtGap;
-    const targets: Array<FocusedRect & { arcOffset?: number }> = new Array(numTargets);
+    const rightLaneLeft = srcLeft + srcW + srcTgtGap;
+    const centerLeft = srcLeft + Math.floor((srcW - tgtW) / 2);
+    const targets: FocusedTargetRect[] = new Array(numTargets);
     let yR = blockTop;
-    for (const i of rightIdx) {
-      targets[i] = { left: rightLeft, top: yR, width: tgtW, height: tgtHeights[i], arcOffset: 0 };
+    for (const i of rightLane) {
+      targets[i] = { left: rightLaneLeft, top: yR, width: tgtW, height: tgtHeights[i], arcOffset: 0 };
       yR += tgtHeights[i] + tgtGap;
     }
     let yL = blockTop;
-    for (const i of leftIdx) {
+    for (const i of leftLane) {
       targets[i] = { left: blockLeft, top: yL, width: tgtW, height: tgtHeights[i], arcOffset: 0 };
       yL += tgtHeights[i] + tgtGap;
+    }
+    // Centre destination(s) sit directly below the source — their line
+    // drops straight down from the source's bottom edge.
+    let yC = blockTop + srcH + tgtGap;
+    for (const i of centerLane) {
+      targets[i] = { left: centerLeft, top: yC, width: tgtW, height: tgtHeights[i], arcOffset: 0, center: true };
+      yC += tgtHeights[i] + tgtGap;
     }
 
     return { source, targets };
