@@ -814,6 +814,19 @@ button[data-section-tone="hr-preview"] {
   --color-brand-800: var(--brand-800);
   --color-brand-900: var(--brand-900);
 
+  /* Base brand alias. Tailwind v4 generates `bg-brand` / `text-brand` /
+   * `ring-brand` / `border-brand` (and their /opacity variants) ONLY
+   * from a `--color-brand` key — the numbered ramp (`--color-brand-600`
+   * etc.) does NOT imply a bare `brand`. The v3→v4 migration ported the
+   * ramp but dropped this DEFAULT, leaving ~38 bare-`brand` usages inert
+   * across the app: apply buttons (`bg-brand text-white`) rendered with
+   * no background, links/rings lost their accent, and the hiring-
+   * analytics velocity bars had an invisible fill. Bind it to
+   * `--brand-600`, the canonical primary (≈9:1 with white → AAA on
+   * light; a clearly-visible mid-tone on dark themes). Themed, since
+   * each theme defines its own `--brand-600`. */
+  --color-brand:    var(--brand-600);
+
   --color-page:     var(--bg);
   --color-card:     var(--card);
   --color-card-solid: var(--card-solid);

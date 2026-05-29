@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── App-wide — restored the brand accent colour — May 2026
+  {
+    title: "App-wide — fix: the brand accent is back on buttons, links & charts (a Tailwind v4 migration had quietly dropped the base brand colour)",
+    body: "Spotted while investigating why the hiring-analytics \"avg days per stage\" bars were invisible: the bar fill used the `bg-brand` utility, which was rendering with **no colour at all**.\n\n**Root cause — a migration gap.** When the app moved to Tailwind v4 (CSS-first theming), the brand colour *ramp* (`--color-brand-50` … `--color-brand-900`) was carried over, but the **base** `--color-brand` key was not. In Tailwind v4 the bare utilities `bg-brand` / `text-brand` / `ring-brand` / `border-brand` (and their `/opacity` variants like `bg-brand/10`) are generated **only** from `--color-brand` — the numbered ramp doesn't imply a bare `brand`. So ~38 spots across the app that used bare `brand` were silently inert: apply buttons (`bg-brand text-white`) rendered with no background, accent links and focus rings lost their colour, and the analytics velocity bars had an invisible fill (which is what made them look like empty lines).\n\n**Fix.** Added `--color-brand: var(--brand-600)` to the theme — the canonical primary shade (≈9:1 contrast with white → AAA on light themes, and a clearly-visible mid-tone on dark themes). Because it's bound to each theme's own `--brand-600`, the accent now tracks the active theme everywhere. This restores branding in one place across the public job board's apply buttons, the scorecard/templates actions, accent links, and focus states — no per-component edits needed.\n\n**Analytics bars, specifically.** On top of the colour fix, the velocity chart now uses a theme-adaptive track (`bg-fg/10`, visible on both light and dark themes — the old `bg-elevated` track was nearly invisible on dark themes like Voltage) and a vivid `brand-500` fill with a 2px minimum width so even the shortest stage (\"New\", ~7% of the longest) shows a sliver. The bars are now clearly readable on every theme.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Employer analytics — realistic demo funnel — May 2026
   {
     title: "Hiring analytics — demo seeding now produces a believable funnel (volume, real hires, per-posting variance) instead of a flat 1-per-stage line",

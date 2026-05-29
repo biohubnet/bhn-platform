@@ -277,9 +277,9 @@ export default async function EmployerAnalyticsPage() {
             {velocityStages.map((v) => (
               <div key={v.stage} className="flex items-center gap-3">
                 <span className="text-xs text-muted w-24 shrink-0 text-right">{v.label}</span>
-                <div className="flex-1 h-2 bg-elevated rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-fg/10 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-brand rounded-full transition-all"
+                    className="h-full bg-brand-500 rounded-full transition-all min-w-[2px]"
                     style={{ width: `${Math.round((v.avgDays / maxDays) * 100)}%` }}
                   />
                 </div>
