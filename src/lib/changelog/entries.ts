@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Showcase form — theme-immune high-contrast fields — May 2026
+  {
+    title: "Showcase (Regulatory Affairs) — form fields are now high-contrast on every theme",
+    body: "The public submission form's labels, input text, placeholders, and field outlines were wired to theme tokens, and the input borders were an 8%-opacity hairline — so on some themes and devices the whole form read washed-out, even though it technically cleared the contrast threshold. The form now uses fixed dark text (labels ~14.7:1, input text ~17:1, helper ~7.6:1) and clearly-visible borders that don't depend on the viewer's theme at all, the same theme-immune approach the error message already used. Strong, consistent contrast for every visitor.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── AutoPipette — AI-written stuck help — May 2026
   {
     title: "AutoPipette — stuck-help now reads your intent instead of saying \"refresh the page\"",

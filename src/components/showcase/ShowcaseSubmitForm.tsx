@@ -97,8 +97,8 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
     return (
       <div className="flex flex-col items-center text-center py-4">
         <CheckCircle2 className="h-12 w-12 mb-3" style={{ color: "#67b094" }} />
-        <h3 className="text-[18px] font-semibold text-fg">Submitted — thank you.</h3>
-        <p className="mt-2 text-[13px] text-fg-muted max-w-sm">
+        <h3 className="text-[18px] font-semibold text-[#111827]">Submitted — thank you.</h3>
+        <p className="mt-2 text-[13px] text-[#475569] max-w-sm">
           We&apos;ll review your entry and you&apos;ll see yourself on the showcase shortly. If anything looks off, the team will reach out.
         </p>
         <button
@@ -110,7 +110,7 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
             setStatus("idle");
           }}
           className="mt-5 text-[12px] font-semibold underline"
-          style={{ color: "#0e7da3" }}
+          style={{ color: "#0b6f90" }}
         >
           Submit another
         </button>
@@ -124,7 +124,7 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Name */}
       <div>
-        <label className="block text-[11px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-1">
+        <label className="block text-[11px] uppercase tracking-[0.16em] font-bold text-[#1f2937] mb-1">
           Your name
         </label>
         <input
@@ -136,13 +136,13 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
           autoComplete="name"
           placeholder="e.g. Priya Iyer"
           disabled={submitting}
-          className="w-full px-3 py-2 rounded-lg border border-line bg-white text-[14px] text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-brand-400 disabled:opacity-50"
+          className="w-full px-3 py-2 rounded-lg border border-[#cbd5e1] bg-white text-[14px] text-[#111827] placeholder:text-[#5b6470] focus:outline-none focus:ring-2 focus:ring-[#0b6f90] disabled:opacity-50"
         />
       </div>
 
       {/* LinkedIn */}
       <div>
-        <label className="block text-[11px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-1">
+        <label className="block text-[11px] uppercase tracking-[0.16em] font-bold text-[#1f2937] mb-1">
           LinkedIn handle
         </label>
         <input
@@ -153,16 +153,16 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
           maxLength={200}
           placeholder="e.g. priya-iyer-1234 or linkedin.com/in/priya-iyer-1234"
           disabled={submitting}
-          className="w-full px-3 py-2 rounded-lg border border-line bg-white text-[14px] text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-brand-400 disabled:opacity-50"
+          className="w-full px-3 py-2 rounded-lg border border-[#cbd5e1] bg-white text-[14px] text-[#111827] placeholder:text-[#5b6470] focus:outline-none focus:ring-2 focus:ring-[#0b6f90] disabled:opacity-50"
         />
-        <p className="mt-1 text-[11px] text-fg-subtle">
+        <p className="mt-1 text-[11px] text-[#475569]">
           Just the slug works — we&apos;ll fill in the rest.
         </p>
       </div>
 
       {/* Photo */}
       <div>
-        <label className="block text-[11px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-1">
+        <label className="block text-[11px] uppercase tracking-[0.16em] font-bold text-[#1f2937] mb-1">
           Headshot
         </label>
         <div className="flex items-start gap-4">
@@ -170,8 +170,8 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
           <div
             className="shrink-0 w-24 h-24 rounded-full overflow-hidden border-2 flex items-center justify-center"
             style={{
-              borderColor: photoPreview ? "#67b094" : "var(--line)",
-              backgroundColor: photoPreview ? "transparent" : "var(--elevated)",
+              borderColor: photoPreview ? "#67b094" : "#cbd5e1",
+              backgroundColor: photoPreview ? "transparent" : "#f1f5f9",
             }}
           >
             {photoPreview ? (
@@ -182,7 +182,7 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Camera className="h-7 w-7 text-fg-subtle" />
+              <Camera className="h-7 w-7 text-[#64748b]" />
             )}
           </div>
 
@@ -200,17 +200,17 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-line bg-white text-[12px] font-semibold text-fg hover:bg-elevated disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#cbd5e1] bg-white text-[12px] font-semibold text-[#1f2937] hover:bg-[#f1f5f9] disabled:opacity-50"
             >
               <Upload size={12} />
               {photoFile ? "Choose a different photo" : "Choose photo"}
             </button>
             {photoFile && (
-              <p className="mt-1 text-[11px] text-fg-subtle truncate">
+              <p className="mt-1 text-[11px] text-[#475569] truncate">
                 {photoFile.name} — {(photoFile.size / 1024).toFixed(0)} KB
               </p>
             )}
-            <p className="mt-1 text-[11px] text-fg-subtle leading-relaxed">
+            <p className="mt-1 text-[11px] text-[#475569] leading-relaxed">
               JPEG, PNG, or WebP. Under 5 MB. Square photos work best.
             </p>
           </div>
