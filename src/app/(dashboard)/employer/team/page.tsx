@@ -25,7 +25,6 @@ import { PendingInvitesList } from "@/components/employer/team/PendingInvitesLis
 import { JoinRequestsPanel } from "@/components/employer/team/JoinRequestsPanel";
 import { InviteTeammateModal } from "@/components/employer/team/InviteTeammateModal";
 import { TeamDemoSeederBar } from "@/components/employer/team/TeamDemoSeederBar";
-import { DEMO_TEAM_EMAILS } from "@/lib/employer/team-demo";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +120,7 @@ export default async function EmployerTeamPage() {
   const canManage  = meetsMinRole(callerRole, "manager");
   const isOwner    = callerRole === "owner";
 
-  const [members, pendingInvites, joinRequests, company, demoUsers] =
+  const [members, pendingInvites, joinRequests, company] =
     await Promise.all([
       prisma.companyMember.findMany({
         where:   { companyId },
@@ -131,7 +130,7 @@ export default async function EmployerTeamPage() {
           title:      true,
           joinedAt:   true,
           lastSeenAt: true,
-          user: { select: { id: true, name: true, email: true, image: true } },
+          user: { select: { id: true, name: true, email: true, image: true, accountKind: true } },
         },
         orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
       }),
@@ -167,20 +166,12 @@ export default async function EmployerTeamPage() {
         where:  { id: companyId },
         select: { name: true },
       }),
-      // Detect which demo users are already members of this company
-      // so the demo seeder bar shows the right button state.
-      canManage
-        ? prisma.user.findMany({
-            where: { email: { in: DEMO_TEAM_EMAILS } },
-            select: { id: true },
-          })
-        : Promise.resolve([]),
     ]);
 
+  // Demo members are detected by accountKind so the Clear affordance
+  // works across every additive batch (not a fixed email list).
   const hasDemoMembers =
-    canManage &&
-    demoUsers.length > 0 &&
-    members.some((m) => demoUsers.some((d) => d.id === m.user.id));
+    canManage && members.some((m) => m.user.accountKind === "demo");
 
   // Role-count summary — used in the header description.
   const roleCounts = members.reduce<Record<string, number>>((acc, m) => {

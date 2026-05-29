@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Employer team — additive demo seeding — May 2026
+  {
+    title: "Employer team — demo seeding is now additive (each click adds 3 more members; Clear sweeps them all)",
+    body: "Follow-up: after the preview-company fix, demo-team seeding worked once but \"Add again\" did nothing. The seeder used a **fixed pool of 3 emails** and skipped anyone already a member — so repeated clicks were permanent no-ops, unlike the postings seeder which adds a fresh batch each time.\n\n**Now additive.** Each \"Add demo team\" click mints a fresh batch of 3 demo members with **globally-unique per-batch emails** (`demo.team.<token>.<i>@bhn.test`), cycling realistic names from a 12-person pool so a growing roster shows distinct people rather than clones. Click three times → 9 members.\n\n**Clear sweeps everything.** Instead of matching a fixed email list, Clear now removes **all demo-account members** of the company (detected by `accountKind = \"demo\"`), so it catches every batch plus any legacy fixed-email members from before this change. It also cleans up the now-orphaned demo `User` rows (scoped to the `demo.team.` email prefix so real demo applicants are never touched).\n\n**Page detection** switched to match: the Clear button now shows whenever any member is a demo account, not just when the three legacy emails are present.\n\nNet: view-as-HR → /employer/team → Add demo team (adds 3) → Add again (adds 3 more) → Clear demo (removes all). Lands in the same private preview company as the rest of the seeded HR data.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Employer team — fix: preview company survives demo members — May 2026
   {
     title: "Employer team — fix: demo-team seeding now sticks (preview workspace no longer disqualified by its own demo members)",

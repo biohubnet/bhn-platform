@@ -1,25 +1,31 @@
 /**
- * Team demo seeder — employer self-service.
+ * Team demo seeder — employer self-service. ADDITIVE.
  *
- *   POST   /api/employer/demo/team-seed   → add 3 demo members
- *   DELETE /api/employer/demo/team-seed   → remove them
+ *   POST   /api/employer/demo/team-seed   → add a fresh batch of 3 demo members
+ *   DELETE /api/employer/demo/team-seed   → remove ALL demo members
  *
- * Each demo member is a real User row (accountKind = "demo") backed
- * by a well-known email address in the `.test` TLD (which can never
- * receive real mail). The seeder finds-or-creates the User, then
- * creates a CompanyMember row for the caller's company.
+ * Each demo member is a real User row (accountKind = "demo") with a
+ * unique per-batch email in the `.test` TLD (which can never receive
+ * real mail). Because every batch gets fresh emails, repeated "Add
+ * demo team" clicks keep growing the roster instead of no-opping —
+ * matching the postings seeder.
  *
- * Clear identifies them by email — a `{ email: { in: DEMO_TEAM_EMAILS } }`
- * lookup then deletes only the CompanyMember rows for this company,
- * leaving the demo User rows alive so the same accounts can be
- * re-seeded without accumulating duplicate users.
+ * Clear finds demo members by accountKind = "demo" (not a fixed email
+ * list), so it sweeps every batch + any legacy fixed-email members,
+ * deletes their CompanyMember rows, and cleans up the now-orphaned
+ * demo User rows.
  */
 
 import { NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
-import { DEMO_TEAM_MEMBERS, DEMO_TEAM_EMAILS } from "@/lib/employer/team-demo";
+import {
+  DEMO_TEAM_ARCHETYPES,
+  DEMO_TEAM_NAMES,
+  DEMO_TEAM_EMAIL_PREFIX,
+} from "@/lib/employer/team-demo";
 
 export const runtime = "nodejs";
 
@@ -60,39 +66,43 @@ export async function POST() {
     );
   }
 
+  // How many demo members already in this company — used to advance
+  // the name pool so a fresh batch shows different people.
+  const existingDemoCount = await prisma.companyMember.count({
+    where: { companyId, user: { accountKind: "demo" } },
+  });
+
+  // Per-batch token → globally-unique emails → brand-new User rows
+  // every click, so seeding is genuinely additive (no dedup/skip).
+  const batch = randomBytes(4).toString("hex");
+
   let membersCreated = 0;
 
-  for (const spec of DEMO_TEAM_MEMBERS) {
-    // Find or create the demo user (upsert so re-running never piles
-    // up duplicates for the same email).
-    const demoUser = await prisma.user.upsert({
-      where:  { email: spec.email },
-      create: {
-        email:       spec.email,
-        name:        spec.name,
+  for (let i = 0; i < DEMO_TEAM_ARCHETYPES.length; i++) {
+    const arche = DEMO_TEAM_ARCHETYPES[i];
+    const name  = DEMO_TEAM_NAMES[(existingDemoCount + i) % DEMO_TEAM_NAMES.length];
+    const email = `${DEMO_TEAM_EMAIL_PREFIX}${batch}.${i}@bhn.test`;
+
+    const demoUser = await prisma.user.create({
+      data: {
+        email,
+        name,
         role:        "employer",
         accountKind: "demo",
       },
-      update: {},
       select: { id: true },
     });
-
-    // Skip if already a member of this company.
-    const existing = await prisma.companyMember.findUnique({
-      where: { companyId_userId: { companyId, userId: demoUser.id } },
-    });
-    if (existing) continue;
 
     await prisma.companyMember.create({
       data: {
         companyId,
         userId:      demoUser.id,
-        role:        spec.role,
-        title:       spec.title,
+        role:        arche.role,
+        title:       arche.title,
         invitedById: userId,
-        joinedAt:    daysAgo(spec.joinedDaysAgo),
-        lastSeenAt:  spec.lastSeenHoursAgo != null
-          ? hoursAgo(spec.lastSeenHoursAgo)
+        joinedAt:    daysAgo(arche.joinedDaysAgo),
+        lastSeenAt:  arche.lastSeenHoursAgo != null
+          ? hoursAgo(arche.lastSeenHoursAgo)
           : null,
       },
     });
@@ -125,19 +135,39 @@ export async function DELETE() {
     );
   }
 
-  // Resolve demo user IDs from the known email set.
-  const demoUsers = await prisma.user.findMany({
-    where:  { email: { in: DEMO_TEAM_EMAILS } },
-    select: { id: true },
+  // Find every demo-account member of this company (catches all
+  // additive batches AND any legacy fixed-email members).
+  const demoMembers = await prisma.companyMember.findMany({
+    where:  { companyId, user: { accountKind: "demo" } },
+    select: { id: true, userId: true },
   });
-  const demoUserIds = demoUsers.map((u) => u.id);
+  const memberRowIds = demoMembers.map((m) => m.id);
+  const userIds      = demoMembers.map((m) => m.userId);
 
   const { count: deleted } = await prisma.companyMember.deleteMany({
-    where: {
-      companyId,
-      userId: { in: demoUserIds },
-    },
+    where: { id: { in: memberRowIds } },
   });
+
+  // Clean up the now-orphaned demo team users (those no longer a
+  // member of ANY company). Scoped to the demo-team email prefix so
+  // we never touch demo applicants or other demo accounts.
+  if (userIds.length > 0) {
+    const stillMembers = await prisma.companyMember.findMany({
+      where:  { userId: { in: userIds } },
+      select: { userId: true },
+    });
+    const stillSet = new Set(stillMembers.map((s) => s.userId));
+    const orphanIds = userIds.filter((id) => !stillSet.has(id));
+    if (orphanIds.length > 0) {
+      await prisma.user.deleteMany({
+        where: {
+          id:          { in: orphanIds },
+          accountKind: "demo",
+          email:       { startsWith: DEMO_TEAM_EMAIL_PREFIX },
+        },
+      });
+    }
+  }
 
   return NextResponse.json({ ok: true, deleted });
 }
