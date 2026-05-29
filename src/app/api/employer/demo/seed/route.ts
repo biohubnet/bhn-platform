@@ -2,46 +2,85 @@
  * Self-service demo seeder for HR / employer accounts.
  *
  * Lets an employer (or admin viewing /employer) populate their own
- * workspace with throwaway postings + applicants at a mix of
- * pipeline stages so the rest of the surface has something to play
- * with. Symmetric pair:
+ * workspace with throwaway postings + a realistic applicant funnel so
+ * the rest of the surface — especially /employer/analytics — has
+ * believable data to render. Symmetric pair:
  *
  *   POST   /api/employer/demo/seed   → create
  *   DELETE /api/employer/demo/seed   → clear
  *
+ * Why a funnel (not one applicant per stage):
+ *   The old seeder put exactly six applicants on every posting — one
+ *   per stage — so the analytics page showed a flat 1·1·1·1·1 line, no
+ *   hires (→ "0%" offer acceptance), 18 total applicants, and three
+ *   identical postings. Nothing like a real pipeline. Each posting now
+ *   carries an explicit `funnel`: a decaying pyramid (many "new",
+ *   narrowing to a couple of offers and a hire) plus an accumulated
+ *   "rejected" bucket, with per-posting variance — a hot role, a
+ *   standard role, and a niche role. Company-wide that lands at ~88
+ *   applicants, 3 hires, and a 60% offer-acceptance rate, and the
+ *   per-stage velocity bars form a clean ascending curve (new ≈ days,
+ *   hired ≈ weeks) with funnel-shaped sample sizes (n: 28→15→10→6…).
+ *
  * Markings
- *   Every posting created here gets `isDemoSeed = true` so the
- *   clear path can find them by `(createdById, isDemoSeed)` and
+ *   Every posting created here gets `isDemoSeed = true` so the clear
+ *   path can find them by `(createdById | companyId, isDemoSeed)` and
  *   sweep the lot. Cascading FKs on ApplicationStatus / Interview /
  *   Offer mean we never need to mark those rows individually.
  *
  * Applicants
- *   We find or create a small pool of demo trainees
- *   (accountKind = "demo", role = "trainee") and reuse them across
- *   postings. Demo users have no demoExpiresAt so the phantom
- *   sweeper leaves them alone; the clear path here only deletes
- *   postings (so a demo user can survive across multiple seed/clear
- *   cycles — useful for keeping applicant-detail bookmarks alive).
+ *   A pool of 56 distinct demo trainees (accountKind = "demo") with
+ *   index-based unique emails, reused across postings (the same person
+ *   may apply to several roles — realistic, and allowed since the
+ *   ApplicationStatus @@unique is per posting+applicant). Created with
+ *   a single createMany(skipDuplicates) + findMany rather than N
+ *   upserts. Demo users have no demoExpiresAt so the phantom sweeper
+ *   leaves them alone; the clear path deletes only postings, so the
+ *   pool survives seed/clear cycles and is reused on the next seed.
  *
- * Stages
- *   Each posting gets six applicants, one per stage:
- *     1. new
- *     2. reviewing
- *     3. shortlisted
- *     4. phone_screen          (with a proposed Interview row)
- *     5. offer                 (with a sent Offer row)
- *     6. rejected              (with a rejectionReason)
- *   stageEnteredAt is staggered so the dashboard's "stale ≥ 7d"
- *   filter has something to chew on too.
+ * Throughput
+ *   ~88 applications + interviews + offers are written with batched
+ *   createMany calls (one per posting for the bulk stages, one for
+ *   interviews) so the route stays well under the serverless timeout.
+ *   Only the few offer/hired rows are created individually — they need
+ *   their ApplicationStatus id to attach an Offer.
  */
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
 
 export const runtime = "nodejs";
 
-const POSTING_TEMPLATES = [
+// ── Funnel shape ──────────────────────────────────────────────────
+// Currently-in-stage counts (a snapshot). `rejected` accumulates
+// across the cycle and inflates total applicants without showing as a
+// pipeline column. `onsite` feeds velocity + total but (like rejected)
+// isn't a column in the per-posting table — both are intentional.
+
+interface FunnelShape {
+  new:          number;
+  reviewing:    number;
+  shortlisted:  number;
+  phone_screen: number;
+  onsite:       number;
+  offer:        number;
+  hired:        number;
+  rejected:     number;
+}
+
+const POSTING_TEMPLATES: Array<{
+  title:           string;
+  duration:        string;
+  hours:           string;
+  location:        string;
+  type:            string;
+  compensation:    string;
+  keySkills:       string[];
+  positionDetails: string;
+  funnel:          FunnelShape;
+}> = [
   {
     title: "Research Associate Intern",
     duration: "4 months",
@@ -52,6 +91,8 @@ const POSTING_TEMPLATES = [
     keySkills: ["Cell culture", "PCR", "Western blot", "Documentation"],
     positionDetails:
       "Hands-on wet-lab support across cell-line maintenance, sample prep, and assay readouts. Reports to a senior scientist; you'll join a small team focused on early-stage discovery.",
+    // Hot role — high volume, healthy pyramid.
+    funnel: { new: 16, reviewing: 8, shortlisted: 5, phone_screen: 3, onsite: 2, offer: 1, hired: 1, rejected: 11 },
   },
   {
     title: "Regulatory Affairs Coordinator",
@@ -63,6 +104,8 @@ const POSTING_TEMPLATES = [
     keySkills: ["Health Canada filings", "Document control", "Excel", "Quality systems"],
     positionDetails:
       "Support our regulatory team through document prep, submission tracking, and GxP-aligned record-keeping. Good fit for someone who likes neat systems and is patient with detail.",
+    // Standard role — moderate volume.
+    funnel: { new: 8, reviewing: 5, shortlisted: 3, phone_screen: 2, onsite: 1, offer: 1, hired: 1, rejected: 6 },
   },
   {
     title: "Business Development Analyst",
@@ -74,65 +117,99 @@ const POSTING_TEMPLATES = [
     keySkills: ["Market research", "Competitive analysis", "Excel modelling", "Deck design"],
     positionDetails:
       "Market-sizing sprints + competitive landscapes for two new product lines. Heavy on synthesis; light on bureaucracy. Mentored by the BD lead with weekly review of your decks.",
+    // Niche / part-time role — low volume, already filled (a hire, no open offer).
+    funnel: { new: 4, reviewing: 2, shortlisted: 2, phone_screen: 1, onsite: 1, offer: 0, hired: 1, rejected: 3 },
   },
 ];
 
-/** A small pool of realistic-sounding demo applicants. Reused
- *  across postings — the same person might apply to several. */
-const APPLICANT_NAMES = [
-  "Alex Chen",
-  "Priya Patel",
-  "Marcus Williams",
-  "Sara Mendez",
-  "Jordan Kim",
-  "Olivia Brown",
-  "David Lee",
-  "Maya Rodriguez",
+// ── Applicant pool ────────────────────────────────────────────────
+// 8 × 7 = 56 distinct full names (guaranteed unique by cartesian
+// product). The largest single-posting funnel is 47 ≤ 56, so every
+// posting can draw a distinct applicant per slot.
+
+const FIRST_NAMES = ["Alex", "Priya", "Marcus", "Sara", "Jordan", "Olivia", "David", "Maya"];
+const LAST_NAMES  = ["Chen", "Patel", "Williams", "Mendez", "Kim", "Brown", "Lee"];
+
+const APPLICANT_POOL: string[] = [];
+for (const f of FIRST_NAMES) for (const l of LAST_NAMES) APPLICANT_POOL.push(`${f} ${l}`);
+
+const applicantEmail = (i: number) => `demo.seed.applicant.${i}@bhn.test`;
+
+// ── Stage timing ──────────────────────────────────────────────────
+// [minDaysAgo, maxDaysAgo] for stageEnteredAt. Later stages skew
+// further into the past so "avg days in stage" rises down the funnel
+// (a realistic ascending velocity curve) and the dashboard's "stale ≥
+// 7d" filter has rows on both sides. Order matches STAGE_ORDER on the
+// analytics page.
+
+const STAGE_DAY_RANGE: Record<string, [number, number]> = {
+  new:          [0, 4],
+  reviewing:    [3, 8],
+  shortlisted:  [6, 13],
+  phone_screen: [9, 17],
+  onsite:       [13, 22],
+  offer:        [16, 26],
+  hired:        [22, 34],
+  rejected:     [5, 28], // wide; excluded from velocity (not in STAGE_ORDER)
+};
+
+// Order we walk the funnel in. The per-posting applicant cursor
+// advances through this list, so every slot gets a distinct applicant.
+const FUNNEL_ORDER: (keyof FunnelShape)[] = [
+  "new", "reviewing", "shortlisted", "phone_screen", "onsite", "offer", "hired", "rejected",
 ];
 
-const STAGES: { status: string; daysAgo: number }[] = [
-  { status: "new",            daysAgo: 1  },
-  { status: "reviewing",      daysAgo: 4  },
-  { status: "shortlisted",    daysAgo: 8  }, // crosses the 7-day stale threshold
-  { status: "phone_screen",   daysAgo: 12 },
-  { status: "offer",          daysAgo: 5  },
-  { status: "rejected",       daysAgo: 14 },
+const COVER_LETTER_VARIANTS = [
+  (skill: string) =>
+    `Hi, thanks for considering me. I've been studying ${skill.toLowerCase()} for the last two semesters and would love to bring that into your team.`,
+  (skill: string) =>
+    `I'm drawn to this role because it leans on ${skill.toLowerCase()} — something I've spent a co-op term and a capstone project getting hands-on with.`,
+  (skill: string) =>
+    `My coursework and lab time have centred on ${skill.toLowerCase()}, and I'm keen to apply it somewhere the work actually ships.`,
 ];
 
-function emailFor(name: string): string {
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z\s]/g, "")
-    .replace(/\s+/g, ".")
-    .slice(0, 32);
-  return `demo.${slug}@bhn.test`;
-}
+const REJECTION_REASONS = [
+  "Strong on paper, but we moved forward with candidates who had more direct bench time.",
+  "Filled this seat from another shortlist. Encouraged to reapply for future openings.",
+  "Good conversation — timing and start-date constraints didn't line up on our side.",
+  "Close call; the panel leaned toward a candidate with adjacent regulatory experience.",
+];
 
 function daysAgo(n: number): Date {
   return new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 }
 
-async function ensureDemoApplicants(count: number): Promise<{ id: string; name: string; email: string }[]> {
-  const out: { id: string; name: string; email: string }[] = [];
-  for (let i = 0; i < count; i++) {
-    const name = APPLICANT_NAMES[i % APPLICANT_NAMES.length];
-    const email = emailFor(name);
-    // Upsert so re-running the seeder reuses the same throwaway
-    // user instead of piling up duplicates.
-    const u = await prisma.user.upsert({
-      where: { email },
-      create: {
-        email,
-        name,
-        role: "trainee",
-        accountKind: "demo",
-      },
-      update: {},
-      select: { id: true, name: true, email: true },
-    });
-    out.push({ id: u.id, name: u.name ?? name, email: u.email });
-  }
-  return out;
+/** A random Date within a stage's [min,max] days-ago window. */
+function randDaysAgo(stage: keyof FunnelShape): Date {
+  const [lo, hi] = STAGE_DAY_RANGE[stage];
+  const d = lo + Math.random() * (hi - lo);
+  return new Date(Date.now() - d * 86_400_000);
+}
+
+/** Create (or reuse) the 56-person demo applicant pool, returned in
+ *  index order so per-posting assignment is stable. */
+async function ensureDemoApplicants(): Promise<{ id: string; name: string }[]> {
+  await prisma.user.createMany({
+    data: APPLICANT_POOL.map((name, i) => ({
+      email:       applicantEmail(i),
+      name,
+      role:        "trainee",
+      accountKind: "demo",
+    })),
+    skipDuplicates: true,
+  });
+
+  const emails = APPLICANT_POOL.map((_, i) => applicantEmail(i));
+  const rows = await prisma.user.findMany({
+    where:  { email: { in: emails } },
+    select: { id: true, name: true, email: true },
+  });
+  const byEmail = new Map(rows.map((r) => [r.email, r]));
+
+  return APPLICANT_POOL.map((name, i) => {
+    const r = byEmail.get(applicantEmail(i));
+    return { id: r?.id ?? "", name: r?.name ?? name };
+  });
 }
 
 export async function POST() {
@@ -163,8 +240,10 @@ export async function POST() {
   const realRole = (session.user as { realRole?: string }).realRole ?? role;
   const activeCompanyId = await resolveWorkspaceCompanyId(userId, realRole).catch(() => null);
 
-  // 8 demo applicants → enough variety across 3 postings.
-  const applicants = await ensureDemoApplicants(APPLICANT_NAMES.length);
+  const applicants = await ensureDemoApplicants();
+  if (applicants.some((a) => !a.id)) {
+    return NextResponse.json({ error: "Failed to provision demo applicants" }, { status: 500 });
+  }
 
   let postingsCreated = 0;
   let applicationsCreated = 0;
@@ -173,9 +252,8 @@ export async function POST() {
 
   for (let i = 0; i < POSTING_TEMPLATES.length; i++) {
     const tpl = POSTING_TEMPLATES[i];
-    // Stagger created-at slightly so postings don't all share the
-    // exact same timestamp.
-    const createdAt = daysAgo(20 - i * 3);
+
+    // Stagger created-at so postings don't share a timestamp.
     const posting = await prisma.internshipPosting.create({
       data: {
         isDemoSeed: true,
@@ -192,91 +270,129 @@ export async function POST() {
         status: "active",
         deadline: daysAgo(-21), // 21 days in the future
         createdById: userId,
-        // Stamp the active company so the company-scoped read filter
-        // on /employer/postings returns these rows. Null when the
-        // caller has no company (read path then uses createdById).
         companyId: activeCompanyId,
-        createdAt,
+        createdAt: daysAgo(40 - i * 6), // older postings have deeper funnels
       },
       select: { id: true },
     });
     postingsCreated++;
 
-    // Pick a distinct applicant per stage for this posting. Cycle
-    // through the pool with an offset so each posting gets a
-    // different mix.
-    for (let s = 0; s < STAGES.length; s++) {
-      const stage = STAGES[s];
-      const applicant = applicants[(s + i * 2) % applicants.length];
-      const stageEnteredAt = daysAgo(stage.daysAgo);
+    // Walk the funnel, handing each slot the NEXT applicant from the
+    // pool (offset per posting so different roles draw overlapping-but-
+    // shifted people — the same applicant can appear in two postings).
+    let cursor = i * 17;
+    const next = () => applicants[cursor++ % applicants.length];
 
+    const bulkApps: Prisma.ApplicationStatusCreateManyInput[] = [];
+    const interviews: Prisma.InterviewCreateManyInput[] = [];
+    const offerSlots: { applicantId: string; name: string; kind: "offer" | "hired"; enteredAt: Date }[] = [];
+
+    let coverIdx = 0;
+    let rejIdx = 0;
+
+    for (const stage of FUNNEL_ORDER) {
+      const count = tpl.funnel[stage];
+      for (let k = 0; k < count; k++) {
+        const a = next();
+        const enteredAt = randDaysAgo(stage);
+
+        if (stage === "offer" || stage === "hired") {
+          // Needs its ApplicationStatus id to attach an Offer — created
+          // individually below.
+          offerSlots.push({ applicantId: a.id, name: a.name, kind: stage, enteredAt });
+          continue;
+        }
+
+        bulkApps.push({
+          postingId:   posting.id,
+          applicantId: a.id,
+          status:      stage,
+          stageEnteredAt: enteredAt,
+          coverLetter: COVER_LETTER_VARIANTS[coverIdx++ % COVER_LETTER_VARIANTS.length](tpl.keySkills[0]),
+          rejectionReason:
+            stage === "rejected" ? REJECTION_REASONS[rejIdx++ % REJECTION_REASONS.length] : null,
+        });
+
+        // Interview rows for the two interviewing stages (feeds the
+        // calendar + applicant detail; not read by analytics).
+        if (stage === "phone_screen") {
+          interviews.push({
+            postingId: posting.id,
+            applicantId: a.id,
+            scheduledById: userId,
+            status: "proposed",
+            format: "phone",
+            proposedSlots: [daysAgo(-2).toISOString(), daysAgo(-4).toISOString(), daysAgo(-6).toISOString()],
+            notes: "Auto-seeded for demo. 30-min screen with the hiring manager.",
+          });
+        } else if (stage === "onsite") {
+          interviews.push({
+            postingId: posting.id,
+            applicantId: a.id,
+            scheduledById: userId,
+            status: "accepted",
+            format: "onsite",
+            proposedSlots: [daysAgo(-3).toISOString(), daysAgo(-5).toISOString()],
+            acceptedSlot: daysAgo(-3),
+            location: tpl.location,
+            notes: "Auto-seeded for demo. On-site loop: 3× 45-min panels + lab tour.",
+          });
+        }
+      }
+    }
+
+    // Bulk write the simple stages + interviews for this posting.
+    if (bulkApps.length) {
+      await prisma.applicationStatus.createMany({ data: bulkApps });
+      applicationsCreated += bulkApps.length;
+    }
+    if (interviews.length) {
+      await prisma.interview.createMany({ data: interviews });
+      interviewsCreated += interviews.length;
+    }
+
+    // Offer / hired rows — individual create to capture the
+    // ApplicationStatus id, then attach the Offer.
+    for (const slot of offerSlots) {
+      const accepted = slot.kind === "hired";
       const appStatus = await prisma.applicationStatus.create({
         data: {
           postingId: posting.id,
-          applicantId: applicant.id,
-          status: stage.status,
-          stageEnteredAt,
-          coverLetter:
-            "Hi, thanks for considering me. I've been studying " +
-            tpl.keySkills[0].toLowerCase() +
-            " for the last two semesters and would love to bring that into your team.",
-          rejectionReason:
-            stage.status === "rejected"
-              ? "Strong fit on skills, but we filled this seat from another shortlist. Encourage you to reapply for future openings."
-              : null,
+          applicantId: slot.applicantId,
+          status: slot.kind, // "offer" or "hired"
+          stageEnteredAt: slot.enteredAt,
+          coverLetter: COVER_LETTER_VARIANTS[coverIdx++ % COVER_LETTER_VARIANTS.length](tpl.keySkills[0]),
         },
         select: { id: true },
       });
       applicationsCreated++;
 
-      // Interview for phone_screen stage.
-      if (stage.status === "phone_screen") {
-        await prisma.interview.create({
-          data: {
-            postingId: posting.id,
-            applicantId: applicant.id,
-            scheduledById: userId,
-            status: "proposed",
-            format: "phone",
-            proposedSlots: [
-              daysAgo(-2).toISOString(),
-              daysAgo(-4).toISOString(),
-              daysAgo(-5).toISOString(),
-            ],
-            notes: "Auto-seeded for demo. 30-min screen with the hiring manager.",
-          },
-        });
-        interviewsCreated++;
-      }
-
-      // Offer for offer stage.
-      if (stage.status === "offer") {
-        await prisma.offer.create({
-          data: {
-            applicationStatusId: appStatus.id,
-            postingId: posting.id,
-            applicantId: applicant.id,
-            createdById: userId,
-            status: "sent",
-            templateKey: "paid_internship",
-            body:
-              `Dear ${applicant.name},\n\n` +
-              `We're thrilled to offer you the **${tpl.title}** position at ${companyName}.\n\n` +
-              `**Compensation:** ${tpl.compensation}\n` +
-              `**Duration:** ${tpl.duration}\n` +
-              `**Location:** ${tpl.location}\n\n` +
-              `Please reply by the deadline below to accept or decline.\n\n` +
-              `Welcome aboard,\n${companyName} hiring team`,
-            compensation: tpl.compensation,
-            startDate: daysAgo(-14),
-            hoursPerWeek: tpl.hours,
-            location: tpl.location,
-            acceptDeadline: daysAgo(-7),
-            sentAt: daysAgo(stage.daysAgo - 1),
-          },
-        });
-        offersCreated++;
-      }
+      await prisma.offer.create({
+        data: {
+          applicationStatusId: appStatus.id,
+          postingId: posting.id,
+          applicantId: slot.applicantId,
+          createdById: userId,
+          status: accepted ? "accepted" : "sent",
+          templateKey: "paid_internship",
+          body:
+            `Dear ${slot.name},\n\n` +
+            `We're thrilled to offer you the **${tpl.title}** position at ${companyName}.\n\n` +
+            `**Compensation:** ${tpl.compensation}\n` +
+            `**Duration:** ${tpl.duration}\n` +
+            `**Location:** ${tpl.location}\n\n` +
+            `Please reply by the deadline below to accept or decline.\n\n` +
+            `Welcome aboard,\n${companyName} hiring team`,
+          compensation: tpl.compensation,
+          startDate: daysAgo(-14),
+          hoursPerWeek: tpl.hours,
+          location: tpl.location,
+          acceptDeadline: accepted ? daysAgo(3) : daysAgo(-7),
+          sentAt: accepted ? daysAgo(18) : daysAgo(3),
+          respondedAt: accepted ? daysAgo(15) : null,
+        },
+      });
+      offersCreated++;
     }
   }
 
@@ -304,7 +420,8 @@ export async function DELETE() {
   // the active companyId (so a teammate's company-scoped demo seeds
   // are also swept, and so seeds created after the companyId fix are
   // caught regardless of who in the company created them). Always
-  // gated by isDemoSeed so real postings are never touched.
+  // gated by isDemoSeed so real postings are never touched. The demo
+  // applicant pool is intentionally left intact (reused next seed).
   const realRole = (session.user as { realRole?: string }).realRole ?? role;
   const activeCompanyId = await resolveWorkspaceCompanyId(userId, realRole).catch(() => null);
   const result = await prisma.internshipPosting.deleteMany({

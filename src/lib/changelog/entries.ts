@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Employer analytics — realistic demo funnel — May 2026
+  {
+    title: "Hiring analytics — demo seeding now produces a believable funnel (volume, real hires, per-posting variance) instead of a flat 1-per-stage line",
+    body: "The demo seeder behind `/employer/analytics` made the charts look fake. It put **exactly six applicants on every posting — one per stage** — so the page showed a flat 1·1·1·1·1 \"pipeline,\" **zero hires** (→ \"0%\" offer acceptance), 18 total applicants, and three **identical** postings. Nothing about it read like a real hiring pipeline.\n\n**Now each posting carries an explicit funnel** — a decaying pyramid (many \"new\" applicants narrowing to a couple of offers and a hire) plus an accumulated \"rejected\" bucket — with **per-posting variance**: a hot role (Research Associate, ~47 applicants), a standard role (Regulatory Affairs, ~27), and a niche part-time role (BD Analyst, ~14, already filled). Company-wide that lands at:\n  • **~88 total applicants** (was 18)\n  • **3 hires** and a **60% offer-acceptance rate** (was 0 / \"0%\")\n  • per-stage **velocity bars that form a clean ascending curve** — \"new\" measured in days, \"hired\" in weeks — with funnel-shaped sample sizes (n ≈ 28 → 15 → 10 → 6 → 4 → 2 → 3) instead of n=1 everywhere.\n\nStage-entry timestamps are spread per applicant within realistic windows (later stages skew further into the past), so \"avg days per stage\" and the \"stale ≥ 7 days\" filter both have honest data. Cover letters and rejection reasons vary across a small pool rather than repeating one line.\n\n**Under the hood:** a 56-person demo applicant pool (distinct names, reused across postings — the same person can apply to several roles) is provisioned with a single batched `createMany`, and the ~88 applications + interviews are written with batched inserts (only the handful of offer/hired rows are created individually, since each needs its application id to attach an Offer). The whole seed stays well under the serverless timeout. Seed/clear semantics are unchanged — Clear still sweeps every demo posting (cascading to its applications, interviews, and offers); the applicant pool is reused on the next seed.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Employer team — realistic demo roster — May 2026
   {
     title: "Employer team — demo seeding now builds a realistic org (distinct people & titles, weighted role mix) instead of three repeated clones",
