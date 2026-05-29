@@ -1414,7 +1414,7 @@ export function ResumeEditor({
       {/* Inline error toast for pull / promote failures. Auto-dismiss
           with a click; never blocks the surface. */}
       {masterPullError && (
-        <div className="fixed left-4 bottom-4 z-50 max-w-sm rounded-lg bg-rose-50 ring-1 ring-rose-200 text-rose-900 text-[12px] px-3 py-2 shadow-lg flex items-start gap-2">
+        <div className="fixed left-4 bottom-20 z-50 max-w-sm rounded-lg bg-rose-50 ring-1 ring-rose-200 text-rose-900 text-[12px] px-3 py-2 shadow-lg flex items-start gap-2">
           <span className="flex-1">{masterPullError}</span>
           <button
             type="button"
@@ -1641,7 +1641,8 @@ function SaveStatus({ saving, version, savedAt }: { saving: boolean; version: nu
 
 /**
  * FloatingSaveStatus — always-visible save badge anchored to the
- * viewport's bottom-right corner.
+ * viewport's bottom-left corner (bottom-right is taken by the global
+ * AutoPipette hint dock + the recovery panel).
  *
  * The inline `SaveStatus` near the top of the editor scrolls away as
  * the user works down a long resume. This floating variant stays
@@ -1701,10 +1702,12 @@ function FloatingSaveStatus({ saving, version, savedAt }: { saving: boolean; ver
     <div
       role="status"
       aria-live="polite"
-      // Bottom-right with safe-area + a bit of breathing room. z-40
-      // keeps it above the editor content but below any modal /
-      // toaster (which run at z-50 in this app).
-      className="fixed z-40 right-4 bottom-4 pb-[env(safe-area-inset-bottom)] pr-[env(safe-area-inset-right)] pointer-events-none"
+      // Bottom-LEFT, deliberately: the global AutoPipette hint dock —
+      // and this editor's own recovery panel — own the bottom-RIGHT
+      // corner (both fixed there), so a bottom-right save badge stacked
+      // on top of them. Living bottom-left keeps it clear of both. z-40
+      // keeps it above editor content but below modals / toasters (z-50).
+      className="fixed z-40 left-4 bottom-4 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pointer-events-none"
     >
       <span
         className={cn(

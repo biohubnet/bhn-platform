@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Resume builder — floating save badge overlap fix — May 2026
+  {
+    title: "Resume builder — the floating “auto-saves” badge no longer overlaps the hint chip",
+    body: "On the resume editor, the always-visible save badge (“Auto-saves / Saving… / Saved · v12”) was pinned to the bottom-right — the same corner as the AutoPipette hint chip — so the two stacked on top of each other. The save badge now lives in the bottom-LEFT, clear of the hint chip and the recovery panel, and the resume error toast tucks just above it.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Resume builder — pull-from-master drag fix — May 2026
   {
     title: "Resume builder — “Pull from master” no longer blurs the resume, and drag works again",
