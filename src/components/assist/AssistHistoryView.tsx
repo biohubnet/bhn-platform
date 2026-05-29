@@ -10,7 +10,7 @@
  *   • Hints shown
  */
 import { useState } from "react";
-import { Loader2, AlertCircle, Trash2, Activity, FileText, Calendar, Sparkles } from "lucide-react";
+import { Loader2, AlertCircle, Trash2, Activity, FileText, Calendar, Sparkles, ChevronDown } from "lucide-react";
 
 interface Props {
   counts: {
@@ -61,6 +61,10 @@ export function AssistHistoryView({ counts, recentEvents, rollups, summaries, hi
   const [wiping, setWiping] = useState(false);
   const [wipeResult, setWipeResult] = useState<{ deleted: typeof counts } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Recent-events list is collapsed to the latest few; expandable.
+  const [showAllEvents, setShowAllEvents] = useState(false);
+  const COLLAPSED_EVENTS = 5;
+  const shownEvents = showAllEvents ? recentEvents : recentEvents.slice(0, COLLAPSED_EVENTS);
 
   async function wipe() {
     if (!confirm("Permanently delete every behaviour signal, rollup, summary, and hint we have on file for you? This can't be undone. Your preferences (consent toggle, sensitivity) are NOT deleted.")) {
@@ -223,11 +227,11 @@ export function AssistHistoryView({ counts, recentEvents, rollups, summaries, hi
         </section>
       )}
 
-      {/* Recent raw events */}
+      {/* Recent raw events — collapsed to the latest few, expandable. */}
       {recentEvents.length > 0 && (
         <section>
           <h2 className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-2">
-            Recent events · last 50
+            Recent events · last {recentEvents.length}
           </h2>
           <div className="rounded-xl border border-line bg-card overflow-x-auto">
             <table className="w-full text-xs">
@@ -240,7 +244,7 @@ export function AssistHistoryView({ counts, recentEvents, rollups, summaries, hi
                 </tr>
               </thead>
               <tbody>
-                {recentEvents.map((e) => (
+                {shownEvents.map((e) => (
                   <tr key={e.id} className="border-t border-line">
                     <td className="px-3 py-2 font-mono text-subtle text-[10px]">{e.ts.slice(11, 19)} · {e.ts.slice(0, 10)}</td>
                     <td className="px-3 py-2 text-fg">{e.kind}</td>
@@ -251,6 +255,22 @@ export function AssistHistoryView({ counts, recentEvents, rollups, summaries, hi
               </tbody>
             </table>
           </div>
+          {recentEvents.length > COLLAPSED_EVENTS && (
+            <button
+              type="button"
+              onClick={() => setShowAllEvents((v) => !v)}
+              aria-expanded={showAllEvents}
+              className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:text-brand-800"
+            >
+              {showAllEvents
+                ? "Show fewer"
+                : `Show all ${recentEvents.length}`}
+              <ChevronDown
+                size={12}
+                className={`transition-transform ${showAllEvents ? "rotate-180" : ""}`}
+              />
+            </button>
+          )}
         </section>
       )}
 

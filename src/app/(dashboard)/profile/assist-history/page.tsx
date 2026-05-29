@@ -15,6 +15,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AssistConsentPanel } from "@/components/assist/AssistConsentPanel";
 import { AssistHistoryView } from "@/components/assist/AssistHistoryView";
+import { AssistFlowChart } from "@/components/assist/AssistFlowChart";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +116,10 @@ export default async function AssistHistoryPage() {
           shownAt: h.shownAt?.toISOString() ?? null,
         }))}
       />
+
+      {/* End-of-page: how the system works, for the user (and any IT /
+          privacy reviewer) reading this trust page top to bottom. */}
+      <AssistFlowChart />
     </div>
   );
 }

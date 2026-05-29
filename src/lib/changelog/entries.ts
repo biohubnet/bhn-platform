@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── AutoPipette history — how-it-works chart + tidier events — May 2026
+  {
+    title: "AutoPipette · my history — added a “how it works” chart and tidied the events list",
+    body: "The AutoPipette history page (Profile › AutoPipette · my history) now ends with a clear, step-by-step flow of how the system works — what's captured, when (and whether) AI is involved, where it's stored and for how long, and the controls that bound it — plus a row of plain-language privacy guarantees. Handy if you (or an IT / privacy reviewer) want the whole data path at a glance. The “Recent events” table is also collapsed to the latest 5 with a one-click “Show all” so the page isn't a wall of rows.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Showcase form — theme-immune high-contrast fields — May 2026
   {
     title: "Showcase (Regulatory Affairs) — form fields are now high-contrast on every theme",
