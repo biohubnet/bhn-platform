@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Employer team — realistic demo roster — May 2026
+  {
+    title: "Employer team — demo seeding now builds a realistic org (distinct people & titles, weighted role mix) instead of three repeated clones",
+    body: "Refinement to the additive team seeder. It was additive (each click added 3 more), but it stamped the **same three titles** every batch — HR Manager / Talent Coordinator / Dept. Head — just with different names. Seed three times and you got three identical \"HR Managers,\" three \"Talent Coordinators,\" etc., in a perfectly even 1:1:1 role split with identical join/last-seen timestamps. No real talent team looks like that.\n\n**Now each click draws the next distinct people from an ordered 12-person pool.** Every teammate has a unique name **and** title, and titles don't repeat until the pool is exhausted (then it wraps — fine for a demo). The pool is ordered so the roster grows believably:\n  • **Click 1** — Director of Talent (Manager), Senior Recruiter (Generalist), Hiring Manager · Regulatory Affairs (Viewer): a sensible starter team.\n  • **Clicks 2–4** — Technical Recruiter, Talent Coordinator, Recruiting Manager, Sourcing Specialist, Hiring Manager · Quality, University Recruiter, People Ops Partner, VP People, Dept. Head · Clinical Ops.\n\nAcross the full 12 the mix is **3 managers / 6 generalists / 3 viewers** — a realistic talent-org shape (generalist-heavy, a couple of managers, a few view-only hiring managers) that also populates all four role chips (owner = you, the seeder). Titles are life-sciences-flavoured to match BHN. `joinedDaysAgo` descends down the pool so first-added people read as longer-tenured, and `lastSeenAt` varies — some active in the last few hours, some quiet for days, a couple who never logged in — so the roster looks organically grown rather than seeded in identical waves.\n\nStill fully additive (3 per click, globally-unique per-batch emails, no dedup/skip) and Clear still sweeps every demo-account member. Only the *shape* of what gets seeded changed.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Showcase submission form — contrast regression fix — May 2026
   {
     title: "Showcase entry form — fix: text contrast restored (public page now renders in the brand light palette regardless of the visitor's theme)",

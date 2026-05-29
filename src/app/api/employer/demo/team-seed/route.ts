@@ -22,8 +22,8 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
 import {
-  DEMO_TEAM_ARCHETYPES,
-  DEMO_TEAM_NAMES,
+  DEMO_TEAM_POOL,
+  DEMO_TEAM_BATCH_SIZE,
   DEMO_TEAM_EMAIL_PREFIX,
 } from "@/lib/employer/team-demo";
 
@@ -66,8 +66,11 @@ export async function POST() {
     );
   }
 
-  // How many demo members already in this company — used to advance
-  // the name pool so a fresh batch shows different people.
+  // How many demo members already in this company — the offset into the
+  // ordered pool, so each click draws the NEXT distinct people (different
+  // name AND title) rather than repeating the same batch. Batches are
+  // always DEMO_TEAM_BATCH_SIZE, which divides the pool length evenly, so
+  // the offset stays aligned to pool boundaries and wraps predictably.
   const existingDemoCount = await prisma.companyMember.count({
     where: { companyId, user: { accountKind: "demo" } },
   });
@@ -78,15 +81,14 @@ export async function POST() {
 
   let membersCreated = 0;
 
-  for (let i = 0; i < DEMO_TEAM_ARCHETYPES.length; i++) {
-    const arche = DEMO_TEAM_ARCHETYPES[i];
-    const name  = DEMO_TEAM_NAMES[(existingDemoCount + i) % DEMO_TEAM_NAMES.length];
-    const email = `${DEMO_TEAM_EMAIL_PREFIX}${batch}.${i}@bhn.test`;
+  for (let i = 0; i < DEMO_TEAM_BATCH_SIZE; i++) {
+    const person = DEMO_TEAM_POOL[(existingDemoCount + i) % DEMO_TEAM_POOL.length];
+    const email  = `${DEMO_TEAM_EMAIL_PREFIX}${batch}.${i}@bhn.test`;
 
     const demoUser = await prisma.user.create({
       data: {
         email,
-        name,
+        name:        person.name,
         role:        "employer",
         accountKind: "demo",
       },
@@ -97,12 +99,12 @@ export async function POST() {
       data: {
         companyId,
         userId:      demoUser.id,
-        role:        arche.role,
-        title:       arche.title,
+        role:        person.role,
+        title:       person.title,
         invitedById: userId,
-        joinedAt:    daysAgo(arche.joinedDaysAgo),
-        lastSeenAt:  arche.lastSeenHoursAgo != null
-          ? hoursAgo(arche.lastSeenHoursAgo)
+        joinedAt:    daysAgo(person.joinedDaysAgo),
+        lastSeenAt:  person.lastSeenHoursAgo != null
+          ? hoursAgo(person.lastSeenHoursAgo)
           : null,
       },
     });
