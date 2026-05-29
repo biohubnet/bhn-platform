@@ -235,6 +235,12 @@ const SCORECARD_CRITERIA = [
   { id: "c_prob", label: "Problem solving",           scale: 5 },
 ];
 
+// Voluntary DEI self-ID pools for the demo. Distributions are
+// suppression-safe at company scale; "Prefer not to say" is a real
+// category, not a null.
+const DEMO_GENDERS = ["Woman", "Man", "Non-binary", "Prefer not to say"];
+const DEMO_RACES = ["Asian", "Black", "Hispanic / Latino", "White", "Middle Eastern", "Prefer not to say"];
+
 interface ChainEvent { fromStage: string | null; toStage: string; changedAt: Date; }
 
 /** new → … → current stage, final event at `enteredAt`, earlier events
@@ -531,6 +537,24 @@ export async function POST() {
       }
       if (acts.length) await prisma.employerActivityLog.createMany({ data: acts });
     }
+
+    // (e) Voluntary demographics (consent=true) for the DEI report.
+    // ~2/3 opt in; the report only surfaces them if the company turns
+    // DEI reporting on (off by default), and always suppresses small cells.
+    const demoRows = newApps
+      .filter((_, i) => i % 3 !== 0)
+      .map((a) => ({
+        applicationStatusId: a.id,
+        consent:          true,
+        gender:           DEMO_GENDERS[Math.floor(Math.random() * DEMO_GENDERS.length)],
+        raceEthnicity:    DEMO_RACES[Math.floor(Math.random() * DEMO_RACES.length)],
+        disabilityStatus: Math.random() < 0.12 ? "Yes" : "No",
+        veteranStatus:    Math.random() < 0.08 ? "Yes" : "No",
+        consentedAt:      a.stageEnteredAt,
+        consentVersion:   "v1",
+        isDemoSeed:       true,
+      }));
+    if (demoRows.length) await prisma.applicationDemographics.createMany({ data: demoRows, skipDuplicates: true });
   }
 
   // ── Reporting suite: company-scoped costs + targets (OKRs) ──

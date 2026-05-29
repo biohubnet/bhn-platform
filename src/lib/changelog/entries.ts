@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Talent Reports — P5: diversity / DEI pipeline — May 2026
+  {
+    title: "Talent Reports — Diversity (DEI) pipeline report: opt-in, aggregate-only, OFF by default",
+    body: "A privacy-first **Diversity / DEI** report (`/employer/reports/diversity`) showing representation across the funnel (applicants → reached interview → hired) by self-reported dimension, so you can spot where under-represented groups drop off.\n\n**Built to be safe by construction:**\n  • **Off by default** — a company owner must enable it in report settings, intended only after a legal/privacy review.\n  • **Voluntary self-ID** — only counts applicants who explicitly consented; never inferred.\n  • **k-anonymity suppression** — any cell below 5 is hidden (“—”), with complementary suppression so a hidden value can't be back-derived from the row total.\n  • **Coverage gate** — a dimension is hidden entirely unless ≥ 50% of applicants answered it, so a low response rate can't produce misleading numbers.\n  • **Aggregate-only** — the report (and its CSV) never expose an individual; small counts are blanked in exports too.\n\nThe demo seeder populates consented demographics so you can preview it (enable DEI in settings first). Note: the applicant-facing opt-in capture UI is intentionally the last mile — wire it in when you turn DEI on for real, after sign-off; the data model, suppression, seeding, and report are all in place.",
+    kind: "feature",
+    visibleTo: ["employer", "admin", "superadmin"],
+    daysAgo: 0,
+  },
   // ── Talent Reports — P4: cost-per-hire + targets/cost settings — May 2026
   {
     title: "Talent Reports — Cost-per-hire report + a settings panel to set OKR targets & log costs",

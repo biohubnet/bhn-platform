@@ -15,6 +15,7 @@ export * from "./requisitions";
 export * from "./productivity";
 export * from "./quality";
 export * from "./sources";
+export * from "./diversity";
 export * from "./cost";
 export * from "./summary";
 export * from "./csv";
