@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.29f";
+export const TOUR_VERSION = "2026.05.29g";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Talent Reports suite — P1 — May 2026
+  {
+    id: "employer.talent-reports-hub",
+    title: "New: Talent Reports — board-ready hiring KPIs & OKRs",
+    body: "A new Reports tab opens a leadership one-pager: KPI/OKR tiles (open reqs, applications, hires, time-to-fill, offer acceptance, apply→hire, cost-per-hire) with RAG status against the goals you set, trend sparklines, and a pipeline funnel — all period-filtered (month / quarter / year / custom). Set targets to light up the RAG colours; drill-down reports and a goal-setting panel are rolling out next. Click 'Seed demo data' to preview it populated.",
+    path: "/employer/reports",
+    placement: "center",
+    roles: ["employer", "admin", "superadmin"],
+    cta: { label: "Open Reports", href: "/employer/reports" },
+    since: "2026.05.29g",
+  },
   // ─── Event flow polish — May 2026
   {
     id: "admin.event-flow-polish",

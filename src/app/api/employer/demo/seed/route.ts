@@ -212,6 +212,19 @@ async function ensureDemoApplicants(): Promise<{ id: string; name: string }[]> {
   });
 }
 
+// Reporting suite — applicant source attribution. Weighted so a few
+// channels dominate, like a realistic talent funnel.
+const SOURCE_POOL: string[] = [
+  ...Array(45).fill("bhn_board"),
+  ...Array(20).fill("referral"),
+  ...Array(15).fill("employer_site"),
+  ...Array(12).fill("direct_email"),
+  ...Array(8).fill("talent_pool"),
+];
+function pickSource(): string {
+  return SOURCE_POOL[Math.floor(Math.random() * SOURCE_POOL.length)];
+}
+
 export async function POST() {
   const session = await getSession();
   const role = (session?.user as { role?: string })?.role ?? "";
@@ -311,6 +324,7 @@ export async function POST() {
           coverLetter: COVER_LETTER_VARIANTS[coverIdx++ % COVER_LETTER_VARIANTS.length](tpl.keySkills[0]),
           rejectionReason:
             stage === "rejected" ? REJECTION_REASONS[rejIdx++ % REJECTION_REASONS.length] : null,
+          source: pickSource(),
         });
 
         // Interview rows for the two interviewing stages (feeds the
@@ -362,6 +376,7 @@ export async function POST() {
           status: slot.kind, // "offer" or "hired"
           stageEnteredAt: slot.enteredAt,
           coverLetter: COVER_LETTER_VARIANTS[coverIdx++ % COVER_LETTER_VARIANTS.length](tpl.keySkills[0]),
+          source: pickSource(),
         },
         select: { id: true },
       });
@@ -396,12 +411,69 @@ export async function POST() {
     }
   }
 
+  // ── Reporting suite: company-scoped costs + targets (OKRs) ──
+  // REPLACE semantics (delete the demo set, recreate) so re-seeding
+  // doesn't double the spend or duplicate targets — unlike postings,
+  // which are additive. Gated by isDemoSeed so real data is untouched.
+  let costsCreated = 0;
+  let targetsCreated = 0;
+  if (activeCompanyId) {
+    await prisma.recruitingCost.deleteMany({ where: { companyId: activeCompanyId, isDemoSeed: true } });
+    await prisma.hiringTarget.deleteMany({ where: { companyId: activeCompanyId, isDemoSeed: true } });
+
+    const COST_ROWS = [
+      { costType: "advertising",    amount: 2400, days: 35 },
+      { costType: "advertising",    amount: 1800, days: 18 },
+      { costType: "agency_fee",     amount: 6000, days: 28 },
+      { costType: "referral_bonus", amount: 1500, days: 12 },
+      { costType: "tooling",        amount: 900,  days: 40 },
+      { costType: "events",         amount: 1200, days: 22 },
+      { costType: "other",          amount: 350,  days: 6 },
+    ];
+    await prisma.recruitingCost.createMany({
+      data: COST_ROWS.map((c) => ({
+        companyId:   activeCompanyId,
+        costType:    c.costType,
+        amount:      c.amount,
+        currency:    "CAD",
+        incurredAt:  daysAgo(c.days),
+        isDemoSeed:  true,
+        createdById: userId,
+      })),
+    });
+    costsCreated = COST_ROWS.length;
+
+    // A mix tuned against the seeded actuals so RAG shows green/amber/red.
+    const TARGET_ROWS = [
+      { metricKey: "hires",              targetValue: 5,    comparator: "gte" }, // actual 3 → off track
+      { metricKey: "applications",       targetValue: 60,   comparator: "gte" }, // actual ~88 → on track
+      { metricKey: "time_to_fill_days",  targetValue: 30,   comparator: "lte" },
+      { metricKey: "offer_accept_rate",  targetValue: 70,   comparator: "gte" }, // actual high → on track
+      { metricKey: "apply_to_hire_rate", targetValue: 4,    comparator: "gte" },
+      { metricKey: "cost_per_hire",      targetValue: 4500, comparator: "lte" }, // actual ~higher → at risk/off
+    ];
+    await prisma.hiringTarget.createMany({
+      data: TARGET_ROWS.map((t) => ({
+        companyId:   activeCompanyId,
+        metricKey:   t.metricKey,
+        targetValue: t.targetValue,
+        comparator:  t.comparator,
+        period:      "quarter",
+        isDemoSeed:  true,
+        createdById: userId,
+      })),
+    });
+    targetsCreated = TARGET_ROWS.length;
+  }
+
   return NextResponse.json({
     ok: true,
     postingsCreated,
     applicationsCreated,
     interviewsCreated,
     offersCreated,
+    costsCreated,
+    targetsCreated,
   });
 }
 
@@ -433,6 +505,14 @@ export async function DELETE() {
       ],
     },
   });
+
+  // Reporting suite: sweep company-scoped demo costs + targets (they
+  // don't hang off a posting, so the cascade above doesn't reach them).
+  // Gated by isDemoSeed so real cost/target rows are never touched.
+  if (activeCompanyId) {
+    await prisma.recruitingCost.deleteMany({ where: { companyId: activeCompanyId, isDemoSeed: true } });
+    await prisma.hiringTarget.deleteMany({ where: { companyId: activeCompanyId, isDemoSeed: true } });
+  }
 
   return NextResponse.json({ ok: true, deleted: result.count });
 }

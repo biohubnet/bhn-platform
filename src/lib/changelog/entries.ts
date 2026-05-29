@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Talent Reports suite — P1: exec summary + hub — May 2026
+  {
+    title: "New — Talent Reports: a leadership KPI & OKR hub for hiring (/employer/reports)",
+    body: "HR can now pull a **board-ready report** instead of reading the live operational dashboard. The new **Reports** tab (employer sidebar) opens an executive one-pager:\n\n• **KPI / OKR tiles** — open requisitions, applications, hires, time-to-fill, offer acceptance, apply→hire rate, and cost-per-hire — each with a **RAG status** (on-track / at-risk / off-track) against the goals you set, a % to goal, and a trend **sparkline**.\n• **Pipeline funnel** for the period — applications narrowing through each stage with conversion %, plus the biggest drop-off stage called out.\n• **Period filter** — month / quarter / year to date, last quarter, last 90 days, or a custom range. Boundaries are computed in your local (Toronto) time so late-evening events bucket correctly.\n\nThe numbers reconcile with the live pipeline and respect your private workspace (admins/superadmins preview against their own demo company). Targets show \"no target\" until you set them — the goal-setting panel and the deeper drill-down reports (funnel detail, time-to-fill, offers, source effectiveness, diversity, cost-per-hire) are rolling out next under the same section.\n\nTip: on `/employer/reports`, click **Seed demo data** to populate a realistic company (≈88 applications, 3 hires, costs, and a set of targets tuned to show each RAG colour) so you can see every tile light up.",
+    kind: "feature",
+    visibleTo: ["employer", "admin", "superadmin"],
+    daysAgo: 0,
+  },
   // ── App-wide — restored the brand accent colour — May 2026
   {
     title: "App-wide — fix: the brand accent is back on buttons, links & charts (a Tailwind v4 migration had quietly dropped the base brand colour)",
