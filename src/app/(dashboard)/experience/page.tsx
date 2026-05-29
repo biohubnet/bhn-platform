@@ -284,11 +284,12 @@ function FlowChart() {
               icon={Briefcase}
               tone="neutral"
               hint="Live job board · apply directly"
-              cli={[
-                { c: "⟳", t: "refreshing open roles…" },
-                { c: "✦", t: "QA Associate · Toronto" },
-                { c: "✦", t: "CGT Technician · remote" },
-                { c: "↗", t: "apply on the company site" },
+              fill
+              points={[
+                "Roles from BHN partners",
+                "Apply on the company's site",
+                "No admin gate — go direct",
+                "New postings added often",
               ]}
             />
           </div>
@@ -318,7 +319,7 @@ function FlowChart() {
 }
 
 function FlowBox({
-  step, title, href, icon: Icon, tone, hint, cli,
+  step, title, href, icon: Icon, tone, hint, cli, points, fill,
 }: {
   step: string;
   title: string;
@@ -326,11 +327,18 @@ function FlowBox({
   icon: React.ElementType;
   tone: "brand" | "neutral" | "amber" | "success";
   hint?: string;
-  /** Optional CLI-style activity vignette in the box body. Used to
-   *  show "work happening" on line-less boxes (Admin review, Talent
-   *  Pool), and to give the Self-apply box equal height to its taller
-   *  Pool-track neighbour via a parallel live-board stream. */
+  /** A line-less box (no nav curve) can carry a CLI-style activity
+   *  vignette in its body to show "work happening" (Admin review,
+   *  Talent Pool). */
   cli?: { c: string; t: string }[];
+  /** Plain info bullets in the box body — used to fill a box with real
+   *  content (the Self-apply box, which keeps its nav curve and isn't a
+   *  candidate for the dark CLI panel). */
+  points?: string[];
+  /** Stretch this box to fill its column height so the shorter box in a
+   *  two-track row bottom-aligns with the taller one. Relies on the
+   *  parent being a flex column of definite (stretched) height. */
+  fill?: boolean;
 }) {
   const toneClasses = {
     brand:   "border-brand-200 bg-brand-50 text-brand-900",
@@ -344,7 +352,7 @@ function FlowBox({
   // with an href use the curve hover, no animation needed.
   const iconAnim = href || cli ? "" : "animate-icon-wobble";
   const inner = (
-    <div className={`rounded-xl border-2 px-4 py-3 transition-colors hover:shadow-md ${toneClasses}`}>
+    <div className={`rounded-xl border-2 px-4 py-3 transition-colors hover:shadow-md ${toneClasses}${fill ? " flex-1" : ""}`}>
       <div className="flex items-start gap-3">
         <span className={`shrink-0 w-8 h-8 rounded-lg bg-white/70 flex items-center justify-center ${iconAnim}`}>
           <Icon size={14} />
@@ -356,12 +364,25 @@ function FlowBox({
           <h4 className="text-sm font-bold tracking-tight">{title}</h4>
           {hint && <p className="text-xs opacity-80 mt-0.5">{hint}</p>}
           {cli && <CliVignette lines={cli} />}
+          {points && points.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {points.map((p) => (
+                <li key={p} className="flex items-start gap-1.5 text-[11px] leading-snug opacity-80">
+                  <span aria-hidden className="mt-[5px] h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
+                  <span>{p}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         {href && <ArrowRight size={14} className="opacity-60 shrink-0 mt-1" />}
       </div>
     </div>
   );
-  if (href) return <NavHighlightZone href={href}>{inner}</NavHighlightZone>;
+  // `fill` lets a short box stretch to its (grid-stretched) column's
+  // full height so its bottom lines up with a taller sibling. Needs the
+  // flex chain: column → this wrapper (flex-1) → inner (flex-1).
+  if (href) return <NavHighlightZone href={href} className={fill ? "no-underline flex flex-col flex-1" : undefined}>{inner}</NavHighlightZone>;
   return inner;
 }
 

@@ -33,7 +33,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Experience map — self-apply card height — May 2026
   {
     title: "Experience map — the Self-apply card now matches its neighbour's height",
-    body: "In the two parallel tracks (Talent Pool vs Self-apply), the Talent Pool card grew taller once it gained its activity vignette, leaving the Self-apply card stranded short with empty space beside it. The Self-apply card now carries a matching live-board vignette — open roles refreshing, a couple of example postings, and the apply-on-the-company's-site step — so the two tracks line up evenly.",
+    body: "In the two parallel tracks (Talent Pool vs Self-apply), the Talent Pool card grew taller once it gained its activity vignette, leaving the Self-apply card stranded short with empty space beside it. The Self-apply card now spells out what's inside the live job board — roles from BHN partners, applying on the company's own site, no admin gate — and stretches to fill its column, so the two tracks bottom-align evenly.",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,
