@@ -10,7 +10,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActiveCompanyId } from "@/lib/employer/company";
+import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
 
 export const runtime = "nodejs";
 
@@ -107,7 +107,8 @@ export async function POST() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const companyId = await getActiveCompanyId(userId);
+  const realRole = (session.user as { realRole?: string }).realRole ?? role;
+  const companyId = await resolveWorkspaceCompanyId(userId, realRole);
   if (!companyId) {
     return NextResponse.json({ error: "No company workspace found." }, { status: 400 });
   }
@@ -148,7 +149,8 @@ export async function DELETE() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const companyId = await getActiveCompanyId(userId);
+  const realRole = (session.user as { realRole?: string }).realRole ?? role;
+  const companyId = await resolveWorkspaceCompanyId(userId, realRole);
   if (!companyId) {
     return NextResponse.json({ error: "No company workspace found." }, { status: 400 });
   }

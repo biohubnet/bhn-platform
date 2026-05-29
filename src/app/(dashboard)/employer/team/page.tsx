@@ -16,8 +16,8 @@ import { redirect } from "next/navigation";
 import { Users, Users2, Shield, ShieldCheck, Eye, UserCog } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActiveCompanyId, meetsMinRole } from "@/lib/employer/company";
-import { ensureAdminPreviewCompany } from "@/lib/employer/admin-preview";
+import { meetsMinRole } from "@/lib/employer/company";
+import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { Card } from "@/components/ui/Card";
 import { MemberList } from "@/components/employer/team/MemberList";
@@ -67,6 +67,7 @@ export default async function EmployerTeamPage() {
 
   const userId   = (session.user as { id: string }).id;
   const userRole = (session.user as { role?: string }).role ?? "trainee";
+  const realRole = (session.user as { realRole?: string }).realRole ?? userRole;
   const isAdmin  = userRole === "admin" || userRole === "superadmin";
 
   if (userRole !== "employer" && !isAdmin) {
@@ -91,9 +92,10 @@ export default async function EmployerTeamPage() {
   // would still surface that company, defeating the isolation goal.
   // The helper looks specifically for a sole-member company belonging
   // to the admin and ignores shared memberships.
-  let companyId: string | null = isAdmin
-    ? await ensureAdminPreviewCompany(userId).catch(() => null)
-    : await getActiveCompanyId(userId).catch(() => null);
+  // Shared resolver (keyed on REAL role) so this page lands on the
+  // exact company the team-seed route writes into — including for
+  // superadmins using view-as-employer. See resolveWorkspaceCompanyId.
+  const companyId: string | null = await resolveWorkspaceCompanyId(userId, realRole).catch(() => null);
 
   if (!companyId) {
     return (

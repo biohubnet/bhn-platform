@@ -18,7 +18,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActiveCompanyId } from "@/lib/employer/company";
+import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
 import { DEMO_TEAM_MEMBERS, DEMO_TEAM_EMAILS } from "@/lib/employer/team-demo";
 
 export const runtime = "nodejs";
@@ -30,46 +30,12 @@ function daysAgo(n: number): Date {
   return new Date(Date.now() - n * 86_400_000);
 }
 
-/** Resolves (or bootstraps) the company to seed into.
- *  Mirrors the logic in the team page so seed/clear always work even
- *  when the backfill script hasn't run and no Company rows exist yet. */
-async function resolveCompanyId(userId: string, isAdmin: boolean): Promise<string | null> {
-  const own = await getActiveCompanyId(userId);
-  if (own) return own;
-  if (!isAdmin) return null;
-
-  const existing = await prisma.company.findFirst({
-    orderBy: { createdAt: "asc" },
-    select:  { id: true },
-  });
-
-  if (existing) {
-    // Adopt the existing company — upsert a member row so the admin
-    // can perform actions without needing a manual invite.
-    await prisma.companyMember.upsert({
-      where:  { companyId_userId: { companyId: existing.id, userId } },
-      create: { companyId: existing.id, userId, role: "owner", joinedAt: new Date() },
-      update: {},
-    });
-    return existing.id;
-  }
-
-  // No companies at all — auto-create one.
-  const profile = await prisma.user.findUnique({
-    where:  { id: userId },
-    select: { employerCompany: true },
-  });
-  const newCo = await prisma.company.create({
-    data: {
-      name:    profile?.employerCompany?.trim() || "My Company",
-      members: {
-        create: { userId, role: "owner", joinedAt: new Date() },
-      },
-    },
-    select: { id: true },
-  });
-  return newCo.id;
-}
+// The old `resolveCompanyId(userId, isAdmin)` here adopted the FIRST
+// company in the table for admins — the exact cross-admin leak that
+// ensureAdminPreviewCompany was built to kill, and it diverged from
+// the team PAGE (which already uses the private preview company). It's
+// been replaced by the shared resolveWorkspaceCompanyId so seed-writes
+// and the team page's reads always land on the same company.
 
 export async function POST() {
   const session = await getSession();
@@ -83,7 +49,10 @@ export async function POST() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const companyId = await resolveCompanyId(userId, isAdmin);
+  const companyId = await resolveWorkspaceCompanyId(
+    userId,
+    (session.user as { realRole?: string }).realRole ?? role,
+  );
   if (!companyId) {
     return NextResponse.json(
       { error: "No company workspace found" },
@@ -145,7 +114,10 @@ export async function DELETE() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const companyId = await resolveCompanyId(userId, isAdmin);
+  const companyId = await resolveWorkspaceCompanyId(
+    userId,
+    (session.user as { realRole?: string }).realRole ?? role,
+  );
   if (!companyId) {
     return NextResponse.json(
       { error: "No company workspace found" },

@@ -9,8 +9,7 @@ import { redirect } from "next/navigation";
 import { CalendarDays } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActiveCompanyId } from "@/lib/employer/company";
-import { ensureAdminPreviewCompany } from "@/lib/employer/admin-preview";
+import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { CalendarClient } from "@/components/employer/calendar/CalendarClient";
 import { DemoSeederBar } from "@/components/employer/DemoSeederBar";
@@ -23,6 +22,7 @@ export default async function EmployerCalendarPage() {
 
   const userId   = (session.user as { id: string }).id;
   const userRole = (session.user as { role?: string }).role ?? "trainee";
+  const realRole = (session.user as { realRole?: string }).realRole ?? userRole;
   const isAdmin  = userRole === "admin" || userRole === "superadmin";
 
   if (userRole !== "employer" && !isAdmin) {
@@ -34,14 +34,10 @@ export default async function EmployerCalendarPage() {
   }
 
   // ── Resolve companyId ──────────────────────────────────────────
-  // Real employers go through their CompanyMember row. Admins get a
-  // PRIVATE single-member preview workspace via ensureAdminPreviewCompany
-  // — see src/lib/employer/admin-preview.ts for why this matters
-  // (the old "auto-add to the FIRST company" bootstrap leaked data
-  // between admins; every superadmin ended up sharing Cytiva).
-  let companyId: string | null = isAdmin
-    ? await ensureAdminPreviewCompany(userId).catch(() => null)
-    : await getActiveCompanyId(userId).catch(() => null);
+  // Shared resolver (keyed on REAL role) so this read lands on the
+  // exact company the demo seed writes into — including for
+  // superadmins using view-as-employer. See resolveWorkspaceCompanyId.
+  const companyId: string | null = await resolveWorkspaceCompanyId(userId, realRole).catch(() => null);
 
   if (!companyId) {
     return (
@@ -53,9 +49,11 @@ export default async function EmployerCalendarPage() {
     );
   }
 
+  // Check by companyId — same scope the calendar reads — so the
+  // "clear demo" affordance reflects what's actually shown.
   const hasDemoPostings =
     (await prisma.internshipPosting.count({
-      where: { createdById: userId, isDemoSeed: true },
+      where: { companyId, isDemoSeed: true },
     }).catch(() => 0)) > 0;
 
   return (

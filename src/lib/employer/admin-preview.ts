@@ -41,6 +41,40 @@
  * CompanyMember rows.
  */
 import { prisma } from "@/lib/prisma";
+import { getActiveCompanyId } from "./company";
+
+/**
+ * THE single source of truth for "which company does this caller's
+ * /employer workspace resolve to" — used by BOTH the read pages
+ * (postings / analytics / calendar / templates / team) AND the demo
+ * seed routes, so seed-writes and page-reads always land on the same
+ * company.
+ *
+ * Keyed on the caller's REAL role (session.user.realRole), NOT the
+ * effective role. That matters for superadmins using view-as-employer:
+ * their effective role is "employer" but they have no genuine
+ * CompanyMember row, so without this they'd resolve to null on both
+ * sides and seeding would silently do nothing. Keying on realRole
+ * routes any admin/superadmin (acting-as or not) to their private
+ * preview company.
+ *
+ *   • admin / superadmin (by real role) → ensureAdminPreviewCompany
+ *     (a private, sole-member workspace — never a shared company, so
+ *     no cross-admin leak).
+ *   • genuine employer → getActiveCompanyId (their real CompanyMember).
+ *
+ * Returns null only for a genuine employer with no company yet;
+ * callers render an empty state / 400 in that case.
+ */
+export async function resolveWorkspaceCompanyId(
+  userId: string,
+  realRole: string | null | undefined,
+): Promise<string | null> {
+  if (realRole === "admin" || realRole === "superadmin") {
+    return ensureAdminPreviewCompany(userId);
+  }
+  return getActiveCompanyId(userId);
+}
 
 export async function ensureAdminPreviewCompany(
   userId: string,

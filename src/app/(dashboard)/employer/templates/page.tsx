@@ -10,8 +10,7 @@ import { redirect } from "next/navigation";
 import { Mail } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActiveCompanyId } from "@/lib/employer/company";
-import { ensureAdminPreviewCompany } from "@/lib/employer/admin-preview";
+import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { TemplatesClient } from "@/components/employer/templates/TemplatesClient";
 import { EmployerEntityDemoBar } from "@/components/employer/EmployerEntityDemoBar";
@@ -42,6 +41,7 @@ async function renderTemplatesPage() {
 
   const userId   = (session.user as { id: string }).id;
   const userRole = (session.user as { role?: string }).role ?? "trainee";
+  const realRole = (session.user as { realRole?: string }).realRole ?? userRole;
   const isAdmin  = userRole === "admin" || userRole === "superadmin";
 
   if (userRole !== "employer" && !isAdmin) {
@@ -53,12 +53,10 @@ async function renderTemplatesPage() {
   }
 
   // ── Resolve companyId ──────────────────────────────────────────
-  // Real employers go through their CompanyMember row. Admins get a
-  // PRIVATE single-member preview workspace via ensureAdminPreviewCompany
-  // — see src/lib/employer/admin-preview.ts for why.
-  let companyId: string | null = isAdmin
-    ? await ensureAdminPreviewCompany(userId).catch(() => null)
-    : await getActiveCompanyId(userId).catch(() => null);
+  // Shared resolver (keyed on REAL role) so this read lands on the
+  // exact company the demo-template seed writes into — including for
+  // superadmins using view-as-employer. See resolveWorkspaceCompanyId.
+  const companyId: string | null = await resolveWorkspaceCompanyId(userId, realRole).catch(() => null);
 
   if (!companyId) {
     return (

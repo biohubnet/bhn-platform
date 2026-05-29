@@ -9,8 +9,7 @@ import { redirect } from "next/navigation";
 import { BarChart3, Download, Users, UserCheck, Percent, Briefcase } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActiveCompanyId } from "@/lib/employer/company";
-import { ensureAdminPreviewCompany } from "@/lib/employer/admin-preview";
+import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { Card } from "@/components/ui/Card";
 import { DemoSeederBar } from "@/components/employer/DemoSeederBar";
@@ -49,6 +48,7 @@ export default async function EmployerAnalyticsPage() {
 
   const userId   = (session.user as { id: string }).id;
   const userRole = (session.user as { role?: string }).role ?? "trainee";
+  const realRole = (session.user as { realRole?: string }).realRole ?? userRole;
   const isAdmin  = userRole === "admin" || userRole === "superadmin";
 
   if (userRole !== "employer" && !isAdmin) {
@@ -60,12 +60,10 @@ export default async function EmployerAnalyticsPage() {
   }
 
   // ── Resolve companyId ──────────────────────────────────────────
-  // Real employers go through their CompanyMember row. Admins get a
-  // PRIVATE single-member preview workspace via ensureAdminPreviewCompany
-  // — see src/lib/employer/admin-preview.ts for why this matters.
-  let companyId: string | null = isAdmin
-    ? await ensureAdminPreviewCompany(userId).catch(() => null)
-    : await getActiveCompanyId(userId).catch(() => null);
+  // Shared resolver (keyed on REAL role) so this read lands on the
+  // exact company the demo seed writes into — including for
+  // superadmins using view-as-employer. See resolveWorkspaceCompanyId.
+  const companyId: string | null = await resolveWorkspaceCompanyId(userId, realRole).catch(() => null);
 
   if (!companyId) {
     return (
@@ -78,12 +76,12 @@ export default async function EmployerAnalyticsPage() {
   }
 
   // ── Demo seed check ────────────────────────────────────────────
-
-  const hasDemoPostings = companyId
-    ? (await prisma.internshipPosting.count({
-        where: { createdById: userId, isDemoSeed: true },
-      }).catch(() => 0)) > 0
-    : false;
+  // Check by companyId — the same scope the charts below read — so
+  // the "clear demo" affordance reflects what's actually shown.
+  const hasDemoPostings =
+    (await prisma.internshipPosting.count({
+      where: { companyId, isDemoSeed: true },
+    }).catch(() => 0)) > 0;
 
   // ── Fetch data ─────────────────────────────────────────────────
 

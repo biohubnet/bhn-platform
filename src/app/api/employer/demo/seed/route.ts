@@ -37,7 +37,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActiveCompanyId } from "@/lib/employer/company";
+import { resolveWorkspaceCompanyId } from "@/lib/employer/admin-preview";
 
 export const runtime = "nodejs";
 
@@ -153,15 +153,15 @@ export async function POST() {
   const companyName = me?.employerCompany?.trim()
     || (me?.email?.split("@")[1]?.split(".")[0] ?? "Acme Bio");
 
-  // Resolve the caller's active company so the seeded postings carry
-  // the SAME companyId the /employer/postings read path filters by.
-  // Without this, the read path's company-scoped filter
-  // (`{ companyId }`, used whenever the viewer has an active company —
-  // including admins acting-as employer) never matches the seeded
-  // rows and the list stays empty after refresh. When there's no
-  // active company, companyId stays null and the read path falls back
-  // to `{ createdById }`, which still matches.
-  const activeCompanyId = await getActiveCompanyId(userId).catch(() => null);
+  // Resolve the caller's workspace company so the seeded postings carry
+  // the SAME companyId every /employer read path filters by (postings,
+  // analytics, calendar all read posting.companyId). Uses the shared
+  // resolver keyed on REAL role so admins/superadmins (incl. view-as-
+  // employer) resolve to their private preview company — exactly what
+  // the read pages resolve. Without this, seed-writes and page-reads
+  // land on different companies and the data is invisible.
+  const realRole = (session.user as { realRole?: string }).realRole ?? role;
+  const activeCompanyId = await resolveWorkspaceCompanyId(userId, realRole).catch(() => null);
 
   // 8 demo applicants → enough variety across 3 postings.
   const applicants = await ensureDemoApplicants(APPLICANT_NAMES.length);
@@ -305,7 +305,8 @@ export async function DELETE() {
   // are also swept, and so seeds created after the companyId fix are
   // caught regardless of who in the company created them). Always
   // gated by isDemoSeed so real postings are never touched.
-  const activeCompanyId = await getActiveCompanyId(userId).catch(() => null);
+  const realRole = (session.user as { realRole?: string }).realRole ?? role;
+  const activeCompanyId = await resolveWorkspaceCompanyId(userId, realRole).catch(() => null);
   const result = await prisma.internshipPosting.deleteMany({
     where: {
       isDemoSeed: true,
