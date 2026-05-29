@@ -7,7 +7,7 @@
  */
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { FileBarChart, ArrowRight } from "lucide-react";
+import { FileBarChart, ArrowRight, Printer, Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { Card } from "@/components/ui/Card";
@@ -74,7 +74,24 @@ export default async function ReportsHubPage({
         icon={<FileBarChart size={20} />}
         title="Talent reports"
         description={`Board-ready hiring KPIs and OKRs for ${range.label}. Pick a period, track goals, and drill into each metric.`}
-        actions={<PeriodPicker current={range.key} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <PeriodPicker current={range.key} />
+            <Link
+              href={withQs("/employer/reports/print")}
+              className="no-print inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg ring-1 ring-inset ring-line bg-card hover:bg-elevated text-fg transition-colors"
+            >
+              <Printer size={13} /> Print view
+            </Link>
+            <a
+              href={`/api/employer/reports/export-all${qs ? `?${qs}` : ""}`}
+              download
+              className="no-print inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg ring-1 ring-inset ring-line bg-card hover:bg-elevated text-fg transition-colors"
+            >
+              <Download size={13} /> Export all
+            </a>
+          </div>
+        }
       />
 
       <DemoSeederBar hasExistingDemos={hasDemoPostings} />

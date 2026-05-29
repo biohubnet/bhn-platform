@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Talent Reports — P6: print one-pager + export-all — May 2026
+  {
+    title: "Talent Reports — Print → PDF one-pager + Export-all CSV (the suite is complete)",
+    body: "The finishing touches that make reports shareable with leadership:\n\n• **Print view** (`/employer/reports/print`) — every report composed into a single, clean one-pager (KPI tiles, funnel, velocity, offers, requisitions, cost, top sources, and diversity when enabled). It's pinned to the light palette so it exports cleanly on any theme, and a print stylesheet hides the app chrome — hit **Print / Save PDF** for a board-ready PDF straight from the browser (no new dependency).\n• **Export all** — one CSV with every section for the selected period, for slicing in a spreadsheet. (Per-report CSVs are still on each report.)\n\nBoth live in the Reports hub header and respect the active period. This completes the Talent Reports suite: executive summary + nine reports + OKR targets with RAG + costs + opt-in diversity, all period-filtered with CSV and PDF export.",
+    kind: "feature",
+    visibleTo: ["employer", "admin", "superadmin"],
+    daysAgo: 0,
+  },
   // ── Talent Reports — P5: diversity / DEI pipeline — May 2026
   {
     title: "Talent Reports — Diversity (DEI) pipeline report: opt-in, aggregate-only, OFF by default",
