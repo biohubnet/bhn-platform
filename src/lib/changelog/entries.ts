@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Talent Reports — P4: cost-per-hire + targets/cost settings — May 2026
+  {
+    title: "Talent Reports — Cost-per-hire report + a settings panel to set OKR targets & log costs",
+    body: "Two additions that make the OKR/RAG side of the suite real:\n\n**Cost-per-hire report** (`/employer/reports/cost`): cost-per-hire (total recruiting spend ÷ hires), total spend, and breakdowns by **cost type** (advertising, agency, referral bonus, tooling, events, …) and by posting. CSV export included. Cleanly handles zero-hire periods (shows spend + \"no hires in period\" instead of dividing by zero).\n\n**Report settings** (`/employer/reports/settings`): the panel that powers RAG everywhere.\n  • **Targets (OKRs)** — set a goal for any KPI (hires, applications, time-to-fill, time-to-hire, offer acceptance, apply→hire, cost-per-hire). Each report and exec tile then shows on-track / at-risk / off-track + % to goal against your number. Comparator (higher- vs lower-is-better) is auto-set per metric.\n  • **Recruiting costs** — log spend (type, amount, date) to feed cost-per-hire; remove lines anytime.\n  • **DEI toggle** — owner-only switch to enable the (opt-in, suppressed) diversity report; off by default pending legal/privacy sign-off.\n\nWrites are role-gated: managers+ can set targets and log costs; only an owner can flip DEI. Cost-per-hire is also now a live exec-summary tile + nav card on the hub.",
+    kind: "feature",
+    visibleTo: ["employer", "admin", "superadmin"],
+    daysAgo: 0,
+  },
   // ── Talent Reports — P3: source effectiveness — May 2026
   {
     title: "Talent Reports — Source effectiveness: which channels actually produce hires",

@@ -29,8 +29,9 @@ const REPORTS: { href: string; label: string; desc: string; live: boolean }[] = 
   { href: "/employer/reports/productivity",  label: "Team productivity",   desc: "Activity by recruiter",             live: true },
   { href: "/employer/reports/quality",       label: "Quality of hire",     desc: "Scorecard signal",                  live: true },
   { href: "/employer/reports/sources",       label: "Source effectiveness",desc: "Where applicants & hires come from",live: true },
-  { href: "/employer/reports/cost",          label: "Cost per hire",       desc: "Spend per hire + breakdown",        live: false },
+  { href: "/employer/reports/cost",          label: "Cost per hire",       desc: "Spend per hire + breakdown",        live: true },
   { href: "/employer/reports/diversity",     label: "Diversity (DEI)",     desc: "Representation by stage (opt-in)",   live: false },
+  { href: "/employer/reports/settings",      label: "Report settings",     desc: "Targets, costs & DEI toggle",       live: true },
 ];
 
 export default async function ReportsHubPage({
@@ -85,7 +86,7 @@ export default async function ReportsHubPage({
             key={t.key}
             label={t.label}
             result={t.result}
-            href={t.key === "cost_per_hire" ? undefined : withQs(t.href)}
+            href={withQs(t.href)}
           />
         ))}
       </section>
