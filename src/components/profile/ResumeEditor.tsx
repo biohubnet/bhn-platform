@@ -964,7 +964,13 @@ export function ResumeEditor({
   }
 
   return (
-    <div className="space-y-5">
+    <div
+      // When the pull-from-master drawer (fixed, 400px, right) is open,
+      // shift the editor content left on wide screens so the two sit
+      // side-by-side and you can drag straight across — nothing hidden
+      // behind the drawer.
+      className={`space-y-5 transition-[padding] duration-200 ${masterDrawerOpen ? "lg:pr-[420px]" : ""}`}
+    >
       {/* Resume picker — multi-resume aware. Shows the current
           resume's name as the selected value; the dropdown lists
           every non-archived sibling + a link to /profile/resumes

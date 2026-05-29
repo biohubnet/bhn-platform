@@ -177,19 +177,17 @@ export function PullFromMasterDrawer({ open, onClose, content, onSendToTarget }:
 
   return (
     <>
-      {/* Backdrop. Click-to-close. Backdrop-blur keeps the editor
-          visually present but de-emphasised so the user remembers
-          they're still on the resume. */}
-      <div
-        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden
-      />
-      {/* Drawer panel. Fixed right, full-height, capped width so it
-          doesn't swallow the editor on narrow viewports. */}
+      {/* NON-modal side panel — deliberately NO backdrop. The whole
+          point of "pull from master" is to drag a bullet from here
+          straight into a resume bullet list, so the editor must stay
+          fully visible AND interactive to the left. A backdrop would
+          (a) blur the editor and (b) sit above it, intercepting the
+          drag before the drop target ever fired. Close via X or Esc.
+          Fixed right, full-height, capped width so it doesn't swallow
+          the editor on narrow viewports. */}
       <aside
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-label="Pull from master library"
         className="fixed right-0 top-0 bottom-0 z-50 w-[400px] max-w-[calc(100vw-1rem)] bg-card-solid border-l border-line shadow-2xl flex flex-col"
       >

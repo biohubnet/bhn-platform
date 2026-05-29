@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Resume builder — pull-from-master drag fix — May 2026
+  {
+    title: "Resume builder — “Pull from master” no longer blurs the resume, and drag works again",
+    body: "The pull-from-master drawer used to drop a dimming, blurring backdrop over your resume — which both hid it and quietly intercepted drag-and-drop, so you couldn't actually drag a bullet from your master library onto the resume. It's now a proper side panel: the resume stays fully visible and interactive beside it (on wide screens it even slides left so nothing hides behind the drawer), so you can drag a master bullet straight into any bullet list. Close it with Esc or the ✕; the “Send to…” picker still works too.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Fit-rating matrix — trainee job-app pipeline — May 2026
   {
     title: "New: a fit-rating matrix for your job applications",
