@@ -61,10 +61,12 @@ export function AssistHistoryView({ counts, recentEvents, rollups, summaries, hi
   const [wiping, setWiping] = useState(false);
   const [wipeResult, setWipeResult] = useState<{ deleted: typeof counts } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Recent-events list is collapsed to the latest few; expandable.
+  // Long lists are collapsed to the latest few; expandable to all.
+  const COLLAPSED = 5;
   const [showAllEvents, setShowAllEvents] = useState(false);
-  const COLLAPSED_EVENTS = 5;
-  const shownEvents = showAllEvents ? recentEvents : recentEvents.slice(0, COLLAPSED_EVENTS);
+  const [showAllHints, setShowAllHints] = useState(false);
+  const shownEvents = showAllEvents ? recentEvents : recentEvents.slice(0, COLLAPSED);
+  const shownHints = showAllHints ? hints : hints.slice(0, COLLAPSED);
 
   async function wipe() {
     if (!confirm("Permanently delete every behaviour signal, rollup, summary, and hint we have on file for you? This can't be undone. Your preferences (consent toggle, sensitivity) are NOT deleted.")) {
@@ -166,7 +168,7 @@ export function AssistHistoryView({ counts, recentEvents, rollups, summaries, hi
             Hints shown to you
           </h2>
           <ul className="space-y-2">
-            {hints.map((h) => (
+            {shownHints.map((h) => (
               <li key={h.id} className="rounded-xl border border-line bg-card p-4">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
@@ -183,6 +185,20 @@ export function AssistHistoryView({ counts, recentEvents, rollups, summaries, hi
               </li>
             ))}
           </ul>
+          {hints.length > COLLAPSED && (
+            <button
+              type="button"
+              onClick={() => setShowAllHints((v) => !v)}
+              aria-expanded={showAllHints}
+              className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:text-brand-800"
+            >
+              {showAllHints ? "Show fewer" : `Show all ${hints.length}`}
+              <ChevronDown
+                size={12}
+                className={`transition-transform ${showAllHints ? "rotate-180" : ""}`}
+              />
+            </button>
+          )}
         </section>
       )}
 
@@ -255,7 +271,7 @@ export function AssistHistoryView({ counts, recentEvents, rollups, summaries, hi
               </tbody>
             </table>
           </div>
-          {recentEvents.length > COLLAPSED_EVENTS && (
+          {recentEvents.length > COLLAPSED && (
             <button
               type="button"
               onClick={() => setShowAllEvents((v) => !v)}
