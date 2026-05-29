@@ -28,7 +28,7 @@ const REPORTS: { href: string; label: string; desc: string; live: boolean }[] = 
   { href: "/employer/reports/requisitions",  label: "Requisitions",        desc: "Status + aging + stale reqs",       live: true },
   { href: "/employer/reports/productivity",  label: "Team productivity",   desc: "Activity by recruiter",             live: true },
   { href: "/employer/reports/quality",       label: "Quality of hire",     desc: "Scorecard signal",                  live: true },
-  { href: "/employer/reports/sources",       label: "Source effectiveness",desc: "Where applicants & hires come from",live: false },
+  { href: "/employer/reports/sources",       label: "Source effectiveness",desc: "Where applicants & hires come from",live: true },
   { href: "/employer/reports/cost",          label: "Cost per hire",       desc: "Spend per hire + breakdown",        live: false },
   { href: "/employer/reports/diversity",     label: "Diversity (DEI)",     desc: "Representation by stage (opt-in)",   live: false },
 ];

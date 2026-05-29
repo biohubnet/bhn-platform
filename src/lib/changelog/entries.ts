@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Talent Reports — P3: source effectiveness — May 2026
+  {
+    title: "Talent Reports — Source effectiveness: which channels actually produce hires",
+    body: "New **Source effectiveness** report (`/employer/reports/sources`): applications by channel (BHN board, referral, employer site, direct email, talent pool), each with % of total, interview rate, hires, and **hire rate** — plus a \"best source\" callout that only ranks channels with enough volume (≥ 5 apps) so a 1-application fluke can't win. CSV export included.\n\nTo power it, applications now capture a **source** at apply time (defaults to the BHN board for platform applies; stamped once and never overwritten on re-apply). The demo seeder distributes sources realistically so the report is populated immediately.",
+    kind: "feature",
+    visibleTo: ["employer", "admin", "superadmin"],
+    daysAgo: 0,
+  },
   // ── Talent Reports — P2: six drill-down reports — May 2026
   {
     title: "Talent Reports — six drill-down reports: funnel, time-to-fill, offers, requisitions, productivity, quality",

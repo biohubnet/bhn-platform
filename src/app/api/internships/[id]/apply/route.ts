@@ -35,6 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = (await req.json().catch(() => ({}))) as {
     notes?: string;
     coverLetter?: string;
+    source?: string;
   };
   // `notes` stays trainee-private. `coverLetter` is the new
   // employer-visible field. ApplyDialog currently sends the user-
@@ -45,6 +46,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     typeof body.coverLetter === "string"
       ? body.coverLetter.trim().slice(0, 2000)
       : null;
+  // Reporting: where this application came from (source-effectiveness
+  // report). Allowlist-validated; defaults to the BHN board since this
+  // route IS the platform apply path. Stamped only on create below so a
+  // re-apply never rewrites the original attribution.
+  const ALLOWED_SOURCES = ["bhn_board", "employer_site", "direct_email", "referral", "talent_pool"];
+  const source =
+    typeof body.source === "string" && ALLOWED_SOURCES.includes(body.source) ? body.source : "bhn_board";
 
   const posting = await prisma.internshipPosting.findUnique({
     where: { id: postingId },
@@ -70,6 +78,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       status: "new",
       notes,
       coverLetter,
+      source,
     },
     // Don't trample the employer's stage if it's already past "new".
     update: updateData,
