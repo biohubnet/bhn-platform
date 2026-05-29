@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── GSAP capability demo — May 2026
+  {
+    title: "Added GSAP + a live animation showcase at /showcase/gsap",
+    body: "GSAP (with @gsap/react) is now available in the platform, and there's a public demo page at /showcase/gsap showing what it can do: timeline-choreographed hero reveal, a pinned + scroll-scrubbed sequence, multi-speed parallax, and batched scroll-in cards. Built with the official GSAP skills' React patterns — useGSAP for automatic cleanup, client-only (SSR-safe), and prefers-reduced-motion respected. It's a capability demo / starting point for richer scroll-driven motion on real pages.",
+    kind: "note",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Resume builder — whole page clears the pull drawer — May 2026
   {
     title: "Resume builder — the master-resume bar no longer hides behind the Pull-from-master drawer",
