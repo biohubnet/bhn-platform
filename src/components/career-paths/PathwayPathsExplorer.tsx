@@ -47,7 +47,6 @@ import {
   ChevronsLeft,
   Maximize2,
   Minimize2,
-  HelpCircle,
 } from "lucide-react";
 import {
   BHN_PATHWAYS,
@@ -56,7 +55,8 @@ import {
   type CareerTrack,
   type CrossLink,
   type LevelId,
-  crossLinkStrength,
+  type BranchTarget,
+  getBranchTargets,
   strengthTier,
 } from "@/lib/career-paths/pathway-data";
 
@@ -77,20 +77,6 @@ const LEVEL_META: Record<LevelId, { label: string; years: string; icon: React.Re
   lead:   { label: "Lead",      years: "10–15 yrs", icon: null },
   vp:     { label: "VP / Exec", years: "15+ yrs",  icon: <Trophy size={11} /> },
 };
-
-/** The station the first-visit guide auto-opens — whichever has the most
- *  cross-links, so the demo shows a rich vector selector. Computed once. */
-const GUIDE_SOURCE: { track: CareerTrack; station: CareerStation } | null = (() => {
-  let best: { track: CareerTrack; station: CareerStation } | null = null;
-  let bestN = 0;
-  for (const track of BHN_PATHWAYS) {
-    for (const station of track.stations) {
-      const n = station.crossLinks?.length ?? 0;
-      if (n > bestN) { bestN = n; best = { track, station }; }
-    }
-  }
-  return best;
-})();
 
 /** Argument carried up when the user clicks a station's branch-out
  *  icon. Identifies the source station + its parent track. */
@@ -135,10 +121,6 @@ function gridTemplateColumns(pathways: { id: string }[], collapsed: Set<string>)
 
 export function PathwayPathsExplorer() {
   const [branch, setBranch] = useState<BranchOpenWithRects | null>(null);
-  // First-visit guide: auto-opens the richest branch as a silent demo
-  // (expanded vector selector) then collapses it. See runGuide below.
-  const [guideActive, setGuideActive] = useState(false);
-  const guideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Station-detail popup — shows the FULL contents of a single
   // station (all roles, full focus paragraph, every education gap)
@@ -250,13 +232,14 @@ export function PathwayPathsExplorer() {
   const [pendingBranchOpen, setPendingBranchOpen] = useState<BranchOpen | null>(null);
 
   function handleBranchOpen(o: BranchOpen) {
+    const links = getBranchTargets(o.track, o.station);
     const pathwayIds = new Set<string>([
       o.track.id,
-      ...(o.station.crossLinks ?? []).map((cl) => cl.trackId),
+      ...links.map((cl) => cl.trackId),
     ]);
     const levelIds = new Set<LevelId>([
       o.station.level,
-      ...(o.station.crossLinks ?? []).map((cl) => cl.targetLevel),
+      ...links.map((cl) => cl.targetLevel),
     ]);
     const pathwaysToExpand = Array.from(pathwayIds).filter((id) => collapsedPathways.has(id));
     const levelsToExpand = Array.from(levelIds).filter((id) => collapsedLevels.has(id));
@@ -290,7 +273,7 @@ export function PathwayPathsExplorer() {
       }
       const sourceRect = srcEl.getBoundingClientRect();
       const targetRects = new Map<string, DOMRect>();
-      for (const cl of o.station.crossLinks ?? []) {
+      for (const cl of getBranchTargets(o.track, o.station)) {
         const tgtId = `${cl.trackId}-${cl.targetLevel}`;
         const tgtEl = document.querySelector<HTMLElement>(`[data-station-id="${tgtId}"]`);
         if (tgtEl) targetRects.set(tgtId, tgtEl.getBoundingClientRect());
@@ -300,36 +283,6 @@ export function PathwayPathsExplorer() {
     });
     return () => cancelAnimationFrame(raf);
   }, [pendingBranchOpen, collapsedPathways, collapsedLevels]);
-
-  // ── First-visit guide ──────────────────────────────────────────
-  // Auto-opens the richest branch (GUIDE_SOURCE) as a hands-free demo so
-  // a newcomer sees the expanded vector selector — then collapses it.
-  // Also replayable from the "Guide" button. localStorage-gated so it
-  // only auto-plays once per browser.
-  function runGuide() {
-    if (!GUIDE_SOURCE) return;
-    if (guideTimer.current) clearTimeout(guideTimer.current);
-    setGuideActive(true);
-    handleBranchOpen(GUIDE_SOURCE);
-    guideTimer.current = setTimeout(() => {
-      setBranch(null);
-      setGuideActive(false);
-    }, 5200);
-  }
-  useEffect(() => {
-    if (typeof window === "undefined" || !GUIDE_SOURCE) return;
-    try {
-      if (localStorage.getItem("bhn-pathways-branch-guide-v1")) return;
-      localStorage.setItem("bhn-pathways-branch-guide-v1", "1");
-    } catch {
-      /* private mode — just skip the auto-play */
-      return;
-    }
-    const t = setTimeout(() => runGuide(), 1100);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  useEffect(() => () => { if (guideTimer.current) clearTimeout(guideTimer.current); }, []);
 
   const anyCollapsed = collapsedLevels.size > 0 || collapsedPathways.size > 0;
 
@@ -389,14 +342,6 @@ export function PathwayPathsExplorer() {
               />
             </div>
             <div className="flex-1" />
-            <button
-              type="button"
-              onClick={runGuide}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-brand-700 font-semibold hover:bg-brand-50 transition-colors"
-              title="Replay the branching guide"
-            >
-              <HelpCircle size={11} /> Guide
-            </button>
             {anyCollapsed && (
               <button
                 type="button"
@@ -459,31 +404,7 @@ export function PathwayPathsExplorer() {
 
       {/* Branch modal — only mounted when a branch action is active.
           Renders into a portal-like fixed overlay. */}
-      {branch && (
-        <BranchModal
-          source={branch}
-          onClose={() => {
-            setBranch(null);
-            setGuideActive(false);
-            if (guideTimer.current) clearTimeout(guideTimer.current);
-          }}
-        />
-      )}
-
-      {/* Guide caption — floats over the modal while the demo plays. */}
-      {guideActive && branch && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[120] pointer-events-none max-w-md px-4">
-          <div className="rounded-xl bg-black/70 backdrop-blur-sm text-white px-4 py-2.5 text-center shadow-xl">
-            <p className="text-[12.5px] font-semibold inline-flex items-center gap-1.5">
-              <GitFork size={13} /> Branching out
-            </p>
-            <p className="text-[11.5px] text-white/80 mt-0.5 leading-snug">
-              Click the <GitFork size={11} className="inline -translate-y-px mx-0.5" /> on any role to see where it can branch.
-              The more saturated a line, the more likely that move.
-            </p>
-          </div>
-        </div>
-      )}
+      {branch && <BranchModal source={branch} onClose={() => setBranch(null)} />}
 
       {/* Station-detail popup — full card content, dynamically sized
           to the data. Click anywhere on a station card (outside the
@@ -1161,7 +1082,7 @@ const STAGE_TIMINGS: Record<Stage, number> = {
 };
 
 interface TargetData {
-  cl: CrossLink;
+  cl: BranchTarget;
   track: CareerTrack;
   station: CareerStation;
   /** Original chart rect, viewport-relative. The starting position
@@ -1179,7 +1100,7 @@ function BranchModal({
   // the array a stable reference across re-renders (without it the
   // modal previously hung in a render loop).
   const targets: TargetData[] = useMemo(() => {
-    return (source.station.crossLinks ?? [])
+    return getBranchTargets(source.track, source.station)
       .map((cl) => {
         const track = PATHWAY_BY_ID.get(cl.trackId);
         const station = track?.stations.find((s) => s.level === cl.targetLevel);
@@ -1330,7 +1251,7 @@ function BranchModal({
               label="WHERE YOU'D LAND"
               Icon={ICONS[t.track.iconKey]}
               crossLink={t.cl}
-              strength={crossLinkStrength(t.cl)}
+              strength={t.cl.strength}
             />
           </div>
         ))}
@@ -1437,7 +1358,7 @@ function BranchModal({
                 label="Where you'd land"
                 Icon={ICONS[t.track.iconKey]}
                 crossLink={t.cl}
-                strength={crossLinkStrength(t.cl)}
+                strength={t.cl.strength}
               />
             </FlipCard>
           ))}
@@ -1454,7 +1375,7 @@ function BranchModal({
               fromRect: t.fromRect,
               toRect: layout.targets[i],
               color: t.track.accent,
-              strength: crossLinkStrength(t.cl),
+              strength: t.cl.strength,
               arcOffset: layout.targets[i].arcOffset,
             }))}
             sourceAccent={source.track.accent}

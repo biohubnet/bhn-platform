@@ -43,7 +43,7 @@
  * Biomanufacturing → Senior QA/QC; Senior Reg-Affairs → Senior
  * Medical Affairs). They reuse the CrossLink shape from data.ts.
  */
-import type { CareerTrack } from "./data";
+import type { CareerStation, CareerTrack, CrossLink } from "./data";
 
 // ── 1. Biomanufacturing ──────────────────────────────────────────
 const BIOMANUFACTURING: CareerTrack = {
@@ -815,6 +815,96 @@ export function strengthTier(s: number): string {
   if (s >= 0.6) return "Likely";
   if (s >= 0.45) return "Possible";
   return "Stretch";
+}
+
+// ── Branch targets: curated cross-links + exploratory long-shots ────
+
+export interface BranchTarget extends CrossLink {
+  /** 0..1 likelihood. Curated links use crossLinkStrength; exploratory
+   *  ones use a skill-text overlap scaled into a clearly lower band. */
+  strength: number;
+  /** True for auto-discovered "less likely" branches (not curated). */
+  exploratory?: boolean;
+}
+
+const LEVEL_LABEL: Record<string, string> = {
+  junior: "Junior", mid: "Mid", senior: "Senior", lead: "Lead", vp: "VP",
+  principal: "Principal", exec: "Exec",
+};
+const levelLabel = (lvl: string) => LEVEL_LABEL[lvl] ?? lvl.charAt(0).toUpperCase() + lvl.slice(1);
+
+const STOPWORDS = new Set([
+  "the", "and", "for", "with", "that", "this", "from", "into", "your", "you", "are",
+  "its", "not", "but", "all", "can", "has", "have", "who", "how", "why", "what",
+  "when", "across", "their", "them", "more", "most", "less", "than", "then", "over",
+  "under", "each", "one", "two", "new", "own", "per", "via", "plus",
+]);
+
+function tokenize(text: string): Set<string> {
+  const out = new Set<string>();
+  for (const raw of text.toLowerCase().split(/[^a-z]+/)) {
+    if (raw.length >= 4 && !STOPWORDS.has(raw)) out.add(raw);
+  }
+  return out;
+}
+
+/** A station's "skill fingerprint" — tokens from its roles, focus, and
+ *  education gaps. Used for the cosine-similarity-like overlap score. */
+function stationProfile(st: { roles?: string[]; focus?: string; educationGaps?: string[] }): Set<string> {
+  return tokenize([(st.roles ?? []).join(" "), st.focus ?? "", (st.educationGaps ?? []).join(" ")].join(" "));
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  return inter / (a.size + b.size - inter);
+}
+
+/**
+ * Branch options for a station: the CURATED cross-links (editorial — the
+ * most-likely moves) PLUS auto-discovered EXPLORATORY long-shots to other
+ * streams at the same level — the "less likely but reachable" paths the
+ * selector now also surfaces. Each carries a 0..1 `strength` so lines can
+ * saturation-rank them. Exploratory strength comes from skill-fingerprint
+ * overlap, scaled into a band that always sits below curated links, so
+ * the curated paths stay visually dominant. Total is capped to keep the
+ * selector readable; curated always come first.
+ */
+export function getBranchTargets(track: CareerTrack, station: CareerStation): BranchTarget[] {
+  const curated: BranchTarget[] = (station.crossLinks ?? []).map((cl) => ({
+    ...cl,
+    strength: crossLinkStrength(cl),
+  }));
+  const seen = new Set(curated.map((c) => `${c.trackId}-${c.targetLevel}`));
+  const srcProfile = stationProfile(station);
+
+  const exploratory: BranchTarget[] = [];
+  for (const other of BHN_PATHWAYS) {
+    if (other.id === track.id) continue;
+    const cand = other.stations.find((s) => s.level === station.level);
+    if (!cand) continue;
+    if (seen.has(`${other.id}-${station.level}`)) continue;
+    const sim = jaccard(srcProfile, stationProfile(cand));
+    const strength = Math.max(0.16, Math.min(0.5, 0.16 + Math.min(sim, 0.45) * 0.78));
+    const lvl = levelLabel(station.level);
+    exploratory.push({
+      trackId: other.id,
+      targetLevel: station.level,
+      when: `${lvl} → ${lvl}`,
+      reason:
+        "An exploratory branch — not a common move, but the day-to-day skill profiles overlap enough that it's reachable with deliberate upskilling rather than a restart.",
+      learningNeeded: (cand.educationGaps ?? []).slice(0, 2),
+      strength,
+      exploratory: true,
+    });
+  }
+  exploratory.sort((a, b) => b.strength - a.strength);
+
+  // Curated + enough exploratory to reach ~6 (but always ≥2 exploratory,
+  // so the "less likely" options are visible even on rich stations).
+  const room = Math.max(2, 6 - curated.length);
+  return [...curated, ...exploratory.slice(0, room)];
 }
 
 // Re-export the shared types so callers can import everything from

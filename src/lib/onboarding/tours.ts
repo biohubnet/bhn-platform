@@ -37,7 +37,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "trainee.pathways-vector-branch",
     title: "Pathways — branch-out is now a likelihood vector selector",
-    body: "On the pathways chart, click a role's ⑂ branch icon: every move it can make fans out at once, and each line's saturation shows how likely it is — vivid = strong fit, faint = a stretch. Each destination shows a likelihood chip + affinity bar. Your first visit auto-plays a quick demo; replay it any time from the Guide button in the toolbar.",
+    body: "On the pathways chart, click a role's ⑂ branch icon: every move it can make fans out at once, and each line's saturation shows how likely it is — vivid = strong fit, faint = a stretch. Each destination shows a likelihood chip + affinity bar. It now surfaces both the most-likely curated moves and less-likely exploratory branches into other streams.",
     path: "/career-paths/pathways",
     placement: "center",
     cta: { label: "Open pathways", href: "/career-paths/pathways" },
