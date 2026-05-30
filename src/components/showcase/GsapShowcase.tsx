@@ -278,12 +278,18 @@ const SCENES = ["Upstream", "Cell culture", "Bioreactors", "Downstream", "Purifi
 // keyframe; each card's Y-angle is computed in JSX and pushed out along Z by the
 // inherited --radius (responsive). Hover pauses; reduced-motion stops the spin.
 const CAROUSEL_CSS = `
-/* This standalone launch page owns its typography. The platform's theme system
-   sets h1,h2,h3 { font-family: var(--font-display-theme); text-transform:
-   var(--heading-transform) } — so an active theme (e.g. Hi-tech/TRON =
-   JetBrains Mono + uppercase) would hijack the headings and drop their weight
-   (mono has no 900). Neutralize it so headings stay Outfit font-black, as designed. */
-.bhn-showcase :is(h1, h2, h3) { font-family: inherit !important; text-transform: none !important; }
+/* This standalone launch page owns its typography. The platform theme system
+   styles every h1,h2,h3 from CSS vars (font-family / weight / tracking / transform)
+   and that base rule is UNLAYERED, so it beats Tailwind's font-black & tracking-tight
+   utilities. With a theme like Hi-tech/TRON active, headings became JetBrains Mono
+   UPPERCASE at weight 500 with very wide tracking. Re-set those vars on the page root
+   so headings render as designed: Outfit, font-black (900), tight tracking, no caps. */
+.bhn-showcase {
+  --font-display-theme: inherit;
+  --heading-weight: 900;
+  --heading-tracking: -0.02em;
+  --heading-transform: none;
+}
 .bhn3d-banner { position: absolute; inset: 0; }
 .bhn3d-slider {
   --radius: 560px;
