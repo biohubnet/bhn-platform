@@ -697,7 +697,7 @@ export function GsapShowcase() {
                 </div>
                 <div className="mt-4 flex items-end gap-1.5 h-[120px]">
                   {CPH_TREND.map((v, i) => (
-                    <div key={i} className="flex-1 flex flex-col justify-end">
+                    <div key={i} className="flex-1 flex flex-col justify-end h-full">
                       <div className="cost-bar rounded-t" style={{ height: `${cphHeight(v)}%`, background: `linear-gradient(to top, ${CYAN}, ${TEAL})` }} />
                     </div>
                   ))}
