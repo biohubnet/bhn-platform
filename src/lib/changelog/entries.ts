@@ -24,8 +24,8 @@ export interface ChangelogEntry {
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── GSAP capability demo — May 2026
   {
-    title: "Added GSAP + a labeled feature reference at /showcase/gsap",
-    body: "GSAP (with @gsap/react and every plugin) is now available in the platform, and there's a public reference deck at /showcase/gsap. Each demo card is titled with the exact API to reach for, so it doubles as a cheat-sheet: core tweens, 30+ eases, grid staggers, timelines, keyframes, SplitText, ScrambleText, TextPlugin, DrawSVG, MorphSVG, MotionPath, CustomEase, Flip, Draggable + Inertia, Observer, Physics2D, and gsap.utils — plus scroll-driven sections for ScrollTrigger reveal, scrub, pin, parallax, batch, and fake-horizontal scroll. Built with the official GSAP skills' React patterns: useGSAP auto-cleanup, client-only (SSR-safe), prefers-reduced-motion gated, each demo isolated so one can't break the page.",
+    title: "Added GSAP + an agency-grade launch page at /showcase/gsap",
+    body: "GSAP (with @gsap/react and every plugin) is now in the platform, and /showcase/gsap is a public, product-launch-style landing page built entirely around real BioHubNet features — the Engage / Experience / Equip pillars, the career-pathways branch map, the AI resume fit-rating matrix, the employer Talent Reports, and the toolkit rail (AI tutor, master resume, interview prep, AutoPipette). The motion is the medium: smooth scrolling + parallax (ScrollSmoother), a SplitText hero reveal, a scrubbed DrawSVG pathway with a node riding the line (MotionPath), animated fit bars + count-up stats, growing KPI bars, a pinned horizontal feature rail, a cursor-follow glow (quickTo), and a CustomWiggle CTA. Built on the official GSAP skills' React rules — useGSAP auto-cleanup, client-only/SSR-safe, all motion gated behind prefers-reduced-motion, each effect isolated so one can't break the page.",
     kind: "note",
     visibleTo: ADMINS,
     daysAgo: 0,

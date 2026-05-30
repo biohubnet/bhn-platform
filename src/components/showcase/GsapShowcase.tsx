@@ -1,47 +1,92 @@
 "use client";
 /**
- * GsapShowcase — a LABELED feature reference for GSAP, built with the
- * official GSAP skills' React patterns. Each demo card is titled with
- * the exact API to reach for, so it doubles as a cheat-sheet.
+ * GsapShowcase — an agency-grade, GSAP-powered product-launch page for the
+ * BioHubNet platform. Every section is a REAL platform feature (the
+ * ENGAGE / EXPERIENCE / EQUIP pillars, career pathways, the AI resume +
+ * fit-rating matrix, employer Talent Reports, AutoPipette), choreographed
+ * with the official GSAP skills' React patterns:
  *
- * Skill rules followed:
- *   • useGSAP() scoped to a ref → every tween / ScrollTrigger / Draggable
- *     auto-reverts on unmount (SSR-safe; nothing runs on the server).
- *   • contextSafe() wraps event-handler animations so they're tracked +
- *     cleaned up.
- *   • gsap.matchMedia("(prefers-reduced-motion: no-preference)") gates the
- *     ambient loops; interactive demos still respond on user action.
- *   • ScrollTrigger only on top-level tweens/timelines; markers off.
- *   • Each demo is wrapped in safe() so a single plugin hiccup degrades to
- *     a static card instead of breaking the page.
+ *   • useGSAP() scoped to a ref → auto-cleanup of every tween / ScrollTrigger
+ *     / ScrollSmoother on unmount; SSR-safe (nothing runs on the server).
+ *   • gsap.matchMedia("(prefers-reduced-motion: no-preference)") owns ALL
+ *     motion incl. ScrollSmoother; the reduce branch leaves everything
+ *     visible + static.
+ *   • contextSafe() for event-handler tweens; ScrollTrigger only on
+ *     top-level timelines; markers off; each block guarded so one hiccup
+ *     degrades gracefully.
  *
- * Colours are fixed (dark, GSAP-green) so it reads the same on any theme.
+ * Fixed chrome (nav, progress, cursor glow) lives OUTSIDE #smooth-content —
+ * ScrollSmoother transforms that node, which would break position:fixed.
  */
-import { useRef, type ReactNode } from "react";
+import { useRef } from "react";
 import Link from "next/link";
+import { Outfit } from "next/font/google";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Flip } from "gsap/Flip";
-import { Draggable } from "gsap/Draggable";
-import { InertiaPlugin } from "gsap/InertiaPlugin";
-import { MotionPathPlugin } from "gsap/MotionPathPlugin";
-import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
-import { MorphSVGPlugin } from "gsap/MorphSVGPlugin";
+import { ScrollSmoother } from "gsap/ScrollSmoother";
 import { SplitText } from "gsap/SplitText";
+import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
+import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import { TextPlugin } from "gsap/TextPlugin";
-import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
-import { Physics2DPlugin } from "gsap/Physics2DPlugin";
-import { Observer } from "gsap/Observer";
 import { CustomEase } from "gsap/CustomEase";
+import { CustomWiggle } from "gsap/CustomWiggle";
 import { useGSAP } from "@gsap/react";
 
 gsap.registerPlugin(
-  useGSAP, ScrollTrigger, Flip, Draggable, InertiaPlugin, MotionPathPlugin,
-  DrawSVGPlugin, MorphSVGPlugin, SplitText, TextPlugin, ScrambleTextPlugin,
-  Physics2DPlugin, Observer, CustomEase,
+  useGSAP, ScrollTrigger, ScrollSmoother, SplitText, DrawSVGPlugin,
+  MotionPathPlugin, TextPlugin, CustomEase, CustomWiggle,
 );
 
-const GREEN = "#0ae448";
+const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600", "800", "900"], display: "swap" });
+
+const TEAL = "#2dd4bf";
+const CYAN = "#22d3ee";
+
+const PILLARS = [
+  {
+    tag: "Engage", color: CYAN,
+    title: "Learn the bench.",
+    body: "Eight biomanufacturing career tracks mapped Junior to VP, platform courses tuned to each rung, and an AI tutor that meets you where you are.",
+    points: ["Career pathways", "Course catalog", "AI tutor"],
+  },
+  {
+    tag: "Experience", color: TEAL,
+    title: "Land the role.",
+    body: "Live internships from industry partners, a talent pool employers actually browse, and AI that tailors your resume and rates your fit, role by role.",
+    points: ["Internship board", "AI resume + tailoring", "Fit-rating matrix"],
+  },
+  {
+    tag: "Equip", color: "#a78bfa",
+    title: "Fund the leap.",
+    body: "Turn a project into a venture. VentureConnect backs events and conferences up to $5K; VentureLift backs commercialization up to $25K.",
+    points: ["VentureConnect · ≤ $5K", "VentureLift · ≤ $25K", "Guided wizard"],
+  },
+];
+
+const STATS = [
+  { v: 8, suffix: "", label: "Career tracks" },
+  { v: 5, suffix: "", label: "Stations, Junior to VP" },
+  { v: 9, suffix: "", label: "Talent reports" },
+  { v: 25, suffix: "K", prefix: "$", label: "Funding per venture" },
+];
+
+const RAIL = [
+  ["AI tutor", "Ask anything about a course; grounded in the material."],
+  ["Master resume", "One library of bullets; pull into any tailored draft."],
+  ["Fit-rating matrix", "Strong / Partial / Gap against every requirement."],
+  ["Interview prep", "Likely questions + STAR answers from your resume."],
+  ["AutoPipette", "Notices when you're stuck, suggests the next step."],
+  ["Talent Reports", "Board-ready KPIs, OKRs with RAG, opt-in DEI."],
+];
+
+const FIT_ROWS = [
+  { req: "Mammalian cell culture", rating: "strong", pct: 96 },
+  { req: "GMP documentation", rating: "strong", pct: 88 },
+  { req: "Aseptic technique · BSL-2", rating: "partial", pct: 58 },
+  { req: "Bioreactor scale-up", rating: "partial", pct: 49 },
+  { req: "Regulatory (ICH Q2)", rating: "gap", pct: 18 },
+];
+const RATING_COLOR: Record<string, string> = { strong: "#34d399", partial: "#fbbf24", gap: "#fb7185" };
 
 export function GsapShowcase() {
   const root = useRef<HTMLDivElement>(null);
@@ -49,355 +94,284 @@ export function GsapShowcase() {
   useGSAP(
     (_ctx, contextSafe) => {
       const q = <T extends Element = HTMLElement>(s: string) => root.current?.querySelector<T>(s) ?? null;
-      const safe = (fn: () => void) => { try { fn(); } catch (e) { console.warn("[gsap demo]", e); } };
+      const cleanups: Array<() => void> = [];
+      const splits: SplitText[] = [];
+      const safe = (fn: () => void) => { try { fn(); } catch (e) { console.warn("[launch]", e); } };
 
-      // Always-on scroll progress bar.
-      safe(() =>
-        gsap.to(".gs-progress", {
-          scaleX: 1, ease: "none",
-          scrollTrigger: { trigger: document.body, start: 0, end: "max", scrub: 0.3 },
-        }),
-      );
+      // Progress bar (works with or without smoother).
+      safe(() => gsap.to(".gs-progress", { scaleX: 1, ease: "none", scrollTrigger: { trigger: document.body, start: 0, end: "max", scrub: 0.3 } }));
+
+      const counter = (el: HTMLElement | null, to: number, prefix = "", suffix = "") => {
+        if (!el) return;
+        const o = { v: 0 };
+        gsap.to(o, {
+          v: to, duration: 1.6, ease: "power2.out", snap: { v: 1 },
+          scrollTrigger: { trigger: el, start: "top 85%" },
+          onUpdate: () => { el.textContent = `${prefix}${Math.round(o.v)}${suffix}`; },
+        });
+      };
 
       const mm = gsap.matchMedia();
-      const splits: SplitText[] = [];
 
-      // ── Ambient looping demos (only when motion is welcome) ──────────
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        // CORE
-        safe(() => gsap.to(".d-tween", { x: 96, rotate: 360, borderRadius: "50%", duration: 1.5, ease: "power2.inOut", yoyo: true, repeat: -1 }));
+        // Smooth scrolling + data-speed parallax (guarded → native scroll on fail).
+        safe(() => { ScrollSmoother.create({ wrapper: "#smooth-wrapper", content: "#smooth-content", smooth: 1.15, effects: true }); });
 
+        // Cursor-follow glow (fine pointers only) via quickTo.
         safe(() => {
-          const eases = ["power2.out", "back.out(2.5)", "elastic.out(1,0.4)", "bounce.out", "expo.out", "sine.inOut"];
-          gsap.utils.toArray<HTMLElement>(".d-ease").forEach((el, i) =>
-            gsap.to(el, { x: 130, duration: 1.7, ease: eases[i], yoyo: true, repeat: -1, repeatDelay: 0.25 }),
-          );
+          const glow = q("#cursor-glow");
+          if (glow && window.matchMedia("(pointer:fine)").matches) {
+            gsap.set(glow, { opacity: 1 });
+            const xTo = gsap.quickTo(glow, "x", { duration: 0.6, ease: "power3" });
+            const yTo = gsap.quickTo(glow, "y", { duration: 0.6, ease: "power3" });
+            const move = (e: PointerEvent) => { xTo(e.clientX); yTo(e.clientY); };
+            window.addEventListener("pointermove", move);
+            cleanups.push(() => window.removeEventListener("pointermove", move));
+          }
         });
 
-        safe(() => gsap.to(".d-stagger", { scale: 0.25, backgroundColor: GREEN, duration: 0.5, ease: "power1.inOut", yoyo: true, repeat: -1, stagger: { each: 0.07, grid: "auto", from: "center" } }));
-
-        safe(() =>
-          gsap.timeline({ repeat: -1, repeatDelay: 0.5, defaults: { duration: 0.5, ease: "power2.inOut" } })
-            .to(".d-tl-1", { x: 80 }).to(".d-tl-2", { x: 80 }, "<0.15").to(".d-tl-3", { x: 80 }, "<0.15")
-            .to([".d-tl-1", ".d-tl-2", ".d-tl-3"], { x: 0 }, "+=0.35"),
-        );
-
-        safe(() => gsap.to(".d-key", { keyframes: { x: [0, 92, 92, 0, 0], y: [0, 0, 56, 56, 0] }, duration: 3, ease: "power1.inOut", repeat: -1 }));
-
-        // TEXT
-        safe(() => { const st = new SplitText(".d-split", { type: "chars" }); splits.push(st); gsap.from(st.chars, { yPercent: 120, opacity: 0, stagger: 0.045, duration: 0.6, ease: "back.out(1.7)", repeat: -1, repeatDelay: 1.8, yoyo: true }); });
-        safe(() => gsap.to(".d-scramble", { duration: 2, scrambleText: { text: "ScrambleTextPlugin", chars: "upperCase", speed: 0.5 }, repeat: -1, repeatDelay: 1.3 }));
-        safe(() => gsap.to(".d-text", { duration: 2, text: "typed with TextPlugin…", ease: "none", repeat: -1, repeatDelay: 1.5 }));
-
-        // SVG
-        safe(() => gsap.fromTo(".d-draw", { drawSVG: "0%" }, { drawSVG: "100%", duration: 1.7, ease: "power1.inOut", yoyo: true, repeat: -1 }));
-        safe(() => gsap.to(".d-morph", { morphSVG: "#d-morph-to", duration: 1.4, ease: "power2.inOut", yoyo: true, repeat: -1 }));
-        safe(() => gsap.to(".d-mp", { motionPath: { path: "#d-mp-path", align: "#d-mp-path", alignOrigin: [0.5, 0.5], autoRotate: true }, duration: 3.5, ease: "none", repeat: -1 }));
-
-        // EASES — author a curve
+        // Reusable reveal effect (registerEffect) for headings + cards.
         safe(() => {
-          CustomEase.create("d-custom", "M0,0 C0.2,0 0.35,1.3 0.5,1.15 0.65,1 0.8,1 1,1");
-          gsap.to(".d-custom", { x: 130, duration: 2, ease: "d-custom", yoyo: true, repeat: -1, repeatDelay: 0.3 });
+          gsap.registerEffect({
+            name: "reveal",
+            defaults: { y: 42, duration: 0.9, ease: "power3.out", stagger: 0.08 },
+            extendTimeline: false,
+            effect: (targets: Element[], cfg: { y: number; duration: number; ease: string; stagger: number }) =>
+              gsap.from(targets, { y: cfg.y, opacity: 0, duration: cfg.duration, ease: cfg.ease, stagger: cfg.stagger, scrollTrigger: { trigger: targets[0], start: "top 86%" } }),
+          });
+          gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => (gsap.effects as Record<string, (t: Element[]) => gsap.core.Tween>).reveal([el]));
         });
 
-        // PHYSICS — repeating burst
+        // Hero — SplitText word reveal.
         safe(() => {
-          const burst = gsap.timeline({ repeat: -1, repeatDelay: 1.4 });
-          burst.set(".d-particle", { x: 0, y: 0, opacity: 1, scale: 1 })
-            .to(".d-particle", { duration: 1.1, physics2D: { velocity: "random(140,320)", angle: "random(0,360)", gravity: 520 }, opacity: 0, scale: 0.3, ease: "none" });
+          const st = new SplitText(".hero-h1", { type: "lines,words", linesClass: "overflow-hidden" });
+          splits.push(st);
+          gsap.from(st.words, { yPercent: 118, opacity: 0, stagger: 0.05, duration: 1, ease: "power4.out", delay: 0.15 });
+        });
+        safe(() => gsap.from(".hero-fade", { y: 26, opacity: 0, duration: 0.9, ease: "power3.out", stagger: 0.12, delay: 0.55 }));
+
+        // Career pathways — DrawSVG line-draw + nodes, scrubbed; a node rides the path.
+        safe(() => {
+          gsap.timeline({ scrollTrigger: { trigger: ".path-sec", start: "top 65%", end: "bottom 70%", scrub: 1 } })
+            .from(".path-line", { drawSVG: "0%", ease: "none" }, 0)
+            .from(".path-node", { scale: 0, transformOrigin: "center", stagger: 0.4, ease: "back.out(2)" }, 0.1);
+          gsap.to(".path-rider", { motionPath: { path: "#path-spine", align: "#path-spine", alignOrigin: [0.5, 0.5] }, ease: "none", scrollTrigger: { trigger: ".path-sec", start: "top 65%", end: "bottom 70%", scrub: 1 } });
+        });
+
+        // Fit matrix — bars grow + score counts, on enter.
+        safe(() => {
+          gsap.from(".fit-bar", { scaleX: 0, transformOrigin: "left center", stagger: 0.12, duration: 0.9, ease: "power3.out", scrollTrigger: { trigger: ".fit-sec", start: "top 75%" } });
+          counter(q(".fit-score"), 64, "", "");
+        });
+
+        // Stats counters.
+        STATS.forEach((s, i) => safe(() => counter(q(`.stat-${i}`), s.v, s.prefix ?? "", s.suffix ?? "")));
+
+        // Talent Reports — KPI bars grow.
+        safe(() => gsap.from(".kpi-bar", { height: 0, transformOrigin: "bottom", stagger: 0.1, duration: 1, ease: "power3.out", scrollTrigger: { trigger: ".kpi-sec", start: "top 78%" } }));
+
+        // Feature rail — pinned, scrolls horizontally (ease: none).
+        safe(() => {
+          const track = q(".rail-track");
+          if (track) {
+            gsap.to(track, {
+              xPercent: -100 * ((track.children.length - 1) / track.children.length),
+              ease: "none",
+              scrollTrigger: { trigger: ".rail-sec", start: "top top", end: "+=2200", scrub: 1, pin: true },
+            });
+          }
+        });
+
+        // CTA — CustomWiggle on the arrow, looping subtly.
+        safe(() => {
+          CustomWiggle.create("ctaWiggle", { wiggles: 6, type: "easeOut" });
+          gsap.to(".cta-arrow", { x: 8, duration: 1.4, ease: "ctaWiggle", repeat: -1, repeatDelay: 1.6 });
         });
       });
 
-      // ── Interactive demos (respond on user action, any motion pref) ──
-      safe(() => {
-        const flipBox = q(".d-flip-box");
-        const btn = q(".d-flip-btn");
-        if (flipBox && btn && contextSafe) {
-          const onClick = contextSafe(() => {
-            const items = gsap.utils.toArray<HTMLElement>(".d-flip-item");
-            const state = Flip.getState(items);
-            flipBox.classList.toggle("d-flip-col");
-            Flip.from(state, { duration: 0.6, ease: "power2.inOut", stagger: 0.05 });
-          });
-          btn.addEventListener("click", onClick);
-        }
+      mm.add("(prefers-reduced-motion: reduce)", () => {
+        // Everything visible + static.
+        safe(() => gsap.set([".hero-fade", ".reveal", ".fit-bar", ".kpi-bar"], { clearProps: "all" }));
+        safe(() => gsap.set(".path-line", { drawSVG: "100%" }));
+        STATS.forEach((s, i) => safe(() => { const el = q(`.stat-${i}`); if (el) el.textContent = `${s.prefix ?? ""}${s.v}${s.suffix ?? ""}`; }));
+        safe(() => { const el = q(".fit-score"); if (el) el.textContent = "64"; });
       });
 
-      safe(() => { Draggable.create(".d-drag", { type: "x,y", bounds: ".d-drag-area", inertia: true, edgeResistance: 0.65 }); });
-
-      let obs: Observer | null = null;
-      safe(() => {
-        const dial = q(".d-dial");
-        if (dial) {
-          obs = Observer.create({
-            target: ".d-obs-area", type: "wheel,touch,pointer",
-            onChange: (self) => gsap.to(dial, { rotation: "+=" + (self.deltaX + self.deltaY) * 0.6, duration: 0.5, ease: "power2.out" }),
-          });
-        }
-      });
-
-      safe(() => {
-        const slider = q<HTMLInputElement>(".d-util-slider");
-        const out = q(".d-util-out");
-        const bar = q(".d-util-bar");
-        if (slider && out && bar) {
-          const update = () => {
-            const v = Number(slider.value); // 0..100
-            const mapped = gsap.utils.mapRange(0, 100, -40, 40, v);
-            const snapped = gsap.utils.snap(5, v);
-            const clamped = gsap.utils.clamp(20, 80, v);
-            out.textContent = `mapRange→${mapped.toFixed(0)}  snap(5)→${snapped}  clamp(20,80)→${clamped}`;
-            gsap.to(bar, { width: `${v}%`, backgroundColor: gsap.utils.interpolate("#22d3ee", GREEN, v / 100), duration: 0.3 });
-          };
-          slider.addEventListener("input", update);
-          update();
-        }
-      });
-
-      // ── ScrollTrigger demos (scroll-driven; user controls them) ──────
-      safe(() => gsap.from(".d-toggle", { y: 60, opacity: 0, duration: 0.8, ease: "power3.out", scrollTrigger: { trigger: ".d-toggle", start: "top 85%", toggleActions: "play none none reverse" } }));
-      safe(() => gsap.to(".d-scrub", { xPercent: 260, rotate: 180, ease: "none", scrollTrigger: { trigger: ".d-scrub-sec", start: "top 80%", end: "bottom 30%", scrub: true } }));
-
-      safe(() => {
-        const countEl = q(".gs-count");
-        const counter = { v: 0 };
-        gsap.timeline({ scrollTrigger: { trigger: ".gs-pin", start: "top top", end: "+=1500", scrub: 1, pin: true } })
-          .to(".gs-ring", { rotate: 300, scale: 1.18, ease: "none" }, 0)
-          .to(counter, { v: 100, ease: "none", snap: { v: 1 }, onUpdate: () => { if (countEl) countEl.textContent = String(Math.round(counter.v)); } }, 0)
-          .from(".gs-step-1", { xPercent: -140, opacity: 0 }, 0.05)
-          .from(".gs-step-2", { yPercent: 140, opacity: 0 }, 0.25)
-          .from(".gs-step-3", { xPercent: 140, opacity: 0 }, 0.45);
-      });
-
-      safe(() => {
-        const par = (sel: string, yPercent: number) => gsap.to(sel, { yPercent, ease: "none", scrollTrigger: { trigger: ".gs-parallax", start: "top bottom", end: "bottom top", scrub: true } });
-        par(".gs-par-back", -24); par(".gs-par-mid", -55); par(".gs-par-front", -95);
-      });
-
-      safe(() => {
-        gsap.set(".gs-card", { opacity: 0, y: 48 });
-        ScrollTrigger.batch(".gs-card", {
-          start: "top 88%",
-          onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, stagger: 0.12, duration: 0.55, ease: "power2.out", overwrite: true }),
-          onLeaveBack: (els) => gsap.to(els, { opacity: 0, y: 48, overwrite: true }),
-        });
-      });
-
-      safe(() => {
-        const track = q(".gs-h-track");
-        if (track) {
-          gsap.to(track, {
-            xPercent: -100 * ((track.children.length - 1) / track.children.length),
-            ease: "none",
-            scrollTrigger: { trigger: ".gs-h-sec", start: "top top", end: "+=1600", scrub: 1, pin: true },
-          });
-        }
-      });
-
-      // Manual cleanup for things gsap.context doesn't revert itself.
-      return () => { splits.forEach((s) => s.revert()); obs?.kill(); };
+      return () => { splits.forEach((s) => s.revert()); cleanups.forEach((fn) => fn()); };
     },
     { scope: root },
   );
 
   return (
-    <div ref={root} className="min-h-screen bg-[#0b0f17] text-white overflow-x-hidden">
-      <div className="gs-progress fixed top-0 left-0 right-0 h-1 origin-left z-50" style={{ transform: "scaleX(0)", background: `linear-gradient(90deg, ${GREEN}, #22d3ee)` }} aria-hidden />
-
-      {/* Header */}
-      <header className="px-6 pt-16 pb-10 max-w-6xl mx-auto">
-        <p className="text-[11px] uppercase tracking-[0.4em] font-bold mb-3" style={{ color: GREEN }}>GSAP · feature reference</p>
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight">What GSAP can do</h1>
-        <p className="mt-4 text-white/60 max-w-2xl leading-relaxed">
-          Each card is labelled with the API to reach for. The grid below loops automatically; scroll-driven demos are further down. Everything respects <span className="text-white/80">prefers-reduced-motion</span>.
-        </p>
-      </header>
-
-      {/* Compact looping / interactive cards */}
-      <div className="px-6 max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-20">
-        <Card group="Core" api="gsap.to() / from() / fromTo()" note="Tween any property — x, rotation, scale, color, borderRadius…">
-          <span className="d-tween block w-12 h-12 rounded-lg" style={{ background: GREEN }} />
-        </Card>
-
-        <Card group="Core" api='ease: "power / back / elastic / bounce / expo / sine"' note="30+ eases, top → bottom">
-          <div className="space-y-1.5">
-            {["power2", "back", "elastic", "bounce", "expo", "sine"].map((n) => (
-              <span key={n} className="d-ease block w-3 h-3 rounded-full" style={{ background: GREEN }} title={n} />
-            ))}
-          </div>
-        </Card>
-
-        <Card group="Core" api='stagger: { grid: "auto", from: "center" }' note="Grid-aware staggered tweens">
-          <div className="grid grid-cols-5 gap-1.5">
-            {Array.from({ length: 25 }).map((_, i) => <span key={i} className="d-stagger w-3 h-3 rounded-sm bg-white/30" />)}
-          </div>
-        </Card>
-
-        <Card group="Timeline" api="gsap.timeline() + position param" note='Sequence with overlaps ("<0.15")'>
-          <div className="space-y-2">
-            {["d-tl-1", "d-tl-2", "d-tl-3"].map((c) => <span key={c} className={`${c} block w-8 h-3 rounded`} style={{ background: GREEN }} />)}
-          </div>
-        </Card>
-
-        <Card group="Timeline" api="keyframes: { x: [...], y: [...] }" note="Multi-step path on one tween">
-          <span className="d-key block w-8 h-8 rounded-md" style={{ background: "#22d3ee" }} />
-        </Card>
-
-        <Card group="Text" api="new SplitText(el, { type: 'chars' })" note="Split into chars / words / lines, then animate">
-          <span className="d-split text-2xl font-black" style={{ color: GREEN }}>SplitText</span>
-        </Card>
-
-        <Card group="Text" api="scrambleText: { text, chars }" note="Decode / scramble effect">
-          <span className="d-scramble font-mono text-sm text-white/80">··················</span>
-        </Card>
-
-        <Card group="Text" api='text: "…" (TextPlugin)' note="Typewriter replacement">
-          <span className="d-text font-mono text-sm" style={{ color: "#22d3ee" }} />
-        </Card>
-
-        <Card group="SVG" api='drawSVG: "0%" → "100%"' note="Animate stroke drawing">
-          <svg viewBox="0 0 120 40" className="w-full h-12"><path className="d-draw" d="M4,30 C30,4 50,36 70,18 90,2 110,30 116,12" fill="none" stroke={GREEN} strokeWidth="3" strokeLinecap="round" /></svg>
-        </Card>
-
-        <Card group="SVG" api='morphSVG: "#target"' note="Morph one shape into another">
-          <svg viewBox="0 0 60 60" className="w-14 h-14">
-            <path id="d-morph-to" d="M30,4 56,30 30,56 4,30Z" fill="none" stroke="transparent" />
-            <path className="d-morph" d="M30,6 a24,24 0 1,0 0.1,0Z" fill={`${GREEN}33`} stroke={GREEN} strokeWidth="2" />
-          </svg>
-        </Card>
-
-        <Card group="SVG" api="motionPath: { path, autoRotate }" note="Follow an arbitrary path">
-          <svg viewBox="0 0 120 50" className="w-full h-14">
-            <path id="d-mp-path" d="M6,42 C36,2 84,2 114,42" fill="none" stroke="#ffffff22" strokeWidth="2" />
-            <rect className="d-mp" x="-5" y="-3" width="10" height="6" rx="1.5" fill={GREEN} />
-          </svg>
-        </Card>
-
-        <Card group="Easing" api='CustomEase.create(id, "M0,0 C…")' note="Author any easing curve">
-          <span className="d-custom block w-9 h-9 rounded-lg" style={{ background: "#a78bfa" }} />
-        </Card>
-
-        <Card group="Interactive" api="Flip.getState() → Flip.from()" note="Animate layout changes — click to reflow" interactive>
-          <div className="d-flip-box flex flex-row gap-2 flex-wrap">
-            {["a", "b", "c", "d"].map((c) => <span key={c} className="d-flip-item w-8 h-8 rounded-md" style={{ background: GREEN }} />)}
-          </div>
-          <button type="button" className="d-flip-btn mt-3 text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded ring-1 ring-white/20 hover:bg-white/10">Reflow ⤧</button>
-        </Card>
-
-        <Card group="Interactive" api="Draggable.create({ inertia: true })" note="Drag + throw with momentum" interactive>
-          <div className="d-drag-area relative w-full h-20 rounded-lg ring-1 ring-white/10">
-            <span className="d-drag absolute left-2 top-2 w-10 h-10 rounded-full grid place-items-center text-[10px] font-bold text-black cursor-grab active:cursor-grabbing" style={{ background: GREEN }}>drag</span>
-          </div>
-        </Card>
-
-        <Card group="Interactive" api="Observer.create({ type: 'wheel,touch,pointer' })" note="Wheel / drag over the box to spin" interactive>
-          <div className="d-obs-area w-full h-20 rounded-lg ring-1 ring-white/10 grid place-items-center cursor-ew-resize">
-            <span className="d-dial block w-12 h-1.5 rounded-full" style={{ background: GREEN }} />
-          </div>
-        </Card>
-
-        <Card group="Physics" api="physics2D: { velocity, angle, gravity }" note="Particle motion under gravity">
-          <div className="relative w-full h-20 grid place-items-center">
-            {Array.from({ length: 18 }).map((_, i) => <span key={i} className="d-particle absolute w-1.5 h-1.5 rounded-full" style={{ background: i % 2 ? GREEN : "#22d3ee" }} />)}
-          </div>
-        </Card>
-
-        <Card group="Utils" api="gsap.utils.mapRange / snap / clamp / interpolate" note="Drag the slider" interactive>
-          <input type="range" min={0} max={100} defaultValue={50} className="d-util-slider w-full accent-[#0ae448]" />
-          <div className="d-util-bar h-1.5 rounded-full mt-2" style={{ width: "50%", background: GREEN }} />
-          <p className="d-util-out font-mono text-[10.5px] text-white/60 mt-2 leading-snug" />
-        </Card>
-      </div>
-
-      {/* ── Scroll-driven demos ─────────────────────────────────────── */}
-      <SectionLabel>ScrollTrigger — scroll the rest</SectionLabel>
-
-      <ScrollDemo api='scrollTrigger: { toggleActions: "play none none reverse" }' title="Reveal on enter">
-        <div className="d-toggle inline-block px-6 py-4 rounded-2xl ring-1 ring-white/10 bg-white/[0.04] text-lg font-bold">I fade + slide in when scrolled into view ✦</div>
-      </ScrollDemo>
-
-      <div className="d-scrub-sec relative py-28 overflow-hidden border-y border-white/10">
-        <SectionCaption api="scrollTrigger: { scrub: true }">Scrub — progress tied to scroll</SectionCaption>
-        <span className="d-scrub block w-16 h-16 rounded-xl mt-8 ml-6" style={{ background: GREEN }} />
-      </div>
-
-      {/* pin + scrub */}
-      <section className="gs-pin relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
-        <div aria-hidden className="gs-ring absolute w-[58vmin] h-[58vmin] rounded-full" style={{ border: `2px dashed ${GREEN}55` }} />
-        <p className="text-[11px] uppercase tracking-[0.34em] font-bold text-white/40 mb-2">pin: true + scrub</p>
-        <div className="relative text-center"><span className="gs-count text-[24vmin] sm:text-[150px] font-black leading-none tabular-nums" style={{ color: GREEN }}>0</span><span className="text-4xl font-black align-top" style={{ color: GREEN }}>%</span></div>
-        <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-2xl mt-6">
-          {[["gs-step-1", "Pin"], ["gs-step-2", "Scrub"], ["gs-step-3", "Sequence"]].map(([c, t]) => (
-            <div key={c} className={`${c} rounded-xl p-4 ring-1 ring-white/10 bg-white/[0.04] text-center font-bold`} style={{ color: GREEN }}>{t}</div>
-          ))}
+    <div ref={root} className={`${outfit.className} bg-[#07101a] text-white overflow-x-hidden`}>
+      {/* ── Fixed chrome (outside #smooth-content) ── */}
+      <div id="cursor-glow" aria-hidden className="pointer-events-none fixed top-0 left-0 z-[5] w-[42rem] h-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0" style={{ background: `radial-gradient(circle, ${CYAN}22 0%, transparent 60%)` }} />
+      <div className="gs-progress fixed top-0 left-0 right-0 h-[3px] origin-left z-50" style={{ transform: "scaleX(0)", background: `linear-gradient(90deg, ${CYAN}, ${TEAL})` }} aria-hidden />
+      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-6 rounded-full px-5 py-2.5 ring-1 ring-white/10 bg-white/[0.06] backdrop-blur-md">
+        <span className="font-black tracking-tight text-[15px]">BioHubNet</span>
+        <div className="hidden sm:flex items-center gap-5 text-[12px] text-white/60 font-medium">
+          <a href="#pillars" className="hover:text-white transition-colors">Platform</a>
+          <a href="#pathways" className="hover:text-white transition-colors">Pathways</a>
+          <a href="#equip" className="hover:text-white transition-colors">Funding</a>
         </div>
-      </section>
+        <Link href="/dashboard" className="text-[12px] font-bold rounded-full px-3.5 py-1.5 text-[#07101a]" style={{ background: TEAL }}>Enter</Link>
+      </nav>
 
-      {/* parallax */}
-      <section className="gs-parallax relative h-[80vh] flex items-center justify-center overflow-hidden border-y border-white/10">
-        <div aria-hidden className="gs-par-back absolute text-[30vw] font-black text-white/[0.04] whitespace-nowrap">PARALLAX</div>
-        <div aria-hidden className="gs-par-mid absolute left-[12%] top-[30%] w-24 h-24 rounded-3xl rotate-12" style={{ background: `${GREEN}22`, border: `1px solid ${GREEN}55` }} />
-        <div aria-hidden className="gs-par-front absolute right-[16%] bottom-[26%] w-16 h-16 rounded-full" style={{ background: "#22d3ee33", border: "1px solid #22d3ee66" }} />
-        <p className="relative text-2xl sm:text-4xl font-bold max-w-md text-center px-6">Layers drift at different speeds — pure scrub.</p>
-      </section>
+      <div id="smooth-wrapper">
+        <div id="smooth-content">
+          {/* ── HERO ── */}
+          <section className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center">
+            <div aria-hidden className="absolute inset-0 overflow-hidden">
+              <div data-speed="0.85" className="absolute -top-1/4 left-1/2 -translate-x-1/2 w-[120vw] h-[80vh] rounded-full blur-[120px] opacity-50" style={{ background: `radial-gradient(circle, ${"#0d9488"}55, transparent 60%)` }} />
+              <div data-speed="1.1" className="absolute top-1/3 left-[8%] w-72 h-72 rounded-full blur-3xl opacity-30" style={{ background: `${CYAN}` }} />
+              <div data-speed="0.7" className="absolute bottom-[10%] right-[10%] w-80 h-80 rounded-full blur-3xl opacity-25" style={{ background: "#0369a1" }} />
+            </div>
+            <p className="hero-fade relative text-[11px] uppercase tracking-[0.4em] font-bold mb-6" style={{ color: TEAL }}>Transformative talent development</p>
+            <h1 className="hero-h1 relative font-black leading-[0.98] tracking-tight max-w-6xl" style={{ fontSize: "clamp(2.6rem, 6vw, 5.4rem)" }}>
+              The biomanufacturing career platform — train, get placed, get funded.
+            </h1>
+            <p className="hero-fade relative mt-7 text-base sm:text-xl text-white/65 max-w-2xl leading-relaxed">
+              One path from your first course to your first offer — and the funding to build what&apos;s next.
+            </p>
+            <div className="hero-fade relative mt-10 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/dashboard" className="rounded-full px-6 py-3 text-[15px] font-bold text-[#07101a]" style={{ background: TEAL }}>Enter the platform</Link>
+              <a href="#pathways" className="rounded-full px-6 py-3 text-[15px] font-bold ring-1 ring-white/20 hover:bg-white/10 transition-colors">See career pathways</a>
+            </div>
+          </section>
 
-      {/* batch */}
-      <section className="relative px-6 py-24 max-w-5xl mx-auto">
-        <SectionCaption api="ScrollTrigger.batch()">Batched reveals on enter</SectionCaption>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8">
-          {Array.from({ length: 8 }).map((_, i) => <div key={i} className="gs-card h-24 rounded-2xl ring-1 ring-white/10 bg-white/[0.04] grid place-items-center font-black" style={{ color: GREEN }}>{i + 1}</div>)}
+          {/* ── PILLARS ── */}
+          <section id="pillars" className="relative px-6 py-32 md:py-48 max-w-6xl mx-auto">
+            <h2 className="reveal font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Three pillars, one trajectory.</h2>
+            <p className="reveal mt-4 text-white/55 max-w-xl text-lg">Most platforms do one. BioHubNet carries you across all three.</p>
+            <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {PILLARS.map((p) => (
+                <div key={p.tag} className="reveal group rounded-3xl p-7 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors" data-speed="1.04">
+                  <p className="text-[11px] uppercase tracking-[0.3em] font-bold mb-5" style={{ color: p.color }}>{p.tag}</p>
+                  <h3 className="text-2xl font-black mb-3">{p.title}</h3>
+                  <p className="text-white/55 text-[14px] leading-relaxed mb-5">{p.body}</p>
+                  <ul className="space-y-1.5">
+                    {p.points.map((pt) => (
+                      <li key={pt} className="flex items-center gap-2 text-[13px] text-white/75">
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: p.color }} />{pt}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── CAREER PATHWAYS (DrawSVG) ── */}
+          <section id="pathways" className="path-sec relative px-6 py-32 md:py-44 border-y border-white/10 overflow-hidden">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 items-center">
+              <div>
+                <h2 className="reveal font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Every route from junior to VP.</h2>
+                <p className="reveal mt-5 text-white/60 text-lg leading-relaxed max-w-md">Pick a track and see the five stations ahead — plus the branch points where careers fork into adjacent streams, each ranked by likelihood with the skills to bridge the jump.</p>
+              </div>
+              <svg viewBox="0 0 420 240" className="w-full h-auto">
+                <path id="path-spine" className="path-line" d="M20,200 C90,200 90,120 160,120 C230,120 230,60 300,60 L400,60" fill="none" stroke={TEAL} strokeWidth="3" strokeLinecap="round" />
+                <path className="path-line" d="M160,120 C210,120 210,180 280,180 L360,180" fill="none" stroke={`${CYAN}99`} strokeWidth="2.5" strokeDasharray="6 6" strokeLinecap="round" />
+                {[[20, 200], [160, 120], [300, 60], [400, 60], [280, 180], [360, 180]].map(([cx, cy], i) => (
+                  <circle key={i} className="path-node" cx={cx} cy={cy} r={i < 4 ? 8 : 6} fill={i < 4 ? TEAL : "#07101a"} stroke={i < 4 ? "#07101a" : CYAN} strokeWidth="2.5" />
+                ))}
+                <rect className="path-rider" x="-5" y="-5" width="10" height="10" rx="2" fill="#fff" />
+                {["Junior", "Associate", "Senior", "Lead / VP"].map((t, i) => (
+                  <text key={t} x={[20, 160, 300, 400][i]} y={[222, 142, 42, 42][i]} fill="#ffffffaa" fontSize="11" textAnchor={i === 3 ? "end" : "middle"} fontFamily="inherit">{t}</text>
+                ))}
+              </svg>
+            </div>
+          </section>
+
+          {/* ── FIT MATRIX ── */}
+          <section className="fit-sec relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr] gap-12 items-center">
+              <div>
+                <h2 className="reveal font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Know your fit before you apply.</h2>
+                <p className="reveal mt-5 text-white/60 text-lg leading-relaxed max-w-md">The fit-rating matrix reads your resume against a role&apos;s requirements one by one — Strong, Partial, or Gap — with the evidence it found and the fastest way to close each gap.</p>
+                <div className="reveal mt-7 flex items-end gap-3">
+                  <span className="fit-score font-black tabular-nums leading-none" style={{ fontSize: "clamp(3rem,7vw,5rem)", color: TEAL }}>0</span>
+                  <span className="text-white/40 text-sm mb-2 uppercase tracking-[0.2em] font-bold">/ 100 overall fit</span>
+                </div>
+              </div>
+              <div className="rounded-3xl p-6 ring-1 ring-white/10 bg-white/[0.03] space-y-4">
+                {FIT_ROWS.map((r) => (
+                  <div key={r.req}>
+                    <div className="flex items-center justify-between text-[13px] mb-1.5">
+                      <span className="text-white/80">{r.req}</span>
+                      <span className="uppercase text-[10px] font-black tracking-wider" style={{ color: RATING_COLOR[r.rating] }}>{r.rating}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                      <div className="fit-bar h-full rounded-full" style={{ width: `${r.pct}%`, background: RATING_COLOR[r.rating] }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── STATS ── */}
+          <section className="relative px-6 py-24 border-y border-white/10">
+            <div className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+              {STATS.map((s, i) => (
+                <div key={s.label}>
+                  <p className={`stat-${i} font-black tabular-nums leading-none`} style={{ fontSize: "clamp(2.4rem,5vw,4rem)", color: i % 2 ? CYAN : TEAL }}>{s.prefix ?? ""}0{s.suffix ?? ""}</p>
+                  <p className="mt-3 text-white/50 text-[13px]">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── TALENT REPORTS ── */}
+          <section className="kpi-sec relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
+              <div className="flex items-end gap-3 h-56">
+                {[40, 62, 55, 78, 70, 92].map((h, i) => (
+                  <div key={i} className="flex-1 flex flex-col justify-end">
+                    <div className="kpi-bar rounded-t-md" style={{ height: `${h}%`, background: `linear-gradient(to top, ${TEAL}, ${CYAN})` }} />
+                  </div>
+                ))}
+              </div>
+              <div>
+                <h2 className="reveal font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Board-ready, for employers.</h2>
+                <p className="reveal mt-5 text-white/60 text-lg leading-relaxed max-w-md">Nine talent reports — funnel, time-to-fill, offers, cost-per-hire, source effectiveness and an opt-in DEI view — with OKR targets, RAG status, period filters, and one-click PDF or CSV export.</p>
+              </div>
+            </div>
+          </section>
+
+          {/* ── FEATURE RAIL (horizontal pin) ── */}
+          <section className="rail-sec relative h-screen overflow-hidden">
+            <div className="absolute top-10 left-1/2 -translate-x-1/2 text-center px-6 z-10">
+              <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(1.8rem, 3.5vw, 3rem)" }}>Everything in the toolkit.</h2>
+            </div>
+            <div className="rail-track flex h-full items-center gap-6 px-[6vw]" style={{ width: "max-content" }}>
+              {RAIL.map(([t, d], i) => (
+                <div key={t} className="w-[78vw] sm:w-[42vw] lg:w-[30vw] rounded-3xl p-8 ring-1 ring-white/10 bg-white/[0.04]">
+                  <span className="text-[12px] font-black" style={{ color: i % 2 ? CYAN : TEAL }}>{String(i + 1).padStart(2, "0")}</span>
+                  <h3 className="text-3xl font-black mt-3">{t}</h3>
+                  <p className="text-white/55 mt-3 leading-relaxed">{d}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── CTA / FOOTER ── */}
+          <section id="equip" className="relative px-6 py-40 md:py-56 text-center overflow-hidden">
+            <div aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(60% 60% at 50% 50%, ${"#0d9488"}33, transparent 70%)` }} />
+            <h2 className="reveal relative font-black tracking-tight max-w-4xl mx-auto" style={{ fontSize: "clamp(2.4rem, 6vw, 5rem)" }}>Start your pathway today.</h2>
+            <p className="reveal relative mt-5 text-white/60 text-lg max-w-xl mx-auto">Train for the bench, get in front of employers, and fund the leap — all in one place.</p>
+            <div className="reveal relative mt-10">
+              <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-lg font-black text-[#07101a]" style={{ background: TEAL }}>
+                Enter BioHubNet <span className="cta-arrow inline-block">&rarr;</span>
+              </Link>
+            </div>
+          </section>
+
+          <footer className="relative px-6 pb-16 text-center text-white/35 text-[11px] leading-relaxed">
+            <p>Motion engineered with GSAP — ScrollSmoother · SplitText · ScrollTrigger (pin / scrub / batch) · DrawSVG · MotionPath · CustomWiggle · quickTo · registerEffect · matchMedia.</p>
+            <p className="mt-2">Respects prefers-reduced-motion · cleans up via useGSAP.</p>
+          </footer>
         </div>
-      </section>
-
-      {/* horizontal containerAnimation */}
-      <section className="gs-h-sec relative h-screen overflow-hidden">
-        <SectionCaption api="pin + horizontal track (ease: none)">Fake horizontal scroll</SectionCaption>
-        <div className="gs-h-track flex h-full items-center gap-6 px-6" style={{ width: "max-content" }}>
-          {["Scroll ↓ to pan →", "Panel two", "Panel three", "Panel four"].map((t, i) => (
-            <div key={i} className="w-[80vw] sm:w-[60vw] h-[55vh] rounded-3xl ring-1 ring-white/10 grid place-items-center text-2xl font-black" style={{ background: i % 2 ? `${GREEN}14` : "#22d3ee14", color: i % 2 ? GREEN : "#22d3ee" }}>{t}</div>
-          ))}
-        </div>
-      </section>
-
-      <footer className="px-6 py-20 text-center text-white/40 text-[12px]">
-        Built with the official GSAP skills · useGSAP auto-cleanup · prefers-reduced-motion respected
-        <div className="mt-4"><Link href="/dashboard" className="text-[13px] font-semibold underline" style={{ color: GREEN }}>← Back to the platform</Link></div>
-      </footer>
-    </div>
-  );
-}
-
-function Card({ group, api, note, children, interactive }: { group: string; api: string; note: string; children: ReactNode; interactive?: boolean }) {
-  return (
-    <div className="rounded-2xl ring-1 ring-white/10 bg-white/[0.03] p-4 flex flex-col">
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <span className="text-[9.5px] uppercase tracking-[0.18em] font-bold text-white/40">{group}</span>
-        {interactive && <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded" style={{ background: `${GREEN}22`, color: GREEN }}>interactive</span>}
       </div>
-      <div className="min-h-[88px] flex items-center justify-center overflow-hidden">{children}</div>
-      <p className="font-mono text-[11px] mt-3 leading-snug" style={{ color: GREEN }}>{api}</p>
-      <p className="text-[11.5px] text-white/50 mt-1 leading-snug">{note}</p>
     </div>
-  );
-}
-
-function SectionLabel({ children }: { children: ReactNode }) {
-  return <h2 className="px-6 max-w-6xl mx-auto text-[11px] uppercase tracking-[0.34em] font-bold text-white/40 pt-10 pb-2">{children}</h2>;
-}
-function SectionCaption({ api, children }: { api: string; children: ReactNode }) {
-  return (
-    <div className="px-6 max-w-5xl mx-auto">
-      <p className="text-xl sm:text-2xl font-bold">{children}</p>
-      <p className="font-mono text-[12px] mt-1" style={{ color: GREEN }}>{api}</p>
-    </div>
-  );
-}
-function ScrollDemo({ api, title, children }: { api: string; title: string; children: ReactNode }) {
-  return (
-    <section className="px-6 max-w-5xl mx-auto py-24">
-      <p className="text-xl sm:text-2xl font-bold">{title}</p>
-      <p className="font-mono text-[12px] mt-1 mb-8" style={{ color: GREEN }}>{api}</p>
-      {children}
-    </section>
   );
 }
