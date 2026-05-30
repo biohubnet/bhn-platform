@@ -197,6 +197,58 @@ function sparkPath(vals: number[], w = 132, h = 40, pad = 4) {
 }
 const fitChip = (s: number) => (s >= 85 ? RATING_COLOR.strong : s >= 60 ? RATING_COLOR.partial : RATING_COLOR.gap);
 
+// ── Course catalog ───────────────────────────────────────────────────────────
+const RING_R = 26;
+const RING_C = 2 * Math.PI * RING_R;
+const COURSES = [
+  { t: "Upstream Processing", mods: 8, level: "Core", pct: 100, color: CYAN },
+  { t: "Downstream & Purification", mods: 7, level: "Core", pct: 72, color: TEAL },
+  { t: "Cell Culture & Bioreactors", mods: 9, level: "Core", pct: 45, color: BLUE },
+  { t: "GMP & Quality Systems", mods: 6, level: "Foundations", pct: 88, color: VIOLET },
+  { t: "Aseptic Technique · BSL-2", mods: 5, level: "Lab skills", pct: 30, color: CYAN },
+  { t: "Analytical Methods · ICH Q2", mods: 6, level: "Advanced", pct: 12, color: TEAL },
+];
+
+// ── Eight tracks ─────────────────────────────────────────────────────────────
+const TRACKS = ["Process Development", "Upstream", "Downstream / DSP", "MSAT / Tech Transfer", "QA / Quality Systems", "QC / Analytical", "Regulatory Affairs", "Manufacturing Ops"];
+
+// ── Resume tools workflow ────────────────────────────────────────────────────
+const RESUME_FLOW = [
+  { t: "Master resume", d: "Bank every bullet once — projects, methods, outcomes.", color: BLUE },
+  { t: "Tailor to a role", d: "AI reshapes it to a specific posting in seconds.", color: TEAL },
+  { t: "Fit-rating matrix", d: "Strong / Partial / Gap against the requirements.", color: CYAN },
+  { t: "Cover letter", d: "Drafted from your real evidence, in your voice.", color: VIOLET },
+  { t: "Interview prep", d: "Likely questions + STAR answers from your resume.", color: TEAL },
+];
+
+// ── Job board ────────────────────────────────────────────────────────────────
+const JOBS = [
+  { role: "Process Development Intern", org: "Cell-therapy CDMO", loc: "Toronto · Hybrid", stipend: "$24 / hr", tags: ["Upstream", "GMP"], fit: 91 },
+  { role: "QC Analyst (Co-op)", org: "Biologics manufacturer", loc: "Mississauga · On-site", stipend: "$22 / hr", tags: ["Analytical", "ICH Q2"], fit: 78 },
+  { role: "MSAT Associate", org: "Vaccine producer", loc: "Montréal · On-site", stipend: "$26 / hr", tags: ["Tech transfer"], fit: 84 },
+  { role: "Downstream Intern", org: "Gene-therapy startup", loc: "Remote-first", stipend: "$23 / hr", tags: ["DSP", "Purification"], fit: 66 },
+];
+
+// ── Knowledge Exchange ───────────────────────────────────────────────────────
+const EXCHANGE: [string, string][] = [
+  ["Peer cohorts", "Learn alongside others on the same track."],
+  ["Mentor office hours", "Book time with people one rung ahead."],
+  ["Ask the bench", "Crowd-sourced answers to real lab problems."],
+  ["Shared protocols", "A living library of vetted SOPs and methods."],
+];
+const KX_NODES: [number, number, number][] = [[180, 160, 18], [70, 70, 11], [290, 80, 12], [60, 230, 12], [305, 235, 11], [180, 48, 10], [180, 285, 12]];
+const KX_LINKS = ["M180,160 L70,70", "M180,160 L290,80", "M180,160 L60,230", "M180,160 L305,235", "M180,160 L180,48", "M180,160 L180,285", "M70,70 L180,48", "M290,80 L305,235"];
+
+// ── International exchange (coming) ───────────────────────────────────────────
+const INTL = ["Toronto ⇄ Boston", "Vancouver ⇄ Basel", "Montréal ⇄ Singapore", "Toronto ⇄ Cambridge UK"];
+
+// ── Funding ladder ───────────────────────────────────────────────────────────
+const FUNDING = [
+  { t: "VentureConnect", cap: 5, w: 20, color: CYAN, blurb: "Backs the events, conferences, and community moments that put your work in front of the right people.", items: ["Conference travel + registration", "Host a community event", "Networking + outreach"] },
+  { t: "VentureLift", cap: 25, w: 100, color: VIOLET, blurb: "Backs commercialization — prototypes, pilots, and the first real steps toward a product.", items: ["Prototype + materials", "Pilot runs + validation", "Go-to-market groundwork"] },
+];
+const FUND_STEPS = ["Open the guided wizard", "Scope + budget your ask", "Reviewed by the BHN team", "Funded — build the leap"];
+
 export function GsapShowcase() {
   const root = useRef<HTMLDivElement>(null);
 
@@ -301,6 +353,36 @@ export function GsapShowcase() {
           counter(q(".fit-score"), 64);
         });
 
+        // Course progress rings — each arc animates to its pct on enter.
+        safe(() => {
+          gsap.utils.toArray<SVGCircleElement>(".course-ring").forEach((ring) => {
+            const pct = Number(ring.dataset.pct ?? 0);
+            const c = Number(ring.dataset.c ?? RING_C);
+            gsap.fromTo(ring, { strokeDashoffset: c }, { strokeDashoffset: c * (1 - pct / 100), duration: 1.3, ease: "power2.out", scrollTrigger: { trigger: ring, start: "top 90%" } });
+          });
+        });
+
+        // Resume-tools workflow — the connecting line draws in.
+        safe(() => gsap.from(".resume-line", { drawSVG: "0%", duration: 1.1, ease: "power2.out", scrollTrigger: { trigger: ".resume-sec", start: "top 75%" } }));
+
+        // Job board — cards cascade via batch.
+        safe(() => ScrollTrigger.batch(".job-card", { start: "top 92%", onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, stagger: 0.08, duration: 0.6, ease: "power3.out", overwrite: true }) }));
+
+        // Knowledge Exchange — links draw + nodes pop.
+        safe(() => {
+          gsap.from(".kx-link", { drawSVG: "0%", duration: 0.9, ease: "power2.out", scrollTrigger: { trigger: ".kx-sec", start: "top 80%" } });
+          gsap.from(".kx-node", { scale: 0, transformOrigin: "center", stagger: 0.1, ease: "back.out(2)", scrollTrigger: { trigger: ".kx-sec", start: "top 80%" } });
+        });
+
+        // International exchange — arc draws + a dot travels it on a loop.
+        safe(() => {
+          gsap.from(".intl-arc", { drawSVG: "0%", duration: 1.4, ease: "power2.out", scrollTrigger: { trigger: ".intl-sec", start: "top 80%" } });
+          gsap.to(".intl-rider", { motionPath: { path: "#intl-arc", align: "#intl-arc", alignOrigin: [0.5, 0.5] }, duration: 4.5, ease: "power1.inOut", repeat: -1, yoyo: true });
+        });
+
+        // Funding — comparison bars grow.
+        safe(() => gsap.from(".fund-bar", { scaleX: 0, transformOrigin: "left center", stagger: 0.15, duration: 1, ease: "power3.out", scrollTrigger: { trigger: ".fund-sec", start: "top 82%" } }));
+
         // HR command center — KPI counters + sparkline draw, staggered on enter.
         KPI_TILES.forEach((t, i) => safe(() => counter(q(`.kpi-val-${i}`), t.to, { prefix: t.prefix, suffix: t.unit, decimals: t.decimals })));
         safe(() => gsap.from(".kpi-spark", { drawSVG: "0%", duration: 1.1, ease: "power2.out", stagger: 0.1, scrollTrigger: { trigger: ".kpi-sec", start: "top 78%" } }));
@@ -361,10 +443,10 @@ export function GsapShowcase() {
 
       mm.add("(prefers-reduced-motion: reduce)", () => {
         // Everything visible + static.
-        safe(() => gsap.set([".hero-fade", ".reveal", ".fit-bar", ".funnel-bar", ".cost-bar", ".score-bar"], { clearProps: "all" }));
-        safe(() => gsap.set([".pipe-card", ".report-tile"], { opacity: 1, y: 0, scale: 1 }));
-        safe(() => gsap.set([".path-line", ".kpi-spark", ".trend-line", ".loop-spine"], { drawSVG: "100%" }));
-        safe(() => gsap.set(".loop-dot", { scale: 1 }));
+        safe(() => gsap.set([".hero-fade", ".reveal", ".fit-bar", ".funnel-bar", ".cost-bar", ".score-bar", ".fund-bar"], { clearProps: "all" }));
+        safe(() => gsap.set([".pipe-card", ".report-tile", ".job-card"], { opacity: 1, y: 0, scale: 1 }));
+        safe(() => gsap.set([".path-line", ".kpi-spark", ".trend-line", ".loop-spine", ".resume-line", ".kx-link", ".intl-arc"], { drawSVG: "100%" }));
+        safe(() => gsap.set([".loop-dot", ".kx-node"], { scale: 1 }));
         STATS.forEach((s, i) => safe(() => { const el = q(`.stat-${i}`); if (el) el.textContent = `${s.prefix}${s.to}${s.suffix}`; }));
         KPI_TILES.forEach((t, i) => safe(() => { const el = q(`.kpi-val-${i}`); if (el) el.textContent = `${t.prefix}${t.to.toFixed(t.decimals)}${t.unit}`; }));
         FUNNEL.forEach((f, i) => safe(() => { const el = q(`.funnel-n-${i}`); if (el) el.textContent = `${f.n}`; }));
@@ -383,11 +465,12 @@ export function GsapShowcase() {
       <div className="gs-progress fixed top-0 left-0 right-0 h-[3px] origin-left z-50" style={{ transform: "scaleX(0)", background: `linear-gradient(90deg, ${CYAN}, ${TEAL})` }} aria-hidden />
       <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-5 rounded-full px-5 py-2.5 ring-1 ring-white/10 bg-white/[0.06] backdrop-blur-md">
         <span className="font-black tracking-tight text-[15px]">BioHubNet</span>
-        <div className="hidden md:flex items-center gap-4 text-[12px] text-white/60 font-medium">
-          <a href="#pillars" className="hover:text-white transition-colors">Platform</a>
+        <div className="hidden md:flex items-center gap-3.5 text-[12px] text-white/60 font-medium">
+          <a href="#courses" className="hover:text-white transition-colors">Courses</a>
           <a href="#pathways" className="hover:text-white transition-colors">Pathways</a>
+          <a href="#resume" className="hover:text-white transition-colors">Resume</a>
+          <a href="#jobs" className="hover:text-white transition-colors">Jobs</a>
           <a href="#hiring" className="hover:text-white transition-colors">Hiring</a>
-          <a href="#reports" className="hover:text-white transition-colors">Reports</a>
           <a href="#equip" className="hover:text-white transition-colors">Funding</a>
         </div>
         <Link href="/dashboard" className="text-[12px] font-bold rounded-full px-3.5 py-1.5 text-[#07101a]" style={{ background: TEAL }}>Enter</Link>
@@ -477,6 +560,28 @@ export function GsapShowcase() {
             </div>
           </section>
 
+          {/* ── COURSE CATALOG ── */}
+          <section id="courses" className="relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
+            <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: CYAN }}>Engage · Learn the bench</p>
+            <h2 className="reveal mt-3 font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>A course catalog built for the cleanroom.</h2>
+            <p className="reveal mt-4 text-white/55 max-w-2xl text-lg">Platform courses tuned to each rung of every track — modular, hands-on, and graded against the exact skills employers screen for.</p>
+            <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {COURSES.map((c) => (
+                <div key={c.t} className="reveal group rounded-2xl p-6 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors flex items-center gap-5">
+                  <svg viewBox="0 0 64 64" className="w-16 h-16 shrink-0 -rotate-90">
+                    <circle cx="32" cy="32" r={RING_R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
+                    <circle className="course-ring" data-pct={c.pct} data-c={RING_C.toFixed(2)} cx="32" cy="32" r={RING_R} fill="none" stroke={c.color} strokeWidth="5" strokeLinecap="round" strokeDasharray={RING_C.toFixed(2)} strokeDashoffset={(RING_C * (1 - c.pct / 100)).toFixed(2)} />
+                  </svg>
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold" style={{ color: c.color }}>{c.level}</p>
+                    <h3 className="font-black text-lg leading-tight mt-1">{c.t}</h3>
+                    <p className="text-[12px] text-white/45 mt-1">{c.mods} modules · {c.pct}% complete</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* ── CAREER PATHWAYS (DrawSVG) ── */}
           <section id="pathways" className="path-sec relative px-6 py-32 md:py-44 overflow-hidden">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 items-center">
@@ -495,6 +600,46 @@ export function GsapShowcase() {
                   <text key={t} x={[20, 160, 300, 400][i]} y={[222, 142, 42, 42][i]} fill="#ffffffaa" fontSize="11" textAnchor={i === 3 ? "end" : "middle"} fontFamily="inherit">{t}</text>
                 ))}
               </svg>
+            </div>
+          </section>
+
+          {/* ── EIGHT TRACKS ── */}
+          <section className="relative px-6 pb-24 -mt-12 md:-mt-16 max-w-6xl mx-auto">
+            <p className="reveal text-[12px] uppercase tracking-[0.24em] font-bold text-white/40">Eight tracks, mapped end to end</p>
+            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+              {TRACKS.map((t, i) => (
+                <div key={t} className="reveal rounded-xl px-4 py-3.5 ring-1 ring-white/10 bg-white/[0.03] flex items-center gap-3">
+                  <span className="text-[11px] font-black tabular-nums" style={{ color: i % 2 ? CYAN : TEAL }}>{String(i + 1).padStart(2, "0")}</span>
+                  <span className="text-[13px] font-semibold text-white/80">{t}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── RESUME TOOLS ── */}
+          <section id="resume" className="resume-sec relative px-6 py-32 md:py-44 border-y border-white/10">
+            <div className="max-w-6xl mx-auto">
+              <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: TEAL }}>Resume tools you&apos;ve never had</p>
+              <h2 className="reveal mt-3 font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>One resume engine, five moves.</h2>
+              <p className="reveal mt-4 text-white/55 max-w-2xl text-lg">Bank your evidence once, then let AI reshape it for any role — and tell you exactly where you stand before you hit apply.</p>
+              <div className="relative mt-16">
+                <svg className="absolute left-0 right-0 top-[18px] w-full h-1 hidden lg:block" viewBox="0 0 1000 4" preserveAspectRatio="none">
+                  <path className="resume-line" d="M40,2 L960,2" fill="none" stroke={`${TEAL}66`} strokeWidth="2" strokeDasharray="5 6" strokeLinecap="round" />
+                </svg>
+                <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+                  {RESUME_FLOW.map((s, i) => (
+                    <div key={s.t} className="reveal">
+                      <div className="w-9 h-9 rounded-full grid place-items-center font-black text-[13px] text-[#07101a] mb-4 ring-4 ring-[#07101a]" style={{ background: s.color }}>{i + 1}</div>
+                      <h3 className="font-black text-lg">{s.t}</h3>
+                      <p className="text-white/55 text-[13px] leading-relaxed mt-1.5">{s.d}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="reveal mt-12 rounded-2xl p-6 ring-1 bg-white/[0.03] flex flex-col sm:flex-row sm:items-center gap-4" style={{ borderColor: `${VIOLET}55` }}>
+                <span className="text-[10px] uppercase tracking-[0.24em] font-black px-2.5 py-1 rounded-full self-start" style={{ color: "#07101a", background: VIOLET }}>New</span>
+                <p className="text-white/75 text-[15px] leading-relaxed"><span className="font-black text-white">AutoPipette</span> watches as you work — when you stall on a draft or an application, it quietly suggests the smartest next step.</p>
+              </div>
             </div>
           </section>
 
@@ -538,6 +683,84 @@ export function GsapShowcase() {
                   <p className={`relative text-white/55 leading-relaxed mt-2 ${tile.big ? "text-[14px]" : "text-[12px]"}`}>{tile.d}</p>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* ── JOB BOARD ── */}
+          <section id="jobs" className="relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: BLUE }}>Experience · Land the role</p>
+                <h2 className="reveal mt-3 font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Live postings, matched to you.</h2>
+              </div>
+              <p className="reveal text-white/55 max-w-sm text-[15px] leading-relaxed">Real internships and co-ops from industry partners — each one pre-scored against your fit, so you know where to spend your effort.</p>
+            </div>
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {JOBS.map((j) => (
+                <div key={j.role} className="job-card opacity-0 translate-y-3 group rounded-2xl p-6 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="font-black text-xl">{j.role}</h3>
+                      <p className="text-white/50 text-[13px] mt-1">{j.org} · {j.loc}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="inline-block text-[10px] font-black tabular-nums px-2 py-1 rounded" style={{ color: "#07101a", background: fitChip(j.fit) }}>{j.fit}% fit</span>
+                      <p className="text-[12px] text-white/60 mt-2 font-bold">{j.stipend}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {j.tags.map((t) => <span key={t} className="text-[11px] rounded-full px-2.5 py-0.5 ring-1 ring-white/10 text-white/60">{t}</span>)}
+                    <span className="text-[11px] rounded-full px-2.5 py-0.5 text-white/35">Internship</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── KNOWLEDGE EXCHANGE ── */}
+          <section className="kx-sec relative px-6 py-32 md:py-44 border-y border-white/10 overflow-hidden">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
+              <div>
+                <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: CYAN }}>Knowledge Exchange</p>
+                <h2 className="reveal mt-3 font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>You&apos;re never figuring it out alone.</h2>
+                <p className="reveal mt-4 text-white/55 max-w-md text-lg">A living network of peers, mentors, and shared know-how — the part of the bench you can&apos;t get from a textbook.</p>
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {EXCHANGE.map(([t, d]) => (
+                    <div key={t} className="reveal rounded-2xl p-5 ring-1 ring-white/10 bg-white/[0.03]">
+                      <h3 className="font-black text-[15px]">{t}</h3>
+                      <p className="text-white/55 text-[12px] leading-relaxed mt-1.5">{d}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <svg viewBox="0 0 360 320" className="w-full h-auto max-w-md mx-auto">
+                {KX_LINKS.map((d, i) => <path key={i} className="kx-link" d={d} fill="none" stroke={`${CYAN}55`} strokeWidth="1.5" />)}
+                {KX_NODES.map((n, i) => (
+                  <circle key={i} className="kx-node" cx={n[0]} cy={n[1]} r={n[2]} fill="#0b1623" stroke={i === 0 ? TEAL : CYAN} strokeWidth="2" />
+                ))}
+              </svg>
+            </div>
+          </section>
+
+          {/* ── INTERNATIONAL EXCHANGE (COMING) ── */}
+          <section className="intl-sec relative px-6 py-32 md:py-44 max-w-6xl mx-auto overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-12 items-center">
+              <div>
+                <span className="reveal inline-block text-[10px] uppercase tracking-[0.24em] font-black px-2.5 py-1 rounded-full mb-4" style={{ color: "#07101a", background: VIOLET }}>Coming soon</span>
+                <h2 className="reveal font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>International exchange, on the horizon.</h2>
+                <p className="reveal mt-4 text-white/55 max-w-md text-lg">Placements and learning exchanges with biomanufacturing hubs abroad — spend a term on a different bench, then bring it home.</p>
+                <div className="reveal mt-7 flex flex-wrap gap-2">
+                  {INTL.map((r) => <span key={r} className="text-[12px] rounded-full px-3 py-1.5 ring-1 ring-white/10 bg-white/[0.03] text-white/70">{r}</span>)}
+                </div>
+              </div>
+              <svg viewBox="0 0 420 240" className="w-full h-auto">
+                <path id="intl-arc" className="intl-arc" d="M40,190 C140,30 280,30 380,150" fill="none" stroke={`${VIOLET}aa`} strokeWidth="2.5" strokeDasharray="6 8" strokeLinecap="round" />
+                <circle cx="40" cy="190" r="7" fill={CYAN} />
+                <circle cx="380" cy="150" r="7" fill={VIOLET} />
+                <g className="intl-rider"><circle r="5" fill="#fff" /></g>
+                <text x="40" y="215" fill="#ffffffaa" fontSize="11" textAnchor="middle" fontFamily="inherit">Home hub</text>
+                <text x="380" y="133" fill="#ffffffaa" fontSize="11" textAnchor="middle" fontFamily="inherit">Abroad</text>
+              </svg>
             </div>
           </section>
 
@@ -778,19 +1001,36 @@ export function GsapShowcase() {
           </section>
 
           {/* ── FUNDING (EQUIP) ── */}
-          <section id="equip" className="relative px-6 py-28 md:py-40 border-y border-white/10">
-            <div className="max-w-6xl mx-auto">
-              <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: VIOLET }}>Equip</p>
-              <h2 className="reveal mt-3 font-black tracking-tight max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Fund the leap from project to venture.</h2>
-              <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <div className="reveal rounded-3xl p-9 ring-1 ring-white/10 bg-white/[0.03]">
-                  <div className="flex items-baseline gap-3"><h3 className="text-2xl font-black">VentureConnect</h3><span className="font-black" style={{ color: CYAN }}>≤ $5K</span></div>
-                  <p className="mt-3 text-white/60 leading-relaxed max-w-md">Backs the events, conferences, and community moments that put your work in front of the people who matter.</p>
-                </div>
-                <div className="reveal rounded-3xl p-9 ring-1 ring-white/10 bg-white/[0.03]">
-                  <div className="flex items-baseline gap-3"><h3 className="text-2xl font-black">VentureLift</h3><span className="font-black" style={{ color: VIOLET }}>≤ $25K</span></div>
-                  <p className="mt-3 text-white/60 leading-relaxed max-w-md">Backs commercialization — prototypes, pilots, and the first real steps toward a product, guided by a wizard.</p>
-                </div>
+          <section id="equip" className="fund-sec relative px-6 py-32 md:py-44 border-y border-white/10 overflow-hidden">
+            <div aria-hidden data-speed="0.9" className="absolute bottom-0 left-[-10%] w-[40vw] h-[40vw] rounded-full blur-[120px] opacity-20" style={{ background: VIOLET }} />
+            <div className="max-w-6xl mx-auto relative">
+              <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: VIOLET }}>Equip · Fund the leap</p>
+              <h2 className="reveal mt-3 font-black tracking-tight max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Funding that turns a project into a venture.</h2>
+              <p className="reveal mt-4 text-white/55 max-w-2xl text-lg">Two tiers of non-dilutive backing, a guided wizard to apply, and a real review — so the best ideas don&apos;t stall for lack of $5K.</p>
+              <div className="mt-14 grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {FUNDING.map((f) => (
+                  <div key={f.t} className="reveal rounded-3xl p-8 ring-1 ring-white/10 bg-white/[0.03]">
+                    <div className="flex items-baseline justify-between">
+                      <h3 className="text-2xl font-black">{f.t}</h3>
+                      <span className="font-black tabular-nums text-2xl" style={{ color: f.color }}>≤ ${f.cap}K</span>
+                    </div>
+                    <div className="mt-4 h-2.5 rounded-full bg-white/10 overflow-hidden">
+                      <div className="fund-bar h-full rounded-full" style={{ width: `${f.w}%`, background: `linear-gradient(90deg, ${f.color}, ${CYAN})` }} />
+                    </div>
+                    <p className="mt-5 text-white/60 leading-relaxed">{f.blurb}</p>
+                    <ul className="mt-5 space-y-2">
+                      {f.items.map((it) => <li key={it} className="flex items-center gap-2 text-[13px] text-white/75"><span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: f.color }} />{it}</li>)}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {FUND_STEPS.map((s, i) => (
+                  <div key={s} className="reveal rounded-2xl p-5 ring-1 ring-white/10 bg-white/[0.03]">
+                    <span className="text-[11px] font-black tabular-nums" style={{ color: i % 2 ? CYAN : VIOLET }}>{String(i + 1).padStart(2, "0")}</span>
+                    <p className="text-[13px] font-semibold text-white/80 mt-2">{s}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </section>
