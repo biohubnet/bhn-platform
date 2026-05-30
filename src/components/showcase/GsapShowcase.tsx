@@ -249,6 +249,28 @@ const FUNDING = [
 ];
 const FUND_STEPS = ["Open the guided wizard", "Scope + budget your ask", "Reviewed by the BHN team", "Funded — build the leap"];
 
+// ── Employer benefits ────────────────────────────────────────────────────────
+const EMPLOYER_BENEFITS = [
+  { metric: "Pre-trained", title: "Bench-ready candidates", body: "Applicants arrive trained on upstream, downstream, GMP and aseptic technique — not just a resume.", color: CYAN },
+  { metric: "−32%", title: "Faster time-to-fill", body: "Fit-scored applicants and a pipeline your whole team works cut weeks off every req.", color: TEAL },
+  { metric: "−26%", title: "Lower cost-per-hire", body: "Source from a vetted talent pool instead of paying agency fees, posting by posting.", color: BLUE },
+  { metric: "10 reports", title: "Board-ready proof", body: "Time-to-fill, offers, source, cost, quality and opt-in DEI — with OKR targets and RAG status.", color: VIOLET },
+  { metric: "1 system", title: "Your whole team, aligned", body: "Role-based access, attribution on every move, and candidate email that fires itself.", color: CYAN },
+  { metric: "Scored", title: "Quality you can measure", body: "Structured interview scorecards roll into a quality-of-hire metric you can defend.", color: TEAL },
+];
+
+// ── Past funded ventures ─────────────────────────────────────────────────────
+const VC_PAST = [
+  { name: "Booth at BIO 2025", who: "A. Patel · Upstream", amt: "$4.2K", outcome: "3 pilot partners", note: "Showcased a low-cost perfusion rig to the exhibition floor." },
+  { name: "Cell & Gene meetup", who: "QA cohort · Toronto", amt: "$3.5K", outcome: "120 attendees", note: "Hosted a regional community night; two hires followed." },
+  { name: "Poster at ISPE", who: "J. Reyes · MSAT", amt: "$1.8K", outcome: "Best-poster award", note: "Earned an invited talk and two new collaborations." },
+];
+const VL_PAST = [
+  { name: "Inline single-use sensor", who: "D. Khan · DSP", amt: "$24K", outcome: "Patent filed", note: "Built and validated a reusable inline process sensor." },
+  { name: "Microbioreactor pilot", who: "S. Cohen · Upstream", amt: "$18K", outcome: "Licensing talks", note: "Ran a 12-condition pilot to de-risk scale-up." },
+  { name: "Aseptic VR trainer", who: "L. Tremblay · QC", amt: "$22K", outcome: "4 sites piloting", note: "Shipped a VR module for BSL-2 technique drills." },
+];
+
 export function GsapShowcase() {
   const root = useRef<HTMLDivElement>(null);
 
@@ -383,6 +405,9 @@ export function GsapShowcase() {
         // Funding — comparison bars grow.
         safe(() => gsap.from(".fund-bar", { scaleX: 0, transformOrigin: "left center", stagger: 0.15, duration: 1, ease: "power3.out", scrollTrigger: { trigger: ".fund-sec", start: "top 82%" } }));
 
+        // Past ventures — cards cascade via batch.
+        safe(() => ScrollTrigger.batch(".venture-card", { start: "top 92%", onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, stagger: 0.07, duration: 0.55, ease: "power3.out", overwrite: true }) }));
+
         // HR command center — KPI counters + sparkline draw, staggered on enter.
         KPI_TILES.forEach((t, i) => safe(() => counter(q(`.kpi-val-${i}`), t.to, { prefix: t.prefix, suffix: t.unit, decimals: t.decimals })));
         safe(() => gsap.from(".kpi-spark", { drawSVG: "0%", duration: 1.1, ease: "power2.out", stagger: 0.1, scrollTrigger: { trigger: ".kpi-sec", start: "top 78%" } }));
@@ -444,7 +469,7 @@ export function GsapShowcase() {
       mm.add("(prefers-reduced-motion: reduce)", () => {
         // Everything visible + static.
         safe(() => gsap.set([".hero-fade", ".reveal", ".fit-bar", ".funnel-bar", ".cost-bar", ".score-bar", ".fund-bar"], { clearProps: "all" }));
-        safe(() => gsap.set([".pipe-card", ".report-tile", ".job-card"], { opacity: 1, y: 0, scale: 1 }));
+        safe(() => gsap.set([".pipe-card", ".report-tile", ".job-card", ".venture-card"], { opacity: 1, y: 0, scale: 1 }));
         safe(() => gsap.set([".path-line", ".kpi-spark", ".trend-line", ".loop-spine", ".resume-line", ".kx-link", ".intl-arc"], { drawSVG: "100%" }));
         safe(() => gsap.set([".loop-dot", ".kx-node"], { scale: 1 }));
         STATS.forEach((s, i) => safe(() => { const el = q(`.stat-${i}`); if (el) el.textContent = `${s.prefix}${s.to}${s.suffix}`; }));
@@ -470,7 +495,7 @@ export function GsapShowcase() {
           <a href="#pathways" className="hover:text-white transition-colors">Pathways</a>
           <a href="#resume" className="hover:text-white transition-colors">Resume</a>
           <a href="#jobs" className="hover:text-white transition-colors">Jobs</a>
-          <a href="#hiring" className="hover:text-white transition-colors">Hiring</a>
+          <a href="#employers" className="hover:text-white transition-colors">Employers</a>
           <a href="#equip" className="hover:text-white transition-colors">Funding</a>
         </div>
         <Link href="/dashboard" className="text-[12px] font-bold rounded-full px-3.5 py-1.5 text-[#07101a]" style={{ background: TEAL }}>Enter</Link>
@@ -764,6 +789,28 @@ export function GsapShowcase() {
             </div>
           </section>
 
+          {/* ── EMPLOYER DIVIDER + BENEFITS ── */}
+          <section id="employers" className="relative px-6 py-32 md:py-44 overflow-hidden" style={{ background: `linear-gradient(180deg, ${VIOLET}14, transparent 42%)` }}>
+            <div aria-hidden className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${VIOLET}88, transparent)` }} />
+            <div aria-hidden data-speed="0.9" className="absolute -top-10 right-[-8%] w-[36vw] h-[36vw] rounded-full blur-[130px] opacity-20" style={{ background: VIOLET }} />
+            <div className="max-w-6xl mx-auto relative">
+              <div className="reveal inline-flex items-center gap-2 rounded-full px-4 py-1.5 ring-1 text-[12px] font-black uppercase tracking-[0.24em]" style={{ color: VIOLET, borderColor: `${VIOLET}55` }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: VIOLET }} />For employers &amp; hiring teams
+              </div>
+              <h2 className="reveal mt-5 font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4.5vw, 3.6rem)" }}>Stop sourcing cold. Start hiring trained.</h2>
+              <p className="reveal mt-4 text-white/60 max-w-2xl text-lg">BioHubNet is where biomanufacturing talent learns the bench — so the people in your pipeline already know your methods. Here&apos;s what that changes for your team.</p>
+              <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {EMPLOYER_BENEFITS.map((b) => (
+                  <div key={b.title} className="reveal group rounded-2xl p-7 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
+                    <p className="font-black tabular-nums leading-none" style={{ fontSize: "clamp(1.7rem,3vw,2.3rem)", color: b.color }}>{b.metric}</p>
+                    <h3 className="text-lg font-black mt-3">{b.title}</h3>
+                    <p className="text-white/55 text-[13px] leading-relaxed mt-2">{b.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
           {/* ── HR COMMAND CENTER (KPI / RAG) ── */}
           <section id="hiring" className="kpi-sec relative px-6 py-32 md:py-44 border-y border-white/10 overflow-hidden">
             <div aria-hidden data-speed="0.9" className="absolute top-0 right-[-10%] w-[40vw] h-[40vw] rounded-full blur-[120px] opacity-20" style={{ background: VIOLET }} />
@@ -1029,6 +1076,52 @@ export function GsapShowcase() {
                   <div key={s} className="reveal rounded-2xl p-5 ring-1 ring-white/10 bg-white/[0.03]">
                     <span className="text-[11px] font-black tabular-nums" style={{ color: i % 2 ? CYAN : VIOLET }}>{String(i + 1).padStart(2, "0")}</span>
                     <p className="text-[13px] font-semibold text-white/80 mt-2">{s}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── PAST VENTURES ── */}
+          <section className="relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
+            <h2 className="reveal font-black tracking-tight max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Funded, built, and shipped.</h2>
+            <p className="reveal mt-4 text-white/55 max-w-2xl text-lg">Where past VentureConnect and VentureLift backing actually went — from a conference booth to a filed patent.</p>
+
+            <div className="mt-14">
+              <div className="reveal flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-5">
+                <h3 className="text-xl font-black" style={{ color: CYAN }}>VentureConnect</h3>
+                <span className="text-[12px] text-white/45 uppercase tracking-[0.18em] font-bold">≤ $5K · events + community</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {VC_PAST.map((v) => (
+                  <div key={v.name} className="venture-card opacity-0 translate-y-3 rounded-2xl p-6 ring-1 ring-white/10 bg-white/[0.03]">
+                    <div className="flex items-start justify-between gap-3">
+                      <h4 className="font-black text-[16px] leading-tight">{v.name}</h4>
+                      <span className="shrink-0 text-[11px] font-black tabular-nums px-2 py-0.5 rounded" style={{ color: "#07101a", background: CYAN }}>{v.amt}</span>
+                    </div>
+                    <p className="text-white/45 text-[12px] mt-1">{v.who}</p>
+                    <p className="text-white/60 text-[13px] leading-relaxed mt-3">{v.note}</p>
+                    <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-bold" style={{ color: CYAN }}><span aria-hidden>✓</span>{v.outcome}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-12">
+              <div className="reveal flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-5">
+                <h3 className="text-xl font-black" style={{ color: VIOLET }}>VentureLift</h3>
+                <span className="text-[12px] text-white/45 uppercase tracking-[0.18em] font-bold">≤ $25K · commercialization</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {VL_PAST.map((v) => (
+                  <div key={v.name} className="venture-card opacity-0 translate-y-3 rounded-2xl p-6 ring-1 ring-white/10 bg-white/[0.03]">
+                    <div className="flex items-start justify-between gap-3">
+                      <h4 className="font-black text-[16px] leading-tight">{v.name}</h4>
+                      <span className="shrink-0 text-[11px] font-black tabular-nums px-2 py-0.5 rounded" style={{ color: "#07101a", background: VIOLET }}>{v.amt}</span>
+                    </div>
+                    <p className="text-white/45 text-[12px] mt-1">{v.who}</p>
+                    <p className="text-white/60 text-[13px] leading-relaxed mt-3">{v.note}</p>
+                    <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-bold" style={{ color: VIOLET }}><span aria-hidden>✓</span>{v.outcome}</p>
                   </div>
                 ))}
               </div>
