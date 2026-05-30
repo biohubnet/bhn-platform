@@ -187,6 +187,10 @@ export function GsapShowcase() {
           CustomWiggle.create("ctaWiggle", { wiggles: 6, type: "easeOut" });
           gsap.to(".cta-arrow", { x: 8, duration: 1.4, ease: "ctaWiggle", repeat: -1, repeatDelay: 1.6 });
         });
+
+        // Re-measure trigger positions once the web font has loaded, so the
+        // reveals/pins don't fire against a pre-font layout.
+        safe(() => { document.fonts?.ready?.then(() => ScrollTrigger.refresh()); });
       });
 
       mm.add("(prefers-reduced-motion: reduce)", () => {
@@ -204,6 +208,12 @@ export function GsapShowcase() {
 
   return (
     <div ref={root} className={`${outfit.className} bg-[#07101a] text-white overflow-x-hidden`}>
+      {/* Dark backdrop on a FIXED full-viewport layer. ScrollSmoother turns
+          #smooth-wrapper into position:fixed, which collapses this root div's
+          height — a plain bg here would vanish and the app's light body would
+          show through (white text on white). A fixed -z layer can't collapse. */}
+      <div aria-hidden className="fixed inset-0 -z-10 bg-[#07101a]" />
+
       {/* ── Fixed chrome (outside #smooth-content) ── */}
       <div id="cursor-glow" aria-hidden className="pointer-events-none fixed top-0 left-0 z-[5] w-[42rem] h-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0" style={{ background: `radial-gradient(circle, ${CYAN}22 0%, transparent 60%)` }} />
       <div className="gs-progress fixed top-0 left-0 right-0 h-[3px] origin-left z-50" style={{ transform: "scaleX(0)", background: `linear-gradient(90deg, ${CYAN}, ${TEAL})` }} aria-hidden />
