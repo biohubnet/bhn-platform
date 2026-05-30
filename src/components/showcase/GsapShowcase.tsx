@@ -284,11 +284,11 @@ const CAROUSEL_CSS = `
    utilities. With a theme like Hi-tech/TRON active, headings became JetBrains Mono
    UPPERCASE at weight 500 with very wide tracking. Re-set those vars on the page root
    so headings render as designed: Outfit, font-black (900), tight tracking, no caps. */
-.bhn-showcase {
-  --font-display-theme: inherit;
-  --heading-weight: 900;
-  --heading-tracking: -0.02em;
-  --heading-transform: none;
+.bhn-showcase :is(h1, h2, h3) {
+  font-family: inherit !important;   /* -> Outfit from the page root */
+  font-weight: 900 !important;       /* all showcase headings are font-black */
+  letter-spacing: -0.02em !important;
+  text-transform: none !important;
 }
 .bhn3d-banner { position: absolute; inset: 0; }
 .bhn3d-slider {
