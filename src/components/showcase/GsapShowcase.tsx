@@ -152,17 +152,22 @@ export function GsapShowcase() {
           gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => (gsap.effects as Record<string, (t: Element[]) => gsap.core.Tween>).reveal([el]));
         });
 
-        // Hero — SplitText word reveal. Driven by a ScrollTrigger that's
-        // already past its start at load (hero is at the top), so it fires
-        // immediately — same mechanism as the reveals below, which avoids the
-        // stuck-at-opacity:0 failure a bare delayed from() hit here.
+        // Hero — SplitText WORD reveal. Words only (no overflow-clipped line
+        // wrappers, which hid the H1 when Outfit loaded taller than the split-
+        // time fallback font). Built after fonts are ready so the split
+        // measures correctly, and driven by an in-view ScrollTrigger so it
+        // actually plays (a bare from() stayed stuck at opacity:0 here).
         safe(() => {
-          const st = new SplitText(".hero-h1", { type: "lines,words", linesClass: "overflow-hidden" });
-          splits.push(st);
-          gsap.from(st.words, {
-            yPercent: 118, opacity: 0, stagger: 0.05, duration: 1, ease: "power4.out",
-            scrollTrigger: { trigger: ".hero-h1", start: "top 95%", once: true },
-          });
+          const buildHero = () => {
+            const st = new SplitText(".hero-h1", { type: "words" });
+            splits.push(st);
+            gsap.from(st.words, {
+              y: 44, opacity: 0, stagger: 0.045, duration: 0.85, ease: "power3.out",
+              scrollTrigger: { trigger: ".hero-h1", start: "top 95%", once: true },
+            });
+            ScrollTrigger.refresh();
+          };
+          if (document.fonts?.ready) document.fonts.ready.then(buildHero); else buildHero();
         });
         safe(() => gsap.from(".hero-fade", {
           y: 26, opacity: 0, duration: 0.9, ease: "power3.out", stagger: 0.12,
