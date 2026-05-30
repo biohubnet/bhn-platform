@@ -271,6 +271,58 @@ const VL_PAST = [
   { name: "Aseptic VR trainer", who: "L. Tremblay · QC", amt: "$22K", outcome: "4 sites piloting", note: "Shipped a VR module for BSL-2 technique drills." },
 ];
 
+// ── 3D image carousel (pure-CSS ring; geometry per the create-3d-image-slider skill) ──
+const SCENES = ["Upstream", "Cell culture", "Bioreactors", "Downstream", "Purification", "Aseptic · BSL-2", "QA / QC", "Analytical", "Regulatory", "Fill & finish"];
+
+// Scoped, brand-styled carousel CSS. The whole ring spins on its parent via a CSS
+// keyframe; each card's Y-angle is computed in JSX and pushed out along Z by the
+// inherited --radius (responsive). Hover pauses; reduced-motion stops the spin.
+const CAROUSEL_CSS = `
+.bhn3d-banner { position: absolute; inset: 0; }
+.bhn3d-slider {
+  --radius: 560px;
+  position: absolute; top: 50%; left: 50%;
+  width: 220px; height: 300px; margin: -150px 0 0 -110px;
+  transform-style: preserve-3d;
+  animation: bhn3dSpin 32s linear infinite;
+}
+@keyframes bhn3dSpin {
+  from { transform: perspective(1200px) rotateX(-11deg) rotateY(0deg); }
+  to   { transform: perspective(1200px) rotateX(-11deg) rotateY(360deg); }
+}
+.bhn3d-item { position: absolute; inset: 0; }
+.bhn3d-card {
+  position: absolute; inset: 0; overflow: hidden; border-radius: 14px;
+  background-size: cover; background-position: center; background-color: #0b1623;
+  box-shadow: 0 24px 60px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.14);
+  filter: saturate(.92);
+}
+.bhn3d-card::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(7,16,26,.05) 38%, rgba(7,16,26,.85) 100%),
+    linear-gradient(150deg, rgba(34,211,238,.18), rgba(13,148,136,.12) 55%, transparent);
+}
+.bhn3d-label {
+  position: absolute; left: 16px; bottom: 14px; z-index: 2;
+  font-size: 14px; font-weight: 800; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,.65);
+}
+.bhn3d-num {
+  position: absolute; top: 12px; right: 14px; z-index: 2;
+  font-size: 11px; font-weight: 800; letter-spacing: .14em; color: rgba(255,255,255,.72);
+}
+.bhn3d-banner:hover .bhn3d-slider { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .bhn3d-slider { animation: none; transform: perspective(1200px) rotateX(-11deg); }
+}
+@media (max-width: 1023px) {
+  .bhn3d-slider { --radius: 400px; width: 180px; height: 240px; margin: -120px 0 0 -90px; }
+}
+@media (max-width: 639px) {
+  .bhn3d-slider { --radius: 280px; width: 150px; height: 200px; margin: -100px 0 0 -75px; }
+}
+`;
+
 export function GsapShowcase() {
   const root = useRef<HTMLDivElement>(null);
 
@@ -485,6 +537,7 @@ export function GsapShowcase() {
 
   return (
     <div ref={root} className={`${outfit.className} bg-[#07101a] text-white overflow-x-hidden`}>
+      <style dangerouslySetInnerHTML={{ __html: CAROUSEL_CSS }} />
       {/* ── Fixed chrome (outside #smooth-content) ── */}
       <div id="cursor-glow" aria-hidden className="pointer-events-none fixed top-0 left-0 z-[5] w-[42rem] h-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0" style={{ background: `radial-gradient(circle, ${CYAN}22 0%, transparent 60%)` }} />
       <div className="gs-progress fixed top-0 left-0 right-0 h-[3px] origin-left z-50" style={{ transform: "scaleX(0)", background: `linear-gradient(90deg, ${CYAN}, ${TEAL})` }} aria-hidden />
@@ -581,6 +634,27 @@ export function GsapShowcase() {
                     ))}
                   </ul>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── 3D IMAGE CAROUSEL ── */}
+          <section className="relative overflow-hidden" style={{ height: "88vh", minHeight: "600px" }}>
+            <div className="absolute top-[7%] left-1/2 -translate-x-1/2 z-10 w-full px-6 text-center">
+              <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: CYAN }}>The world you&apos;ll work in</p>
+              <h2 className="reveal mt-3 font-black tracking-tight mx-auto max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Step inside biomanufacturing.</h2>
+              <p className="reveal mt-3 text-white/50 max-w-xl mx-auto text-[15px]">Ten disciplines, one rotating look at the bench you&apos;re training for — hover to pause.</p>
+            </div>
+            <div className="bhn3d-banner">
+              <div className="bhn3d-slider">
+                {SCENES.map((s, i) => (
+                  <div key={s} className="bhn3d-item" style={{ transform: `rotateY(${((i * 360) / SCENES.length).toFixed(3)}deg) translateZ(var(--radius))` }}>
+                    <div className="bhn3d-card" style={{ backgroundImage: `url(https://picsum.photos/seed/bhnscene${i + 1}/440/600)` }}>
+                      <span className="bhn3d-num">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="bhn3d-label">{s}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </section>
