@@ -278,6 +278,12 @@ const SCENES = ["Upstream", "Cell culture", "Bioreactors", "Downstream", "Purifi
 // keyframe; each card's Y-angle is computed in JSX and pushed out along Z by the
 // inherited --radius (responsive). Hover pauses; reduced-motion stops the spin.
 const CAROUSEL_CSS = `
+/* This standalone launch page owns its typography. The platform's theme system
+   sets h1,h2,h3 { font-family: var(--font-display-theme); text-transform:
+   var(--heading-transform) } — so an active theme (e.g. Hi-tech/TRON =
+   JetBrains Mono + uppercase) would hijack the headings and drop their weight
+   (mono has no 900). Neutralize it so headings stay Outfit font-black, as designed. */
+.bhn-showcase :is(h1, h2, h3) { font-family: inherit !important; text-transform: none !important; }
 .bhn3d-banner { position: absolute; inset: 0; }
 .bhn3d-slider {
   --radius: 560px;
@@ -536,7 +542,7 @@ export function GsapShowcase() {
   );
 
   return (
-    <div ref={root} className={`${outfit.className} bg-[#07101a] text-white overflow-x-hidden`}>
+    <div ref={root} className={`${outfit.className} bhn-showcase bg-[#07101a] text-white overflow-x-hidden`}>
       <style dangerouslySetInnerHTML={{ __html: CAROUSEL_CSS }} />
       {/* ── Fixed chrome (outside #smooth-content) ── */}
       <div id="cursor-glow" aria-hidden className="pointer-events-none fixed top-0 left-0 z-[5] w-[42rem] h-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0" style={{ background: `radial-gradient(circle, ${CYAN}22 0%, transparent 60%)` }} />
