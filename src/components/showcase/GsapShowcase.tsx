@@ -18,7 +18,7 @@
  * Fixed chrome (nav, progress, cursor glow) lives OUTSIDE #smooth-content —
  * ScrollSmoother transforms that node, which would break position:fixed.
  */
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Outfit } from "next/font/google";
 import gsap from "gsap";
@@ -90,6 +90,16 @@ const RATING_COLOR: Record<string, string> = { strong: "#34d399", partial: "#fbb
 
 export function GsapShowcase() {
   const root = useRef<HTMLDivElement>(null);
+
+  // The app's <body> carries the platform's light theme background. This
+  // page is dark, and ScrollSmoother makes the wrapper position:fixed (so a
+  // bg on our own divs can be bypassed at the edges). Paint the body dark
+  // while this page is mounted; restore on unmount.
+  useEffect(() => {
+    const prev = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = "#07101a";
+    return () => { document.body.style.backgroundColor = prev; };
+  }, []);
 
   useGSAP(
     (_ctx, contextSafe) => {
@@ -208,12 +218,6 @@ export function GsapShowcase() {
 
   return (
     <div ref={root} className={`${outfit.className} bg-[#07101a] text-white overflow-x-hidden`}>
-      {/* Dark backdrop on a FIXED full-viewport layer. ScrollSmoother turns
-          #smooth-wrapper into position:fixed, which collapses this root div's
-          height — a plain bg here would vanish and the app's light body would
-          show through (white text on white). A fixed -z layer can't collapse. */}
-      <div aria-hidden className="fixed inset-0 -z-10 bg-[#07101a]" />
-
       {/* ── Fixed chrome (outside #smooth-content) ── */}
       <div id="cursor-glow" aria-hidden className="pointer-events-none fixed top-0 left-0 z-[5] w-[42rem] h-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0" style={{ background: `radial-gradient(circle, ${CYAN}22 0%, transparent 60%)` }} />
       <div className="gs-progress fixed top-0 left-0 right-0 h-[3px] origin-left z-50" style={{ transform: "scaleX(0)", background: `linear-gradient(90deg, ${CYAN}, ${TEAL})` }} aria-hidden />
@@ -227,8 +231,8 @@ export function GsapShowcase() {
         <Link href="/dashboard" className="text-[12px] font-bold rounded-full px-3.5 py-1.5 text-[#07101a]" style={{ background: TEAL }}>Enter</Link>
       </nav>
 
-      <div id="smooth-wrapper">
-        <div id="smooth-content">
+      <div id="smooth-wrapper" className="bg-[#07101a]">
+        <div id="smooth-content" className="bg-[#07101a]">
           {/* ── HERO ── */}
           <section className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center">
             <div aria-hidden className="absolute inset-0 overflow-hidden">
