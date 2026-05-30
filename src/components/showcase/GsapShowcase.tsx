@@ -152,13 +152,22 @@ export function GsapShowcase() {
           gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => (gsap.effects as Record<string, (t: Element[]) => gsap.core.Tween>).reveal([el]));
         });
 
-        // Hero — SplitText word reveal.
+        // Hero — SplitText word reveal. Driven by a ScrollTrigger that's
+        // already past its start at load (hero is at the top), so it fires
+        // immediately — same mechanism as the reveals below, which avoids the
+        // stuck-at-opacity:0 failure a bare delayed from() hit here.
         safe(() => {
           const st = new SplitText(".hero-h1", { type: "lines,words", linesClass: "overflow-hidden" });
           splits.push(st);
-          gsap.from(st.words, { yPercent: 118, opacity: 0, stagger: 0.05, duration: 1, ease: "power4.out", delay: 0.15 });
+          gsap.from(st.words, {
+            yPercent: 118, opacity: 0, stagger: 0.05, duration: 1, ease: "power4.out",
+            scrollTrigger: { trigger: ".hero-h1", start: "top 95%", once: true },
+          });
         });
-        safe(() => gsap.from(".hero-fade", { y: 26, opacity: 0, duration: 0.9, ease: "power3.out", stagger: 0.12, delay: 0.55 }));
+        safe(() => gsap.from(".hero-fade", {
+          y: 26, opacity: 0, duration: 0.9, ease: "power3.out", stagger: 0.12,
+          scrollTrigger: { trigger: ".hero-section", start: "top 95%", once: true },
+        }));
 
         // Career pathways — DrawSVG line-draw + nodes, scrubbed; a node rides the path.
         safe(() => {
@@ -234,7 +243,7 @@ export function GsapShowcase() {
       <div id="smooth-wrapper" className="bg-[#07101a]">
         <div id="smooth-content" className="bg-[#07101a]">
           {/* ── HERO ── */}
-          <section className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center">
+          <section className="hero-section relative min-h-screen flex flex-col items-center justify-center px-6 text-center">
             <div aria-hidden className="absolute inset-0 overflow-hidden">
               <div data-speed="0.85" className="absolute -top-1/4 left-1/2 -translate-x-1/2 w-[120vw] h-[80vh] rounded-full blur-[120px] opacity-50" style={{ background: `radial-gradient(circle, ${"#0d9488"}55, transparent 60%)` }} />
               <div data-speed="1.1" className="absolute top-1/3 left-[8%] w-72 h-72 rounded-full blur-3xl opacity-30" style={{ background: `${CYAN}` }} />
