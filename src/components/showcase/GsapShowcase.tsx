@@ -1,11 +1,19 @@
 "use client";
 /**
  * GsapShowcase — an agency-grade, GSAP-powered product-launch page for the
- * BioHubNet platform. Every section is a REAL platform feature (the
- * ENGAGE / EXPERIENCE / EQUIP pillars, career pathways, the AI resume +
- * fit-rating matrix, employer Talent Reports, AutoPipette), choreographed
- * with the official GSAP skills' React patterns:
+ * BioHubNet platform, told as a TWO-SIDED marketplace: trained talent on one
+ * side, hiring teams (HR / recruiting) on the other. Every section is a REAL
+ * platform capability:
  *
+ *   Talent   — ENGAGE/EXPERIENCE/EQUIP pillars, career pathways, AI toolkit
+ *              (tutor, master resume, tailoring, cover letters, fit matrix,
+ *              interview prep, AutoPipette), VentureConnect / VentureLift.
+ *   Employer — HR command center (KPI tiles with OKR targets + RAG), the
+ *              hiring funnel, the candidate pipeline, the post→hire loop,
+ *              the 10 Talent Reports, time-to-fill & cost-per-hire trends,
+ *              structured scorecards / quality-of-hire.
+ *
+ * Choreographed with the official GSAP skills' React patterns:
  *   • useGSAP() scoped to a ref → auto-cleanup of every tween / ScrollTrigger
  *     / ScrollSmoother on unmount; SSR-safe (nothing runs on the server).
  *   • gsap.matchMedia("(prefers-reduced-motion: no-preference)") owns ALL
@@ -41,42 +49,128 @@ const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600", "800",
 
 const TEAL = "#2dd4bf";
 const CYAN = "#22d3ee";
+const BLUE = "#38bdf8";
+const VIOLET = "#a78bfa";
+const RAG: Record<string, string> = { on: "#34d399", at: "#fbbf24", off: "#fb7185" };
 
+// ── Brand pillars ──────────────────────────────────────────────────────────
 const PILLARS = [
-  {
-    tag: "Engage", color: CYAN,
-    title: "Learn the bench.",
-    body: "Eight biomanufacturing career tracks mapped Junior to VP, platform courses tuned to each rung, and an AI tutor that meets you where you are.",
-    points: ["Career pathways", "Course catalog", "AI tutor"],
-  },
-  {
-    tag: "Experience", color: TEAL,
-    title: "Land the role.",
-    body: "Live internships from industry partners, a talent pool employers actually browse, and AI that tailors your resume and rates your fit, role by role.",
-    points: ["Internship board", "AI resume + tailoring", "Fit-rating matrix"],
-  },
-  {
-    tag: "Equip", color: "#a78bfa",
-    title: "Fund the leap.",
-    body: "Turn a project into a venture. VentureConnect backs events and conferences up to $5K; VentureLift backs commercialization up to $25K.",
-    points: ["VentureConnect · ≤ $5K", "VentureLift · ≤ $25K", "Guided wizard"],
-  },
+  { tag: "Engage", color: CYAN, title: "Learn the bench.", body: "Eight biomanufacturing career tracks mapped Junior to VP, platform courses tuned to each rung, and an AI tutor that meets you where you are.", points: ["Career pathways", "Course catalog", "AI tutor"] },
+  { tag: "Experience", color: TEAL, title: "Land the role.", body: "Live internships from industry partners, a talent pool employers actually browse, and AI that tailors your resume and rates your fit, role by role.", points: ["Internship board", "AI resume + tailoring", "Fit-rating matrix"] },
+  { tag: "Equip", color: VIOLET, title: "Fund the leap.", body: "Turn a project into a venture. VentureConnect backs events and conferences up to $5K; VentureLift backs commercialization up to $25K.", points: ["VentureConnect · ≤ $5K", "VentureLift · ≤ $25K", "Guided wizard"] },
 ];
 
+// ── Marquee role titles (the pathways are real) ──────────────────────────────
+const ROLES = ["Process Development Scientist", "QA / QC Specialist", "Bioprocess Engineer", "MSAT Lead", "Upstream Associate", "Downstream Scientist", "Regulatory Affairs", "Manufacturing Technician", "Cell Therapy Analyst", "Validation Engineer", "Quality Systems Manager", "Director of Manufacturing"];
+
+// ── Two-sided framing ────────────────────────────────────────────────────────
+const TALENT_FEATURES = ["Career pathways, Junior to VP", "Courses + AI tutor", "Master resume + AI tailoring", "Fit-rating matrix", "Internship board", "Interview prep", "AutoPipette nudges", "Venture funding to $25K"];
+const EMPLOYER_FEATURES = ["Talent-pool search", "Requisitions + scorecards", "AI fit screening", "Interview self-scheduling", "Offer management", "Automated candidate comms", "Team roles + attribution", "10 board-ready reports"];
+
+// ── Talent AI toolkit (bento) ────────────────────────────────────────────────
+const AI_TILES = [
+  { t: "AI tutor", d: "Course-grounded answers on every lesson — ask anything, cited to the material.", span: "col-span-2 row-span-2", color: CYAN, big: true },
+  { t: "Resume tailoring", d: "Reshape your master resume to any role in seconds.", span: "col-span-2", color: TEAL, big: false },
+  { t: "Master resume", d: "One library of bullets behind every draft.", span: "", color: BLUE, big: false },
+  { t: "Cover letters", d: "Drafted from your evidence, in your voice.", span: "", color: VIOLET, big: false },
+  { t: "Fit-rating matrix", d: "Strong / Partial / Gap, requirement by requirement.", span: "col-span-2", color: TEAL, big: false },
+  { t: "Interview prep", d: "Likely questions + STAR answers, pulled from your resume.", span: "", color: CYAN, big: false },
+  { t: "AutoPipette", d: "Spots when you stall and suggests the next move.", span: "", color: VIOLET, big: false },
+];
+
+// ── HR command center — KPI tiles with OKR targets + RAG ─────────────────────
+const KPI_TILES = [
+  { k: "Time-to-fill", to: 28, prefix: "", unit: "d", decimals: 0, rag: "on", target: "target ≤ 30d", spark: [41, 39, 36, 34, 31, 28] },
+  { k: "Offer acceptance", to: 86, prefix: "", unit: "%", decimals: 0, rag: "on", target: "target ≥ 80%", spark: [71, 75, 79, 82, 84, 86] },
+  { k: "Cost-per-hire", to: 4.6, prefix: "$", unit: "k", decimals: 1, rag: "on", target: "target ≤ $5k", spark: [6.2, 5.8, 5.4, 5.0, 4.8, 4.6] },
+  { k: "Apply → hire", to: 3.4, prefix: "", unit: "%", decimals: 1, rag: "on", target: "target ≥ 3%", spark: [2.1, 2.5, 2.8, 3.0, 3.2, 3.4] },
+  { k: "Quality-of-hire", to: 4.3, prefix: "", unit: "/5", decimals: 1, rag: "on", target: "target ≥ 4.0", spark: [3.6, 3.8, 3.9, 4.1, 4.2, 4.3] },
+  { k: "Pipeline velocity", to: 12, prefix: "", unit: "d", decimals: 0, rag: "at", target: "target ≤ 10d", spark: [17, 16, 15, 14, 13, 12] },
+];
+
+// ── Hiring funnel ─────────────────────────────────────────────────────────────
+const FUNNEL = [
+  { stage: "Applications", n: 1280, pct: 100 },
+  { stage: "Screened", n: 512, pct: 40 },
+  { stage: "Interviewed", n: 196, pct: 15 },
+  { stage: "Offered", n: 64, pct: 5 },
+  { stage: "Hired", n: 44, pct: 3.4 },
+];
+
+// ── Candidate pipeline (Kanban) ──────────────────────────────────────────────
+const PIPELINE = [
+  { stage: "Applied", color: CYAN, total: 312, cards: [["R. Okafor", "PD Scientist", 92], ["M. Lin", "QA Specialist", 78]] as [string, string, number][] },
+  { stage: "Screening", color: BLUE, total: 128, cards: [["A. Patel", "Bioprocess Eng", 81], ["T. Nguyen", "Upstream Assoc", 64]] as [string, string, number][] },
+  { stage: "Interview", color: TEAL, total: 46, cards: [["J. Reyes", "MSAT", 88], ["S. Cohen", "DSP Scientist", 79]] as [string, string, number][] },
+  { stage: "Offer", color: VIOLET, total: 12, cards: [["D. Khan", "DSP Lead", 90]] as [string, string, number][] },
+  { stage: "Hired", color: RAG.on, total: 8, cards: [["L. Tremblay", "QC Analyst", 85]] as [string, string, number][] },
+];
+
+// ── The post → hire loop (workflow) ──────────────────────────────────────────
+const HIRING_LOOP = [
+  { step: "Post a requisition", body: "Spin up a role with scorecards, a hiring team, and an SLA in minutes." },
+  { step: "Source the talent pool", body: "Search trained, fit-rated candidates by skill, track, and station." },
+  { step: "Screen with AI fit", body: "Every applicant scored Strong / Partial / Gap against the requirements." },
+  { step: "Interview with rubrics", body: "Structured scorecards, candidate self-scheduling, panel load balanced." },
+  { step: "Offer + close", body: "Send, track acceptance, and auto-fire candidate comms on every move." },
+  { step: "Report to leadership", body: "Board-ready KPIs and OKR RAG status — Print-to-PDF or export CSV." },
+];
+
+// ── The 10 Talent Reports ─────────────────────────────────────────────────────
+const REPORTS = [
+  { n: "Executive Summary", d: "OKR + RAG tiles, sparklines", feat: true },
+  { n: "Funnel & Conversion", d: "Snapshot + true-cohort", feat: false },
+  { n: "Time-to-Fill", d: "Median, p25/p75, SLA gaps", feat: false },
+  { n: "Offer Analytics", d: "Acceptance %, decline reasons", feat: false },
+  { n: "Requisition Aging", d: "Open / stale-req flags", feat: false },
+  { n: "Team Productivity", d: "Activity, interviews-to-hire", feat: false },
+  { n: "Quality-of-Hire", d: "Hires vs rejected scores", feat: false },
+  { n: "Source Effectiveness", d: "Source → hire, cost / source", feat: false },
+  { n: "Cost-per-Hire", d: "Spend / hires, by cost type", feat: false },
+  { n: "DEI Pipeline", d: "Opt-in · k-anonymity", feat: false },
+];
+
+// ── Trend data ────────────────────────────────────────────────────────────────
+const TTF_TREND = [41, 39, 38, 36, 35, 33, 32, 31, 30, 29, 28, 28];
+const CPH_TREND = [6.2, 6.0, 5.8, 5.6, 5.3, 5.1, 5.0, 4.9, 4.8, 4.7, 4.6, 4.6];
+const CPH_MAX = Math.max(...CPH_TREND);
+const CPH_MIN = Math.min(...CPH_TREND);
+const cphHeight = (v: number) => 38 + ((v - CPH_MIN) / (CPH_MAX - CPH_MIN || 1)) * 62;
+
+// ── Structured scorecard / quality-of-hire ───────────────────────────────────
+const SCORE_CRITERIA = [
+  { k: "Technical depth", v: 4.6 },
+  { k: "GMP rigor", v: 4.8 },
+  { k: "Communication", v: 4.1 },
+  { k: "Culture add", v: 4.3 },
+];
+
+// ── Voices ────────────────────────────────────────────────────────────────────
+const VOICES = [
+  { q: "I went from a community-college cert to a process-development offer in one cycle.", who: "Trainee · Upstream track", color: CYAN },
+  { q: "We cut time-to-fill from 41 to 28 days and finally have numbers the board trusts.", who: "Head of Talent · cell-therapy CDMO", color: TEAL },
+  { q: "The fit matrix told me the exact two skills to close before I applied.", who: "Trainee · QA track", color: BLUE },
+  { q: "Source effectiveness paid for itself — we killed two channels that never converted.", who: "Recruiting Lead · biologics", color: VIOLET },
+];
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
 const STATS = [
-  { v: 8, suffix: "", label: "Career tracks" },
-  { v: 5, suffix: "", label: "Stations, Junior to VP" },
-  { v: 9, suffix: "", label: "Talent reports" },
-  { v: 25, suffix: "K", prefix: "$", label: "Funding per venture" },
+  { to: 8, prefix: "", suffix: "", label: "Career tracks, Junior to VP" },
+  { to: 28, prefix: "", suffix: "d", label: "Median time-to-fill" },
+  { to: 10, prefix: "", suffix: "", label: "Board-ready talent reports" },
+  { to: 25, prefix: "$", suffix: "K", label: "Funding per venture" },
 ];
 
+// ── Feature rail (horizontal pin) ────────────────────────────────────────────
 const RAIL = [
-  ["AI tutor", "Ask anything about a course; grounded in the material."],
-  ["Master resume", "One library of bullets; pull into any tailored draft."],
-  ["Fit-rating matrix", "Strong / Partial / Gap against every requirement."],
-  ["Interview prep", "Likely questions + STAR answers from your resume."],
-  ["AutoPipette", "Notices when you're stuck, suggests the next step."],
-  ["Talent Reports", "Board-ready KPIs, OKRs with RAG, opt-in DEI."],
+  { t: "AI tutor", d: "Ask anything about a course; grounded in the material.", side: "Talent" },
+  { t: "Fit-rating matrix", d: "Strong / Partial / Gap against every requirement.", side: "Talent" },
+  { t: "Master resume", d: "One library of bullets; pull into any tailored draft.", side: "Talent" },
+  { t: "Interview prep", d: "Likely questions + STAR answers from your resume.", side: "Talent" },
+  { t: "AutoPipette", d: "Notices when you're stuck and suggests the next step.", side: "Talent" },
+  { t: "Talent-pool search", d: "Browse trained, fit-rated candidates by skill + track.", side: "Employer" },
+  { t: "Scorecards + rubrics", d: "Structured interviews with panel load balanced.", side: "Employer" },
+  { t: "Talent Reports", d: "Board-ready KPIs, OKRs with RAG, opt-in DEI.", side: "Employer" },
 ];
 
 const FIT_ROWS = [
@@ -88,13 +182,28 @@ const FIT_ROWS = [
 ];
 const RATING_COLOR: Record<string, string> = { strong: "#34d399", partial: "#fbbf24", gap: "#fb7185" };
 
+// Build a polyline `d` from values, normalized into a w×h box.
+function sparkPath(vals: number[], w = 132, h = 40, pad = 4) {
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = max - min || 1;
+  const stepX = (w - pad * 2) / (vals.length - 1);
+  return vals
+    .map((v, i) => {
+      const x = pad + i * stepX;
+      const y = pad + (h - pad * 2) * (1 - (v - min) / span);
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+}
+const fitChip = (s: number) => (s >= 85 ? RATING_COLOR.strong : s >= 60 ? RATING_COLOR.partial : RATING_COLOR.gap);
+
 export function GsapShowcase() {
   const root = useRef<HTMLDivElement>(null);
 
-  // The app's <body> carries the platform's light theme background. This
-  // page is dark, and ScrollSmoother makes the wrapper position:fixed (so a
-  // bg on our own divs can be bypassed at the edges). Paint the body dark
-  // while this page is mounted; restore on unmount.
+  // The app's <body> carries the platform's light theme background. This page
+  // is dark, and ScrollSmoother makes the wrapper position:fixed (so a bg on
+  // our own divs can be bypassed at the edges). Paint the body dark while this
+  // page is mounted; restore on unmount.
   useEffect(() => {
     const prev = document.body.style.backgroundColor;
     document.body.style.backgroundColor = "#07101a";
@@ -102,7 +211,7 @@ export function GsapShowcase() {
   }, []);
 
   useGSAP(
-    (_ctx, contextSafe) => {
+    () => {
       const q = <T extends Element = HTMLElement>(s: string) => root.current?.querySelector<T>(s) ?? null;
       const cleanups: Array<() => void> = [];
       const splits: SplitText[] = [];
@@ -111,13 +220,15 @@ export function GsapShowcase() {
       // Progress bar (works with or without smoother).
       safe(() => gsap.to(".gs-progress", { scaleX: 1, ease: "none", scrollTrigger: { trigger: document.body, start: 0, end: "max", scrub: 0.3 } }));
 
-      const counter = (el: HTMLElement | null, to: number, prefix = "", suffix = "") => {
+      const counter = (el: HTMLElement | null, to: number, opts: { prefix?: string; suffix?: string; decimals?: number } = {}) => {
         if (!el) return;
+        const { prefix = "", suffix = "", decimals = 0 } = opts;
         const o = { v: 0 };
         gsap.to(o, {
-          v: to, duration: 1.6, ease: "power2.out", snap: { v: 1 },
-          scrollTrigger: { trigger: el, start: "top 85%" },
-          onUpdate: () => { el.textContent = `${prefix}${Math.round(o.v)}${suffix}`; },
+          v: to, duration: 1.6, ease: "power2.out",
+          ...(decimals ? {} : { snap: { v: 1 } }),
+          scrollTrigger: { trigger: el, start: "top 88%" },
+          onUpdate: () => { el.textContent = `${prefix}${o.v.toFixed(decimals)}${suffix}`; },
         });
       };
 
@@ -154,9 +265,8 @@ export function GsapShowcase() {
 
         // Hero — SplitText WORD reveal. Words only (no overflow-clipped line
         // wrappers, which hid the H1 when Outfit loaded taller than the split-
-        // time fallback font). Built after fonts are ready so the split
-        // measures correctly, and driven by an in-view ScrollTrigger so it
-        // actually plays (a bare from() stayed stuck at opacity:0 here).
+        // time fallback font). Built after fonts are ready so the split measures
+        // correctly, and driven by an in-view ScrollTrigger so it always plays.
         safe(() => {
           const buildHero = () => {
             const st = new SplitText(".hero-h1", { type: "words" });
@@ -174,6 +284,9 @@ export function GsapShowcase() {
           scrollTrigger: { trigger: ".hero-section", start: "top 95%", once: true },
         }));
 
+        // Marquee — seamless infinite loop (content is duplicated, so -50% wraps).
+        safe(() => gsap.to(".marquee-track", { xPercent: -50, duration: 30, ease: "none", repeat: -1 }));
+
         // Career pathways — DrawSVG line-draw + nodes, scrubbed; a node rides the path.
         safe(() => {
           gsap.timeline({ scrollTrigger: { trigger: ".path-sec", start: "top 65%", end: "bottom 70%", scrub: 1 } })
@@ -185,14 +298,44 @@ export function GsapShowcase() {
         // Fit matrix — bars grow + score counts, on enter.
         safe(() => {
           gsap.from(".fit-bar", { scaleX: 0, transformOrigin: "left center", stagger: 0.12, duration: 0.9, ease: "power3.out", scrollTrigger: { trigger: ".fit-sec", start: "top 75%" } });
-          counter(q(".fit-score"), 64, "", "");
+          counter(q(".fit-score"), 64);
         });
 
-        // Stats counters.
-        STATS.forEach((s, i) => safe(() => counter(q(`.stat-${i}`), s.v, s.prefix ?? "", s.suffix ?? "")));
+        // HR command center — KPI counters + sparkline draw, staggered on enter.
+        KPI_TILES.forEach((t, i) => safe(() => counter(q(`.kpi-val-${i}`), t.to, { prefix: t.prefix, suffix: t.unit, decimals: t.decimals })));
+        safe(() => gsap.from(".kpi-spark", { drawSVG: "0%", duration: 1.1, ease: "power2.out", stagger: 0.1, scrollTrigger: { trigger: ".kpi-sec", start: "top 78%" } }));
 
-        // Talent Reports — KPI bars grow.
-        safe(() => gsap.from(".kpi-bar", { height: 0, transformOrigin: "bottom", stagger: 0.1, duration: 1, ease: "power3.out", scrollTrigger: { trigger: ".kpi-sec", start: "top 78%" } }));
+        // Funnel — bars sweep from center + counts.
+        safe(() => gsap.from(".funnel-bar", { scaleX: 0, transformOrigin: "center", stagger: 0.12, duration: 0.9, ease: "power3.out", scrollTrigger: { trigger: ".funnel-sec", start: "top 78%" } }));
+        FUNNEL.forEach((f, i) => safe(() => counter(q(`.funnel-n-${i}`), f.n)));
+
+        // Pipeline — candidate cards cascade in via batch.
+        safe(() => ScrollTrigger.batch(".pipe-card", {
+          start: "top 90%",
+          onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, stagger: 0.08, duration: 0.6, ease: "power3.out", overwrite: true }),
+        }));
+
+        // Hiring loop — vertical spine draws + dots pop as the section scrolls.
+        safe(() => {
+          gsap.from(".loop-spine", { drawSVG: "0%", ease: "none", scrollTrigger: { trigger: ".loop-sec", start: "top 70%", end: "bottom 75%", scrub: 1 } });
+          gsap.from(".loop-dot", { scale: 0, transformOrigin: "center", stagger: 0.5, ease: "back.out(2)", scrollTrigger: { trigger: ".loop-sec", start: "top 70%", end: "bottom 80%", scrub: 1 } });
+        });
+
+        // Reports — bento tiles cascade via batch.
+        safe(() => ScrollTrigger.batch(".report-tile", {
+          start: "top 92%",
+          onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, scale: 1, stagger: 0.06, duration: 0.55, ease: "power3.out", overwrite: true }),
+        }));
+
+        // Trends — time-to-fill line draws (scrubbed); cost bars grow on enter.
+        safe(() => gsap.from(".trend-line", { drawSVG: "0%", ease: "none", scrollTrigger: { trigger: ".trend-sec", start: "top 78%", end: "bottom 80%", scrub: 1 } }));
+        safe(() => gsap.from(".cost-bar", { scaleY: 0, transformOrigin: "bottom", stagger: 0.05, duration: 0.8, ease: "power3.out", scrollTrigger: { trigger: ".trend-sec", start: "top 72%" } }));
+
+        // Scorecard — criterion bars grow on enter.
+        safe(() => gsap.from(".score-bar", { scaleX: 0, transformOrigin: "left center", stagger: 0.12, duration: 0.9, ease: "power3.out", scrollTrigger: { trigger: ".score-sec", start: "top 80%" } }));
+
+        // Stats counters.
+        STATS.forEach((s, i) => safe(() => counter(q(`.stat-${i}`), s.to, { prefix: s.prefix, suffix: s.suffix })));
 
         // Feature rail — pinned, scrolls horizontally (ease: none).
         safe(() => {
@@ -201,7 +344,7 @@ export function GsapShowcase() {
             gsap.to(track, {
               xPercent: -100 * ((track.children.length - 1) / track.children.length),
               ease: "none",
-              scrollTrigger: { trigger: ".rail-sec", start: "top top", end: "+=2200", scrub: 1, pin: true },
+              scrollTrigger: { trigger: ".rail-sec", start: "top top", end: "+=3000", scrub: 1, pin: true },
             });
           }
         });
@@ -212,16 +355,19 @@ export function GsapShowcase() {
           gsap.to(".cta-arrow", { x: 8, duration: 1.4, ease: "ctaWiggle", repeat: -1, repeatDelay: 1.6 });
         });
 
-        // Re-measure trigger positions once the web font has loaded, so the
-        // reveals/pins don't fire against a pre-font layout.
+        // Re-measure trigger positions once the web font has loaded.
         safe(() => { document.fonts?.ready?.then(() => ScrollTrigger.refresh()); });
       });
 
       mm.add("(prefers-reduced-motion: reduce)", () => {
         // Everything visible + static.
-        safe(() => gsap.set([".hero-fade", ".reveal", ".fit-bar", ".kpi-bar"], { clearProps: "all" }));
-        safe(() => gsap.set(".path-line", { drawSVG: "100%" }));
-        STATS.forEach((s, i) => safe(() => { const el = q(`.stat-${i}`); if (el) el.textContent = `${s.prefix ?? ""}${s.v}${s.suffix ?? ""}`; }));
+        safe(() => gsap.set([".hero-fade", ".reveal", ".fit-bar", ".funnel-bar", ".cost-bar", ".score-bar"], { clearProps: "all" }));
+        safe(() => gsap.set([".pipe-card", ".report-tile"], { opacity: 1, y: 0, scale: 1 }));
+        safe(() => gsap.set([".path-line", ".kpi-spark", ".trend-line", ".loop-spine"], { drawSVG: "100%" }));
+        safe(() => gsap.set(".loop-dot", { scale: 1 }));
+        STATS.forEach((s, i) => safe(() => { const el = q(`.stat-${i}`); if (el) el.textContent = `${s.prefix}${s.to}${s.suffix}`; }));
+        KPI_TILES.forEach((t, i) => safe(() => { const el = q(`.kpi-val-${i}`); if (el) el.textContent = `${t.prefix}${t.to.toFixed(t.decimals)}${t.unit}`; }));
+        FUNNEL.forEach((f, i) => safe(() => { const el = q(`.funnel-n-${i}`); if (el) el.textContent = `${f.n}`; }));
         safe(() => { const el = q(".fit-score"); if (el) el.textContent = "64"; });
       });
 
@@ -235,11 +381,13 @@ export function GsapShowcase() {
       {/* ── Fixed chrome (outside #smooth-content) ── */}
       <div id="cursor-glow" aria-hidden className="pointer-events-none fixed top-0 left-0 z-[5] w-[42rem] h-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0" style={{ background: `radial-gradient(circle, ${CYAN}22 0%, transparent 60%)` }} />
       <div className="gs-progress fixed top-0 left-0 right-0 h-[3px] origin-left z-50" style={{ transform: "scaleX(0)", background: `linear-gradient(90deg, ${CYAN}, ${TEAL})` }} aria-hidden />
-      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-6 rounded-full px-5 py-2.5 ring-1 ring-white/10 bg-white/[0.06] backdrop-blur-md">
+      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-5 rounded-full px-5 py-2.5 ring-1 ring-white/10 bg-white/[0.06] backdrop-blur-md">
         <span className="font-black tracking-tight text-[15px]">BioHubNet</span>
-        <div className="hidden sm:flex items-center gap-5 text-[12px] text-white/60 font-medium">
+        <div className="hidden md:flex items-center gap-4 text-[12px] text-white/60 font-medium">
           <a href="#pillars" className="hover:text-white transition-colors">Platform</a>
           <a href="#pathways" className="hover:text-white transition-colors">Pathways</a>
+          <a href="#hiring" className="hover:text-white transition-colors">Hiring</a>
+          <a href="#reports" className="hover:text-white transition-colors">Reports</a>
           <a href="#equip" className="hover:text-white transition-colors">Funding</a>
         </div>
         <Link href="/dashboard" className="text-[12px] font-bold rounded-full px-3.5 py-1.5 text-[#07101a]" style={{ background: TEAL }}>Enter</Link>
@@ -250,8 +398,8 @@ export function GsapShowcase() {
           {/* ── HERO ── */}
           <section className="hero-section relative min-h-screen flex flex-col items-center justify-center px-6 text-center">
             <div aria-hidden className="absolute inset-0 overflow-hidden">
-              <div data-speed="0.85" className="absolute -top-1/4 left-1/2 -translate-x-1/2 w-[120vw] h-[80vh] rounded-full blur-[120px] opacity-50" style={{ background: `radial-gradient(circle, ${"#0d9488"}55, transparent 60%)` }} />
-              <div data-speed="1.1" className="absolute top-1/3 left-[8%] w-72 h-72 rounded-full blur-3xl opacity-30" style={{ background: `${CYAN}` }} />
+              <div data-speed="0.85" className="absolute -top-1/4 left-1/2 -translate-x-1/2 w-[120vw] h-[80vh] rounded-full blur-[120px] opacity-50" style={{ background: `radial-gradient(circle, #0d948855, transparent 60%)` }} />
+              <div data-speed="1.1" className="absolute top-1/3 left-[8%] w-72 h-72 rounded-full blur-3xl opacity-30" style={{ background: CYAN }} />
               <div data-speed="0.7" className="absolute bottom-[10%] right-[10%] w-80 h-80 rounded-full blur-3xl opacity-25" style={{ background: "#0369a1" }} />
             </div>
             <p className="hero-fade relative text-[11px] uppercase tracking-[0.4em] font-bold mb-6" style={{ color: TEAL }}>Transformative talent development</p>
@@ -259,16 +407,27 @@ export function GsapShowcase() {
               The biomanufacturing career platform — train, get placed, get funded.
             </h1>
             <p className="hero-fade relative mt-7 text-base sm:text-xl text-white/65 max-w-2xl leading-relaxed">
-              One path from your first course to your first offer — and the funding to build what&apos;s next.
+              One platform, two sides: trained talent finds the role, and hiring teams find the talent — measured end to end.
             </p>
             <div className="hero-fade relative mt-10 flex flex-wrap items-center justify-center gap-3">
               <Link href="/dashboard" className="rounded-full px-6 py-3 text-[15px] font-bold text-[#07101a]" style={{ background: TEAL }}>Enter the platform</Link>
-              <a href="#pathways" className="rounded-full px-6 py-3 text-[15px] font-bold ring-1 ring-white/20 hover:bg-white/10 transition-colors">See career pathways</a>
+              <a href="#hiring" className="rounded-full px-6 py-3 text-[15px] font-bold ring-1 ring-white/20 hover:bg-white/10 transition-colors">See the hiring suite</a>
             </div>
           </section>
 
+          {/* ── MARQUEE ── */}
+          <div className="marquee-wrap relative overflow-hidden py-5 border-y border-white/10 bg-white/[0.02]">
+            <div className="marquee-track flex w-max items-center will-change-transform">
+              {[...ROLES, ...ROLES].map((r, i) => (
+                <span key={i} className="flex items-center gap-7 px-7 text-[13px] font-bold uppercase tracking-[0.18em] text-white/45 whitespace-nowrap">
+                  <span style={{ color: i % 2 ? CYAN : TEAL }}>◇</span>{r}
+                </span>
+              ))}
+            </div>
+          </div>
+
           {/* ── PILLARS ── */}
-          <section id="pillars" className="relative px-6 py-32 md:py-48 max-w-6xl mx-auto">
+          <section id="pillars" className="relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
             <h2 className="reveal font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Three pillars, one trajectory.</h2>
             <p className="reveal mt-4 text-white/55 max-w-xl text-lg">Most platforms do one. BioHubNet carries you across all three.</p>
             <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -289,8 +448,37 @@ export function GsapShowcase() {
             </div>
           </section>
 
+          {/* ── TWO-SIDED SPLIT ── */}
+          <section className="relative px-6 py-28 md:py-40 border-y border-white/10">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="reveal font-black tracking-tight text-center mx-auto max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Two products. One graph of talent.</h2>
+              <div className="mt-14 grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="reveal group relative overflow-hidden rounded-3xl p-9 ring-1 ring-white/10" style={{ background: `linear-gradient(155deg, ${CYAN}1a, transparent 55%)` }}>
+                  <p className="text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: CYAN }}>For talent</p>
+                  <h3 className="mt-3 text-3xl font-black">Train, then get seen.</h3>
+                  <p className="mt-3 text-white/60 leading-relaxed max-w-md">From your first course to a tailored application — with AI in the loop the whole way.</p>
+                  <ul className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+                    {TALENT_FEATURES.map((f) => (
+                      <li key={f} className="flex items-center gap-2 text-[13px] text-white/80"><span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: CYAN }} />{f}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="reveal group relative overflow-hidden rounded-3xl p-9 ring-1 ring-white/10" style={{ background: `linear-gradient(155deg, ${VIOLET}1a, transparent 55%)` }}>
+                  <p className="text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: VIOLET }}>For employers · HR</p>
+                  <h3 className="mt-3 text-3xl font-black">Hire faster, prove it.</h3>
+                  <p className="mt-3 text-white/60 leading-relaxed max-w-md">A full applicant-tracking pipeline plus the reporting leadership actually asks for.</p>
+                  <ul className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+                    {EMPLOYER_FEATURES.map((f) => (
+                      <li key={f} className="flex items-center gap-2 text-[13px] text-white/80"><span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: VIOLET }} />{f}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* ── CAREER PATHWAYS (DrawSVG) ── */}
-          <section id="pathways" className="path-sec relative px-6 py-32 md:py-44 border-y border-white/10 overflow-hidden">
+          <section id="pathways" className="path-sec relative px-6 py-32 md:py-44 overflow-hidden">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 items-center">
               <div>
                 <h2 className="reveal font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Every route from junior to VP.</h2>
@@ -311,7 +499,7 @@ export function GsapShowcase() {
           </section>
 
           {/* ── FIT MATRIX ── */}
-          <section className="fit-sec relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
+          <section className="fit-sec relative px-6 py-32 md:py-44 max-w-6xl mx-auto border-t border-white/10">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr] gap-12 items-center">
               <div>
                 <h2 className="reveal font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Know your fit before you apply.</h2>
@@ -337,32 +525,225 @@ export function GsapShowcase() {
             </div>
           </section>
 
-          {/* ── STATS ── */}
-          <section className="relative px-6 py-24 border-y border-white/10">
-            <div className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-              {STATS.map((s, i) => (
-                <div key={s.label}>
-                  <p className={`stat-${i} font-black tabular-nums leading-none`} style={{ fontSize: "clamp(2.4rem,5vw,4rem)", color: i % 2 ? CYAN : TEAL }}>{s.prefix ?? ""}0{s.suffix ?? ""}</p>
-                  <p className="mt-3 text-white/50 text-[13px]">{s.label}</p>
+          {/* ── AI TOOLKIT (BENTO) ── */}
+          <section className="relative px-6 py-28 md:py-40 max-w-6xl mx-auto">
+            <h2 className="reveal font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>An AI co-pilot for the whole job hunt.</h2>
+            <p className="reveal mt-4 text-white/55 max-w-xl text-lg">Seven tools, one thread — grounded in your courses, your resume, and the role in front of you.</p>
+            <div className="mt-14 grid grid-cols-2 lg:grid-cols-4 auto-rows-[150px] gap-3 grid-flow-dense">
+              {AI_TILES.map((tile) => (
+                <div key={tile.t} className={`reveal group relative overflow-hidden rounded-2xl p-5 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-colors ${tile.span}`}>
+                  <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full blur-2xl opacity-40 transition-opacity group-hover:opacity-70" style={{ background: tile.color }} />
+                  <p className="relative text-[10px] uppercase tracking-[0.28em] font-bold" style={{ color: tile.color }}>AI</p>
+                  <h3 className={`relative font-black mt-1.5 ${tile.big ? "text-2xl" : "text-lg"}`}>{tile.t}</h3>
+                  <p className={`relative text-white/55 leading-relaxed mt-2 ${tile.big ? "text-[14px]" : "text-[12px]"}`}>{tile.d}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* ── TALENT REPORTS ── */}
-          <section className="kpi-sec relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
-              <div className="flex items-end gap-3 h-56">
-                {[40, 62, 55, 78, 70, 92].map((h, i) => (
-                  <div key={i} className="flex-1 flex flex-col justify-end">
-                    <div className="kpi-bar rounded-t-md" style={{ height: `${h}%`, background: `linear-gradient(to top, ${TEAL}, ${CYAN})` }} />
+          {/* ── HR COMMAND CENTER (KPI / RAG) ── */}
+          <section id="hiring" className="kpi-sec relative px-6 py-32 md:py-44 border-y border-white/10 overflow-hidden">
+            <div aria-hidden data-speed="0.9" className="absolute top-0 right-[-10%] w-[40vw] h-[40vw] rounded-full blur-[120px] opacity-20" style={{ background: VIOLET }} />
+            <div className="max-w-6xl mx-auto relative">
+              <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: VIOLET }}>For employers · HR</p>
+              <h2 className="reveal mt-3 font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>The numbers leadership asks for, live.</h2>
+              <p className="reveal mt-4 text-white/55 max-w-2xl text-lg">Every KPI carries an OKR target and a RAG status — on track, at risk, or off track — computed over the period you pick.</p>
+              <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {KPI_TILES.map((t, i) => (
+                  <div key={t.k} className="reveal group rounded-2xl p-6 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[12px] font-semibold text-white/55">{t.k}</p>
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: RAG[t.rag] }}>
+                        <span className="w-2 h-2 rounded-full" style={{ background: RAG[t.rag] }} />{t.rag === "on" ? "On track" : t.rag === "at" ? "At risk" : "Off track"}
+                      </span>
+                    </div>
+                    <p className={`kpi-val-${i} font-black tabular-nums leading-none mt-3`} style={{ fontSize: "clamp(2rem,4vw,3rem)" }}>{t.prefix}0{t.unit}</p>
+                    <div className="mt-3 flex items-end justify-between gap-3">
+                      <span className="text-[11px] text-white/40">{t.target}</span>
+                      <svg viewBox="0 0 132 40" className="w-[120px] h-[34px] overflow-visible">
+                        <path className="kpi-spark" d={sparkPath(t.spark)} fill="none" stroke={RAG[t.rag]} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
                   </div>
                 ))}
               </div>
-              <div>
-                <h2 className="reveal font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Board-ready, for employers.</h2>
-                <p className="reveal mt-5 text-white/60 text-lg leading-relaxed max-w-md">Nine talent reports — funnel, time-to-fill, offers, cost-per-hire, source effectiveness and an opt-in DEI view — with OKR targets, RAG status, period filters, and one-click PDF or CSV export.</p>
+            </div>
+          </section>
+
+          {/* ── HIRING FUNNEL ── */}
+          <section className="funnel-sec relative px-6 py-32 md:py-44 max-w-5xl mx-auto">
+            <h2 className="reveal font-black tracking-tight text-center mx-auto max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>From applicant to hire, stage by stage.</h2>
+            <p className="reveal mt-4 text-white/55 max-w-xl mx-auto text-center text-lg">Snapshot and true-cohort conversion side by side, with the biggest drop-off flagged automatically.</p>
+            <div className="mt-14 space-y-4">
+              {FUNNEL.map((f, i) => {
+                const conv = i > 0 ? Math.round((f.n / FUNNEL[i - 1].n) * 100) : null;
+                return (
+                  <div key={f.stage}>
+                    <div className="flex items-center justify-between text-[13px] mb-1.5 px-1">
+                      <span className="font-semibold text-white/80">{f.stage}</span>
+                      <span className="flex items-center gap-3">
+                        {conv !== null && <span className="text-[11px] text-white/40">{conv}% advance</span>}
+                        <span className={`funnel-n-${i} tabular-nums font-black`} style={{ color: i === FUNNEL.length - 1 ? RAG.on : CYAN }}>0</span>
+                      </span>
+                    </div>
+                    <div className="mx-auto funnel-bar h-11 rounded-lg flex items-center px-4 text-[12px] font-bold text-[#07101a]" style={{ width: `${Math.max(f.pct, 8)}%`, background: `linear-gradient(90deg, ${CYAN}, ${TEAL})` }}>
+                      {f.pct}%
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* ── CANDIDATE PIPELINE ── */}
+          <section className="relative px-6 py-28 md:py-40 border-y border-white/10 bg-white/[0.015]">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="reveal font-black tracking-tight max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>A pipeline your whole team works.</h2>
+              <p className="reveal mt-4 text-white/55 max-w-xl text-lg">Drag candidates across stages, with role-based access, attribution on every move, and email that fires itself.</p>
+              <div className="mt-12 grid grid-cols-2 md:grid-cols-5 gap-3">
+                {PIPELINE.map((col) => (
+                  <div key={col.stage} className="rounded-2xl p-3 ring-1 ring-white/10 bg-white/[0.03]">
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <span className="flex items-center gap-1.5 text-[12px] font-bold"><span className="w-2 h-2 rounded-full" style={{ background: col.color }} />{col.stage}</span>
+                      <span className="text-[11px] text-white/35 tabular-nums">{col.total}</span>
+                    </div>
+                    <div className="space-y-2">
+                      {col.cards.map(([name, role, score]) => (
+                        <div key={name} className="pipe-card rounded-xl p-3 ring-1 ring-white/10 bg-[#0b1623] opacity-0 translate-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[12px] font-bold text-white/90">{name}</span>
+                            <span className="text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded" style={{ color: "#07101a", background: fitChip(score) }}>{score}</span>
+                          </div>
+                          <p className="text-[11px] text-white/45 mt-0.5">{role}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
+          </section>
+
+          {/* ── HIRING LOOP (workflow) ── */}
+          <section className="loop-sec relative px-6 py-32 md:py-44 max-w-5xl mx-auto">
+            <h2 className="reveal font-black tracking-tight max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Post a role to report to the board.</h2>
+            <p className="reveal mt-4 text-white/55 max-w-xl text-lg">Six steps, one system of record — every action logged, every metric reconciled.</p>
+            <div className="mt-14 grid grid-cols-[28px_1fr] gap-x-5">
+              <svg viewBox="0 0 28 600" preserveAspectRatio="none" className="w-7 h-full">
+                <path className="loop-spine" d="M14,14 L14,586" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" />
+                {HIRING_LOOP.map((_, i) => (
+                  <circle key={i} className="loop-dot" cx="14" cy={14 + i * ((586 - 14) / (HIRING_LOOP.length - 1))} r="6" fill="#07101a" stroke={i % 2 ? CYAN : TEAL} strokeWidth="2.5" />
+                ))}
+              </svg>
+              <ol className="space-y-9">
+                {HIRING_LOOP.map((s, i) => (
+                  <li key={s.step} className="reveal">
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-[12px] font-black tabular-nums" style={{ color: i % 2 ? CYAN : TEAL }}>{String(i + 1).padStart(2, "0")}</span>
+                      <h3 className="text-xl font-black">{s.step}</h3>
+                    </div>
+                    <p className="text-white/55 mt-1.5 leading-relaxed pl-7 max-w-lg">{s.body}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+
+          {/* ── REPORTS SUITE (BENTO) ── */}
+          <section id="reports" className="relative px-6 py-32 md:py-44 border-y border-white/10">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="reveal font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Ten reports. One source of truth.</h2>
+              <p className="reveal mt-4 text-white/55 max-w-2xl text-lg">A pure metrics library feeds every report, the print one-pager, and the CSV — so the numbers always reconcile. Period filters, OKR targets, RAG everywhere.</p>
+              <div className="mt-14 grid grid-cols-2 lg:grid-cols-5 gap-3">
+                {REPORTS.map((r) => (
+                  <div key={r.n} className={`report-tile opacity-0 translate-y-3 scale-95 rounded-2xl p-4 ring-1 transition-colors ${r.feat ? "ring-white/20" : "ring-white/10 hover:ring-white/25"}`} style={{ background: r.feat ? `linear-gradient(155deg, ${TEAL}26, transparent 60%)` : "rgba(255,255,255,0.03)" }}>
+                    {r.feat && <p className="text-[9px] uppercase tracking-[0.24em] font-bold mb-1.5" style={{ color: TEAL }}>Headline</p>}
+                    <h3 className="text-[14px] font-black leading-tight">{r.n}</h3>
+                    <p className="text-[11px] text-white/50 mt-1.5 leading-snug">{r.d}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="reveal mt-6 flex flex-wrap gap-2 text-[11px] text-white/50">
+                {["Period filters (MTD / QTD / YTD)", "OKR targets + RAG", "Print → PDF", "CSV export", "DEI: opt-in · k-anonymity"].map((c) => (
+                  <span key={c} className="rounded-full px-3 py-1 ring-1 ring-white/10 bg-white/[0.03]">{c}</span>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── TRENDS ── */}
+          <section className="trend-sec relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
+            <h2 className="reveal font-black tracking-tight text-center mx-auto max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Both lines going the right way.</h2>
+            <div className="mt-14 grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="rounded-3xl p-7 ring-1 ring-white/10 bg-white/[0.03]">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-[12px] font-semibold text-white/55">Time-to-fill</p>
+                    <p className="text-3xl font-black tabular-nums mt-1" style={{ color: TEAL }}>41 → 28<span className="text-base text-white/40 font-bold"> days</span></p>
+                  </div>
+                  <span className="text-[11px] font-bold" style={{ color: RAG.on }}>−32%</span>
+                </div>
+                <svg viewBox="0 0 320 120" className="w-full h-auto mt-4 overflow-visible">
+                  <path className="trend-line" d={sparkPath(TTF_TREND, 320, 120, 10)} fill="none" stroke={TEAL} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div className="rounded-3xl p-7 ring-1 ring-white/10 bg-white/[0.03]">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-[12px] font-semibold text-white/55">Cost-per-hire</p>
+                    <p className="text-3xl font-black tabular-nums mt-1" style={{ color: CYAN }}>$6.2k → $4.6k</p>
+                  </div>
+                  <span className="text-[11px] font-bold" style={{ color: RAG.on }}>−26%</span>
+                </div>
+                <div className="mt-4 flex items-end gap-1.5 h-[120px]">
+                  {CPH_TREND.map((v, i) => (
+                    <div key={i} className="flex-1 flex flex-col justify-end">
+                      <div className="cost-bar rounded-t" style={{ height: `${cphHeight(v)}%`, background: `linear-gradient(to top, ${CYAN}, ${TEAL})` }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── SCORECARD / QUALITY-OF-HIRE ── */}
+          <section className="score-sec relative px-6 py-28 md:py-40 max-w-6xl mx-auto border-t border-white/10">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 items-center">
+              <div>
+                <h2 className="reveal font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Structured scorecards, every interview.</h2>
+                <p className="reveal mt-5 text-white/60 text-lg leading-relaxed max-w-md">A shared rubric per role, scored by each panelist, rolled into a quality-of-hire metric that lets you compare hires against the ones you passed on.</p>
+              </div>
+              <div className="rounded-3xl p-7 ring-1 ring-white/10 bg-white/[0.03]">
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-[13px] font-bold text-white/80">PD Scientist · Panel rubric</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded" style={{ color: "#07101a", background: RAG.on }}>Strong hire</span>
+                </div>
+                <div className="space-y-4">
+                  {SCORE_CRITERIA.map((c) => (
+                    <div key={c.k}>
+                      <div className="flex items-center justify-between text-[13px] mb-1.5">
+                        <span className="text-white/75">{c.k}</span>
+                        <span className="tabular-nums font-bold text-white/90">{c.v.toFixed(1)}<span className="text-white/35"> / 5</span></span>
+                      </div>
+                      <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                        <div className="score-bar h-full rounded-full" style={{ width: `${(c.v / 5) * 100}%`, background: `linear-gradient(90deg, ${TEAL}, ${CYAN})` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── STATS ── */}
+          <section className="relative px-6 py-24 border-y border-white/10">
+            <div className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+              {STATS.map((s, i) => (
+                <div key={s.label}>
+                  <p className={`stat-${i} font-black tabular-nums leading-none`} style={{ fontSize: "clamp(2.4rem,5vw,4rem)", color: i % 2 ? CYAN : TEAL }}>{s.prefix}0{s.suffix}</p>
+                  <p className="mt-3 text-white/50 text-[13px]">{s.label}</p>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -372,21 +753,53 @@ export function GsapShowcase() {
               <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(1.8rem, 3.5vw, 3rem)" }}>Everything in the toolkit.</h2>
             </div>
             <div className="rail-track flex h-full items-center gap-6 px-[6vw]" style={{ width: "max-content" }}>
-              {RAIL.map(([t, d], i) => (
-                <div key={t} className="w-[78vw] sm:w-[42vw] lg:w-[30vw] rounded-3xl p-8 ring-1 ring-white/10 bg-white/[0.04]">
-                  <span className="text-[12px] font-black" style={{ color: i % 2 ? CYAN : TEAL }}>{String(i + 1).padStart(2, "0")}</span>
-                  <h3 className="text-3xl font-black mt-3">{t}</h3>
-                  <p className="text-white/55 mt-3 leading-relaxed">{d}</p>
+              {RAIL.map((r) => (
+                <div key={r.t} className="w-[78vw] sm:w-[42vw] lg:w-[28vw] rounded-3xl p-8 ring-1 ring-white/10 bg-white/[0.04]">
+                  <span className="text-[10px] font-black uppercase tracking-[0.28em]" style={{ color: r.side === "Talent" ? CYAN : VIOLET }}>{r.side}</span>
+                  <h3 className="text-3xl font-black mt-3">{r.t}</h3>
+                  <p className="text-white/55 mt-3 leading-relaxed">{r.d}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* ── CTA / FOOTER ── */}
-          <section id="equip" className="relative px-6 py-40 md:py-56 text-center overflow-hidden">
-            <div aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(60% 60% at 50% 50%, ${"#0d9488"}33, transparent 70%)` }} />
-            <h2 className="reveal relative font-black tracking-tight max-w-4xl mx-auto" style={{ fontSize: "clamp(2.4rem, 6vw, 5rem)" }}>Start your pathway today.</h2>
-            <p className="reveal relative mt-5 text-white/60 text-lg max-w-xl mx-auto">Train for the bench, get in front of employers, and fund the leap — all in one place.</p>
+          {/* ── VOICES ── */}
+          <section className="relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
+            <h2 className="reveal font-black tracking-tight max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Both sides, in their words.</h2>
+            <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-5">
+              {VOICES.map((v) => (
+                <figure key={v.who} className="reveal group rounded-3xl p-8 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
+                  <div className="text-5xl font-black leading-none mb-3" style={{ color: v.color }}>&ldquo;</div>
+                  <blockquote className="text-lg leading-relaxed text-white/85">{v.q}</blockquote>
+                  <figcaption className="mt-5 text-[12px] uppercase tracking-[0.18em] font-bold text-white/45">{v.who}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+
+          {/* ── FUNDING (EQUIP) ── */}
+          <section id="equip" className="relative px-6 py-28 md:py-40 border-y border-white/10">
+            <div className="max-w-6xl mx-auto">
+              <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: VIOLET }}>Equip</p>
+              <h2 className="reveal mt-3 font-black tracking-tight max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Fund the leap from project to venture.</h2>
+              <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="reveal rounded-3xl p-9 ring-1 ring-white/10 bg-white/[0.03]">
+                  <div className="flex items-baseline gap-3"><h3 className="text-2xl font-black">VentureConnect</h3><span className="font-black" style={{ color: CYAN }}>≤ $5K</span></div>
+                  <p className="mt-3 text-white/60 leading-relaxed max-w-md">Backs the events, conferences, and community moments that put your work in front of the people who matter.</p>
+                </div>
+                <div className="reveal rounded-3xl p-9 ring-1 ring-white/10 bg-white/[0.03]">
+                  <div className="flex items-baseline gap-3"><h3 className="text-2xl font-black">VentureLift</h3><span className="font-black" style={{ color: VIOLET }}>≤ $25K</span></div>
+                  <p className="mt-3 text-white/60 leading-relaxed max-w-md">Backs commercialization — prototypes, pilots, and the first real steps toward a product, guided by a wizard.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── CTA ── */}
+          <section className="relative px-6 py-40 md:py-56 text-center overflow-hidden">
+            <div aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(60% 60% at 50% 50%, #0d948833, transparent 70%)` }} />
+            <h2 className="reveal relative font-black tracking-tight max-w-4xl mx-auto" style={{ fontSize: "clamp(2.4rem, 6vw, 5rem)" }}>Train talent. Hire talent. Prove it.</h2>
+            <p className="reveal relative mt-5 text-white/60 text-lg max-w-xl mx-auto">One platform for the people building biomanufacturing — and the teams that hire them.</p>
             <div className="reveal relative mt-10">
               <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-lg font-black text-[#07101a]" style={{ background: TEAL }}>
                 Enter BioHubNet <span className="cta-arrow inline-block">&rarr;</span>
