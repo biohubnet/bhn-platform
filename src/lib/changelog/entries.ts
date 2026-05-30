@@ -24,8 +24,8 @@ export interface ChangelogEntry {
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── GSAP capability demo — May 2026
   {
-    title: "Added GSAP + a live animation showcase at /showcase/gsap",
-    body: "GSAP (with @gsap/react) is now available in the platform, and there's a public demo page at /showcase/gsap showing what it can do: timeline-choreographed hero reveal, a pinned + scroll-scrubbed sequence, multi-speed parallax, and batched scroll-in cards. Built with the official GSAP skills' React patterns — useGSAP for automatic cleanup, client-only (SSR-safe), and prefers-reduced-motion respected. It's a capability demo / starting point for richer scroll-driven motion on real pages.",
+    title: "Added GSAP + a labeled feature reference at /showcase/gsap",
+    body: "GSAP (with @gsap/react and every plugin) is now available in the platform, and there's a public reference deck at /showcase/gsap. Each demo card is titled with the exact API to reach for, so it doubles as a cheat-sheet: core tweens, 30+ eases, grid staggers, timelines, keyframes, SplitText, ScrambleText, TextPlugin, DrawSVG, MorphSVG, MotionPath, CustomEase, Flip, Draggable + Inertia, Observer, Physics2D, and gsap.utils — plus scroll-driven sections for ScrollTrigger reveal, scrub, pin, parallax, batch, and fake-horizontal scroll. Built with the official GSAP skills' React patterns: useGSAP auto-cleanup, client-only (SSR-safe), prefers-reduced-motion gated, each demo isolated so one can't break the page.",
     kind: "note",
     visibleTo: ADMINS,
     daysAgo: 0,
