@@ -406,18 +406,21 @@ export function GsapShowcase() {
         // the default toggleActions and always finishes at the natural opacity:1.
         // (No `once:true` — that was killing tweens mid-fade; no batch — its onEnter
         // didn't fire reliably here, stranding rows hidden.)
-        // Reveal — smooth rise + fade ONLY. No scale/zoom, no 3D tilt, no overshoot
-        // ease (those read as a "sudden zoom-in"). fromTo keeps an explicit opacity:1
-        // end so a post-font ScrollTrigger.refresh() can never strand it dim.
-        safe(() => gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) =>
-          gsap.fromTo(el, { opacity: 0, y: 46 }, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 88%" } })));
-
-        // List rows + chips — gentle rise + fade (no scale/pop). The scroll cascades
-        // them as each crosses into view.
-        safe(() => gsap.utils.toArray<HTMLElement>(".bhn-showcase li:not(.reveal)").forEach((el) =>
-          gsap.fromTo(el, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out", scrollTrigger: { trigger: el, start: "top 97%" } })));
-        safe(() => gsap.utils.toArray<HTMLElement>('.bhn-showcase span[class*="rounded"][class*="px-"]').forEach((el) =>
-          gsap.fromTo(el, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out", scrollTrigger: { trigger: el, start: "top 97%" } })));
+        // Reveal — smooth rise + fade (NO scale/zoom, no tilt). Mechanism: pre-hide,
+        // then a PLAIN gsap.to() fired from a standalone ScrollTrigger onEnter — NOT a
+        // scrollTrigger-bound from/fromTo (those froze mid-progress here, stranding
+        // blocks dim/offset). A plain to() runs on the global timeline to completion,
+        // always landing at opacity:1, y:0 — exactly how the card batches behave.
+        // The gsap.set only runs in this no-preference branch, so reduced-motion /
+        // no-JS leaves everything fully visible.
+        const reveal = (sel: string, fromY: number, dur: number, ease: string, startPct: number) =>
+          safe(() => gsap.utils.toArray<HTMLElement>(sel).forEach((el) => {
+            gsap.set(el, { opacity: 0, y: fromY });
+            ScrollTrigger.create({ trigger: el, start: `top ${startPct}%`, onEnter: () => gsap.to(el, { opacity: 1, y: 0, duration: dur, ease, overwrite: true }) });
+          }));
+        reveal(".reveal", 44, 0.85, "power3.out", 88);
+        reveal(".bhn-showcase li:not(.reveal)", 14, 0.5, "power2.out", 97);
+        reveal('.bhn-showcase span[class*="rounded"][class*="px-"]', 8, 0.45, "power2.out", 97);
 
         // Nav drops in on load.
         safe(() => gsap.from("nav", { y: -24, opacity: 0, duration: 0.85, ease: "power3.out", delay: 0.1 }));
