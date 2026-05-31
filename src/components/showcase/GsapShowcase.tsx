@@ -26,7 +26,7 @@
  * Fixed chrome (nav, progress, cursor glow) lives OUTSIDE #smooth-content —
  * ScrollSmoother transforms that node, which would break position:fixed.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Outfit } from "next/font/google";
 import gsap from "gsap";
@@ -389,7 +389,8 @@ function WaveDivider({ from = TEAL, to = CYAN, flip = false }: { from?: string; 
   );
 }
 
-export function GsapShowcase() {
+// ── DESIGN SYSTEM A — "Flow" (organic, editorial; the existing page) ──────────
+function FlowShowcase() {
   const root = useRef<HTMLDivElement>(null);
 
   // The app's <body> carries the platform's light theme background. This page
@@ -428,7 +429,7 @@ export function GsapShowcase() {
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         // Smooth scrolling + data-speed parallax (guarded → native scroll on fail).
-        safe(() => { ScrollSmoother.create({ wrapper: "#smooth-wrapper", content: "#smooth-content", smooth: 1.15, effects: true }); });
+        safe(() => { ScrollSmoother.get()?.kill(); ScrollSmoother.create({ wrapper: "#smooth-wrapper", content: "#smooth-content", smooth: 1.15, effects: true }); });
 
         // Cursor-follow glow (fine pointers only) via quickTo.
         safe(() => {
@@ -1323,5 +1324,287 @@ export function GsapShowcase() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DESIGN SYSTEM B — "Cinematic": a film-reel cut of the same story. No cards or
+// boxes — only full-bleed duotone imagery, letterboxing, grain + scanlines, a
+// timecode HUD, kinetic type, a scrubbed manifesto, crossfading "acts", a pinned
+// horizontal reel, slammed numerals, and an end-credits roll.
+// ════════════════════════════════════════════════════════════════════════════
+const CINEMATIC_CSS = `
+.bhn-cine { background:#04080d; color:#e9f6f3; }
+.bhn-cine ::selection { background:#2dd4bf; color:#04080d; }
+.bhn-cine :is(h1,h2,h3){ font-family:inherit !important; font-weight:900 !important; letter-spacing:-0.03em !important; text-transform:none !important; }
+.bhn-cine #cine-content > section { position:relative; min-height:100vh; }
+.cine-grain { position:fixed; inset:0; z-index:58; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.cine-scanlines { position:fixed; inset:0; z-index:57; pointer-events:none; opacity:.30;
+  background:repeating-linear-gradient(180deg, transparent 0 3px, rgba(0,0,0,.16) 3px 4px); }
+.cine-vignette { position:fixed; inset:0; z-index:57; pointer-events:none;
+  background:radial-gradient(125% 85% at 50% 45%, transparent 50%, rgba(0,0,0,.72) 100%); }
+.cine-img { position:absolute; inset:0; background-size:cover; background-position:center; }
+.cine-img.duo { filter:grayscale(1) contrast(1.08) brightness(.6); }
+.cine-bar { position:absolute; left:0; right:0; height:7vh; background:#04080d; z-index:4; pointer-events:none; }
+@media (prefers-reduced-motion: reduce) { .cine-grain, .cine-scanlines { display:none; } }
+`;
+
+const MANIFESTO = "One platform carries a scientist from a first course to a funded venture — and hands hiring teams the trained people, and the proof, their boards keep asking for.";
+const CINE_METRICS = [
+  { p: "", n: "8", u: "", l: "career tracks, Junior to VP", c: TEAL },
+  { p: "", n: "28", u: "d", l: "median time-to-fill", c: CYAN },
+  { p: "−", n: "32", u: "%", l: "faster hiring, on average", c: TEAL },
+  { p: "", n: "10", u: "", l: "board-ready talent reports", c: BLUE },
+  { p: "$", n: "25", u: "K", l: "funding behind one venture", c: VIOLET },
+];
+
+function CinematicShowcase() {
+  const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const prev = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = "#04080d";
+    return () => { document.body.style.backgroundColor = prev; };
+  }, []);
+
+  useGSAP(
+    () => {
+      const q = <T extends Element = HTMLElement>(s: string) => root.current?.querySelector<T>(s) ?? null;
+      const splits: SplitText[] = [];
+      const safe = (fn: () => void) => { try { fn(); } catch (e) { console.warn("[cine]", e); } };
+      const mm = gsap.matchMedia();
+
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        safe(() => { ScrollSmoother.get()?.kill(); ScrollSmoother.create({ wrapper: "#cine-wrapper", content: "#cine-content", smooth: 1.2, effects: true }); });
+
+        safe(() => gsap.to(".cine-prog", { scaleX: 1, ease: "none", scrollTrigger: { trigger: document.body, start: 0, end: "max", scrub: 0.3 } }));
+        safe(() => gsap.to(".cine-rec", { opacity: 0.2, duration: 0.7, repeat: -1, yoyo: true, ease: "power1.inOut" }));
+        safe(() => { const val = q(".cine-frame-val"); if (val) ScrollTrigger.create({ trigger: document.body, start: 0, end: "max", scrub: true, onUpdate: (self) => { val.textContent = String(Math.round(self.progress * 9999)).padStart(4, "0"); } }); });
+
+        const reveal = (sel: string, fromY: number, dur: number, startPct: number) =>
+          safe(() => gsap.utils.toArray<HTMLElement>(sel).forEach((el) => {
+            gsap.set(el, { opacity: 0, y: fromY });
+            ScrollTrigger.create({ trigger: el, start: `top ${startPct}%`, onEnter: () => gsap.to(el, { opacity: 1, y: 0, duration: dur, ease: "power3.out", overwrite: true }) });
+          }));
+        reveal(".cine-reveal", 50, 0.9, 90);
+        reveal(".cine-metric", 70, 0.95, 88);
+        reveal(".cine-credit-line", 18, 0.55, 96);
+
+        // Cold open — headline reveals char by char once fonts are measured.
+        safe(() => {
+          const build = () => {
+            const st = new SplitText(".cine-h1", { type: "chars,words" });
+            splits.push(st);
+            gsap.from(st.chars, { yPercent: 115, opacity: 0, stagger: 0.022, duration: 0.9, ease: "power4.out", scrollTrigger: { trigger: ".cine-h1", start: "top 95%", once: true } });
+            ScrollTrigger.refresh();
+          };
+          if (document.fonts?.ready) document.fonts.ready.then(build); else build();
+        });
+        safe(() => gsap.from(".cine-fade", { y: 24, opacity: 0, duration: 1, stagger: 0.13, ease: "power3.out", delay: 0.25 }));
+
+        // Manifesto — words brighten one by one, scrubbed to scroll.
+        safe(() => gsap.fromTo(".cine-word", { opacity: 0.14 }, { opacity: 1, stagger: 0.3, ease: "none", scrollTrigger: { trigger: ".cine-manifesto", start: "top 75%", end: "bottom 80%", scrub: 1 } }));
+
+        // Three acts — pinned full-bleed scenes that crossfade, each image ken-burns.
+        safe(() => {
+          const sec = q(".cine-acts-sec");
+          const acts = gsap.utils.toArray<HTMLElement>(".cine-act");
+          if (sec && acts.length) {
+            gsap.set(sec, { height: "100vh", overflow: "hidden" });
+            acts.forEach((a, i) => gsap.set(a, { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, autoAlpha: i === 0 ? 1 : 0 }));
+            const tl = gsap.timeline({ scrollTrigger: { trigger: sec, start: "top top", end: "+=280%", scrub: 1, pin: true } });
+            for (let i = 1; i < acts.length; i++) tl.to(acts[i - 1], { autoAlpha: 0, duration: 0.6 }).to(acts[i], { autoAlpha: 1, duration: 0.6 }, "<");
+            acts.forEach((a) => { const img = a.querySelector<HTMLElement>(".cine-img"); if (img) gsap.fromTo(img, { scale: 1.05 }, { scale: 1.16, ease: "none", scrollTrigger: { trigger: sec, start: "top top", end: "+=280%", scrub: 1 } }); });
+          }
+        });
+
+        // The reel — pinned, scrolls horizontally (ease none for 1:1 scroll mapping).
+        safe(() => {
+          const track = q(".cine-reel-track");
+          if (track) {
+            const n = track.children.length;
+            gsap.to(track, { xPercent: -100 * ((n - 1) / n), ease: "none", scrollTrigger: { trigger: ".cine-reel-sec", start: "top top", end: "+=3200", scrub: 1, pin: true } });
+          }
+        });
+
+        safe(() => { document.fonts?.ready?.then(() => ScrollTrigger.refresh()); });
+      });
+
+      mm.add("(prefers-reduced-motion: reduce)", () => {
+        safe(() => gsap.set([".cine-fade", ".cine-reveal", ".cine-metric", ".cine-credit-line"], { clearProps: "all" }));
+        safe(() => gsap.set(".cine-word", { opacity: 1 }));
+      });
+
+      return () => { splits.forEach((s) => s.revert()); };
+    },
+    { scope: root },
+  );
+
+  return (
+    <div ref={root} className={`${outfit.className} bhn-cine text-white overflow-x-hidden`} style={{ background: "#04080d" }}>
+      <style dangerouslySetInnerHTML={{ __html: CINEMATIC_CSS }} />
+      {/* Fixed film chrome (outside #cine-content) */}
+      <div className="cine-grain" aria-hidden />
+      <div className="cine-scanlines" aria-hidden />
+      <div className="cine-vignette" aria-hidden />
+      <div className="cine-prog fixed top-0 left-0 right-0 h-[2px] origin-left z-[60]" style={{ transform: "scaleX(0)", background: `linear-gradient(90deg, ${CYAN}, ${VIOLET})` }} aria-hidden />
+      <div className="fixed top-4 left-5 z-[60] flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.28em] text-white/55">
+        <span className="cine-rec inline-block w-2 h-2 rounded-full" style={{ background: "#fb7185" }} />Rec · BioHubNet
+      </div>
+      <div className="fixed top-4 right-5 z-[60] text-[11px] font-black uppercase tracking-[0.28em] text-white/45 tabular-nums">
+        Reel 01 · F<span className="cine-frame-val">0000</span>
+      </div>
+
+      <div id="cine-wrapper" style={{ background: "#04080d" }}>
+        <div id="cine-content" style={{ background: "#04080d" }}>
+          {/* COLD OPEN */}
+          <section className="cine-hero flex flex-col items-center justify-center px-6 text-center overflow-hidden">
+            <div aria-hidden className="absolute inset-0 overflow-hidden">
+              <div className="cine-img duo" data-speed="0.75" style={{ backgroundImage: "url(https://picsum.photos/seed/cinehero7/1920/1280)" }} />
+              <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, rgba(4,8,13,.5), rgba(4,8,13,.92)), radial-gradient(circle at 50% 38%, ${CYAN}22, transparent 60%)` }} />
+            </div>
+            <div className="cine-bar" style={{ top: 0 }} /><div className="cine-bar" style={{ bottom: 0 }} />
+            <p className="cine-fade relative text-[11px] uppercase tracking-[0.5em] font-bold mb-7" style={{ color: TEAL }}>A BioHubNet production</p>
+            <h1 className="cine-h1 relative font-black leading-[0.9] tracking-tight max-w-5xl" style={{ fontSize: "clamp(3rem, 9vw, 8rem)" }}>Biomanufacturing, in three acts.</h1>
+            <p className="cine-fade relative mt-8 text-base sm:text-xl text-white/65 max-w-2xl leading-relaxed">Train the bench. Land the role. Fund the leap — one platform, told end to end.</p>
+            <p className="cine-fade relative mt-12 text-[11px] uppercase tracking-[0.35em] text-white/40">Scroll to roll &darr;</p>
+          </section>
+
+          {/* MANIFESTO — scrubbed word reveal */}
+          <section className="cine-manifesto flex items-center px-6 md:px-[10vw]">
+            <p className="max-w-5xl text-3xl sm:text-5xl md:text-6xl font-black leading-[1.18] tracking-tight">
+              {MANIFESTO.split(" ").map((w, i) => (<span key={i} className="cine-word">{w} </span>))}
+            </p>
+          </section>
+
+          {/* THREE ACTS — pinned crossfade of full-bleed scenes */}
+          <section className="cine-acts-sec">
+            {PILLARS.map((p, i) => (
+              <div key={p.tag} className="cine-act flex items-center overflow-hidden px-6 md:px-[8vw]">
+                <div aria-hidden className="absolute inset-0 overflow-hidden">
+                  <div className="cine-img duo" style={{ backgroundImage: `url(https://picsum.photos/seed/cineact${i + 1}9/1600/1200)` }} />
+                  <div className="absolute inset-0" style={{ background: `linear-gradient(105deg, rgba(4,8,13,.93) 36%, rgba(4,8,13,.35)), linear-gradient(0deg, ${p.color}22, transparent 55%)` }} />
+                </div>
+                <div className="relative max-w-2xl">
+                  <div className="flex items-center gap-5 mb-5">
+                    <span className="font-black leading-none" style={{ fontSize: "clamp(4rem, 13vw, 11rem)", color: "transparent", WebkitTextStroke: `1.5px ${p.color}` }}>{["I", "II", "III"][i]}</span>
+                    <span className="text-[12px] uppercase tracking-[0.4em] font-bold" style={{ color: p.color }}>{p.tag}</span>
+                  </div>
+                  <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(2.4rem, 6vw, 5rem)" }}>{p.title}</h2>
+                  <p className="mt-5 text-white/70 text-lg md:text-xl leading-relaxed max-w-xl">{p.body}</p>
+                  <div className="mt-7 flex flex-wrap gap-x-8 gap-y-2.5">
+                    {p.points.map((pt) => (<span key={pt} className="inline-flex items-center gap-2.5 text-[13px] font-semibold text-white/70"><span className="h-px w-6" style={{ background: p.color }} />{pt}</span>))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </section>
+
+          {/* THE REEL — pinned horizontal filmstrip */}
+          <section className="cine-reel-sec h-screen overflow-hidden">
+            <div className="absolute top-[8vh] left-0 right-0 z-10 text-center px-6">
+              <p className="text-[12px] uppercase tracking-[0.4em] text-white/40">The reel</p>
+              <h2 className="mt-2 font-black tracking-tight" style={{ fontSize: "clamp(1.8rem, 4vw, 3.2rem)" }}>Ten disciplines, one take.</h2>
+            </div>
+            <div className="cine-reel-track flex h-full items-center gap-[4vw] px-[10vw]" style={{ width: "max-content" }}>
+              {SCENES.map((s, i) => (
+                <figure key={s} className="relative h-[58vh] w-[clamp(260px,32vw,460px)] shrink-0 overflow-hidden">
+                  <div className="cine-img duo" style={{ backgroundImage: `url(https://picsum.photos/seed/cinereel${i + 1}3/900/1300)` }} />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 42%, rgba(4,8,13,.92))" }} />
+                  <span className="absolute top-4 left-5 text-[11px] font-black tracking-[0.2em] text-white/65 tabular-nums">{String(i + 1).padStart(2, "0")} / 10</span>
+                  <figcaption className="absolute left-5 bottom-5 right-5 text-2xl md:text-3xl font-black leading-none">{s}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+
+          {/* NUMBERS — slammed numerals, no tiles */}
+          <section className="cine-metrics flex flex-col justify-center px-6 md:px-[8vw] py-32">
+            <p className="cine-reveal text-[12px] uppercase tracking-[0.45em] text-white/40 mb-8">By the numbers</p>
+            {CINE_METRICS.map((m) => (
+              <div key={m.l} className="cine-metric flex items-baseline gap-5 md:gap-12 border-t border-white/12 py-5 md:py-7">
+                <span className="font-black tabular-nums leading-none shrink-0" style={{ fontSize: "clamp(3.2rem, 11vw, 9rem)", color: m.c }}>{m.p}{m.n}<span style={{ fontSize: "0.3em" }} className="align-top">{m.u}</span></span>
+                <span className="text-white/55 text-base md:text-2xl font-semibold">{m.l}</span>
+              </div>
+            ))}
+          </section>
+
+          {/* ACT BREAK — employer pivot */}
+          <section className="cine-break flex items-center justify-center px-6 overflow-hidden">
+            <div aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(70% 60% at 50% 50%, ${VIOLET}33, transparent 70%)` }} />
+            <div className="cine-bar" style={{ top: 0 }} /><div className="cine-bar" style={{ bottom: 0 }} />
+            <h2 className="cine-reveal relative text-center font-black tracking-tight max-w-5xl" style={{ fontSize: "clamp(2.6rem, 8vw, 7rem)", lineHeight: 0.95 }}>Stop sourcing cold.<br />Start hiring <span style={{ color: VIOLET }}>trained</span>.</h2>
+          </section>
+
+          {/* END CREDITS + CTA */}
+          <section className="cine-credits px-6 md:px-[10vw] py-36">
+            <p className="cine-reveal text-[12px] uppercase tracking-[0.45em] text-white/40 text-center mb-14">Funded · built · shipped</p>
+            <div className="max-w-3xl mx-auto space-y-12">
+              <div>
+                <h3 className="cine-reveal text-xl font-black mb-5" style={{ color: CYAN }}>VentureConnect <span className="text-white/35 text-[11px] font-bold tracking-[0.2em] uppercase ml-2">&le; $5K · events</span></h3>
+                <div className="space-y-3.5">
+                  {VC_PAST.map((v) => (
+                    <p key={v.name} className="cine-credit-line flex items-baseline gap-3">
+                      <span className="font-black">{v.name}</span>
+                      <span className="text-white/35 text-[12px] hidden sm:inline">{v.who}</span>
+                      <span className="flex-1 border-b border-dotted border-white/15 -translate-y-1" />
+                      <span className="tabular-nums font-black" style={{ color: CYAN }}>{v.amt}</span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="cine-reveal text-xl font-black mb-5" style={{ color: VIOLET }}>VentureLift <span className="text-white/35 text-[11px] font-bold tracking-[0.2em] uppercase ml-2">&le; $25K · commercialization</span></h3>
+                <div className="space-y-3.5">
+                  {VL_PAST.map((v) => (
+                    <p key={v.name} className="cine-credit-line flex items-baseline gap-3">
+                      <span className="font-black">{v.name}</span>
+                      <span className="text-white/35 text-[12px] hidden sm:inline">{v.who}</span>
+                      <span className="flex-1 border-b border-dotted border-white/15 -translate-y-1" />
+                      <span className="tabular-nums font-black" style={{ color: VIOLET }}>{v.amt}</span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="text-center mt-28">
+              <h2 className="cine-reveal font-black tracking-tight" style={{ fontSize: "clamp(2.8rem, 9vw, 7rem)", lineHeight: 0.95 }}>Enter BioHubNet.</h2>
+              <div className="cine-reveal mt-10">
+                <Link href="/dashboard" className="inline-flex items-center gap-3 px-9 py-4 text-lg font-black text-[#04080d]" style={{ background: TEAL }}>Enter the platform <span>&rarr;</span></Link>
+              </div>
+              <p className="cine-reveal mt-12 text-white/30 text-[11px] tracking-[0.25em] uppercase">BioHubNet · a two-sided talent engine · 2026</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── The floating switch between design systems ───────────────────────────────
+type SystemKey = "flow" | "cinematic";
+function DesignSwitch({ system, onChange }: { system: SystemKey; onChange: (s: SystemKey) => void }) {
+  return (
+    <div className={`${outfit.className} fixed z-[80] bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full p-1 pl-3 ring-1 ring-white/15 bg-black/55 backdrop-blur-md`} style={{ boxShadow: "0 12px 44px -12px rgba(0,0,0,0.85)" }}>
+      <span className="text-[9px] uppercase tracking-[0.24em] font-bold text-white/35 pr-1 hidden sm:inline">Design</span>
+      {(["flow", "cinematic"] as SystemKey[]).map((o) => (
+        <button key={o} type="button" onClick={() => onChange(o)} aria-pressed={system === o}
+          className={`px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] rounded-full transition-colors ${system === o ? "text-[#04080d]" : "text-white/55 hover:text-white"}`}
+          style={system === o ? { background: o === "cinematic" ? VIOLET : TEAL } : undefined}>
+          {o === "flow" ? "Flow" : "Cinematic"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function GsapShowcase() {
+  const [system, setSystem] = useState<SystemKey>("flow");
+  return (
+    <>
+      {system === "flow" ? <FlowShowcase /> : <CinematicShowcase />}
+      <DesignSwitch system={system} onChange={setSystem} />
+    </>
   );
 }
