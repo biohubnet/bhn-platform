@@ -523,12 +523,6 @@ export function GsapShowcase() {
           gsap.from(".loop-dot", { scale: 0, transformOrigin: "center", stagger: 0.5, ease: "back.out(2)", scrollTrigger: { trigger: ".loop-sec", start: "top 70%", end: "bottom 80%", scrub: 1 } });
         });
 
-        // Reports — bento tiles cascade via batch.
-        safe(() => ScrollTrigger.batch(".report-tile", {
-          start: "top 92%",
-          onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, stagger: 0.06, duration: 0.55, ease: "power3.out", overwrite: true }),
-        }));
-
         // Trends — time-to-fill line draws (scrubbed); cost bars grow on enter.
         safe(() => gsap.from(".trend-line", { drawSVG: "0%", ease: "none", scrollTrigger: { trigger: ".trend-sec", start: "top 78%", end: "bottom 80%", scrub: 1 } }));
         safe(() => gsap.from(".cost-bar", { scaleY: 0, transformOrigin: "bottom", stagger: 0.05, duration: 0.8, ease: "power3.out", scrollTrigger: { trigger: ".trend-sec", start: "top 72%" } }));
@@ -579,7 +573,7 @@ export function GsapShowcase() {
       mm.add("(prefers-reduced-motion: reduce)", () => {
         // Everything visible + static.
         safe(() => gsap.set([".hero-fade", ".reveal", ".fit-bar", ".funnel-bar", ".cost-bar", ".score-bar", ".fund-bar"], { clearProps: "all" }));
-        safe(() => gsap.set([".pipe-card", ".report-tile", ".job-card", ".venture-card"], { opacity: 1, y: 0, scale: 1 }));
+        safe(() => gsap.set([".pipe-card", ".job-card", ".venture-card"], { opacity: 1, y: 0, scale: 1 }));
         safe(() => gsap.set([".path-line", ".kpi-spark", ".trend-line", ".loop-spine", ".resume-line", ".kx-link", ".intl-arc"], { drawSVG: "100%" }));
         safe(() => gsap.set([".loop-dot", ".kx-node"], { scale: 1 }));
         STATS.forEach((s, i) => safe(() => { const el = q(`.stat-${i}`); if (el) el.textContent = `${s.prefix}${s.to}${s.suffix}`; }));
@@ -649,16 +643,17 @@ export function GsapShowcase() {
           <section id="pillars" className="relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
             <h2 className="reveal font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Three pillars, one trajectory.</h2>
             <p className="reveal mt-4 text-white/55 max-w-xl text-lg">Most platforms do one. BioHubNet carries you across all three.</p>
-            <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-5">
-              {PILLARS.map((p) => (
-                <div key={p.tag} className="reveal group rounded-3xl p-7 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors" data-speed="1.04">
-                  <p className="text-[11px] uppercase tracking-[0.3em] font-bold mb-5" style={{ color: p.color }}>{p.tag}</p>
-                  <h3 className="text-2xl font-black mb-3">{p.title}</h3>
-                  <p className="text-white/55 text-[14px] leading-relaxed mb-5">{p.body}</p>
-                  <ul className="space-y-1.5">
+            <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-x-12 gap-y-14">
+              {PILLARS.map((p, i) => (
+                <div key={p.tag} data-speed={["1.09", "1.0", "0.91"][i]} className="relative">
+                  <div className="reveal h-1.5 w-14 rounded-full mb-7" style={{ background: p.color }} />
+                  <p className="reveal text-[11px] uppercase tracking-[0.3em] font-bold mb-3" style={{ color: p.color }}>{p.tag}</p>
+                  <h3 className="reveal text-3xl font-black mb-3">{p.title}</h3>
+                  <p className="reveal text-white/55 text-[14px] leading-relaxed mb-6">{p.body}</p>
+                  <ul className="space-y-2.5">
                     {p.points.map((pt) => (
-                      <li key={pt} className="flex items-center gap-2 text-[13px] text-white/75">
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: p.color }} />{pt}
+                      <li key={pt} className="flex items-center gap-3 text-[13px] text-white/75">
+                        <span className="h-px w-5 shrink-0" style={{ background: p.color }} />{pt}
                       </li>
                     ))}
                   </ul>
@@ -763,12 +758,12 @@ export function GsapShowcase() {
           {/* ── EIGHT TRACKS ── */}
           <section className="tracks-strip relative px-6 pb-24 pt-6 max-w-6xl mx-auto">
             <p className="reveal text-[12px] uppercase tracking-[0.24em] font-bold text-white/40">Eight tracks, mapped end to end</p>
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="mt-8 flex flex-wrap items-baseline gap-x-8 gap-y-4">
               {TRACKS.map((t, i) => (
-                <div key={t} className="reveal rounded-xl px-4 py-3.5 ring-1 ring-white/10 bg-white/[0.03] flex items-center gap-3">
-                  <span className="text-[11px] font-black tabular-nums" style={{ color: i % 2 ? CYAN : TEAL }}>{String(i + 1).padStart(2, "0")}</span>
-                  <span className="text-[13px] font-semibold text-white/80">{t}</span>
-                </div>
+                <span key={t} className="reveal inline-flex items-baseline gap-2.5 text-2xl md:text-3xl font-black leading-none text-white/85 hover:text-white transition-colors">
+                  <span className="text-[12px] font-black tabular-nums" style={{ color: i % 2 ? CYAN : TEAL }}>{String(i + 1).padStart(2, "0")}</span>
+                  {t}
+                </span>
               ))}
             </div>
           </section>
@@ -1051,23 +1046,26 @@ export function GsapShowcase() {
             </div>
           </section>
 
-          {/* ── REPORTS SUITE (BENTO) ── */}
+          {/* ── REPORTS SUITE (editorial list) ── */}
           <section id="reports" className="relative px-6 py-32 md:py-44 border-y border-white/10">
             <div className="max-w-6xl mx-auto">
               <h2 className="reveal font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Ten reports. One source of truth.</h2>
               <p className="reveal mt-4 text-white/55 max-w-2xl text-lg">A pure metrics library feeds every report, the print one-pager, and the CSV — so the numbers always reconcile. Period filters, OKR targets, RAG everywhere.</p>
-              <div className="mt-14 grid grid-cols-2 lg:grid-cols-5 gap-3">
-                {REPORTS.map((r) => (
-                  <div key={r.n} className={`report-tile opacity-0 translate-y-3 rounded-2xl p-4 ring-1 transition-colors ${r.feat ? "ring-white/20" : "ring-white/10 hover:ring-white/25"}`} style={{ background: r.feat ? `linear-gradient(155deg, ${TEAL}26, transparent 60%)` : "rgba(255,255,255,0.03)" }}>
-                    {r.feat && <p className="text-[9px] uppercase tracking-[0.24em] font-bold mb-1.5" style={{ color: TEAL }}>Headline</p>}
-                    <h3 className="text-[14px] font-black leading-tight">{r.n}</h3>
-                    <p className="text-[11px] text-white/50 mt-1.5 leading-snug">{r.d}</p>
+              <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-x-16">
+                {REPORTS.map((r, i) => (
+                  <div key={r.n} className="reveal group flex items-baseline gap-5 py-4 border-b border-white/10 hover:border-white/30 transition-colors">
+                    <span className="text-[13px] font-black tabular-nums shrink-0 w-7 pt-0.5 transition-transform group-hover:translate-x-0.5" style={{ color: r.feat ? TEAL : "rgba(255,255,255,0.28)" }}>{String(i + 1).padStart(2, "0")}</span>
+                    <div className="min-w-0">
+                      <h3 className="text-[16px] font-black leading-tight inline">{r.n}</h3>
+                      {r.feat && <span className="ml-2 text-[9px] uppercase tracking-[0.24em] font-bold align-middle" style={{ color: TEAL }}>Headline</span>}
+                      <p className="text-[12px] text-white/45 mt-1 leading-snug">{r.d}</p>
+                    </div>
                   </div>
                 ))}
               </div>
-              <div className="reveal mt-6 flex flex-wrap gap-2 text-[11px] text-white/50">
-                {["Period filters (MTD / QTD / YTD)", "OKR targets + RAG", "Print → PDF", "CSV export", "DEI: opt-in · k-anonymity"].map((c) => (
-                  <span key={c} className="rounded-full px-3 py-1 ring-1 ring-white/10 bg-white/[0.03]">{c}</span>
+              <div className="reveal mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-white/50">
+                {["Period filters (MTD / QTD / YTD)", "OKR targets + RAG", "Print → PDF", "CSV export", "DEI: opt-in · k-anonymity"].map((c, i, arr) => (
+                  <span key={c} className="inline-flex items-center gap-5">{c}{i < arr.length - 1 && <span className="text-white/20" aria-hidden>/</span>}</span>
                 ))}
               </div>
             </div>
@@ -1141,8 +1139,9 @@ export function GsapShowcase() {
           <section className="relative px-6 py-24 border-y border-white/10">
             <div className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
               {STATS.map((s, i) => (
-                <div key={s.label}>
+                <div key={s.label} data-speed={["0.84", "1.16", "0.9", "1.12"][i]} className="flex flex-col items-center">
                   <p className={`stat-${i} font-black tabular-nums leading-none`} style={{ fontSize: "clamp(2.4rem,5vw,4rem)", color: i % 2 ? CYAN : TEAL }}>{s.prefix}0{s.suffix}</p>
+                  <span className="mt-4 h-px w-8 rounded-full" style={{ background: i % 2 ? CYAN : TEAL, opacity: 0.5 }} />
                   <p className="mt-3 text-white/50 text-[13px]">{s.label}</p>
                 </div>
               ))}
@@ -1168,11 +1167,11 @@ export function GsapShowcase() {
           {/* ── VOICES ── */}
           <section className="relative px-6 py-32 md:py-44 max-w-6xl mx-auto">
             <h2 className="reveal font-black tracking-tight max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Both sides, in their words.</h2>
-            <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-5">
-              {VOICES.map((v) => (
-                <figure key={v.who} className="reveal group rounded-3xl p-8 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
-                  <div className="text-5xl font-black leading-none mb-3" style={{ color: v.color }}>&ldquo;</div>
-                  <blockquote className="text-lg leading-relaxed text-white/85">{v.q}</blockquote>
+            <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-16">
+              {VOICES.map((v, i) => (
+                <figure key={v.who} className="reveal relative pl-7 border-l-2" style={{ borderColor: v.color, marginTop: i % 2 ? "2.5rem" : "0" }}>
+                  <span aria-hidden className="absolute -left-1 -top-7 text-6xl font-black leading-none select-none" style={{ color: v.color, opacity: 0.5 }}>&ldquo;</span>
+                  <blockquote className="text-xl md:text-2xl font-medium leading-relaxed text-white/85">{v.q}</blockquote>
                   <figcaption className="mt-5 text-[12px] uppercase tracking-[0.18em] font-bold text-white/45">{v.who}</figcaption>
                 </figure>
               ))}
