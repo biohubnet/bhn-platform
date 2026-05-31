@@ -413,19 +413,29 @@ export function GsapShowcase() {
           });
         });
 
-        // Every list row slides in, staggered (those not already a .reveal).
-        // fromTo with an EXPLICIT end + once:true so a re-fire (smooth-scroll momentum
-        // or the post-font ScrollTrigger.refresh) can never leave a row stuck mid-fade.
-        safe(() => ScrollTrigger.batch(".bhn-showcase li:not(.reveal)", {
-          start: "top 97%", batchMax: 6, interval: 0.08, once: true,
-          onEnter: (els) => gsap.fromTo(els, { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out", stagger: 0.05, overwrite: true }),
-        }));
+        // Every list row slides in, staggered. Pre-hide with gsap.set, then animate
+        // TO opacity:1 (the same pattern the card batches use) — gsap.to always
+        // CONVERGES to fully-visible, so a batch re-fire can never leave a row stuck
+        // mid-fade the way a from()/fromTo() can. The set only runs in this
+        // no-preference branch, so reduced-motion / no-JS leaves rows visible.
+        safe(() => {
+          const liSel = ".bhn-showcase li:not(.reveal)";
+          gsap.set(liSel, { opacity: 0, x: -18 });
+          ScrollTrigger.batch(liSel, {
+            start: "top 97%",
+            onEnter: (els) => gsap.to(els, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out", stagger: 0.05, overwrite: true }),
+          });
+        });
 
-        // Pills / chips / badges spring in.
-        safe(() => ScrollTrigger.batch('.bhn-showcase span[class*="rounded"][class*="px-"]', {
-          start: "top 97%", batchMax: 8, interval: 0.08, once: true,
-          onEnter: (els) => gsap.fromTo(els, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)", stagger: 0.04, overwrite: true }),
-        }));
+        // Pills / chips / badges spring in (same robust set -> to pattern).
+        safe(() => {
+          const chipSel = '.bhn-showcase span[class*="rounded"][class*="px-"]';
+          gsap.set(chipSel, { opacity: 0, scale: 0.6 });
+          ScrollTrigger.batch(chipSel, {
+            start: "top 97%",
+            onEnter: (els) => gsap.to(els, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)", stagger: 0.04, overwrite: true }),
+          });
+        });
 
         // Nav drops in on load.
         safe(() => gsap.from("nav", { y: -24, opacity: 0, duration: 0.85, ease: "power3.out", delay: 0.1 }));
