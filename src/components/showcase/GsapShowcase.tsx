@@ -401,41 +401,27 @@ export function GsapShowcase() {
           }
         });
 
-        // Reveal — varied entrances down the page (rise / 3D tilt-up / slide-in)
-        // so the motion never feels monotone; every .reveal block animates on scroll.
+        // Reveal — varied entrances (rise / 3D tilt-up / slide-in) so motion isn't
+        // monotone. Individual per-element from + scrollTrigger, which fires once via
+        // the default toggleActions and always finishes at the natural opacity:1.
+        // (No `once:true` — that was killing tweens mid-fade; no batch — its onEnter
+        // didn't fire reliably here, stranding rows hidden.)
         safe(() => {
           gsap.utils.toArray<HTMLElement>(".reveal").forEach((el, i) => {
-            const st = { trigger: el, start: "top 88%", once: true };
+            const st = { trigger: el, start: "top 88%" };
             const v = i % 3;
-            if (v === 0) gsap.from(el, { opacity: 0, y: 58, scale: 0.97, duration: 0.95, ease: "power3.out", scrollTrigger: st });
-            else if (v === 1) gsap.from(el, { opacity: 0, y: 46, rotateX: -30, transformPerspective: 900, transformOrigin: "50% 100%", duration: 1, ease: "power3.out", scrollTrigger: st });
-            else gsap.from(el, { opacity: 0, y: 38, x: -28, duration: 0.95, ease: "power3.out", scrollTrigger: st });
+            if (v === 0) gsap.from(el, { opacity: 0, y: 56, scale: 0.97, duration: 0.9, ease: "power3.out", scrollTrigger: st });
+            else if (v === 1) gsap.from(el, { opacity: 0, y: 44, rotateX: -28, transformPerspective: 900, transformOrigin: "50% 100%", duration: 0.95, ease: "power3.out", scrollTrigger: st });
+            else gsap.from(el, { opacity: 0, y: 36, x: -26, duration: 0.9, ease: "power3.out", scrollTrigger: st });
           });
         });
 
-        // Every list row slides in, staggered. Pre-hide with gsap.set, then animate
-        // TO opacity:1 (the same pattern the card batches use) — gsap.to always
-        // CONVERGES to fully-visible, so a batch re-fire can never leave a row stuck
-        // mid-fade the way a from()/fromTo() can. The set only runs in this
-        // no-preference branch, so reduced-motion / no-JS leaves rows visible.
-        safe(() => {
-          const liSel = ".bhn-showcase li:not(.reveal)";
-          gsap.set(liSel, { opacity: 0, x: -18 });
-          ScrollTrigger.batch(liSel, {
-            start: "top 97%",
-            onEnter: (els) => gsap.to(els, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out", stagger: 0.05, overwrite: true }),
-          });
-        });
-
-        // Pills / chips / badges spring in (same robust set -> to pattern).
-        safe(() => {
-          const chipSel = '.bhn-showcase span[class*="rounded"][class*="px-"]';
-          gsap.set(chipSel, { opacity: 0, scale: 0.6 });
-          ScrollTrigger.batch(chipSel, {
-            start: "top 97%",
-            onEnter: (els) => gsap.to(els, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)", stagger: 0.04, overwrite: true }),
-          });
-        });
+        // List rows + chips — same reliable per-element from pattern as .reveal. The
+        // scroll itself cascades them as each crosses into view (no batch, no once).
+        safe(() => gsap.utils.toArray<HTMLElement>(".bhn-showcase li:not(.reveal)").forEach((el) =>
+          gsap.from(el, { opacity: 0, x: -16, duration: 0.55, ease: "power2.out", scrollTrigger: { trigger: el, start: "top 97%" } })));
+        safe(() => gsap.utils.toArray<HTMLElement>('.bhn-showcase span[class*="rounded"][class*="px-"]').forEach((el) =>
+          gsap.from(el, { opacity: 0, scale: 0.6, duration: 0.45, ease: "back.out(2)", scrollTrigger: { trigger: el, start: "top 97%" } })));
 
         // Nav drops in on load.
         safe(() => gsap.from("nav", { y: -24, opacity: 0, duration: 0.85, ease: "power3.out", delay: 0.1 }));
