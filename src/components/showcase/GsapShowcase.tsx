@@ -414,15 +414,16 @@ export function GsapShowcase() {
         });
 
         // Every list row slides in, staggered (those not already a .reveal).
+        // batchMax keeps each cascade small so staggers stay snappy at any scroll speed.
         safe(() => ScrollTrigger.batch(".bhn-showcase li:not(.reveal)", {
-          start: "top 94%",
+          start: "top 96%", batchMax: 6, interval: 0.08,
           onEnter: (els) => gsap.from(els, { opacity: 0, x: -18, duration: 0.5, ease: "power2.out", stagger: 0.05, overwrite: true }),
         }));
 
         // Pills / chips / badges spring in.
         safe(() => ScrollTrigger.batch('.bhn-showcase span[class*="rounded"][class*="px-"]', {
-          start: "top 95%",
-          onEnter: (els) => gsap.from(els, { opacity: 0, scale: 0.55, duration: 0.45, ease: "back.out(2)", stagger: 0.04, overwrite: true }),
+          start: "top 96%", batchMax: 8, interval: 0.08,
+          onEnter: (els) => gsap.from(els, { opacity: 0, scale: 0.6, duration: 0.45, ease: "back.out(2)", stagger: 0.04, overwrite: true }),
         }));
 
         // Nav drops in on load.
