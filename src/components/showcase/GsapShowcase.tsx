@@ -308,11 +308,7 @@ const CAROUSEL_CSS = `
   position: absolute; top: 50%; left: 50%;
   width: 220px; height: 300px; margin: -150px 0 0 -110px;
   transform-style: preserve-3d;
-  animation: bhn3dSpin 32s linear infinite;
-}
-@keyframes bhn3dSpin {
-  from { transform: perspective(1200px) rotateX(-11deg) rotateY(0deg); }
-  to   { transform: perspective(1200px) rotateX(-11deg) rotateY(360deg); }
+  transform: perspective(1200px) rotateX(-11deg);  /* base tilt; GSAP scrubs rotateY by scroll */
 }
 .bhn3d-item { position: absolute; inset: 0; }
 .bhn3d-card {
@@ -335,15 +331,26 @@ const CAROUSEL_CSS = `
   position: absolute; top: 12px; right: 14px; z-index: 2;
   font-size: 11px; font-weight: 800; letter-spacing: .14em; color: rgba(255,255,255,.72);
 }
-.bhn3d-banner:hover .bhn3d-slider { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) {
-  .bhn3d-slider { animation: none; transform: perspective(1200px) rotateX(-11deg); }
+  .bhn3d-slider { transform: perspective(1200px) rotateX(-11deg); }
 }
 @media (max-width: 1023px) {
   .bhn3d-slider { --radius: 400px; width: 180px; height: 240px; margin: -120px 0 0 -90px; }
 }
 @media (max-width: 639px) {
   .bhn3d-slider { --radius: 280px; width: 150px; height: 200px; margin: -100px 0 0 -75px; }
+}
+
+/* ── Full-screen sections — each fills the viewport with its content vertically
+   centered. Default align-items (stretch) + the children's own mx-auto/text-align
+   preserve horizontal layout; min-height (not height) lets tall sections grow.
+   Excludes the hero (already centered), the pinned rail + 3D carousel, and the
+   small tracks connector strip. ── */
+.bhn-showcase #smooth-content > section:not(.hero-section):not(.rail-sec):not(.bhn3d-sec):not(.tracks-strip) {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 `;
 
@@ -532,6 +539,21 @@ export function GsapShowcase() {
         // Stats counters.
         STATS.forEach((s, i) => safe(() => counter(q(`.stat-${i}`), s.to, { prefix: s.prefix, suffix: s.suffix })));
 
+        // 3D carousel — pin the section full-screen and scrub the ring's Y-rotation
+        // to scroll, so it turns a full 360 as you scroll through (no auto-spin, no
+        // stopping). Created before the rail pin to keep pins in page order.
+        safe(() => {
+          const slider = q(".bhn3d-slider");
+          if (slider) {
+            gsap.set(slider, { transformPerspective: 1200, rotationX: -11, rotationY: 0 });
+            gsap.to(slider, {
+              rotationY: 360,
+              ease: "none",
+              scrollTrigger: { trigger: ".bhn3d-sec", start: "top top", end: "+=1700", scrub: 1, pin: true },
+            });
+          }
+        });
+
         // Feature rail — pinned, scrolls horizontally (ease: none).
         safe(() => {
           const track = q(".rail-track");
@@ -674,12 +696,12 @@ export function GsapShowcase() {
             </div>
           </section>
 
-          {/* ── 3D IMAGE CAROUSEL ── */}
-          <section className="relative overflow-hidden" style={{ height: "88vh", minHeight: "600px" }}>
-            <div className="absolute top-[7%] left-1/2 -translate-x-1/2 z-10 w-full px-6 text-center">
+          {/* ── 3D IMAGE CAROUSEL (pinned; rotation scrubbed by scroll) ── */}
+          <section className="bhn3d-sec relative overflow-hidden h-screen">
+            <div className="absolute top-[9%] left-1/2 -translate-x-1/2 z-10 w-full px-6 text-center">
               <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: CYAN }}>The world you&apos;ll work in</p>
               <h2 className="reveal mt-3 font-black tracking-tight mx-auto max-w-3xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Step inside biomanufacturing.</h2>
-              <p className="reveal mt-3 text-white/50 max-w-xl mx-auto text-[15px]">Ten disciplines, one rotating look at the bench you&apos;re training for — hover to pause.</p>
+              <p className="reveal mt-3 text-white/50 max-w-xl mx-auto text-[15px]">Ten disciplines — scroll to turn the ring all the way round.</p>
             </div>
             <div className="bhn3d-banner">
               <div className="bhn3d-slider">
@@ -724,7 +746,7 @@ export function GsapShowcase() {
                 <h2 className="reveal font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>Every route from junior to VP.</h2>
                 <p className="reveal mt-5 text-white/60 text-lg leading-relaxed max-w-md">Pick a track and see the five stations ahead — plus the branch points where careers fork into adjacent streams, each ranked by likelihood with the skills to bridge the jump.</p>
               </div>
-              <svg viewBox="0 0 420 240" className="w-full h-auto">
+              <svg data-speed="1.12" viewBox="0 0 420 240" className="w-full h-auto">
                 <path id="path-spine" className="path-line" d="M20,200 C90,200 90,120 160,120 C230,120 230,60 300,60 L400,60" fill="none" stroke={TEAL} strokeWidth="3" strokeLinecap="round" />
                 <path className="path-line" d="M160,120 C210,120 210,180 280,180 L360,180" fill="none" stroke={`${CYAN}99`} strokeWidth="2.5" strokeDasharray="6 6" strokeLinecap="round" />
                 {[[20, 200], [160, 120], [300, 60], [400, 60], [280, 180], [360, 180]].map(([cx, cy], i) => (
@@ -739,7 +761,7 @@ export function GsapShowcase() {
           </section>
 
           {/* ── EIGHT TRACKS ── */}
-          <section className="relative px-6 pb-24 -mt-12 md:-mt-16 max-w-6xl mx-auto">
+          <section className="tracks-strip relative px-6 pb-24 pt-6 max-w-6xl mx-auto">
             <p className="reveal text-[12px] uppercase tracking-[0.24em] font-bold text-white/40">Eight tracks, mapped end to end</p>
             <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
               {TRACKS.map((t, i) => (
@@ -789,7 +811,7 @@ export function GsapShowcase() {
                   <span className="text-white/40 text-sm mb-2 uppercase tracking-[0.2em] font-bold">/ 100 overall fit</span>
                 </div>
               </div>
-              <div className="rounded-3xl p-6 ring-1 ring-white/10 bg-white/[0.03] space-y-4">
+              <div data-speed="1.1" className="rounded-3xl p-6 ring-1 ring-white/10 bg-white/[0.03] space-y-4">
                 {FIT_ROWS.map((r) => (
                   <div key={r.req}>
                     <div className="flex items-center justify-between text-[13px] mb-1.5">
@@ -868,7 +890,7 @@ export function GsapShowcase() {
                   ))}
                 </div>
               </div>
-              <svg viewBox="0 0 360 320" className="w-full h-auto max-w-md mx-auto">
+              <svg data-speed="1.1" viewBox="0 0 360 320" className="w-full h-auto max-w-md mx-auto">
                 {KX_LINKS.map((d, i) => <path key={i} className="kx-link" d={d} fill="none" stroke={`${CYAN}55`} strokeWidth="1.5" />)}
                 {KX_NODES.map((n, i) => (
                   <circle key={i} className="kx-node" cx={n[0]} cy={n[1]} r={n[2]} fill="#0b1623" stroke={i === 0 ? TEAL : CYAN} strokeWidth="2" />
@@ -888,7 +910,7 @@ export function GsapShowcase() {
                   {INTL.map((r) => <span key={r} className="text-[12px] rounded-full px-3 py-1.5 ring-1 ring-white/10 bg-white/[0.03] text-white/70">{r}</span>)}
                 </div>
               </div>
-              <svg viewBox="0 0 420 240" className="w-full h-auto">
+              <svg data-speed="0.9" viewBox="0 0 420 240" className="w-full h-auto">
                 <path id="intl-arc" className="intl-arc" d="M40,190 C140,30 280,30 380,150" fill="none" stroke={`${VIOLET}aa`} strokeWidth="2.5" strokeDasharray="6 8" strokeLinecap="round" />
                 <circle cx="40" cy="190" r="7" fill={CYAN} />
                 <circle cx="380" cy="150" r="7" fill={VIOLET} />
