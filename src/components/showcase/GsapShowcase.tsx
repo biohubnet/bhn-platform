@@ -290,18 +290,32 @@ const CAROUSEL_CSS = `
   letter-spacing: -0.02em !important;
   text-transform: none !important;
 }
-/* Tactile hover — lift any ringed card. Uses the CSS \`translate\` property (not
-   \`transform\`) so it composes with GSAP's reveal transforms instead of fighting them. */
+/* No plain round-corner boxes. Every ringed card surface becomes a BOLD ORGANIC
+   shape: asymmetric large/small corner radii (leaf-like), a soft gradient wash, and
+   a faint inset outline in place of the hard 1px ring. Even siblings mirror the
+   orientation so grids read as a flowing, hand-placed rhythm rather than a table of
+   boxes. Hover lifts via the CSS \`translate\` property so it composes with GSAP. */
 .bhn-showcase section :is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="ring-1"] {
-  transition: translate .4s cubic-bezier(.2,.7,.2,1), box-shadow .4s ease, background-color .3s ease;
+  border-radius: 2.6rem 0.7rem 2.6rem 0.7rem !important;
+  background-image: linear-gradient(155deg, rgba(255,255,255,.055), rgba(255,255,255,.012));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.07);
+  --tw-ring-shadow: 0 0 transparent;
+  transition: translate .45s cubic-bezier(.2,.7,.2,1), box-shadow .45s ease, background-color .3s ease;
+}
+.bhn-showcase section :is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="ring-1"]:nth-child(even) {
+  border-radius: 0.7rem 2.6rem 0.7rem 2.6rem !important;
 }
 .bhn-showcase section :is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="ring-1"]:hover {
   translate: 0 -6px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.16), 0 30px 60px -30px rgba(0,0,0,.6);
 }
 @media (prefers-reduced-motion: reduce) {
   .bhn-showcase section :is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="ring-1"] { transition: none; }
   .bhn-showcase section :is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="ring-1"]:hover { translate: none; }
 }
+/* Flowing organics: curved chapter dividers + blob masks for background washes. */
+.bhn-showcase .flow-wave { fill: none; }
+.bhn-showcase .blob { border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; }
 .bhn3d-banner { position: absolute; inset: 0; }
 .bhn3d-slider {
   --radius: 560px;
@@ -353,6 +367,27 @@ const CAROUSEL_CSS = `
   justify-content: center;
 }
 `;
+
+// Flowing curved divider between chapters — one organic stroke on a gradient,
+// drawn in by scroll (see ".flow-wave" in the GSAP block). Sits in normal flow
+// between full-screen sections so the seam reads as a continuous curve, not a line.
+function WaveDivider({ from = TEAL, to = CYAN, flip = false }: { from?: string; to?: string; flip?: boolean }) {
+  const gid = `fw-${from.slice(1)}-${to.slice(1)}-${flip ? "b" : "a"}`;
+  return (
+    <div aria-hidden className="relative w-full overflow-hidden leading-[0]" style={{ height: 140, transform: flip ? "scaleY(-1)" : undefined }}>
+      <svg viewBox="0 0 1440 140" preserveAspectRatio="none" className="w-full h-full">
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor={from} stopOpacity="0" />
+            <stop offset="0.5" stopColor={from} stopOpacity="0.6" />
+            <stop offset="1" stopColor={to} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path className="flow-wave" d="M0,74 C240,138 430,14 680,52 C930,90 1160,140 1440,60" stroke={`url(#${gid})`} strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+    </div>
+  );
+}
 
 export function GsapShowcase() {
   const root = useRef<HTMLDivElement>(null);
@@ -566,6 +601,11 @@ export function GsapShowcase() {
           gsap.to(".cta-arrow", { x: 8, duration: 1.4, ease: "ctaWiggle", repeat: -1, repeatDelay: 1.6 });
         });
 
+        // Flowing chapter dividers — each curved stroke draws itself across its seam.
+        safe(() => gsap.utils.toArray<SVGPathElement>(".flow-wave").forEach((p) => {
+          gsap.from(p, { drawSVG: "0%", ease: "none", scrollTrigger: { trigger: p, start: "top 95%", end: "bottom 55%", scrub: 1 } });
+        }));
+
         // Re-measure trigger positions once the web font has loaded.
         safe(() => { document.fonts?.ready?.then(() => ScrollTrigger.refresh()); });
       });
@@ -574,7 +614,7 @@ export function GsapShowcase() {
         // Everything visible + static.
         safe(() => gsap.set([".hero-fade", ".reveal", ".fit-bar", ".funnel-bar", ".cost-bar", ".score-bar", ".fund-bar"], { clearProps: "all" }));
         safe(() => gsap.set([".pipe-card", ".job-card", ".venture-card"], { opacity: 1, y: 0, scale: 1 }));
-        safe(() => gsap.set([".path-line", ".kpi-spark", ".trend-line", ".loop-spine", ".resume-line", ".kx-link", ".intl-arc"], { drawSVG: "100%" }));
+        safe(() => gsap.set([".path-line", ".kpi-spark", ".trend-line", ".loop-spine", ".resume-line", ".kx-link", ".intl-arc", ".flow-wave"], { drawSVG: "100%" }));
         safe(() => gsap.set([".loop-dot", ".kx-node"], { scale: 1 }));
         STATS.forEach((s, i) => safe(() => { const el = q(`.stat-${i}`); if (el) el.textContent = `${s.prefix}${s.to}${s.suffix}`; }));
         KPI_TILES.forEach((t, i) => safe(() => { const el = q(`.kpi-val-${i}`); if (el) el.textContent = `${t.prefix}${t.to.toFixed(t.decimals)}${t.unit}`; }));
@@ -717,9 +757,9 @@ export function GsapShowcase() {
             <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: CYAN }}>Engage · Learn the bench</p>
             <h2 className="reveal mt-3 font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>A course catalog built for the cleanroom.</h2>
             <p className="reveal mt-4 text-white/55 max-w-2xl text-lg">Platform courses tuned to each rung of every track — modular, hands-on, and graded against the exact skills employers screen for.</p>
-            <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-1">
               {COURSES.map((c) => (
-                <div key={c.t} className="reveal group rounded-2xl p-6 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors flex items-center gap-5">
+                <div key={c.t} className="reveal group flex items-center gap-5 py-5 border-b border-white/10 hover:border-white/25 transition-colors">
                   <svg viewBox="0 0 64 64" className="w-16 h-16 shrink-0 -rotate-90">
                     <circle cx="32" cy="32" r={RING_R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
                     <circle className="course-ring" data-pct={c.pct} data-c={RING_C.toFixed(2)} cx="32" cy="32" r={RING_R} fill="none" stroke={c.color} strokeWidth="5" strokeLinecap="round" strokeDasharray={RING_C.toFixed(2)} strokeDashoffset={(RING_C * (1 - c.pct / 100)).toFixed(2)} />
@@ -788,7 +828,7 @@ export function GsapShowcase() {
                   ))}
                 </div>
               </div>
-              <div className="reveal mt-12 rounded-2xl p-6 ring-1 bg-white/[0.03] flex flex-col sm:flex-row sm:items-center gap-4" style={{ borderColor: `${VIOLET}55` }}>
+              <div className="reveal mt-14 pl-5 border-l-2 flex flex-col sm:flex-row sm:items-center gap-4" style={{ borderColor: VIOLET }}>
                 <span className="text-[10px] uppercase tracking-[0.24em] font-black px-2.5 py-1 rounded-full self-start" style={{ color: "#07101a", background: VIOLET }}>New</span>
                 <p className="text-white/75 text-[15px] leading-relaxed"><span className="font-black text-white">AutoPipette</span> watches as you work — when you stall on a draft or an application, it quietly suggests the smartest next step.</p>
               </div>
@@ -847,9 +887,9 @@ export function GsapShowcase() {
               </div>
               <p className="reveal text-white/55 max-w-sm text-[15px] leading-relaxed">Real internships and co-ops from industry partners — each one pre-scored against your fit, so you know where to spend your effort.</p>
             </div>
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-x-14">
               {JOBS.map((j) => (
-                <div key={j.role} className="job-card opacity-0 translate-y-3 group rounded-2xl p-6 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
+                <div key={j.role} className="job-card opacity-0 translate-y-3 group py-6 border-b border-white/10 hover:border-white/25 transition-colors">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h3 className="font-black text-xl">{j.role}</h3>
@@ -876,10 +916,10 @@ export function GsapShowcase() {
                 <p className="reveal text-[11px] uppercase tracking-[0.32em] font-bold" style={{ color: CYAN }}>Knowledge Exchange</p>
                 <h2 className="reveal mt-3 font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>You&apos;re never figuring it out alone.</h2>
                 <p className="reveal mt-4 text-white/55 max-w-md text-lg">A living network of peers, mentors, and shared know-how — the part of the bench you can&apos;t get from a textbook.</p>
-                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {EXCHANGE.map(([t, d]) => (
-                    <div key={t} className="reveal rounded-2xl p-5 ring-1 ring-white/10 bg-white/[0.03]">
-                      <h3 className="font-black text-[15px]">{t}</h3>
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-7">
+                  {EXCHANGE.map(([t, d], i) => (
+                    <div key={t} className="reveal pl-4 border-l-2" style={{ borderColor: i % 2 ? CYAN : TEAL }}>
+                      <h3 className="font-black text-[16px]">{t}</h3>
                       <p className="text-white/55 text-[12px] leading-relaxed mt-1.5">{d}</p>
                     </div>
                   ))}
@@ -901,8 +941,10 @@ export function GsapShowcase() {
                 <span className="reveal inline-block text-[10px] uppercase tracking-[0.24em] font-black px-2.5 py-1 rounded-full mb-4" style={{ color: "#07101a", background: VIOLET }}>Coming soon</span>
                 <h2 className="reveal font-black tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)" }}>International exchange, on the horizon.</h2>
                 <p className="reveal mt-4 text-white/55 max-w-md text-lg">Placements and learning exchanges with biomanufacturing hubs abroad — spend a term on a different bench, then bring it home.</p>
-                <div className="reveal mt-7 flex flex-wrap gap-2">
-                  {INTL.map((r) => <span key={r} className="text-[12px] rounded-full px-3 py-1.5 ring-1 ring-white/10 bg-white/[0.03] text-white/70">{r}</span>)}
+                <div className="reveal mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+                  {INTL.map((r, i, arr) => (
+                    <span key={r} className="inline-flex items-center gap-6 text-lg md:text-xl font-black text-white/80">{r}{i < arr.length - 1 && <span className="text-white/20" aria-hidden>~</span>}</span>
+                  ))}
                 </div>
               </div>
               <svg data-speed="0.9" viewBox="0 0 420 240" className="w-full h-auto">
@@ -917,8 +959,9 @@ export function GsapShowcase() {
           </section>
 
           {/* ── EMPLOYER DIVIDER + BENEFITS ── */}
-          <section id="employers" className="relative px-6 py-32 md:py-44 overflow-hidden" style={{ background: `linear-gradient(180deg, ${VIOLET}14, transparent 42%)` }}>
-            <div aria-hidden className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${VIOLET}88, transparent)` }} />
+          <WaveDivider from={CYAN} to={VIOLET} />
+          <section id="employers" className="relative px-6 py-28 md:py-40 overflow-hidden" style={{ background: `linear-gradient(180deg, ${VIOLET}14, transparent 42%)` }}>
+            <div aria-hidden data-speed="1.15" className="blob absolute -top-24 left-[-10%] w-[44vw] h-[44vw] blur-[150px] opacity-25" style={{ background: VIOLET }} />
             <div aria-hidden data-speed="0.9" className="absolute -top-10 right-[-8%] w-[36vw] h-[36vw] rounded-full blur-[130px] opacity-20" style={{ background: VIOLET }} />
             <div className="max-w-6xl mx-auto relative">
               <div className="reveal inline-flex items-center gap-2 rounded-full px-4 py-1.5 ring-1 text-[12px] font-black uppercase tracking-[0.24em]" style={{ color: VIOLET, borderColor: `${VIOLET}55` }}>
@@ -926,12 +969,13 @@ export function GsapShowcase() {
               </div>
               <h2 className="reveal mt-5 font-black tracking-tight max-w-4xl" style={{ fontSize: "clamp(2rem, 4.5vw, 3.6rem)" }}>Stop sourcing cold. Start hiring trained.</h2>
               <p className="reveal mt-4 text-white/60 max-w-2xl text-lg">BioHubNet is where biomanufacturing talent learns the bench — so the people in your pipeline already know your methods. Here&apos;s what that changes for your team.</p>
-              <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {EMPLOYER_BENEFITS.map((b) => (
-                  <div key={b.title} className="reveal group rounded-2xl p-7 ring-1 ring-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
-                    <p className="font-black tabular-nums leading-none" style={{ fontSize: "clamp(1.7rem,3vw,2.3rem)", color: b.color }}>{b.metric}</p>
-                    <h3 className="text-lg font-black mt-3">{b.title}</h3>
-                    <p className="text-white/55 text-[13px] leading-relaxed mt-2">{b.body}</p>
+              <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-12">
+                {EMPLOYER_BENEFITS.map((b, i) => (
+                  <div key={b.title} data-speed={["1.07", "0.94", "1.0", "0.96", "1.05", "0.92"][i]} className="relative">
+                    <div className="reveal h-1.5 w-12 rounded-full mb-5" style={{ background: b.color }} />
+                    <p className="reveal font-black tabular-nums leading-none" style={{ fontSize: "clamp(1.9rem,3.4vw,2.6rem)", color: b.color }}>{b.metric}</p>
+                    <h3 className="reveal text-lg font-black mt-3">{b.title}</h3>
+                    <p className="reveal text-white/55 text-[13px] leading-relaxed mt-2">{b.body}</p>
                   </div>
                 ))}
               </div>
@@ -1202,11 +1246,11 @@ export function GsapShowcase() {
                   </div>
                 ))}
               </div>
-              <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="mt-12 flex flex-wrap gap-x-12 gap-y-7">
                 {FUND_STEPS.map((s, i) => (
-                  <div key={s} className="reveal rounded-2xl p-5 ring-1 ring-white/10 bg-white/[0.03]">
-                    <span className="text-[11px] font-black tabular-nums" style={{ color: i % 2 ? CYAN : VIOLET }}>{String(i + 1).padStart(2, "0")}</span>
-                    <p className="text-[13px] font-semibold text-white/80 mt-2">{s}</p>
+                  <div key={s} className="reveal flex items-baseline gap-3 max-w-[210px]">
+                    <span className="text-3xl font-black tabular-nums leading-none shrink-0" style={{ color: i % 2 ? CYAN : VIOLET }}>{String(i + 1).padStart(2, "0")}</span>
+                    <p className="text-[14px] font-semibold text-white/75">{s}</p>
                   </div>
                 ))}
               </div>
@@ -1223,16 +1267,16 @@ export function GsapShowcase() {
                 <h3 className="text-xl font-black" style={{ color: CYAN }}>VentureConnect</h3>
                 <span className="text-[12px] text-white/45 uppercase tracking-[0.18em] font-bold">≤ $5K · events + community</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12">
                 {VC_PAST.map((v) => (
-                  <div key={v.name} className="venture-card opacity-0 translate-y-3 rounded-2xl p-6 ring-1 ring-white/10 bg-white/[0.03]">
-                    <div className="flex items-start justify-between gap-3">
-                      <h4 className="font-black text-[16px] leading-tight">{v.name}</h4>
-                      <span className="shrink-0 text-[11px] font-black tabular-nums px-2 py-0.5 rounded" style={{ color: "#07101a", background: CYAN }}>{v.amt}</span>
+                  <div key={v.name} className="venture-card opacity-0 translate-y-3 py-6 border-t-2" style={{ borderColor: `${CYAN}66` }}>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <h4 className="font-black text-[18px] leading-tight">{v.name}</h4>
+                      <span className="shrink-0 text-[13px] font-black tabular-nums" style={{ color: CYAN }}>{v.amt}</span>
                     </div>
                     <p className="text-white/45 text-[12px] mt-1">{v.who}</p>
                     <p className="text-white/60 text-[13px] leading-relaxed mt-3">{v.note}</p>
-                    <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-bold" style={{ color: CYAN }}><span aria-hidden>✓</span>{v.outcome}</p>
+                    <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-bold" style={{ color: CYAN }}><span aria-hidden>&#10003;</span>{v.outcome}</p>
                   </div>
                 ))}
               </div>
@@ -1243,16 +1287,16 @@ export function GsapShowcase() {
                 <h3 className="text-xl font-black" style={{ color: VIOLET }}>VentureLift</h3>
                 <span className="text-[12px] text-white/45 uppercase tracking-[0.18em] font-bold">≤ $25K · commercialization</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12">
                 {VL_PAST.map((v) => (
-                  <div key={v.name} className="venture-card opacity-0 translate-y-3 rounded-2xl p-6 ring-1 ring-white/10 bg-white/[0.03]">
-                    <div className="flex items-start justify-between gap-3">
-                      <h4 className="font-black text-[16px] leading-tight">{v.name}</h4>
-                      <span className="shrink-0 text-[11px] font-black tabular-nums px-2 py-0.5 rounded" style={{ color: "#07101a", background: VIOLET }}>{v.amt}</span>
+                  <div key={v.name} className="venture-card opacity-0 translate-y-3 py-6 border-t-2" style={{ borderColor: `${VIOLET}66` }}>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <h4 className="font-black text-[18px] leading-tight">{v.name}</h4>
+                      <span className="shrink-0 text-[13px] font-black tabular-nums" style={{ color: VIOLET }}>{v.amt}</span>
                     </div>
                     <p className="text-white/45 text-[12px] mt-1">{v.who}</p>
                     <p className="text-white/60 text-[13px] leading-relaxed mt-3">{v.note}</p>
-                    <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-bold" style={{ color: VIOLET }}><span aria-hidden>✓</span>{v.outcome}</p>
+                    <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-bold" style={{ color: VIOLET }}><span aria-hidden>&#10003;</span>{v.outcome}</p>
                   </div>
                 ))}
               </div>
@@ -1260,6 +1304,7 @@ export function GsapShowcase() {
           </section>
 
           {/* ── CTA ── */}
+          <WaveDivider from={VIOLET} to={TEAL} flip />
           <section className="relative px-6 py-40 md:py-56 text-center overflow-hidden">
             <div aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(60% 60% at 50% 50%, #0d948833, transparent 70%)` }} />
             <h2 className="reveal relative font-black tracking-tight max-w-4xl mx-auto" style={{ fontSize: "clamp(2.4rem, 6vw, 5rem)" }}>Train talent. Hire talent. Prove it.</h2>
