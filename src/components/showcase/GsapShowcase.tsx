@@ -405,7 +405,7 @@ export function GsapShowcase() {
         // so the motion never feels monotone; every .reveal block animates on scroll.
         safe(() => {
           gsap.utils.toArray<HTMLElement>(".reveal").forEach((el, i) => {
-            const st = { trigger: el, start: "top 88%" };
+            const st = { trigger: el, start: "top 88%", once: true };
             const v = i % 3;
             if (v === 0) gsap.from(el, { opacity: 0, y: 58, scale: 0.97, duration: 0.95, ease: "power3.out", scrollTrigger: st });
             else if (v === 1) gsap.from(el, { opacity: 0, y: 46, rotateX: -30, transformPerspective: 900, transformOrigin: "50% 100%", duration: 1, ease: "power3.out", scrollTrigger: st });
@@ -414,16 +414,17 @@ export function GsapShowcase() {
         });
 
         // Every list row slides in, staggered (those not already a .reveal).
-        // batchMax keeps each cascade small so staggers stay snappy at any scroll speed.
+        // fromTo with an EXPLICIT end + once:true so a re-fire (smooth-scroll momentum
+        // or the post-font ScrollTrigger.refresh) can never leave a row stuck mid-fade.
         safe(() => ScrollTrigger.batch(".bhn-showcase li:not(.reveal)", {
-          start: "top 96%", batchMax: 6, interval: 0.08,
-          onEnter: (els) => gsap.from(els, { opacity: 0, x: -18, duration: 0.5, ease: "power2.out", stagger: 0.05, overwrite: true }),
+          start: "top 97%", batchMax: 6, interval: 0.08, once: true,
+          onEnter: (els) => gsap.fromTo(els, { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out", stagger: 0.05, overwrite: true }),
         }));
 
         // Pills / chips / badges spring in.
         safe(() => ScrollTrigger.batch('.bhn-showcase span[class*="rounded"][class*="px-"]', {
-          start: "top 96%", batchMax: 8, interval: 0.08,
-          onEnter: (els) => gsap.from(els, { opacity: 0, scale: 0.6, duration: 0.45, ease: "back.out(2)", stagger: 0.04, overwrite: true }),
+          start: "top 97%", batchMax: 8, interval: 0.08, once: true,
+          onEnter: (els) => gsap.fromTo(els, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)", stagger: 0.04, overwrite: true }),
         }));
 
         // Nav drops in on load.
