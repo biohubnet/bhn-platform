@@ -290,6 +290,18 @@ const CAROUSEL_CSS = `
   letter-spacing: -0.02em !important;
   text-transform: none !important;
 }
+/* Tactile hover — lift any ringed card. Uses the CSS \`translate\` property (not
+   \`transform\`) so it composes with GSAP's reveal transforms instead of fighting them. */
+.bhn-showcase section :is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="ring-1"] {
+  transition: translate .4s cubic-bezier(.2,.7,.2,1), box-shadow .4s ease, background-color .3s ease;
+}
+.bhn-showcase section :is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="ring-1"]:hover {
+  translate: 0 -6px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bhn-showcase section :is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="ring-1"] { transition: none; }
+  .bhn-showcase section :is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="ring-1"]:hover { translate: none; }
+}
 .bhn3d-banner { position: absolute; inset: 0; }
 .bhn3d-slider {
   --radius: 560px;
@@ -389,17 +401,32 @@ export function GsapShowcase() {
           }
         });
 
-        // Reusable reveal effect (registerEffect) for headings + cards.
+        // Reveal — varied entrances down the page (rise / 3D tilt-up / slide-in)
+        // so the motion never feels monotone; every .reveal block animates on scroll.
         safe(() => {
-          gsap.registerEffect({
-            name: "reveal",
-            defaults: { y: 42, duration: 0.9, ease: "power3.out", stagger: 0.08 },
-            extendTimeline: false,
-            effect: (targets: Element[], cfg: { y: number; duration: number; ease: string; stagger: number }) =>
-              gsap.from(targets, { y: cfg.y, opacity: 0, duration: cfg.duration, ease: cfg.ease, stagger: cfg.stagger, scrollTrigger: { trigger: targets[0], start: "top 86%" } }),
+          gsap.utils.toArray<HTMLElement>(".reveal").forEach((el, i) => {
+            const st = { trigger: el, start: "top 88%" };
+            const v = i % 3;
+            if (v === 0) gsap.from(el, { opacity: 0, y: 58, scale: 0.97, duration: 0.95, ease: "power3.out", scrollTrigger: st });
+            else if (v === 1) gsap.from(el, { opacity: 0, y: 46, rotateX: -30, transformPerspective: 900, transformOrigin: "50% 100%", duration: 1, ease: "power3.out", scrollTrigger: st });
+            else gsap.from(el, { opacity: 0, y: 38, x: -28, duration: 0.95, ease: "power3.out", scrollTrigger: st });
           });
-          gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => (gsap.effects as Record<string, (t: Element[]) => gsap.core.Tween>).reveal([el]));
         });
+
+        // Every list row slides in, staggered (those not already a .reveal).
+        safe(() => ScrollTrigger.batch(".bhn-showcase li:not(.reveal)", {
+          start: "top 94%",
+          onEnter: (els) => gsap.from(els, { opacity: 0, x: -18, duration: 0.5, ease: "power2.out", stagger: 0.05, overwrite: true }),
+        }));
+
+        // Pills / chips / badges spring in.
+        safe(() => ScrollTrigger.batch('.bhn-showcase span[class*="rounded"][class*="px-"]', {
+          start: "top 95%",
+          onEnter: (els) => gsap.from(els, { opacity: 0, scale: 0.55, duration: 0.45, ease: "back.out(2)", stagger: 0.04, overwrite: true }),
+        }));
+
+        // Nav drops in on load.
+        safe(() => gsap.from("nav", { y: -24, opacity: 0, duration: 0.85, ease: "power3.out", delay: 0.1 }));
 
         // Hero — SplitText WORD reveal. Words only (no overflow-clipped line
         // wrappers, which hid the H1 when Outfit loaded taller than the split-
