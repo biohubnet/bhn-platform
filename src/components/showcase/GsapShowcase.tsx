@@ -406,27 +406,18 @@ export function GsapShowcase() {
         // the default toggleActions and always finishes at the natural opacity:1.
         // (No `once:true` — that was killing tweens mid-fade; no batch — its onEnter
         // didn't fire reliably here, stranding rows hidden.)
-        // Reveal — varied entrances (rise / 3D tilt-up / slide-in). fromTo with an
-        // EXPLICIT opacity:1 end: gsap.from() re-captures the element's "natural" end
-        // opacity, and the post-font ScrollTrigger.refresh() can re-record a
-        // mid-animation value (~0.75) as that end, stranding it dim. fromTo's explicit
-        // end is immune to that re-capture, so headings always finish fully opaque.
-        safe(() => {
-          gsap.utils.toArray<HTMLElement>(".reveal").forEach((el, i) => {
-            const st = { trigger: el, start: "top 88%" };
-            const v = i % 3;
-            if (v === 0) gsap.fromTo(el, { opacity: 0, y: 56, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.9, ease: "power3.out", scrollTrigger: st });
-            else if (v === 1) gsap.fromTo(el, { opacity: 0, y: 44, rotateX: -28 }, { opacity: 1, y: 0, rotateX: 0, transformPerspective: 900, transformOrigin: "50% 100%", duration: 0.95, ease: "power3.out", scrollTrigger: st });
-            else gsap.fromTo(el, { opacity: 0, y: 36, x: -26 }, { opacity: 1, y: 0, x: 0, duration: 0.9, ease: "power3.out", scrollTrigger: st });
-          });
-        });
+        // Reveal — smooth rise + fade ONLY. No scale/zoom, no 3D tilt, no overshoot
+        // ease (those read as a "sudden zoom-in"). fromTo keeps an explicit opacity:1
+        // end so a post-font ScrollTrigger.refresh() can never strand it dim.
+        safe(() => gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) =>
+          gsap.fromTo(el, { opacity: 0, y: 46 }, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 88%" } })));
 
-        // List rows + chips — same explicit-end fromTo, individual triggers. The
-        // scroll itself cascades them as each crosses into view.
+        // List rows + chips — gentle rise + fade (no scale/pop). The scroll cascades
+        // them as each crosses into view.
         safe(() => gsap.utils.toArray<HTMLElement>(".bhn-showcase li:not(.reveal)").forEach((el) =>
-          gsap.fromTo(el, { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.55, ease: "power2.out", scrollTrigger: { trigger: el, start: "top 97%" } })));
+          gsap.fromTo(el, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out", scrollTrigger: { trigger: el, start: "top 97%" } })));
         safe(() => gsap.utils.toArray<HTMLElement>('.bhn-showcase span[class*="rounded"][class*="px-"]').forEach((el) =>
-          gsap.fromTo(el, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)", scrollTrigger: { trigger: el, start: "top 97%" } })));
+          gsap.fromTo(el, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out", scrollTrigger: { trigger: el, start: "top 97%" } })));
 
         // Nav drops in on load.
         safe(() => gsap.from("nav", { y: -24, opacity: 0, duration: 0.85, ease: "power3.out", delay: 0.1 }));
@@ -525,7 +516,7 @@ export function GsapShowcase() {
         // Reports — bento tiles cascade via batch.
         safe(() => ScrollTrigger.batch(".report-tile", {
           start: "top 92%",
-          onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, scale: 1, stagger: 0.06, duration: 0.55, ease: "power3.out", overwrite: true }),
+          onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, stagger: 0.06, duration: 0.55, ease: "power3.out", overwrite: true }),
         }));
 
         // Trends — time-to-fill line draws (scrubbed); cost bars grow on enter.
@@ -1042,7 +1033,7 @@ export function GsapShowcase() {
               <p className="reveal mt-4 text-white/55 max-w-2xl text-lg">A pure metrics library feeds every report, the print one-pager, and the CSV — so the numbers always reconcile. Period filters, OKR targets, RAG everywhere.</p>
               <div className="mt-14 grid grid-cols-2 lg:grid-cols-5 gap-3">
                 {REPORTS.map((r) => (
-                  <div key={r.n} className={`report-tile opacity-0 translate-y-3 scale-95 rounded-2xl p-4 ring-1 transition-colors ${r.feat ? "ring-white/20" : "ring-white/10 hover:ring-white/25"}`} style={{ background: r.feat ? `linear-gradient(155deg, ${TEAL}26, transparent 60%)` : "rgba(255,255,255,0.03)" }}>
+                  <div key={r.n} className={`report-tile opacity-0 translate-y-3 rounded-2xl p-4 ring-1 transition-colors ${r.feat ? "ring-white/20" : "ring-white/10 hover:ring-white/25"}`} style={{ background: r.feat ? `linear-gradient(155deg, ${TEAL}26, transparent 60%)` : "rgba(255,255,255,0.03)" }}>
                     {r.feat && <p className="text-[9px] uppercase tracking-[0.24em] font-bold mb-1.5" style={{ color: TEAL }}>Headline</p>}
                     <h3 className="text-[14px] font-black leading-tight">{r.n}</h3>
                     <p className="text-[11px] text-white/50 mt-1.5 leading-snug">{r.d}</p>
