@@ -406,22 +406,27 @@ export function GsapShowcase() {
         // the default toggleActions and always finishes at the natural opacity:1.
         // (No `once:true` — that was killing tweens mid-fade; no batch — its onEnter
         // didn't fire reliably here, stranding rows hidden.)
+        // Reveal — varied entrances (rise / 3D tilt-up / slide-in). fromTo with an
+        // EXPLICIT opacity:1 end: gsap.from() re-captures the element's "natural" end
+        // opacity, and the post-font ScrollTrigger.refresh() can re-record a
+        // mid-animation value (~0.75) as that end, stranding it dim. fromTo's explicit
+        // end is immune to that re-capture, so headings always finish fully opaque.
         safe(() => {
           gsap.utils.toArray<HTMLElement>(".reveal").forEach((el, i) => {
             const st = { trigger: el, start: "top 88%" };
             const v = i % 3;
-            if (v === 0) gsap.from(el, { opacity: 0, y: 56, scale: 0.97, duration: 0.9, ease: "power3.out", scrollTrigger: st });
-            else if (v === 1) gsap.from(el, { opacity: 0, y: 44, rotateX: -28, transformPerspective: 900, transformOrigin: "50% 100%", duration: 0.95, ease: "power3.out", scrollTrigger: st });
-            else gsap.from(el, { opacity: 0, y: 36, x: -26, duration: 0.9, ease: "power3.out", scrollTrigger: st });
+            if (v === 0) gsap.fromTo(el, { opacity: 0, y: 56, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.9, ease: "power3.out", scrollTrigger: st });
+            else if (v === 1) gsap.fromTo(el, { opacity: 0, y: 44, rotateX: -28 }, { opacity: 1, y: 0, rotateX: 0, transformPerspective: 900, transformOrigin: "50% 100%", duration: 0.95, ease: "power3.out", scrollTrigger: st });
+            else gsap.fromTo(el, { opacity: 0, y: 36, x: -26 }, { opacity: 1, y: 0, x: 0, duration: 0.9, ease: "power3.out", scrollTrigger: st });
           });
         });
 
-        // List rows + chips — same reliable per-element from pattern as .reveal. The
-        // scroll itself cascades them as each crosses into view (no batch, no once).
+        // List rows + chips — same explicit-end fromTo, individual triggers. The
+        // scroll itself cascades them as each crosses into view.
         safe(() => gsap.utils.toArray<HTMLElement>(".bhn-showcase li:not(.reveal)").forEach((el) =>
-          gsap.from(el, { opacity: 0, x: -16, duration: 0.55, ease: "power2.out", scrollTrigger: { trigger: el, start: "top 97%" } })));
+          gsap.fromTo(el, { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.55, ease: "power2.out", scrollTrigger: { trigger: el, start: "top 97%" } })));
         safe(() => gsap.utils.toArray<HTMLElement>('.bhn-showcase span[class*="rounded"][class*="px-"]').forEach((el) =>
-          gsap.from(el, { opacity: 0, scale: 0.6, duration: 0.45, ease: "back.out(2)", scrollTrigger: { trigger: el, start: "top 97%" } })));
+          gsap.fromTo(el, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)", scrollTrigger: { trigger: el, start: "top 97%" } })));
 
         // Nav drops in on load.
         safe(() => gsap.from("nav", { y: -24, opacity: 0, duration: 0.85, ease: "power3.out", delay: 0.1 }));
