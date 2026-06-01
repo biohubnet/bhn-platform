@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useId, cloneElement, isValidElement } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -161,7 +161,7 @@ function LoginPageInner() {
       />
 
       {/* Top bar — small mark + theme cycler */}
-      <div className="relative max-w-6xl mx-auto flex items-center justify-between mb-10 sm:mb-14">
+      <header className="relative max-w-6xl mx-auto flex items-center justify-between mb-10 sm:mb-14">
         <Link href="/" className="inline-flex items-center gap-2.5 group">
           <LogoMark size={32} className="drop-shadow-brand-glow-sky" />
           <span className="text-sm font-bold tracking-tight text-white">
@@ -169,8 +169,9 @@ function LoginPageInner() {
           </span>
         </Link>
         <ThemeCycler />
-      </div>
+      </header>
 
+      <main>
       {/* ─── TEASER HEADER ─────────────────────────────────────────
            Lab-coat tone, biotech wordplay. Sits in the lit pool of
            the spotlight, with the petal glowing above. Text colours
@@ -178,7 +179,7 @@ function LoginPageInner() {
            regardless of the viewer's theme. */}
       <div className="relative max-w-6xl mx-auto mb-8 sm:mb-12 text-center">
         <span className="inline-flex items-center gap-2 rounded-full bg-amber-300/15 ring-1 ring-inset ring-amber-300/40 px-3 py-1 text-[10px] uppercase tracking-[0.22em] font-black text-amber-200 backdrop-blur-sm">
-          <FlaskConical size={11} className="animate-pulse" />
+          <FlaskConical size={11} aria-hidden className="motion-safe:animate-pulse" />
           Phase II · Incubating
         </span>
         <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.05] max-w-3xl mx-auto drop-shadow-text-glow">
@@ -230,7 +231,7 @@ function LoginPageInner() {
               >
                 01
               </span>
-              <p className="text-[10px] uppercase tracking-[0.32em] font-semibold text-white/50">
+              <p className="text-[11px] uppercase tracking-[0.32em] font-semibold text-white/60">
                 New here
               </p>
             </div>
@@ -243,7 +244,7 @@ function LoginPageInner() {
             <p className="mt-4 text-sm text-slate-300 leading-relaxed">
               Free to start.{" "}
               <span className="inline-flex items-center gap-1 text-white font-semibold">
-                <Coins size={11} className="text-amber-300" /> 200 BHN credits
+                <Coins size={11} aria-hidden className="text-amber-300" /> 200 BHN credits
               </span>{" "}
               on the house — most courses cost 50–200, with 4,800 more available
               after admin review.
@@ -269,7 +270,7 @@ function LoginPageInner() {
                 className="group relative w-full inline-flex items-center justify-center gap-3 text-white font-bold tracking-tight py-3.5 text-base overflow-hidden transition-transform hover:-translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                 style={{
                   backgroundImage:
-                    "linear-gradient(120deg, #1d4f8b 0%, #2c8aa3 50%, #3fa86a 100%)",
+                    "linear-gradient(120deg, #173f72 0%, #1f6f86 50%, #2f7e50 100%)",
                   boxShadow:
                     "0 10px 28px -8px rgba(56,189,248,0.45), inset 0 1px 0 rgba(255,255,255,0.22)",
                 }}
@@ -284,7 +285,7 @@ function LoginPageInner() {
                   }}
                 />
                 <span className="relative">Create your free account</span>
-                <ArrowRight size={16} className="relative group-hover:translate-x-1 transition-transform" />
+                <ArrowRight size={16} aria-hidden className="relative group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
           </section>
@@ -308,7 +309,7 @@ function LoginPageInner() {
               >
                 02
               </span>
-              <p className="text-[10px] uppercase tracking-[0.32em] font-semibold text-white/50">
+              <p className="text-[11px] uppercase tracking-[0.32em] font-semibold text-white/60">
                 Returning
               </p>
             </div>
@@ -322,17 +323,17 @@ function LoginPageInner() {
             </h2>
 
             {justRegistered && (
-              <div className="mt-4 border-l-2 border-emerald-400 pl-4 py-1 text-sm text-emerald-200 inline-flex items-start gap-2 w-full">
-                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-300" />
+              <div role="status" className="mt-4 border-l-2 border-emerald-400 pl-4 py-1 text-sm text-emerald-200 inline-flex items-start gap-2 w-full">
+                <CheckCircle2 size={14} aria-hidden className="mt-0.5 shrink-0 text-emerald-300" />
                 <span>
                   Your account is ready. We pre-filled your email — just enter the password you chose.
                 </span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-6 flex-1 flex flex-col">
+            <form onSubmit={handleSubmit} aria-busy={loading} className="mt-6 space-y-6 flex-1 flex flex-col">
               {error && (
-                <div className="border-l-2 border-rose-400 pl-4 py-1 text-sm text-rose-200">
+                <div id="login-error" role="alert" className="border-l-2 border-rose-400 pl-4 py-1 text-sm text-rose-200">
                   {error}
                 </div>
               )}
@@ -344,7 +345,9 @@ function LoginPageInner() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full bg-transparent border-0 border-b border-white/30 px-0 py-2 text-base text-white placeholder:text-white/25 focus:outline-none focus:border-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors"
+                  aria-invalid={error ? true : undefined}
+                  aria-describedby={error ? "login-error" : undefined}
+                  className="w-full bg-transparent border-0 border-b border-white/55 px-0 py-2 text-base text-white placeholder:text-white/45 focus:outline-none focus:border-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors"
                   placeholder="you@lab.…"
                 />
               </LineField>
@@ -352,9 +355,9 @@ function LoginPageInner() {
               <LineField
                 label="Password"
                 aside={
-                  <Link href="/login" className="text-[11px] uppercase tracking-[0.22em] text-white/50 hover:text-white transition-colors">
+                  <a href="mailto:support@biohubnetwork.ca?subject=Password%20reset%20help" aria-label="Reset your password — email support" className="inline-block py-1 -my-1 text-[11px] uppercase tracking-[0.22em] text-white/60 hover:text-white transition-colors">
                     Forgot?
-                  </Link>
+                  </a>
                 }
               >
                 <input
@@ -363,7 +366,9 @@ function LoginPageInner() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full bg-transparent border-0 border-b border-white/30 px-0 py-2 text-base text-white placeholder:text-white/25 focus:outline-none focus:border-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors"
+                  aria-invalid={error ? true : undefined}
+                  aria-describedby={error ? "login-error" : undefined}
+                  className="w-full bg-transparent border-0 border-b border-white/55 px-0 py-2 text-base text-white placeholder:text-white/45 focus:outline-none focus:border-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors"
                   placeholder="••••••••"
                 />
               </LineField>
@@ -379,7 +384,7 @@ function LoginPageInner() {
                     required
                     autoComplete="one-time-code"
                     autoFocus
-                    className="w-40 bg-transparent border-0 border-b border-white/30 px-0 py-2 text-center text-xl font-mono tracking-[0.4em] text-white placeholder:text-white/25 focus:outline-none focus:border-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors"
+                    className="w-40 bg-transparent border-0 border-b border-white/55 px-0 py-2 text-center text-xl font-mono tracking-[0.4em] text-white placeholder:text-white/45 focus:outline-none focus:border-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors"
                     placeholder="123 456"
                   />
                 </LineField>
@@ -399,7 +404,7 @@ function LoginPageInner() {
                     className="sr-only peer"
                   />
                   <span className="w-4 h-4 border border-white/40 bg-transparent transition-all peer-checked:bg-white peer-checked:border-white peer-focus-visible:ring-2 peer-focus-visible:ring-white/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-transparent flex items-center justify-center">
-                    {remember && <Check size={11} className="text-slate-900" strokeWidth={3} />}
+                    {remember && <Check size={11} aria-hidden className="text-slate-900" strokeWidth={3} />}
                   </span>
                 </span>
                 <span className="text-xs text-white/60 group-hover:text-white/85 transition-colors">
@@ -419,7 +424,7 @@ function LoginPageInner() {
                   className="group relative w-full inline-flex items-center justify-center gap-3 text-white font-bold tracking-tight py-3.5 text-base overflow-hidden transition-transform hover:-translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:opacity-60 disabled:hover:translate-y-0"
                   style={{
                     backgroundImage:
-                      "linear-gradient(120deg, #1d4f8b 0%, #2c8aa3 50%, #3fa86a 100%)",
+                      "linear-gradient(120deg, #173f72 0%, #1f6f86 50%, #2f7e50 100%)",
                     boxShadow:
                       "0 10px 28px -8px rgba(56,189,248,0.45), inset 0 1px 0 rgba(255,255,255,0.22)",
                   }}
@@ -438,7 +443,7 @@ function LoginPageInner() {
                   ) : (
                     <>
                       <span className="relative">Sign in</span>
-                      <ArrowRight size={16} className="relative group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight size={16} aria-hidden className="relative group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
                 </button>
@@ -458,6 +463,7 @@ function LoginPageInner() {
           .
         </p>
       </div>
+      </main>
     </div>
   );
 }
@@ -471,7 +477,7 @@ function Bullet({
   return (
     <li className="flex items-start gap-3 text-sm text-slate-300 leading-snug">
       <span className="w-5 h-5 inline-flex items-center justify-center shrink-0 mt-0.5 text-sky-300">
-        <Icon size={13} strokeWidth={1.5} />
+        <Icon size={13} strokeWidth={1.5} aria-hidden />
       </span>
       <span>{children}</span>
     </li>
@@ -492,16 +498,31 @@ function LineField({
   aside?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const id = useId();
+  const hintId = hint ? `${id}-hint` : undefined;
+  // Associate the label by id and expose the hint as a DESCRIPTION
+  // (aria-describedby), rather than wrapping label + aside + hint in one
+  // <label>. Otherwise the input's accessible NAME absorbs all of it
+  // ("Password Forgot?", "Authenticator code From your authenticator app…").
+  // Any aria-describedby already on the field (e.g. the login error) is merged.
+  const el = children as React.ReactElement<Record<string, unknown>>;
+  const field = isValidElement(children)
+    ? cloneElement(el, {
+        id,
+        "aria-describedby":
+          [el.props["aria-describedby"] as string | undefined, hintId].filter(Boolean).join(" ") || undefined,
+      })
+    : children;
   return (
-    <label className="block">
+    <div className="block">
       <span className="flex items-baseline justify-between mb-1">
-        <span className="text-[10px] uppercase tracking-[0.32em] font-semibold text-white/60">
+        <label htmlFor={id} className="text-[11px] uppercase tracking-[0.32em] font-semibold text-white/60">
           {label}
-        </span>
+        </label>
         {aside}
       </span>
-      {children}
-      {hint && <span className="block text-[11px] text-white/45 mt-1.5">{hint}</span>}
-    </label>
+      {field}
+      {hint && <span id={hintId} className="block text-[11px] text-white/45 mt-1.5">{hint}</span>}
+    </div>
   );
 }
