@@ -422,7 +422,7 @@ export default async function RewardsPage() {
                         Cancelled.
                         {reward!.cancelledReason && <> {reward!.cancelledReason}</>}
                         <br />
-                        Reach out to support@biohubnet.com to re-issue.
+                        Reach out to support@biohubnet.ca to re-issue.
                       </div>
                     ) : null}
                   </div>

@@ -60,7 +60,7 @@ export const COMPLIANCE_ITEMS: ComplianceItem[] = [
       "Collection is purpose-bound. Profile fields exist only when a feature needs them (resume URL for applications, supervisor letter for ENGAGE eligibility, etc.).",
       "Consent is captured at sign-up via the platform terms; newsletter is opt-in (off by default).",
       "Trainees can edit or remove their data on /profile; the leave-pool flow walks approved candidates through deletion of their talent-application submission.",
-      "Access requests + erasure requests are routed through support@biohubnet.com with a 30-day SLA.",
+      "Access requests + erasure requests are routed through support@biohubnet.ca with a 30-day SLA.",
     ],
     status: "partial",
     evidenceHref: "/profile",

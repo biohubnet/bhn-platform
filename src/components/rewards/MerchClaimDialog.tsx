@@ -275,7 +275,7 @@ export function MerchClaimDialog({ rewardId, tierTitle, items, needsSize = false
 
               <p className="text-[11px] text-subtle leading-snug pt-1">
                 Once submitted, your selection is locked for this claim. To
-                change anything, email <span className="font-semibold">support@biohubnet.com</span>{" "}
+                change anything, email <span className="font-semibold">support@biohubnet.ca</span>{" "}
                 with your name + tier.
               </p>
             </form>

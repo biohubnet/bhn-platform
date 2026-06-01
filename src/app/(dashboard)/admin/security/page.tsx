@@ -461,7 +461,7 @@ export default async function AdminSecurityPage() {
       )}
 
       <p className="mt-6 text-xs text-subtle">
-        Need to file a vulnerability disclosure? Email <a className="text-brand-600 hover:underline" href="mailto:security@biohubnetwork.ca">security@biohubnetwork.ca</a>.
+        Need to file a vulnerability disclosure? Email <a className="text-brand-600 hover:underline" href="mailto:security@biohubnet.ca">security@biohubnet.ca</a>.
       </p>
     </div>
   );

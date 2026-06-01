@@ -21,7 +21,7 @@ export const metadata = {
  * This page is the *outside-in* view.
  */
 
-const CONTACT = "security@biohubnetwork.ca";
+const CONTACT = "security@biohubnet.ca";
 // Bump when the policy changes; surfaced in /.well-known/security.txt
 // as the Expires field reference.
 const POLICY_REVIEW = "2026-11-01";
@@ -268,7 +268,7 @@ export default function SecurityPage() {
             </li>
             <li>
               <strong>DPA &amp; security questionnaire:</strong> request
-              from <a href="mailto:compliance@biohubnetwork.ca">compliance@biohubnetwork.ca</a>
+              from <a href="mailto:compliance@biohubnet.ca">compliance@biohubnet.ca</a>
               {" "}— typical turnaround 2 business days.
             </li>
           </ul>
@@ -276,7 +276,7 @@ export default function SecurityPage() {
           <p>
             For the full compliance roadmap (including spend / decision items
             and timeline), please email{" "}
-            <a href="mailto:compliance@biohubnetwork.ca">compliance@biohubnetwork.ca</a>.
+            <a href="mailto:compliance@biohubnet.ca">compliance@biohubnet.ca</a>.
             We share it under NDA with active prospects and customers.
           </p>
 

@@ -355,7 +355,7 @@ function LoginPageInner() {
               <LineField
                 label="Password"
                 aside={
-                  <a href="mailto:support@biohubnetwork.ca?subject=Password%20reset%20help" aria-label="Reset your password — email support" className="inline-block py-1 -my-1 text-[11px] uppercase tracking-[0.22em] text-white/60 hover:text-white transition-colors">
+                  <a href="mailto:support@biohubnet.ca?subject=Password%20reset%20help" aria-label="Reset your password — email support" className="inline-block py-1 -my-1 text-[11px] uppercase tracking-[0.22em] text-white/60 hover:text-white transition-colors">
                     Forgot?
                   </a>
                 }
