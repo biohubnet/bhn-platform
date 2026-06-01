@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  BookOpen, Layers, ArrowRight, TrendingUp, CheckCircle2,
-  Clock, AlertCircle, Users, Calendar,
-} from "lucide-react";
+import { BookOpen, Layers, ArrowRight, TrendingUp, Users } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PendingEnrollmentRequests, type PendingRequest } from "@/components/admin/PendingEnrollmentRequests";
@@ -175,9 +172,10 @@ export default async function AdminEnrollmentsOverviewPage() {
       />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
 
-      {/* Two equally-weighted panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <section className="rounded-2xl border border-line bg-card p-5 surface-shadow space-y-4">
+      {/* Two editorial panels — borderless, split by a brand-gradient hairline */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-x-10 gap-y-8">
+        {/* ── Courses ── */}
+        <section className="space-y-6">
           <header className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
               <BookOpen size={18} className="text-brand-600" />
@@ -191,35 +189,29 @@ export default async function AdminEnrollmentsOverviewPage() {
             </Link>
           </header>
 
-          <div className="grid grid-cols-3 gap-3">
-            <StatTile icon={BookOpen}     label="Published"   value={publishedCourses}        hint="Live in catalog" />
-            <StatTile icon={Users}        label="Enrollments" value={totalCourseEnrollments}  hint="All time" big />
-            <StatTile icon={TrendingUp}   label="New (24h)"   value={newCourseEnrollments24h} hint={`${newCourseEnrollments7d} this week`} />
+          <div className="grid grid-cols-3 divide-x divide-line">
+            <StatNum icon={BookOpen}   label="Published"   value={publishedCourses}        hint="Live in catalog" />
+            <StatNum icon={Users}      label="Enrollments" value={totalCourseEnrollments}  hint="All time" big gradient />
+            <StatNum icon={TrendingUp} label="New (24h)"   value={newCourseEnrollments24h} hint={`${newCourseEnrollments7d} this week`} />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-            <MiniStat icon={Clock}        label="Pending"    value={courseStatus.pending}    tone="amber" />
-            <MiniStat icon={Clock}        label="Active"     value={courseStatus.active}     tone="brand"  />
-            <MiniStat icon={CheckCircle2} label="Completed"  value={courseStatus.completed}  tone="emerald" />
-            <MiniStat icon={AlertCircle}  label="Withdrawn"  value={courseStatus.withdrawn}  tone="slate" />
-            <MiniStat icon={AlertCircle}  label="Other"      value={
-              totalCourseEnrollments - courseStatus.active - courseStatus.completed - courseStatus.withdrawn - courseStatus.pending
-            } tone="amber" />
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 border-t border-line pt-4">
+            <StatusDot label="Pending"   value={courseStatus.pending}   tone="amber" />
+            <StatusDot label="Active"    value={courseStatus.active}    tone="brand" />
+            <StatusDot label="Completed" value={courseStatus.completed} tone="emerald" />
+            <StatusDot label="Withdrawn" value={courseStatus.withdrawn} tone="slate" />
+            <StatusDot label="Other"     value={Math.max(0, totalCourseEnrollments - courseStatus.active - courseStatus.completed - courseStatus.withdrawn - courseStatus.pending)} tone="slate" />
           </div>
 
-          <div className="pt-2 border-t border-line">
-            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-2">
-              Top courses by enrollment
-            </p>
+          <div className="border-t border-line pt-4">
+            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-1">Top courses by enrollment</p>
             {topCourses.length === 0 ? (
               <p className="text-xs text-muted italic">No published courses yet.</p>
             ) : (
-              <ul className="space-y-1.5">
+              <ul className="divide-y divide-line">
                 {topCourses.map((c) => (
-                  <li key={c.id} className="flex items-center justify-between text-sm">
-                    <Link href={`/courses/${c.id}`} className="text-fg hover:text-brand-700 truncate">
-                      {c.title}
-                    </Link>
+                  <li key={c.id} className="flex items-center justify-between gap-3 text-sm py-2">
+                    <Link href={`/courses/${c.id}`} className="text-fg hover:text-brand-700 truncate">{c.title}</Link>
                     <span className="text-xs font-mono tabular-nums text-muted">{c._count.enrollments}</span>
                   </li>
                 ))}
@@ -228,7 +220,11 @@ export default async function AdminEnrollmentsOverviewPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-line bg-card p-5 surface-shadow space-y-4">
+        {/* brand-gradient hairline divider (lg only) */}
+        <div aria-hidden className="hidden lg:block w-px" style={{ background: "linear-gradient(to bottom, transparent, rgba(56,189,248,0.45) 35%, rgba(16,185,129,0.30) 70%, transparent)" }} />
+
+        {/* ── Pathways ── */}
+        <section className="space-y-6 border-t border-line pt-8 lg:border-t-0 lg:pt-0">
           <header className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-fg tracking-tight inline-flex items-center gap-2">
               <Layers size={18} className="text-brand-600" />
@@ -242,32 +238,28 @@ export default async function AdminEnrollmentsOverviewPage() {
             </Link>
           </header>
 
-          <div className="grid grid-cols-3 gap-3">
-            <StatTile icon={Layers}     label="Published"   value={publishedPathways}        hint="Live pathways" />
-            <StatTile icon={Users}      label="Enrollments" value={totalPathwayEnrollments}  hint="All time" big />
-            <StatTile icon={TrendingUp} label="New (24h)"   value={newPathwayEnrollments24h} hint="" />
+          <div className="grid grid-cols-3 divide-x divide-line">
+            <StatNum icon={Layers}     label="Published"   value={publishedPathways}        hint="Live pathways" />
+            <StatNum icon={Users}      label="Enrollments" value={totalPathwayEnrollments}  hint="All time" big gradient />
+            <StatNum icon={TrendingUp} label="New (24h)"   value={newPathwayEnrollments24h} hint="" />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-            <MiniStat icon={Clock}        label="Pending"    value={pathwayStatus.pending}    tone="amber" />
-            <MiniStat icon={CheckCircle2} label="Approved"   value={pathwayStatus.approved}   tone="brand" />
-            <MiniStat icon={Calendar}     label="Waitlist"   value={pathwayStatus.waitlisted} tone="amber" />
-            <MiniStat icon={CheckCircle2} label="Completed"  value={pathwayStatus.completed}  tone="emerald" />
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 border-t border-line pt-4">
+            <StatusDot label="Pending"   value={pathwayStatus.pending}    tone="amber" />
+            <StatusDot label="Approved"  value={pathwayStatus.approved}   tone="brand" />
+            <StatusDot label="Waitlist"  value={pathwayStatus.waitlisted} tone="amber" />
+            <StatusDot label="Completed" value={pathwayStatus.completed}  tone="emerald" />
           </div>
 
-          <div className="pt-2 border-t border-line">
-            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-2">
-              Top pathways by enrollment
-            </p>
+          <div className="border-t border-line pt-4">
+            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-subtle mb-1">Top pathways by enrollment</p>
             {topPathways.length === 0 ? (
               <p className="text-xs text-muted italic">No published pathways yet.</p>
             ) : (
-              <ul className="space-y-1.5">
+              <ul className="divide-y divide-line">
                 {topPathways.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between text-sm">
-                    <Link href={`/pathways/${p.id}`} className="text-fg hover:text-brand-700 truncate">
-                      {p.title}
-                    </Link>
+                  <li key={p.id} className="flex items-center justify-between gap-3 text-sm py-2">
+                    <Link href={`/pathways/${p.id}`} className="text-fg hover:text-brand-700 truncate">{p.title}</Link>
                     <span className="text-xs font-mono tabular-nums text-muted">{p._count.enrollments}</span>
                   </li>
                 ))}
@@ -304,49 +296,56 @@ function mapStatusCounts(rows: { status: string; _count: { _all: number } }[]): 
   }
   return base;
 }
-function StatTile({
-  icon: Icon, label, value, hint, big,
+/** Borderless stat — label + figure, separated from siblings by a hairline
+ *  (divide-x on the parent). The headline figure can carry the brand gradient. */
+function StatNum({
+  icon: Icon, label, value, hint, big, gradient,
 }: {
   icon: React.ElementType;
   label: string;
   value: number;
   hint: string;
   big?: boolean;
+  gradient?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-bg p-3">
+    <div className="px-4 first:pl-0 last:pr-0">
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] font-bold text-subtle">
         <Icon size={11} /> {label}
       </div>
-      <p className={`font-bold font-mono tabular-nums text-fg mt-1 ${big ? "text-3xl" : "text-2xl"}`}>
+      <p
+        className={`font-bold font-mono tabular-nums mt-1 ${big ? "text-3xl" : "text-2xl"} ${gradient ? "" : "text-fg"}`}
+        style={
+          gradient
+            ? { backgroundImage: "linear-gradient(120deg, #0369a1 0%, #047857 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }
+            : undefined
+        }
+      >
         {value.toLocaleString()}
       </p>
       {hint && <p className="text-[11px] text-muted mt-0.5">{hint}</p>}
     </div>
   );
 }
-function MiniStat({
-  icon: Icon, label, value, tone,
+/** Inline status — a tone dot + label + value, no box. */
+function StatusDot({
+  label, value, tone,
 }: {
-  icon: React.ElementType;
   label: string;
   value: number;
   tone: "brand" | "emerald" | "amber" | "slate";
 }) {
-  const colours: Record<string, string> = {
-    brand:   "text-brand-700",
-    emerald: "text-emerald-700",
-    amber:   "text-amber-700",
-    slate:   "text-slate-600",
+  const dot: Record<string, string> = {
+    brand:   "bg-brand-600",
+    emerald: "bg-emerald-500",
+    amber:   "bg-amber-500",
+    slate:   "bg-slate-400",
   };
   return (
-    <div className="rounded-lg bg-bg border border-line px-2.5 py-1.5">
-      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-subtle">
-        <Icon size={9} /> {label}
-      </div>
-      <p className={`text-base font-bold font-mono tabular-nums ${colours[tone]}`}>
-        {value.toLocaleString()}
-      </p>
-    </div>
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`w-1.5 h-1.5 rounded-full ${dot[tone]}`} />
+      <span className="text-[11px] uppercase tracking-wider text-subtle">{label}</span>
+      <span className="text-sm font-bold font-mono tabular-nums text-fg">{value.toLocaleString()}</span>
+    </span>
   );
 }
