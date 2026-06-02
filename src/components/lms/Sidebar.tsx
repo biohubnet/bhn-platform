@@ -1639,7 +1639,7 @@ export function Sidebar({
             )}
 
             {visibleInsightsAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Insights">
+              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Design & Insight">
                 {visibleInsightsAdmin.map((item) => (
                   <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
                 ))}

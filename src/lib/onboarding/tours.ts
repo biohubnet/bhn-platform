@@ -37,7 +37,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "admin.login-floater-master-switches",
     title: "Switch the login backdrop's ambient layers on or off",
-    body: "Insight → Login-screen floaters now opens with two master switches: Floating molecules and Sparkles. Flip either off to hide that layer on the public /login page for everyone — your seated floater gallery stays saved. Saved instantly, no deploy needed.",
+    body: "Design & Insight → Login-screen floaters now opens with two master switches: Floating molecules and Sparkles. Flip either off to hide that layer on the public /login page for everyone — your seated floater gallery stays saved. Saved instantly, no deploy needed.",
     path: "/admin/login-floaters",
     placement: "center",
     roles: ["admin", "superadmin"],
