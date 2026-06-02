@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Admin · batch-delete demo / test users — Jun 2026
   {
     title: "Admin · batch-delete demo and test users in one sweep",
-    body: "The /admin/users table now has a Delete action in the batch bar whenever you're on the Demo or Phantom tab. Tick any number of accounts, hit Delete, type DELETE to confirm, and they're hard-deleted in a single call — along with everything that cascades off them (enrollments, certificates, submissions, and more). Safety rails are built in: it only ever removes non-real test accounts, so any real account in your selection is skipped, and your own account and any superadmins are never deleted. Real-user deletion stays per-row and superadmin-gated.",
+    body: "The /admin/users table now has a Delete action in the batch bar whenever you're on the Demo or Phantom tab. Tick any number of accounts, hit Delete, confirm once, and they're hard-deleted in a single call — along with everything that cascades off them (enrollments, certificates, submissions, signatures, registrations, and more). Safety rails are built in: it only ever removes non-real test accounts, so any real account in your selection is skipped, and your own account and any superadmins are never deleted. Real-user deletion stays per-row and superadmin-gated.",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,

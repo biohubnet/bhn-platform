@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   let affected = 0;
+  let failedCount = 0;
 
   switch (action) {
     case "activate":
@@ -89,16 +90,38 @@ export async function POST(req: NextRequest) {
       // Hard-delete, gated for safety: only NON-REAL test accounts (demo /
       // sandbox / phantom), never yourself, never a superadmin. Real users
       // stay per-row + superadmin-gated (see /api/admin/users/[id] DELETE).
-      // Relations cascade at the DB level (onDelete: Cascade), so deleteMany
-      // removes each account's enrollments, certificates, submissions, etc.
-      const r = await prisma.user.deleteMany({
+      const targets = await prisma.user.findMany({
         where: {
-          id: { in: userIds, not: actorId },
+          id: { in: userIds },
           accountKind: { not: "real" },
           role: { not: "superadmin" },
+          NOT: { id: actorId },
         },
+        select: { id: true },
       });
-      affected = r.count;
+      const ids = targets.map((t) => t.id);
+      if (ids.length) {
+        // Most relations cascade at the DB level, but a few use onDelete:
+        // Restrict and would block the delete — the account's OWN electronic
+        // signatures, event registrations, and workshop bookings. Clear those
+        // first so the user delete can proceed.
+        await prisma.$transaction([
+          prisma.electronicSignature.deleteMany({ where: { signerId: { in: ids } } }),
+          prisma.workshopBooking.deleteMany({ where: { userId: { in: ids } } }),
+          prisma.registration.deleteMany({ where: { userId: { in: ids } } }),
+        ]);
+        try {
+          const r = await prisma.user.deleteMany({ where: { id: { in: ids } } });
+          affected = r.count;
+        } catch {
+          // A single unexpected reference shouldn't abort the whole sweep —
+          // fall back to per-account deletes so the rest still go through.
+          for (const uid of ids) {
+            try { await prisma.user.delete({ where: { id: uid } }); affected++; }
+            catch { failedCount++; }
+          }
+        }
+      }
       break;
     }
     default:
@@ -115,5 +138,5 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ ok: true, affected });
+  return NextResponse.json({ ok: true, affected, failed: failedCount });
 }

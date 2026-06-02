@@ -45,7 +45,6 @@ export function UsersTableClient({ users, groups, kind }: Props) {
   const [pendingRole, setPendingRole] = useState("trainee");
   const [pendingAmount, setPendingAmount] = useState("100");
   const [pendingGroup, setPendingGroup] = useState(groups[0]?.id ?? "");
-  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   // Batch hard-delete is destructive — only surfaced for non-real test accounts.
   const canBatchDelete = kind !== "real";
@@ -103,10 +102,13 @@ export function UsersTableClient({ users, groups, kind }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userIds: Array.from(selected), action, payload }),
       });
+      const j = (await res.json().catch(() => ({}))) as { error?: string; affected?: number; failed?: number };
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
         alert(j.error ?? "Batch action failed");
         return;
+      }
+      if (action === "delete" && (j.failed ?? 0) > 0) {
+        alert(`Deleted ${j.affected ?? 0}. ${j.failed} couldn't be removed — they still have linked records that block deletion.`);
       }
       setModal(null);
       clearSelection();
@@ -180,7 +182,7 @@ export function UsersTableClient({ users, groups, kind }: Props) {
           )}
           {canBatchDelete && (
             <button
-              onClick={() => { setDeleteConfirm(""); setModal("delete"); }}
+              onClick={() => setModal("delete")}
               disabled={busy}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white transition-colors flex items-center gap-1.5"
             >
@@ -388,31 +390,16 @@ export function UsersTableClient({ users, groups, kind }: Props) {
         footer={
           <>
             <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
-            <Button
-              variant="danger"
-              onClick={() => batch("delete")}
-              loading={busy}
-              disabled={deleteConfirm.trim().toUpperCase() !== "DELETE"}
-            >
+            <Button variant="danger" onClick={() => batch("delete")} loading={busy}>
               Delete {selected.size} user{selected.size === 1 ? "" : "s"}
             </Button>
           </>
         }
       >
-        <div className="space-y-3">
-          <div className="rounded-lg bg-rose-50 border border-rose-200 text-rose-800 px-3 py-2 text-xs">
-            Safety: real accounts are never removed here — only non-real test accounts
-            (<span className="font-semibold">{kind}</span>) in your selection are deleted. Your own
-            account and any superadmins are skipped automatically.
-          </div>
-          <Field label="Type DELETE to confirm">
-            <Input
-              value={deleteConfirm}
-              onChange={(e) => setDeleteConfirm(e.target.value)}
-              placeholder="DELETE"
-              autoFocus
-            />
-          </Field>
+        <div className="rounded-lg bg-rose-50 border border-rose-200 text-rose-800 px-3 py-2 text-xs">
+          Safety: real accounts are never removed here — only non-real test accounts
+          (<span className="font-semibold">{kind}</span>) in your selection are deleted. Your own
+          account and any superadmins are skipped automatically.
         </div>
       </Modal>
     </div>

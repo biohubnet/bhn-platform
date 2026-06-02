@@ -37,7 +37,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "admin.users-batch-delete",
     title: "Batch-delete demo & test users",
-    body: "On the Demo or Phantom tab of /admin/users, tick any accounts and a Delete action appears in the batch bar — type DELETE to confirm and they're removed in one sweep, along with everything that cascades off them. Real accounts, your own account, and any superadmins are always skipped.",
+    body: "On the Demo or Phantom tab of /admin/users, tick any accounts and a Delete action appears in the batch bar — confirm once and they're removed in one sweep, along with everything that cascades off them. Real accounts, your own account, and any superadmins are always skipped.",
     path: "/admin/users",
     placement: "center",
     roles: ["admin", "superadmin"],
