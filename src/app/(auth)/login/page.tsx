@@ -11,6 +11,7 @@ import { LogoMark } from "@/components/ui/Logo";
 import { DeepSeaStars } from "@/components/branding/DeepSeaStars";
 import { LoginFloaters } from "@/components/branding/LoginFloaters";
 import { ThemeCycler } from "@/components/ui/ThemePicker";
+import { LoginAmbientMenu } from "@/components/branding/LoginAmbientMenu";
 
 const REMEMBER_KEY = "bhn-remember-email";
 
@@ -39,6 +40,13 @@ function LoginPageInner() {
   // it does, the form expands a second field for the 6-digit code.
   const [mfaRequired, setMfaRequired] = useState(false);
   const [totp, setTotp] = useState("");
+  // Ambient-effects toggles for the login stage, wired to the
+  // LoginAmbientMenu in the header. Default on; persisted per-device in
+  // localStorage and read after mount (below) to avoid a hydration
+  // mismatch. `showBling` gates the DeepSeaStars twinkle, `showFloaters`
+  // gates the drifting biotech molecules.
+  const [showFloaters, setShowFloaters] = useState(true);
+  const [showBling, setShowBling] = useState(true);
 
   // Pre-fill: ?email=… from registration / employer-invite fallback
   // takes priority; otherwise fall back to localStorage Remember-Me.
@@ -52,6 +60,27 @@ function LoginPageInner() {
       }
     } catch {}
   }, [prefillEmail]);
+
+  // Restore ambient-effect prefs after mount (localStorage is unavailable
+  // during SSR; reading here keeps first paint on the defaults so server
+  // and client agree, then we reconcile to the saved choice).
+  useEffect(() => {
+    try {
+      const f = localStorage.getItem("bhn-login-floaters");
+      const b = localStorage.getItem("bhn-login-bling");
+      if (f !== null) setShowFloaters(f !== "0");
+      if (b !== null) setShowBling(b !== "0");
+    } catch {}
+  }, []);
+
+  function toggleFloaters(v: boolean) {
+    setShowFloaters(v);
+    try { localStorage.setItem("bhn-login-floaters", v ? "1" : "0"); } catch {}
+  }
+  function toggleBling(v: boolean) {
+    setShowBling(v);
+    try { localStorage.setItem("bhn-login-bling", v ? "1" : "0"); } catch {}
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -136,8 +165,9 @@ function LoginPageInner() {
            spotlight wash so the stars feel like they live in
            the same atmosphere as the BHN petal. CSS-driven
            keyframes — no JS animation loop. Respects
-           prefers-reduced-motion. */}
-      <DeepSeaStars />
+           prefers-reduced-motion. Gated by the Sparkles switch in the
+           header's ambient-effects menu. */}
+      {showBling && <DeepSeaStars />}
 
       {/* ─── BIOMANUFACTURING MOLECULES — periphery-only.
            Data-driven now: the active list lives in the
@@ -146,8 +176,9 @@ function LoginPageInner() {
            config from /api/login-floaters on mount, maps each
            entry through FLOATER_REGISTRY (the curated component
            library), and positions them via side + verticalPct.
-           Used to be a hardcoded block of 5 floaters here. */}
-      <LoginFloaters />
+           Used to be a hardcoded block of 5 floaters here. Gated by the
+           Floating-molecules switch in the ambient-effects menu. */}
+      {showFloaters && <LoginFloaters />}
 
       {/* Vignette — gentle darken at the page edges so the
           spotlight pool reads as the focal area. */}
@@ -168,7 +199,15 @@ function LoginPageInner() {
             Bio<span className="text-sky-300">Hub</span><span className="text-emerald-300">Net</span>
           </span>
         </Link>
-        <ThemeCycler />
+        <div className="flex items-center gap-1">
+          <LoginAmbientMenu
+            floaters={showFloaters}
+            bling={showBling}
+            onToggleFloaters={toggleFloaters}
+            onToggleBling={toggleBling}
+          />
+          <ThemeCycler />
+        </div>
       </header>
 
       <main>

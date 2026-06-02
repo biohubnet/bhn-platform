@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Login · toggle the ambient effects — Jun 2026
+  {
+    title: "Login · switch the floating molecules and sparkles on or off",
+    body: "The sign-in page has a new Sparkles menu in the top bar, next to the theme switch. Open it for two toggles: Floating molecules (the drifting biotech glyphs) and Sparkles (the twinkling marine-snow effect). Turn either off if you'd rather a calmer stage — your choice is saved on that device. Both still respect reduced-motion settings, and both default to on.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Admin · last-login column + role classification + HR seat — Jun 2026
   {
     title: "Admin · Users gains a live Last Login column, role-group filters, and an HR seat",
