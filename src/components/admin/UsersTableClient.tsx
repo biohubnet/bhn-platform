@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckSquare, Square, MinusSquare, X,
-  ShieldCheck, ShieldOff, Coins, UserCheck, UsersRound, Loader2,
+  ShieldCheck, ShieldOff, Coins, UserCheck, UsersRound, Loader2, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Modal } from "@/components/ui/Modal";
@@ -31,19 +31,24 @@ interface GroupOption {
 interface Props {
   users: UserRow[];
   groups: GroupOption[];
+  /** Active account-kind tab. Batch delete is only offered for non-real test accounts. */
+  kind: string;
 }
 
 const ROLES = ["trainee", "evaluating", "employer", "industrial_mentor", "instructor", "admin", "superadmin"];
 
-export function UsersTableClient({ users, groups }: Props) {
+export function UsersTableClient({ users, groups, kind }: Props) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("");
-  const [modal, setModal] = useState<null | "role" | "credits" | "group">(null);
+  const [modal, setModal] = useState<null | "role" | "credits" | "group" | "delete">(null);
   const [pendingRole, setPendingRole] = useState("trainee");
   const [pendingAmount, setPendingAmount] = useState("100");
   const [pendingGroup, setPendingGroup] = useState(groups[0]?.id ?? "");
+  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [busy, setBusy] = useState(false);
+  // Batch hard-delete is destructive — only surfaced for non-real test accounts.
+  const canBatchDelete = kind !== "real";
 
   const visible = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -87,7 +92,7 @@ export function UsersTableClient({ users, groups }: Props) {
   }
 
   async function batch(
-    action: "activate" | "deactivate" | "setRole" | "grantCredits" | "addToGroup",
+    action: "activate" | "deactivate" | "setRole" | "grantCredits" | "addToGroup" | "delete",
     payload?: Record<string, unknown>
   ) {
     if (selected.size === 0) return;
@@ -171,6 +176,15 @@ export function UsersTableClient({ users, groups }: Props) {
               className="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-1.5"
             >
               <UsersRound size={13} /> Add to group
+            </button>
+          )}
+          {canBatchDelete && (
+            <button
+              onClick={() => { setDeleteConfirm(""); setModal("delete"); }}
+              disabled={busy}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white transition-colors flex items-center gap-1.5"
+            >
+              <Trash2 size={13} /> Delete
             </button>
           )}
           <span className="ml-auto" />
@@ -363,6 +377,43 @@ export function UsersTableClient({ users, groups }: Props) {
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </Select>
         </Field>
+      </Modal>
+
+      <Modal
+        open={modal === "delete"}
+        onClose={() => setModal(null)}
+        size="sm"
+        title={`Delete ${selected.size} ${kind} user${selected.size === 1 ? "" : "s"}?`}
+        description="This permanently removes the selected accounts and everything that belongs to them — enrollments, certificates, submissions, and more. This cannot be undone."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+            <Button
+              variant="danger"
+              onClick={() => batch("delete")}
+              loading={busy}
+              disabled={deleteConfirm.trim().toUpperCase() !== "DELETE"}
+            >
+              Delete {selected.size} user{selected.size === 1 ? "" : "s"}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <div className="rounded-lg bg-rose-50 border border-rose-200 text-rose-800 px-3 py-2 text-xs">
+            Safety: real accounts are never removed here — only non-real test accounts
+            (<span className="font-semibold">{kind}</span>) in your selection are deleted. Your own
+            account and any superadmins are skipped automatically.
+          </div>
+          <Field label="Type DELETE to confirm">
+            <Input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder="DELETE"
+              autoFocus
+            />
+          </Field>
+        </div>
       </Modal>
     </div>
   );

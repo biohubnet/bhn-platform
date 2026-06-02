@@ -92,7 +92,7 @@ export default async function AdminUsersPage({
         </div>
       )}
 
-      <UsersTableClient users={users} groups={groups} />
+      <UsersTableClient users={users} groups={groups} kind={kind} />
     </div>
   );
 }

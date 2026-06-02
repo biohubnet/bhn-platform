@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.05.29j";
+export const TOUR_VERSION = "2026.06.02a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Admin · batch-delete demo / test users — Jun 2026
+  {
+    id: "admin.users-batch-delete",
+    title: "Batch-delete demo & test users",
+    body: "On the Demo or Phantom tab of /admin/users, tick any accounts and a Delete action appears in the batch bar — type DELETE to confirm and they're removed in one sweep, along with everything that cascades off them. Real accounts, your own account, and any superadmins are always skipped.",
+    path: "/admin/users",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open demo users", href: "/admin/users?kind=demo" },
+    since: "2026.06.02a",
+  },
   // ─── Fit-rating matrix — job-app pipeline — May 2026
   {
     id: "trainee.fit-rating-matrix",

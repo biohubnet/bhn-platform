@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 interface BatchPayload {
   userIds: string[];
-  action: "activate" | "deactivate" | "setRole" | "grantCredits" | "addToGroup";
+  action: "activate" | "deactivate" | "setRole" | "grantCredits" | "addToGroup" | "delete";
   payload?: { role?: string; amount?: number; groupId?: string };
 }
 
@@ -81,6 +81,22 @@ export async function POST(req: NextRequest) {
       const r = await prisma.groupMembership.createMany({
         data: userIds.map((userId) => ({ groupId, userId })),
         skipDuplicates: true,
+      });
+      affected = r.count;
+      break;
+    }
+    case "delete": {
+      // Hard-delete, gated for safety: only NON-REAL test accounts (demo /
+      // sandbox / phantom), never yourself, never a superadmin. Real users
+      // stay per-row + superadmin-gated (see /api/admin/users/[id] DELETE).
+      // Relations cascade at the DB level (onDelete: Cascade), so deleteMany
+      // removes each account's enrollments, certificates, submissions, etc.
+      const r = await prisma.user.deleteMany({
+        where: {
+          id: { in: userIds, not: actorId },
+          accountKind: { not: "real" },
+          role: { not: "superadmin" },
+        },
       });
       affected = r.count;
       break;
