@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Bell, X, Check, BellRing, Users, Eye, Activity, AtSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -118,12 +119,18 @@ function NotificationInboxDrawer({
     }
   }
 
-  return (
+  // Portal to <body>: the sidebar <aside> that mounts this bell always carries a
+  // `transform` (translate-x for its slide-in), which makes it the containing block
+  // for position:fixed descendants — so without a portal this drawer anchors to the
+  // 256px sidebar and gets pushed off-screen left (clipping the text). Rendering into
+  // <body> restores viewport-relative fixed positioning.
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/20" onClick={onClose} />
+      <div className="fixed inset-0 z-[90] bg-black/30" onClick={onClose} />
       {/* Drawer */}
-      <div className="fixed top-0 right-0 bottom-0 z-50 w-full sm:w-[380px] bg-card border-l border-line shadow-2xl flex flex-col">
+      <div className="fixed top-0 right-0 bottom-0 z-[100] w-full sm:w-[380px] bg-card border-l border-line shadow-2xl flex flex-col">
         <header className="flex items-center justify-between px-5 py-4 border-b border-line shrink-0">
           <h2 className="text-base font-bold text-fg">Notifications</h2>
           <div className="flex items-center gap-2">
@@ -171,7 +178,7 @@ function NotificationInboxDrawer({
                     onClick={() => markOne(n.id, n.postingId)}
                     className={cn(
                       "w-full text-left flex items-start gap-3 px-5 py-3 hover:bg-elevated transition-colors",
-                      n.unread && "bg-brand-50/40 ring-l-2 ring-brand-200",
+                      n.unread && "bg-brand-50/40 border-l-2 border-brand-400",
                     )}
                   >
                     {reasonIcon(n.reason)}
