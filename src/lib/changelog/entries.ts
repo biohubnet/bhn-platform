@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Admin · create a simulation without a request — Jun 2026
+  {
+    title: "Admin · spin up a role-play simulation without waiting for a request",
+    body: "The Simulator queue (Admin → Sim requests) has a new \"New simulation\" button. Paste a job description, hit Generate, and the AI builds a complete role-play simulation on the spot — no user request needed. (Both AI providers down? Expand \"Advanced\" and paste a hand-authored JSON payload instead — it runs through the same validator.) The moment it's created it lands in the trainee Career Simulator catalog, so anyone can launch their own attempt — and if a trainee later requests the same posting, it cache-hits your simulation instead of regenerating. Use it to pre-seed the catalog with the roles your cohort actually cares about.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Login · toggle the ambient effects — Jun 2026
   {
     title: "Login · switch the floating molecules and sparkles on or off",

@@ -33,6 +33,17 @@ export interface TourStep {
 export const TOUR_VERSION = "2026.06.02b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Admin · create a simulation without a request — Jun 2026
+  {
+    id: "admin.sim-create-without-request",
+    title: "Create a simulation without a request",
+    body: "On the Sim requests queue there's now a \"New simulation\" button. Paste a job description and generate a role-play sim directly — no user request required. It joins the trainee Career Simulator catalog the moment it's created, and a later request for the same posting reuses it.",
+    path: "/admin/simulator-requests",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Sim requests", href: "/admin/simulator-requests" },
+    since: "2026.06.02b",
+  },
   // ─── Admin · login ambient master switches — Jun 2026
   {
     id: "admin.login-floater-master-switches",

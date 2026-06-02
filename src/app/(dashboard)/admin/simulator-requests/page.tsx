@@ -5,7 +5,7 @@
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Theater, Hourglass, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Theater, Hourglass, CheckCircle2, XCircle, Clock, Plus } from "lucide-react";
 import { getSession, ROLE_RANK } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
@@ -96,24 +96,32 @@ export default async function AdminSimRequestsPage({
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-5">
-        {/* Tabs */}
-        <nav className="flex flex-wrap gap-1.5 text-[12px]">
-          <TabLink
-            label="All"
-            status="all"
-            active={activeStatus === "all"}
-            count={totalAll}
-          />
-          {STATUSES.map((s) => (
+        {/* Tabs + create-without-a-request entry point */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <nav className="flex flex-wrap gap-1.5 text-[12px]">
             <TabLink
-              key={s}
-              label={STATUS_META[s].label}
-              status={s}
-              active={activeStatus === s}
-              count={countsByStatus[s] ?? 0}
+              label="All"
+              status="all"
+              active={activeStatus === "all"}
+              count={totalAll}
             />
-          ))}
-        </nav>
+            {STATUSES.map((s) => (
+              <TabLink
+                key={s}
+                label={STATUS_META[s].label}
+                status={s}
+                active={activeStatus === s}
+                count={countsByStatus[s] ?? 0}
+              />
+            ))}
+          </nav>
+          <Link
+            href="/admin/simulator-requests/new"
+            className="inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-3.5 py-1.5 text-[12px] font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
+          >
+            <Plus size={13} /> New simulation
+          </Link>
+        </div>
 
         {/* Rows */}
         {rows.length === 0 ? (
