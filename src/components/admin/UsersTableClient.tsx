@@ -42,9 +42,10 @@ const ROLES = ["trainee", "evaluating", "employer", "hr", "industrial_mentor", "
  *  full list. "Other" catches employer / mentor / instructor / the two
  *  committee seats — anything that isn't a platform admin, internal HR,
  *  or a learner (trainee/evaluating). */
-type RoleGroup = "all" | "admins" | "hr" | "trainees" | "other";
+type RoleGroup = "all" | "admins" | "instructors" | "hr" | "trainees" | "other";
 function roleGroupOf(role: string): Exclude<RoleGroup, "all"> {
   if (role === "admin" || role === "superadmin") return "admins";
+  if (role === "instructor") return "instructors";
   if (role === "hr") return "hr";
   if (role === "trainee" || role === "evaluating") return "trainees";
   return "other";
@@ -52,6 +53,7 @@ function roleGroupOf(role: string): Exclude<RoleGroup, "all"> {
 const ROLE_GROUP_TABS: { key: RoleGroup; label: string }[] = [
   { key: "all", label: "All" },
   { key: "admins", label: "Admins" },
+  { key: "instructors", label: "Instructors" },
   { key: "hr", label: "HR" },
   { key: "trainees", label: "Trainees" },
   { key: "other", label: "Other" },
@@ -93,6 +95,7 @@ export function UsersTableClient({ users, groups, kind }: Props) {
     const c: Record<RoleGroup, number> = {
       all: users.length,
       admins: 0,
+      instructors: 0,
       hr: 0,
       trainees: 0,
       other: 0,
