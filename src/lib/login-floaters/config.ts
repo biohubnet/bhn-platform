@@ -17,10 +17,16 @@
 
 import { prisma } from "@/lib/prisma";
 import { FLOATER_REGISTRY } from "./registry";
-import type { FloaterInstance } from "./types";
+import type { FloaterInstance, LoginFloaterFx } from "./types";
 
 const KEY = "loginFloaters";
 const MAX_FLOATERS = 12;
+// Global on/off flags for the two ambient layers. Stored in a SEPARATE
+// PlatformSetting row from the floater array above so the existing list
+// logic stays untouched. Both default ON; the login page also has a
+// per-device override menu (effective visibility = global AND device).
+const FX_KEY = "loginFloaterFx";
+const DEFAULT_FX: LoginFloaterFx = { floatersEnabled: true, sparklesEnabled: true };
 
 /** Default set — matches the hardcoded floaters the /login page
  *  used to render before this admin tool. Used as a fallback
@@ -133,4 +139,44 @@ export async function setActiveLoginFloaters(
  *  by the "Reset to defaults" button on the admin page. */
 export async function resetLoginFloatersToDefaults(): Promise<FloaterInstance[]> {
   return setActiveLoginFloaters(DEFAULT_FLOATERS);
+}
+
+/** Read the platform-wide ambient-layer flags. Missing or corrupt row
+ *  → both default ON, so the login page never silently goes dark. */
+export async function getLoginFloaterFx(): Promise<LoginFloaterFx> {
+  const row = await prisma.platformSetting
+    .findUnique({ where: { key: FX_KEY } })
+    .catch(() => null);
+  if (!row) return { ...DEFAULT_FX };
+  try {
+    const parsed = JSON.parse(row.value) as Record<string, unknown>;
+    return {
+      floatersEnabled:
+        typeof parsed?.floatersEnabled === "boolean" ? parsed.floatersEnabled : true,
+      sparklesEnabled:
+        typeof parsed?.sparklesEnabled === "boolean" ? parsed.sparklesEnabled : true,
+    };
+  } catch {
+    return { ...DEFAULT_FX };
+  }
+}
+
+/** Patch the ambient-layer flags (partial — only the keys present are
+ *  changed). Returns the full, persisted flag set. */
+export async function setLoginFloaterFx(
+  patch: Partial<LoginFloaterFx>,
+): Promise<LoginFloaterFx> {
+  const current = await getLoginFloaterFx();
+  const next: LoginFloaterFx = {
+    floatersEnabled:
+      typeof patch.floatersEnabled === "boolean" ? patch.floatersEnabled : current.floatersEnabled,
+    sparklesEnabled:
+      typeof patch.sparklesEnabled === "boolean" ? patch.sparklesEnabled : current.sparklesEnabled,
+  };
+  await prisma.platformSetting.upsert({
+    where: { key: FX_KEY },
+    update: { value: JSON.stringify(next) },
+    create: { key: FX_KEY, value: JSON.stringify(next) },
+  });
+  return next;
 }

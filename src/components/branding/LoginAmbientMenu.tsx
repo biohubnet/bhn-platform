@@ -22,6 +22,11 @@ interface Props {
   bling: boolean;
   onToggleFloaters: (v: boolean) => void;
   onToggleBling: (v: boolean) => void;
+  /** Global availability — when an admin has switched a layer off
+   *  platform-wide (on /admin/login-floaters), its row is hidden here
+   *  since the per-device toggle would be a no-op. Default true. */
+  floatersAvailable?: boolean;
+  blingAvailable?: boolean;
 }
 
 export function LoginAmbientMenu({
@@ -29,6 +34,8 @@ export function LoginAmbientMenu({
   bling,
   onToggleFloaters,
   onToggleBling,
+  floatersAvailable = true,
+  blingAvailable = true,
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -79,18 +86,22 @@ export function LoginAmbientMenu({
             Ambient effects
           </p>
 
-          <SwitchRow
-            icon={<Atom size={15} aria-hidden className="text-sky-300" />}
-            label="Floating molecules"
-            checked={floaters}
-            onChange={onToggleFloaters}
-          />
-          <SwitchRow
-            icon={<Sparkles size={15} aria-hidden className="text-amber-300" />}
-            label="Sparkles"
-            checked={bling}
-            onChange={onToggleBling}
-          />
+          {floatersAvailable && (
+            <SwitchRow
+              icon={<Atom size={15} aria-hidden className="text-sky-300" />}
+              label="Floating molecules"
+              checked={floaters}
+              onChange={onToggleFloaters}
+            />
+          )}
+          {blingAvailable && (
+            <SwitchRow
+              icon={<Sparkles size={15} aria-hidden className="text-amber-300" />}
+              label="Sparkles"
+              checked={bling}
+              onChange={onToggleBling}
+            />
+          )}
 
           <p className="px-2 pt-1.5 pb-0.5 text-[10px] leading-snug text-white/35">
             Saved on this device.

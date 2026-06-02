@@ -47,6 +47,12 @@ function LoginPageInner() {
   // gates the drifting biotech molecules.
   const [showFloaters, setShowFloaters] = useState(true);
   const [showBling, setShowBling] = useState(true);
+  // Platform-wide master flags (set by admins on /admin/login-floaters).
+  // Fetched on mount; a layer shows only when BOTH the global flag and
+  // the per-device pref are on. Default true so first paint matches the
+  // common case and a slow fetch never flash-hides the stage.
+  const [globalFloaters, setGlobalFloaters] = useState(true);
+  const [globalBling, setGlobalBling] = useState(true);
 
   // Pre-fill: ?email=… from registration / employer-invite fallback
   // takes priority; otherwise fall back to localStorage Remember-Me.
@@ -71,6 +77,23 @@ function LoginPageInner() {
       if (f !== null) setShowFloaters(f !== "0");
       if (b !== null) setShowBling(b !== "0");
     } catch {}
+  }, []);
+
+  // Pull the platform-wide master flags so an admin's global off-switch
+  // (set on /admin/login-floaters) wins over the per-device pref.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/login-floaters")
+      .then((r) => r.json())
+      .then((j) => {
+        if (cancelled) return;
+        if (typeof j?.floatersEnabled === "boolean") setGlobalFloaters(j.floatersEnabled);
+        if (typeof j?.sparklesEnabled === "boolean") setGlobalBling(j.sparklesEnabled);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function toggleFloaters(v: boolean) {
@@ -166,8 +189,9 @@ function LoginPageInner() {
            the same atmosphere as the BHN petal. CSS-driven
            keyframes — no JS animation loop. Respects
            prefers-reduced-motion. Gated by the Sparkles switch in the
-           header's ambient-effects menu. */}
-      {showBling && <DeepSeaStars />}
+           header's ambient-effects menu, and by the global Sparkles
+           master switch on /admin/login-floaters. */}
+      {globalBling && showBling && <DeepSeaStars />}
 
       {/* ─── BIOMANUFACTURING MOLECULES — periphery-only.
            Data-driven now: the active list lives in the
@@ -177,8 +201,9 @@ function LoginPageInner() {
            entry through FLOATER_REGISTRY (the curated component
            library), and positions them via side + verticalPct.
            Used to be a hardcoded block of 5 floaters here. Gated by the
-           Floating-molecules switch in the ambient-effects menu. */}
-      {showFloaters && <LoginFloaters />}
+           Floating-molecules switch in the ambient-effects menu, and by
+           the global master switch on /admin/login-floaters. */}
+      {globalFloaters && showFloaters && <LoginFloaters />}
 
       {/* Vignette — gentle darken at the page edges so the
           spotlight pool reads as the focal area. */}
@@ -200,12 +225,16 @@ function LoginPageInner() {
           </span>
         </Link>
         <div className="flex items-center gap-1">
-          <LoginAmbientMenu
-            floaters={showFloaters}
-            bling={showBling}
-            onToggleFloaters={toggleFloaters}
-            onToggleBling={toggleBling}
-          />
+          {(globalFloaters || globalBling) && (
+            <LoginAmbientMenu
+              floatersAvailable={globalFloaters}
+              blingAvailable={globalBling}
+              floaters={showFloaters}
+              bling={showBling}
+              onToggleFloaters={toggleFloaters}
+              onToggleBling={toggleBling}
+            />
+          )}
           <ThemeCycler />
         </div>
       </header>

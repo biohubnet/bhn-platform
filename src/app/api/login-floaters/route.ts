@@ -9,7 +9,7 @@
  * pre-auth, so its dependency has to be too).
  */
 import { NextResponse } from "next/server";
-import { getActiveLoginFloaters } from "@/lib/login-floaters/config";
+import { getActiveLoginFloaters, getLoginFloaterFx } from "@/lib/login-floaters/config";
 
 export const runtime = "nodejs";
 // Floaters change on admin edits, not on every request — but
@@ -18,6 +18,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const floaters = await getActiveLoginFloaters();
-  return NextResponse.json({ floaters });
+  const [floaters, fx] = await Promise.all([
+    getActiveLoginFloaters(),
+    getLoginFloaterFx(),
+  ]);
+  // Spreads `floatersEnabled` + `sparklesEnabled` alongside the list so
+  // the login page can gate each layer without a second request.
+  return NextResponse.json({ floaters, ...fx });
 }

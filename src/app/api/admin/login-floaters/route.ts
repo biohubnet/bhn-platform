@@ -13,8 +13,9 @@ import { requireRole } from "@/lib/auth";
 import {
   setActiveLoginFloaters,
   resetLoginFloatersToDefaults,
+  setLoginFloaterFx,
 } from "@/lib/login-floaters/config";
-import type { FloaterInstance } from "@/lib/login-floaters/types";
+import type { FloaterInstance, LoginFloaterFx } from "@/lib/login-floaters/types";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     floaters?: unknown;
     reset?: boolean;
+    fx?: Partial<LoginFloaterFx>;
   };
 
   if (body.reset === true) {
@@ -34,13 +36,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, floaters: written });
   }
 
-  if (!Array.isArray(body.floaters)) {
-    return NextResponse.json(
-      { error: "Body must include a `floaters` array." },
-      { status: 400 },
-    );
+  // Global on/off flags — can be saved on their own (an instant toggle
+  // from the editor) or alongside a floaters-array save.
+  let fx: LoginFloaterFx | undefined;
+  if (body.fx && typeof body.fx === "object") {
+    fx = await setLoginFloaterFx(body.fx);
   }
 
-  const written = await setActiveLoginFloaters(body.floaters as FloaterInstance[]);
-  return NextResponse.json({ ok: true, floaters: written });
+  if (Array.isArray(body.floaters)) {
+    const written = await setActiveLoginFloaters(body.floaters as FloaterInstance[]);
+    return NextResponse.json({ ok: true, floaters: written, ...(fx ? { fx } : {}) });
+  }
+
+  if (fx) {
+    return NextResponse.json({ ok: true, fx });
+  }
+
+  return NextResponse.json(
+    { error: "Body must include `floaters`, `fx`, or `reset`." },
+    { status: 400 },
+  );
 }

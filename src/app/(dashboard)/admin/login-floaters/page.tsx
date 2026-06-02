@@ -16,7 +16,7 @@
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { getActiveLoginFloaters } from "@/lib/login-floaters/config";
+import { getActiveLoginFloaters, getLoginFloaterFx } from "@/lib/login-floaters/config";
 import { SWIM_CLASSES } from "@/lib/login-floaters/registry";
 import { LoginFloatersEditor } from "@/components/admin/login-floaters/LoginFloatersEditor";
 import { FloaterAquarium } from "@/components/admin/login-floaters/FloaterAquarium";
@@ -27,7 +27,10 @@ export default async function AdminLoginFloatersPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
 
-  const floaters = await getActiveLoginFloaters();
+  const [floaters, fx] = await Promise.all([
+    getActiveLoginFloaters(),
+    getLoginFloaterFx(),
+  ]);
 
   return (
     <div className="space-y-5">
@@ -46,6 +49,7 @@ export default async function AdminLoginFloatersPage() {
       />
       <LoginFloatersEditor
         initialFloaters={floaters}
+        initialFx={fx}
         swimClasses={[...SWIM_CLASSES]}
       />
 

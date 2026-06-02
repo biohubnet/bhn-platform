@@ -37,3 +37,18 @@ export interface FloaterInstance {
    *  lab-swim-rev · lab-swim-drift. */
   swimClass?: string;
 }
+
+/** Platform-wide master switches for the two ambient layers on the
+ *  /login backdrop. Stored in a PlatformSetting row separate from the
+ *  floater array (so the list logic stays untouched), and set from
+ *  /admin/login-floaters. `floatersEnabled` gates the drifting
+ *  molecules (<LoginFloaters>); `sparklesEnabled` gates the twinkle
+ *  (<DeepSeaStars>). Both default ON. The /login page also exposes a
+ *  per-visitor menu that can only dim a layer locally — the effective
+ *  visibility is `global AND device`. Kept in this prisma-free types
+ *  file so the client editor can import the type without pulling the
+ *  server config (which imports prisma). */
+export interface LoginFloaterFx {
+  floatersEnabled: boolean;
+  sparklesEnabled: boolean;
+}

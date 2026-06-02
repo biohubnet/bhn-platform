@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Login · toggle the ambient effects — Jun 2026
   {
     title: "Login · switch the floating molecules and sparkles on or off",
-    body: "The sign-in page has a new Sparkles menu in the top bar, next to the theme switch. Open it for two toggles: Floating molecules (the drifting biotech glyphs) and Sparkles (the twinkling marine-snow effect). Turn either off if you'd rather a calmer stage — your choice is saved on that device. Both still respect reduced-motion settings, and both default to on.",
+    body: "The sign-in page has a new Sparkles menu in the top bar, next to the theme switch. Open it for two toggles: Floating molecules (the drifting biotech glyphs) and Sparkles (the twinkling marine-snow effect). Turn either off if you'd rather a calmer stage — your choice is saved on that device. Both still respect reduced-motion settings, and both default to on.\n\nAdmins get a platform-wide version too: the same two master switches now sit at the top of the Login Floaters editor (Insight → Login-screen floaters). Flip a layer off there to hide it for everyone — your seated floater gallery stays saved and comes back when you switch the molecules on again. The login-page menu only lets a visitor dim a layer locally; the admin switch is the global default (effective visibility = global AND per-device).",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,

@@ -38,17 +38,20 @@ import { useRouter } from "next/navigation";
 import {
   Trash2, RotateCcw, Save, Loader2, AlertCircle, CheckCircle2, Check, X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { FLOATER_REGISTRY, FLOATER_LIST, type FloaterDef } from "@/lib/login-floaters/registry";
-import type { FloaterInstance } from "@/lib/login-floaters/types";
+import type { FloaterInstance, LoginFloaterFx } from "@/lib/login-floaters/types";
 
 interface Props {
   initialFloaters: FloaterInstance[];
+  initialFx: LoginFloaterFx;
   swimClasses: string[];
 }
 
 export function LoginFloatersEditor({
   initialFloaters,
+  initialFx,
   swimClasses,
 }: Props) {
   const router = useRouter();
@@ -56,6 +59,12 @@ export function LoginFloatersEditor({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState<string | null>(null);
+  // Global on/off flags for the two ambient layers. Toggled instantly
+  // (own transition + feedback note), independent of the floater list's
+  // Save button below.
+  const [fx, setFx] = useState<LoginFloaterFx>(initialFx);
+  const [fxPending, startFxTransition] = useTransition();
+  const [fxNote, setFxNote] = useState<string | null>(null);
 
   function patchAt(idx: number, patch: Partial<FloaterInstance>) {
     setFloaters((cur) => cur.map((f, i) => (i === idx ? { ...f, ...patch } : f)));
@@ -146,6 +155,43 @@ export function LoginFloatersEditor({
     });
   }
 
+  /** Instant-save a global ambient-layer flag. Optimistic: flips the
+   *  switch immediately, reverts the touched keys if the write fails. */
+  function toggleFx(patch: Partial<LoginFloaterFx>) {
+    setFx((cur) => ({ ...cur, ...patch }));
+    setFxNote(null);
+    const revert = () =>
+      setFx((cur) => {
+        const next = { ...cur };
+        for (const k of Object.keys(patch) as (keyof LoginFloaterFx)[]) next[k] = !patch[k];
+        return next;
+      });
+    startFxTransition(async () => {
+      try {
+        const r = await fetch("/api/admin/login-floaters", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fx: patch }),
+        });
+        const j = (await r.json().catch(() => ({}))) as {
+          ok?: boolean;
+          fx?: LoginFloaterFx;
+          error?: string;
+        };
+        if (!r.ok || !j.ok) {
+          revert();
+          setFxNote(j.error ?? "Couldn't save.");
+          return;
+        }
+        if (j.fx) setFx(j.fx);
+        setFxNote("Saved.");
+      } catch (e) {
+        revert();
+        setFxNote((e as Error).message);
+      }
+    });
+  }
+
   // ── Active editing surface (bottom) ───────────────────────────
   const usedIds = new Set(floaters.map((f) => f.id));
 
@@ -176,6 +222,49 @@ export function LoginFloatersEditor({
 
   return (
     <div className="space-y-4">
+      {/* Master visibility switches — the platform-wide on/off for the
+          two ambient layers on /login. Saved instantly. The /login page
+          also has a per-visitor menu that can dim a layer locally. */}
+      <Card className="px-5 py-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-fg">Ambient layers on /login</p>
+            <p className="mt-0.5 text-[12px] text-muted max-w-[62ch]">
+              Master switches for the whole login backdrop. Turn a layer off to hide it
+              for everyone — your seated floaters below stay saved and reappear when you
+              switch the molecules back on. Saved instantly.
+            </p>
+          </div>
+          {fxNote && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-xs",
+                fxNote === "Saved." ? "text-emerald-700" : "text-rose-700",
+              )}
+            >
+              {fxNote === "Saved." ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+              {fxNote}
+            </span>
+          )}
+        </div>
+        <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+          <FxToggle
+            label="Floating molecules"
+            hint="The drifting biotech glyphs you pick below."
+            checked={fx.floatersEnabled}
+            disabled={fxPending}
+            onChange={(v) => toggleFx({ floatersEnabled: v })}
+          />
+          <FxToggle
+            label="Sparkles"
+            hint="The twinkling marine-snow particles."
+            checked={fx.sparklesEnabled}
+            disabled={fxPending}
+            onChange={(v) => toggleFx({ sparklesEnabled: v })}
+          />
+        </div>
+      </Card>
+
       {/* ── GALLERY ────────────────────────────────────────────────
           The visual picker sits at the TOP — picking what to seat
           on /login is the primary task. Replaces the standalone
@@ -526,6 +615,55 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </span>
       <div className="mt-1">{children}</div>
     </label>
+  );
+}
+
+/** A labelled master on/off switch for one ambient layer. */
+function FxToggle({
+  label,
+  hint,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-4 rounded-xl border px-3.5 py-3 transition-colors",
+        checked ? "border-brand-200 bg-brand-50/40" : "border-line bg-card-solid",
+      )}
+    >
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-fg">{label}</p>
+        <p className="mt-0.5 text-[11px] text-muted">{hint}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={`${label}: ${checked ? "on" : "off"}`}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={cn(
+          "relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-card",
+          checked ? "bg-brand-600" : "bg-line",
+        )}
+      >
+        <span
+          aria-hidden
+          className={cn(
+            "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+            checked ? "translate-x-5" : "translate-x-0",
+          )}
+        />
+      </button>
+    </div>
   );
 }
 

@@ -33,6 +33,17 @@ export interface TourStep {
 export const TOUR_VERSION = "2026.06.02b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Admin · login ambient master switches — Jun 2026
+  {
+    id: "admin.login-floater-master-switches",
+    title: "Switch the login backdrop's ambient layers on or off",
+    body: "Insight → Login-screen floaters now opens with two master switches: Floating molecules and Sparkles. Flip either off to hide that layer on the public /login page for everyone — your seated floater gallery stays saved. Saved instantly, no deploy needed.",
+    path: "/admin/login-floaters",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Login Floaters", href: "/admin/login-floaters" },
+    since: "2026.06.02b",
+  },
   // ─── Admin · Users last-login + role groups + HR seat — Jun 2026
   {
     id: "admin.users-classification-hr",
