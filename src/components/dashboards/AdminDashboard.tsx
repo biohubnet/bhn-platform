@@ -186,7 +186,7 @@ export async function AdminDashboard({
       ? {
           headline: (
             <>
-              Hi, {firstName} — <em>{totalPending} {totalPending === 1 ? "approval" : "approvals"}</em> waiting.
+              Hi, {firstName} — <span className="text-[0.5em] align-baseline"><em>{totalPending} {totalPending === 1 ? "approval" : "approvals"}</em> waiting.</span>
             </>
           ),
           dek: "Trainees across credit applications, role-change requests, and pathway enrolments are blocked until you triage. Most rows take less than a minute.",
