@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
  *  Security fix (PT-02, May 2026): previous version accepted any role
  *  value, allowing admin → superadmin elevation via this endpoint. */
 const ALLOWED_ROLES = [
-  "trainee", "evaluating", "employer", "industrial_mentor",
+  "trainee", "evaluating", "employer", "hr", "industrial_mentor",
   "engage_hqp_advisor", "equip_grant_reviewer", "instructor",
   "admin",
 ] as const;

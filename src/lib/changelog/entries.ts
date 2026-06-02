@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Admin · last-login column + role classification + HR seat — Jun 2026
+  {
+    title: "Admin · Users gains a live Last Login column, role-group filters, and an HR seat",
+    body: "Three upgrades to /admin/users. (1) Last Login is now a real column — every successful sign-in (password or email-code) stamps the time, so you can see who's active at a glance. It populates going forward, from each account's next sign-in. (2) A Group row above the table buckets the current tab by role — All / Admins / HR / Trainees / Other — each with a live count; click one to filter. It's a second lens layered on the Real / Demo / Phantom account-kind tabs, so you can answer \"who are my admins\" versus \"who are my trainees\" without scanning rows. (3) A new HR role joins the roster: an internal people-ops seat that sits outside the admin tier — it grants no admin access on its own and is gated per-route, exactly like the employer seat. Assign it from the role dropdown in the batch bar or per row, and superadmins can preview-as HR from the view-as switch.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Admin · batch-delete demo / test users — Jun 2026
   {
     title: "Admin · batch-delete demo and test users in one sweep",

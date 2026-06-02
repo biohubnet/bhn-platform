@@ -35,12 +35,33 @@ interface Props {
   kind: string;
 }
 
-const ROLES = ["trainee", "evaluating", "employer", "industrial_mentor", "instructor", "admin", "superadmin"];
+const ROLES = ["trainee", "evaluating", "employer", "hr", "industrial_mentor", "instructor", "admin", "superadmin"];
+
+/** Coarse role buckets for the classification chips above the table.
+ *  Every role maps to exactly one bucket so the counts always sum to the
+ *  full list. "Other" catches employer / mentor / instructor / the two
+ *  committee seats — anything that isn't a platform admin, internal HR,
+ *  or a learner (trainee/evaluating). */
+type RoleGroup = "all" | "admins" | "hr" | "trainees" | "other";
+function roleGroupOf(role: string): Exclude<RoleGroup, "all"> {
+  if (role === "admin" || role === "superadmin") return "admins";
+  if (role === "hr") return "hr";
+  if (role === "trainee" || role === "evaluating") return "trainees";
+  return "other";
+}
+const ROLE_GROUP_TABS: { key: RoleGroup; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "admins", label: "Admins" },
+  { key: "hr", label: "HR" },
+  { key: "trainees", label: "Trainees" },
+  { key: "other", label: "Other" },
+];
 
 export function UsersTableClient({ users, groups, kind }: Props) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("");
+  const [roleGroup, setRoleGroup] = useState<RoleGroup>("all");
   const [modal, setModal] = useState<null | "role" | "credits" | "group" | "delete">(null);
   const [pendingRole, setPendingRole] = useState("trainee");
   const [pendingAmount, setPendingAmount] = useState("100");
@@ -50,15 +71,35 @@ export function UsersTableClient({ users, groups, kind }: Props) {
   const canBatchDelete = kind !== "real";
 
   const visible = useMemo(() => {
+    let list =
+      roleGroup === "all"
+        ? users
+        : users.filter((u) => roleGroupOf(u.role) === roleGroup);
     const q = filter.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
-        u.email.toLowerCase().includes(q) ||
-        u.name?.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q)
-    );
-  }, [users, filter]);
+    if (q) {
+      list = list.filter(
+        (u) =>
+          u.email.toLowerCase().includes(q) ||
+          u.name?.toLowerCase().includes(q) ||
+          u.role.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [users, filter, roleGroup]);
+
+  // Per-bucket counts for the classification chips — computed from the
+  // full (unfiltered) set so each chip shows the true size of its group.
+  const groupCounts = useMemo(() => {
+    const c: Record<RoleGroup, number> = {
+      all: users.length,
+      admins: 0,
+      hr: 0,
+      trainees: 0,
+      other: 0,
+    };
+    for (const u of users) c[roleGroupOf(u.role)]++;
+    return c;
+  }, [users]);
 
   const allVisibleSelected =
     visible.length > 0 && visible.every((u) => selected.has(u.id));
@@ -120,6 +161,43 @@ export function UsersTableClient({ users, groups, kind }: Props) {
 
   return (
     <div className="space-y-3">
+      {/* Role classification — bucket the current account-kind view by
+          role group. Counts come from the full set; clicking filters. */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-subtle">
+          Group
+        </span>
+        {ROLE_GROUP_TABS.filter(
+          (t) => t.key !== "other" || groupCounts.other > 0
+        ).map((t) => {
+          const active = roleGroup === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setRoleGroup(t.key)}
+              aria-pressed={active}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                active
+                  ? "border-brand-600 bg-brand-600 text-white"
+                  : "border-line bg-card text-muted hover:border-brand-300 hover:text-fg"
+              )}
+            >
+              {t.label}
+              <span
+                className={cn(
+                  "tabular-nums text-[11px]",
+                  active ? "text-brand-50" : "text-subtle"
+                )}
+              >
+                {groupCounts[t.key]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Filter */}
       <div className="flex items-center gap-3">
         <Input
@@ -268,6 +346,7 @@ export function UsersTableClient({ users, groups, kind }: Props) {
                         "text-xs px-2 py-0.5 rounded-full font-medium",
                         user.role === "superadmin" ? "bg-rose-100 text-rose-700" :
                         user.role === "admin" ? "bg-brand-100 text-brand-700" :
+                        user.role === "hr" ? "bg-sky-100 text-sky-700" :
                         user.role === "instructor" ? "bg-violet-100 text-violet-700" :
                         user.role === "evaluating" ? "bg-amber-100 text-amber-700" :
                         "bg-elevated text-muted"

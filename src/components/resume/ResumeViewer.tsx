@@ -192,6 +192,7 @@ function roleLabel(role: string) {
     case "admin":             return "Admin";
     case "superadmin":        return "Admin";
     case "employer":          return "Employer";
+    case "hr":                return "HR";
     default:                  return "User";
   }
 }

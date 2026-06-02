@@ -12,6 +12,7 @@ const TARGETS: { id: string; label: string; description: string }[] = [
   { id: "trainee",              label: "Trainee",              description: "Default learner experience" },
   { id: "evaluating",           label: "Evaluating",           description: "Trial-tier learner" },
   { id: "employer",             label: "Employer HR",          description: "Industry partner posting jobs" },
+  { id: "hr",                   label: "HR (internal)",        description: "Internal people-ops / HR seat" },
   { id: "industrial_mentor",    label: "Industrial Mentor",    description: "Industry professional mentoring trainees" },
   { id: "engage_hqp_advisor",   label: "ENGAGE HQP Advisor",   description: "Trainee-side HQP advisor seat (ENGAGE pillar)" },
   { id: "equip_grant_reviewer", label: "EQUIP Grant Reviewer", description: "EQUIP Grant Review committee seat" },

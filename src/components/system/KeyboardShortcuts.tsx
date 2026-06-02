@@ -63,6 +63,7 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
     trainee:              "Trainee",
     evaluating:           "Evaluating",
     employer:             "Employer HR",
+    hr:                   "HR",
     industrial_mentor:    "Industrial Mentor",
     engage_hqp_advisor:   "ENGAGE HQP Advisor",
     equip_grant_reviewer: "EQUIP Grant Reviewer",

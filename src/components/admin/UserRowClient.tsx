@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const ROLES = ["trainee", "evaluating", "employer", "industrial_mentor", "instructor", "admin", "superadmin"];
+const ROLES = ["trainee", "evaluating", "employer", "hr", "industrial_mentor", "instructor", "admin", "superadmin"];
 
 interface UserData {
   id: string;

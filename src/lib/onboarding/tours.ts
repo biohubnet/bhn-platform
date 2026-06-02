@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.02a";
+export const TOUR_VERSION = "2026.06.02b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Admin · Users last-login + role groups + HR seat — Jun 2026
+  {
+    id: "admin.users-classification-hr",
+    title: "Users: Last Login, role groups & a new HR seat",
+    body: "The /admin/users table now has a live Last Login column (stamped on every sign-in) and a Group row that buckets the current tab by role — All / Admins / HR / Trainees / Other — each with a count; click one to filter. There's also a new HR role for internal people-ops staff: assign it from the role dropdown. HR sits outside the admin tier, so it grants no admin access on its own.",
+    path: "/admin/users",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Users", href: "/admin/users" },
+    since: "2026.06.02b",
+  },
   // ─── Admin · batch-delete demo / test users — Jun 2026
   {
     id: "admin.users-batch-delete",

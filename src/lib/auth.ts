@@ -216,6 +216,19 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+  events: {
+    // Stamp last sign-in time on every successful authentication so the
+    // admin Users table "Last Login" column reflects real activity. Fires
+    // for both credential providers (password + email-code). Best effort —
+    // a write failure must never block the login itself.
+    async signIn({ user }) {
+      const id = (user as { id?: string })?.id;
+      if (!id) return;
+      await prisma.user
+        .update({ where: { id }, data: { lastLoginAt: new Date() } })
+        .catch(() => undefined);
+    },
+  },
 };
 
 /** Raw session — never modified for impersonation. Use for auth on
@@ -260,6 +273,7 @@ export async function requireSession() {
  * Roles, ordered:
  *   trainee / evaluating → learner (0)        [legacy alias: 'user']
  *   employer             → HR partner posting jobs (0, gated separately)
+ *   hr                   → internal HR / people-ops seat (0, gated separately)
  *   engage_hqp_advisor   → trainee-side HQP advisor seat (1)
  *   equip_grant_reviewer → EQUIP grant review committee seat (1)
  *   instructor           → authors courses (1)
@@ -279,6 +293,7 @@ export const ROLE_RANK: Record<string, number> = {
   trainee: 0,
   evaluating: 0,
   employer: 0,              // outside the learner-staff progression — gated separately
+  hr: 0,                    // internal HR / people-ops seat — gated per-route, NOT auto-admin
   industrial_mentor: 0,     // industry professional offering guidance to trainees;
                             //   external like employer, gated per-route, not staff
   engage_hqp_advisor: 1,    // ENGAGE HQP Advisory committee seat
@@ -292,6 +307,7 @@ export type Role =
   | "trainee"
   | "evaluating"
   | "employer"
+  | "hr"
   | "industrial_mentor"
   | "engage_hqp_advisor"
   | "equip_grant_reviewer"
@@ -311,6 +327,13 @@ export function isIndustrialMentor(role: string) {
 /** Is this account an employer (HR partner who posts jobs / reviews applicants)? */
 export function isEmployer(role: string) {
   return role === "employer";
+}
+
+/** Internal HR / people-ops seat. Like employer it sits at rank 0 and is
+ *  gated per-route — being HR grants no admin access on its own. Use it to
+ *  classify internal people-ops staff distinctly from platform admins. */
+export function isHr(role: string) {
+  return role === "hr";
 }
 
 export async function requireRole(minRole: "instructor" | "admin" | "superadmin") {
