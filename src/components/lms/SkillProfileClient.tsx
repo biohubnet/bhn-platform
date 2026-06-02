@@ -130,7 +130,7 @@ export function SkillProfileClient({
       <section className="bg-card border border-line rounded-2xl p-5">
         <h2 className="font-semibold text-fg mb-3">Skills on your profile</h2>
         {mine.length === 0 ? (
-          <div className="py-8 px-6 text-center space-y-3 rounded-xl border border-dashed border-line bg-bg/30">
+          <div className="py-8 px-6 text-center space-y-3 rounded-xl border border-dashed border-line bg-background/30">
             <span className="inline-flex w-12 h-12 rounded-xl bg-brand-50 text-brand-700 items-center justify-center ring-1 ring-inset ring-brand-200">
               <Sparkles size={20} />
             </span>

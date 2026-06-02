@@ -369,7 +369,7 @@ export function VersionHistoryDrawer({ open, onClose, onReverted, ownerId, curre
           aria-label="Revision preview"
         >
           <div
-            className="bg-bg rounded-2xl border border-line shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"
+            className="bg-background rounded-2xl border border-line shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <header className="px-4 py-3 border-b border-line flex items-center justify-between">

@@ -264,7 +264,7 @@ export function PullFromMasterDrawer({ open, onClose, content, onSendToTarget }:
                   return (
                     <li
                       key={b.id}
-                      className="rounded-md bg-bg/40 ring-1 ring-line/60 border-l-4 p-2.5"
+                      className="rounded-md bg-background/40 ring-1 ring-line/60 border-l-4 p-2.5"
                       style={{ borderLeftColor: SECTION_KIND_COLOR[sectionKind] }}
                     >
                       <div className="flex items-start gap-2">

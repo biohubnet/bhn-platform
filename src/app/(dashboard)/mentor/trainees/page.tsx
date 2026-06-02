@@ -90,7 +90,7 @@ export default async function MentorTraineesPage() {
         ) : (
           <div className="rounded-2xl border border-line bg-card-solid overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-bg/40 border-b border-line">
+              <thead className="bg-background/40 border-b border-line">
                 <tr className="text-[10px] uppercase tracking-[0.18em] font-bold text-fg-subtle">
                   <th className="text-left px-4 py-2.5">Trainee</th>
                   <th className="text-left px-3 py-2.5">Comments</th>
@@ -104,7 +104,7 @@ export default async function MentorTraineesPage() {
                   const open = openById.get(r.id) ?? 0;
                   const totalComments = r._count.comments;
                   return (
-                    <tr key={r.id} className="border-t border-line/60 hover:bg-bg/30 transition-colors">
+                    <tr key={r.id} className="border-t border-line/60 hover:bg-background/30 transition-colors">
                       <td className="px-4 py-2.5">
                         <div className="font-medium text-fg">{r.user.name ?? r.user.email}</div>
                         <div className="text-[11px] text-fg-subtle">{r.user.email}</div>

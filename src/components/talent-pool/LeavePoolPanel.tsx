@@ -297,7 +297,7 @@ function ExitSurveyModal({
                 value={feedback.jobSource}
                 onChange={(e) => setFeedback((p) => ({ ...p, jobSource: e.target.value }))}
                 placeholder="Company name + how you found them (LinkedIn / direct outreach / BHN partner / etc.)"
-                className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+                className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
               />
             </Field>
           )}
@@ -348,7 +348,7 @@ function ExitSurveyModal({
               onChange={(e) => setFeedback((p) => ({ ...p, whatWorkedWell: e.target.value }))}
               rows={3}
               maxLength={4000}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             />
           </Field>
           <Field label="What would you change?" hint="What we should do differently for the next person.">
@@ -357,7 +357,7 @@ function ExitSurveyModal({
               onChange={(e) => setFeedback((p) => ({ ...p, whatToImprove: e.target.value }))}
               rows={3}
               maxLength={4000}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             />
           </Field>
           <Field label="Anything else you want to share?">
@@ -366,7 +366,7 @@ function ExitSurveyModal({
               onChange={(e) => setFeedback((p) => ({ ...p, additionalComments: e.target.value }))}
               rows={2}
               maxLength={4000}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             />
           </Field>
 
@@ -443,7 +443,7 @@ function ScaleField({
               className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
                 active
                   ? "bg-brand-600 text-white"
-                  : "bg-bg border border-line text-muted hover:text-fg hover:border-brand-300"
+                  : "bg-background border border-line text-muted hover:text-fg hover:border-brand-300"
               }`}
             >
               {n}

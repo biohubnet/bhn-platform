@@ -188,7 +188,7 @@ export function ResumePrintView({ content, fallbackName, fallbackEmail }: Props)
       ) : (
       <>
       {/* Toolbar — only visible on screen, hidden from print. */}
-      <div className="no-print sticky top-0 z-10 bg-bg/95 backdrop-blur-sm border-b border-line">
+      <div className="no-print sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-line">
         <div className="max-w-[8.5in] mx-auto px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
           <Link
             href="/profile/resume"

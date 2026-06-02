@@ -125,7 +125,7 @@ export default async function AdminFeedbackPage() {
           {reasonRows.map((r) => (
             <li key={r.key} className="grid grid-cols-[180px_1fr_30px] gap-2 items-center text-xs">
               <span className="text-fg truncate">{r.label}</span>
-              <div className="h-2 rounded-full bg-bg overflow-hidden">
+              <div className="h-2 rounded-full bg-background overflow-hidden">
                 <div
                   className="h-full bg-brand-500"
                   style={{ width: `${(r.count / maxReason) * 100}%` }}
@@ -199,7 +199,7 @@ export default async function AdminFeedbackPage() {
         <FeedbackInviteForm />
 
         {invitations.length > 0 && (
-          <div className="rounded-xl border border-line bg-bg overflow-x-auto">
+          <div className="rounded-xl border border-line bg-background overflow-x-auto">
             <table className="w-full text-xs">
               <thead className="bg-elevated/60 text-[10px] uppercase tracking-[0.14em] font-bold text-subtle">
                 <tr>

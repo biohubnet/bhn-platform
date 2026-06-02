@@ -211,7 +211,7 @@ export function SimpleRegistrationForm({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Jane Smith"
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
               required
               autoComplete="name"
             />
@@ -226,7 +226,7 @@ export function SimpleRegistrationForm({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
               required
               autoComplete="email"
             />
@@ -237,7 +237,7 @@ export function SimpleRegistrationForm({
               value={organization}
               onChange={(e) => setOrganization(e.target.value)}
               placeholder="University of Toronto"
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
               autoComplete="organization"
             />
           </Field>
@@ -277,7 +277,7 @@ export function SimpleRegistrationForm({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+1 416 555 1234"
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono"
               autoComplete="tel"
             />
           </Field>
@@ -351,7 +351,7 @@ export function SimpleRegistrationForm({
               value={dietary}
               onChange={(e) => setDietary(e.target.value)}
               placeholder="Vegetarian, nut allergy, etc."
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             />
           </Field>
           <Field label="Accessibility needs" hint="Optional. Wheelchair access, hearing loop, captions, etc.">
@@ -360,7 +360,7 @@ export function SimpleRegistrationForm({
               value={accessibility}
               onChange={(e) => setAccessibility(e.target.value)}
               placeholder="Anything we should know"
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             />
           </Field>
         </div>
@@ -402,7 +402,7 @@ function CustomQuestionField({
   onChange: (v: string | string[]) => void;
 }) {
   const baseInputClass =
-    "w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm";
+    "w-full bg-background border border-line rounded-lg px-3 py-2 text-sm";
 
   if (question.kind === "text") {
     return (

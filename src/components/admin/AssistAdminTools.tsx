@@ -160,7 +160,7 @@ export function AssistAdminTools() {
         </p>
       )}
       {result && (
-        <pre className="text-[10px] font-mono bg-fg text-bg p-3 rounded-lg overflow-x-auto max-h-64">
+        <pre className="text-[10px] font-mono bg-fg text-background p-3 rounded-lg overflow-x-auto max-h-64">
 {result}
         </pre>
       )}

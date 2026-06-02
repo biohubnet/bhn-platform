@@ -123,7 +123,7 @@ export function EventBasicsEditor({
             value={form.title}
             onChange={(e) => update("title", e.target.value)}
             required
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
         <Field label="Tagline" hint="One-line marketing hook shown on the landing-page hero.">
@@ -131,7 +131,7 @@ export function EventBasicsEditor({
             type="text"
             value={form.tagline}
             onChange={(e) => update("tagline", e.target.value)}
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
         <Field label="Description" hint="Markdown supported. Rendered on the landing page.">
@@ -139,7 +139,7 @@ export function EventBasicsEditor({
             value={form.description}
             onChange={(e) => update("description", e.target.value)}
             rows={5}
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono leading-relaxed"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono leading-relaxed"
           />
         </Field>
         <Field label="Cover image" hint="Optional hero image. Upload a file (PNG/JPG/WebP, ≤ 8 MB) or paste any URL. Leave blank for the default brand gradient.">
@@ -160,7 +160,7 @@ export function EventBasicsEditor({
               value={form.startDate}
               onChange={(e) => update("startDate", e.target.value)}
               required
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             />
           </Field>
           <Field label="End date &amp; time" required>
@@ -169,7 +169,7 @@ export function EventBasicsEditor({
               value={form.endDate}
               onChange={(e) => update("endDate", e.target.value)}
               required
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             />
           </Field>
         </div>
@@ -178,7 +178,7 @@ export function EventBasicsEditor({
             type="text"
             value={form.timezone}
             onChange={(e) => update("timezone", e.target.value)}
-            className="w-full sm:max-w-xs bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+            className="w-full sm:max-w-xs bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono"
           />
         </Field>
       </Card>
@@ -190,7 +190,7 @@ export function EventBasicsEditor({
             type="text"
             value={form.mainVenueName}
             onChange={(e) => update("mainVenueName", e.target.value)}
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
         <Field label="Venue address">
@@ -198,7 +198,7 @@ export function EventBasicsEditor({
             type="text"
             value={form.mainVenueAddress}
             onChange={(e) => update("mainVenueAddress", e.target.value)}
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
         <Field label="Google Maps URL" hint="Direct link used by the public landing page.">
@@ -207,7 +207,7 @@ export function EventBasicsEditor({
             value={form.mainVenueMapUrl}
             onChange={(e) => update("mainVenueMapUrl", e.target.value)}
             placeholder="https://maps.google.com/…"
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
         <Field label="Accommodation info" hint="Hotel block, travel tips, etc. Markdown supported.">
@@ -215,7 +215,7 @@ export function EventBasicsEditor({
             value={form.accommodationInfo}
             onChange={(e) => update("accommodationInfo", e.target.value)}
             rows={4}
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono leading-relaxed"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono leading-relaxed"
           />
         </Field>
       </Card>
@@ -228,7 +228,7 @@ export function EventBasicsEditor({
             onChange={(e) =>
               update("status", e.target.value as EventBasicsForm["status"])
             }
-            className="w-full sm:max-w-xs bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full sm:max-w-xs bg-background border border-line rounded-lg px-3 py-2 text-sm"
           >
             <option value="draft">Draft</option>
             <option value="published">Published</option>
@@ -244,7 +244,7 @@ export function EventBasicsEditor({
               type="datetime-local"
               value={form.registrationOpensAt}
               onChange={(e) => update("registrationOpensAt", e.target.value)}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             />
           </Field>
           <Field
@@ -255,7 +255,7 @@ export function EventBasicsEditor({
               type="datetime-local"
               value={form.registrationClosesAt}
               onChange={(e) => update("registrationClosesAt", e.target.value)}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             />
           </Field>
         </div>
@@ -377,7 +377,7 @@ function CoverImageInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="…or paste an image URL"
-        className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+        className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
       />
       {uploadError && (
         <p className="text-xs text-rose-700">{uploadError}</p>

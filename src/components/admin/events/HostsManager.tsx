@@ -103,7 +103,7 @@ export function HostsManager({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="email@example.com"
-            className="bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="bg-background border border-line rounded-lg px-3 py-2 text-sm"
             required
           />
           <input
@@ -111,7 +111,7 @@ export function HostsManager({
             value={role}
             onChange={(e) => setRole(e.target.value)}
             placeholder="host"
-            className="bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </div>
         <p className="text-xs text-subtle">

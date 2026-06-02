@@ -110,7 +110,7 @@ export function RegistrationEditor({
             <select
               value={form.attendeeType}
               onChange={(e) => update("attendeeType", e.target.value as AttendeeType)}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             >
               <option value="trainee">Trainee</option>
               <option value="industry">Industry</option>
@@ -128,7 +128,7 @@ export function RegistrationEditor({
             <select
               value={form.registrationStatus}
               onChange={(e) => update("registrationStatus", e.target.value as RegistrationStatus)}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             >
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
@@ -140,7 +140,7 @@ export function RegistrationEditor({
             <select
               value={form.paymentStatus}
               onChange={(e) => update("paymentStatus", e.target.value as PaymentStatus)}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             >
               <option value="pending">Pending</option>
               <option value="paid">Paid</option>
@@ -179,7 +179,7 @@ export function RegistrationEditor({
             onChange={(e) => update("dietaryRestrictions", e.target.value)}
             maxLength={500}
             placeholder="vegetarian · gluten-free · nut allergy"
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
         <Field label="Accessibility needs">
@@ -189,7 +189,7 @@ export function RegistrationEditor({
             maxLength={1000}
             rows={3}
             placeholder="Wheelchair access · ASL · large-print materials · …"
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm resize-y"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm resize-y"
           />
         </Field>
       </fieldset>
@@ -209,7 +209,7 @@ export function RegistrationEditor({
           rows={3}
           maxLength={2000}
           placeholder="VIP — speaker at session 2 · seat near power outlet · …"
-          className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm resize-y"
+          className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm resize-y"
         />
       </fieldset>
 

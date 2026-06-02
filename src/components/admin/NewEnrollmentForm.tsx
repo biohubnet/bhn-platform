@@ -219,11 +219,11 @@ function SingleUserMode({
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
                 placeholder="Search name or email…"
-                className="w-full bg-bg border border-line rounded-lg pl-8 pr-3 py-2 text-sm"
+                className="w-full bg-background border border-line rounded-lg pl-8 pr-3 py-2 text-sm"
                 autoFocus
               />
             </label>
-            <ul className="max-h-[420px] overflow-y-auto border border-line rounded-lg bg-bg divide-y divide-line">
+            <ul className="max-h-[420px] overflow-y-auto border border-line rounded-lg bg-background divide-y divide-line">
               {filteredUsers.length === 0 ? (
                 <li className="px-3 py-6 text-center text-xs text-muted italic">
                   No matching users.
@@ -280,11 +280,11 @@ function SingleUserMode({
             value={courseQuery}
             onChange={(e) => setCourseQuery(e.target.value)}
             placeholder="Filter courses…"
-            className="w-full bg-bg border border-line rounded-lg pl-8 pr-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg pl-8 pr-3 py-2 text-sm"
           />
         </label>
 
-        <ul className="max-h-[300px] overflow-y-auto border border-line rounded-lg bg-bg divide-y divide-line">
+        <ul className="max-h-[300px] overflow-y-auto border border-line rounded-lg bg-background divide-y divide-line">
           {filteredCourses.length === 0 ? (
             <li className="px-3 py-6 text-center text-xs text-muted italic">
               No matching courses.
@@ -330,7 +330,7 @@ function SingleUserMode({
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full sm:max-w-xs bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full sm:max-w-xs bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
           <p className="text-[11px] text-subtle mt-1">
             Applies to every selected course. Skip for no deadline.
@@ -445,7 +445,7 @@ function CsvMode({
         value={csv}
         onChange={(e) => setCsv(e.target.value)}
         placeholder={"email,course_title,due_date\nphantom-a1b2@bhn.test,GMP Basics,\nphantom-a1b2@bhn.test,Aseptic Processing,2026-08-01"}
-        className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+        className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono"
       />
 
       {error && (

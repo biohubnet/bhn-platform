@@ -142,7 +142,7 @@ function Composer() {
             injects custom CSS variables so the Studio hero picks up
             the composer's values. */}
         <div
-          className="rounded-2xl ring-1 ring-line bg-bg overflow-hidden"
+          className="rounded-2xl ring-1 ring-line bg-background overflow-hidden"
           style={{
             ...tokenStyleVars(tokens),
             // Custom alpha override for tile bg — read by an inline

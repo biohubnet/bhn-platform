@@ -67,7 +67,7 @@ export function FeedbackInviteForm() {
   }
 
   return (
-    <div className="rounded-xl border border-dashed border-line bg-bg p-3 space-y-3">
+    <div className="rounded-xl border border-dashed border-line bg-background p-3 space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label className="block">
           <span className="text-xs font-bold text-fg">Recipient email (optional)</span>

@@ -237,7 +237,7 @@ function QuestionEditor({
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="What is your t-shirt size?"
-          className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+          className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           required
         />
       </Field>
@@ -252,7 +252,7 @@ function QuestionEditor({
           value={key}
           onChange={(e) => setKey(e.target.value)}
           placeholder="tshirt-size"
-          className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+          className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono"
           required
         />
       </Field>
@@ -263,7 +263,7 @@ function QuestionEditor({
           value={hint ?? ""}
           onChange={(e) => setHint(e.target.value)}
           placeholder="We'll have a few extras at registration."
-          className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+          className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
         />
       </Field>
 
@@ -271,7 +271,7 @@ function QuestionEditor({
         <select
           value={kind}
           onChange={(e) => setKind(e.target.value as QuestionRow["kind"])}
-          className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+          className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
         >
           {Object.entries(KIND_LABELS).map(([k, lbl]) => (
             <option key={k} value={k}>{lbl}</option>
@@ -293,7 +293,7 @@ function QuestionEditor({
                     setOptions(next);
                   }}
                   placeholder="Label"
-                  className="flex-1 bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+                  className="flex-1 bg-background border border-line rounded-lg px-3 py-2 text-sm"
                 />
                 <input
                   type="text"
@@ -304,7 +304,7 @@ function QuestionEditor({
                     setOptions(next);
                   }}
                   placeholder="value"
-                  className="w-32 bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+                  className="w-32 bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono"
                 />
                 <button
                   type="button"

@@ -206,7 +206,7 @@ export function CourseEditButton({ course }: { course: CourseShape }) {
               flow that pathways already use. When on, the user-facing
               enrol creates a Pending row (instead of Active) and skips
               the credit deduction; the deduction happens on approval. */}
-          <label className="flex items-start gap-3 rounded-xl border border-line bg-bg p-3 cursor-pointer">
+          <label className="flex items-start gap-3 rounded-xl border border-line bg-background p-3 cursor-pointer">
             <input
               type="checkbox"
               checked={requiresApproval}

@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BHN Job Portal — Competitive Benchmark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#06101a; --bg2:#0a1623; --ink:#e9f5f3;
+    --muted:rgba(233,245,243,.58); --faint:rgba(233,245,243,.34); --line:rgba(255,255,255,.09);
+    --teal:#2dd4bf; --cyan:#22d3ee; --blue:#38bdf8; --violet:#a78bfa;
+    --green:#34d399; --amber:#fbbf24; --rose:#fb7185;
+    --maxw:1120px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Outfit",system-ui,sans-serif; font-weight:400; line-height:1.6;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  /* ambient washes */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background:
+      radial-gradient(60vw 50vh at 78% -8%, rgba(34,211,238,.16), transparent 60%),
+      radial-gradient(55vw 50vh at 8% 18%, rgba(45,212,191,.12), transparent 60%),
+      radial-gradient(60vw 60vh at 90% 92%, rgba(167,139,250,.14), transparent 60%);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.04; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 28px;}
+  h1,h2,h3,h4{font-weight:900; letter-spacing:-.02em; line-height:1.04; margin:0;}
+  a{color:inherit;}
+  .mono{font-family:"JetBrains Mono",monospace;}
+
+  /* top bar */
+  .topbar{
+    position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px; backdrop-filter:blur(12px);
+    background:linear-gradient(180deg, rgba(6,16,26,.85), rgba(6,16,26,.45));
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.01em;}
+  .brand .dotlogo{width:11px;height:11px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--cyan));box-shadow:0 0 14px rgba(45,212,191,.6);}
+  .topbar .meta{font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--faint);}
+  .printbtn{
+    font:inherit; font-size:12px; font-weight:800; letter-spacing:.04em; cursor:pointer;
+    color:#04212a; background:var(--teal); border:0; border-radius:999px; padding:8px 16px;
+  }
+
+  /* hero */
+  header.hero{padding:90px 0 56px;}
+  .kicker{font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.34em; color:var(--teal);}
+  header.hero h1{font-size:clamp(2.4rem,6vw,4.6rem); margin:18px 0 0; max-width:16ch;}
+  .grad{background:linear-gradient(100deg,var(--teal),var(--cyan) 55%,var(--blue)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  header.hero p.lede{margin:22px 0 0; font-size:clamp(1.05rem,1.7vw,1.35rem); color:var(--muted); max-width:60ch;}
+  .scope{display:flex; flex-wrap:wrap; gap:8px; margin-top:28px;}
+  .scope span{font-size:12px; font-weight:600; color:var(--muted); padding:6px 13px; border:1px solid var(--line); border-radius:999px;}
+  .scope span b{color:var(--ink); font-weight:800;}
+
+  section{padding:64px 0; border-top:1px solid var(--line);}
+  .seclabel{font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.28em; color:var(--faint);}
+  .sechead{font-size:clamp(1.7rem,3.4vw,2.7rem); margin-top:10px; max-width:24ch;}
+  .secsub{color:var(--muted); margin-top:14px; max-width:64ch; font-size:1.05rem;}
+
+  /* reveal */
+  .reveal{opacity:0; transform:translateY(26px); transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in{opacity:1; transform:none;}
+
+  /* category map */
+  .cats{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:38px;}
+  .cat{padding:26px 24px 28px; border-left:2px solid; position:relative;}
+  .cat h3{font-size:1.15rem; margin-bottom:6px;}
+  .cat .who{font-size:12px; color:var(--faint); letter-spacing:.04em; margin-bottom:14px; font-weight:600;}
+  .cat p{color:var(--muted); font-size:.95rem; margin:0;}
+  .cat .tag{font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.2em;}
+  .bhn-line{margin-top:34px; padding:24px 26px; border-radius:2.2rem .6rem 2.2rem .6rem;
+    background:linear-gradient(150deg, rgba(45,212,191,.12), rgba(255,255,255,.02));
+    box-shadow:inset 0 0 0 1px rgba(45,212,191,.25);}
+  .bhn-line b{color:var(--teal);}
+
+  /* matrix */
+  .legend{display:flex; flex-wrap:wrap; gap:18px; margin:30px 0 18px; font-size:12.5px; color:var(--muted);}
+  .legend .li{display:flex; align-items:center; gap:8px;}
+  .dot{width:13px; height:13px; border-radius:50%; display:inline-block; flex:none;}
+  .dot.best{background:var(--teal); box-shadow:0 0 0 4px rgba(45,212,191,.14), 0 0 13px rgba(45,212,191,.55);}
+  .dot.solid{background:var(--green);}
+  .dot.part{background:linear-gradient(90deg,var(--amber) 50%, rgba(251,191,36,.12) 50%); box-shadow:inset 0 0 0 1.5px var(--amber);}
+  .dot.none{background:transparent; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.16);}
+  .matrix-scroll{overflow-x:auto; margin-top:6px; border-radius:14px;}
+  table.matrix{width:100%; border-collapse:collapse; min-width:720px;}
+  table.matrix th, table.matrix td{padding:13px 14px; text-align:center; border-bottom:1px solid var(--line);}
+  table.matrix thead th{position:sticky; top:0; font-size:12.5px; font-weight:800; letter-spacing:.02em; color:var(--muted); background:rgba(10,22,35,.7); backdrop-filter:blur(6px);}
+  table.matrix thead th.bhn{color:var(--teal);}
+  table.matrix td.cap, table.matrix th.cap{text-align:left; font-weight:600; color:var(--ink); white-space:nowrap;}
+  table.matrix col.bhncol{}
+  td.bhncell{background:rgba(45,212,191,.05);}
+  th.bhn{background:rgba(45,212,191,.08)!important;}
+  tr.star td.cap{font-weight:800;}
+  tr.star td.cap::before{content:"★"; color:var(--teal); margin-right:8px; font-size:11px; vertical-align:middle;}
+  tr.star{background:linear-gradient(90deg, rgba(45,212,191,.06), transparent 70%);}
+  .matrix small{display:block; color:var(--faint); font-weight:500; font-size:11px; white-space:normal; max-width:230px;}
+
+  /* wedge */
+  .wedge{display:grid; grid-template-columns:repeat(2,1fr); gap:30px 44px; margin-top:40px;}
+  .w-item{display:flex; gap:20px;}
+  .w-item .n{font-size:2.6rem; font-weight:900; line-height:1; color:transparent; -webkit-text-stroke:1.4px var(--teal); flex:none;}
+  .w-item h3{font-size:1.2rem; margin-bottom:8px;}
+  .w-item p{color:var(--muted); font-size:.97rem; margin:0;}
+  .w-item.v .n{-webkit-text-stroke-color:var(--violet);}
+
+  /* gaps */
+  .gaps{margin-top:34px; display:grid; gap:2px;}
+  .gap{display:grid; grid-template-columns:auto 1fr; gap:18px; align-items:start; padding:20px 0; border-bottom:1px solid var(--line);}
+  .gap .lbl{font-weight:800; color:var(--ink); min-width:210px; display:flex; align-items:center; gap:10px;}
+  .gap .lbl::before{content:""; width:9px;height:9px;border-radius:50%; background:var(--rose); box-shadow:0 0 10px rgba(251,113,133,.6); flex:none;}
+  .gap p{margin:0; color:var(--muted); font-size:.97rem;}
+
+  /* scorecard */
+  .score{margin-top:36px; display:grid; gap:16px;}
+  .srow{display:grid; grid-template-columns:230px 1fr; gap:22px; align-items:center;}
+  .srow .dim{font-weight:600; font-size:.95rem;}
+  .srow .dim.win{font-weight:800;}
+  .srow .dim.win b{color:var(--teal);}
+  .bars{display:grid; gap:7px;}
+  .track{position:relative; height:13px; border-radius:999px; background:rgba(255,255,255,.05); overflow:hidden;}
+  .fill{position:absolute; inset:0 auto 0 0; width:0; border-radius:999px; transition:width 1.1s cubic-bezier(.2,.7,.2,1);}
+  .in .fill{width:var(--target);}
+  .fill.bhn{background:linear-gradient(90deg,var(--teal),var(--cyan));}
+  .fill.main{background:rgba(255,255,255,.2);}
+  .barlabel{display:flex; justify-content:space-between; font-size:11px; letter-spacing:.04em; color:var(--faint);}
+  .barlabel b{color:var(--muted); font-weight:700;}
+  .barlabel .bhnv{color:var(--teal);}
+
+  /* recos */
+  .recos{counter-reset:r; margin-top:34px; display:grid; gap:20px;}
+  .reco{display:grid; grid-template-columns:auto 1fr; gap:20px; padding:22px 24px; border-radius:1.8rem .55rem 1.8rem .55rem;
+    background:linear-gradient(150deg, rgba(255,255,255,.045), rgba(255,255,255,.012)); box-shadow:inset 0 0 0 1px var(--line);}
+  .reco:nth-child(even){border-radius:.55rem 1.8rem .55rem 1.8rem;}
+  .reco::before{counter-increment:r; content:counter(r,decimal-leading-zero); font-family:"JetBrains Mono"; font-weight:700; font-size:1.1rem; color:var(--teal);}
+  .reco h3{font-size:1.08rem; margin-bottom:6px;}
+  .reco p{margin:0; color:var(--muted); font-size:.96rem;}
+
+  /* verdict pull quote */
+  .verdict{margin-top:46px; padding:30px 34px; border-left:3px solid var(--cyan);
+    font-size:clamp(1.15rem,2.2vw,1.6rem); font-weight:800; letter-spacing:-.01em; line-height:1.35; max-width:50ch;}
+  .verdict span{color:var(--cyan);}
+
+  footer{border-top:1px solid var(--line); padding:42px 0 70px; color:var(--faint); font-size:13px;}
+  footer .src{display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:14px;}
+  footer .src a{color:var(--muted); text-decoration:none; border-bottom:1px solid var(--line); padding-bottom:1px;}
+  footer .src a:hover{color:var(--cyan); border-color:var(--cyan);}
+  .disclaim{margin-top:22px; color:var(--faint); font-size:12px; max-width:70ch;}
+
+  @media (max-width:780px){
+    .cats{grid-template-columns:1fr;}
+    .wedge{grid-template-columns:1fr;}
+    .srow{grid-template-columns:1fr; gap:8px;}
+    .gap{grid-template-columns:1fr;}
+  }
+  @media print{
+    body{background:#fff; color:#0a0a0a;}
+    body::before,body::after,.topbar{display:none;}
+    .reveal{opacity:1; transform:none;}
+    .grad{color:#0a7a6a; -webkit-text-fill-color:#0a7a6a;}
+    section{border-color:#ddd;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand"><span class="dotlogo"></span> BioHubNet</div>
+    <div class="meta">Job Portal · Competitive Benchmark</div>
+    <button class="printbtn" onclick="window.print()">Save PDF</button>
+  </div>
+
+  <header class="hero wrap">
+    <p class="kicker reveal">Competitive Benchmark · May 2026</p>
+    <h1 class="reveal">BHN's job portal, measured against <span class="grad">the mainstream.</span></h1>
+    <p class="lede reveal">A feature‑for‑feature read of BioHubNet's hiring suite against the platforms recruiters actually use — grounded in what BHN ships today, not the pitch.</p>
+    <div class="scope reveal">
+      <span>vs <b>LinkedIn</b></span><span>vs <b>Indeed</b></span><span>vs <b>Greenhouse</b></span>
+      <span>vs <b>Lever</b></span><span>vs <b>Ashby</b></span><span>vs <b>Workday</b></span>
+    </div>
+  </header>
+
+  <!-- 1. FRAMING -->
+  <section class="wrap">
+    <p class="seclabel reveal">01 — The honest framing</p>
+    <h2 class="sechead reveal">"Job portal" is three markets. BHN straddles all three — for one industry.</h2>
+    <div class="cats">
+      <div class="cat reveal" style="border-color:var(--cyan)">
+        <p class="tag" style="color:var(--cyan)">Job boards</p>
+        <h3>Distribution &amp; supply</h3>
+        <p class="who">LinkedIn · Indeed · ZipRecruiter</p>
+        <p>Reach hundreds of millions of candidates and broadcast openings. The supply side.</p>
+      </div>
+      <div class="cat reveal" style="border-color:var(--teal)">
+        <p class="tag" style="color:var(--teal)">Recruiting suites</p>
+        <h3>Workflow &amp; structure</h3>
+        <p class="who">Greenhouse · Lever · Ashby</p>
+        <p>Pipelines, structured interviews, CRM and analytics. The process side.</p>
+      </div>
+      <div class="cat reveal" style="border-color:var(--violet)">
+        <p class="tag" style="color:var(--violet)">Enterprise HCM</p>
+        <h3>Scale &amp; compliance</h3>
+        <p class="who">Workday</p>
+        <p>ATS + HRIS + onboarding + global compliance, embedded AI agents.</p>
+      </div>
+    </div>
+    <div class="bhn-line reveal">
+      <b>BHN is a fourth thing: a train‑to‑hire flywheel.</b> It doesn't just match candidates — it <b>produces</b> them. Courses build verified skills → a vetted talent pool → an AI fit‑rating → a full ATS → board‑grade analytics → even venture funding. So the real question isn't "can BHN beat LinkedIn on reach," it's "what happens when the applicants arrive already trained to your bench."
+    </div>
+  </section>
+
+  <!-- 2. MATRIX -->
+  <section class="wrap">
+    <p class="seclabel reveal">02 — Feature matrix</p>
+    <h2 class="sechead reveal">Capability by capability.</h2>
+    <div class="legend reveal">
+      <span class="li"><span class="dot best"></span> Standout / best‑in‑class</span>
+      <span class="li"><span class="dot solid"></span> Solid, native</span>
+      <span class="li"><span class="dot part"></span> Partial / via integration</span>
+      <span class="li"><span class="dot none"></span> Absent / weak</span>
+      <span class="li" style="color:var(--faint)">★ = BHN differentiator · BHN (pending) = built, UI not shipped</span>
+    </div>
+    <div class="matrix-scroll reveal">
+      <table class="matrix">
+        <colgroup><col/><col class="bhncol"/><col/><col/><col/></colgroup>
+        <thead>
+          <tr>
+            <th class="cap">Capability</th>
+            <th class="bhn">BHN</th>
+            <th>LinkedIn / Indeed</th>
+            <th>Greenhouse / Lever / Ashby</th>
+            <th>Workday</th>
+          </tr>
+        </thead>
+        <tbody id="mbody"><!-- filled by JS --></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 3. WEDGE -->
+  <section class="wrap">
+    <p class="seclabel reveal">03 — Where BHN wins</p>
+    <h2 class="sechead reveal">The wedge no horizontal tool can copy.</h2>
+    <div class="wedge">
+      <div class="w-item reveal"><div class="n">01</div><div><h3>Supply is pre‑trained &amp; pre‑fit‑rated</h3><p>Every rival sources unknown people and then screens them. BHN's applicants learned the bench on‑platform, so they arrive with verified, taxonomy‑mapped skills and a Strong/Partial/Gap fit score. Source → screen → skills‑assess collapses into "browse a vetted pool."</p></div></div>
+      <div class="w-item reveal"><div class="n">02</div><div><h3>Vertical depth, not a mile‑wide inch</h3><p>GMP, aseptic / BSL‑2, upstream &amp; downstream, ICH Q2, eight career tracks Junior→VP. A taxonomy LinkedIn, Greenhouse and Workday are too horizontal to model.</p></div></div>
+      <div class="w-item reveal"><div class="n">03</div><div><h3>Suite‑grade structure &amp; analytics, native</h3><p>Scorecards and rubrics rival Greenhouse's philosophy; ten reports with OKR targets, RAG status, cost‑per‑hire, source ROI and privacy‑safe DEI match Ashby's ambition — and it's built in, not a paid analytics tier.</p></div></div>
+      <div class="w-item reveal v"><div class="n">04</div><div><h3>One funded loop</h3><p>Train, hire, and fund — VentureConnect and VentureLift back graduates' ventures. Entirely outside any ATS's scope.</p></div></div>
+    </div>
+  </section>
+
+  <!-- 4. GAPS -->
+  <section class="wrap">
+    <p class="seclabel reveal">04 — Where BHN lags</p>
+    <h2 class="sechead reveal">The honest gaps.</h2>
+    <div class="gaps">
+      <div class="gap reveal"><div class="lbl">Supply &amp; distribution</div><p>The big one. LinkedIn/Indeed carry hundreds of millions of candidates and ad networks; BHN's pool is only its own vertical users, and the <b>public job board + direct‑apply is still pending</b>. BHN wins on quality, loses on volume and reach.</p></div>
+      <div class="gap reveal"><div class="lbl">Agentic AI</div><p>LinkedIn's Hiring Assistant, Indeed's Talent Scout and Workday's Illuminate/HiredScore now autonomously source, message and schedule (LinkedIn cites ~1.5 hrs saved per role). BHN's AI fit‑rates beautifully but isn't yet an autonomous recruiter agent.</p></div>
+      <div class="gap reveal"><div class="lbl">Integration ecosystem</div><p>Greenhouse/Lever/Ashby have hundreds of integrations and open APIs — assessments, background checks, HRIS, calendars, Slack. BHN is a closed system.</p></div>
+      <div class="gap reveal"><div class="lbl">Scheduling · CRM · bulk outreach</div><p>Lighter than Ashby/Lever: no calendar sync or panel coordination, no nurture sequences, and the bulk‑email composer is still pending.</p></div>
+      <div class="gap reveal"><div class="lbl">Enterprise &amp; compliance</div><p>SSO/SCIM, OFCCP/EEOC, global localization, SOC2 — Workday/Greenhouse territory, unproven for BHN. (Though its k‑anonymity DEI handling is actually ahead on privacy.)</p></div>
+    </div>
+  </section>
+
+  <!-- 5. SCORECARD -->
+  <section class="wrap">
+    <p class="seclabel reveal">05 — Dimension scorecard</p>
+    <h2 class="sechead reveal">BHN vs. the best mainstream player, per dimension.</h2>
+    <p class="secsub reveal">Teal = BHN. Grey = strongest mainstream platform on that axis. Scored 1–5.</p>
+    <div class="score" id="score"><!-- filled by JS --></div>
+    <div class="verdict reveal">A category‑bender that <span>beats horizontal incumbents on candidate quality, vertical depth and integrated training + analytics</span> — and trails on reach, agentic AI, ecosystem and enterprise readiness.</div>
+  </section>
+
+  <!-- 6. RECOMMENDATIONS -->
+  <section class="wrap">
+    <p class="seclabel reveal">06 — What to do with it</p>
+    <h2 class="sechead reveal">Play the wedge, don't out‑feature the giants.</h2>
+    <div class="recos">
+      <div class="reco reveal"><h3>Position on the wedge</h3><p>"The only hiring platform where the candidates are already trained to your bench." Never claim to beat LinkedIn on reach.</p></div>
+      <div class="reco reveal"><h3>Close the two story‑breaking gaps</h3><p>Ship the public job board + direct‑apply (without it the "marketplace" claim is hollow) and a bulk / nurture outreach path.</p></div>
+      <div class="reco reveal"><h3>Make the AI agentic</h3><p>An "AI screener" that auto‑applies the fit matrix to every inbound applicant and drafts the advance/reject. The data model already supports it — it just needs to act.</p></div>
+      <div class="reco reveal"><h3>Land‑grab on analytics</h3><p>Native cost‑per‑hire + source ROI + privacy‑safe DEI is a real differentiator against Ashby/Greenhouse for mid‑market biomanufacturing.</p></div>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <div>Sources</div>
+    <div class="src">
+      <a href="https://www.index.dev/blog/greenhouse-vs-lever-vs-ats-comparison" target="_blank" rel="noopener">Greenhouse vs Lever vs Ashby — index.dev</a>
+      <a href="https://www.ashbyhq.com/compare/ashby-vs-greenhouse" target="_blank" rel="noopener">Ashby all‑in‑one analytics</a>
+      <a href="https://news.linkedin.com/2025/hiring-assistant-globally-available" target="_blank" rel="noopener">LinkedIn Hiring Assistant (global)</a>
+      <a href="https://aibusiness.com/agentic-ai/indeed-unveils-ai-agents-for-job-seekers-and-recruiters" target="_blank" rel="noopener">Indeed AI agents — Talent Scout</a>
+      <a href="https://www.noon.ai/blog/articles/09-linkedin-recruiter-ai-features-2026" target="_blank" rel="noopener">LinkedIn Recruiter AI 2026 — Noon</a>
+      <a href="https://www.workday.com/en-us/products/conversational-ai/applicant-tracking-system.html" target="_blank" rel="noopener">Workday conversational AI ATS</a>
+      <a href="https://www.joveo.com/workday-recruiting-ultimate-guide/" target="_blank" rel="noopener">Workday Recruiting guide — Joveo</a>
+    </div>
+    <p class="disclaim">BHN capabilities reflect the current codebase (shipped vs. pending flagged in the matrix). Mainstream capabilities synthesized from public 2025–26 product material. Marks are a directional capability read for positioning, not a procurement scorecard.</p>
+  </footer>
+
+<script>
+  // ── Matrix data: [capability, note, [BHN, boards, ATS, workday], star, pending]
+  const L = {best:"best",solid:"solid",part:"part",none:"none"};
+  const ROWS = [
+    ["Job distribution & reach","", [L.none,L.best,L.part,L.part], false, true],
+    ["External candidate supply / sourcing","reach the open market", [L.none,L.best,L.part,L.solid], false, false],
+    ["Candidate pre‑vetting / verified skills","trained on‑platform", [L.best,L.none,L.none,L.part], true, false],
+    ["AI screening & fit scoring","Strong / Partial / Gap + evidence", [L.solid,L.solid,L.solid,L.solid], false, false],
+    ["AI recruiter agents (source→outreach→schedule)","", [L.part,L.best,L.part,L.solid], false, false],
+    ["ATS pipeline / kanban / collaboration","attribution, activity log, presence", [L.solid,L.part,L.best,L.best], false, false],
+    ["Structured interviews (scorecards / rubrics)","rubric builder + recommendation rollup", [L.best,L.none,L.best,L.solid], true, false],
+    ["Interview scheduling (calendar sync, panels)","slot propose + self‑pick", [L.part,L.part,L.best,L.solid], false, false],
+    ["Offers / e‑sign / onboarding handoff","accept‑decline + light e‑sign", [L.part,L.none,L.solid,L.best], false, false],
+    ["Candidate CRM / nurture / rediscovery","", [L.part,L.solid,L.best,L.solid], false, false],
+    ["Communications (templates, automation, bulk)","auto‑rejection on stage move", [L.solid,L.part,L.best,L.solid], false, false],
+    ["Analytics & reporting","10 reports · OKR + RAG · CSV / PDF", [L.best,L.part,L.best,L.best], true, false],
+    ["Cost‑per‑hire & source effectiveness","native, not an add‑on", [L.best,L.part,L.solid,L.solid], true, false],
+    ["DEI pipeline reporting","opt‑in · k‑anonymity · coverage gate", [L.best,L.none,L.part,L.solid], true, false],
+    ["Integrations / open API / marketplace","", [L.none,L.solid,L.best,L.best], false, false],
+    ["Enterprise compliance (SSO, OFCCP/EEOC, global)","", [L.part,L.solid,L.best,L.best], false, false],
+    ["Vertical / domain depth","biomanufacturing taxonomy · 8 tracks", [L.best,L.none,L.none,L.none], true, false],
+    ["Train‑to‑hire flywheel","courses → skills → pool → hire", [L.best,L.none,L.none,L.part], true, false],
+  ];
+  const mbody = document.getElementById("mbody");
+  ROWS.forEach(([cap,note,levels,star,pending])=>{
+    const tr=document.createElement("tr"); if(star) tr.className="star";
+    const capCell=`<td class="cap">${cap}${pending?' <small>BHN: pending</small>':(note?`<small>${note}</small>`:'')}</td>`;
+    const cells=levels.map((lv,i)=>`<td class="${i===0?'bhncell':''}" title="${lv}"><span class="dot ${lv}"></span></td>`).join("");
+    tr.innerHTML=capCell+cells; mbody.appendChild(tr);
+  });
+
+  // ── Scorecard data: [dimension, bhn, mainstream, winnerNote]
+  const SCORE = [
+    ["Candidate quality / pre‑vetting",5,2,true],
+    ["Vertical / domain depth",5,1,true],
+    ["Train‑to‑hire integration",5,1,true],
+    ["Cost / source / DEI reporting",5,3,true],
+    ["Structured hiring (scorecards)",4,5,false],
+    ["Analytics & reporting",4,5,false],
+    ["AI screening / fit",4,4,false],
+    ["AI recruiter agents",2,5,false],
+    ["Candidate supply & reach",2,5,false],
+    ["Integrations / ecosystem",1,5,false],
+    ["Enterprise / compliance",2,5,false],
+  ];
+  const score=document.getElementById("score");
+  SCORE.forEach(([dim,b,m,win])=>{
+    const row=document.createElement("div"); row.className="srow reveal";
+    row.innerHTML=`
+      <div class="dim ${win?'win':''}">${win?'<b>'+dim+'</b>':dim}</div>
+      <div class="bars">
+        <div class="track"><div class="fill bhn" style="--target:${b/5*100}%"></div></div>
+        <div class="track"><div class="fill main" style="--target:${m/5*100}%"></div></div>
+        <div class="barlabel"><span class="bhnv">BHN ${b}/5</span><span><b>Best mainstream ${m}/5</b></span></div>
+      </div>`;
+    score.appendChild(row);
+  });
+
+  // ── Reveal on scroll
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} }),{threshold:.12});
+  document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+</script>
+</body>
+</html>

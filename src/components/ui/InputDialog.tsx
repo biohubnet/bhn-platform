@@ -210,7 +210,7 @@ function Dialog({
 
         {/* Footer — buttons right-aligned. Cancel is secondary
             (ghost), Confirm is primary (brand). */}
-        <div className="px-5 py-3 border-t border-line bg-bg/30 flex items-center justify-end gap-2">
+        <div className="px-5 py-3 border-t border-line bg-background/30 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => onClose(null)}

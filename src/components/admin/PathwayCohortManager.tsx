@@ -113,7 +113,7 @@ export function PathwayCohortManager({
       )}
 
       {rows.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-line bg-bg p-6 text-center">
+        <div className="rounded-xl border border-dashed border-line bg-background p-6 text-center">
           <p className="text-sm font-medium text-muted">No cohorts yet.</p>
           <p className="text-xs text-subtle mt-1.5 max-w-md mx-auto leading-relaxed">
             Without cohorts, the pathway uses the legacy single-track enrollment.
@@ -125,7 +125,7 @@ export function PathwayCohortManager({
           {rows.map((c) => (
             <article
               key={c.id}
-              className="rounded-xl border border-line bg-bg p-3 flex flex-wrap items-start gap-3 justify-between"
+              className="rounded-xl border border-line bg-background p-3 flex flex-wrap items-start gap-3 justify-between"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -313,28 +313,28 @@ function CohortDialog({
         <form onSubmit={save} className="p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Name" required>
-              <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm" placeholder="Spring 2026 cohort" />
+              <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm" placeholder="Spring 2026 cohort" />
             </Field>
             <Field label="Slug" required hint="URL-safe; kebab-case. Unique within the pathway.">
-              <input value={slug} onChange={(e) => setSlug(e.target.value)} required pattern="^[a-z0-9][a-z0-9-]{0,40}$" className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono" placeholder="spring-2026" />
+              <input value={slug} onChange={(e) => setSlug(e.target.value)} required pattern="^[a-z0-9][a-z0-9-]{0,40}$" className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono" placeholder="spring-2026" />
             </Field>
           </div>
           <Field label="Description" hint="Markdown supported. Shown to applicants in the cohort picker.">
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm" placeholder="Hybrid format · Weekly Wednesdays · In-person retreat in March" />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm" placeholder="Hybrid format · Weekly Wednesdays · In-person retreat in March" />
           </Field>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Start date" required>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm" />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm" />
             </Field>
             <Field label="End date">
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm" />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm" />
             </Field>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Field label="Capacity" required>
-              <input type="number" min={1} value={capacity} onChange={(e) => setCapacity(Number(e.target.value) || 0)} required className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono" />
+              <input type="number" min={1} value={capacity} onChange={(e) => setCapacity(Number(e.target.value) || 0)} required className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono" />
             </Field>
             <Field label="Allow waitlist?">
               <label className="flex items-center gap-2 mt-2">
@@ -343,22 +343,22 @@ function CohortDialog({
               </label>
             </Field>
             <Field label="Waitlist cap" hint="Blank = unlimited.">
-              <input type="number" min={0} value={waitlistCapacity} onChange={(e) => setWaitlistCapacity(e.target.value)} disabled={!allowWaitlist} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono disabled:opacity-50" />
+              <input type="number" min={0} value={waitlistCapacity} onChange={(e) => setWaitlistCapacity(e.target.value)} disabled={!allowWaitlist} className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono disabled:opacity-50" />
             </Field>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Enrollment opens" hint="Blank = open immediately.">
-              <input type="datetime-local" value={opensAt} onChange={(e) => setOpensAt(e.target.value)} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm" />
+              <input type="datetime-local" value={opensAt} onChange={(e) => setOpensAt(e.target.value)} className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm" />
             </Field>
             <Field label="Enrollment closes" hint="Blank = no auto-close.">
-              <input type="datetime-local" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm" />
+              <input type="datetime-local" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm" />
             </Field>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Status" hint="Draft hides from applicants. Open accepts enrollments. Closed stops new ones. Archived = past cohort.">
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm">
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm">
                 <option value="draft">Draft</option>
                 <option value="open">Open</option>
                 <option value="closed">Closed</option>
@@ -366,7 +366,7 @@ function CohortDialog({
               </select>
             </Field>
             <Field label="Display order" hint="Lower = shown first.">
-              <input type="number" value={displayOrder} onChange={(e) => setDisplayOrder(Number(e.target.value) || 0)} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono" />
+              <input type="number" value={displayOrder} onChange={(e) => setDisplayOrder(Number(e.target.value) || 0)} className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono" />
             </Field>
           </div>
 

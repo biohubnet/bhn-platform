@@ -98,7 +98,7 @@ export function BroadcastComposer({ slug, audienceCounts }: {
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="Important update about tomorrow's session"
-          className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+          className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
         />
       </div>
 
@@ -111,7 +111,7 @@ export function BroadcastComposer({ slug, audienceCounts }: {
           onChange={(e) => setBody(e.target.value)}
           rows={10}
           placeholder="Hi everyone,&#10;&#10;Quick reminder that we're meeting in **room 204** tomorrow at 10am. Don't forget your name tag.&#10;&#10;Looking forward to seeing you all!"
-          className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm leading-relaxed resize-y font-mono"
+          className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm leading-relaxed resize-y font-mono"
         />
         <p className="text-xs text-subtle mt-1.5">
           Supports <strong>**bold**</strong>, <em>*italic*</em>, and <code className="font-mono bg-elevated px-1 rounded">[link](url)</code> markdown. Double-newline creates a paragraph break.

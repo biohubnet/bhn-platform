@@ -247,7 +247,7 @@ function SectionBlock(props: {
 
       {/* Section-wide thread */}
       {(props.sectionComments.length > 0 || showSectionComposer) && (
-        <div className="rounded-lg bg-bg/40 ring-1 ring-line/60 p-3 space-y-2">
+        <div className="rounded-lg bg-background/40 ring-1 ring-line/60 p-3 space-y-2">
           {props.sectionComments.map((c) => (
             <CommentRowView key={c.id} c={c} onStatus={props.onStatus} canManage={props.canComment} />
           ))}
@@ -394,7 +394,7 @@ function BulletRow(props: {
           className={`shrink-0 mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
             openCount > 0
               ? "bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200 hover:bg-amber-100"
-              : "text-fg-subtle hover:text-fg hover:bg-bg/50"
+              : "text-fg-subtle hover:text-fg hover:bg-background/50"
           }`}
           title={comments.length === 0 ? "Add comment" : `${comments.length} comment(s), ${openCount} open`}
         >
@@ -433,7 +433,7 @@ function ResumeWideThread(props: {
 }) {
   const [open, setOpen] = useState(props.comments.length > 0);
   return (
-    <div className="rounded-xl border border-dashed border-line bg-bg/30 p-3">
+    <div className="rounded-xl border border-dashed border-line bg-background/30 p-3">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -551,7 +551,7 @@ function Composer({
         onChange={(e) => setBody(e.target.value)}
         placeholder={placeholder}
         rows={2}
-        className="w-full text-xs rounded-lg border border-line bg-bg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-brand-400 resize-y"
+        className="w-full text-xs rounded-lg border border-line bg-background px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-brand-400 resize-y"
         onKeyDown={(e) => {
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); send(); }
         }}

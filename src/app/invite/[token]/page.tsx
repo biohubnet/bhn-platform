@@ -67,7 +67,7 @@ export default async function InviteAcceptPage({ params }: Props) {
       : "This invite link has expired.";
 
     return (
-      <main className="min-h-screen bg-bg flex items-center justify-center p-6">
+      <main className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="w-full max-w-md text-center space-y-4">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 text-red-500 ring-1 ring-inset ring-red-100 mb-2">
             <AlertCircle size={24} />
@@ -107,7 +107,7 @@ export default async function InviteAcceptPage({ params }: Props) {
   const daysLeft    = Math.ceil((invite.expiresAt.getTime() - Date.now()) / 86_400_000);
 
   return (
-    <main className="min-h-screen bg-bg flex items-center justify-center p-6">
+    <main className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-3">

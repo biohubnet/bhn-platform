@@ -137,7 +137,7 @@ export default async function AdminDesignSystemPage() {
           Page background on a Card.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <SurfaceSwatch name="Page" cls="bg-bg text-fg" caption="bg-bg" />
+          <SurfaceSwatch name="Page" cls="bg-background text-fg" caption="bg-background" />
           <SurfaceSwatch name="Card" cls="bg-card text-fg surface-shadow" caption="bg-card · surface-shadow" />
           <SurfaceSwatch name="Elevated" cls="bg-elevated text-fg" caption="bg-elevated" />
           <SurfaceSwatch name="Popover" cls="popover" caption="popover (utility)" />

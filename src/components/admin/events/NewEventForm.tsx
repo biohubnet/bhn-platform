@@ -228,7 +228,7 @@ export function NewEventForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="2026 BHN Annual Symposium"
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             autoFocus
             required
           />
@@ -242,7 +242,7 @@ export function NewEventForm() {
               setSlug(slugify(e.target.value));
             }}
             placeholder="2026-annual-symposium"
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono"
             required
           />
           {!slugValid && slug.length > 0 && (
@@ -260,7 +260,7 @@ export function NewEventForm() {
             value={tagline}
             onChange={(e) => setTagline(e.target.value)}
             placeholder="Two days of biomanufacturing talks, workshops, and trainee posters."
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
         <Field
@@ -272,7 +272,7 @@ export function NewEventForm() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="A two-day gathering for biotech trainees, employers, and partners across the BHN network..."
             rows={4}
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm leading-relaxed resize-y"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm leading-relaxed resize-y"
           />
         </Field>
       </Section>
@@ -290,14 +290,14 @@ export function NewEventForm() {
               type="date"
               value={startDateOnly}
               onChange={(e) => setStartDateOnly(e.target.value)}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
               required
             />
             <input
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="bg-background border border-line rounded-lg px-3 py-2 text-sm"
               required
             />
           </div>
@@ -325,14 +325,14 @@ export function NewEventForm() {
               value={oneDayEvent ? startDateOnly : endDateOnly}
               onChange={(e) => setEndDateOnly(e.target.value)}
               disabled={oneDayEvent}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm disabled:bg-elevated disabled:text-subtle disabled:cursor-not-allowed"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm disabled:bg-elevated disabled:text-subtle disabled:cursor-not-allowed"
               required={!oneDayEvent}
             />
             <input
               type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="bg-background border border-line rounded-lg px-3 py-2 text-sm"
               required
             />
           </div>
@@ -357,7 +357,7 @@ export function NewEventForm() {
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
             placeholder="America/Toronto"
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
       </Section>
@@ -395,7 +395,7 @@ export function NewEventForm() {
                 value={mainVenueName}
                 onChange={(e) => setMainVenueName(e.target.value)}
                 placeholder="MaRS Discovery District, Toronto"
-                className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+                className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
               />
             </Field>
             <Field label="Venue address">
@@ -404,7 +404,7 @@ export function NewEventForm() {
                 value={mainVenueAddress}
                 onChange={(e) => setMainVenueAddress(e.target.value)}
                 placeholder="101 College Street, Toronto, ON M5G 1L7"
-                className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+                className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
               />
             </Field>
           </>
@@ -419,7 +419,7 @@ export function NewEventForm() {
                 value={mainVenueName}
                 onChange={(e) => setMainVenueName(e.target.value)}
                 placeholder="Zoom Webinar"
-                className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+                className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
               />
             </Field>
             <Field
@@ -431,7 +431,7 @@ export function NewEventForm() {
                 value={meetingUrl}
                 onChange={(e) => setMeetingUrl(e.target.value)}
                 placeholder="https://zoom.us/j/123456789"
-                className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+                className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono"
               />
             </Field>
           </>
@@ -503,7 +503,7 @@ export function NewEventForm() {
             value={maxAttendees}
             onChange={(e) => setMaxAttendees(e.target.value)}
             placeholder="100"
-            className="w-full sm:max-w-xs bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full sm:max-w-xs bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
         {maxAttendees.trim() && (

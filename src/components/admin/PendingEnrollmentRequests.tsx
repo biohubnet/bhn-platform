@@ -384,7 +384,7 @@ function GroupedColumn({
           const someSelected =
             pendingRows.some((r) => selected.has(r.id)) && !allPendingSelected;
           return (
-            <div key={g.targetId} className="rounded-xl bg-bg border border-line">
+            <div key={g.targetId} className="rounded-xl bg-background border border-line">
               <div className="px-3 py-2 border-b border-line bg-elevated/40 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   {pendingRows.length > 0 && (

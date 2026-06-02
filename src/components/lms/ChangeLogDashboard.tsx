@@ -146,7 +146,7 @@ export function ChangeLogDashboard({ data }: { data: DashboardData }) {
                     {/* Tooltip — works even when the bar is 1px wide
                         because we extend the hover surface to the
                         full column. Explicit slate-900 / white instead
-                        of the theme tokens because `text-bg` was
+                        of the theme tokens because `text-background` was
                         rendering invisible against `bg-fg` on some
                         themes (both resolved to the same shade). */}
                     <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-md bg-slate-900 text-white shadow-lg text-[10px] whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-20">

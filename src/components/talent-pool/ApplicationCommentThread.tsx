@@ -143,7 +143,7 @@ export function ApplicationCommentThread({
             return (
               <li
                 key={c.id}
-                className={`rounded-xl border border-line p-3 ${mine ? "bg-brand-50/40 border-brand-200" : "bg-bg"}`}
+                className={`rounded-xl border border-line p-3 ${mine ? "bg-brand-50/40 border-brand-200" : "bg-background"}`}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -188,7 +188,7 @@ export function ApplicationCommentThread({
             rows={3}
             maxLength={4000}
             placeholder="Comment on this application — visible to admins + employers, not the applicant."
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm resize-y"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm resize-y"
           />
           <div className="flex items-center justify-between mt-2">
             <p className="text-[10px] text-subtle">

@@ -547,7 +547,7 @@ function ResumeCard({
         (isSelected
           ? "border-brand-400 bg-brand-50/60 ring-1 ring-brand-300"
           : row.isArchived
-            ? "border-line bg-bg/30"
+            ? "border-line bg-background/30"
             : "border-line bg-card-solid hover:bg-elevated")
       }
     >

@@ -66,7 +66,7 @@ function ShowroomPanel({ id, name, description }: { id: DesignSystemId; name: st
         </p>
         <p className="text-[11px] text-muted max-w-prose">{description}</p>
       </header>
-      <div className="rounded-2xl ring-1 ring-line bg-bg overflow-hidden">
+      <div className="rounded-2xl ring-1 ring-line bg-background overflow-hidden">
         {/* Wrapping in `dashboard-layout` here is how the Studio
             full-bleed hero math (`100vw - sidebar-inset`) gets a
             sensible inset inside this nested preview. Without

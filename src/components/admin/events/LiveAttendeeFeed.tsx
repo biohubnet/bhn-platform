@@ -219,7 +219,7 @@ function CountTile({
     tone === "emerald" ? "border-emerald-200 bg-emerald-50/40" :
     tone === "amber"   ? "border-amber-200 bg-amber-50/40"   :
     tone === "violet"  ? "border-violet-200 bg-violet-50/40" :
-    "border-line bg-bg";
+    "border-line bg-background";
   return (
     <div
       className={`rounded-xl border ${tint} p-3 transition-all ${pulsing ? "scale-[1.03] ring-2 ring-brand-300" : ""}`}

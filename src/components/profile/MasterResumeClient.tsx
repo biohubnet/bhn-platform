@@ -454,7 +454,7 @@ export function MasterResumeClient({
             <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted mb-2">Versions</h3>
             <ul className="space-y-2">
               {snapshots.map((s) => (
-                <li key={s.id} className="rounded-md border border-line/60 bg-bg/30 p-2.5 flex items-start gap-2">
+                <li key={s.id} className="rounded-md border border-line/60 bg-background/30 p-2.5 flex items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-semibold text-fg leading-tight">
                       v{s.versionNumber} · {s.name}
@@ -556,7 +556,7 @@ function SectionGroup({
 
       <div className="space-y-3">
         {byAnchor.map(([anchor, group]) => (
-          <div key={anchor} className="rounded-xl border border-line/60 bg-bg/30 p-3">
+          <div key={anchor} className="rounded-xl border border-line/60 bg-background/30 p-3">
             {anchor && (
               <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
                 <div>
@@ -756,7 +756,7 @@ function BulletEditor({
         </div>
       </div>
       {showHistory && (
-        <div className="mt-1.5 rounded-md border border-line/60 bg-bg/30 p-2 space-y-1.5">
+        <div className="mt-1.5 rounded-md border border-line/60 bg-background/30 p-2 space-y-1.5">
           {revisionsLoading && (
             <p className="text-[11px] text-fg-subtle inline-flex items-center gap-1">
               <Loader2 size={10} className="animate-spin" /> Loading revisions…

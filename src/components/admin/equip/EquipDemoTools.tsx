@@ -60,7 +60,7 @@ export function EquipDemoTools() {
         </button>
       </div>
       {result && (
-        <pre className="text-[10px] font-mono bg-fg text-bg p-3 rounded-lg overflow-x-auto max-h-40">
+        <pre className="text-[10px] font-mono bg-fg text-background p-3 rounded-lg overflow-x-auto max-h-40">
 {result}
         </pre>
       )}

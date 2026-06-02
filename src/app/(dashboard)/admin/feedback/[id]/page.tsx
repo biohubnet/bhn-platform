@@ -103,7 +103,7 @@ export default async function AdminFeedbackDetailPage({
 
 function ScaleRow({ label, value, max }: { label: string; value: number | null; max: number }) {
   return (
-    <div className="rounded-xl border border-line bg-bg p-3">
+    <div className="rounded-xl border border-line bg-background p-3">
       <p className="text-xs text-muted">{label}</p>
       <p className="text-lg font-bold font-mono tabular-nums text-fg">
         {value ?? "—"}

@@ -130,7 +130,7 @@ export function InternshipAdminTable({ postings }: Props) {
           row is selected. Sticks below the page's top nav band. */}
       {selected.size > 0 && (
         <div className="sticky top-2 z-30">
-          <div className="bg-fg text-bg rounded-xl shadow-lg ring-1 ring-fg/10 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="bg-fg text-background rounded-xl shadow-lg ring-1 ring-fg/10 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold tabular-nums">
                 {selected.size} selected
@@ -292,7 +292,7 @@ function BatchBtn({
       disabled={pending}
       className={
         "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold " +
-        "bg-bg text-fg ring-1 ring-fg/15 transition-colors disabled:opacity-50 " +
+        "bg-background text-fg ring-1 ring-fg/15 transition-colors disabled:opacity-50 " +
         toneCls +
         (danger ? " hover:ring-rose-700" : "")
       }

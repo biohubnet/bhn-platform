@@ -1007,7 +1007,7 @@ export function ResumeEditor({
         ) : (
           // Keep grid alignment when there's no postings — render a
           // placeholder card explaining why the action's hidden.
-          <div className="rounded-xl border border-dashed border-line bg-bg/30 p-3 text-[11px] text-fg-subtle leading-snug">
+          <div className="rounded-xl border border-dashed border-line bg-background/30 p-3 text-[11px] text-fg-subtle leading-snug">
             Tailor to posting unlocks when there are active internship postings on the platform.
           </div>
         )}
@@ -2540,7 +2540,7 @@ function RecoveryPanel({
           // canonical stack index so onRestore splices the right one.
           const stackIndex = stack.length - 1 - i;
           return (
-            <li key={`${stackIndex}-${entry.label}`} className="flex items-start gap-2 rounded-md bg-bg/40 ring-1 ring-line/40 px-2 py-1.5">
+            <li key={`${stackIndex}-${entry.label}`} className="flex items-start gap-2 rounded-md bg-background/40 ring-1 ring-line/40 px-2 py-1.5">
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-fg-subtle">
                   {entry.type === "bullet" ? "Bullet" : entry.type === "item" ? "Item" : "Section"}

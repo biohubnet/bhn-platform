@@ -189,7 +189,7 @@ export function PhantomUsersClient({
               value={count}
               onChange={(e) => setCount(Math.max(1, Math.min(maxBatch, Number(e.target.value) || 1)))}
               disabled={busy}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono"
             />
             <span className="text-[11px] text-subtle">1 – {maxBatch} per batch</span>
           </label>
@@ -199,7 +199,7 @@ export function PhantomUsersClient({
               value={role}
               onChange={(e) => setRole(e.target.value)}
               disabled={busy}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
             >
               {ROLE_OPTIONS.map((r) => (
                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -218,7 +218,7 @@ export function PhantomUsersClient({
               value={hours}
               onChange={(e) => setHours(Math.max(1, Math.min(maxHours, Number(e.target.value) || 1)))}
               disabled={busy}
-              className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm font-mono"
+              className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm font-mono"
             />
             <span className="text-[11px] text-subtle">1 – {maxHours}h</span>
           </label>

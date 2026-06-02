@@ -216,7 +216,7 @@ function TicketEditor({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Standard"
-          className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+          className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
         />
       </Field>
       <Field label="Description (optional)">
@@ -225,7 +225,7 @@ function TicketEditor({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="What's included"
-          className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+          className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
         />
       </Field>
       <div className="grid grid-cols-2 gap-3">
@@ -236,14 +236,14 @@ function TicketEditor({
             step={0.01}
             value={priceDollars}
             onChange={(e) => setPriceDollars(e.target.value)}
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           />
         </Field>
         <Field label="Currency">
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
           >
             <option>CAD</option>
             <option>USD</option>
@@ -260,7 +260,7 @@ function TicketEditor({
           value={capacity}
           onChange={(e) => setCapacity(e.target.value)}
           placeholder="Unlimited"
-          className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm"
+          className="w-full bg-background border border-line rounded-lg px-3 py-2 text-sm"
         />
       </Field>
       <label className="flex items-center gap-2.5 cursor-pointer">
