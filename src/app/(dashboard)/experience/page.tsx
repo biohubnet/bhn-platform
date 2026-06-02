@@ -392,15 +392,15 @@ function FlowBox({
  * Pool) reads as live work happening rather than a static label. Lines
  * reveal in sequence (staggered .cli-line delay) with a blinking cursor.
  * Purely decorative (aria-hidden); follows the ACTIVE THEME via tokens —
- * a recessed `bg-bg` surface with `text-fg` log lines (always the body
- * contrast pair, so AA-compliant in every theme) and a brand-accent
+ * a recessed `bg-elevated` surface with `text-fg` log lines (the body
+ * fg/elevated pair, AA-compliant in every theme) and a brand-accent
  * prompt + cursor. Light theme renders light, dark theme renders dark.
  */
 function CliVignette({ lines }: { lines: { c: string; t: string }[] }) {
   return (
     <div
       aria-hidden
-      className="mt-2.5 rounded-lg px-2.5 py-2 font-mono text-[10.5px] leading-[1.55] bg-bg ring-1 ring-line overflow-hidden"
+      className="mt-2.5 rounded-lg px-2.5 py-2 font-mono text-[10.5px] leading-[1.55] bg-elevated ring-1 ring-line overflow-hidden"
     >
       {lines.map((ln, i) => (
         <div
