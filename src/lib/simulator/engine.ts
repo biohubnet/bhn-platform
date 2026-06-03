@@ -87,6 +87,37 @@ export function applyChoice(
   };
 }
 
+/**
+ * Rewind the attempt to the START of `targetWeek`, keeping every
+ * decision made in earlier weeks and discarding everything from
+ * `targetWeek` onward. Stats are recomputed from scratch by replaying
+ * the kept log over the payload's initial values, so the result is
+ * exactly the state the player was in when they first reached that
+ * week. Pure — the API route and the guest player both call into it.
+ */
+export function rewindToWeek(
+  payload: SimulationPayload,
+  state: AttemptState,
+  targetWeek: number,
+): AttemptState {
+  const keptLog = state.log.filter((e) => e.week < targetWeek);
+  const stats: AttemptStats = {};
+  for (const s of payload.stats) stats[s.key] = s.initialValue;
+  for (const entry of keptLog) {
+    for (const [k, delta] of Object.entries(entry.effects ?? {})) {
+      if (!(k in stats)) continue;
+      stats[k] = clamp(stats[k] + (delta ?? 0), 0, 100);
+    }
+  }
+  return {
+    week: targetWeek,
+    scenarioIndex: 0,
+    stats,
+    log: keptLog,
+    finished: false,
+  };
+}
+
 // ────────────────────────────────────────────────────────────────────
 // End-of-quarter review
 // ────────────────────────────────────────────────────────────────────

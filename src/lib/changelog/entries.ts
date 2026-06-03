@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator · go back to previous weeks — Jun 2026
+  {
+    title: "Simulator · go back to a previous week to review or replay it",
+    body: "The 12-week track is now navigable. Tap any week you've already played and you'll see exactly what you faced that week — the scenarios, the choice you made, the outcome, and the stat swings each one cost or earned. From there you can rewind and replay from that week: your earlier weeks are kept, and everything from the chosen week onward is cleared, so you can try a different path without resetting the whole quarter. Review is the safe default; rewinding asks first. Works the same whether you're signed in or playing a shared link.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator · clearer 12-week survival track — Jun 2026
   {
     title: "Simulator · the 12-week bar now says what it's for",

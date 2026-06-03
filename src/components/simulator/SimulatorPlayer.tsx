@@ -46,6 +46,7 @@ import {
   applyChoice,
   computeDecisionProfile,
   computeReview,
+  rewindToWeek,
 } from "@/lib/simulator/engine";
 import { Avatar as PersonAvatar } from "./Avatar";
 import type {
@@ -107,6 +108,9 @@ export function SimulatorPlayer({
   // Whether the player has opened the briefing yet — drives the
   // "read this first" emphasis on the briefing card (calms once read).
   const [briefingSeen, setBriefingSeen] = useState(false);
+  // Which past week's review modal is open (null = none) — the
+  // "go back to a previous week" entry point.
+  const [reviewWeek, setReviewWeek] = useState<number | null>(null);
 
   // Stable keys for the one-time welcome modal + (guest) progress
   // checkpoint. Authed attempts key on the attempt id; guest plays key
@@ -286,6 +290,45 @@ export function SimulatorPlayer({
     }
   }
 
+  // Go back to a previous week — rewind to its start, keeping earlier
+  // decisions and discarding everything from that week onward so the
+  // player can replay a different path.
+  async function handleRewind(week: number) {
+    if (
+      !confirm(
+        `Go back to week ${week}? Your decisions from week ${week} onward will be cleared so you can replay from there — earlier weeks are kept.`,
+      )
+    ) {
+      return;
+    }
+    const next = rewindToWeek(payload, state, week);
+    const apply = () => {
+      setState(next);
+      setResolved(null);
+      pendingNextRef.current = null;
+      setReviewWeek(null);
+    };
+
+    if (guest) {
+      apply();
+      persistGuest(next);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/simulator/${attemptId}/rewind`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ week }),
+      });
+      if (!res.ok) throw new Error();
+      apply();
+      router.refresh();
+    } catch {
+      setError("Couldn't go back. Please try again.");
+    }
+  }
+
   // Review view when finished
   if (state.finished) {
     return (
@@ -333,8 +376,23 @@ export function SimulatorPlayer({
         />
       )}
 
-      {/* Week progress strip */}
-      <WeekStrip currentWeek={state.week} scenarios={payload.scenarios} />
+      {reviewWeek !== null && (
+        <WeekReviewModal
+          payload={payload}
+          log={state.log}
+          week={reviewWeek}
+          onClose={() => setReviewWeek(null)}
+          onRewind={handleRewind}
+        />
+      )}
+
+      {/* Week progress strip — tap a past week to revisit it */}
+      <WeekStrip
+        currentWeek={state.week}
+        scenarios={payload.scenarios}
+        log={state.log}
+        onReviewWeek={setReviewWeek}
+      />
 
       {/* Three-column body */}
       <div className="grid gap-5 lg:grid-cols-[1fr_320px] xl:grid-cols-[260px_1fr_320px]">
@@ -550,9 +608,13 @@ function BriefingCallout({
 function WeekStrip({
   currentWeek,
   scenarios,
+  log,
+  onReviewWeek,
 }: {
   currentWeek: number;
   scenarios: Scenario[];
+  log: LogEntry[];
+  onReviewWeek: (week: number) => void;
 }) {
   // For each week 1..12, count its scenarios — affects segment opacity for
   // "scheduled" vs "empty" weeks.
@@ -564,7 +626,14 @@ function WeekStrip({
     return counts;
   }, [scenarios]);
 
+  const playedWeeks = useMemo(() => {
+    const set = new Set<number>();
+    for (const e of log) set.add(e.week);
+    return set;
+  }, [log]);
+
   const clampedWeek = Math.min(Math.max(currentWeek, 1), 12);
+  const canGoBack = currentWeek > 1;
 
   return (
     <div className="rounded-[var(--radius-lg)] border border-line/70 bg-card-solid px-5 py-4 md:px-6">
@@ -583,12 +652,13 @@ function WeekStrip({
         Each bar is one week. Make it to the{" "}
         <span className="text-fg-muted">week-12 review</span> with your standing
         intact — that&apos;s the whole job.
+        {canGoBack && <> Tap a past week to look back or replay from there.</>}
       </p>
 
       <div className="relative flex items-stretch gap-1 pt-3">
         {Array.from({ length: 12 }, (_, i) => {
           const week = i + 1;
-          const state =
+          const status =
             week < currentWeek
               ? "done"
               : week === currentWeek
@@ -596,7 +666,51 @@ function WeekStrip({
                 : "future";
           const hasScenarios = weekDensity[i] > 0;
           const isFinish = week === 12;
-          return (
+          const canReview = week < currentWeek && playedWeeks.has(week);
+
+          const content = (
+            <>
+              {isFinish && (
+                <Flag className="absolute -top-3 left-1/2 h-3 w-3 -translate-x-1/2 text-brand-600" />
+              )}
+              <div
+                className={[
+                  "rounded-full transition-colors",
+                  status === "current" ? "h-2" : "h-1.5",
+                  status === "done" && "bg-brand-400",
+                  status === "current" && "bg-brand-600",
+                  status === "future" && hasScenarios && "bg-line-strong/60",
+                  status === "future" && !hasScenarios && "bg-line/70",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              />
+              <div
+                className={[
+                  "mt-1.5 text-center text-[10.5px] tabular-nums",
+                  status === "current" && "font-semibold text-fg",
+                  status === "done" && "text-fg-subtle",
+                  status === "future" && "text-fg-subtle/60",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {week}
+              </div>
+            </>
+          );
+
+          return canReview ? (
+            <button
+              key={week}
+              type="button"
+              onClick={() => onReviewWeek(week)}
+              title={`Week ${week} — tap to look back or replay`}
+              className="group relative flex-1 cursor-pointer rounded-md transition hover:bg-raised/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/70"
+            >
+              {content}
+            </button>
+          ) : (
             <div
               key={week}
               className="group relative flex-1"
@@ -606,36 +720,154 @@ function WeekStrip({
                   : `Week ${week}${hasScenarios ? ` — ${weekDensity[i]} scenario${weekDensity[i] === 1 ? "" : "s"}` : ""}`
               }
             >
-              {isFinish && (
-                <Flag className="absolute -top-3 left-1/2 h-3 w-3 -translate-x-1/2 text-brand-600" />
-              )}
-              <div
-                className={[
-                  "rounded-full transition-colors",
-                  state === "current" ? "h-2" : "h-1.5",
-                  state === "done" && "bg-brand-400",
-                  state === "current" && "bg-brand-600",
-                  state === "future" && hasScenarios && "bg-line-strong/60",
-                  state === "future" && !hasScenarios && "bg-line/70",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              />
-              <div
-                className={[
-                  "mt-1.5 text-center text-[10.5px] tabular-nums",
-                  state === "current" && "font-semibold text-fg",
-                  state === "done" && "text-fg-subtle",
-                  state === "future" && "text-fg-subtle/60",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                {week}
-              </div>
+              {content}
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Week review modal — look back at a past week, then optionally rewind
+// ────────────────────────────────────────────────────────────────────
+
+function WeekReviewModal({
+  payload,
+  log,
+  week,
+  onClose,
+  onRewind,
+}: {
+  payload: SimulationPayload;
+  log: LogEntry[];
+  week: number;
+  onClose: () => void;
+  onRewind: (week: number) => void;
+}) {
+  const entries = log.filter((e) => e.week === week);
+  const statLabel = (k: string) => {
+    const s = payload.stats.find((x) => x.key === k);
+    return s?.short || s?.label || k;
+  };
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/55 p-4 backdrop-blur-[3px] md:p-8"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Week ${week} review`}
+      style={{ animation: "fade-in 180ms ease-out" }}
+    >
+      <div
+        className="relative w-full max-w-2xl rounded-lg border border-line-strong bg-card-solid shadow-modal-deep"
+        onClick={(e) => e.stopPropagation()}
+        style={{ animation: "slide-up-in 240ms ease-out" }}
+      >
+        <header className="flex items-start justify-between gap-3 border-b border-line/60 px-6 py-5">
+          <div className="min-w-0">
+            <div className="mb-1 flex items-center gap-2 text-[12px] text-fg-subtle">
+              <CalendarDays className="h-3.5 w-3.5" />
+              Looking back · Week {week}
+            </div>
+            <h2
+              className="text-[19px] font-semibold tracking-tight text-fg md:text-[21px]"
+              style={{ fontFamily: "var(--font-display-theme, inherit)" }}
+            >
+              What happened in week {week}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-fg-muted hover:bg-raised/40 hover:text-fg"
+            aria-label="Close"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </header>
+
+        <div className="space-y-4 px-6 py-6">
+          {entries.length === 0 ? (
+            <p className="text-[13.5px] text-fg-muted">
+              No decisions were recorded for week {week}.
+            </p>
+          ) : (
+            entries.map((e, i) => (
+              <div
+                key={i}
+                className="rounded-md border border-line/70 bg-raised/15 px-4 py-3.5"
+              >
+                <div className="mb-2 text-[13.5px] font-semibold text-fg">
+                  {e.scenarioTitle}
+                </div>
+                <div className="mb-1 text-[11px] text-fg-subtle">You chose</div>
+                <p className="mb-2.5 text-[13.5px] leading-[1.55] text-fg">
+                  {e.choiceLabel}
+                </p>
+                <div className="mb-1 text-[11px] text-fg-subtle">Outcome</div>
+                <p className="text-[13px] leading-[1.6] text-fg-muted">
+                  {e.outcome}
+                </p>
+                {Object.keys(e.effects ?? {}).length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {Object.entries(e.effects).map(([k, v]) => (
+                      <span
+                        key={k}
+                        className={[
+                          "rounded-full px-2 py-0.5 text-[10.5px] font-medium tabular-nums",
+                          (v ?? 0) >= 0
+                            ? "bg-emerald-50 text-emerald-800"
+                            : "bg-rose-50 text-rose-800",
+                        ].join(" ")}
+                      >
+                        {(v ?? 0) >= 0 ? "+" : ""}
+                        {v} {statLabel(k)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line/60 bg-raised/20 px-6 py-4">
+          <p className="max-w-[58%] text-[11.5px] leading-snug text-fg-subtle">
+            {week <= 1
+              ? "Rewinding restarts the whole quarter from week 1."
+              : `Rewinding keeps weeks 1–${week - 1} and clears week ${week} onward.`}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="rounded-md border border-line bg-card-solid px-3.5 py-2 text-[12.5px] font-medium text-fg hover:border-line-strong"
+            >
+              Close
+            </button>
+            <button
+              onClick={() => onRewind(week)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-brand-700"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Rewind &amp; replay from week {week}
+            </button>
+          </div>
+        </footer>
       </div>
     </div>
   );
