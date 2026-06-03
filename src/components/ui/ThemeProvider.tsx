@@ -68,7 +68,7 @@ export const THEMES = [
   {
     id: "artdeco",
     name: "Gilded",
-    description: "Modern Art Deco in graphite + gold — gleaming gold metalwork over slate, cream text, a sunburst crown and fine gold geometry. A limited June engagement.",
+    description: "Modern Art Deco in graphite + gold — gleaming gold over deep, textured graphite with a light-shine, cream text, a sunburst crown and fine gold geometry. A limited June engagement.",
     category: "limited",
     endsOn: "2026-06-30",
     limited: true,

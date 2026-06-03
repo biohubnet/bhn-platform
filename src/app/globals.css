@@ -248,32 +248,35 @@
 }
 
 /* ───── Gilded — limited-time modern Art Deco theme (June 2026).
- *   Graphite + gold metalwork: deep slate-graphite surfaces, gleaming
- *   gold accents and hairlines, cream text, and geometric gold motifs —
- *   a sunburst crown over a fine gold grid. Geometric, opulent, metal —
- *   barely any colour beyond the gold. Dark theme — inherits Voltage's
- *   Tailwind tint tames + deep-text lifts (near-black ground) so coloured
- *   chips + deep text stay AA-legible. Expires 2026-06-30 (endsOn). ─── */
+ *   Polished graphite + gold metalwork: deep, almost-black graphite with
+ *   a fine noise grain (texture) and a diagonal light-shine raking across
+ *   like light off lacquer, gleaming gold accents and hairlines, cream
+ *   text, and geometric gold motifs — a sunburst crown over a gold grid.
+ *   Dark, opulent, metal. Inherits Voltage's Tailwind tint tames +
+ *   deep-text lifts (near-black ground) so coloured chips + deep text
+ *   stay AA-legible. Expires 2026-06-30 (endsOn). ───── */
 [data-theme="artdeco"] {
-  --popover-bg: #1c1d23;
-  --bg:        #16171c;        /* graphite */
-  /* Gold sunburst crown + warm gold glow over a fine gold geometric
-   * grid (the metalwork). */
+  --popover-bg: #16171c;
+  --bg:        #0d0e11;        /* deep graphite, almost black */
+  /* Layers, top→bottom: noise grain · diagonal light-shine · gold
+   * sunburst crown · warm gold sheen · gold geometric grid. */
   --bg-mesh:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+    linear-gradient(125deg, transparent 34%, rgba(245,235,210,0.05) 47%, rgba(212,175,55,0.07) 50%, rgba(245,235,210,0.04) 53%, transparent 66%),
     repeating-conic-gradient(from 90deg at 50% 0%, rgba(212,175,55,0.05) 0deg 1.4deg, transparent 1.4deg 8deg),
-    radial-gradient(at 50% -5%, rgba(212,175,55,0.13) 0px, transparent 60%),
-    linear-gradient(rgba(212,175,55,0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(212,175,55,0.045) 1px, transparent 1px);
-  --card:      rgba(31,33,39,0.88);
-  --card-solid: #1f2127;        /* slate graphite */
-  --elevated:  rgba(42,44,52,0.86);
-  --raised:    rgba(54,57,66,0.92);
+    radial-gradient(at 50% -8%, rgba(212,175,55,0.13) 0px, transparent 58%),
+    linear-gradient(rgba(212,175,55,0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212,175,55,0.055) 1px, transparent 1px);
+  --card:      rgba(22,23,29,0.90);
+  --card-solid: #16171c;        /* graphite card */
+  --elevated:  rgba(32,34,42,0.88);
+  --raised:    rgba(44,47,57,0.92);
   --fg:        #f1ead7;        /* cream */
   --fg-muted:  #cbbf9f;        /* champagne */
   --fg-subtle: #b3a988;        /* muted gold — AA on card/raised */
   --line:      rgba(212,175,55,0.42);   /* gold hairline (~3:1, 1.4.11) */
   --line-strong: rgba(212,175,55,0.58);
-  --backdrop:  rgba(4,5,7,0.86);
+  --backdrop:  rgba(2,2,4,0.88);
 
   /* Gleaming-gold brand ramp. 50–200 deep gold shadows; 500 the
    * signature gold; 600 dips deeper so white-text CTAs clear AA
@@ -296,18 +299,19 @@
   --radius-lg: 5px;
   --radius-xl: 8px;
 
-  /* Dashboard hero — graphite with gold. */
-  --hero-bg:     #131419;
+  /* Dashboard hero — deep graphite with gold + a light-shine streak. */
+  --hero-bg:     #0c0d11;
   --hero-mesh-1: #d4af37;
   --hero-mesh-2: #8a6f24;
-  --hero-mesh-3: #2c2e36;
-  --hero-mesh-4: #0e0f13;
+  --hero-mesh-3: #26282f;
+  --hero-mesh-4: #08090c;
   --hero-title-gradient: linear-gradient(120deg, #f1ead7 0%, #d4af37 50%, #f1ead7 100%);
 }
 
-/* Sunburst + glow fill the viewport; the gold geometric grid tiles at 30px. */
+/* Per-layer sizes: grain tiles 140px · shine/sunburst/sheen fill ·
+ * the gold grid tiles at 28px. */
 [data-theme="artdeco"] body {
-  background-size: 100% 100%, 100% 100%, 30px 30px, 30px 30px;
+  background-size: 140px 140px, 100% 100%, 100% 100%, 100% 100%, 28px 28px, 28px 28px;
 }
 
 /* Inherit Voltage's full Tailwind tint tame + deep-text lifts — both
