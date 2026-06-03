@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator · Key Opinion Leaders roster — Jun 2026
+  {
+    title: "Simulator · field & medical sims can carry a Key Opinion Leaders roster",
+    body: "Simulations for roles where the job is building relationships OUTSIDE the company — Medical Science Liaisons, field sales, partnerships — can now include a panel of external Key Opinion Leaders (KOLs) alongside your internal team and cross-functional partners. They appear as their own “Key Opinion Leaders” section in the roster, each with a clickable dossier (who they are, how to engage them, what to avoid), and the onboarding guide counts them in. The MSL — Oncology sim now ships with a 20-KOL territory panel. Office roles simply won't have the section.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator · briefing-first onboarding — Jun 2026
   {
     title: "Simulator · the briefing is now front-and-centre, with a guided intro",

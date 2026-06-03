@@ -874,7 +874,11 @@ function OutcomeCard({ outcome }: { outcome: string }) {
 function RosterPanel({ payload }: { payload: SimulationPayload }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
-  const allPeople = [...payload.team, ...payload.partners];
+  const allPeople = [
+    ...payload.team,
+    ...payload.partners,
+    ...(payload.kols ?? []),
+  ];
   const selected = openId
     ? allPeople.find((p) => p.id === openId) ?? null
     : null;
@@ -906,6 +910,16 @@ function RosterPanel({ payload }: { payload: SimulationPayload }) {
           onOpen={handleOpen}
           activeId={openId}
         />
+        {payload.kols && payload.kols.length > 0 && (
+          <RosterGroup
+            title="Key Opinion Leaders"
+            subtitle={`${payload.kols.length} external`}
+            people={payload.kols}
+            onOpen={handleOpen}
+            activeId={openId}
+            scrollable
+          />
+        )}
       </Card>
       {selected && anchor && (
         <PersonPopup
@@ -924,12 +938,14 @@ function RosterGroup({
   people,
   onOpen,
   activeId,
+  scrollable,
 }: {
   title: string;
   subtitle: string;
   people: Person[];
   onOpen: (id: string, e: React.MouseEvent<HTMLButtonElement>) => void;
   activeId: string | null;
+  scrollable?: boolean;
 }) {
   return (
     <div className="border-b border-line/40 last:border-b-0">
@@ -937,7 +953,7 @@ function RosterGroup({
         <span className="text-[11.5px] text-fg-subtle">{title}</span>
         <span className="text-[11px] text-fg-subtle/70">{subtitle}</span>
       </div>
-      <ul>
+      <ul className={scrollable ? "max-h-[360px] overflow-y-auto" : undefined}>
         {people.map((p) => (
           <li key={p.id}>
             <button
@@ -1488,7 +1504,11 @@ function WelcomeModal({
       },
       {
         title: "Know your people",
-        body: `You'll work with ${payload.team.length} teammates and ${payload.partners.length} cross-functional partners. Click any name in the roster to open their dossier — how to work with them, what they can unblock, what to avoid. Skim a few before week 1.`,
+        body: `You'll work with ${payload.team.length} teammates and ${payload.partners.length} cross-functional partners${
+          payload.kols && payload.kols.length > 0
+            ? `, plus a panel of ${payload.kols.length} external Key Opinion Leaders to win over`
+            : ""
+        }. Click any name in the roster to open their dossier — how to work with them, what they can unblock, what to avoid. Skim a few before week 1.`,
       },
       {
         title: "Make the call — it all saves",

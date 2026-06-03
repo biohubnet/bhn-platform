@@ -116,6 +116,19 @@ export function validatePayload(raw: unknown): ValidationResult {
   if (out.partners.length < 1)
     return err(`partners has only ${out.partners.length} valid people`);
 
+  // KOLs — optional external cast (clinicians, researchers, customers)
+  // for field / medical / sales roles. No minimum; absent on most office
+  // sims. Validated as ordinary People with group "kol", and preserved
+  // on the payload only when at least one is valid.
+  if (Array.isArray(raw.kols)) {
+    const kols: Person[] = [];
+    for (const p of raw.kols) {
+      const person = validatePerson(p, "kol");
+      if (person) kols.push(person);
+    }
+    if (kols.length > 0) out.kols = kols;
+  }
+
   // Scenarios
   if (!Array.isArray(raw.scenarios)) return err("scenarios is not an array");
   const validKeys = new Set(out.stats.map((s) => s.key));
@@ -165,7 +178,10 @@ function validateBriefing(raw: Record<string, unknown>): Briefing | null {
   };
 }
 
-function validatePerson(raw: unknown, group: "team" | "partner"): Person | null {
+function validatePerson(
+  raw: unknown,
+  group: "team" | "partner" | "kol",
+): Person | null {
   if (!isRecord(raw)) return null;
   const id = nonEmptyString(raw.id, "");
   const name = nonEmptyString(raw.name, "");

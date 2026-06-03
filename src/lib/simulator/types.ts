@@ -23,7 +23,7 @@ export type Person = {
   shortName: string;   // 'Marcus' or 'Priya R.' when disambiguation needed
   role: string;        // 'Sr UX Designer'
   shortRole: string;   // 'Sr UX' — for the compact roster strip
-  group: "team" | "partner";
+  group: "team" | "partner" | "kol";
   tenure: string;      // '6 yrs as engineer, 2 as TL' — short, readable
   oneLiner: string;    // 1–2 sentence characterization (incl personality quirks)
   daily: string[];
@@ -129,6 +129,11 @@ export type SimulationPayload = {
   team: Person[];
   /// 3–6 cross-functional partners.
   partners: Person[];
+  /// External Key Opinion Leaders (KOLs) — for field / medical / sales
+  /// roles where the job is building relationships with people OUTSIDE
+  /// the company (clinicians, researchers, customers). Optional: most
+  /// office roles have none, and older payloads predate the field.
+  kols?: Person[];
   /// 12–17 scenarios spanning weeks 1–12.
   scenarios: Scenario[];
   reviewThresholds: ReviewThresholds;
