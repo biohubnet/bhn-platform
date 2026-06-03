@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator · briefing-first onboarding — Jun 2026
+  {
+    title: "Simulator · the briefing is now front-and-centre, with a guided intro",
+    body: "Two changes to how a simulation opens. (1) The briefing — what the job description won't tell you, the part that makes the sim feel like coaching rather than a game — is now a prominent “Start here” card at the top of the board instead of a small button tucked in the corner. It draws the eye until you've opened it once, then settles into a quiet “Reopen”. (2) The first-run walkthrough is now a proper onboarding guide: five quick steps that orient you to your stats, your roster, and the flow — and it ends by handing you straight to the briefing as your first move. Both work on shared public links too.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator · real employer names anonymized — Jun 2026
   {
     title: "Simulator · simulations no longer carry real company names",

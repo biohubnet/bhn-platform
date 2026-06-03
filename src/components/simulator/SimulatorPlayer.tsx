@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import {
   Activity,
+  ArrowRight,
   Battery,
   BookOpen,
   Compass,
@@ -101,6 +102,9 @@ export function SimulatorPlayer({
   // see it again on reload. SSR-safe: starts false, the effect below
   // promotes to true on the client only if no dismissal flag exists.
   const [welcomeOpen, setWelcomeOpen] = useState(false);
+  // Whether the player has opened the briefing yet — drives the
+  // "read this first" emphasis on the briefing card (calms once read).
+  const [briefingSeen, setBriefingSeen] = useState(false);
 
   // Stable keys for the one-time welcome modal + (guest) progress
   // checkpoint. Authed attempts key on the attempt id; guest plays key
@@ -108,6 +112,9 @@ export function SimulatorPlayer({
   const welcomeKey = guest
     ? `sim:welcome:guest:${guest.token}`
     : `sim:welcome:${attemptId}`;
+  const briefingSeenKey = guest
+    ? `sim:briefing-seen:guest:${guest.token}`
+    : `sim:briefing-seen:${attemptId}`;
   const guestStateKey = guest ? `bhn-sim-guest:${guest.token}` : null;
 
   function persistGuest(next: AttemptState) {
@@ -147,6 +154,24 @@ export function SimulatorPlayer({
       localStorage.setItem(welcomeKey, "dismissed");
     }
   }
+
+  // Briefing-seen flag — hydrate once, then `openBriefing` opens the
+  // modal and records that it's been read (so the "read this first"
+  // emphasis on the briefing card calms down afterwards).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem(briefingSeenKey)) setBriefingSeen(true);
+  }, [briefingSeenKey]);
+  function openBriefing() {
+    setBriefingOpen(true);
+    setBriefingSeen(true);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(briefingSeenKey, "1");
+      } catch {}
+    }
+  }
+
   const router = useRouter();
 
   const scenarios = payload.scenarios.filter((s) => s.week === state.week);
@@ -275,12 +300,13 @@ export function SimulatorPlayer({
   return (
     <div className="space-y-5">
       {/* Hero band — role context */}
-      <RoleHeader
+      <RoleHeader payload={payload} onReset={handleReset} />
+
+      {/* The first thing to do — a prominent, click-to-open briefing. */}
+      <BriefingCallout
         payload={payload}
-        onReset={handleReset}
-        onOpenBriefing={
-          payload.briefing ? () => setBriefingOpen(true) : undefined
-        }
+        seen={briefingSeen}
+        onOpen={openBriefing}
       />
 
       {briefingOpen && payload.briefing && (
@@ -298,7 +324,7 @@ export function SimulatorPlayer({
             payload.briefing
               ? () => {
                   dismissWelcome();
-                  setBriefingOpen(true);
+                  openBriefing();
                 }
               : undefined
           }
@@ -365,11 +391,9 @@ export function SimulatorPlayer({
 function RoleHeader({
   payload,
   onReset,
-  onOpenBriefing,
 }: {
   payload: SimulationPayload;
   onReset: () => void;
-  onOpenBriefing?: () => void;
 }) {
   return (
     <div className="rounded-[var(--radius-lg)] border border-line/70 bg-card-solid px-6 py-6 md:px-7 md:py-7">
@@ -407,18 +431,6 @@ function RoleHeader({
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2.5">
-          {onOpenBriefing && (
-            <button
-              onClick={onOpenBriefing}
-              className="group inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-[14px] font-semibold text-white shadow-md transition hover:bg-brand-700 hover:shadow-lg active:scale-[0.98]"
-            >
-              <BookOpen className="h-4 w-4" />
-              Read the briefing
-              <span className="ml-1 hidden text-[11px] font-normal text-white/75 sm:inline">
-                · hidden dynamics, failure modes, interview Qs
-              </span>
-            </button>
-          )}
           <button
             onClick={onReset}
             className="text-[11.5px] text-fg-subtle transition hover:text-fg-muted"
@@ -428,6 +440,104 @@ function RoleHeader({
         </div>
       </div>
     </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Briefing callout — the prominent "read this first" entry point.
+// Styled as a full-width card (not a button) but fully clickable; the
+// "Start here" emphasis (accent border, pulsing dot) calms to a quiet
+// "Reopen" state once the player has opened the briefing.
+// ────────────────────────────────────────────────────────────────────
+
+function BriefingCallout({
+  payload,
+  seen,
+  onOpen,
+}: {
+  payload: SimulationPayload;
+  seen: boolean;
+  onOpen: () => void;
+}) {
+  const b = payload.briefing;
+  if (!b) return null;
+  const meta = [
+    b.failureModes?.length ? `${b.failureModes.length} failure modes` : null,
+    b.unwrittenRules?.length
+      ? `${b.unwrittenRules.length} unwritten rules`
+      : null,
+    b.interviewQuestions?.length
+      ? `${b.interviewQuestions.length} questions to ask`
+      : null,
+  ].filter(Boolean) as string[];
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label="Open the briefing — what the job won't tell you"
+      className={[
+        "group relative block w-full overflow-hidden rounded-[var(--radius-lg)] border text-left transition",
+        seen
+          ? "border-line/70 bg-card-solid hover:border-brand-400/70 hover:bg-raised/20"
+          : "border-brand-300/70 bg-gradient-to-br from-brand-50/70 via-card-solid to-card-solid shadow-sm hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "absolute inset-y-0 left-0 w-1",
+          seen ? "bg-brand-300/40" : "bg-brand-500",
+        ].join(" ")}
+        aria-hidden
+      />
+      <div className="flex items-center gap-4 px-5 py-4 md:gap-5 md:px-7 md:py-5">
+        <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-600 text-white shadow-sm">
+          <BookOpen className="h-5 w-5" />
+          {!seen && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-brand-500" />
+            </span>
+          )}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-brand-700">
+            {seen ? "The briefing" : "Start here · read this first"}
+          </div>
+          <h2
+            className="mt-0.5 text-[18px] font-semibold leading-tight tracking-tight text-fg md:text-[20px]"
+            style={{ fontFamily: "var(--font-display-theme, inherit)" }}
+          >
+            What the job won&apos;t tell you
+          </h2>
+          <p className="mt-1 line-clamp-2 max-w-2xl text-[13px] leading-[1.6] text-fg-muted">
+            The hidden power dynamics, the failure modes new hires fall into,
+            and the questions that impress a hiring manager. Five minutes here
+            changes how you read week 1.
+          </p>
+          {meta.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-fg-subtle">
+              {meta.map((m, i) => (
+                <span key={i} className="inline-flex items-center gap-2">
+                  {i > 0 && (
+                    <span className="text-fg-subtle/40" aria-hidden>
+                      ·
+                    </span>
+                  )}
+                  {m}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <span className="hidden shrink-0 items-center gap-1.5 self-center rounded-full border border-line bg-card-solid px-3.5 py-2 text-[12.5px] font-semibold text-fg transition group-hover:border-brand-400 group-hover:text-brand-700 sm:inline-flex">
+          {seen ? "Reopen" : "Open"}
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
+    </button>
   );
 }
 
@@ -1363,26 +1473,26 @@ function WelcomeModal({
   const steps = useMemo(
     () => [
       {
-        title: `Welcome to your ${payload.jobTitle} quarter`,
-        body: `You're the new ${payload.jobTitle.toLowerCase()} reporting to ${payload.vpName}. The next 12 weeks are a simulation — real-shaped decisions, no real consequences. Try the thing you'd be afraid to try at work.`,
+        title: `You're the new ${payload.jobTitle}`,
+        body: `Reporting to ${payload.vpName}. The next 12 weeks are a simulation — real-shaped decisions with zero real-world risk. Treat it as a sandbox: make the move you'd hesitate to make at work, and watch how it lands.`,
       },
       {
-        title: "Five stats track how you're doing",
-        body: `Each decision moves ${payload.stats.length} stats (${payload.stats.map((s) => s.label).join(", ")}). Hover any choice before committing to see exactly how it'll move them. Your manager's trust and your scientific craft carry the most weight at the QBR.`,
-      },
-      {
-        title: "The roster is your safety net",
-        body: `You'll meet ${payload.team.length} teammates and ${payload.partners.length} cross-functional partners. Click any name to open their dossier — daily/weekly rhythm, how to work with them, what they can help unblock, what to avoid. Read the first three before you start week 1.`,
-      },
-      {
-        title: "Read the briefing before you decide",
+        title: "Your first move: read the briefing",
         body: payload.briefing
-          ? "The Briefing button (top-right) holds what the JD doesn't tell you: hidden power dynamics, failure modes new hires fall into, and the sharp questions to ask the hiring manager. Open it now — it'll change how you read week 1."
-          : "Each scenario has 3–4 choices. Hover one to preview the stat-effects chips, click to commit. Most options have a tempting-but-flawed flavour. The 'safe' answer is rarely the best one.",
+          ? `Before you decide anything, open the “Start here” briefing card at the top of the board. It's what the job description won't tell you — who really holds power, the failure modes new hires fall into, and the questions that impress a hiring manager. Five minutes there will change how you read week 1.`
+          : `Each scenario gives you 3–4 options. Hover one to preview how it moves your stats, then click to commit. The “safe” choice is rarely the best — most options carry a tempting-but-flawed catch.`,
       },
       {
-        title: "Twelve weeks. State auto-saves.",
-        body: `After each choice the state checkpoints — close the tab and come back later. At week 12 the person you report to (${payload.vpName}) writes you a performance review with a tier and a per-stat narrative. You can reset and try a different path any time.`,
+        title: `Read the room: ${payload.stats.length} stats`,
+        body: `Every decision shifts ${payload.stats.map((s) => s.label).join(", ")}. Hover a choice before you commit to preview the exact deltas. Your manager's trust and your team's output weigh the most at the quarter-end review.`,
+      },
+      {
+        title: "Know your people",
+        body: `You'll work with ${payload.team.length} teammates and ${payload.partners.length} cross-functional partners. Click any name in the roster to open their dossier — how to work with them, what they can unblock, what to avoid. Skim a few before week 1.`,
+      },
+      {
+        title: "Make the call — it all saves",
+        body: `Work through each week's scenarios; progress checkpoints after every choice, so you can step away and pick up later. At week 12, ${payload.vpName} writes your performance review — a tier plus a per-stat narrative. Reset and try a different path any time.`,
       },
     ],
     [payload],
@@ -1412,7 +1522,7 @@ function WelcomeModal({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Welcome to the simulator"
+      aria-label="Onboarding guide"
     >
       <div
         className="relative w-full max-w-xl rounded-2xl border border-line bg-card-solid shadow-2xl"
@@ -1429,7 +1539,7 @@ function WelcomeModal({
         <div className="px-7 pt-9 pb-3">
           <div className="mb-2.5 inline-flex items-center gap-2 rounded-full bg-brand-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-800 ring-1 ring-inset ring-brand-200">
             <Sparkles className="h-3 w-3" />
-            Quick tour · {step + 1} of {steps.length}
+            Onboarding guide · {step + 1} of {steps.length}
           </div>
           <h2
             className="mb-3 text-[22px] font-semibold leading-[1.2] tracking-tight text-fg"
@@ -1469,22 +1579,31 @@ function WelcomeModal({
             ← Back
           </button>
           <div className="flex items-center gap-2">
-            {isLast && onOpenBriefing && (
-              <button
-                onClick={onOpenBriefing}
-                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3.5 py-2 text-[12.5px] font-semibold text-fg hover:border-line-strong"
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                Open briefing
-              </button>
-            )}
             {isLast ? (
-              <button
-                onClick={onClose}
-                className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-brand-700"
-              >
-                Start week 1 →
-              </button>
+              onOpenBriefing ? (
+                <>
+                  <button
+                    onClick={onClose}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3.5 py-2 text-[12.5px] font-semibold text-fg hover:border-line-strong"
+                  >
+                    Skip to week 1
+                  </button>
+                  <button
+                    onClick={onOpenBriefing}
+                    className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-brand-700"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" />
+                    Read the briefing →
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-brand-700"
+                >
+                  Start week 1 →
+                </button>
+              )
             ) : (
               <button
                 onClick={() => setStep((s) => s + 1)}

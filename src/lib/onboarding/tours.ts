@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.03a";
+export const TOUR_VERSION = "2026.06.03b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Simulator · briefing-first onboarding — Jun 2026
+  {
+    id: "sim.briefing-first",
+    title: "Start every sim with the briefing",
+    body: "When you open a simulation, the briefing — the hidden dynamics and failure modes the job description leaves out — is now a prominent “Start here” card at the top of the board, and a short guided walkthrough orients you before week 1. Read the briefing first; it changes how every decision reads.",
+    path: "/simulator",
+    placement: "center",
+    cta: { label: "Open the Career Simulator", href: "/simulator" },
+    since: "2026.06.03b",
+  },
   // ─── Simulator · public playable share + open comments — Jun 2026
   {
     id: "sim.public-share-play",
