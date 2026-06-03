@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Showcase · returning submitters skip re-uploading — Jun 2026
+  {
+    title: "Showcase · returning people get their photo + LinkedIn auto-filled",
+    body: "On any showcase submission page, the moment someone types their name we run an exact-name lookup against past submissions. If they've already submitted (to any cohort), their LinkedIn and saved headshot are filled in to confirm or update — no re-uploading the same photo. Submitting reuses the saved photo and records them in the current cohort, so one person can appear across several cohort showcases. The lookup is exact-name only and rate-limited (names can't be enumerated), and uploading a fresh photo always overrides.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Groups · searchable add-people picker — Jun 2026
   {
     title: "Groups · add existing people to a group with a searchable picker",

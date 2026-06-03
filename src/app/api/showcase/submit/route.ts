@@ -10,7 +10,12 @@
  *   name         string (required, 2-120 chars)
  *   linkedin     string (required, 2-200 chars — raw user input,
  *                normalised to a canonical URL server-side)
- *   photo        File   (required, image/* under 5 MB)
+ *   photo        File   (image/* under 5 MB) — required UNLESS reuseFromId
+ *                is provided (returning person reusing a saved photo).
+ *   reuseFromId  string (optional) — id of the person's previous
+ *                submission; its photo is copied server-side so they don't
+ *                re-upload. Guarded: that row's name must match the
+ *                submitted name.
  *
  * Returns: { ok: true, id } on success, { error } on failure.
  */
@@ -68,6 +73,7 @@ export async function POST(req: NextRequest) {
   const name = String(formData.get("name") ?? "").trim();
   const linkedinRaw = String(formData.get("linkedin") ?? "").trim();
   const photo = formData.get("photo");
+  const reuseFromId = String(formData.get("reuseFromId") ?? "").trim() || null;
 
   // Validate text fields. The slug must be a real, open showcase group
   // (the seeded Regulatory Affairs group, or any an admin created in
@@ -98,37 +104,69 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  // Validate file.
-  if (!photo || !(photo instanceof File)) {
-    return NextResponse.json({ error: "Headshot file is required." }, { status: 400 });
-  }
-  if (photo.size === 0) {
-    return NextResponse.json({ error: "Photo file is empty." }, { status: 400 });
-  }
-  if (photo.size > MAX_PHOTO_BYTES) {
-    return NextResponse.json({ error: `Photo must be under 5 MB. Yours is ${(photo.size / 1024 / 1024).toFixed(1)} MB.` }, { status: 400 });
-  }
-  if (!ALLOWED_TYPES.has(photo.type)) {
-    return NextResponse.json({ error: `Photo must be JPEG, PNG, or WebP. Yours is ${photo.type || "an unknown type"}.` }, { status: 400 });
-  }
-
-  // Derive a safe extension.
-  const ext = photo.type === "image/png" ? "png"
-            : photo.type === "image/webp" ? "webp"
-            : "jpg";
-
-  // Use the row id we're about to create as the R2 key so each
-  // photo's URL is stable + we can find / delete it later. Two-
-  // pass: create the row first (without photoUrl), upload, then
-  // patch — but that's two writes. Cleaner: generate the id via
-  // crypto + create + upload in parallel, then write the row.
+  // The id doubles as the R2 key so each photo URL is stable + findable.
   const { randomUUID } = await import("crypto");
   const id = `cm${randomUUID().replace(/-/g, "").slice(0, 24)}`;
-  const photoKey = `showcase/${programSlug}/${id}.${ext}`;
 
+  // Resolve the photo bytes: a freshly uploaded file, or — for a
+  // returning person whose typed name matched a previous entry — a
+  // server-side copy of that entry's photo (so they don't re-upload and
+  // each row still owns its own object). A new upload always wins.
+  let buf: Buffer;
+  let contentType: string;
+  let ext: string;
+
+  if (photo instanceof File && photo.size > 0) {
+    if (photo.size > MAX_PHOTO_BYTES) {
+      return NextResponse.json({ error: `Photo must be under 5 MB. Yours is ${(photo.size / 1024 / 1024).toFixed(1)} MB.` }, { status: 400 });
+    }
+    if (!ALLOWED_TYPES.has(photo.type)) {
+      return NextResponse.json({ error: `Photo must be JPEG, PNG, or WebP. Yours is ${photo.type || "an unknown type"}.` }, { status: 400 });
+    }
+    buf = Buffer.from(await photo.arrayBuffer());
+    contentType = photo.type;
+    ext = photo.type === "image/png" ? "png" : photo.type === "image/webp" ? "webp" : "jpg";
+  } else if (reuseFromId) {
+    // Reuse a returning person's saved photo. Guard against grabbing
+    // someone else's image: the source row's name must match the name
+    // being submitted (the lookup that surfaced it was exact-name too).
+    const src = await prisma.showcaseSubmission.findUnique({
+      where: { id: reuseFromId },
+      select: { name: true, photoUrl: true, photoKey: true },
+    });
+    if (!src || src.name.trim().toLowerCase() !== name.toLowerCase()) {
+      return NextResponse.json(
+        { error: "Couldn't reuse your previous photo — please upload one." },
+        { status: 400 },
+      );
+    }
+    try {
+      const r = await fetch(src.photoUrl);
+      if (!r.ok) throw new Error(`fetch ${r.status}`);
+      buf = Buffer.from(await r.arrayBuffer());
+    } catch (err) {
+      console.error("[showcase] reuse photo fetch failed:", err);
+      return NextResponse.json(
+        { error: "Couldn't reuse your previous photo — please upload one." },
+        { status: 400 },
+      );
+    }
+    if (buf.length === 0 || buf.length > MAX_PHOTO_BYTES) {
+      return NextResponse.json(
+        { error: "Couldn't reuse your previous photo — please upload one." },
+        { status: 400 },
+      );
+    }
+    const m = src.photoKey.match(/\.([a-z0-9]+)$/i);
+    ext = (m?.[1] ?? "jpg").toLowerCase();
+    contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+  } else {
+    return NextResponse.json({ error: "Headshot file is required." }, { status: 400 });
+  }
+
+  const photoKey = `showcase/${programSlug}/${id}.${ext}`;
   try {
-    const buf = Buffer.from(await photo.arrayBuffer());
-    await putR2Object(photoKey, buf, photo.type);
+    await putR2Object(photoKey, buf, contentType);
   } catch (err) {
     console.error("[showcase] R2 upload failed:", err);
     return NextResponse.json({ error: "Photo upload failed. Try again." }, { status: 502 });

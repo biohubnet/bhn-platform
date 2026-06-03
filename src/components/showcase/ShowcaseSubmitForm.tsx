@@ -3,25 +3,35 @@
 /**
  * ShowcaseSubmitForm — public form on /showcase/<programSlug>.
  *
- * State machine:
- *   idle      → user filling in fields
- *   submitting→ FormData POST in flight to /api/showcase/submit
- *   success   → submission confirmed, show thank-you panel
- *   error     → server returned an error, message rendered below
- *
- * The photo preview uses a local object URL so the user can see
- * what they're uploading before they hit submit. We revoke the URL
- * on unmount to avoid leaking blob URLs.
+ * Returning-person flow: as the user types their NAME, a debounced
+ * exact-name lookup (/api/showcase/lookup) checks whether they've
+ * submitted before (any cohort). On a match it prefills their LinkedIn
+ * and shows their saved photo for confirm-or-update — they don't
+ * re-upload. Submitting then reuses the saved photo (via reuseFromId)
+ * and records them in THIS cohort; uploading a new photo always wins.
  */
 
 import { useState, useRef, useEffect } from "react";
-import { Camera, CheckCircle2, Loader2, AlertCircle, Upload } from "lucide-react";
+import {
+  Camera,
+  CheckCircle2,
+  Loader2,
+  AlertCircle,
+  Upload,
+  Sparkles,
+} from "lucide-react";
 
 interface Props {
   programSlug: string;
 }
 
 type Status = "idle" | "submitting" | "success" | "error";
+type Matched = {
+  submissionId: string;
+  name: string;
+  linkedinHandle: string | null;
+  photoUrl: string;
+};
 
 export function ShowcaseSubmitForm({ programSlug }: Props) {
   const [name, setName] = useState("");
@@ -32,16 +42,70 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Local preview URL — revoke on cleanup.
+  // Returning-person lookup.
+  const [matched, setMatched] = useState<Matched | null>(null);
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const lastQueried = useRef<string>("");
+
+  // Local preview URL for a freshly chosen file — revoke on cleanup.
   useEffect(() => {
-    if (!photoFile) {
-      setPhotoPreview(null);
-      return;
-    }
+    if (!photoFile) return;
     const url = URL.createObjectURL(photoFile);
     setPhotoPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [photoFile]);
+
+  // Debounced exact-name lookup. Skips once the user has chosen their own
+  // photo (we don't override their explicit upload). On a hit, prefill
+  // LinkedIn (if blank) and show the saved photo.
+  useEffect(() => {
+    if (photoFile) return;
+    const trimmed = name.trim();
+    if (trimmed.length < 3) {
+      if (matched) {
+        setMatched(null);
+        setPhotoPreview(null);
+        lastQueried.current = "";
+      }
+      return;
+    }
+    const handle = setTimeout(async () => {
+      if (trimmed.toLowerCase() === lastQueried.current) return;
+      lastQueried.current = trimmed.toLowerCase();
+      setLookupBusy(true);
+      try {
+        const res = await fetch(
+          `/api/showcase/lookup?name=${encodeURIComponent(trimmed)}`,
+        );
+        const j = (await res.json().catch(() => ({}))) as {
+          found?: boolean;
+          submissionId?: string;
+          name?: string;
+          linkedinHandle?: string | null;
+          photoUrl?: string;
+        };
+        if (j.found && j.photoUrl && j.submissionId && j.name) {
+          setMatched({
+            submissionId: j.submissionId,
+            name: j.name,
+            linkedinHandle: j.linkedinHandle ?? null,
+            photoUrl: j.photoUrl,
+          });
+          if (j.linkedinHandle && !linkedin.trim()) setLinkedin(j.linkedinHandle);
+          setPhotoPreview(j.photoUrl);
+        } else {
+          setMatched(null);
+          setPhotoPreview(null);
+        }
+      } catch {
+        /* ignore lookup errors — fall back to manual entry */
+      } finally {
+        setLookupBusy(false);
+      }
+    }, 550);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, photoFile]);
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -49,22 +113,31 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
       setPhotoFile(null);
       return;
     }
-    // Local client-side gate — mirrors the server's MAX_PHOTO_BYTES.
     if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg(`Photo must be under 5 MB. Yours is ${(file.size / 1024 / 1024).toFixed(1)} MB.`);
+      setErrorMsg(
+        `Photo must be under 5 MB. Yours is ${(file.size / 1024 / 1024).toFixed(1)} MB.`,
+      );
       e.target.value = "";
       return;
     }
     setErrorMsg(null);
-    setPhotoFile(file);
+    setPhotoFile(file); // overrides any reused photo
   }
+
+  // We're reusing the saved photo when there's a match and the user
+  // hasn't uploaded a fresh file.
+  const reusing = !!matched && !photoFile;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!name.trim() || !linkedin.trim() || !photoFile) {
-      setErrorMsg("Fill in all three fields — name, LinkedIn, and headshot.");
+    if (!name.trim() || !linkedin.trim()) {
+      setErrorMsg("Fill in your name and LinkedIn.");
+      return;
+    }
+    if (!photoFile && !reusing) {
+      setErrorMsg("Add a headshot.");
       return;
     }
 
@@ -72,7 +145,8 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
     fd.set("programSlug", programSlug);
     fd.set("name", name.trim());
     fd.set("linkedin", linkedin.trim());
-    fd.set("photo", photoFile);
+    if (photoFile) fd.set("photo", photoFile);
+    else if (matched) fd.set("reuseFromId", matched.submissionId);
 
     setStatus("submitting");
     try {
@@ -80,7 +154,10 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
         method: "POST",
         body: fd,
       });
-      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+      };
       if (!res.ok || !j.ok) {
         setStatus("error");
         setErrorMsg(j.error ?? `Submission failed (HTTP ${res.status}).`);
@@ -97,9 +174,12 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
     return (
       <div className="flex flex-col items-center text-center py-4">
         <CheckCircle2 className="h-12 w-12 mb-3" style={{ color: "#67b094" }} />
-        <h3 className="text-[18px] font-semibold text-[#111827]">Submitted — thank you.</h3>
+        <h3 className="text-[18px] font-semibold text-[#111827]">
+          Submitted — thank you.
+        </h3>
         <p className="mt-2 text-[13px] text-[#475569] max-w-sm">
-          We&apos;ll review your entry and you&apos;ll see yourself on the showcase shortly. If anything looks off, the team will reach out.
+          We&apos;ll review your entry and you&apos;ll see yourself on the
+          showcase shortly. If anything looks off, the team will reach out.
         </p>
         <button
           type="button"
@@ -107,6 +187,9 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
             setName("");
             setLinkedin("");
             setPhotoFile(null);
+            setPhotoPreview(null);
+            setMatched(null);
+            lastQueried.current = "";
             setStatus("idle");
           }}
           className="mt-5 text-[12px] font-semibold underline"
@@ -119,6 +202,7 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
   }
 
   const submitting = status === "submitting";
+  const firstName = (matched?.name ?? "").trim().split(/\s+/)[0];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -127,18 +211,38 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
         <label className="block text-[11px] uppercase tracking-[0.16em] font-bold text-[#1f2937] mb-1">
           Your name
         </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          maxLength={120}
-          autoComplete="name"
-          placeholder="e.g. Priya Iyer"
-          disabled={submitting}
-          className="w-full px-3 py-2 rounded-lg border border-[#cbd5e1] bg-white text-[14px] text-[#111827] placeholder:text-[#5b6470] focus:outline-none focus:ring-2 focus:ring-[#0b6f90] disabled:opacity-50"
-        />
+        <div className="relative">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            maxLength={120}
+            autoComplete="name"
+            placeholder="e.g. Priya Iyer"
+            disabled={submitting}
+            className="w-full px-3 py-2 rounded-lg border border-[#cbd5e1] bg-white text-[14px] text-[#111827] placeholder:text-[#5b6470] focus:outline-none focus:ring-2 focus:ring-[#0b6f90] disabled:opacity-50"
+          />
+          {lookupBusy && (
+            <Loader2
+              size={14}
+              className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#94a3b8]"
+            />
+          )}
+        </div>
       </div>
+
+      {/* Returning-person banner */}
+      {reusing && (
+        <div className="flex items-start gap-2 rounded-lg bg-[#eef7f4] ring-1 ring-inset ring-[#bfe3d6] px-3 py-2.5 text-[12.5px] text-[#14532d]">
+          <Sparkles className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "#2a8a6a" }} />
+          <span>
+            Welcome back{firstName ? `, ${firstName}` : ""}! We found your earlier
+            entry — your LinkedIn and headshot are filled in below. Update
+            anything that&apos;s changed, or just confirm.
+          </span>
+        </div>
+      )}
 
       {/* LinkedIn */}
       <div>
@@ -203,13 +307,22 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#cbd5e1] bg-white text-[12px] font-semibold text-[#1f2937] hover:bg-[#f1f5f9] disabled:opacity-50"
             >
               <Upload size={12} />
-              {photoFile ? "Choose a different photo" : "Choose photo"}
+              {reusing
+                ? "Upload a new photo"
+                : photoFile
+                  ? "Choose a different photo"
+                  : "Choose photo"}
             </button>
-            {photoFile && (
+            {reusing ? (
+              <p className="mt-1 text-[11px] text-[#2a8a6a] font-medium">
+                Using your saved headshot — upload a new one only if you want to
+                replace it.
+              </p>
+            ) : photoFile ? (
               <p className="mt-1 text-[11px] text-[#475569] truncate">
                 {photoFile.name} — {(photoFile.size / 1024).toFixed(0)} KB
               </p>
-            )}
+            ) : null}
             <p className="mt-1 text-[11px] text-[#475569] leading-relaxed">
               JPEG, PNG, or WebP. Under 5 MB. Square photos work best.
             </p>
@@ -217,15 +330,7 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
         </div>
       </div>
 
-      {/* Error.
-          text-[#881337] (rose-900 literal), NOT the `text-rose-900`
-          utility: globals.css redefines `.text-rose-900` per dark theme
-          to a LIGHT shade (hitech #fca5a5, dryice #fecdd3, …) for
-          contrast on dark cards. Those rules match via the <html>
-          [data-theme] ancestor, so the page-level `data-theme="light"`
-          pin can't neutralise them — light-rose text would land on this
-          light bg-rose-50 box. An arbitrary-value class has no per-theme
-          override, so the error stays dark-on-light for every visitor. */}
+      {/* Error — see note in the original on the literal rose colour. */}
       {errorMsg && (
         <div className="flex items-start gap-2 rounded-lg bg-rose-50 ring-1 ring-inset ring-rose-200 px-3 py-2 text-[12px] text-[#881337]">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -244,7 +349,11 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
           }}
         >
           {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
-          {submitting ? "Submitting…" : "Submit my entry"}
+          {submitting
+            ? "Submitting…"
+            : reusing
+              ? "Confirm & submit"
+              : "Submit my entry"}
         </button>
       </div>
     </form>
