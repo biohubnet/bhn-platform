@@ -67,8 +67,8 @@ export const THEMES = [
   },
   {
     id: "artdeco",
-    name: "Gatsby Gold",
-    description: "Gold geometry on emerald-black — Art Deco glamour, all Jazz-Age ballroom. A limited June engagement.",
+    name: "Steinway",
+    description: "Modern Art Deco in bronze + terracotta over warm graphite — 111 West 57th, the Steinway Tower on Billionaires' Row. A limited June engagement.",
     category: "limited",
     endsOn: "2026-06-30",
     limited: true,

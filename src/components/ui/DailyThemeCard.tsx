@@ -37,7 +37,7 @@ const SWATCH: Record<ThemeId, [string, string, string]> = {
   sakura:     ["#fffaf9", "#d04c61", "#3a1f24"],
   icecream:   ["#fff8f3", "#c5234a", "#b8e0d2"],
   greenwood:  ["#f7faf2", "#456224", "#c6a449"],
-  artdeco:    ["#101813", "#c9a23f", "#f4ecd6"],
+  artdeco:    ["#1c1813", "#c19a5b", "#f3ebdc"],
 };
 
 function todayKey(): string {

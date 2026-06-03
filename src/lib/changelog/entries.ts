@@ -24,8 +24,8 @@ export interface ChangelogEntry {
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Limited-time June theme · Art Deco — Jun 2026
   {
-    title: "Limited-time theme · Gatsby Gold, an Art Deco drop for June",
-    body: "A new seasonal theme is live through June 30: Gatsby Gold — gold geometry on emerald-black, champagne-ivory text, brass hairlines, and sharp Deco edges. The Jazz-Age ballroom in your browser. Pick it from the theme switcher (the gold swatch under \"Limited time\"), or tap it from the theme-of-the-day card on your dashboard. Like all limited drops it disappears when the window closes — it retires after June 30, and anyone still on it falls back to their default.",
+    title: "Limited-time theme · Steinway, a modern Art Deco drop for June",
+    body: "A new seasonal theme is live through June 30: Steinway — modern Art Deco in bronze + terracotta over warm graphite, with champagne-cream text, bronze hairlines, and fine vertical fluting. It's drawn from 111 West 57th, the Steinway Tower on Billionaires' Row — the world's skinniest skyscraper, which pairs a sleek supertall with the restored 1925 Steinway concert hall. Pick it from the theme switcher (the bronze swatch under \"Limited time\"), or tap it from the theme-of-the-day card on your dashboard. Like all limited drops it disappears when the window closes — it retires after June 30, and anyone still on it falls back to their default.",
     kind: "feature",
     visibleTo: ALL,
     daysAgo: 0,
