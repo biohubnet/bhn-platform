@@ -23,7 +23,6 @@ export const maxDuration = 30;
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;  // 5 MB
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
-const ALLOWED_PROGRAMS = new Set(["regulatory-affairs"]);
 
 /** Normalise whatever the user typed into a canonical
  *  https://www.linkedin.com/in/<slug>/ URL. Handles:
@@ -70,9 +69,21 @@ export async function POST(req: NextRequest) {
   const linkedinRaw = String(formData.get("linkedin") ?? "").trim();
   const photo = formData.get("photo");
 
-  // Validate text fields.
-  if (!ALLOWED_PROGRAMS.has(programSlug)) {
-    return NextResponse.json({ error: "Unknown program." }, { status: 400 });
+  // Validate text fields. The slug must be a real, open showcase group
+  // (the seeded Regulatory Affairs group, or any an admin created in
+  // /admin/showcase).
+  const group = await prisma.showcaseGroup.findUnique({
+    where: { slug: programSlug },
+    select: { active: true },
+  });
+  if (!group) {
+    return NextResponse.json({ error: "Unknown showcase." }, { status: 400 });
+  }
+  if (!group.active) {
+    return NextResponse.json(
+      { error: "This showcase isn't accepting submissions right now." },
+      { status: 400 },
+    );
   }
   if (name.length < 2 || name.length > 120) {
     return NextResponse.json({ error: "Name should be 2–120 characters." }, { status: 400 });

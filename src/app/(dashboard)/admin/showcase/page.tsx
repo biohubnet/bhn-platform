@@ -12,6 +12,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ShowcaseAdminClient } from "@/components/admin/ShowcaseAdminClient";
+import { ShowcaseGroupsManager } from "@/components/admin/ShowcaseGroupsManager";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,28 @@ export default async function AdminShowcasePage() {
     ...s,
     createdAt: s.createdAt.toISOString(),
     lastDownloadedAt: s.lastDownloadedAt?.toISOString() ?? null,
+  }));
+
+  // Showcase groups + per-group submission counts (submissions couple to
+  // a group loosely by programSlug == slug).
+  const groupRows = await prisma.showcaseGroup.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+  const subCounts = await prisma.showcaseSubmission.groupBy({
+    by: ["programSlug"],
+    _count: { _all: true },
+  });
+  const countBySlug = new Map(
+    subCounts.map((c) => [c.programSlug, c._count._all]),
+  );
+  const groups = groupRows.map((g) => ({
+    id: g.id,
+    slug: g.slug,
+    name: g.name,
+    eyebrow: g.eyebrow,
+    intro: g.intro,
+    active: g.active,
+    submissionCount: countBySlug.get(g.slug) ?? 0,
   }));
 
   const adminName =
@@ -57,6 +80,8 @@ export default async function AdminShowcasePage() {
         </div>
         <div className="h-px bg-gradient-to-r from-transparent via-brand-200/70 to-transparent" />
       </section>
+
+      <ShowcaseGroupsManager initialGroups={groups} />
 
       <ShowcaseAdminClient initialSubmissions={serialised} adminName={adminName} />
     </div>

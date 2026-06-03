@@ -4596,6 +4596,32 @@ model ShowcaseSubmission {
   @@index([programSlug, createdAt])
 }
 
+/// A showcase "group" — a named, slug-addressed graduate showcase. Each
+/// group gets its own public, no-login submission link at /showcase/<slug>
+/// (rendered by src/app/showcase/[slug]/page.tsx). Admins create + manage
+/// these from /admin/showcase. Submissions link to a group loosely by
+/// ShowcaseSubmission.programSlug == ShowcaseGroup.slug (matches the
+/// existing slug-keyed design; no FK so legacy rows are unaffected).
+model ShowcaseGroup {
+  id          String   @id @default(cuid())
+  /// URL slug — the public link is /showcase/<slug>. Unique.
+  slug        String   @unique
+  /// Showcase title shown on the public page (e.g. "Graduate Showcase").
+  name        String
+  /// Small category/eyebrow above the title (e.g. "Learning Pathway · Regulatory Affairs").
+  eyebrow     String?
+  /// Intro blurb under the title on the public submission page.
+  intro       String?
+  /// false = the public page hides the form and shows "submissions closed",
+  /// and the submit API rejects new entries for this slug.
+  active      Boolean  @default(true)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
 // ───────────────────────────────────────────────────────────────
 // Reporting suite — HR/Talent reports (/employer/reports).
 // Targets/OKRs, cost tracking, voluntary DEI self-ID, and a typed

@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.03b";
+export const TOUR_VERSION = "2026.06.03c";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Showcase · per-group public links — Jun 2026
+  {
+    id: "showcase.groups",
+    title: "Spin up a showcase for any group",
+    body: "On Admin → Showcase you can now create a named showcase group and get its own public, no-login submission link (/showcase/<slug>) to send out — one per cohort, event, or program. Open/close submissions per group and copy each link from the new “Showcase groups” panel.",
+    path: "/admin/showcase",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Showcase admin", href: "/admin/showcase" },
+    since: "2026.06.03c",
+  },
   // ─── Simulator · briefing-first onboarding — Jun 2026
   {
     id: "sim.briefing-first",

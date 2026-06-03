@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Showcase · multiple groups, a public link each — Jun 2026
+  {
+    title: "Showcase · run separate showcases for different groups, each with its own link",
+    body: "The graduate showcase is no longer a single hard-wired program. From Admin → Showcase you can now create named showcase groups — give each a title, an eyebrow/category, and an intro — and every one gets its own public, no-login submission link at /showcase/<slug> that you can copy and send out. Open or close submissions per group, and see how many entries each has. The existing Regulatory Affairs showcase is now one of these groups (its page is unchanged), and submissions still triage in the same dashboard below the group list.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Simulator · go back to previous weeks — Jun 2026
   {
     title: "Simulator · go back to a previous week to review or replay it",
