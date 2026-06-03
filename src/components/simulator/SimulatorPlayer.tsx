@@ -31,7 +31,9 @@ import {
   ArrowRight,
   Battery,
   BookOpen,
+  CalendarDays,
   Compass,
+  Flag,
   Loader2,
   Network,
   RotateCcw,
@@ -562,49 +564,79 @@ function WeekStrip({
     return counts;
   }, [scenarios]);
 
+  const clampedWeek = Math.min(Math.max(currentWeek, 1), 12);
+
   return (
-    <div className="flex items-stretch gap-1 px-1">
-      {Array.from({ length: 12 }, (_, i) => {
-        const week = i + 1;
-        const state =
-          week < currentWeek
-            ? "done"
-            : week === currentWeek
-              ? "current"
-              : "future";
-        const hasScenarios = weekDensity[i] > 0;
-        return (
-          <div
-            key={week}
-            className="group relative flex-1"
-            title={`Week ${week}${hasScenarios ? ` — ${weekDensity[i]} scenario${weekDensity[i] === 1 ? "" : "s"}` : ""}`}
-          >
+    <div className="rounded-[var(--radius-lg)] border border-line/70 bg-card-solid px-5 py-4 md:px-6">
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-brand-600" />
+          <span className="text-[13px] font-semibold text-fg">
+            Survive your first 12 weeks
+          </span>
+        </div>
+        <span className="text-[12px] tabular-nums text-fg-subtle">
+          Week <span className="font-semibold text-fg">{clampedWeek}</span> of 12
+        </span>
+      </div>
+      <p className="mb-4 text-[11.5px] leading-snug text-fg-subtle">
+        Each bar is one week. Make it to the{" "}
+        <span className="text-fg-muted">week-12 review</span> with your standing
+        intact — that&apos;s the whole job.
+      </p>
+
+      <div className="relative flex items-stretch gap-1 pt-3">
+        {Array.from({ length: 12 }, (_, i) => {
+          const week = i + 1;
+          const state =
+            week < currentWeek
+              ? "done"
+              : week === currentWeek
+                ? "current"
+                : "future";
+          const hasScenarios = weekDensity[i] > 0;
+          const isFinish = week === 12;
+          return (
             <div
-              className={[
-                "h-1 rounded-full transition-colors",
-                state === "done" && "bg-brand-400",
-                state === "current" && "bg-brand-600",
-                state === "future" && hasScenarios && "bg-line-strong/60",
-                state === "future" && !hasScenarios && "bg-line/70",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            />
-            <div
-              className={[
-                "mt-1.5 text-center text-[10.5px] tabular-nums",
-                state === "current" && "font-semibold text-fg",
-                state === "done" && "text-fg-subtle",
-                state === "future" && "text-fg-subtle/60",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+              key={week}
+              className="group relative flex-1"
+              title={
+                isFinish
+                  ? "Week 12 — your first performance review (the finish line)"
+                  : `Week ${week}${hasScenarios ? ` — ${weekDensity[i]} scenario${weekDensity[i] === 1 ? "" : "s"}` : ""}`
+              }
             >
-              {week}
+              {isFinish && (
+                <Flag className="absolute -top-3 left-1/2 h-3 w-3 -translate-x-1/2 text-brand-600" />
+              )}
+              <div
+                className={[
+                  "rounded-full transition-colors",
+                  state === "current" ? "h-2" : "h-1.5",
+                  state === "done" && "bg-brand-400",
+                  state === "current" && "bg-brand-600",
+                  state === "future" && hasScenarios && "bg-line-strong/60",
+                  state === "future" && !hasScenarios && "bg-line/70",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              />
+              <div
+                className={[
+                  "mt-1.5 text-center text-[10.5px] tabular-nums",
+                  state === "current" && "font-semibold text-fg",
+                  state === "done" && "text-fg-subtle",
+                  state === "future" && "text-fg-subtle/60",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {week}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1490,7 +1522,7 @@ function WelcomeModal({
     () => [
       {
         title: `You're the new ${payload.jobTitle}`,
-        body: `Reporting to ${payload.vpName}. The next 12 weeks are a simulation — real-shaped decisions with zero real-world risk. Treat it as a sandbox: make the move you'd hesitate to make at work, and watch how it lands.`,
+        body: `Reporting to ${payload.vpName}. The goal is simple: survive your first 12 weeks and reach the week-12 performance review with your standing intact. It's a simulation — real-shaped decisions, zero real-world risk — so make the move you'd hesitate to make at work, and watch how it lands.`,
       },
       {
         title: "Your first move: read the briefing",

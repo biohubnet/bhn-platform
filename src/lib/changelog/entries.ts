@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator · clearer 12-week survival track — Jun 2026
+  {
+    title: "Simulator · the 12-week bar now says what it's for",
+    body: "The thin week bars at the top of a sim were easy to miss. They're now a labelled track — “Survive your first 12 weeks,” a live “Week X of 12” counter, the current week called out, a flag on the week-12 finish line, and a one-line reminder that the whole job is to reach the week-12 review with your standing intact. The onboarding guide states the same goal up front.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator · Key Opinion Leaders roster — Jun 2026
   {
     title: "Simulator · field & medical sims can carry a Key Opinion Leaders roster",
