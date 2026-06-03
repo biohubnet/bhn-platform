@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Limited-time June theme · Art Deco — Jun 2026
+  {
+    title: "Limited-time theme · Gatsby Gold, an Art Deco drop for June",
+    body: "A new seasonal theme is live through June 30: Gatsby Gold — gold geometry on emerald-black, champagne-ivory text, brass hairlines, and sharp Deco edges. The Jazz-Age ballroom in your browser. Pick it from the theme switcher (the gold swatch under \"Limited time\"), or tap it from the theme-of-the-day card on your dashboard. Like all limited drops it disappears when the window closes — it retires after June 30, and anyone still on it falls back to their default.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Admin · create a simulation without a request — Jun 2026
   {
     title: "Admin · spin up a role-play simulation without waiting for a request",

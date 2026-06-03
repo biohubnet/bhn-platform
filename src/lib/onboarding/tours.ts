@@ -33,6 +33,16 @@ export interface TourStep {
 export const TOUR_VERSION = "2026.06.02b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Limited-time June theme · Art Deco — Jun 2026
+  {
+    id: "theme.artdeco-june",
+    title: "June's limited theme: Gatsby Gold",
+    body: "A new Art Deco theme — gold on emerald-black — is live through June 30. Open the theme switcher (the swatch in the top bar) and look under \"Limited time\", or tap today's suggestion on your dashboard. It retires when June ends.",
+    path: "/dashboard",
+    placement: "center",
+    cta: { label: "Browse themes", href: "/themes" },
+    since: "2026.06.02b",
+  },
   // ─── Admin · create a simulation without a request — Jun 2026
   {
     id: "admin.sim-create-without-request",

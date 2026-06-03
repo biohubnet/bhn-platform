@@ -65,6 +65,14 @@ export const THEMES = [
     endsOn: "2026-05-31",
     limited: true,
   },
+  {
+    id: "artdeco",
+    name: "Gatsby Gold",
+    description: "Gold geometry on emerald-black — Art Deco glamour, all Jazz-Age ballroom. A limited June engagement.",
+    category: "limited",
+    endsOn: "2026-06-30",
+    limited: true,
+  },
 ] as const;
 
 /** Display labels for each category — surfaced as section headers
@@ -197,17 +205,17 @@ export function ThemeScript() {
 }
 
 /**
- * Pick a "theme of the day" suggestion. Sakura preempts as long as
- * it's in its availability window (lets us highlight the limited-time
- * theme); after Sakura expires we rotate through the rest of the
- * registry by day-of-year. We skip the user's currently-saved theme
- * so the suggestion is always something different.
+ * Pick a "theme of the day" suggestion. The current limited-time theme
+ * preempts as long as it's in its availability window (lets us highlight
+ * the seasonal drop); once it expires we rotate through the rest of the
+ * registry by day-of-year. We skip the user's currently-saved theme so
+ * the suggestion is always something different.
  */
 export function suggestTodaysTheme(currentlySaved: ThemeId | null, now: Date = new Date()): ThemeId | null {
   const active = activeThemes(now);
-  // Sakura preempt while available — promotes the limited-time theme.
-  const sakura = active.find((t) => t.id === "sakura");
-  if (sakura && currentlySaved !== "sakura") return "sakura";
+  // Limited-time preempt — promotes the seasonal theme (Art Deco · June 2026).
+  const featured = active.find((t) => t.id === "artdeco");
+  if (featured && currentlySaved !== "artdeco") return "artdeco";
 
   const pool = active.map((t) => t.id).filter((id) => id !== currentlySaved);
   if (pool.length === 0) return null;
