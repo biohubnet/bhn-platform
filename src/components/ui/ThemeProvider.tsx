@@ -67,8 +67,8 @@ export const THEMES = [
   },
   {
     id: "artdeco",
-    name: "Steinway",
-    description: "Modern Art Deco in bronze + terracotta over warm graphite — 111 West 57th, the Steinway Tower on Billionaires' Row. A limited June engagement.",
+    name: "Emerald Lounge",
+    description: "Modern Art Deco glamour — emerald + obsidian velvet, gleaming gold, cream, a sunburst motif and jewel-tone glow. The opulent lounge after dark. A limited June engagement.",
     category: "limited",
     endsOn: "2026-06-30",
     limited: true,

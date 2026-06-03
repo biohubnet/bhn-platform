@@ -247,68 +247,68 @@
   --color-emerald-50: rgba(110, 130, 110, 0.10);
 }
 
-/* ───── Steinway — limited-time modern Art Deco theme (June 2026).
- *   Inspired by 111 West 57th, the Steinway Tower on Billionaires' Row:
- *   bronze + terracotta over warm graphite, champagne-cream text, fine
- *   vertical bronze fluting (the supertall's tapering pilasters), and
- *   refined modern radii — sleeker than 1920s Deco. Dark theme — it
- *   inherits Voltage's Tailwind tint tames + deep-text lifts (both on a
- *   near-black ground) so coloured chips + deep-state text stay
- *   AA-legible. Expires 2026-06-30 (registry endsOn). ───── */
+/* ───── Emerald Lounge — limited-time modern Art Deco theme (June 2026).
+ *   The glamour interior after dark: deep emerald + obsidian velvet
+ *   surfaces, gleaming gold, cream text, a gold sunburst fanning from the
+ *   top, and jewel-tone glows (emerald · sapphire · amethyst). High-gloss,
+ *   opulent, geometric. Dark theme — inherits Voltage's Tailwind tint
+ *   tames + deep-text lifts (near-black ground) so coloured chips + deep
+ *   text stay AA-legible. Expires 2026-06-30 (registry endsOn). ───── */
 [data-theme="artdeco"] {
-  --popover-bg: #181410;
-  --bg:        #161310;        /* warm graphite (bronze-black) */
-  /* Bronze crown-glow top + terracotta warmth + fine vertical bronze
-   * fluting (the tower's pilasters). */
+  --popover-bg: #0b1c15;
+  --bg:        #08140f;        /* obsidian-emerald */
+  /* Gold sunburst fanning from top-centre + jewel-tone glows
+   * (emerald top, sapphire bottom-left, amethyst bottom-right). */
   --bg-mesh:
-    radial-gradient(at 50% -8%, rgba(193,154,91,0.16) 0px, transparent 55%),
-    radial-gradient(at 88% 94%, rgba(158,79,58,0.14) 0px, transparent 52%),
-    linear-gradient(90deg, rgba(193,154,91,0.05) 1px, transparent 1px);
-  --card:      rgba(28,24,19,0.86);
-  --card-solid: #1c1813;
-  --elevated:  rgba(38,32,24,0.86);
-  --raised:    rgba(50,42,31,0.92);
-  --fg:        #f3ebdc;        /* champagne cream */
-  --fg-muted:  #cbb38c;        /* bronze cream */
-  --fg-subtle: #a8916a;        /* muted bronze — AA on card/raised */
-  --line:      rgba(176,141,87,0.45);   /* bronze hairline (~3:1, 1.4.11) */
-  --line-strong: rgba(176,141,87,0.60);
-  --backdrop:  rgba(8,6,4,0.84);
+    repeating-conic-gradient(from 90deg at 50% -2%, rgba(212,175,55,0.06) 0deg 1.6deg, transparent 1.6deg 9deg),
+    radial-gradient(at 50% 0%,  rgba(26,160,106,0.18) 0px, transparent 58%),
+    radial-gradient(at 6% 94%,  rgba(58,104,190,0.12) 0px, transparent 48%),
+    radial-gradient(at 94% 92%, rgba(150,84,176,0.11) 0px, transparent 50%);
+  --card:      rgba(14,32,25,0.88);
+  --card-solid: #0e2019;        /* emerald velvet (lacquered) */
+  --elevated:  rgba(20,44,34,0.86);
+  --raised:    rgba(28,58,45,0.92);
+  --fg:        #f3ecd6;        /* cream */
+  --fg-muted:  #cdbd95;        /* champagne */
+  --fg-subtle: #b2a37c;        /* muted gold — AA on card/raised */
+  --line:      rgba(212,175,55,0.42);   /* gold hairline (~3:1, 1.4.11) */
+  --line-strong: rgba(212,175,55,0.58);
+  --backdrop:  rgba(2,8,5,0.86);
 
-  /* Bronze brand ramp. 50–200 deep bronze shadows; 500 the signature
-   * bronze; 600 dips deeper so white-text CTAs clear AA (~5.8:1); 700+
-   * ramps warm for accent text on the graphite ground — the same
-   * non-monotonic 600-dip pattern Voltage uses. */
-  --brand-50:  #211a0f;
-  --brand-100: #2f2614;
-  --brand-200: #43361d;
-  --brand-300: #6b5429;
-  --brand-400: #957741;
-  --brand-500: #c19a5b;
-  --brand-600: #7d6232;
-  --brand-700: #c19a5b;
-  --brand-800: #d4b176;
-  --brand-900: #e7cd9b;
+  /* Gleaming-gold brand ramp. 50–200 deep gold shadows; 500 the signature
+   * gold; 600 dips deeper so white-text CTAs clear AA (~5.4:1); 700+ ramp
+   * bright for accent text on the emerald ground — the same non-monotonic
+   * 600-dip pattern Voltage uses. */
+  --brand-50:  #2a2310;
+  --brand-100: #3d3216;
+  --brand-200: #57471d;
+  --brand-300: #87702c;
+  --brand-400: #b8973c;
+  --brand-500: #d4af37;
+  --brand-600: #7e6420;
+  --brand-700: #d4af37;
+  --brand-800: #e6c65a;
+  --brand-900: #f3dd8c;
 
-  /* Refined modern radii — sleeker than 1920s Deco's hard edges. */
-  --radius-sm: 2px;
-  --radius:    4px;
-  --radius-lg: 6px;
-  --radius-xl: 10px;
+  /* Modern glam radii — streamlined, a touch of curve. */
+  --radius-sm: 3px;
+  --radius:    6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
 
-  /* Dashboard hero — graphite with bronze + terracotta. */
-  --hero-bg:     #17120c;
-  --hero-mesh-1: #c19a5b;
-  --hero-mesh-2: #9e4f3a;
-  --hero-mesh-3: #7d6232;
-  --hero-mesh-4: #0f0b07;
-  --hero-title-gradient: linear-gradient(120deg, #f3ebdc 0%, #c19a5b 50%, #e0b878 100%);
+  /* Dashboard hero — obsidian-emerald with gold + sapphire. */
+  --hero-bg:     #06120c;
+  --hero-mesh-1: #d4af37;
+  --hero-mesh-2: #1aa06a;
+  --hero-mesh-3: #3a68be;
+  --hero-mesh-4: #04100a;
+  --hero-title-gradient: linear-gradient(120deg, #f3ecd6 0%, #d4af37 50%, #f3ecd6 100%);
 }
 
-/* Radials fill the screen; the bronze fluting tiles as fine vertical
- * pinstripes (the tower's pilasters) — 26px apart, full height. */
+/* Single fill — the sunburst repeats by angle and the radials fill the
+ * viewport; no tiling grid layer to size. */
 [data-theme="artdeco"] body {
-  background-size: 100% 100%, 100% 100%, 26px 100%;
+  background-size: 100% 100%;
 }
 
 /* Inherit Voltage's full Tailwind tint tame + deep-text lifts — both
