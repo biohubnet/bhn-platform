@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator · real employer names anonymized — Jun 2026
+  {
+    title: "Simulator · simulations no longer carry real company names",
+    body: "Now that a simulation can be shared as a public link, it shouldn't name a real employer. Two changes: (1) the existing “MSL — Oncology” sim had its company switched from a real pharma to a fictional one (Northwind Pharma); and (2) the generator now always invents a fictional company for the role's industry instead of lifting the real one from the job description — the same way it already anonymizes real people, and real rival companies are described generically too. If you hand-author or upload a payload, use a fictional company yourself; you can edit any sim's company from its editor. (The original pasted JD text is kept admin-only for reference and is never shown on a shared link.)",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Simulator · public playable share link + open comments — Jun 2026
   {
     title: "Simulator · share any sim as a public link anyone can play — and comment on",

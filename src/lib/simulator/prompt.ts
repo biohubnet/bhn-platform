@@ -17,7 +17,7 @@ A single valid JSON object matching the schema below. No prose before or after. 
 \`\`\`
 {
   "jobTitle": string,                  // e.g. "Director, Design"
-  "companyName": string | null,        // e.g. "RBC" — null if you can't tell
+  "companyName": string | null,        // ALWAYS fictional — invent a plausible company for the industry/region (e.g. "Northwind Pharma", "Cedarline Capital"). NEVER the real employer from the JD. null only if no company fits.
   "location": string | null,           // e.g. "Toronto", "Remote", "Singapore (hybrid)"
   "context": string,                   // 3–5 sentence quarter-context: business pressure, competitors, regulatory, what's at stake
   "vpName": string,                    // Plausible name for the player's direct manager (matches the company/region)
@@ -46,7 +46,7 @@ Person = {
   "role": string,                      // Full title: "Sr UX Designer", "Director, Product"
   "shortRole": string,                 // Compact label: "Sr UX", "Dir Product"
   "group": "team" | "partner",
-  "tenure": string,                    // Short readable: "6 yrs at RBC", "2 yrs in role"
+  "tenure": string,                    // Short readable: "6 yrs in industry", "2 yrs in role" — never name a real company
   "oneLiner": string,                  // 1–2 sentences with personality, history, or current dynamic. Sharp, not bland.
   "daily":   [string, string, ...],    // 2–3 concrete things they actually do daily
   "weekly":  [string, string, ...]     // 2–3 weekly rituals, meetings, 1:1s
@@ -91,13 +91,13 @@ Choice = {
 
 4. **People recur.** The cast you set up in team + partners must appear by name in scenarios. The VP appears in 3+ scenarios. Team members get named in scenarios about them (a 1:1, a performance concern, a stretch opportunity).
 
-5. **Specificity over genericness.** "Marcus, your senior PM, missed his last two deliverables" is right. "Your senior PM is underperforming" is wrong. Reference real tools (Figma, Jira, Dovetail, Sentry, Slack, Salesforce, Linear) where appropriate to the role. Reference real industry pressures (regulators, well-known competitors, common audit failures).
+5. **Specificity over genericness.** "Marcus, your senior PM, missed his last two deliverables" is right. "Your senior PM is underperforming" is wrong. Reference real tools (Figma, Jira, Dovetail, Sentry, Slack, Salesforce, Linear) where appropriate to the role. Reference real industry pressures (regulators, competitive dynamics, common audit failures) — but do NOT name real rival companies; describe competitors generically ("a larger incumbent", "a well-funded challenger").
 
 6. **Tone: mix realistic and human.** Slightly wry. Adults with histories. Avoid corporate-newsletter voice. Avoid cliché ("synergy", "stakeholder alignment"). Avoid emojis. Names should match the geography and industry.
 
 7. **End with a QBR.** Week 12 must include a scenario titled with "QBR" or "Quarterly Review" where the player closes the loop with their VP / leadership.
 
-8. **No identifying real people.** If the JD mentions a specific named person, do NOT use that name in your cast. Generate plausible fictional names.
+8. **No real names — people OR companies.** If the JD names a specific person, do NOT use that name in your cast — generate plausible fictional names. Likewise the employer must be FICTIONAL: never reuse the real company name from the JD anywhere in the output (companyName, context, scenarios, tenure, briefing). Invent ONE plausible fictional company for the role's industry/region and use it consistently. Sims can be shared publicly, so they must never reference a real employer.
 
 9. **JSON only.** First character of output must be \`{\`. Last must be \`}\`. No \`\`\` markers, no "Here's the simulation:", no trailing commentary.
 

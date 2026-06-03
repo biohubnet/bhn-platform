@@ -159,4 +159,8 @@ export type AttemptState = {
   finished: boolean;
 };
 
-export const PROMPT_VERSION = "v1";
+// Bumped v1→v2 (Jun 2026) when the generator prompt switched to
+// inventing a FICTIONAL employer instead of extracting the real one
+// from the JD — sims are publicly shareable, so they must not name a
+// real company. New generations dedup under the v2 namespace.
+export const PROMPT_VERSION = "v2";
