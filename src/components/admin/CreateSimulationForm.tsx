@@ -10,12 +10,13 @@
  * a couple of minutes, so we show a result card with links to the
  * editor/preview and a "create another" reset.
  */
-import { useState, type ChangeEvent } from "react";
+import { useState, useRef, type ChangeEvent, type DragEvent } from "react";
 import Link from "next/link";
 import {
   Sparkles, Loader2, AlertCircle, CheckCircle2, ChevronDown, Theater, Plus,
-  Upload, FileJson, X,
+  Upload, FileJson,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 
 const MIN_CHARS = 300;
@@ -26,6 +27,8 @@ export function CreateSimulationForm() {
   const [showPayload, setShowPayload] = useState(false);
   const [payloadText, setPayloadText] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{
@@ -43,12 +46,12 @@ export function CreateSimulationForm() {
     !busy &&
     (usePayload ? jdChars === 0 || jdChars >= MIN_CHARS : jdChars >= MIN_CHARS);
 
-  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    // Reset the input value so re-picking the same file still fires onChange.
-    e.target.value = "";
-    if (!file) return;
+  async function loadFile(file: File) {
     setError(null);
+    if (!/\.json$/i.test(file.name) && file.type && !file.type.includes("json")) {
+      setError(`That doesn't look like a .json file (${file.name}).`);
+      return;
+    }
     try {
       const text = await file.text();
       setPayloadText(text);
@@ -57,6 +60,22 @@ export function CreateSimulationForm() {
     } catch (err) {
       setError(`Couldn't read that file: ${(err as Error).message}`);
     }
+  }
+  function handleFileInput(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Reset the value so re-picking the same file still fires onChange.
+    e.target.value = "";
+    if (file) void loadFile(file);
+  }
+  function onDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) void loadFile(file);
+  }
+  function clearFile() {
+    setFileName(null);
+    setPayloadText("");
   }
 
   async function submit() {
@@ -215,37 +234,74 @@ export function CreateSimulationForm() {
             size={13}
             className={"transition-transform " + (showPayload ? "" : "-rotate-90")}
           />
-          Advanced · paste a hand-authored payload instead of generating
+          Advanced · upload or paste a hand-authored payload instead of generating
         </button>
         {showPayload && (
           <div className="mt-2 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-card-solid px-3 py-1.5 text-[12px] font-semibold text-muted transition-colors hover:border-brand-300 hover:text-fg">
-                <Upload size={13} /> Upload .json file
-                <input
-                  type="file"
-                  accept=".json,application/json"
-                  className="sr-only"
-                  onChange={handleFile}
-                />
-              </label>
+            {/* Drag-and-drop zone — also click-to-browse + keyboard. */}
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="Upload a .json payload file — drag and drop, or click to browse"
+              onClick={() => inputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  inputRef.current?.click();
+                }
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+              }}
+              onDrop={onDrop}
+              className={cn(
+                "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-7 text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
+                dragOver
+                  ? "border-brand-400 bg-brand-50/70"
+                  : fileName
+                    ? "border-emerald-300 bg-emerald-50/40"
+                    : "border-line bg-card-solid hover:border-brand-300 hover:bg-elevated/40",
+              )}
+            >
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".json,application/json"
+                className="sr-only"
+                onChange={handleFileInput}
+              />
               {fileName ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-800 ring-1 ring-inset ring-emerald-200">
-                  <FileJson size={12} /> {fileName}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFileName(null);
-                      setPayloadText("");
-                    }}
-                    aria-label="Clear uploaded file"
-                    className="ml-0.5 text-emerald-700 transition-colors hover:text-emerald-950"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
+                <>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-800">
+                    <FileJson size={16} /> {fileName}
+                  </span>
+                  <span className="text-[11px] text-muted">
+                    Drop another file or click to replace ·{" "}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearFile();
+                      }}
+                      className="font-medium text-emerald-700 underline-offset-2 hover:underline"
+                    >
+                      clear
+                    </button>
+                  </span>
+                </>
               ) : (
-                <span className="text-[11px] text-subtle">or paste it below</span>
+                <>
+                  <Upload size={20} className={dragOver ? "text-brand-600" : "text-muted"} />
+                  <span className="text-sm font-medium text-fg">
+                    {dragOver ? "Drop the .json file" : "Drag a .json file here, or click to browse"}
+                  </span>
+                  <span className="text-[11px] text-subtle">…or paste the payload below</span>
+                </>
               )}
             </div>
             <textarea
@@ -254,8 +310,8 @@ export function CreateSimulationForm() {
                 setPayloadText(e.target.value);
                 if (fileName) setFileName(null);
               }}
-              rows={10}
-              placeholder='Upload a .json file above, or paste:  { "jobTitle": "…", "stats": [...], "people": [...], "weeks": [...] }'
+              rows={8}
+              placeholder='…or paste the payload JSON:  { "jobTitle": "…", "stats": [...], "people": [...], "weeks": [...] }'
               className="w-full resize-y rounded-lg border border-line bg-card-solid px-3 py-2 font-mono text-[12px] leading-relaxed text-fg placeholder:text-subtle focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
             />
             <p className="text-[11px] text-subtle">
