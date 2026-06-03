@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 
 interface UserBasic { id: string; name: string | null; email: string }
 interface CourseBasic { id: string; title: string }
@@ -52,11 +52,12 @@ export function GroupsClient({
     setGroups((prev) => prev.filter((g) => g.id !== id));
   }
 
-  async function addMember(groupId: string, userId: string) {
+  async function addMembers(groupId: string, userIds: string[]) {
+    if (userIds.length === 0) return;
     await fetch(`/api/admin/groups/${groupId}/members`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userIds: [userId] }),
+      body: JSON.stringify({ userIds }),
     });
     router.refresh();
   }
@@ -130,21 +131,28 @@ export function GroupsClient({
               <div className="border-t border-line px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Members */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-muted">Members</p>
-                    <AddSelect
-                      placeholder="Add user…"
-                      options={allUsers
-                        .filter((u) => !group.members.some((m) => m.user.id === u.id))
-                        .map((u) => ({ value: u.id, label: u.name ?? u.email }))}
-                      onAdd={(id) => addMember(group.id, id)}
-                    />
-                  </div>
-                  <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted mb-2">
+                    Members
+                    <span className="ml-2 text-[11px] font-normal text-subtle">
+                      a person can be in multiple groups
+                    </span>
+                  </p>
+                  <MemberPicker
+                    candidates={allUsers.filter(
+                      (u) => !group.members.some((m) => m.user.id === u.id),
+                    )}
+                    onAdd={(ids) => addMembers(group.id, ids)}
+                  />
+                  <div className="mt-2 space-y-1">
                     {group.members.map((m) => (
-                      <div key={m.user.id} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-elevated">
-                        <span>{m.user.name ?? m.user.email}</span>
-                        <button onClick={() => removeMember(group.id, m.user.id)} className="text-subtle hover:text-red-400">
+                      <div key={m.user.id} className="flex items-center justify-between gap-2 text-sm py-1 px-2 rounded hover:bg-elevated">
+                        <span className="min-w-0">
+                          <span className="block truncate">{m.user.name ?? m.user.email}</span>
+                          {m.user.name && (
+                            <span className="block truncate text-[11px] text-subtle">{m.user.email}</span>
+                          )}
+                        </span>
+                        <button onClick={() => removeMember(group.id, m.user.id)} className="text-subtle hover:text-red-400 shrink-0">
                           <Trash2 size={12} />
                         </button>
                       </div>
@@ -258,6 +266,137 @@ function AddSelect({
         ))}
       </select>
       <Plus size={12} className="text-subtle" />
+    </div>
+  );
+}
+
+/**
+ * Searchable, multi-select picker for adding EXISTING people to a group.
+ * Candidates are users not already in this group (a person can still be
+ * in other groups — membership is per-group). Adds the whole selection
+ * in one request.
+ */
+function MemberPicker({
+  candidates,
+  onAdd,
+}: {
+  candidates: UserBasic[];
+  onAdd: (ids: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? candidates.filter(
+        (u) =>
+          (u.name ?? "").toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q),
+      )
+    : candidates;
+  const shown = filtered.slice(0, 50);
+
+  function toggle(id: string) {
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+  function cancel() {
+    setOpen(false);
+    setSelected(new Set());
+    setQuery("");
+  }
+  async function confirm() {
+    if (selected.size === 0 || busy) return;
+    setBusy(true);
+    await onAdd([...selected]);
+    setBusy(false);
+    cancel();
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1 rounded-md border border-line bg-card px-2.5 py-1.5 text-xs font-medium text-fg hover:border-brand-400 hover:text-brand-700"
+      >
+        <Plus size={12} /> Add people
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-line bg-elevated/40 p-2">
+      <input
+        autoFocus
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search name or email…"
+        className="w-full rounded-md border border-line bg-card px-2.5 py-1.5 text-xs text-fg outline-none focus:border-brand-400"
+      />
+      <div className="mt-1.5 max-h-52 overflow-y-auto rounded-md border border-line bg-card">
+        {shown.length === 0 ? (
+          <p className="px-3 py-3 text-center text-xs text-subtle">
+            {candidates.length === 0
+              ? "Everyone's already in this group."
+              : "No matches."}
+          </p>
+        ) : (
+          shown.map((u) => {
+            const on = selected.has(u.id);
+            return (
+              <button
+                key={u.id}
+                onClick={() => toggle(u.id)}
+                className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-elevated"
+              >
+                <span
+                  className={[
+                    "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border",
+                    on
+                      ? "border-brand-600 bg-brand-600 text-white"
+                      : "border-line",
+                  ].join(" ")}
+                >
+                  {on && <Check size={10} />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs text-fg">
+                    {u.name ?? u.email}
+                  </span>
+                  {u.name && (
+                    <span className="block truncate text-[10.5px] text-subtle">
+                      {u.email}
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          })
+        )}
+        {filtered.length > shown.length && (
+          <p className="px-3 py-1 text-[10.5px] text-subtle">
+            Showing 50 of {filtered.length} — keep typing to narrow.
+          </p>
+        )}
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <button onClick={cancel} className="text-xs text-subtle hover:text-fg">
+          Cancel
+        </button>
+        <button
+          onClick={confirm}
+          disabled={selected.size === 0 || busy}
+          className="rounded-md bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+        >
+          {busy ? "Adding…" : selected.size > 0 ? `Add ${selected.size}` : "Add"}
+        </button>
+      </div>
     </div>
   );
 }

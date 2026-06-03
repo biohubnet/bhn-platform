@@ -37,7 +37,7 @@ export default async function AdminGroupsPage() {
       <div>
         <h1 className="text-2xl font-bold text-fg">Groups / Cohorts</h1>
         <p className="text-muted text-sm mt-1">
-          Add users and courses to a group — members are auto-enrolled in group courses.
+          Add existing people and courses to a group. A person can belong to multiple groups; members are auto-enrolled in the group&apos;s courses.
         </p>
       </div>
       <GroupsClient groups={groups} allUsers={users} allCourses={courses} />

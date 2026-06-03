@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Groups · searchable add-people picker — Jun 2026
+  {
+    title: "Groups · add existing people to a group with a searchable picker",
+    body: "Adding people to a group (Admin → Groups) is no longer a tiny dropdown of every user. Each group now has an “Add people” button that opens a searchable, multi-select picker — type a name or email, tick everyone you want, and add them all in one go. A person can belong to multiple groups, and members are still auto-enrolled in the group's courses.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Showcase · multiple groups, a public link each — Jun 2026
   {
     title: "Showcase · run separate showcases for different groups, each with its own link",
