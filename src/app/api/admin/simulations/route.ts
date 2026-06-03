@@ -9,15 +9,19 @@
  * and anyone can launch their own attempt — and a later request for the
  * same JD cache-hits it by sourceHash instead of regenerating.
  *
- *   Body: { jdText: string, sourceUrl?: string, payload?: object }
- *     - payload present → hand-author path (validated, no AI call)
- *     - payload absent  → AI generate path
+ *   Body: { jdText?: string, sourceUrl?: string, payload?: object }
+ *     - payload present → hand-author / upload path (validated, no AI).
+ *       The JD is OPTIONAL here: pass one to dedup this sim against a
+ *       future trainee request for the same posting, or omit it and we
+ *       derive a stable hash + snippet from the payload itself.
+ *     - payload absent  → AI generate path (JD required, ≥300 chars).
  *
- * Dedup: if a Simulation already exists for the normalised JD's
- * sourceHash, we return it ({ existed: true }) rather than make a
- * duplicate — same one-row-per-posting rule the request flow uses.
+ * Dedup: if a Simulation already exists for the resolved sourceHash, we
+ * return it ({ existed: true }) rather than make a duplicate — the same
+ * one-row-per-posting rule the request flow uses.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateSimulation } from "@/lib/simulator/generator";
@@ -46,39 +50,39 @@ export async function POST(req: NextRequest) {
     payload?: unknown;
   };
 
-  const jdText = typeof body.jdText === "string" ? body.jdText : "";
+  const jdText = typeof body.jdText === "string" ? body.jdText.trim() : "";
   const sourceUrl =
     typeof body.sourceUrl === "string" && body.sourceUrl.trim()
       ? body.sourceUrl.trim().slice(0, 2000)
       : null;
+  const hasPayload = !!body.payload && typeof body.payload === "object";
 
-  // Normalise + hash the JD exactly the way the trainee request path
-  // does, so a direct-create and a later matching request share one row.
-  const extracted = extractJobDescriptionFromText(jdText, PROMPT_VERSION);
-  if (!extracted.ok) {
-    return NextResponse.json({ error: extracted.error }, { status: 400 });
-  }
-
-  // Dedup — never create a second row for the same posting.
-  const existing = await prisma.simulation.findUnique({
-    where: { sourceHash: extracted.sourceHash },
-    select: { id: true, jobTitle: true },
-  });
-  if (existing) {
-    return NextResponse.json({
-      ok: true,
-      existed: true,
-      simulationId: existing.id,
-      jobTitle: existing.jobTitle,
-    });
-  }
-
-  // Resolve the payload — hand-authored (validated, no AI) or AI-generated.
   let payload: SimulationPayload;
   let modelUsed: string;
   let generationMs: number;
+  let sourceHash: string;
+  let jdSnippet: string;
 
-  if (body.payload && typeof body.payload === "object") {
+  // Small helper: the same dedup check both paths run once their hash
+  // is known. Returns the existing-row response, or null to proceed.
+  async function existingFor(hash: string) {
+    const existing = await prisma.simulation.findUnique({
+      where: { sourceHash: hash },
+      select: { id: true, jobTitle: true },
+    });
+    return existing
+      ? NextResponse.json({
+          ok: true,
+          existed: true,
+          simulationId: existing.id,
+          jobTitle: existing.jobTitle,
+        })
+      : null;
+  }
+
+  if (hasPayload) {
+    // Hand-authored / uploaded payload — validated, no AI call. The JD
+    // is optional on this path.
     const validated = validatePayload(body.payload);
     if (!validated.ok) {
       return NextResponse.json(
@@ -89,7 +93,44 @@ export async function POST(req: NextRequest) {
     payload = validated.payload;
     modelUsed = "hand-authored";
     generationMs = 0;
+
+    if (jdText) {
+      // A JD was supplied alongside the payload — hash it the trainee
+      // way so this sim dedups against a future request for the posting.
+      const extracted = extractJobDescriptionFromText(jdText, PROMPT_VERSION);
+      if (!extracted.ok) {
+        return NextResponse.json({ error: extracted.error }, { status: 400 });
+      }
+      sourceHash = extracted.sourceHash;
+      jdSnippet = extracted.jdSnippet;
+    } else {
+      // No JD — derive a stable hash + snippet from the payload itself.
+      // The "handauthored::" prefix keeps it from ever colliding with a
+      // JD-derived hash (those are "<promptVersion>::<jd>").
+      sourceHash = createHash("sha256")
+        .update(`handauthored::${PROMPT_VERSION}::${JSON.stringify(payload)}`)
+        .digest("hex");
+      jdSnippet =
+        [payload.jobTitle, payload.companyName, payload.location]
+          .filter(Boolean)
+          .join(" · ")
+          .slice(0, 800) || payload.jobTitle;
+    }
+
+    const dup = await existingFor(sourceHash);
+    if (dup) return dup;
   } else {
+    // AI generate path — a real JD is required.
+    const extracted = extractJobDescriptionFromText(jdText, PROMPT_VERSION);
+    if (!extracted.ok) {
+      return NextResponse.json({ error: extracted.error }, { status: 400 });
+    }
+    sourceHash = extracted.sourceHash;
+    jdSnippet = extracted.jdSnippet;
+
+    const dup = await existingFor(sourceHash);
+    if (dup) return dup;
+
     const gen = await generateSimulation(extracted.content, adminId);
     if (!gen.ok) {
       return NextResponse.json({ ok: false, error: gen.error }, { status: 502 });
@@ -101,9 +142,9 @@ export async function POST(req: NextRequest) {
 
   const sim = await prisma.simulation.create({
     data: {
-      sourceHash: extracted.sourceHash,
+      sourceHash,
       sourceUrl,
-      jdSnippet: extracted.jdSnippet,
+      jdSnippet,
       jobTitle: payload.jobTitle,
       companyName: payload.companyName,
       location: payload.location,

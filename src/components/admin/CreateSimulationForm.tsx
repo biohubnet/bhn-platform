@@ -10,10 +10,11 @@
  * a couple of minutes, so we show a result card with links to the
  * editor/preview and a "create another" reset.
  */
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
   Sparkles, Loader2, AlertCircle, CheckCircle2, ChevronDown, Theater, Plus,
+  Upload, FileJson, X,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 
@@ -24,6 +25,7 @@ export function CreateSimulationForm() {
   const [sourceUrl, setSourceUrl] = useState("");
   const [showPayload, setShowPayload] = useState(false);
   const [payloadText, setPayloadText] = useState("");
+  const [fileName, setFileName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{
@@ -34,9 +36,28 @@ export function CreateSimulationForm() {
 
   const jdChars = jdText.trim().length;
   const usePayload = showPayload && payloadText.trim().length > 0;
-  // With a payload we don't need the JD to clear the 300-char floor (the
-  // payload carries the content); otherwise enforce the AI path's minimum.
-  const canSubmit = !busy && (usePayload ? jdChars > 0 : jdChars >= MIN_CHARS);
+  // On the payload path the JD is optional — but if one IS typed it still
+  // has to clear the 300-char floor (the API hashes it the trainee way).
+  // On the AI path the JD is required.
+  const canSubmit =
+    !busy &&
+    (usePayload ? jdChars === 0 || jdChars >= MIN_CHARS : jdChars >= MIN_CHARS);
+
+  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Reset the input value so re-picking the same file still fires onChange.
+    e.target.value = "";
+    if (!file) return;
+    setError(null);
+    try {
+      const text = await file.text();
+      setPayloadText(text);
+      setFileName(file.name);
+      setShowPayload(true);
+    } catch (err) {
+      setError(`Couldn't read that file: ${(err as Error).message}`);
+    }
+  }
 
   async function submit() {
     setBusy(true);
@@ -157,13 +178,15 @@ export function CreateSimulationForm() {
         <span
           className={
             "mt-1 block text-[11px] " +
-            (jdChars > 0 && jdChars < MIN_CHARS && !usePayload
-              ? "text-rose-600"
-              : "text-subtle")
+            (jdChars > 0 && jdChars < MIN_CHARS ? "text-rose-600" : "text-subtle")
           }
         >
           {jdChars.toLocaleString()} chars
-          {!usePayload && ` · need at least ${MIN_CHARS} — paste the full posting, not a summary`}
+          {usePayload
+            ? jdChars > 0 && jdChars < MIN_CHARS
+              ? ` · still needs ${MIN_CHARS}+ if you include a JD — or clear it (optional with a payload)`
+              : " · optional when you upload or paste a payload"
+            : ` · need at least ${MIN_CHARS} — paste the full posting, not a summary`}
         </span>
       </label>
 
@@ -195,17 +218,50 @@ export function CreateSimulationForm() {
           Advanced · paste a hand-authored payload instead of generating
         </button>
         {showPayload && (
-          <div className="mt-2 space-y-1">
+          <div className="mt-2 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-card-solid px-3 py-1.5 text-[12px] font-semibold text-muted transition-colors hover:border-brand-300 hover:text-fg">
+                <Upload size={13} /> Upload .json file
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  className="sr-only"
+                  onChange={handleFile}
+                />
+              </label>
+              {fileName ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-800 ring-1 ring-inset ring-emerald-200">
+                  <FileJson size={12} /> {fileName}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFileName(null);
+                      setPayloadText("");
+                    }}
+                    aria-label="Clear uploaded file"
+                    className="ml-0.5 text-emerald-700 transition-colors hover:text-emerald-950"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ) : (
+                <span className="text-[11px] text-subtle">or paste it below</span>
+              )}
+            </div>
             <textarea
               value={payloadText}
-              onChange={(e) => setPayloadText(e.target.value)}
+              onChange={(e) => {
+                setPayloadText(e.target.value);
+                if (fileName) setFileName(null);
+              }}
               rows={10}
-              placeholder='{ "jobTitle": "…", "companyName": "…", "stats": [...], "people": [...], "weeks": [...] }'
+              placeholder='Upload a .json file above, or paste:  { "jobTitle": "…", "stats": [...], "people": [...], "weeks": [...] }'
               className="w-full resize-y rounded-lg border border-line bg-card-solid px-3 py-2 font-mono text-[12px] leading-relaxed text-fg placeholder:text-subtle focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
             />
             <p className="text-[11px] text-subtle">
-              Validated against the same schema as the AI path. The JD above is still
-              used for the snippet + dedup hash, so paste it too.
+              Validated against the same schema as the AI path. The job description
+              above is optional on this path — add it only if you want this sim to
+              dedup against a future trainee request for the same posting.
             </p>
           </div>
         )}
