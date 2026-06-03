@@ -88,8 +88,8 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   },
   // ── Limited-time June theme · Art Deco — Jun 2026
   {
-    title: "Limited-time theme · Gilded, a modern Art Deco drop for June",
-    body: "A new seasonal theme is live through June 30: Gilded — modern Art Deco in graphite + gold. Deep, almost-black graphite with a fine grain and a diagonal light-shine (like light off lacquer), gleaming gold accents and hairlines, cream text, and geometric gold metalwork: a sunburst crown over a gold grid. Opulent and metal, barely any colour beyond the gold. Pick it from the theme switcher (the graphite-and-gold swatch under \"Limited time\"), or tap it from the theme-of-the-day card on your dashboard. Like all limited drops it disappears when the window closes — it retires after June 30, and anyone still on it falls back to their default.",
+    title: "Limited-time theme · Promenade, a powdered Art Deco drop for June",
+    body: "A new seasonal theme is live through June 30: Promenade — a powdered, modern take on Art Deco. Warm apricot-cream surfaces, sea-glass teal as the jewel accent, sage and terracotta highlights, crisp geometric edges, a soft sunburst crown and fine line-work. Inspired by the soft 1925 palette as it's revived for the Art Deco centenary — elegant and calm rather than dark and metallic. Pick it from the theme switcher (the apricot-and-teal swatch under \"Limited time\"), or tap it from the theme-of-the-day card on your dashboard. Like all limited drops it retires after June 30, and anyone still on it falls back to their default.",
     kind: "feature",
     visibleTo: ALL,
     daysAgo: 0,

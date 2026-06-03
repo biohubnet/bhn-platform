@@ -256,42 +256,41 @@
  *   deep-text lifts (near-black ground) so coloured chips + deep text
  *   stay AA-legible. Expires 2026-06-30 (endsOn). ───── */
 [data-theme="artdeco"] {
-  --popover-bg: #16171c;
-  --bg:        #0d0e11;        /* deep graphite, almost black */
-  /* Layers, top→bottom: noise grain · diagonal light-shine · gold
-   * sunburst crown · warm gold sheen · gold geometric grid. */
+  --popover-bg: #f3ead9;
+  --bg:        #ece0cd;        /* warm apricot-cream */
+  /* Layers, top→bottom: sea-glass teal sunburst crown · soft teal radial
+   * glow · apricot corner glow · fine apricot geometric grid (h + v).
+   * Flat and clean, matching the vector Deco illustration — no grain. */
   --bg-mesh:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
-    linear-gradient(125deg, transparent 34%, rgba(245,235,210,0.05) 47%, rgba(212,175,55,0.07) 50%, rgba(245,235,210,0.04) 53%, transparent 66%),
-    repeating-conic-gradient(from 90deg at 50% 0%, rgba(212,175,55,0.05) 0deg 1.4deg, transparent 1.4deg 8deg),
-    radial-gradient(at 50% -8%, rgba(212,175,55,0.13) 0px, transparent 58%),
-    linear-gradient(rgba(212,175,55,0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(212,175,55,0.055) 1px, transparent 1px);
-  --card:      rgba(22,23,29,0.90);
-  --card-solid: #16171c;        /* graphite card */
-  --elevated:  rgba(32,34,42,0.88);
-  --raised:    rgba(44,47,57,0.92);
-  --fg:        #f1ead7;        /* cream */
-  --fg-muted:  #cbbf9f;        /* champagne */
-  --fg-subtle: #b3a988;        /* muted gold — AA on card/raised */
-  --line:      rgba(212,175,55,0.42);   /* gold hairline (~3:1, 1.4.11) */
-  --line-strong: rgba(212,175,55,0.58);
-  --backdrop:  rgba(2,2,4,0.88);
+    repeating-conic-gradient(from 90deg at 50% 0%, rgba(74,123,131,0.05) 0deg 1.3deg, transparent 1.3deg 8deg),
+    radial-gradient(at 50% -6%, rgba(74,123,131,0.10) 0px, transparent 52%),
+    radial-gradient(at 88% 110%, rgba(196,138,95,0.12) 0px, transparent 55%),
+    linear-gradient(rgba(176,116,78,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(176,116,78,0.05) 1px, transparent 1px);
+  --card:      rgba(247,240,228,0.92);
+  --card-solid: #f7f0e4;        /* cream card */
+  --elevated:  #efe5d3;
+  --raised:    #e6d9c2;
+  --fg:        #26252a;        /* deco charcoal */
+  --fg-muted:  #555a5c;        /* slate-charcoal */
+  --fg-subtle: #6f6657;        /* warm taupe — AA on card/raised */
+  --line:      rgba(60,53,44,0.16);     /* warm hairline */
+  --line-strong: rgba(60,53,44,0.30);
+  --backdrop:  rgba(30,26,22,0.45);
 
-  /* Gleaming-gold brand ramp. 50–200 deep gold shadows; 500 the
-   * signature gold; 600 dips deeper so white-text CTAs clear AA
-   * (~5.4:1); 700+ ramp bright for accent text on the graphite ground —
-   * the same non-monotonic 600-dip pattern Voltage uses. */
-  --brand-50:  #2a2310;
-  --brand-100: #3d3216;
-  --brand-200: #57471d;
-  --brand-300: #87702c;
-  --brand-400: #b8973c;
-  --brand-500: #d4af37;
-  --brand-600: #7e6420;
-  --brand-700: #d4af37;
-  --brand-800: #e6c65a;
-  --brand-900: #f3dd8c;
+  /* Sea-glass teal brand — the deco jewel tone against apricot + cream.
+   * Monotonic light ramp; 600 is deep enough for white-text CTAs
+   * (~5.6:1), 700+ for accent text on the cream ground. */
+  --brand-50:  #e6eef0;
+  --brand-100: #cfe0e3;
+  --brand-200: #abc8cd;
+  --brand-300: #84aeb4;
+  --brand-400: #5d9098;
+  --brand-500: #4a7b83;
+  --brand-600: #3a6168;
+  --brand-700: #2e4e54;
+  --brand-800: #243e43;
+  --brand-900: #1b2f33;
 
   /* Crisp geometric Deco edges. */
   --radius-sm: 1px;
@@ -299,112 +298,53 @@
   --radius-lg: 5px;
   --radius-xl: 8px;
 
-  /* Dashboard hero — deep graphite with gold + a light-shine streak. */
-  --hero-bg:     #0c0d11;
-  --hero-mesh-1: #d4af37;
-  --hero-mesh-2: #8a6f24;
-  --hero-mesh-3: #26282f;
-  --hero-mesh-4: #08090c;
-  --hero-title-gradient: linear-gradient(120deg, #f1ead7 0%, #d4af37 50%, #f1ead7 100%);
+  /* Dashboard hero — apricot-cream ground, teal → apricot deco gradient. */
+  --hero-bg:     #e7d5bd;
+  --hero-mesh-1: #4a7b83;
+  --hero-mesh-2: #c98a5f;
+  --hero-mesh-3: #8a9a7a;
+  --hero-mesh-4: #f3ead8;
+  --hero-title-gradient: linear-gradient(120deg, #2e4e54 0%, #4a7b83 48%, #c1784f 100%);
 }
 
-/* Per-layer sizes: grain tiles 140px · shine/sunburst/sheen fill ·
- * the gold grid tiles at 28px. */
+/* Per-layer sizes: sunburst + two radial glows fill · the apricot grid
+ * tiles at 30px. */
 [data-theme="artdeco"] body {
-  background-size: 140px 140px, 100% 100%, 100% 100%, 100% 100%, 28px 28px, 28px 28px;
+  background-size: 100% 100%, 100% 100%, 100% 100%, 30px 30px, 30px 30px;
 }
 
-/* Inherit Voltage's full Tailwind tint tame + deep-text lifts — both
- * themes sit on a near-black ground, so the same values keep coloured
- * chips and deep-state text AA-legible across every page. */
+/* Warm-light Tailwind tint tame — keep coloured chips (bg-rose-50 etc.)
+ * harmonised with the apricot-cream ground rather than the default cool
+ * tints. Other hues fall back to the default light tints. */
 [data-theme="artdeco"] {
-  --color-rose-50:    rgba(244, 63, 94, 0.12);
-  --color-rose-100:   rgba(244, 63, 94, 0.18);
-  --color-rose-200:   rgba(244, 63, 94, 0.28);
-  --color-amber-50:   rgba(245, 158, 11, 0.10);
-  --color-amber-100:  rgba(245, 158, 11, 0.16);
-  --color-amber-200:  rgba(245, 158, 11, 0.26);
-  --color-emerald-50: rgba(16, 185, 129, 0.12);
-  --color-emerald-100:rgba(16, 185, 129, 0.18);
-  --color-emerald-200:rgba(16, 185, 129, 0.26);
-  --color-sky-50:     rgba(14, 165, 233, 0.12);
-  --color-sky-100:    rgba(14, 165, 233, 0.18);
-  --color-violet-50:  rgba(139, 92, 246, 0.10);
-  --color-violet-100: rgba(139, 92, 246, 0.18);
-  --color-violet-200: rgba(139, 92, 246, 0.26);
-  --color-blue-50:    rgba(59, 130, 246, 0.10);
-  --color-blue-100:   rgba(59, 130, 246, 0.18);
-  --color-blue-200:   rgba(59, 130, 246, 0.26);
-  --color-sky-200:    rgba(14, 165, 233, 0.26);
-  --color-green-50:   rgba(34, 197, 94, 0.10);
-  --color-green-100:  rgba(34, 197, 94, 0.18);
-  --color-green-200:  rgba(34, 197, 94, 0.26);
-  --color-red-50:     rgba(239, 68, 68, 0.10);
-  --color-red-100:    rgba(239, 68, 68, 0.18);
-  --color-red-200:    rgba(239, 68, 68, 0.26);
-  --color-cyan-50:    rgba(6, 182, 212, 0.10);
-  --color-cyan-100:   rgba(6, 182, 212, 0.18);
-  --color-cyan-200:   rgba(6, 182, 212, 0.26);
-  --color-indigo-50:  rgba(99, 102, 241, 0.10);
-  --color-indigo-100: rgba(99, 102, 241, 0.18);
-  --color-indigo-200: rgba(99, 102, 241, 0.26);
-  --color-purple-50:  rgba(168, 85, 247, 0.10);
-  --color-purple-100: rgba(168, 85, 247, 0.18);
-  --color-purple-200: rgba(168, 85, 247, 0.26);
-  --color-orange-50:  rgba(249, 115, 22, 0.10);
-  --color-orange-100: rgba(249, 115, 22, 0.18);
-  --color-orange-200: rgba(249, 115, 22, 0.26);
-  --color-teal-50:    rgba(20, 184, 166, 0.10);
-  --color-teal-100:   rgba(20, 184, 166, 0.18);
-  --color-teal-200:   rgba(20, 184, 166, 0.26);
-  --color-slate-50:   rgba(148, 163, 184, 0.08);
-  --color-slate-100:  rgba(148, 163, 184, 0.15);
-  --color-slate-200:  rgba(148, 163, 184, 0.24);
-  --color-gray-50:    rgba(156, 163, 175, 0.08);
-  --color-gray-100:   rgba(156, 163, 175, 0.15);
-  --color-gray-200:   rgba(156, 163, 175, 0.24);
-  --color-zinc-50:    rgba(161, 161, 170, 0.08);
-  --color-zinc-100:   rgba(161, 161, 170, 0.15);
-  --color-zinc-200:   rgba(161, 161, 170, 0.24);
-  --color-neutral-50: rgba(163, 163, 163, 0.08);
-  --color-neutral-100:rgba(163, 163, 163, 0.15);
-  --color-neutral-200:rgba(163, 163, 163, 0.24);
-  --color-stone-50:   rgba(168, 162, 158, 0.08);
-  --color-stone-100:  rgba(168, 162, 158, 0.15);
-  --color-stone-200:  rgba(168, 162, 158, 0.24);
-  --color-yellow-50:  rgba(234, 179, 8, 0.10);
-  --color-yellow-100: rgba(234, 179, 8, 0.18);
-  --color-yellow-200: rgba(234, 179, 8, 0.26);
-  --color-lime-50:    rgba(132, 204, 22, 0.10);
-  --color-lime-100:   rgba(132, 204, 22, 0.18);
-  --color-lime-200:   rgba(132, 204, 22, 0.26);
-  --color-pink-50:    rgba(236, 72, 153, 0.10);
-  --color-pink-100:   rgba(236, 72, 153, 0.18);
-  --color-pink-200:   rgba(236, 72, 153, 0.26);
-  --color-fuchsia-50: rgba(217, 70, 239, 0.10);
-  --color-fuchsia-100:rgba(217, 70, 239, 0.18);
-  --color-fuchsia-200:rgba(217, 70, 239, 0.26);
+  --color-rose-50:    rgba(190, 110, 95, 0.12);
+  --color-rose-100:   rgba(190, 110, 95, 0.18);
+  --color-rose-200:   rgba(190, 110, 95, 0.28);
+  --color-amber-50:   rgba(196, 138, 95, 0.12);
+  --color-amber-100:  rgba(196, 138, 95, 0.18);
+  --color-amber-200:  rgba(196, 138, 95, 0.26);
+  --color-emerald-50: rgba(120, 140, 110, 0.12);
+  --color-emerald-100:rgba(120, 140, 110, 0.18);
+  --color-emerald-200:rgba(120, 140, 110, 0.26);
+  --color-sky-50:     rgba(74, 123, 131, 0.10);
+  --color-sky-100:    rgba(74, 123, 131, 0.16);
+  --color-sky-200:    rgba(74, 123, 131, 0.24);
+  --color-teal-50:    rgba(74, 123, 131, 0.10);
+  --color-teal-100:   rgba(74, 123, 131, 0.16);
+  --color-teal-200:   rgba(74, 123, 131, 0.24);
 }
-[data-theme="artdeco"] .text-rose-700    { color: #fb7185; }
-[data-theme="artdeco"] .text-rose-800    { color: #f87171; }
-[data-theme="artdeco"] .text-rose-900    { color: #fca5a5; }
-[data-theme="artdeco"] .text-amber-700   { color: #fbbf24; }
-[data-theme="artdeco"] .text-amber-800   { color: #fcd34d; }
-[data-theme="artdeco"] .text-amber-900   { color: #fde68a; }
-[data-theme="artdeco"] .text-emerald-700 { color: #34d399; }
-[data-theme="artdeco"] .text-emerald-800 { color: #6ee7b7; }
-[data-theme="artdeco"] .text-emerald-900 { color: #a7f3d0; }
-[data-theme="artdeco"] .text-sky-600     { color: #38bdf8; }
-[data-theme="artdeco"] .text-sky-700     { color: #38bdf8; }
-[data-theme="artdeco"] .text-sky-800     { color: #7dd3fc; }
-[data-theme="artdeco"] .text-sky-900     { color: #bae6fd; }
-[data-theme="artdeco"] .text-violet-600  { color: #a78bfa; }
-[data-theme="artdeco"] .text-violet-700  { color: #a78bfa; }
-[data-theme="artdeco"] .text-violet-800  { color: #c4b5fd; }
-[data-theme="artdeco"] .text-violet-900  { color: #ddd6fe; }
-[data-theme="artdeco"] .text-blue-600    { color: #60a5fa; }
-[data-theme="artdeco"] .text-blue-700    { color: #93c5fd; }
-[data-theme="artdeco"] .text-blue-800    { color: #bfdbfe; }
+[data-theme="artdeco"] .text-rose-700    { color: #8f4a42; }
+[data-theme="artdeco"] .text-rose-800    { color: #743a34; }
+[data-theme="artdeco"] .text-rose-900    { color: #5c2e2a; }
+[data-theme="artdeco"] .text-amber-700   { color: #8a5a2a; }
+[data-theme="artdeco"] .text-amber-800   { color: #6f4720; }
+[data-theme="artdeco"] .text-amber-900   { color: #5a3a1a; }
+[data-theme="artdeco"] .text-emerald-700 { color: #4c5d44; }
+[data-theme="artdeco"] .text-emerald-800 { color: #3a4836; }
+[data-theme="artdeco"] .text-emerald-900 { color: #2a3528; }
+[data-theme="artdeco"] .text-sky-700     { color: #2e4e54; }
+[data-theme="artdeco"] .text-sky-800     { color: #243e43; }
+[data-theme="artdeco"] .text-teal-700    { color: #2e4e54; }
 
 /* Tame Tailwind's saturated tint stack so cards using bg-rose-50 etc.
  * harmonise with the warm parchment instead of fighting it. The

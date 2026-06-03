@@ -67,8 +67,8 @@ export const THEMES = [
   },
   {
     id: "artdeco",
-    name: "Gilded",
-    description: "Modern Art Deco in graphite + gold — gleaming gold over deep, textured graphite with a light-shine, cream text, a sunburst crown and fine gold geometry. A limited June engagement.",
+    name: "Promenade",
+    description: "Powdered Art Deco — apricot, sea-glass teal and sage over warm cream, with crisp geometric edges, a soft sunburst crown and fine line-work. A softer take on the 1925 palette for its 2025 centenary. A limited June engagement.",
     category: "limited",
     endsOn: "2026-06-30",
     limited: true,
