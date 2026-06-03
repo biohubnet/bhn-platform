@@ -116,3 +116,52 @@ export async function PUT(
   });
   return NextResponse.json({ ok: true });
 }
+
+/**
+ * DELETE /api/admin/simulations/[id] — hard-delete a Simulation.
+ *
+ * Cascades: every SimulationAttempt against it is removed (onDelete:
+ * Cascade) — i.e. all trainee playthroughs/progress go with it — and any
+ * SimulationRequest that was fulfilled by it keeps its row but has its
+ * `simulationId` nulled (onDelete: SetNull). Admin-gated + audit-logged.
+ */
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await requireRole("admin").catch(() => null);
+  if (!session) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const adminId = (session.user as { id?: string }).id;
+  if (!adminId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { id } = await params;
+  const sim = await prisma.simulation.findUnique({
+    where: { id },
+    select: { id: true, jobTitle: true, _count: { select: { attempts: true } } },
+  });
+  if (!sim) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await prisma.simulation.delete({ where: { id } });
+
+  await prisma.auditLog
+    .create({
+      data: {
+        actorId: adminId,
+        action: "simulation.delete",
+        targetType: "simulation",
+        targetId: id,
+        detail: JSON.stringify({
+          jobTitle: sim.jobTitle,
+          attemptsDeleted: sim._count.attempts,
+        }),
+      },
+    })
+    .catch(() => undefined);
+
+  return NextResponse.json({ ok: true, attemptsDeleted: sim._count.attempts });
+}

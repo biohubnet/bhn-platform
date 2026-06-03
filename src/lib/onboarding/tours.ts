@@ -33,6 +33,17 @@ export interface TourStep {
 export const TOUR_VERSION = "2026.06.02b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Admin · delete a simulation — Jun 2026
+  {
+    id: "admin.sim-delete",
+    title: "Delete a simulation, not just a request",
+    body: "Open a simulation's editor (from a fulfilled request → Open editor) and you'll find a Delete button at the bottom. It removes the sim from the trainee catalog and wipes every attempt against it — confirmed first, audit-logged.",
+    path: "/admin/simulator-requests",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Sim requests", href: "/admin/simulator-requests" },
+    since: "2026.06.02b",
+  },
   // ─── Limited-time June theme · Art Deco — Jun 2026
   {
     id: "theme.artdeco-june",

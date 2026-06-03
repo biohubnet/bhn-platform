@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Admin · delete a simulation — Jun 2026
+  {
+    title: "Admin · delete a simulation outright",
+    body: "You can now hard-delete a simulation, not just a request. Open any simulation's editor (reachable from a fulfilled request → Open editor) and there's a Delete button in a danger zone at the bottom. It confirms first and tells you exactly what goes: the sim leaves the trainee Career Simulator catalog, and every attempt against it (including any in-progress playthroughs) is permanently deleted; any request that was fulfilled by it keeps its row but loses the link. Admin-gated and audit-logged. Deleting a request — which only clears the queue row and leaves the sim — still works separately.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Limited-time June theme · Art Deco — Jun 2026
   {
     title: "Limited-time theme · Gilded, a modern Art Deco drop for June",

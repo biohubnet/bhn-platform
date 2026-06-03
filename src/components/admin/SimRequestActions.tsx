@@ -125,7 +125,7 @@ export function SimRequestActions({ requestId, status, existingSimulationId }: P
     const ok = await confirmDialog({
       title: "Delete this simulation request?",
       description: isFulfilled
-        ? "Removes the request row from the queue. The fulfilled Simulation itself stays — delete it separately from /admin/simulations if you want it gone too. Any job folders linked to this request will have their link cleared but stay intact."
+        ? "Removes the request row from the queue. The fulfilled Simulation itself stays — open its editor and use the Delete button there if you want it gone too. Any job folders linked to this request will have their link cleared but stay intact."
         : "Removes the request row from the queue. Any job folders linked to this request will have their link cleared but stay intact. This can't be undone.",
       confirmLabel: "Delete request",
       cancelLabel: "Keep it",

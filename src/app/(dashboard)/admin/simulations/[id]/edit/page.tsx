@@ -16,6 +16,7 @@ import { getSession, ROLE_RANK } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { SimPayloadEditor } from "@/components/admin/SimPayloadEditor";
+import { DeleteSimulationButton } from "@/components/admin/DeleteSimulationButton";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +117,14 @@ export default async function SimulationEditPage({
         )}
 
         <SimPayloadEditor simulationId={sim.id} initialJson={pretty} />
+
+        {/* Danger zone — hard-delete (cascades to every attempt). */}
+        <DeleteSimulationButton
+          simulationId={sim.id}
+          jobTitle={sim.jobTitle}
+          totalAttempts={sim._count.attempts}
+          attemptsInProgress={attemptsInProgress}
+        />
       </div>
     </div>
   );
