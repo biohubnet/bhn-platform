@@ -24,8 +24,8 @@ export interface ChangelogEntry {
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Limited-time June theme · Art Deco — Jun 2026
   {
-    title: "Limited-time theme · Emerald Lounge, a modern Art Deco drop for June",
-    body: "A new seasonal theme is live through June 30: Emerald Lounge — modern Art Deco glamour in deep emerald + obsidian velvet, gleaming gold, and cream, with a gold sunburst fanning from the top and jewel-tone glows (emerald, sapphire, amethyst). Opulent, high-gloss, geometric. Pick it from the theme switcher (the emerald-and-gold swatch under \"Limited time\"), or tap it from the theme-of-the-day card on your dashboard. Like all limited drops it disappears when the window closes — it retires after June 30, and anyone still on it falls back to their default.",
+    title: "Limited-time theme · Gilded, a modern Art Deco drop for June",
+    body: "A new seasonal theme is live through June 30: Gilded — modern Art Deco in graphite + gold. Slate-graphite surfaces, gleaming gold accents and hairlines, cream text, and geometric gold metalwork: a sunburst crown over a fine gold grid. Opulent and metal, barely any colour beyond the gold. Pick it from the theme switcher (the graphite-and-gold swatch under \"Limited time\"), or tap it from the theme-of-the-day card on your dashboard. Like all limited drops it disappears when the window closes — it retires after June 30, and anyone still on it falls back to their default.",
     kind: "feature",
     visibleTo: ALL,
     daysAgo: 0,

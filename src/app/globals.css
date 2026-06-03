@@ -247,38 +247,38 @@
   --color-emerald-50: rgba(110, 130, 110, 0.10);
 }
 
-/* ───── Emerald Lounge — limited-time modern Art Deco theme (June 2026).
- *   The glamour interior after dark: deep emerald + obsidian velvet
- *   surfaces, gleaming gold, cream text, a gold sunburst fanning from the
- *   top, and jewel-tone glows (emerald · sapphire · amethyst). High-gloss,
- *   opulent, geometric. Dark theme — inherits Voltage's Tailwind tint
- *   tames + deep-text lifts (near-black ground) so coloured chips + deep
- *   text stay AA-legible. Expires 2026-06-30 (registry endsOn). ───── */
+/* ───── Gilded — limited-time modern Art Deco theme (June 2026).
+ *   Graphite + gold metalwork: deep slate-graphite surfaces, gleaming
+ *   gold accents and hairlines, cream text, and geometric gold motifs —
+ *   a sunburst crown over a fine gold grid. Geometric, opulent, metal —
+ *   barely any colour beyond the gold. Dark theme — inherits Voltage's
+ *   Tailwind tint tames + deep-text lifts (near-black ground) so coloured
+ *   chips + deep text stay AA-legible. Expires 2026-06-30 (endsOn). ─── */
 [data-theme="artdeco"] {
-  --popover-bg: #0b1c15;
-  --bg:        #08140f;        /* obsidian-emerald */
-  /* Gold sunburst fanning from top-centre + jewel-tone glows
-   * (emerald top, sapphire bottom-left, amethyst bottom-right). */
+  --popover-bg: #1c1d23;
+  --bg:        #16171c;        /* graphite */
+  /* Gold sunburst crown + warm gold glow over a fine gold geometric
+   * grid (the metalwork). */
   --bg-mesh:
-    repeating-conic-gradient(from 90deg at 50% -2%, rgba(212,175,55,0.06) 0deg 1.6deg, transparent 1.6deg 9deg),
-    radial-gradient(at 50% 0%,  rgba(26,160,106,0.18) 0px, transparent 58%),
-    radial-gradient(at 6% 94%,  rgba(58,104,190,0.12) 0px, transparent 48%),
-    radial-gradient(at 94% 92%, rgba(150,84,176,0.11) 0px, transparent 50%);
-  --card:      rgba(14,32,25,0.88);
-  --card-solid: #0e2019;        /* emerald velvet (lacquered) */
-  --elevated:  rgba(20,44,34,0.86);
-  --raised:    rgba(28,58,45,0.92);
-  --fg:        #f3ecd6;        /* cream */
-  --fg-muted:  #cdbd95;        /* champagne */
-  --fg-subtle: #b2a37c;        /* muted gold — AA on card/raised */
+    repeating-conic-gradient(from 90deg at 50% 0%, rgba(212,175,55,0.05) 0deg 1.4deg, transparent 1.4deg 8deg),
+    radial-gradient(at 50% -5%, rgba(212,175,55,0.13) 0px, transparent 60%),
+    linear-gradient(rgba(212,175,55,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212,175,55,0.045) 1px, transparent 1px);
+  --card:      rgba(31,33,39,0.88);
+  --card-solid: #1f2127;        /* slate graphite */
+  --elevated:  rgba(42,44,52,0.86);
+  --raised:    rgba(54,57,66,0.92);
+  --fg:        #f1ead7;        /* cream */
+  --fg-muted:  #cbbf9f;        /* champagne */
+  --fg-subtle: #b3a988;        /* muted gold — AA on card/raised */
   --line:      rgba(212,175,55,0.42);   /* gold hairline (~3:1, 1.4.11) */
   --line-strong: rgba(212,175,55,0.58);
-  --backdrop:  rgba(2,8,5,0.86);
+  --backdrop:  rgba(4,5,7,0.86);
 
-  /* Gleaming-gold brand ramp. 50–200 deep gold shadows; 500 the signature
-   * gold; 600 dips deeper so white-text CTAs clear AA (~5.4:1); 700+ ramp
-   * bright for accent text on the emerald ground — the same non-monotonic
-   * 600-dip pattern Voltage uses. */
+  /* Gleaming-gold brand ramp. 50–200 deep gold shadows; 500 the
+   * signature gold; 600 dips deeper so white-text CTAs clear AA
+   * (~5.4:1); 700+ ramp bright for accent text on the graphite ground —
+   * the same non-monotonic 600-dip pattern Voltage uses. */
   --brand-50:  #2a2310;
   --brand-100: #3d3216;
   --brand-200: #57471d;
@@ -290,25 +290,24 @@
   --brand-800: #e6c65a;
   --brand-900: #f3dd8c;
 
-  /* Modern glam radii — streamlined, a touch of curve. */
-  --radius-sm: 3px;
-  --radius:    6px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
+  /* Crisp geometric Deco edges. */
+  --radius-sm: 1px;
+  --radius:    3px;
+  --radius-lg: 5px;
+  --radius-xl: 8px;
 
-  /* Dashboard hero — obsidian-emerald with gold + sapphire. */
-  --hero-bg:     #06120c;
+  /* Dashboard hero — graphite with gold. */
+  --hero-bg:     #131419;
   --hero-mesh-1: #d4af37;
-  --hero-mesh-2: #1aa06a;
-  --hero-mesh-3: #3a68be;
-  --hero-mesh-4: #04100a;
-  --hero-title-gradient: linear-gradient(120deg, #f3ecd6 0%, #d4af37 50%, #f3ecd6 100%);
+  --hero-mesh-2: #8a6f24;
+  --hero-mesh-3: #2c2e36;
+  --hero-mesh-4: #0e0f13;
+  --hero-title-gradient: linear-gradient(120deg, #f1ead7 0%, #d4af37 50%, #f1ead7 100%);
 }
 
-/* Single fill — the sunburst repeats by angle and the radials fill the
- * viewport; no tiling grid layer to size. */
+/* Sunburst + glow fill the viewport; the gold geometric grid tiles at 30px. */
 [data-theme="artdeco"] body {
-  background-size: 100% 100%;
+  background-size: 100% 100%, 100% 100%, 30px 30px, 30px 30px;
 }
 
 /* Inherit Voltage's full Tailwind tint tame + deep-text lifts — both

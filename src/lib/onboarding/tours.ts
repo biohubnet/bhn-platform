@@ -36,8 +36,8 @@ export const TOUR_STEPS: TourStep[] = [
   // ─── Limited-time June theme · Art Deco — Jun 2026
   {
     id: "theme.artdeco-june",
-    title: "June's limited theme: Emerald Lounge",
-    body: "A new modern Art Deco theme — emerald + obsidian velvet, gleaming gold, a sunburst motif and jewel-tone glow — is live through June 30. Open the theme switcher (the swatch in the top bar) and look under \"Limited time\", or tap today's suggestion on your dashboard. It retires when June ends.",
+    title: "June's limited theme: Gilded",
+    body: "A new modern Art Deco theme — graphite + gold, gleaming metalwork, a sunburst crown and fine gold geometry — is live through June 30. Open the theme switcher (the swatch in the top bar) and look under \"Limited time\", or tap today's suggestion on your dashboard. It retires when June ends.",
     path: "/dashboard",
     placement: "center",
     cta: { label: "Browse themes", href: "/themes" },

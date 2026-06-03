@@ -67,8 +67,8 @@ export const THEMES = [
   },
   {
     id: "artdeco",
-    name: "Emerald Lounge",
-    description: "Modern Art Deco glamour — emerald + obsidian velvet, gleaming gold, cream, a sunburst motif and jewel-tone glow. The opulent lounge after dark. A limited June engagement.",
+    name: "Gilded",
+    description: "Modern Art Deco in graphite + gold — gleaming gold metalwork over slate, cream text, a sunburst crown and fine gold geometry. A limited June engagement.",
     category: "limited",
     endsOn: "2026-06-30",
     limited: true,
