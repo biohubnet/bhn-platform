@@ -35,13 +35,40 @@ export function validatePayload(raw: unknown): ValidationResult {
   raw = unwrapPayloadEnvelope(raw);
   if (!isRecord(raw)) return err("Payload is not an object");
 
+  // jobTitle is REQUIRED — a simulation with no role is broken, not
+  // playable. (Previously defaulted to "Director", which is how
+  // placeholder "Director / Reporting to VP, VP" sims slipped through.)
+  const jobTitle = nonEmptyString(raw.jobTitle, "");
+  if (!jobTitle) {
+    return err('missing "jobTitle" — every simulation needs a real role.');
+  }
+
+  // Manager (vpName/vpRole) — prefer the payload's own fields; if absent,
+  // back-fill from a cast member flagged as the manager (role contains
+  // "manager", e.g. "…your manager"); only then give up. Never silently
+  // collapses to "VP, VP".
+  let vpName = nonEmptyString(raw.vpName, "");
+  let vpRole = nonEmptyString(raw.vpRole, "");
+  if (!vpName || !vpRole) {
+    const mgr = findManager(raw.team) ?? findManager(raw.partners);
+    if (mgr) {
+      if (!vpName) vpName = mgr.name;
+      if (!vpRole) vpRole = mgr.role;
+    }
+  }
+  if (!vpName || !vpRole) {
+    return err(
+      'missing the manager — set "vpName" and "vpRole" (or flag a cast member\'s role as "…your manager").',
+    );
+  }
+
   const out: SimulationPayload = {
-    jobTitle: nonEmptyString(raw.jobTitle, "Director"),
+    jobTitle,
     companyName: typeof raw.companyName === "string" ? raw.companyName : null,
     location: typeof raw.location === "string" ? raw.location : null,
     context: nonEmptyString(raw.context, ""),
-    vpName: nonEmptyString(raw.vpName, "VP"),
-    vpRole: nonEmptyString(raw.vpRole, "VP"),
+    vpName,
+    vpRole,
     stats: [],
     team: [],
     partners: [],
@@ -236,6 +263,20 @@ function unwrapPayloadEnvelope(raw: unknown): unknown {
   const sim = raw.simulation;
   if (isRecord(sim) && isRecord(sim.payload)) return sim.payload;
   return raw;
+}
+
+/** Find a cast member explicitly flagged as the player's manager (role
+ *  contains "manager"). Used to back-fill vpName/vpRole when a payload
+ *  put the manager only in the cast and left the top-level fields out. */
+function findManager(arr: unknown): { name: string; role: string } | null {
+  if (!Array.isArray(arr)) return null;
+  for (const p of arr) {
+    if (!isRecord(p)) continue;
+    const name = typeof p.name === "string" ? p.name.trim() : "";
+    const role = typeof p.role === "string" ? p.role.trim() : "";
+    if (name && role && /manager/i.test(role)) return { name, role };
+  }
+  return null;
 }
 function nonEmptyString(v: unknown, fallback: string): string {
   return typeof v === "string" && v.trim().length > 0 ? v.trim() : fallback;

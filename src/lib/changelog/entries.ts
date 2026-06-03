@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator · validator requires a real role + manager — Jun 2026
+  {
+    title: "Simulator · no more placeholder “Director / Reporting to VP, VP” sims",
+    body: "The simulation validator now requires a real job title and a named manager. Before, a payload that left out jobTitle / vpName / vpRole was accepted and silently filled with generic placeholders, so the sim played as “Director … Reporting to VP, VP.” Now an empty job title is rejected outright, and a missing manager is back-filled from whichever cast member is flagged as the manager (a role containing “…your manager”) before giving up — so AI-generated, hand-authored, and uploaded sims all carry their real role + manager into the player.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Admin · delete a simulation — Jun 2026
   {
     title: "Admin · delete a simulation outright",
