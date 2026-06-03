@@ -315,9 +315,14 @@ export function CreateSimulationForm() {
               className="w-full resize-y rounded-lg border border-line bg-card-solid px-3 py-2 font-mono text-[12px] leading-relaxed text-fg placeholder:text-subtle focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
             />
             <p className="text-[11px] text-subtle">
-              Validated against the same schema as the AI path. The job description
-              above is optional on this path — add it only if you want this sim to
-              dedup against a future trainee request for the same posting.
+              The file must be a full simulation payload —{" "}
+              <span className="font-mono">stats</span>, <span className="font-mono">team</span>,{" "}
+              <span className="font-mono">partners</span>, and{" "}
+              <span className="font-mono">scenarios</span> arrays. A whole exported simulation
+              (with a <span className="font-mono">payload</span> field) works too — it&apos;s
+              unwrapped automatically. The easiest valid starting point is an existing sim&apos;s
+              editor (Open editor → copy its JSON). Validated against the same schema as the AI
+              path; the job description above is optional here.
             </p>
           </div>
         )}

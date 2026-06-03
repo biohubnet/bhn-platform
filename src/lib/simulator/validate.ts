@@ -28,6 +28,11 @@ const ALLOWED_SCENARIO_TYPES: ScenarioType[] = [
 ];
 
 export function validatePayload(raw: unknown): ValidationResult {
+  // Accept a bare SimulationPayload, or transparently unwrap a common
+  // envelope — so an admin can upload a whole exported Simulation row
+  // ({ ..., payload: {...} }) or a { simulation: { payload } } blob and
+  // have it just work. The payload is what we actually validate.
+  raw = unwrapPayloadEnvelope(raw);
   if (!isRecord(raw)) return err("Payload is not an object");
 
   const out: SimulationPayload = {
@@ -50,7 +55,10 @@ export function validatePayload(raw: unknown): ValidationResult {
   };
 
   // Stats
-  if (!Array.isArray(raw.stats)) return err("stats is not an array");
+  if (!Array.isArray(raw.stats))
+    return err(
+      'this JSON isn\'t a simulation payload — it needs a top-level "stats" array (plus "team", "partners", and "scenarios"). A whole exported simulation works too. If you only have a job description, use the AI generator above instead.',
+    );
   for (const s of raw.stats) {
     if (!isRecord(s)) continue;
     const stat: StatDef = {
@@ -218,6 +226,16 @@ function validateScenario(
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+/** Unwrap a payload nested under a known envelope key. A bare payload
+ *  (one that already carries a `stats` array) is returned untouched. */
+function unwrapPayloadEnvelope(raw: unknown): unknown {
+  if (!isRecord(raw)) return raw;
+  if (Array.isArray(raw.stats)) return raw;
+  if (isRecord(raw.payload)) return raw.payload;
+  const sim = raw.simulation;
+  if (isRecord(sim) && isRecord(sim.payload)) return sim.payload;
+  return raw;
 }
 function nonEmptyString(v: unknown, fallback: string): string {
   return typeof v === "string" && v.trim().length > 0 ? v.trim() : fallback;
