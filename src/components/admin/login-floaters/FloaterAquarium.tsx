@@ -66,39 +66,42 @@ const FISH_TOTAL_MS        = FISH_DROP_MS + FISH_WIGGLE_MS + FISH_RISE_MS;
 // Pre-pick a palette of theme-friendly tint classes. Each swimmer
 // is born with one of these; rotates through them over its
 // lifespan so colour reads as gentle evolution.
+// Cool, dim bioluminescent tints — the swimmers read as faint glowing
+// creatures suspended in dark water rather than bright cartoon fish.
 const HUES = [
-  "text-sky-300/40",
-  "text-cyan-300/40",
-  "text-emerald-300/40",
-  "text-amber-300/40",
-  "text-rose-300/40",
-  "text-violet-300/40",
-  "text-fuchsia-300/40",
-  "text-teal-300/40",
+  "text-sky-300/35",
+  "text-cyan-300/35",
+  "text-blue-300/30",
+  "text-teal-300/30",
+  "text-sky-200/28",
+  "text-cyan-200/30",
+  "text-slate-200/22",
+  "text-indigo-300/28",
 ];
 
 // ── Aquarium decor constants ─────────────────────────────────────
-// Plants anchored in the sand along the bottom. Stable across
-// renders (module-scope) so the seaweed bed doesn't reshuffle every
-// time the swimmer list changes. Six plants spaced roughly even
-// across the width with deliberate jitter; mix of three frond
-// shapes so the bed reads as a real ecosystem, not a row of clones.
-type PlantShape = "ribbon" | "fan" | "tassel";
-const AQUARIUM_PLANTS: {
+// Drifting dust motes — "marine snow" caught in the water's glow.
+// Module-scope so the field doesn't reshuffle when the swimmer list
+// changes. Scattered across the water region at varied depth + speed.
+const AQUARIUM_MOTES: {
   leftPct: number;
-  shape: PlantShape;
-  scale: number;
-  swayDurSec: number;
-  swayDelaySec: number;
-  color: string;
+  topPct: number;
+  sizePx: number;
+  durationSec: number;
+  delaySec: number;
+  opacity: number;
 }[] = [
-  { leftPct:  6, shape: "ribbon", scale: 1.10, swayDurSec: 5.6, swayDelaySec: 0.0, color: "#2d8a5e" },
-  { leftPct: 18, shape: "fan",    scale: 0.85, swayDurSec: 6.2, swayDelaySec: 1.4, color: "#1d6b4a" },
-  { leftPct: 32, shape: "tassel", scale: 0.95, swayDurSec: 5.0, swayDelaySec: 0.6, color: "#3da774" },
-  { leftPct: 48, shape: "ribbon", scale: 1.25, swayDurSec: 6.8, swayDelaySec: 2.1, color: "#1d6b4a" },
-  { leftPct: 62, shape: "tassel", scale: 0.80, swayDurSec: 5.4, swayDelaySec: 0.3, color: "#2d8a5e" },
-  { leftPct: 76, shape: "fan",    scale: 1.05, swayDurSec: 5.8, swayDelaySec: 1.7, color: "#3da774" },
-  { leftPct: 90, shape: "ribbon", scale: 0.90, swayDurSec: 6.4, swayDelaySec: 0.9, color: "#1d6b4a" },
+  { leftPct:  8, topPct: 30, sizePx: 2,   durationSec: 14, delaySec:  0,   opacity: 0.5  },
+  { leftPct: 16, topPct: 62, sizePx: 1.5, durationSec: 18, delaySec:  3.2, opacity: 0.4  },
+  { leftPct: 27, topPct: 44, sizePx: 3,   durationSec: 22, delaySec:  6.0, opacity: 0.6  },
+  { leftPct: 35, topPct: 70, sizePx: 2,   durationSec: 16, delaySec:  1.5, opacity: 0.45 },
+  { leftPct: 44, topPct: 36, sizePx: 1.5, durationSec: 20, delaySec:  8.4, opacity: 0.4  },
+  { leftPct: 52, topPct: 58, sizePx: 2.5, durationSec: 24, delaySec:  2.7, opacity: 0.55 },
+  { leftPct: 61, topPct: 48, sizePx: 2,   durationSec: 17, delaySec:  5.1, opacity: 0.5  },
+  { leftPct: 69, topPct: 66, sizePx: 1.5, durationSec: 21, delaySec:  9.3, opacity: 0.4  },
+  { leftPct: 78, topPct: 40, sizePx: 3,   durationSec: 19, delaySec:  4.2, opacity: 0.6  },
+  { leftPct: 86, topPct: 56, sizePx: 2,   durationSec: 23, delaySec:  7.6, opacity: 0.45 },
+  { leftPct: 92, topPct: 34, sizePx: 1.5, durationSec: 15, delaySec: 11.0, opacity: 0.4  },
 ];
 
 // Bubble columns. Each rises from its own random x position. The
@@ -121,50 +124,6 @@ const AQUARIUM_BUBBLES: {
   { leftPct: 92, sizePx:  4, durationSec: 20, delaySec:  3.1 },
   { leftPct: 30, sizePx:  3, durationSec: 18, delaySec: 12.5 },
 ];
-
-/** SVG silhouettes for the three plant shapes. All anchored at
- *  bottom-centre (viewBox y=40 is the sand line) and use
- *  currentColor so the per-plant `color:` style above tints them. */
-function PlantSvg({ shape }: { shape: PlantShape }) {
-  switch (shape) {
-    case "ribbon":
-      // Tall vallisneria-like ribbon plant — narrow blades that
-      // ripple in the current. Anchored at viewBox bottom.
-      return (
-        <svg viewBox="0 0 24 80" width="24" height="80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
-          <path d="M 10 80 C 7 60 13 50 9 30 C 5 14 12 6 11 0" />
-          <path d="M 14 80 C 17 62 11 50 15 32 C 19 16 13 8 14 2" opacity="0.85" />
-          <path d="M 12 80 C 12 64 12 48 12 30 C 12 16 12 8 12 0" opacity="0.6" strokeWidth="2" />
-        </svg>
-      );
-    case "fan":
-      // Broad-bladed fan plant. Multiple blades fan out from a
-      // central anchor, like Cryptocoryne or Anubias.
-      return (
-        <svg viewBox="0 0 36 56" width="36" height="56" fill="currentColor" stroke="currentColor" strokeWidth="0.5" aria-hidden>
-          <ellipse cx="6"  cy="32" rx="3.5" ry="22" transform="rotate(-22 6 32)" fillOpacity="0.85" />
-          <ellipse cx="14" cy="28" rx="4"   ry="26" transform="rotate(-8 14 28)" fillOpacity="0.95" />
-          <ellipse cx="22" cy="28" rx="4"   ry="26" transform="rotate(8 22 28)" fillOpacity="0.95" />
-          <ellipse cx="30" cy="32" rx="3.5" ry="22" transform="rotate(22 30 32)" fillOpacity="0.85" />
-        </svg>
-      );
-    case "tassel":
-      // Bushy, foxtail-style tassel plant — many fine strands.
-      return (
-        <svg viewBox="0 0 26 66" width="26" height="66" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
-          <path d="M 13 66 L 13 18" strokeWidth="2.2" />
-          {[58, 50, 42, 34, 26, 18].map((y, i) => (
-            <g key={i}>
-              <path d={`M 13 ${y} q -6 -4 -10 -10`} opacity={0.95 - i * 0.06} />
-              <path d={`M 13 ${y} q  6 -4  10 -10`} opacity={0.95 - i * 0.06} />
-              <path d={`M 13 ${y} q -3 -5  -5 -12`} opacity={0.85 - i * 0.06} />
-              <path d={`M 13 ${y} q  3 -5   5 -12`} opacity={0.85 - i * 0.06} />
-            </g>
-          ))}
-        </svg>
-      );
-  }
-}
 
 interface Swimmer {
   key: number;
@@ -601,48 +560,18 @@ export function FloaterAquarium() {
     cursorRef.current = null;
   }
 
-  // ── Aquarium water tint — vertical gradient (lighter at the
-  //     surface, darker in the depths) plus a day/night cycle that
-  //     sweeps the palette in fullscreen mode.
-  //
-  //     The palette is intentionally DARKER than a real-life
-  //     aquarium because the floater glyphs are rendered in pastel
-  //     /40-opacity tints (text-sky-300/40 etc.) — they need a deep
-  //     backdrop to read clearly. Think "deep-sea tank at night",
-  //     not "tropical reef at noon".                          ──
+  // ── Deep-water void backdrop ──────────────────────────────────
+  //     A soft cool bloom in the centre fading to near-black, so the
+  //     tank reads as a luminous body of water suspended in darkness
+  //     (the glowing-water-sphere look) rather than a flat lit panel.
+  //     In screensaver mode the bloom's hue drifts slowly — a calm
+  //     tide of light — without ever leaving the dark-blue mood.
   const bgGradient = useMemo(() => {
-    if (!fullscreen) {
-      // Static deep-tank palette: cyan-tinged near-black at the top,
-      // even darker at the floor. Reads as "looking into a deep
-      // glass tank" with floaters that pop against the depth.
-      return "linear-gradient(180deg, #082238 0%, #061a2e 30%, #04111f 70%, #020910 100%)";
-    }
-    // Day/night cycle, all palettes deepened so pastel floaters
-    // keep their contrast at every phase.
-    //   surface = top-of-tank colour
-    //   middle  = mid-water
-    //   depth   = bottom (where the sand sits)
-    const palette = [
-      { surface: "#050d18", middle: "#040912", depth: "#02060c" }, // pre-dawn — near-black
-      { surface: "#0b324a", middle: "#082238", depth: "#040f1f" }, // morning — deep teal
-      { surface: "#0e4f7a", middle: "#0a345a", depth: "#051a30" }, // midday — deep tropical
-      { surface: "#3a1a48", middle: "#1f1030", depth: "#0c0820" }, // dusk — deep magenta water
-      { surface: "#050d18", middle: "#040912", depth: "#02060c" }, // back to pre-dawn
-    ];
-    const seg = bgPhase * (palette.length - 1);
-    const i = Math.floor(seg);
-    const t = seg - i;
-    const a = palette[i];
-    const b = palette[i + 1] ?? palette[i];
-    const mix = (c1: string, c2: string, m: number) => {
-      const p1 = parseInt(c1.slice(1), 16);
-      const p2 = parseInt(c2.slice(1), 16);
-      const r = Math.round(((p1 >> 16) & 0xff) * (1 - m) + ((p2 >> 16) & 0xff) * m);
-      const g = Math.round(((p1 >> 8) & 0xff) * (1 - m) + ((p2 >> 8) & 0xff) * m);
-      const bl = Math.round((p1 & 0xff) * (1 - m) + (p2 & 0xff) * m);
-      return `rgb(${r}, ${g}, ${bl})`;
-    };
-    return `linear-gradient(180deg, ${mix(a.surface, b.surface, t)} 0%, ${mix(a.middle, b.middle, t)} 45%, ${mix(a.depth, b.depth, t)} 100%)`;
+    const h = fullscreen ? 204 + Math.sin(bgPhase * Math.PI * 2) * 16 : 205; // 188..220
+    return (
+      `radial-gradient(ellipse 80% 90% at 50% 40%, ` +
+      `hsl(${h} 58% 15%) 0%, hsl(${h} 60% 9%) 38%, #04101c 70%, #01050c 100%)`
+    );
   }, [bgPhase, fullscreen]);
 
   const containerClass = fullscreen
@@ -694,48 +623,44 @@ export function FloaterAquarium() {
          *  ║ flat panel with floating glyphs.                       ║
          *  ╚══════════════════════════════════════════════════════════╝ */}
 
-        {/* Sub-surface light shimmer — a horizontal band of pale
-            light just under the top edge of the tank. Subtle
-            shimmer keyframe makes it feel like sunlight refracting
-            on the water. */}
+        {/* Volumetric glow of the water mass — behind everything. */}
+        <div className="aquarium-glow pointer-events-none" aria-hidden />
+
+        {/* The water sphere — faint luminous rim bounding the volume. */}
+        <div className="aquarium-sphere pointer-events-none" aria-hidden />
+
+        {/* Rippling surface line near the top of the sphere. */}
         <div className="aquarium-surface pointer-events-none" aria-hidden />
 
-        {/* Diagonal light beams piercing down through the water from
-            above. Two beams at slightly different angles + speeds
-            so the lit-from-overhead feeling reads even on small
-            panel sizes. */}
-        <div className="aquarium-light-beam aquarium-light-beam-a pointer-events-none" aria-hidden />
-        <div className="aquarium-light-beam aquarium-light-beam-b pointer-events-none" aria-hidden />
+        {/* God-rays raking down from the surface — a few at varied
+            x / width / speed so the volumetric light reads. */}
+        <div className="aquarium-ray pointer-events-none" aria-hidden style={{ left: "30%", animation: "aquarium-ray-sway 19s ease-in-out infinite" }} />
+        <div className="aquarium-ray pointer-events-none" aria-hidden style={{ left: "47%", width: "11%", animation: "aquarium-ray-sway 25s ease-in-out -6s infinite reverse" }} />
+        <div className="aquarium-ray pointer-events-none" aria-hidden style={{ left: "63%", width: "6%", animation: "aquarium-ray-sway 22s ease-in-out -11s infinite" }} />
 
-        {/* Sand / gravel bed at the bottom of the tank. Layered
-            radial highlights make it read as textured pebbles, not
-            a flat band. */}
-        <div className="aquarium-sand pointer-events-none" aria-hidden />
+        {/* Caustic light rippling on the tank floor (foreground). */}
+        <div className="aquarium-caustics pointer-events-none" aria-hidden />
 
-        {/* Swaying seaweed plants anchored in the sand. Each frond
-            is a different colour + sway phase so the bed doesn't
-            look like an army of identical clones. */}
-        <div className="aquarium-plants pointer-events-none" aria-hidden>
-          {AQUARIUM_PLANTS.map((p, i) => (
+        {/* Drifting dust motes — "marine snow" in the glow. */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden>
+          {AQUARIUM_MOTES.map((m, i) => (
             <span
               key={i}
-              className={`aquarium-plant aquarium-plant-${p.shape}`}
+              className="aquarium-mote"
               style={{
-                left: `${p.leftPct}%`,
-                ["--plant-scale" as string]: p.scale,
-                ["--plant-sway-dur" as string]: `${p.swayDurSec}s`,
-                ["--plant-sway-delay" as string]: `${p.swayDelaySec}s`,
-                color: p.color,
+                left: `${m.leftPct}%`,
+                top: `${m.topPct}%`,
+                width: `${m.sizePx}px`,
+                height: `${m.sizePx}px`,
+                animationDuration: `${m.durationSec}s`,
+                animationDelay: `${m.delaySec}s`,
+                ["--mote-op" as string]: m.opacity,
               } as React.CSSProperties}
-            >
-              <PlantSvg shape={p.shape} />
-            </span>
+            />
           ))}
         </div>
 
-        {/* Rising bubbles — fixed set of bubble columns at random
-            x positions, each on its own rise speed + delay so they
-            never sync up. */}
+        {/* Rising bubbles — each column on its own rise speed + delay. */}
         <div className="aquarium-bubbles pointer-events-none" aria-hidden>
           {AQUARIUM_BUBBLES.map((b, i) => (
             <span
@@ -752,13 +677,12 @@ export function FloaterAquarium() {
           ))}
         </div>
 
-        {/* Front-glass vignette — slight inside shadow + a thin
-            top-edge highlight so the panel reads as glass with
-            water behind it, not a back-lit screen. */}
+        {/* Void vignette — darken the edges so the water glow floats in
+            black, deepening the "suspended sphere" read. */}
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
-          style={{ boxShadow: "inset 0 -40px 60px -10px rgba(0,0,0,0.45), inset 0 18px 24px -10px rgba(255,255,255,0.10)" }}
+          style={{ boxShadow: "inset 0 0 150px 40px rgba(0,0,0,0.62)" }}
         />
 
         {/* Caption in screensaver — bottom-left, fades */}

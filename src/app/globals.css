@@ -3236,115 +3236,135 @@ body {
 }
 
 /* ╔══════════════════════════════════════════════════════════════════╗
- * ║ Floater Aquarium — water-surface, light beams, sand, plants,     ║
- * ║ bubbles. Used by /admin/login-floaters bottom panel + its        ║
- * ║ fullscreen screensaver. Pointer-events-none on every layer so    ║
- * ║ click-to-spawn-burst still falls through to the container.       ║
+ * ║ Floater Aquarium — "deep water in the void" skin.                 ║
+ * ║ A glowing body of dark water suspended in a black void: a         ║
+ * ║ rippling surface up top with god-rays raking down, caustic light  ║
+ * ║ playing on the floor, rising bubbles + drifting dust motes.       ║
+ * ║ Used by /admin/login-floaters bottom panel + its fullscreen       ║
+ * ║ screensaver. Pointer-events-none on every layer so click-to-      ║
+ * ║ spawn-burst still falls through to the container.                 ║
  * ╚══════════════════════════════════════════════════════════════════╝ */
 
-/* Surface shimmer — pale horizontal band at the very top of the
- * tank that ripples gently. Reads as sunlight refracting on the
- * underside of the water surface. */
+/* Volumetric glow of the water mass — a broad cool bloom centred a bit
+ * above middle, behind everything, so the tank reads as luminous water
+ * hanging in the dark rather than a flat panel. */
+.aquarium-glow {
+  position: absolute;
+  inset: -12%;
+  background:
+    radial-gradient(58% 54% at 50% 38%, rgba(70,150,220,0.22) 0%, rgba(38,98,168,0.12) 42%, transparent 72%),
+    radial-gradient(40% 26% at 50% 15%, rgba(190,230,255,0.16) 0%, transparent 70%);
+  filter: blur(6px);
+}
+
+/* The water sphere — a faint luminous rim + inner depth gradient that
+ * bounds the water volume. Sized by height so it stays circular; the
+ * tank's overflow-hidden clips it into a dome in the short panel and a
+ * full orb in the fullscreen screensaver. */
+.aquarium-sphere {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  height: 134%;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 30%,
+      rgba(150,210,255,0.10) 0%,
+      rgba(40,110,180,0.10) 38%,
+      rgba(12,46,86,0.16) 62%,
+      rgba(2,10,24,0.24) 100%);
+  box-shadow:
+    inset 0 20px 70px -12px rgba(195,232,255,0.22),
+    inset 0 0 130px -24px rgba(60,150,230,0.18),
+    0 0 90px rgba(50,130,210,0.12);
+  border: 1px solid rgba(150,210,255,0.10);
+}
+
+/* Rippling surface — the air/water boundary near the top of the sphere.
+ * A bright, faintly wavy band that shimmers like light catching the
+ * underside of the surface. */
 @keyframes aquarium-surface-shimmer {
-  0%, 100% { transform: translateX(-2%);  opacity: 0.55; }
-  50%      { transform: translateX( 2%);  opacity: 0.85; }
+  0%, 100% { transform: translateX(-1.5%) scaleY(1);    opacity: 0.7; }
+  50%      { transform: translateX( 1.5%) scaleY(1.18); opacity: 1; }
 }
 .aquarium-surface {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 14%;
+  top: 16%;
+  left: 7%;
+  right: 7%;
+  height: 4%;
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 60%, transparent 100%),
-    linear-gradient(90deg,
-      transparent 0%,
-      rgba(255,255,255,0.10) 20%,
-      transparent 40%,
-      rgba(255,255,255,0.12) 60%,
-      transparent 80%,
-      rgba(255,255,255,0.10) 100%);
+    radial-gradient(120% 100% at 50% 100%, rgba(232,246,255,0.55) 0%, rgba(150,210,255,0.18) 45%, transparent 76%);
   filter: blur(2px);
-  animation: aquarium-surface-shimmer 8s ease-in-out infinite;
+  mix-blend-mode: screen;
+  animation: aquarium-surface-shimmer 7s ease-in-out infinite;
 }
 
-/* Light beams — diagonal pale streaks that pierce the water from
- * above. Two beams at different angles + speeds so the "lit from
- * overhead" feel reads even on a small panel. */
-@keyframes aquarium-beam-drift {
-  0%, 100% { transform: translate3d(-3%,  0%, 0) rotate(8deg);  opacity: 0.30; }
-  50%      { transform: translate3d( 3%, -2%, 0) rotate(10deg); opacity: 0.55; }
+/* God-rays — near-vertical light shafts raking down from the surface
+ * into the water. Several at slightly different x + speeds, very soft
+ * and screen-blended so they read as volumetric light, not bars. Each
+ * instance sets its own left / width / animation inline. */
+@keyframes aquarium-ray-sway {
+  0%, 100% { transform: translateX(-1%) rotate(-2deg); opacity: 0.26; }
+  50%      { transform: translateX( 1%) rotate( 2deg); opacity: 0.5; }
 }
-.aquarium-light-beam {
+.aquarium-ray {
   position: absolute;
-  top: -10%;
-  width: 30%;
-  height: 130%;
+  top: 14%;
+  height: 72%;
+  width: 8%;
   background: linear-gradient(180deg,
-    rgba(255,255,255,0.18) 0%,
-    rgba(255,255,255,0.10) 30%,
-    rgba(255,255,255,0.04) 70%,
+    rgba(212,236,255,0.32) 0%,
+    rgba(160,210,255,0.12) 45%,
     transparent 100%);
+  filter: blur(7px);
   mix-blend-mode: screen;
-  filter: blur(8px);
+  transform-origin: 50% 0;
   pointer-events: none;
 }
-.aquarium-light-beam-a {
-  left: 18%;
-  animation: aquarium-beam-drift 22s ease-in-out infinite;
-}
-.aquarium-light-beam-b {
-  left: 60%;
-  width: 24%;
-  animation: aquarium-beam-drift 28s ease-in-out -7s infinite reverse;
-  opacity: 0.5;
-}
 
-/* Sand / gravel bed at the bottom of the tank. Layered radial
- * highlights give the band a pebbled feel without needing a noise
- * image. The dark-to-light vertical gradient sells "ground" rather
- * than "another stripe of water." */
-.aquarium-sand {
+/* Caustic light on the floor — bright, wavy reflected ripples in the
+ * foreground, like light bent through the surface and cast on the tank
+ * floor. Replaces the old sand bed. Masked so it fades up into the water
+ * rather than ending on a hard line. */
+@keyframes aquarium-caustic-drift {
+  0%, 100% { background-position: 0 0, 0 0;            opacity: 0.5; }
+  50%      { background-position: 42px -6px, -32px 5px; opacity: 0.85; }
+}
+.aquarium-caustics {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 9%;
+  height: 28%;
   background:
-    radial-gradient(ellipse 8% 50% at 14% 40%, rgba(220, 200, 160, 0.45), transparent 70%),
-    radial-gradient(ellipse 6% 40% at 32% 65%, rgba(230, 210, 170, 0.32), transparent 70%),
-    radial-gradient(ellipse 10% 55% at 56% 50%, rgba(220, 200, 160, 0.40), transparent 70%),
-    radial-gradient(ellipse 7% 45% at 78% 40%, rgba(230, 210, 170, 0.32), transparent 70%),
-    radial-gradient(ellipse 8% 50% at 92% 60%, rgba(220, 200, 160, 0.40), transparent 70%),
-    linear-gradient(180deg, rgba(80, 60, 40, 0.55) 0%, rgba(120, 90, 60, 0.85) 60%, rgba(140, 110, 70, 0.95) 100%);
+    repeating-radial-gradient(ellipse 64px 16px at 30% 60%, rgba(196,232,255,0.16) 0 2px, transparent 2px 24px),
+    repeating-radial-gradient(ellipse 84px 20px at 72% 82%, rgba(160,215,255,0.12) 0 2px, transparent 2px 28px),
+    linear-gradient(180deg, transparent 0%, rgba(22,64,116,0.20) 72%, rgba(44,96,158,0.24) 100%);
+  filter: blur(1px);
+  mix-blend-mode: screen;
+  animation: aquarium-caustic-drift 9s ease-in-out infinite;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 42%);
+          mask-image: linear-gradient(180deg, transparent 0%, #000 42%);
 }
 
-/* Plant fronds anchored in the sand. Each plant gets its own sway
- * timing via inline custom properties (--plant-sway-dur,
- * --plant-sway-delay, --plant-scale, color: …). The transform-origin
- * is at the bottom of the plant (50% 100%) so the sway pivots from
- * the seabed, not the middle of the frond. */
-@keyframes aquarium-plant-sway {
-  0%, 100% { transform: translateX(-50%) scale(var(--plant-scale, 1)) rotate(-3deg); }
-  50%      { transform: translateX(-50%) scale(var(--plant-scale, 1)) rotate( 3deg); }
+/* Dust motes — slow-drifting specks of light in the dark water, like
+ * marine snow caught in the glow. Each sets its own left / top / size /
+ * duration / delay / opacity inline. */
+@keyframes aquarium-mote-drift {
+  0%   { transform: translate3d(0, 0, 0);       opacity: 0; }
+  15%  { opacity: var(--mote-op, 0.5); }
+  85%  { opacity: var(--mote-op, 0.5); }
+  100% { transform: translate3d(8px, -60px, 0); opacity: 0; }
 }
-.aquarium-plants {
+.aquarium-mote {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-}
-.aquarium-plant {
-  position: absolute;
-  bottom: 4%;                  /* roots sit just above the sand */
-  transform: translateX(-50%) scale(var(--plant-scale, 1));
-  transform-origin: 50% 100%;
-  animation:
-    aquarium-plant-sway var(--plant-sway-dur, 6s) ease-in-out infinite;
-  animation-delay: var(--plant-sway-delay, 0s);
-  line-height: 0;
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.30));
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(224,242,255,0.95) 0%, rgba(180,220,255,0.45) 60%, transparent 100%);
+  animation: aquarium-mote-drift linear infinite;
+  will-change: transform, opacity;
 }
 
 /* Bubbles rising from the sand. Each bubble runs the same vertical
@@ -3382,8 +3402,9 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .aquarium-surface,
-  .aquarium-light-beam,
-  .aquarium-plant,
+  .aquarium-ray,
+  .aquarium-caustics,
+  .aquarium-mote,
   .aquarium-bubble { animation: none !important; }
 }
 
