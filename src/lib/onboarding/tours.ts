@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.02b";
+export const TOUR_VERSION = "2026.06.03a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Simulator · public playable share + open comments — Jun 2026
+  {
+    id: "sim.public-share-play",
+    title: "Share a sim as a link anyone can play",
+    body: "Open a simulation you're playing and hit Share (top-right) to mint a public link. Anyone you send it to can play the whole role-play with no login — their progress saves in their browser — and leave a comment with their name in the thread below the player. Great for getting a mentor's read on a sim.",
+    path: "/simulator",
+    placement: "center",
+    cta: { label: "Open the Career Simulator", href: "/simulator" },
+    since: "2026.06.03a",
+  },
   // ─── Admin · delete a simulation — Jun 2026
   {
     id: "admin.sim-delete",

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Simulator · public playable share link + open comments — Jun 2026
+  {
+    title: "Simulator · share any sim as a public link anyone can play — and comment on",
+    body: "Every simulation now has a Share button (top-right of the player). It mints a public link — /share/sim/… — that anyone can open with no login and actually PLAY: the full 12-week role-play runs right in their browser, progress auto-saved on their device, no account needed. Below the player there's an open discussion thread where anyone can leave a comment with their name — handy for getting a mentor's or your cohort's read on a sim you built or just played. Any role can create a link, and clicking Share again reuses the same one. Guest play is self-contained: it never touches your own saved attempts, and admins can hide a comment if one needs moderating.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Simulator · validator requires a real role + manager — Jun 2026
   {
     title: "Simulator · no more placeholder “Director / Reporting to VP, VP” sims",

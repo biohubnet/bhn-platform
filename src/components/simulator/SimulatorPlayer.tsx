@@ -39,7 +39,11 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { computeDecisionProfile, computeReview } from "@/lib/simulator/engine";
+import {
+  applyChoice,
+  computeDecisionProfile,
+  computeReview,
+} from "@/lib/simulator/engine";
 import { Avatar as PersonAvatar } from "./Avatar";
 import type {
   AttemptState,
@@ -52,9 +56,18 @@ import type {
 } from "@/lib/simulator/types";
 
 type Props = {
-  attemptId: string;
+  /** Present in the normal authenticated flow (a real DB attempt). */
+  attemptId?: string;
   payload: SimulationPayload;
   initialState: AttemptState;
+  /**
+   * When set, the player runs ENTIRELY client-side: every choice is
+   * resolved locally via the pure engine and progress is checkpointed
+   * to localStorage instead of the database. Used by the public,
+   * no-login share page (`/share/sim/[token]`) so anonymous visitors
+   * can actually play without an account or a server-side attempt.
+   */
+  guest?: { token: string };
 };
 
 const STAT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -65,7 +78,12 @@ const STAT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   capacity: Battery,
 };
 
-export function SimulatorPlayer({ attemptId, payload, initialState }: Props) {
+export function SimulatorPlayer({
+  attemptId,
+  payload,
+  initialState,
+  guest,
+}: Props) {
   const [state, setState] = useState<AttemptState>(initialState);
   const [submitting, setSubmitting] = useState(false);
   const [resolved, setResolved] = useState<{
@@ -83,15 +101,50 @@ export function SimulatorPlayer({ attemptId, payload, initialState }: Props) {
   // see it again on reload. SSR-safe: starts false, the effect below
   // promotes to true on the client only if no dismissal flag exists.
   const [welcomeOpen, setWelcomeOpen] = useState(false);
+
+  // Stable keys for the one-time welcome modal + (guest) progress
+  // checkpoint. Authed attempts key on the attempt id; guest plays key
+  // on the share token.
+  const welcomeKey = guest
+    ? `sim:welcome:guest:${guest.token}`
+    : `sim:welcome:${attemptId}`;
+  const guestStateKey = guest ? `bhn-sim-guest:${guest.token}` : null;
+
+  function persistGuest(next: AttemptState) {
+    if (!guestStateKey || typeof window === "undefined") return;
+    try {
+      localStorage.setItem(guestStateKey, JSON.stringify(next));
+    } catch {}
+  }
+
+  // Guest resume — rehydrate any in-progress state from a previous
+  // visit (the no-login player has no server checkpoint).
+  useEffect(() => {
+    if (!guestStateKey || typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(guestStateKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as AttemptState;
+      if (
+        saved &&
+        typeof saved.week === "number" &&
+        saved.stats &&
+        Array.isArray(saved.log)
+      ) {
+        setState(saved);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guestStateKey]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const key = `sim:welcome:${attemptId}`;
-    if (!localStorage.getItem(key)) setWelcomeOpen(true);
-  }, [attemptId]);
+    if (!localStorage.getItem(welcomeKey)) setWelcomeOpen(true);
+  }, [welcomeKey]);
   function dismissWelcome() {
     setWelcomeOpen(false);
     if (typeof window !== "undefined") {
-      localStorage.setItem(`sim:welcome:${attemptId}`, "dismissed");
+      localStorage.setItem(welcomeKey, "dismissed");
     }
   }
   const router = useRouter();
@@ -102,8 +155,27 @@ export function SimulatorPlayer({ attemptId, payload, initialState }: Props) {
 
   async function makeChoice(idx: number) {
     if (!scenario || submitting) return;
-    setSubmitting(true);
     setError(null);
+
+    // Guest mode: resolve the choice locally with the same pure engine
+    // the server uses — no network, progress saved to localStorage.
+    if (guest) {
+      const result = applyChoice(payload, state, idx);
+      if (!result) {
+        setError("That choice isn't available.");
+        return;
+      }
+      setResolved({
+        choiceIdx: idx,
+        label: result.entry.choiceLabel,
+        outcome: result.entry.outcome,
+      });
+      pendingNextRef.current = result.state;
+      persistGuest(result.state);
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const res = await fetch(`/api/simulator/${attemptId}/choose`, {
         method: "POST",
@@ -155,15 +227,32 @@ export function SimulatorPlayer({ attemptId, payload, initialState }: Props) {
     ) {
       return;
     }
+    const stats: AttemptStats = {};
+    for (const s of payload.stats) stats[s.key] = s.initialValue;
+    const fresh: AttemptState = {
+      week: 1,
+      scenarioIndex: 0,
+      stats,
+      log: [],
+      finished: false,
+    };
+
+    // Guest mode: reset locally, no server round-trip.
+    if (guest) {
+      setState(fresh);
+      setResolved(null);
+      pendingNextRef.current = null;
+      persistGuest(fresh);
+      return;
+    }
+
     const res = await fetch(`/api/simulator/${attemptId}/reset`, {
       method: "POST",
     });
     if (res.ok) {
       // Reset local state without round-tripping through Prisma — we
       // know the initial state from the payload.
-      const stats: AttemptStats = {};
-      for (const s of payload.stats) stats[s.key] = s.initialValue;
-      setState({ week: 1, scenarioIndex: 0, stats, log: [], finished: false });
+      setState(fresh);
       setResolved(null);
       pendingNextRef.current = null;
       router.refresh();
@@ -177,6 +266,7 @@ export function SimulatorPlayer({ attemptId, payload, initialState }: Props) {
         payload={payload}
         state={state}
         attemptId={attemptId}
+        guest={!!guest}
         onReset={handleReset}
       />
     );
@@ -1026,11 +1116,13 @@ function ReviewView({
   payload,
   state,
   attemptId,
+  guest,
   onReset,
 }: {
   payload: SimulationPayload;
   state: AttemptState;
-  attemptId: string;
+  attemptId?: string;
+  guest?: boolean;
   onReset: () => void;
 }) {
   const review = useMemo(() => computeReview(payload, state), [payload, state]);
@@ -1218,16 +1310,27 @@ function ReviewView({
         >
           <RotateCcw className="h-4 w-4" /> Try the quarter again
         </button>
-        <a
-          href="/simulator"
-          className="inline-flex items-center gap-2 rounded-md border border-line bg-card-solid px-5 py-2.5 text-sm font-medium text-fg hover:border-brand-400 hover:text-brand-700"
-        >
-          Back to my simulations
-        </a>
+        {guest ? (
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 rounded-md border border-line bg-card-solid px-5 py-2.5 text-sm font-medium text-fg hover:border-brand-400 hover:text-brand-700"
+          >
+            Explore the BHN Training Platform
+          </a>
+        ) : (
+          <a
+            href="/simulator"
+            className="inline-flex items-center gap-2 rounded-md border border-line bg-card-solid px-5 py-2.5 text-sm font-medium text-fg hover:border-brand-400 hover:text-brand-700"
+          >
+            Back to my simulations
+          </a>
+        )}
       </div>
 
       <div className="pt-4 text-center text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">
-        Attempt {attemptId.slice(0, 8)} · {state.log.length} decisions logged
+        {guest
+          ? `Shared preview · ${state.log.length} decisions logged`
+          : `Attempt ${attemptId?.slice(0, 8) ?? "—"} · ${state.log.length} decisions logged`}
       </div>
 
       {briefingOpen && payload.briefing && (

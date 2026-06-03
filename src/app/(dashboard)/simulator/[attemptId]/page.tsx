@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SimulatorPlayer } from "@/components/simulator/SimulatorPlayer";
+import { ShareSimButton } from "@/components/simulator/ShareSimButton";
 import type {
   AttemptState,
   AttemptStats,
@@ -46,12 +47,18 @@ export default async function SimulationAttemptPage({ params }: Ctx) {
 
   return (
     <div className="space-y-4">
-      <Link
-        href="/simulator"
-        className="inline-flex items-center gap-1 text-xs text-muted hover:text-fg"
-      >
-        <ArrowLeft className="h-3 w-3" /> Back to my simulations
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href="/simulator"
+          className="inline-flex items-center gap-1 text-xs text-muted hover:text-fg"
+        >
+          <ArrowLeft className="h-3 w-3" /> Back to my simulations
+        </Link>
+        <ShareSimButton
+          simulationId={attempt.simulationId}
+          jobTitle={payload.jobTitle}
+        />
+      </div>
       <SimulatorPlayer
         attemptId={attempt.id}
         payload={payload}

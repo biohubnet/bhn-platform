@@ -4001,9 +4001,11 @@ model Simulation {
   createdById   String?
   createdAt     DateTime @default(now())
 
-  createdBy User?               @relation("SimulationCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  attempts  SimulationAttempt[]
-  requests  SimulationRequest[]
+  createdBy   User?                  @relation("SimulationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  attempts    SimulationAttempt[]
+  requests    SimulationRequest[]
+  shareTokens SimulationShareToken[]
+  comments    SimulationComment[]
 
   @@index([sourceUrl])
   @@index([createdAt])
@@ -4092,6 +4094,61 @@ model SimulationAttempt {
 
   @@index([userId, updatedAt])
   @@index([simulationId])
+}
+
+/// Tokenised public, no-login share link for a Simulation.
+///
+/// /share/sim/[token] serves a fully PLAYABLE view — an anonymous
+/// visitor runs the same sim entirely client-side (the play engine is
+/// pure and the whole payload ships to the browser), with progress
+/// checkpointed to localStorage rather than a server attempt. Any
+/// signed-in user (any role) can mint a link; possession of the URL is
+/// the only auth, mirroring JobFolderShareToken.
+model SimulationShareToken {
+  id           String     @id @default(cuid())
+  simulationId String
+  simulation   Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  /// URL-safe random token (~22 chars). Unique + indexed for fast
+  /// lookups on the public share page.
+  token        String     @unique
+  /// Optional label the sharer gave the link ("For the ASCO mentor").
+  label        String?
+  /// Who minted the link. Plain column (no FK) — display/audit only;
+  /// the link must outlive the sharer's account.
+  createdById  String?
+  /// null = no expiry; otherwise the share page 410s after this time.
+  expiresAt    DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@index([simulationId, createdAt])
+}
+
+/// Public comment on a Simulation, postable by ANYONE via a share link
+/// — including logged-out visitors. The commenter's display name is
+/// captured as free text (no account required). authorUserId is set
+/// only when the poster happens to be signed in. Threads attach to the
+/// Simulation so every share link of the same sim shares one discussion.
+model SimulationComment {
+  id           String     @id @default(cuid())
+  simulationId String
+  simulation   Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  /// Free-text display name captured from the (possibly anonymous)
+  /// commenter. Required — every comment renders with a name.
+  authorName   String
+  /// Set when a logged-in user posts; null for anonymous visitors.
+  /// Plain column (no FK) so anonymous comments survive independently.
+  authorUserId String?
+  body         String
+  /// Coarse abuse signal (first x-forwarded-for hop). Never displayed,
+  /// used only for per-IP rate limiting + moderation forensics.
+  ip           String?
+  /// Soft-moderation: hidden rows stay in the table but don't render
+  /// on the public page. Toggled by admins.
+  hidden       Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+
+  @@index([simulationId, createdAt])
+  @@index([ip, createdAt])
 }
 
 /// Structured resume — a JSON tree of sections → items → bullets,
