@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Fix · contrast on the name-chips picker — Jun 2026
+  {
+    title: "Fix · readable salutation chips in the “How should we address you?” editor",
+    body: "The name chips (First name, Dr./Prof./Mr./Ms. … Yuan) in the preferred-name picker were washing out on the glass themes — faint text on a near-transparent chip. They now use a solid, high-contrast brand fill that reads clearly across every theme, and the section labels were darkened to match.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Register → attend → showcase chain — Jun 2026
   {
     title: "Pathways · take attendance, then gate the showcase to attendees",

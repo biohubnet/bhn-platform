@@ -171,7 +171,7 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
           ref={popoverRef}
           className="absolute top-full left-0 mt-1 z-30 w-[22rem] rounded-xl border border-line bg-card-solid shadow-elevated p-3 popover"
         >
-          <p className="text-[11px] uppercase tracking-[0.16em] font-bold text-fg-subtle mb-2">
+          <p className="text-[11px] uppercase tracking-[0.16em] font-bold text-fg-muted mb-2">
             How should we address you?
           </p>
           <ChipRow
@@ -213,7 +213,7 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
               type="button"
               onClick={() => save(null)}
               disabled={busy}
-              className="mt-2 text-[11px] text-fg-subtle hover:text-fg underline disabled:opacity-50"
+              className="mt-2 text-[11px] text-fg-muted hover:text-fg underline disabled:opacity-50"
             >
               Reset (use my full name)
             </button>
@@ -251,7 +251,7 @@ function ChipRow({
               "text-[11.5px] px-2 py-1 rounded-md transition-colors disabled:opacity-50 " +
               (isPicked
                 ? "bg-brand-600 text-white font-semibold"
-                : "bg-elevated text-fg-muted hover:text-fg hover:bg-raised")
+                : "bg-brand-50 text-brand-700 font-medium hover:bg-brand-100")
             }
           >
             {honorific ? <span className="opacity-70 mr-0.5">{honorific}</span> : null}
