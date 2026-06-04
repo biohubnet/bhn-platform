@@ -19,8 +19,14 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     name?: unknown;
     eyebrow?: unknown;
     intro?: unknown;
+    linkedPathwayId?: unknown;
   };
-  const data: { name?: string; eyebrow?: string | null; intro?: string | null } = {};
+  const data: {
+    name?: string;
+    eyebrow?: string | null;
+    intro?: string | null;
+    linkedPathwayId?: string | null;
+  } = {};
   if (typeof body.name === "string" && body.name.trim()) {
     data.name = body.name.trim().slice(0, 160);
   }
@@ -29,6 +35,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   }
   if (typeof body.intro === "string") {
     data.intro = body.intro.trim() ? body.intro.trim().slice(0, 600) : null;
+  }
+  // Bind (or unbind) the showcase pathway to a real learning Pathway.
+  if (typeof body.linkedPathwayId === "string" || body.linkedPathwayId === null) {
+    data.linkedPathwayId = (body.linkedPathwayId as string | null) || null;
   }
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });

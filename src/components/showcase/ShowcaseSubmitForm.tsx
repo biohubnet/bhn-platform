@@ -23,6 +23,10 @@ import {
 
 interface Props {
   programSlug: string;
+  /** Gated cohort: the visitor is a verified, signed-in, attended trainee.
+   *  Skips the returning-person name lookup and prefills their name. */
+  gated?: boolean;
+  lockedName?: string;
 }
 
 type Status = "idle" | "submitting" | "success" | "error";
@@ -33,8 +37,12 @@ type Matched = {
   photoUrl: string;
 };
 
-export function ShowcaseSubmitForm({ programSlug }: Props) {
-  const [name, setName] = useState("");
+export function ShowcaseSubmitForm({
+  programSlug,
+  gated = false,
+  lockedName = "",
+}: Props) {
+  const [name, setName] = useState(lockedName);
   const [linkedin, setLinkedin] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -59,6 +67,7 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
   // photo (we don't override their explicit upload). On a hit, prefill
   // LinkedIn (if blank) and show the saved photo.
   useEffect(() => {
+    if (gated) return; // verified trainee — no name-based lookup needed
     if (photoFile) return;
     const trimmed = name.trim();
     if (trimmed.length < 3) {
@@ -240,6 +249,17 @@ export function ShowcaseSubmitForm({ programSlug }: Props) {
             Welcome back{firstName ? `, ${firstName}` : ""}! We found your earlier
             entry — your LinkedIn and headshot are filled in below. Update
             anything that&apos;s changed, or just confirm.
+          </span>
+        </div>
+      )}
+
+      {/* Verified-trainee banner (attendance-gated cohort) */}
+      {gated && (
+        <div className="flex items-start gap-2 rounded-lg bg-[#eef7f4] ring-1 ring-inset ring-[#bfe3d6] px-3 py-2.5 text-[12.5px] text-[#14532d]">
+          <Sparkles className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "#2a8a6a" }} />
+          <span>
+            You&apos;re verified as an attended trainee for this cohort — just
+            add your LinkedIn and a headshot to be featured.
           </span>
         </div>
       )}

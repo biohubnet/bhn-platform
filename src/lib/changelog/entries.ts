@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Register → attend → showcase chain — Jun 2026
+  {
+    title: "Pathways · take attendance, then gate the showcase to attendees",
+    body: "The graduate showcase can now be wired to the real learning-pathway registration — the register → attend → showcase chain for go-live. In Admin → Pathway enrollments, each approved trainee gets an “Attended” checkbox (plus an optional session count) so you can record who actually showed up. In Admin → Showcase, you link a showcase pathway to a real learning Pathway, link each cohort to its registration cohort, and flip “Gate: only attended can submit”. Once a cohort is gated, its public /showcase link requires login and accepts a submission ONLY from a signed-in trainee with an approved/completed enrollment in that cohort who is marked attended (enforced server-side, not just hidden) — everyone else sees a sign-in / not-on-roster / attendance-pending notice. Ungated cohorts stay open and public exactly as before, so nothing changes until you flip the gate.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Showcase · pathways → cohorts — Jun 2026
   {
     title: "Showcase · organise cohorts under a pathway (named once, no number)",

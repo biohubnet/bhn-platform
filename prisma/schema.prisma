@@ -1790,10 +1790,11 @@ model Pathway {
   capacity           Int?
   allowWaitlist      Boolean   @default(true)
 
-  courses      PathwayCourse[]
-  cohorts      PathwayCohort[]
-  enrollments  PathwayEnrollment[]
-  certificates Certificate[]
+  courses       PathwayCourse[]
+  cohorts       PathwayCohort[]
+  enrollments   PathwayEnrollment[]
+  certificates  Certificate[]
+  showcaseLinks ShowcasePathway[]
 }
 
 /// One cohort within a Pathway — e.g. "Spring 2026 — OBIO Bootcamp"
@@ -1842,8 +1843,9 @@ model PathwayCohort {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  pathway     Pathway             @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
-  enrollments PathwayEnrollment[]
+  pathway        Pathway             @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  enrollments    PathwayEnrollment[]
+  showcaseGroups ShowcaseGroup[]
 
   @@unique([pathwayId, slug])
   /// Supports "list cohorts for this pathway in display order".
@@ -1885,6 +1887,14 @@ model PathwayEnrollment {
   enrolledAt       DateTime       @default(now()) // request created
   approvedAt       DateTime?
   completedAt      DateTime?
+  /// Attendance (enrollment-level). Admins mark who attended from
+  /// /admin/pathway-enrollments; the graduate showcase can gate on
+  /// `attended` so only those who showed up get to submit.
+  attended               Boolean   @default(false)
+  sessionsAttended       Int       @default(0)
+  attendanceNote         String?
+  attendanceRecordedAt   DateTime?
+  attendanceRecordedById String?
   pathway          Pathway        @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
   cohort           PathwayCohort? @relation(fields: [cohortId], references: [id], onDelete: SetNull)
 
@@ -1892,6 +1902,8 @@ model PathwayEnrollment {
   @@index([pathwayId, status, enrolledAt])
   /// Supports per-cohort capacity + waitlist queries.
   @@index([cohortId, status, waitlistPosition])
+  /// Supports the cohort attendance roster + showcase eligibility check.
+  @@index([cohortId, attended])
 }
 
 /// Application from a trainee for additional starter credits beyond the
@@ -4592,8 +4604,13 @@ model ShowcaseSubmission {
   /// Name / email of the admin who last downloaded.
   lastDownloadedBy  String?
   adminNote         String?
+  /// Set when the submission came through a GATED (attendance-gated)
+  /// cohort: the logged-in trainee's User id, stamped server-side from
+  /// the session. Null for public/anonymous submissions.
+  userId            String?
 
   @@index([programSlug, createdAt])
+  @@index([programSlug, userId])
 }
 
 /// A showcase "group" — a named, slug-addressed graduate showcase. Each
@@ -4627,9 +4644,19 @@ model ShowcaseGroup {
   pathway      ShowcasePathway? @relation(fields: [pathwayId], references: [id], onDelete: SetNull)
   /// 1-based cohort number within the pathway (auto-incremented on add).
   cohortNumber Int?
+  /// When set, this showcase cohort is BOUND to a real learning-pathway
+  /// cohort (PathwayCohort) — the registration + attendance source of
+  /// truth. Lets the showcase gate on who actually registered + attended.
+  linkedCohortId String?
+  linkedCohort   PathwayCohort? @relation(fields: [linkedCohortId], references: [id], onDelete: SetNull)
+  /// When true (and linkedCohortId set) the public page requires login
+  /// and only approved-enrolled + attended trainees can submit. False =
+  /// open/public (the interim default; nothing breaks for unbound groups).
+  gateOnAttendance Boolean @default(false)
 
   @@index([createdAt])
   @@index([pathwayId])
+  @@index([linkedCohortId])
 }
 
 /// A learning pathway — the program a showcase belongs to, created ONCE
@@ -4648,8 +4675,13 @@ model ShowcasePathway {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   cohorts     ShowcaseGroup[]
+  /// When set, bound to a real learning Pathway — the registration anchor
+  /// whose approved enrollments + attendance govern the showcase.
+  linkedPathwayId String?
+  linkedPathway   Pathway? @relation(fields: [linkedPathwayId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+  @@index([linkedPathwayId])
 }
 
 // ───────────────────────────────────────────────────────────────

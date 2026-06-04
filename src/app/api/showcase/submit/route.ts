@@ -21,6 +21,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import { putR2Object, r2PublicUrl, R2_PUBLIC_URL } from "@/lib/r2";
 
 export const runtime = "nodejs";
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
   // /admin/showcase).
   const group = await prisma.showcaseGroup.findUnique({
     where: { slug: programSlug },
-    select: { active: true },
+    select: { active: true, gateOnAttendance: true, linkedCohortId: true },
   });
   if (!group) {
     return NextResponse.json({ error: "Unknown showcase." }, { status: 400 });
@@ -90,6 +91,39 @@ export async function POST(req: NextRequest) {
       { error: "This showcase isn't accepting submissions right now." },
       { status: 400 },
     );
+  }
+
+  // Attendance gate — enforced HERE regardless of what the client sends.
+  // A bound + gated cohort accepts submissions only from a signed-in trainee
+  // with an approved/completed enrollment in the bound cohort who is marked
+  // attended. The trainee's User id is stamped on the row.
+  let gatedUserId: string | null = null;
+  if (group.gateOnAttendance && group.linkedCohortId) {
+    const session = await getSession();
+    const userId = session
+      ? ((session.user as { id?: string }).id ?? null)
+      : null;
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Sign in to submit to this showcase." },
+        { status: 401 },
+      );
+    }
+    const enr = await prisma.pathwayEnrollment.findFirst({
+      where: {
+        userId,
+        cohortId: group.linkedCohortId,
+        status: { in: ["approved", "completed"] },
+      },
+      select: { attended: true },
+    });
+    if (!enr || !enr.attended) {
+      return NextResponse.json(
+        { error: "Only registered trainees who attended this cohort can submit." },
+        { status: 403 },
+      );
+    }
+    gatedUserId = userId;
   }
   if (name.length < 2 || name.length > 120) {
     return NextResponse.json({ error: "Name should be 2–120 characters." }, { status: 400 });
@@ -190,6 +224,7 @@ export async function POST(req: NextRequest) {
         photoKey,
         submittedFromIp: ip,
         submittedFromUa: ua,
+        userId: gatedUserId,
       },
     });
   } catch (err) {

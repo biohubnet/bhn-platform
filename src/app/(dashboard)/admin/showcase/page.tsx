@@ -34,7 +34,7 @@ export default async function AdminShowcasePage() {
   // Showcase pathways (each with its cohorts) + legacy standalone groups,
   // with per-slug submission counts (submissions couple loosely by
   // programSlug == slug).
-  const [pathwayRows, standaloneRows, subCounts] = await Promise.all([
+  const [pathwayRows, standaloneRows, subCounts, realPathwayRows] = await Promise.all([
     prisma.showcasePathway.findMany({
       orderBy: { createdAt: "desc" },
       include: { cohorts: { orderBy: { cohortNumber: "asc" } } },
@@ -47,6 +47,20 @@ export default async function AdminShowcasePage() {
       by: ["programSlug"],
       _count: { _all: true },
     }),
+    // Real learning pathways (registration source of truth) + their
+    // cohorts, to bind a showcase cohort to its registration cohort.
+    prisma.pathway.findMany({
+      where: { status: "published" },
+      orderBy: { title: "asc" },
+      select: {
+        id: true,
+        title: true,
+        cohorts: {
+          orderBy: { displayOrder: "asc" },
+          select: { id: true, name: true, slug: true },
+        },
+      },
+    }),
   ]);
   const countBySlug = new Map(
     subCounts.map((c) => [c.programSlug, c._count._all]),
@@ -57,6 +71,7 @@ export default async function AdminShowcasePage() {
     name: p.name,
     eyebrow: p.eyebrow,
     intro: p.intro,
+    linkedPathwayId: p.linkedPathwayId,
     cohorts: p.cohorts.map((c) => ({
       id: c.id,
       slug: c.slug,
@@ -64,6 +79,8 @@ export default async function AdminShowcasePage() {
       cohortNumber: c.cohortNumber,
       active: c.active,
       submissionCount: countBySlug.get(c.slug) ?? 0,
+      linkedCohortId: c.linkedCohortId,
+      gateOnAttendance: c.gateOnAttendance,
     })),
   }));
   const standalone = standaloneRows.map((g) => ({
@@ -105,6 +122,7 @@ export default async function AdminShowcasePage() {
       <ShowcasePathwaysManager
         initialPathways={pathways}
         initialStandalone={standalone}
+        realPathways={realPathwayRows}
       />
 
       <ShowcaseAdminClient initialSubmissions={serialised} adminName={adminName} />

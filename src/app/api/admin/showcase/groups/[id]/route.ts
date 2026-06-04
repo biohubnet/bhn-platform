@@ -20,12 +20,16 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     eyebrow?: unknown;
     intro?: unknown;
     active?: unknown;
+    linkedCohortId?: unknown;
+    gateOnAttendance?: unknown;
   };
   const data: {
     name?: string;
     eyebrow?: string | null;
     intro?: string | null;
     active?: boolean;
+    linkedCohortId?: string | null;
+    gateOnAttendance?: boolean;
   } = {};
   if (typeof body.name === "string" && body.name.trim()) {
     data.name = body.name.trim().slice(0, 160);
@@ -38,6 +42,14 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   }
   if (typeof body.active === "boolean") {
     data.active = body.active;
+  }
+  // Bind (or unbind) this cohort to a real PathwayCohort, and toggle the
+  // attendance gate on the public submission page.
+  if (typeof body.linkedCohortId === "string" || body.linkedCohortId === null) {
+    data.linkedCohortId = (body.linkedCohortId as string | null) || null;
+  }
+  if (typeof body.gateOnAttendance === "boolean") {
+    data.gateOnAttendance = body.gateOnAttendance;
   }
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });

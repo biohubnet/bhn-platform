@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { PathwayEnrollmentDecideButtons } from "@/components/admin/PathwayEnrollmentDecideButtons";
+import { AttendanceToggle } from "@/components/admin/AttendanceToggle";
 import { DemoPhantomTray, type DemoScenario } from "@/components/admin/DemoPhantomTray";
 
 /** Form slugs that admins reach for on the pathway-enrollment surface
@@ -28,6 +29,8 @@ interface Row {
   enrolledAt: Date;
   approvedAt: Date | null;
   reviewedAt: Date | null;
+  attended: boolean;
+  sessionsAttended: number;
   pathway: { id: string; title: string; capacity: number | null };
   user: { id: string; name: string | null; email: string; organization: string | null; jobTitle: string | null };
 }
@@ -67,6 +70,8 @@ export default async function AdminPathwayEnrollmentsPage({ searchParams }: { se
     enrolledAt: e.enrolledAt,
     approvedAt: e.approvedAt,
     reviewedAt: e.reviewedAt,
+    attended: e.attended,
+    sessionsAttended: e.sessionsAttended,
     pathway: e.pathway,
     user: userMap.get(e.userId) ?? { id: "", name: null, email: "—", organization: null, jobTitle: null },
   }));
@@ -189,8 +194,8 @@ export default async function AdminPathwayEnrollmentsPage({ searchParams }: { se
       {/* Sections */}
       <Section title="Pending review"      tone="amber"   rows={pendingRows}   approvedMap={approvedMap} showQueuePosition={false} />
       <Section title="Waitlist"            tone="warning" rows={waitlistRows}  approvedMap={approvedMap} showQueuePosition />
-      <Section title="Approved · in pathway" tone="brand" rows={approvedRows}  approvedMap={approvedMap} showQueuePosition={false} />
-      <Section title="Completed"           tone="success" rows={completedRows} approvedMap={approvedMap} showQueuePosition={false} />
+      <Section title="Approved · in pathway" tone="brand" rows={approvedRows}  approvedMap={approvedMap} showQueuePosition={false} showAttendance />
+      <Section title="Completed"           tone="success" rows={completedRows} approvedMap={approvedMap} showQueuePosition={false} showAttendance />
       <Section title="Rejected · withdrawn" tone="neutral" rows={rejectedRows} approvedMap={approvedMap} showQueuePosition={false} />
 
       {/* Demo controls — same pattern as the /admin/enrollments dashboard.
@@ -285,9 +290,10 @@ interface SectionProps {
   rows: Row[];
   approvedMap: Map<string, number>;
   showQueuePosition: boolean;
+  showAttendance?: boolean;
 }
 
-function Section({ title, tone, rows, approvedMap, showQueuePosition }: SectionProps) {
+function Section({ title, tone, rows, approvedMap, showQueuePosition, showAttendance = false }: SectionProps) {
   if (rows.length === 0) return null;
 
   // Queue position is the row's index within the section + 1 (already
@@ -310,6 +316,7 @@ function Section({ title, tone, rows, approvedMap, showQueuePosition }: SectionP
               <th className="px-5 py-3">Pathway</th>
               <th className="px-5 py-3">Reason</th>
               <th className="px-5 py-3">Submitted</th>
+              {showAttendance && <th className="px-5 py-3">Attendance</th>}
               <th className="px-5 py-3">Actions</th>
             </tr>
           </thead>
@@ -351,6 +358,15 @@ function Section({ title, tone, rows, approvedMap, showQueuePosition }: SectionP
                   <td className="px-5 py-3 text-subtle text-xs whitespace-nowrap">
                     {new Date(r.enrolledAt).toLocaleDateString()}
                   </td>
+                  {showAttendance && (
+                    <td className="px-5 py-3">
+                      <AttendanceToggle
+                        enrollmentId={r.id}
+                        attended={r.attended}
+                        sessionsAttended={r.sessionsAttended}
+                      />
+                    </td>
+                  )}
                   <td className="px-5 py-3">
                     <PathwayEnrollmentDecideButtons id={r.id} status={r.status} />
                   </td>

@@ -13,6 +13,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import { ShowcaseSubmitForm } from "@/components/showcase/ShowcaseSubmitForm";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,10 @@ type Ctx = { params: Promise<{ slug: string }> };
 function getGroup(slug: string) {
   return prisma.showcaseGroup.findUnique({
     where: { slug },
-    include: { pathway: true },
+    include: {
+      pathway: true,
+      linkedCohort: { select: { id: true, name: true, pathwayId: true } },
+    },
   });
 }
 
@@ -67,6 +71,34 @@ export default async function ShowcaseGroupPage({ params }: Ctx) {
   if (!group) notFound();
   const b = branding(group);
 
+  // Attendance gate: a bound + gated cohort requires login and only lets
+  // approved-enrolled + attended trainees submit (re-checked server-side in
+  // /api/showcase/submit, which is the real enforcement boundary).
+  const gated = group.gateOnAttendance && !!group.linkedCohortId;
+  let gateState: "open" | "signin" | "not-enrolled" | "not-attended" | "eligible" =
+    "open";
+  let lockedName = "";
+  if (gated) {
+    const session = await getSession();
+    if (!session) {
+      gateState = "signin";
+    } else {
+      const userId = (session.user as { id?: string }).id ?? "";
+      lockedName = (session.user as { name?: string }).name ?? "";
+      const enr = await prisma.pathwayEnrollment.findFirst({
+        where: {
+          userId,
+          cohortId: group.linkedCohortId!,
+          status: { in: ["approved", "completed"] },
+        },
+        select: { attended: true },
+      });
+      if (!enr) gateState = "not-enrolled";
+      else if (!enr.attended) gateState = "not-attended";
+      else gateState = "eligible";
+    }
+  }
+
   return (
     <main
       data-theme="light"
@@ -102,9 +134,7 @@ export default async function ShowcaseGroupPage({ params }: Ctx) {
         </section>
 
         <section className="rounded-2xl bg-white shadow-card-rest border border-line/70 px-5 sm:px-7 py-5 sm:py-7">
-          {group.active ? (
-            <ShowcaseSubmitForm programSlug={group.slug} />
-          ) : (
+          {!group.active ? (
             <div className="text-center py-6">
               <h3 className="text-[16px] font-semibold text-fg">
                 Submissions are closed
@@ -114,6 +144,22 @@ export default async function ShowcaseGroupPage({ params }: Ctx) {
                 back later, or reach out to the BioHubNet team.
               </p>
             </div>
+          ) : gated ? (
+            gateState === "eligible" ? (
+              <ShowcaseSubmitForm
+                programSlug={group.slug}
+                gated
+                lockedName={lockedName}
+              />
+            ) : (
+              <GateNotice
+                state={gateState as "signin" | "not-enrolled" | "not-attended"}
+                slug={slug}
+                cohortName={group.linkedCohort?.name}
+              />
+            )
+          ) : (
+            <ShowcaseSubmitForm programSlug={group.slug} />
           )}
         </section>
 
@@ -126,5 +172,64 @@ export default async function ShowcaseGroupPage({ params }: Ctx) {
         </footer>
       </div>
     </main>
+  );
+}
+
+/** Shown in place of the form when a cohort is attendance-gated and the
+ *  visitor isn't (yet) an eligible, attended, signed-in trainee. */
+function GateNotice({
+  state,
+  slug,
+  cohortName,
+}: {
+  state: "signin" | "not-enrolled" | "not-attended";
+  slug: string;
+  cohortName?: string | null;
+}) {
+  const cohort = cohortName ? ` (${cohortName})` : "";
+  if (state === "signin") {
+    return (
+      <div className="text-center py-6">
+        <h3 className="text-[16px] font-semibold text-fg">Sign in to submit</h3>
+        <p className="mt-2 text-[13px] text-fg-muted max-w-sm mx-auto">
+          This showcase is for trainees who registered for and attended the
+          pathway{cohort}. Sign in with your BioHubNet account to continue.
+        </p>
+        <a
+          href={`/login?callbackUrl=${encodeURIComponent(`/showcase/${slug}`)}`}
+          className="mt-4 inline-block rounded-lg px-4 py-2 text-[13px] font-semibold text-white"
+          style={{ background: "linear-gradient(90deg, #2a6d7a 0%, #0e7da3 100%)" }}
+        >
+          Sign in &rarr;
+        </a>
+      </div>
+    );
+  }
+  if (state === "not-enrolled") {
+    return (
+      <div className="text-center py-6">
+        <h3 className="text-[16px] font-semibold text-fg">
+          Not on this cohort&apos;s roster
+        </h3>
+        <p className="mt-2 text-[13px] text-fg-muted max-w-sm mx-auto">
+          We couldn&apos;t find an approved registration for you in this pathway
+          cohort{cohort}. If you think this is a mistake, reach out to the
+          BioHubNet team.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="text-center py-6">
+      <h3 className="text-[16px] font-semibold text-fg">
+        Attendance not recorded yet
+      </h3>
+      <p className="mt-2 text-[13px] text-fg-muted max-w-sm mx-auto">
+        You&apos;re registered for this cohort{cohort}, but our records
+        don&apos;t show you as having attended yet — only attendees can be
+        featured. If you did attend, the team will update your attendance
+        shortly.
+      </p>
+    </div>
   );
 }
