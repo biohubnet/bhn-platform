@@ -4619,6 +4619,36 @@ model ShowcaseGroup {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  /// When set, this group is a COHORT of a pathway: its public branding
+  /// comes from the pathway, and `name` holds the cohort label (e.g.
+  /// "Cohort 2"). Null = a standalone showcase (e.g. the legacy
+  /// Regulatory Affairs program).
+  pathwayId    String?
+  pathway      ShowcasePathway? @relation(fields: [pathwayId], references: [id], onDelete: SetNull)
+  /// 1-based cohort number within the pathway (auto-incremented on add).
+  cohortNumber Int?
+
+  @@index([createdAt])
+  @@index([pathwayId])
+}
+
+/// A learning pathway — the program a showcase belongs to, created ONCE
+/// and named WITHOUT a cohort number ("Medical Affairs Learning Pathway").
+/// Its cohorts are ShowcaseGroup rows with pathwayId set; each cohort has
+/// its own public /showcase/<slug> link but shares the pathway's branding
+/// (eyebrow + intro). This is the anchor a future approved-registration
+/// list attaches to — one registration per pathway, reused across cohorts.
+model ShowcasePathway {
+  id          String          @id @default(cuid())
+  slug        String          @unique
+  name        String
+  eyebrow     String?
+  intro       String?
+  createdById String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  cohorts     ShowcaseGroup[]
+
   @@index([createdAt])
 }
 

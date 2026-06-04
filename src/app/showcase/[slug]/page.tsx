@@ -20,17 +20,42 @@ export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ slug: string }> };
 
 function getGroup(slug: string) {
-  return prisma.showcaseGroup.findUnique({ where: { slug } });
+  return prisma.showcaseGroup.findUnique({
+    where: { slug },
+    include: { pathway: true },
+  });
+}
+
+const DEFAULT_INTRO =
+  "Done the pathway? Drop your name, LinkedIn handle, and a headshot, and we'll feature you alongside the other graduates. No login needed.";
+
+/** Public branding: a cohort inherits its pathway's eyebrow + intro (with
+ *  a constant "Graduate Showcase" title); a standalone group uses its own. */
+function branding(group: {
+  name: string;
+  eyebrow: string | null;
+  intro: string | null;
+  pathway: { name: string; eyebrow: string | null; intro: string | null } | null;
+}) {
+  if (group.pathway) {
+    return {
+      eyebrow: group.pathway.eyebrow || group.pathway.name,
+      title: "Graduate Showcase",
+      intro: group.pathway.intro || DEFAULT_INTRO,
+    };
+  }
+  return { eyebrow: group.eyebrow, title: group.name, intro: group.intro };
 }
 
 export async function generateMetadata({ params }: Ctx): Promise<Metadata> {
   const { slug } = await params;
   const group = await getGroup(slug);
   if (!group) return { title: "Showcase · BioHubNet", robots: { index: false } };
+  const b = branding(group);
   return {
-    title: `${group.name} · BioHubNet`,
+    title: `${b.title} · BioHubNet`,
     description:
-      group.intro ??
+      b.intro ??
       "Submit your name, LinkedIn handle, and a headshot to be featured in the BioHubNet showcase.",
     robots: { index: false, follow: false },
   };
@@ -40,6 +65,7 @@ export default async function ShowcaseGroupPage({ params }: Ctx) {
   const { slug } = await params;
   const group = await getGroup(slug);
   if (!group) notFound();
+  const b = branding(group);
 
   return (
     <main
@@ -57,20 +83,20 @@ export default async function ShowcaseGroupPage({ params }: Ctx) {
         </header>
 
         <section className="mb-7 text-center">
-          {group.eyebrow && (
+          {b.eyebrow && (
             <p
               className="text-[10.5px] uppercase tracking-[0.22em] font-bold"
               style={{ color: "#0b6f90" }}
             >
-              {group.eyebrow}
+              {b.eyebrow}
             </p>
           )}
           <h2 className="mt-2 text-[24px] sm:text-[30px] font-bold text-fg leading-tight">
-            {group.name}
+            {b.title}
           </h2>
-          {group.intro && (
+          {b.intro && (
             <p className="mt-3 text-[14px] sm:text-[15px] leading-relaxed text-fg-muted max-w-md mx-auto">
-              {group.intro}
+              {b.intro}
             </p>
           )}
         </section>

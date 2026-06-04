@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Showcase · pathways → cohorts — Jun 2026
+  {
+    title: "Showcase · organise cohorts under a pathway (named once, no number)",
+    body: "Showcases now nest under a pathway. In Admin → Showcase you create a pathway once — named WITHOUT a cohort number, e.g. “Medical Affairs Learning Pathway” — then add auto-numbered cohorts under it (Cohort 1, Cohort 2, …) with one click. Each cohort gets its own public, no-login /showcase/<slug> link to send out, with open/close + a submission count per cohort, but they all share the pathway's branding (set the title + intro once). The returning-person auto-fill works across every cohort, and the pathway is what a future approved-registration list attaches to — reused across cohorts, not re-created per cohort. Existing standalone showcases (like Regulatory Affairs) keep working as before.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Showcase · returning submitters skip re-uploading — Jun 2026
   {
     title: "Showcase · returning people get their photo + LinkedIn auto-filled",

@@ -12,7 +12,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ShowcaseAdminClient } from "@/components/admin/ShowcaseAdminClient";
-import { ShowcaseGroupsManager } from "@/components/admin/ShowcaseGroupsManager";
+import { ShowcasePathwaysManager } from "@/components/admin/ShowcasePathwaysManager";
 
 export const dynamic = "force-dynamic";
 
@@ -31,24 +31,45 @@ export default async function AdminShowcasePage() {
     lastDownloadedAt: s.lastDownloadedAt?.toISOString() ?? null,
   }));
 
-  // Showcase groups + per-group submission counts (submissions couple to
-  // a group loosely by programSlug == slug).
-  const groupRows = await prisma.showcaseGroup.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-  const subCounts = await prisma.showcaseSubmission.groupBy({
-    by: ["programSlug"],
-    _count: { _all: true },
-  });
+  // Showcase pathways (each with its cohorts) + legacy standalone groups,
+  // with per-slug submission counts (submissions couple loosely by
+  // programSlug == slug).
+  const [pathwayRows, standaloneRows, subCounts] = await Promise.all([
+    prisma.showcasePathway.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { cohorts: { orderBy: { cohortNumber: "asc" } } },
+    }),
+    prisma.showcaseGroup.findMany({
+      where: { pathwayId: null },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.showcaseSubmission.groupBy({
+      by: ["programSlug"],
+      _count: { _all: true },
+    }),
+  ]);
   const countBySlug = new Map(
     subCounts.map((c) => [c.programSlug, c._count._all]),
   );
-  const groups = groupRows.map((g) => ({
+  const pathways = pathwayRows.map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    eyebrow: p.eyebrow,
+    intro: p.intro,
+    cohorts: p.cohorts.map((c) => ({
+      id: c.id,
+      slug: c.slug,
+      name: c.name,
+      cohortNumber: c.cohortNumber,
+      active: c.active,
+      submissionCount: countBySlug.get(c.slug) ?? 0,
+    })),
+  }));
+  const standalone = standaloneRows.map((g) => ({
     id: g.id,
     slug: g.slug,
     name: g.name,
-    eyebrow: g.eyebrow,
-    intro: g.intro,
     active: g.active,
     submissionCount: countBySlug.get(g.slug) ?? 0,
   }));
@@ -81,7 +102,10 @@ export default async function AdminShowcasePage() {
         <div className="h-px bg-gradient-to-r from-transparent via-brand-200/70 to-transparent" />
       </section>
 
-      <ShowcaseGroupsManager initialGroups={groups} />
+      <ShowcasePathwaysManager
+        initialPathways={pathways}
+        initialStandalone={standalone}
+      />
 
       <ShowcaseAdminClient initialSubmissions={serialised} adminName={adminName} />
     </div>
