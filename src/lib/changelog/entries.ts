@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Login floaters · adjustable entrance delay — Jun 2026
+  {
+    title: "Login floaters · adjustable fade-in speed",
+    body: "The floating molecules and sparkles on the /login backdrop now fade in gradually instead of appearing all at once — and you control how slow that is. Admin → Login floaters has a new “Entrance delay” slider (Instant → 15s, default ~6s): both ambient layers stagger their fade-in across that window so the page settles in calmly rather than popping. Saved instantly.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Fix · contrast on the name-chips picker — Jun 2026
   {
     title: "Fix · readable salutation chips in the “How should we address you?” editor",

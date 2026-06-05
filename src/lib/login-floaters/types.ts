@@ -51,4 +51,8 @@ export interface FloaterInstance {
 export interface LoginFloaterFx {
   floatersEnabled: boolean;
   sparklesEnabled: boolean;
+  /** How long (ms) the entrance stagger spreads across: on /login the
+   *  floaters + sparkles fade in progressively over this window instead
+   *  of all at once. 0 = appear instantly. Default 6000 (≈6s). */
+  appearMs: number;
 }

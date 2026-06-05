@@ -53,6 +53,8 @@ function LoginPageInner() {
   // common case and a slow fetch never flash-hides the stage.
   const [globalFloaters, setGlobalFloaters] = useState(true);
   const [globalBling, setGlobalBling] = useState(true);
+  // Admin-set entrance-stagger window (ms) for both ambient layers.
+  const [globalAppearMs, setGlobalAppearMs] = useState(6000);
 
   // Pre-fill: ?email=… from registration / employer-invite fallback
   // takes priority; otherwise fall back to localStorage Remember-Me.
@@ -89,6 +91,7 @@ function LoginPageInner() {
         if (cancelled) return;
         if (typeof j?.floatersEnabled === "boolean") setGlobalFloaters(j.floatersEnabled);
         if (typeof j?.sparklesEnabled === "boolean") setGlobalBling(j.sparklesEnabled);
+        if (typeof j?.appearMs === "number") setGlobalAppearMs(j.appearMs);
       })
       .catch(() => {});
     return () => {
@@ -191,7 +194,7 @@ function LoginPageInner() {
            prefers-reduced-motion. Gated by the Sparkles switch in the
            header's ambient-effects menu, and by the global Sparkles
            master switch on /admin/login-floaters. */}
-      {globalBling && showBling && <DeepSeaStars />}
+      {globalBling && showBling && <DeepSeaStars appearMs={globalAppearMs} />}
 
       {/* ─── BIOMANUFACTURING MOLECULES — periphery-only.
            Data-driven now: the active list lives in the

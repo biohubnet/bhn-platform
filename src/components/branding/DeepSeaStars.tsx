@@ -31,7 +31,7 @@
  *     and mouse interactions ignore the entire layer.
  */
 
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 type Variant = "a" | "b" | "c" | "d";
 type Shape = "star" | "twinkle";
@@ -101,28 +101,51 @@ const STARS: StarDef[] = [
   { x: 97, size:  4, duration: 30, delay:  -8, variant: "c", shape: "twinkle", tint: "text-teal-100",  opacity: 0.30 },
 ];
 
-export function DeepSeaStars() {
+export function DeepSeaStars({ appearMs = 6000 }: { appearMs?: number }) {
+  // Flip true a frame after mount so the entrance opacity transition plays.
+  // Each star's delay is spread across `appearMs`, so the cloud fades in
+  // progressively rather than popping in all at once. SSR renders hidden
+  // (opacity 0) → no hydration mismatch; the entrance is a client effect.
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute inset-0 overflow-hidden"
     >
-      {STARS.map((s, i) => (
-        <span
-          key={i}
-          className={`absolute top-0 ${s.tint} sea-star-sink-${s.variant}`}
-          style={
-            {
+      {STARS.map((s, i) => {
+        const entranceDelay =
+          STARS.length > 1 ? (i / (STARS.length - 1)) * appearMs : 0;
+        return (
+          <span
+            key={i}
+            className="absolute top-0"
+            style={{
               left: `${s.x}%`,
-              animationDuration: `${s.duration}s`,
-              animationDelay: `${s.delay}s`,
-              "--star-op": s.opacity,
-            } as CSSProperties
-          }
-        >
-          {s.shape === "star" ? <SeaStarShape size={s.size} /> : <TwinkleShape size={s.size} />}
-        </span>
-      ))}
+              opacity: shown ? 1 : 0,
+              transition: "opacity 1200ms ease-out",
+              transitionDelay: `${Math.round(entranceDelay)}ms`,
+            }}
+          >
+            <span
+              className={`inline-block ${s.tint} sea-star-sink-${s.variant}`}
+              style={
+                {
+                  animationDuration: `${s.duration}s`,
+                  animationDelay: `${s.delay}s`,
+                  "--star-op": s.opacity,
+                } as CSSProperties
+              }
+            >
+              {s.shape === "star" ? <SeaStarShape size={s.size} /> : <TwinkleShape size={s.size} />}
+            </span>
+          </span>
+        );
+      })}
     </div>
   );
 }

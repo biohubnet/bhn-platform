@@ -26,7 +26,19 @@ const MAX_FLOATERS = 12;
 // logic stays untouched. Both default ON; the login page also has a
 // per-device override menu (effective visibility = global AND device).
 const FX_KEY = "loginFloaterFx";
-const DEFAULT_FX: LoginFloaterFx = { floatersEnabled: true, sparklesEnabled: true };
+const APPEAR_MS_DEFAULT = 6000;
+const APPEAR_MS_MAX = 20000;
+const DEFAULT_FX: LoginFloaterFx = {
+  floatersEnabled: true,
+  sparklesEnabled: true,
+  appearMs: APPEAR_MS_DEFAULT,
+};
+
+/** Clamp the entrance window to a sane 0..20s integer. */
+function clampAppearMs(v: unknown): number {
+  if (typeof v !== "number" || !Number.isFinite(v)) return APPEAR_MS_DEFAULT;
+  return Math.max(0, Math.min(APPEAR_MS_MAX, Math.round(v)));
+}
 
 /** Default set — matches the hardcoded floaters the /login page
  *  used to render before this admin tool. Used as a fallback
@@ -155,6 +167,8 @@ export async function getLoginFloaterFx(): Promise<LoginFloaterFx> {
         typeof parsed?.floatersEnabled === "boolean" ? parsed.floatersEnabled : true,
       sparklesEnabled:
         typeof parsed?.sparklesEnabled === "boolean" ? parsed.sparklesEnabled : true,
+      appearMs:
+        parsed?.appearMs === undefined ? APPEAR_MS_DEFAULT : clampAppearMs(parsed.appearMs),
     };
   } catch {
     return { ...DEFAULT_FX };
@@ -172,6 +186,8 @@ export async function setLoginFloaterFx(
       typeof patch.floatersEnabled === "boolean" ? patch.floatersEnabled : current.floatersEnabled,
     sparklesEnabled:
       typeof patch.sparklesEnabled === "boolean" ? patch.sparklesEnabled : current.sparklesEnabled,
+    appearMs:
+      patch.appearMs === undefined ? current.appearMs : clampAppearMs(patch.appearMs),
   };
   await prisma.platformSetting.upsert({
     where: { key: FX_KEY },

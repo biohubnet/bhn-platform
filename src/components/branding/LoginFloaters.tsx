@@ -22,13 +22,19 @@ import type { FloaterInstance } from "@/lib/login-floaters/types";
 
 export function LoginFloaters() {
   const [floaters, setFloaters] = useState<FloaterInstance[] | null>(null);
+  const [appearMs, setAppearMs] = useState(6000);
+  // Flips true a frame after the floaters mount so the opacity transition
+  // (the staggered entrance) actually plays instead of snapping on.
+  const [shown, setShown] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/login-floaters")
       .then((r) => r.json())
       .then((j) => {
-        if (!cancelled && Array.isArray(j?.floaters)) {
+        if (cancelled) return;
+        if (typeof j?.appearMs === "number") setAppearMs(j.appearMs);
+        if (Array.isArray(j?.floaters)) {
           setFloaters(j.floaters as FloaterInstance[]);
         }
       })
@@ -41,6 +47,12 @@ export function LoginFloaters() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!floaters || floaters.length === 0) return;
+    const id = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(id);
+  }, [floaters]);
 
   if (!floaters) return null;
 
@@ -61,11 +73,24 @@ export function LoginFloaters() {
         const swim = f.swimClass ?? "lab-swim-slow";
         const size = f.size ?? def.defaultSize;
 
+        // Staggered entrance: spread each floater's fade-in across the
+        // admin-set `appearMs` window so they appear progressively, not all
+        // at once. Applied to DraggableGlyph's outer wrapper (un-animated —
+        // swim/spin live on inner layers) so it never fights the drift.
+        const entranceDelay =
+          floaters.length > 1 ? (idx / (floaters.length - 1)) * appearMs : 0;
+
         return (
           <DraggableGlyph
             key={`${f.id}-${idx}`}
             className={`absolute hidden lg:block ${colorClass}`}
-            style={{ ...sideStyle, top: `${f.position.verticalPct}%` }}
+            style={{
+              ...sideStyle,
+              top: `${f.position.verticalPct}%`,
+              opacity: shown ? 1 : 0,
+              transition: "opacity 1100ms ease-out",
+              transitionDelay: `${Math.round(entranceDelay)}ms`,
+            }}
             swimClass={swim}
             pokeRadius={150}
           >

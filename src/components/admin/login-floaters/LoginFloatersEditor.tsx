@@ -33,7 +33,7 @@
  * 5-floater layout.
  */
 
-import { useState, useTransition, type PointerEvent as ReactPointerEvent } from "react";
+import { useRef, useState, useTransition, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   Trash2, RotateCcw, Save, Loader2, AlertCircle, CheckCircle2, Check, X,
@@ -163,7 +163,7 @@ export function LoginFloatersEditor({
     const revert = () =>
       setFx((cur) => {
         const next = { ...cur };
-        for (const k of Object.keys(patch) as (keyof LoginFloaterFx)[]) next[k] = !patch[k];
+        for (const k of Object.keys(patch) as ("floatersEnabled" | "sparklesEnabled")[]) next[k] = !patch[k];
         return next;
       });
     startFxTransition(async () => {
@@ -190,6 +190,39 @@ export function LoginFloatersEditor({
         setFxNote((e as Error).message);
       }
     });
+  }
+
+  /** Adjust the entrance-stagger window. Live-updates the slider, then
+   *  debounce-saves it (the range input fires onChange continuously). */
+  const appearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function onAppearChange(ms: number) {
+    setFx((cur) => ({ ...cur, appearMs: ms }));
+    setFxNote(null);
+    if (appearTimer.current) clearTimeout(appearTimer.current);
+    appearTimer.current = setTimeout(() => {
+      startFxTransition(async () => {
+        try {
+          const r = await fetch("/api/admin/login-floaters", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fx: { appearMs: ms } }),
+          });
+          const j = (await r.json().catch(() => ({}))) as {
+            ok?: boolean;
+            fx?: LoginFloaterFx;
+            error?: string;
+          };
+          if (!r.ok || !j.ok) {
+            setFxNote(j.error ?? "Couldn't save.");
+            return;
+          }
+          if (j.fx) setFx(j.fx);
+          setFxNote("Saved.");
+        } catch (e) {
+          setFxNote((e as Error).message);
+        }
+      });
+    }, 450);
   }
 
   // ── Active editing surface (bottom) ───────────────────────────
@@ -262,6 +295,37 @@ export function LoginFloatersEditor({
             disabled={fxPending}
             onChange={(v) => toggleFx({ sparklesEnabled: v })}
           />
+        </div>
+
+        {/* Entrance delay — how slowly the two layers fade in on /login. */}
+        <div className="mt-2.5 rounded-xl border border-line bg-card-solid px-3.5 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-fg">Entrance delay</p>
+              <p className="mt-0.5 text-[11px] text-muted max-w-[54ch]">
+                How slowly the molecules + sparkles appear when /login loads —
+                they fade in staggered across this window instead of all at once.
+              </p>
+            </div>
+            <span className="shrink-0 font-mono text-sm tabular-nums text-fg">
+              {fx.appearMs === 0 ? "Instant" : `${(fx.appearMs / 1000).toFixed(1)}s`}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={15000}
+            step={500}
+            value={fx.appearMs}
+            disabled={fxPending}
+            onChange={(e) => onAppearChange(Number(e.target.value))}
+            aria-label="Entrance delay in seconds"
+            className="mt-3 w-full accent-brand-600 disabled:opacity-50"
+          />
+          <div className="mt-1 flex justify-between font-mono text-[10px] text-subtle">
+            <span>Instant</span>
+            <span>15s</span>
+          </div>
         </div>
       </Card>
 
