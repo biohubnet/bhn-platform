@@ -304,7 +304,7 @@ function LoginPageInner() {
               </p>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
               Start training{" "}
               <span className="font-serif italic font-normal text-white/85">with us</span>
             </h2>
@@ -382,7 +382,7 @@ function LoginPageInner() {
               </p>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
               {justRegistered ? (
                 <>Account created — <span className="font-serif italic font-normal text-white/85">sign in</span></>
               ) : (
