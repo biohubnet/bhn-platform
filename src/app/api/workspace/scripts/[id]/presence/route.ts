@@ -48,6 +48,8 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   const rows = await prisma.scriptPresence.findMany({
     where: { scriptId, editorKey: { not: editorKey }, lastSeenAt: { gte: new Date(now.getTime() - ONLINE_MS) } },
     select: { editorKey: true, name: true, color: true, activeSid: true, recentSids: true },
+    // Stable order so peers/avatars don't reshuffle between polls.
+    orderBy: { editorKey: "asc" },
   });
   const peers = rows.map((r) => ({
     editorKey: r.editorKey,

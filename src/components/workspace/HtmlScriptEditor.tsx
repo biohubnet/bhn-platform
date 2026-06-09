@@ -79,6 +79,7 @@ export function HtmlScriptEditor({
   const boxesRef = useRef<HTMLElement[]>([]);
   const activeSidRef = useRef<string | null>(null);
   const recentRef = useRef<Map<string, number>>(new Map());
+  const peersKeyRef = useRef<string>("");
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
@@ -165,7 +166,15 @@ export function HtmlScriptEditor({
           body: JSON.stringify({ editorKey: meId, name: meName, color: myColor, activeSid: activeSidRef.current, recentSids: recent }),
         });
         const j = (await res.json().catch(() => ({}))) as { ok?: boolean; peers?: PresencePeer[] };
-        if (!cancelled && j.ok && Array.isArray(j.peers)) setPeers(j.peers);
+        if (!cancelled && j.ok && Array.isArray(j.peers)) {
+          // Only re-render when presence actually changes — avoids a needless
+          // 2s re-render churn (and any flicker) while someone is typing.
+          const key = JSON.stringify(j.peers);
+          if (key !== peersKeyRef.current) {
+            peersKeyRef.current = key;
+            setPeers(j.peers);
+          }
+        }
       } catch { /* ignore — presence is best-effort */ }
     }
     beat();
@@ -177,16 +186,23 @@ export function HtmlScriptEditor({
   useEffect(() => {
     const ps = presenceStyleRef.current;
     if (!ps) return;
+    // One indicator per section (deterministic, peers are stably ordered) so a
+    // shared section never flips its colour/name between collaborators.
     let out = "";
+    const seen = new Set<string>();
     for (const p of peers) {
-      const c = p.color;
-      if (p.activeSid) {
+      if (p.activeSid && !seen.has(p.activeSid)) {
+        seen.add(p.activeSid);
+        const c = p.color;
         out += `[data-sid="${p.activeSid}"]{outline:2px solid ${c};outline-offset:2px;border-radius:6px;position:relative}`;
         out += `[data-sid="${p.activeSid}"]::after{content:"${cssStr(p.name)}";position:absolute;top:-0.85em;right:8px;background:${c};color:#fff;font:600 10px/1.5 ui-sans-serif,system-ui,sans-serif;padding:0 6px;border-radius:5px;white-space:nowrap;pointer-events:none;z-index:5}`;
       }
+    }
+    for (const p of peers) {
       for (const sid of p.recentSids) {
-        if (sid === p.activeSid) continue;
-        out += `[data-sid="${sid}"]{box-shadow:inset 4px 0 0 ${c}}`;
+        if (seen.has(sid)) continue;
+        seen.add(sid);
+        out += `[data-sid="${sid}"]{box-shadow:inset 4px 0 0 ${p.color}}`;
       }
     }
     ps.textContent = out;
