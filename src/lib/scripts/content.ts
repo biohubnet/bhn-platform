@@ -11,7 +11,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-export type ScriptFormat = "sections" | "richtext";
+export type ScriptFormat = "sections" | "richtext" | "html";
 
 export interface SnapshotSection {
   heading: string;
@@ -68,7 +68,8 @@ export async function saveScriptContent(args: {
 
   await prisma.$transaction(async (tx) => {
     const data: Prisma.ScriptUpdateInput = { format, updatedAt: new Date() };
-    if (format === "richtext" && args.richContent !== undefined) {
+    // Persist richContent for any rich format (richtext doc, or original HTML).
+    if (args.richContent !== undefined) {
       data.richContent = (args.richContent ?? Prisma.JsonNull) as Prisma.InputJsonValue;
     }
     await tx.script.update({ where: { id: scriptId }, data });

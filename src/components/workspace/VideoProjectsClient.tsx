@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Trash2, FileText, Loader2, Sparkles, ArrowRight, Clapperboard } from "lucide-react";
+import { Plus, Trash2, FileText, Loader2, ArrowRight, Clapperboard } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 
 interface ProjectRow {
@@ -24,7 +24,6 @@ export function VideoProjectsClient({ initialProjects }: { initialProjects: Proj
   const [projects, setProjects] = useState<ProjectRow[]>(initialProjects);
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
-  const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function create() {
@@ -55,23 +54,6 @@ export function VideoProjectsClient({ initialProjects }: { initialProjects: Proj
     router.refresh();
   }
 
-  async function seedMolly() {
-    setSeeding(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/workspace/seed-molly", { method: "POST" });
-      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; projectId?: string; scriptId?: string; error?: string };
-      if (!res.ok || !j.ok) { setError(j.error ?? "Seed failed."); return; }
-      if (j.projectId && j.scriptId) {
-        router.push(`/admin/workspace/marketing/video/${j.projectId}/scripts/${j.scriptId}`);
-      } else {
-        router.refresh();
-      }
-    } finally {
-      setSeeding(false);
-    }
-  }
-
   return (
     <div className="space-y-5">
       {/* Create + seed row */}
@@ -95,15 +77,6 @@ export function VideoProjectsClient({ initialProjects }: { initialProjects: Proj
           >
             {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Create
           </button>
-          <button
-            type="button"
-            onClick={seedMolly}
-            disabled={seeding}
-            title="Create the BHN Promo Video Project with the Molly interview script"
-            className="inline-flex items-center gap-1.5 rounded-md border border-brand-200 bg-brand-50/60 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100 disabled:opacity-50"
-          >
-            {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} Seed BHN Promo
-          </button>
         </div>
         {error && <p className="mt-2 text-xs text-rose-700">{error}</p>}
       </Card>
@@ -113,9 +86,7 @@ export function VideoProjectsClient({ initialProjects }: { initialProjects: Proj
         <Card className="px-5 py-10 text-center">
           <Clapperboard size={22} className="mx-auto text-muted" />
           <p className="mt-2 text-sm font-medium text-fg">No video projects yet</p>
-          <p className="mt-1 text-xs text-muted">
-            Create one above, or hit <strong>Seed BHN Promo</strong> to start from the Molly interview script.
-          </p>
+          <p className="mt-1 text-xs text-muted">Create one above to get started.</p>
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

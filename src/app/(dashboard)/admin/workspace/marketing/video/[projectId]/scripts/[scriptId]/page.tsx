@@ -9,6 +9,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { ScriptStudio } from "@/components/workspace/ScriptStudio";
+import { HtmlScriptEditor } from "@/components/workspace/HtmlScriptEditor";
 
 export const dynamic = "force-dynamic";
 interface Props { params: Promise<{ projectId: string; scriptId: string }> }
@@ -28,6 +29,8 @@ export default async function ScriptEditorPage({ params }: Props) {
   if (!script || script.projectId !== projectId) notFound();
 
   const sections = script.sections.map((s) => ({ heading: s.heading, body: s.body }));
+  const rc = (script.richContent as { kind?: string; html?: string; css?: string } | null) ?? null;
+  const isHtml = script.format === "html";
 
   return (
     <div className="space-y-6">
@@ -43,12 +46,16 @@ export default async function ScriptEditorPage({ params }: Props) {
           </Link>
         }
       />
-      <ScriptStudio
-        scriptId={script.id}
-        initialFormat={script.format === "richtext" ? "richtext" : "sections"}
-        initialSections={sections}
-        initialRich={(script.richContent as Record<string, unknown> | null) ?? null}
-      />
+      {isHtml ? (
+        <HtmlScriptEditor scriptId={script.id} initialHtml={rc?.html ?? ""} css={rc?.css ?? ""} />
+      ) : (
+        <ScriptStudio
+          scriptId={script.id}
+          initialFormat={script.format === "richtext" ? "richtext" : "sections"}
+          initialSections={sections}
+          initialRich={(rc as Record<string, unknown> | null) ?? null}
+        />
+      )}
     </div>
   );
 }

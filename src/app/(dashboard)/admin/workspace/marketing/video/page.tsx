@@ -7,12 +7,16 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { VideoProjectsClient } from "@/components/workspace/VideoProjectsClient";
+import { ensureBhnPromoProject } from "@/lib/scripts/seed";
 
 export const dynamic = "force-dynamic";
 
 export default async function VideoProductionPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
+
+  // The BHN Promo Video Project is always present (no manual seed step).
+  await ensureBhnPromoProject((session.user as { id?: string }).id ?? null);
 
   const projects = await prisma.videoProject.findMany({
     where: { category: "marketing", isArchived: false },

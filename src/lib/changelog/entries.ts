@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Workspace · Video Production scripts — Jun 2026
   {
     title: "Workspace · Video Production scripts",
-    body: "A new WORKSPACE section in the sidebar opens Marketing → Video Production: create video projects and draft their scripts. “Seed BHN Promo” imports the Molly interview guide as a starting script. Each script gives you two editors to try side-by-side — a structured Sections editor and a Rich-text editor — so you can pick whichever fits; every save is kept in history. (Public share links, comments, and live co-editing land in the next updates.)",
+    body: "A new WORKSPACE section in the sidebar opens Marketing → Video Production: create video projects and draft their scripts. The BHN Promo Video Project is ready and waiting, with the Molly interview guide kept in its original styling (live preview + editable source). New scripts offer two editors to try — a structured Sections editor and a Rich-text editor — and every save is kept in history. (Public share links, comments, and live co-editing land in the next updates.)",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,
