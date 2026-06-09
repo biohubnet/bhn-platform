@@ -17,12 +17,14 @@
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, AlertTriangle, Beaker, Microscope, Rocket, ClipboardList } from "lucide-react";
+import { ArrowRight, AlertTriangle, Beaker, Microscope, Rocket, ClipboardList, CalendarClock } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { STREAM_META, STATUS_META, type EquipStatus, type EquipStream } from "@/lib/equip/types";
 import { DeadlinesCard } from "@/components/equip/DeadlinesCard";
+import { derivedDeadlineSpecs, type DerivedDeadlineSpec } from "@/lib/equip/calendar";
+import { formatDeadlineEastern } from "@/lib/equip/deadlines";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,24 @@ type AppRow = {
   fundedAt: Date | null;
   updatedAt: Date;
 };
+
+/** Next upcoming deadline per stream, from the canonical Equip calendar
+ *  (config, not DB) — so it always renders, even before EquipDeadline rows
+ *  are synced for this environment. */
+function nextDeadlineByStream(): Partial<Record<EquipStream, DerivedDeadlineSpec>> {
+  const now = Date.now();
+  const specs = derivedDeadlineSpecs()
+    .filter((s) => s.deadlineAt.getTime() >= now)
+    .sort((a, b) => a.deadlineAt.getTime() - b.deadlineAt.getTime());
+  const out: Partial<Record<EquipStream, DerivedDeadlineSpec>> = {};
+  for (const s of specs) if (!out[s.stream]) out[s.stream] = s;
+  return out;
+}
+
+function daysUntilLabel(d: Date): string {
+  const days = Math.max(0, Math.ceil((d.getTime() - Date.now()) / 86_400_000));
+  return days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
+}
 
 export default async function EquipLandingPage() {
   const session = await getSession();
@@ -77,6 +97,7 @@ export default async function EquipLandingPage() {
     .filter((a) => a.status === "funded" || a.status === "approved")
     .reduce((sum, a) => sum + (a.approvedAmount ?? 0), 0);
   const hasDraft = apps.some((a) => a.status === "draft");
+  const nextDl = nextDeadlineByStream();
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -166,8 +187,8 @@ WHERE migration_name = '20260620000000_equip_application_pipeline';`}
             </Link>
           </div>
           <div className="divide-y divide-line border-y border-line">
-            <StreamRow stream="venture_connect" hasDraft={apps.some((a) => a.stream === "venture_connect" && a.status === "draft")} />
-            <StreamRow stream="venture_lift"    hasDraft={apps.some((a) => a.stream === "venture_lift" && a.status === "draft")} />
+            <StreamRow stream="venture_connect" deadline={nextDl.venture_connect ?? null} hasDraft={apps.some((a) => a.stream === "venture_connect" && a.status === "draft")} />
+            <StreamRow stream="venture_lift"    deadline={nextDl.venture_lift ?? null}    hasDraft={apps.some((a) => a.stream === "venture_lift" && a.status === "draft")} />
           </div>
         </section>
 
@@ -244,7 +265,7 @@ function SpineDot() {
   return <span className="inline-block w-1.5 h-1.5 rounded-full bg-gradient-to-br from-brand-500 to-brand-700" aria-hidden />;
 }
 
-function StreamRow({ stream, hasDraft }: { stream: EquipStream; hasDraft: boolean }) {
+function StreamRow({ stream, hasDraft, deadline }: { stream: EquipStream; hasDraft: boolean; deadline: DerivedDeadlineSpec | null }) {
   const meta = STREAM_META[stream];
   return (
     <Link
@@ -265,6 +286,13 @@ function StreamRow({ stream, hasDraft }: { stream: EquipStream; hasDraft: boolea
         </p>
         <p className="text-[12px] text-muted leading-snug mt-1">{meta.blurb}</p>
         <p className="text-[10px] text-subtle font-mono mt-1.5 uppercase tracking-[0.18em]">{meta.cadence}</p>
+        {deadline && (
+          <p className="mt-1.5 inline-flex flex-wrap items-center gap-1.5 text-[10.5px] font-semibold text-brand-700">
+            <CalendarClock size={11} className="shrink-0" />
+            <span>Next deadline: {formatDeadlineEastern(deadline.deadlineAt)}</span>
+            <span className="font-normal text-subtle">· {daysUntilLabel(deadline.deadlineAt)} · {deadline.cycleLabel}</span>
+          </p>
+        )}
       </div>
       <ArrowRight size={14} className="text-subtle group-hover:text-brand-700 group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
     </Link>

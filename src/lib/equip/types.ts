@@ -71,7 +71,7 @@ export const STREAM_META: Record<EquipStream, {
   },
   venture_lift: {
     name: "VentureLift",
-    blurb: "Two-stage application for up to $25,000 CAD. Stage 1 is a short pre-screening form; passing it unlocks the full Stage-2 application (project team, market, plan, budget, appendices, signatures).",
+    blurb: "Two-stage application for up to $25,000 CAD. Stage 1 is a short pre-screening form; passing it unlocks the full Stage-2 application (Innovation, Market Potential, Project Plan, Commercialization Potential and Impact).",
     cadence: "Quarterly funding cycle",
     bestFor: "Pre-seed / seed-stage company with a provisional patent, prototype, and a commercialization roadmap.",
   },
