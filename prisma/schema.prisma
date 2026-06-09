@@ -4814,6 +4814,32 @@ model ApplicationStatusHistory {
 // ScriptRevision (live edits + full history + one-click revert).
 // ─────────────────────────────────────────────────────────────────────────
 
+/// Workspace → File Sharing. A file shared within the internal team workspace,
+/// sibling to Marketing. SKELETON model — extend as the feature grows
+/// (versioning, per-user access grants, external share links).
+model SharedFile {
+  id          String   @id @default(cuid())
+  /// Workspace category this file lives under, mirroring VideoProject.
+  category    String   @default("file-sharing")
+  title       String
+  description String   @default("")
+  /// Storage key / URL for the uploaded object (R2 is stubbed today).
+  storageKey  String   @default("")
+  /// Original filename + MIME + size for display.
+  fileName    String   @default("")
+  mimeType    String   @default("")
+  sizeBytes   Int      @default(0)
+  /// Free-text status chip: active | archived.
+  status      String   @default("active")
+  isArchived  Boolean  @default(false)
+  /// User.id of the admin who uploaded it (plain id, no FK — mirrors VideoProject).
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, isArchived])
+}
+
 model VideoProject {
   id          String   @id @default(cuid())
   /// Workspace category this project lives under. "marketing" today;

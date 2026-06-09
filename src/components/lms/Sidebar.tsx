@@ -63,6 +63,7 @@ import {
   Drama,
   Theater,
   Clapperboard,
+  FolderUp,
 } from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationInbox";
 
@@ -283,6 +284,17 @@ const workspaceVideoItem: NavItem = {
   minRole: "admin",
   description:
     "Plan promo videos and draft their scripts. Scripts get shareable links for collaborative editing — contributors don't need an account.",
+};
+
+// WORKSPACE → File Sharing. Sibling of Marketing. SKELETON nav stub —
+// share files across the internal team. See FILE_SHARING_HANDOFF.md.
+const workspaceFileSharingItem: NavItem = {
+  label: "File Sharing",
+  href: "/admin/workspace/file-sharing",
+  icon: FolderUp,
+  minRole: "admin",
+  description:
+    "Share files within the internal team workspace. Upload, organise, and (later) hand out shareable links.",
 };
 
 // ENGAGE — running the learning loop: enrolments, groups, course
@@ -1606,10 +1618,13 @@ export function Sidebar({
           <SectionGroup
             title="WORKSPACE"
             tone="neutral"
-            description="Internal team tooling. Marketing → Video Production: plan promo videos and draft their scripts, with shareable links for collaborative editing (no login needed)."
+            description="Internal team tooling. Marketing → Video Production: plan promo videos and draft their scripts, with shareable links for collaborative editing (no login needed). File Sharing → share files across the team."
           >
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Marketing">
               <NavLink item={workspaceVideoItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+            </AdminSubgroup>
+            <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.operations} label="File Sharing">
+              <NavLink item={workspaceFileSharingItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
             </AdminSubgroup>
           </SectionGroup>
         )}
