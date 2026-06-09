@@ -1865,38 +1865,38 @@ model PathwayCourse {
 }
 
 model PathwayEnrollment {
-  id               String         @id @default(cuid())
-  userId           String
-  pathwayId        String
+  id                     String         @id @default(cuid())
+  userId                 String
+  pathwayId              String
   /// Set when the pathway has cohorts. Null on legacy pre-cohort
   /// enrollments and on enrollments to single-cohort pathways
   /// (which keep using pathway-level fields). The (userId,
   /// pathwayId) uniqueness still applies even with cohorts —
   /// one user, one enrollment per pathway, regardless of cohort.
-  cohortId         String?
+  cohortId               String?
   // pending | approved | rejected | waitlisted | withdrawn | completed
-  status           String         @default("pending")
+  status                 String         @default("pending")
   /// 1-indexed waitlist position when status="waitlisted". Null
   /// otherwise. Densely renumbered when an earlier waitlister
   /// cancels.
-  waitlistPosition Int?
-  requestReason    String?
-  reviewerId       String?
-  reviewerNote     String?
-  reviewedAt       DateTime?
-  enrolledAt       DateTime       @default(now()) // request created
-  approvedAt       DateTime?
-  completedAt      DateTime?
+  waitlistPosition       Int?
+  requestReason          String?
+  reviewerId             String?
+  reviewerNote           String?
+  reviewedAt             DateTime?
+  enrolledAt             DateTime       @default(now()) // request created
+  approvedAt             DateTime?
+  completedAt            DateTime?
   /// Attendance (enrollment-level). Admins mark who attended from
   /// /admin/pathway-enrollments; the graduate showcase can gate on
   /// `attended` so only those who showed up get to submit.
-  attended               Boolean   @default(false)
-  sessionsAttended       Int       @default(0)
+  attended               Boolean        @default(false)
+  sessionsAttended       Int            @default(0)
   attendanceNote         String?
   attendanceRecordedAt   DateTime?
   attendanceRecordedById String?
-  pathway          Pathway        @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
-  cohort           PathwayCohort? @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  pathway                Pathway        @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  cohort                 PathwayCohort? @relation(fields: [cohortId], references: [id], onDelete: SetNull)
 
   @@unique([userId, pathwayId])
   @@index([pathwayId, status, enrolledAt])
@@ -2452,13 +2452,13 @@ model BhnEvent {
 /// double-send for the same window. sentCount is informational —
 /// captures how many recipients we tried (for ops + audit).
 model EventReminder {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   eventId     String
-  kind        String   // one_week | one_day | one_hour
+  kind        String // one_week | one_day | one_hour
   scheduledAt DateTime
   sentAt      DateTime?
-  sentCount   Int      @default(0)
-  createdAt   DateTime @default(now())
+  sentCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
 
   event BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
@@ -2559,26 +2559,26 @@ model CustomRegAnswer {
 /// registration form when the event has any active ticket types
 /// configured; otherwise the free flow runs as before.
 model TicketType {
-  id           String   @id @default(cuid())
-  eventId      String
-  name         String
-  description  String?
+  id            String   @id @default(cuid())
+  eventId       String
+  name          String
+  description   String?
   /// Price in cents (CAD). 0 = free. Lookups in the registration
   /// flow short-circuit Stripe Checkout when the chosen tier is free.
-  priceCents   Int      @default(0)
-  currency     String   @default("CAD")
+  priceCents    Int      @default(0)
+  currency      String   @default("CAD")
   /// Optional per-tier capacity. NULL = uncapped (only event-level
   /// maxAttendees applies).
-  capacity     Int?
+  capacity      Int?
   /// When false, the tier is hidden from the public form but
   /// existing registrations against it stay intact.
-  isActive     Boolean  @default(true)
-  displayOrder Int      @default(0)
+  isActive      Boolean  @default(true)
+  displayOrder  Int      @default(0)
   /// Stripe Price ID — created lazily on first checkout and cached
   /// here so subsequent purchases re-use it.
   stripePriceId String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   event BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
@@ -2591,23 +2591,23 @@ model TicketType {
 /// loop renders to HTML at dispatch time using the existing
 /// markdown helper.
 model EventBroadcast {
-  id            String   @id @default(cuid())
-  eventId       String
+  id             String    @id @default(cuid())
+  eventId        String
   /// User who composed + sent the broadcast.
-  sentById      String
-  subject       String
+  sentById       String
+  subject        String
   /// Markdown body. Rendered to HTML at send time.
-  body          String
+  body           String
   /// "all" | "confirmed" | "pending" | "waitlist" | "checked_in"
   audienceFilter String
   /// Number of recipients the send loop actually attempted.
-  recipientCount Int     @default(0)
+  recipientCount Int       @default(0)
   /// Number of attempts that returned successfully from SMTP.
-  sentCount     Int      @default(0)
+  sentCount      Int       @default(0)
   /// Set when the send loop finishes (failures are also recorded
   /// in sentCount mismatch). Kept null while in flight.
-  sentAt        DateTime?
-  createdAt     DateTime @default(now())
+  sentAt         DateTime?
+  createdAt      DateTime  @default(now())
 
   event  BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   sentBy User     @relation("UserEventBroadcast", fields: [sentById], references: [id], onDelete: Restrict)
@@ -2872,9 +2872,9 @@ model Registration {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  event      BhnEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user       User?    @relation(fields: [userId], references: [id], onDelete: Restrict)
-  approvedBy User?    @relation("RegistrationApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  event         BhnEvent          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user          User?             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  approvedBy    User?             @relation("RegistrationApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   customAnswers CustomRegAnswer[]
 
   /// Idempotency for signed-in registrants — one row per (event, user).
@@ -4416,47 +4416,47 @@ model MasterSnapshot {
 /// Self-only — never visible to other users. Soft-archive flag for
 /// "I'm not actively pursuing this anymore but might come back."
 model JobFolder {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation("UserJobFolders", fields: [userId], references: [id], onDelete: Cascade)
+  id                  String             @id @default(cuid())
+  userId              String
+  user                User               @relation("UserJobFolders", fields: [userId], references: [id], onDelete: Cascade)
   /// Short title — usually "Company · Role". Free text; can be
   /// renamed any time.
-  title         String
+  title               String
   /// Free-text job description snippet. Either pasted from the
   /// posting URL or summarised by the user. Markdown allowed.
-  jdSnippet     String   @default("")
+  jdSnippet           String             @default("")
   /// Optional posting on this platform — when set the folder
   /// surfaces a chip linking back to the live posting page.
-  postingId     String?
+  postingId           String?
   /// Optional resume this folder was tailored against. Set NULL
   /// on delete so deleting a resume doesn't cascade-kill the
   /// folder (the user might still want the JD + cover letter).
-  resumeId      String?
-  resume        Resume?  @relation("JobFolderResume", fields: [resumeId], references: [id], onDelete: SetNull)
+  resumeId            String?
+  resume              Resume?            @relation("JobFolderResume", fields: [resumeId], references: [id], onDelete: SetNull)
   /// Long-form cover letter (markdown). Auto-saved on the UI.
-  coverLetter   String   @default("")
+  coverLetter         String             @default("")
   /// Interview prep guide (markdown). Auto-saved on the UI.
-  interviewPrep String   @default("")
+  interviewPrep       String             @default("")
   /// Free-form scratch notes — recruiter names, salary band, things
   /// said in coffee chats, things to remember before the interview.
   /// Markdown, auto-saved like the other doc fields.
-  notes         String   @default("")
+  notes               String             @default("")
   /// ── Application tracker fields ─────────────────────────────────
   /// Optional URL of the live posting / ATS application link the
   /// trainee submitted to. Display only.
-  applicationUrl String?
+  applicationUrl      String?
   /// When the trainee actually clicked Submit. Drives "applied N days
   /// ago" on the dashboard.
-  appliedAt      DateTime?
+  appliedAt           DateTime?
   /// When the posting closes. Drives "deadline in N days" banners.
-  deadline       DateTime?
+  deadline            DateTime?
   /// Name of the recruiter or hiring manager the trainee is in
   /// touch with — for the "who do I follow up with" question.
-  recruiterName  String?
-  recruiterEmail String?
+  recruiterName       String?
+  recruiterEmail      String?
   /// Internal referral, if any — surfaces on the folder card and
   /// in the cover-letter generator's prompt context.
-  referredBy     String?
+  referredBy          String?
   /// Optional linked SimulationRequest. When set, the folder has
   /// a role-play sim attached or queued — the linked request
   /// carries its own pending|generating|ready|failed|rejected
@@ -4466,14 +4466,14 @@ model JobFolder {
   simulationRequestId String?
   simulationRequest   SimulationRequest? @relation("JobFolderSimRequest", fields: [simulationRequestId], references: [id], onDelete: SetNull)
   /// drafting | submitted | interviewing | offer | rejected | closed
-  status        String   @default("drafting")
-  isArchived    Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  status              String             @default("drafting")
+  isArchived          Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
   /// Auto-logged + manual lifecycle events. Newest-first on the
   /// Timeline tab.
-  events JobFolderEvent[]
+  events      JobFolderEvent[]
   /// Tokenised read-only share links for sending a mentor to view
   /// this folder without an account.
   shareTokens JobFolderShareToken[]
@@ -4491,19 +4491,19 @@ model JobFolder {
 /// requirement. Tokens expire on `expiresAt`; setting that to null
 /// = "until revoked." Revoke deletes the row.
 model JobFolderShareToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   folderId  String
   folder    JobFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
   /// URL-safe random token, ~22 chars. Indexed unique for fast
   /// lookups on the share page.
-  token     String   @unique
+  token     String    @unique
   /// Optional label the trainee gave the link ("For Diane", "For
   /// the mentor at ASCO"). Surfaced in the manage-links UI.
   label     String?
   /// null = no expiry, otherwise the share page returns 410 after
   /// this timestamp.
   expiresAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([folderId, createdAt])
 }
@@ -4515,7 +4515,7 @@ model JobFolderShareToken {
 /// Timeline tab so the trainee can record offline events (phone
 /// call, coffee chat, etc.).
 model JobFolderEvent {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   folderId  String
   folder    JobFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
   /// One of: "created" | "status_changed" | "applied" | "sim_requested" |
@@ -4527,7 +4527,7 @@ model JobFolderEvent {
   /// future analytics / render variants.
   body      String
   payload   Json?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([folderId, createdAt])
 }
@@ -4540,7 +4540,7 @@ model JobFolderEvent {
 /// the AI to produce an updated `description` / `specialization`;
 /// `lastScannedAt` / `scanError` capture that state.
 model Facility {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   name           String
   url            String?
   /// "Being built" | "Already built" | null
@@ -4561,8 +4561,8 @@ model Facility {
   lastScannedAt  DateTime?
   /// Error string from the last rescan attempt, if any.
   scanError      String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@unique([name])
   @@index([province])
@@ -4580,34 +4580,34 @@ model Facility {
 /// CGT, …) can plug in later via /showcase/<other-slug> without a
 /// schema migration.
 model ShowcaseSubmission {
-  id                String    @id @default(cuid())
-  programSlug       String    @default("regulatory-affairs")
-  name              String
+  id               String    @id @default(cuid())
+  programSlug      String    @default("regulatory-affairs")
+  name             String
   /// As the user typed it — may be "linkedin.com/in/foo" or just
   /// "foo". The form normalises to a canonical URL stored in
   /// `linkedinUrl`; the original raw input stays here for audit.
-  linkedinHandle    String
-  linkedinUrl       String?
+  linkedinHandle   String
+  linkedinUrl      String?
   /// Public R2 URL — `R2_PUBLIC_URL/showcase/<slug>/<id>.<ext>`.
-  photoUrl          String
+  photoUrl         String
   /// R2 object key (without bucket / base URL) so the delete
   /// endpoint can drop the file.
-  photoKey          String
+  photoKey         String
   /// IP + UA captured for basic abuse triage on the admin
   /// dashboard. Not displayed to the public.
-  submittedFromIp   String?
-  submittedFromUa   String?
-  createdAt         DateTime  @default(now())
+  submittedFromIp  String?
+  submittedFromUa  String?
+  createdAt        DateTime  @default(now())
   /// Updated every time an admin clicks "Download". Lets staff
   /// track which rows have been processed vs are still to do.
-  lastDownloadedAt  DateTime?
+  lastDownloadedAt DateTime?
   /// Name / email of the admin who last downloaded.
-  lastDownloadedBy  String?
-  adminNote         String?
+  lastDownloadedBy String?
+  adminNote        String?
   /// Set when the submission came through a GATED (attendance-gated)
   /// cohort: the logged-in trainee's User id, stamped server-side from
   /// the session. Null for public/anonymous submissions.
-  userId            String?
+  userId           String?
 
   @@index([programSlug, createdAt])
   @@index([programSlug, userId])
@@ -4640,19 +4640,19 @@ model ShowcaseGroup {
   /// comes from the pathway, and `name` holds the cohort label (e.g.
   /// "Cohort 2"). Null = a standalone showcase (e.g. the legacy
   /// Regulatory Affairs program).
-  pathwayId    String?
-  pathway      ShowcasePathway? @relation(fields: [pathwayId], references: [id], onDelete: SetNull)
+  pathwayId        String?
+  pathway          ShowcasePathway? @relation(fields: [pathwayId], references: [id], onDelete: SetNull)
   /// 1-based cohort number within the pathway (auto-incremented on add).
-  cohortNumber Int?
+  cohortNumber     Int?
   /// When set, this showcase cohort is BOUND to a real learning-pathway
   /// cohort (PathwayCohort) — the registration + attendance source of
   /// truth. Lets the showcase gate on who actually registered + attended.
-  linkedCohortId String?
-  linkedCohort   PathwayCohort? @relation(fields: [linkedCohortId], references: [id], onDelete: SetNull)
+  linkedCohortId   String?
+  linkedCohort     PathwayCohort?   @relation(fields: [linkedCohortId], references: [id], onDelete: SetNull)
   /// When true (and linkedCohortId set) the public page requires login
   /// and only approved-enrolled + attended trainees can submit. False =
   /// open/public (the interim default; nothing breaks for unbound groups).
-  gateOnAttendance Boolean @default(false)
+  gateOnAttendance Boolean          @default(false)
 
   @@index([createdAt])
   @@index([pathwayId])
@@ -4666,19 +4666,19 @@ model ShowcaseGroup {
 /// (eyebrow + intro). This is the anchor a future approved-registration
 /// list attaches to — one registration per pathway, reused across cohorts.
 model ShowcasePathway {
-  id          String          @id @default(cuid())
-  slug        String          @unique
-  name        String
-  eyebrow     String?
-  intro       String?
-  createdById String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  cohorts     ShowcaseGroup[]
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  name            String
+  eyebrow         String?
+  intro           String?
+  createdById     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  cohorts         ShowcaseGroup[]
   /// When set, bound to a real learning Pathway — the registration anchor
   /// whose approved enrollments + attendance govern the showcase.
   linkedPathwayId String?
-  linkedPathway   Pathway? @relation(fields: [linkedPathwayId], references: [id], onDelete: SetNull)
+  linkedPathway   Pathway?        @relation(fields: [linkedPathwayId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
   @@index([linkedPathwayId])
@@ -4862,22 +4862,22 @@ model VideoProject {
 }
 
 model Script {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   projectId   String
   project     VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title       String
   /// Which editor renders this script: "sections" | "richtext". Defaults
   /// to sections; flipped once the user picks the editor in P1.
-  format      String   @default("sections")
+  format      String       @default("sections")
   /// Rich-text document (TipTap JSON) when format = "richtext"; NULL for
   /// sections-format scripts (their content lives in ScriptSection rows).
   richContent Json?
   /// Display order within the project.
-  order       Int      @default(0)
-  isArchived  Boolean  @default(false)
+  order       Int          @default(0)
+  isArchived  Boolean      @default(false)
   createdById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   sections      ScriptSection[]
   revisions     ScriptRevision[]
