@@ -1,0 +1,54 @@
+/**
+ * One script — the editor surface (admin-only). Renders ScriptStudio, which
+ * shows both editor options (Sections + Rich text) for the user to choose.
+ */
+import { redirect, notFound } from "next/navigation";
+import Link from "next/link";
+import { FileText, ArrowLeft } from "lucide-react";
+import { requireRole } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { PageHero } from "@/components/ui/PageHero";
+import { ScriptStudio } from "@/components/workspace/ScriptStudio";
+
+export const dynamic = "force-dynamic";
+interface Props { params: Promise<{ projectId: string; scriptId: string }> }
+
+export default async function ScriptEditorPage({ params }: Props) {
+  const session = await requireRole("admin").catch(() => null);
+  if (!session) redirect("/dashboard");
+  const { projectId, scriptId } = await params;
+
+  const script = await prisma.script.findUnique({
+    where: { id: scriptId },
+    include: {
+      sections: { orderBy: { order: "asc" } },
+      project: { select: { id: true, title: true } },
+    },
+  });
+  if (!script || script.projectId !== projectId) notFound();
+
+  const sections = script.sections.map((s) => ({ heading: s.heading, body: s.body }));
+
+  return (
+    <div className="space-y-6">
+      <PageHero
+        eyebrow={<><FileText size={11} /> Script · {script.project.title}</>}
+        title={script.title}
+        actions={
+          <Link
+            href={`/admin/workspace/marketing/video/${projectId}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3 py-1.5 text-xs font-semibold text-fg hover:bg-elevated"
+          >
+            <ArrowLeft size={13} /> Back to project
+          </Link>
+        }
+      />
+      <ScriptStudio
+        scriptId={script.id}
+        initialFormat={script.format === "richtext" ? "richtext" : "sections"}
+        initialSections={sections}
+        initialRich={(script.richContent as Record<string, unknown> | null) ?? null}
+      />
+    </div>
+  );
+}

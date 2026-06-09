@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Workspace · Video Production scripts — Jun 2026
+  {
+    title: "Workspace · Video Production scripts",
+    body: "A new WORKSPACE section in the sidebar opens Marketing → Video Production: create video projects and draft their scripts. “Seed BHN Promo” imports the Molly interview guide as a starting script. Each script gives you two editors to try side-by-side — a structured Sections editor and a Rich-text editor — so you can pick whichever fits; every save is kept in history. (Public share links, comments, and live co-editing land in the next updates.)",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Login floaters · adjustable entrance delay — Jun 2026
   {
     title: "Login floaters · adjustable fade-in speed",

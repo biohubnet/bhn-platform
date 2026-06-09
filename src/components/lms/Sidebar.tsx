@@ -62,6 +62,7 @@ import {
   Eye,
   Drama,
   Theater,
+  Clapperboard,
 } from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationInbox";
 
@@ -271,6 +272,17 @@ const employerItems: (NavItem & { labelKey: string })[] = [
 const adminOverview: NavItem = {
   label: "Overview", href: "/admin", icon: LayoutDashboard, exact: true, minRole: "admin",
   description: "Administration home — quick stats and shortcuts into every admin queue.",
+};
+
+// WORKSPACE — internal team tooling, its own top-level section. First item:
+// Marketing → Video Production (plan promo videos + draft their scripts).
+const workspaceVideoItem: NavItem = {
+  label: "Video Production",
+  href: "/admin/workspace/marketing/video",
+  icon: Clapperboard,
+  minRole: "admin",
+  description:
+    "Plan promo videos and draft their scripts. Scripts get shareable links for collaborative editing — contributors don't need an account.",
 };
 
 // ENGAGE — running the learning loop: enrolments, groups, course
@@ -1589,6 +1601,18 @@ export function Sidebar({
             the sidebar already routes to /profile, so this section
             was duplicated affordance. The /profile route still
             works (Feature switcher board lives there). */}
+
+        {isAdmin && (
+          <SectionGroup
+            title="WORKSPACE"
+            tone="neutral"
+            description="Internal team tooling. Marketing → Video Production: plan promo videos and draft their scripts, with shareable links for collaborative editing (no login needed)."
+          >
+            <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Marketing">
+              <NavLink item={workspaceVideoItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+            </AdminSubgroup>
+          </SectionGroup>
+        )}
 
         {isAdmin && (
           <SectionGroup

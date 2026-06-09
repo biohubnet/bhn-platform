@@ -4804,3 +4804,155 @@ model ApplicationStatusHistory {
   @@index([postingId, toStage, changedAt])
   @@index([applicationStatusId, changedAt])
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// WORKSPACE — internal team tooling, reached from the admin sidebar's
+// WORKSPACE section. First surface: Marketing → Video Production. A
+// VideoProject holds collaboratively-edited Scripts. Scripts can be opened
+// and edited by people who are NOT logged in, via a public ScriptShareToken
+// link (they give a name → a ScriptCollaborator row). Every save writes a
+// ScriptRevision (live edits + full history + one-click revert).
+// ─────────────────────────────────────────────────────────────────────────
+
+model VideoProject {
+  id          String   @id @default(cuid())
+  /// Workspace category this project lives under. "marketing" today;
+  /// reserved for future workspace sections.
+  category    String   @default("marketing")
+  title       String
+  summary     String   @default("")
+  /// Free-text status chip: active | wrapped | archived.
+  status      String   @default("active")
+  isArchived  Boolean  @default(false)
+  /// User.id of the admin who created it (plain id, no FK relation — keeps
+  /// the User model untouched; attribution by id is enough).
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  scripts Script[]
+
+  @@index([category, isArchived])
+}
+
+model Script {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  /// Which editor renders this script: "sections" | "richtext". Defaults
+  /// to sections; flipped once the user picks the editor in P1.
+  format      String   @default("sections")
+  /// Rich-text document (TipTap JSON) when format = "richtext"; NULL for
+  /// sections-format scripts (their content lives in ScriptSection rows).
+  richContent Json?
+  /// Display order within the project.
+  order       Int      @default(0)
+  isArchived  Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sections      ScriptSection[]
+  revisions     ScriptRevision[]
+  comments      ScriptComment[]
+  collaborators ScriptCollaborator[]
+  shareTokens   ScriptShareToken[]
+
+  @@index([projectId, isArchived])
+}
+
+model ScriptSection {
+  id        String   @id @default(cuid())
+  scriptId  String
+  script    Script   @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  order     Int      @default(0)
+  heading   String   @default("")
+  /// Markdown body.
+  body      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([scriptId, order])
+}
+
+model ScriptRevision {
+  id           String   @id @default(cuid())
+  scriptId     String
+  script       Script   @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  /// User.id when a logged-in user saved it; NULL for anonymous.
+  authorUserId String?
+  /// Display name captured at save time (user name or anon name).
+  authorName   String   @default("Someone")
+  /// "user" | "anon"
+  authorKind   String   @default("anon")
+  /// Full content snapshot at this save — { sections: [...] } or
+  /// { richContent: {...} }. Enables one-click revert.
+  snapshot     Json
+  /// Short human summary, e.g. "Edited 'Voice And Tone'".
+  summary      String   @default("")
+  createdAt    DateTime @default(now())
+
+  @@index([scriptId, createdAt])
+}
+
+model ScriptComment {
+  id              String   @id @default(cuid())
+  scriptId        String
+  script          Script   @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  /// Section this comment is anchored to (NULL = whole-script).
+  anchorSectionId String?
+  /// Optional text-range anchor within the section/doc.
+  anchorFrom      Int?
+  anchorTo        Int?
+  /// Thread parent (NULL = top-level comment).
+  parentId        String?
+  authorUserId    String?
+  authorName      String   @default("Someone")
+  authorKind      String   @default("anon")
+  body            String
+  /// open | resolved
+  status          String   @default("open")
+  createdAt       DateTime @default(now())
+
+  @@index([scriptId, createdAt])
+  @@index([parentId])
+}
+
+model ScriptCollaborator {
+  id               String    @id @default(cuid())
+  scriptId         String
+  script           Script    @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  /// The name they gave when they opened the link. The row id is stored
+  /// in an httpOnly cookie so we recognise them on return.
+  name             String
+  /// How many edits they've made — drives the "after 3" account offer.
+  editCount        Int       @default(0)
+  /// Set once they convert via the offer.
+  email            String?
+  convertedUserId  String?
+  /// When they last dismissed the account offer (re-offer later).
+  offerDismissedAt DateTime?
+  firstSeenAt      DateTime  @default(now())
+  lastSeenAt       DateTime  @default(now())
+
+  @@index([scriptId, lastSeenAt])
+}
+
+model ScriptShareToken {
+  id          String    @id @default(cuid())
+  scriptId    String
+  script      Script    @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  /// URL-safe random token (~22 chars), unique for fast lookups.
+  token       String    @unique
+  /// Optional label ("For Molly", "Director cut").
+  label       String?
+  /// true = link grants editing; false = read-only.
+  canEdit     Boolean   @default(true)
+  /// null = no expiry; otherwise the public page returns 410 after this.
+  expiresAt   DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([scriptId, createdAt])
+}
