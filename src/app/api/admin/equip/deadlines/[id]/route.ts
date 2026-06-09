@@ -39,7 +39,7 @@ import { prisma } from "@/lib/prisma";
 export const runtime = "nodejs";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireCommitteeOrAdmin(["equip_review"]);
+  const session = await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]);
   const actorId = (session.user as { id?: string }).id ?? "";
   const { id } = await params;
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
@@ -142,7 +142,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireCommitteeOrAdmin(["equip_review"]);
+  const session = await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]);
   const actorId = (session.user as { id?: string }).id ?? "";
   const { id } = await params;
 

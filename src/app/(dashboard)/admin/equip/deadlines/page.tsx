@@ -118,7 +118,7 @@ async function syncRoundsToDeadlines(actorId: string): Promise<number> {
 }
 
 export default async function AdminEquipDeadlinesPage() {
-  const session = await requireCommitteeOrAdmin(["equip_review"]).catch(() => null);
+  const session = await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]).catch(() => null);
   if (!session) redirect("/dashboard");
   const userId = (session.user as { id?: string }).id ?? "";
 

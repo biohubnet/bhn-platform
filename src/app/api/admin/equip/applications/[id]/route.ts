@@ -40,7 +40,7 @@ const TARGET_STATUSES = new Set<EquipStatus>([
 ]);
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  await requireCommitteeOrAdmin(["equip_review"]);
+  await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]);
   const { id } = await params;
   const app = await prisma.equipApplication.findUnique({
     where: { id },
@@ -96,7 +96,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireCommitteeOrAdmin(["equip_review"]);
+  const session = await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]);
   const reviewerId = (session?.user as { id?: string })?.id;
   if (!reviewerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

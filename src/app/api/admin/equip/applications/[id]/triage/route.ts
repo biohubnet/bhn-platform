@@ -59,7 +59,7 @@ function extractJsonBlock(text: string): string {
 }
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  await requireCommitteeOrAdmin(["equip_review"]);
+  await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]);
   if (!AI_CONFIGURED.chat) {
     return NextResponse.json({ error: "AI not configured" }, { status: 503 });
   }

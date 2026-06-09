@@ -49,7 +49,7 @@ const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
 
 export default async function EquipOverviewPage() {
-  const session = await requireCommitteeOrAdmin(["equip_review"]).catch(() => null);
+  const session = await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]).catch(() => null);
   if (!session) redirect("/dashboard");
 
   const now = new Date();

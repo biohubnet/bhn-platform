@@ -32,7 +32,7 @@ export default async function AdminEquipReviewPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await requireCommitteeOrAdmin(["equip_review"]).catch(() => null);
+  const session = await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]).catch(() => null);
   if (!session) redirect("/dashboard");
   const reviewerUserId = (session.user as { id?: string })?.id ?? "";
   const { id } = await params;

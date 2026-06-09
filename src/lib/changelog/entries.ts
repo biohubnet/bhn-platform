@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP · reviewer role access fix — Jun 2026
+  {
+    title: "EQUIP · reviewers can act on applications",
+    body: "Fixed an access gap: holders of the EQUIP Grant Reviewer role could see the review queue but couldn't open an application or record a decision. The role now has the same access as EQUIP Review committee members across every EQUIP admin page and API — claim, pre-screen, score, approve, reject, and mark funded all work.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Video scripts · live collaboration highlights — Jun 2026
   {
     title: "Video scripts · live collaboration highlights",

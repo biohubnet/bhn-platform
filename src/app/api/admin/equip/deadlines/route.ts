@@ -18,13 +18,13 @@ export const runtime = "nodejs";
 const VALID_STREAMS = new Set(["venture_connect", "venture_lift"]);
 
 export async function GET() {
-  await requireCommitteeOrAdmin(["equip_review"]);
+  await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]);
   const rows = await listDeadlines();
   return NextResponse.json({ deadlines: rows });
 }
 
 export async function POST(req: Request) {
-  const session = await requireCommitteeOrAdmin(["equip_review"]);
+  const session = await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]);
   const actorId = (session.user as { id?: string }).id ?? "";
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
 

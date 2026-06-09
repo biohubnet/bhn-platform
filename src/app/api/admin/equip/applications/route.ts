@@ -18,7 +18,7 @@ const VALID_STATUSES = new Set([
 ]);
 
 export async function GET(req: Request) {
-  await requireCommitteeOrAdmin(["equip_review"]);
+  await requireCommitteeOrAdmin(["equip_review"], ["equip_grant_reviewer"]);
 
   const url = new URL(req.url);
   const statusFilter = url.searchParams.get("status");
