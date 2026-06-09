@@ -132,22 +132,19 @@ export function ScriptStudio({ scriptId, initialFormat, initialSections, initial
               <AlertCircle size={12} /> {error}
             </span>
           )}
+          {mode === "sections" && <SaveBtn format="sections" label="Save (Sections)" />}
+          {mode === "richtext" && <SaveBtn format="richtext" label="Save (Rich text)" />}
         </div>
       </div>
 
-      {/* Editors */}
+      {/* Editors — Save lives in the top bar (so it never collides with the
+          floating tour button at the bottom-right of the viewport). */}
       {mode === "sections" && (
-        <div className="space-y-3">
-          <SectionsEditor sections={sections} onChange={setSections} disabled={saving !== null} />
-          <div className="flex justify-end"><SaveBtn format="sections" label="Save (Sections)" /></div>
-        </div>
+        <SectionsEditor sections={sections} onChange={setSections} disabled={saving !== null} />
       )}
 
       {mode === "richtext" && (
-        <div className="space-y-3">
-          <RichTextEditor initial={rich} onChange={setRich} disabled={saving !== null} />
-          <div className="flex justify-end"><SaveBtn format="richtext" label="Save (Rich text)" /></div>
-        </div>
+        <RichTextEditor initial={rich} onChange={setRich} disabled={saving !== null} />
       )}
 
       {mode === "compare" && (

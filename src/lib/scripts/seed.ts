@@ -29,9 +29,20 @@ export async function ensureBhnPromoProject(createdById: string | null): Promise
 
   const existing = await prisma.script.findFirst({
     where: { projectId: project.id, title: SCRIPT_TITLE },
-    select: { id: true },
+    select: { id: true, format: true },
   });
-  if (existing) return;
+  if (existing) {
+    // Upgrade an earlier sections-format seed to the original-styled HTML so
+    // the script keeps the guide's exact look (one-time — leaves html as-is).
+    if (existing.format !== "html") {
+      await prisma.script.update({
+        where: { id: existing.id },
+        data: { format: "html", richContent: { kind: "html", html: MOLLY_HTML, css: MOLLY_CSS } },
+      });
+      await prisma.scriptSection.deleteMany({ where: { scriptId: existing.id } });
+    }
+    return;
+  }
 
   await prisma.script.create({
     data: {
