@@ -1,11 +1,13 @@
 import {
   ShieldCheck, Database, Activity, AlertTriangle, CheckCircle2, KeyRound,
   Users, Sparkles, Clock, GitCommit, Cpu, ServerCrash, UserCog, Building2,
-  ScrollText, Zap, Eye,
+  ScrollText, Zap, Eye, Mail,
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { mailConfigured } from "@/lib/mail";
 import { PageHero } from "@/components/ui/PageHero";
+import { EmailTester } from "@/components/admin/EmailTester";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +15,9 @@ interface RowCount { table: string; count: number; }
 interface KindStat { kind: string; total: number; failed: number; avgMs: number; }
 
 export default async function SystemStatusPage() {
-  await requireRole("superadmin");
+  const session = await requireRole("superadmin");
+  const myEmail = (session.user as { email?: string }).email ?? "";
+  const smtpReady = mailConfigured();
 
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const since7d  = new Date(Date.now() - 7  * 24 * 60 * 60 * 1000);
@@ -172,6 +176,11 @@ export default async function SystemStatusPage() {
     label: "Action queue",
     reason: `${pendingRoleChanges + pendingCreditApps + pendingPathwayApps} pending`,
   });
+  healthFlags.push({
+    tone: smtpReady ? "ok" : "warn",
+    label: "Email",
+    reason: smtpReady ? "SMTP configured" : "Not configured",
+  });
   const worst = healthFlags.some((f) => f.tone === "crit")
     ? "crit"
     : healthFlags.some((f) => f.tone === "warn") ? "warn" : "ok";
@@ -247,6 +256,17 @@ export default async function SystemStatusPage() {
             </div>
           ))}
         </div>
+      </Section>
+
+      {/* Email / SMTP section */}
+      <Section icon={Mail} title="Email (SMTP)" aside={smtpReady ? "Configured" : "Not configured"}>
+        <p className="mb-3 text-sm text-muted">
+          Outbound email (login codes, verification, EQUIP &amp; event notifications) sends over SMTP via{" "}
+          <code className="rounded border border-line bg-elevated/60 px-1 py-0.5 font-mono text-xs">nodemailer</code>.
+          Set <code className="rounded border border-line bg-elevated/60 px-1 py-0.5 font-mono text-xs">SMTP_HOST · PORT · USER · PASS · FROM</code> in the environment,
+          then send a test to confirm your provider + credentials work.
+        </p>
+        <EmailTester defaultTo={myEmail} configured={smtpReady} />
       </Section>
 
       {/* AI usage section */}
