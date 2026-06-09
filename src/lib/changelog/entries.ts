@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Video scripts · live collaboration highlights — Jun 2026
+  {
+    title: "Video scripts · live collaboration highlights",
+    body: "When more than one person edits a video script, you now see who else is in the document (coloured initials in the toolbar), and the section each person is working in is outlined in their colour — refreshing every couple of seconds. Recently-edited sections get a coloured marker too. No setup or accounts needed.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Workspace · Video Production scripts — Jun 2026
   {
     title: "Workspace · Video Production scripts",

@@ -4858,6 +4858,7 @@ model Script {
   comments      ScriptComment[]
   collaborators ScriptCollaborator[]
   shareTokens   ScriptShareToken[]
+  presence      ScriptPresence[]
 
   @@index([projectId, isArchived])
 }
@@ -4955,4 +4956,28 @@ model ScriptShareToken {
   createdAt   DateTime  @default(now())
 
   @@index([scriptId, createdAt])
+}
+
+/// Ephemeral live-presence for collaborative script editing. One row per
+/// active editor per script, refreshed by a ~2s client heartbeat. Drives the
+/// near-real-time "who's here + who's editing which section" highlights —
+/// each editor gets a stable colour. Rows go stale (not seen) and are swept.
+model ScriptPresence {
+  id         String   @id @default(cuid())
+  scriptId   String
+  script     Script   @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  /// Stable identity for the editor in this script — User.id for a logged-in
+  /// user, else the anonymous collaborator id.
+  editorKey  String
+  name       String   @default("Someone")
+  /// Hex colour assigned to this editor (client-derived from editorKey).
+  color      String   @default("#3b82f6")
+  /// data-sid of the section their caret is currently in (NULL = none).
+  activeSid  String?
+  /// Comma-separated data-sids they've edited recently (fading highlight).
+  recentSids String   @default("")
+  lastSeenAt DateTime @default(now())
+
+  @@unique([scriptId, editorKey])
+  @@index([scriptId, lastSeenAt])
 }

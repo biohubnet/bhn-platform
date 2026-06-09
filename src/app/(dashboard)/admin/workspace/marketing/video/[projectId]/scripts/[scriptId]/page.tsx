@@ -31,6 +31,8 @@ export default async function ScriptEditorPage({ params }: Props) {
   const sections = script.sections.map((s) => ({ heading: s.heading, body: s.body }));
   const rc = (script.richContent as { kind?: string; html?: string; css?: string } | null) ?? null;
   const isHtml = script.format === "html";
+  const meId = (session.user as { id?: string }).id ?? "anon";
+  const meName = (session.user as { name?: string }).name ?? "You";
 
   return (
     <div className="space-y-6">
@@ -47,7 +49,7 @@ export default async function ScriptEditorPage({ params }: Props) {
         }
       />
       {isHtml ? (
-        <HtmlScriptEditor scriptId={script.id} initialHtml={rc?.html ?? ""} css={rc?.css ?? ""} />
+        <HtmlScriptEditor scriptId={script.id} initialHtml={rc?.html ?? ""} css={rc?.css ?? ""} meId={meId} meName={meName} />
       ) : (
         <ScriptStudio
           scriptId={script.id}
