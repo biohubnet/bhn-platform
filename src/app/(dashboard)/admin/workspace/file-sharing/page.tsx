@@ -1,19 +1,15 @@
 /**
- * Workspace → File Sharing. Admin-only. Sibling of Marketing → Video Production.
- *
- * SKELETON — generated to give the parallel session a starting point.
- * The `SharedFile` model exists in prisma/schema.prisma, but NO migration has
- * been applied to the dev DB yet, and the local .env points at the production
- * database (never run `prisma migrate deploy` locally). So this page does NOT
- * query the DB. Once the migration is created, replace the placeholder below
- * with a `<SharedFilesClient />` backed by `GET /api/workspace/files`, mirroring
- * VideoProjectsClient.tsx + the video-projects API routes. See
- * FILE_SHARING_HANDOFF.md at the repo root.
+ * Workspace → File Sharing. Admin-only. Sibling of Marketing → Video
+ * Production. Upload files to R2, get public unguessable share links,
+ * archive/restore, delete.
  */
 import { redirect } from "next/navigation";
 import { FolderUp } from "lucide-react";
 import { requireRole } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { r2PublicUrl, R2_PUBLIC_URL } from "@/lib/r2";
 import { PageHero } from "@/components/ui/PageHero";
+import { SharedFilesClient } from "@/components/workspace/SharedFilesClient";
 
 export const dynamic = "force-dynamic";
 
@@ -21,20 +17,30 @@ export default async function FileSharingPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
 
+  const files = await prisma.sharedFile.findMany({
+    where: { category: "file-sharing" },
+    orderBy: { createdAt: "desc" },
+  });
+  const data = files.map((f) => ({
+    id: f.id,
+    title: f.title,
+    description: f.description,
+    fileName: f.fileName,
+    mimeType: f.mimeType,
+    sizeBytes: f.sizeBytes,
+    isArchived: f.isArchived,
+    shareUrl: R2_PUBLIC_URL && f.storageKey ? r2PublicUrl(f.storageKey) : null,
+    createdAt: f.createdAt.toISOString(),
+  }));
+
   return (
     <div className="space-y-6">
       <PageHero
         eyebrow={<><FolderUp size={11} /> Workspace · File Sharing</>}
         title="File Sharing"
-        description="Share files within the internal team workspace. Skeleton page — upload, listing, and shareable links are not built yet."
+        description="Share files within the team. Each upload gets a public unguessable link you can send to anyone — no account needed to download."
       />
-      {/* TODO(file-sharing): replace with <SharedFilesClient /> backed by
-          GET /api/workspace/files once the SharedFile migration is applied.
-          Mirror src/components/workspace/VideoProjectsClient.tsx and the
-          src/app/api/workspace/video-projects routes. */}
-      <div className="rounded-lg border border-dashed border-zinc-300 p-8 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-        File Sharing scaffold — build the upload + list UI here.
-      </div>
+      <SharedFilesClient initialFiles={data} />
     </div>
   );
 }

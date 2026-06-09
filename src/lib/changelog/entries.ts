@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Workspace · File Sharing — Jun 2026
+  {
+    title: "Workspace · File Sharing",
+    body: "The WORKSPACE section has a second tool: File Sharing, right next to Marketing. Upload a file (up to 50 MB) and it gets a public unguessable link — copy it and send it to anyone; they can download without an account, the same way script share links work. Files can be retitled, archived/restored, or deleted (which kills the link).",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── EQUIP · reviewer role access fix — Jun 2026
   {
     title: "EQUIP · reviewers can act on applications",
