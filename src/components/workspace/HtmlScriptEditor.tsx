@@ -80,6 +80,8 @@ export function HtmlScriptEditor({
   const activeSidRef = useRef<string | null>(null);
   const recentRef = useRef<Map<string, number>>(new Map());
   const peersKeyRef = useRef<string>("");
+  const peersRef = useRef<PresencePeer[]>([]);
+  const paintRef = useRef<() => void>(() => {});
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
@@ -137,11 +139,12 @@ export function HtmlScriptEditor({
       const node = sel?.anchorNode ?? null;
       if (node && content.contains(node)) activeSidRef.current = sidOf(node);
     };
-    const onSel = () => updateActive();
+    const onSel = () => { updateActive(); paintRef.current(); };
     const onInput = () => {
       updateActive();
       const sid = activeSidRef.current;
       if (sid) recentRef.current.set(sid, Date.now());
+      paintRef.current();
     };
     content.addEventListener("keyup", onSel);
     content.addEventListener("mouseup", onSel);
@@ -182,31 +185,37 @@ export function HtmlScriptEditor({
     return () => { cancelled = true; clearInterval(iv); };
   }, [scriptId, meId, meName, myColor]);
 
-  // ── Paint peer highlights into the shadow <style> whenever peers change. ──
-  useEffect(() => {
+  // ── Paint peer highlights into the shadow <style>. CRUCIAL: never paint a
+  //    peer marker on the section the LOCAL caret is in, so typing never looks
+  //    like the box "switched" to another user. Repaints on peer change AND on
+  //    local caret moves. One indicator per section (peers stably ordered). ──
+  const paint = useCallback(() => {
     const ps = presenceStyleRef.current;
     if (!ps) return;
-    // One indicator per section (deterministic, peers are stably ordered) so a
-    // shared section never flips its colour/name between collaborators.
+    const mine = activeSidRef.current;
     let out = "";
     const seen = new Set<string>();
-    for (const p of peers) {
-      if (p.activeSid && !seen.has(p.activeSid)) {
-        seen.add(p.activeSid);
+    for (const p of peersRef.current) {
+      const sid = p.activeSid;
+      if (sid && sid !== mine && !seen.has(sid)) {
+        seen.add(sid);
         const c = p.color;
-        out += `[data-sid="${p.activeSid}"]{outline:2px solid ${c};outline-offset:2px;border-radius:6px;position:relative}`;
-        out += `[data-sid="${p.activeSid}"]::after{content:"${cssStr(p.name)}";position:absolute;top:-0.85em;right:8px;background:${c};color:#fff;font:600 10px/1.5 ui-sans-serif,system-ui,sans-serif;padding:0 6px;border-radius:5px;white-space:nowrap;pointer-events:none;z-index:5}`;
+        out += `[data-sid="${sid}"]{outline:2px solid ${c};outline-offset:2px;border-radius:6px;position:relative}`;
+        out += `[data-sid="${sid}"]::after{content:"${cssStr(p.name)}";position:absolute;top:-0.85em;right:8px;background:${c};color:#fff;font:600 10px/1.5 ui-sans-serif,system-ui,sans-serif;padding:0 6px;border-radius:5px;white-space:nowrap;pointer-events:none;z-index:5}`;
       }
     }
-    for (const p of peers) {
+    for (const p of peersRef.current) {
       for (const sid of p.recentSids) {
-        if (seen.has(sid)) continue;
+        if (sid === mine || seen.has(sid)) continue;
         seen.add(sid);
         out += `[data-sid="${sid}"]{box-shadow:inset 4px 0 0 ${p.color}}`;
       }
     }
     ps.textContent = out;
-  }, [peers]);
+  }, []);
+
+  useEffect(() => { paintRef.current = paint; }, [paint]);
+  useEffect(() => { peersRef.current = peers; paint(); }, [peers, paint]);
 
   const loadRevisions = useCallback(async () => {
     setRevLoading(true);
