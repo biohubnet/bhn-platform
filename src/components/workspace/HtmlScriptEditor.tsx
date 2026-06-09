@@ -1,14 +1,27 @@
 "use client";
 
 /**
- * Editor for an "html"-format script — content that keeps the original guide's
- * styling. The styled document renders in a sandboxed iframe (its own CSS,
- * scripts disabled); editing is done on the HTML source with a live preview.
+ * Editor for an "html"-format script — keeps the original guide's exact
+ * styling AND is directly editable. The styled document is mounted inside a
+ * Shadow DOM: its stylesheet is fully isolated from the dashboard (no leaks
+ * in or out), but it renders inline as normal page content — no iframe, no
+ * internal scrollbar. The content is contentEditable, so you click into the
+ * styled document and type. A Visual/HTML toggle exposes the raw source.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Code2, Save, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Save, Loader2, CheckCircle2, AlertCircle, Code2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/** Remap document-level selectors to :host so body/:root styling still
+ *  applies inside the shadow tree (everything else matches as-is). */
+function adaptCss(css: string): string {
+  return css
+    .replace(/:root\b/g, ":host")
+    .replace(/(^|})(\s*)html\s*,\s*body\b/g, "$1$2:host")
+    .replace(/(^|})(\s*)body\b/g, "$1$2:host")
+    .replace(/(^|})(\s*)html\b/g, "$1$2:host");
+}
 
 export function HtmlScriptEditor({
   scriptId,
@@ -20,18 +33,39 @@ export function HtmlScriptEditor({
   css: string;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"preview" | "source">("preview");
-  const [html, setHtml] = useState(initialHtml);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showSource, setShowSource] = useState(false);
+  const [sourceHtml, setSourceHtml] = useState(initialHtml);
 
-  const srcDoc = `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${html}</body></html>`;
+  // Mount the styled, editable document into a shadow root once.
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || host.shadowRoot) return;
+    const shadow = host.attachShadow({ mode: "open" });
+    const style = document.createElement("style");
+    // ":host{display:block}" + a horizontal-overflow guard so the centred
+    // 980px column never forces a sideways scrollbar inside the column.
+    style.textContent = `${adaptCss(css)}\n:host{display:block}\n:host main{max-width:100%}`;
+    const content = document.createElement("div");
+    content.innerHTML = initialHtml;
+    content.contentEditable = "true";
+    content.spellcheck = true;
+    content.style.outline = "none";
+    contentRef.current = content;
+    shadow.append(style, content);
+  }, [css, initialHtml]);
+
+  const currentHtml = () => contentRef.current?.innerHTML ?? sourceHtml;
 
   async function save() {
     setSaving(true);
     setError(null);
     setSaved(null);
+    const html = showSource ? sourceHtml : currentHtml();
     try {
       const res = await fetch(`/api/workspace/scripts/${scriptId}`, {
         method: "PATCH",
@@ -43,6 +77,7 @@ export function HtmlScriptEditor({
         setError(j.error ?? "Save failed.");
         return;
       }
+      if (showSource && contentRef.current) contentRef.current.innerHTML = sourceHtml;
       setSaved("Saved.");
       router.refresh();
     } catch (e) {
@@ -52,26 +87,21 @@ export function HtmlScriptEditor({
     }
   }
 
-  const tabBtn = (key: "preview" | "source", icon: React.ReactNode, label: string) => (
-    <button
-      type="button"
-      onClick={() => setTab(key)}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
-        tab === key ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg",
-      )}
-    >
-      {icon} {label}
-    </button>
-  );
+  function toggleSource() {
+    if (!showSource) {
+      setSourceHtml(currentHtml());
+    } else if (contentRef.current) {
+      contentRef.current.innerHTML = sourceHtml;
+    }
+    setShowSource((s) => !s);
+  }
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-1 rounded-lg bg-elevated/60 p-1">
-          {tabBtn("preview", <Eye size={13} />, "Preview")}
-          {tabBtn("source", <Code2 size={13} />, "HTML source")}
-        </div>
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+          <Pencil size={12} /> Click anywhere in the document to edit — it keeps the original styling.
+        </span>
         <div className="flex items-center gap-3">
           {saved && (
             <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
@@ -85,6 +115,13 @@ export function HtmlScriptEditor({
           )}
           <button
             type="button"
+            onClick={toggleSource}
+            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3 py-1.5 text-xs font-semibold text-fg hover:bg-elevated"
+          >
+            <Code2 size={13} /> {showSource ? "Visual" : "HTML"}
+          </button>
+          <button
+            type="button"
             onClick={save}
             disabled={saving}
             className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-brand-700 disabled:opacity-50"
@@ -94,23 +131,18 @@ export function HtmlScriptEditor({
         </div>
       </div>
 
-      {tab === "preview" ? (
-        <div className="overflow-hidden rounded-xl border border-line bg-white">
-          <iframe title="Script preview" sandbox="" className="h-[640px] w-full border-0 bg-white" srcDoc={srcDoc} />
-        </div>
-      ) : (
+      {/* Styled, editable document (shadow DOM) — flows inline, no iframe. */}
+      <div ref={hostRef} className={cn(showSource && "hidden")} />
+
+      {/* Raw HTML source */}
+      {showSource && (
         <textarea
-          value={html}
+          value={sourceHtml}
           spellCheck={false}
-          onChange={(e) => setHtml(e.target.value)}
-          className="min-h-[640px] w-full resize-y rounded-xl border border-line bg-card-solid px-3 py-2 font-mono text-xs leading-relaxed text-fg focus:outline-none focus:ring-2 focus:ring-brand-400"
+          onChange={(e) => setSourceHtml(e.target.value)}
+          className="min-h-[520px] w-full resize-y rounded-xl border border-line bg-card-solid px-3 py-2 font-mono text-xs leading-relaxed text-fg focus:outline-none focus:ring-2 focus:ring-brand-400"
         />
       )}
-
-      <p className="text-[11px] text-muted">
-        This script keeps the original guide&apos;s styling. Edit the HTML source — the preview updates live.
-        Friendlier inline editing, comments, and shareable collaborative links arrive in the next updates.
-      </p>
     </div>
   );
 }
