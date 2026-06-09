@@ -4,16 +4,16 @@
  * Editor for an "html"-format script. Keeps the original guide's exact styling
  * (mounted in a Shadow DOM — isolated CSS, renders inline, no iframe), is
  * directly editable (contentEditable), and adds:
- *   • a sticky toolbar (Save always in reach) with live presence avatars;
+ *   • a big floating Save button with auto-save every 30s, a live countdown,
+ *     and an "auto-saved/saved at HH:MM" status;
  *   • near-real-time collaboration: a ~2s heartbeat reports who's here and
  *     which section each person's caret is in; everyone's active/recent
- *     sections are outlined + tinted in that person's colour (overlaid via a
- *     shadow-DOM <style>, so nothing is written into the saved content);
+ *     sections are outlined + tinted in their colour (overlaid via a shadow-DOM
+ *     <style>, so nothing is written into the saved content);
  *   • a right sidebar: Sections (add / move / remove) and History (who/when +
  *     restore).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Save, Loader2, CheckCircle2, AlertCircle, Code2, Pencil, History, ListTree,
   Plus, ChevronUp, ChevronDown, Trash2, RotateCcw, User as UserIcon,
@@ -29,6 +29,8 @@ interface Revision {
   createdAt: string;
 }
 
+const AUTOSAVE_SECONDS = 30;
+
 function adaptCss(css: string): string {
   return css
     .replace(/:root\b/g, ":host")
@@ -42,6 +44,13 @@ function fmtWhen(iso: string): string {
     return new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   } catch {
     return iso;
+  }
+}
+function fmtTime(ms: number): string {
+  try {
+    return new Date(ms).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  } catch {
+    return "";
   }
 }
 
@@ -70,7 +79,6 @@ export function HtmlScriptEditor({
   meId: string;
   meName: string;
 }) {
-  const router = useRouter();
   const myColor = useMemo(() => colorForKey(meId), [meId]);
 
   const hostRef = useRef<HTMLDivElement>(null);
@@ -82,9 +90,16 @@ export function HtmlScriptEditor({
   const peersKeyRef = useRef<string>("");
   const peersRef = useRef<PresencePeer[]>([]);
   const paintRef = useRef<() => void>(() => {});
+  // Auto-save bookkeeping (refs so the 1s ticker never sees stale values).
+  const dirtyRef = useRef(false);
+  const savingRef = useRef(false);
+  const secondsRef = useRef(AUTOSAVE_SECONDS);
+  const doSaveRef = useRef<(k: "manual" | "auto") => void>(() => {});
 
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(AUTOSAVE_SECONDS);
+  const [lastSaved, setLastSaved] = useState<{ at: number; kind: "manual" | "auto" } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
   const [sourceHtml, setSourceHtml] = useState(initialHtml);
@@ -93,6 +108,15 @@ export function HtmlScriptEditor({
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revLoading, setRevLoading] = useState(false);
   const [peers, setPeers] = useState<PresencePeer[]>([]);
+
+  // Mark unsaved. setDirty only on the clean→dirty transition (keystrokes are
+  // cheap — we don't re-render on every key).
+  const markDirty = useCallback(() => {
+    if (!dirtyRef.current) {
+      dirtyRef.current = true;
+      setDirty(true);
+    }
+  }, []);
 
   const refreshSections = useCallback(() => {
     const root = contentRef.current;
@@ -106,7 +130,7 @@ export function HtmlScriptEditor({
   }, []);
 
   // Mount the styled, editable document into a shadow root once + wire caret
-  // tracking for presence.
+  // tracking for presence + dirty-marking for auto-save.
   useEffect(() => {
     const host = hostRef.current;
     if (!host || host.shadowRoot) return;
@@ -125,7 +149,6 @@ export function HtmlScriptEditor({
     contentRef.current = content;
     shadow.append(style, presenceStyle, content);
 
-    // Deterministic ids for the initial sections (so every client agrees).
     findSections(content).forEach((b, i) => { if (!b.getAttribute("data-sid")) b.setAttribute("data-sid", `s${i}`); });
     refreshSections();
 
@@ -141,6 +164,7 @@ export function HtmlScriptEditor({
     };
     const onSel = () => { updateActive(); paintRef.current(); };
     const onInput = () => {
+      markDirty();
       updateActive();
       const sid = activeSidRef.current;
       if (sid) recentRef.current.set(sid, Date.now());
@@ -150,9 +174,9 @@ export function HtmlScriptEditor({
     content.addEventListener("mouseup", onSel);
     content.addEventListener("focusin", onSel);
     content.addEventListener("input", onInput);
-  }, [css, initialHtml, refreshSections]);
+  }, [css, initialHtml, refreshSections, markDirty]);
 
-  // ── Presence heartbeat (~2s): report me + activeSid + recent, get peers. ──
+  // ── Presence heartbeat (~2s) ──
   useEffect(() => {
     let cancelled = false;
     async function beat() {
@@ -170,25 +194,20 @@ export function HtmlScriptEditor({
         });
         const j = (await res.json().catch(() => ({}))) as { ok?: boolean; peers?: PresencePeer[] };
         if (!cancelled && j.ok && Array.isArray(j.peers)) {
-          // Only re-render when presence actually changes — avoids a needless
-          // 2s re-render churn (and any flicker) while someone is typing.
           const key = JSON.stringify(j.peers);
           if (key !== peersKeyRef.current) {
             peersKeyRef.current = key;
             setPeers(j.peers);
           }
         }
-      } catch { /* ignore — presence is best-effort */ }
+      } catch { /* best-effort */ }
     }
     beat();
     const iv = setInterval(beat, 2000);
     return () => { cancelled = true; clearInterval(iv); };
   }, [scriptId, meId, meName, myColor]);
 
-  // ── Paint peer highlights into the shadow <style>. CRUCIAL: never paint a
-  //    peer marker on the section the LOCAL caret is in, so typing never looks
-  //    like the box "switched" to another user. Repaints on peer change AND on
-  //    local caret moves. One indicator per section (peers stably ordered). ──
+  // ── Paint peer highlights (never on the local caret's own section). ──
   const paint = useCallback(() => {
     const ps = presenceStyleRef.current;
     if (!ps) return;
@@ -232,16 +251,19 @@ export function HtmlScriptEditor({
 
   const currentHtml = () => contentRef.current?.innerHTML ?? sourceHtml;
 
-  async function save() {
+  const doSave = useCallback(async (kind: "manual" | "auto") => {
+    if (savingRef.current) return;
+    // Auto-save only when there's something to save.
+    if (kind === "auto" && !dirtyRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setError(null);
-    setSaved(null);
     const html = showSource ? sourceHtml : currentHtml();
     try {
       const res = await fetch(`/api/workspace/scripts/${scriptId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ format: "html", richContent: { kind: "html", html, css }, summary: "Edited script" }),
+        body: JSON.stringify({ format: "html", richContent: { kind: "html", html, css }, summary: kind === "auto" ? "Auto-saved" : "Edited script" }),
       });
       const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok || !j.ok) {
@@ -252,15 +274,45 @@ export function HtmlScriptEditor({
         contentRef.current.innerHTML = sourceHtml;
         refreshSections();
       }
-      setSaved("Saved.");
+      dirtyRef.current = false;
+      secondsRef.current = AUTOSAVE_SECONDS;
+      setDirty(false);
+      setSecondsLeft(AUTOSAVE_SECONDS);
+      setLastSaved({ at: Date.now(), kind });
       loadRevisions();
-      router.refresh();
     } catch (e) {
       setError((e as Error).message);
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
-  }
+  }, [scriptId, css, showSource, sourceHtml, refreshSections, loadRevisions]);
+
+  useEffect(() => { doSaveRef.current = doSave; }, [doSave]);
+
+  // ── Auto-save ticker: 1s pulse, counts down only while there are unsaved
+  //    changes, fires an auto-save at zero, then resets. ──
+  useEffect(() => {
+    const iv = setInterval(() => {
+      if (savingRef.current) return;
+      if (!dirtyRef.current) {
+        if (secondsRef.current !== AUTOSAVE_SECONDS) {
+          secondsRef.current = AUTOSAVE_SECONDS;
+          setSecondsLeft(AUTOSAVE_SECONDS);
+        }
+        return;
+      }
+      secondsRef.current -= 1;
+      if (secondsRef.current <= 0) {
+        secondsRef.current = AUTOSAVE_SECONDS;
+        setSecondsLeft(AUTOSAVE_SECONDS);
+        doSaveRef.current("auto");
+      } else {
+        setSecondsLeft(secondsRef.current);
+      }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, []);
 
   function toggleSource() {
     if (!showSource) {
@@ -278,6 +330,7 @@ export function HtmlScriptEditor({
     if (!a || !b || !b.parentNode) return;
     if (dir === -1) b.parentNode.insertBefore(a, b);
     else b.parentNode.insertBefore(a, b.nextSibling);
+    markDirty();
     refreshSections();
   }
   function removeSection(i: number) {
@@ -287,6 +340,7 @@ export function HtmlScriptEditor({
     const parent = b.parentElement;
     b.remove();
     if (parent && parent.tagName === "SECTION" && parent.children.length === 0) parent.remove();
+    markDirty();
     refreshSections();
   }
   function addSection() {
@@ -300,6 +354,7 @@ export function HtmlScriptEditor({
     art.innerHTML = "<h2>New section</h2><p>Write here…</p>";
     sec.appendChild(art);
     host.appendChild(sec);
+    markDirty();
     refreshSections();
     art.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -325,9 +380,10 @@ export function HtmlScriptEditor({
         setSourceHtml(html);
         refreshSections();
       }
-      setSaved("Restored.");
+      dirtyRef.current = false;
+      setDirty(false);
+      setLastSaved({ at: Date.now(), kind: "manual" });
       loadRevisions();
-      router.refresh();
     } finally {
       setSaving(false);
     }
@@ -337,8 +393,8 @@ export function HtmlScriptEditor({
   const roster = [{ editorKey: meId, name: `${meName} (you)`, color: myColor }, ...peers];
 
   return (
-    <div className="space-y-3">
-      {/* Sticky toolbar */}
+    <div className="space-y-3 pb-24">
+      {/* Sticky toolbar — presence + view toggle (Save lives in the floating bar). */}
       <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-card-solid px-3 py-2 shadow-card-rest">
         <div className="flex items-center gap-3">
           <div className="flex items-center -space-x-1.5">
@@ -358,33 +414,13 @@ export function HtmlScriptEditor({
             {peers.length > 0 ? `${peers.length + 1} editing live` : "Click in the document to edit"}
           </span>
         </div>
-        <div className="flex items-center gap-2.5">
-          {saved && (
-            <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
-              <CheckCircle2 size={12} /> {saved}
-            </span>
-          )}
-          {error && (
-            <span className="inline-flex items-center gap-1 text-xs text-rose-700">
-              <AlertCircle size={12} /> {error}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={toggleSource}
-            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3 py-1.5 text-xs font-semibold text-fg hover:bg-elevated"
-          >
-            <Code2 size={13} /> {showSource ? "Visual" : "HTML"}
-          </button>
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-brand-700 disabled:opacity-50"
-          >
-            {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={toggleSource}
+          className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3 py-1.5 text-xs font-semibold text-fg hover:bg-elevated"
+        >
+          <Code2 size={13} /> {showSource ? "Visual" : "HTML"}
+        </button>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -395,7 +431,7 @@ export function HtmlScriptEditor({
           <textarea
             value={sourceHtml}
             spellCheck={false}
-            onChange={(e) => setSourceHtml(e.target.value)}
+            onChange={(e) => { setSourceHtml(e.target.value); markDirty(); }}
             className="min-h-[560px] w-full min-w-0 resize-y rounded-xl border border-line bg-card-solid px-3 py-2 font-mono text-xs leading-relaxed text-fg focus:outline-none focus:ring-2 focus:ring-brand-400"
           />
         )}
@@ -437,7 +473,7 @@ export function HtmlScriptEditor({
                 ))}
                 {sections.length === 0 && <li className="px-2 py-2 text-[11px] text-muted">No sections detected.</li>}
               </ul>
-              <p className="px-1.5 pt-1.5 text-[10px] leading-relaxed text-muted">Structure changes apply on Save.</p>
+              <p className="px-1.5 pt-1.5 text-[10px] leading-relaxed text-muted">Structure changes save with the document.</p>
             </div>
           ) : (
             <div className="rounded-xl border border-line bg-card-solid p-2">
@@ -464,6 +500,36 @@ export function HtmlScriptEditor({
             </div>
           )}
         </aside>
+      </div>
+
+      {/* ── Floating Save bar (bottom-centre, clear of the bottom-right tour
+          button). Big Save button + auto-save countdown + saved status. ── */}
+      <div className="fixed bottom-5 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full border border-line bg-card-solid/95 px-3 py-2 shadow-elevated backdrop-blur supports-[backdrop-filter]:bg-card-solid/80">
+        <div className="pl-1.5 text-xs">
+          {error ? (
+            <span className="inline-flex items-center gap-1.5 font-medium text-rose-700"><AlertCircle size={13} /> {error}</span>
+          ) : saving ? (
+            <span className="inline-flex items-center gap-1.5 text-muted"><Loader2 size={13} className="animate-spin" /> Saving…</span>
+          ) : dirty ? (
+            <span className="inline-flex items-center gap-1.5 font-medium text-amber-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Unsaved · auto-save in {secondsLeft}s
+            </span>
+          ) : lastSaved ? (
+            <span className="inline-flex items-center gap-1.5 text-emerald-700">
+              <CheckCircle2 size={13} /> {lastSaved.kind === "auto" ? "Auto-saved" : "Saved"} at {fmtTime(lastSaved.at)}
+            </span>
+          ) : (
+            <span className="text-muted">All changes saved</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => doSave("manual")}
+          disabled={saving}
+          className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-sm shadow-brand-600/30 transition-colors hover:bg-brand-700 disabled:opacity-50"
+        >
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save
+        </button>
       </div>
     </div>
   );
