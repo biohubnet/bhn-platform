@@ -155,17 +155,26 @@ export function KeyboardShortcuts({ realRole, actingAs }: Props) {
   const xPendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    function isEditable(t: EventTarget | null): boolean {
-      const el = t as HTMLElement | null;
-      if (!el) return false;
-      const tag = el.tagName?.toLowerCase();
-      if (tag === "input" || tag === "textarea" || tag === "select") return true;
-      return !!el.isContentEditable;
+    function isEditable(e: KeyboardEvent): boolean {
+      // Walk the composed path, not just e.target, so we also catch fields
+      // inside a Shadow DOM (e.g. the workspace script editor) — there
+      // e.target is only the shadow host, which hides the real input and
+      // would let plain typing (like "x") trigger global shortcuts.
+      const path = typeof e.composedPath === "function" ? e.composedPath() : [];
+      const nodes: EventTarget[] = path.length ? path : e.target ? [e.target] : [];
+      for (const n of nodes) {
+        const el = n as HTMLElement | null;
+        if (!el || el.nodeType !== 1) continue;
+        const tag = el.tagName?.toLowerCase();
+        if (tag === "input" || tag === "textarea" || tag === "select") return true;
+        if (el.isContentEditable) return true;
+      }
+      return false;
     }
 
     function onKey(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (isEditable(e.target)) return;
+      if (isEditable(e)) return;
       const k = e.key;
       const kLower = k.toLowerCase();
 
