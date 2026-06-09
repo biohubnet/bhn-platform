@@ -116,7 +116,7 @@ export async function revertToRevision(args: {
     scriptId: args.scriptId,
     format: snap.format,
     sections: snap.format === "sections" ? snap.sections : undefined,
-    richContent: snap.format === "richtext" ? snap.richContent : undefined,
+    richContent: snap.format === "sections" ? undefined : snap.richContent,
     author: args.author,
     summary: `Reverted to an earlier version`,
   });
