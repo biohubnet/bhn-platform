@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Workspace · Outreach contact lists — Jun 2026
   {
     title: "Workspace · Outreach contact lists",
-    body: "Marketing has a new **Outreach** tool next to Video Production: contact lists of partner organisations we can reach out to for cross-promoting BHN programs. It starts pre-loaded with the team's Cross-promotion Partners list (attributions preserved — Roshni's additions are credited) plus a separate, empty EXPERIENCE Program list. Edit cells in place, add/reorder/remove contacts, move a contact between lists, and reshape each list's columns (add, rename, remove, reorder). Every new contact records who added it and when.",
+    body: "Marketing has a new **Outreach** tool next to Video Production: one shared **directory** of partner contacts, organised into lists (pre-loaded with the team's Cross-promotion Partners — Roshni's additions credited — plus a separate EXPERIENCE Program list). A person can sit on several lists without duplication: shared details (org, name, title, email) are edited once and update everywhere, while each list keeps its own notes, ordering, and columns (add/rename/remove/reorder). Saving an email that already belongs to someone offers a merge instead of creating a duplicate, and every contact records who added it and when.",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,

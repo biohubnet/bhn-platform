@@ -5028,6 +5028,8 @@ model OutreachList {
 
   contacts OutreachContact[]
 
+  memberships OutreachMembership[]
+
   @@index([order])
 }
 
@@ -5046,5 +5048,43 @@ model OutreachContact {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([listId, order])
+}
+
+// ── Outreach v2: central directory ──────────────────────────────────────
+// One OutreachPerson per real human (shared fields: org/name/title/email,
+// keyed by the global person-column config in PlatformSetting
+// "outreachPersonColumns"). OutreachMembership links a person into a list
+// and carries the per-list fields (the list's `columns`, e.g. Notes).
+// Editing a person updates them in every list; a person can sit in many
+// lists without duplication. OutreachContact above is the legacy v1 table —
+// rows are migrated into people+memberships at runtime, then removed.
+
+model OutreachPerson {
+  id          String   @id @default(cuid())
+  /// Shared field values keyed by the global person-column keys.
+  values      Json
+  addedById   String?
+  addedByName String   @default("BHN team")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships OutreachMembership[]
+}
+
+model OutreachMembership {
+  id          String   @id @default(cuid())
+  listId      String
+  list        OutreachList   @relation(fields: [listId], references: [id], onDelete: Cascade)
+  personId    String
+  person      OutreachPerson @relation(fields: [personId], references: [id], onDelete: Cascade)
+  /// Per-list field values keyed by the list's column keys.
+  values      Json
+  order       Int      @default(0)
+  addedById   String?
+  addedByName String   @default("BHN team")
+  createdAt   DateTime @default(now())
+
+  @@unique([listId, personId])
   @@index([listId, order])
 }
