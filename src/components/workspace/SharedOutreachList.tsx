@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, ChevronUp, ChevronDown, Loader2, UserRound, Link2 } from "lucide-react";
+import { OutreachCell } from "./OutreachCell";
 
 interface ColumnDef { key: string; label: string }
 export interface SharedRow {
@@ -86,9 +87,6 @@ export function SharedOutreachList({
     router.refresh();
   }
 
-  const cellInput =
-    "w-full rounded-md border border-transparent bg-transparent px-1.5 py-1.5 text-[12.5px] text-fg placeholder:text-subtle focus:border-brand-300 focus:bg-card-solid focus:outline-none focus:ring-1 focus:ring-brand-300 disabled:opacity-70";
-
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -136,26 +134,22 @@ export function SharedOutreachList({
             {rows.map((row, i) => (
               <tr key={row.membershipId} className="group hover:bg-elevated/30">
                 {personColumns.map((c) => (
-                  <td key={c.key} className="px-1.5 py-1 align-top">
-                    <input
+                  <td key={c.key} className="min-w-[9rem] px-1.5 py-1 align-top">
+                    <OutreachCell
                       key={`${row.personId}-${c.key}-${row.personValues[c.key] ?? ""}`}
                       defaultValue={row.personValues[c.key] ?? ""}
                       disabled={!canEdit}
-                      onBlur={(e) => savePersonCell(row, c.key, e.target.value.trim())}
-                      placeholder="—"
-                      className={cellInput}
+                      onSave={(v) => savePersonCell(row, c.key, v)}
                     />
                   </td>
                 ))}
                 {columns.map((c) => (
-                  <td key={c.key} className="border-l border-line/70 px-1.5 py-1 align-top">
-                    <input
+                  <td key={c.key} className="min-w-[9rem] border-l border-line/70 px-1.5 py-1 align-top">
+                    <OutreachCell
                       key={`${row.membershipId}-${c.key}-${row.values[c.key] ?? ""}`}
                       defaultValue={row.values[c.key] ?? ""}
                       disabled={!canEdit}
-                      onBlur={(e) => saveMembershipCell(row, c.key, e.target.value.trim())}
-                      placeholder="—"
-                      className={cellInput}
+                      onSave={(v) => saveMembershipCell(row, c.key, v)}
                     />
                   </td>
                 ))}

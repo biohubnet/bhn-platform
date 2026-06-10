@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Outreach · cells wrap long text — Jun 2026
+  {
+    title: "Outreach · long details now wrap",
+    body: "Outreach table cells (titles, notes, …) now wrap onto multiple lines instead of clipping, growing as you type. Enter saves the cell; Shift+Enter adds a line break. Applies to all lists, the Directory, and shared list links.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Outreach · reach-out history — Jun 2026
   {
     title: "Outreach · reach-out history per contact",

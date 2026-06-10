@@ -23,6 +23,7 @@ import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import { OutreachSharePanel } from "./OutreachSharePanel";
 import { TouchLogModal } from "./TouchLogModal";
+import { OutreachCell } from "./OutreachCell";
 
 interface ColumnDef { key: string; label: string }
 interface ShareLinkInfo { id: string; token: string; label: string | null; createdAt: string }
@@ -253,8 +254,6 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
   }
 
   const miniBtn = "inline-flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-elevated hover:text-fg disabled:opacity-30";
-  const cellInput =
-    "w-full rounded-md border border-transparent bg-transparent px-1.5 py-1.5 text-[12.5px] text-fg placeholder:text-subtle focus:border-brand-300 focus:bg-card-solid focus:outline-none focus:ring-1 focus:ring-brand-300";
 
   /** Small inline "add to list" picker (lists the person isn't on yet). */
   const AddToListSelect = ({ personId, exclude }: { personId: string; exclude: string[] }) => {
@@ -454,13 +453,11 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
               {board.directory.map((p) => (
                 <tr key={p.id} className="group hover:bg-elevated/30">
                   {board.personColumns.map((c) => (
-                    <td key={c.key} className="px-1.5 py-1 align-top">
-                      <input
+                    <td key={c.key} className="min-w-[9rem] px-1.5 py-1 align-top">
+                      <OutreachCell
                         key={`${p.id}-${c.key}-${p.values[c.key] ?? ""}`}
                         defaultValue={p.values[c.key] ?? ""}
-                        onBlur={(e) => savePersonCell(p.id, p.values, c.key, e.target.value.trim())}
-                        placeholder="—"
-                        className={cellInput}
+                        onSave={(v) => savePersonCell(p.id, p.values, c.key, v)}
                       />
                     </td>
                   ))}
@@ -525,24 +522,20 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
               {active.rows.map((row, i) => (
                 <tr key={row.membershipId} className="group hover:bg-elevated/30">
                   {board.personColumns.map((c) => (
-                    <td key={c.key} className="px-1.5 py-1 align-top">
-                      <input
+                    <td key={c.key} className="min-w-[9rem] px-1.5 py-1 align-top">
+                      <OutreachCell
                         key={`${row.personId}-${c.key}-${row.personValues[c.key] ?? ""}`}
                         defaultValue={row.personValues[c.key] ?? ""}
-                        onBlur={(e) => savePersonCell(row.personId, row.personValues, c.key, e.target.value.trim())}
-                        placeholder="—"
-                        className={cellInput}
+                        onSave={(v) => savePersonCell(row.personId, row.personValues, c.key, v)}
                       />
                     </td>
                   ))}
                   {active.columns.map((c) => (
-                    <td key={c.key} className="border-l border-line/70 px-1.5 py-1 align-top first-of-type:border-l">
-                      <input
+                    <td key={c.key} className="min-w-[9rem] border-l border-line/70 px-1.5 py-1 align-top first-of-type:border-l">
+                      <OutreachCell
                         key={`${row.membershipId}-${c.key}-${row.values[c.key] ?? ""}`}
                         defaultValue={row.values[c.key] ?? ""}
-                        onBlur={(e) => saveMembershipCell(row, c.key, e.target.value.trim())}
-                        placeholder="—"
-                        className={cellInput}
+                        onSave={(v) => saveMembershipCell(row, c.key, v)}
                       />
                     </td>
                   ))}
