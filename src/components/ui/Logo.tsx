@@ -6,17 +6,18 @@ interface LogoMarkProps {
 }
 
 /**
- * BHN Training mark — four interlocking blue→green petals arranged in
- * 90° rotational symmetry around a central 4-pointed star. Mirrors the
- * BioHubNet brand emblem at `public/biohubnet-logo.svg`, inlined here
- * so the Sidebar and anywhere else using `<Logo>` can render the mark
- * without an extra network round-trip and can pick up CSS sizing /
- * filter effects (drop-shadow etc.) cleanly.
+ * BHN Training mark — the BioHubNet "hexagon hub-network": six nodes
+ * joined by bonds into a hexagonal ring around a diamond hub, i.e. the
+ * name drawn literally (Bio = hexagon, Hub = diamond core, Net = the
+ * connected nodes). Mirrors the brand lockup at
+ * `public/biohubnet-logo.svg`, inlined here so the Sidebar and
+ * anywhere else using `<Logo>` can render the mark without an extra
+ * network round-trip and can pick up CSS sizing / filter effects
+ * (drop-shadow etc.) cleanly.
  *
- * One petal is defined inside a hidden `<symbol>` and rendered four
- * times at 0° / 90° / 180° / 270° rotations, each with its own
- * gradient ramp (top-cyan, right-green, bottom-deep-blue, left-navy)
- * so adjacent petals read as distinct ribbons.
+ * Flat two-weight geometry, no gradients — the apex node carries the
+ * bio green, the diamond hub the brand blue, everything else the ink
+ * teal. Same palette + geometry as icon.tsx and opengraph-image.tsx.
  */
 export function LogoMark({ size = 36, className }: LogoMarkProps) {
   return (
@@ -30,80 +31,39 @@ export function LogoMark({ size = 36, className }: LogoMarkProps) {
       aria-label="BHN Training"
       className={cn("inline-block", className)}
     >
-      <defs>
-        <linearGradient id="bhn-petal-top" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%"  stopColor="#1d4f8b" />
-          <stop offset="55%" stopColor="#2c8aa3" />
-          <stop offset="100%" stopColor="#3fa86a" />
-        </linearGradient>
-        <linearGradient id="bhn-petal-right" x1="1" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#52b066" />
-          <stop offset="55%" stopColor="#3aa28a" />
-          <stop offset="100%" stopColor="#1e6d9c" />
-        </linearGradient>
-        <linearGradient id="bhn-petal-bottom" x1="1" y1="1" x2="0" y2="0">
-          <stop offset="0%"  stopColor="#1d4f8b" />
-          <stop offset="50%" stopColor="#2674a0" />
-          <stop offset="100%" stopColor="#48a25f" />
-        </linearGradient>
-        <linearGradient id="bhn-petal-left" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%"  stopColor="#173d6f" />
-          <stop offset="55%" stopColor="#226d9a" />
-          <stop offset="100%" stopColor="#3c9c63" />
-        </linearGradient>
-        <radialGradient id="bhn-petal-shine" cx="0.35" cy="0.3" r="0.55">
-          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.42" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-        </radialGradient>
-
-        {/* One petal pointing up. Tip at (24, 2), curls down and around
-            to (24, 22) just past the centre so 90° rotations meet at the
-            4-pointed star. */}
-        <symbol id="bhn-petal-mark" viewBox="0 0 48 48">
-          <path
-            d="M 24 2
-               C 35 2 43 9 43 19
-               C 43 24 39 26 33 25
-               C 28 23 26 23 24 23
-               C 22 23 20 23 15 25
-               C 9 26 5 24 5 19
-               C 5 9 13 2 24 2
-               Z"
-          />
-        </symbol>
-      </defs>
-
-      {/* Four petals — base gradient + a soft white shine overlay on
-          each so the ribbons read with a hint of depth. */}
-      <g>
-        <use href="#bhn-petal-mark" fill="url(#bhn-petal-top)" />
-        <use href="#bhn-petal-mark" fill="url(#bhn-petal-shine)" />
-      </g>
-      <g transform="rotate(90 24 24)">
-        <use href="#bhn-petal-mark" fill="url(#bhn-petal-right)" />
-        <use href="#bhn-petal-mark" fill="url(#bhn-petal-shine)" />
-      </g>
-      <g transform="rotate(180 24 24)">
-        <use href="#bhn-petal-mark" fill="url(#bhn-petal-bottom)" />
-        <use href="#bhn-petal-mark" fill="url(#bhn-petal-shine)" />
-      </g>
-      <g transform="rotate(270 24 24)">
-        <use href="#bhn-petal-mark" fill="url(#bhn-petal-left)" />
-        <use href="#bhn-petal-mark" fill="url(#bhn-petal-shine)" />
-      </g>
-
-      {/* Central 4-pointed star — drawn as a white fill on top so it
-          reads as the negative-space cut-out without requiring path
-          subtraction. */}
+      {/* Bonds — hexagonal ring through the six vertex nodes */}
       <path
-        d="M 24 16
-           C 25 20 28 23 32 24
-           C 28 25 25 28 24 32
-           C 23 28 20 25 16 24
-           C 20 23 23 20 24 16
-           Z"
-        fill="#ffffff"
+        d="M 24 8.5 L 37.42 16.25 L 37.42 31.75 L 24 39.5 L 10.58 31.75 L 10.58 16.25 Z"
+        stroke="#1F5A68"
+        strokeWidth="2.2"
+        strokeLinejoin="round"
       />
+      {/* Spokes — hub out to the three primary nodes */}
+      <path
+        d="M 24 24 L 24 8.5 M 24 24 L 37.42 31.75 M 24 24 L 10.58 31.75"
+        stroke="#1F5A68"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      {/* Hub — rounded diamond core, heritage of the original
+          four-diamond cluster promoted to the focal element */}
+      <rect
+        x="18.7"
+        y="18.7"
+        width="10.6"
+        height="10.6"
+        rx="2.3"
+        transform="rotate(45 24 24)"
+        fill="#1B7FB8"
+      />
+      {/* Primary nodes (spoke-connected) — apex carries the bio green */}
+      <circle cx="24" cy="8.5" r="3.2" fill="#4FA475" />
+      <circle cx="37.42" cy="31.75" r="3.2" fill="#1F5A68" />
+      <circle cx="10.58" cy="31.75" r="3.2" fill="#1F5A68" />
+      {/* Secondary nodes (ring-only) */}
+      <circle cx="37.42" cy="16.25" r="2.2" fill="#1F5A68" />
+      <circle cx="24" cy="39.5" r="2.2" fill="#1F5A68" />
+      <circle cx="10.58" cy="16.25" r="2.2" fill="#1F5A68" />
     </svg>
   );
 }

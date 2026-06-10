@@ -74,14 +74,23 @@ export function HtmlScriptEditor({
   css,
   meId,
   meName,
+  apiBase,
+  readOnly = false,
 }: {
   scriptId: string;
   initialHtml: string;
   css: string;
   meId: string;
   meName: string;
+  /** Endpoint prefix for save/revisions/presence. Defaults to the admin
+   *  workspace API; the public share page passes its token-scoped base. */
+  apiBase?: string;
+  /** View-only share links: document not editable, no save bar / structure
+   *  buttons / restore. */
+  readOnly?: boolean;
 }) {
   const myColor = useMemo(() => colorForKey(meId), [meId]);
+  const base = apiBase ?? `/api/workspace/scripts/${scriptId}`;
 
   const hostRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -159,7 +168,7 @@ export function HtmlScriptEditor({
 
     const content = document.createElement("div");
     content.innerHTML = initialHtml;
-    content.contentEditable = "true";
+    content.contentEditable = readOnly ? "false" : "true";
     content.spellcheck = true;
     content.style.outline = "none";
     contentRef.current = content;
@@ -190,7 +199,7 @@ export function HtmlScriptEditor({
     content.addEventListener("mouseup", onSel);
     content.addEventListener("focusin", onSel);
     content.addEventListener("input", onInput);
-  }, [css, initialHtml, refreshSections, markDirty]);
+  }, [css, initialHtml, refreshSections, markDirty, readOnly]);
 
   // ── Presence heartbeat (~2s) ──
   useEffect(() => {
@@ -203,7 +212,7 @@ export function HtmlScriptEditor({
         else recentRef.current.delete(sid);
       }
       try {
-        const res = await fetch(`/api/workspace/scripts/${scriptId}/presence`, {
+        const res = await fetch(`${base}/presence`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ editorKey: meId, name: meName, color: myColor, activeSid: activeSidRef.current, recentSids: recent }),
@@ -221,7 +230,7 @@ export function HtmlScriptEditor({
     beat();
     const iv = setInterval(beat, 2000);
     return () => { cancelled = true; clearInterval(iv); };
-  }, [scriptId, meId, meName, myColor]);
+  }, [base, meId, meName, myColor]);
 
   // ── Paint peer highlights (never on the local caret's own section). ──
   const paint = useCallback(() => {
@@ -255,13 +264,13 @@ export function HtmlScriptEditor({
   const loadRevisions = useCallback(async () => {
     setRevLoading(true);
     try {
-      const res = await fetch(`/api/workspace/scripts/${scriptId}/revisions`);
+      const res = await fetch(`${base}/revisions`);
       const j = (await res.json().catch(() => ({}))) as { ok?: boolean; revisions?: Revision[] };
       if (j.ok && Array.isArray(j.revisions)) setRevisions(j.revisions);
     } finally {
       setRevLoading(false);
     }
-  }, [scriptId]);
+  }, [base]);
 
   useEffect(() => { loadRevisions(); }, [loadRevisions]);
 
@@ -276,7 +285,7 @@ export function HtmlScriptEditor({
     setError(null);
     const html = showSource ? sourceHtml : currentHtml();
     try {
-      const res = await fetch(`/api/workspace/scripts/${scriptId}`, {
+      const res = await fetch(base, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ format: "html", richContent: { kind: "html", html, css }, summary: kind === "auto" ? "Auto-saved" : "Edited script" }),
@@ -302,7 +311,7 @@ export function HtmlScriptEditor({
       savingRef.current = false;
       setSaving(false);
     }
-  }, [scriptId, css, showSource, sourceHtml, refreshSections, loadRevisions]);
+  }, [base, css, showSource, sourceHtml, refreshSections, loadRevisions]);
 
   useEffect(() => { doSaveRef.current = doSave; }, [doSave]);
 
@@ -439,7 +448,7 @@ export function HtmlScriptEditor({
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/workspace/scripts/${scriptId}/revisions`, {
+      const res = await fetch(`${base}/revisions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ restoreId: revId }),
@@ -486,16 +495,20 @@ export function HtmlScriptEditor({
           </div>
           <span className="hidden items-center gap-1.5 text-xs text-muted sm:inline-flex">
             <Pencil size={12} />
-            {peers.length > 0 ? `${peers.length + 1} editing live` : "Click in the document to edit"}
+            {readOnly
+              ? "View-only link"
+              : peers.length > 0 ? `${peers.length + 1} editing live` : "Click in the document to edit"}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={toggleSource}
-          className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3 py-1.5 text-xs font-semibold text-fg hover:bg-elevated"
-        >
-          <Code2 size={13} /> {showSource ? "Visual" : "HTML"}
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={toggleSource}
+            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3 py-1.5 text-xs font-semibold text-fg hover:bg-elevated"
+          >
+            <Code2 size={13} /> {showSource ? "Visual" : "HTML"}
+          </button>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -533,17 +546,23 @@ export function HtmlScriptEditor({
             <div className="rounded-xl border border-line bg-card-solid p-2">
               <div className="flex items-center justify-between px-1 py-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-subtle">Sections</span>
-                <button type="button" onClick={addSection} className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900">
-                  <Plus size={12} /> Add
-                </button>
+                {!readOnly && (
+                  <button type="button" onClick={addSection} className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900">
+                    <Plus size={12} /> Add
+                  </button>
+                )}
               </div>
               <ul className="space-y-0.5">
                 {sections.map((s, i) => (
                   <li key={i} className="group flex items-center gap-0.5 rounded-md px-1.5 py-1 hover:bg-elevated">
                     <span className="flex-1 truncate text-xs text-fg" title={s.heading}>{s.heading}</span>
-                    <button type="button" title="Move up" disabled={i === 0} onClick={() => moveSection(i, -1)} className={miniBtn}><ChevronUp size={13} /></button>
-                    <button type="button" title="Move down" disabled={i === sections.length - 1} onClick={() => moveSection(i, 1)} className={miniBtn}><ChevronDown size={13} /></button>
-                    <button type="button" title="Remove" onClick={() => removeSection(i)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
+                    {!readOnly && (
+                      <>
+                        <button type="button" title="Move up" disabled={i === 0} onClick={() => moveSection(i, -1)} className={miniBtn}><ChevronUp size={13} /></button>
+                        <button type="button" title="Move down" disabled={i === sections.length - 1} onClick={() => moveSection(i, 1)} className={miniBtn}><ChevronDown size={13} /></button>
+                        <button type="button" title="Remove" onClick={() => removeSection(i)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
+                      </>
+                    )}
                   </li>
                 ))}
                 {sections.length === 0 && <li className="px-2 py-2 text-[11px] text-muted">No sections detected.</li>}
@@ -553,18 +572,24 @@ export function HtmlScriptEditor({
                 <>
                   <div className="mt-2 flex items-center justify-between border-t border-line px-1 pb-1 pt-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-subtle">Intercut script</span>
-                    <button type="button" onClick={addIntercut} className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900">
-                      <Plus size={12} /> Add line
-                    </button>
+                    {!readOnly && (
+                      <button type="button" onClick={addIntercut} className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900">
+                        <Plus size={12} /> Add line
+                      </button>
+                    )}
                   </div>
                   <ul className="space-y-0.5">
                     {intercut.map((r, i) => (
                       <li key={i} className="group flex items-center gap-0.5 rounded-md px-1.5 py-1 hover:bg-elevated">
                         <span className="w-4 shrink-0 text-right font-mono text-[10px] text-subtle">{i + 1}</span>
                         <span className="flex-1 truncate text-xs text-fg" title={r.label}>{r.label}</span>
-                        <button type="button" title="Move up" disabled={i === 0} onClick={() => moveIntercut(i, -1)} className={miniBtn}><ChevronUp size={13} /></button>
-                        <button type="button" title="Move down" disabled={i === intercut.length - 1} onClick={() => moveIntercut(i, 1)} className={miniBtn}><ChevronDown size={13} /></button>
-                        <button type="button" title="Remove line" onClick={() => removeIntercut(i)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
+                        {!readOnly && (
+                          <>
+                            <button type="button" title="Move up" disabled={i === 0} onClick={() => moveIntercut(i, -1)} className={miniBtn}><ChevronUp size={13} /></button>
+                            <button type="button" title="Move down" disabled={i === intercut.length - 1} onClick={() => moveIntercut(i, 1)} className={miniBtn}><ChevronDown size={13} /></button>
+                            <button type="button" title="Remove line" onClick={() => removeIntercut(i)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
+                          </>
+                        )}
                       </li>
                     ))}
                     {intercut.length === 0 && (
@@ -589,7 +614,9 @@ export function HtmlScriptEditor({
                       <UserIcon size={11} className="shrink-0 text-muted" />
                       <span className="flex-1 truncate text-xs font-medium text-fg" title={r.authorName}>{r.authorName}</span>
                       {r.authorKind === "anon" && <span className="rounded bg-elevated px-1 text-[9px] uppercase tracking-wide text-subtle">guest</span>}
-                      <button type="button" title="Restore this version" onClick={() => restore(r.id)} className={cn(miniBtn, "hover:text-brand-700")}><RotateCcw size={12} /></button>
+                      {!readOnly && (
+                        <button type="button" title="Restore this version" onClick={() => restore(r.id)} className={cn(miniBtn, "hover:text-brand-700")}><RotateCcw size={12} /></button>
+                      )}
                     </div>
                     <div className="mt-0.5 pl-[18px] text-[10px] text-muted">{fmtWhen(r.createdAt)}{r.summary ? ` · ${r.summary}` : ""}</div>
                   </li>
@@ -605,6 +632,7 @@ export function HtmlScriptEditor({
 
       {/* ── Floating Save bar (bottom-centre, clear of the bottom-right tour
           button). Big Save button + auto-save countdown + saved status. ── */}
+      {!readOnly && (
       <div className="fixed bottom-5 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full border border-line bg-card-solid/95 px-3 py-2 shadow-elevated backdrop-blur supports-[backdrop-filter]:bg-card-solid/80">
         <div className="pl-1.5 text-xs">
           {error ? (
@@ -647,6 +675,7 @@ export function HtmlScriptEditor({
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save
         </button>
       </div>
+      )}
     </div>
   );
 }

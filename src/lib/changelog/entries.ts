@@ -22,6 +22,22 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Video scripts · share with external collaborators — Jun 2026
+  {
+    title: "Video scripts · share with people outside the platform",
+    body: "Scripts can now be shared with external collaborators — no account needed. Hit the new **Share** button on a script to create a public link (it copies automatically). Whoever opens it gives their name, then edits the script live with the same editor you use: original styling, coloured presence highlights, 30-second auto-save, and full history — every change attributed to their name and revertable. Revoke a link any time from the same panel.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
+  // ── Brand · BioHubNet logo redesign — Jun 2026
+  {
+    title: "A fresh BioHubNet logo",
+    body: "The BioHubNet mark has been redrawn: six nodes joined into a hexagonal network around a diamond hub — the name drawn literally (Bio = the hexagon, Hub = the diamond core, Net = the connected nodes). It keeps the familiar teal–blue–green family but drops the old gradient cluster for flat, crisp geometry that stays sharp at every size. You'll see it everywhere at once: the sidebar, sign-in pages, the browser-tab icon, link previews, and the public showcase pages.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Video scripts · manage intercut lines — Jun 2026
   {
     title: "Video scripts · manage the intercut script lines",
