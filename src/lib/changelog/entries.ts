@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Outreach · EQUIP Partners list — Jun 2026
+  {
+    title: "Outreach · EQUIP Partners list imported",
+    body: "The EQUIP Partner Contact List (xlsx) is now a third outreach list. Its “Comms contact” column marks the person to reach out to for cross-promoting events and announcements, and the sheet's “find the comms person at …” placeholders are kept as to-dos. People who were already in the directory (Sophie, Jarrod, Mary, Barry, Samantha) weren't duplicated — they simply joined the new list, so they now show on both lists as one contact each.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Outreach · share lists with a link — Jun 2026
   {
     title: "Outreach · share a list with a link",

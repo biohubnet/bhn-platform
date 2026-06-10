@@ -105,8 +105,7 @@ export async function ensureOutreachDirectory(createdById: string | null): Promi
     prisma.outreachList.count(),
     prisma.outreachPerson.count(),
   ]);
-  if (listCount > 0 || personCount > 0) return;
-
+  if (listCount === 0 && personCount === 0) {
   const partners = await prisma.outreachList.create({
     data: {
       name: PARTNER_LIST,
@@ -142,6 +141,112 @@ export async function ensureOutreachDirectory(createdById: string | null): Promi
       order: 1,
       createdById,
     },
+  });
+  }
+
+  await ensureEquipPartnerList(createdById);
+}
+
+// ── EQUIP Partner Contact List (xlsx import) ─────────────────────────────
+
+const EQUIP_LIST = "EQUIP Partners";
+const EQUIP_SEED_FLAG = "outreachEquipSeeded";
+
+export const EQUIP_MEMBERSHIP_COLUMNS: OutreachColumn[] = [
+  { key: "comms", label: "Comms contact" },
+  { key: "notes", label: "Notes" },
+];
+
+interface EquipSeedContact { org: string; name: string; title?: string; email?: string; comms?: boolean; notes?: string }
+
+/** Cleaned import of "EQUIP Partner Contact List.xlsx" (Sheet1). The sheet's
+ *  "Comms reach out" flag column (its cell comment: "the main contact to
+ *  reach out to when we ask to cross-promote our events, announcements
+ *  etc.") becomes the "Comms contact" column. "Let's find the comms person
+ *  at X" placeholder rows are kept as to-dos. */
+const EQUIP_CONTACTS: EquipSeedContact[] = [
+  { org: "CDL", name: "Mathew Platt", title: "Global Head of Venture Recruitment", email: "mathew.platt@creativedestructionlab.com", notes: "On EQUIP Committee." },
+  { org: "CDL", name: "", notes: "To do: find the comms person at CDL." },
+  { org: "H2i", name: "Paul Santerre", title: "Director of the Health Innovation Hub (H2i)", email: "paul.santerre@dentistry.utoronto.ca" },
+  { org: "H2i", name: "Sophie Stuart-Sheppard", title: "Strategic Communications Officer", email: "sophie.stuartsheppard@utoronto.ca", comms: true },
+  { org: "Hatchery", name: "", notes: "To do: find the comms person at Hatchery. LaunchLab contact." },
+  { org: "Black Founder's Network", name: "", notes: "To do: find the comms person at BFN." },
+  { org: "i2I", name: "Elicia Maine", title: "Associate Vice-President, Knowledge Mobilization and Innovation (AVPKMI)", email: "emaine@sfu.ca" },
+  { org: "i2I", name: "James (Jim) McLellan", email: "james.mclellan@queensu.ca" },
+  { org: "i2I", name: "Simon Denford", comms: true },
+  { org: "L2M", name: "Jarrod Ladouceur", title: "Industrial Partnerships Officer", email: "jarrod.ladouceur@utoronto.ca", comms: true },
+  { org: "MaRS", name: "", notes: "To do: find the comms person at MaRS." },
+  { org: "OBIO", name: "Mary Argent-Katwala", title: "Senior Director, Stakeholder Engagement", email: "maryargent-katwala@obio.ca", comms: true },
+  { org: "OBIO", name: "Garima Ghale", title: "Associate Director", email: "garimaghale@obio.ca" },
+  { org: "Ontario Genomics", name: "Elizabeth Gray", title: "Director, Investment and Venture Development", email: "egray@ontariogenomics.ca" },
+  { org: "Ontario Genomics", name: "Farnaz Fekri", title: "Manager Mentorship and Venture Development", email: "ffekri@ontariogenomics.ca", comms: true },
+  { org: "TIAP", name: "Parimal Nathwani", title: "President and CEO", email: "pnathwani@tiap.ca" },
+  { org: "TIAP", name: "Barry Gee", title: "Director, Public Affairs", email: "bgee@tiap.ca", comms: true },
+  { org: "TIAP", name: "Phil Goldbach", title: "Director, Technology and Venture Development", email: "pgoldbach@tiap.ca", notes: "Signing rep on the proposal." },
+  { org: "TMU DMZ", name: "", notes: "To do: find the comms person at DMZ." },
+  { org: "UTEST", name: "Kurtis Scissons", title: "Director, University Ventures", email: "kurtis.scissons@utoronto.ca" },
+  { org: "UTEST", name: "Samantha Goodspeed", title: "Program Coordinator", email: "samantha.goodspeed@utoronto.ca", comms: true },
+  { org: "Velocity", name: "", notes: "To do: find the comms person at Velocity." },
+  { org: "PRiME", name: "Natalie", comms: true },
+];
+
+/** Import the EQUIP Partner Contact List as its own list — run-once
+ *  (PlatformSetting flag). People who already exist in the directory (same
+ *  e-mail) gain a membership here instead of being duplicated. */
+async function ensureEquipPartnerList(createdById: string | null): Promise<void> {
+  const done = await prisma.platformSetting.findUnique({ where: { key: EQUIP_SEED_FLAG } }).catch(() => null);
+  if (done) return;
+
+  const order = await prisma.outreachList.count();
+  const list = await prisma.outreachList.create({
+    data: {
+      name: EQUIP_LIST,
+      description: "EQUIP partner organisations. “Comms contact” marks the person to reach out to when we cross-promote events and announcements.",
+      columns: EQUIP_MEMBERSHIP_COLUMNS as unknown as Prisma.InputJsonValue,
+      order,
+      createdById,
+    },
+  });
+
+  // Existing directory people by e-mail, so overlaps join this list instead
+  // of duplicating (e.g. comms contacts already on Cross-promotion Partners).
+  const people = await prisma.outreachPerson.findMany({ select: { id: true, values: true } });
+  const byEmail = new Map<string, string>();
+  for (const p of people) {
+    const key = emailKey((p.values as Record<string, string>)?.email);
+    if (key && !byEmail.has(key)) byEmail.set(key, p.id);
+  }
+
+  for (let i = 0; i < EQUIP_CONTACTS.length; i++) {
+    const c = EQUIP_CONTACTS[i];
+    const key = emailKey(c.email);
+    let personId = key ? byEmail.get(key) : undefined;
+    if (!personId) {
+      const person = await prisma.outreachPerson.create({
+        data: {
+          values: { org: c.org, name: c.name, title: c.title ?? "", email: c.email ?? "" } as unknown as Prisma.InputJsonValue,
+          addedByName: "BHN team",
+        },
+        select: { id: true },
+      });
+      personId = person.id;
+      if (key) byEmail.set(key, personId);
+    }
+    await prisma.outreachMembership.create({
+      data: {
+        listId: list.id,
+        personId,
+        order: i,
+        values: { comms: c.comms ? "Yes" : "", notes: c.notes ?? "" } as unknown as Prisma.InputJsonValue,
+        addedByName: "BHN team",
+      },
+    }).catch(() => {});
+  }
+
+  await prisma.platformSetting.upsert({
+    where: { key: EQUIP_SEED_FLAG },
+    update: { value: "1" },
+    create: { key: EQUIP_SEED_FLAG, value: "1" },
   });
 }
 
