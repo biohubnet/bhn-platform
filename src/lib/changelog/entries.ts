@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Video scripts · manage intercut lines — Jun 2026
+  {
+    title: "Video scripts · manage the intercut script lines",
+    body: "The script editor's Sections panel now has an “Intercut script” list for the dialogue under Draft Full Intercut Script: every line shows its speaker and opening words, and you can add a new line, reorder with ↑/↓, or remove one. New lines come pre-styled (speaker · script copy · visual note) — click into the document to write them.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Video scripts · revert to last manual save — Jun 2026
   {
     title: "Video scripts · revert to the last manual save",

@@ -87,6 +87,7 @@ export function HtmlScriptEditor({
   const contentRef = useRef<HTMLDivElement | null>(null);
   const presenceStyleRef = useRef<HTMLStyleElement | null>(null);
   const boxesRef = useRef<HTMLElement[]>([]);
+  const intercutRef = useRef<HTMLElement[]>([]);
   const activeSidRef = useRef<string | null>(null);
   const recentRef = useRef<Map<string, number>>(new Map());
   const peersKeyRef = useRef<string>("");
@@ -107,6 +108,9 @@ export function HtmlScriptEditor({
   const [sourceHtml, setSourceHtml] = useState(initialHtml);
   const [tab, setTab] = useState<"sections" | "history">("sections");
   const [sections, setSections] = useState<{ heading: string }[]>([]);
+  // Dialogue rows inside the "Draft Full Intercut Script" block (.intercut-row).
+  const [intercut, setIntercut] = useState<{ label: string }[]>([]);
+  const [hasIntercut, setHasIntercut] = useState(false);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revLoading, setRevLoading] = useState(false);
   const [peers, setPeers] = useState<PresencePeer[]>([]);
@@ -129,6 +133,16 @@ export function HtmlScriptEditor({
     setSections(boxes.map((b) => ({
       heading: (b.querySelector("h1,h2,h3")?.textContent ?? "Untitled section").trim().slice(0, 70) || "Untitled section",
     })));
+
+    // The intercut script's dialogue rows — managed as their own sub-list.
+    const rows = Array.from(root.querySelectorAll<HTMLElement>(".intercut-row"));
+    intercutRef.current = rows;
+    setIntercut(rows.map((r) => {
+      const speaker = r.querySelector(".speaker")?.textContent?.trim() || "—";
+      const copy = (r.querySelector(".script-copy")?.textContent ?? "").trim().replace(/\s+/g, " ");
+      return { label: `${speaker} · ${copy.slice(0, 46)}${copy.length > 46 ? "…" : ""}` };
+    }));
+    setHasIntercut(rows.length > 0 || !!root.querySelector(".full-script, .intercut-list"));
   }, []);
 
   // Mount the styled, editable document into a shadow root once + wire caret
@@ -361,6 +375,47 @@ export function HtmlScriptEditor({
     art.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  // ── Intercut-script rows (under "Draft Full Intercut Script") ──
+  function moveIntercut(i: number, dir: -1 | 1) {
+    const a = intercutRef.current[i];
+    const b = intercutRef.current[i + dir];
+    if (!a || !b || !b.parentNode) return;
+    if (dir === -1) b.parentNode.insertBefore(a, b);
+    else b.parentNode.insertBefore(a, b.nextSibling);
+    markDirty();
+    refreshSections();
+  }
+  function removeIntercut(i: number) {
+    const r = intercutRef.current[i];
+    if (!r) return;
+    if (!confirm("Remove this script line?")) return;
+    r.remove();
+    markDirty();
+    refreshSections();
+  }
+  function addIntercut() {
+    const root = contentRef.current;
+    if (!root) return;
+    // Append inside the existing list; create the list inside the full-script
+    // section if it was emptied out.
+    let list = root.querySelector<HTMLElement>(".intercut-list");
+    if (!list) {
+      const host = root.querySelector<HTMLElement>(".full-script");
+      if (!host) return;
+      list = document.createElement("div");
+      list.className = "intercut-list";
+      host.appendChild(list);
+    }
+    const row = document.createElement("article");
+    row.className = "intercut-row";
+    row.innerHTML =
+      '<div class="speaker">Speaker</div><p class="script-copy">Write the line…</p><p class="visual-note">Visual note for the editor…</p>';
+    list.appendChild(row);
+    markDirty();
+    refreshSections();
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   // Newest revision that was a deliberate act — a manual Save, a section
   // edit, or an earlier revert. Auto-saves tag themselves "Auto-saved".
   const lastManual = revisions.find((r) => r.summary !== "Auto-saved");
@@ -493,6 +548,32 @@ export function HtmlScriptEditor({
                 ))}
                 {sections.length === 0 && <li className="px-2 py-2 text-[11px] text-muted">No sections detected.</li>}
               </ul>
+
+              {hasIntercut && (
+                <>
+                  <div className="mt-2 flex items-center justify-between border-t border-line px-1 pb-1 pt-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-subtle">Intercut script</span>
+                    <button type="button" onClick={addIntercut} className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900">
+                      <Plus size={12} /> Add line
+                    </button>
+                  </div>
+                  <ul className="space-y-0.5">
+                    {intercut.map((r, i) => (
+                      <li key={i} className="group flex items-center gap-0.5 rounded-md px-1.5 py-1 hover:bg-elevated">
+                        <span className="w-4 shrink-0 text-right font-mono text-[10px] text-subtle">{i + 1}</span>
+                        <span className="flex-1 truncate text-xs text-fg" title={r.label}>{r.label}</span>
+                        <button type="button" title="Move up" disabled={i === 0} onClick={() => moveIntercut(i, -1)} className={miniBtn}><ChevronUp size={13} /></button>
+                        <button type="button" title="Move down" disabled={i === intercut.length - 1} onClick={() => moveIntercut(i, 1)} className={miniBtn}><ChevronDown size={13} /></button>
+                        <button type="button" title="Remove line" onClick={() => removeIntercut(i)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
+                      </li>
+                    ))}
+                    {intercut.length === 0 && (
+                      <li className="px-2 py-2 text-[11px] text-muted">No script lines yet — Add line starts the intercut.</li>
+                    )}
+                  </ul>
+                </>
+              )}
+
               <p className="px-1.5 pt-1.5 text-[10px] leading-relaxed text-muted">Structure changes save with the document.</p>
             </div>
           ) : (
