@@ -5,7 +5,9 @@
  * (mounted in a Shadow DOM — isolated CSS, renders inline, no iframe), is
  * directly editable (contentEditable), and adds:
  *   • a big floating Save button with auto-save every 30s, a live countdown,
- *     and an "auto-saved/saved at HH:MM" status;
+ *     an "auto-saved/saved at HH:MM" status, and a Revert button that rolls
+ *     the document back to the last MANUAL save (auto-saves and unsaved edits
+ *     after it are replaced; every version stays in History);
  *   • near-real-time collaboration: a ~2s heartbeat reports who's here and
  *     which section each person's caret is in; everyone's active/recent
  *     sections are outlined + tinted in their colour (overlaid via a shadow-DOM
@@ -359,8 +361,26 @@ export function HtmlScriptEditor({
     art.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  // Newest revision that was a deliberate act — a manual Save, a section
+  // edit, or an earlier revert. Auto-saves tag themselves "Auto-saved".
+  const lastManual = revisions.find((r) => r.summary !== "Auto-saved");
+  const canRevert = !!lastManual && (dirty || revisions[0]?.id !== lastManual.id);
+
+  async function revertToLastManual() {
+    if (!lastManual) return;
+    if (!confirm(
+      `Revert to the last manual save — by ${lastManual.authorName}, ${fmtWhen(lastManual.createdAt)}?\n\n` +
+      "Unsaved edits are discarded. Newer auto-saved versions stay in History."
+    )) return;
+    await applyRestore(lastManual.id);
+  }
+
   async function restore(revId: string) {
     if (!confirm("Restore this version? The current content is replaced and saved as a new version.")) return;
+    await applyRestore(revId);
+  }
+
+  async function applyRestore(revId: string) {
     setSaving(true);
     setError(null);
     try {
@@ -522,6 +542,21 @@ export function HtmlScriptEditor({
             <span className="text-muted">All changes saved</span>
           )}
         </div>
+        <button
+          type="button"
+          onClick={revertToLastManual}
+          disabled={saving || !canRevert}
+          title={
+            !lastManual
+              ? "No manual save to revert to yet"
+              : canRevert
+                ? `Revert to the last manual save — ${fmtWhen(lastManual.createdAt)} by ${lastManual.authorName}`
+                : "Already at the last manual save"
+          }
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card-solid px-4 py-3 text-xs font-semibold text-fg transition-colors hover:bg-elevated disabled:opacity-40"
+        >
+          <RotateCcw size={14} /> Revert
+        </button>
         <button
           type="button"
           onClick={() => doSave("manual")}

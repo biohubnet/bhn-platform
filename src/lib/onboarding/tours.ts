@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.09a";
+export const TOUR_VERSION = "2026.06.10a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Video scripts · revert to last manual save — Jun 2026
+  {
+    id: "workspace.script-revert-manual",
+    title: "Undo what auto-save kept",
+    body: "In the video script editor, the floating bar now has a Revert button next to Save. It rolls the script back to the last version you saved by hand — useful when the 30-second auto-save has locked in edits you didn't want. Newer auto-saved versions stay in History, so nothing is lost.",
+    path: "/admin/workspace/marketing/video",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Video Production", href: "/admin/workspace/marketing/video" },
+    since: "2026.06.10a",
+  },
   // ─── Workspace · File Sharing — Jun 2026
   {
     id: "workspace.file-sharing",

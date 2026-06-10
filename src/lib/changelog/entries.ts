@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Video scripts · revert to last manual save — Jun 2026
+  {
+    title: "Video scripts · revert to the last manual save",
+    body: "The script editor's floating bar has a new **Revert** button next to Save. One click rolls the document back to the last *manually* saved version — handy when the 30-second auto-save has captured edits you didn't mean to keep. Unsaved edits are discarded, but nothing is lost from History: every auto-saved version stays there, and the revert itself is recorded as a new version. The button greys out when you're already at the last manual save.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Workspace · File Sharing — Jun 2026
   {
     title: "Workspace · File Sharing",
