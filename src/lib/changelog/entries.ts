@@ -70,14 +70,6 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     visibleTo: ADMINS,
     daysAgo: 0,
   },
-  // ── Brand · BioHubNet logo redesign — Jun 2026
-  {
-    title: "A fresh BioHubNet logo",
-    body: "The BioHubNet mark has been redrawn: six nodes joined into a hexagonal network around a diamond hub — the name drawn literally (Bio = the hexagon, Hub = the diamond core, Net = the connected nodes). It keeps the familiar teal–blue–green family but drops the old gradient cluster for flat, crisp geometry that stays sharp at every size. You'll see it everywhere at once: the sidebar, sign-in pages, the browser-tab icon, link previews, and the public showcase pages.",
-    kind: "improvement",
-    visibleTo: ALL,
-    daysAgo: 0,
-  },
   // ── Video scripts · manage intercut lines — Jun 2026
   {
     title: "Video scripts · manage the intercut script lines",

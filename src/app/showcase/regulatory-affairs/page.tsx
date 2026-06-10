@@ -32,12 +32,11 @@ export default function ShowcaseRegulatoryAffairsPage() {
     // form should be brand-consistent, not adopt the viewer's theme.)
     <main data-theme="light" className="min-h-screen bg-gradient-to-b from-[#f0f7f7] via-[#e6f0f1] to-[#dfecee]">
       <div className="max-w-2xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
-        {/* BioHubNet brand lock-up — the brand PNG rendered from
-            public/biohubnet-logo.svg (regenerate with
-            scripts/render-logo-png.mjs). It already contains the hexagon
-            hub-network mark + "BioHubNet" wordmark + "Transformative
-            Talent Development" tagline, so we render it as a single image
-            and don't re-typeset the wordmark below (that would duplicate). */}
+        {/* BioHubNet brand lock-up — the official PNG the user supplied
+            (public/biohubnet-logo.png). It already contains the diamond
+            mark + "BioHubNet" wordmark + "Transformative Talent
+            Development" tagline, so we render it as a single image and
+            don't re-typeset the wordmark below (that would duplicate). */}
         <header className="flex flex-col items-center text-center mb-10 sm:mb-12">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

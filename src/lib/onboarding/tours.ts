@@ -30,17 +30,9 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.10b";
+export const TOUR_VERSION = "2026.06.10a";
 
 export const TOUR_STEPS: TourStep[] = [
-  // ─── Brand · logo refresh — Jun 2026
-  {
-    id: "brand.logo-refresh",
-    title: "BioHubNet, redrawn",
-    body: "There's a new mark in the corner: six nodes joined into a hexagonal network around a diamond hub — the name drawn literally (Bio = hexagon, Hub = diamond core, Net = the connected nodes). Same teal–blue–green family as before, now flat and crisp at every size, and finally consistent everywhere: sidebar, browser tab, sign-in, and link previews.",
-    placement: "center",
-    since: "2026.06.10b",
-  },
   // ─── Video scripts · revert to last manual save — Jun 2026
   {
     id: "workspace.script-revert-manual",
