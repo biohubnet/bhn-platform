@@ -20,8 +20,10 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+import { OutreachSharePanel } from "./OutreachSharePanel";
 
 interface ColumnDef { key: string; label: string }
+interface ShareLinkInfo { id: string; token: string; label: string | null; createdAt: string }
 interface ListRow {
   membershipId: string;
   personId: string;
@@ -31,7 +33,7 @@ interface ListRow {
   createdAt: string;
   otherLists: string[];
 }
-interface ListData { id: string; name: string; description: string; columns: ColumnDef[]; rows: ListRow[] }
+interface ListData { id: string; name: string; description: string; columns: ColumnDef[]; rows: ListRow[]; shareLinks: ShareLinkInfo[] }
 interface DirPerson {
   id: string;
   values: Record<string, string>;
@@ -306,6 +308,9 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
         </div>
 
         <div className="flex items-center gap-2">
+          {!isDir && active && (
+            <OutreachSharePanel listId={active.id} listName={active.name} initialLinks={active.shareLinks} />
+          )}
           {!isDir && active && (
             renaming ? (
               <span className="inline-flex items-center gap-1">

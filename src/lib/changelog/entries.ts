@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Outreach · share lists with a link — Jun 2026
+  {
+    title: "Outreach · share a list with a link",
+    body: "Each outreach list now has a **Share** button that mints a public link — send it to anyone (a colleague without an account, a partner) and they can open just that list, give their name, add contacts, and edit details. Everything they add is credited to their name in the Added-by column, and links can be revoked any time. Guests can't delete contacts, see other lists, or change columns. Outreach also moved up a level in the sidebar — it now sits beside Marketing and File Sharing under WORKSPACE.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Workspace · Outreach contact lists — Jun 2026
   {
     title: "Workspace · Outreach contact lists",

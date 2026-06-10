@@ -5030,6 +5030,9 @@ model OutreachList {
 
   memberships OutreachMembership[]
 
+  shareTokens   OutreachShareToken[]
+  collaborators OutreachCollaborator[]
+
   @@index([order])
 }
 
@@ -5087,4 +5090,35 @@ model OutreachMembership {
 
   @@unique([listId, personId])
   @@index([listId, order])
+}
+
+/// Public share link for ONE outreach list — /outreach/<token>. Anyone with
+/// the link can view and (when canEdit) add contacts + edit cells, no
+/// account needed; they give a name first (OutreachCollaborator) so
+/// attribution holds. Mirrors ScriptShareToken.
+model OutreachShareToken {
+  id          String    @id @default(cuid())
+  listId      String
+  list        OutreachList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  token       String    @unique
+  label       String?
+  canEdit     Boolean   @default(true)
+  expiresAt   DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([listId, createdAt])
+}
+
+/// Named anonymous editor on a shared outreach list. The row id lives in an
+/// httpOnly per-list cookie; contacts they add carry their name.
+model OutreachCollaborator {
+  id         String   @id @default(cuid())
+  listId     String
+  list       OutreachList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  name       String
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@index([listId, lastSeenAt])
 }

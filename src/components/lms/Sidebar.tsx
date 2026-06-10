@@ -287,15 +287,16 @@ const workspaceVideoItem: NavItem = {
     "Plan promo videos and draft their scripts. Scripts get shareable links for collaborative editing — contributors don't need an account.",
 };
 
-// WORKSPACE → Marketing → Outreach. Contact lists (cross-promotion partners,
-// EXPERIENCE program) for promoting BHN programs.
+// WORKSPACE → Outreach. Sibling of Marketing and File Sharing. Central
+// contact directory + lists (cross-promotion partners, EXPERIENCE program)
+// for promoting BHN programs.
 const workspaceOutreachItem: NavItem = {
   label: "Outreach",
-  href: "/admin/workspace/marketing/outreach",
+  href: "/admin/workspace/outreach",
   icon: BookUser,
   minRole: "admin",
   description:
-    "Partner contacts for cross-promoting BHN programs. Editable lists + columns; every contact records who added it.",
+    "Partner contacts for cross-promoting BHN programs. One directory, many lists; editable columns; every contact records who added it.",
 };
 
 // WORKSPACE → File Sharing. Sibling of Marketing. SKELETON nav stub —
@@ -1634,6 +1635,8 @@ export function Sidebar({
           >
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Marketing">
               <NavLink item={workspaceVideoItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+            </AdminSubgroup>
+            <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Outreach">
               <NavLink item={workspaceOutreachItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
             </AdminSubgroup>
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.operations} label="File Sharing">
