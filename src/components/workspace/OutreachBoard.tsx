@@ -17,10 +17,12 @@ import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Loader2, Pencil, Check, X,
   Columns3, UserRound, ArrowLeft, ArrowRight, Link2, BookUser, ListPlus, UserMinus,
+  MessagesSquare,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import { OutreachSharePanel } from "./OutreachSharePanel";
+import { TouchLogModal } from "./TouchLogModal";
 
 interface ColumnDef { key: string; label: string }
 interface ShareLinkInfo { id: string; token: string; label: string | null; createdAt: string }
@@ -32,6 +34,8 @@ interface ListRow {
   addedByName: string;
   createdAt: string;
   otherLists: string[];
+  touchCount: number;
+  lastTouchAt: string | null;
 }
 interface ListData { id: string; name: string; description: string; columns: ColumnDef[]; rows: ListRow[]; shareLinks: ShareLinkInfo[] }
 interface DirPerson {
@@ -40,6 +44,8 @@ interface DirPerson {
   addedByName: string;
   createdAt: string;
   lists: { listId: string; name: string }[];
+  touchCount: number;
+  lastTouchAt: string | null;
 }
 export interface OutreachData { personColumns: ColumnDef[]; lists: ListData[]; directory: DirPerson[] }
 
@@ -56,6 +62,10 @@ const fmtDate = (iso: string) => {
   try { return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); }
   catch { return iso; }
 };
+const fmtShort = (iso: string) => {
+  try { return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+  catch { return ""; }
+};
 
 export function OutreachBoard({ data }: { data: OutreachData }) {
   const router = useRouter();
@@ -69,6 +79,8 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
   const [colsOpen, setColsOpen] = useState(false);
   const [draftCols, setDraftCols] = useState<ColumnDef[]>([]);
   const [newColLabel, setNewColLabel] = useState("");
+  // Reach-out history modal target.
+  const [touchFor, setTouchFor] = useState<{ personId: string; name: string; listId: string | null } | null>(null);
 
   useEffect(() => {
     setBoard(data);
@@ -265,6 +277,22 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
     );
   };
 
+  /** Reach-out history chip — count + last contact date; opens the log. */
+  const TouchChip = ({ count, last, onClick }: { count: number; last: string | null; onClick: () => void }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      title={count > 0 ? `${count} reach-out${count === 1 ? "" : "s"} — open history` : "No reach-outs yet — log the first"}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold transition-colors",
+        count > 0 ? "bg-brand-50 text-brand-700 hover:bg-brand-100" : "bg-elevated text-subtle hover:text-fg",
+      )}
+    >
+      <MessagesSquare size={10} />
+      {count > 0 && last ? `${count} · ${fmtShort(last)}` : "Log"}
+    </button>
+  );
+
   const tab = (id: string, label: string, count: number, icon?: React.ReactNode) => (
     <button
       key={id}
@@ -417,6 +445,7 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
                   </th>
                 ))}
                 <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">On lists</th>
+                <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Reach-outs</th>
                 <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Added by</th>
                 <th className="w-24 px-3 py-2.5" />
               </tr>
@@ -443,6 +472,13 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
                       {p.lists.length === 0 && <span className="text-[11px] text-subtle">—</span>}
                     </span>
                   </td>
+                  <td className="whitespace-nowrap px-3 py-2 align-middle">
+                    <TouchChip
+                      count={p.touchCount}
+                      last={p.lastTouchAt}
+                      onClick={() => setTouchFor({ personId: p.id, name: p.values["name"] || p.values["org"] || "Contact", listId: null })}
+                    />
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2.5 align-middle">
                     <span className="inline-flex items-center gap-1.5 text-[11px] text-muted" title={`Added ${fmtDate(p.createdAt)}`}>
                       <UserRound size={11} className="shrink-0" /> {p.addedByName}
@@ -457,7 +493,7 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
                 </tr>
               ))}
               {board.directory.length === 0 && (
-                <tr><td colSpan={board.personColumns.length + 3} className="px-4 py-10 text-center text-sm text-muted">Nobody in the directory yet — hit <strong>Add contact</strong>.</td></tr>
+                <tr><td colSpan={board.personColumns.length + 4} className="px-4 py-10 text-center text-sm text-muted">Nobody in the directory yet — hit <strong>Add contact</strong>.</td></tr>
               )}
             </tbody>
           </table>
@@ -480,6 +516,7 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
                     {c.label}
                   </th>
                 ))}
+                <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Reach-outs</th>
                 <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Added by</th>
                 <th className="w-32 px-3 py-2.5" />
               </tr>
@@ -509,6 +546,13 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
                       />
                     </td>
                   ))}
+                  <td className="whitespace-nowrap px-3 py-2 align-middle">
+                    <TouchChip
+                      count={row.touchCount}
+                      last={row.lastTouchAt}
+                      onClick={() => setTouchFor({ personId: row.personId, name: row.personValues["name"] || row.personValues["org"] || "Contact", listId: active.id })}
+                    />
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2.5 align-middle">
                     <span className="block">
                       <span className="inline-flex items-center gap-1.5 text-[11px] text-muted" title={`Added ${fmtDate(row.createdAt)}`}>
@@ -531,7 +575,7 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
               ))}
               {active.rows.length === 0 && (
                 <tr>
-                  <td colSpan={board.personColumns.length + active.columns.length + 2} className="px-4 py-10 text-center text-sm text-muted">
+                  <td colSpan={board.personColumns.length + active.columns.length + 3} className="px-4 py-10 text-center text-sm text-muted">
                     No contacts on this list yet — <strong>Add contact</strong> creates a new person, or use the Directory tab to add an existing one.
                   </td>
                 </tr>
@@ -544,8 +588,18 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
       <p className="text-[11px] text-muted">
         <Link2 size={9} className="mr-1 inline text-brand-600" />
         marked columns are shared across all lists — edit once, updates everywhere. Cells save when you click away.
-        Hover a row for actions; “Added by” is recorded automatically.
+        Hover a row for actions; “Added by” is recorded automatically. The Reach-outs chip opens a
+        contact&apos;s history — when, what, and who initiated each touch.
       </p>
+
+      {touchFor && (
+        <TouchLogModal
+          personId={touchFor.personId}
+          personName={touchFor.name}
+          listId={touchFor.listId}
+          onClose={() => setTouchFor(null)}
+        />
+      )}
     </div>
   );
 }

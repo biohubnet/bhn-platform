@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Outreach · reach-out history — Jun 2026
+  {
+    title: "Outreach · reach-out history per contact",
+    body: "Every outreach contact now carries a reach-out log. A new **Reach-outs** chip on each row (every list + the Directory) shows how many touches a contact has had and when the last one was; click it to see the full history — what it was (email, call, meeting, LinkedIn, event), when, **who initiated it**, which list it was for, and a note — and to log a new one in two clicks. History attaches to the person, so it follows them across lists; no more double-contacting someone another teammate already reached.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Outreach · EQUIP Partners list — Jun 2026
   {
     title: "Outreach · EQUIP Partners list imported",

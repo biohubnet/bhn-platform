@@ -5032,6 +5032,7 @@ model OutreachList {
 
   shareTokens   OutreachShareToken[]
   collaborators OutreachCollaborator[]
+  touches       OutreachTouch[]
 
   @@index([order])
 }
@@ -5073,6 +5074,7 @@ model OutreachPerson {
   updatedAt   DateTime @updatedAt
 
   memberships OutreachMembership[]
+  touches     OutreachTouch[]
 }
 
 model OutreachMembership {
@@ -5121,4 +5123,25 @@ model OutreachCollaborator {
   lastSeenAt  DateTime @default(now())
 
   @@index([listId, lastSeenAt])
+}
+
+/// One logged reach-out to a directory person — when it happened, what it
+/// was (kind + note), and who initiated it. Optionally tied to the list it
+/// was made for; survives list deletion (SetNull) so the person's history
+/// stays complete.
+model OutreachTouch {
+  id         String   @id @default(cuid())
+  personId   String
+  person     OutreachPerson @relation(fields: [personId], references: [id], onDelete: Cascade)
+  listId     String?
+  list       OutreachList?  @relation(fields: [listId], references: [id], onDelete: SetNull)
+  /// email | call | meeting | linkedin | event | other
+  kind       String   @default("email")
+  note       String   @default("")
+  happenedAt DateTime @default(now())
+  byId       String?
+  byName     String   @default("BHN team")
+  createdAt  DateTime @default(now())
+
+  @@index([personId, happenedAt])
 }

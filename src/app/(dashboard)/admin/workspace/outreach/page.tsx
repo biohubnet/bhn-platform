@@ -38,7 +38,11 @@ export default async function OutreachPage() {
           orderBy: { order: "asc" },
           include: {
             person: {
-              include: { memberships: { select: { listId: true, list: { select: { name: true } } } } },
+              include: {
+                memberships: { select: { listId: true, list: { select: { name: true } } } },
+                touches: { orderBy: { happenedAt: "desc" }, take: 1, select: { happenedAt: true } },
+                _count: { select: { touches: true } },
+              },
             },
           },
         },
@@ -46,7 +50,11 @@ export default async function OutreachPage() {
     }),
     prisma.outreachPerson.findMany({
       orderBy: { createdAt: "asc" },
-      include: { memberships: { select: { listId: true, list: { select: { name: true } } } } },
+      include: {
+        memberships: { select: { listId: true, list: { select: { name: true } } } },
+        touches: { orderBy: { happenedAt: "desc" }, take: 1, select: { happenedAt: true } },
+        _count: { select: { touches: true } },
+      },
     }),
   ]);
 
@@ -68,6 +76,8 @@ export default async function OutreachPage() {
         addedByName: m.addedByName,
         createdAt: m.createdAt.toISOString(),
         otherLists: m.person.memberships.filter((x) => x.listId !== l.id).map((x) => x.list.name),
+        touchCount: m.person._count.touches,
+        lastTouchAt: m.person.touches[0]?.happenedAt.toISOString() ?? null,
       })),
     })),
     directory: people.map((p) => ({
@@ -76,6 +86,8 @@ export default async function OutreachPage() {
       addedByName: p.addedByName,
       createdAt: p.createdAt.toISOString(),
       lists: p.memberships.map((m) => ({ listId: m.listId, name: m.list.name })),
+      touchCount: p._count.touches,
+      lastTouchAt: p.touches[0]?.happenedAt.toISOString() ?? null,
     })),
   };
 
