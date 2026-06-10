@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Workspace · Outreach contact lists — Jun 2026
+  {
+    title: "Workspace · Outreach contact lists",
+    body: "Marketing has a new **Outreach** tool next to Video Production: contact lists of partner organisations we can reach out to for cross-promoting BHN programs. It starts pre-loaded with the team's Cross-promotion Partners list (attributions preserved — Roshni's additions are credited) plus a separate, empty EXPERIENCE Program list. Edit cells in place, add/reorder/remove contacts, move a contact between lists, and reshape each list's columns (add, rename, remove, reorder). Every new contact records who added it and when.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Video scripts · share with external collaborators — Jun 2026
   {
     title: "Video scripts · share with people outside the platform",

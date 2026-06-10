@@ -5007,3 +5007,44 @@ model ScriptPresence {
   @@unique([scriptId, editorKey])
   @@index([scriptId, lastSeenAt])
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// WORKSPACE → Marketing → Outreach. Contact lists for cross-promotion of
+// BHN programs. Lists carry their own editable column definitions (admins
+// can add/rename/remove/reorder columns); contacts store cell values as
+// JSON keyed by column key, plus who added them (attribution).
+// ─────────────────────────────────────────────────────────────────────────
+
+model OutreachList {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  /// Ordered column definitions: [{ key: string, label: string }]
+  columns     Json
+  order       Int      @default(0)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contacts OutreachContact[]
+
+  @@index([order])
+}
+
+model OutreachContact {
+  id          String   @id @default(cuid())
+  listId      String
+  list        OutreachList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  /// Cell values keyed by the list's column keys.
+  values      Json
+  order       Int      @default(0)
+  /// Attribution — who added this contact. Plain User.id (no FK) + a
+  /// denormalised display name so seeded/legacy rows can carry names
+  /// like "Roshni" without a platform account.
+  addedById   String?
+  addedByName String   @default("BHN team")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([listId, order])
+}
