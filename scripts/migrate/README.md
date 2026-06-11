@@ -16,6 +16,18 @@ deployment and every legacy URL keeps resolving — `lib/r2.ts` recognises it.
 So a host change no longer needs a DB rewrite. (If you instead keep the same
 custom domain by re-pointing it at the new bucket, you don't even need this.)
 
+## This deployment's confirmed situation
+
+- **R2 host = the `*.r2.dev` managed subdomain**
+  (`https://pub-53e04deae8a14a14b1ca2a2fcfee91f9.r2.dev`). That subdomain is
+  bound to this bucket+account and **cannot move** — the new account's bucket
+  gets a different `pub-<hash>.r2.dev`. So the host WILL change → at cutover set
+  `R2_LEGACY_PUBLIC_URLS="https://pub-53e04deae8a14a14b1ca2a2fcfee91f9.r2.dev"`
+  on the new deployment. (Optional: attach a custom domain to the new bucket to
+  escape r2.dev's prod rate limits and make future moves a no-op.)
+- **Downtime at cutover is acceptable** → single pass below; no delta syncs or
+  freeze-window catch-up needed. Take the old app offline, copy, flip, verify.
+
 ## 0. Provision (you create the accounts)
 
 New Vercel team, new Neon project (same Postgres major version — check the old
