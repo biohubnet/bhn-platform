@@ -139,11 +139,11 @@ export default async function AdminEquipPage({
           className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-700"
         >
           <Mail size={15} />
-          Preview applicant emails
+          <span className="font-extrabold tracking-tight">Email templates</span>
           <ArrowRight size={15} />
         </Link>
         <span className="text-[12px] text-muted">
-          See every email applicants get — VentureConnect &amp; VentureLift, all lifecycle steps.
+          View, edit, and AI-rewrite every email applicants get — VentureConnect &amp; VentureLift, all lifecycle steps.
         </span>
       </div>
 
