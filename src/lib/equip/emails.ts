@@ -1,21 +1,28 @@
 /**
  * EQUIP application emails — the full lifecycle, for both streams
- * (VentureConnect + VentureLift).
+ * (VentureConnect + VentureLift), with ADMIN-EDITABLE copy.
  *
- * Each builder returns { subject, html, text }. HTML uses an email-safe,
- * table-based, inline-styled shell (no external CSS — clients strip it).
- * Stream-aware copy is derived from STREAM_META so VC ($5k, single-stage,
- * up to 3 apps) and VL ($25k, two-stage) read correctly from one template.
+ * How it works
+ *   • Copy lives as EditableFields (subject, heading, paragraphs, CTA label,
+ *     footnote) per (template id, stream). Defaults are in TEMPLATE_DEFAULTS;
+ *     admin overrides persist in PlatformSetting "equipEmailTemplateOverrides"
+ *     and win over defaults field-by-template.
+ *   • Fields are plain text with {{placeholders}} (resolved per applicant,
+ *     values HTML-escaped) and **bold** markers. The same strings render the
+ *     HTML (branded, email-safe shell) and the plain-text part, so previews,
+ *     edits, and live sends can never drift apart.
+ *   • Reviewer / disbursement notes are appended automatically as a quoted
+ *     callout when present — they're applicant-specific, not template copy.
+ *   • CTA URLs are fixed per template (tracker or /equip) — labels are
+ *     editable, destinations are not (no broken/phishy links from a typo).
  *
  * Wiring:
  *   • submission confirmation  → /api/equip/applications/[id]/submit
- *   • every decision email     → /api/admin/equip/applications/[id] (PATCH),
- *     via buildEquipStatusEmail(targetStatus, ctx)
- * Reviewers can preview every template at /admin/equip/email-templates.
- *
- * All sends are best-effort behind mailConfigured(); a mail failure never
- * blocks the underlying status change.
+ *   • decision emails          → /api/admin/equip/applications/[id] (PATCH)
+ *   • editing + AI assist      → /api/admin/equip/email-templates/*
+ *   • preview gallery          → /admin/equip/email-templates
  */
+import { prisma } from "@/lib/prisma";
 import { STREAM_META, type EquipStream, type EquipStatus, type ApplicationStage } from "@/lib/equip/types";
 
 export interface Built {
@@ -39,6 +46,27 @@ export interface EquipEmailCtx {
   milestoneTitle?: string | null;
   dueLabel?: string | null;
 }
+
+/** The editable surface of one template variant. Plain text +
+ *  {{placeholders}} + **bold** markers. */
+export interface EditableFields {
+  subject: string;
+  heading: string;
+  paras: string[];
+  ctaLabel?: string;
+  footnote?: string;
+}
+
+export type EquipTemplateId =
+  | "submission"
+  | "under_review"
+  | "pre_screen_passed"
+  | "pre_screen_no"
+  | "approved"
+  | "not_selected"
+  | "funded"
+  | "deadline"
+  | "milestone";
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -93,7 +121,7 @@ function noteBlockHtml(note?: string | null): string {
 function shell(opts: {
   preheader: string;
   heading: string;
-  paras: string[]; // each a paragraph of (already-escaped or trusted) HTML
+  paras: string[]; // paragraph HTML (escaped + bold-converted)
   extraHtml?: string; // e.g. note callout rows (full <tr>…</tr> markup)
   cta?: { label: string; url: string };
   footnote?: string;
@@ -133,7 +161,7 @@ function shell(opts: {
       <!-- Card -->
       <tr><td style="background:#ffffff;border:1px solid ${LINE};border-radius:16px;padding:32px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-          <tr><td style="padding:0 0 16px;font-size:21px;font-weight:800;line-height:1.3;color:${INK};">${esc(heading)}</td></tr>
+          <tr><td style="padding:0 0 16px;font-size:21px;font-weight:800;line-height:1.3;color:${INK};">${heading}</td></tr>
           ${paraHtml}
           ${extraHtml}
           ${ctaHtml}
@@ -168,347 +196,396 @@ function textVersion(opts: {
   }
   if (ctaLabel && ctaUrl) parts.push("", `${ctaLabel}: ${ctaUrl}`);
   if (footnote) parts.push("", footnote);
-  parts.push(
-    "",
-    "—",
-    "BioHubNet · EQUIP",
-    "Questions? info@biohubnet.ca",
-  );
+  parts.push("", "—", "BioHubNet · EQUIP", "Questions? info@biohubnet.ca");
   return parts.join("\n");
 }
 
-const meta = (stream: EquipStream) => STREAM_META[stream];
+// ── Placeholders ─────────────────────────────────────────────────────────
 
-// ── Templates ────────────────────────────────────────────────────────────
-
-/** 1. Submission received (confirmation). VL stage-aware. */
-export function equipSubmissionReceived(ctx: EquipEmailCtx): Built {
-  const m = meta(ctx.stream);
-  const isVlPreScreen = ctx.stream === "venture_lift" && ctx.stage !== "full_app";
-  const isVlFull = ctx.stream === "venture_lift" && ctx.stage === "full_app";
-  const what = isVlPreScreen
-    ? `${m.name} Stage 1 (pre-screening) application`
-    : isVlFull
+/** Resolve every supported {{placeholder}} for one applicant context.
+ *  Values are RAW text here; the renderer escapes for HTML. */
+export function resolvePlaceholders(ctx: EquipEmailCtx): Record<string, string> {
+  const m = STREAM_META[ctx.stream];
+  const isVl = ctx.stream === "venture_lift";
+  const isVlFull = isVl && ctx.stage === "full_app";
+  const submissionKind = isVl
+    ? isVlFull
       ? `${m.name} Stage 2 (full) application`
-      : `${m.name} application`;
-  const next = isVlPreScreen
-    ? "Our committee will review your pre-screening submission. If it passes, you'll get an email unlocking the full Stage-2 application."
-    : ctx.stream === "venture_lift"
+      : `${m.name} Stage 1 (pre-screening) application`
+    : `${m.name} application`;
+  const nextSteps = isVl
+    ? isVlFull
       ? "Your full application now goes to the review committee for evaluation against the six VentureLift criteria."
-      : "Your application now goes to the review committee. VentureConnect runs on a monthly cycle, so you'll hear back after the current window closes.";
-  const amount = formatCad(ctx.requestedAmount);
-  const subject = `We've received your ${m.name} application`;
-  const paras = [
-    `Hi ${esc(firstName(ctx.applicantName))},`,
-    `Thanks — we've received your <strong>${esc(what)}</strong>${amount ? ` requesting <strong>${esc(amount)}</strong>` : ""}. It's now in the queue.`,
-    esc(next),
-    `You can track its status any time from your applications dashboard.`,
-  ];
+      : "Our committee will review your pre-screening submission. If it passes, you'll get an email unlocking the full Stage-2 application."
+    : "Your application now goes to the review committee. VentureConnect runs on a monthly cycle, so you'll hear back after the current window closes.";
+  const requested = formatCad(ctx.requestedAmount);
+  const approved = formatCad(ctx.approvedAmount ?? ctx.requestedAmount);
+  const funded = formatCad(ctx.approvedAmount);
   return {
-    subject,
-    html: shell({
-      preheader: `Your ${m.name} application is in the queue.`,
-      heading: "Application received",
-      paras,
-      cta: { label: "Track my application", url: trackerUrl() },
-      footnote: "No action is needed right now — we'll email you at each step.",
-    }),
-    text: textVersion({
-      heading: "Application received",
-      lines: [
-        `Hi ${firstName(ctx.applicantName)},`,
-        `Thanks — we've received your ${what}${amount ? ` requesting ${amount}` : ""}. It's now in the queue.`,
-        next,
-        "Track its status any time from your applications dashboard.",
-      ],
-      ctaLabel: "Track my application",
-      ctaUrl: trackerUrl(),
-      footnote: "No action is needed right now — we'll email you at each step.",
-    }),
+    firstName: firstName(ctx.applicantName),
+    fullName: (ctx.applicantName ?? "").trim() || "there",
+    streamName: m.name,
+    cadence: m.cadence,
+    submissionKind,
+    nextSteps,
+    requestedAmount: requested,
+    approvedAmount: approved,
+    requestedAmountClause: requested ? ` requesting **${requested}**` : "",
+    approvedAmountClause: approved ? ` for **${approved}**` : "",
+    fundedAmountClause: funded ? ` of **${funded}**` : "",
+    deadlineLabel: ctx.deadlineLabel ?? "soon",
+    milestoneTitle: ctx.milestoneTitle ?? "a grant milestone",
+    dueLabel: ctx.dueLabel ?? "soon",
   };
 }
 
-/** 2. Under review (reviewer claimed it). */
-export function equipUnderReview(ctx: EquipEmailCtx): Built {
-  const m = meta(ctx.stream);
-  return {
-    subject: `Your ${m.name} application is under review`,
-    html: shell({
-      preheader: `A reviewer has started evaluating your ${m.name} application.`,
-      heading: "Your application is under review",
-      paras: [
-        `Hi ${esc(firstName(ctx.applicantName))},`,
-        `Good news — a member of the EQUIP review committee has started evaluating your <strong>${esc(m.name)}</strong> application.`,
-        `There's nothing you need to do. We'll email you as soon as a decision is made.`,
-      ],
-      cta: { label: "View status", url: trackerUrl() },
-    }),
-    text: textVersion({
-      heading: "Your application is under review",
-      lines: [
-        `Hi ${firstName(ctx.applicantName)},`,
-        `A member of the EQUIP review committee has started evaluating your ${m.name} application.`,
-        "There's nothing you need to do — we'll email you as soon as a decision is made.",
-      ],
-      ctaLabel: "View status",
-      ctaUrl: trackerUrl(),
-    }),
-  };
-}
+/** Placeholder docs shown in the editor UI. */
+export const PLACEHOLDER_DOCS: { token: string; desc: string }[] = [
+  { token: "{{firstName}}", desc: "Applicant's first name" },
+  { token: "{{fullName}}", desc: "Applicant's full name" },
+  { token: "{{streamName}}", desc: "VentureConnect / VentureLift" },
+  { token: "{{cadence}}", desc: "Stream cadence (monthly / quarterly)" },
+  { token: "{{submissionKind}}", desc: "What was submitted (stage-aware for VL)" },
+  { token: "{{nextSteps}}", desc: "Stage-aware what-happens-next sentence" },
+  { token: "{{requestedAmount}}", desc: "Requested amount, e.g. $4,200 CAD" },
+  { token: "{{approvedAmount}}", desc: "Approved amount, e.g. $22,000 CAD" },
+  { token: "{{requestedAmountClause}}", desc: "“ requesting $X CAD” or empty" },
+  { token: "{{approvedAmountClause}}", desc: "“ for $X CAD” or empty" },
+  { token: "{{fundedAmountClause}}", desc: "“ of $X CAD” or empty" },
+  { token: "{{deadlineLabel}}", desc: "Deadline date label (reminder emails)" },
+  { token: "{{milestoneTitle}}", desc: "Milestone title (reminder emails)" },
+  { token: "{{dueLabel}}", desc: "Milestone due label (reminder emails)" },
+];
 
-/** 3. VL pre-screen passed → Stage 2 unlocked. */
-export function equipPreScreenPassed(ctx: EquipEmailCtx): Built {
-  return {
-    subject: "Your VentureLift pre-screening passed — Stage 2 is open",
-    html: shell({
-      preheader: "You've passed pre-screening. The full VentureLift application is now open.",
+// ── Defaults (the shipped copy, now data) ────────────────────────────────
+
+type DefaultsMap = Record<EquipTemplateId, Partial<Record<EquipStream, EditableFields>>>;
+
+const SUBMISSION_COMMON: Omit<EditableFields, "paras"> & { paras: string[] } = {
+  subject: "We've received your {{streamName}} application",
+  heading: "Application received",
+  paras: [
+    "Hi {{firstName}},",
+    "Thanks — we've received your **{{submissionKind}}**{{requestedAmountClause}}. It's now in the queue.",
+    "{{nextSteps}}",
+    "You can track its status any time from your applications dashboard.",
+  ],
+  ctaLabel: "Track my application",
+  footnote: "No action is needed right now — we'll email you at each step.",
+};
+
+const UNDER_REVIEW_COMMON: EditableFields = {
+  subject: "Your {{streamName}} application is under review",
+  heading: "Your application is under review",
+  paras: [
+    "Hi {{firstName}},",
+    "Good news — a member of the EQUIP review committee has started evaluating your **{{streamName}}** application.",
+    "There's nothing you need to do. We'll email you as soon as a decision is made.",
+  ],
+  ctaLabel: "View status",
+};
+
+const APPROVED_COMMON: EditableFields = {
+  subject: "Your {{streamName}} application has been approved",
+  heading: "Your application is approved 🎉",
+  paras: [
+    "Hi {{firstName}},",
+    "Congratulations — your **{{streamName}}** application has been **approved**{{approvedAmountClause}}.",
+    "Next, our team prepares the funding disbursement. You'll get a separate email once funds are released, along with the milestones tied to your grant.",
+  ],
+  ctaLabel: "View my approval",
+};
+
+const FUNDED_COMMON: EditableFields = {
+  subject: "Your {{streamName}} grant has been funded",
+  heading: "Your grant is funded",
+  paras: [
+    "Hi {{firstName}},",
+    "Your **{{streamName}}** grant{{fundedAmountClause}} has been **funded**. 🎉",
+    "Your grant milestones are now live on your dashboard — please keep them up to date as you progress. Reporting on outcomes is part of the program and helps us support the next cohort.",
+  ],
+  ctaLabel: "View my milestones",
+};
+
+const DEADLINE_COMMON: EditableFields = {
+  subject: "Reminder: {{streamName}} deadline is {{deadlineLabel}}",
+  heading: "{{streamName}} deadline approaching",
+  paras: [
+    "Hi {{firstName}},",
+    "A quick reminder that the current **{{streamName}}** funding window closes **{{deadlineLabel}}**.",
+    "If you've started an application, now's the time to finish and submit it — applications must be submitted before the window closes to be considered this cycle.",
+  ],
+  ctaLabel: "Finish my application",
+};
+
+const MILESTONE_COMMON: EditableFields = {
+  subject: "Milestone due {{dueLabel}}: {{milestoneTitle}}",
+  heading: "A grant milestone is coming up",
+  paras: [
+    "Hi {{firstName}},",
+    "Your **{{streamName}}** grant milestone — **{{milestoneTitle}}** — is due **{{dueLabel}}**.",
+    "Please update its status on your dashboard. Keeping milestones current is part of the funding agreement and helps us report program outcomes.",
+  ],
+  ctaLabel: "Update my milestones",
+};
+
+export const TEMPLATE_DEFAULTS: DefaultsMap = {
+  submission: { venture_connect: SUBMISSION_COMMON, venture_lift: SUBMISSION_COMMON },
+  under_review: { venture_connect: UNDER_REVIEW_COMMON, venture_lift: UNDER_REVIEW_COMMON },
+  pre_screen_passed: {
+    venture_lift: {
+      subject: "Your VentureLift pre-screening passed — Stage 2 is open",
       heading: "You're through to Stage 2",
       paras: [
-        `Hi ${esc(firstName(ctx.applicantName))},`,
-        `Congratulations — your <strong>VentureLift</strong> pre-screening passed. The full Stage-2 application is now unlocked.`,
-        `Stage 2 covers Innovation, Market Potential, Project Plan, and Commercialization Potential &amp; Impact, and asks for your CV and IP supporting documents (a filed provisional patent is the minimum). Funding is up to <strong>$25,000 CAD</strong>.`,
+        "Hi {{firstName}},",
+        "Congratulations — your **VentureLift** pre-screening passed. The full Stage-2 application is now unlocked.",
+        "Stage 2 covers Innovation, Market Potential, Project Plan, and Commercialization Potential & Impact, and asks for your CV and IP supporting documents (a filed provisional patent is the minimum). Funding is up to **$25,000 CAD**.",
       ],
-      extraHtml: noteBlockHtml(ctx.reviewerNote),
-      cta: { label: "Open my Stage-2 application", url: trackerUrl() },
-      footnote: "Tip: prepare Appendix 3 (IP documents) early — it's the hard eligibility gate for approval.",
-    }),
-    text: textVersion({
-      heading: "You're through to Stage 2",
-      lines: [
-        `Hi ${firstName(ctx.applicantName)},`,
-        "Congratulations — your VentureLift pre-screening passed. The full Stage-2 application is now unlocked.",
-        "Stage 2 covers Innovation, Market Potential, Project Plan, and Commercialization Potential & Impact, and asks for your CV and IP supporting documents. Funding is up to $25,000 CAD.",
-      ],
-      note: ctx.reviewerNote,
       ctaLabel: "Open my Stage-2 application",
-      ctaUrl: trackerUrl(),
       footnote: "Tip: prepare Appendix 3 (IP documents) early — it's the hard eligibility gate for approval.",
-    }),
-  };
-}
-
-/** 4. VL pre-screen not selected. */
-export function equipPreScreenNotSelected(ctx: EquipEmailCtx): Built {
-  return {
-    subject: "Update on your VentureLift pre-screening",
-    html: shell({
-      preheader: "A decision on your VentureLift pre-screening.",
+    },
+  },
+  pre_screen_no: {
+    venture_lift: {
+      subject: "Update on your VentureLift pre-screening",
       heading: "Update on your pre-screening",
       paras: [
-        `Hi ${esc(firstName(ctx.applicantName))},`,
-        `Thank you for your interest in <strong>VentureLift</strong>. After review, your pre-screening application wasn't selected to advance to Stage 2 this cycle.`,
-        `This isn't a reflection of your venture's potential — pre-screening is competitive and tightly scoped to the program's eligibility criteria. You're welcome to apply again in a future cycle.`,
+        "Hi {{firstName}},",
+        "Thank you for your interest in **VentureLift**. After review, your pre-screening application wasn't selected to advance to Stage 2 this cycle.",
+        "This isn't a reflection of your venture's potential — pre-screening is competitive and tightly scoped to the program's eligibility criteria. You're welcome to apply again in a future cycle.",
       ],
-      extraHtml: noteBlockHtml(ctx.reviewerNote),
-      cta: { label: "Explore EQUIP streams", url: `${baseUrl()}/equip` },
-    }),
-    text: textVersion({
-      heading: "Update on your pre-screening",
-      lines: [
-        `Hi ${firstName(ctx.applicantName)},`,
-        "Thank you for your interest in VentureLift. After review, your pre-screening application wasn't selected to advance to Stage 2 this cycle.",
-        "This isn't a reflection of your venture's potential — you're welcome to apply again in a future cycle.",
-      ],
-      note: ctx.reviewerNote,
       ctaLabel: "Explore EQUIP streams",
-      ctaUrl: `${baseUrl()}/equip`,
-    }),
-  };
-}
-
-/** 5. Approved (with amount). Both streams. */
-export function equipApproved(ctx: EquipEmailCtx): Built {
-  const m = meta(ctx.stream);
-  const amount = formatCad(ctx.approvedAmount ?? ctx.requestedAmount);
-  return {
-    subject: `Your ${m.name} application has been approved`,
-    html: shell({
-      preheader: `Approved${amount ? ` for ${amount}` : ""}. Funding disbursement comes next.`,
-      heading: "Your application is approved 🎉",
-      paras: [
-        `Hi ${esc(firstName(ctx.applicantName))},`,
-        `Congratulations — your <strong>${esc(m.name)}</strong> application has been <strong>approved</strong>${amount ? ` for <strong>${esc(amount)}</strong>` : ""}.`,
-        `Next, our team prepares the funding disbursement. You'll get a separate email once funds are released, along with the milestones tied to your grant.`,
-      ],
-      extraHtml: noteBlockHtml(ctx.reviewerNote),
-      cta: { label: "View my approval", url: trackerUrl() },
-    }),
-    text: textVersion({
-      heading: "Your application is approved",
-      lines: [
-        `Hi ${firstName(ctx.applicantName)},`,
-        `Congratulations — your ${m.name} application has been approved${amount ? ` for ${amount}` : ""}.`,
-        "Next, our team prepares the funding disbursement. You'll get a separate email once funds are released, along with your grant milestones.",
-      ],
-      note: ctx.reviewerNote,
-      ctaLabel: "View my approval",
-      ctaUrl: trackerUrl(),
-    }),
-  };
-}
-
-/** 6. Not selected (rejected). Both streams. */
-export function equipNotSelected(ctx: EquipEmailCtx): Built {
-  const m = meta(ctx.stream);
-  const again =
-    ctx.stream === "venture_connect"
-      ? "VentureConnect runs monthly, and a company may submit up to three separate applications — you're welcome to apply again for a future event."
-      : "You're welcome to apply again in a future VentureLift cycle.";
-  return {
-    subject: `Update on your ${m.name} application`,
-    html: shell({
-      preheader: `A decision on your ${m.name} application.`,
+    },
+  },
+  approved: { venture_connect: APPROVED_COMMON, venture_lift: APPROVED_COMMON },
+  not_selected: {
+    venture_connect: {
+      subject: "Update on your {{streamName}} application",
       heading: "Update on your application",
       paras: [
-        `Hi ${esc(firstName(ctx.applicantName))},`,
-        `Thank you for applying to <strong>${esc(m.name)}</strong>. After careful review, your application wasn't selected for funding this round.`,
-        `Decisions are competitive and weighed against the program's criteria and available budget. ${esc(again)}`,
+        "Hi {{firstName}},",
+        "Thank you for applying to **{{streamName}}**. After careful review, your application wasn't selected for funding this round.",
+        "Decisions are competitive and weighed against the program's criteria and available budget. VentureConnect runs monthly, and a company may submit up to three separate applications — you're welcome to apply again for a future event.",
       ],
-      extraHtml: noteBlockHtml(ctx.reviewerNote),
-      cta: { label: "Explore EQUIP streams", url: `${baseUrl()}/equip` },
-    }),
-    text: textVersion({
-      heading: "Update on your application",
-      lines: [
-        `Hi ${firstName(ctx.applicantName)},`,
-        `Thank you for applying to ${m.name}. After careful review, your application wasn't selected for funding this round.`,
-        `Decisions are competitive and weighed against the program's criteria and available budget. ${again}`,
-      ],
-      note: ctx.reviewerNote,
       ctaLabel: "Explore EQUIP streams",
-      ctaUrl: `${baseUrl()}/equip`,
-    }),
-  };
-}
-
-/** 7. Funded (disbursed; milestones begin). Both streams. */
-export function equipFunded(ctx: EquipEmailCtx): Built {
-  const m = meta(ctx.stream);
-  const amount = formatCad(ctx.approvedAmount);
-  return {
-    subject: `Your ${m.name} grant has been funded`,
-    html: shell({
-      preheader: `Your ${m.name} funds are on the way${amount ? ` (${amount})` : ""}.`,
-      heading: "Your grant is funded",
+    },
+    venture_lift: {
+      subject: "Update on your {{streamName}} application",
+      heading: "Update on your application",
       paras: [
-        `Hi ${esc(firstName(ctx.applicantName))},`,
-        `Your <strong>${esc(m.name)}</strong> grant${amount ? ` of <strong>${esc(amount)}</strong>` : ""} has been <strong>funded</strong>. 🎉`,
-        `Your grant milestones are now live on your dashboard — please keep them up to date as you progress. Reporting on outcomes is part of the program and helps us support the next cohort.`,
+        "Hi {{firstName}},",
+        "Thank you for applying to **{{streamName}}**. After careful review, your application wasn't selected for funding this round.",
+        "Decisions are competitive and weighed against the program's criteria and available budget. You're welcome to apply again in a future VentureLift cycle.",
       ],
-      extraHtml: noteBlockHtml(ctx.disbursementNote),
-      cta: { label: "View my milestones", url: trackerUrl() },
-    }),
-    text: textVersion({
-      heading: "Your grant is funded",
-      lines: [
-        `Hi ${firstName(ctx.applicantName)},`,
-        `Your ${m.name} grant${amount ? ` of ${amount}` : ""} has been funded.`,
-        "Your grant milestones are now live on your dashboard — please keep them up to date as you progress.",
-      ],
-      note: ctx.disbursementNote,
-      ctaLabel: "View my milestones",
-      ctaUrl: trackerUrl(),
-    }),
-  };
+      ctaLabel: "Explore EQUIP streams",
+    },
+  },
+  funded: { venture_connect: FUNDED_COMMON, venture_lift: FUNDED_COMMON },
+  deadline: { venture_connect: DEADLINE_COMMON, venture_lift: DEADLINE_COMMON },
+  milestone: { venture_connect: MILESTONE_COMMON, venture_lift: MILESTONE_COMMON },
+};
+
+/** Which note (if any) each template appends, and where its CTA points. */
+const TEMPLATE_BEHAVIOUR: Record<EquipTemplateId, { note: "reviewer" | "disbursement" | null; cta: "tracker" | "equip" }> = {
+  submission:        { note: null,           cta: "tracker" },
+  under_review:      { note: null,           cta: "tracker" },
+  pre_screen_passed: { note: "reviewer",     cta: "tracker" },
+  pre_screen_no:     { note: "reviewer",     cta: "equip" },
+  approved:          { note: "reviewer",     cta: "tracker" },
+  not_selected:      { note: "reviewer",     cta: "equip" },
+  funded:            { note: "disbursement", cta: "tracker" },
+  deadline:          { note: null,           cta: "tracker" },
+  milestone:         { note: null,           cta: "tracker" },
+};
+
+// ── Rendering ────────────────────────────────────────────────────────────
+
+/** Substitute placeholders with raw values. Unknown tokens become "". */
+function substitute(template: string, values: Record<string, string>): string {
+  return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => values[key] ?? "");
 }
 
-/** 8. Deadline reminder (library/cron-ready). */
-export function equipDeadlineReminder(ctx: EquipEmailCtx): Built {
-  const m = meta(ctx.stream);
-  const when = ctx.deadlineLabel ?? "soon";
-  return {
-    subject: `Reminder: ${m.name} deadline is ${when}`,
-    html: shell({
-      preheader: `The ${m.name} funding window closes ${when}.`,
-      heading: `${m.name} deadline approaching`,
-      paras: [
-        `Hi ${esc(firstName(ctx.applicantName))},`,
-        `A quick reminder that the current <strong>${esc(m.name)}</strong> funding window closes <strong>${esc(when)}</strong>.`,
-        `If you've started an application, now's the time to finish and submit it — applications must be submitted before the window closes to be considered this cycle.`,
-      ],
-      cta: { label: "Finish my application", url: trackerUrl() },
-    }),
-    text: textVersion({
-      heading: `${m.name} deadline approaching`,
-      lines: [
-        `Hi ${firstName(ctx.applicantName)},`,
-        `A reminder that the current ${m.name} funding window closes ${when}.`,
-        "If you've started an application, finish and submit it before the window closes to be considered this cycle.",
-      ],
-      ctaLabel: "Finish my application",
-      ctaUrl: trackerUrl(),
-    }),
-  };
+/** Plain text + **bold** → escaped HTML with <strong>. */
+function toHtml(s: string): string {
+  return esc(s).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
 }
 
-/** 9. Milestone reminder (library; for funded grants). */
-export function equipMilestoneReminder(ctx: EquipEmailCtx): Built {
-  const m = meta(ctx.stream);
-  const title = ctx.milestoneTitle ?? "a grant milestone";
-  const due = ctx.dueLabel ?? "soon";
-  return {
-    subject: `Milestone due ${due}: ${title}`,
-    html: shell({
-      preheader: `Your ${m.name} grant milestone "${title}" is due ${due}.`,
-      heading: "A grant milestone is coming up",
-      paras: [
-        `Hi ${esc(firstName(ctx.applicantName))},`,
-        `Your <strong>${esc(m.name)}</strong> grant milestone — <strong>${esc(title)}</strong> — is due <strong>${esc(due)}</strong>.`,
-        `Please update its status on your dashboard. Keeping milestones current is part of the funding agreement and helps us report program outcomes.`,
-      ],
-      cta: { label: "Update my milestones", url: trackerUrl() },
-    }),
-    text: textVersion({
-      heading: "A grant milestone is coming up",
-      lines: [
-        `Hi ${firstName(ctx.applicantName)},`,
-        `Your ${m.name} grant milestone — ${title} — is due ${due}.`,
-        "Please update its status on your dashboard.",
-      ],
-      ctaLabel: "Update my milestones",
-      ctaUrl: trackerUrl(),
-    }),
-  };
+const stripBold = (s: string) => s.replace(/\*\*([^*]+)\*\*/g, "$1");
+
+/** Render one template variant for one applicant context. Pure. */
+export function renderEquipEmail(
+  id: EquipTemplateId,
+  ctx: EquipEmailCtx,
+  fields: EditableFields,
+): Built {
+  const values = resolvePlaceholders(ctx);
+  const behaviour = TEMPLATE_BEHAVIOUR[id];
+  const note =
+    behaviour.note === "reviewer" ? ctx.reviewerNote
+    : behaviour.note === "disbursement" ? ctx.disbursementNote
+    : null;
+  const ctaUrl = behaviour.cta === "tracker" ? trackerUrl() : `${baseUrl()}/equip`;
+
+  const subject = stripBold(substitute(fields.subject, values)).trim();
+  const headingRaw = substitute(fields.heading, values);
+  const parasRaw = fields.paras.map((p) => substitute(p, values)).filter((p) => p.trim().length > 0);
+  const footnoteRaw = fields.footnote ? substitute(fields.footnote, values) : undefined;
+  const ctaLabel = fields.ctaLabel ? stripBold(substitute(fields.ctaLabel, values)).trim() : undefined;
+
+  const html = shell({
+    preheader: stripBold(parasRaw[1] ?? parasRaw[0] ?? subject).slice(0, 140),
+    heading: toHtml(headingRaw),
+    paras: parasRaw.map(toHtml),
+    extraHtml: noteBlockHtml(note),
+    cta: ctaLabel ? { label: ctaLabel, url: ctaUrl } : undefined,
+    footnote: footnoteRaw ? toHtml(footnoteRaw) : undefined,
+  });
+
+  const text = textVersion({
+    heading: stripBold(headingRaw),
+    lines: parasRaw.map(stripBold),
+    note,
+    ctaLabel,
+    ctaUrl: ctaLabel ? ctaUrl : undefined,
+    footnote: footnoteRaw ? stripBold(footnoteRaw) : undefined,
+  });
+
+  return { subject, html, text };
 }
 
-// ── Decision-status dispatcher (used by the admin PATCH route) ─────────────
+// ── Overrides (PlatformSetting persistence) ──────────────────────────────
 
-/** Map a decision target status to the right applicant email. Returns null
- *  for statuses that shouldn't notify (e.g. nothing matched). */
-export function buildEquipStatusEmail(target: EquipStatus, ctx: EquipEmailCtx): Built | null {
-  switch (target) {
-    case "under_review":        return equipUnderReview(ctx);
-    case "pre_screen_approved": return equipPreScreenPassed(ctx);
-    case "pre_screen_rejected": return equipPreScreenNotSelected(ctx);
-    case "approved":            return equipApproved(ctx);
-    case "rejected":            return equipNotSelected(ctx);
-    case "funded":              return equipFunded(ctx);
-    default:                    return null;
+const OVERRIDES_KEY = "equipEmailTemplateOverrides";
+type OverrideMap = Record<string, EditableFields>; // key = `${id}:${stream}`
+
+export const overrideKey = (id: EquipTemplateId, stream: EquipStream) => `${id}:${stream}`;
+
+export async function getEquipTemplateOverrides(): Promise<OverrideMap> {
+  const row = await prisma.platformSetting.findUnique({ where: { key: OVERRIDES_KEY } }).catch(() => null);
+  if (!row) return {};
+  try {
+    const parsed = JSON.parse(row.value) as OverrideMap;
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
   }
 }
 
-// ── Catalogue (for the admin preview gallery) ──────────────────────────────
+async function writeOverrides(map: OverrideMap): Promise<void> {
+  const value = JSON.stringify(map);
+  await prisma.platformSetting.upsert({
+    where: { key: OVERRIDES_KEY },
+    update: { value },
+    create: { key: OVERRIDES_KEY, value },
+  });
+}
+
+export async function saveEquipTemplateOverride(
+  id: EquipTemplateId,
+  stream: EquipStream,
+  fields: EditableFields,
+): Promise<void> {
+  const map = await getEquipTemplateOverrides();
+  map[overrideKey(id, stream)] = fields;
+  await writeOverrides(map);
+}
+
+export async function resetEquipTemplateOverride(id: EquipTemplateId, stream: EquipStream): Promise<void> {
+  const map = await getEquipTemplateOverrides();
+  delete map[overrideKey(id, stream)];
+  await writeOverrides(map);
+}
+
+/** Default + override resolution for one variant. */
+export function resolveTemplateFields(
+  id: EquipTemplateId,
+  stream: EquipStream,
+  overrides: OverrideMap,
+): { fields: EditableFields; isCustomized: boolean } {
+  const def = TEMPLATE_DEFAULTS[id][stream];
+  if (!def) {
+    // Shouldn't happen for valid (id, stream) pairs — fall back defensively.
+    return { fields: { subject: "", heading: "", paras: [] }, isCustomized: false };
+  }
+  const ov = overrides[overrideKey(id, stream)];
+  return ov ? { fields: ov, isCustomized: true } : { fields: def, isCustomized: false };
+}
+
+/** Validate untrusted editor input into EditableFields. Null = invalid. */
+export function sanitizeEditableFields(input: unknown): EditableFields | null {
+  if (typeof input !== "object" || input === null) return null;
+  const o = input as Record<string, unknown>;
+  const str = (v: unknown, max: number) =>
+    typeof v === "string" && v.trim().length > 0 && v.length <= max ? v.trim() : null;
+  const subject = str(o.subject, 300);
+  const heading = str(o.heading, 300);
+  if (!subject || !heading) return null;
+  if (!Array.isArray(o.paras) || o.paras.length === 0 || o.paras.length > 12) return null;
+  const paras: string[] = [];
+  for (const p of o.paras) {
+    if (typeof p !== "string" || p.length > 2000) return null;
+    if (p.trim().length > 0) paras.push(p.trim());
+  }
+  if (paras.length === 0) return null;
+  const ctaLabel = typeof o.ctaLabel === "string" && o.ctaLabel.trim() ? o.ctaLabel.trim().slice(0, 80) : undefined;
+  const footnote = typeof o.footnote === "string" && o.footnote.trim() ? o.footnote.trim().slice(0, 600) : undefined;
+  return { subject, heading, paras, ctaLabel, footnote };
+}
+
+// ── High-level senders (used by the API routes) ──────────────────────────
+
+const STATUS_TO_TEMPLATE: Partial<Record<EquipStatus, EquipTemplateId>> = {
+  under_review: "under_review",
+  pre_screen_approved: "pre_screen_passed",
+  pre_screen_rejected: "pre_screen_no",
+  approved: "approved",
+  rejected: "not_selected",
+  funded: "funded",
+};
+
+/** Map a decision target status to the right applicant email (override-aware).
+ *  Returns null for statuses that shouldn't notify. */
+export async function buildEquipStatusEmail(target: EquipStatus, ctx: EquipEmailCtx): Promise<Built | null> {
+  const id = STATUS_TO_TEMPLATE[target];
+  if (!id) return null;
+  if (!TEMPLATE_DEFAULTS[id][ctx.stream]) return null; // e.g. pre-screen ids on VC
+  const overrides = await getEquipTemplateOverrides();
+  const { fields } = resolveTemplateFields(id, ctx.stream, overrides);
+  return renderEquipEmail(id, ctx, fields);
+}
+
+/** Submission confirmation (override-aware). */
+export async function buildEquipSubmissionEmail(ctx: EquipEmailCtx): Promise<Built> {
+  const overrides = await getEquipTemplateOverrides();
+  const { fields } = resolveTemplateFields("submission", ctx.stream, overrides);
+  return renderEquipEmail("submission", ctx, fields);
+}
+
+// ── Catalogue (for the admin gallery) ────────────────────────────────────
 
 export interface EquipEmailTemplateInfo {
-  id: string;
+  id: EquipTemplateId;
   label: string;
   when: string;
   /** Which streams this email is sent for. */
   appliesTo: "both" | EquipStream;
-  build: (ctx: EquipEmailCtx) => Built;
 }
 
 export const EQUIP_EMAIL_TEMPLATES: EquipEmailTemplateInfo[] = [
-  { id: "submission",        label: "Submission received",          when: "Applicant submits an application",                     appliesTo: "both",          build: equipSubmissionReceived },
-  { id: "under_review",      label: "Under review",                 when: "A reviewer claims the application",                    appliesTo: "both",          build: equipUnderReview },
-  { id: "pre_screen_passed", label: "Pre-screen passed (Stage 2)",  when: "VL pre-screening passes → Stage 2 unlocks",            appliesTo: "venture_lift",  build: equipPreScreenPassed },
-  { id: "pre_screen_no",     label: "Pre-screen not selected",      when: "VL pre-screening isn't selected to advance",          appliesTo: "venture_lift",  build: equipPreScreenNotSelected },
-  { id: "approved",          label: "Approved",                     when: "Application is approved for funding",                  appliesTo: "both",          build: equipApproved },
-  { id: "not_selected",      label: "Not selected",                 when: "Application isn't selected for funding",               appliesTo: "both",          build: equipNotSelected },
-  { id: "funded",            label: "Funded",                       when: "Funds are disbursed; milestones begin",               appliesTo: "both",          build: equipFunded },
-  { id: "deadline",          label: "Deadline reminder",            when: "Funding window is closing soon",                      appliesTo: "both",          build: equipDeadlineReminder },
-  { id: "milestone",         label: "Milestone reminder",           when: "A funded grant's milestone is due soon",              appliesTo: "both",          build: equipMilestoneReminder },
+  { id: "submission",        label: "Submission received",          when: "Applicant submits an application",            appliesTo: "both" },
+  { id: "under_review",      label: "Under review",                 when: "A reviewer claims the application",           appliesTo: "both" },
+  { id: "pre_screen_passed", label: "Pre-screen passed (Stage 2)",  when: "VL pre-screening passes → Stage 2 unlocks",   appliesTo: "venture_lift" },
+  { id: "pre_screen_no",     label: "Pre-screen not selected",      when: "VL pre-screening isn't selected to advance", appliesTo: "venture_lift" },
+  { id: "approved",          label: "Approved",                     when: "Application is approved for funding",         appliesTo: "both" },
+  { id: "not_selected",      label: "Not selected",                 when: "Application isn't selected for funding",      appliesTo: "both" },
+  { id: "funded",            label: "Funded",                       when: "Funds are disbursed; milestones begin",      appliesTo: "both" },
+  { id: "deadline",          label: "Deadline reminder",            when: "Funding window is closing soon",             appliesTo: "both" },
+  { id: "milestone",         label: "Milestone reminder",           when: "A funded grant's milestone is due soon",     appliesTo: "both" },
 ];
+
+export function isEquipTemplateId(v: unknown): v is EquipTemplateId {
+  return typeof v === "string" && EQUIP_EMAIL_TEMPLATES.some((t) => t.id === v);
+}
 
 /** Realistic sample context for previewing a stream's templates. */
 export function sampleEquipCtx(stream: EquipStream): EquipEmailCtx {

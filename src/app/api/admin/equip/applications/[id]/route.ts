@@ -248,7 +248,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // never roll back or 500 a recorded decision. (under_review/approved/
   // rejected/funded + the two VL pre-screen outcomes each map to a template.)
   if (mailConfigured() && updated.user?.email) {
-    const email = buildEquipStatusEmail(target, {
+    const email = await buildEquipStatusEmail(target, {
       applicantName: updated.user.name,
       stream: app.stream as EquipStream,
       stage: app.applicationStage as ApplicationStage,

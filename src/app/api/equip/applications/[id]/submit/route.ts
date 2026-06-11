@@ -31,7 +31,7 @@ import {
   type EquipDocument,
 } from "@/lib/equip/types";
 import { nextOpenDeadline } from "@/lib/equip/deadlines";
-import { equipSubmissionReceived } from "@/lib/equip/emails";
+import { buildEquipSubmissionEmail } from "@/lib/equip/emails";
 import { sendMail, mailConfigured } from "@/lib/mail";
 
 export const runtime = "nodejs";
@@ -340,7 +340,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       select: { name: true, email: true },
     });
     if (applicant?.email) {
-      const email = equipSubmissionReceived({
+      const email = await buildEquipSubmissionEmail({
         applicantName: applicant.name,
         stream: app.stream as EquipStream,
         stage: app.applicationStage as ApplicationStage,
