@@ -6,6 +6,7 @@ import {
   isSectionField, isChoiceField, isMultiCheckboxField, isFileField,
   isFieldVisible,
 } from "@/lib/forms/types";
+import { isR2PublicUrl } from "@/lib/r2";
 
 export const runtime = "nodejs";
 
@@ -76,7 +77,8 @@ export async function POST(
       }
       // Accept only our own R2 URLs to prevent storing arbitrary external
       // links — clients that didn't go through /upload can't sneak in.
-      if (v && !v.startsWith(process.env.R2_PUBLIC_URL ?? "")) {
+      // (isR2PublicUrl recognises legacy hosts too, so it survives a bucket move.)
+      if (v && !isR2PublicUrl(v)) {
         return NextResponse.json(
           { error: `Invalid upload reference for "${f.label}".` },
           { status: 400 }

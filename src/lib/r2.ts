@@ -8,6 +8,33 @@ const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
 export const R2_BUCKET = process.env.R2_BUCKET || "bhn-scorm";
 export const R2_PUBLIC_URL = (process.env.R2_PUBLIC_URL || "").replace(/\/$/, "");
 
+/**
+ * Extra public-URL bases that should STILL resolve to keys in the current
+ * bucket — i.e. the OLD host(s) after an R2/account migration, while existing
+ * DB rows still hold the previous absolute URLs. Comma-separated.
+ *
+ * Why this exists: file URLs are stored absolutely (`r2PublicUrl(key)` bakes
+ * the host into the value). Moving to a bucket with a different public host
+ * would otherwise orphan every stored URL. Instead, at cutover set
+ *   R2_LEGACY_PUBLIC_URLS="https://old-host"
+ * and every old URL keeps resolving — zero DB rewrites. Empty by default, so
+ * behaviour is identical until a migration sets it.
+ */
+const R2_LEGACY_PUBLIC_URLS = (process.env.R2_LEGACY_PUBLIC_URLS || "")
+  .split(",")
+  .map((s) => s.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
+/** All public-URL bases we recognise as ours — the current host first, then
+ *  any legacy hosts. Used to map a stored URL back to its object key. */
+export const R2_PUBLIC_URL_PREFIXES: string[] = [R2_PUBLIC_URL, ...R2_LEGACY_PUBLIC_URLS].filter(Boolean);
+
+/** Does this URL point at one of our public bases (current or legacy)? */
+export function isR2PublicUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return R2_PUBLIC_URL_PREFIXES.some((p) => url.startsWith(p));
+}
+
 export const r2 = accountId && accessKeyId && secretAccessKey
   ? new S3Client({
       region: "auto",
@@ -50,12 +77,14 @@ export async function getSignedR2GetUrl(
  * videoIntroUrl rows store full https URLs; we want to keep them
  * working but mint signed URLs at read time.
  *
- * Returns null if the input isn't an R2_PUBLIC_URL we recognise.
+ * Returns null if the input isn't one of our public bases (current or, after
+ * a migration, a legacy host in R2_LEGACY_PUBLIC_URLS).
  */
 export function r2KeyFromPublicUrl(url: string | null | undefined): string | null {
-  if (!url || !R2_PUBLIC_URL) return null;
-  if (!url.startsWith(R2_PUBLIC_URL)) return null;
-  return url.slice(R2_PUBLIC_URL.length).replace(/^\//, "").split("?")[0] || null;
+  if (!url) return null;
+  const prefix = R2_PUBLIC_URL_PREFIXES.find((p) => url.startsWith(p));
+  if (!prefix) return null;
+  return url.slice(prefix.length).replace(/^\//, "").split("?")[0] || null;
 }
 
 /**
@@ -139,18 +168,18 @@ export async function putR2Object(key: string, body: Buffer | Uint8Array, conten
  *   • a full R2_PUBLIC_URL/<key> (with or without `?v=` cache-bust suffix)
  *   • a bare key like "applications/USERID/abc/resume.pdf"
  *
- * No-ops silently when the URL doesn't start with R2_PUBLIC_URL — that
- * way callers can pass `user.resumeUrl` directly without first
- * stripping a hand-typed external URL (the upload + PATCH routes
- * already validate that resumeUrl belongs to our R2, but defending in
- * depth here keeps a stale legacy URL from causing a 500).
+ * No-ops silently when the URL isn't one of our public bases — that way
+ * callers can pass `user.resumeUrl` directly without first stripping a
+ * hand-typed external URL (the upload + PATCH routes already validate that
+ * resumeUrl belongs to our R2, but defending in depth here keeps a stale
+ * legacy URL from causing a 500). Recognises legacy hosts too, so cleanup
+ * still works on pre-migration URLs.
  */
 export async function deleteR2ObjectByUrl(urlOrKey: string | null | undefined) {
   if (!urlOrKey || !r2) return;
-  let key: string;
+  let key: string | null;
   if (urlOrKey.startsWith("http://") || urlOrKey.startsWith("https://")) {
-    if (!R2_PUBLIC_URL || !urlOrKey.startsWith(R2_PUBLIC_URL)) return;
-    key = urlOrKey.slice(R2_PUBLIC_URL.length).replace(/^\//, "").split("?")[0];
+    key = r2KeyFromPublicUrl(urlOrKey);
   } else {
     key = urlOrKey.replace(/^\//, "");
   }
