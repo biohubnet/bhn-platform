@@ -29,6 +29,8 @@ import {
   type VentureLiftReviewerScores,
 } from "@/lib/equip/types";
 import { templateMilestones } from "@/lib/equip/milestones";
+import { buildEquipStatusEmail } from "@/lib/equip/emails";
+import { sendMail, mailConfigured } from "@/lib/mail";
 
 export const runtime = "nodejs";
 
@@ -241,5 +243,28 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       reviewer: { select: { id: true, name: true } },
     },
   });
+
+  // Notify the applicant of the decision. Best-effort: a mail failure must
+  // never roll back or 500 a recorded decision. (under_review/approved/
+  // rejected/funded + the two VL pre-screen outcomes each map to a template.)
+  if (mailConfigured() && updated.user?.email) {
+    const email = buildEquipStatusEmail(target, {
+      applicantName: updated.user.name,
+      stream: app.stream as EquipStream,
+      stage: app.applicationStage as ApplicationStage,
+      requestedAmount: app.requestedAmount,
+      approvedAmount: typeof data.approvedAmount === "number" ? data.approvedAmount : undefined,
+      reviewerNote: reviewerNote ?? null,
+      disbursementNote: disbursementNote ?? null,
+    });
+    if (email) {
+      try {
+        await sendMail({ to: updated.user.email, subject: email.subject, text: email.text, html: email.html });
+      } catch (err) {
+        console.error("[equip] decision email failed", { id, target, err });
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true, application: updated });
 }

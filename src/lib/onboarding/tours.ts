@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.10a";
+export const TOUR_VERSION = "2026.06.11a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── EQUIP · applicant emails — Jun 2026
+  {
+    id: "equip.applicant-emails",
+    title: "EQUIP now emails applicants",
+    body: "Applicants get an email at every step — submission, under review, the VentureLift pre-screen result, and the approval / not-selected / funded decisions, for both streams. Decision emails fire automatically when you record a decision, and your reviewer note rides along. Preview every template from Admin → EQUIP → “preview the applicant emails”.",
+    path: "/admin/equip/email-templates",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Preview EQUIP emails", href: "/admin/equip/email-templates" },
+    since: "2026.06.11a",
+  },
   // ─── Video scripts · revert to last manual save — Jun 2026
   {
     id: "workspace.script-revert-manual",

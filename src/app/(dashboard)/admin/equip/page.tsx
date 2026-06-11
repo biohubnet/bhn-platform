@@ -128,6 +128,8 @@ export default async function AdminEquipPage({
             VentureConnect (≤$5K, monthly) + VentureLift (≤$25K, quarterly). Click a row to review, leave a note, and decide.
             {" "}For the program-management dashboard (apps in flight, stalled-app alerts, per-stream funnel),{" "}
             <Link href="/admin/equip/overview" className="text-amber-200 font-bold underline decoration-amber-200/60 underline-offset-2 hover:text-amber-100 transition-colors">open the Equip overview →</Link>
+            {" "}or preview the{" "}
+            <Link href="/admin/equip/email-templates" className="text-amber-200 font-bold underline decoration-amber-200/60 underline-offset-2 hover:text-amber-100 transition-colors">applicant emails →</Link>
           </>
         }
       />

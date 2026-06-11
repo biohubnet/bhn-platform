@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP · applicant emails at every step — Jun 2026
+  {
+    title: "EQUIP · applicants now get an email at every step",
+    body: "EQUIP applications now send the applicant an email across the whole lifecycle, for both VentureConnect and VentureLift: a confirmation when they submit, an under-review notice, the VentureLift pre-screen pass/decline, and the approval, not-selected, and funded decisions — each with the right stream copy, amounts, and your reviewer note included. Decision emails fire automatically when you record a decision; the submission email fires on submit. Reviewers can preview every template (both streams) at Admin → EQUIP → “preview the applicant emails”.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Outreach · cells wrap long text — Jun 2026
   {
     title: "Outreach · long details now wrap",
