@@ -67,20 +67,37 @@ export function EquipEmailGallery({ streams }: { streams: StreamPreview[] }) {
                 <ChevronDown size={16} className={cn("shrink-0 text-muted transition-transform", isOpen && "rotate-180")} />
               </button>
 
-              {isOpen && (
-                <div className="border-t border-line">
-                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 px-4 py-2.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-subtle">Subject</span>
-                    <span className="text-[13px] font-semibold text-fg">{it.subject}</span>
+              {/* Snappy open/close: animate grid row 0fr→1fr (height) with a
+                  quick opacity lift. Content stays mounted so it can animate
+                  both directions; the iframe is sandboxed + script-free, so
+                  keeping it mounted is cheap. */}
+              <div
+                className={cn(
+                  "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+                  isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                )}
+              >
+                <div className="overflow-hidden">
+                  <div
+                    className={cn(
+                      "border-t border-line transition-opacity duration-150 ease-out",
+                      isOpen ? "opacity-100" : "opacity-0",
+                    )}
+                  >
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 px-4 py-2.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-subtle">Subject</span>
+                      <span className="text-[13px] font-semibold text-fg">{it.subject}</span>
+                    </div>
+                    <iframe
+                      title={`${it.label} preview`}
+                      srcDoc={it.html}
+                      sandbox=""
+                      loading="lazy"
+                      className="h-[560px] w-full border-0 bg-[#f1f5f9]"
+                    />
                   </div>
-                  <iframe
-                    title={`${it.label} preview`}
-                    srcDoc={it.html}
-                    sandbox=""
-                    className="h-[560px] w-full border-0 bg-[#f1f5f9]"
-                  />
                 </div>
-              )}
+              </div>
             </li>
           );
         })}

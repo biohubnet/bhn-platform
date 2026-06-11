@@ -10,7 +10,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft, ArrowRight, AlertTriangle, Rocket, Beaker } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertTriangle, Rocket, Beaker, Mail } from "lucide-react";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { DSSection } from "@/components/design-system/DSSection";
 import { DSStatGrid, DSStat } from "@/components/design-system/DSStatGrid";
@@ -128,11 +128,24 @@ export default async function AdminEquipPage({
             VentureConnect (≤$5K, monthly) + VentureLift (≤$25K, quarterly). Click a row to review, leave a note, and decide.
             {" "}For the program-management dashboard (apps in flight, stalled-app alerts, per-stream funnel),{" "}
             <Link href="/admin/equip/overview" className="text-amber-200 font-bold underline decoration-amber-200/60 underline-offset-2 hover:text-amber-100 transition-colors">open the Equip overview →</Link>
-            {" "}or preview the{" "}
-            <Link href="/admin/equip/email-templates" className="text-amber-200 font-bold underline decoration-amber-200/60 underline-offset-2 hover:text-amber-100 transition-colors">applicant emails →</Link>
           </>
         }
       />
+
+      {/* Quick action: the applicant-email gallery (VC + VL templates). */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href="/admin/equip/email-templates"
+          className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-700"
+        >
+          <Mail size={15} />
+          Preview applicant emails
+          <ArrowRight size={15} />
+        </Link>
+        <span className="text-[12px] text-muted">
+          See every email applicants get — VentureConnect &amp; VentureLift, all lifecycle steps.
+        </span>
+      </div>
 
       {tableMissing && (
         <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 flex items-start gap-3">
