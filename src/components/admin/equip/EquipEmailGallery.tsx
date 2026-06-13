@@ -526,7 +526,7 @@ export function EquipEmailGallery({
                             ))}
                           </ul>
                           <p className="mt-2 text-[11px] text-subtle">
-                            Reviewer / disbursement notes are appended automatically when present. The button's destination is fixed; only its label is editable.
+                            Reviewer / disbursement notes are appended automatically when present. The button&apos;s destination is fixed; only its label is editable.
                           </p>
                         </details>
 
@@ -570,7 +570,8 @@ export function EquipEmailGallery({
                       srcDoc={shownHtml}
                       sandbox=""
                       loading="lazy"
-                      className="h-[560px] w-full border-0 bg-[#f1f5f9]"
+                      style={{ background: "#f1f5f9" }}
+                      className="h-[560px] w-full border-0"
                     />
                   </div>
                 </div>
@@ -587,12 +588,14 @@ export function EquipEmailGallery({
           <div className="absolute inset-0" onClick={(e) => e.stopPropagation()} />
           {tourRect ? (
             <div
-              className="pointer-events-none fixed rounded-xl border-2 border-brand-400 shadow-[0_0_0_9999px_rgba(15,23,42,0.55)] transition-all duration-200 ease-out"
+              className="pointer-events-none fixed rounded-xl border-2 border-brand-400 transition-all duration-200 ease-out"
               style={{
                 top: tourRect.top - 6,
                 left: tourRect.left - 6,
                 width: tourRect.width + 12,
                 height: tourRect.height + 12,
+                // Spotlight: a huge spread shadow dims everything except the cutout.
+                boxShadow: "0 0 0 9999px rgba(15, 23, 42, 0.55)",
               }}
             />
           ) : (
