@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.11b";
+export const TOUR_VERSION = "2026.06.11c";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Practice · Mock Interview — Jun 2026
+  {
+    id: "practice.mock-interview",
+    title: "Rehearse interviews out loud",
+    body: "New under EXPERIENCE: Mock Interview. Pick a role (paste the job description for sharper questions), then answer the AI's questions by voice — your recording is auto-transcribed — or by typing. Each answer gets a score and specific feedback, with an overall debrief at the end. Voice is optional; typing works everywhere.",
+    path: "/mock-interview",
+    placement: "center",
+    cta: { label: "Try Mock Interview", href: "/mock-interview" },
+    since: "2026.06.11c",
+  },
   // ─── EQUIP · applicant emails — Jun 2026
   {
     id: "equip.applicant-emails",

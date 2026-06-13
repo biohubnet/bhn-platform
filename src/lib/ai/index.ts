@@ -198,6 +198,58 @@ export async function embed(texts: string[], opts: EmbedOpts = {}): Promise<numb
   }
 }
 
+/**
+ * Transcribe spoken audio to text via Cloudflare Workers AI (Whisper).
+ * Pass the raw recorded bytes (webm/ogg/wav/mp3 all work). Returns the
+ * transcript, or { ok:false } when CF isn't configured or the call fails.
+ * No Gemini fallback — Whisper is Cloudflare-only here. The server route is
+ * responsible for capping audio size.
+ */
+export async function transcribe(
+  audio: Uint8Array | ArrayBuffer,
+  opts: BaseOpts = {},
+): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+  if (!CF_TOKEN || !CF_ACCOUNT) return { ok: false, error: "Speech-to-text isn't configured." };
+  const bytes = audio instanceof ArrayBuffer ? new Uint8Array(audio) : audio;
+  const start = Date.now();
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/openai/whisper`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${CF_TOKEN}`, "Content-Type": "application/octet-stream" },
+        body: bytes as unknown as BodyInit,
+      },
+    );
+    const j = (await res.json()) as { success?: boolean; result?: { text?: string }; errors?: { message: string }[] };
+    if (!res.ok || j.success === false) {
+      throw new Error(j.errors?.[0]?.message ?? `Whisper HTTP ${res.status}`);
+    }
+    const text = (j.result?.text ?? "").trim();
+    await logInteraction({
+      userId: opts.userId,
+      kind: opts.feature ?? "transcribe",
+      provider: "cloudflare",
+      model: "@cf/openai/whisper",
+      latencyMs: Date.now() - start,
+      success: true,
+    });
+    return { ok: true, text };
+  } catch (e) {
+    const err = (e as Error).message;
+    await logInteraction({
+      userId: opts.userId,
+      kind: opts.feature ?? "transcribe",
+      provider: "cloudflare",
+      model: "@cf/openai/whisper",
+      latencyMs: Date.now() - start,
+      success: false,
+      errorMessage: err,
+    });
+    return { ok: false, error: err };
+  }
+}
+
 /** Format a number[] into a Postgres pgvector literal: `[0.1, 0.2, …]`. */
 export function toVectorLiteral(v: number[]): string {
   return `[${v.join(",")}]`;

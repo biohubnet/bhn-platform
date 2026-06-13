@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Practice · Mock Interview — Jun 2026
+  {
+    title: "Practice interviews out loud — new Mock Interview",
+    body: "A new **Mock Interview** tool (under EXPERIENCE) lets you rehearse interviews by voice. Pick the role you're practising for — optionally paste the job description — and the AI generates a tailored question set. Answer each one **out loud** (your recording is auto-transcribed) or by typing, and get an honest 0–100 score with specific strengths and fixes per answer, then an overall debrief at the end. Past sessions are saved so you can track your improvement. Voice is optional — typing works everywhere.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── EQUIP · applicant emails at every step — Jun 2026
   {
     title: "EQUIP · applicants now get an email at every step",

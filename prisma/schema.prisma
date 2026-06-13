@@ -5145,3 +5145,45 @@ model OutreachTouch {
 
   @@index([personId, happenedAt])
 }
+
+// ── Mock Interview practice ──────────────────────────────────────────────
+// A self-practice interview session for a trainee. The AI generates
+// role-specific questions; the candidate answers by voice (Whisper STT) or
+// text; each answer is scored + given feedback; the session ends with an
+// overall summary. Voice is optional — typing works everywhere.
+model MockInterview {
+  id           String   @id @default(cuid())
+  userId       String
+  role         String
+  /// Optional focus / pasted job description the questions are tailored to.
+  context      String   @default("")
+  status       String   @default("in_progress") // in_progress | complete
+  overallScore Int?
+  summary      String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  answers      MockInterviewAnswer[]
+
+  @@index([userId, createdAt])
+}
+
+model MockInterviewAnswer {
+  id           String   @id @default(cuid())
+  interviewId  String
+  interview    MockInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  order        Int
+  question     String
+  /// behavioral | technical | situational | motivation
+  questionKind String   @default("behavioral")
+  transcript   String   @default("")
+  inputMode    String   @default("text") // voice | text
+  score        Int?                       // 0–100
+  feedback     String   @default("")
+  strengths    Json     @default("[]")
+  improvements Json     @default("[]")
+  answeredAt   DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([interviewId, order])
+}
