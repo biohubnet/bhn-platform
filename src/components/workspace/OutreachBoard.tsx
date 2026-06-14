@@ -17,11 +17,12 @@ import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Loader2, Pencil, Check, X,
   Columns3, UserRound, ArrowLeft, ArrowRight, Link2, BookUser, ListPlus, UserMinus,
-  MessagesSquare,
+  MessagesSquare, MailPlus,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import { OutreachSharePanel } from "./OutreachSharePanel";
+import { OutreachTemplatesModal, type ResolvedTemplate, type PlaceholderDoc } from "./OutreachTemplatesModal";
 import { TouchLogModal } from "./TouchLogModal";
 import { OutreachCell } from "./OutreachCell";
 
@@ -68,7 +69,17 @@ const fmtShort = (iso: string) => {
   catch { return ""; }
 };
 
-export function OutreachBoard({ data }: { data: OutreachData }) {
+export function OutreachBoard({
+  data,
+  emailTemplates,
+  templatePlaceholders,
+  senderName,
+}: {
+  data: OutreachData;
+  emailTemplates: ResolvedTemplate[];
+  templatePlaceholders: PlaceholderDoc[];
+  senderName: string;
+}) {
   const router = useRouter();
   const [board, setBoard] = useState<OutreachData>(data);
   const [activeId, setActiveId] = useState<string>(data.lists[0]?.id ?? DIR_TAB);
@@ -82,6 +93,7 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
   const [newColLabel, setNewColLabel] = useState("");
   // Reach-out history modal target.
   const [touchFor, setTouchFor] = useState<{ personId: string; name: string; listId: string | null } | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   useEffect(() => {
     setBoard(data);
@@ -335,6 +347,13 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setTemplatesOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-3 py-1.5 text-xs font-semibold text-fg hover:bg-elevated"
+          >
+            <MailPlus size={13} /> Email templates
+          </button>
           {!isDir && active && (
             <OutreachSharePanel listId={active.id} listName={active.name} initialLinks={active.shareLinks} />
           )}
@@ -591,6 +610,22 @@ export function OutreachBoard({ data }: { data: OutreachData }) {
           personName={touchFor.name}
           listId={touchFor.listId}
           onClose={() => setTouchFor(null)}
+        />
+      )}
+
+      {templatesOpen && (
+        <OutreachTemplatesModal
+          templates={emailTemplates}
+          placeholders={templatePlaceholders}
+          contacts={board.directory.map((p) => ({
+            id: p.id,
+            name: p.values["name"] ?? "",
+            org: p.values["org"] ?? "",
+            email: p.values["email"] ?? "",
+          }))}
+          senderName={senderName}
+          canEdit
+          onClose={() => setTemplatesOpen(false)}
         />
       )}
     </div>

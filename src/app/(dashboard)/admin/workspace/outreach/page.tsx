@@ -13,6 +13,9 @@ import { OutreachBoard, type OutreachData } from "@/components/workspace/Outreac
 import {
   ensureOutreachDirectory, getPersonColumns, DEFAULT_MEMBERSHIP_COLUMNS, type OutreachColumn,
 } from "@/lib/outreach/directory";
+import {
+  getOutreachTemplateOverrides, resolveTemplates, OUTREACH_PLACEHOLDERS,
+} from "@/lib/outreach/templates";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +28,7 @@ export default async function OutreachPage() {
 
   await ensureOutreachDirectory((session.user as { id?: string }).id ?? null);
 
-  const [personColumns, lists, people] = await Promise.all([
+  const [personColumns, lists, people, templateOverrides] = await Promise.all([
     getPersonColumns(),
     prisma.outreachList.findMany({
       orderBy: { order: "asc" },
@@ -56,6 +59,7 @@ export default async function OutreachPage() {
         _count: { select: { touches: true } },
       },
     }),
+    getOutreachTemplateOverrides(),
   ]);
 
   const data: OutreachData = {
@@ -91,6 +95,15 @@ export default async function OutreachPage() {
     })),
   };
 
+  const emailTemplates = resolveTemplates(templateOverrides);
+  const contacts = people
+    .map((p) => {
+      const v = asValues(p.values);
+      return { id: p.id, name: v.name ?? "", org: v.org ?? "", email: v.email ?? "" };
+    })
+    .filter((c) => c.name || c.org);
+  const senderName = (session.user as { name?: string }).name ?? "";
+
   return (
     <div className="space-y-6">
       <PageHero
@@ -98,7 +111,12 @@ export default async function OutreachPage() {
         title="Outreach"
         description="One directory of partner contacts, organised into lists. A person can sit on several lists without duplication — edit their shared details once and every list updates. Per-list notes and columns stay separate."
       />
-      <OutreachBoard data={data} />
+      <OutreachBoard
+        data={data}
+        emailTemplates={emailTemplates}
+        templatePlaceholders={OUTREACH_PLACEHOLDERS}
+        senderName={senderName}
+      />
     </div>
   );
 }

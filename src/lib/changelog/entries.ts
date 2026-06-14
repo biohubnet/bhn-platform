@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Outreach · email templates — Jun 2026
+  {
+    title: "Outreach · ready-to-use email templates",
+    body: "The Outreach tool now has an **Email templates** library (button in the board header): eight partner cross-promotion templates — first introduction, promote a program / event, warm follow-up, value-first / reciprocal, thank-you, and re-engage a dormant partner — each written to be easy for a partner to forward, with a paste-ready blurb and one clear ask. Pick a template, personalise it for a contact (their name and org fill in automatically, plus yours), then copy it or open it in your email client, and log it as a reach-out in one click. Admins can edit any template — by hand or with AI — and edits apply for the whole team.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Practice · Mock Interview — Jun 2026
   {
     title: "Practice interviews out loud — new Mock Interview",
