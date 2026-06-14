@@ -87,6 +87,7 @@ export function paceLabel(wpm: number): string {
  *  reply with prose or a second JSON blob after it still parses correctly —
  *  `lastIndexOf` would grab the wrong closer. */
 function extractJson<T>(raw: string): T | null {
+  if (typeof raw !== "string") return null; // defensive: never call string ops on a non-string
   const cleaned = raw.replace(/```(?:json)?/gi, "").trim();
   const firstArr = cleaned.indexOf("[");
   const firstObj = cleaned.indexOf("{");

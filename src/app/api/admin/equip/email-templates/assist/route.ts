@@ -31,6 +31,7 @@ export const maxDuration = 30;
 const isStream = (v: unknown): v is EquipStream => v === "venture_connect" || v === "venture_lift";
 
 function extractJson(raw: string): unknown {
+  if (typeof raw !== "string") return null; // defensive: CF may return a parsed object
   // Models love to wrap JSON in fences or prose — find the outermost object.
   const cleaned = raw.replace(/```(?:json)?/gi, "").trim();
   const start = cleaned.indexOf("{");

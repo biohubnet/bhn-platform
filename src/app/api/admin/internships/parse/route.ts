@@ -258,7 +258,10 @@ async function callCloudflareText(input: string): Promise<string> {
     const msg = j.errors?.[0]?.message ?? j.messages?.[0]?.message ?? "Cloudflare AI call failed";
     throw new Error(msg);
   }
-  const text = (j.result?.response ?? "") as string;
+  // Newer CF models return `response` as a parsed object for JSON output;
+  // normalize to a string so .trim()/JSON.parse downstream don't throw.
+  const raw261 = j.result?.response;
+  const text = typeof raw261 === "string" ? raw261 : raw261 != null ? JSON.stringify(raw261) : "";
   if (!text.trim()) throw new Error("Cloudflare AI returned an empty response.");
   return text;
 }
@@ -333,7 +336,8 @@ async function callCloudflareVision(imageBytes: number[]): Promise<string> {
     const msg = j.errors?.[0]?.message ?? j.messages?.[0]?.message ?? "Cloudflare Vision call failed";
     throw new Error(msg);
   }
-  const text = (j.result?.response ?? j.result?.description ?? "") as string;
+  const raw336 = j.result?.response ?? j.result?.description;
+  const text = typeof raw336 === "string" ? raw336 : raw336 != null ? JSON.stringify(raw336) : "";
   if (!text.trim()) throw new Error("Cloudflare Vision returned an empty response.");
   return text;
 }

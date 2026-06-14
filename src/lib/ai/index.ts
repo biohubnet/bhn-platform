@@ -92,8 +92,14 @@ async function chatCloudflare(messages: ChatMessage[], opts: ChatOpts) {
   );
   const j = await res.json();
   if (!res.ok || !j.success) throw new Error(j.errors?.[0]?.message ?? `Cloudflare AI HTTP ${res.status}`);
+  // Newer CF models (e.g. llama-3.3-70b) auto-parse JSON output and return
+  // `response` as an OBJECT rather than a string. Normalize to a string here
+  // so every caller — plain-text or extractJson — gets a consistent type.
+  // (Casting an object `as string` is what made downstream `.replace()` throw.)
+  const resp = j.result?.response;
+  const text = typeof resp === "string" ? resp : resp != null ? JSON.stringify(resp) : "";
   return {
-    text: (j.result?.response ?? "") as string,
+    text,
     promptTokens: j.result?.usage?.prompt_tokens as number | undefined,
     completionTokens: j.result?.usage?.completion_tokens as number | undefined,
     model: CF_CHAT_MODEL.replace(/^@cf\/meta\//, ""),
