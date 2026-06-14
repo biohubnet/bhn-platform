@@ -16,11 +16,12 @@ import { useRouter } from "next/navigation";
 import {
   Mic, Square, Volume2, Loader2, ChevronLeft, ChevronRight, Check,
   Flag, Trash2, Sparkles, RotateCcw, Gauge, Lightbulb, ChevronDown,
-  AudioLines, Waves, HeartPulse, Activity,
+  AudioLines, Waves, HeartPulse, Activity, Info,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import { analyzeAudio } from "@/lib/interview/acoustics";
+import { AnalysisInfoModal } from "./AnalysisInfoModal";
 
 export interface RunnerAnswer {
   id: string;
@@ -143,6 +144,7 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
   const [speaking, setSpeaking] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   const [coachLoading, setCoachLoading] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const [summary, setSummary] = useState({ status: interview.status, overallScore: interview.overallScore, text: interview.summary });
 
   const current = answers[idx];
@@ -321,6 +323,13 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
           <h1 className="truncate text-xl font-extrabold text-fg">{interview.role}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setInfoOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card-solid px-2.5 py-1.5 text-[11px] font-semibold text-muted hover:bg-elevated hover:text-fg"
+          >
+            <Info size={13} /> How analysis works
+          </button>
           <span className="text-[12px] text-muted tabular-nums">{answeredCount}/{answers.length} answered</span>
           <button type="button" onClick={deleteSession} title="Delete session" className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-elevated hover:text-rose-700">
             <Trash2 size={15} />
@@ -590,6 +599,8 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
           <Sparkles size={11} /> You can finish now for a debrief on what you&apos;ve answered, or go back and complete the rest.
         </p>
       )}
+
+      {infoOpen && <AnalysisInfoModal onClose={() => setInfoOpen(false)} />}
     </div>
   );
 }
