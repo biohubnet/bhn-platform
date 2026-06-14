@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.11c";
+export const TOUR_VERSION = "2026.06.14a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Outreach · move/remove contacts between lists — Jun 2026
+  {
+    id: "outreach.list-membership",
+    title: "Move a contact between lists",
+    body: "On the Outreach board, hover any contact and hit the new Lists button. Tick a list to add the contact, untick to remove them, or — from inside a list — move them onto another list in one click. Removing from a list never deletes the contact: they stay in the Directory and on any other lists.",
+    path: "/admin/workspace/outreach",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Outreach", href: "/admin/workspace/outreach" },
+    since: "2026.06.14a",
+  },
   // ─── Practice · Mock Interview — Jun 2026
   {
     id: "practice.mock-interview",

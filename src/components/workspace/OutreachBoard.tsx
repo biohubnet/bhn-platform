@@ -16,8 +16,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Loader2, Pencil, Check, X,
-  Columns3, UserRound, ArrowLeft, ArrowRight, Link2, BookUser, ListPlus, UserMinus,
-  MessagesSquare, MailPlus,
+  Columns3, UserRound, ArrowLeft, ArrowRight, Link2, BookUser, UserMinus,
+  MessagesSquare, MailPlus, ListChecks,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
@@ -68,6 +68,136 @@ const fmtShort = (iso: string) => {
   try { return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
   catch { return ""; }
 };
+
+/**
+ * Per-contact "Lists" popover — move/remove a contact to or from any list.
+ *   • Checkbox rows toggle membership: tick to ADD the person to a list,
+ *     untick to REMOVE them from it (works for every list, incl. the one
+ *     you're viewing).
+ *   • On a list tab, a "Move off …" section relocates the person off the
+ *     current list onto another in one click (leaves here, joins there).
+ * Membership state is derived from the already-loaded board, so it needs no
+ * extra fetch.
+ */
+function ListMembershipMenu({
+  personId,
+  currentListId,
+  lists,
+  busy,
+  onAdd,
+  onRemove,
+  onMove,
+}: {
+  personId: string;
+  /** The list being viewed, or null on the Directory tab. */
+  currentListId: string | null;
+  lists: ListData[];
+  busy: boolean;
+  onAdd: (personId: string, listId: string) => void;
+  onRemove: (membershipId: string) => void;
+  onMove: (membershipId: string, toListId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  // listId → this person's membershipId (only for lists they're already on).
+  const memberByList = new Map<string, string>();
+  for (const l of lists) {
+    const r = l.rows.find((row) => row.personId === personId);
+    if (r) memberByList.set(l.id, r.membershipId);
+  }
+  const currentMembershipId = currentListId ? memberByList.get(currentListId) ?? null : null;
+  const currentName = currentListId ? lists.find((l) => l.id === currentListId)?.name ?? "" : "";
+  // Relocate only makes sense off the current list, onto lists they're not on yet.
+  const moveTargets = currentMembershipId
+    ? lists.filter((l) => l.id !== currentListId && !memberByList.has(l.id))
+    : [];
+
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        title="Manage lists — add, remove, or move this contact"
+        disabled={busy || lists.length === 0}
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "inline-flex h-6 items-center gap-1 rounded px-1.5 text-[11px] font-semibold hover:bg-elevated disabled:opacity-30",
+          open ? "bg-elevated text-fg" : "text-muted hover:text-fg",
+        )}
+      >
+        <ListChecks size={13} /> Lists
+      </button>
+
+      {open && (
+        <>
+          {/* outside-click catcher */}
+          <button
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-30 cursor-default"
+          />
+          <div className="absolute right-0 top-7 z-40 w-60 rounded-lg border border-line bg-card-solid p-1.5 text-left shadow-card-hover">
+            <p className="px-2 pb-1 pt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-subtle">
+              On these lists
+            </p>
+            <ul className="max-h-56 space-y-0.5 overflow-y-auto">
+              {lists.map((l) => {
+                const mid = memberByList.get(l.id);
+                const isMember = !!mid;
+                return (
+                  <li key={l.id}>
+                    <button
+                      type="button"
+                      onClick={() => { if (isMember) onRemove(mid!); else onAdd(personId, l.id); setOpen(false); }}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-fg hover:bg-elevated"
+                    >
+                      <span
+                        className={cn(
+                          "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
+                          isMember ? "border-brand-600 bg-brand-600 text-white" : "border-line text-transparent",
+                        )}
+                      >
+                        <Check size={11} />
+                      </span>
+                      <span className="truncate">{l.name}</span>
+                      {l.id === currentListId && (
+                        <span className="ml-auto rounded-full bg-elevated px-1.5 py-0.5 text-[9px] font-semibold text-subtle">current</span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {currentMembershipId && moveTargets.length > 0 && (
+              <>
+                <div className="my-1 border-t border-line" />
+                <p className="truncate px-2 pb-1 pt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-subtle">
+                  Move off “{currentName}” to
+                </p>
+                <ul className="max-h-40 space-y-0.5 overflow-y-auto">
+                  {moveTargets.map((l) => (
+                    <li key={l.id}>
+                      <button
+                        type="button"
+                        onClick={() => { onMove(currentMembershipId, l.id); setOpen(false); }}
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-fg hover:bg-elevated"
+                      >
+                        <ArrowRight size={12} className="shrink-0 text-brand-600" />
+                        <span className="truncate">{l.name}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </>
+      )}
+    </span>
+  );
+}
 
 export function OutreachBoard({
   data,
@@ -178,6 +308,25 @@ export function OutreachBoard({
     await api(`/api/workspace/outreach/lists/${listId}/memberships`, { method: "POST", body: JSON.stringify({ personId }) });
     router.refresh();
   }
+  // Toggle a person off a specific list (by membership) — used by the Lists
+  // menu. Optimistic; no confirm since it's a reversible checkbox toggle.
+  async function removeMembership(membershipId: string) {
+    setBoard((cur) => ({
+      ...cur,
+      lists: cur.lists.map((l) => ({ ...l, rows: l.rows.filter((r) => r.membershipId !== membershipId) })),
+    }));
+    await api(`/api/workspace/outreach/memberships/${membershipId}`, { method: "DELETE" });
+    router.refresh();
+  }
+  // Relocate a person off their current list onto another, in one action.
+  async function moveMembership(membershipId: string, toListId: string) {
+    setBoard((cur) => ({
+      ...cur,
+      lists: cur.lists.map((l) => (l.id !== activeId ? l : { ...l, rows: l.rows.filter((r) => r.membershipId !== membershipId) })),
+    }));
+    await api(`/api/workspace/outreach/memberships/${membershipId}`, { method: "PATCH", body: JSON.stringify({ toListId }) });
+    router.refresh();
+  }
   async function removeFromList(row: ListRow) {
     const who = row.personValues["name"] || row.personValues["org"] || "this contact";
     if (!confirm(`Remove ${who} from this list? They stay in the directory${row.otherLists.length ? ` and on ${row.otherLists.join(", ")}` : ""}.`)) return;
@@ -266,27 +415,6 @@ export function OutreachBoard({
   }
 
   const miniBtn = "inline-flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-elevated hover:text-fg disabled:opacity-30";
-
-  /** Small inline "add to list" picker (lists the person isn't on yet). */
-  const AddToListSelect = ({ personId, exclude }: { personId: string; exclude: string[] }) => {
-    const options = board.lists.filter((l) => !exclude.includes(l.id));
-    if (options.length === 0) return null;
-    return (
-      <span className="relative inline-flex" title="Add to a list">
-        <ListPlus size={13} className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-muted" />
-        <select
-          value=""
-          onChange={(e) => e.target.value && addToList(personId, e.target.value)}
-          className="h-6 w-7 cursor-pointer appearance-none rounded bg-transparent pl-6 text-[11px] text-transparent hover:bg-elevated focus:outline-none"
-        >
-          <option value="" disabled hidden />
-          {options.map((l) => (
-            <option key={l.id} value={l.id} className="text-fg">{l.name}</option>
-          ))}
-        </select>
-      </span>
-    );
-  };
 
   /** Reach-out history chip — count + last contact date; opens the log. */
   const TouchChip = ({ count, last, onClick }: { count: number; last: string | null; onClick: () => void }) => (
@@ -502,7 +630,15 @@ export function OutreachBoard({
                   </td>
                   <td className="whitespace-nowrap px-2 py-1.5 align-middle">
                     <span className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
-                      <AddToListSelect personId={p.id} exclude={p.lists.map((l) => l.listId)} />
+                      <ListMembershipMenu
+                        personId={p.id}
+                        currentListId={null}
+                        lists={board.lists}
+                        busy={busy}
+                        onAdd={addToList}
+                        onRemove={removeMembership}
+                        onMove={moveMembership}
+                      />
                       <button type="button" title="Delete from directory (all lists)" onClick={() => deletePerson(p)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
                     </span>
                   </td>
@@ -579,7 +715,15 @@ export function OutreachBoard({
                     <span className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
                       <button type="button" title="Move up" disabled={i === 0} onClick={() => moveRow(row.membershipId, -1)} className={miniBtn}><ChevronUp size={13} /></button>
                       <button type="button" title="Move down" disabled={i === active.rows.length - 1} onClick={() => moveRow(row.membershipId, 1)} className={miniBtn}><ChevronDown size={13} /></button>
-                      <AddToListSelect personId={row.personId} exclude={[active.id, ...board.lists.filter((l) => l.rows.some((r) => r.personId === row.personId)).map((l) => l.id)]} />
+                      <ListMembershipMenu
+                        personId={row.personId}
+                        currentListId={active.id}
+                        lists={board.lists}
+                        busy={busy}
+                        onAdd={addToList}
+                        onRemove={removeMembership}
+                        onMove={moveMembership}
+                      />
                       <button type="button" title="Remove from this list (stays in directory)" onClick={() => removeFromList(row)} className={cn(miniBtn, "hover:text-rose-700")}><UserMinus size={12} /></button>
                     </span>
                   </td>
@@ -600,7 +744,9 @@ export function OutreachBoard({
       <p className="text-[11px] text-muted">
         <Link2 size={9} className="mr-1 inline text-brand-600" />
         marked columns are shared across all lists — edit once, updates everywhere. Cells save when you click away.
-        Hover a row for actions; “Added by” is recorded automatically. The Reach-outs chip opens a
+        Hover a row for actions. The <ListChecks size={10} className="mx-0.5 inline text-brand-600" /><strong>Lists</strong> button
+        moves a contact to or from any list — tick a list to add them, untick to remove, or move them off the current
+        list in one click. “Added by” is recorded automatically; the Reach-outs chip opens a
         contact&apos;s history — when, what, and who initiated each touch.
       </p>
 

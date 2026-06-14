@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Outreach · move/remove contacts between lists — Jun 2026
+  {
+    title: "Outreach · move or remove a contact between lists",
+    body: "Each outreach contact now has a **Lists** button (hover a row, on every list and the Directory) for managing which lists they belong to — replacing the old hard-to-spot add control. Open it to see every list with a checkbox: **tick** to add the contact to a list, **untick** to remove them from one. From inside a list you can also **move** a contact off the current list onto another in a single click — they leave here and join there, keeping their shared details and reach-out history. Removing a contact from a list never deletes them: they stay in the Directory and on any other lists.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Outreach · email templates — Jun 2026
   {
     title: "Outreach · ready-to-use email templates",

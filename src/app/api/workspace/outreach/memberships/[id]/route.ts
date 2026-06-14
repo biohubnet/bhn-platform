@@ -3,6 +3,9 @@
  *   PATCH  /api/workspace/outreach/memberships/[id]
  *     { values }       → update this list's fields for the person
  *     { move: -1 | 1 } → swap with the neighbour in the same list
+ *     { toListId }     → MOVE the person off this list onto another list
+ *                        (relocates this membership; if they're already on the
+ *                        target, the move just removes them from here)
  *   DELETE /api/workspace/outreach/memberships/[id]
  *     → remove the person from this list (they stay in the directory)
  */
@@ -30,7 +33,29 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const membership = await prisma.outreachMembership.findUnique({ where: { id } });
   if (!membership) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  const body = (await req.json().catch(() => ({}))) as { values?: unknown; move?: number };
+  const body = (await req.json().catch(() => ({}))) as { values?: unknown; move?: number; toListId?: string };
+
+  // Move the person off this list onto another list.
+  if (typeof body.toListId === "string" && body.toListId) {
+    if (body.toListId === membership.listId) return NextResponse.json({ ok: true });
+    const target = await prisma.outreachList.findUnique({ where: { id: body.toListId }, select: { id: true } });
+    if (!target) return NextResponse.json({ error: "Target list not found." }, { status: 404 });
+    const already = await prisma.outreachMembership.findUnique({
+      where: { listId_personId: { listId: body.toListId, personId: membership.personId } },
+      select: { id: true },
+    });
+    if (already) {
+      // Already on the target — moving off the source just removes this membership.
+      await prisma.outreachMembership.delete({ where: { id: membership.id } }).catch(() => null);
+      return NextResponse.json({ ok: true, alreadyOnTarget: true });
+    }
+    const order = await prisma.outreachMembership.count({ where: { listId: body.toListId } });
+    await prisma.outreachMembership.update({
+      where: { id: membership.id },
+      data: { listId: body.toListId, order },
+    });
+    return NextResponse.json({ ok: true });
+  }
 
   if (body.move === -1 || body.move === 1) {
     const neighbour = await prisma.outreachMembership.findFirst({
