@@ -22,7 +22,7 @@ export async function POST(_req: NextRequest, ctx: Ctx) {
     where: { id, userId: uid },
     select: {
       id: true, role: true,
-      answers: { orderBy: { order: "asc" }, select: { question: true, transcript: true, score: true } },
+      answers: { orderBy: { order: "asc" }, select: { question: true, transcript: true, score: true, confidence: true } },
     },
   });
   if (!interview) return NextResponse.json({ error: "Not found." }, { status: 404 });

@@ -106,6 +106,17 @@ function useRecorder() {
     [],
   );
 
+  // Safety net: if the component unmounts mid-recording (navigation, tab
+  // close), tear down the recorder + release the mic so it doesn't stay hot.
+  useEffect(() => {
+    return () => {
+      try {
+        if (mrRef.current && mrRef.current.state !== "inactive") mrRef.current.stop();
+      } catch { /* already stopped */ }
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
   return { recording, supported, start, stop };
 }
 

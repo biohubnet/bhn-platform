@@ -82,24 +82,44 @@ export function paceLabel(wpm: number): string {
   return "rushed — slow down and breathe";
 }
 
-/** Pull the first JSON value (object or array) out of a model reply. */
+/** Pull the first complete JSON value (object or array) out of a model reply.
+ *  Scans for the bracket that BALANCES the first opener (string-aware), so a
+ *  reply with prose or a second JSON blob after it still parses correctly —
+ *  `lastIndexOf` would grab the wrong closer. */
 function extractJson<T>(raw: string): T | null {
   const cleaned = raw.replace(/```(?:json)?/gi, "").trim();
-  // Try array first, then object — whichever appears first.
   const firstArr = cleaned.indexOf("[");
   const firstObj = cleaned.indexOf("{");
   const starts = [firstArr, firstObj].filter((i) => i >= 0);
   if (starts.length === 0) return null;
   const start = Math.min(...starts);
-  const openCh = cleaned[start];
-  const closeCh = openCh === "[" ? "]" : "}";
-  const end = cleaned.lastIndexOf(closeCh);
-  if (end <= start) return null;
-  try {
-    return JSON.parse(cleaned.slice(start, end + 1)) as T;
-  } catch {
-    return null;
+  const open = cleaned[start];
+  const close = open === "[" ? "]" : "}";
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  for (let i = start; i < cleaned.length; i++) {
+    const c = cleaned[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"') inStr = true;
+    else if (c === open) depth++;
+    else if (c === close) {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(cleaned.slice(start, i + 1)) as T;
+        } catch {
+          return null;
+        }
+      }
+    }
   }
+  return null;
 }
 
 const clampScore = (n: unknown): number => {
@@ -213,7 +233,9 @@ export async function evaluateAnswer(input: {
     };
   }
   const p = extractJson<Record<string, unknown>>(res.text) ?? {};
-  const confidence = p.confidence === undefined || p.confidence === null ? null : clampScore(p.confidence);
+  // Only accept a genuinely numeric confidence — a garbage value (e.g.
+  // "high") must read as "not scored" (null), not a misleading 0/100.
+  const confidence = typeof p.confidence === "number" && Number.isFinite(p.confidence) ? clampScore(p.confidence) : null;
   return {
     score: clampScore(p.score),
     feedback: typeof p.feedback === "string" ? p.feedback.trim().slice(0, 1200) : "",
@@ -228,24 +250,28 @@ export async function evaluateAnswer(input: {
 
 export async function summarizeInterview(input: {
   role: string;
-  answers: { question: string; transcript: string; score: number | null }[];
+  answers: { question: string; transcript: string; score: number | null; confidence?: number | null }[];
   userId?: string | null;
 }): Promise<{ overallScore: number; summary: string }> {
   const answered = input.answers.filter((a) => a.transcript.trim().length > 0);
   const avg = answered.length
     ? Math.round(answered.reduce((s, a) => s + (a.score ?? 0), 0) / answered.length)
     : 0;
+  const withConf = answered.filter((a) => typeof a.confidence === "number");
+  const avgConf = withConf.length
+    ? Math.round(withConf.reduce((s, a) => s + (a.confidence ?? 0), 0) / withConf.length)
+    : null;
 
   const system = [
     "You are an interview coach writing a short end-of-session debrief.",
     "Summarize the candidate's overall performance across the whole mock interview: 2-4 sentences, warm and specific.",
-    "Name the strongest theme and the single highest-leverage thing to work on next. No bullet lists, no preamble.",
+    "Cover BOTH content (what they said) and, when a confidence read is given, delivery (how they came across). Name the strongest theme and the single highest-leverage thing to work on next. No bullet lists, no preamble.",
     'Respond with ONLY JSON: {"summary": string}',
   ].join("\n");
   const user = [
     `Role: ${input.role}`,
-    `Per-question results:\n${input.answers.map((a, i) => `${i + 1}. [${a.score ?? "—"}] ${a.question}\n   Answer: ${a.transcript.trim().slice(0, 600) || "(skipped)"}`).join("\n")}`,
-    `Computed average score: ${avg}/100.`,
+    `Per-question results (content score / confidence):\n${input.answers.map((a, i) => `${i + 1}. [content ${a.score ?? "—"} · confidence ${a.confidence ?? "—"}] ${a.question}\n   Answer: ${a.transcript.trim().slice(0, 600) || "(skipped)"}`).join("\n")}`,
+    `Computed averages — content: ${avg}/100${avgConf !== null ? `; delivery confidence: ${avgConf}/100` : " (no voice answers, so no delivery read)"}.`,
   ].join("\n\n");
 
   const res = await chat(
