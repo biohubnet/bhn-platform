@@ -5178,10 +5178,15 @@ model MockInterviewAnswer {
   questionKind String   @default("behavioral")
   transcript   String   @default("")
   inputMode    String   @default("text") // voice | text
-  score        Int?                       // 0–100
+  score        Int?                       // 0–100 (content)
   feedback     String   @default("")
   strengths    Json     @default("[]")
   improvements Json     @default("[]")
+  /// Voice-confidence read (0–100) + delivery metrics from the recording.
+  confidence   Int?
+  wpm          Int?
+  fillerCount  Int?
+  deliveryNote String   @default("")
   answeredAt   DateTime?
   createdAt    DateTime @default(now())
 

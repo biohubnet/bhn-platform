@@ -18,8 +18,10 @@ const nextConfig: NextConfig = {
   // Referrer-Policy: strict-origin-when-cross-origin — sends the full
   //   URL for same-origin requests; only the origin for cross-origin
   //   ones; nothing on downgrades (https → http).
-  // Permissions-Policy — opt out of powerful browser features the
-  //   platform doesn't use (camera, microphone, geolocation).
+  // Permissions-Policy — opt out of powerful browser features. Camera and
+  //   geolocation stay fully disabled; microphone is allowed on our OWN
+  //   origin (self) for the Mock Interview voice answers, while still blocked
+  //   for any third-party iframe.
   async headers() {
     return [
       {
@@ -28,7 +30,7 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options",  value: "nosniff" },
           { key: "X-Frame-Options",          value: "SAMEORIGIN" },
           { key: "Referrer-Policy",          value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy",       value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Permissions-Policy",       value: "camera=(), microphone=(self), geolocation=()" },
         ],
       },
       // /scorm-loader.html — make it uncacheable. Browsers don't

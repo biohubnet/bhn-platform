@@ -205,10 +205,12 @@ export async function embed(texts: string[], opts: EmbedOpts = {}): Promise<numb
  * No Gemini fallback — Whisper is Cloudflare-only here. The server route is
  * responsible for capping audio size.
  */
+export interface TranscriptWord { word: string; start: number; end: number }
+
 export async function transcribe(
   audio: Uint8Array | ArrayBuffer,
   opts: BaseOpts = {},
-): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; text: string; words: TranscriptWord[]; wordCount: number } | { ok: false; error: string }> {
   if (!CF_TOKEN || !CF_ACCOUNT) return { ok: false, error: "Speech-to-text isn't configured." };
   const bytes = audio instanceof ArrayBuffer ? new Uint8Array(audio) : audio;
   const start = Date.now();
@@ -221,11 +223,20 @@ export async function transcribe(
         body: bytes as unknown as BodyInit,
       },
     );
-    const j = (await res.json()) as { success?: boolean; result?: { text?: string }; errors?: { message: string }[] };
+    const j = (await res.json()) as {
+      success?: boolean;
+      result?: { text?: string; word_count?: number; words?: { word?: string; start?: number; end?: number }[] };
+      errors?: { message: string }[];
+    };
     if (!res.ok || j.success === false) {
       throw new Error(j.errors?.[0]?.message ?? `Whisper HTTP ${res.status}`);
     }
     const text = (j.result?.text ?? "").trim();
+    const words: TranscriptWord[] = Array.isArray(j.result?.words)
+      ? j.result!.words!
+          .filter((w) => typeof w.word === "string" && typeof w.start === "number" && typeof w.end === "number")
+          .map((w) => ({ word: w.word as string, start: w.start as number, end: w.end as number }))
+      : [];
     await logInteraction({
       userId: opts.userId,
       kind: opts.feature ?? "transcribe",
@@ -234,7 +245,7 @@ export async function transcribe(
       latencyMs: Date.now() - start,
       success: true,
     });
-    return { ok: true, text };
+    return { ok: true, text, words, wordCount: j.result?.word_count ?? words.length };
   } catch (e) {
     const err = (e as Error).message;
     await logInteraction({

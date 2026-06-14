@@ -9,7 +9,7 @@
  * or fences) and clamp/validate so a malformed reply degrades gracefully
  * instead of throwing.
  */
-import { chat } from "@/lib/ai";
+import { chat, type TranscriptWord } from "@/lib/ai";
 
 export type QuestionKind = "behavioral" | "technical" | "situational" | "motivation";
 const KINDS: QuestionKind[] = ["behavioral", "technical", "situational", "motivation"];
@@ -19,10 +19,67 @@ export interface GeneratedQuestion {
   kind: QuestionKind;
 }
 export interface AnswerEvaluation {
-  score: number; // 0–100
+  score: number; // 0–100 — content quality
   feedback: string;
   strengths: string[];
   improvements: string[];
+  confidence: number | null; // 0–100 — how assured the delivery sounded/read
+  deliveryFeedback: string;  // coaching on pace, fillers, hedging, assertiveness
+}
+
+// ── Delivery metrics (from Whisper word timestamps) ───────────────────────
+
+export interface DeliveryMetrics {
+  durationSec: number;
+  wordCount: number;
+  wpm: number;          // speaking pace
+  fillerCount: number;  // um / uh / like / you know / sort of …
+  fillerRate: number;   // fillers per 100 words
+  longPauses: number;   // silences > 1.2s between words
+}
+
+const SINGLE_FILLERS = new Set(["um", "umm", "uh", "uhh", "uhm", "er", "err", "ah", "ahh", "hmm", "mhm", "like"]);
+const MULTI_FILLERS = [/\byou know\b/gi, /\bsort of\b/gi, /\bkind of\b/gi, /\bi mean\b/gi, /\byou see\b/gi];
+const PAUSE_THRESHOLD = 1.2; // seconds
+
+/** Compute objective delivery metrics from Whisper word timings. Returns null
+ *  when there aren't enough timestamped words to be meaningful (e.g. a typed
+ *  answer, or a model that didn't return word timings). */
+export function computeDelivery(words: TranscriptWord[], fullText: string): DeliveryMetrics | null {
+  if (!Array.isArray(words) || words.length < 5) return null;
+  const durationSec = Math.max(0, words[words.length - 1].end - words[0].start);
+  if (durationSec < 1) return null;
+  const wordCount = words.length;
+  const wpm = Math.round(wordCount / (durationSec / 60));
+
+  let fillerCount = 0;
+  for (const w of words) {
+    const clean = w.word.toLowerCase().replace(/[^a-z]/g, "");
+    if (SINGLE_FILLERS.has(clean)) fillerCount++;
+  }
+  for (const re of MULTI_FILLERS) fillerCount += (fullText.match(re) ?? []).length;
+
+  let longPauses = 0;
+  for (let i = 1; i < words.length; i++) {
+    if (words[i].start - words[i - 1].end > PAUSE_THRESHOLD) longPauses++;
+  }
+
+  return {
+    durationSec: Math.round(durationSec),
+    wordCount,
+    wpm,
+    fillerCount,
+    fillerRate: Math.round((fillerCount / wordCount) * 1000) / 10,
+    longPauses,
+  };
+}
+
+/** Qualitative pace label for the UI. */
+export function paceLabel(wpm: number): string {
+  if (wpm < 100) return "measured — could pick up the pace a little";
+  if (wpm <= 160) return "a natural, confident pace";
+  if (wpm <= 185) return "slightly fast";
+  return "rushed — slow down and breathe";
 }
 
 /** Pull the first JSON value (object or array) out of a model reply. */
@@ -117,24 +174,33 @@ export async function evaluateAnswer(input: {
   question: string;
   questionKind: string;
   transcript: string;
+  /** Delivery metrics from the recording (voice answers only). */
+  delivery?: DeliveryMetrics | null;
   userId?: string | null;
 }): Promise<AnswerEvaluation> {
+  const d = input.delivery ?? null;
+  const deliveryLine = d
+    ? `Delivery metrics from the recording: spoke ~${d.wordCount} words in ${d.durationSec}s (${d.wpm} words/min, ${paceLabel(d.wpm)}); ${d.fillerCount} filler word(s) (${d.fillerRate} per 100 words); ${d.longPauses} long pause(s).`
+    : "No audio delivery metrics (the answer was typed, or timing wasn't available) — judge confidence only from the wording (hedging, qualifiers, assertiveness).";
+
   const system = [
-    "You are a supportive but honest interview coach. Evaluate ONE answer to ONE interview question.",
-    "Judge on: relevance to the question, structure (STAR for behavioral), specificity / concrete evidence, and clarity / conciseness.",
-    "Be encouraging and concrete. Strengths and improvements must be specific to what they actually said — never generic.",
-    "Account for the answer being a speech transcript (filler words, minor disfluencies are normal; don't over-penalize).",
-    'Respond with ONLY JSON: {"score": number 0-100, "feedback": string (2-4 sentences), "strengths": string[] (1-3), "improvements": string[] (1-3)}',
+    "You are a supportive but honest interview coach. Evaluate ONE answer to ONE interview question on two SEPARATE axes:",
+    "1) CONTENT (score): relevance, structure (STAR for behavioral), specificity / concrete evidence, clarity.",
+    "2) CONFIDENCE (confidence): how assured and credible the delivery comes across. Use the delivery metrics when given (pace, fillers, pauses) AND the wording (hedging like 'I think maybe', 'sort of', 'I guess', 'probably', over-apologizing, trailing off vs. direct, owned statements). A great answer can still be undersold by shaky delivery, and vice-versa.",
+    "Be encouraging and concrete. Strengths/improvements are about CONTENT; deliveryFeedback is one or two sentences of specific delivery coaching (e.g. cut a named filler, slow down, state it without hedging). Never generic.",
+    "Speech transcripts have natural disfluencies — coach them, don't harshly penalize.",
+    'Respond with ONLY JSON: {"score": number 0-100, "feedback": string (2-4 sentences), "strengths": string[] (1-3), "improvements": string[] (1-3), "confidence": number 0-100, "deliveryFeedback": string (1-2 sentences)}',
   ].join("\n");
   const user = [
     `Role: ${input.role}`,
     `Question (${input.questionKind}): ${input.question}`,
     `Candidate's answer (transcript): ${input.transcript.trim().slice(0, 4000) || "(no answer given)"}`,
+    deliveryLine,
   ].join("\n\n");
 
   const res = await chat(
     [{ role: "system", content: system }, { role: "user", content: user }],
-    { maxTokens: 600, temperature: 0.4, feature: "mock_interview_eval", userId: input.userId },
+    { maxTokens: 700, temperature: 0.4, feature: "mock_interview_eval", userId: input.userId },
   );
   if (!res.ok) {
     return {
@@ -142,14 +208,19 @@ export async function evaluateAnswer(input: {
       feedback: "We couldn't score this answer automatically right now — your transcript is saved, try scoring again later.",
       strengths: [],
       improvements: [],
+      confidence: null,
+      deliveryFeedback: "",
     };
   }
   const p = extractJson<Record<string, unknown>>(res.text) ?? {};
+  const confidence = p.confidence === undefined || p.confidence === null ? null : clampScore(p.confidence);
   return {
     score: clampScore(p.score),
     feedback: typeof p.feedback === "string" ? p.feedback.trim().slice(0, 1200) : "",
     strengths: asStringList(p.strengths, 3),
     improvements: asStringList(p.improvements, 3),
+    confidence,
+    deliveryFeedback: typeof p.deliveryFeedback === "string" ? p.deliveryFeedback.trim().slice(0, 600) : "",
   };
 }
 

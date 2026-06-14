@@ -31,6 +31,7 @@ export default async function MockInterviewRunnerPage({ params }: Props) {
           id: true, order: true, question: true, questionKind: true,
           transcript: true, inputMode: true, score: true, feedback: true,
           strengths: true, improvements: true, answeredAt: true,
+          confidence: true, wpm: true, fillerCount: true, deliveryNote: true,
         },
       },
     },
@@ -48,6 +49,10 @@ export default async function MockInterviewRunnerPage({ params }: Props) {
     feedback: a.feedback,
     strengths: asList(a.strengths),
     improvements: asList(a.improvements),
+    confidence: a.confidence,
+    wpm: a.wpm,
+    fillerCount: a.fillerCount,
+    deliveryNote: a.deliveryNote,
     answered: a.answeredAt !== null,
   }));
 

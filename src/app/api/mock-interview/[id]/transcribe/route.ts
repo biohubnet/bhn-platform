@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { transcribe } from "@/lib/ai";
+import { computeDelivery } from "@/lib/interview/ai";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -34,5 +35,8 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   if (!result.ok) {
     return NextResponse.json({ error: `Couldn't transcribe: ${result.error}. You can type your answer instead.` }, { status: 502 });
   }
-  return NextResponse.json({ ok: true, text: result.text });
+  // Objective delivery metrics from the word timings (pace, fillers, pauses).
+  // Null when the model didn't return usable timestamps — the answer still works.
+  const delivery = computeDelivery(result.words, result.text);
+  return NextResponse.json({ ok: true, text: result.text, delivery });
 }

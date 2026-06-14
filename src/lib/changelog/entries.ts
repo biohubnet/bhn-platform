@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Practice · Mock Interview — Jun 2026
   {
     title: "Practice interviews out loud — new Mock Interview",
-    body: "A new **Mock Interview** tool (under EXPERIENCE) lets you rehearse interviews by voice. Pick the role you're practising for — optionally paste the job description — and the AI generates a tailored question set. Answer each one **out loud** (your recording is auto-transcribed) or by typing, and get an honest 0–100 score with specific strengths and fixes per answer, then an overall debrief at the end. Past sessions are saved so you can track your improvement. Voice is optional — typing works everywhere.",
+    body: "A new **Mock Interview** tool (under EXPERIENCE) lets you rehearse interviews by voice. Pick the role you're practising for — optionally paste the job description — and the AI generates a tailored question set. Answer each one **out loud** (your recording is auto-transcribed) or by typing, and get an honest 0–100 score with specific strengths and fixes per answer, then an overall debrief at the end. Past sessions are saved so you can track your improvement. Voice is optional — typing works everywhere. Voice answers also get a **confidence read**: a 0–100 score plus delivery coaching on your pace (words per minute), filler words, and any hedging — so you can practise *how* you come across, not just what you say.",
     kind: "feature",
     visibleTo: ALL,
     daysAgo: 0,

@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Mic, Square, Volume2, Loader2, ChevronLeft, ChevronRight, Check,
-  Flag, Trash2, Sparkles, RotateCcw,
+  Flag, Trash2, Sparkles, RotateCcw, Gauge,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
@@ -31,8 +31,13 @@ export interface RunnerAnswer {
   feedback: string;
   strengths: string[];
   improvements: string[];
+  confidence: number | null;
+  wpm: number | null;
+  fillerCount: number | null;
+  deliveryNote: string;
   answered: boolean;
 }
+interface Delivery { durationSec: number; wordCount: number; wpm: number; fillerCount: number; fillerRate: number; longPauses: number }
 interface InterviewInfo {
   id: string;
   role: string;
@@ -111,6 +116,7 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
   const firstUnanswered = Math.max(0, initial.findIndex((a) => !a.answered));
   const [idx, setIdx] = useState(interview.status === "complete" ? 0 : firstUnanswered === -1 ? 0 : firstUnanswered);
   const [draft, setDraft] = useState("");
+  const [delivery, setDelivery] = useState<Delivery | null>(null); // from the recording, if any
   const [busy, setBusy] = useState<"transcribe" | "score" | "finish" | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +130,7 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
   // Seed the draft from any saved transcript when moving between questions.
   useEffect(() => {
     setDraft(current?.transcript ?? "");
+    setDelivery(null); // delivery only applies to a fresh recording on this visit
     setError(null);
     stopSpeaking();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -162,9 +169,10 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
           headers: { "Content-Type": "application/octet-stream" },
           body: blob,
         });
-        const j = (await res.json().catch(() => ({}))) as { ok?: boolean; text?: string; error?: string };
+        const j = (await res.json().catch(() => ({}))) as { ok?: boolean; text?: string; error?: string; delivery?: Delivery | null };
         if (!res.ok || !j.ok) { setError(j.error ?? "Transcription failed — type your answer instead."); return; }
         setDraft((d) => (d.trim() ? `${d.trim()} ${j.text ?? ""}`.trim() : (j.text ?? "")));
+        if (j.delivery) setDelivery(j.delivery);
       } catch (e) {
         setError((e as Error).message);
       } finally {
@@ -173,8 +181,17 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
     } else {
       try {
         await recorder.start();
-      } catch {
-        setError("Couldn't access the mic. Allow microphone permission, or type your answer.");
+      } catch (e) {
+        const name = (e as DOMException)?.name;
+        setError(
+          name === "NotAllowedError"
+            ? "Microphone blocked. Click the mic/lock icon in your browser's address bar, allow the microphone, and try again — or just type your answer."
+            : name === "NotFoundError"
+              ? "No microphone found. Plug one in, or type your answer."
+              : name === "NotReadableError"
+                ? "Your mic is in use by another app. Close it and try again, or type your answer."
+                : "Couldn't access the mic. Allow microphone permission, or type your answer.",
+        );
       }
     }
   }
@@ -188,12 +205,27 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
       const res = await fetch(`/api/mock-interview/${interview.id}/answer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answerId: current.id, transcript: draft.trim(), inputMode: current.inputMode === "voice" ? "voice" : "text" }),
+        body: JSON.stringify({
+          answerId: current.id,
+          transcript: draft.trim(),
+          inputMode: delivery ? "voice" : "text",
+          delivery: delivery ?? undefined,
+        }),
       });
-      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; evaluation?: Omit<RunnerAnswer, "id" | "order" | "question" | "questionKind" | "transcript" | "inputMode" | "answered">; error?: string };
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        evaluation?: { score: number; feedback: string; strengths: string[]; improvements: string[]; confidence: number | null; deliveryFeedback: string };
+        delivery?: Delivery | null;
+        error?: string;
+      };
       if (!res.ok || !j.ok || !j.evaluation) { setError(j.error ?? "Scoring failed — try again."); return; }
       const ev = j.evaluation;
-      setAnswers((cur) => cur.map((a, i) => (i === idx ? { ...a, transcript: draft.trim(), answered: true, score: ev.score, feedback: ev.feedback, strengths: ev.strengths, improvements: ev.improvements } : a)));
+      setAnswers((cur) => cur.map((a, i) => (i === idx ? {
+        ...a, transcript: draft.trim(), answered: true,
+        score: ev.score, feedback: ev.feedback, strengths: ev.strengths, improvements: ev.improvements,
+        confidence: ev.confidence, deliveryNote: ev.deliveryFeedback,
+        wpm: j.delivery?.wpm ?? null, fillerCount: j.delivery?.fillerCount ?? null,
+      } : a)));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -329,7 +361,7 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
                 {current.answered ? "Re-score answer" : "Submit answer"}
               </button>
               {draft && !recorder.recording && (
-                <button type="button" onClick={() => setDraft("")} className="text-xs font-semibold text-muted hover:text-fg">Clear</button>
+                <button type="button" onClick={() => { setDraft(""); setDelivery(null); }} className="text-xs font-semibold text-muted hover:text-fg">Clear</button>
               )}
             </div>
             {error && <p className="mt-2 text-xs text-rose-700">{error}</p>}
@@ -361,6 +393,32 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
                   </div>
                 )}
               </div>
+
+              {/* Delivery & confidence (from the voice answer) */}
+              {(current.confidence !== null || current.wpm !== null || current.deliveryNote) && (
+                <div className="mt-3 rounded-lg border border-brand-200 bg-brand-50/40 p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider text-brand-700">
+                      <Gauge size={12} /> Delivery &amp; confidence
+                    </p>
+                    {current.confidence !== null && (
+                      <span className={cn("rounded-full px-2.5 py-1 text-xs font-extrabold tabular-nums", scoreBg(current.confidence))}>
+                        {current.confidence}/100
+                      </span>
+                    )}
+                  </div>
+                  {(current.wpm !== null || current.fillerCount !== null) && (
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-muted">
+                      {current.wpm !== null && <span><strong className="text-fg tabular-nums">{current.wpm}</strong> words/min</span>}
+                      {current.fillerCount !== null && <span><strong className="text-fg tabular-nums">{current.fillerCount}</strong> filler word{current.fillerCount === 1 ? "" : "s"}</span>}
+                    </div>
+                  )}
+                  {current.deliveryNote && <p className="mt-1.5 text-[12.5px] leading-relaxed text-fg">{current.deliveryNote}</p>}
+                  {current.wpm === null && current.confidence !== null && (
+                    <p className="mt-1.5 text-[11px] text-subtle">Confidence read from your wording. Record a voice answer for pace &amp; filler-word analysis.</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </Card>

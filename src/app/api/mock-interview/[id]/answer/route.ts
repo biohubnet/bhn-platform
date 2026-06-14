@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { evaluateAnswer } from "@/lib/interview/ai";
+import { evaluateAnswer, type DeliveryMetrics } from "@/lib/interview/ai";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -19,10 +19,24 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await ctx.params;
-  const body = (await req.json().catch(() => ({}))) as { answerId?: unknown; transcript?: unknown; inputMode?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { answerId?: unknown; transcript?: unknown; inputMode?: unknown; delivery?: unknown };
   const answerId = typeof body.answerId === "string" ? body.answerId : "";
   const transcript = typeof body.transcript === "string" ? body.transcript.trim().slice(0, 6000) : "";
   const inputMode = body.inputMode === "voice" ? "voice" : "text";
+  // Trust delivery metrics only on voice answers (the client computes them
+  // from the recording; a typed answer has no acoustic signal).
+  const rawD = (typeof body.delivery === "object" && body.delivery !== null ? body.delivery : null) as Partial<DeliveryMetrics> | null;
+  const delivery: DeliveryMetrics | null =
+    inputMode === "voice" && rawD && typeof rawD.wpm === "number"
+      ? {
+          durationSec: Number(rawD.durationSec) || 0,
+          wordCount: Number(rawD.wordCount) || 0,
+          wpm: Math.max(0, Math.min(400, Math.round(Number(rawD.wpm) || 0))),
+          fillerCount: Math.max(0, Math.round(Number(rawD.fillerCount) || 0)),
+          fillerRate: Number(rawD.fillerRate) || 0,
+          longPauses: Math.max(0, Math.round(Number(rawD.longPauses) || 0)),
+        }
+      : null;
   if (!answerId) return NextResponse.json({ error: "Missing answer." }, { status: 400 });
   if (!transcript) return NextResponse.json({ error: "Say or type an answer first." }, { status: 400 });
 
@@ -38,6 +52,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     question: answer.question,
     questionKind: answer.questionKind,
     transcript,
+    delivery,
     userId: uid,
   });
 
@@ -50,9 +65,13 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       feedback: evaluation.feedback,
       strengths: evaluation.strengths as unknown as Prisma.InputJsonValue,
       improvements: evaluation.improvements as unknown as Prisma.InputJsonValue,
+      confidence: evaluation.confidence,
+      wpm: delivery?.wpm ?? null,
+      fillerCount: delivery?.fillerCount ?? null,
+      deliveryNote: evaluation.deliveryFeedback,
       answeredAt: new Date(),
     },
   });
 
-  return NextResponse.json({ ok: true, evaluation });
+  return NextResponse.json({ ok: true, evaluation, delivery });
 }
