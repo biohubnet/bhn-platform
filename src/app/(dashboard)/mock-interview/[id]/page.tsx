@@ -26,6 +26,15 @@ function asGuidance(v: unknown): RunnerAnswer["guidance"] {
   };
 }
 
+const str = (v: unknown): string => (typeof v === "string" ? v : "");
+function asVoice(v: unknown): RunnerAnswer["voice"] {
+  if (typeof v !== "object" || v === null) return null;
+  const o = v as Record<string, unknown>;
+  const tone = str(o.tone), composure = str(o.composure), stumbles = str(o.stumbles), tip = str(o.tip);
+  if (!tone && !composure && !stumbles && !tip) return null;
+  return { tone, composure, stumbles, tip };
+}
+
 interface Props { params: Promise<{ id: string }> }
 
 export default async function MockInterviewRunnerPage({ params }: Props) {
@@ -45,7 +54,7 @@ export default async function MockInterviewRunnerPage({ params }: Props) {
           transcript: true, inputMode: true, score: true, feedback: true,
           strengths: true, improvements: true, answeredAt: true,
           confidence: true, wpm: true, fillerCount: true, deliveryNote: true,
-          guidance: true,
+          guidance: true, voice: true, stumbleCount: true,
         },
       },
     },
@@ -66,8 +75,10 @@ export default async function MockInterviewRunnerPage({ params }: Props) {
     confidence: a.confidence,
     wpm: a.wpm,
     fillerCount: a.fillerCount,
+    stumbleCount: a.stumbleCount,
     deliveryNote: a.deliveryNote,
     guidance: asGuidance(a.guidance),
+    voice: asVoice(a.voice),
     answered: a.answeredAt !== null,
   }));
 

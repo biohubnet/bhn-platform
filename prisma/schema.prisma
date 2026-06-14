@@ -5191,6 +5191,10 @@ model MockInterviewAnswer {
   /// really want to hear. Generated on demand, cached here.
   /// { intent, approach, wantToHear[], avoid[], modelOutline[] }
   guidance     Json?
+  /// Voice-coach read of the spoken answer (voice answers only).
+  /// { tone, composure, stumbles, tip } + raw acoustics.
+  voice        Json?
+  stumbleCount Int?
   answeredAt   DateTime?
   createdAt    DateTime @default(now())
 

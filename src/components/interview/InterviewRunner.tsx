@@ -16,9 +16,11 @@ import { useRouter } from "next/navigation";
 import {
   Mic, Square, Volume2, Loader2, ChevronLeft, ChevronRight, Check,
   Flag, Trash2, Sparkles, RotateCcw, Gauge, Lightbulb, ChevronDown,
+  AudioLines, Waves, HeartPulse, Activity,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+import { analyzeAudio } from "@/lib/interview/acoustics";
 
 export interface RunnerAnswer {
   id: string;
@@ -34,12 +36,16 @@ export interface RunnerAnswer {
   confidence: number | null;
   wpm: number | null;
   fillerCount: number | null;
+  stumbleCount: number | null;
   deliveryNote: string;
   guidance: Guidance | null;
+  voice: VoiceRead | null;
   answered: boolean;
 }
 interface Guidance { intent: string; approach: string; wantToHear: string[]; avoid: string[]; modelOutline: string[] }
-interface Delivery { durationSec: number; wordCount: number; wpm: number; fillerCount: number; fillerRate: number; longPauses: number }
+interface VoiceRead { tone: string; composure: string; stumbles: string; tip: string }
+interface Delivery { durationSec: number; wordCount: number; wpm: number; fillerCount: number; fillerRate: number; longPauses: number; stumbleCount: number }
+interface Acoustics { pitchHzMean: number; pitchVariation: number; energyVariation: number; voicedRatio: number; monotone: boolean }
 interface InterviewInfo {
   id: string;
   role: string;
@@ -130,6 +136,7 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
   const [idx, setIdx] = useState(interview.status === "complete" ? 0 : firstUnanswered === -1 ? 0 : firstUnanswered);
   const [draft, setDraft] = useState("");
   const [delivery, setDelivery] = useState<Delivery | null>(null); // from the recording, if any
+  const [acoustics, setAcoustics] = useState<Acoustics | null>(null); // pitch/energy from the recording
   const [busy, setBusy] = useState<"transcribe" | "score" | "finish" | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -146,6 +153,7 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
   useEffect(() => {
     setDraft(current?.transcript ?? "");
     setDelivery(null); // delivery only applies to a fresh recording on this visit
+    setAcoustics(null);
     setError(null);
     setCoachOpen(false);
     stopSpeaking();
@@ -204,6 +212,8 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
       const blob = await recorder.stop();
       if (blob.size === 0) { setError("No audio captured — check mic permission."); return; }
       setBusy("transcribe");
+      // Analyze pitch/energy locally (best-effort) in parallel with Whisper.
+      const acousticsP = analyzeAudio(blob).catch(() => null);
       try {
         const res = await fetch(`/api/mock-interview/${interview.id}/transcribe`, {
           method: "POST",
@@ -218,6 +228,8 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
         setError((e as Error).message);
       } finally {
         setBusy(null);
+        const ac = await acousticsP;
+        if (ac) setAcoustics(ac);
       }
     } else {
       try {
@@ -249,13 +261,14 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
         body: JSON.stringify({
           answerId: current.id,
           transcript: draft.trim(),
-          inputMode: delivery ? "voice" : "text",
+          inputMode: delivery || acoustics ? "voice" : "text",
           delivery: delivery ?? undefined,
+          acoustics: acoustics ?? undefined,
         }),
       });
       const j = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
-        evaluation?: { score: number; feedback: string; strengths: string[]; improvements: string[]; confidence: number | null; deliveryFeedback: string };
+        evaluation?: { score: number; feedback: string; strengths: string[]; improvements: string[]; confidence: number | null; deliveryFeedback: string; voice: VoiceRead | null };
         delivery?: Delivery | null;
         error?: string;
       };
@@ -264,8 +277,8 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
       setAnswers((cur) => cur.map((a, i) => (i === idx ? {
         ...a, transcript: draft.trim(), answered: true,
         score: ev.score, feedback: ev.feedback, strengths: ev.strengths, improvements: ev.improvements,
-        confidence: ev.confidence, deliveryNote: ev.deliveryFeedback,
-        wpm: j.delivery?.wpm ?? null, fillerCount: j.delivery?.fillerCount ?? null,
+        confidence: ev.confidence, deliveryNote: ev.deliveryFeedback, voice: ev.voice ?? null,
+        wpm: j.delivery?.wpm ?? null, fillerCount: j.delivery?.fillerCount ?? null, stumbleCount: j.delivery?.stumbleCount ?? null,
       } : a)));
     } catch (e) {
       setError((e as Error).message);
@@ -460,7 +473,7 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
                 {current.answered ? "Re-score answer" : "Submit answer"}
               </button>
               {draft && !recorder.recording && (
-                <button type="button" onClick={() => { setDraft(""); setDelivery(null); }} className="text-xs font-semibold text-muted hover:text-fg">Clear</button>
+                <button type="button" onClick={() => { setDraft(""); setDelivery(null); setAcoustics(null); }} className="text-xs font-semibold text-muted hover:text-fg">Clear</button>
               )}
             </div>
             {error && <p className="mt-2 text-xs text-rose-700">{error}</p>}
@@ -515,6 +528,36 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
                   {current.deliveryNote && <p className="mt-1.5 text-[12.5px] leading-relaxed text-fg">{current.deliveryNote}</p>}
                   {current.wpm === null && current.confidence !== null && (
                     <p className="mt-1.5 text-[11px] text-subtle">Confidence read from your wording. Record a voice answer for pace &amp; filler-word analysis.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Voice coach — tone, nerves, stumbles (spoken answers) */}
+              {current.voice && (current.voice.tone || current.voice.composure || current.voice.stumbles || current.voice.tip) && (
+                <div className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50/40 p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider text-indigo-700">
+                      <AudioLines size={12} /> Voice coach
+                    </p>
+                    {current.stumbleCount !== null && (
+                      <span className="text-[11px] text-muted"><strong className="text-fg tabular-nums">{current.stumbleCount}</strong> stumble{current.stumbleCount === 1 ? "" : "s"}</span>
+                    )}
+                  </div>
+                  <div className="mt-2 space-y-1.5">
+                    {current.voice.tone && (
+                      <p className="flex gap-2 text-[12.5px] leading-relaxed text-fg"><Waves size={13} className="mt-0.5 shrink-0 text-indigo-600" /><span><span className="font-semibold">Tone:</span> {current.voice.tone}</span></p>
+                    )}
+                    {current.voice.composure && (
+                      <p className="flex gap-2 text-[12.5px] leading-relaxed text-fg"><HeartPulse size={13} className="mt-0.5 shrink-0 text-indigo-600" /><span><span className="font-semibold">Composure:</span> {current.voice.composure}</span></p>
+                    )}
+                    {current.voice.stumbles && (
+                      <p className="flex gap-2 text-[12.5px] leading-relaxed text-fg"><Activity size={13} className="mt-0.5 shrink-0 text-indigo-600" /><span><span className="font-semibold">Fluency:</span> {current.voice.stumbles}</span></p>
+                    )}
+                  </div>
+                  {current.voice.tip && (
+                    <p className="mt-2 rounded-md bg-indigo-100/60 px-2.5 py-1.5 text-[12px] leading-relaxed text-indigo-900">
+                      <span className="font-bold">Try this:</span> {current.voice.tip}
+                    </p>
                   )}
                 </div>
               )}

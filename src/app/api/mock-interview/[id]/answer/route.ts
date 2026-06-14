@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { evaluateAnswer, type DeliveryMetrics } from "@/lib/interview/ai";
+import { evaluateAnswer, type DeliveryMetrics, type VoiceAcoustics } from "@/lib/interview/ai";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await ctx.params;
-  const body = (await req.json().catch(() => ({}))) as { answerId?: unknown; transcript?: unknown; inputMode?: unknown; delivery?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { answerId?: unknown; transcript?: unknown; inputMode?: unknown; delivery?: unknown; acoustics?: unknown };
   const answerId = typeof body.answerId === "string" ? body.answerId : "";
   const transcript = typeof body.transcript === "string" ? body.transcript.trim().slice(0, 6000) : "";
   const inputMode = body.inputMode === "voice" ? "voice" : "text";
@@ -35,6 +35,19 @@ export async function POST(req: NextRequest, ctx: Ctx) {
           fillerCount: Math.max(0, Math.round(Number(rawD.fillerCount) || 0)),
           fillerRate: Number(rawD.fillerRate) || 0,
           longPauses: Math.max(0, Math.round(Number(rawD.longPauses) || 0)),
+          stumbleCount: Math.max(0, Math.round(Number(rawD.stumbleCount) || 0)),
+        }
+      : null;
+  // Acoustic features (pitch/energy) computed client-side from the recording.
+  const rawA = (typeof body.acoustics === "object" && body.acoustics !== null ? body.acoustics : null) as Partial<VoiceAcoustics> | null;
+  const acoustics: VoiceAcoustics | null =
+    inputMode === "voice" && rawA && typeof rawA.pitchVariation === "number"
+      ? {
+          pitchHzMean: Math.max(0, Math.round(Number(rawA.pitchHzMean) || 0)),
+          pitchVariation: Number(rawA.pitchVariation) || 0,
+          energyVariation: Number(rawA.energyVariation) || 0,
+          voicedRatio: Number(rawA.voicedRatio) || 0,
+          monotone: rawA.monotone === true,
         }
       : null;
   if (!answerId) return NextResponse.json({ error: "Missing answer." }, { status: 400 });
@@ -53,8 +66,14 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     questionKind: answer.questionKind,
     transcript,
     delivery,
+    acoustics,
     userId: uid,
   });
+
+  // Persist the voice read + the acoustics it was based on (for replay).
+  const voiceBlob = evaluation.voice
+    ? { ...evaluation.voice, acoustics: acoustics ?? undefined }
+    : null;
 
   await prisma.mockInterviewAnswer.update({
     where: { id: answer.id },
@@ -68,7 +87,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       confidence: evaluation.confidence,
       wpm: delivery?.wpm ?? null,
       fillerCount: delivery?.fillerCount ?? null,
+      stumbleCount: delivery?.stumbleCount ?? null,
       deliveryNote: evaluation.deliveryFeedback,
+      voice: (voiceBlob as unknown as Prisma.InputJsonValue) ?? Prisma.JsonNull,
       answeredAt: new Date(),
     },
   });

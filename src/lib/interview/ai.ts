@@ -25,6 +25,25 @@ export interface AnswerEvaluation {
   improvements: string[];
   confidence: number | null; // 0–100 — how assured the delivery sounded/read
   deliveryFeedback: string;  // coaching on pace, fillers, hedging, assertiveness
+  voice: VoiceCoaching | null; // voice-coach read (voice answers only)
+}
+
+/** Acoustic features measured client-side from the recording (mirrors
+ *  lib/interview/acoustics.ts — defined here so this server module doesn't
+ *  import the browser-only Web Audio code). */
+export interface VoiceAcoustics {
+  pitchHzMean: number;
+  pitchVariation: number;
+  energyVariation: number;
+  voicedRatio: number;
+  monotone: boolean;
+}
+/** A voice coach's qualitative read of the delivery. */
+export interface VoiceCoaching {
+  tone: string;      // monotone vs. expressive, projection
+  composure: string; // nerves / steadiness
+  stumbles: string;  // fluency — restarts, fillers
+  tip: string;       // one actionable voice tip
 }
 
 // ── Delivery metrics (from Whisper word timestamps) ───────────────────────
@@ -36,6 +55,7 @@ export interface DeliveryMetrics {
   fillerCount: number;  // um / uh / like / you know / sort of …
   fillerRate: number;   // fillers per 100 words
   longPauses: number;   // silences > 1.2s between words
+  stumbleCount: number; // repeated words / restarts ("the the", "I-I")
 }
 
 const SINGLE_FILLERS = new Set(["um", "umm", "uh", "uhh", "uhm", "er", "err", "ah", "ahh", "hmm", "mhm", "like"]);
@@ -60,8 +80,14 @@ export function computeDelivery(words: TranscriptWord[], fullText: string): Deli
   for (const re of MULTI_FILLERS) fillerCount += (fullText.match(re) ?? []).length;
 
   let longPauses = 0;
+  let stumbleCount = 0;
+  const clean = (w: string) => w.toLowerCase().replace(/[^a-z']/g, "");
   for (let i = 1; i < words.length; i++) {
     if (words[i].start - words[i - 1].end > PAUSE_THRESHOLD) longPauses++;
+    // A repeated word back-to-back is a stutter/restart ("the the", "I I").
+    const a = clean(words[i - 1].word);
+    const b = clean(words[i].word);
+    if (a && a === b) stumbleCount++;
   }
 
   return {
@@ -71,6 +97,7 @@ export function computeDelivery(words: TranscriptWord[], fullText: string): Deli
     fillerCount,
     fillerRate: Math.round((fillerCount / wordCount) * 1000) / 10,
     longPauses,
+    stumbleCount,
   };
 }
 
@@ -197,31 +224,40 @@ export async function evaluateAnswer(input: {
   transcript: string;
   /** Delivery metrics from the recording (voice answers only). */
   delivery?: DeliveryMetrics | null;
+  /** Acoustic features from the recording — pitch/energy (voice answers only). */
+  acoustics?: VoiceAcoustics | null;
   userId?: string | null;
 }): Promise<AnswerEvaluation> {
   const d = input.delivery ?? null;
+  const ac = input.acoustics ?? null;
+  const isVoice = d !== null || ac !== null;
   const deliveryLine = d
-    ? `Delivery metrics from the recording: spoke ~${d.wordCount} words in ${d.durationSec}s (${d.wpm} words/min, ${paceLabel(d.wpm)}); ${d.fillerCount} filler word(s) (${d.fillerRate} per 100 words); ${d.longPauses} long pause(s).`
+    ? `Delivery metrics from the recording: spoke ~${d.wordCount} words in ${d.durationSec}s (${d.wpm} words/min, ${paceLabel(d.wpm)}); ${d.fillerCount} filler word(s) (${d.fillerRate} per 100 words); ${d.longPauses} long pause(s); ${d.stumbleCount} stumble/restart(s).`
     : "No audio delivery metrics (the answer was typed, or timing wasn't available) — judge confidence only from the wording (hedging, qualifiers, assertiveness).";
+  const acousticsLine = ac
+    ? `Acoustic analysis of the voice: average pitch ~${ac.pitchHzMean} Hz; pitch variation ${ac.pitchVariation} (${ac.monotone ? "LOW — sounds monotone/flat" : "healthy — voice has melodic variation"}); loudness variation ${ac.energyVariation} (low = flat/under-projected); voiced ratio ${ac.voicedRatio}.`
+    : "No acoustic (pitch/energy) analysis available — base any tone read on wording + the delivery metrics, and say a clearer recording would sharpen the tone read.";
 
   const system = [
-    "You are a supportive but honest interview coach. Evaluate ONE answer to ONE interview question on two SEPARATE axes:",
+    "You are a supportive but honest interview coach AND voice coach. Evaluate ONE answer on these axes:",
     "1) CONTENT (score): relevance, structure (STAR for behavioral), specificity / concrete evidence, clarity.",
-    "2) CONFIDENCE (confidence): how assured and credible the delivery comes across. Use the delivery metrics when given (pace, fillers, pauses) AND the wording (hedging like 'I think maybe', 'sort of', 'I guess', 'probably', over-apologizing, trailing off vs. direct, owned statements). A great answer can still be undersold by shaky delivery, and vice-versa.",
-    "Be encouraging and concrete. Strengths/improvements are about CONTENT; deliveryFeedback is one or two sentences of specific delivery coaching (e.g. cut a named filler, slow down, state it without hedging). Never generic.",
-    "Speech transcripts have natural disfluencies — coach them, don't harshly penalize.",
-    'Respond with ONLY JSON: {"score": number 0-100, "feedback": string (2-4 sentences), "strengths": string[] (1-3), "improvements": string[] (1-3), "confidence": number 0-100, "deliveryFeedback": string (1-2 sentences)}',
+    "2) CONFIDENCE (confidence): how assured and credible the delivery comes across — from the delivery metrics AND wording (hedging, owned statements). A great answer can be undersold by shaky delivery, and vice-versa.",
+    "3) VOICE (voice): a voice coach's read of HOW they sounded, ONLY when this was a spoken answer. tone = monotone vs. expressive + projection (use the pitch/loudness variation); composure = nerves vs. steadiness (use fillers, pauses, stumbles, pace); stumbles = fluency (restarts, repeated words, filler clusters); tip = ONE concrete voice exercise/cue. Ground each in the actual metrics — cite the real number/signal. Be encouraging; disfluencies are normal, coach them. If no acoustic data, keep tone modest and say a recording sharpens it.",
+    "Be specific, never generic. Strengths/improvements are about CONTENT; deliveryFeedback is 1-2 sentences of delivery coaching.",
+    `Respond with ONLY JSON: {"score": number 0-100, "feedback": string (2-4 sentences), "strengths": string[] (1-3), "improvements": string[] (1-3), "confidence": number 0-100, "deliveryFeedback": string (1-2 sentences)${isVoice ? ', "voice": {"tone": string (1 sentence), "composure": string (1 sentence), "stumbles": string (1 sentence), "tip": string (1 sentence)}' : ""}}`,
   ].join("\n");
-  const user = [
+  const userParts = [
     `Role: ${input.role}`,
     `Question (${input.questionKind}): ${input.question}`,
     `Candidate's answer (transcript): ${input.transcript.trim().slice(0, 4000) || "(no answer given)"}`,
     deliveryLine,
-  ].join("\n\n");
+  ];
+  if (isVoice) userParts.push(acousticsLine);
+  const user = userParts.join("\n\n");
 
   const res = await chat(
     [{ role: "system", content: system }, { role: "user", content: user }],
-    { maxTokens: 700, temperature: 0.4, feature: "mock_interview_eval", userId: input.userId },
+    { maxTokens: 900, temperature: 0.4, feature: "mock_interview_eval", userId: input.userId },
   );
   if (!res.ok) {
     return {
@@ -231,12 +267,23 @@ export async function evaluateAnswer(input: {
       improvements: [],
       confidence: null,
       deliveryFeedback: "",
+      voice: null,
     };
   }
   const p = extractJson<Record<string, unknown>>(res.text) ?? {};
   // Only accept a genuinely numeric confidence — a garbage value (e.g.
   // "high") must read as "not scored" (null), not a misleading 0/100.
   const confidence = typeof p.confidence === "number" && Number.isFinite(p.confidence) ? clampScore(p.confidence) : null;
+  const vc = p.voice;
+  const voice: VoiceCoaching | null =
+    isVoice && typeof vc === "object" && vc !== null
+      ? {
+          tone: typeof (vc as Record<string, unknown>).tone === "string" ? ((vc as Record<string, unknown>).tone as string).trim().slice(0, 300) : "",
+          composure: typeof (vc as Record<string, unknown>).composure === "string" ? ((vc as Record<string, unknown>).composure as string).trim().slice(0, 300) : "",
+          stumbles: typeof (vc as Record<string, unknown>).stumbles === "string" ? ((vc as Record<string, unknown>).stumbles as string).trim().slice(0, 300) : "",
+          tip: typeof (vc as Record<string, unknown>).tip === "string" ? ((vc as Record<string, unknown>).tip as string).trim().slice(0, 300) : "",
+        }
+      : null;
   return {
     score: clampScore(p.score),
     feedback: typeof p.feedback === "string" ? p.feedback.trim().slice(0, 1200) : "",
@@ -244,6 +291,7 @@ export async function evaluateAnswer(input: {
     improvements: asStringList(p.improvements, 3),
     confidence,
     deliveryFeedback: typeof p.deliveryFeedback === "string" ? p.deliveryFeedback.trim().slice(0, 600) : "",
+    voice: voice && (voice.tone || voice.composure || voice.stumbles || voice.tip) ? voice : null,
   };
 }
 
