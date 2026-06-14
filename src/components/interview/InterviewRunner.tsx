@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Mic, Square, Volume2, Loader2, ChevronLeft, ChevronRight, Check,
-  Flag, Trash2, Sparkles, RotateCcw, Gauge,
+  Flag, Trash2, Sparkles, RotateCcw, Gauge, Lightbulb, ChevronDown,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
@@ -35,8 +35,10 @@ export interface RunnerAnswer {
   wpm: number | null;
   fillerCount: number | null;
   deliveryNote: string;
+  guidance: Guidance | null;
   answered: boolean;
 }
+interface Guidance { intent: string; approach: string; wantToHear: string[]; avoid: string[]; modelOutline: string[] }
 interface Delivery { durationSec: number; wordCount: number; wpm: number; fillerCount: number; fillerRate: number; longPauses: number }
 interface InterviewInfo {
   id: string;
@@ -132,6 +134,8 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
+  const [coachLoading, setCoachLoading] = useState(false);
   const [summary, setSummary] = useState({ status: interview.status, overallScore: interview.overallScore, text: interview.summary });
 
   const current = answers[idx];
@@ -143,9 +147,35 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
     setDraft(current?.transcript ?? "");
     setDelivery(null); // delivery only applies to a fresh recording on this visit
     setError(null);
+    setCoachOpen(false);
     stopSpeaking();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx]);
+
+  // Lazy-load per-question coaching ("how to answer" + what employers want).
+  async function toggleCoaching() {
+    if (!current) return;
+    if (current.guidance) { setCoachOpen((o) => !o); return; }
+    if (coachOpen) { setCoachOpen(false); return; }
+    setCoachLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/mock-interview/${interview.id}/guidance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answerId: current.id }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; guidance?: Guidance; error?: string };
+      if (!res.ok || !j.ok || !j.guidance) { setError(j.error ?? "Couldn't load coaching — try again."); return; }
+      const g = j.guidance;
+      setAnswers((cur) => cur.map((a, i) => (i === idx ? { ...a, guidance: g } : a)));
+      setCoachOpen(true);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setCoachLoading(false);
+    }
+  }
 
   // Recording timer.
   useEffect(() => {
@@ -336,6 +366,64 @@ export function InterviewRunner({ interview, answers: initial }: { interview: In
           </div>
 
           <p className="mt-3 text-lg font-bold leading-snug text-fg">{current.question}</p>
+
+          {/* Coaching — how to answer this + what employers want to hear */}
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={toggleCoaching}
+              disabled={coachLoading}
+              className="inline-flex items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700 hover:bg-violet-100 disabled:opacity-50"
+            >
+              {coachLoading ? <Loader2 size={13} className="animate-spin" /> : <Lightbulb size={13} />}
+              How to answer this
+              {current.guidance && <ChevronDown size={13} className={cn("transition-transform", coachOpen && "rotate-180")} />}
+            </button>
+
+            {coachOpen && current.guidance && (
+              <div className="mt-2 space-y-3 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+                {current.guidance.intent && (
+                  <div>
+                    <p className="text-[10.5px] font-bold uppercase tracking-wider text-violet-700">What they&apos;re really asking</p>
+                    <p className="mt-0.5 text-[13px] leading-relaxed text-fg">{current.guidance.intent}</p>
+                  </div>
+                )}
+                {current.guidance.approach && (
+                  <div>
+                    <p className="text-[10.5px] font-bold uppercase tracking-wider text-violet-700">How to approach it</p>
+                    <p className="mt-0.5 text-[13px] leading-relaxed text-fg">{current.guidance.approach}</p>
+                  </div>
+                )}
+                {current.guidance.wantToHear.length > 0 && (
+                  <div>
+                    <p className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700">What employers want to hear</p>
+                    <ul className="mt-1 space-y-1">
+                      {current.guidance.wantToHear.map((s, i) => <li key={i} className="flex gap-1.5 text-[12.5px] leading-snug text-fg"><Check size={13} className="mt-0.5 shrink-0 text-emerald-600" /> {s}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {current.guidance.avoid.length > 0 && (
+                  <div>
+                    <p className="text-[10.5px] font-bold uppercase tracking-wider text-rose-700">Avoid</p>
+                    <ul className="mt-1 space-y-1">
+                      {current.guidance.avoid.map((s, i) => <li key={i} className="text-[12.5px] leading-snug text-muted">— {s}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {current.guidance.modelOutline.length > 0 && (
+                  <div>
+                    <p className="text-[10.5px] font-bold uppercase tracking-wider text-subtle">A strong answer hits</p>
+                    <ol className="mt-1 list-decimal space-y-1 pl-4">
+                      {current.guidance.modelOutline.map((s, i) => <li key={i} className="text-[12.5px] leading-snug text-fg">{s}</li>)}
+                    </ol>
+                  </div>
+                )}
+                <p className="border-t border-violet-200/60 pt-2 text-[11px] text-muted">
+                  Try answering in your own words first, then compare — this is a scaffold, not a script.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Answer area */}
           <div className="mt-4">

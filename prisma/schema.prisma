@@ -5187,6 +5187,10 @@ model MockInterviewAnswer {
   wpm          Int?
   fillerCount  Int?
   deliveryNote String   @default("")
+  /// AI coaching for THIS question — how to approach it + what employers
+  /// really want to hear. Generated on demand, cached here.
+  /// { intent, approach, wantToHear[], avoid[], modelOutline[] }
+  guidance     Json?
   answeredAt   DateTime?
   createdAt    DateTime @default(now())
 

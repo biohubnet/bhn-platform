@@ -13,6 +13,19 @@ export const dynamic = "force-dynamic";
 const asList = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 
+function asGuidance(v: unknown): RunnerAnswer["guidance"] {
+  if (typeof v !== "object" || v === null) return null;
+  const o = v as Record<string, unknown>;
+  if (typeof o.intent !== "string" && typeof o.approach !== "string") return null;
+  return {
+    intent: typeof o.intent === "string" ? o.intent : "",
+    approach: typeof o.approach === "string" ? o.approach : "",
+    wantToHear: asList(o.wantToHear),
+    avoid: asList(o.avoid),
+    modelOutline: asList(o.modelOutline),
+  };
+}
+
 interface Props { params: Promise<{ id: string }> }
 
 export default async function MockInterviewRunnerPage({ params }: Props) {
@@ -32,6 +45,7 @@ export default async function MockInterviewRunnerPage({ params }: Props) {
           transcript: true, inputMode: true, score: true, feedback: true,
           strengths: true, improvements: true, answeredAt: true,
           confidence: true, wpm: true, fillerCount: true, deliveryNote: true,
+          guidance: true,
         },
       },
     },
@@ -53,6 +67,7 @@ export default async function MockInterviewRunnerPage({ params }: Props) {
     wpm: a.wpm,
     fillerCount: a.fillerCount,
     deliveryNote: a.deliveryNote,
+    guidance: asGuidance(a.guidance),
     answered: a.answeredAt !== null,
   }));
 
