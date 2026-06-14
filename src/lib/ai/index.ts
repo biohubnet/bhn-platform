@@ -68,10 +68,18 @@ async function logInteraction(input: {
   }
 }
 
+// Cloudflare Workers AI chat model. NOTE: Cloudflare retires model slugs on a
+// schedule (the previous @cf/meta/llama-3.1-8b-instruct was deprecated
+// 2026-05-30, returning HTTP 410). If chat() starts failing platform-wide,
+// check https://developers.cloudflare.com/workers-ai/models/ for the current
+// slug and update this one constant. The Gemini fallback in chat() keeps the
+// platform working in the meantime.
+const CF_CHAT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+
 /** Cloudflare Llama for chat. */
 async function chatCloudflare(messages: ChatMessage[], opts: ChatOpts) {
   const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.1-8b-instruct`,
+    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/${CF_CHAT_MODEL}`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${CF_TOKEN}`, "Content-Type": "application/json" },
@@ -83,12 +91,12 @@ async function chatCloudflare(messages: ChatMessage[], opts: ChatOpts) {
     }
   );
   const j = await res.json();
-  if (!j.success) throw new Error(j.errors?.[0]?.message ?? "Cloudflare AI call failed");
+  if (!res.ok || !j.success) throw new Error(j.errors?.[0]?.message ?? `Cloudflare AI HTTP ${res.status}`);
   return {
     text: (j.result?.response ?? "") as string,
     promptTokens: j.result?.usage?.prompt_tokens as number | undefined,
     completionTokens: j.result?.usage?.completion_tokens as number | undefined,
-    model: "llama-3.1-8b-instruct",
+    model: CF_CHAT_MODEL.replace(/^@cf\/meta\//, ""),
   };
 }
 
@@ -120,39 +128,50 @@ async function chatGemini(messages: ChatMessage[], opts: ChatOpts) {
 }
 
 export async function chat(messages: ChatMessage[], opts: ChatOpts = {}) {
-  const start = Date.now();
-  const provider = CF_TOKEN ? "cloudflare" : (GEMINI_KEY ? "gemini" : null);
-  if (!provider) {
+  // Try Cloudflare first (primary), then Gemini (fallback). The fallback is
+  // what keeps the platform working through a Cloudflare model deprecation or
+  // outage — previously a CF failure took every AI text feature down because
+  // there was no second provider in the path.
+  const providers: ("cloudflare" | "gemini")[] = [];
+  if (CF_TOKEN) providers.push("cloudflare");
+  if (GEMINI_KEY) providers.push("gemini");
+  if (providers.length === 0) {
     return { ok: false as const, error: "AI not configured", text: "" };
   }
-  try {
-    const result = provider === "cloudflare"
-      ? await chatCloudflare(messages, opts)
-      : await chatGemini(messages, opts);
-    await logInteraction({
-      userId: opts.userId,
-      kind: opts.feature ?? "chat",
-      provider,
-      model: result.model,
-      promptTokens: result.promptTokens,
-      completionTokens: result.completionTokens,
-      latencyMs: Date.now() - start,
-      success: true,
-    });
-    return { ok: true as const, text: result.text };
-  } catch (e) {
-    const err = (e as Error).message;
-    await logInteraction({
-      userId: opts.userId,
-      kind: opts.feature ?? "chat",
-      provider,
-      model: "unknown",
-      latencyMs: Date.now() - start,
-      success: false,
-      errorMessage: err,
-    });
-    return { ok: false as const, error: err, text: "" };
+
+  let lastErr = "AI not configured";
+  for (const provider of providers) {
+    const start = Date.now();
+    try {
+      const result = provider === "cloudflare"
+        ? await chatCloudflare(messages, opts)
+        : await chatGemini(messages, opts);
+      await logInteraction({
+        userId: opts.userId,
+        kind: opts.feature ?? "chat",
+        provider,
+        model: result.model,
+        promptTokens: result.promptTokens,
+        completionTokens: result.completionTokens,
+        latencyMs: Date.now() - start,
+        success: true,
+      });
+      return { ok: true as const, text: result.text };
+    } catch (e) {
+      lastErr = (e as Error).message;
+      await logInteraction({
+        userId: opts.userId,
+        kind: opts.feature ?? "chat",
+        provider,
+        model: "unknown",
+        latencyMs: Date.now() - start,
+        success: false,
+        errorMessage: lastErr,
+      });
+      // fall through to the next provider, if any
+    }
   }
+  return { ok: false as const, error: lastErr, text: "" };
 }
 
 /**
