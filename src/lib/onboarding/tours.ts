@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.16b";
+export const TOUR_VERSION = "2026.06.16c";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Outreach · intro history + two-version campaigns — Jun 2026
+  {
+    id: "outreach.intro-history",
+    title: "New vs returning contacts",
+    body: "Outreach now remembers whether each contact has had an intro. On Contacts, the Intro chip shows “Intro sent” or “Needs intro” (click to toggle) — everyone already in your directory counts as already-known. When you build a campaign you can pick two templates: an intro for new contacts and a “returning” one that opens by thanking contacts who already support you. The roster auto-sends the right version to each person.",
+    path: "/admin/workspace/outreach/contacts",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Contacts", href: "/admin/workspace/outreach/contacts" },
+    since: "2026.06.16c",
+  },
   // ─── Admin · AI metrics — Jun 2026
   {
     id: "admin.ai-metrics",

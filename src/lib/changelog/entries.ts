@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Outreach · intro history + two-version campaigns — Jun 2026
+  {
+    title: "Outreach · intro history + two-version campaigns",
+    body: "Each contact now tracks whether they've had an **intro email** — a new **Intro** chip on the Contacts directory shows green *Intro sent* or amber *Needs intro*, and you can click it to toggle. Everyone already in your directory was marked as already-known (they predate this and have heard from us). Campaigns can now carry **two versions**: an intro template for new contacts, and an optional **returning** template for contacts who already know us — one that opens by thanking them for their earlier support instead of introducing BHN again. On a campaign, the roster shows how many are new vs returning, tags each recipient **Intro** or **Returning**, and previews the right version per contact; marking a brand-new contact reached stamps their intro as sent. A ready-made “Returning partner (thanks for earlier support)” template is included.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Admin · AI reliability + metrics — Jun 2026
   {
     title: "Admin · AI metrics + a reliability layer",

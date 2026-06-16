@@ -43,29 +43,28 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     markSent?: unknown; unmarkSent?: unknown;
   };
 
-  // ── Mark a recipient reached — adds to sentPersonIds + logs a touch. ──
+  // ── Mark a recipient reached — adds to sentPersonIds + logs a touch, and
+  // stamps introSentAt if this was their first contact (the intro was sent). ──
   if (typeof body.markSent === "string") {
     const personId = body.markSent;
     const sent = asIds(campaign.sentPersonIds);
     if (!sent.includes(personId)) {
-      const person = await prisma.outreachPerson.findUnique({ where: { id: personId }, select: { id: true } });
+      const person = await prisma.outreachPerson.findUnique({ where: { id: personId }, select: { id: true, introSentAt: true } });
       if (!person) return NextResponse.json({ error: "Contact not found." }, { status: 404 });
-      await prisma.$transaction([
+      const ops: Prisma.PrismaPromise<unknown>[] = [
         prisma.outreachCampaign.update({
           where: { id },
           data: { sentPersonIds: [...sent, personId] as unknown as Prisma.InputJsonValue },
         }),
         prisma.outreachTouch.create({
-          data: {
-            personId,
-            listId: campaign.listId,
-            kind: "email",
-            note: `Campaign: ${campaign.name}`,
-            byId: uid,
-            byName,
-          },
+          data: { personId, listId: campaign.listId, kind: "email", note: `Campaign: ${campaign.name}`, byId: uid, byName },
         }),
-      ]);
+      ];
+      // Reaching a contact who had no intro on file = their intro was just sent.
+      if (!person.introSentAt) {
+        ops.push(prisma.outreachPerson.update({ where: { id: personId }, data: { introSentAt: new Date() } }));
+      }
+      await prisma.$transaction(ops);
     }
     return NextResponse.json({ ok: true });
   }

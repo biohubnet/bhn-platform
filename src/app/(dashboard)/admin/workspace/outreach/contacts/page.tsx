@@ -93,6 +93,7 @@ export default async function OutreachContactsPage() {
       lists: p.memberships.map((m) => ({ listId: m.listId, name: m.list.name })),
       touchCount: p._count.touches,
       lastTouchAt: p.touches[0]?.happenedAt.toISOString() ?? null,
+      introSentAt: p.introSentAt?.toISOString() ?? null,
     })),
   };
 

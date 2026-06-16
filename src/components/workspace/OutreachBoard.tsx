@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Loader2, Pencil, Check, X,
   Columns3, UserRound, ArrowLeft, ArrowRight, Link2, BookUser, UserMinus,
-  MessagesSquare, MailPlus, ListChecks,
+  MessagesSquare, MailPlus, ListChecks, MailCheck,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
@@ -49,6 +49,8 @@ interface DirPerson {
   lists: { listId: string; name: string }[];
   touchCount: number;
   lastTouchAt: string | null;
+  /** When the intro email was sent; null = net-new, still needs an intro. */
+  introSentAt: string | null;
 }
 export interface OutreachData { personColumns: ColumnDef[]; lists: ListData[]; directory: DirPerson[] }
 
@@ -377,6 +379,14 @@ export function OutreachBoard({
     await api(`/api/workspace/outreach/people/${p.id}`, { method: "DELETE" });
     router.refresh();
   }
+  // Toggle a person's intro history: mark the intro as sent (they already know
+  // us) or reset to "needs intro". The campaign 2-version logic reads this.
+  async function toggleIntro(p: DirPerson) {
+    const next = p.introSentAt ? null : new Date().toISOString();
+    setBoard((cur) => ({ ...cur, directory: cur.directory.map((x) => (x.id === p.id ? { ...x, introSentAt: next } : x)) }));
+    await api(`/api/workspace/outreach/people/${p.id}`, { method: "PATCH", body: JSON.stringify({ setIntroSent: !p.introSentAt }) });
+    router.refresh();
+  }
   async function addContact() {
     if (isDir) {
       await api(`/api/workspace/outreach/people`, { method: "POST", body: JSON.stringify({}) });
@@ -624,6 +634,7 @@ export function OutreachBoard({
                   </th>
                 ))}
                 <th className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">On lists</th>
+                <th className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Intro</th>
                 <th className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Reach-outs</th>
                 <th className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Added by</th>
                 <th className="sticky top-0 z-10 border-b border-line bg-card-solid w-24 px-3 py-2.5" />
@@ -648,6 +659,19 @@ export function OutreachBoard({
                       ))}
                       {p.lists.length === 0 && <span className="text-[11px] text-subtle">—</span>}
                     </span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 align-middle">
+                    <button
+                      type="button"
+                      onClick={() => toggleIntro(p)}
+                      title={p.introSentAt ? `Intro sent ${fmtShort(p.introSentAt)} — click to mark as needing an intro` : "No intro yet — click to mark the intro as already sent (they already know us)"}
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors",
+                        p.introSentAt ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-amber-50 text-amber-800 hover:bg-amber-100",
+                      )}
+                    >
+                      {p.introSentAt ? <><MailCheck size={10} /> Intro sent</> : <><MailPlus size={10} /> Needs intro</>}
+                    </button>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 align-middle">
                     <TouchChip
@@ -678,7 +702,7 @@ export function OutreachBoard({
                 </tr>
               ))}
               {board.directory.length === 0 && (
-                <tr><td colSpan={board.personColumns.length + 4} className="px-4 py-10 text-center text-sm text-muted">Nobody in the directory yet — hit <strong>Add contact</strong>.</td></tr>
+                <tr><td colSpan={board.personColumns.length + 5} className="px-4 py-10 text-center text-sm text-muted">Nobody in the directory yet — hit <strong>Add contact</strong>.</td></tr>
               )}
             </tbody>
           </table>

@@ -32,7 +32,18 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const person = await prisma.outreachPerson.findUnique({ where: { id } });
   if (!person) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  const body = (await req.json().catch(() => ({}))) as { values?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { values?: unknown; setIntroSent?: unknown };
+
+  // Toggle intro history: mark the intro as sent (already-known) or clear it
+  // back to "needs intro". Keeps an existing timestamp when re-marking.
+  if (typeof body.setIntroSent === "boolean") {
+    await prisma.outreachPerson.update({
+      where: { id },
+      data: { introSentAt: body.setIntroSent ? (person.introSentAt ?? new Date()) : null },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
   const values = sanitizeValues(body.values);
   if (!values) return NextResponse.json({ error: "Invalid values." }, { status: 400 });
 

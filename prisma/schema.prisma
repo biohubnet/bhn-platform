@@ -5096,6 +5096,10 @@ model OutreachPerson {
   addedByName String   @default("BHN team")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  /// When the introduction email was sent. null = net-new contact that still
+  /// needs an intro; set = they already know us (gets the returning/thank-you
+  /// campaign copy). Backfilled to createdAt for everyone predating this field.
+  introSentAt DateTime?
 
   memberships OutreachMembership[]
   touches     OutreachTouch[]
@@ -5182,8 +5186,13 @@ model OutreachCampaign {
   /// Target list; null = everyone in the directory.
   listId        String?
   list          OutreachList? @relation(fields: [listId], references: [id], onDelete: SetNull)
-  /// Email template id from the outreach templates library.
+  /// Email template id from the outreach templates library — the INTRO version,
+  /// used for contacts who haven't been introduced yet (introSentAt null).
   templateId    String
+  /// Optional second template for contacts who already know us (introSentAt
+  /// set) — opens by thanking them for their earlier support instead of
+  /// introducing BHN. Null = use the intro template for everyone.
+  returningTemplateId String?
   /// Campaign-level template variables keyed by token (programName, deadline…).
   vars          Json
   /// personIds already reached in this campaign (drives progress).

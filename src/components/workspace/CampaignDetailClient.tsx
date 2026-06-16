@@ -18,7 +18,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 
-export interface Recipient { personId: string; name: string; org: string; email: string }
+export interface Recipient { personId: string; name: string; org: string; email: string; needsIntro: boolean }
 
 interface CampaignInfo {
   id: string;
@@ -30,6 +30,10 @@ interface CampaignInfo {
   templateLabel: string;
   templateSubject: string;
   templateBody: string;
+  /** Second template for contacts who already know us; null = intro for all. */
+  returningTemplateLabel: string | null;
+  returningTemplateSubject: string | null;
+  returningTemplateBody: string | null;
   vars: Record<string, string>;
 }
 
@@ -84,13 +88,26 @@ export function CampaignDetailClient({
   const reached = useMemo(() => roster.filter((r) => sent.has(r.personId)).length, [roster, sent]);
   const pct = roster.length > 0 ? Math.round((reached / roster.length) * 100) : 0;
 
+  const hasReturning = campaign.returningTemplateSubject != null;
+  const newCount = useMemo(() => roster.filter((r) => r.needsIntro).length, [roster]);
+  const returningCount = roster.length - newCount;
+
   function api(path: string, body: unknown) {
     return fetch(path, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   }
 
+  // Which version a recipient receives: the returning copy if they already
+  // know us and a returning template exists, otherwise the intro copy.
+  function versionFor(r: Recipient): { kind: "intro" | "returning"; subject: string; body: string } {
+    if (!r.needsIntro && hasReturning) {
+      return { kind: "returning", subject: campaign.returningTemplateSubject ?? "", body: campaign.returningTemplateBody ?? "" };
+    }
+    return { kind: "intro", subject: campaign.templateSubject, body: campaign.templateBody };
+  }
   function fillsFor(r: Recipient) {
+    const v = versionFor(r);
     const map = { ...vars, firstName: (r.name || "").split(" ")[0] ?? "", contactName: r.name, org: r.org, email: r.email };
-    return { subject: fill(campaign.templateSubject, map), body: fill(campaign.templateBody, map) };
+    return { subject: fill(v.subject, map), body: fill(v.body, map) };
   }
 
   async function saveVars() {
@@ -185,7 +202,10 @@ export function CampaignDetailClient({
                 {campaign.listName ? <BookUser size={13} /> : <Users size={13} />}
                 {campaign.listName ?? "Everyone in the directory"}
               </span>
-              <span className="inline-flex items-center gap-1"><Megaphone size={13} /> {campaign.templateLabel}</span>
+              <span className="inline-flex items-center gap-1"><Megaphone size={13} /> Intro: {campaign.templateLabel}</span>
+              {hasReturning && (
+                <span className="inline-flex items-center gap-1"><MailCheck size={13} /> Returning: {campaign.returningTemplateLabel}</span>
+              )}
             </div>
           </div>
 
@@ -256,8 +276,16 @@ export function CampaignDetailClient({
 
       {/* Roster */}
       <Card className="p-0">
-        <div className="flex items-center justify-between border-b border-line px-4 py-3">
-          <h2 className="text-sm font-semibold text-fg">Recipients <span className="text-subtle">({roster.length})</span></h2>
+        <div className="border-b border-line px-4 py-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-fg">Recipients <span className="text-subtle">({roster.length})</span></h2>
+            <span className="text-[11px] text-muted">{newCount} new · {returningCount} returning</span>
+          </div>
+          {returningCount > 0 && !hasReturning && (
+            <p className="mt-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-[11px] text-amber-800">
+              {returningCount} {returningCount === 1 ? "contact already knows" : "contacts already know"} you, so they will get the intro too. Add a returning template (when creating a campaign) so they open with a thank-you for their earlier support instead.
+            </p>
+          )}
         </div>
         {roster.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted">
@@ -269,6 +297,7 @@ export function CampaignDetailClient({
               const isSent = sent.has(r.personId);
               const isOpen = expanded.has(r.personId);
               const preview = isOpen ? fillsFor(r) : null;
+              const ver = versionFor(r);
               return (
                 <li key={r.personId} className={cn("px-4 py-3", isSent && "bg-emerald-50/30")}>
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -276,6 +305,15 @@ export function CampaignDetailClient({
                       <p className="truncate text-sm font-semibold text-fg">
                         {r.name || <span className="text-muted">Unnamed contact</span>}
                         {r.org && <span className="ml-2 text-[12px] font-normal text-muted">{r.org}</span>}
+                        <span
+                          title={ver.kind === "returning" ? "Already knows you — gets the thank-you version" : "New contact — gets the intro version"}
+                          className={cn(
+                            "ml-2 rounded-full px-1.5 py-0.5 align-middle text-[9.5px] font-bold uppercase tracking-wide",
+                            ver.kind === "returning" ? "bg-emerald-50 text-emerald-700" : "bg-brand-50 text-brand-700",
+                          )}
+                        >
+                          {ver.kind === "returning" ? "Returning" : "Intro"}
+                        </span>
                       </p>
                       <p className="truncate text-[12px] text-subtle">{r.email || "No email on file"}</p>
                     </div>

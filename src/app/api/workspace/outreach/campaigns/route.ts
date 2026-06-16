@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const byName = (session.user as { name?: string }).name ?? "Admin";
 
   const body = (await req.json().catch(() => ({}))) as {
-    name?: unknown; templateId?: unknown; listId?: unknown; vars?: unknown;
+    name?: unknown; templateId?: unknown; returningTemplateId?: unknown; listId?: unknown; vars?: unknown;
   };
 
   const name = typeof body.name === "string" ? body.name.trim().slice(0, 120) : "";
@@ -37,6 +37,13 @@ export async function POST(req: NextRequest) {
 
   const templateId = typeof body.templateId === "string" ? body.templateId : "";
   if (!findTemplate(templateId)) return NextResponse.json({ error: "Unknown template." }, { status: 400 });
+
+  // Optional second template for contacts who already know us.
+  let returningTemplateId: string | null = null;
+  if (typeof body.returningTemplateId === "string" && body.returningTemplateId) {
+    if (!findTemplate(body.returningTemplateId)) return NextResponse.json({ error: "Unknown returning template." }, { status: 400 });
+    returningTemplateId = body.returningTemplateId;
+  }
 
   let listId: string | null = null;
   if (typeof body.listId === "string" && body.listId) {
@@ -49,6 +56,7 @@ export async function POST(req: NextRequest) {
     data: {
       name,
       templateId,
+      returningTemplateId,
       listId,
       vars: sanitizeVars(body.vars) as unknown as Prisma.InputJsonValue,
       sentPersonIds: [] as unknown as Prisma.InputJsonValue,

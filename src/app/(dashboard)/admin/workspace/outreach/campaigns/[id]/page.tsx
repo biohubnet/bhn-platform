@@ -33,28 +33,31 @@ export default async function CampaignDetailPage({ params }: PageProps) {
   if (!campaign) notFound();
 
   const overrides = await getOutreachTemplateOverrides();
-  const tpl = resolveTemplates(overrides).find((t) => t.id === campaign.templateId);
+  const tpls = resolveTemplates(overrides);
+  const tpl = tpls.find((t) => t.id === campaign.templateId);
+  // Optional second template for contacts who already know us.
+  const returning = campaign.returningTemplateId ? tpls.find((t) => t.id === campaign.returningTemplateId) : null;
 
-  // Build the roster from the target audience.
+  // Build the roster from the target audience. needsIntro = no intro on file yet.
   let roster: Recipient[];
   if (campaign.listId) {
     const memberships = await prisma.outreachMembership.findMany({
       where: { listId: campaign.listId },
       orderBy: { order: "asc" },
-      include: { person: { select: { id: true, values: true } } },
+      include: { person: { select: { id: true, values: true, introSentAt: true } } },
     });
     roster = memberships.map((m) => {
       const v = asValues(m.person.values);
-      return { personId: m.personId, name: v.name ?? "", org: v.org ?? "", email: v.email ?? "" };
+      return { personId: m.personId, name: v.name ?? "", org: v.org ?? "", email: v.email ?? "", needsIntro: !m.person.introSentAt };
     });
   } else {
     const people = await prisma.outreachPerson.findMany({
       orderBy: { createdAt: "asc" },
-      select: { id: true, values: true },
+      select: { id: true, values: true, introSentAt: true },
     });
     roster = people.map((p) => {
       const v = asValues(p.values);
-      return { personId: p.id, name: v.name ?? "", org: v.org ?? "", email: v.email ?? "" };
+      return { personId: p.id, name: v.name ?? "", org: v.org ?? "", email: v.email ?? "", needsIntro: !p.introSentAt };
     });
   }
 
@@ -72,6 +75,9 @@ export default async function CampaignDetailPage({ params }: PageProps) {
         templateLabel: tpl?.label ?? campaign.templateId,
         templateSubject: tpl?.subject ?? "",
         templateBody: tpl?.body ?? "",
+        returningTemplateLabel: returning?.label ?? null,
+        returningTemplateSubject: returning?.subject ?? null,
+        returningTemplateBody: returning?.body ?? null,
         vars: asVars(campaign.vars),
       }}
       roster={roster}

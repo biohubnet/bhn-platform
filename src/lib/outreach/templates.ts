@@ -124,6 +124,13 @@ export const OUTREACH_TEMPLATE_DEFAULTS: OutreachTemplate[] = [
     subject: "Been a while \u2014 something for {{org}}'s founders",
     body: "Hi {{firstName}},\n\nIt's been a bit since we last connected \u2014 hope things are going well at {{org}}.\n\nWe've got a fresh round that made me think of your members: {{programName}}, up to $25k non-dilutive (no equity) for seed-stage biotech founders, closing {{deadline}}.\n\nSame zero-effort deal as before \u2014 paste-ready blurb here:\n\n\"Founders: {{programName}} is open \u2014 up to $25k non-dilutive (no equity). Closes {{deadline}}. Apply: {{link}}\"\n\nIf a forward to your newsletter works, that's the whole ask. And I'd still love to amplify {{org}}'s programs to our network whenever you have something to share.\n\nGood to be back in touch,\n{{senderName}}\n{{senderTitle}}, BHN",
   },
+  {
+    id: "returning-partner",
+    label: "Returning partner (thanks for earlier support + new ask)",
+    when: "For partners who already know us and have supported BHN before \u2014 no re-introduction needed. Opens by thanking them for their earlier support, then shares the current program/event. The 'returning contact' version for a campaign.",
+    subject: "Thanks for supporting BHN \u2014 one more for {{org}}'s founders",
+    body: "Hi {{firstName}},\n\nThank you again for supporting BHN's work alongside {{org}} \u2014 your help getting opportunities in front of your members has genuinely mattered, and I appreciate it.\n\nIn that same spirit, here's one more that fits your founders: {{programName}}, up to $25k non-dilutive (no equity) for seed-stage biotech, closing {{deadline}}.\n\nSame zero-effort deal \u2014 a paste-ready blurb you can drop straight into a member update:\n\n\"Founders: {{programName}} is open \u2014 up to $25k non-dilutive (no equity) for seed-stage biotech. Closes {{deadline}}. Apply: {{link}}\"\n\nA single forward is the whole ask. And as always, glad to return the favour and put {{org}}'s next cohort or event in front of our founder network.\n\nThank you {{firstName}},\n{{senderName}}\n{{senderTitle}}, BHN",
+  },
 ];
 
 // ── Overrides (PlatformSetting persistence) ───────────────────────────────

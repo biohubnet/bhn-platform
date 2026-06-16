@@ -56,6 +56,7 @@ export function CampaignsClient({
   const [name, setName] = useState("");
   const [listId, setListId] = useState("");           // "" = everyone
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
+  const [returningTemplateId, setReturningTemplateId] = useState(""); // "" = same intro for everyone
   const [error, setError] = useState<string | null>(null);
 
   const chosenTemplate = templates.find((t) => t.id === templateId);
@@ -69,7 +70,7 @@ export function CampaignsClient({
       const res = await fetch("/api/workspace/outreach/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed, templateId, listId: listId || undefined }),
+        body: JSON.stringify({ name: trimmed, templateId, returningTemplateId: returningTemplateId || undefined, listId: listId || undefined }),
       });
       const j = (await res.json().catch(() => ({}))) as { ok?: boolean; campaign?: { id: string }; error?: string };
       if (res.ok && j.campaign) {
@@ -138,7 +139,7 @@ export function CampaignsClient({
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-subtle">Email template</span>
+              <span className="mb-1 block text-xs font-semibold text-subtle">Email template — intro <span className="font-normal text-muted">(new contacts)</span></span>
               <select
                 value={templateId}
                 onChange={(e) => setTemplateId(e.target.value)}
@@ -154,6 +155,25 @@ export function CampaignsClient({
           {chosenTemplate && (
             <p className="rounded-md bg-elevated/50 px-3 py-2 text-[12px] text-muted">{chosenTemplate.when}</p>
           )}
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-subtle">
+              Returning template <span className="font-normal text-muted">— for contacts who already know us (optional)</span>
+            </span>
+            <select
+              value={returningTemplateId}
+              onChange={(e) => setReturningTemplateId(e.target.value)}
+              className="w-full rounded-md border border-line bg-card-solid px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+            >
+              <option value="">Same intro for everyone</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>{t.label}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-muted">
+              Contacts who already have an intro on file get this version — e.g. one that opens by thanking them for their earlier support — instead of being introduced again.
+            </p>
+          </label>
 
           {error && <p className="text-xs font-semibold text-rose-600">{error}</p>}
 
