@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth";
 import { AI_CONFIGURED } from "@/lib/ai";
-import { callText, delimitContext } from "@/lib/ai/reliability";
+import { callText, delimitContext, groundednessConfidence } from "@/lib/ai/reliability";
 import { COURSE_TUTOR } from "@/lib/ai/prompts";
 
 /**
@@ -49,5 +49,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   );
 
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 502 });
-  return NextResponse.json({ answer: result.text.trim() });
+  const answer = result.text.trim();
+
+  // Confidence = how grounded the answer is in the course context. Below the
+  // threshold we flag it for human review and tell the learner.
+  const confidence = groundednessConfidence(answer, context);
+  const flagged = confidence < 0.35;
+  if (result.interactionId) {
+    await prisma.aIInteraction
+      .update({
+        where: { id: result.interactionId },
+        data: {
+          confidence,
+          ...(flagged ? { flaggedForReview: true, reviewStatus: "open", answerExcerpt: answer.slice(0, 2000) } : {}),
+        },
+      })
+      .catch(() => {});
+  }
+  return NextResponse.json({ answer, interactionId: result.interactionId, confidence, flagged });
 }

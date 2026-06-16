@@ -2071,6 +2071,22 @@ model AIInteraction {
   promptVersion    String?
   /// Did the structured output pass its schema check? Null = not a validated call.
   validationPassed Boolean?
+  /// Human-in-the-loop: thumbs from the end user. +1 up, -1 down, null unrated.
+  /// Powers the answer-acceptance rate on /admin/ai-metrics.
+  userRating       Int?
+  /// Model/heuristic confidence 0..1 for answer-type calls; below threshold the
+  /// answer is flagged for human review.
+  confidence       Float?
+  /// Flagged for human review (thumbs-down or low confidence).
+  flaggedForReview Boolean  @default(false)
+  /// open | resolved | escalated (null = not in the review queue).
+  reviewStatus     String?
+  reviewNote       String?
+  reviewedById     String?
+  reviewedAt       DateTime?
+  /// The user-facing answer text, kept only for flagged calls so a reviewer has
+  /// context in the queue. Null for normal calls (we don't store every answer).
+  answerExcerpt    String?
   latencyMs        Int?
   success          Boolean  @default(true)
   errorMessage     String?
@@ -2078,6 +2094,7 @@ model AIInteraction {
 
   @@index([createdAt])
   @@index([kind, createdAt])
+  @@index([flaggedForReview, reviewStatus])
 }
 
 /// One run of the offline eval harness (evals/run.ts). Stores the commit it ran

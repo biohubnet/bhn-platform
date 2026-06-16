@@ -5,7 +5,7 @@
  */
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Activity } from "lucide-react";
+import { Activity, ShieldQuestion } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { PageHero } from "@/components/ui/PageHero";
 import { getAiMetrics } from "@/lib/ai/metrics";
@@ -30,6 +30,11 @@ export default async function AiMetricsPage({ searchParams }: { searchParams: Pr
   const cards: { label: string; value: string; sub?: string }[] = [
     { label: "Calls", value: m.totalCalls.toLocaleString() },
     { label: "Error rate", value: pct(m.errorRate) },
+    {
+      label: "Acceptance rate",
+      value: m.acceptanceRate == null ? "—" : pct(m.acceptanceRate),
+      sub: m.ratedCalls ? `${m.ratedCalls} thumbs-rated` : "no thumbs yet",
+    },
     {
       label: "Valid-output rate",
       value: m.validRate == null ? "—" : pct(m.validRate),
@@ -67,7 +72,16 @@ export default async function AiMetricsPage({ searchParams }: { searchParams: Pr
         ))}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      {m.openReviews > 0 && (
+        <Link
+          href="/admin/ai-review"
+          className="inline-flex w-fit items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+        >
+          <ShieldQuestion size={13} /> {m.openReviews} answer{m.openReviews === 1 ? "" : "s"} flagged for review — open the queue
+        </Link>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
         {cards.map((c) => (
           <div key={c.label} className="rounded-xl border border-line bg-card-solid p-4">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-subtle">{c.label}</p>

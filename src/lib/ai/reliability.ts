@@ -28,11 +28,12 @@ export interface ReliableOpts {
   retries?: number;
 }
 
-/** Prose answer with retry + exponential backoff + timeout. */
+/** Prose answer with retry + exponential backoff + timeout. Returns the
+ *  telemetry row id so callers can attach confidence / review flags / ratings. */
 export async function callText(
   messages: ChatMessage[],
   opts: ReliableOpts,
-): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; text: string; interactionId: string | null } | { ok: false; error: string }> {
   const attempts = Math.max(1, opts.retries ?? 3);
   let lastErr = "AI not configured";
   for (let i = 0; i < attempts; i++) {
@@ -44,11 +45,21 @@ export async function callText(
       temperature: opts.temperature,
       timeoutMs: opts.timeoutMs,
     });
-    if (r.ok && r.text.trim()) return { ok: true, text: r.text };
+    if (r.ok && r.text.trim()) return { ok: true, text: r.text, interactionId: r.interactionId };
     lastErr = r.ok ? "Empty response" : r.error;
     if (i < attempts - 1) await sleep(250 * 2 ** i); // 250ms, 500ms, 1s, …
   }
   return { ok: false, error: lastErr };
+}
+
+/** Cheap groundedness/confidence proxy: share of the answer's content words
+ *  present in the provided context. Used to flag low-confidence RAG answers. */
+export function groundednessConfidence(answer: string, context: string): number {
+  const toks = (s: string) => (s.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter((t) => t.length > 3);
+  const ctx = new Set(toks(context));
+  const a = toks(answer);
+  if (a.length === 0) return 0;
+  return Math.round((a.filter((t) => ctx.has(t)).length / a.length) * 100) / 100;
 }
 
 /** Extract the first balanced JSON object/array from a model response. */

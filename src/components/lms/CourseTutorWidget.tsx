@@ -1,11 +1,15 @@
 "use client";
 import { useState } from "react";
-import { Sparkles, Send, Bot, User as UserIcon } from "lucide-react";
+import { Sparkles, Send, Bot, User as UserIcon, ThumbsUp, ThumbsDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Turn {
   role: "user" | "assistant";
   content: string;
+  interactionId?: string | null;
+  confidence?: number;
+  flagged?: boolean;
+  rating?: 1 | -1;
 }
 
 const SUGGESTIONS = [
@@ -37,10 +41,27 @@ export function CourseTutorWidget({ courseId }: { courseId: string }) {
         setError(j.error ?? "Couldn't answer");
         return;
       }
-      setTurns((t) => [...t, { role: "assistant", content: j.answer ?? "" }]);
+      setTurns((t) => [...t, {
+        role: "assistant",
+        content: j.answer ?? "",
+        interactionId: j.interactionId ?? null,
+        confidence: j.confidence,
+        flagged: j.flagged,
+      }]);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function rate(i: number, rating: 1 | -1) {
+    const turn = turns[i];
+    if (!turn?.interactionId || turn.rating) return;
+    setTurns((t) => t.map((x, xi) => (xi === i ? { ...x, rating } : x)));
+    await fetch("/api/ai/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ interactionId: turn.interactionId, rating, answerExcerpt: turn.content.slice(0, 2000) }),
+    }).catch(() => {});
   }
 
   return (
@@ -80,13 +101,35 @@ export function CourseTutorWidget({ courseId }: { courseId: string }) {
                   <Bot size={13} />
                 </div>
               )}
-              <div className={cn(
-                "rounded-2xl px-3.5 py-2 text-sm whitespace-pre-line max-w-[85%]",
-                t.role === "user"
-                  ? "bg-brand-600 text-white rounded-br-sm"
-                  : "bg-card border border-line text-fg rounded-bl-sm"
-              )}>
-                {t.content}
+              <div className="max-w-[85%]">
+                <div className={cn(
+                  "rounded-2xl px-3.5 py-2 text-sm whitespace-pre-line",
+                  t.role === "user"
+                    ? "bg-brand-600 text-white rounded-br-sm"
+                    : "bg-card border border-line text-fg rounded-bl-sm"
+                )}>
+                  {t.content}
+                </div>
+                {t.role === "assistant" && t.interactionId && (
+                  <div className="mt-1 flex items-center gap-1.5 px-1">
+                    <span className="text-[10px] text-subtle">Helpful?</span>
+                    <button onClick={() => rate(i, 1)} disabled={!!t.rating} aria-label="Helpful"
+                      className={cn("rounded p-0.5 hover:bg-elevated disabled:cursor-default", t.rating === 1 ? "text-emerald-600" : "text-muted")}>
+                      <ThumbsUp size={12} />
+                    </button>
+                    <button onClick={() => rate(i, -1)} disabled={!!t.rating} aria-label="Not helpful"
+                      className={cn("rounded p-0.5 hover:bg-elevated disabled:cursor-default", t.rating === -1 ? "text-rose-600" : "text-muted")}>
+                      <ThumbsDown size={12} />
+                    </button>
+                    {t.rating && <span className="text-[10px] text-subtle">Thanks for the feedback</span>}
+                    {t.flagged && !t.rating && (
+                      <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800"
+                        title="This answer may be incomplete — it has been flagged for a human to review">
+                        <AlertTriangle size={10} /> Flagged for review
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               {t.role === "user" && (
                 <div className="w-7 h-7 rounded-lg bg-elevated text-muted flex items-center justify-center shrink-0">

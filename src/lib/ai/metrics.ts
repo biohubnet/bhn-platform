@@ -14,6 +14,9 @@ export interface AiMetrics {
   errorRate: number;            // 0..1 — success === false share
   validRate: number | null;     // validationPassed true / validated calls; null when no validated calls
   validatedCalls: number;
+  acceptanceRate: number | null; // thumbs-up / rated calls; null when none rated
+  ratedCalls: number;
+  openReviews: number;          // flagged answers awaiting human review (all-time)
   p50LatencyMs: number | null;
   p95LatencyMs: number | null;
   totalCostUsd: number;
@@ -31,19 +34,25 @@ function percentile(sortedAsc: number[], p: number): number | null {
 
 export async function getAiMetrics(days: number): Promise<AiMetrics> {
   const since = new Date(Date.now() - days * 86_400_000);
-  const rows = await prisma.aIInteraction.findMany({
-    where: { createdAt: { gte: since } },
-    select: {
-      kind: true, success: true, latencyMs: true, costUsd: true,
-      promptTokens: true, completionTokens: true, validationPassed: true, createdAt: true,
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  const [rows, openReviews] = await Promise.all([
+    prisma.aIInteraction.findMany({
+      where: { createdAt: { gte: since } },
+      select: {
+        kind: true, success: true, latencyMs: true, costUsd: true,
+        promptTokens: true, completionTokens: true, validationPassed: true,
+        userRating: true, createdAt: true,
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.aIInteraction.count({ where: { flaggedForReview: true } }),
+  ]);
 
   const totalCalls = rows.length;
   const errors = rows.filter((r) => !r.success).length;
   const validated = rows.filter((r) => r.validationPassed !== null);
   const validPassed = validated.filter((r) => r.validationPassed === true).length;
+  const rated = rows.filter((r) => r.userRating !== null);
+  const accepted = rated.filter((r) => (r.userRating ?? 0) > 0).length;
   const latencies = rows.filter((r) => r.success && typeof r.latencyMs === "number").map((r) => r.latencyMs as number).sort((a, b) => a - b);
 
   const dayMap = new Map<string, DayPoint>();
@@ -72,6 +81,9 @@ export async function getAiMetrics(days: number): Promise<AiMetrics> {
     errorRate: totalCalls ? errors / totalCalls : 0,
     validRate: validated.length ? validPassed / validated.length : null,
     validatedCalls: validated.length,
+    acceptanceRate: rated.length ? accepted / rated.length : null,
+    ratedCalls: rated.length,
+    openReviews,
     p50LatencyMs: percentile(latencies, 50),
     p95LatencyMs: percentile(latencies, 95),
     totalCostUsd: Math.round(totalCostUsd * 1e6) / 1e6,

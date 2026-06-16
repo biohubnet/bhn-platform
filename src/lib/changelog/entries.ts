@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── AI quality · feedback + review queue — Jun 2026
+  {
+    title: "AI quality · answer feedback + a review queue",
+    body: "Learners can now rate the course AI tutor's answers with a quick **thumbs up/down**, and any answer that's poorly grounded in the source is automatically flagged as **low confidence**. A new admin **AI review queue** (Admin → Insights) collects every flagged answer — thumbs-down or low-confidence — so a human can resolve or escalate it. The **AI metrics** page now shows a real thumbs-based **acceptance rate** alongside the existing reliability and cost stats.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Outreach · intro history + two-version campaigns — Jun 2026
   {
     title: "Outreach · intro history + two-version campaigns",

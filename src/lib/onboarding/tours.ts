@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.16c";
+export const TOUR_VERSION = "2026.06.16d";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── AI quality · review queue — Jun 2026
+  {
+    id: "admin.ai-review",
+    title: "Catch weak AI answers",
+    body: "Learners can thumbs-up/down the course AI tutor, and answers that aren't well grounded in the source get auto-flagged. Admin → Insights → AI review queue collects every flagged answer for a human to resolve or escalate, and the AI metrics page now shows a real acceptance rate.",
+    path: "/admin/ai-review",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open the review queue", href: "/admin/ai-review" },
+    since: "2026.06.16d",
+  },
   // ─── Outreach · intro history + two-version campaigns — Jun 2026
   {
     id: "outreach.intro-history",
