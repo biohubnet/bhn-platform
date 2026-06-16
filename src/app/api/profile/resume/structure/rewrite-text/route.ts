@@ -18,8 +18,9 @@
  * stamps a revision). This one is a pure text → text helper.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireSession } from "@/lib/auth";
-import { chat } from "@/lib/ai";
+import { callStructured } from "@/lib/ai/reliability";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -37,6 +38,13 @@ OUTPUT STRICTLY this JSON:
 { "rewritten": "the rewritten text" }
 
 No prose, no markdown fences, no commentary outside the JSON.`;
+
+// Matches the tolerant shape the old code parsed: { rewritten?: string }.
+// We require a non-empty (after-trim) string so a missing/blank rewrite routes
+// to the same failure path as the original `if (!rewritten)` guard.
+const RewriteSchema = z.object({
+  rewritten: z.string().trim().min(1),
+});
 
 export async function POST(req: NextRequest) {
   const session = await requireSession().catch(() => null);
@@ -64,36 +72,19 @@ export async function POST(req: NextRequest) {
   if (instruction) userMsg.push(`STEERING: ${instruction}`);
   else userMsg.push("Improve the text per the principles above.");
 
-  const result = await chat(
+  const r = await callStructured(
     [
       { role: "system", content: SYSTEM },
       { role: "user",   content: userMsg.join("\n\n") },
     ],
-    { userId, feature: "resume_rewrite_text", maxTokens: 600 },
+    RewriteSchema,
+    { userId, feature: "resume_rewrite_text", maxTokens: 600, temperature: 0.5 },
   );
-  if (!result.ok || !result.text) {
-    return NextResponse.json(
-      { error: result.ok ? "Empty AI response." : result.error },
-      { status: 502 },
-    );
-  }
-  // Tolerant JSON extraction — same shape as resume/parse.ts.
-  let body0 = result.text.trim();
-  body0 = body0.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
-  const first = body0.indexOf("{");
-  const last  = body0.lastIndexOf("}");
-  let rewritten = "";
-  if (first >= 0 && last > first) {
-    try {
-      const j = JSON.parse(body0.slice(first, last + 1)) as { rewritten?: unknown };
-      if (typeof j.rewritten === "string") rewritten = j.rewritten.trim();
-    } catch {
-      // fall through — empty rewritten triggers the error below
-    }
-  }
-  if (!rewritten) {
+  if (!r.ok) {
     return NextResponse.json({ error: "AI didn't return a usable rewrite." }, { status: 502 });
   }
+  // schema guarantees a non-empty, trimmed string.
+  const rewritten = r.data.rewritten;
   const normalized = (s: string) => s.replace(/\s+/g, " ").trim();
   const changed = normalized(rewritten) !== normalized(original);
 

@@ -16,7 +16,8 @@ import { NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { chat, AI_CONFIGURED } from "@/lib/ai";
+import { AI_CONFIGURED } from "@/lib/ai";
+import { callText } from "@/lib/ai/reliability";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // up to 5 min for bigger orgs
@@ -134,7 +135,7 @@ export async function POST(req: Request) {
     ].join("\n");
 
     try {
-      const result = await chat(
+      const result = await callText(
         [
           { role: "system", content: SYSTEM },
           { role: "user", content: aiInput },

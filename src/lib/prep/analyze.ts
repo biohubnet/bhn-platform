@@ -18,9 +18,34 @@
  * evidence and per-gap coaching nudges.
  */
 
+import { z } from "zod";
 import type { PrepStateCompare } from "./types";
-import { chat } from "@/lib/ai";
+import { callStructured } from "@/lib/ai/reliability";
 import { prisma } from "@/lib/prisma";
+
+/** Mirrors the structured JSON the résumé-coach prompt asks for. Kept as
+ *  permissive as the previous parse, which was a `JSON.parse(...) as T`
+ *  cast (erased at runtime) — so the ONLY hard runtime guard the old code
+ *  enforced was "`matches` is a non-empty array". Every per-field value was
+ *  read defensively by the sanitizer below (`String(m.keyword)`, the status
+ *  ternary, `m.evidence ? … : undefined`), tolerating missing keys, non-string
+ *  values, and out-of-union statuses. We reproduce that exact leniency here so
+ *  responses the old code accepted don't now get rejected into the heuristic
+ *  fallback: `keywords` optional; per-match fields optional + loosely typed;
+ *  `matches` required + non-empty. The sanitizer still trims + coerces. */
+const AnalysisSchema = z.object({
+  keywords: z.array(z.string()).optional(),
+  matches: z
+    .array(
+      z.object({
+        keyword: z.string(),
+        status: z.string().optional(),
+        evidence: z.string().nullish(),
+        suggestion: z.string().nullish(),
+      }),
+    )
+    .min(1),
+});
 
 interface AnalyzeInput {
   /** JD text — concatenate posting.title + positionDetails + keySkills. */
@@ -77,49 +102,40 @@ async function tryAiAnalysis(
     `=====\n\n` +
     `Return the JSON now.`;
 
-  const result = await chat(
+  const r = await callStructured(
     [
       { role: "system", content: system },
       { role: "user", content: userPrompt },
     ],
+    AnalysisSchema,
     { feature: "prep.analyze-resume-jd", userId, temperature: 0.2, maxTokens: 1400 },
   );
 
-  if (!result.ok || !result.text) return null;
-
-  // Defensive parse — providers sometimes wrap JSON in ```json fences.
-  const cleaned = result.text.replace(/```json/g, "").replace(/```/g, "").trim();
-  try {
-    const parsed = JSON.parse(cleaned) as {
-      keywords?: string[];
-      matches?: Array<{
-        keyword: string;
-        status: "present" | "weak" | "missing";
-        evidence: string | null;
-        suggestion: string | null;
-      }>;
-    };
-    if (!Array.isArray(parsed.matches) || parsed.matches.length === 0) return null;
-
-    const matches = parsed.matches.slice(0, 20).map((m) => ({
-      keyword: String(m.keyword).slice(0, 80),
-      status: ["present", "weak", "missing"].includes(m.status) ? m.status : "missing",
-      evidence: m.evidence ? String(m.evidence).slice(0, 180) : undefined,
-      suggestion: m.suggestion ? String(m.suggestion).slice(0, 240) : undefined,
-    }));
-
-    const alignment = computeAlignment(matches);
-    return {
-      analyzedAt: new Date().toISOString(),
-      resumeSnapshot: resume,
-      jdKeywords: (parsed.keywords ?? matches.map((m) => m.keyword)).map((k) => String(k).toLowerCase()).slice(0, 20),
-      matches,
-      alignmentScore: alignment,
-    };
-  } catch {
-    // Bad JSON — fall through to heuristic.
+  if (!r.ok) {
+    // No usable AI response (provider error, empty/invalid JSON, or no
+    // matches) — fall through to heuristic.
     return null;
   }
+
+  const parsed = r.data;
+
+  const matches = parsed.matches.slice(0, 20).map((m) => ({
+    keyword: String(m.keyword).slice(0, 80),
+    status: (["present", "weak", "missing"] as const).includes(m.status as PrepStateCompare["matches"][number]["status"])
+      ? (m.status as PrepStateCompare["matches"][number]["status"])
+      : ("missing" as const),
+    evidence: m.evidence ? String(m.evidence).slice(0, 180) : undefined,
+    suggestion: m.suggestion ? String(m.suggestion).slice(0, 240) : undefined,
+  }));
+
+  const alignment = computeAlignment(matches);
+  return {
+    analyzedAt: new Date().toISOString(),
+    resumeSnapshot: resume,
+    jdKeywords: (parsed.keywords ?? matches.map((m) => m.keyword)).map((k) => String(k).toLowerCase()).slice(0, 20),
+    matches,
+    alignmentScore: alignment,
+  };
 }
 
 async function heuristicAnalysis(

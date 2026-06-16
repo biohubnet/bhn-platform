@@ -11,7 +11,8 @@
  * Llama 3.3 fallback). Both return text only — caller decides where
  * to put it (typically into JobFolder.coverLetter / interviewPrep).
  */
-import { chat } from "@/lib/ai";
+import { z } from "zod";
+import { callText, callStructured } from "@/lib/ai/reliability";
 import type { ResumeContent } from "@/lib/resume/types";
 import { formatItemDates } from "@/lib/resume/types";
 
@@ -75,7 +76,7 @@ export async function generateCoverLetter(args: BuildPromptInput & { userId?: st
     `CANDIDATE RESUME:`,
     resume || "(no resume linked — write based on the JD only, but call this out)",
   ].join("\n");
-  const result = await chat(
+  const result = await callText(
     [
       { role: "system", content: COVER_LETTER_SYSTEM },
       { role: "user", content: user },
@@ -122,7 +123,7 @@ export async function generateInterviewPrep(args: BuildPromptInput & { userId?: 
     `CANDIDATE RESUME:`,
     resume || "(no resume linked — produce a generic prep guide and call this out at the top)",
   ].join("\n");
-  const result = await chat(
+  const result = await callText(
     [
       { role: "system", content: INTERVIEW_PREP_SYSTEM },
       { role: "user", content: user },
@@ -176,6 +177,17 @@ Scoring rubric:
   40–54: stretch — likely not yet ready, but applying isn't a waste.
   Below 40: significant gap; better to use this JD to learn what to build than to apply blind.`;
 
+/** Mirrors the original lenient guard: score/verdict/nextMove typed, and
+ *  strengths/gaps only required to be arrays (elements are filtered to
+ *  strings afterward, exactly as before). */
+const RateFitSchema = z.object({
+  score: z.number(),
+  verdict: z.string(),
+  strengths: z.array(z.unknown()),
+  gaps: z.array(z.unknown()),
+  nextMove: z.string(),
+});
+
 export async function rateFit(args: {
   jdSnippet: string;
   resumeContent: unknown;
@@ -204,41 +216,28 @@ export async function rateFit(args: {
     "",
     "Return the JSON now.",
   ].join("\n");
-  const result = await chat(
+  const r = await callStructured(
     [
       { role: "system", content: RATE_FIT_SYSTEM },
       { role: "user", content: user },
     ],
+    RateFitSchema,
     { userId: args.userId, feature: "job_folder_rate_fit", maxTokens: 1200, temperature: 0.3 },
   );
-  if (!result.ok || !result.text.trim()) {
-    return { ok: false, error: result.ok ? "Empty AI response." : result.error };
+  if (!r.ok) {
+    return { ok: false, error: "Model returned a malformed assessment." };
   }
-  const cleaned = result.text.replace(/```json/g, "").replace(/```/g, "").trim();
-  try {
-    const parsed = JSON.parse(cleaned) as Partial<FitAssessment>;
-    if (
-      typeof parsed.score !== "number" ||
-      typeof parsed.verdict !== "string" ||
-      !Array.isArray(parsed.strengths) ||
-      !Array.isArray(parsed.gaps) ||
-      typeof parsed.nextMove !== "string"
-    ) {
-      return { ok: false, error: "Model returned a malformed assessment." };
-    }
-    return {
-      ok: true,
-      assessment: {
-        score: Math.max(0, Math.min(100, Math.round(parsed.score))),
-        verdict: parsed.verdict.slice(0, 300),
-        strengths: parsed.strengths.filter((s) => typeof s === "string").slice(0, 6) as string[],
-        gaps: parsed.gaps.filter((s) => typeof s === "string").slice(0, 6) as string[],
-        nextMove: parsed.nextMove.slice(0, 400),
-      },
-    };
-  } catch {
-    return { ok: false, error: "Couldn't parse the AI response." };
-  }
+  const parsed = r.data;
+  return {
+    ok: true,
+    assessment: {
+      score: Math.max(0, Math.min(100, Math.round(parsed.score))),
+      verdict: parsed.verdict.slice(0, 300),
+      strengths: parsed.strengths.filter((s) => typeof s === "string").slice(0, 6) as string[],
+      gaps: parsed.gaps.filter((s) => typeof s === "string").slice(0, 6) as string[],
+      nextMove: parsed.nextMove.slice(0, 400),
+    },
+  };
 }
 
 // ── Fit-rating matrix ───────────────────────────────────────────
@@ -294,6 +293,16 @@ OUTPUT: STRICT JSON. No markdown, no commentary, no code fences. Exact schema:
 
 Ratings: "strong" = clearly meets, with evidence. "partial" = some or adjacent evidence, not a clean match. "gap" = not evidenced at all. Provide 5–9 rows, ordered by importance to the role. Score should reconcile with the rows (mostly strong → high; several gaps → low).`;
 
+/** Mirrors the original lenient guard: score/verdict/nextMove typed, and
+ *  rows only required to be an array (each row is defensively coerced
+ *  field-by-field afterward, exactly as before). */
+const FitMatrixSchema = z.object({
+  score: z.number(),
+  verdict: z.string(),
+  rows: z.array(z.unknown()),
+  nextMove: z.string(),
+});
+
 export async function rateFitMatrix(args: {
   jdSnippet: string;
   resumeContent: unknown;
@@ -319,54 +328,42 @@ export async function rateFitMatrix(args: {
     "",
     "Return the JSON now.",
   ].join("\n");
-  const result = await chat(
+  const r = await callStructured(
     [
       { role: "system", content: FIT_MATRIX_SYSTEM },
       { role: "user", content: user },
     ],
+    FitMatrixSchema,
     { userId: args.userId, feature: "job_folder_fit_matrix", maxTokens: 1800, temperature: 0.3 },
   );
-  if (!result.ok || !result.text.trim()) {
-    return { ok: false, error: result.ok ? "Empty AI response." : result.error };
+  if (!r.ok) {
+    return { ok: false, error: "Model returned a malformed matrix." };
   }
-  const cleaned = result.text.replace(/```json/g, "").replace(/```/g, "").trim();
-  try {
-    const parsed = JSON.parse(cleaned) as Partial<FitMatrix>;
-    if (
-      typeof parsed.score !== "number" ||
-      typeof parsed.verdict !== "string" ||
-      !Array.isArray(parsed.rows) ||
-      typeof parsed.nextMove !== "string"
-    ) {
-      return { ok: false, error: "Model returned a malformed matrix." };
-    }
-    const validRatings: FitRowRating[] = ["strong", "partial", "gap"];
-    const rows: FitMatrixRow[] = parsed.rows
-      .filter((r): r is FitMatrixRow => !!r && typeof r === "object")
-      .map((r) => {
-        const rr = r as Partial<FitMatrixRow>;
-        return {
-          requirement: typeof rr.requirement === "string" ? rr.requirement.slice(0, 90) : "",
-          rating: validRatings.includes(rr.rating as FitRowRating) ? (rr.rating as FitRowRating) : "partial",
-          evidence: typeof rr.evidence === "string" ? rr.evidence.slice(0, 220) : "",
-          tip: typeof rr.tip === "string" ? rr.tip.slice(0, 180) : "",
-        };
-      })
-      .filter((r) => r.requirement.length > 0)
-      .slice(0, 10);
-    if (rows.length === 0) {
-      return { ok: false, error: "Model returned no requirement rows." };
-    }
-    return {
-      ok: true,
-      matrix: {
-        score: Math.max(0, Math.min(100, Math.round(parsed.score))),
-        verdict: parsed.verdict.slice(0, 300),
-        rows,
-        nextMove: parsed.nextMove.slice(0, 400),
-      },
-    };
-  } catch {
-    return { ok: false, error: "Couldn't parse the AI response." };
+  const parsed = r.data;
+  const validRatings: FitRowRating[] = ["strong", "partial", "gap"];
+  const rows: FitMatrixRow[] = parsed.rows
+    .filter((row): row is FitMatrixRow => !!row && typeof row === "object")
+    .map((row) => {
+      const rr = row as Partial<FitMatrixRow>;
+      return {
+        requirement: typeof rr.requirement === "string" ? rr.requirement.slice(0, 90) : "",
+        rating: validRatings.includes(rr.rating as FitRowRating) ? (rr.rating as FitRowRating) : "partial",
+        evidence: typeof rr.evidence === "string" ? rr.evidence.slice(0, 220) : "",
+        tip: typeof rr.tip === "string" ? rr.tip.slice(0, 180) : "",
+      };
+    })
+    .filter((row) => row.requirement.length > 0)
+    .slice(0, 10);
+  if (rows.length === 0) {
+    return { ok: false, error: "Model returned no requirement rows." };
   }
+  return {
+    ok: true,
+    matrix: {
+      score: Math.max(0, Math.min(100, Math.round(parsed.score))),
+      verdict: parsed.verdict.slice(0, 300),
+      rows,
+      nextMove: parsed.nextMove.slice(0, 400),
+    },
+  };
 }

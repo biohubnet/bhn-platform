@@ -16,7 +16,8 @@
  */
 
 import type { StarFeedback } from "./types";
-import { chat } from "@/lib/ai";
+import { z } from "zod";
+import { callStructured } from "@/lib/ai/reliability";
 
 const NUMBER_OR_PERCENT = /(\d+\.?\d*\s*%|\d{2,}|reduced|increased|cut|saved|improved|delivered)/i;
 const FIRST_PERSON = /\bI\s|\bI'/;
@@ -135,6 +136,18 @@ export function validateStarStructure(fields: StarFields): StarFeedback {
 }
 
 /**
+ * Schema for the AI polish output. All four fields are required and must be
+ * non-empty — mirrors the original `if (!parsed.situation || ...) return null`
+ * guard, which rejected both missing and empty-string values.
+ */
+const PolishedStarSchema = z.object({
+  situation: z.string().min(1),
+  task: z.string().min(1),
+  action: z.string().min(1),
+  result: z.string().min(1),
+});
+
+/**
  * AI-polish a STAR story. Takes the four fields + an optional
  * coaching prompt and returns a single revision suggestion. Never
  * mutates the user's draft — the UI presents accept / reject.
@@ -166,31 +179,21 @@ export async function polishStarStory(
     `Result: ${fields.result}\n\n` +
     `Return the JSON now.`;
 
-  const result = await chat(
+  const r = await callStructured(
     [
       { role: "system", content: system },
       { role: "user", content: userPrompt },
     ],
+    PolishedStarSchema,
     { feature: "prep.star-polish", userId, temperature: 0.4, maxTokens: 800 },
   );
 
-  if (!result.ok || !result.text) return null;
-  const cleaned = result.text.replace(/```json/g, "").replace(/```/g, "").trim();
-  try {
-    const parsed = JSON.parse(cleaned) as {
-      situation?: string;
-      task?: string;
-      action?: string;
-      result?: string;
-    };
-    if (!parsed.situation || !parsed.task || !parsed.action || !parsed.result) return null;
-    return {
-      situation: String(parsed.situation).slice(0, 800),
-      task:      String(parsed.task).slice(0, 600),
-      action:    String(parsed.action).slice(0, 1600),
-      result:    String(parsed.result).slice(0, 800),
-    };
-  } catch {
-    return null;
-  }
+  if (!r.ok) return null;
+  const parsed = r.data;
+  return {
+    situation: String(parsed.situation).slice(0, 800),
+    task:      String(parsed.task).slice(0, 600),
+    action:    String(parsed.action).slice(0, 1600),
+    result:    String(parsed.result).slice(0, 800),
+  };
 }

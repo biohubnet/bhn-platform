@@ -16,9 +16,11 @@
  * model is told it must NOT invent bullets, must NOT introduce facts
  * not present in the original, and must keep rewrites light.
  */
+import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { embed, toVectorLiteral, chat, AI_CONFIGURED } from "@/lib/ai";
+import { embed, toVectorLiteral, AI_CONFIGURED } from "@/lib/ai";
+import { callStructured } from "@/lib/ai/reliability";
 
 /** Maximum bullets returned in the final pick. The plan picks 12 by
  *  default; we cap higher so callers can request "up to" 20 for power
@@ -192,6 +194,20 @@ You must return STRICT JSON in this shape — NO prose, NO markdown fences, NO c
 
 The keys of \`rewrites\` and \`reasons\` MUST be a subset of \`picked\`. If you cannot improve a bullet, copy the original text verbatim into \`rewrites\`.`;
 
+/** Schema for the model's pick JSON. Matches the previous lenient parse:
+ *  the ONLY hard requirement was `Array.isArray(parsed.picked)`; `rewrites`
+ *  and `reasons` were read as `unknown` and guarded with
+ *  `typeof x === "object"` downstream (falling back to `{}` for ANY other
+ *  type — string, number, null, array, or absent). So they must accept any
+ *  value here, not just objects, or we'd reject responses the old code
+ *  accepted. `picked` elements are filtered to strings downstream, so any
+ *  element type is tolerated. */
+const PickResponseSchema = z.object({
+  picked: z.array(z.unknown()),
+  rewrites: z.unknown().optional(),
+  reasons: z.unknown().optional(),
+});
+
 export interface AiSuggestion {
   bulletId: string;
   originalBody: string;
@@ -241,11 +257,12 @@ export async function pickAndRewrite(args: {
     `Remember: pick at most ${args.maxBullets}. Return STRICT JSON only.`,
   ].join("\n");
 
-  const result = await chat(
+  const r = await callStructured(
     [
       { role: "system", content: PICK_AND_REWRITE_SYSTEM },
       { role: "user", content: userPrompt },
     ],
+    PickResponseSchema,
     {
       userId: args.userId,
       feature: "master_tailor_pick",
@@ -253,15 +270,10 @@ export async function pickAndRewrite(args: {
       temperature: 0.3,
     },
   );
-  if (!result.ok) return { ok: false, error: result.error };
-  if (!result.text) return { ok: false, error: "AI returned an empty response." };
-
-  const parsed = extractJson(result.text) as
-    | { picked?: unknown; rewrites?: unknown; reasons?: unknown }
-    | null;
-  if (!parsed || !Array.isArray(parsed.picked)) {
+  if (!r.ok) {
     return { ok: false, error: "AI didn't return parseable JSON. Try again." };
   }
+  const parsed = r.data;
   const pickedIds = parsed.picked
     .filter((x): x is string => typeof x === "string")
     .slice(0, Math.min(args.maxBullets, HARD_BULLET_CAP));
@@ -292,15 +304,4 @@ export async function pickAndRewrite(args: {
   }
 
   return { ok: true, suggestions };
-}
-
-/** Same tolerant JSON extractor used in resume/tailor.ts + resume/parse.ts. */
-function extractJson(raw: string): unknown | null {
-  let body = raw.trim();
-  body = body.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
-  const first = body.indexOf("{");
-  const last = body.lastIndexOf("}");
-  if (first < 0 || last < 0 || last < first) return null;
-  body = body.slice(first, last + 1);
-  try { return JSON.parse(body); } catch { return null; }
 }

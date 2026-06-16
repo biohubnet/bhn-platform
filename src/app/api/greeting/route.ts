@@ -14,7 +14,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { chat, AI_CONFIGURED } from "@/lib/ai";
+import { AI_CONFIGURED } from "@/lib/ai";
+import { callText } from "@/lib/ai/reliability";
 import type { Prisma } from "@prisma/client";
 
 interface GreetingPrefs {
@@ -117,7 +118,7 @@ Examples (different role / time, just for tone):
 
   const userMsg = `User: ${firstName}, role ${role}${user.jobTitle ? `, job title "${user.jobTitle}"` : ""}${user.organization ? `, organisation "${user.organization}"` : ""}. Generate the tagline.`;
 
-  const r = await chat(
+  const r = await callText(
     [
       { role: "system", content: sys },
       { role: "user", content: userMsg },

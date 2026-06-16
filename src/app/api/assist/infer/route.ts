@@ -24,6 +24,7 @@
  * Treated as machinery, not a user-facing endpoint.
  */
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { chat, AI_CONFIGURED } from "@/lib/ai";
@@ -66,6 +67,20 @@ interface InferResult {
   confidence: number;
   selectedHelpKey: string;
 }
+
+// Runtime shape check for the parsed model output. A type assertion gives zero
+// runtime safety, so structurally-valid JSON with wrong field types (confidence
+// as a string, stuck as "yes") would otherwise flow into !parsed.stuck /
+// parsed.confidence < 0.5 / findHelpCard(...) and rely on JS coercion. We keep
+// this route on chat() (NOT callStructured) on purpose — callStructured would
+// collapse the two distinct observable responses (502 provider-failure vs the
+// 200 ai_returned_non_json payload, which the admin tool renders with `raw`).
+const InferResultSchema = z.object({
+  stuck: z.boolean(),
+  intent: z.string(),
+  confidence: z.number(),
+  selectedHelpKey: z.string(),
+});
 
 function startOfDay(): Date {
   const d = new Date();
@@ -188,7 +203,15 @@ export async function POST(req: Request) {
   const raw = result.text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
   let parsed: InferResult;
   try {
-    parsed = JSON.parse(raw) as InferResult;
+    // Validate the shape at runtime — wrong field types (e.g. confidence as a
+    // string) are rejected here rather than coerced downstream. Both non-JSON
+    // and shape-mismatch return the SAME 200 ai_returned_non_json payload (with
+    // raw) so the admin tool's existing handling is unchanged.
+    const v = InferResultSchema.safeParse(JSON.parse(raw));
+    if (!v.success) {
+      return NextResponse.json({ ok: false, reason: "ai_returned_non_json", raw });
+    }
+    parsed = v.data;
   } catch {
     return NextResponse.json({ ok: false, reason: "ai_returned_non_json", raw });
   }

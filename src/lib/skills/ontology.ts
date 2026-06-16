@@ -16,8 +16,10 @@
  * "existing" rows are immediately writable as CourseSkill / PostingSkill /
  * UserSkill. "new" rows go through the admin review queue at /admin/skills.
  */
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { embed, chat } from "@/lib/ai";
+import { embed } from "@/lib/ai";
+import { callStructured } from "@/lib/ai/reliability";
 import { SKILL_SEED } from "./seed";
 
 // ── Slug helpers ─────────────────────────────────────────────────
@@ -171,6 +173,18 @@ Rules:
 • Never include things that aren't skills (company names, people, soft phrases like "team player").
 • Reply with ONLY valid JSON. No prose, no code fences.`;
 
+// Mirrors the old tolerant parse: `skills` is optional, and any non-string
+// elements are silently dropped (rather than rejecting the whole array), so
+// `candidates` ends up as a clean string[] exactly like the previous
+// `.filter((s): s is string => …)`.
+const ExtractionSchema = z.object({
+  skills: z
+    .array(z.unknown())
+    .optional()
+    .default([])
+    .transform((arr) => arr.filter((s): s is string => typeof s === "string")),
+});
+
 export async function extractSkillsFromText(text: string): Promise<ExtractionResult> {
   const trimmed = text.trim();
   if (trimmed.length < 30) return { existing: [], novel: [] };
@@ -186,22 +200,17 @@ export async function extractSkillsFromText(text: string): Promise<ExtractionRes
 
   const userMsg = `Known canonical skills (prefer these when applicable):\n${knownNames}\n\n---\nExtract skills from this text:\n\n${trimmed.slice(0, 4000)}`;
 
-  const r = await chat(
+  const r = await callStructured(
     [
       { role: "system", content: EXTRACTION_SYSTEM },
       { role: "user", content: userMsg },
     ],
+    ExtractionSchema,
     { feature: "skill_extraction", maxTokens: 400, temperature: 0.2 },
   );
   if (!r.ok) return { existing: [], novel: [] };
 
-  // Parse JSON, tolerant of stray code fences or pre/post text.
-  let parsed: { skills?: unknown } = {};
-  try {
-    const json = extractJsonObject(r.text);
-    parsed = json ? (JSON.parse(json) as { skills?: unknown }) : {};
-  } catch { return { existing: [], novel: [] }; }
-  const candidates = Array.isArray(parsed.skills) ? parsed.skills.filter((s): s is string => typeof s === "string") : [];
+  const candidates = r.data.skills;
 
   const existing: ExtractionResult["existing"] = [];
   const novel: ExtractionResult["novel"] = [];

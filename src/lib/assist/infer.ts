@@ -15,7 +15,8 @@
  * the caller falls back to the canned rule card.
  */
 import { prisma } from "@/lib/prisma";
-import { chat, AI_CONFIGURED } from "@/lib/ai";
+import { AI_CONFIGURED } from "@/lib/ai";
+import { callText } from "@/lib/ai/reliability";
 import { buildStuckMenu, validateStuckHint, type GeneratedHint } from "@/lib/assist/stuck-logic";
 import type { Role } from "@/lib/auth";
 import type { RecentBehaviour } from "@/lib/assist/types";
@@ -103,7 +104,7 @@ export async function inferStuckHint(opts: {
     JSON.stringify(menu, null, 2),
   ].join("\n");
 
-  const res = await chat(
+  const res = await callText(
     [
       { role: "system", content: SYSTEM },
       { role: "user", content: userPrompt },

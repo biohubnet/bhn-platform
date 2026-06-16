@@ -18,12 +18,15 @@
  *      assessments, decide yes / maybe / no on interviewing, list the
  *      remaining weaknesses that still need closing.
  *
- * All three use chat() with strict JSON-output prompts. The parsers
- * are tolerant: they try to find JSON inside model output even when
- * the LLM wraps it in markdown ```json``` fences (Cloudflare Workers
- * AI does this often).
+ * All three use callStructured() with strict JSON-output prompts and a
+ * lenient zod schema, so the reliability layer validates + repair-retries
+ * the model output (it already tolerates markdown ```json``` fences and
+ * stray prose, which Cloudflare Workers AI emits often). The per-call
+ * defensive re-shaping below stays as the final normalisation pass.
  */
-import { chat, type ChatMessage } from "@/lib/ai";
+import { z } from "zod";
+import { type ChatMessage } from "@/lib/ai";
+import { callStructured } from "@/lib/ai/reliability";
 import type {
   Requirement,
   Assessment,
@@ -46,6 +49,23 @@ interface VerdictInput {
 }
 
 // ── 1. Parse JD ─────────────────────────────────────────────────
+
+/** Lenient schema mirroring the defensive re-shaping below: the model may
+ *  omit fields or send an off-vocabulary importance — we accept it here and
+ *  normalise afterwards, exactly as the old extractJson()+map/filter did. */
+const ParseSchema = z.object({
+  requirements: z
+    .array(
+      z
+        .object({
+          id: z.string().optional(),
+          text: z.string().optional(),
+          importance: z.string().optional(),
+        })
+        .passthrough(),
+    )
+    .optional(),
+});
 
 export async function parseRequirements(
   jd: string,
@@ -73,15 +93,14 @@ export async function parseRequirements(
     content: `Job title: ${postingTitle}\n\nJob description:\n${jd}`,
   };
 
-  const result = await chat([SYSTEM, USER], {
+  const r = await callStructured([SYSTEM, USER], ParseSchema, {
     userId,
     feature: "tailor.parse",
     maxTokens: 1400,
     temperature: 0.2,
   });
-  if (!result.ok) return [];
-  const parsed = extractJson<{ requirements?: Requirement[] }>(result.text);
-  const reqs = parsed?.requirements ?? [];
+  if (!r.ok) return [];
+  const reqs = (r.data.requirements ?? []) as Requirement[];
   // Defensive: ensure every row has the expected shape + a deterministic id.
   return reqs
     .filter((r) => typeof r?.text === "string" && r.text.trim().length > 0)
@@ -94,6 +113,25 @@ export async function parseRequirements(
 }
 
 // ── 2. Assess requirements ──────────────────────────────────────
+
+/** Lenient schema mirroring the defensive merge below: rows may arrive with an
+ *  off-vocabulary classification or missing reasoning/evidence/question — we
+ *  normalise per requirement afterwards, exactly as the old code did. */
+const AssessSchema = z.object({
+  assessments: z
+    .array(
+      z
+        .object({
+          requirementId: z.string().optional(),
+          classification: z.string().optional(),
+          reasoning: z.string().optional(),
+          evidence: z.string().optional(),
+          question: z.string().nullable().optional(),
+        })
+        .passthrough(),
+    )
+    .optional(),
+});
 
 export async function assessRequirements(
   input: AssessmentInput,
@@ -126,15 +164,14 @@ export async function assessRequirements(
     ].join("\n"),
   };
 
-  const result = await chat([SYSTEM, USER], {
+  const r = await callStructured([SYSTEM, USER], AssessSchema, {
     userId,
     feature: "tailor.assess",
     maxTokens: 2400,
     temperature: 0.3,
   });
-  if (!result.ok) return input.requirements.map((r) => fallbackAssessment(r.id));
-  const parsed = extractJson<{ assessments?: Assessment[] }>(result.text);
-  const rows = parsed?.assessments ?? [];
+  if (!r.ok) return input.requirements.map((req) => fallbackAssessment(req.id));
+  const rows = (r.data.assessments ?? []) as Assessment[];
   // Re-shape + fill in any requirements the LLM dropped (defensive).
   const byId = new Map(rows.map((a) => [a.requirementId, a]));
   return input.requirements.map((r) => {
@@ -167,6 +204,17 @@ function fallbackAssessment(requirementId: string): Assessment {
 }
 
 // ── 3. Hiring-manager verdict ───────────────────────────────────
+
+/** Lenient schema mirroring the defensive normalisation below: decision may be
+ *  off-vocabulary, reasoning may be missing, remainingWeaknesses may be absent
+ *  or contain non-strings — we coerce afterwards, exactly as the old code did. */
+const VerdictSchema = z
+  .object({
+    decision: z.string().optional(),
+    reasoning: z.string().optional(),
+    remainingWeaknesses: z.array(z.unknown()).optional(),
+  })
+  .passthrough();
 
 export async function hiringManagerVerdict(
   input: VerdictInput,
@@ -202,13 +250,13 @@ export async function hiringManagerVerdict(
     ].join("\n"),
   };
 
-  const result = await chat([SYSTEM, USER], {
+  const r = await callStructured([SYSTEM, USER], VerdictSchema, {
     userId,
     feature: "tailor.verdict",
     maxTokens: 700,
     temperature: 0.4,
   });
-  if (!result.ok) {
+  if (!r.ok) {
     return {
       decision: "maybe",
       reasoning: "Couldn't reach the AI for the hiring-manager verdict. Review the per-requirement assessments below and decide whether to keep iterating.",
@@ -218,7 +266,7 @@ export async function hiringManagerVerdict(
         .slice(0, 6),
     };
   }
-  const parsed = extractJson<{ decision?: Verdict; reasoning?: string; remainingWeaknesses?: string[] }>(result.text);
+  const parsed = r.data as { decision?: Verdict; reasoning?: string; remainingWeaknesses?: string[] };
   return {
     decision:
       parsed?.decision === "yes" || parsed?.decision === "no" ? parsed.decision : "maybe",
@@ -227,40 +275,4 @@ export async function hiringManagerVerdict(
       ? parsed.remainingWeaknesses.filter((x) => typeof x === "string").slice(0, 6)
       : [],
   };
-}
-
-// ── Helpers ─────────────────────────────────────────────────────
-
-/** Tolerant JSON extraction. LLMs (especially CF Workers AI) like to
- *  wrap JSON in ```json``` fences or sprinkle prose before/after. We
- *  pull out the first {...} or [...] block we can parse. */
-function extractJson<T>(raw: string): T | null {
-  if (!raw) return null;
-  // Strip code fences.
-  const stripped = raw.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
-  // Try direct parse first.
-  try {
-    return JSON.parse(stripped) as T;
-  } catch {}
-  // Find the first balanced { ... } or [ ... ] block.
-  for (const open of ["{", "["]) {
-    const close = open === "{" ? "}" : "]";
-    const start = stripped.indexOf(open);
-    if (start < 0) continue;
-    let depth = 0;
-    for (let i = start; i < stripped.length; i++) {
-      if (stripped[i] === open) depth++;
-      else if (stripped[i] === close) {
-        depth--;
-        if (depth === 0) {
-          try {
-            return JSON.parse(stripped.slice(start, i + 1)) as T;
-          } catch {
-            break;
-          }
-        }
-      }
-    }
-  }
-  return null;
 }

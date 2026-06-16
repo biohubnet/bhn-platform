@@ -7,13 +7,15 @@
  *   tailorToPosting() — every bullet across the resume → posting-
  *                      aligned variant, in one batched call
  *
- * Both run through the same `chat()` adapter that powers parse() so
- * the provider stack + AIInteraction logging is consistent. Every
+ * Both run through callStructured() (the reliability wrapper over chat())
+ * so the provider stack + AIInteraction logging + schema validation are
+ * consistent with the rest of the AI surface. Every
  * rewrite returns the original alongside the suggestion so the
  * trainee can preview the diff before accepting — accepting is the
  * trainee's call, not the AI's.
  */
-import { chat } from "@/lib/ai";
+import { z } from "zod";
+import { callStructured } from "@/lib/ai/reliability";
 import type { ResumeContent } from "./types";
 
 // ── Single-bullet rewrite ────────────────────────────────────────
@@ -32,6 +34,12 @@ OUTPUT STRICTLY this JSON:
 { "rewritten": "the rewritten bullet" }
 
 No prose, no markdown fences, no commentary outside the JSON.`;
+
+/** Matches the lenient shape the old hand-parser read: `rewritten` is used
+ *  only when it's a string, otherwise treated as absent → "". */
+const RewriteBulletSchema = z.object({
+  rewritten: z.string().optional(),
+});
 
 export async function rewriteBullet(args: {
   original: string;
@@ -54,20 +62,18 @@ export async function rewriteBullet(args: {
     lines.push(`Improve the bullet using the principles above.`);
   }
 
-  const result = await chat(
+  const r = await callStructured(
     [
       { role: "system", content: REWRITE_BULLET_SYSTEM },
       { role: "user",   content: lines.join("\n\n") },
     ],
+    RewriteBulletSchema,
     { userId: args.userId, feature: "resume_rewrite_bullet", maxTokens: 256 },
   );
-  if (!result.ok || !result.text) {
-    return { ok: false, error: result.ok ? "Empty AI response." : result.error };
+  if (!r.ok) {
+    return { ok: false, error: "AI didn't return a usable rewrite." };
   }
-  const json = extractJson(result.text);
-  const rewritten = json && typeof (json as Record<string, unknown>).rewritten === "string"
-    ? ((json as Record<string, unknown>).rewritten as string).trim()
-    : "";
+  const rewritten = typeof r.data.rewritten === "string" ? r.data.rewritten.trim() : "";
   if (!rewritten) return { ok: false, error: "AI didn't return a usable rewrite." };
   return { ok: true, rewritten };
 }
@@ -100,6 +106,17 @@ OUTPUT STRICTLY this JSON (one entry per input bullet):
 }
 
 No prose, no markdown fences.`;
+
+/** Mirrors the old tolerant parse: `rewrites` may be absent (→ []), and each
+ *  entry is validated per-row in the loop below. Entries are typed `unknown`
+ *  (not `object`) on purpose — the old hand-parser only gated on
+ *  `Array.isArray(rewrites)` and then individually skipped any malformed row,
+ *  so a mixed array (some junk, some valid) still yielded the valid rows. A
+ *  stricter per-entry schema would reject the whole array on one bad row and
+ *  drop the salvageable rewrites, changing results. */
+const TailorResponseSchema = z.object({
+  rewrites: z.array(z.unknown()).optional(),
+});
 
 export interface BulletForTailor {
   id: string;
@@ -139,27 +156,25 @@ export async function tailorToPosting(args: {
     `POSTING:\n${postingLines.join("\n")}\n\n` +
     `RESUME (${args.bullets.length} bullets):\n${bulletLines.join("\n")}`;
 
-  const result = await chat(
+  const r = await callStructured(
     [
       { role: "system", content: TAILOR_SYSTEM },
       { role: "user",   content: userPrompt },
     ],
+    TailorResponseSchema,
     { userId: args.userId, feature: "resume_tailor", maxTokens: 4096 },
   );
-  if (!result.ok || !result.text) {
-    return { ok: false, error: result.ok ? "Empty AI response." : result.error };
-  }
-  const json = extractJson(result.text);
-  const rewritesRaw = json && Array.isArray((json as Record<string, unknown>).rewrites)
-    ? ((json as Record<string, unknown>).rewrites as unknown[])
-    : [];
+  // The old hand-parser fell back to an empty rewrite list (→ ok:true, []) when
+  // the response was missing/garbled, so unparseable output left the resume
+  // untouched rather than erroring. Preserve that behavior here.
+  const rewritesRaw: unknown[] = r.ok && Array.isArray(r.data.rewrites) ? r.data.rewrites : [];
 
   // Build lookup of originals so the result rows are self-contained
   // and the UI can render a diff without an extra round-trip.
   const origById = new Map(args.bullets.map((b) => [b.id, b.body]));
   const rewrites: TailorRewrite[] = [];
-  for (const r of rewritesRaw) {
-    const obj = r as Record<string, unknown>;
+  for (const row of rewritesRaw) {
+    const obj = row as Record<string, unknown>;
     const id = typeof obj.id === "string" ? obj.id : null;
     const rewritten = typeof obj.rewritten === "string" ? obj.rewritten.trim() : "";
     if (!id || !rewritten) continue;
@@ -173,17 +188,6 @@ export async function tailorToPosting(args: {
     });
   }
   return { ok: true, rewrites };
-}
-
-/** Same tolerant JSON extractor used in resume/parse.ts. */
-function extractJson(raw: string): unknown | null {
-  let body = raw.trim();
-  body = body.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
-  const first = body.indexOf("{");
-  const last  = body.lastIndexOf("}");
-  if (first < 0 || last < 0 || last < first) return null;
-  body = body.slice(first, last + 1);
-  try { return JSON.parse(body); } catch { return null; }
 }
 
 // ── Tree walker helpers ──────────────────────────────────────────

@@ -27,8 +27,10 @@
  *     signals: { themeColor?: string, cssVars?: number, maskIcon?: string } }
  */
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getSession } from "@/lib/auth";
-import { chat, AI_CONFIGURED } from "@/lib/ai";
+import { AI_CONFIGURED } from "@/lib/ai";
+import { callStructured } from "@/lib/ai/reliability";
 import { fetchHomepageHtml } from "@/lib/employer/logo-discovery";
 import { isHexColor, type CompanyBrand } from "@/lib/employer/brand";
 
@@ -166,6 +168,21 @@ Rules:
 - Avoid plain white (#FFFFFF) and plain black (#000000) — those are
   almost always background / text, not brand.`;
 
+/**
+ * Lenient schema matching the old `Partial<Record<keyof CompanyBrand, string>>`
+ * parse target. Validation only gates "is this a JSON object of optional
+ * string fields" — exactly as the old `JSON.parse` did. Per-field hex
+ * validity is still enforced downstream by `isHexColor`, so empty strings or
+ * malformed values pass the schema and get dropped there (preserving the old
+ * behaviour where the model returns "" for unknown fields).
+ */
+const AiBrandSchema = z.object({
+  primary: z.string().optional(),
+  secondary: z.string().optional(),
+  accent: z.string().optional(),
+  style: z.string().optional(),
+});
+
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const role = (session?.user as { role?: string })?.role ?? "";
@@ -206,11 +223,12 @@ export async function POST(req: NextRequest) {
 
   const pageText = extractTextForAi(html);
   const aiInput = `Website URL: ${url.toString()}\n\nPage content:\n${pageText}`;
-  const result = await chat(
+  const result = await callStructured(
     [
       { role: "system", content: AI_SYSTEM },
       { role: "user", content: aiInput },
     ],
+    AiBrandSchema,
     { feature: "employer_brand_detect", maxTokens: 200, temperature: 0.1 },
   );
   if (!result.ok) {
@@ -222,17 +240,12 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Try to parse the AI's JSON. Strip code fences defensively.
-  const raw = result.text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
-  let aiBrand: CompanyBrand = {};
-  try {
-    const parsed = JSON.parse(raw) as Partial<Record<keyof CompanyBrand, string>>;
-    if (isHexColor(parsed.primary)) aiBrand.primary = parsed.primary;
-    if (isHexColor(parsed.secondary)) aiBrand.secondary = parsed.secondary;
-    if (isHexColor(parsed.accent)) aiBrand.accent = parsed.accent;
-  } catch {
-    aiBrand = {};
-  }
+  // Keep only valid hex triples — same lenient filter as before.
+  const parsed = result.data;
+  const aiBrand: CompanyBrand = {};
+  if (isHexColor(parsed.primary)) aiBrand.primary = parsed.primary;
+  if (isHexColor(parsed.secondary)) aiBrand.secondary = parsed.secondary;
+  if (isHexColor(parsed.accent)) aiBrand.accent = parsed.accent;
 
   // Merge: mechanical wins where set, AI fills the rest.
   const merged: CompanyBrand = {

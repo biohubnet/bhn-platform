@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getSession } from "@/lib/auth";
-import { chat, AI_CONFIGURED } from "@/lib/ai";
+import { AI_CONFIGURED } from "@/lib/ai";
+import { callStructured } from "@/lib/ai/reliability";
 import {
   fetchHomepageHtml,
   pickBestLogoWithFallback,
@@ -34,16 +36,27 @@ interface Body {
   companyName?: string;  // optional hint when website is empty
 }
 
-interface Parsed {
-  companyName: string;
-  companyIndustry: string;
-  companySize: string;
-  companyLocation: string;
-  companyDescription: string;
-  companyFounded: string;
-  companyMainBusiness: string;
-  companyTicker: string;
-}
+// Matches the `Parsed` shape the route reads. Lenient on purpose: the old code
+// did `JSON.parse(...) as Parsed` (no runtime validation) and reads every field
+// via `String(x ?? "").trim()`, so missing/null fields — and even non-string
+// values like a numeric year/ticker — were already tolerated and coerced. Each
+// field is therefore `z.unknown()` so the schema accepts exactly what the old
+// `String(x ?? "")` path accepted; only a non-object JSON value (array/number/
+// string/null) falls through to the same parse-failure 502 below, which is the
+// behavior the old `JSON.parse(...) as Parsed` produced garbage for and the
+// wrapper's parse-failure fallback is meant to handle.
+const ParsedSchema = z
+  .object({
+    companyName: z.unknown(),
+    companyIndustry: z.unknown(),
+    companySize: z.unknown(),
+    companyLocation: z.unknown(),
+    companyDescription: z.unknown(),
+    companyFounded: z.unknown(),
+    companyMainBusiness: z.unknown(),
+    companyTicker: z.unknown(),
+  })
+  .passthrough();
 
 function normalizeUrl(input: string) {
   const trimmed = input.trim();
@@ -80,35 +93,6 @@ function extractText(html: string) {
     .join("\n\n");
 }
 
-function extractJsonBlock(text: string): string {
-  const fenced = text
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/```\s*$/, "")
-    .trim();
-  let depth = 0;
-  let start = -1;
-  let inString = false;
-  let escaped = false;
-  for (let i = 0; i < fenced.length; i++) {
-    const ch = fenced[i];
-    if (escaped) { escaped = false; continue; }
-    if (inString) {
-      if (ch === "\\") escaped = true;
-      else if (ch === '"') inString = false;
-      continue;
-    }
-    if (ch === '"') { inString = true; continue; }
-    if (ch === "{") {
-      if (depth === 0) start = i;
-      depth++;
-    } else if (ch === "}") {
-      depth--;
-      if (depth === 0 && start >= 0) return fenced.slice(start, i + 1);
-    }
-  }
-  return fenced;
-}
-
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const role = (session?.user as { role?: string })?.role ?? "";
@@ -134,26 +118,21 @@ export async function POST(req: NextRequest) {
     ? `Website URL: ${url.toString()}\n\nPage content:\n${pageText}`
     : `Website URL: ${url.toString()}\n(No page content reachable. Use prior knowledge of this URL if any.)`;
 
-  const result = await chat(
+  const r = await callStructured(
     [
       { role: "system", content: SYSTEM },
       { role: "user", content: aiInput },
     ],
+    ParsedSchema,
     { feature: "employer_profile_autofill", maxTokens: 800, temperature: 0.1 }
   );
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error ?? "AI request failed." }, { status: 502 });
-  }
-
-  let parsed: Parsed;
-  try {
-    parsed = JSON.parse(extractJsonBlock(result.text)) as Parsed;
-  } catch {
+  if (!r.ok) {
     return NextResponse.json(
       { error: "AI returned non-JSON. Try again or fill the fields manually." },
       { status: 502 }
     );
   }
+  const parsed = r.data;
 
   // Pick the highest-scored logo candidate from the homepage. Falls
   // through to Clearbit's 256-px+ hosted logo when the HTML has no

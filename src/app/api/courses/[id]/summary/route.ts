@@ -16,7 +16,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireCourseOwner } from "@/lib/auth";
-import { chat, AI_CONFIGURED } from "@/lib/ai";
+import { AI_CONFIGURED } from "@/lib/ai";
+import { callText } from "@/lib/ai/reliability";
 
 const BASE_SYSTEM =
   "You write concise, learner-friendly summaries of training courses for a biomanufacturing LMS. " +
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!course.aiSummary) {
       return NextResponse.json({ error: "Generate an initial summary first, then refine." }, { status: 400 });
     }
-    const result = await chat([
+    const result = await callText([
       { role: "system", content: REFINE_SYSTEM },
       {
         role: "user",
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     ? `\nAssessments: ${course.assessments.map((a) => a.title).join(", ")}.`
     : "";
 
-  const result = await chat([
+  const result = await callText([
     { role: "system", content: BASE_SYSTEM },
     {
       role: "user",

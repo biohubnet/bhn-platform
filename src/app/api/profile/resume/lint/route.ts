@@ -14,7 +14,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
-import { chat } from "@/lib/ai";
+import { callText } from "@/lib/ai/reliability";
 import { buildLintPrompt, parseLintResponse } from "@/lib/resume/lint";
 import type { ResumeContent } from "@/lib/resume/types";
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { system, user } = buildLintPrompt(body.content);
-  const result = await chat(
+  const result = await callText(
     [
       { role: "system", content: system },
       { role: "user",   content: user },
