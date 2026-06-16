@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Admin · AI reliability + metrics — Jun 2026
+  {
+    title: "Admin · AI metrics + a reliability layer",
+    body: "A new **AI metrics** page (Admin → Insights) shows reliability and cost across every AI call from the telemetry log — call volume, error rate, p50/p95 latency, cost, and valid-output (schema-validation) rate, charted per day and broken down per feature, over a 7/30/90-day window. Behind it, AI calls now record estimated **cost** and the **prompt version** that ran, and a reliability wrapper adds retries with backoff, a per-call timeout, zod-validated structured outputs (with a repair-retry), and prompt-injection defense for course Q&A. Quality is tracked offline by a new **eval harness** (golden datasets + scorers + an LLM-as-judge) with a **CI gate** that fails a PR if a metric regresses. See docs/reliability-evals.md.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Greenwood theme · richer falling leaves — Jun 2026
   {
     title: "Greenwood theme · truer falling leaves",

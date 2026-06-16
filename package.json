@@ -8,6 +8,9 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
+    "eval": "tsx evals/run.ts --save",
+    "eval:ci": "tsx evals/run.ts --no-llm --check",
+    "eval:baseline": "tsx evals/run.ts --no-llm --write-baseline",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
@@ -66,7 +69,8 @@
     "unpdf": "^1.6.2",
     "unzipper": "^0.12.3",
     "uuid": "^14.0.0",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
@@ -77,6 +81,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }

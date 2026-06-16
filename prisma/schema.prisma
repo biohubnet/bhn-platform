@@ -2060,11 +2060,17 @@ model ElectronicSignature {
 model AIInteraction {
   id               String   @id @default(cuid())
   userId           String?
-  kind             String // chat | embed | summarize | search | tutor | classify
+  kind             String // chat | embed | summarize | search | tutor | classify  (also the feature label)
   provider         String // cloudflare | gemini
   model            String
   promptTokens     Int?
   completionTokens Int?
+  /// Computed from tokens × per-model pricing (src/lib/ai/pricing.ts). Null when unknown.
+  costUsd          Float?
+  /// Version of the prompt template used (src/lib/ai/prompts.ts) — pins what ran.
+  promptVersion    String?
+  /// Did the structured output pass its schema check? Null = not a validated call.
+  validationPassed Boolean?
   latencyMs        Int?
   success          Boolean  @default(true)
   errorMessage     String?
@@ -2072,6 +2078,23 @@ model AIInteraction {
 
   @@index([createdAt])
   @@index([kind, createdAt])
+}
+
+/// One run of the offline eval harness (evals/run.ts). Stores the commit it ran
+/// against and the aggregate scores so quality can be tracked over time and the
+/// CI gate can compare against a stored baseline.
+model EvalRun {
+  id        String   @id @default(cuid())
+  commitSha String?
+  /// "ci" | "local" | "manual"
+  trigger   String   @default("local")
+  /// Aggregate scores keyed by metric (correctness, groundedness, recallAt3…).
+  scores    Json
+  passed    Boolean  @default(true)
+  summary   String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 /// Persistent cache of m2m100 (and any future translation model)

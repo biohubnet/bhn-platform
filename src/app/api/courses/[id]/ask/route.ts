@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth";
-import { chat, AI_CONFIGURED } from "@/lib/ai";
+import { AI_CONFIGURED } from "@/lib/ai";
+import { callText, delimitContext } from "@/lib/ai/reliability";
+import { COURSE_TUTOR } from "@/lib/ai/prompts";
 
 /**
  * Course-grounded Q&A. We feed the LLM the course title, description,
@@ -27,25 +29,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const moduleList = course.modules.map((m) => `- ${m.title}${m.description ? ": " + m.description : ""}`).join("\n");
-  const context =
+  // Untrusted retrieved content is sanitized + delimited (prompt-injection
+  // defense); the system prompt declares <course_context> data-only.
+  const context = delimitContext(
+    "course_context",
     `Course: ${course.title}\n` +
-    (course.category ? `Category: ${course.category}\n` : "") +
-    (course.description ? `\nDescription:\n${course.description}\n` : "") +
-    (course.aiSummary ? `\nSummary:\n${course.aiSummary}\n` : "") +
-    (moduleList ? `\nModules in this course:\n${moduleList}\n` : "");
+      (course.category ? `Category: ${course.category}\n` : "") +
+      (course.description ? `\nDescription:\n${course.description}\n` : "") +
+      (course.aiSummary ? `\nSummary:\n${course.aiSummary}\n` : "") +
+      (moduleList ? `\nModules in this course:\n${moduleList}\n` : ""),
+  );
 
-  const result = await chat([
-    {
-      role: "system",
-      content:
-        "You are a study assistant for a biomanufacturing training platform. Help the learner understand " +
-        "the SPECIFIC course context provided. Stay focused on that course; if the question is unrelated, " +
-        "politely redirect to the course content. Be concise (2-4 short paragraphs max), use plain language, " +
-        "and never invent specifics that aren't supported by the context. If the answer isn't in the context, " +
-        "say what general principle applies and suggest which module is most relevant.",
-    },
-    { role: "user", content: `${context}\n\nLearner's question: ${q}` },
-  ], { feature: "course_tutor", userId, maxTokens: 500, temperature: 0.4 });
+  const result = await callText(
+    [
+      { role: "system", content: COURSE_TUTOR.system },
+      { role: "user", content: `${context}\n\nLearner's question: ${q}` },
+    ],
+    { feature: "course_tutor", userId, maxTokens: 500, temperature: 0.4, promptVersion: COURSE_TUTOR.version },
+  );
 
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 502 });
   return NextResponse.json({ answer: result.text.trim() });

@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.16a";
+export const TOUR_VERSION = "2026.06.16b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Admin · AI metrics — Jun 2026
+  {
+    id: "admin.ai-metrics",
+    title: "See how the AI is doing",
+    body: "Admin → Insights → AI metrics shows reliability and cost across every AI call: volume, error rate, p50/p95 latency, cost, and the schema-validation (valid-output) rate, charted per day and per feature. Pick a 7/30/90-day window. Answer + retrieval quality is tracked separately by the offline eval harness (npm run eval), which gates pull requests in CI.",
+    path: "/admin/ai-metrics",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open AI metrics", href: "/admin/ai-metrics" },
+    since: "2026.06.16b",
+  },
   // ─── Outreach · Campaigns — Jun 2026
   {
     id: "outreach.campaigns",

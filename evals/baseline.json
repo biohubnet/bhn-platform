@@ -1,0 +1,10 @@
+{
+  "scores": {
+    "recallAt3": 0.938,
+    "precisionAt3": 0.625,
+    "mrr": 1,
+    "keyword": 0.9,
+    "groundedness": 0.694
+  },
+  "note": "regenerate with: npm run eval:baseline"
+}

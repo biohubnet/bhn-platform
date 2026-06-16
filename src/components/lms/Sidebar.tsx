@@ -423,6 +423,8 @@ const adminInsightsItems: NavItem[] = [
     description: "UX-charter KPI dashboard. Tracks the three named user outcomes — trainee arrival latency, admin queue depth, transparency cadence — against the targets named in docs/ux/charter.md." },
   { label: "Analytics",           href: "/admin/analytics",           icon: LineChart,  minRole: "admin",
     description: "Engagement, learning, and conversion metrics across the platform." },
+  { label: "AI metrics",          href: "/admin/ai-metrics",          icon: Activity,   minRole: "admin",
+    description: "AI reliability + cost observability from the AIInteraction telemetry log — call volume, error rate, p50/p95 latency, cost, and valid-output (schema-validation) rate, per day and per feature." },
   { label: "Pipeline analytics",  href: "/admin/pipeline-analytics",  icon: Activity,   minRole: "admin",
     description: "Hiring-pipeline health — stage distribution, median time-in-stage, stalled (≥14d) applications, conversion-to-offer rate across the platform." },
   { label: "AutoPipette",         href: "/admin/assist",              icon: Pipette,    minRole: "admin",

@@ -1,0 +1,49 @@
+name: AI Evals
+
+# Regression gate: runs the deterministic eval suite (retrieval recall@k /
+# precision@k / MRR + answer keyword/grounding) on PRs that touch the AI layer,
+# prompts, or the eval harness, and fails the check if any metric drops more
+# than the tolerance below its committed baseline (evals/baseline.json).
+# No secrets needed — the LLM-as-judge correctness pass only runs locally /
+# when AI keys are configured (npm run eval).
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/ai/**"
+      - "evals/**"
+      - "src/app/api/courses/**"
+      - "prisma/schema.prisma"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install deps
+        run: npm ci --ignore-scripts
+      - name: Run eval regression gate
+        run: npm run eval:ci
+      - name: Comment results on PR
+        if: ${{ always() && github.event.pull_request.number }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = '(no report produced)';
+            try { report = fs.readFileSync('evals/report.md', 'utf8'); } catch {}
+            const status = '${{ job.status }}';
+            const body = `### AI eval gate — ${status}\n\n\`\`\`\n${report}\n\`\`\`\n_Compared against \`evals/baseline.json\`. Update with \`npm run eval:baseline\` when an intended change moves a metric._`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });

@@ -9,6 +9,7 @@
  * structured error so feature code can degrade gracefully.
  */
 import { prisma } from "@/lib/prisma";
+import { computeCostUsd } from "./pricing";
 
 const CF_ACCOUNT = process.env.CF_ACCOUNT_ID;
 const CF_TOKEN   = process.env.CF_AI_TOKEN;
@@ -29,9 +30,13 @@ interface BaseOpts {
   userId?: string | null;
   feature?: string;       // e.g. "course_search", "course_summary", "course_tutor"
 }
-interface ChatOpts extends BaseOpts {
+export interface ChatOpts extends BaseOpts {
   maxTokens?: number;
   temperature?: number;
+  /** Abort the provider call after this many ms (default 20000). */
+  timeoutMs?: number;
+  /** Prompt-template version recorded in telemetry (src/lib/ai/prompts.ts). */
+  promptVersion?: string;
 }
 interface EmbedOpts extends BaseOpts {
   /** override model — defaults to bge-small-en-v1.5 (384d). */
@@ -48,9 +53,11 @@ async function logInteraction(input: {
   latencyMs: number;
   success: boolean;
   errorMessage?: string;
-}) {
+  promptVersion?: string;
+  validationPassed?: boolean;
+}): Promise<string | null> {
   try {
-    await prisma.aIInteraction.create({
+    const row = await prisma.aIInteraction.create({
       data: {
         userId: input.userId ?? null,
         kind: input.kind,
@@ -58,13 +65,19 @@ async function logInteraction(input: {
         model: input.model,
         promptTokens: input.promptTokens ?? null,
         completionTokens: input.completionTokens ?? null,
+        costUsd: computeCostUsd(input.model, input.promptTokens, input.completionTokens),
+        promptVersion: input.promptVersion ?? null,
+        validationPassed: input.validationPassed ?? null,
         latencyMs: input.latencyMs,
         success: input.success,
         errorMessage: input.errorMessage ?? null,
       },
+      select: { id: true },
     });
+    return row.id;
   } catch (e) {
     console.error("AI log failed:", (e as Error).message);
+    return null;
   }
 }
 
@@ -88,6 +101,7 @@ async function chatCloudflare(messages: ChatMessage[], opts: ChatOpts) {
         max_tokens: opts.maxTokens ?? 512,
         temperature: opts.temperature ?? 0.5,
       }),
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 20000),
     }
   );
   const j = await res.json();
@@ -121,6 +135,7 @@ async function chatGemini(messages: ChatMessage[], opts: ChatOpts) {
         contents: [{ role: "user", parts: [{ text: lastUser }] }],
         generationConfig: { maxOutputTokens: opts.maxTokens ?? 512, temperature: opts.temperature ?? 0.5 },
       }),
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 20000),
     }
   );
   const j = await res.json();
@@ -152,7 +167,7 @@ export async function chat(messages: ChatMessage[], opts: ChatOpts = {}) {
       const result = provider === "cloudflare"
         ? await chatCloudflare(messages, opts)
         : await chatGemini(messages, opts);
-      await logInteraction({
+      const interactionId = await logInteraction({
         userId: opts.userId,
         kind: opts.feature ?? "chat",
         provider,
@@ -161,8 +176,14 @@ export async function chat(messages: ChatMessage[], opts: ChatOpts = {}) {
         completionTokens: result.completionTokens,
         latencyMs: Date.now() - start,
         success: true,
+        promptVersion: opts.promptVersion,
       });
-      return { ok: true as const, text: result.text };
+      return {
+        ok: true as const,
+        text: result.text,
+        interactionId,
+        usage: { promptTokens: result.promptTokens, completionTokens: result.completionTokens },
+      };
     } catch (e) {
       lastErr = (e as Error).message;
       await logInteraction({
@@ -173,6 +194,7 @@ export async function chat(messages: ChatMessage[], opts: ChatOpts = {}) {
         latencyMs: Date.now() - start,
         success: false,
         errorMessage: lastErr,
+        promptVersion: opts.promptVersion,
       });
       // fall through to the next provider, if any
     }
