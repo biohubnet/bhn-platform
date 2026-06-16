@@ -43,7 +43,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "@/components/ui/ThemeProvider";
 
 type TimeOfDay = "dawn" | "day" | "dusk" | "night";
-type LeafShape = "oak" | "maple" | "elm" | "birch" | "eucalyptus";
+type LeafShape = "oak" | "maple" | "elm" | "birch" | "eucalyptus" | "eucalyptusRound";
 
 /** Map clock hour → time-of-day bucket. Tuned for a temperate
  *  Toronto-ish climate; not seasonal-aware (would over-complicate
@@ -91,16 +91,18 @@ interface Firefly {
  *  so the leaves read at small sizes — too much detail just looks
  *  like a smudge once you scale down to 16-22 px. */
 const LEAF_PATHS: Record<LeafShape, string> = {
-  // Oak — lobed silhouette with a short stem
-  oak: "M12 23 L12 14 M12 14 C7 16 4 14 4 11 C7 12 9 11 10 9 C6 10 4 7 5 4 C8 5 10 6 11 8 C10 4 12 1 14 1 C16 1 18 4 17 8 C18 6 20 5 23 4 C24 7 22 10 18 9 C19 11 21 12 24 11 C24 14 21 16 16 14 C16 14 12 14 12 14 Z",
-  // Maple — classic 5-lobed
-  maple: "M12 23 L12 16 M12 16 L7 19 L8 14 L3 14 L7 11 L4 7 L8 8 L9 3 L12 7 L15 3 L16 8 L20 7 L17 11 L21 14 L16 14 L17 19 L12 16 Z",
-  // Elm — narrow, simple ellipse with veins
+  // Oak — wavy rounded lobes down each side, narrowing toward the base
+  oak: "M12 22 C10 21 10 20 8 19.5 C5 19 6 16 8.5 15.5 C5.5 15 6 12 8.5 11.5 C6 11 6.5 8 9 7.5 C10 5 10.5 3 12 2 C13.5 3 14 5 15 7.5 C17.5 8 18 11 15.5 11.5 C18 12 18.5 15 15.5 15.5 C18 16 19 19 16 19.5 C14 20 14 21 12 22 Z",
+  // Maple — five sharp lobes with deep sinuses
+  maple: "M12 21 L10.5 15 L5 16 L8 11 L4 7 L9 8 L12 2 L15 8 L20 7 L16 11 L19 16 L13.5 15 L12 21 Z",
+  // Elm — narrow, simple ellipse with an oblique base
   elm: "M12 23 L12 19 M12 19 C8 18 6 14 8 8 C10 4 12 1 12 1 C12 1 14 4 16 8 C18 14 16 18 12 19 Z",
-  // Birch — heart-shaped with serrated bottom
-  birch: "M12 23 L12 18 M12 18 C7 17 4 13 5 9 C6 5 9 3 12 6 C15 3 18 5 19 9 C20 13 17 17 12 18 Z",
+  // Birch — toothed ovate tapering to a sharp tip
+  birch: "M12 21 L9 19 L7 16 L9 14 L7 11 L9 9 L8 6 L10 5 L12 2 L14 5 L16 6 L15 9 L17 11 L15 14 L17 16 L15 19 L12 21 Z",
   // Eucalyptus — long, slender, slightly sickle-curved lanceolate blade
   eucalyptus: "M12 23 L12 19 M12 19 C8 15 9 8 12 3 C12 3 12 2 13 2 C15 6 16 14 12 19 Z",
+  // Eucalyptus (silver dollar) — round, near-orbicular blade on a short stem
+  eucalyptusRound: "M12 22 L12 18 M12 18 C7 18 4 15 4 11 C4 6.5 7.5 4 12 4 C16.5 4 20 6.5 20 11 C20 15 17 18 12 18 Z",
 };
 
 /** Rotation pool for leaves — pre-randomised at mount; same set
@@ -254,17 +256,24 @@ export function GreenwoodAtmosphere() {
   // lifetime of the component so React keys don't churn and the
   // browser keeps the same composited layers across renders.
   const leaves = useMemo<FallingLeaf[]>(() => {
-    // Eucalyptus is weighted in twice so a couple drop among the autumn
-    // leaves without bumping the total (still 7 — wind, not a leaf storm).
-    const shapes: LeafShape[] = ["oak", "eucalyptus", "maple", "elm", "eucalyptus", "birch"];
-    // Autumnal palette — russet → burnt sienna → ochre → moss-edge.
-    // Mixed so the falling set has range, not a uniform colour.
-    const hues = ["#9b6e2f", "#7d4a1f", "#b46f2c", "#c08438", "#86581c", "#6f7a3a", "#a85f24"];
-    // Eucalyptus drops fresh, not autumn — silvery sage greens.
-    const sageHues = ["#9caf88", "#86a079", "#7f9e84"];
+    // One slot per species (eucalyptus shows as both a slender and a round
+    // silver-dollar leaf). 7 leaves over 6 slots = every species appears,
+    // oak twice — wind, not a leaf storm.
+    const shapes: LeafShape[] = ["oak", "maple", "eucalyptusRound", "elm", "birch", "eucalyptus"];
+    // Per-species colour — each tree turns its own way, so the falling set
+    // reads true: scarlet maples, gold birch, russet oak, ochre elm, and
+    // silvery-sage eucalyptus (which falls fresh, not autumn).
+    const palettes: Record<LeafShape, string[]> = {
+      oak:             ["#8a4b2a", "#6e3b1f", "#9c5a2e", "#7a3526"],
+      maple:           ["#c0392b", "#d35400", "#b5341f", "#cf5b1e"],
+      elm:             ["#b98a2e", "#caa13a", "#a8791f", "#bd9433"],
+      birch:           ["#e0b32a", "#d4a521", "#ecc23d", "#c89a2a"],
+      eucalyptus:      ["#9caf88", "#86a079", "#7f9e84", "#8fa99a"],
+      eucalyptusRound: ["#9caf88", "#86a079", "#7f9e84", "#8fa99a"],
+    };
     return Array.from({ length: LEAF_COUNT }, (_, i) => {
       const shape = shapes[i % shapes.length];
-      const palette = shape === "eucalyptus" ? sageHues : hues;
+      const palette = palettes[shape];
       return {
         id: i,
         leftPct: Math.random() * 100,
