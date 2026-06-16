@@ -30,18 +30,29 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.14a";
+export const TOUR_VERSION = "2026.06.16a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Outreach · Campaigns — Jun 2026
+  {
+    id: "outreach.campaigns",
+    title: "Run a tracked outreach campaign",
+    body: "Outreach now has two views: Contacts (your directory + lists) and Campaigns. A campaign targets a list (or everyone) with one email template, then gives you a personalised roster — copy or open each email, and mark contacts reached to track progress. Every send is logged to that contact's reach-out history.",
+    path: "/admin/workspace/outreach/campaigns",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Campaigns", href: "/admin/workspace/outreach/campaigns" },
+    since: "2026.06.16a",
+  },
   // ─── Outreach · move/remove contacts between lists — Jun 2026
   {
     id: "outreach.list-membership",
     title: "Move a contact between lists",
     body: "On the Outreach board, hover any contact and hit the new Lists button. Tick a list to add the contact, untick to remove them, or — from inside a list — move them onto another list in one click. Removing from a list never deletes the contact: they stay in the Directory and on any other lists.",
-    path: "/admin/workspace/outreach",
+    path: "/admin/workspace/outreach/contacts",
     placement: "center",
     roles: ["admin", "superadmin"],
-    cta: { label: "Open Outreach", href: "/admin/workspace/outreach" },
+    cta: { label: "Open Outreach", href: "/admin/workspace/outreach/contacts" },
     since: "2026.06.14a",
   },
   // ─── Practice · Mock Interview — Jun 2026

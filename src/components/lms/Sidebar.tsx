@@ -291,16 +291,24 @@ const workspaceVideoItem: NavItem = {
     "Plan promo videos and draft their scripts. Scripts get shareable links for collaborative editing — contributors don't need an account.",
 };
 
-// WORKSPACE → Outreach. Sibling of Marketing and File Sharing. Central
-// contact directory + lists (cross-promotion partners, EXPERIENCE program)
-// for promoting BHN programs.
-const workspaceOutreachItem: NavItem = {
-  label: "Outreach",
-  href: "/admin/workspace/outreach",
+// WORKSPACE → Outreach. Sibling of Marketing and File Sharing. Two views:
+// Contacts (the directory + lists) and Campaigns (tracked cross-promotion
+// pushes), shown as sub-items under the Outreach subgroup.
+const workspaceOutreachContactsItem: NavItem = {
+  label: "Contacts",
+  href: "/admin/workspace/outreach/contacts",
   icon: BookUser,
   minRole: "admin",
   description:
     "Partner contacts for cross-promoting BHN programs. One directory, many lists; editable columns; every contact records who added it.",
+};
+const workspaceOutreachCampaignsItem: NavItem = {
+  label: "Campaigns",
+  href: "/admin/workspace/outreach/campaigns",
+  icon: Megaphone,
+  minRole: "admin",
+  description:
+    "Run a tracked cross-promotion push: pick a target list and an email template, then work down a personalised roster, copying or opening each email and marking contacts reached.",
 };
 
 // WORKSPACE → File Sharing. Sibling of Marketing. SKELETON nav stub —
@@ -1641,7 +1649,8 @@ export function Sidebar({
               <NavLink item={workspaceVideoItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
             </AdminSubgroup>
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Outreach">
-              <NavLink item={workspaceOutreachItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+              <NavLink item={workspaceOutreachContactsItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+              <NavLink item={workspaceOutreachCampaignsItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
             </AdminSubgroup>
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.operations} label="File Sharing">
               <NavLink item={workspaceFileSharingItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />

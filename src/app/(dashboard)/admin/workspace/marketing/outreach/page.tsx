@@ -2,5 +2,5 @@
 import { redirect } from "next/navigation";
 
 export default function OutreachMovedPage() {
-  redirect("/admin/workspace/outreach");
+  redirect("/admin/workspace/outreach/contacts");
 }

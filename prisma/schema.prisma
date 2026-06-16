@@ -5033,6 +5033,7 @@ model OutreachList {
   shareTokens   OutreachShareToken[]
   collaborators OutreachCollaborator[]
   touches       OutreachTouch[]
+  campaigns     OutreachCampaign[]
 
   @@index([order])
 }
@@ -5144,6 +5145,35 @@ model OutreachTouch {
   createdAt  DateTime @default(now())
 
   @@index([personId, happenedAt])
+}
+
+/// An outreach CAMPAIGN — a planned, trackable cross-promotion push using one
+/// email template against a target audience (a list, or null = the whole
+/// directory). The roster is derived live from the audience; `sentPersonIds`
+/// records who's been reached so the campaign shows progress. `vars` holds the
+/// campaign-level template fields (program / event / deadline / link) that fill
+/// the {{placeholders}}; per-contact name/org/email come from the person.
+model OutreachCampaign {
+  id            String   @id @default(cuid())
+  name          String
+  /// Target list; null = everyone in the directory.
+  listId        String?
+  list          OutreachList? @relation(fields: [listId], references: [id], onDelete: SetNull)
+  /// Email template id from the outreach templates library.
+  templateId    String
+  /// Campaign-level template variables keyed by token (programName, deadline…).
+  vars          Json
+  /// personIds already reached in this campaign (drives progress).
+  sentPersonIds Json
+  /// draft | active | done
+  status        String   @default("draft")
+  notes         String   @default("")
+  createdById   String?
+  createdByName String   @default("BHN team")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 // ── Mock Interview practice ──────────────────────────────────────────────

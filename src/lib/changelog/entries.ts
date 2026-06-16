@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Outreach · Campaigns — Jun 2026
+  {
+    title: "Outreach · campaigns",
+    body: "Outreach now has two views, shown as sub-items under the Outreach tab: **Contacts** (the directory + lists you already had) and a new **Campaigns** view. A campaign is a planned, trackable cross-promotion push — pick a target list (or everyone) and one email template, then work down a **personalised roster**: each contact's name, org and email fill the template automatically, and campaign-level fields (program, event, deadline, link, your name/title) fill the rest, previewing live. For each contact you can **copy** the email or **open it in your mail client**, then **mark them reached** — which logs a reach-out on that contact (so it shows in their history) and advances the campaign's progress bar. Set a campaign to draft / active / done. Sending still happens from your own mail client, so nothing is blasted automatically.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Outreach · sticky table headers — Jun 2026
   {
     title: "Outreach · column headers stay put while scrolling",
