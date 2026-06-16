@@ -2087,6 +2087,9 @@ model AIInteraction {
   /// The user-facing answer text, kept only for flagged calls so a reviewer has
   /// context in the queue. Null for normal calls (we don't store every answer).
   answerExcerpt    String?
+  /// When the triage agent processed this flagged answer (idempotency marker —
+  /// the agent skips rows already stamped).
+  agentTriagedAt   DateTime?
   latencyMs        Int?
   success          Boolean  @default(true)
   errorMessage     String?
@@ -2112,6 +2115,24 @@ model EvalRun {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/// One run of the autonomous triage agent (src/lib/inngest/triageAgent.ts).
+/// Powers the agent dashboard + the before/after throughput metric.
+model AgentRun {
+  id             String    @id @default(cuid())
+  agent          String    @default("triage")
+  /// schedule | manual
+  trigger        String    @default("schedule")
+  startedAt      DateTime  @default(now())
+  finishedAt     DateTime?
+  itemsProcessed Int       @default(0)
+  itemsProposed  Int       @default(0)
+  durationMs     Int?
+  ok             Boolean   @default(true)
+  summary        String    @default("")
+
+  @@index([startedAt])
 }
 
 /// Persistent cache of m2m100 (and any future translation model)

@@ -427,6 +427,8 @@ const adminInsightsItems: NavItem[] = [
     description: "AI reliability + cost observability from the AIInteraction telemetry log — call volume, error rate, p50/p95 latency, cost, acceptance rate, and valid-output (schema-validation) rate, per day and per feature." },
   { label: "AI review queue",     href: "/admin/ai-review",           icon: ShieldCheck, minRole: "admin",
     description: "AI answers flagged for a human — thumbs-down from a learner or low-confidence (poorly grounded) answers, plus the triage agent's proposals. Resolve or escalate each." },
+  { label: "AI triage agent",     href: "/admin/ai-agent",            icon: Sparkles,   minRole: "admin",
+    description: "The autonomous agent that triages the AI review queue (category + severity + a proposed action for a human). Kill switch, run-now, before/after throughput vs manual triage, and run history. Orchestrated by Inngest." },
   { label: "Pipeline analytics",  href: "/admin/pipeline-analytics",  icon: Activity,   minRole: "admin",
     description: "Hiring-pipeline health — stage distribution, median time-in-stage, stalled (≥14d) applications, conversion-to-offer rate across the platform." },
   { label: "AutoPipette",         href: "/admin/assist",              icon: Pipette,    minRole: "admin",

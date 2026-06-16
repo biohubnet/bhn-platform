@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.16d";
+export const TOUR_VERSION = "2026.06.16e";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── AI · triage agent — Jun 2026
+  {
+    id: "admin.ai-agent",
+    title: "Let the agent triage for you",
+    body: "Admin → Insights → AI triage agent is an autonomous agent that reads the review queue, classifies each flagged answer, and proposes an action for a human (it never resolves on its own). It runs on a schedule via Inngest or on demand. You control it with a kill switch, and the page shows how much time it saves vs triaging by hand.",
+    path: "/admin/ai-agent",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open the triage agent", href: "/admin/ai-agent" },
+    since: "2026.06.16e",
+  },
   // ─── AI quality · review queue — Jun 2026
   {
     id: "admin.ai-review",

@@ -1,0 +1,8 @@
+{"id":"tr1","reason":"low confidence (20%)","answer":"I'm not sure about this specific course, but generally bioreactors are used in manufacturing. You might want to check the syllabus.","expectedCategory":"ungrounded"}
+{"id":"tr2","reason":"a user rated it thumbs-down","answer":"Dissolved oxygen is controlled by sparging air or oxygen and by increasing agitation, which raises kLa. The course module on aeration covers the setpoints.","expectedCategory":"looks_fine"}
+{"id":"tr3","reason":"low confidence (15%)","answer":"That's a great question! Let me know if you have any other questions about the platform or your account settings.","expectedCategory":"off_topic"}
+{"id":"tr4","reason":"a user rated it thumbs-down","answer":"Media fills validate aseptic processing.","expectedCategory":"incomplete"}
+{"id":"tr5","reason":"low confidence (25%)","answer":"Protein A binds the antibody, definitely at exactly pH 7.4 every single time, and elution always happens instantly with zero loss.","expectedCategory":"ungrounded"}
+{"id":"tr6","reason":"a user rated it thumbs-down","answer":"The pressure cascade keeps cleaner rooms at higher pressure than dirtier adjacent rooms so air flows outward, preventing contaminants from migrating inward; differential sensors confirm it. See the cleanroom module.","expectedCategory":"looks_fine"}
+{"id":"tr7","reason":"low confidence (10%)","answer":"It depends.","expectedCategory":"incomplete"}
+{"id":"tr8","reason":"a user rated it thumbs-down","answer":"I can help you reset your password — go to account settings and click 'forgot password'.","expectedCategory":"off_topic"}

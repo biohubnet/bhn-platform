@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── AI · autonomous triage agent — Jun 2026
+  {
+    title: "AI · an autonomous triage agent",
+    body: "A new **AI triage agent** (Admin → Insights) works the AI review queue for you: it reads each flagged answer, classifies it (category + severity), and **proposes** an action for a human — it never resolves or sends anything on its own. It's **orchestrated by Inngest** (durable, retried, one run at a time) on a 6-hour schedule, or you can run it on demand. Guardrails included: a **kill switch**, a per-run cap, idempotency (each answer handled once), and schema-validated output. The page shows a **before/after** metric — manual triage time vs the agent's throughput, and the hours saved.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── AI quality · feedback + review queue — Jun 2026
   {
     title: "AI quality · answer feedback + a review queue",

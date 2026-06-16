@@ -89,6 +89,22 @@ async function main() {
   scores.groundedness = round(avg(grounded));
   if (llmRan) { scores.correctness = round(avg(correctness)); scores.judgeGroundedness = round(avg(judgeGround)); }
 
+  // ── Triage agent eval (LLM only): category-classification accuracy ──────
+  if (!NO_LLM) {
+    try {
+      const { triageAnswer } = await import("@/lib/ai/triage");
+      const tr = readJsonl<{ id: string; answer: string; reason: string; expectedCategory: string }>("triage.jsonl");
+      const correct: number[] = [];
+      for (const c of tr) {
+        const res = await triageAnswer({ answer: c.answer, reason: c.reason });
+        correct.push(res && res.category === c.expectedCategory ? 1 : 0);
+      }
+      if (correct.length) scores.triageAccuracy = round(avg(correct));
+    } catch (e) {
+      console.warn("Agent triage eval skipped:", (e as Error).message);
+    }
+  }
+
   // ── Report ────────────────────────────────────────────────────────────
   const mode = llmRan ? "full (LLM judge)" : "deterministic";
   const lines = Object.entries(scores).map(([k, v]) => `- **${k}**: ${v.toFixed(3)}`);
