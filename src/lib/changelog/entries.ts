@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Greenwood theme · eucalyptus leaves — Jun 2026
+  {
+    title: "Greenwood theme · eucalyptus leaves in the breeze",
+    body: "The Greenwood theme's drifting leaves now include slender, silvery-sage eucalyptus leaves among the autumn oak, maple, elm and birch.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Greenwood theme · greener green — Jun 2026
   {
     title: "Greenwood theme · a cleaner, truer green",

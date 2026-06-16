@@ -43,7 +43,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "@/components/ui/ThemeProvider";
 
 type TimeOfDay = "dawn" | "day" | "dusk" | "night";
-type LeafShape = "oak" | "maple" | "elm" | "birch";
+type LeafShape = "oak" | "maple" | "elm" | "birch" | "eucalyptus";
 
 /** Map clock hour → time-of-day bucket. Tuned for a temperate
  *  Toronto-ish climate; not seasonal-aware (would over-complicate
@@ -99,6 +99,8 @@ const LEAF_PATHS: Record<LeafShape, string> = {
   elm: "M12 23 L12 19 M12 19 C8 18 6 14 8 8 C10 4 12 1 12 1 C12 1 14 4 16 8 C18 14 16 18 12 19 Z",
   // Birch — heart-shaped with serrated bottom
   birch: "M12 23 L12 18 M12 18 C7 17 4 13 5 9 C6 5 9 3 12 6 C15 3 18 5 19 9 C20 13 17 17 12 18 Z",
+  // Eucalyptus — long, slender, slightly sickle-curved lanceolate blade
+  eucalyptus: "M12 23 L12 19 M12 19 C8 15 9 8 12 3 C12 3 12 2 13 2 C15 6 16 14 12 19 Z",
 };
 
 /** Rotation pool for leaves — pre-randomised at mount; same set
@@ -252,24 +254,32 @@ export function GreenwoodAtmosphere() {
   // lifetime of the component so React keys don't churn and the
   // browser keeps the same composited layers across renders.
   const leaves = useMemo<FallingLeaf[]>(() => {
-    const shapes: LeafShape[] = ["oak", "maple", "elm", "birch"];
+    // Eucalyptus is weighted in twice so a couple drop among the autumn
+    // leaves without bumping the total (still 7 — wind, not a leaf storm).
+    const shapes: LeafShape[] = ["oak", "eucalyptus", "maple", "elm", "eucalyptus", "birch"];
     // Autumnal palette — russet → burnt sienna → ochre → moss-edge.
     // Mixed so the falling set has range, not a uniform colour.
     const hues = ["#9b6e2f", "#7d4a1f", "#b46f2c", "#c08438", "#86581c", "#6f7a3a", "#a85f24"];
-    return Array.from({ length: LEAF_COUNT }, (_, i) => ({
-      id: i,
-      leftPct: Math.random() * 100,
-      delaySec: Math.random() * 22,
-      durationSec: 18 + Math.random() * 14,
-      startRotation: Math.random() * 360,
-      // Sway amplitude — how far the leaf wanders horizontally as it
-      // falls. Larger numbers read as more wind.
-      swayPx: 60 + Math.random() * 100,
-      scale: 0.55 + Math.random() * 0.75,
-      shape: shapes[i % shapes.length],
-      hue: hues[Math.floor(Math.random() * hues.length)],
-      opacity: 0.55 + Math.random() * 0.30,
-    }));
+    // Eucalyptus drops fresh, not autumn — silvery sage greens.
+    const sageHues = ["#9caf88", "#86a079", "#7f9e84"];
+    return Array.from({ length: LEAF_COUNT }, (_, i) => {
+      const shape = shapes[i % shapes.length];
+      const palette = shape === "eucalyptus" ? sageHues : hues;
+      return {
+        id: i,
+        leftPct: Math.random() * 100,
+        delaySec: Math.random() * 22,
+        durationSec: 18 + Math.random() * 14,
+        startRotation: Math.random() * 360,
+        // Sway amplitude — how far the leaf wanders horizontally as it
+        // falls. Larger numbers read as more wind.
+        swayPx: 60 + Math.random() * 100,
+        scale: 0.55 + Math.random() * 0.75,
+        shape,
+        hue: palette[Math.floor(Math.random() * palette.length)],
+        opacity: 0.55 + Math.random() * 0.30,
+      };
+    });
   }, []);
 
   const fireflies = useMemo<Firefly[]>(() => {
