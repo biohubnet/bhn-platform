@@ -5,6 +5,13 @@
 /evals/report.md
 /evals/summary.txt
 
+# MCP server (Python) artifacts
+/mcp/.venv/
+mcp/**/__pycache__/
+*.pyc
+/mcp/*.egg-info/
+/mcp/.pytest_cache/
+
 # dependencies
 /node_modules
 /.pnp

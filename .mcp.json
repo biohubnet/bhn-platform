@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "bhn": {
+      "command": "python",
+      "args": ["-m", "bhn_mcp.server"],
+      "cwd": "mcp",
+      "env": {
+        "DATABASE_URL": "${DATABASE_URL}",
+        "BHN_MCP_ALLOW_WRITES": "0",
+        "BHN_MCP_TOKEN": "${BHN_MCP_TOKEN}"
+      }
+    }
+  }
+}
