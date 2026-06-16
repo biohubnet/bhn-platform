@@ -12,7 +12,8 @@
  *   • E-mail is the identity key: saving an e-mail that belongs to another
  *     person offers a merge instead of creating a duplicate.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Loader2, Pencil, Check, X,
@@ -98,6 +99,33 @@ function ListMembershipMenu({
   onMove: (membershipId: string, toListId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  // Fixed viewport position for the portalled menu, so it escapes the table's
+  // overflow clip and is never cut off near the bottom of the scroll box.
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  function openMenu() {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) {
+      const w = 240; // matches w-60
+      const left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
+      setPos({ top: r.bottom + 4, left });
+    }
+    setOpen(true);
+  }
+
+  // The menu is position:fixed, so any scroll/resize detaches it from its
+  // button — close instead of letting it drift.
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
 
   // listId → this person's membershipId (only for lists they're already on).
   const memberByList = new Map<string, string>();
@@ -115,10 +143,11 @@ function ListMembershipMenu({
   return (
     <span className="relative inline-flex">
       <button
+        ref={btnRef}
         type="button"
         title="Manage lists — add, remove, or move this contact"
         disabled={busy || lists.length === 0}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? setOpen(false) : openMenu())}
         className={cn(
           "inline-flex h-6 items-center gap-1 rounded px-1.5 text-[11px] font-semibold hover:bg-elevated disabled:opacity-30",
           open ? "bg-elevated text-fg" : "text-muted hover:text-fg",
@@ -127,7 +156,7 @@ function ListMembershipMenu({
         <ListChecks size={13} /> Lists
       </button>
 
-      {open && (
+      {open && pos && typeof document !== "undefined" && createPortal(
         <>
           {/* outside-click catcher */}
           <button
@@ -135,9 +164,12 @@ function ListMembershipMenu({
             aria-hidden
             tabIndex={-1}
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-30 cursor-default"
+            className="fixed inset-0 z-50 cursor-default"
           />
-          <div className="absolute right-0 top-7 z-40 w-60 rounded-lg border border-line bg-card-solid p-1.5 text-left shadow-card-hover">
+          <div
+            style={{ top: pos.top, left: pos.left }}
+            className="fixed z-[60] w-60 rounded-lg border border-line bg-card-solid p-1.5 text-left shadow-card-hover"
+          >
             <p className="px-2 pb-1 pt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-subtle">
               On these lists
             </p>
@@ -193,7 +225,8 @@ function ListMembershipMenu({
               </>
             )}
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </span>
   );
@@ -581,19 +614,19 @@ export function OutreachBoard({
 
       {/* ── DIRECTORY TABLE ── */}
       {isDir ? (
-        <Card className="overflow-x-auto p-0">
+        <Card className="max-h-[70vh] overflow-auto p-0">
           <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
               <tr className="border-b border-line bg-elevated/40">
                 {board.personColumns.map((c) => (
-                  <th key={c.key} className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">
+                  <th key={c.key} className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">
                     <span className="inline-flex items-center gap-1"><Link2 size={9} className="text-brand-600" /> {c.label}</span>
                   </th>
                 ))}
-                <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">On lists</th>
-                <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Reach-outs</th>
-                <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Added by</th>
-                <th className="w-24 px-3 py-2.5" />
+                <th className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">On lists</th>
+                <th className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Reach-outs</th>
+                <th className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Added by</th>
+                <th className="sticky top-0 z-10 border-b border-line bg-card-solid w-24 px-3 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -652,25 +685,25 @@ export function OutreachBoard({
         </Card>
       ) : active ? (
         /* ── LIST TABLE: shared person columns + this list's columns ── */
-        <Card className="overflow-x-auto p-0">
+        <Card className="max-h-[70vh] overflow-auto p-0">
           <table className="w-full min-w-[820px] border-collapse text-left">
             <thead>
               <tr className="border-b border-line bg-elevated/40">
                 {board.personColumns.map((c) => (
-                  <th key={c.key} className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">
+                  <th key={c.key} className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">
                     <span className="inline-flex items-center gap-1" title="Shared — editing updates this person in every list">
                       <Link2 size={9} className="text-brand-600" /> {c.label}
                     </span>
                   </th>
                 ))}
                 {active.columns.map((c) => (
-                  <th key={c.key} className="border-l border-line/70 px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle first-of-type:border-l">
+                  <th key={c.key} className="sticky top-0 z-10 border-b border-l border-line/70 bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle first-of-type:border-l">
                     {c.label}
                   </th>
                 ))}
-                <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Reach-outs</th>
-                <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Added by</th>
-                <th className="w-32 px-3 py-2.5" />
+                <th className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Reach-outs</th>
+                <th className="sticky top-0 z-10 border-b border-line bg-card-solid px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Added by</th>
+                <th className="sticky top-0 z-10 border-b border-line bg-card-solid w-32 px-3 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-line">

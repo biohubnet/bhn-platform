@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Outreach · sticky table headers — Jun 2026
+  {
+    title: "Outreach · column headers stay put while scrolling",
+    body: "On the Outreach board, the table's column headers now stick to the top as you scroll a long list or the Directory, so you always know which column you're reading. Each table scrolls within its own area with the header pinned.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Outreach · move/remove contacts between lists — Jun 2026
   {
     title: "Outreach · move or remove a contact between lists",
