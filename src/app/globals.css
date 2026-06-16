@@ -2249,19 +2249,21 @@ body {
   --line-strong: rgba(31, 42, 26, 0.20);
   --backdrop:  rgba(31, 42, 26, 0.42);
 
-  /* Brand: fern → deep-forest ramp. brand-600 is the CTA — white-on-
-   * #456224 reads ~7.8:1 (AAA). brand-50 stays leaf-tinted so cards
-   * using bg-brand-50 blend with the page parchment. */
-  --brand-50:  #eaf1de;
-  --brand-100: #d6e4be;
-  --brand-200: #b8cf94;
-  --brand-300: #94b569;
-  --brand-400: #759a48;
-  --brand-500: #5d7f33;
-  --brand-600: #456224;
-  --brand-700: #36501c;
-  --brand-800: #283c14;
-  --brand-900: #1c2a0d;
+  /* Brand: a clean Fujifilm-style "tree green" ramp — true green (hue ~144°),
+   * more saturated and far less olive/khaki than the old fern ramp. The vivid
+   * mid (brand-500) is the Fujifilm-green signature; brand-600 is the CTA —
+   * white-on-#126e37 reads ~6.3:1 (strong AA). brand-50 stays leaf-tinted so
+   * cards using bg-brand-50 blend with the page parchment. */
+  --brand-50:  #e7f4ec;
+  --brand-100: #c5e8d2;
+  --brand-200: #94d6ad;
+  --brand-300: #59bd80;
+  --brand-400: #29a75d;
+  --brand-500: #149149;
+  --brand-600: #126e37;
+  --brand-700: #0e5a2d;
+  --brand-800: #0a4522;
+  --brand-900: #073018;
 
   /* Soft, hand-rounded radii — like river stones and rounded leaves.
    * Matches the organic feel without going playful. */

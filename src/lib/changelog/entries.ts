@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Greenwood theme · greener green — Jun 2026
+  {
+    title: "Greenwood theme · a cleaner, truer green",
+    body: "The Greenwood theme's green has been retuned from an olive / fern tone to a cleaner, more saturated Fujifilm-style tree green. Buttons and accents now read as a true forest green rather than khaki. Contrast on buttons stays accessible (white text passes AA).",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Outreach · Campaigns — Jun 2026
   {
     title: "Outreach · campaigns",
