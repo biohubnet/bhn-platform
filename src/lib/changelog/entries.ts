@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Greenwood theme · greener green — Jun 2026
   {
     title: "Greenwood theme · a cleaner, truer green",
-    body: "The Greenwood theme's green has been retuned from an olive / fern tone to a cleaner, more saturated Fujifilm-style tree green. Buttons and accents now read as a true forest green rather than khaki. Contrast on buttons stays accessible (white text passes AA).",
+    body: "The Greenwood theme's green has been retuned from an olive / fern tone to a cleaner, more saturated Fujifilm-style tree green — consistently across the whole theme: buttons and accents, the forest hero scene, and the drifting canopy light all now read as a true forest green rather than khaki. The intentional time-of-day moments (dawn mist, golden sun, amber dusk, moonlit night) are unchanged. Contrast on buttons stays accessible (white text passes AA).",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,

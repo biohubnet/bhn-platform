@@ -2234,9 +2234,9 @@ body {
    * (See [data-greenwood-time="…"] blocks further down for dawn,
    * dusk, and night repaints of the same mesh.) */
   --bg-mesh:
-    radial-gradient(at 12% 16%, rgba(120, 160, 90, 0.10) 0px, transparent 55%),
+    radial-gradient(at 12% 16%, rgba(85, 165, 117, 0.10) 0px, transparent 55%),
     radial-gradient(at 86% 14%, rgba(220, 200, 120, 0.13) 0px, transparent 50%),
-    radial-gradient(at 26% 90%, rgba(80, 130, 70, 0.10) 0px, transparent 50%),
+    radial-gradient(at 26% 90%, rgba(58, 130, 87, 0.10) 0px, transparent 50%),
     radial-gradient(at 78% 88%, rgba(240, 200, 100, 0.08) 0px, transparent 55%);
   --card:      rgba(248, 251, 240, 0.92);
   --card-solid: #f7faf2;          /* inner-leaf cream */
@@ -2278,11 +2278,11 @@ body {
    * "this is a website with green on it". Overridden per time-of-day
    * below so the hero retints from misty-dawn → golden-noon →
    * amber-dusk → moonlit-cobalt across a day. */
-  --hero-bg:     #1f3a1e;
-  --hero-mesh-1: #6f9151;
+  --hero-bg:     #163a24;
+  --hero-mesh-1: #5a9170;
   --hero-mesh-2: #c6a449;
-  --hero-mesh-3: #2a4a22;
-  --hero-mesh-4: #8ba85b;
+  --hero-mesh-3: #224a32;
+  --hero-mesh-4: #60a880;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -2304,12 +2304,12 @@ body {
   --bg-mesh:
     radial-gradient(at 40% 8%, rgba(255, 220, 200, 0.22) 0px, transparent 55%),
     radial-gradient(at 80% 12%, rgba(240, 200, 220, 0.18) 0px, transparent 50%),
-    radial-gradient(at 20% 80%, rgba(200, 220, 200, 0.14) 0px, transparent 55%),
-    radial-gradient(at 70% 95%, rgba(180, 200, 180, 0.12) 0px, transparent 55%);
+    radial-gradient(at 20% 80%, rgba(198, 220, 207, 0.14) 0px, transparent 55%),
+    radial-gradient(at 70% 95%, rgba(176, 200, 186, 0.12) 0px, transparent 55%);
   --hero-bg:     #2a3d3e;
   --hero-mesh-1: #d4a574;
   --hero-mesh-2: #f4d4a8;
-  --hero-mesh-3: #7c9382;
+  --hero-mesh-3: #799383;
   --hero-mesh-4: #45575c;
 }
 
@@ -2731,8 +2731,8 @@ body {
   inset: -10% -20% -10% -20%;
   background:
     radial-gradient(ellipse 55% 35% at 22% 82%, rgba(255, 255, 255, 0.32), transparent 70%),
-    radial-gradient(ellipse 50% 30% at 72% 92%, rgba(225, 235, 200, 0.26), transparent 72%),
-    radial-gradient(ellipse 35% 22% at 50% 70%, rgba(220, 230, 215, 0.18), transparent 75%);
+    radial-gradient(ellipse 50% 30% at 72% 92%, rgba(215, 235, 223, 0.26), transparent 72%),
+    radial-gradient(ellipse 35% 22% at 50% 70%, rgba(214, 232, 221, 0.18), transparent 75%);
   filter: blur(28px);
   animation: greenwood-mist-drift 64s ease-in-out infinite;
 }
@@ -2866,7 +2866,7 @@ body {
   border-radius: 999px;
   background: color-mix(in srgb, var(--card) 80%, transparent);
   border: 1px solid var(--line);
-  box-shadow: 0 6px 18px rgba(50, 80, 30, 0.10);
+  box-shadow: 0 6px 18px rgba(34, 80, 52, 0.10);
   backdrop-filter: blur(8px) saturate(1.1);
   -webkit-backdrop-filter: blur(8px) saturate(1.1);
   color: var(--fg-muted);
@@ -2884,7 +2884,7 @@ body {
   height: 6px;
   border-radius: 50%;
   background: radial-gradient(circle, var(--brand-500) 0%, var(--brand-700) 80%);
-  box-shadow: 0 0 6px rgba(93, 127, 51, 0.55);
+  box-shadow: 0 0 6px rgba(20, 145, 73, 0.55);
   flex-shrink: 0;
 }
 .greenwood-atmosphere .greenwood-caption-text {
