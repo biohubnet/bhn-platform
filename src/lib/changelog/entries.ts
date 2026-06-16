@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Greenwood theme · richer falling leaves — Jun 2026
   {
     title: "Greenwood theme · truer falling leaves",
-    body: "The Greenwood theme's drifting leaves have been redrawn at higher fidelity — a lobed oak, a sharp five-point maple, a toothed birch — and each species now falls in its own colour: russet oak, scarlet maple, ochre elm, golden birch. Two eucalyptus leaves drift in too, a slender one and a round silver-dollar, both in silvery sage.",
+    body: "The Greenwood theme's drifting leaves have been redrawn at higher fidelity — a lobed oak, a true five-lobe maple (sharp tips, rounded sinuses), a toothed birch — and each species now falls in its own colour: russet oak, scarlet maple, ochre elm, golden birch. Two eucalyptus leaves drift in too, a slender one and a round silver-dollar with the little notch at its tip, both in silvery sage.",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,

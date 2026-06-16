@@ -93,16 +93,16 @@ interface Firefly {
 const LEAF_PATHS: Record<LeafShape, string> = {
   // Oak — wavy rounded lobes down each side, narrowing toward the base
   oak: "M12 22 C10 21 10 20 8 19.5 C5 19 6 16 8.5 15.5 C5.5 15 6 12 8.5 11.5 C6 11 6.5 8 9 7.5 C10 5 10.5 3 12 2 C13.5 3 14 5 15 7.5 C17.5 8 18 11 15.5 11.5 C18 12 18.5 15 15.5 15.5 C18 16 19 19 16 19.5 C14 20 14 21 12 22 Z",
-  // Maple — five sharp lobes with deep sinuses
-  maple: "M12 21 L10.5 15 L5 16 L8 11 L4 7 L9 8 L12 2 L15 8 L20 7 L16 11 L19 16 L13.5 15 L12 21 Z",
+  // Maple — single central lobe + four side lobes, sharp tips, rounded sinuses
+  maple: "M12 18 C11 16.5 11 15.5 10.5 14.5 C9 14 6 14.5 4 12 C7 11 8.5 10.5 8.5 9.5 C8 8 6.5 6 5.5 5 C7.5 5.8 9 6.3 9.5 6.5 C10.3 5 11 3 12 1.5 C13 3 13.7 5 14.5 6.5 C15 6.3 16.5 5.8 18.5 5 C17.5 6 16 8 15.5 9.5 C15.5 10.5 17 11 20 12 C18 14.5 15 14 13.5 14.5 C13 15.5 13 16.5 12 18 Z",
   // Elm — narrow, simple ellipse with an oblique base
   elm: "M12 23 L12 19 M12 19 C8 18 6 14 8 8 C10 4 12 1 12 1 C12 1 14 4 16 8 C18 14 16 18 12 19 Z",
-  // Birch — toothed ovate tapering to a sharp tip
-  birch: "M12 21 L9 19 L7 16 L9 14 L7 11 L9 9 L8 6 L10 5 L12 2 L14 5 L16 6 L15 9 L17 11 L15 14 L17 16 L15 19 L12 21 Z",
+  // Birch — toothed ovate, rounded base tapering to a sharp tip
+  birch: "M12 21 C9 20 6.5 18 6.5 14 L8 13 L7 11 L8.5 9.5 L8 7 C9 5 10.5 3 12 2 C13.5 3 15 5 16 7 L15.5 9.5 L17 11 L16 13 L17.5 14 C17.5 18 15 20 12 21 Z",
   // Eucalyptus — long, slender, slightly sickle-curved lanceolate blade
   eucalyptus: "M12 23 L12 19 M12 19 C8 15 9 8 12 3 C12 3 12 2 13 2 C15 6 16 14 12 19 Z",
-  // Eucalyptus (silver dollar) — round, near-orbicular blade on a short stem
-  eucalyptusRound: "M12 22 L12 18 M12 18 C7 18 4 15 4 11 C4 6.5 7.5 4 12 4 C16.5 4 20 6.5 20 11 C20 15 17 18 12 18 Z",
+  // Eucalyptus (silver dollar) — round blade with the apical notch (dimple) at its tip
+  eucalyptusRound: "M12 22 L12 18.5 C6.5 18 3.5 14.5 4 10.5 C4.4 6.8 7.2 4.4 10.3 4.3 C11.4 4.6 12 5.4 12 6.6 C12 5.4 12.6 4.6 13.7 4.3 C16.8 4.4 19.6 6.8 20 10.5 C20.5 14.5 17.5 18 12 18.5 Z",
 };
 
 /** Rotation pool for leaves — pre-randomised at mount; same set
