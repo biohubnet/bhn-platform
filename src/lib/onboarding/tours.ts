@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.16e";
+export const TOUR_VERSION = "2026.06.16f";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── AI · triage agent — Jun 2026
@@ -130,6 +130,17 @@ export const TOUR_STEPS: TourStep[] = [
     roles: ["admin", "superadmin"],
     cta: { label: "Open Video Production", href: "/admin/workspace/marketing/video" },
     since: "2026.06.10a",
+  },
+  // ─── Video Production · P4 — Jun 2026
+  {
+    id: "workspace.script-account-offer",
+    title: "Collaborators can create an account after 3 edits",
+    body: "External script editors (people who open a share link without logging in) now see a one-click offer to create a BHN account after their third save. They supply email + password and get an account instantly — plus a confirmation email with a link back to the script. Admins see them in the normal Users list once converted.",
+    path: "/admin/workspace/marketing/video",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Video Production", href: "/admin/workspace/marketing/video" },
+    since: "2026.06.16f",
   },
   // ─── Workspace · File Sharing — Jun 2026
   {

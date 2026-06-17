@@ -3504,4 +3504,11 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     visibleTo: ADMINS,
     daysAgo: 0,
   },
+  {
+    title: "Script collaborators can now create a BHN account after 3 edits",
+    body: "External contributors who edit a shared Workspace script via a share link are offered a free BHN account after their third save. The offer is a dismissible modal — closing it skips this visit but re-offers on the next multiple of 3 edits. Accepting creates the account instantly (email + password), stamps the collaborator record, and emails a link back to the script. Admins see the account in the usual Users table once created. Logged-in users and already-converted collaborators never see the prompt.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
 ];
