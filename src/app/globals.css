@@ -2368,6 +2368,18 @@ body {
 [data-theme="greenwood"][data-greenwood-time="night"] .text-sky-700     { color: #38bdf8; }
 [data-theme="greenwood"][data-greenwood-time="night"] .text-sky-800     { color: #7dd3fc; }
 
+/* HR PREVIEW section container — violet-100/55 is too light on the dark night
+ * background (#1a2128); needs stronger contrast. Use a darker violet for the
+ * container background to ensure legible text. */
+[data-theme="greenwood"][data-greenwood-time="night"] [data-section-tone="hr-preview"] {
+  border-color: #c4b5fd !important;
+  background-color: rgba(139, 92, 246, 0.18) !important;
+}
+[data-theme="greenwood"][data-greenwood-time="night"] [data-section-tone="hr-preview"] button {
+  background-color: rgba(139, 92, 246, 0.28) !important;
+  color: #f3e8ff !important;
+}
+
 /* Tame Tailwind's saturated tints so rose-* / amber-* / sky-* tints
  * harmonise with the moss-and-bark palette instead of fighting it.
  * Emerald stays close to the brand ramp — it's already at home. */
