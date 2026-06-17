@@ -6,6 +6,7 @@
  * live editor admins use — original styling, presence colours, auto-save,
  * history — with all edits attributed to their name.
  */
+import { headers } from "next/headers";
 import { FileText } from "lucide-react";
 import { resolveShareToken, getCollaborator } from "@/lib/scripts/share";
 import { HtmlScriptEditor } from "@/components/workspace/HtmlScriptEditor";
@@ -18,6 +19,10 @@ interface Props { params: Promise<{ token: string }> }
 export default async function SharedScriptPage({ params }: Props) {
   const { token } = await params;
   const res = await resolveShareToken(token);
+  const hdrs = await headers();
+  const host = hdrs.get("host") ?? "bhn-training-platform.vercel.app";
+  const proto = hdrs.get("x-forwarded-proto") ?? "https";
+  const scriptUrl = `${proto}://${host}/scripts/${token}`;
 
   if (!res.ok) {
     return (
@@ -69,6 +74,9 @@ export default async function SharedScriptPage({ params }: Props) {
             meName={collab.name}
             apiBase={`/api/scripts/shared/${token}`}
             readOnly={!res.token.canEdit}
+            initialEditCount={collab.editCount}
+            alreadyConverted={!!collab.convertedUserId}
+            scriptUrl={scriptUrl}
           />
         </div>
       ) : (

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { colorForKey, type PresencePeer } from "@/lib/scripts/presence";
+import { AccountOfferModal } from "./AccountOfferModal";
 
 interface Revision {
   id: string;
@@ -76,6 +77,9 @@ export function HtmlScriptEditor({
   meName,
   apiBase,
   readOnly = false,
+  initialEditCount = 0,
+  alreadyConverted = false,
+  scriptUrl,
 }: {
   scriptId: string;
   initialHtml: string;
@@ -88,6 +92,12 @@ export function HtmlScriptEditor({
   /** View-only share links: document not editable, no save bar / structure
    *  buttons / restore. */
   readOnly?: boolean;
+  /** P4: edit count so far (from the ScriptCollaborator row). */
+  initialEditCount?: number;
+  /** P4: collaborator already has a BHN account — never show the offer. */
+  alreadyConverted?: boolean;
+  /** P4: full URL of this page, emailed on account creation. */
+  scriptUrl?: string;
 }) {
   const myColor = useMemo(() => colorForKey(meId), [meId]);
   const base = apiBase ?? `/api/workspace/scripts/${scriptId}`;
@@ -123,6 +133,10 @@ export function HtmlScriptEditor({
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revLoading, setRevLoading] = useState(false);
   const [peers, setPeers] = useState<PresencePeer[]>([]);
+  // P4: account-offer modal. Track edit count client-side; show at multiples of 3.
+  const [editCount, setEditCount] = useState(initialEditCount);
+  const [converted, setConverted] = useState(alreadyConverted);
+  const [showOffer, setShowOffer] = useState(false);
 
   // Mark unsaved. setDirty only on the clean→dirty transition (keystrokes are
   // cheap — we don't re-render on every key).
@@ -290,7 +304,7 @@ export function HtmlScriptEditor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ format: "html", richContent: { kind: "html", html, css }, summary: kind === "auto" ? "Auto-saved" : "Edited script" }),
       });
-      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; editCount?: number; converted?: boolean };
       if (!res.ok || !j.ok) {
         setError(j.error ?? "Save failed.");
         return;
@@ -305,6 +319,17 @@ export function HtmlScriptEditor({
       setSecondsLeft(AUTOSAVE_SECONDS);
       setLastSaved({ at: Date.now(), kind });
       loadRevisions();
+      // P4: after each save on the shared route the server returns the new editCount.
+      // Show the account offer at every multiple of 3 while the collab hasn't converted.
+      if (typeof j.editCount === "number" && !j.converted && !converted && scriptUrl) {
+        const newCount = j.editCount;
+        setEditCount(newCount);
+        const dismissed = sessionStorage.getItem(`offer-dismissed-${scriptId}`);
+        if (newCount > 0 && newCount % 3 === 0 && dismissed !== String(newCount)) {
+          setShowOffer(true);
+        }
+      }
+      if (j.converted) setConverted(true);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -675,6 +700,21 @@ export function HtmlScriptEditor({
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save
         </button>
       </div>
+      )}
+
+      {showOffer && scriptUrl && (
+        <AccountOfferModal
+          scriptId={scriptId}
+          scriptUrl={scriptUrl}
+          onDismiss={() => {
+            sessionStorage.setItem(`offer-dismissed-${scriptId}`, String(editCount));
+            setShowOffer(false);
+          }}
+          onConverted={() => {
+            setConverted(true);
+            setShowOffer(false);
+          }}
+        />
       )}
     </div>
   );

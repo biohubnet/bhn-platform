@@ -35,10 +35,11 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     summary: typeof body.summary === "string" ? body.summary.slice(0, 120) : "Edited script",
   });
 
-  await prisma.scriptCollaborator.update({
+  const updated = await prisma.scriptCollaborator.update({
     where: { id: collab.id },
     data: { editCount: { increment: 1 }, lastSeenAt: new Date() },
-  }).catch(() => {});
+    select: { editCount: true, convertedUserId: true },
+  }).catch(() => null);
 
-  return NextResponse.json({ ok: true, snapshot });
+  return NextResponse.json({ ok: true, snapshot, editCount: updated?.editCount ?? null, converted: !!updated?.convertedUserId });
 }
