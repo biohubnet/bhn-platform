@@ -2368,16 +2368,28 @@ body {
 [data-theme="greenwood"][data-greenwood-time="night"] .text-sky-700     { color: #38bdf8; }
 [data-theme="greenwood"][data-greenwood-time="night"] .text-sky-800     { color: #7dd3fc; }
 
-/* HR PREVIEW section container — violet-100/55 is too light on the dark night
- * background (#1a2128); needs stronger contrast. Use a darker violet for the
- * container background to ensure legible text. */
+/* HR PREVIEW section — the violet tone is a fixed palette (not theme-driven),
+ * tuned for light canvases. On Greenwood's dark night background (#1a2128) the
+ * violet-100 container, violet-200 title chip, deep-violet text (700–900), and
+ * the keyboard-shortcut code chip all fall below AA. Lift every layer to a
+ * light-on-dark violet (mirrors the [data-theme="hitech"] violet lifts). */
 [data-theme="greenwood"][data-greenwood-time="night"] [data-section-tone="hr-preview"] {
-  border-color: #c4b5fd !important;
-  background-color: rgba(139, 92, 246, 0.18) !important;
+  border-color: rgba(167, 139, 250, 0.55) !important;
+  background-color: rgba(139, 92, 246, 0.16) !important;
 }
-[data-theme="greenwood"][data-greenwood-time="night"] [data-section-tone="hr-preview"] button {
+/* Title chip (a <button>): light violet fill + near-white text. */
+[data-theme="greenwood"][data-greenwood-time="night"] [data-section-tone="hr-preview"] > div > button {
+  background-color: rgba(139, 92, 246, 0.32) !important;
+  color: #ede9fe !important;
+}
+/* Explainer paragraph + eye glyph + "view-as HR" deep-violet text. */
+[data-theme="greenwood"][data-greenwood-time="night"] .text-violet-700 { color: #c4b5fd !important; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-violet-800 { color: #ddd6fe !important; }
+[data-theme="greenwood"][data-greenwood-time="night"] .text-violet-900 { color: #ede9fe !important; }
+/* The xx keyboard-shortcut code chip — give it a visible fill on dark. */
+[data-theme="greenwood"][data-greenwood-time="night"] [data-section-tone="hr-preview"] code {
   background-color: rgba(139, 92, 246, 0.28) !important;
-  color: #f3e8ff !important;
+  border-color: rgba(167, 139, 250, 0.45) !important;
 }
 
 /* Tame Tailwind's saturated tints so rose-* / amber-* / sky-* tints
