@@ -11,6 +11,7 @@ import { Building2, Download } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getOrSeedForm } from "@/lib/forms/registry";
+import { EMPLOYER_INTAKE_SEEN_KEY } from "@/lib/admin/queue-counts";
 import { PageHero } from "@/components/ui/PageHero";
 import { EmployerIntakeTable, type IntakeRow } from "@/components/experience/EmployerIntakeTable";
 
@@ -51,6 +52,17 @@ export default async function EmployerIntakePage() {
     numberOfInterviews: val(s.data, "numberOfInterviews"),
     latestInterviewScheduled: val(s.data, "latestInterviewScheduled"),
   }));
+
+  // Opening the page marks these leads as seen — clears the sidebar "new" badge
+  // (a global last-seen timestamp; the badge re-appears when newer leads land).
+  const nowIso = new Date().toISOString();
+  await prisma.platformSetting
+    .upsert({
+      where: { key: EMPLOYER_INTAKE_SEEN_KEY },
+      update: { value: nowIso },
+      create: { key: EMPLOYER_INTAKE_SEEN_KEY, value: nowIso },
+    })
+    .catch(() => {});
 
   return (
     <div className="space-y-6">

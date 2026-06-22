@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Experience · employer intake "new" badge — Jun 2026
+  {
+    title: "Experience · new-lead badge",
+    body: "The **Employer intake** nav item now shows a **red badge with a count** when new “Hire an intern” leads have arrived since you last opened it. Opening the page clears the badge; it reappears when fresh leads land.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Experience · employer intake editing — Jun 2026
   {
     title: "Experience · edit employer-intake leads",

@@ -383,6 +383,7 @@ const adminExperienceItems: NavItem[] = [
   { label: "Talent pool",         href: "/talent-pool",               icon: Users,        minRole: "admin",
     description: "Approved talent-application members — same surface employers see, with full submission data + comment threads. Use this to coordinate with employer reviewers." },
   { label: "Employer intake",     href: "/admin/experience/employer-intake", icon: Inbox, minRole: "admin",
+    badgeKey: "employer-intake-new",
     description: "“Hire an intern” leads captured from the public form on biohubnet.ca (via /api/public/employer-intake) plus the imported Experience registry. Newest first, with CSV export." },
   // Visible to instructors + industrial mentors as well as admins —
   // reviewing trainee resumes is core mentor work, not an admin
@@ -539,6 +540,7 @@ const URGENT_FROM_ONE = new Set<string>([
   "interview-requests",
   "offer-requests",
   "buddy-invites",
+  "employer-intake-new",
 ]);
 
 const ROLE_RANK: Record<string, number> = {

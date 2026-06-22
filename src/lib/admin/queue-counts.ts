@@ -40,7 +40,12 @@ export type QueueBadgeKey =
   | "pathway-enrollments"
   | "access-requests"
   | "theme-proposals"
+  | "employer-intake-new"
   | "inbox-total";
+
+/** PlatformSetting key holding the ISO timestamp an admin last opened the
+ *  Employer-intake page. Submissions newer than this are "new". */
+export const EMPLOYER_INTAKE_SEEN_KEY = "employerIntakeSeenAt";
 
 export type QueueCounts = Partial<Record<QueueBadgeKey, number>>;
 
@@ -48,18 +53,35 @@ export type QueueCounts = Partial<Record<QueueBadgeKey, number>>;
  *  swallowed → 0 so the layout render never blows up on a missing
  *  table or a Prisma-client mismatch in CI. */
 export async function getAdminQueueCounts(): Promise<QueueCounts> {
+  // "New" employer-intake leads = submissions created after the last time an
+  // admin opened that page (a global last-seen timestamp). Null = never opened
+  // → everything counts as new until the first visit clears it.
+  const seenRow = await prisma.platformSetting
+    .findUnique({ where: { key: EMPLOYER_INTAKE_SEEN_KEY }, select: { value: true } })
+    .catch(() => null);
+  const seenAt = seenRow?.value ? new Date(seenRow.value) : null;
+
   const [
     creditApps,
     roleChanges,
     pathwayApps,
     accessRequests,
     themeProposals,
+    employerIntakeNew,
   ] = await Promise.all([
     prisma.creditApplication.count({ where: { status: "pending" } }).catch(() => 0),
     prisma.roleChangeRequest.count({ where: { status: "pending" } }).catch(() => 0),
     prisma.pathwayEnrollment.count({ where: { status: "pending" } }).catch(() => 0),
     prisma.accessRequest.count({ where: { status: "pending" } }).catch(() => 0),
     prisma.themeProposal.count({ where: { status: { in: ["submitted", "under_review"] } } }).catch(() => 0),
+    prisma.eventFormSubmission
+      .count({
+        where: {
+          form: { slug: "employer-intake" },
+          ...(seenAt ? { createdAt: { gt: seenAt } } : {}),
+        },
+      })
+      .catch(() => 0),
   ]);
   const counts: QueueCounts = {
     "credit-applications":  creditApps,
@@ -67,6 +89,7 @@ export async function getAdminQueueCounts(): Promise<QueueCounts> {
     "pathway-enrollments":  pathwayApps,
     "access-requests":      accessRequests,
     "theme-proposals":      themeProposals,
+    "employer-intake-new":  employerIntakeNew,
     // Inbox = aggregate of the per-queue counts above (the page itself
     // surfaces them as one inbox). Surfaced separately so the sidebar
     // can badge /admin/inbox with the rolled-up total.
