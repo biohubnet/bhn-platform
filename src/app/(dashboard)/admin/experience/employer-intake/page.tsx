@@ -7,12 +7,12 @@
  * table; CSV export reuses the generic /api/forms/[slug]/export.csv route.
  */
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Building2, Download, Globe } from "lucide-react";
+import { Building2, Download } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getOrSeedForm } from "@/lib/forms/registry";
 import { PageHero } from "@/components/ui/PageHero";
+import { EmployerIntakeTable, type IntakeRow } from "@/components/experience/EmployerIntakeTable";
 
 export const dynamic = "force-dynamic";
 
@@ -29,12 +29,28 @@ export default async function EmployerIntakePage() {
   // Ensure the form row exists so the page works on a fresh deploy.
   await getOrSeedForm("employer-intake");
 
-  const rows = await prisma.eventFormSubmission.findMany({
+  const subs = await prisma.eventFormSubmission.findMany({
     where: { form: { slug: "employer-intake" } },
     orderBy: { createdAt: "desc" },
     take: 500,
-    select: { id: true, data: true, email: true, createdAt: true, reviewStatus: true },
+    select: { id: true, data: true, email: true, createdAt: true },
   });
+
+  const rows: IntakeRow[] = subs.map((s) => ({
+    id: s.id,
+    email: s.email ?? val(s.data, "email"),
+    createdAt: s.createdAt.toISOString(),
+    name: val(s.data, "name"),
+    organization: val(s.data, "organization"),
+    title: val(s.data, "title"),
+    website: val(s.data, "website"),
+    address: val(s.data, "address"),
+    timeline: val(s.data, "hiring_timeline"),
+    needs: val(s.data, "needs"),
+    companyId: val(s.data, "companyId"),
+    numberOfInterviews: val(s.data, "numberOfInterviews"),
+    latestInterviewScheduled: val(s.data, "latestInterviewScheduled"),
+  }));
 
   return (
     <div className="space-y-6">
@@ -61,57 +77,7 @@ export default async function EmployerIntakePage() {
             No employer-intake submissions yet. New leads from the public form land here automatically.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-subtle">
-                  <th className="px-5 py-2.5 font-medium">Organization</th>
-                  <th className="px-3 py-2.5 font-medium">Contact</th>
-                  <th className="px-3 py-2.5 font-medium">Email</th>
-                  <th className="px-3 py-2.5 font-medium">Timeline</th>
-                  <th className="px-3 py-2.5 font-medium">Looking for</th>
-                  <th className="px-3 py-2.5 font-medium whitespace-nowrap">Received</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => {
-                  const org = val(r.data, "organization");
-                  const site = val(r.data, "website");
-                  const name = val(r.data, "name");
-                  const title = val(r.data, "title");
-                  const needs = val(r.data, "needs");
-                  const timeline = val(r.data, "hiring_timeline");
-                  return (
-                    <tr key={r.id} className="border-b border-line/60 align-top hover:bg-elevated/40">
-                      <td className="px-5 py-3">
-                        <div className="font-semibold text-fg">{org || "—"}</div>
-                        {site && (
-                          <Link href={site.startsWith("http") ? site : `https://${site}`} target="_blank" rel="noopener"
-                            className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-brand-600 hover:underline">
-                            <Globe size={10} /> {site.replace(/^https?:\/\//, "")}
-                          </Link>
-                        )}
-                      </td>
-                      <td className="px-3 py-3 text-fg">
-                        {name || "—"}
-                        {title && <div className="text-[11px] text-muted">{title}</div>}
-                      </td>
-                      <td className="px-3 py-3">
-                        <a href={`mailto:${r.email ?? val(r.data, "email")}`} className="text-brand-600 hover:underline">
-                          {(r.email ?? val(r.data, "email")) || "—"}
-                        </a>
-                      </td>
-                      <td className="px-3 py-3 text-muted whitespace-nowrap">{timeline || "—"}</td>
-                      <td className="px-3 py-3 text-muted max-w-[22rem]">{needs || "—"}</td>
-                      <td className="px-3 py-3 text-muted whitespace-nowrap">
-                        {r.createdAt.toLocaleDateString("en-CA")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <EmployerIntakeTable rows={rows} />
         )}
       </div>
     </div>

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Experience · employer intake editing — Jun 2026
+  {
+    title: "Experience · edit employer-intake leads",
+    body: "Employer-intake entries (Admin → Experience → Employer intake) are now **editable** — fix a typo, update the hiring timeline, or log interview activity inline — and you can **delete** spam or duplicates. Each row gets edit + delete actions.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Experience · employer intake — Jun 2026
   {
     title: "Experience · employer-intake leads",
