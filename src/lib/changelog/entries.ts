@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Experience · employer intake — Jun 2026
+  {
+    title: "Experience · employer-intake leads",
+    body: "The public **“Hire an intern”** form now feeds the platform directly. Employer leads submitted on biohubnet.ca land in a new **Employer intake** page (Admin → Experience) — organization, contact, hiring timeline and what they're looking for — newest first, with **CSV export**. Existing registrations from the legacy spreadsheet can be imported in one pass.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── EQUIP · recipient tracker — Jun 2026
   {
     title: "EQUIP · a recipient tracker",

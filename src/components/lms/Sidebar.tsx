@@ -382,6 +382,8 @@ const adminExperienceItems: NavItem[] = [
     description: "User-submitted requests for role-play simulations. Review each JD, run the AI generator, hand-author a payload, or reject with a note." },
   { label: "Talent pool",         href: "/talent-pool",               icon: Users,        minRole: "admin",
     description: "Approved talent-application members — same surface employers see, with full submission data + comment threads. Use this to coordinate with employer reviewers." },
+  { label: "Employer intake",     href: "/admin/experience/employer-intake", icon: Inbox, minRole: "admin",
+    description: "“Hire an intern” leads captured from the public form on biohubnet.ca (via /api/public/employer-intake) plus the imported Experience registry. Newest first, with CSV export." },
   // Visible to instructors + industrial mentors as well as admins —
   // reviewing trainee resumes is core mentor work, not an admin
   // privilege. The route itself re-checks isStaffReviewer(role).

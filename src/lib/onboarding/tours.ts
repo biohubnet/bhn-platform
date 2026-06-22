@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.16g";
+export const TOUR_VERSION = "2026.06.16h";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Experience · employer intake — Jun 2026
+  {
+    id: "admin.employer-intake",
+    title: "See who wants to hire",
+    body: "Admin → Experience → Employer intake collects every “Hire an intern” lead from the public form on biohubnet.ca — organization, contact, hiring timeline, and what they're looking for — newest first, with CSV export.",
+    path: "/admin/experience/employer-intake",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open employer intake", href: "/admin/experience/employer-intake" },
+    since: "2026.06.16h",
+  },
   // ─── EQUIP · recipient tracker — Jun 2026
   {
     id: "admin.equip-tracker",
