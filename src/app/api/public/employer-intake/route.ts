@@ -49,7 +49,7 @@ export function OPTIONS(req: NextRequest) {
 const BodySchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   email: z.string().trim().email("A valid email is required").max(320),
-  organization: z.string().trim().min(1, "Organization is required").max(300),
+  organization: z.string().trim().max(300).optional().default(""),
   title: z.string().trim().max(200).optional().default(""),
   website: z.string().trim().max(500).optional().default(""),
   address: z.string().trim().max(500).optional().default(""),
