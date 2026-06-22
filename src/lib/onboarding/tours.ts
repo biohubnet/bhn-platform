@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.16f";
+export const TOUR_VERSION = "2026.06.16g";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── EQUIP · recipient tracker — Jun 2026
+  {
+    id: "admin.equip-tracker",
+    title: "Track who you funded",
+    body: "Admin → EQUIP → Recipient tracker is a post-award dossier of every VentureConnect and VentureLift company, watched across LinkedIn and the open web. Flagged entries mark fresh raises, awards, partnerships and milestones — each linked to its source. Filter by track, search, or show highlights only.",
+    path: "/admin/equip/tracker",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open the recipient tracker", href: "/admin/equip/tracker" },
+    since: "2026.06.16g",
+  },
   // ─── AI · triage agent — Jun 2026
   {
     id: "admin.ai-agent",

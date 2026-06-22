@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP · recipient tracker — Jun 2026
+  {
+    title: "EQUIP · a recipient tracker",
+    body: "A new **Recipient tracker** (Admin → EQUIP) is a post-award intelligence dossier: every company funded by a **VentureConnect** or **VentureLift** grant, tracked across LinkedIn and the open web. Flagged entries mark a fresh **raise, award, partnership or milestone** — each linked to its source. Filter by track, search across founders and milestones, or flip on **highlights only**. Use the **copy rescan prompt** button to refresh the data.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── AI · autonomous triage agent — Jun 2026
   {
     title: "AI · an autonomous triage agent",

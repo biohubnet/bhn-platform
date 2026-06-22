@@ -66,6 +66,7 @@ import {
   Clapperboard,
   FolderUp,
   BookUser,
+  Radar,
 } from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationInbox";
 
@@ -399,6 +400,8 @@ const adminEquipItems: NavItem[] = [
     description: "Review queue for the EQUIP funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
   { label: "EQUIP deadlines",      href: "/admin/equip/deadlines",     icon: ClipboardList, minRole: "admin",
     description: "Schedule + manage the funding-window deadlines for VentureConnect (monthly) and VentureLift (quarterly). List + calendar views. Open / close / extend any window. Late submissions are blocked automatically." },
+  { label: "Recipient tracker",    href: "/admin/equip/tracker",       icon: Radar,         minRole: "admin",
+    description: "Post-award intelligence dossier — every company funded by a VentureConnect or VentureLift grant, tracked across LinkedIn and the open web. Flags fresh raises, awards, partnerships and milestones, each linked to its source. Filter by track, search, or show highlights only." },
   { label: "EQUIP Review Committee", href: "/admin/committees/equip-review", icon: Users2, minRole: "admin",
     description: "Manage EQUIP Review Committee membership. Members get queue access without holding an admin role. Roster + a shortcut into the funding review queue." },
 ];
