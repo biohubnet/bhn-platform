@@ -150,6 +150,30 @@ export function ScriptCommentLayer({
     };
   }, [contentRef, schedule]);
 
+  // Re-render when the in-document selection changes, so the floating
+  // "Comment" button can follow it.
+  useEffect(() => {
+    const el = contentRef.current;
+    const onSel = () => schedule();
+    document.addEventListener("selectionchange", onSel);
+    el?.addEventListener("mouseup", onSel);
+    el?.addEventListener("keyup", onSel);
+    return () => { document.removeEventListener("selectionchange", onSel); el?.removeEventListener("mouseup", onSel); el?.removeEventListener("keyup", onSel); };
+  }, [contentRef, schedule]);
+
+  /** Bounding rect of the current non-collapsed selection inside the doc. */
+  function readSel(): DOMRect | null {
+    const content = contentRef.current; if (!content) return null;
+    const root = content.getRootNode() as ShadowRoot;
+    const sel: Selection | null = (root as unknown as { getSelection?: () => Selection | null }).getSelection?.()
+      ?? window.getSelection?.() ?? null;
+    if (!sel || sel.rangeCount === 0) return null;
+    const range = sel.getRangeAt(0);
+    if (range.collapsed || !content.contains(range.startContainer)) return null;
+    const r = range.getBoundingClientRect();
+    return r && (r.width || r.height) ? r : null;
+  }
+
   /* ── placement from the native selection ───────────────────────────── */
   function makeFromSelection() {
     const content = contentRef.current; if (!content) return;
@@ -305,18 +329,30 @@ export function ScriptCommentLayer({
     document.body,
   ) : null;
 
+  // Floating "Comment" button that sits on the document beside the selection.
+  const selRect = !draft ? readSel() : null;
+  const floatBtn = selRect ? createPortal(
+    <button onMouseDown={(e) => e.preventDefault()} onClick={makeFromSelection}
+      style={{
+        position: "fixed",
+        left: Math.min(selRect.right - 6, window.innerWidth - 122),
+        top: selRect.top - 38 > 8 ? selRect.top - 38 : selRect.bottom + 6,
+        zIndex: 65, display: "inline-flex", alignItems: "center", gap: 6,
+        background: "#126e37", color: "#fff", border: 0, borderRadius: 8, padding: "6px 11px",
+        fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 6px 16px -6px rgba(0,0,0,.45)",
+      }}>
+      <MessageSquarePlus size={13} /> Comment
+    </button>, document.body) : null;
+
   return (
     <div className="rounded-xl border border-line bg-card-solid p-3">
-      <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={makeFromSelection}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-brand-600 px-3 py-2 text-xs font-bold text-white hover:bg-brand-700">
-        <MessageSquarePlus size={14} /> Make comment
-      </button>
-      <p className="mt-2 text-[11px] leading-relaxed text-muted">
-        <b>Select the words</b> in the script you want to comment on (or just click to place the cursor — that picks the whole sentence), then hit <b>Make comment</b>. Comments appear in the margin, linked by a dotted line.
+      <p className="text-[11px] leading-relaxed text-muted">
+        <b>Select text</b> in the script — a <b>Comment</b> button appears beside it. Comments show in the margin, linked by a dotted line; click a card to highlight what it marks.
       </p>
       {notice && <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] font-medium text-amber-800">{notice}</p>}
       {tops.length > 0 && <p className="mt-2 text-[11px] text-subtle">{tops.filter((c) => c.status !== "resolved").length} open · {tops.length} total</p>}
       {overlay}
+      {floatBtn}
     </div>
   );
 }
