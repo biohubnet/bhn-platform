@@ -209,7 +209,7 @@ export function ScriptCommentLayer({
 
   type Placed = { key: string; cmt?: Cmt; isDraft?: boolean; anchorY: number; anchorRight: number; rects: DOMRect[]; cardTop: number };
   const placed: Placed[] = [];
-  const railLeft = docRect ? Math.min(docRect.right + 14, window.innerWidth - CARD_W - 12) : 0;
+  const railLeft = docRect ? Math.min(docRect.right + 30, window.innerWidth - CARD_W - 12) : 0;
   if (docRect) {
     const items: { key: string; cmt?: Cmt; isDraft?: boolean; sid: string; from: number; to: number; quote: string | null }[] = [];
     for (const c of tops) if (c.anchorSectionId != null && c.anchorFrom != null && c.anchorTo != null)
@@ -243,12 +243,14 @@ export function ScriptCommentLayer({
       })}
       <svg style={{ position: "fixed", inset: 0, width: "100%", height: "100%", overflow: "visible" }}>
         {placed.map((p) => {
-          const cy = p.cardTop + 18, gx = docRect.right + 7;
-          const dim = p.cmt?.status === "resolved" ? 0.4 : (p.isDraft || p.cmt?.id === selectedId) ? 1 : 0.75;
+          const cy = p.cardTop + 18, gx = docRect.right + 14;
+          const dim = p.cmt?.status === "resolved" ? 0.45 : 1;
+          // Round dots (linecap round + ~0-length dashes) read clearly as
+          // "connecting dots" where a 1px dashed line anti-aliases to nothing.
           return (
             <g key={"th" + p.key} opacity={dim}>
-              <path d={`M ${p.anchorRight} ${p.anchorY} L ${gx} ${p.anchorY} L ${gx} ${cy} L ${railLeft} ${cy}`} fill="none" stroke="#9aa4b2" strokeWidth={1} strokeDasharray="1 6" strokeLinecap="round" />
-              <circle cx={p.anchorRight} cy={p.anchorY} r={2.4} fill="#126e37" />
+              <path d={`M ${p.anchorRight} ${p.anchorY} L ${gx} ${p.anchorY} L ${gx} ${cy} L ${railLeft} ${cy}`} fill="none" stroke="#8893a5" strokeWidth={2} strokeDasharray="0.1 7" strokeLinecap="round" />
+              <circle cx={p.anchorRight} cy={p.anchorY} r={3} fill="#126e37" />
             </g>
           );
         })}
