@@ -175,23 +175,39 @@ export function ScriptCommentLayer({
   }
 
   /* ── placement from the native selection ───────────────────────────── */
+  /** Find a stable block to anchor to. Prefer an existing [data-sid]; else tag
+   *  the nearest top-level block under the content so ANY text is anchorable. */
+  function anchorBlock(node: Node): HTMLElement | null {
+    const content = contentRef.current; if (!content) return null;
+    const existing = blockOf(node);
+    if (existing && existing !== content && content.contains(existing)) return existing;
+    let top: HTMLElement | null = node.nodeType === 1 ? (node as HTMLElement) : node.parentElement;
+    if (!top || !content.contains(top)) return null;
+    while (top.parentElement && top.parentElement !== content && content.contains(top.parentElement)) top = top.parentElement;
+    if (!top.getAttribute("data-sid")) {
+      top.setAttribute("data-sid", "c" + Math.random().toString(36).slice(2, 9));
+      content.dispatchEvent(new Event("input", { bubbles: true })); // mark dirty → the new sid persists on save
+    }
+    return top;
+  }
+
   function makeFromSelection() {
     const content = contentRef.current; if (!content) return;
     const root = content.getRootNode() as ShadowRoot;
     const sel: Selection | null = (root as unknown as { getSelection?: () => Selection | null }).getSelection?.()
       ?? window.getSelection?.() ?? null;
-    if (!sel || sel.rangeCount === 0) { hint("Click in the script (or select some words), then Make comment."); return; }
+    if (!sel || sel.rangeCount === 0) { hint("Select some text in the script first."); return; }
     const range = sel.getRangeAt(0);
-    if (!content.contains(range.startContainer)) { hint("Place the cursor inside the script first."); return; }
-    const block = blockOf(range.startContainer);
-    if (!block) { hint("Couldn't anchor there — try a paragraph."); return; }
+    if (!content.contains(range.startContainer)) { hint("Select inside the script text."); return; }
+    const block = anchorBlock(range.startContainer);
+    if (!block) { hint("Select inside the script text."); return; }
     const text = block.textContent ?? "";
     const startOff = pointToChar(block, range.startContainer, range.startOffset);
     let from: number, to: number;
     if (range.collapsed) {
       [from, to] = sentenceBounds(text, startOff);
     } else {
-      const endInSame = blockOf(range.endContainer) === block;
+      const endInSame = block.contains(range.endContainer);
       const endOff = endInSame ? pointToChar(block, range.endContainer, range.endOffset) : text.length;
       [from, to] = snapToWords(text, Math.min(startOff, endOff), Math.max(startOff, endOff));
       if (to <= from) [from, to] = sentenceBounds(text, from);
