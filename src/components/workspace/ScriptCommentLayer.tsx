@@ -18,7 +18,7 @@
  * portaled to <body> at fixed viewport coords so it tracks the document on
  * scroll without fighting the editor layout.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MessageSquarePlus, Check, RotateCcw, Trash2, Pencil, CornerDownRight, X } from "lucide-react";
 
@@ -98,7 +98,14 @@ export function ScriptCommentLayer({
   const [replyBody, setReplyBody] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [, force] = useState(0);
-  const tick = useCallback(() => force((n) => n + 1), []);
+  // Coalesce all position recomputes (scroll / resize / every keystroke) into a
+  // single update per animation frame — measuring ranges with getClientRects on
+  // every raw event forced a reflow per event and felt sluggish.
+  const rafRef = useRef<number | null>(null);
+  const schedule = useCallback(() => {
+    if (rafRef.current != null) return;
+    rafRef.current = requestAnimationFrame(() => { rafRef.current = null; force((n) => n + 1); });
+  }, []);
 
   const blockFor = (sid: string | null) =>
     sid ? contentRef.current?.querySelector<HTMLElement>(`[data-sid="${CSS.escape(sid)}"]`) ?? null : null;
@@ -127,14 +134,21 @@ export function ScriptCommentLayer({
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    const onMove = () => tick();
-    window.addEventListener("scroll", onMove, true);
+    const onMove = () => schedule();
+    window.addEventListener("scroll", onMove, { capture: true, passive: true });
     window.addEventListener("resize", onMove);
-    const mo = contentRef.current ? new MutationObserver(onMove) : null;
-    if (contentRef.current) mo!.observe(contentRef.current, { subtree: true, characterData: true, childList: true });
-    const iv = setInterval(onMove, 1500);
-    return () => { window.removeEventListener("scroll", onMove, true); window.removeEventListener("resize", onMove); mo?.disconnect(); clearInterval(iv); };
-  }, [contentRef, tick]);
+    const el = contentRef.current;
+    const mo = el ? new MutationObserver(onMove) : null;
+    if (el) mo!.observe(el, { subtree: true, characterData: true, childList: true });
+    const iv = setInterval(onMove, 5000); // keep relative times fresh
+    return () => {
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+      mo?.disconnect();
+      clearInterval(iv);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [contentRef, schedule]);
 
   /* ── placement from the native selection ───────────────────────────── */
   function makeFromSelection() {
