@@ -5001,6 +5001,11 @@ model ScriptComment {
   body            String
   /// open | resolved
   status          String   @default("open")
+  /// Edit tracking — how many times the body was edited + when last edited.
+  editCount       Int      @default(0)
+  editedAt        DateTime?
+  /// Snapshot of the anchored text, for re-locating the highlight after edits.
+  anchorQuote     String?
   createdAt       DateTime @default(now())
 
   @@index([scriptId, createdAt])

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Video Production · anchored script comments — Jun 2026
+  {
+    title: "Video Production · anchored comments",
+    body: "Script comments are now **anchored to the text**. Drag the **Make comment** button onto a sentence to attach a comment there, then drag the round handles to widen or narrow the anchor word by word. Comments sit in the margin, each linked to its sentence by a thin dotted line, and show **who commented and when** — with replies, inline edits, and an *“updated 3× · last 4m ago by …”* line once a thread has changed more than once.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Video Production · script comments — Jun 2026
   {
     title: "Video Production · comments on scripts",
