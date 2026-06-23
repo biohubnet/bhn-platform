@@ -3,75 +3,47 @@
 /**
  * Anchored comments for the HTML script editor.
  *
- * Mounted only on the Comments tab. Renders:
- *   • a "Make comment" button you DRAG onto the script — on drop it anchors to
- *     the SENTENCE under the cursor (default), with draggable start/end handles
- *     to widen/narrow the range word by word;
- *   • highlight rectangles + handles over the document (the doc lives in a
- *     Shadow DOM; we read ranges with getClientRects across the boundary);
- *   • margin comment cards to the right of the document, each linked to its
- *     anchor by a thin loosely-dotted connector that routes through the margin
- *     so it never crosses text;
- *   • author + relative time, inline edit (tracked as "edited Nx · last …"),
- *     threaded replies, resolve/reopen, and (admins) delete.
+ * The document lives in a Shadow DOM, where caret-from-a-point doesn't reach
+ * the text reliably across browsers — so placement uses the NATIVE selection
+ * (which works inside a shadow contentEditable): select a sentence or some
+ * words in the script, click "Make comment", and the comment anchors to that
+ * range (snapped to whole words; a bare click anchors the whole sentence).
  *
- * Everything except the button is portaled to <body> at fixed viewport
- * coordinates, recomputed on scroll/resize/edit, so it tracks the document as
- * it moves without fighting the editor's grid layout.
+ * Renders highlight rectangles over the anchored text, margin comment cards to
+ * the right of the document, and a thin loosely-dotted connector from each
+ * anchor to its card (routed through the margin so it never crosses text).
+ * Cards show who + when, support inline edit (tracked as "edited Nx"), threaded
+ * replies, resolve/reopen, and admin delete, with an "updated Nx · last …"
+ * line once a thread changes more than once. Everything except the button is
+ * portaled to <body> at fixed viewport coords so it tracks the document on
+ * scroll without fighting the editor layout.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquarePlus, Check, RotateCcw, Trash2, Pencil, Loader2, CornerDownRight } from "lucide-react";
+import { MessageSquarePlus, Check, RotateCcw, Trash2, Pencil, CornerDownRight, X } from "lucide-react";
 
 interface Cmt {
-  id: string;
-  body: string;
-  authorName: string;
-  authorKind: string;
-  status: string;
-  parentId: string | null;
-  anchorSectionId: string | null;
-  anchorFrom: number | null;
-  anchorTo: number | null;
-  anchorQuote: string | null;
-  editCount: number;
-  editedAt: string | null;
-  createdAt: string;
+  id: string; body: string; authorName: string; authorKind: string; status: string; parentId: string | null;
+  anchorSectionId: string | null; anchorFrom: number | null; anchorTo: number | null; anchorQuote: string | null;
+  editCount: number; editedAt: string | null; createdAt: string;
 }
 interface Draft { sid: string; from: number; to: number; quote: string }
 
 const CARD_W = 264;
 
 /* ── text helpers ─────────────────────────────────────────────────────── */
-function caretFromPoint(root: Document | ShadowRoot, x: number, y: number): { node: Node; offset: number } | null {
-  const r = (root as Document).caretRangeFromPoint?.(x, y);
-  if (r && r.startContainer.nodeType === 3) return { node: r.startContainer, offset: r.startOffset };
-  const d = document.caretRangeFromPoint?.(x, y);
-  if (d && d.startContainer.nodeType === 3) return { node: d.startContainer, offset: d.startOffset };
-  return null;
-}
-/** char offset within block.textContent for a (textNode, offset) inside it. */
 function pointToChar(block: HTMLElement, node: Node, offset: number): number {
-  let n = 0;
-  const w = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
-  let t: Node | null;
-  while ((t = w.nextNode())) {
-    if (t === node) return n + offset;
-    n += (t.textContent ?? "").length;
-  }
+  let n = 0; const w = document.createTreeWalker(block, NodeFilter.SHOW_TEXT); let t: Node | null;
+  while ((t = w.nextNode())) { if (t === node) return n + offset; n += (t.textContent ?? "").length; }
   return n;
 }
-/** (textNode, offset) for a char offset within block.textContent. */
 function charToPoint(block: HTMLElement, target: number): { node: Node; offset: number } | null {
-  let n = 0;
-  let last: Node | null = null;
-  const w = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
-  let t: Node | null;
+  let n = 0; let last: Node | null = null;
+  const w = document.createTreeWalker(block, NodeFilter.SHOW_TEXT); let t: Node | null;
   while ((t = w.nextNode())) {
     const len = (t.textContent ?? "").length;
     if (target <= n + len) return { node: t, offset: Math.max(0, target - n) };
-    n += len;
-    last = t;
+    n += len; last = t;
   }
   return last ? { node: last, offset: (last.textContent ?? "").length } : null;
 }
@@ -79,26 +51,20 @@ function sentenceBounds(text: string, off: number): [number, number] {
   const marks = [0]; const re = /[.!?]+[)\]"']*\s+/g; let m: RegExpExecArray | null;
   while ((m = re.exec(text))) marks.push(m.index + m[0].length);
   if (marks[marks.length - 1] !== text.length) marks.push(text.length);
-  for (let i = 0; i < marks.length - 1; i++) {
-    if (off >= marks[i]! && off < marks[i + 1]!) {
-      let s = marks[i]!, e = marks[i + 1]!;
-      while (s < e && /\s/.test(text[s]!)) s++;
-      while (e > s && /\s/.test(text[e - 1]!)) e--;
-      return [s, e];
-    }
+  for (let i = 0; i < marks.length - 1; i++) if (off >= marks[i]! && off < marks[i + 1]!) {
+    let s = marks[i]!, e = marks[i + 1]!;
+    while (s < e && /\s/.test(text[s]!)) s++;
+    while (e > s && /\s/.test(text[e - 1]!)) e--;
+    return [s, e];
   }
   return [0, text.length];
 }
-function wordBounds(text: string, off: number): [number, number] {
-  off = Math.max(0, Math.min(text.length, off));
-  let s = off, e = off;
-  if ((s > 0 && /\S/.test(text[s - 1]!)) || /\S/.test(text[s] ?? "")) {
-    while (s > 0 && /\S/.test(text[s - 1]!)) s--;
-    while (e < text.length && /\S/.test(text[e]!)) e++;
-  } else {
-    while (s > 0 && /\s/.test(text[s - 1]!)) s--;
-    e = s; while (s > 0 && /\S/.test(text[s - 1]!)) s--;
-  }
+function snapToWords(text: string, from: number, to: number): [number, number] {
+  let s = from, e = to;
+  while (s > 0 && /\S/.test(text[s - 1]!)) s--;
+  while (e < text.length && /\S/.test(text[e]!)) e++;
+  while (s < e && /\s/.test(text[s]!)) s++;
+  while (e > s && /\s/.test(text[e - 1]!)) e--;
   return [s, e];
 }
 function relTime(iso: string): string {
@@ -110,6 +76,10 @@ function relTime(iso: string): string {
   const h = Math.round(m / 60); if (h < 24) return h + "h ago";
   return new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
+const blockOf = (n: Node | null): HTMLElement | null => {
+  const el = n && n.nodeType === 1 ? (n as HTMLElement) : n?.parentElement ?? null;
+  return (el?.closest?.("[data-sid]") as HTMLElement | null) ?? null;
+};
 
 export function ScriptCommentLayer({
   contentRef, base,
@@ -126,14 +96,13 @@ export function ScriptCommentLayer({
   const [editBody, setEditBody] = useState("");
   const [replyFor, setReplyFor] = useState<string | null>(null);
   const [replyBody, setReplyBody] = useState("");
-  const [pin, setPin] = useState<{ x: number; y: number } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [, force] = useState(0);
   const tick = useCallback(() => force((n) => n + 1), []);
 
   const blockFor = (sid: string | null) =>
     sid ? contentRef.current?.querySelector<HTMLElement>(`[data-sid="${CSS.escape(sid)}"]`) ?? null : null;
 
-  /** Resolve a comment's live range, relocating via the quote if offsets drift. */
   const rangeFor = useCallback((sid: string, from: number, to: number, quote: string | null): Range | null => {
     const block = blockFor(sid); if (!block) return null;
     const text = block.textContent ?? "";
@@ -150,7 +119,6 @@ export function ScriptCommentLayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contentRef]);
 
-  /* fetch */
   const load = useCallback(async () => {
     const res = await fetch(`${base}/comments`).catch(() => null);
     const j = (await res?.json().catch(() => ({}))) as { ok?: boolean; comments?: Cmt[]; canModerate?: boolean };
@@ -158,68 +126,43 @@ export function ScriptCommentLayer({
   }, [base]);
   useEffect(() => { load(); }, [load]);
 
-  /* recompute overlay positions on scroll / resize / content mutation */
   useEffect(() => {
     const onMove = () => tick();
     window.addEventListener("scroll", onMove, true);
     window.addEventListener("resize", onMove);
     const mo = contentRef.current ? new MutationObserver(onMove) : null;
     if (contentRef.current) mo!.observe(contentRef.current, { subtree: true, characterData: true, childList: true });
-    const iv = setInterval(onMove, 1500); // keep relative times + drift fresh
+    const iv = setInterval(onMove, 1500);
     return () => { window.removeEventListener("scroll", onMove, true); window.removeEventListener("resize", onMove); mo?.disconnect(); clearInterval(iv); };
   }, [contentRef, tick]);
 
-  /* ── drag the button to place a new anchor ─────────────────────────── */
-  function onButtonDown(e: React.PointerEvent) {
-    e.preventDefault();
-    setPin({ x: e.clientX, y: e.clientY });
-    const move = (ev: PointerEvent) => setPin({ x: ev.clientX, y: ev.clientY });
-    const up = (ev: PointerEvent) => {
-      window.removeEventListener("pointermove", move);
-      setPin(null);
-      placeAt(ev.clientX, ev.clientY);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up, { once: true });
-  }
-  function placeAt(x: number, y: number) {
+  /* ── placement from the native selection ───────────────────────────── */
+  function makeFromSelection() {
     const content = contentRef.current; if (!content) return;
     const root = content.getRootNode() as ShadowRoot;
-    const caret = caretFromPoint(root, x, y);
-    if (!caret) return;
-    const block = (caret.node.parentElement?.closest("[data-sid]") as HTMLElement | null);
-    if (!block || !content.contains(block)) return;
+    const sel: Selection | null = (root as unknown as { getSelection?: () => Selection | null }).getSelection?.()
+      ?? window.getSelection?.() ?? null;
+    if (!sel || sel.rangeCount === 0) { hint("Click in the script (or select some words), then Make comment."); return; }
+    const range = sel.getRangeAt(0);
+    if (!content.contains(range.startContainer)) { hint("Place the cursor inside the script first."); return; }
+    const block = blockOf(range.startContainer);
+    if (!block) { hint("Couldn't anchor there — try a paragraph."); return; }
     const text = block.textContent ?? "";
-    const off = pointToChar(block, caret.node, caret.offset);
-    const [s, e] = sentenceBounds(text, off);
-    const sid = block.getAttribute("data-sid")!;
-    setDraft({ sid, from: s, to: e, quote: text.slice(s, e) });
-    setDraftBody(""); setSelectedId(null);
+    const startOff = pointToChar(block, range.startContainer, range.startOffset);
+    let from: number, to: number;
+    if (range.collapsed) {
+      [from, to] = sentenceBounds(text, startOff);
+    } else {
+      const endInSame = blockOf(range.endContainer) === block;
+      const endOff = endInSame ? pointToChar(block, range.endContainer, range.endOffset) : text.length;
+      [from, to] = snapToWords(text, Math.min(startOff, endOff), Math.max(startOff, endOff));
+      if (to <= from) [from, to] = sentenceBounds(text, from);
+    }
+    setDraft({ sid: block.getAttribute("data-sid")!, from, to, quote: text.slice(from, to) });
+    setDraftBody(""); setSelectedId(null); setNotice(null);
+    sel.removeAllRanges?.();
   }
-
-  /* ── handle drag (word-level) ──────────────────────────────────────── */
-  function onHandleDown(which: "start" | "end", e: React.PointerEvent) {
-    e.preventDefault(); e.stopPropagation();
-    const content = contentRef.current; if (!content || !draft) return;
-    const block = blockFor(draft.sid); if (!block) return;
-    const text = block.textContent ?? "";
-    const root = content.getRootNode() as ShadowRoot;
-    const move = (ev: PointerEvent) => {
-      const caret = caretFromPoint(root, ev.clientX, ev.clientY);
-      if (!caret || (caret.node.parentElement?.closest("[data-sid]") as HTMLElement | null) !== block) return;
-      const off = pointToChar(block, caret.node, caret.offset);
-      const [ws, we] = wordBounds(text, off);
-      setDraft((d) => {
-        if (!d) return d;
-        let { from, to } = d;
-        if (which === "start") from = Math.min(ws, to - 1);
-        else to = Math.max(we, from + 1);
-        return { ...d, from, to, quote: text.slice(from, to) };
-      });
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", () => window.removeEventListener("pointermove", move), { once: true });
-  }
+  function hint(msg: string) { setNotice(msg); setTimeout(() => setNotice((n) => (n === msg ? null : n)), 3500); }
 
   /* ── mutations ─────────────────────────────────────────────────────── */
   async function saveDraft() {
@@ -251,7 +194,7 @@ export function ScriptCommentLayer({
     await fetch(`${base}/comments?commentId=${c.id}`, { method: "DELETE" }).catch(() => {});
   }
 
-  /* ── geometry for the portal layer ─────────────────────────────────── */
+  /* ── geometry ──────────────────────────────────────────────────────── */
   const content = contentRef.current;
   const docRect = content?.getBoundingClientRect();
   const tops = comments.filter((c) => !c.parentId);
@@ -264,7 +207,6 @@ export function ScriptCommentLayer({
     return { at, by };
   };
 
-  // Build placement (anchor Y + stacked card Y) for each top-level comment + the draft.
   type Placed = { key: string; cmt?: Cmt; isDraft?: boolean; anchorY: number; anchorRight: number; rects: DOMRect[]; cardTop: number };
   const placed: Placed[] = [];
   const railLeft = docRect ? Math.min(docRect.right + 14, window.innerWidth - CARD_W - 12) : 0;
@@ -276,20 +218,18 @@ export function ScriptCommentLayer({
     const measured = items.map((it) => {
       const r = rangeFor(it.sid, it.from, it.to, it.quote);
       const rects = r ? Array.from(r.getClientRects()) : [];
-      const top = rects.length ? rects[0]!.top : -9999;
-      return { it, rects, top };
+      return { it, rects, top: rects.length ? rects[0]!.top : -9999 };
     }).filter((x) => x.rects.length).sort((a, b) => a.top - b.top);
     let cursor = 0;
-    for (const { it, rects, top } of measured) {
-      const cardTop = Math.max(top, cursor);
+    for (const { it, rects } of measured) {
+      const cardTop = Math.max(rects[0]!.top, cursor);
       placed.push({ key: it.key, cmt: it.cmt, isDraft: it.isDraft, anchorY: (rects[0]!.top + rects[rects.length - 1]!.bottom) / 2, anchorRight: docRect.right, rects, cardTop });
-      cursor = cardTop + (it.isDraft ? 92 : 116) + 12; // rough card height + gap
+      cursor = cardTop + (it.isDraft ? 92 : 118) + 12;
     }
   }
 
   const overlay = docRect ? createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 60, pointerEvents: "none" }}>
-      {/* highlights */}
       {placed.map((p) => {
         const sel = p.isDraft || p.cmt?.id === selectedId;
         const resolved = p.cmt?.status === "resolved";
@@ -297,26 +237,11 @@ export function ScriptCommentLayer({
           <div key={p.key + ":" + i} style={{
             position: "fixed", left: r.left, top: r.top, width: r.width, height: r.height,
             background: resolved ? "rgba(120,130,140,.14)" : sel ? "rgba(18,110,55,.26)" : "rgba(18,110,55,.15)",
-            borderRadius: 3, pointerEvents: "none",
+            borderRadius: 3,
           }} />
         ));
       })}
-      {/* handles for the draft */}
-      {draft && placed.filter((p) => p.isDraft).map((p) => {
-        const f = p.rects[0]!, l = p.rects[p.rects.length - 1]!;
-        const H = (which: "start" | "end", x: number, top: number, h: number) => (
-          <div onPointerDown={(e) => onHandleDown(which, e)} style={{
-            position: "fixed", left: x - 6, top, height: h, width: 12, cursor: "ew-resize", pointerEvents: "auto",
-            display: "flex", flexDirection: "column", alignItems: "center", zIndex: 62,
-          }}>
-            <span style={{ width: 10, height: 10, borderRadius: 9, background: "#126e37", border: "2px solid #fff", boxShadow: "0 1px 2px rgba(0,0,0,.3)" }} />
-            <span style={{ width: 2, flex: 1, background: "#126e37" }} />
-          </div>
-        );
-        return <div key="handles">{H("start", f.left, f.top, f.height)}{H("end", l.right, l.top, l.height)}</div>;
-      })}
-      {/* connectors */}
-      <svg style={{ position: "fixed", inset: 0, width: "100%", height: "100%", pointerEvents: "none", overflow: "visible" }}>
+      <svg style={{ position: "fixed", inset: 0, width: "100%", height: "100%", overflow: "visible" }}>
         {placed.map((p) => {
           const cy = p.cardTop + 18, gx = docRect.right + 7;
           const dim = p.cmt?.status === "resolved" ? 0.4 : (p.isDraft || p.cmt?.id === selectedId) ? 1 : 0.75;
@@ -328,11 +253,14 @@ export function ScriptCommentLayer({
           );
         })}
       </svg>
-      {/* cards */}
       {placed.map((p) => (
         <div key={"card" + p.key} style={{ position: "fixed", left: railLeft, top: p.cardTop, width: CARD_W, pointerEvents: "auto", zIndex: 61 }}>
           {p.isDraft ? (
             <div style={cardStyle(true)}>
+              <div style={{ display: "flex", alignItems: "center", marginBottom: 4 }}>
+                <span style={{ flex: 1, fontSize: 10.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", color: "#126e37" }}>New comment</span>
+                <button onClick={() => setDraft(null)} style={ico} title="Cancel"><X size={12} /></button>
+              </div>
               <div style={quoteStyle}>“{draft?.quote}”</div>
               <div style={{ display: "flex", gap: 6 }}>
                 <input autoFocus value={draftBody} onChange={(e) => setDraftBody(e.target.value)}
@@ -363,25 +291,21 @@ export function ScriptCommentLayer({
 
   return (
     <div className="rounded-xl border border-line bg-card-solid p-3">
-      <button type="button" onPointerDown={onButtonDown}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-brand-600 px-3 py-2 text-xs font-bold text-white hover:bg-brand-700"
-        title="Drag onto a sentence">
+      <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={makeFromSelection}
+        className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-brand-600 px-3 py-2 text-xs font-bold text-white hover:bg-brand-700">
         <MessageSquarePlus size={14} /> Make comment
       </button>
       <p className="mt-2 text-[11px] leading-relaxed text-muted">
-        <b>Drag</b> the button onto a sentence to anchor a comment, then drag the round handles to widen or narrow it. Comments appear in the margin, linked by a dotted line.
+        <b>Select the words</b> in the script you want to comment on (or just click to place the cursor — that picks the whole sentence), then hit <b>Make comment</b>. Comments appear in the margin, linked by a dotted line.
       </p>
+      {notice && <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] font-medium text-amber-800">{notice}</p>}
       {tops.length > 0 && <p className="mt-2 text-[11px] text-subtle">{tops.filter((c) => c.status !== "resolved").length} open · {tops.length} total</p>}
-      {pin && createPortal(
-        <div style={{ position: "fixed", left: pin.x, top: pin.y - 4, transform: "translate(-50%,-100%)", zIndex: 70, pointerEvents: "none" }}>
-          <svg width="24" height="31" viewBox="0 0 26 34" fill="none"><path d="M13 33S24 20.5 24 12.5C24 6.1 19 1 13 1S2 6.1 2 12.5C2 20.5 13 33 13 33Z" fill="#126e37" stroke="#fff" strokeWidth="1.6" /><circle cx="13" cy="12.5" r="4.4" fill="#fff" /></svg>
-        </div>, document.body)}
       {overlay}
     </div>
   );
 }
 
-/* ── small presentational card ────────────────────────────────────────── */
+/* ── presentational card ──────────────────────────────────────────────── */
 const cardStyle = (draft?: boolean): React.CSSProperties => ({
   background: "var(--card-solid)", border: `1px solid ${draft ? "#126e37" : "var(--line-strong, #cfd6df)"}`,
   borderRadius: 10, boxShadow: "0 6px 18px -8px rgba(0,0,0,.3)", padding: "9px 10px",
