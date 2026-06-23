@@ -64,7 +64,6 @@ import {
   Drama,
   Theater,
   Clapperboard,
-  FolderUp,
   BookUser,
   Radar,
 } from "lucide-react";
@@ -312,16 +311,6 @@ const workspaceOutreachCampaignsItem: NavItem = {
     "Run a tracked cross-promotion push: pick a target list and an email template, then work down a personalised roster, copying or opening each email and marking contacts reached.",
 };
 
-// WORKSPACE → File Sharing. Sibling of Marketing. SKELETON nav stub —
-// share files across the internal team. See FILE_SHARING_HANDOFF.md.
-const workspaceFileSharingItem: NavItem = {
-  label: "File Sharing",
-  href: "/admin/workspace/file-sharing",
-  icon: FolderUp,
-  minRole: "admin",
-  description:
-    "Share files within the internal team workspace. Upload, organise, and (later) hand out shareable links.",
-};
 
 // ENGAGE — running the learning loop: enrolments, groups, course
 // content, certificates, credits. Labels prefixed with "Manage" so
@@ -1656,7 +1645,7 @@ export function Sidebar({
           <SectionGroup
             title="WORKSPACE"
             tone="neutral"
-            description="Internal team tooling. Marketing → Video Production: plan promo videos and draft their scripts, with shareable links for collaborative editing (no login needed). File Sharing → share files across the team."
+            description="Internal team tooling. Marketing → Video Production: plan promo videos and draft their scripts, with shareable links for collaborative editing (no login needed)."
           >
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Marketing">
               <NavLink item={workspaceVideoItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
@@ -1664,9 +1653,6 @@ export function Sidebar({
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Outreach">
               <NavLink item={workspaceOutreachContactsItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
               <NavLink item={workspaceOutreachCampaignsItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-            </AdminSubgroup>
-            <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.operations} label="File Sharing">
-              <NavLink item={workspaceFileSharingItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
             </AdminSubgroup>
           </SectionGroup>
         )}

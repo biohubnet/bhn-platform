@@ -164,17 +164,6 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Video Production", href: "/admin/workspace/marketing/video" },
     since: "2026.06.16f",
   },
-  // ─── Workspace · File Sharing — Jun 2026
-  {
-    id: "workspace.file-sharing",
-    title: "Share a file with anyone — one link",
-    body: "WORKSPACE has a new tool next to Marketing: File Sharing. Upload a file (up to 50 MB) and copy its public unguessable link — anyone you send it to can download it, no account needed. Archive or delete a file to retire it (deleting kills the link).",
-    path: "/admin/workspace/file-sharing",
-    placement: "center",
-    roles: ["admin", "superadmin"],
-    cta: { label: "Open File Sharing", href: "/admin/workspace/file-sharing" },
-    since: "2026.06.09a",
-  },
   // ─── Showcase · per-group public links — Jun 2026
   {
     id: "showcase.groups",
