@@ -32,10 +32,32 @@ interface Draft { sid: string; from: number; to: number; quote: string }
 const CARD_W = 264;
 
 /* ── text helpers ─────────────────────────────────────────────────────── */
-function pointToChar(block: HTMLElement, node: Node, offset: number): number {
-  let n = 0; const w = document.createTreeWalker(block, NodeFilter.SHOW_TEXT); let t: Node | null;
-  while ((t = w.nextNode())) { if (t === node) return n + offset; n += (t.textContent ?? "").length; }
-  return n;
+// Smallest text-homogeneous blocks we anchor to (a paragraph/heading/li), so
+// offsets never span unrelated text and word-snapping can't bleed across
+// siblings. Ordered small→large; closest() still returns the nearest match.
+const BLOCK_SEL = "p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,td,th,figcaption,.script-copy,.speaker,.visual-note,.intercut-row,.box,section,article,div";
+
+/** Character offset of a DOM point within block.textContent — Range-based, so
+ *  it's correct whether `node` is a text node OR an element (selection
+ *  endpoints land on elements after double/triple-click and at boundaries; the
+ *  old text-only walk mismapped those to the block's full length). */
+function charOffsetIn(block: HTMLElement, node: Node, offset: number): number {
+  if (!block.contains(node) && node !== block) return -1;
+  const probe = document.createRange();
+  try { probe.selectNodeContents(block); probe.setEnd(node, offset); } catch { return (block.textContent ?? "").length; }
+  return probe.toString().length;
+}
+
+/** Smallest block element containing `node` (paragraph/li/heading/…), never the
+ *  whole section or root. */
+function nearestBlock(node: Node, content: HTMLElement): HTMLElement | null {
+  const el = node.nodeType === 1 ? (node as HTMLElement) : node.parentElement;
+  if (!el || !content.contains(el)) return null;
+  const b = el.closest(BLOCK_SEL) as HTMLElement | null;
+  if (b && b !== content && content.contains(b)) return b;
+  let top: HTMLElement | null = el;
+  while (top && top.parentElement && top.parentElement !== content && content.contains(top.parentElement)) top = top.parentElement;
+  return top && top !== content ? top : null;
 }
 function charToPoint(block: HTMLElement, target: number): { node: Node; offset: number } | null {
   let n = 0; let last: Node | null = null;
@@ -76,11 +98,6 @@ function relTime(iso: string): string {
   const h = Math.round(m / 60); if (h < 24) return h + "h ago";
   return new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
-const blockOf = (n: Node | null): HTMLElement | null => {
-  const el = n && n.nodeType === 1 ? (n as HTMLElement) : n?.parentElement ?? null;
-  return (el?.closest?.("[data-sid]") as HTMLElement | null) ?? null;
-};
-
 export function ScriptCommentLayer({
   contentRef, base,
 }: {
@@ -107,16 +124,28 @@ export function ScriptCommentLayer({
     rafRef.current = requestAnimationFrame(() => { rafRef.current = null; force((n) => n + 1); });
   }, []);
 
-  const blockFor = (sid: string | null) =>
-    sid ? contentRef.current?.querySelector<HTMLElement>(`[data-sid="${CSS.escape(sid)}"]`) ?? null : null;
+  // Locate the anchored block. If the sid is gone (e.g. the doc wasn't saved
+  // before a reload), relocate by the stored quote so the comment survives.
+  const blockFor = (sid: string | null, quote?: string | null): HTMLElement | null => {
+    const content = contentRef.current; if (!content || !sid) return null;
+    let el: HTMLElement | null = null;
+    try { el = content.querySelector<HTMLElement>(`[data-sid="${CSS.escape(sid)}"]`); } catch { el = null; }
+    if (el) return el;
+    if (quote) for (const b of content.querySelectorAll<HTMLElement>(BLOCK_SEL)) if ((b.textContent ?? "").includes(quote)) return b;
+    return null;
+  };
 
   const rangeFor = useCallback((sid: string, from: number, to: number, quote: string | null): Range | null => {
-    const block = blockFor(sid); if (!block) return null;
+    const block = blockFor(sid, quote); if (!block) return null;
     const text = block.textContent ?? "";
     let f = from, t = to;
     if (quote && text.slice(f, t) !== quote) {
-      const idx = text.indexOf(quote);
-      if (idx >= 0) { f = idx; t = idx + quote.length; } else return null;
+      // Relocate to the occurrence nearest the stored offset (not just the
+      // first), so a duplicated phrase or a small edit doesn't jump the anchor.
+      let best = -1, bestD = Infinity, idx = text.indexOf(quote);
+      while (idx >= 0) { const d = Math.abs(idx - from); if (d < bestD) { bestD = d; best = idx; } idx = text.indexOf(quote, idx + 1); }
+      if (best < 0) return null;
+      f = best; t = best + quote.length;
     }
     const a = charToPoint(block, f), b = charToPoint(block, t);
     if (!a || !b) return null;
@@ -161,7 +190,9 @@ export function ScriptCommentLayer({
     return () => { document.removeEventListener("selectionchange", onSel); el?.removeEventListener("mouseup", onSel); el?.removeEventListener("keyup", onSel); };
   }, [contentRef, schedule]);
 
-  /** Bounding rect of the current non-collapsed selection inside the doc. */
+  /** Position rect for the floating button — the LAST client rect of the
+   *  selection (where the user finished dragging), not the union box whose
+   *  right edge is the widest line. */
   function readSel(): DOMRect | null {
     const content = contentRef.current; if (!content) return null;
     const root = content.getRootNode() as ShadowRoot;
@@ -169,28 +200,13 @@ export function ScriptCommentLayer({
       ?? window.getSelection?.() ?? null;
     if (!sel || sel.rangeCount === 0) return null;
     const range = sel.getRangeAt(0);
-    if (range.collapsed || !content.contains(range.startContainer)) return null;
-    const r = range.getBoundingClientRect();
-    return r && (r.width || r.height) ? r : null;
+    if (range.collapsed || (!content.contains(range.startContainer) && !content.contains(range.endContainer))) return null;
+    const rects = range.getClientRects();
+    const last = rects[rects.length - 1];
+    return last && (last.width || last.height) ? last : null;
   }
 
   /* ── placement from the native selection ───────────────────────────── */
-  /** Find a stable block to anchor to. Prefer an existing [data-sid]; else tag
-   *  the nearest top-level block under the content so ANY text is anchorable. */
-  function anchorBlock(node: Node): HTMLElement | null {
-    const content = contentRef.current; if (!content) return null;
-    const existing = blockOf(node);
-    if (existing && existing !== content && content.contains(existing)) return existing;
-    let top: HTMLElement | null = node.nodeType === 1 ? (node as HTMLElement) : node.parentElement;
-    if (!top || !content.contains(top)) return null;
-    while (top.parentElement && top.parentElement !== content && content.contains(top.parentElement)) top = top.parentElement;
-    if (!top.getAttribute("data-sid")) {
-      top.setAttribute("data-sid", "c" + Math.random().toString(36).slice(2, 9));
-      content.dispatchEvent(new Event("input", { bubbles: true })); // mark dirty → the new sid persists on save
-    }
-    return top;
-  }
-
   function makeFromSelection() {
     const content = contentRef.current; if (!content) return;
     const root = content.getRootNode() as ShadowRoot;
@@ -198,21 +214,29 @@ export function ScriptCommentLayer({
       ?? window.getSelection?.() ?? null;
     if (!sel || sel.rangeCount === 0) { hint("Select some text in the script first."); return; }
     const range = sel.getRangeAt(0);
-    if (!content.contains(range.startContainer)) { hint("Select inside the script text."); return; }
-    const block = anchorBlock(range.startContainer);
-    if (!block) { hint("Select inside the script text."); return; }
-    const text = block.textContent ?? "";
-    const startOff = pointToChar(block, range.startContainer, range.startOffset);
-    let from: number, to: number;
-    if (range.collapsed) {
-      [from, to] = sentenceBounds(text, startOff);
-    } else {
-      const endInSame = block.contains(range.endContainer);
-      const endOff = endInSame ? pointToChar(block, range.endContainer, range.endOffset) : text.length;
-      [from, to] = snapToWords(text, Math.min(startOff, endOff), Math.max(startOff, endOff));
-      if (to <= from) [from, to] = sentenceBounds(text, from);
+    if (!content.contains(range.startContainer) && !content.contains(range.endContainer)) { hint("Select inside the script text."); return; }
+    // Anchor to the smallest block that contains the WHOLE selection, so offsets
+    // stay within one text-homogeneous block — works for headings, list items,
+    // nested <strong>, and cross-paragraph drags alike. If that block has no
+    // sid yet, tag it (and mark the doc dirty so the sid persists on save).
+    const block = nearestBlock(range.commonAncestorContainer, content) ?? nearestBlock(range.startContainer, content);
+    if (!block) { hint("Select inside a paragraph."); return; }
+    let sid = block.getAttribute("data-sid");
+    if (!sid) {
+      sid = "c" + Math.random().toString(36).slice(2, 9);
+      block.setAttribute("data-sid", sid);
+      content.dispatchEvent(new Event("input", { bubbles: true }));
     }
-    setDraft({ sid: block.getAttribute("data-sid")!, from, to, quote: text.slice(from, to) });
+    const text = block.textContent ?? "";
+    // Element-aware offsets (Range-based); clamp to the block when an endpoint
+    // sits outside it (a drag that started or ended beyond the doc).
+    const o1 = block.contains(range.startContainer) ? charOffsetIn(block, range.startContainer, range.startOffset) : 0;
+    const o2 = block.contains(range.endContainer) ? charOffsetIn(block, range.endContainer, range.endOffset) : text.length;
+    let from = Math.min(o1, o2), to = Math.max(o1, o2);
+    if (range.collapsed || to === from) { [from, to] = sentenceBounds(text, from); }
+    else { [from, to] = snapToWords(text, from, to); }
+    if (to <= from || !text.slice(from, to).trim()) { hint("Select a word or sentence to comment on."); return; }
+    setDraft({ sid, from, to, quote: text.slice(from, to) });
     setDraftBody(""); setSelectedId(null); setNotice(null);
     sel.removeAllRanges?.();
   }
