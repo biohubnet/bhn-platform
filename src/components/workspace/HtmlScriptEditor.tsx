@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Save, Loader2, CheckCircle2, AlertCircle, Code2, Pencil, History, ListTree,
-  Plus, ChevronUp, ChevronDown, Trash2, RotateCcw, User as UserIcon,
+  Plus, ChevronUp, ChevronDown, Trash2, RotateCcw, User as UserIcon, MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { colorForKey, type PresencePeer } from "@/lib/scripts/presence";
@@ -29,6 +29,16 @@ interface Revision {
   authorName: string;
   authorKind: string;
   summary: string;
+  createdAt: string;
+}
+
+interface Comment {
+  id: string;
+  body: string;
+  authorName: string;
+  authorKind: string;
+  status: string;
+  parentId: string | null;
   createdAt: string;
 }
 
@@ -125,13 +135,18 @@ export function HtmlScriptEditor({
   const [error, setError] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
   const [sourceHtml, setSourceHtml] = useState(initialHtml);
-  const [tab, setTab] = useState<"sections" | "history">("sections");
+  const [tab, setTab] = useState<"sections" | "history" | "comments">("sections");
   const [sections, setSections] = useState<{ heading: string }[]>([]);
   // Dialogue rows inside the "Draft Full Intercut Script" block (.intercut-row).
   const [intercut, setIntercut] = useState<{ label: string }[]>([]);
   const [hasIntercut, setHasIntercut] = useState(false);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revLoading, setRevLoading] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
+  const [canModerate, setCanModerate] = useState(false);
   const [peers, setPeers] = useState<PresencePeer[]>([]);
   // P4: account-offer modal. Track edit count client-side; show at multiples of 3.
   const [editCount, setEditCount] = useState(initialEditCount);
@@ -287,6 +302,49 @@ export function HtmlScriptEditor({
   }, [base]);
 
   useEffect(() => { loadRevisions(); }, [loadRevisions]);
+
+  const loadComments = useCallback(async () => {
+    setCommentsLoading(true);
+    try {
+      const res = await fetch(`${base}/comments`);
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; comments?: Comment[]; canModerate?: boolean };
+      if (j.ok && Array.isArray(j.comments)) { setComments(j.comments); setCanModerate(!!j.canModerate); }
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, [base]);
+
+  useEffect(() => { loadComments(); }, [loadComments]);
+
+  async function postComment() {
+    const body = newComment.trim();
+    if (!body) return;
+    setPostingComment(true);
+    try {
+      const res = await fetch(`${base}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      });
+      if (res.ok) { setNewComment(""); await loadComments(); }
+    } finally {
+      setPostingComment(false);
+    }
+  }
+  async function toggleResolve(c: Comment) {
+    const status = c.status === "resolved" ? "open" : "resolved";
+    setComments((cur) => cur.map((x) => (x.id === c.id ? { ...x, status } : x)));
+    await fetch(`${base}/comments`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ commentId: c.id, status }),
+    }).catch(() => {});
+  }
+  async function deleteComment(c: Comment) {
+    if (!confirm("Delete this comment?")) return;
+    setComments((cur) => cur.filter((x) => x.id !== c.id));
+    await fetch(`${base}/comments?commentId=${c.id}`, { method: "DELETE" }).catch(() => {});
+  }
 
   const currentHtml = () => contentRef.current?.innerHTML ?? sourceHtml;
 
@@ -500,6 +558,10 @@ export function HtmlScriptEditor({
 
   const miniBtn = "inline-flex h-6 w-6 items-center justify-center rounded text-muted hover:text-fg hover:bg-elevated disabled:opacity-30";
   const roster = [{ editorKey: meId, name: `${meName} (you)`, color: myColor }, ...peers];
+  const openCount = comments.filter((c) => c.status !== "resolved").length;
+  const sortedComments = [...comments].sort(
+    (a, b) => (a.status === "resolved" ? 1 : 0) - (b.status === "resolved" ? 1 : 0) || a.createdAt.localeCompare(b.createdAt),
+  );
 
   return (
     <div className="space-y-3 pb-24">
@@ -550,24 +612,32 @@ export function HtmlScriptEditor({
         )}
 
         <aside className="self-start space-y-3 lg:sticky lg:top-16">
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-elevated/60 p-1">
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-elevated/60 p-1">
             <button
               type="button"
               onClick={() => setTab("sections")}
-              className={cn("inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold transition-colors", tab === "sections" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
+              className={cn("inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "sections" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
             >
               <ListTree size={13} /> Sections
             </button>
             <button
               type="button"
+              onClick={() => { setTab("comments"); loadComments(); }}
+              className={cn("relative inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "comments" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
+            >
+              <MessageSquare size={13} /> Comments
+              {openCount > 0 && <span className="rounded-full bg-brand-600 px-1.5 text-[9px] font-bold leading-[1.4] text-white">{openCount}</span>}
+            </button>
+            <button
+              type="button"
               onClick={() => { setTab("history"); loadRevisions(); }}
-              className={cn("inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold transition-colors", tab === "history" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
+              className={cn("inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "history" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
             >
               <History size={13} /> History
             </button>
           </div>
 
-          {tab === "sections" ? (
+          {tab === "sections" && (
             <div className="rounded-xl border border-line bg-card-solid p-2">
               <div className="flex items-center justify-between px-1 py-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-subtle">Sections</span>
@@ -626,7 +696,65 @@ export function HtmlScriptEditor({
 
               <p className="px-1.5 pt-1.5 text-[10px] leading-relaxed text-muted">Structure changes save with the document.</p>
             </div>
-          ) : (
+          )}
+
+          {tab === "comments" && (
+            <div className="rounded-xl border border-line bg-card-solid p-2">
+              <div className="flex items-center justify-between px-1 py-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-subtle">Comments</span>
+                {commentsLoading && <Loader2 size={12} className="animate-spin text-muted" />}
+              </div>
+              <div className="px-1 pb-2">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={2}
+                  placeholder="Add a comment…"
+                  className="w-full resize-y rounded-md border border-line bg-elevated/40 px-2 py-1.5 text-xs text-fg focus:outline-none focus:ring-2 focus:ring-brand-400"
+                />
+                <div className="mt-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={postComment}
+                    disabled={postingComment || !newComment.trim()}
+                    className="inline-flex items-center gap-1 rounded-md bg-brand-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+                  >
+                    {postingComment && <Loader2 size={12} className="animate-spin" />} Comment
+                  </button>
+                </div>
+              </div>
+              <ul className="max-h-[52vh] space-y-1.5 overflow-y-auto px-0.5">
+                {sortedComments.map((c) => (
+                  <li key={c.id} className={cn("rounded-md border border-line px-2 py-1.5", c.status === "resolved" && "opacity-60")}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="flex-1 truncate text-xs font-semibold text-fg" title={c.authorName}>{c.authorName}</span>
+                      {c.authorKind === "anon" && <span className="rounded bg-elevated px-1 text-[9px] uppercase tracking-wide text-subtle">guest</span>}
+                      <button
+                        type="button"
+                        onClick={() => toggleResolve(c)}
+                        title={c.status === "resolved" ? "Reopen" : "Resolve"}
+                        className={cn(miniBtn, c.status === "resolved" ? "hover:text-amber-700" : "hover:text-emerald-700")}
+                      >
+                        {c.status === "resolved" ? <RotateCcw size={12} /> : <CheckCircle2 size={12} />}
+                      </button>
+                      {canModerate && (
+                        <button type="button" onClick={() => deleteComment(c)} title="Delete" className={cn(miniBtn, "hover:text-rose-700")}>
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                    <p className={cn("mt-0.5 whitespace-pre-wrap break-words text-xs text-fg", c.status === "resolved" && "line-through")}>{c.body}</p>
+                    <div className="mt-0.5 text-[10px] text-muted">{fmtWhen(c.createdAt)}{c.status === "resolved" ? " · resolved" : ""}</div>
+                  </li>
+                ))}
+                {!commentsLoading && comments.length === 0 && (
+                  <li className="px-2 py-2 text-[11px] text-muted">No comments yet. Add the first one above.</li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {tab === "history" && (
             <div className="rounded-xl border border-line bg-card-solid p-2">
               <div className="flex items-center justify-between px-1 py-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-subtle">History</span>

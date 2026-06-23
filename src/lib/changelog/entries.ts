@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Video Production · script comments — Jun 2026
+  {
+    title: "Video Production · comments on scripts",
+    body: "The collaborative script editor has a new **Comments** tab next to Sections and History. Anyone editing — including guests on a share link — can leave a comment, mark it **resolved** or reopen it, and the tab shows a count of open comments. This pairs with the existing **History** tab (track changes: every save is attributed and revertable).",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Experience · employer intake "new" badge — Jun 2026
   {
     title: "Experience · new-lead badge",
