@@ -247,6 +247,12 @@ model User {
   /// they've ever written. See model MasterResume.
   masterResume          MasterResume?         @relation("UserMasterResume")
 
+  /// AI Job-Tailoring module — external jobs, tailoring attempts, and
+  /// the user's learned rules. See model TailoringJob.
+  tailoringJobs         TailoringJob[]        @relation("UserTailoringJobs")
+  tailoringRuns         TailoringRun[]        @relation("UserTailoringRuns")
+  tailoringRules        TailoringRule[]       @relation("UserTailoringRules")
+
   // Loyalty / merch rewards. `merchRewards` is the trainee's own
   // claimed/unclaimed reward records; `fulfilledMerch` is the queue
   // an admin has personally marked as shipped.
@@ -4384,6 +4390,23 @@ model MasterBullet {
   /// Current bullet text.
   body String
 
+  /// ── Structured career-fact fields (AI Job-Tailoring grounding) ──
+  /// Decompose the bullet into auditable parts so tailoring can ground
+  /// every claim and NEVER invent a metric (rule 1). All optional —
+  /// legacy bullets keep working with just `body`.
+  /// The quantified result, verbatim (e.g. "$2.3M ARR", "14 flasks").
+  metric String?
+  /// HOW the result was achieved (e.g. "via a 6-week A/B test").
+  mechanism String?
+  /// The canonical, approved wording to preserve when tailoring — the
+  /// drafter may reframe around it but must not contradict it.
+  canonicalPhrasing String?
+  /// 0..1 confidence the fact is accurate / verified. Low-confidence
+  /// facts are surfaced for review and never used to fill a hard gap.
+  confidence Float?
+  /// Free-text provenance (where this fact comes from / how verified).
+  sourceNote String?
+
   /// User- or AI-applied tags. Used by the AI picker to short-list
   /// relevant bullets before LLM re-ranking.
   tags String[]
@@ -4463,6 +4486,120 @@ model MasterSnapshot {
 
   @@unique([masterId, versionNumber])
   @@index([masterId, createdAt])
+}
+
+/// ════════════════════════════════════════════════════════════════
+/// AI Job-Tailoring module (see docs spec). Tailors an application to
+/// an EXTERNAL job, grounded only in the master library (CareerFacts
+/// on MasterBullet), with a QA gate and a correction-driven rule loop.
+/// ════════════════════════════════════════════════════════════════
+
+/// An external job the user is tailoring an application to. Distinct
+/// from InternshipPosting (BHN's own employer postings) — this is any
+/// job found anywhere on the web, ingested by URL or pasted JD.
+model TailoringJob {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("UserTailoringJobs", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Source URL the JD came from (drives ATS detection). Optional —
+  /// a JD can be pasted directly.
+  url String?
+  /// Detected applicant-tracking system from the URL host:
+  /// workday | greenhouse | lever | ashby | successfactors | unknown.
+  ats String?
+
+  title    String
+  company  String
+  location String?
+  comp     String?
+
+  mustHaves        String[]
+  niceToHaves      String[]
+  responsibilities String[]
+  /// The full raw JD text, kept for re-analysis + audit.
+  rawJD String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  runs TailoringRun[]
+
+  @@index([userId, createdAt])
+}
+
+/// One tailoring attempt for a job: the generated artifacts, the QA
+/// report, and the Strong/Partial/Gap fit-check. NEVER auto-submitted —
+/// the human reviews and submits.
+model TailoringRun {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("UserTailoringRuns", fields: [userId], references: [id], onDelete: Cascade)
+
+  jobId String
+  job   TailoringJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  /// Optional FK to a structured Resume produced for this run.
+  resumeId String?
+
+  /// Generated documents + the chosen ATS output variant.
+  resumeDoc String?
+  coverDoc  String?
+  format    String?
+
+  /// Structured fit-check scorecard + QA gate report (schema-validated).
+  fitCheck Json?
+  qaReport Json?
+
+  /// pending | drafting | verified | blocked | done
+  status String @default("pending")
+
+  createdAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  corrections TailoringCorrection[]
+
+  @@index([userId, createdAt])
+  @@index([jobId])
+}
+
+/// Learning loop: a codified correction/preference applied on all
+/// future runs in scope. A correction should only be needed once.
+model TailoringRule {
+  id     String  @id @default(cuid())
+  userId String?
+  user   User?   @relation("UserTailoringRules", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// global | roleType | ats | company
+  scope String @default("global")
+  /// What activates this rule (a roleType, an ats host, a company, or "*").
+  trigger  String @default("*")
+  ruleText String
+
+  isActive   Boolean  @default(true)
+  codifiedAt DateTime @default(now())
+
+  corrections TailoringCorrection[]
+
+  @@index([userId, scope, isActive])
+}
+
+/// A single correction the user made to a run's output. Feeds the rule
+/// engine: a repeated correction is promoted to a TailoringRule.
+model TailoringCorrection {
+  id    String       @id @default(cuid())
+  runId String
+  run   TailoringRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  before String @default("")
+  after  String @default("")
+
+  ruleId String?
+  rule   TailoringRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([runId])
 }
 
 /// A per-application "job folder" — a self-organising bundle of
