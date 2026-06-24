@@ -697,6 +697,9 @@ export function MasterResumeClient({
             <p className="text-[12px] text-fg-muted mt-1 leading-snug">
               Remove punctuation from job titles and company/location names (e.g. “Acme, Inc.” → “Acme Inc”) for cleaner ATS parsing. Your bullet text is left untouched.
             </p>
+            <p className="text-[11px] text-fg-subtle mt-1.5 leading-snug">
+              Why it matters: some applicant-tracking systems — Workday in particular — split fields on commas and periods, so “Acme, Inc.” can be parsed as two employers or a garbled company name. Stripping punctuation from the title and company helps Workday map each job to the right field and keeps your work history readable to the recruiter.
+            </p>
             <button
               type="button"
               onClick={removePunctuation}
