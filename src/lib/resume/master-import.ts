@@ -53,9 +53,14 @@ interface CandidateBullet {
   body: string;
 }
 
-/** Walk the structured Resume tree, returning each bullet annotated
- *  with the section + item context that gives it an anchor. Empty
- *  bodies are dropped. */
+/** Walk the structured Resume tree into candidate bullets.
+ *
+ *  Items WITH bullets contribute one candidate per bullet, anchored to
+ *  the item (job / degree / project). Items with NO bullets — summary,
+ *  certifications, publications, conferences, awards, and any bare
+ *  education / project — would otherwise be lost, so we synthesize a
+ *  single line from the item's own fields. A header-only professional
+ *  summary is captured too. Empty bodies are dropped. */
 function flattenResume(content: ResumeContent): CandidateBullet[] {
   const out: CandidateBullet[] = [];
   for (const section of content.sections ?? []) {
@@ -65,14 +70,44 @@ function flattenResume(content: ResumeContent): CandidateBullet[] {
       const anchorSubtitle = item.subtitle?.trim() || null;
       const formattedDates = formatItemDateRange(item);
       const anchorDateRange = formattedDates || item.dateRange?.trim() || null;
-      for (const bullet of item.bullets ?? []) {
-        const body = (bullet.body ?? "").trim();
-        if (!body) continue;
-        out.push({ sectionKind: kind, anchorTitle, anchorSubtitle, anchorDateRange, body });
+
+      const bullets = (item.bullets ?? []).map((b) => (b.body ?? "").trim()).filter(Boolean);
+      if (bullets.length > 0) {
+        for (const body of bullets) {
+          out.push({ sectionKind: kind, anchorTitle, anchorSubtitle, anchorDateRange, body });
+        }
+      } else {
+        // Flat one-liner — the body holds everything, so no anchor header.
+        const body = composeItemBody(item, anchorDateRange);
+        if (body) out.push({ sectionKind: kind, anchorTitle: null, anchorSubtitle: null, anchorDateRange: null, body });
       }
     }
   }
+  // Capture a professional summary even when the parser only put it in
+  // the header (no dedicated Summary section).
+  const headerSummary = (content.header?.summary ?? "").trim();
+  if (headerSummary && !out.some((c) => c.sectionKind === "summary")) {
+    out.push({ sectionKind: "summary", anchorTitle: null, anchorSubtitle: null, anchorDateRange: null, body: headerSummary });
+  }
   return out;
+}
+
+/** A readable single line for a bullet-less item — folds title,
+ *  subtitle, metric, dates, and description together so nothing is
+ *  lost when the section has no bullets. */
+function composeItemBody(
+  item: { title?: string; subtitle?: string; metric?: string; description?: string },
+  dateRange: string | null,
+): string {
+  const head = [item.title?.trim(), item.subtitle?.trim()].filter(Boolean).join(" — ");
+  const bits: string[] = [];
+  if (head) bits.push(head);
+  if (item.metric?.trim()) bits.push(item.metric.trim());
+  if (dateRange) bits.push(dateRange);
+  let line = bits.join(" · ");
+  const desc = item.description?.trim();
+  if (desc && desc !== line) line = line ? `${line}. ${desc}` : desc;
+  return line.trim();
 }
 
 function formatItemDateRange(item: { startDate?: string; endDate?: string; current?: boolean }): string {
