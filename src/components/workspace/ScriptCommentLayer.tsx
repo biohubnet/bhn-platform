@@ -285,24 +285,36 @@ export function ScriptCommentLayer({
     return { at, by };
   };
 
-  type Placed = { key: string; cmt?: Cmt; isDraft?: boolean; anchorY: number; anchorRight: number; rects: DOMRect[]; cardTop: number };
+  type Placed = { key: string; cmt?: Cmt; isDraft?: boolean; anchored: boolean; anchorY: number; anchorRight: number; rects: DOMRect[]; cardTop: number };
   const placed: Placed[] = [];
   const railLeft = docRect ? Math.min(docRect.right + 30, window.innerWidth - CARD_W - 12) : 0;
   if (docRect) {
-    const items: { key: string; cmt?: Cmt; isDraft?: boolean; sid: string; from: number; to: number; quote: string | null }[] = [];
-    for (const c of tops) if (c.anchorSectionId != null && c.anchorFrom != null && c.anchorTo != null)
-      items.push({ key: c.id, cmt: c, sid: c.anchorSectionId, from: c.anchorFrom, to: c.anchorTo, quote: c.anchorQuote });
+    type It = { key: string; cmt?: Cmt; isDraft?: boolean; sid: string | null; from: number | null; to: number | null; quote: string | null };
+    // EVERY top-level comment gets an entry — including ones with no anchor —
+    // so a comment is never silently dropped from the UI.
+    const items: It[] = tops.map((c) => ({ key: c.id, cmt: c, sid: c.anchorSectionId, from: c.anchorFrom, to: c.anchorTo, quote: c.anchorQuote }));
     if (draft) items.push({ key: "draft", isDraft: true, sid: draft.sid, from: draft.from, to: draft.to, quote: draft.quote });
     const measured = items.map((it) => {
-      const r = rangeFor(it.sid, it.from, it.to, it.quote);
+      const r = it.sid != null && it.from != null && it.to != null ? rangeFor(it.sid, it.from, it.to, it.quote) : null;
       const rects = r ? Array.from(r.getClientRects()) : [];
-      return { it, rects, top: rects.length ? rects[0]!.top : -9999 };
-    }).filter((x) => x.rects.length).sort((a, b) => a.top - b.top);
-    let cursor = 0;
-    for (const { it, rects } of measured) {
+      return { it, rects, top: rects.length ? rects[0]!.top : Infinity };
+    });
+    const anchored = measured.filter((x) => x.rects.length).sort((a, b) => a.top - b.top);
+    const orphans = measured.filter((x) => !x.rects.length);
+    const H = (isDraft?: boolean) => (isDraft ? 92 : 124) + 10;
+    // Orphans (anchor can't be located on the page — the doc was edited/unsaved
+    // so the marked block lost its id, or the quoted text changed) pin to the
+    // top of the rail so they ALWAYS show; they just have no highlight/connector.
+    let cursor = docRect.top + 4;
+    for (const { it } of orphans) {
+      placed.push({ key: it.key, cmt: it.cmt, isDraft: it.isDraft, anchored: false, anchorY: 0, anchorRight: 0, rects: [], cardTop: cursor });
+      cursor += H(it.isDraft);
+    }
+    // Anchored cards track their text, but can't rise into the orphan zone.
+    for (const { it, rects } of anchored) {
       const cardTop = Math.max(rects[0]!.top, cursor);
-      placed.push({ key: it.key, cmt: it.cmt, isDraft: it.isDraft, anchorY: (rects[0]!.top + rects[rects.length - 1]!.bottom) / 2, anchorRight: docRect.right, rects, cardTop });
-      cursor = cardTop + (it.isDraft ? 92 : 118) + 12;
+      placed.push({ key: it.key, cmt: it.cmt, isDraft: it.isDraft, anchored: true, anchorY: (rects[0]!.top + rects[rects.length - 1]!.bottom) / 2, anchorRight: docRect.right, rects, cardTop });
+      cursor = cardTop + H(it.isDraft);
     }
   }
 
@@ -314,21 +326,24 @@ export function ScriptCommentLayer({
         return p.rects.map((r, i) => (
           <div key={p.key + ":" + i} style={{
             position: "fixed", left: r.left, top: r.top, width: r.width, height: r.height,
-            background: resolved ? "rgba(120,130,140,.14)" : sel ? "rgba(18,110,55,.26)" : "rgba(18,110,55,.15)",
+            background: resolved ? "rgba(120,130,140,.16)" : sel ? "rgba(18,110,55,.36)" : "rgba(18,110,55,.22)",
             borderRadius: 3,
           }} />
         ));
       })}
       <svg style={{ position: "fixed", inset: 0, width: "100%", height: "100%", overflow: "visible" }}>
         {placed.map((p) => {
+          if (!p.anchored) return null; // orphans have no on-page text to connect to
           const cy = p.cardTop + 18, gx = docRect.right + 14;
-          const dim = p.cmt?.status === "resolved" ? 0.45 : 1;
-          // Round dots (linecap round + ~0-length dashes) read clearly as
-          // "connecting dots" where a 1px dashed line anti-aliases to nothing.
+          const dim = p.cmt?.status === "resolved" ? 0.4 : 1;
+          // Loose round dots routed entirely through the right gutter — they
+          // start at the document's right edge, so the line NEVER crosses text.
+          // Round caps + ~0-length dashes render as dots (a 1px dashed line
+          // anti-aliases to nothing).
           return (
             <g key={"th" + p.key} opacity={dim}>
-              <path d={`M ${p.anchorRight} ${p.anchorY} L ${gx} ${p.anchorY} L ${gx} ${cy} L ${railLeft} ${cy}`} fill="none" stroke="#8893a5" strokeWidth={2} strokeDasharray="0.1 7" strokeLinecap="round" />
-              <circle cx={p.anchorRight} cy={p.anchorY} r={3} fill="#126e37" />
+              <path d={`M ${p.anchorRight} ${p.anchorY} L ${gx} ${p.anchorY} L ${gx} ${cy} L ${railLeft} ${cy}`} fill="none" stroke="#5f6b7c" strokeWidth={2} strokeDasharray="0.1 6.5" strokeLinecap="round" />
+              <circle cx={p.anchorRight} cy={p.anchorY} r={3.5} fill="#126e37" />
             </g>
           );
         })}
@@ -351,7 +366,7 @@ export function ScriptCommentLayer({
             </div>
           ) : p.cmt && (
             <CardBody
-              c={p.cmt} sel={p.cmt.id === selectedId} canModerate={canModerate}
+              c={p.cmt} sel={p.cmt.id === selectedId} canModerate={canModerate} unlinked={!p.anchored}
               replies={repliesOf(p.cmt.id)} modCount={modCount(p.cmt)} last={lastActivity(p.cmt)}
               editing={editingId === p.cmt.id} editBody={editBody} setEditBody={setEditBody}
               replyOpen={replyFor === p.cmt.id} replyBody={replyBody} setReplyBody={setReplyBody}
@@ -408,7 +423,7 @@ const sendStyle: React.CSSProperties = { flex: "none", background: "#126e37", co
 const ico: React.CSSProperties = { width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 6, color: "var(--fg-muted)", cursor: "pointer", border: 0, background: "transparent" };
 
 function CardBody(props: {
-  c: Cmt; sel: boolean; canModerate: boolean; replies: Cmt[]; modCount: number; last: { at: string; by: string };
+  c: Cmt; sel: boolean; canModerate: boolean; unlinked?: boolean; replies: Cmt[]; modCount: number; last: { at: string; by: string };
   editing: boolean; editBody: string; setEditBody: (v: string) => void;
   replyOpen: boolean; replyBody: string; setReplyBody: (v: string) => void;
   onSelect: () => void; onResolve: () => void; onDelete: () => void;
@@ -427,6 +442,7 @@ function CardBody(props: {
         {props.canModerate && <button title="Delete" style={ico} onClick={(e) => { e.stopPropagation(); props.onDelete(); }}><Trash2 size={12} /></button>}
       </div>
       {c.anchorQuote && <div style={quoteStyle}>“{c.anchorQuote}”</div>}
+      {props.unlinked && <div style={{ fontSize: 10.5, color: "var(--fg-subtle)", fontStyle: "italic", margin: "0 0 5px" }}>↡ shown here — its text wasn’t found on the page</div>}
       {props.editing ? (
         <div style={{ display: "flex", gap: 6 }}>
           <input autoFocus value={props.editBody} onChange={(e) => props.setEditBody(e.target.value)}
