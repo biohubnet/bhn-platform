@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Job Tailor — Jun 2026
+  {
+    title: "Job Tailor — paste a job, get a grounded application",
+    body: "New **Profile → Job Tailor**. Paste a job link or the JD and the AI: **detects the ATS** (Workday / Greenhouse / Lever / Ashby / SuccessFactors), surfaces **eligibility gates** first (location, sponsorship, hard minimums), runs an honest **gap analysis** against your master library (Have / Partial / Gap with a reach call), then drafts a **resume + cover letter grounded only in your real facts — it never invents a metric**, flagging anything it can't support. A hard **QA gate** checks length, banned words, em-dashes, pipes, keyword coverage, and traces every number back to a fact; you get a **Strong / Partial / Gap scorecard** and download the **right files for that ATS**. It never submits for you. Teach it a preference once and it's applied to every future run.",
+    kind: "feature",
+    visibleTo: ["trainee", "evaluating"],
+    daysAgo: 0,
+  },
   // ── Master resume · drag-and-drop import — Jun 2026
   {
     title: "Master resume · drag & drop a file",

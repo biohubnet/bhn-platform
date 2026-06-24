@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.24a";
+export const TOUR_VERSION = "2026.06.24b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Job Tailor — Jun 2026
+  {
+    id: "profile.job-tailor",
+    title: "Tailor a whole application from a job link",
+    body: "Profile → Job Tailor takes a job URL or pasted JD and does the full pass: detects the ATS, flags eligibility gates, runs an honest gap analysis against your master library, then drafts a resume + cover grounded only in your real facts (it never invents a metric). A QA gate checks it and you download the right files for that ATS — it never submits for you.",
+    path: "/profile/tailor",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    cta: { label: "Open Job Tailor", href: "/profile/tailor" },
+    since: "2026.06.24b",
+  },
   // ─── Master resume · drag-and-drop import — Jun 2026
   {
     id: "profile.master-drop-resume",

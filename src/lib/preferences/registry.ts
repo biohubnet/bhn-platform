@@ -124,6 +124,7 @@ export const FEATURES: FeatureDef[] = [
   // Profile -------------------------------------------------------
   { id: "profile-application", label: "Application Builder",      description: "Build your reusable resume + 1-min video intro + elevator pitch.",                         group: "profile",    defaultEnabled: true },
   { id: "profile-master",      label: "Master resume",             description: "Your library of every accomplishment bullet. Tailored drafts pull from it; AI uses it to fit any posting. Snapshots are downloadable.", group: "profile",    defaultEnabled: true },
+  { id: "profile-tailor",      label: "Job Tailor",                description: "Paste a job URL or JD — AI detects the ATS, runs a gap analysis vs your master, drafts a grounded resume + cover, QA-checks them, and exports per-ATS files.", group: "profile",    defaultEnabled: true },
   { id: "profile-resumes",     label: "Resume tailoring",          description: "Tailored drafts that pull from your master library, with version history, mentor comments, PDF export.",            group: "profile",    defaultEnabled: true },
   { id: "profile-skills",      label: "My skills",                 description: "Your skill profile — inferred, extracted, self-claimed.",                                 group: "profile",    defaultEnabled: true },
   { id: "profile-stories",     label: "STAR stories",              description: "Reusable behavioural-interview stories you draft once and pull into applications.",       group: "profile",    defaultEnabled: true },
