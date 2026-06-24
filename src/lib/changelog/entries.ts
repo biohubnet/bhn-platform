@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Master resume · drag-and-drop import — Jun 2026
+  {
+    title: "Master resume · drag & drop a file",
+    body: "On **Profile → Master resume** you can now **drag and drop a resume file** (PDF, DOCX, or TXT) straight onto the page — AI reads it, extracts every bullet, and folds them into your library, **skipping anything that's already there**. No upload step, no separate resume to manage. The dropzone is front-and-centre when your library is empty, and lives in the right rail once it has content so you can keep merging resumes in.",
+    kind: "feature",
+    visibleTo: ["trainee", "evaluating"],
+    daysAgo: 0,
+  },
   // ── AutoPipette assist paused — Jun 2026
   {
     title: "AutoPipette assist paused",

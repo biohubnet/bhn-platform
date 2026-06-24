@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.16h";
+export const TOUR_VERSION = "2026.06.24a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Master resume · drag-and-drop import — Jun 2026
+  {
+    id: "profile.master-drop-resume",
+    title: "Drop in a resume to fill your library",
+    body: "Profile → Master resume now takes a drag-and-drop file. Drop a PDF, DOCX, or TXT resume and AI extracts every bullet into your library, skipping anything already there. The dropzone is front-and-centre when the library is empty, and in the right rail once it has content — so you can keep folding new resumes in.",
+    path: "/profile/master",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    cta: { label: "Open your master resume", href: "/profile/master" },
+    since: "2026.06.24a",
+  },
   // ─── Experience · employer intake — Jun 2026
   {
     id: "admin.employer-intake",

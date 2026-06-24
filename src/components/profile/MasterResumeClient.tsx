@@ -14,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Loader2, FileDown, Printer, Clock, Library,
   ChevronDown, ChevronUp, RotateCcw, Archive, Sparkles, CheckCircle2, History,
+  UploadCloud, FileText,
 } from "lucide-react";
 import { useInputDialog } from "@/components/ui/InputDialog";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -146,8 +147,12 @@ export function MasterResumeClient({
   const [pickedResumeId, setPickedResumeId] = useState<string>("");
   const [seeding, setSeeding] = useState(false);
   const [seedResult, setSeedResult] = useState<
-    { created: number; skipped: number; total: number; note?: string } | null
+    { created: number; skipped: number; total: number; note?: string; fileName?: string } | null
   >(null);
+  // Drag-and-drop file import.
+  const [importing, setImporting] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isEmpty = bullets.length === 0 && archivedCount === 0;
 
@@ -198,24 +203,134 @@ export function MasterResumeClient({
         total: j.total ?? 0,
         note: j.note,
       });
-      // Refresh the master so the freshly-extracted bullets render.
-      // We don't bother with optimistic updates here — the user just
-      // watched the loader spin, a hard reload of the list is fine.
-      const fresh = await fetch("/api/profile/master");
-      if (fresh.ok) {
-        const fj = (await fresh.json()) as {
-          ok?: boolean;
-          master?: { header: ResumeContent["header"] | null; updatedAt: string };
-          bullets?: MasterBulletRow[];
-        };
-        if (fj.ok && fj.bullets) setBullets(fj.bullets);
-        if (fj.ok && fj.master) setMaster((m) => ({ ...m, header: fj.master!.header, updatedAt: fj.master!.updatedAt }));
-      }
+      await refreshMaster();
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setSeeding(false);
     }
+  }
+
+  // Re-pull the master list after an import so freshly-added bullets
+  // render. No optimistic update — the user just watched a loader.
+  async function refreshMaster() {
+    const fresh = await fetch("/api/profile/master");
+    if (!fresh.ok) return;
+    const fj = (await fresh.json()) as {
+      ok?: boolean;
+      master?: { header: ResumeContent["header"] | null; updatedAt: string };
+      bullets?: MasterBulletRow[];
+    };
+    if (fj.ok && fj.bullets) setBullets(fj.bullets);
+    if (fj.ok && fj.master) setMaster((m) => ({ ...m, header: fj.master!.header, updatedAt: fj.master!.updatedAt }));
+  }
+
+  // Drag-and-drop / browse a resume FILE straight into the library.
+  async function importFile(file: File) {
+    if (importing) return;
+    setError(null);
+    setSeedResult(null);
+    setImporting(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const r = await fetch("/api/profile/resume/master/import-file", { method: "POST", body: fd });
+      const j = (await r.json().catch(() => ({}))) as {
+        ok?: boolean; created?: number; skipped?: number; total?: number;
+        note?: string; fileName?: string; error?: string;
+      };
+      if (!r.ok || !j.ok) {
+        setError(j.error ?? "Couldn't import that file.");
+        return;
+      }
+      setSeedResult({
+        created: j.created ?? 0,
+        skipped: j.skipped ?? 0,
+        total: j.total ?? 0,
+        note: j.note,
+        fileName: j.fileName ?? file.name,
+      });
+      await refreshMaster();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) importFile(file);
+    e.target.value = ""; // allow re-selecting the same file
+  }
+  function onDropFile(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) importFile(file);
+  }
+
+  /** Drag-and-drop / click-to-browse zone for a resume file. One shared
+   *  hidden <input>; only one dropzone mounts at a time (empty state OR
+   *  the rail), so the ref never collides. */
+  function renderDropzone(opts?: { compact?: boolean }) {
+    const compact = opts?.compact;
+    return (
+      <div
+        onClick={() => !importing && fileInputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); if (!dragOver) setDragOver(true); }}
+        onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
+        onDrop={onDropFile}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !importing) { e.preventDefault(); fileInputRef.current?.click(); } }}
+        aria-label="Drag and drop a resume file, or click to browse"
+        className={cn(
+          "group rounded-xl border-2 border-dashed text-center transition-colors outline-none",
+          compact ? "p-4" : "p-6",
+          importing ? "cursor-default opacity-80" : "cursor-pointer",
+          dragOver ? "border-brand-400 bg-brand-50/70 ring-2 ring-brand-200" : "border-line hover:border-brand-300 hover:bg-elevated/50 focus-visible:border-brand-300",
+        )}
+      >
+        {importing ? (
+          <div className="flex items-center justify-center gap-2 text-[12.5px] font-semibold text-brand-800">
+            <Loader2 size={15} className="animate-spin" /> Reading &amp; parsing your resume…
+          </div>
+        ) : (
+          <>
+            <UploadCloud size={compact ? 18 : 24} className={cn("mx-auto mb-1.5", dragOver ? "text-brand-600" : "text-fg-subtle group-hover:text-brand-600")} />
+            <p className={cn("font-semibold text-fg", compact ? "text-[12px]" : "text-[13px]")}>
+              {dragOver ? "Drop to import" : <>Drag &amp; drop a resume, or <span className="text-brand-700 underline underline-offset-2">browse</span></>}
+            </p>
+            <p className="text-[11px] text-fg-subtle mt-0.5">PDF, DOCX, or TXT · AI extracts every bullet</p>
+          </>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+          className="hidden"
+          onChange={onPickFile}
+        />
+      </div>
+    );
+  }
+
+  /** Result banner shared by both import paths (file drop + seed from
+   *  an existing resume). */
+  function importResultBox() {
+    if (!seedResult) return null;
+    return (
+      <div className="mt-2.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-900 text-[11.5px] px-2.5 py-1.5 flex items-start gap-1.5">
+        <CheckCircle2 size={12} className="mt-0.5 shrink-0" />
+        <span>
+          {seedResult.fileName ? <><FileText size={11} className="inline -mt-0.5 mr-0.5" /><strong>{seedResult.fileName}</strong> — </> : null}
+          {seedResult.total === 0
+            ? (seedResult.note ?? "Nothing to import — no bullets found.")
+            : <>Added <strong>{seedResult.created}</strong> of {seedResult.total} bullet{seedResult.total === 1 ? "" : "s"}{seedResult.skipped > 0 ? `, skipped ${seedResult.skipped} duplicate${seedResult.skipped === 1 ? "" : "s"}` : ""}.</>}
+        </span>
+      </div>
+    );
   }
 
   // ── Bullet CRUD ─────────────────────────────────────────────────
@@ -333,21 +448,24 @@ export function MasterResumeClient({
             <Library size={28} className="mx-auto text-brand-600 mb-3" />
             <h2 className="text-base font-semibold text-fg">Your library is empty</h2>
             <p className="text-[13px] text-fg-muted mt-1 max-w-md mx-auto leading-snug">
-              Seed it from a resume you've already written, or add your first bullet by hand.
+              Drop in a resume and AI fills your library — or seed it from a resume you've already written, or add your first bullet by hand.
             </p>
 
-            {/* Seed-from-resume picker — only when the user actually has
-                tailored resumes to pull from. New users with no resumes
-                fall through to the manual-add CTAs below. */}
+            {/* Primary path: drop a resume FILE. Works for everyone,
+                including brand-new users with no resumes yet. */}
+            <div className="mt-5 mx-auto max-w-md text-left">
+              {renderDropzone()}
+              {importResultBox()}
+            </div>
+
+            {/* Secondary: seed from an existing tailored resume — only
+                when the user actually has resumes to pull from. */}
             {availableResumes && availableResumes.length > 0 && (
-              <div className="mt-5 mx-auto max-w-md rounded-xl border border-brand-200/70 bg-brand-50/40 p-3 text-left">
+              <div className="mt-3 mx-auto max-w-md rounded-xl border border-brand-200/70 bg-brand-50/40 p-3 text-left">
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles size={13} className="text-brand-700" />
-                  <span className="text-[12px] font-bold text-brand-900">Seed library from a resume</span>
+                  <span className="text-[12px] font-bold text-brand-900">Or seed from an existing resume</span>
                 </div>
-                <p className="text-[11.5px] text-fg-muted leading-snug mb-2.5">
-                  AI reads the resume's bullets and adds anything new to your master.
-                </p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <select
                     value={pickedResumeId}
@@ -369,16 +487,6 @@ export function MasterResumeClient({
                     {seeding ? "Extracting…" : "Seed"}
                   </button>
                 </div>
-                {seedResult && (
-                  <div className="mt-2.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-900 text-[11.5px] px-2.5 py-1.5 flex items-start gap-1.5">
-                    <CheckCircle2 size={12} className="mt-0.5 shrink-0" />
-                    <span>
-                      {seedResult.total === 0
-                        ? (seedResult.note ?? "Nothing to extract — this resume has no bullets yet.")
-                        : <>Added <strong>{seedResult.created}</strong> of {seedResult.total} bullet{seedResult.total === 1 ? "" : "s"}{seedResult.skipped > 0 ? `, skipped ${seedResult.skipped} duplicate${seedResult.skipped === 1 ? "" : "s"}` : ""}.</>}
-                    </span>
-                  </div>
-                )}
               </div>
             )}
 
@@ -431,8 +539,22 @@ export function MasterResumeClient({
         )}
       </div>
 
-      {/* Right rail — snapshots */}
+      {/* Right rail */}
       <aside className="space-y-3">
+        {/* Import a resume file — also available once the library has
+            content, so users can keep folding new resumes into it. The
+            empty state has its own (bigger) dropzone above. */}
+        {!isEmpty && (
+          <div className="rounded-2xl border border-line bg-card-solid p-4">
+            <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted">Import a resume</h3>
+            <p className="text-[12px] text-fg-muted mt-1 mb-2.5 leading-snug">
+              Drop a PDF/DOCX/TXT — AI extracts the bullets and adds anything new (duplicates are skipped).
+            </p>
+            {renderDropzone({ compact: true })}
+            {importResultBox()}
+          </div>
+        )}
+
         <div className="rounded-2xl border border-line bg-card-solid p-4">
           <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted">Snapshots</h3>
           <p className="text-[12px] text-fg-muted mt-1 leading-snug">
