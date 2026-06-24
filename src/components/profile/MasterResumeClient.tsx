@@ -341,9 +341,9 @@ export function MasterResumeClient({
       <div className="mt-2.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-900 text-[11.5px] px-2.5 py-1.5 flex items-start gap-1.5">
         <CheckCircle2 size={12} className="mt-0.5 shrink-0" />
         <span>
-          {seedResult.fileName ? <><FileText size={11} className="inline -mt-0.5 mr-0.5" /><strong>{seedResult.fileName}</strong> — </> : null}
+          {seedResult.fileName ? <><FileText size={11} className="inline -mt-0.5 mr-0.5" /><strong>{seedResult.fileName}</strong>: </> : null}
           {seedResult.total === 0
-            ? (seedResult.note ?? "Nothing to import — no bullets found.")
+            ? (seedResult.note ?? "Nothing to import. No bullets found.")
             : <>Added <strong>{seedResult.created}</strong> of {seedResult.total} bullet{seedResult.total === 1 ? "" : "s"}{seedResult.skipped > 0 ? `, skipped ${seedResult.skipped} duplicate${seedResult.skipped === 1 ? "" : "s"}` : ""}.</>}
         </span>
       </div>
@@ -415,7 +415,7 @@ export function MasterResumeClient({
   async function clearLibrary() {
     const ok = await confirmDialog({
       title: "Clear your entire library?",
-      description: "This permanently deletes every bullet in your master resume — active and archived — and their edit history. Your contact header and any saved snapshots are kept. This can't be undone.",
+      description: "This permanently deletes every bullet in your master resume (active and archived) and their edit history. Your contact header and any saved snapshots are kept. This can't be undone.",
       confirmLabel: "Clear library",
       tone: "destructive",
     });
@@ -449,7 +449,7 @@ export function MasterResumeClient({
   async function removePunctuation() {
     const ok = await confirmDialog({
       title: "Remove punctuation from job titles?",
-      description: "Strips commas, periods, and other punctuation from every job title and company/location name — e.g. “Acme, Inc.” becomes “Acme Inc”. Your bullet text is left untouched. You can re-edit any job afterward.",
+      description: "Strips commas, periods, and other punctuation from every job title and company/location name. For example, “Acme, Inc.” becomes “Acme Inc”. Your bullet text is left untouched. You can re-edit any job afterward.",
       confirmLabel: "Remove punctuation",
       tone: "warning",
     });
@@ -504,8 +504,8 @@ export function MasterResumeClient({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr,300px] gap-8 lg:gap-12">
+      <div className="space-y-6">
         {error && (
           <div className="rounded-lg border border-rose-200 bg-rose-50 text-rose-900 text-[12px] px-3 py-2">
             {error}
@@ -518,7 +518,7 @@ export function MasterResumeClient({
             <Library size={28} className="mx-auto text-brand-600 mb-3" />
             <h2 className="text-base font-semibold text-fg">Your library is empty</h2>
             <p className="text-[13px] text-fg-muted mt-1 max-w-md mx-auto leading-snug">
-              Drop in a resume and AI fills your library — or seed it from a resume you've already written, or add your first bullet by hand.
+              Drop in a resume and AI fills your library, or seed it from a resume you've already written, or add your first bullet by hand.
             </p>
 
             {/* Primary path: drop a resume FILE. Works for everyone,
@@ -594,8 +594,8 @@ export function MasterResumeClient({
         {/* Always show an "add to a new section" affordance once
             there's at least one bullet. */}
         {!isEmpty && (
-          <div className="rounded-2xl border border-dashed border-line p-4 bg-card-solid/50 flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] uppercase tracking-[0.18em] font-bold text-fg-subtle">Add a bullet to</span>
+          <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-line/60">
+            <span className="text-[11px] uppercase tracking-[0.14em] font-semibold text-fg-subtle pt-2">Add a bullet to</span>
             {SECTION_ORDER.filter((k) => !presentSections.includes(k)).map((k) => (
               <button
                 key={k}
@@ -611,23 +611,23 @@ export function MasterResumeClient({
       </div>
 
       {/* Right rail */}
-      <aside className="space-y-3">
+      <aside className="space-y-6 lg:sticky lg:top-6 self-start">
         {/* Import a resume file — also available once the library has
             content, so users can keep folding new resumes into it. The
             empty state has its own (bigger) dropzone above. */}
         {!isEmpty && (
-          <div className="rounded-2xl border border-line bg-card-solid p-4">
-            <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted">Import a resume</h3>
+          <div className="border-t border-line/60 pt-6 first:border-t-0 first:pt-0">
+            <h3 className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-subtle">Import a resume</h3>
             <p className="text-[12px] text-fg-muted mt-1 mb-2.5 leading-snug">
-              Drop a PDF/DOCX/TXT — AI extracts the bullets and adds anything new (duplicates are skipped).
+              Drop a PDF, DOCX, or TXT. AI extracts the bullets and adds anything new (duplicates are skipped).
             </p>
             {renderDropzone({ compact: true })}
             {importResultBox()}
           </div>
         )}
 
-        <div className="rounded-2xl border border-line bg-card-solid p-4">
-          <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted">Snapshots</h3>
+        <div className="border-t border-line/60 pt-6 first:border-t-0 first:pt-0">
+          <h3 className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-subtle">Snapshots</h3>
           <p className="text-[12px] text-fg-muted mt-1 leading-snug">
             Locked, named, downloadable versions of your master. Each version exports as JSON or as a print-friendly view (Save as PDF from your browser).
           </p>
@@ -643,11 +643,11 @@ export function MasterResumeClient({
         </div>
 
         {snapshots.length > 0 && (
-          <div className="rounded-2xl border border-line bg-card-solid p-4">
-            <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted mb-2">Versions</h3>
-            <ul className="space-y-2">
+          <div className="border-t border-line/60 pt-6 first:border-t-0 first:pt-0">
+            <h3 className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-subtle mb-2">Versions</h3>
+            <ul className="space-y-0.5">
               {snapshots.map((s) => (
-                <li key={s.id} className="rounded-md border border-line/60 bg-background/30 p-2.5 flex items-start gap-2">
+                <li key={s.id} className="rounded-md -mx-2 px-2 py-2 hover:bg-elevated/50 transition-colors flex items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-semibold text-fg leading-tight">
                       v{s.versionNumber} · {s.name}
@@ -681,24 +681,24 @@ export function MasterResumeClient({
         )}
 
         {archivedCount > 0 && (
-          <div className="rounded-2xl border border-line bg-card-solid p-4">
-            <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted">Archive</h3>
+          <div className="border-t border-line/60 pt-6 first:border-t-0 first:pt-0">
+            <h3 className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-subtle">Archive</h3>
             <p className="text-[12px] text-fg-muted mt-1">
               {archivedCount} archived bullet{archivedCount === 1 ? "" : "s"}.
               {" "}
-              <em className="text-fg-subtle">(Restore UI coming soon — for now, archived bullets stay in your account.)</em>
+              <em className="text-fg-subtle">(Restore UI coming soon. For now, archived bullets stay in your account.)</em>
             </p>
           </div>
         )}
 
         {bullets.length > 0 && (
-          <div className="rounded-2xl border border-line bg-card-solid p-4">
-            <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted">Format</h3>
+          <div className="border-t border-line/60 pt-6 first:border-t-0 first:pt-0">
+            <h3 className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-subtle">Format</h3>
             <p className="text-[12px] text-fg-muted mt-1 leading-snug">
-              Remove punctuation from job titles and company/location names (e.g. “Acme, Inc.” → “Acme Inc”) for cleaner ATS parsing. Your bullet text is left untouched.
+              Remove punctuation from job titles and company/location names (e.g. “Acme, Inc.” becomes “Acme Inc”) for cleaner ATS parsing. Your bullet text is left untouched.
             </p>
             <p className="text-[11px] text-fg-subtle mt-1.5 leading-snug">
-              Why it matters: some applicant-tracking systems — Workday in particular — split fields on commas and periods, so “Acme, Inc.” can be parsed as two employers or a garbled company name. Stripping punctuation from the title and company helps Workday map each job to the right field and keeps your work history readable to the recruiter.
+              Why it matters: some applicant-tracking systems (Workday in particular) split fields on commas and periods, so “Acme, Inc.” can be parsed as two employers or a garbled company name. Stripping punctuation from the title and company helps Workday map each job to the right field and keeps your work history readable to the recruiter.
             </p>
             <button
               type="button"
@@ -711,8 +711,8 @@ export function MasterResumeClient({
         )}
 
         {(bullets.length > 0 || archivedCount > 0) && (
-          <div className="rounded-2xl border border-rose-200/60 bg-rose-50/30 p-4">
-            <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-rose-700/80">Danger zone</h3>
+          <div className="border-t border-line/60 pt-6 first:border-t-0 first:pt-0">
+            <h3 className="text-[10px] uppercase tracking-[0.18em] font-semibold text-rose-600/80">Danger zone</h3>
             <p className="text-[12px] text-fg-muted mt-1 leading-snug">
               Permanently delete every bullet (active + archived). Your contact header and saved snapshots are kept.
             </p>
@@ -758,12 +758,9 @@ function SectionGroup({
   }, [bullets]);
 
   return (
-    <section
-      className="rounded-2xl border border-line border-l-4 bg-card-solid p-5"
-      style={{ borderLeftColor: SECTION_KIND_COLOR[kind] }}
-    >
+    <section className="border-t border-line/60 pt-6 first:border-t-0 first:pt-0">
       <header className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <h2 className="text-[11px] font-mono uppercase tracking-[0.22em] font-bold text-fg-muted inline-flex items-center gap-1.5">
+        <h2 className="text-[11px] font-mono uppercase tracking-[0.18em] font-semibold text-fg-muted inline-flex items-center gap-1.5 tabular-nums">
           <span
             aria-hidden
             className="inline-block w-2 h-2 rounded-full shrink-0"
@@ -783,9 +780,9 @@ function SectionGroup({
         </button>
       </header>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {byAnchor.map(([anchor, group]) => (
-          <div key={anchor} className="rounded-xl border border-line/60 bg-background/30 p-3">
+          <div key={anchor} className="border-l-2 border-line pl-4">
             {anchor && (
               <GroupHeader anchor={anchor} sample={group[0]} kind={kind} onAdd={onAdd} onSaveGroup={onSaveGroup} />
             )}
