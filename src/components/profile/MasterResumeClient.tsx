@@ -14,8 +14,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Loader2, FileDown, Printer, Clock, Library,
   ChevronDown, ChevronUp, RotateCcw, Archive, Sparkles, CheckCircle2, History,
-  UploadCloud, FileText, Trash2,
+  UploadCloud, FileText, Trash2, Eraser, Pencil, Check, X,
 } from "lucide-react";
+import { MONTHS, splitMonthYear } from "@/lib/resume/anchor";
 import { useInputDialog } from "@/components/ui/InputDialog";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn } from "@/lib/utils";
@@ -66,12 +67,27 @@ export interface MasterBulletRow {
   anchorTitle: string | null;
   anchorSubtitle: string | null;
   anchorDateRange: string | null;
+  anchorCompany?: string | null;
+  anchorLocation?: string | null;
+  anchorStart?: string | null;
+  anchorEnd?: string | null;
+  anchorCurrent?: boolean;
   body: string;
   tags: string[];
   position: number;
   sourceResumeId: string | null;
   revisionCount: number;
   updatedAt: string;
+}
+
+/** Structured job fields edited at the group level. */
+export interface GroupEdit {
+  title: string;
+  company: string;
+  location: string;
+  start: string;
+  end: string;
+  current: boolean;
 }
 
 export interface MasterSnapshotRow {
@@ -414,6 +430,40 @@ export function MasterResumeClient({
     setBullets([]); setArchivedCount(0); setSeedResult(null);
   }
 
+  // ── Structured job (group) editing ──────────────────────────────
+  async function saveGroup(sectionKind: string, anchorTitle: string | null, edit: GroupEdit) {
+    setError(null);
+    const r = await fetch("/api/profile/master/group", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sectionKind, anchorTitle: anchorTitle ?? "", ...edit }),
+    });
+    if (!r.ok) {
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      setError(j.error ?? "Couldn't save the job details.");
+      return;
+    }
+    await refreshMaster();
+  }
+
+  // ── Remove punctuation from every bullet ────────────────────────
+  async function removePunctuation() {
+    const ok = await confirmDialog({
+      title: "Remove punctuation from all bullets?",
+      description: "Strips quotes, commas, pipes, brackets, and sentence periods from every bullet for cleaner ATS parsing. Decimals (3.5), hyphens, and + # & % $ / @ are kept. You can still edit any bullet afterward.",
+      confirmLabel: "Remove punctuation",
+      tone: "warning",
+    });
+    if (!ok) return;
+    setError(null);
+    const r = await fetch("/api/profile/master/strip-punctuation", { method: "POST" });
+    if (!r.ok) {
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      setError(j.error ?? "Couldn't clean the bullets.");
+      return;
+    }
+    await refreshMaster();
+  }
+
   // ── Snapshots ───────────────────────────────────────────────────
   async function takeSnapshot() {
     setError(null);
@@ -537,6 +587,7 @@ export function MasterResumeClient({
             onAdd={(anchorTitle) => addBullet(kind, anchorTitle)}
             onPatch={patchBullet}
             onArchive={archiveBullet}
+            onSaveGroup={(anchorTitle, edit) => saveGroup(kind, anchorTitle, edit)}
           />
         ))}
 
@@ -640,6 +691,22 @@ export function MasterResumeClient({
           </div>
         )}
 
+        {bullets.length > 0 && (
+          <div className="rounded-2xl border border-line bg-card-solid p-4">
+            <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted">Format</h3>
+            <p className="text-[12px] text-fg-muted mt-1 leading-snug">
+              Strip punctuation from every bullet for cleaner ATS parsing. Decimals, hyphens, and + # &amp; % $ / @ are kept.
+            </p>
+            <button
+              type="button"
+              onClick={removePunctuation}
+              className="mt-2.5 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold text-fg-muted ring-1 ring-line hover:bg-elevated transition-colors"
+            >
+              <Eraser size={12} /> Remove punctuation
+            </button>
+          </div>
+        )}
+
         {(bullets.length > 0 || archivedCount > 0) && (
           <div className="rounded-2xl border border-rose-200/60 bg-rose-50/30 p-4">
             <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-rose-700/80">Danger zone</h3>
@@ -666,13 +733,14 @@ export function MasterResumeClient({
 // ── Section group ─────────────────────────────────────────────────
 
 function SectionGroup({
-  kind, bullets, onAdd, onPatch, onArchive,
+  kind, bullets, onAdd, onPatch, onArchive, onSaveGroup,
 }: {
   kind: ResumeSectionKind;
   bullets: MasterBulletRow[];
   onAdd: (anchorTitle: string | null) => void;
   onPatch: (id: string, patch: Partial<MasterBulletRow>) => void;
   onArchive: (id: string) => void;
+  onSaveGroup: (anchorTitle: string | null, edit: GroupEdit) => void;
 }) {
   // Group bullets within a section by anchorTitle so "Job A" + "Job B"
   // bullets visibly cluster.
@@ -716,21 +784,7 @@ function SectionGroup({
         {byAnchor.map(([anchor, group]) => (
           <div key={anchor} className="rounded-xl border border-line/60 bg-background/30 p-3">
             {anchor && (
-              <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
-                <div>
-                  <p className="text-[13px] font-semibold text-fg leading-tight">{anchor}</p>
-                  {group[0]?.anchorSubtitle && (
-                    <p className="text-[11px] text-fg-muted leading-tight mt-0.5">{group[0].anchorSubtitle}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onAdd(anchor)}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-fg-muted hover:text-brand-700"
-                >
-                  <Plus size={10} /> Add to this group
-                </button>
-              </div>
+              <GroupHeader anchor={anchor} sample={group[0]} kind={kind} onAdd={onAdd} onSaveGroup={onSaveGroup} />
             )}
             <ul className="space-y-1.5">
               {group.map((b) => (
@@ -746,6 +800,120 @@ function SectionGroup({
         ))}
       </div>
     </section>
+  );
+}
+
+// ── Per-job (group) header with structured editing ──────────────
+/** Sections where structured job fields (company, location, start/end,
+ *  currently-here) are meaningful. */
+const DATED_KINDS = new Set<ResumeSectionKind>(["experience", "education", "projects", "volunteering"]);
+const giClass = "w-full text-[12px] px-2 py-1.5 rounded-md bg-card-solid ring-1 ring-inset ring-line focus:outline-none focus:ring-brand-300";
+
+function GroupHeader({
+  anchor, sample, kind, onAdd, onSaveGroup,
+}: {
+  anchor: string;
+  sample?: MasterBulletRow;
+  kind: ResumeSectionKind;
+  onAdd: (anchorTitle: string | null) => void;
+  onSaveGroup: (anchorTitle: string | null, edit: GroupEdit) => void;
+}) {
+  const editable = DATED_KINDS.has(kind);
+  const [editing, setEditing] = useState(false);
+  const s0 = splitMonthYear(sample?.anchorStart);
+  const e0 = splitMonthYear(sample?.anchorEnd);
+  const [f, setF] = useState({
+    title: anchor,
+    company: sample?.anchorCompany ?? "",
+    location: sample?.anchorLocation ?? "",
+    startMonth: s0.month, startYear: s0.year,
+    endMonth: e0.month, endYear: e0.year,
+    current: !!sample?.anchorCurrent,
+  });
+
+  const subtitle = [sample?.anchorCompany, sample?.anchorLocation].filter(Boolean).join(" · ") || sample?.anchorSubtitle || "";
+  const dates = sample?.anchorDateRange || "";
+
+  function save() {
+    const start = [f.startMonth.trim(), f.startYear.trim()].filter(Boolean).join(" ");
+    const end = f.current ? "" : [f.endMonth.trim(), f.endYear.trim()].filter(Boolean).join(" ");
+    onSaveGroup(anchor, {
+      title: f.title.trim() || anchor,
+      company: f.company.trim(),
+      location: f.location.trim(),
+      start, end, current: f.current,
+    });
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="mb-2 rounded-lg border border-brand-200 bg-brand-50/40 p-2.5 space-y-2">
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-wide font-bold text-fg-subtle">Title</span>
+          <input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} className={giClass} />
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="block">
+            <span className="text-[10px] uppercase tracking-wide font-bold text-fg-subtle">Company</span>
+            <input value={f.company} onChange={(e) => setF({ ...f, company: e.target.value })} className={giClass} />
+          </label>
+          <label className="block">
+            <span className="text-[10px] uppercase tracking-wide font-bold text-fg-subtle">Location</span>
+            <input value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} className={giClass} placeholder="City, Country" />
+          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-[10px] uppercase tracking-wide font-bold text-fg-subtle">Start</span>
+            <div className="flex gap-1">
+              <select value={f.startMonth} onChange={(e) => setF({ ...f, startMonth: e.target.value })} className={giClass}>
+                <option value="">Month</option>
+                {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <input value={f.startYear} onChange={(e) => setF({ ...f, startYear: e.target.value.replace(/[^\d]/g, "").slice(0, 4) })} className={giClass} placeholder="Year" inputMode="numeric" />
+            </div>
+          </div>
+          <div>
+            <span className="text-[10px] uppercase tracking-wide font-bold text-fg-subtle">End</span>
+            {f.current ? (
+              <p className="text-[12px] text-fg-muted italic px-2 py-1.5">Present</p>
+            ) : (
+              <div className="flex gap-1">
+                <select value={f.endMonth} onChange={(e) => setF({ ...f, endMonth: e.target.value })} className={giClass}>
+                  <option value="">Month</option>
+                  {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <input value={f.endYear} onChange={(e) => setF({ ...f, endYear: e.target.value.replace(/[^\d]/g, "").slice(0, 4) })} className={giClass} placeholder="Year" inputMode="numeric" />
+              </div>
+            )}
+          </div>
+        </div>
+        <label className="flex items-center gap-1.5 text-[12px] text-fg cursor-pointer">
+          <input type="checkbox" checked={f.current} onChange={(e) => setF({ ...f, current: e.target.checked })} className="accent-brand-600" /> I currently work here
+        </label>
+        <div className="flex gap-2 justify-end pt-0.5">
+          <button type="button" onClick={() => setEditing(false)} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11.5px] font-semibold text-fg-muted ring-1 ring-line hover:bg-elevated"><X size={12} /> Cancel</button>
+          <button type="button" onClick={save} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11.5px] font-bold bg-brand-600 text-white hover:bg-brand-700"><Check size={12} /> Save</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
+      <div>
+        <p className="text-[13px] font-semibold text-fg leading-tight">{anchor}</p>
+        {subtitle && <p className="text-[11px] text-fg-muted leading-tight mt-0.5">{subtitle}</p>}
+        {dates && <p className="text-[10.5px] text-fg-subtle leading-tight mt-0.5">{dates}</p>}
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        {editable && (
+          <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[11px] font-semibold text-fg-muted hover:text-brand-700"><Pencil size={10} /> Edit</button>
+        )}
+        <button type="button" onClick={() => onAdd(anchor)} className="inline-flex items-center gap-1 text-[11px] font-semibold text-fg-muted hover:text-brand-700"><Plus size={10} /> Add</button>
+      </div>
+    </div>
   );
 }
 

@@ -51,6 +51,11 @@ interface CandidateBullet {
   anchorSubtitle: string | null;
   anchorDateRange: string | null;
   body: string;
+  anchorCompany?: string | null;
+  anchorLocation?: string | null;
+  anchorStart?: string | null;
+  anchorEnd?: string | null;
+  anchorCurrent?: boolean;
 }
 
 /** Walk the structured Resume tree into candidate bullets.
@@ -71,10 +76,21 @@ function flattenResume(content: ResumeContent): CandidateBullet[] {
       const formattedDates = formatItemDateRange(item);
       const anchorDateRange = formattedDates || item.dateRange?.trim() || null;
 
+      // Structured job fields (used by experience-type groups). Company
+      // is best-effort from the subtitle; the user can split company /
+      // location and refine dates in the group editor.
+      const start = item.startDate?.trim() || null;
+      const end = item.endDate?.trim() || null;
+      const current = !!item.current;
+      const company = item.subtitle?.trim() || null;
+
       const bullets = (item.bullets ?? []).map((b) => (b.body ?? "").trim()).filter(Boolean);
       if (bullets.length > 0) {
         for (const body of bullets) {
-          out.push({ sectionKind: kind, anchorTitle, anchorSubtitle, anchorDateRange, body });
+          out.push({
+            sectionKind: kind, anchorTitle, anchorSubtitle, anchorDateRange, body,
+            anchorCompany: company, anchorLocation: null, anchorStart: start, anchorEnd: end, anchorCurrent: current,
+          });
         }
       } else {
         // Flat one-liner — the body holds everything, so no anchor header.
@@ -231,6 +247,11 @@ export async function importContentIntoMaster(
         anchorTitle: d.candidate.anchorTitle,
         anchorSubtitle: d.candidate.anchorSubtitle,
         anchorDateRange: d.candidate.anchorDateRange,
+        anchorCompany: d.candidate.anchorCompany ?? null,
+        anchorLocation: d.candidate.anchorLocation ?? null,
+        anchorStart: d.candidate.anchorStart ?? null,
+        anchorEnd: d.candidate.anchorEnd ?? null,
+        anchorCurrent: d.candidate.anchorCurrent ?? false,
         body: d.candidate.body,
         tags: [],
         position,

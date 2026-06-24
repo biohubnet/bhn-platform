@@ -4387,6 +4387,17 @@ model MasterBullet {
   anchorSubtitle  String?
   anchorDateRange String?
 
+  /// Structured job/role details for experience-type groups. Edited at
+  /// the group level (all bullets sharing a job carry the same values);
+  /// anchorSubtitle + anchorDateRange are derived from these for display
+  /// and stay populated for back-compat. anchorStart/anchorEnd are free
+  /// "Mon YYYY" strings; anchorCurrent marks "currently here".
+  anchorCompany   String?
+  anchorLocation  String?
+  anchorStart     String?
+  anchorEnd       String?
+  anchorCurrent   Boolean @default(false)
+
   /// Current bullet text.
   body String
 
