@@ -448,8 +448,8 @@ export function MasterResumeClient({
   // ── Remove punctuation from every bullet ────────────────────────
   async function removePunctuation() {
     const ok = await confirmDialog({
-      title: "Remove punctuation from all bullets?",
-      description: "Strips quotes, commas, pipes, brackets, and sentence periods from every bullet for cleaner ATS parsing. Decimals (3.5), hyphens, and + # & % $ / @ are kept. You can still edit any bullet afterward.",
+      title: "Remove punctuation from job titles?",
+      description: "Strips commas, periods, and other punctuation from every job title and company/location name — e.g. “Acme, Inc.” becomes “Acme Inc”. Your bullet text is left untouched. You can re-edit any job afterward.",
       confirmLabel: "Remove punctuation",
       tone: "warning",
     });
@@ -695,7 +695,7 @@ export function MasterResumeClient({
           <div className="rounded-2xl border border-line bg-card-solid p-4">
             <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-fg-muted">Format</h3>
             <p className="text-[12px] text-fg-muted mt-1 leading-snug">
-              Strip punctuation from every bullet for cleaner ATS parsing. Decimals, hyphens, and + # &amp; % $ / @ are kept.
+              Remove punctuation from job titles and company/location names (e.g. “Acme, Inc.” → “Acme Inc”) for cleaner ATS parsing. Your bullet text is left untouched.
             </p>
             <button
               type="button"

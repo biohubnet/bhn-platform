@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Master resume · structured job details + punctuation tool — Jun 2026
   {
     title: "Structured job details + a punctuation cleaner",
-    body: "On **Master resume**, each experience group now has an **Edit** button to set the job's **title, company, location, start month/year, end month/year**, or **“I currently work here.”** Dropping a resume in pre-fills these from the parsed dates. There's also a **Remove punctuation** tool in the right rail that strips commas, quotes, pipes, brackets, and sentence periods from every bullet for cleaner ATS parsing (decimals, hyphens, and + # &amp; % $ / @ are kept).",
+    body: "On **Master resume**, each experience group now has an **Edit** button to set the job's **title, company, location, start month/year, end month/year**, or **“I currently work here.”** Dropping a resume in pre-fills these from the parsed dates. There's also a **Remove punctuation** tool in the right rail that cleans punctuation from your **job titles and company/location names** (e.g. “Acme, Inc.” → “Acme Inc”) for cleaner ATS parsing — your bullet text is left untouched.",
     kind: "improvement",
     visibleTo: ["trainee", "evaluating"],
     daysAgo: 0,

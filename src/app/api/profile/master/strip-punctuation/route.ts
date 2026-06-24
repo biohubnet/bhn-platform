@@ -1,15 +1,16 @@
 /**
  * POST /api/profile/master/strip-punctuation
- * Remove ATS-unfriendly punctuation from every bullet body in the
- * caller's master (quotes, pipes, brackets, commas, sentence periods,
- * em/en dashes, ; : ! ?). Keeps decimals, hyphens, and + # & % $ / @.
- * Returns how many bullets changed. The UI confirms first.
+ * Remove ATS-unfriendly punctuation from JOB TITLES, company, and
+ * location across the caller's master (quotes, commas, periods, pipes,
+ * brackets, em/en dashes, ; : ! ?) — e.g. "Acme, Inc." → "Acme Inc".
+ * Bullet TEXT is left untouched. Keeps decimals, hyphens, and
+ * + # & % $ / @. Returns how many rows changed. The UI confirms first.
  */
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateMaster } from "@/lib/resume/master";
-import { stripPunctuation } from "@/lib/resume/anchor";
+import { stripPunctuation, composeSubtitle } from "@/lib/resume/anchor";
 
 export const runtime = "nodejs";
 
@@ -26,16 +27,26 @@ export async function POST() {
   const master = await getOrCreateMaster(prisma, userId);
   const bullets = await prisma.masterBullet.findMany({
     where: { masterId: master.id, isArchived: false },
-    select: { id: true, body: true },
+    select: { id: true, anchorTitle: true, anchorCompany: true, anchorLocation: true, anchorSubtitle: true },
   });
+
+  // Clean each anchor field; never blank a field out (fall back to the
+  // original if stripping leaves nothing). Recompose the display
+  // subtitle from the cleaned company/location.
+  const clean = (v: string | null) => (v ? stripPunctuation(v) || v : v);
 
   let changed = 0;
   for (const b of bullets) {
-    const cleaned = stripPunctuation(b.body);
-    if (cleaned && cleaned !== b.body) {
+    const title = clean(b.anchorTitle);
+    const company = clean(b.anchorCompany);
+    const location = clean(b.anchorLocation);
+    const subtitle = (company || location)
+      ? composeSubtitle(company, location)
+      : clean(b.anchorSubtitle);
+    if (title !== b.anchorTitle || company !== b.anchorCompany || location !== b.anchorLocation || subtitle !== b.anchorSubtitle) {
       await prisma.masterBullet.update({
         where: { id: b.id },
-        data: { body: cleaned, embeddingText: cleaned },
+        data: { anchorTitle: title, anchorCompany: company, anchorLocation: location, anchorSubtitle: subtitle },
       });
       changed++;
     }
