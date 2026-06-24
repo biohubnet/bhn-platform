@@ -411,7 +411,7 @@ export function MasterResumeClient({
       setError(j.error ?? "Couldn't clear the library.");
       return;
     }
-    setBullets([]); setArchivedCount(0); setSelectedId(null); setSeedResult(null);
+    setBullets([]); setArchivedCount(0); setSeedResult(null);
   }
 
   // ── Snapshots ───────────────────────────────────────────────────
