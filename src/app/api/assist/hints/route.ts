@@ -19,11 +19,14 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAssistPrefs } from "@/lib/assist/preferences";
+import { ASSIST_DISABLED } from "@/lib/assist/flags";
 import type { AssistHintPayload } from "@/lib/assist/types";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  if (ASSIST_DISABLED) return NextResponse.json({ hint: null });
+
   const session = await getSession();
   const userId = (session?.user as { id?: string })?.id;
   if (!session || !userId) {

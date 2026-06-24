@@ -41,6 +41,7 @@ import {
 import { inferStuckHint, aiBudgetState } from "@/lib/assist/infer";
 import { resolveStuckQueue, dedupeStatusesFor } from "@/lib/assist/stuck-logic";
 import { AI_CONFIGURED } from "@/lib/ai";
+import { ASSIST_DISABLED } from "@/lib/assist/flags";
 import type { AssistEventInput } from "@/lib/assist/types";
 import type { Role } from "@/lib/auth";
 
@@ -65,6 +66,9 @@ const STUCK_QUEUE_FLOOR = 0.6;
 const AI_ESCALATE = 0.75;
 
 export async function POST(req: Request) {
+  // Master kill-switch: drop everything — no ingestion, no scoring, no hints.
+  if (ASSIST_DISABLED) return NextResponse.json({ ok: true, ingested: 0, disabled: true });
+
   const session = await getSession();
   const userId = (session?.user as { id?: string })?.id;
   const role = (session?.user as { role?: string })?.role ?? "trainee";

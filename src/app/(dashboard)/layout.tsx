@@ -9,6 +9,7 @@ import { NavHighlightOverlay } from "@/components/guide/NavHighlightOverlay";
 import { DemoOverlay } from "@/components/demo/DemoOverlay";
 import { AssistTracker } from "@/components/assist/AssistTracker";
 import { AssistHintDock } from "@/components/assist/AssistHintDock";
+import { ASSIST_ENABLED } from "@/lib/assist/flags";
 import { prisma } from "@/lib/prisma";
 import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
 import { getTraineeQueueCounts } from "@/lib/trainee/queue-counts";
@@ -169,9 +170,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <DemoOverlay />
       {/* AutoPipette (AI behaviour-watcher) — telemetry + hint chip.
           Both are no-ops for users who have opted out via the /profile
-          toggle or the first-run notice. */}
-      <AssistTracker />
-      <AssistHintDock />
+          toggle or the first-run notice. The whole subsystem is gated
+          behind the master kill-switch (NEXT_PUBLIC_ASSIST_ENABLED). */}
+      {ASSIST_ENABLED && (
+        <>
+          <AssistTracker />
+          <AssistHintDock />
+        </>
+      )}
     </div>
   );
 }

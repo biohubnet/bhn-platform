@@ -30,6 +30,7 @@ import { requireRole } from "@/lib/auth";
 import { chat, AI_CONFIGURED } from "@/lib/ai";
 import { availableHelpCards, findHelpCard } from "@/lib/assist/help-cards";
 import { getAssistPrefs, shouldShowHint } from "@/lib/assist/preferences";
+import { ASSIST_DISABLED } from "@/lib/assist/flags";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -89,6 +90,7 @@ function startOfDay(): Date {
 }
 
 export async function POST(req: Request) {
+  if (ASSIST_DISABLED) return NextResponse.json({ ok: true, disabled: true, hint: null });
   const session = await requireRole("admin").catch(() => null);
   if (!session) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

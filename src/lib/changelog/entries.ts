@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── AutoPipette assist paused — Jun 2026
+  {
+    title: "AutoPipette assist paused",
+    body: "The proactive **AutoPipette** behaviour-assist layer (the “you look stuck” hint chip, its telemetry, the `assist_stuck` AI suggestions, and the weekly-summary cron) is **turned off** for now. No behaviour events are collected and no hints surface. It can be switched back on without a code change by setting `NEXT_PUBLIC_ASSIST_ENABLED=true`.",
+    kind: "note",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Video Production · anchored script comments — Jun 2026
   {
     title: "Video Production · anchored comments",

@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { AI_CONFIGURED } from "@/lib/ai";
 import { callText } from "@/lib/ai/reliability";
+import { ASSIST_DISABLED } from "@/lib/assist/flags";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // up to 5 min for bigger orgs
@@ -76,6 +77,8 @@ export async function POST(req: Request) {
   if (!(await authorised(req))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  // Master kill-switch: skip generating weekly assist summaries.
+  if (ASSIST_DISABLED) return NextResponse.json({ ok: true, disabled: true, summarised: 0 });
   if (!AI_CONFIGURED.chat) {
     return NextResponse.json({ error: "AI not configured." }, { status: 503 });
   }
