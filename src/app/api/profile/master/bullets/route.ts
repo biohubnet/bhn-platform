@@ -23,6 +23,25 @@ async function getMyUserId(): Promise<string | null> {
   return (session.user as { id?: string }).id ?? null;
 }
 
+/**
+ * DELETE /api/profile/master/bullets?all=1
+ * Clears the WHOLE library — every bullet (active + archived) and its
+ * revision history (cascade). The contact header and saved snapshots
+ * are deliberately kept. Requires the explicit ?all=1 guard so a stray
+ * call can't wipe the library; the UI confirms first (destructive tone).
+ */
+export async function DELETE(req: NextRequest) {
+  const userId = await getMyUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const all = new URL(req.url).searchParams.get("all");
+  if (all !== "1" && all !== "true") {
+    return NextResponse.json({ error: "Pass ?all=1 to clear the whole library." }, { status: 400 });
+  }
+  const master = await getOrCreateMaster(prisma, userId);
+  const res = await prisma.masterBullet.deleteMany({ where: { masterId: master.id } });
+  return NextResponse.json({ ok: true, deleted: res.count });
+}
+
 export async function POST(req: NextRequest) {
   const userId = await getMyUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

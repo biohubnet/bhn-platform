@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Loader2, FileDown, Printer, Clock, Library,
   ChevronDown, ChevronUp, RotateCcw, Archive, Sparkles, CheckCircle2, History,
-  UploadCloud, FileText,
+  UploadCloud, FileText, Trash2,
 } from "lucide-react";
 import { useInputDialog } from "@/components/ui/InputDialog";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -395,6 +395,25 @@ export function MasterResumeClient({
     }
   }
 
+  // ── Clear the whole library ─────────────────────────────────────
+  async function clearLibrary() {
+    const ok = await confirmDialog({
+      title: "Clear your entire library?",
+      description: "This permanently deletes every bullet in your master resume — active and archived — and their edit history. Your contact header and any saved snapshots are kept. This can't be undone.",
+      confirmLabel: "Clear library",
+      tone: "destructive",
+    });
+    if (!ok) return;
+    setError(null);
+    const r = await fetch("/api/profile/master/bullets?all=1", { method: "DELETE" });
+    if (!r.ok) {
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      setError(j.error ?? "Couldn't clear the library.");
+      return;
+    }
+    setBullets([]); setArchivedCount(0); setSelectedId(null); setSeedResult(null);
+  }
+
   // ── Snapshots ───────────────────────────────────────────────────
   async function takeSnapshot() {
     setError(null);
@@ -618,6 +637,22 @@ export function MasterResumeClient({
               {" "}
               <em className="text-fg-subtle">(Restore UI coming soon — for now, archived bullets stay in your account.)</em>
             </p>
+          </div>
+        )}
+
+        {(bullets.length > 0 || archivedCount > 0) && (
+          <div className="rounded-2xl border border-rose-200/60 bg-rose-50/30 p-4">
+            <h3 className="text-[10px] uppercase tracking-[0.22em] font-bold text-rose-700/80">Danger zone</h3>
+            <p className="text-[12px] text-fg-muted mt-1 leading-snug">
+              Permanently delete every bullet (active + archived). Your contact header and saved snapshots are kept.
+            </p>
+            <button
+              type="button"
+              onClick={clearLibrary}
+              className="mt-2.5 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold text-rose-700 ring-1 ring-rose-300 hover:bg-rose-100 transition-colors"
+            >
+              <Trash2 size={12} /> Clear library
+            </button>
           </div>
         )}
       </aside>
