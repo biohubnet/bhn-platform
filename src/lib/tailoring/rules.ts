@@ -7,16 +7,23 @@ import { prisma } from "@/lib/prisma";
 
 export interface RuleContext { ats?: string | null; company?: string | null; roleType?: string | null }
 
-/** Active rules that apply to this run: all global rules for the user
- *  (or anonymous-global), plus scoped rules whose trigger matches. */
+/**
+ * Active rules that apply to this run. STRICTLY per-user: only the
+ * caller's own rules are ever loaded, so a personal preference can
+ * never carry over to another user. `scope` only narrows which of the
+ * user's OWN runs a rule fires on (scope "global" = all of this user's
+ * runs — NOT platform-wide). There is deliberately no shared/null-owner
+ * rule path; if platform-wide template rules are ever wanted they must
+ * be a separate, clearly-named model, not a null-userId TailoringRule.
+ */
 export async function loadActiveRules(userId: string, ctx: RuleContext): Promise<string[]> {
   const rules = await prisma.tailoringRule.findMany({
-    where: { isActive: true, OR: [{ userId }, { userId: null }] },
+    where: { userId, isActive: true },
     orderBy: { codifiedAt: "asc" },
     select: { scope: true, trigger: true, ruleText: true },
   });
   const match = (scope: string, trigger: string) => {
-    if (scope === "global") return true;
+    if (scope === "global") return true; // all of THIS user's runs
     const t = trigger.trim().toLowerCase();
     if (t === "*") return true;
     if (scope === "ats") return !!ctx.ats && ctx.ats.toLowerCase() === t;
