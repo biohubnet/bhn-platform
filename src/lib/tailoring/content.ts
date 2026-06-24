@@ -8,7 +8,7 @@ import type { Draft } from "./schemas";
 
 const KINDS: ResumeSectionKind[] = [
   "summary", "experience", "skills", "education", "projects",
-  "certifications", "publications", "awards", "volunteering", "other",
+  "certifications", "publications", "conferences", "awards", "volunteering", "other",
 ];
 function coerceKind(k: string): ResumeSectionKind {
   const v = k.trim().toLowerCase() as ResumeSectionKind;

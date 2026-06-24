@@ -102,6 +102,7 @@ const SECTION_ORDER: ResumeSectionKind[] = [
   "education",
   "certifications",
   "publications",
+  "conferences",
   "awards",
   "volunteering",
   "other",
@@ -494,7 +495,7 @@ export function MasterResumeClient({
               Or add manually
             </p>
             <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
-              {(["experience", "skills", "education", "projects"] as ResumeSectionKind[]).map((k) => (
+              {(["summary", "experience", "skills", "education", "projects", "certifications", "publications", "conferences", "volunteering"] as ResumeSectionKind[]).map((k) => (
                 <button
                   key={k}
                   type="button"

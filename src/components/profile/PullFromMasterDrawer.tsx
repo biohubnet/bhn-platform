@@ -70,6 +70,7 @@ const SECTION_ORDER: ResumeSectionKind[] = [
   "education",
   "certifications",
   "publications",
+  "conferences",
   "awards",
   "volunteering",
   "other",

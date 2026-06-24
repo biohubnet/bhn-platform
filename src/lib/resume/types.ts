@@ -16,6 +16,7 @@ export type ResumeSectionKind =
   | "projects"
   | "certifications"
   | "publications"
+  | "conferences"
   | "awards"
   | "volunteering"
   | "other";
@@ -222,6 +223,18 @@ export const SECTION_HINTS: Record<ResumeSectionKind, SectionFieldHints> = {
     bulletLabel: "",
     bulletPlaceholder: "",
   },
+  conferences: {
+    itemEditor: true,
+    titleLabel: "Talk / Poster title",
+    subtitleLabel: "Conference · Location",
+    metricLabel: "Format (talk / poster / panel)",
+    showDates: true,
+    showDescription: true,
+    showUrl: true,
+    showBullets: false,
+    bulletLabel: "",
+    bulletPlaceholder: "",
+  },
   awards: {
     itemEditor: true,
     titleLabel: "Award",
@@ -315,6 +328,7 @@ export const SECTION_LABEL: Record<ResumeSectionKind, string> = {
   projects:       "Projects",
   certifications: "Certifications",
   publications:   "Publications",
+  conferences:    "Conferences",
   awards:         "Awards",
   volunteering:   "Volunteering",
   other:          "Other",
@@ -333,6 +347,7 @@ export const SECTION_KIND_COLOR: Record<ResumeSectionKind, string> = {
   projects:       "#fbbf24", // amber-400
   certifications: "#22d3ee", // cyan-400
   publications:   "#818cf8", // indigo-400
+  conferences:    "#2dd4bf", // teal-400
   awards:         "#fb7185", // rose-400
   volunteering:   "#fb923c", // orange-400
   other:          "#cbd5e1", // slate-300

@@ -14,7 +14,7 @@ const MARGIN = 1080; // 0.75" in twips
 const SECTION_LABEL: Record<ResumeSectionKind, string> = {
   summary: "Summary", experience: "Experience", skills: "Skills",
   education: "Education", projects: "Projects", certifications: "Certifications",
-  publications: "Publications", awards: "Awards", volunteering: "Volunteering", other: "Additional",
+  publications: "Publications", conferences: "Conferences", awards: "Awards", volunteering: "Volunteering", other: "Additional",
 };
 
 function headerParagraphs(header: Header): Paragraph[] {

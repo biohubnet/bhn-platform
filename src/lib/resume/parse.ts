@@ -29,7 +29,7 @@ OUTPUT STRICTLY this shape:
   },
   "sections": [
     {
-      "kind": "summary" | "experience" | "skills" | "education" | "projects" | "certifications" | "publications" | "awards" | "volunteering" | "other",
+      "kind": "summary" | "experience" | "skills" | "education" | "projects" | "certifications" | "publications" | "conferences" | "awards" | "volunteering" | "other",
       "title": "...",   // optional — only if the heading differs from the standard label
       "items": [
         {
@@ -60,6 +60,7 @@ Rules:
 - For EDUCATION, put GPA / honours / classification into "metric" (e.g. "GPA 3.82 / 4.0"). Coursework / honours / thesis title → bullets.
 - For CERTIFICATIONS, "metric" is the credential id if present; "url" is the verify link. No bullets.
 - For PUBLICATIONS, "subtitle" is the author list, "metric" is the venue / journal, "url" is the DOI or paper link, "description" is an optional one-sentence summary. No bullets.
+- For CONFERENCES (talks, posters, panels presented), "title" is the talk/poster title, "subtitle" is the conference + location, "metric" is the format (talk / poster / panel), "url" is a link if present. No bullets.
 - For AWARDS, "metric" is the placement / ranking if relevant.
 - Preserve the order sections + items appear in the source text.
 - Don't invent content. If a field is absent in the source, omit it (don't fabricate dates or URLs).
@@ -174,7 +175,7 @@ function coerceHeader(h: Record<string, unknown>) {
 function coerceKind(v: unknown): ResumeSectionKind {
   const valid: ResumeSectionKind[] = [
     "summary", "experience", "skills", "education", "projects",
-    "certifications", "publications", "awards", "volunteering", "other",
+    "certifications", "publications", "conferences", "awards", "volunteering", "other",
   ];
   if (typeof v === "string" && (valid as string[]).includes(v)) return v as ResumeSectionKind;
   return "other";

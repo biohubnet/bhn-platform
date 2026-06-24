@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Resume sections · Conferences + more on the master — Jun 2026
+  {
+    title: "More resume sections",
+    body: "Your resume + master library now support a **Conferences** section (talks, posters, panels) alongside the existing **Summary, Education, Certifications, Publications, and Volunteering**. On the **Master resume** empty state you can start a section of any of these in one click, and the AI resume parser recognises Conferences when importing a file.",
+    kind: "improvement",
+    visibleTo: ["trainee", "evaluating"],
+    daysAgo: 0,
+  },
   // ── Job Tailor — Jun 2026
   {
     title: "Job Tailor — paste a job, get a grounded application",
