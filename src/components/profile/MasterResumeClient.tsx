@@ -759,14 +759,15 @@ function SectionGroup({
 
   return (
     <section className="border-t border-line/60 pt-6 first:border-t-0 first:pt-0">
-      <header className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <h2 className="text-[11px] font-mono uppercase tracking-[0.18em] font-semibold text-fg-muted inline-flex items-center gap-1.5 tabular-nums">
+      <header className="flex items-baseline justify-between gap-3 mb-3.5 flex-wrap">
+        <h2 className="inline-flex items-center gap-2 text-[17px] font-semibold tracking-tight text-fg">
           <span
             aria-hidden
-            className="inline-block w-2 h-2 rounded-full shrink-0"
+            className="inline-block w-2.5 h-2.5 rounded-full shrink-0 translate-y-px"
             style={{ backgroundColor: SECTION_KIND_COLOR[kind] }}
           />
-          {SECTION_LABEL[kind]} · {bullets.length}
+          {SECTION_LABEL[kind]}
+          <span className="text-[12px] font-normal text-fg-subtle tabular-nums">{bullets.length}</span>
         </h2>
         {/* "Add bullet" without an anchor — useful for skills / other
             free-floating sections. Anchored adds happen inside each
@@ -774,9 +775,9 @@ function SectionGroup({
         <button
           type="button"
           onClick={() => onAdd(null)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11.5px] font-semibold text-brand-700 ring-1 ring-brand-200 bg-brand-50 hover:bg-brand-100"
+          className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand-700 hover:text-brand-800"
         >
-          <Plus size={11} /> Add bullet
+          <Plus size={12} /> Add bullet
         </button>
       </header>
 
@@ -903,9 +904,9 @@ function GroupHeader({
   return (
     <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
       <div>
-        <p className="text-[13px] font-semibold text-fg leading-tight">{anchor}</p>
-        {subtitle && <p className="text-[11px] text-fg-muted leading-tight mt-0.5">{subtitle}</p>}
-        {dates && <p className="text-[10.5px] text-fg-subtle leading-tight mt-0.5">{dates}</p>}
+        <p className="text-[15px] font-semibold text-fg leading-snug tracking-tight">{anchor}</p>
+        {subtitle && <p className="text-[12px] text-fg-muted leading-snug mt-0.5">{subtitle}</p>}
+        {dates && <p className="text-[11px] text-fg-subtle leading-snug mt-px tabular-nums">{dates}</p>}
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {editable && (
