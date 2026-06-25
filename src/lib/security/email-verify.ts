@@ -94,9 +94,21 @@ export async function issueAndSendEmailVerification(opts: {
 }
 
 /**
- * Claim an email-verification token. Marks the user as verified and
- * clears the token. Idempotent — if the user is already verified,
- * returns the same `ok` result so a double-click doesn't 400.
+ * Claim an email-verification token: mark the user verified.
+ *
+ * TRULY IDEMPOTENT — the token is intentionally NOT cleared on success.
+ * It stays resolvable until its natural 7-day expiry, and an already-
+ * verified user short-circuits to success. This matters because
+ * corporate email security (Microsoft Defender "Safe Links", Proofpoint,
+ * etc.) PRE-FETCHES the link to scan it — which, with the old
+ * clear-on-first-use behaviour, burned the single-use token before the
+ * recipient ever clicked, so their real click hit "Link not recognised".
+ *
+ * Re-hitting the link only ever re-stamps `emailVerified` (already set);
+ * the token is not a login credential and grants no session or
+ * privilege, so keeping it live until expiry is harmless. A later
+ * resend mints a new token and overwrites this one, invalidating the
+ * old link.
  */
 export async function claimEmailVerification(token: string): Promise<
   | { ok: true; userId: string; email: string }
@@ -104,16 +116,18 @@ export async function claimEmailVerification(token: string): Promise<
 > {
   const user = await prisma.user.findUnique({ where: { emailVerifyToken: token } });
   if (!user) return { ok: false, reason: "not-found" };
+
+  // Already verified (scanner pre-fetch, double-click, refresh, browser
+  // prefetch) → idempotent success on the same token.
+  if (user.emailVerified) {
+    return { ok: true, userId: user.id, email: user.email };
+  }
   if (user.emailVerifyExpires && user.emailVerifyExpires < new Date()) {
     return { ok: false, reason: "expired" };
   }
   await prisma.user.update({
     where: { id: user.id },
-    data: {
-      emailVerified: new Date(),
-      emailVerifyToken: null,
-      emailVerifyExpires: null,
-    },
+    data: { emailVerified: new Date() }, // keep token + expiry live for idempotency
   });
   return { ok: true, userId: user.id, email: user.email };
 }
