@@ -51,10 +51,35 @@ export default async function MasterResumePage() {
   return (
     <div className="space-y-6">
       <PageHero
-        eyebrow={<><Library size={11} /> Profile · Master resume</>}
-        title="Your bullet library"
-        description="One place to keep every accomplishment you've ever written. Tailored resumes pull from here. AI uses it to tailor for postings. Edit anywhere — promote good edits back."
+        eyebrow={<><Library size={11} /> Profile · Bullet Bank</>}
+        title="Your Bullet Bank"
+        description="One place to keep every accomplishment bullet you've ever written. Tailored resumes pull from here, and the AI Job Tailor fits them to any posting — so every application starts from proven material, not a blank page."
       />
+
+      {/* Why it exists + how it helps — kept light (no card), aligned to
+          the content column. */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="border-l-2 border-brand-300 pl-4 sm:pl-5 py-0.5">
+          <h2 className="text-[15px] font-semibold tracking-tight text-fg">Write your wins once — reuse them everywhere</h2>
+          <p className="mt-1.5 text-[13.5px] leading-relaxed text-fg-muted max-w-3xl">
+            Rewriting your resume from scratch for every application is slow, and your strongest lines get scattered across a dozen old files. The Bullet Bank is the single place you collect every accomplishment bullet you&apos;ve ever written — your source of truth. Build each application from material you&apos;ve already proven instead of a blank page.
+          </p>
+          <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-3 text-[12.5px]">
+            <div>
+              <dt className="font-semibold text-fg">Tailor in seconds</dt>
+              <dd className="text-fg-muted leading-snug mt-0.5">Pull the right bullets into any resume instead of retyping them — and let the AI fit them to a specific posting.</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-fg">Grounded, never invented</dt>
+              <dd className="text-fg-muted leading-snug mt-0.5">The Job Tailor drafts only from your real bullets, so it can&apos;t fabricate experience you don&apos;t have.</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-fg">Never lose a good line</dt>
+              <dd className="text-fg-muted leading-snug mt-0.5">Drop in an old PDF or DOCX and it harvests the bullets automatically; snapshot versions to lock in a moment in time.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <MasterResumeClient

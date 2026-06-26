@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── "Master resume" renamed to "Bullet Bank" — Jun 2026
+  {
+    title: "“Master resume” is now the Bullet Bank",
+    body: "The **Master resume** tab is renamed to **Bullet Bank** — a clearer name for what it is: your library of every accomplishment bullet you've written. The page now opens with a short explainer of *why* it exists and how it pays off (tailor resumes in seconds, keep the AI grounded in your real wins, and never lose a good line). Everything else works exactly as before; only the name and the intro changed.",
+    kind: "improvement",
+    visibleTo: ["trainee", "evaluating"],
+    daysAgo: 0,
+  },
   // ── Master resume · structured job details + punctuation tool — Jun 2026
   {
     title: "Structured job details + a punctuation cleaner",
