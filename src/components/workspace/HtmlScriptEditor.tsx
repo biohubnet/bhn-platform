@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Save, Loader2, CheckCircle2, AlertCircle, Code2, Pencil, History, ListTree,
   Plus, ChevronUp, ChevronDown, Trash2, RotateCcw, User as UserIcon, MessageSquare,
-  Table2,
+  Table2, CalendarRange, Check, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { colorForKey, type PresencePeer } from "@/lib/scripts/presence";
@@ -67,11 +67,13 @@ const MONTH_NUM: Record<string, number> = { aug: 8, sep: 9, sept: 9, oct: 10, no
 
 /** Best-effort week (1–14) for a row from its first-cell text. Reads an
  *  explicit "Wk N" first, else maps the first "Mon DD" date to the nearest
- *  week anchor. Returns null when there's no date → no slider on that row. */
+ *  week anchor. Returns null when there's no date. The month match tolerates
+ *  a digit directly before the month (e.g. "Day 0–1Oct 29" — no space after a
+ *  <br>), so concatenated cells are still recognised. */
 function detectWeek(text: string): number | null {
   const wk = text.match(/Wk\s*(\d{1,2})/i);
   if (wk) { const n = parseInt(wk[1], 10); if (n >= 1 && n <= 14) return n; }
-  const md = text.match(/\b(Aug|Sept|Sep|Oct|Nov)\w*\.?\s*(\d{1,2})/i);
+  const md = text.match(/(?:^|[^a-z])(aug|sept|sep|oct|nov)[a-z]*\.?\s*(\d{1,2})/i);
   if (md) {
     const mo = MONTH_NUM[md[1].toLowerCase()];
     const day = parseInt(md[2], 10);
@@ -83,6 +85,19 @@ function detectWeek(text: string): number | null {
     }
   }
   return null;
+}
+
+/** Start/end week for a row. Prefers an explicit "Wk X–Y" range, else falls
+ *  back to a single detected week (start === end). null start = undated. */
+function detectRange(text: string): { start: number | null; end: number | null } {
+  const rng = text.match(/Wk\s*(\d{1,2})\s*[–—-]\s*(\d{1,2})/i);
+  if (rng) {
+    const s = parseInt(rng[1], 10);
+    const e = parseInt(rng[2], 10);
+    if (s >= 1 && s <= 14 && e >= 1 && e <= 14) return { start: s, end: e };
+  }
+  const single = detectWeek(text);
+  return { start: single, end: single };
 }
 
 function adaptCss(css: string): string {
@@ -182,8 +197,11 @@ export function HtmlScriptEditor({
   // Dialogue rows inside the "Draft Full Intercut Script" block (.intercut-row).
   const [intercut, setIntercut] = useState<{ label: string }[]>([]);
   const [hasIntercut, setHasIntercut] = useState(false);
-  // Tables panel: each table with its body rows (label + detected week, if any).
-  const [tables, setTables] = useState<{ label: string; rows: { label: string; week: number | null }[] }[]>([]);
+  // Tables panel: each table with its body rows (label + detected week, if
+  // any). `dated` = the table has ≥1 dated row, so every row shows the
+  // "Edit dates" button. The open range editor is tracked separately.
+  const [tables, setTables] = useState<{ label: string; dated: boolean; rows: { label: string; week: number | null }[] }[]>([]);
+  const [rangeEdit, setRangeEdit] = useState<{ ti: number; ri: number; start: number; end: number } | null>(null);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revLoading, setRevLoading] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -238,15 +256,13 @@ export function HtmlScriptEditor({
       const rows = body.length
         ? body
         : Array.from(t.querySelectorAll<HTMLTableRowElement>("tr")).filter((r) => !r.querySelector("th"));
-      return {
-        label,
-        rows: rows.map((r) => {
-          const txt = (r.querySelector("td")?.textContent ?? "").trim().replace(/\s+/g, " ");
-          const attr = r.getAttribute("data-week");
-          const week = attr ? parseInt(attr, 10) : detectWeek(txt);
-          return { label: txt.slice(0, 46) || "Row", week: week && week >= 1 && week <= 14 ? week : null };
-        }),
-      };
+      const mapped = rows.map((r) => {
+        const txt = (r.querySelector("td")?.textContent ?? "").trim().replace(/\s+/g, " ");
+        const attr = r.getAttribute("data-week");
+        const week = attr ? parseInt(attr, 10) : detectWeek(txt);
+        return { label: txt.slice(0, 46) || "Row", week: week && week >= 1 && week <= 14 ? week : null };
+      });
+      return { label, dated: mapped.some((r) => r.week != null), rows: mapped };
     }));
   }, []);
 
@@ -602,18 +618,31 @@ export function HtmlScriptEditor({
     markDirty();
     refreshTables();
   }
-  // Shift a dated row along the Aug→Nov timeline. Keeps the bold `.when`
-  // label (if any) and rewrites the date into a `.date-cell`.
-  function setRowWeek(ti: number, ri: number, week: number) {
+  // Open the date-range editor for a row, pre-filled from its current dates.
+  function openRangeEditor(ti: number, ri: number) {
+    const txt = (rowsOf(ti)[ri]?.querySelector("td")?.textContent ?? "").replace(/\s+/g, " ");
+    const { start, end } = detectRange(txt);
+    setRangeEdit({ ti, ri, start: start ?? 1, end: end ?? start ?? 1 });
+  }
+  // Write a start–end week range into a row. Keeps the bold `.when` label (if
+  // any) and rewrites the date into a `.date-cell` as "Mon D – Mon D (Wk x–y)"
+  // (or a single "Mon D (Wk x)" when start === end).
+  function applyRange(ti: number, ri: number, start: number, end: number) {
     const r = rowsOf(ti)[ri];
     const first = r?.querySelector("td");
     if (!r || !first) return;
+    const s = Math.min(start, end);
+    const e = Math.max(start, end);
+    const text = s === e
+      ? `${WEEK_LABELS[s - 1]} (Wk ${s})`
+      : `${WEEK_LABELS[s - 1]} – ${WEEK_LABELS[e - 1]} (Wk ${s}–${e})`;
     const when = first.querySelector(".when");
     const whenHtml = when ? when.outerHTML + "<br>" : "";
-    first.innerHTML = whenHtml + `<span class="date-cell">Wk ${week} · ${WEEK_LABELS[week - 1]}</span>`;
-    r.setAttribute("data-week", String(week));
+    first.innerHTML = whenHtml + `<span class="date-cell">${text}</span>`;
+    r.setAttribute("data-week", String(s));
     markDirty();
     refreshTables();
+    setRangeEdit(null);
   }
 
   // Newest revision that was a deliberate act — a manual Save, a section
@@ -828,37 +857,62 @@ export function HtmlScriptEditor({
                     )}
                   </div>
                   <ul className="space-y-0.5 p-1">
-                    {tb.rows.map((r, ri) => (
+                    {tb.rows.map((r, ri) => {
+                      const editing = rangeEdit?.ti === ti && rangeEdit?.ri === ri;
+                      return (
                       <li key={ri} className="rounded-md px-1.5 py-1 hover:bg-elevated">
                         <div className="flex items-center gap-0.5">
                           <span className="w-4 shrink-0 text-right font-mono text-[10px] text-subtle">{ri + 1}</span>
                           <span className="flex-1 truncate text-xs text-fg" title={r.label}>{r.label}</span>
                           {!readOnly && (
                             <>
+                              {tb.dated && (
+                                <button type="button" title="Edit date range" onClick={() => (editing ? setRangeEdit(null) : openRangeEditor(ti, ri))} className={cn(miniBtn, editing && "text-brand-700 bg-elevated")}><CalendarRange size={13} /></button>
+                              )}
                               <button type="button" title="Move up" disabled={ri === 0} onClick={() => moveTableRow(ti, ri, -1)} className={miniBtn}><ChevronUp size={13} /></button>
                               <button type="button" title="Move down" disabled={ri === tb.rows.length - 1} onClick={() => moveTableRow(ti, ri, 1)} className={miniBtn}><ChevronDown size={13} /></button>
                               <button type="button" title="Remove row" onClick={() => removeTableRow(ti, ri)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
                             </>
                           )}
                         </div>
-                        {!readOnly && r.week != null && (
-                          <div className="mt-1 flex items-center gap-2 pl-5">
-                            <input
-                              type="range" min={1} max={14} value={r.week}
-                              onChange={(e) => setRowWeek(ti, ri, parseInt(e.target.value, 10))}
-                              className="h-1 flex-1 cursor-pointer accent-brand-600"
-                              title="Shift this row along the Aug→Nov timeline"
-                            />
-                            <span className="w-[86px] shrink-0 text-[10px] font-semibold text-brand-700">Wk {r.week} · {WEEK_LABELS[r.week - 1]}</span>
+                        {!readOnly && editing && (
+                          <div className="mt-1.5 rounded-md border border-line bg-elevated/50 p-2 pl-5">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <label className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-subtle">
+                                From
+                                <select
+                                  value={rangeEdit.start}
+                                  onChange={(e) => setRangeEdit({ ...rangeEdit, start: parseInt(e.target.value, 10) })}
+                                  className="rounded border border-line bg-card-solid px-1 py-0.5 text-[11px] font-normal normal-case tracking-normal text-fg"
+                                >
+                                  {WEEK_LABELS.map((lbl, i) => <option key={i} value={i + 1}>Wk {i + 1} · {lbl}</option>)}
+                                </select>
+                              </label>
+                              <label className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-subtle">
+                                To
+                                <select
+                                  value={rangeEdit.end}
+                                  onChange={(e) => setRangeEdit({ ...rangeEdit, end: parseInt(e.target.value, 10) })}
+                                  className="rounded border border-line bg-card-solid px-1 py-0.5 text-[11px] font-normal normal-case tracking-normal text-fg"
+                                >
+                                  {WEEK_LABELS.map((lbl, i) => <option key={i} value={i + 1}>Wk {i + 1} · {lbl}</option>)}
+                                </select>
+                              </label>
+                              <div className="ml-auto flex items-center gap-1">
+                                <button type="button" title="Apply" onClick={() => applyRange(ti, ri, rangeEdit.start, rangeEdit.end)} className="inline-flex items-center gap-1 rounded-md bg-brand-600 px-2 py-1 text-[11px] font-bold text-white hover:bg-brand-700"><Check size={12} /> Apply</button>
+                                <button type="button" title="Cancel" onClick={() => setRangeEdit(null)} className={cn(miniBtn)}><X size={13} /></button>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </li>
-                    ))}
+                      );
+                    })}
                     {tb.rows.length === 0 && <li className="px-2 py-1.5 text-[11px] text-muted">No rows.</li>}
                   </ul>
                 </div>
               ))}
-              <p className="px-1.5 pb-1 text-[10px] leading-relaxed text-muted">Type in any cell to edit it. Use the slider to shift a dated row along the Aug→Nov timeline. Changes save with the document.</p>
+              <p className="px-1.5 pb-1 text-[10px] leading-relaxed text-muted">Type in any cell to edit it. Use the calendar button to set a row&rsquo;s date range. Changes save with the document.</p>
             </div>
           )}
 
