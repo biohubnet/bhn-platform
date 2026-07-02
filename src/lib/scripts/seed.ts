@@ -6,7 +6,7 @@
  */
 import { prisma } from "@/lib/prisma";
 import { MOLLY_HTML, MOLLY_CSS } from "./molly-html";
-import { SYMPOSIUM_HTML, SYMPOSIUM_CSS } from "./symposium-comms-html";
+import { SYMPOSIUM_HTML, SYMPOSIUM_CSS, PLAN_VERSION } from "./symposium-comms-html";
 
 const PROJECT_TITLE = "BHN Promo Video Project";
 const SCRIPT_TITLE = "Molly Interview Conversation Guide";
@@ -93,12 +93,22 @@ export async function ensureSymposiumCommsProject(createdById: string | null): P
     select: { id: true, richContent: true },
   });
   if (existing) {
-    // Keep the stylesheet current without touching the team's edited HTML.
     const rc = (existing.richContent as { html?: string; css?: string } | null) ?? null;
-    if (rc && rc.css !== SYMPOSIUM_CSS) {
+    const marker = `data-plan-version="${PLAN_VERSION}"`;
+    if (!rc?.html?.includes(marker)) {
+      // One-time heal: this doc predates the current pristine baseline
+      // (or was created before versioning). Reset it to the module HTML +
+      // CSS. Safe because docs carrying the marker are skipped below, so a
+      // team's real edits (which keep the marker) are never overwritten.
       await prisma.script.update({
         where: { id: existing.id },
-        data: { richContent: { kind: "html", html: rc.html ?? SYMPOSIUM_HTML, css: SYMPOSIUM_CSS } },
+        data: { richContent: { kind: "html", html: SYMPOSIUM_HTML, css: SYMPOSIUM_CSS } },
+      });
+    } else if (rc.css !== SYMPOSIUM_CSS) {
+      // Marker present → keep the team's HTML, only refresh the stylesheet.
+      await prisma.script.update({
+        where: { id: existing.id },
+        data: { richContent: { kind: "html", html: rc.html, css: SYMPOSIUM_CSS } },
       });
     }
     return;

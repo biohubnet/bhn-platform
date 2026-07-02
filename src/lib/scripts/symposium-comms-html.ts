@@ -339,7 +339,13 @@ export const SYMPOSIUM_CSS = `:root {
       .cols-2, .two-col-notes { grid-template-columns: 1fr; columns: 1; }
     }`;
 
-export const SYMPOSIUM_HTML = `<main>
+// Bump PLAN_VERSION (here and in the <main data-plan-version> below) to
+// re-heal every seeded plan to this pristine HTML on next load — used to
+// push a corrected baseline. Docs already carrying the current marker are
+// left untouched, so real team edits are never overwritten.
+export const PLAN_VERSION = "2";
+
+export const SYMPOSIUM_HTML = `<main data-plan-version="2">
   <header>
     <span class="label">BioHubNet · Marketing &amp; Communications</span>
     <h1>2026 Annual Symposium &amp; Training Week — Communications Plan</h1>
