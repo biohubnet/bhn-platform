@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Save, Loader2, CheckCircle2, AlertCircle, Code2, Pencil, History, ListTree,
   Plus, ChevronUp, ChevronDown, Trash2, RotateCcw, User as UserIcon, MessageSquare,
+  Table2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { colorForKey, type PresencePeer } from "@/lib/scripts/presence";
@@ -44,6 +45,45 @@ interface Comment {
 }
 
 const AUTOSAVE_SECONDS = 30;
+
+// ── Timeline slider (comms-plan tables) ──
+// Week columns for the 2026 Symposium runway, Aug 3 → Nov 2. The Tables
+// panel shows a slider on any dated row so its date can be shifted along
+// this axis without touching the Gantt chart. Feature-detected per row —
+// tables with no recognisable dates simply get no slider (so this is inert
+// for other html scripts, e.g. the Molly guide).
+const WEEK_LABELS = [
+  "Aug 3", "Aug 10", "Aug 17", "Aug 24", "Aug 31", "Sep 7", "Sep 14",
+  "Sep 21", "Sep 28", "Oct 5", "Oct 12", "Oct 19", "Oct 26", "Nov 2",
+];
+const WEEK_ANCHORS: { wk: number; v: number }[] = [
+  { wk: 1, v: 8 * 31 + 3 }, { wk: 2, v: 8 * 31 + 10 }, { wk: 3, v: 8 * 31 + 17 },
+  { wk: 4, v: 8 * 31 + 24 }, { wk: 5, v: 8 * 31 + 31 }, { wk: 6, v: 9 * 31 + 7 },
+  { wk: 7, v: 9 * 31 + 14 }, { wk: 8, v: 9 * 31 + 21 }, { wk: 9, v: 9 * 31 + 28 },
+  { wk: 10, v: 10 * 31 + 5 }, { wk: 11, v: 10 * 31 + 12 }, { wk: 12, v: 10 * 31 + 19 },
+  { wk: 13, v: 10 * 31 + 26 }, { wk: 14, v: 11 * 31 + 2 },
+];
+const MONTH_NUM: Record<string, number> = { aug: 8, sep: 9, sept: 9, oct: 10, nov: 11 };
+
+/** Best-effort week (1–14) for a row from its first-cell text. Reads an
+ *  explicit "Wk N" first, else maps the first "Mon DD" date to the nearest
+ *  week anchor. Returns null when there's no date → no slider on that row. */
+function detectWeek(text: string): number | null {
+  const wk = text.match(/Wk\s*(\d{1,2})/i);
+  if (wk) { const n = parseInt(wk[1], 10); if (n >= 1 && n <= 14) return n; }
+  const md = text.match(/\b(Aug|Sept|Sep|Oct|Nov)\w*\.?\s*(\d{1,2})/i);
+  if (md) {
+    const mo = MONTH_NUM[md[1].toLowerCase()];
+    const day = parseInt(md[2], 10);
+    if (mo) {
+      const v = mo * 31 + day;
+      let best = WEEK_ANCHORS[0];
+      for (const a of WEEK_ANCHORS) if (Math.abs(a.v - v) < Math.abs(best.v - v)) best = a;
+      return best.wk;
+    }
+  }
+  return null;
+}
 
 function adaptCss(css: string): string {
   return css
@@ -118,6 +158,7 @@ export function HtmlScriptEditor({
   const presenceStyleRef = useRef<HTMLStyleElement | null>(null);
   const boxesRef = useRef<HTMLElement[]>([]);
   const intercutRef = useRef<HTMLElement[]>([]);
+  const tablesRef = useRef<HTMLTableElement[]>([]);
   const activeSidRef = useRef<string | null>(null);
   const recentRef = useRef<Map<string, number>>(new Map());
   const peersKeyRef = useRef<string>("");
@@ -136,11 +177,13 @@ export function HtmlScriptEditor({
   const [error, setError] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
   const [sourceHtml, setSourceHtml] = useState(initialHtml);
-  const [tab, setTab] = useState<"sections" | "history" | "comments">("sections");
+  const [tab, setTab] = useState<"sections" | "tables" | "history" | "comments">("sections");
   const [sections, setSections] = useState<{ heading: string }[]>([]);
   // Dialogue rows inside the "Draft Full Intercut Script" block (.intercut-row).
   const [intercut, setIntercut] = useState<{ label: string }[]>([]);
   const [hasIntercut, setHasIntercut] = useState(false);
+  // Tables panel: each table with its body rows (label + detected week, if any).
+  const [tables, setTables] = useState<{ label: string; rows: { label: string; week: number | null }[] }[]>([]);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revLoading, setRevLoading] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -180,6 +223,44 @@ export function HtmlScriptEditor({
     setHasIntercut(rows.length > 0 || !!root.querySelector(".full-script, .intercut-list"));
   }, []);
 
+  // Scan every <table> for the Tables panel (add/move/remove rows + a date
+  // slider on dated rows). Row label = first-cell text; week = an explicit
+  // data-week or one detected from the first cell's date.
+  const refreshTables = useCallback(() => {
+    const root = contentRef.current;
+    if (!root) return;
+    const tbls = Array.from(root.querySelectorAll<HTMLTableElement>("table"));
+    tablesRef.current = tbls;
+    setTables(tbls.map((t) => {
+      const heading = t.closest(".box")?.querySelector("h2,h3,h4");
+      const label = (heading?.textContent ?? "Table").trim().slice(0, 42) || "Table";
+      const body = Array.from(t.querySelectorAll<HTMLTableRowElement>("tbody tr"));
+      const rows = body.length
+        ? body
+        : Array.from(t.querySelectorAll<HTMLTableRowElement>("tr")).filter((r) => !r.querySelector("th"));
+      return {
+        label,
+        rows: rows.map((r) => {
+          const txt = (r.querySelector("td")?.textContent ?? "").trim().replace(/\s+/g, " ");
+          const attr = r.getAttribute("data-week");
+          const week = attr ? parseInt(attr, 10) : detectWeek(txt);
+          return { label: txt.slice(0, 46) || "Row", week: week && week >= 1 && week <= 14 ? week : null };
+        }),
+      };
+    }));
+  }, []);
+
+  // Live body-row list for a table index (prefers tbody; falls back to
+  // non-header rows). Re-queried per op so it always reflects the DOM.
+  const rowsOf = useCallback((ti: number): HTMLTableRowElement[] => {
+    const t = tablesRef.current[ti];
+    if (!t) return [];
+    const body = Array.from(t.querySelectorAll<HTMLTableRowElement>("tbody tr"));
+    return body.length
+      ? body
+      : Array.from(t.querySelectorAll<HTMLTableRowElement>("tr")).filter((r) => !r.querySelector("th"));
+  }, []);
+
   // Mount the styled, editable document into a shadow root once + wire caret
   // tracking for presence + dirty-marking for auto-save.
   useEffect(() => {
@@ -202,6 +283,7 @@ export function HtmlScriptEditor({
 
     findSections(content).forEach((b, i) => { if (!b.getAttribute("data-sid")) b.setAttribute("data-sid", `s${i}`); });
     refreshSections();
+    refreshTables();
 
     const sidOf = (node: Node | null): string | null => {
       const el = node && node.nodeType === 1 ? (node as Element) : node?.parentElement ?? null;
@@ -225,7 +307,7 @@ export function HtmlScriptEditor({
     content.addEventListener("mouseup", onSel);
     content.addEventListener("focusin", onSel);
     content.addEventListener("input", onInput);
-  }, [css, initialHtml, refreshSections, markDirty, readOnly]);
+  }, [css, initialHtml, refreshSections, refreshTables, markDirty, readOnly]);
 
   // ── Presence heartbeat (~2s) ──
   useEffect(() => {
@@ -334,6 +416,7 @@ export function HtmlScriptEditor({
       if (showSource && contentRef.current) {
         contentRef.current.innerHTML = sourceHtml;
         refreshSections();
+        refreshTables();
       }
       dirtyRef.current = false;
       secondsRef.current = AUTOSAVE_SECONDS;
@@ -358,7 +441,7 @@ export function HtmlScriptEditor({
       savingRef.current = false;
       setSaving(false);
     }
-  }, [base, css, showSource, sourceHtml, refreshSections, loadRevisions]);
+  }, [base, css, showSource, sourceHtml, refreshSections, refreshTables, loadRevisions]);
 
   useEffect(() => { doSaveRef.current = doSave; }, [doSave]);
 
@@ -472,6 +555,67 @@ export function HtmlScriptEditor({
     row.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  // ── Table rows (Tables panel: add / move / remove + date slider) ──
+  function addTableRow(ti: number) {
+    const t = tablesRef.current[ti];
+    if (!t) return;
+    const rows = rowsOf(ti);
+    const last = rows[rows.length - 1];
+    let nr: HTMLTableRowElement;
+    if (last) {
+      nr = last.cloneNode(true) as HTMLTableRowElement;
+      nr.removeAttribute("data-week");
+      Array.from(nr.querySelectorAll("td")).forEach((td, i) => {
+        td.innerHTML = i === 0 ? '<span class="when">New</span><br>—' : "…";
+      });
+      last.parentNode?.insertBefore(nr, last.nextSibling);
+    } else {
+      const body = t.querySelector("tbody") ?? t;
+      const cols = t.querySelectorAll("thead th").length || 3;
+      nr = document.createElement("tr");
+      for (let i = 0; i < cols; i++) {
+        const td = document.createElement("td");
+        td.textContent = "…";
+        nr.appendChild(td);
+      }
+      body.appendChild(nr);
+    }
+    markDirty();
+    refreshTables();
+    nr.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  function moveTableRow(ti: number, ri: number, dir: -1 | 1) {
+    const rows = rowsOf(ti);
+    const a = rows[ri];
+    const b = rows[ri + dir];
+    if (!a || !b || !b.parentNode) return;
+    if (dir === -1) b.parentNode.insertBefore(a, b);
+    else b.parentNode.insertBefore(a, b.nextSibling);
+    markDirty();
+    refreshTables();
+  }
+  function removeTableRow(ti: number, ri: number) {
+    const r = rowsOf(ti)[ri];
+    if (!r) return;
+    if (!confirm("Remove this row?")) return;
+    r.remove();
+    markDirty();
+    refreshTables();
+  }
+  // Shift a dated row along the Aug→Nov timeline. Keeps the bold `.when`
+  // label (if any) and rewrites the date into a `.date-cell`.
+  function setRowWeek(ti: number, ri: number, week: number) {
+    const r = rowsOf(ti)[ri];
+    const first = r?.querySelector("td");
+    if (!r || !first) return;
+    const when = first.querySelector(".when");
+    const whenHtml = when ? when.outerHTML + "<br>" : "";
+    first.innerHTML = whenHtml + `<span class="date-cell">Wk ${week} · ${WEEK_LABELS[week - 1]}</span>`;
+    r.setAttribute("data-week", String(week));
+    markDirty();
+    refreshTables();
+  }
+
   // Newest revision that was a deliberate act — a manual Save, a section
   // edit, or an earlier revert. Auto-saves tag themselves "Auto-saved".
   const lastManual = revisions.find((r) => r.summary !== "Auto-saved");
@@ -510,6 +654,7 @@ export function HtmlScriptEditor({
         contentRef.current.innerHTML = html;
         setSourceHtml(html);
         refreshSections();
+        refreshTables();
       }
       dirtyRef.current = false;
       setDirty(false);
@@ -573,13 +718,20 @@ export function HtmlScriptEditor({
         )}
 
         <aside className="self-start space-y-3 lg:sticky lg:top-16">
-          <div className="grid grid-cols-3 gap-1 rounded-lg bg-elevated/60 p-1">
+          <div className="grid grid-cols-4 gap-1 rounded-lg bg-elevated/60 p-1">
             <button
               type="button"
               onClick={() => setTab("sections")}
               className={cn("inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "sections" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
             >
               <ListTree size={13} /> Sections
+            </button>
+            <button
+              type="button"
+              onClick={() => { setTab("tables"); refreshTables(); }}
+              className={cn("inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "tables" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
+            >
+              <Table2 size={13} /> Tables
             </button>
             <button
               type="button"
@@ -656,6 +808,57 @@ export function HtmlScriptEditor({
               )}
 
               <p className="px-1.5 pt-1.5 text-[10px] leading-relaxed text-muted">Structure changes save with the document.</p>
+            </div>
+          )}
+
+          {tab === "tables" && (
+            <div className="space-y-2 rounded-xl border border-line bg-card-solid p-2">
+              <p className="px-1.5 pt-1 text-[11px] font-bold uppercase tracking-wider text-subtle">Tables</p>
+              {tables.length === 0 && (
+                <p className="px-2 py-2 text-[11px] text-muted">No tables in this document.</p>
+              )}
+              {tables.map((tb, ti) => (
+                <div key={ti} className="overflow-hidden rounded-lg border border-line">
+                  <div className="flex items-center justify-between bg-elevated/60 px-2 py-1.5">
+                    <span className="truncate text-xs font-semibold text-fg" title={tb.label}>{tb.label}</span>
+                    {!readOnly && (
+                      <button type="button" onClick={() => addTableRow(ti)} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900">
+                        <Plus size={12} /> Row
+                      </button>
+                    )}
+                  </div>
+                  <ul className="space-y-0.5 p-1">
+                    {tb.rows.map((r, ri) => (
+                      <li key={ri} className="rounded-md px-1.5 py-1 hover:bg-elevated">
+                        <div className="flex items-center gap-0.5">
+                          <span className="w-4 shrink-0 text-right font-mono text-[10px] text-subtle">{ri + 1}</span>
+                          <span className="flex-1 truncate text-xs text-fg" title={r.label}>{r.label}</span>
+                          {!readOnly && (
+                            <>
+                              <button type="button" title="Move up" disabled={ri === 0} onClick={() => moveTableRow(ti, ri, -1)} className={miniBtn}><ChevronUp size={13} /></button>
+                              <button type="button" title="Move down" disabled={ri === tb.rows.length - 1} onClick={() => moveTableRow(ti, ri, 1)} className={miniBtn}><ChevronDown size={13} /></button>
+                              <button type="button" title="Remove row" onClick={() => removeTableRow(ti, ri)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
+                            </>
+                          )}
+                        </div>
+                        {!readOnly && r.week != null && (
+                          <div className="mt-1 flex items-center gap-2 pl-5">
+                            <input
+                              type="range" min={1} max={14} value={r.week}
+                              onChange={(e) => setRowWeek(ti, ri, parseInt(e.target.value, 10))}
+                              className="h-1 flex-1 cursor-pointer accent-brand-600"
+                              title="Shift this row along the Aug→Nov timeline"
+                            />
+                            <span className="w-[86px] shrink-0 text-[10px] font-semibold text-brand-700">Wk {r.week} · {WEEK_LABELS[r.week - 1]}</span>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                    {tb.rows.length === 0 && <li className="px-2 py-1.5 text-[11px] text-muted">No rows.</li>}
+                  </ul>
+                </div>
+              ))}
+              <p className="px-1.5 pb-1 text-[10px] leading-relaxed text-muted">Type in any cell to edit it. Use the slider to shift a dated row along the Aug→Nov timeline. Changes save with the document.</p>
             </div>
           )}
 
