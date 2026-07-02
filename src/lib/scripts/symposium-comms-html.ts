@@ -199,19 +199,23 @@ export const SYMPOSIUM_CSS = `:root {
     }
     .bar {
       grid-row: 1;
-      height: 15px;
+      min-height: 16px;
       border-radius: 4px;
       align-self: center;
-      margin: 0 2px;
+      margin: 3px 2px;
+      padding: 2px 5px;
       display: flex;
       align-items: center;
       justify-content: center;
+      text-align: center;
       color: #fff;
       font-size: 0.6rem;
       font-weight: 700;
       letter-spacing: 0.02em;
-      white-space: nowrap;
-      overflow: hidden;
+      line-height: 1.25;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .bar.g  { background: var(--green); }
     .bar.gd { background: var(--gold); }

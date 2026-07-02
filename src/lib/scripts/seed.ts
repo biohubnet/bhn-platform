@@ -63,8 +63,12 @@ export async function ensureBhnPromoProject(createdById: string | null): Promise
  * Lazy, idempotent seed for the 2026 Annual Symposium & Training Week
  * communications plan. Same shape as the Molly guide: a marketing project
  * holding one "html"-format script so it renders in the HtmlScriptEditor
- * (editable Gantt + full plan, shareable, version history). Never
- * overwrites an existing plan — once created, the team owns the content.
+ * (editable Gantt + full plan, shareable, version history).
+ *
+ * Content is team-owned once created — we never overwrite the HTML. But we
+ * DO keep the stylesheet current: if the module's CSS has changed (e.g. a
+ * styling fix like wrapping Gantt labels), we patch only `richContent.css`
+ * on the existing script, leaving the edited HTML untouched.
  */
 export async function ensureSymposiumCommsProject(createdById: string | null): Promise<void> {
   let project = await prisma.videoProject.findFirst({
@@ -86,9 +90,19 @@ export async function ensureSymposiumCommsProject(createdById: string | null): P
 
   const existing = await prisma.script.findFirst({
     where: { projectId: project.id, title: SYMPOSIUM_SCRIPT_TITLE },
-    select: { id: true },
+    select: { id: true, richContent: true },
   });
-  if (existing) return;
+  if (existing) {
+    // Keep the stylesheet current without touching the team's edited HTML.
+    const rc = (existing.richContent as { html?: string; css?: string } | null) ?? null;
+    if (rc && rc.css !== SYMPOSIUM_CSS) {
+      await prisma.script.update({
+        where: { id: existing.id },
+        data: { richContent: { kind: "html", html: rc.html ?? SYMPOSIUM_HTML, css: SYMPOSIUM_CSS } },
+      });
+    }
+    return;
+  }
 
   await prisma.script.create({
     data: {
