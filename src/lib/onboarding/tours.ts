@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.06.24b";
+export const TOUR_VERSION = "2026.07.02a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── 2026 Symposium communications plan — Jul 2026
+  {
+    id: "workspace.symposium-comms-plan",
+    title: "The 2026 Symposium comms plan is live",
+    body: "Workspace → Marketing → Video Production now holds the “2026 Annual Symposium & Training Week” project — a fully editable communications plan with a CSS Gantt timeline, pre/during/post-event promotion, a revised tiered sponsorship package, a sample Impact Report, and a full task breakdown. Edit any cell, drag sections, and share a link with the team.",
+    path: "/admin/workspace/marketing/video",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Video Production", href: "/admin/workspace/marketing/video" },
+    since: "2026.07.02a",
+  },
   // ─── Job Tailor — Jun 2026
   {
     id: "profile.job-tailor",

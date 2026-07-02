@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── 2026 Symposium communications plan — Jul 2026
+  {
+    title: "2026 Symposium & Training Week — communications plan",
+    body: "**Workspace → Marketing → Video Production** now has a second team-owned project: **“2026 Annual Symposium & Training Week.”** Open it for a fully editable communications plan — the same live-preview / editable / shareable / version-history surface as the Molly guide. It includes a **CSS Gantt chart** (14-week runway, Aug → event → Nov, colour-coded by workstream), a **pre-event promotion** cadence (Save-the-Date → Registration → Early Engagement → Teasers → Final Countdown), a **during-event / on-the-day** run-of-show, a **post-event** plan, a **sponsorship plan with a revised tiered 2026 package**, a **sample post-event Impact Report**, and a **full task breakdown** (checklists with owners) at the bottom. Built from last year's marketing timeline and the 2026 planning doc; edit any cell, drag sections, and share a link with the team.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── "Master resume" renamed to "Bullet Bank" — Jun 2026
   {
     title: "“Master resume” is now the Bullet Bank",

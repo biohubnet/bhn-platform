@@ -7,7 +7,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { VideoProjectsClient } from "@/components/workspace/VideoProjectsClient";
-import { ensureBhnPromoProject } from "@/lib/scripts/seed";
+import { ensureBhnPromoProject, ensureSymposiumCommsProject } from "@/lib/scripts/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +15,12 @@ export default async function VideoProductionPage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
 
-  // The BHN Promo Video Project is always present (no manual seed step).
-  await ensureBhnPromoProject((session.user as { id?: string }).id ?? null);
+  // Team-owned starter projects are always present (no manual seed step):
+  // the BHN Promo Video project (Molly guide) and the 2026 Symposium
+  // communications plan (editable Gantt + full plan).
+  const meId = (session.user as { id?: string }).id ?? null;
+  await ensureBhnPromoProject(meId);
+  await ensureSymposiumCommsProject(meId);
 
   const projects = await prisma.videoProject.findMany({
     where: { category: "marketing", isArchived: false },
