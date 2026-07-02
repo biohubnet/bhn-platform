@@ -150,7 +150,7 @@ export const SYMPOSIUM_CSS = `:root {
     /* ── Gantt chart ── */
     .gantt-scroll { overflow-x: auto; padding-bottom: 6px; }
     .gantt {
-      min-width: 940px;
+      min-width: 1180px;
       border: 1px solid var(--line);
       border-radius: 8px;
       overflow: hidden;
@@ -158,7 +158,7 @@ export const SYMPOSIUM_CSS = `:root {
     }
     .gantt-head, .gantt-row {
       display: grid;
-      grid-template-columns: 210px repeat(14, 1fr);
+      grid-template-columns: 190px repeat(17, 1fr);
     }
     .gantt-head {
       background: var(--green);
@@ -188,9 +188,34 @@ export const SYMPOSIUM_CSS = `:root {
     .gantt-track {
       grid-column: 2 / -1;
       display: grid;
-      grid-template-columns: repeat(14, 1fr);
+      grid-template-columns: repeat(17, 1fr);
       align-items: center;
       position: relative;
+    }
+    /* July runway (first 3 columns) — faint tint so the "optional early
+       start" zone reads as distinct from the live Aug→Nov campaign. */
+    .gantt-track > .cell:nth-child(-n+3) { background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.025) 5px, rgba(0,0,0,0.025) 10px); }
+    .gantt-head > div:nth-child(2), .gantt-head > div:nth-child(3), .gantt-head > div:nth-child(4) { opacity: 0.82; }
+    /* Draggable hint bubble (sits in the first row's empty space). */
+    .drag-hint {
+      grid-row: 1;
+      align-self: center;
+      justify-self: start;
+      background: var(--gold-soft);
+      color: #6b4e14;
+      border: 1px solid var(--gold);
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(184, 138, 45, 0.25);
+      animation: dragHintPulse 1.9s ease-in-out infinite;
+    }
+    @keyframes dragHintPulse {
+      0%, 100% { transform: translateX(0); opacity: 0.9; }
+      50% { transform: translateX(4px); opacity: 1; }
     }
     .gantt-track > .cell {
       border-left: 1px solid var(--line);
@@ -343,9 +368,13 @@ export const SYMPOSIUM_CSS = `:root {
 // re-heal every seeded plan to this pristine HTML on next load — used to
 // push a corrected baseline. Docs already carrying the current marker are
 // left untouched, so real team edits are never overwritten.
-export const PLAN_VERSION = "3";
+export const PLAN_VERSION = "4";
 
-export const SYMPOSIUM_HTML = `<main data-plan-version="3">
+// Gridline cells for one 17-column Gantt row (Jul 13 → Nov 2). Built once
+// and reused per row to keep the markup readable.
+const GANTT_CELLS = Array.from({ length: 17 }, (_, i) => `<div class="cell" style="grid-column:${i + 1}"></div>`).join("");
+
+export const SYMPOSIUM_HTML = `<main data-plan-version="4">
   <header>
     <span class="label">BioHubNet · Marketing &amp; Communications</span>
     <h1>2026 Annual Symposium &amp; Training Week — Communications Plan</h1>
@@ -379,11 +408,14 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="3">
   <article class="box" data-sid="gantt">
     <span class="eyebrow">Master timeline</span>
     <h2>Communications Gantt chart</h2>
-    <p class="sub">14-week runway, Aug 3 → event → Nov 2. Bars are colour-coded by workstream. <strong>Drag a bar to reschedule it</strong>, or drag either end to change its start or finish — the week columns are the header dates. (Add, reorder, or remove rows from the Tables panel on the right.)</p>
+    <p class="sub">17-week runway, Jul 13 &rarr; event &rarr; Nov 2. Bars are colour-coded by workstream. <strong>Drag a bar to reschedule it</strong>, or drag either end to change its start or finish &mdash; the week columns are the header dates. The three hatched columns before Aug 3 are optional early runway: drag a bar left to start sooner. (Add, reorder, or remove rows from the Tables panel on the right.)</p>
     <div class="gantt-scroll">
       <div class="gantt">
         <div class="gantt-head">
           <div>Workstream</div>
+          <div>Jul<span class="mon">13</span></div>
+          <div>Jul<span class="mon">20</span></div>
+          <div>Jul<span class="mon">27</span></div>
           <div>Aug<span class="mon">3</span></div>
           <div>Aug<span class="mon">10</span></div>
           <div>Aug<span class="mon">17</span></div>
@@ -402,97 +434,87 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="3">
 
         <div class="gantt-row">
           <div class="gantt-label">Foundation &amp; Save-the-Date</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar g" style="grid-column:1 / 4">Save-the-Date</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar g" style="grid-column:4 / 7">Save-the-Date</div>
+            <div class="drag-hint" style="grid-column:8 / 15">&harr; Tip: drag a bar or its ends to change dates</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Microsite / landing page build</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar bl" style="grid-column:1 / 6">Build &amp; go-live</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar bl" style="grid-column:4 / 9">Build &amp; go-live</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Sponsorship drive</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar gd" style="grid-column:1 / 11">Outreach → close sponsors</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar gd" style="grid-column:3 / 12">Outreach &rarr; print cutoff (Sep 21)</div>
+            <div class="bar gd" style="grid-column:12 / 16">digital sponsors</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Registration open (Luma)</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar g" style="grid-column:4 / 14">Open → close registration</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar g" style="grid-column:7 / 18">Open &rarr; close registration</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Content &amp; video filming</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar pl" style="grid-column:5 / 12">Promo + HQP testimonial videos</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar pl" style="grid-column:8 / 15">Promo + HQP testimonial videos</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Speaker / session spotlights</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar bl" style="grid-column:6 / 13">Keynote + panellist reveals</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar bl" style="grid-column:9 / 16">Keynote + panellist reveals</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Early engagement push (email/social)</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar gd" style="grid-column:7 / 13">Emails · carousels · reels</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar gd" style="grid-column:10 / 16">Emails &middot; carousels &middot; reels</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Workshop &amp; tour teasers</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar pl" style="grid-column:9 / 13">CDMO tours · CL3 · bootcamp</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar pl" style="grid-column:12 / 16">CDMO tours &middot; CL3 &middot; bootcamp</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Final countdown campaign</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar rs" style="grid-column:12 / 14">Logistics · reminders · hype</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar rs" style="grid-column:14 / 17">Logistics &middot; reminders &middot; hype</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Training Week + Symposium (LIVE)</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar event" style="grid-column:13 / 14">Oct 26–29 · LIVE</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar event" style="grid-column:16 / 17">Oct 26&ndash;29 &middot; LIVE</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Post-event: thank-you &amp; recap</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar g" style="grid-column:13 / 15">Wrap · gallery · survey</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar g" style="grid-column:16 / 18">Wrap &middot; gallery &middot; survey</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Report &amp; sponsor wrap</div>
-          <div class="gantt-track">
-            <div class="cell" style="grid-column:1"></div><div class="cell" style="grid-column:2"></div><div class="cell" style="grid-column:3"></div><div class="cell" style="grid-column:4"></div><div class="cell" style="grid-column:5"></div><div class="cell" style="grid-column:6"></div><div class="cell" style="grid-column:7"></div><div class="cell" style="grid-column:8"></div><div class="cell" style="grid-column:9"></div><div class="cell" style="grid-column:10"></div><div class="cell" style="grid-column:11"></div><div class="cell" style="grid-column:12"></div><div class="cell" style="grid-column:13"></div><div class="cell" style="grid-column:14"></div>
-            <div class="bar gd" style="grid-column:14 / 15">Report + sponsor deck</div>
+          <div class="gantt-track">${GANTT_CELLS}
+            <div class="bar gd" style="grid-column:17 / 18">Report + sponsor deck</div>
           </div>
         </div>
       </div>
@@ -504,6 +526,16 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="3">
       <span><span class="swatch" style="background:var(--plum)"></span> Content / video</span>
       <span><span class="swatch" style="background:var(--rose)"></span> Final countdown</span>
       <span><span class="swatch" style="background:#b3261e"></span> Live event</span>
+    </div>
+    <div class="callout" style="margin-top:14px">
+      <strong>Timeline dependencies to respect (sanity-check before locking dates):</strong>
+      <ul style="margin:8px 0 0;padding-left:18px;">
+        <li><strong>Sponsor logos for print/merch must lock ~6 weeks out (by ~Sep 21)</strong> &mdash; posters, signage, wayfinding and merch need 4&ndash;6 wks production. A later <em>digital</em> cutoff (~1 wk before) still gets a sponsor onto the microsite, slide loop and email footer.</li>
+        <li><strong>Merch/print order placed by mid-Sep</strong> (same 4&ndash;6 wk lead) &mdash; so it can't wait on late sponsor confirmations.</li>
+        <li><strong>Registration closes ~Oct 22 (1 wk out)</strong> to lock catering + badge headcount with the Chelsea Hotel.</li>
+        <li><strong>Keynote + panellists confirmed before the Speaker Spotlight series</strong> starts (early Sep) &mdash; the reveals are the engagement engine.</li>
+        <li><strong>Impact Report is realistically ~6&ndash;8 weeks post-event</strong> (last year's took ~3 months); publish the highlight reel + recap first to hold momentum.</li>
+      </ul>
     </div>
   </article>
 
@@ -530,7 +562,7 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="3">
         <tr>
           <td><span class="when">Early Engagement</span><br>Sep 7 – Oct 5 (Wk 6–10)</td>
           <td>Build momentum on programming; start speaker/session reveals; open sponsorship visibility.</td>
-          <td>Email #2 (program themes) · Speaker Spotlight series (keynote + Panels 1–3) · workshop &amp; agenda PDF · "Why attend" reel · sponsor logos added as they close.</td>
+          <td>Email #2 (program themes) · Speaker Spotlight series (keynote + Panels 1–3) · <strong>Sponsor Spotlight posts</strong> (welcome each sponsor as they close) · workshop &amp; agenda PDF · "Why attend" reel · sponsor logos added to microsite + email footer as they close.</td>
         </tr>
         <tr>
           <td><span class="when">Workshop &amp; Tour Teasers</span><br>Sep 28 – Oct 19 (Wk 9–12)</td>
@@ -538,9 +570,9 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="3">
           <td>One post per session (OBIO bootcamp, CATTI cell manufacturing, BioZone bioreactor, CL3/THCF tour, OmniaBio &amp; Eurofins CDMO tours) · registration deadline reminders.</td>
         </tr>
         <tr>
-          <td><span class="when">Final Countdown</span><br>Oct 19–26 (Wk 12–13)</td>
-          <td>Convert fence-sitters; equip confirmed attendees with logistics.</td>
-          <td>"2 weeks to go" + sponsor thank-you post · attendee info email (location, transit, agenda) · "Getting There" social · registration-closing notice · day-before hype post tagging speakers/partners.</td>
+          <td><span class="when">Final Countdown</span><br>Oct 15–26 (2 wks out)</td>
+          <td>Convert fence-sitters; equip confirmed attendees with logistics; registration closes ~Oct 22 for headcount.</td>
+          <td>"2 weeks to go" + sponsor thank-you post · attendee info email (location, transit, agenda) · "Getting There" social · registration-closing notice (~Oct 22) · day-before hype post tagging speakers/partners &amp; sponsors.</td>
         </tr>
       </tbody>
     </table>
@@ -561,8 +593,9 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="3">
           <li>Refreshed event key visual + flyer + signage/wayfinding.</li>
           <li>Registration promo video (why register, challenges we solve).</li>
           <li>HQP testimonial videos (played between sessions on the day).</li>
-          <li>Speaker Spotlight card template (keynote + each panellist).</li>
-          <li>Merch/print order — allow 4–6 wks production; pillar stickers.</li>
+          <li>Speaker Spotlight + <strong>Sponsor Spotlight</strong> card templates.</li>
+          <li>Sponsor logo lockups (tiered) for microsite, slide loop, email footer &amp; signage.</li>
+          <li>Merch/print order — allow 4–6 wks production; pillar stickers. <em>Lock sponsor logos before this goes to print (~Sep 21).</em></li>
         </ul>
       </div>
     </div>
@@ -692,9 +725,35 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="3">
       <li>Add a <strong>digital deliverables</strong> line: logo on microsite, slide loop, email footer, and delivered LinkedIn impressions.</li>
       <li>Refresh the visual to the 2026 key visual; keep a one-page "at a glance" tier comparison up front.</li>
       <li>Include the post-event <strong>sponsor thank-you deck</strong> as a named deliverable (proof of ROI → renewal).</li>
-      <li>Name the deadline to confirm (by <strong>Wk 10 / early Oct</strong>) so logos make print + signage.</li>
+      <li>State a <strong>two-stage deadline</strong>: a <strong>print cutoff (~Sep 21)</strong> so logos make posters / signage / merch (4–6 wk production), and a later <strong>digital cutoff (~1 wk out)</strong> for the microsite, slide loop &amp; email footer. (Confirming "by early Oct" is too late for anything printed.)</li>
     </ul>
-    <div class="callout" style="margin-top:12px">
+
+    <h3 style="margin:20px 0 8px;font-size:1.1rem">Sponsor visibility — every touchpoint to sell</h3>
+    <p class="sub" style="margin-bottom:12px">Map each tier to concrete, repeatable placements across the whole campaign — this is what makes the package easy to say yes to and easy to renew.</p>
+    <div class="cols-2">
+      <div class="card">
+        <h4>Before the event</h4>
+        <ul>
+          <li><strong>Microsite</strong> — tiered logo wall + "Presented by" lockup in the footer of every page.</li>
+          <li><strong>Email</strong> — sponsor logo strip in the footer of each blast (Save-the-Date → reminders).</li>
+          <li><strong>Print</strong> — logos on posters, flyers, signage &amp; wayfinding (needs the Sep 21 cutoff).</li>
+          <li><strong>Social</strong> — a "Welcome our sponsors" announcement post + a dedicated <strong>Sponsor Spotlight</strong> beat in the reveal series.</li>
+          <li><strong>Registration</strong> — sponsor mention in the Luma event page + confirmation email.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>On the day &amp; after</h4>
+        <ul>
+          <li><strong>Slide loop</strong> — rotating sponsor logos on the screens between sessions.</li>
+          <li><strong>Naming</strong> — sponsored session / panel / networking break or coffee; "reception sponsored by…".</li>
+          <li><strong>Booths + banners</strong> — exhibitor tables in the networking hall; banner at the registration desk.</li>
+          <li><strong>Verbal</strong> — MC shout-outs from stage at open/close; thank-you in the wrap post (tagged).</li>
+          <li><strong>Post-event</strong> — logo wall + recognition in the Impact Report; a sponsor thank-you deck with <em>delivered impressions per tier</em>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:14px">
       <strong>2025 sponsorship CTA to reuse &amp; strengthen:</strong> “By partnering with us as a sponsor, your organization will gain visibility among key stakeholders while supporting knowledge exchange and workforce development in this rapidly growing field.” Pair it with the tier table and a single <em>“Confirm your tier by [date]”</em> ask.
     </div>
   </article>

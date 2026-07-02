@@ -53,10 +53,11 @@ const AUTOSAVE_SECONDS = 30;
 // or drag either end — writing the new grid-column back to the bar's inline
 // style. Used only for a drag-readout tooltip here.
 const WEEK_LABELS = [
+  "Jul 13", "Jul 20", "Jul 27",
   "Aug 3", "Aug 10", "Aug 17", "Aug 24", "Aug 31", "Sep 7", "Sep 14",
   "Sep 21", "Sep 28", "Oct 5", "Oct 12", "Oct 19", "Oct 26", "Nov 2",
 ];
-const GANTT_COLS = 14;
+const GANTT_COLS = 17;
 
 function adaptCss(css: string): string {
   return css
