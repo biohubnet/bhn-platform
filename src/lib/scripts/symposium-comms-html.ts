@@ -343,9 +343,9 @@ export const SYMPOSIUM_CSS = `:root {
 // re-heal every seeded plan to this pristine HTML on next load — used to
 // push a corrected baseline. Docs already carrying the current marker are
 // left untouched, so real team edits are never overwritten.
-export const PLAN_VERSION = "2";
+export const PLAN_VERSION = "3";
 
-export const SYMPOSIUM_HTML = `<main data-plan-version="2">
+export const SYMPOSIUM_HTML = `<main data-plan-version="3">
   <header>
     <span class="label">BioHubNet · Marketing &amp; Communications</span>
     <h1>2026 Annual Symposium &amp; Training Week — Communications Plan</h1>
@@ -379,7 +379,7 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="2">
   <article class="box" data-sid="gantt">
     <span class="eyebrow">Master timeline</span>
     <h2>Communications Gantt chart</h2>
-    <p class="sub">14-week runway, Aug 3 → event → Nov 2. Bars are colour-coded by workstream. Edit a bar's <code>style="grid-column:START / END"</code> to reschedule it (columns 1–14 = the week columns).</p>
+    <p class="sub">14-week runway, Aug 3 → event → Nov 2. Bars are colour-coded by workstream. <strong>Drag a bar to reschedule it</strong>, or drag either end to change its start or finish — the week columns are the header dates. (Add, reorder, or remove rows from the Tables panel on the right.)</p>
     <div class="gantt-scroll">
       <div class="gantt">
         <div class="gantt-head">

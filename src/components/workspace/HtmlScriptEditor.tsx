@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Save, Loader2, CheckCircle2, AlertCircle, Code2, Pencil, History, ListTree,
   Plus, ChevronUp, ChevronDown, Trash2, RotateCcw, User as UserIcon, MessageSquare,
-  Table2, CalendarRange, Check, X,
+  Table2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { colorForKey, type PresencePeer } from "@/lib/scripts/presence";
@@ -46,59 +46,17 @@ interface Comment {
 
 const AUTOSAVE_SECONDS = 30;
 
-// ── Timeline slider (comms-plan tables) ──
-// Week columns for the 2026 Symposium runway, Aug 3 → Nov 2. The Tables
-// panel shows a slider on any dated row so its date can be shifted along
-// this axis without touching the Gantt chart. Feature-detected per row —
-// tables with no recognisable dates simply get no slider (so this is inert
-// for other html scripts, e.g. the Molly guide).
+// ── Gantt drag (comms-plan) ──
+// Week columns for the 2026 Symposium runway, Aug 3 → Nov 2 (14 columns).
+// The chart's bars sit in a 14-column CSS grid (grid-column: start / end,
+// 1-based grid lines 1–15). The editor makes each bar draggable — move it,
+// or drag either end — writing the new grid-column back to the bar's inline
+// style. Used only for a drag-readout tooltip here.
 const WEEK_LABELS = [
   "Aug 3", "Aug 10", "Aug 17", "Aug 24", "Aug 31", "Sep 7", "Sep 14",
   "Sep 21", "Sep 28", "Oct 5", "Oct 12", "Oct 19", "Oct 26", "Nov 2",
 ];
-const WEEK_ANCHORS: { wk: number; v: number }[] = [
-  { wk: 1, v: 8 * 31 + 3 }, { wk: 2, v: 8 * 31 + 10 }, { wk: 3, v: 8 * 31 + 17 },
-  { wk: 4, v: 8 * 31 + 24 }, { wk: 5, v: 8 * 31 + 31 }, { wk: 6, v: 9 * 31 + 7 },
-  { wk: 7, v: 9 * 31 + 14 }, { wk: 8, v: 9 * 31 + 21 }, { wk: 9, v: 9 * 31 + 28 },
-  { wk: 10, v: 10 * 31 + 5 }, { wk: 11, v: 10 * 31 + 12 }, { wk: 12, v: 10 * 31 + 19 },
-  { wk: 13, v: 10 * 31 + 26 }, { wk: 14, v: 11 * 31 + 2 },
-];
-const MONTH_NUM: Record<string, number> = { aug: 8, sep: 9, sept: 9, oct: 10, nov: 11 };
-
-/** Best-effort week (1–14) for a row from its first-cell text. Reads an
- *  explicit "Wk N" first, else maps the first "Mon DD" date to the nearest
- *  week anchor. Returns null when there's no date. The month match tolerates
- *  a digit directly before the month (e.g. "Day 0–1Oct 29" — no space after a
- *  <br>), so concatenated cells are still recognised. */
-function detectWeek(text: string): number | null {
-  const wk = text.match(/Wk\s*(\d{1,2})/i);
-  if (wk) { const n = parseInt(wk[1], 10); if (n >= 1 && n <= 14) return n; }
-  const md = text.match(/(?:^|[^a-z])(aug|sept|sep|oct|nov)[a-z]*\.?\s*(\d{1,2})/i);
-  if (md) {
-    const mo = MONTH_NUM[md[1].toLowerCase()];
-    const day = parseInt(md[2], 10);
-    if (mo) {
-      const v = mo * 31 + day;
-      let best = WEEK_ANCHORS[0];
-      for (const a of WEEK_ANCHORS) if (Math.abs(a.v - v) < Math.abs(best.v - v)) best = a;
-      return best.wk;
-    }
-  }
-  return null;
-}
-
-/** Start/end week for a row. Prefers an explicit "Wk X–Y" range, else falls
- *  back to a single detected week (start === end). null start = undated. */
-function detectRange(text: string): { start: number | null; end: number | null } {
-  const rng = text.match(/Wk\s*(\d{1,2})\s*[–—-]\s*(\d{1,2})/i);
-  if (rng) {
-    const s = parseInt(rng[1], 10);
-    const e = parseInt(rng[2], 10);
-    if (s >= 1 && s <= 14 && e >= 1 && e <= 14) return { start: s, end: e };
-  }
-  const single = detectWeek(text);
-  return { start: single, end: single };
-}
+const GANTT_COLS = 14;
 
 function adaptCss(css: string): string {
   return css
@@ -174,6 +132,9 @@ export function HtmlScriptEditor({
   const boxesRef = useRef<HTMLElement[]>([]);
   const intercutRef = useRef<HTMLElement[]>([]);
   const tablesRef = useRef<HTMLTableElement[]>([]);
+  // Re-marks the Gantt grid non-editable after the document HTML is replaced
+  // (source-view apply / restore), so bars stay drag-only, not text-editable.
+  const markGanttStaticRef = useRef<() => void>(() => {});
   const activeSidRef = useRef<string | null>(null);
   const recentRef = useRef<Map<string, number>>(new Map());
   const peersKeyRef = useRef<string>("");
@@ -197,11 +158,8 @@ export function HtmlScriptEditor({
   // Dialogue rows inside the "Draft Full Intercut Script" block (.intercut-row).
   const [intercut, setIntercut] = useState<{ label: string }[]>([]);
   const [hasIntercut, setHasIntercut] = useState(false);
-  // Tables panel: each table with its body rows (label + detected week, if
-  // any). `dated` = the table has ≥1 dated row, so every row shows the
-  // "Edit dates" button. The open range editor is tracked separately.
-  const [tables, setTables] = useState<{ label: string; dated: boolean; rows: { label: string; week: number | null }[] }[]>([]);
-  const [rangeEdit, setRangeEdit] = useState<{ ti: number; ri: number; start: number; end: number } | null>(null);
+  // Tables panel: each table with its body rows (add / reorder / remove).
+  const [tables, setTables] = useState<{ label: string; rows: { label: string }[] }[]>([]);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revLoading, setRevLoading] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -256,13 +214,13 @@ export function HtmlScriptEditor({
       const rows = body.length
         ? body
         : Array.from(t.querySelectorAll<HTMLTableRowElement>("tr")).filter((r) => !r.querySelector("th"));
-      const mapped = rows.map((r) => {
-        const txt = (r.querySelector("td")?.textContent ?? "").trim().replace(/\s+/g, " ");
-        const attr = r.getAttribute("data-week");
-        const week = attr ? parseInt(attr, 10) : detectWeek(txt);
-        return { label: txt.slice(0, 46) || "Row", week: week && week >= 1 && week <= 14 ? week : null };
-      });
-      return { label, dated: mapped.some((r) => r.week != null), rows: mapped };
+      return {
+        label,
+        rows: rows.map((r) => {
+          const txt = (r.querySelector("td")?.textContent ?? "").trim().replace(/\s+/g, " ");
+          return { label: txt.slice(0, 46) || "Row" };
+        }),
+      };
     }));
   }, []);
 
@@ -285,7 +243,9 @@ export function HtmlScriptEditor({
     const shadow = host.attachShadow({ mode: "open" });
 
     const style = document.createElement("style");
-    style.textContent = `${adaptCss(css)}\n:host{display:block}\n:host main{max-width:100%}`;
+    style.textContent = `${adaptCss(css)}\n:host{display:block}\n:host main{max-width:100%}`
+      + `\n:host .gantt .bar{user-select:none;-webkit-user-select:none;touch-action:none}`
+      + `\n:host .gantt .bar.hf-dragging{filter:brightness(1.08);box-shadow:0 0 0 2px rgba(0,0,0,0.18);z-index:6}`;
     const presenceStyle = document.createElement("style");
     presenceStyleRef.current = presenceStyle;
 
@@ -323,6 +283,82 @@ export function HtmlScriptEditor({
     content.addEventListener("mouseup", onSel);
     content.addEventListener("focusin", onSel);
     content.addEventListener("input", onInput);
+
+    // ── Gantt bars: drag to reschedule (move whole bar, or drag either end) ──
+    // The chart lives inside the editable document, so we drive it from here:
+    // the grid is made non-editable, and delegated pointer handlers rewrite
+    // each bar's `grid-column: start / end` (grid lines 1–15 over 14 week
+    // columns). The inline style is part of the saved HTML, so drags persist.
+    const markGanttStatic = () => {
+      const g = content.querySelector<HTMLElement>(".gantt");
+      if (g) g.contentEditable = "false";
+    };
+    markGanttStaticRef.current = markGanttStatic;
+    markGanttStatic();
+
+    const gLine = (track: HTMLElement, clientX: number) => {
+      const r = track.getBoundingClientRect();
+      const col = r.width / GANTT_COLS;
+      return Math.min(GANTT_COLS + 1, Math.max(1, 1 + Math.round((clientX - r.left) / col)));
+    };
+    const readCols = (bar: HTMLElement): [number, number] => {
+      const parts = (bar.style.gridColumn || "").split("/").map((s) => parseInt(s.trim(), 10));
+      const s = Number.isFinite(parts[0]) ? parts[0] : 1;
+      const e = Number.isFinite(parts[1]) ? parts[1] : s + 1;
+      return [s, e];
+    };
+    let drag: { bar: HTMLElement; track: HTMLElement; mode: "move" | "l" | "r"; s0: number; e0: number; line0: number } | null = null;
+    const onDragMove = (e: PointerEvent) => {
+      if (!drag) return;
+      const line = gLine(drag.track, e.clientX);
+      let ns = drag.s0, ne = drag.e0;
+      if (drag.mode === "move") {
+        const d = line - drag.line0;
+        ns = drag.s0 + d; ne = drag.e0 + d;
+        if (ns < 1) { ne += 1 - ns; ns = 1; }
+        if (ne > GANTT_COLS + 1) { ns -= ne - (GANTT_COLS + 1); ne = GANTT_COLS + 1; }
+      } else if (drag.mode === "l") {
+        ns = Math.min(Math.max(1, line), drag.e0 - 1);
+      } else {
+        ne = Math.max(Math.min(GANTT_COLS + 1, line), drag.s0 + 1);
+      }
+      drag.bar.style.gridColumn = `${ns} / ${ne}`;
+      drag.bar.title = `Wk ${ns}–${ne - 1} · ${WEEK_LABELS[ns - 1]} → ${WEEK_LABELS[ne - 2]}`;
+    };
+    const onDragUp = () => {
+      if (!drag) return;
+      drag.bar.classList.remove("hf-dragging");
+      drag = null;
+      window.removeEventListener("pointermove", onDragMove);
+      markDirty();
+    };
+    const onDragDown = (e: PointerEvent) => {
+      if (readOnly) return;
+      const bar = (e.target as Element)?.closest?.(".gantt .bar") as HTMLElement | null;
+      const track = bar?.closest?.(".gantt-track") as HTMLElement | null;
+      if (!bar || !track) return;
+      e.preventDefault();
+      const [s0, e0] = readCols(bar);
+      const rect = bar.getBoundingClientRect();
+      const rel = e.clientX - rect.left;
+      const edge = Math.min(18, rect.width * 0.28);
+      const mode = rel <= edge ? "l" : rel >= rect.width - edge ? "r" : "move";
+      drag = { bar, track, mode, s0, e0, line0: gLine(track, e.clientX) };
+      bar.classList.add("hf-dragging");
+      window.addEventListener("pointermove", onDragMove);
+      window.addEventListener("pointerup", onDragUp, { once: true });
+    };
+    const onDragHover = (e: PointerEvent) => {
+      if (readOnly || drag) return;
+      const bar = (e.target as Element)?.closest?.(".gantt .bar") as HTMLElement | null;
+      if (!bar) return;
+      const rect = bar.getBoundingClientRect();
+      const rel = e.clientX - rect.left;
+      const edge = Math.min(18, rect.width * 0.28);
+      bar.style.cursor = rel <= edge || rel >= rect.width - edge ? "ew-resize" : "grab";
+    };
+    content.addEventListener("pointerdown", onDragDown);
+    content.addEventListener("pointermove", onDragHover);
   }, [css, initialHtml, refreshSections, refreshTables, markDirty, readOnly]);
 
   // ── Presence heartbeat (~2s) ──
@@ -433,6 +469,7 @@ export function HtmlScriptEditor({
         contentRef.current.innerHTML = sourceHtml;
         refreshSections();
         refreshTables();
+        markGanttStaticRef.current();
       }
       dirtyRef.current = false;
       secondsRef.current = AUTOSAVE_SECONDS;
@@ -618,32 +655,6 @@ export function HtmlScriptEditor({
     markDirty();
     refreshTables();
   }
-  // Open the date-range editor for a row, pre-filled from its current dates.
-  function openRangeEditor(ti: number, ri: number) {
-    const txt = (rowsOf(ti)[ri]?.querySelector("td")?.textContent ?? "").replace(/\s+/g, " ");
-    const { start, end } = detectRange(txt);
-    setRangeEdit({ ti, ri, start: start ?? 1, end: end ?? start ?? 1 });
-  }
-  // Write a start–end week range into a row. Keeps the bold `.when` label (if
-  // any) and rewrites the date into a `.date-cell` as "Mon D – Mon D (Wk x–y)"
-  // (or a single "Mon D (Wk x)" when start === end).
-  function applyRange(ti: number, ri: number, start: number, end: number) {
-    const r = rowsOf(ti)[ri];
-    const first = r?.querySelector("td");
-    if (!r || !first) return;
-    const s = Math.min(start, end);
-    const e = Math.max(start, end);
-    const text = s === e
-      ? `${WEEK_LABELS[s - 1]} (Wk ${s})`
-      : `${WEEK_LABELS[s - 1]} – ${WEEK_LABELS[e - 1]} (Wk ${s}–${e})`;
-    const when = first.querySelector(".when");
-    const whenHtml = when ? when.outerHTML + "<br>" : "";
-    first.innerHTML = whenHtml + `<span class="date-cell">${text}</span>`;
-    r.setAttribute("data-week", String(s));
-    markDirty();
-    refreshTables();
-    setRangeEdit(null);
-  }
 
   // Newest revision that was a deliberate act — a manual Save, a section
   // edit, or an earlier revert. Auto-saves tag themselves "Auto-saved".
@@ -684,6 +695,7 @@ export function HtmlScriptEditor({
         setSourceHtml(html);
         refreshSections();
         refreshTables();
+        markGanttStaticRef.current();
       }
       dirtyRef.current = false;
       setDirty(false);
@@ -857,62 +869,26 @@ export function HtmlScriptEditor({
                     )}
                   </div>
                   <ul className="space-y-0.5 p-1">
-                    {tb.rows.map((r, ri) => {
-                      const editing = rangeEdit?.ti === ti && rangeEdit?.ri === ri;
-                      return (
+                    {tb.rows.map((r, ri) => (
                       <li key={ri} className="rounded-md px-1.5 py-1 hover:bg-elevated">
                         <div className="flex items-center gap-0.5">
                           <span className="w-4 shrink-0 text-right font-mono text-[10px] text-subtle">{ri + 1}</span>
                           <span className="flex-1 truncate text-xs text-fg" title={r.label}>{r.label}</span>
                           {!readOnly && (
                             <>
-                              {tb.dated && (
-                                <button type="button" title="Edit date range" onClick={() => (editing ? setRangeEdit(null) : openRangeEditor(ti, ri))} className={cn(miniBtn, editing && "text-brand-700 bg-elevated")}><CalendarRange size={13} /></button>
-                              )}
                               <button type="button" title="Move up" disabled={ri === 0} onClick={() => moveTableRow(ti, ri, -1)} className={miniBtn}><ChevronUp size={13} /></button>
                               <button type="button" title="Move down" disabled={ri === tb.rows.length - 1} onClick={() => moveTableRow(ti, ri, 1)} className={miniBtn}><ChevronDown size={13} /></button>
                               <button type="button" title="Remove row" onClick={() => removeTableRow(ti, ri)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
                             </>
                           )}
                         </div>
-                        {!readOnly && editing && (
-                          <div className="mt-1.5 rounded-md border border-line bg-elevated/50 p-2 pl-5">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <label className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-subtle">
-                                From
-                                <select
-                                  value={rangeEdit.start}
-                                  onChange={(e) => setRangeEdit({ ...rangeEdit, start: parseInt(e.target.value, 10) })}
-                                  className="rounded border border-line bg-card-solid px-1 py-0.5 text-[11px] font-normal normal-case tracking-normal text-fg"
-                                >
-                                  {WEEK_LABELS.map((lbl, i) => <option key={i} value={i + 1}>Wk {i + 1} · {lbl}</option>)}
-                                </select>
-                              </label>
-                              <label className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-subtle">
-                                To
-                                <select
-                                  value={rangeEdit.end}
-                                  onChange={(e) => setRangeEdit({ ...rangeEdit, end: parseInt(e.target.value, 10) })}
-                                  className="rounded border border-line bg-card-solid px-1 py-0.5 text-[11px] font-normal normal-case tracking-normal text-fg"
-                                >
-                                  {WEEK_LABELS.map((lbl, i) => <option key={i} value={i + 1}>Wk {i + 1} · {lbl}</option>)}
-                                </select>
-                              </label>
-                              <div className="ml-auto flex items-center gap-1">
-                                <button type="button" title="Apply" onClick={() => applyRange(ti, ri, rangeEdit.start, rangeEdit.end)} className="inline-flex items-center gap-1 rounded-md bg-brand-600 px-2 py-1 text-[11px] font-bold text-white hover:bg-brand-700"><Check size={12} /> Apply</button>
-                                <button type="button" title="Cancel" onClick={() => setRangeEdit(null)} className={cn(miniBtn)}><X size={13} /></button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </li>
-                      );
-                    })}
+                    ))}
                     {tb.rows.length === 0 && <li className="px-2 py-1.5 text-[11px] text-muted">No rows.</li>}
                   </ul>
                 </div>
               ))}
-              <p className="px-1.5 pb-1 text-[10px] leading-relaxed text-muted">Type in any cell to edit it. Use the calendar button to set a row&rsquo;s date range. Changes save with the document.</p>
+              <p className="px-1.5 pb-1 text-[10px] leading-relaxed text-muted">Add, reorder, or remove table rows here. Type in any cell to edit it. To change a schedule date, drag its bar on the Gantt chart. Changes save with the document.</p>
             </div>
           )}
 
