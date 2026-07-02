@@ -37,11 +37,11 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "workspace.symposium-comms-plan",
     title: "The 2026 Symposium comms plan is live",
-    body: "Workspace → Marketing → Video Production now holds the “2026 Annual Symposium & Training Week” project — a fully editable communications plan with a CSS Gantt timeline, pre/during/post-event promotion, a revised tiered sponsorship package, a sample Impact Report, and a full task breakdown. Edit any cell, drag sections, and share a link with the team.",
-    path: "/admin/workspace/marketing/video",
+    body: "New Workspace → Marketing → 26 Symposium Comms Plan tab — a fully editable communications plan with a CSS Gantt timeline, pre/during/post-event promotion, a revised tiered sponsorship package, a sample Impact Report, and a full task breakdown. Edit any cell, drag sections, and share a link with the team.",
+    path: "/admin/workspace/marketing/symposium",
     placement: "center",
     roles: ["admin", "superadmin"],
-    cta: { label: "Open Video Production", href: "/admin/workspace/marketing/video" },
+    cta: { label: "Open the comms plan", href: "/admin/workspace/marketing/symposium" },
     since: "2026.07.02a",
   },
   // ─── Job Tailor — Jun 2026

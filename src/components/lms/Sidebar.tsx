@@ -66,6 +66,7 @@ import {
   Clapperboard,
   BookUser,
   Radar,
+  CalendarClock,
 } from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationInbox";
 
@@ -292,6 +293,20 @@ const workspaceVideoItem: NavItem = {
   minRole: "admin",
   description:
     "Plan promo videos and draft their scripts. Scripts get shareable links for collaborative editing — contributors don't need an account.",
+};
+
+// WORKSPACE → Marketing → 26 Symposium Comms Plan. Opens the 2026 Annual
+// Symposium & Training Week communications plan straight into the editable
+// HTML editor (Gantt timeline, pre/during/post promotion, sponsorship,
+// sample report, task breakdown) — a dedicated tab, not buried in Video
+// Production.
+const workspaceSymposiumItem: NavItem = {
+  label: "26 Symposium Comms Plan",
+  href: "/admin/workspace/marketing/symposium",
+  icon: CalendarClock,
+  minRole: "admin",
+  description:
+    "The full communications & marketing playbook for the 2026 Annual Symposium and Training Week — editable Gantt timeline, pre/during/post promotion, sponsorship, sample report, and task breakdown. Shareable for collaborative editing.",
 };
 
 // WORKSPACE → Outreach. Sibling of Marketing and File Sharing. Two views:
@@ -1652,6 +1667,7 @@ export function Sidebar({
           >
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Marketing">
               <NavLink item={workspaceVideoItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+              <NavLink item={workspaceSymposiumItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
             </AdminSubgroup>
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Outreach">
               <NavLink item={workspaceOutreachContactsItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
