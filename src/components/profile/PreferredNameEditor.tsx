@@ -254,7 +254,7 @@ function ChipRow({
                 : "bg-brand-50 text-brand-700 font-medium hover:bg-brand-100")
             }
           >
-            {honorific ? <span className="opacity-70 mr-0.5">{honorific}</span> : null}
+            {honorific ? <span className="opacity-90 mr-0.5">{honorific}</span> : null}
             <span>{honorific ? s.slice(honorific.length + 1) : s}</span>
           </button>
         );

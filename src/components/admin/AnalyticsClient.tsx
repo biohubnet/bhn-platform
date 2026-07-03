@@ -145,7 +145,12 @@ export function AnalyticsClient() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={range} onChange={(e) => setRange(e.target.value)} className="w-36">
+          <Select
+            value={range}
+            onChange={(e) => setRange(e.target.value)}
+            className="w-36"
+            aria-label="Analytics date range"
+          >
             <option value="7">7 days</option>
             <option value="30">30 days</option>
             <option value="90">90 days</option>
@@ -215,7 +220,7 @@ export function AnalyticsClient() {
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h3 className="font-semibold text-fg flex items-center gap-2"><TrendingUp size={16} className="text-brand-600" /> User growth</h3>
+              <h2 className="font-semibold text-fg flex items-center gap-2"><TrendingUp size={16} className="text-brand-600" /> User growth</h2>
               <p className="text-xs text-subtle mt-0.5">Daily new sign-ups</p>
             </div>
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 font-medium">
@@ -245,7 +250,7 @@ export function AnalyticsClient() {
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h3 className="font-semibold text-fg flex items-center gap-2"><Activity size={16} className="text-emerald-600" /> Daily activity</h3>
+              <h2 className="font-semibold text-fg flex items-center gap-2"><Activity size={16} className="text-emerald-600" /> Daily activity</h2>
               <p className="text-xs text-subtle mt-0.5">Page views and unique users per day</p>
             </div>
           </div>
@@ -269,9 +274,9 @@ export function AnalyticsClient() {
       {/* Funnel + Top paths */}
       <div className="grid lg:grid-cols-3 gap-4">
         <Card className="p-5 lg:col-span-1">
-          <h3 className="font-semibold text-fg flex items-center gap-2 mb-4">
+          <h2 className="font-semibold text-fg flex items-center gap-2 mb-4">
             <ArrowDownRight size={16} className="text-violet-600" /> Conversion funnel
-          </h3>
+          </h2>
           <div className="space-y-2.5">
             {funnelSteps.map((step, i) => {
               const v = data.funnel[step.key];
@@ -302,7 +307,7 @@ export function AnalyticsClient() {
         </Card>
 
         <Card className="p-5 lg:col-span-2">
-          <h3 className="font-semibold text-fg mb-3">Top pages</h3>
+          <h2 className="font-semibold text-fg mb-3">Top pages</h2>
           {data.topPaths.length === 0 ? (
             <p className="text-sm text-subtle py-8 text-center">No page views yet.</p>
           ) : (
@@ -331,7 +336,7 @@ export function AnalyticsClient() {
       {/* Top courses + Event names */}
       <div className="grid lg:grid-cols-2 gap-4">
         <Card className="p-5">
-          <h3 className="font-semibold text-fg mb-3">Top courses</h3>
+          <h2 className="font-semibold text-fg mb-3">Top courses</h2>
           {data.topCourses.length === 0 ? (
             <p className="text-sm text-subtle py-8 text-center">No course traffic yet.</p>
           ) : (
@@ -357,7 +362,7 @@ export function AnalyticsClient() {
         </Card>
 
         <Card className="p-5">
-          <h3 className="font-semibold text-fg mb-3">Top events</h3>
+          <h2 className="font-semibold text-fg mb-3">Top events</h2>
           {data.eventNames.length === 0 ? (
             <p className="text-sm text-subtle py-8 text-center">No events yet.</p>
           ) : (
@@ -405,9 +410,9 @@ function Donut({
   const total = data.reduce((s, d) => s + d.value, 0);
   return (
     <Card className="p-5">
-      <h3 className="font-semibold text-fg flex items-center gap-2 mb-3">
+      <h2 className="font-semibold text-fg flex items-center gap-2 mb-3">
         <Icon size={16} className="text-brand-600" /> {title}
-      </h3>
+      </h2>
       {total === 0 ? (
         <p className="text-sm text-subtle py-8 text-center">{empty ?? "No data yet."}</p>
       ) : (

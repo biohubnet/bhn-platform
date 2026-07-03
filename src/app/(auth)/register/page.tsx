@@ -218,7 +218,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-card to-brand-100 px-4 py-8">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-card to-brand-100 px-4 py-8">
       <div className="w-full max-w-md">
         <Link href="/login" className="flex justify-center mb-8">
           <Logo size="lg" />
@@ -317,10 +317,11 @@ export default function RegisterPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-muted mb-1.5">
+                <label htmlFor="reg-job-title" className="block text-xs font-medium text-muted mb-1.5">
                   I am a… <span className="text-subtle">(optional)</span>
                 </label>
                 <select
+                  id="reg-job-title"
                   value={form.jobTitle}
                   onChange={(e) => setForm({ ...form, jobTitle: e.target.value })}
                   className={inputCls}
@@ -332,8 +333,9 @@ export default function RegisterPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-muted mb-1.5">Language</label>
+                <label htmlFor="reg-locale" className="block text-xs font-medium text-muted mb-1.5">Language</label>
                 <select
+                  id="reg-locale"
                   value={form.locale}
                   onChange={(e) => setForm({ ...form, locale: e.target.value })}
                   className={inputCls}
@@ -350,10 +352,11 @@ export default function RegisterPage() {
                 user.organization. Stored as the official partner
                 name (or free-text "Other"). */}
             <div>
-              <label className="block text-xs font-medium text-muted mb-1.5">
+              <label htmlFor="reg-institution" className="block text-xs font-medium text-muted mb-1.5">
                 Institution / Affiliation <span className="text-subtle">(optional)</span>
               </label>
               <select
+                id="reg-institution"
                 value={form.institution}
                 onChange={(e) => setForm({ ...form, institution: e.target.value, institutionOther: e.target.value === "other" ? form.institutionOther : "" })}
                 className={inputCls}
@@ -482,6 +485,6 @@ export default function RegisterPage() {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

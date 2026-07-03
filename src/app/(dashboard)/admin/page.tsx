@@ -102,9 +102,9 @@ export default async function AdminPage() {
           { label: "Manage Users", href: "/admin/users", color: "bg-brand-600" },
           { label: "Enrollments", href: "/admin/enrollments", color: "bg-indigo-600" },
           { label: "Groups", href: "/admin/groups", color: "bg-violet-600" },
-          { label: "Compliance Report", href: "/admin/reports", color: "bg-green-600" },
+          { label: "Compliance Report", href: "/admin/reports", color: "bg-green-700" },
           { label: "Certificates", href: "/admin/certificates", color: "bg-purple-600" },
-          { label: "Announcements", href: "/admin/announcements", color: "bg-amber-500" },
+          { label: "Announcements", href: "/admin/announcements", color: "bg-amber-700" },
           { label: "Audit Log", href: "/admin/audit", color: "bg-gray-700" },
           { label: "Platform Settings", href: "/admin/settings", color: "bg-slate-600" },
         ].map((l) => (

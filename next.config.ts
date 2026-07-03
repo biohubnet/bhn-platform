@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Pin the workspace root explicitly. Without this, Turbopack's root
+  // inference walks up from cwd looking for the nearest lockfile and can
+  // land on an unrelated ancestor directory if one happens to exist above
+  // the repo (e.g. a stray lockfile in $HOME) — silently resolving
+  // node_modules from the wrong place and breaking `next dev`.
+  turbopack: {
+    root: __dirname,
+  },
   // ── HTTP security headers (OWASP A05 hardening, May 2026) ───────
   // Applied to every route via a catch-all source pattern.
   // X-Frame-Options: SAMEORIGIN — clickjacking protection that still

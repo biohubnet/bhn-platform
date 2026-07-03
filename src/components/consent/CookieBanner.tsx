@@ -24,20 +24,28 @@ export function CookieBanner() {
   if (!ready || hasDecided) return null;
 
   return (
-    <div className="fixed inset-x-3 bottom-3 z-50 max-w-3xl mx-auto animate-slide-up-in">
+    <div
+      role="region"
+      aria-label={t("consent.title")}
+      className="fixed inset-x-3 bottom-3 z-50 max-w-3xl mx-auto animate-slide-up-in"
+    >
       <div className="bg-card-solid border border-line rounded-[var(--radius-xl)] shadow-2xl shadow-brand-900/15 p-5 sm:p-6">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
             <ShieldCheck size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-fg">{t("consent.title")}</h3>
+            {/* Not a heading: this floating widget sits outside the page's own
+                content flow, and its role="region" + aria-label above already
+                supply the accessible name — an <h3> here could skip a level
+                on pages whose own heading outline hasn't reached one yet. */}
+            <p className="font-semibold text-fg" aria-hidden="true">{t("consent.title")}</p>
             <p className="text-sm text-muted mt-1 leading-relaxed">
               {t("consent.body")}{" "}
-              <Link href="/privacy" className="text-brand-600 underline-offset-2 hover:underline">
+              <Link href="/privacy" className="text-brand-600 underline underline-offset-2">
                 {t("consent.privacyPolicy")}
               </Link>{" · "}
-              <Link href="/terms" className="text-brand-600 underline-offset-2 hover:underline">
+              <Link href="/terms" className="text-brand-600 underline underline-offset-2">
                 {t("consent.termsOfService")}
               </Link>
             </p>

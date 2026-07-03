@@ -1212,7 +1212,7 @@ function NavLink({ item, pathname, onNavigate, queueCounts }: {
               className={cn(
                 "shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold tabular-nums",
                 isUrgent
-                  ? "bg-rose-500 text-white animate-nav-badge-pulse"
+                  ? "bg-rose-600 text-white animate-nav-badge-pulse"
                   : "bg-brand-100 text-brand-800 ring-1 ring-inset ring-brand-200",
               )}
               aria-label={`${badgeCount} pending`}
@@ -1395,8 +1395,7 @@ export function Sidebar({
         )}
       />
 
-      <aside
-        role="navigation"
+      <nav
         aria-label="Main navigation"
         className={cn(
           // Desktop: static, w-64. Mobile: fixed-position drawer that
@@ -1861,7 +1860,7 @@ export function Sidebar({
           <LogOut size={14} />
         </button>
       </div>
-    </aside>
+    </nav>
     </>
   );
 }

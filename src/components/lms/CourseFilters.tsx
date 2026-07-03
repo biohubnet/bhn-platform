@@ -183,7 +183,7 @@ function ChipGroup({
   const sel = new Set(selected);
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-slate-500 mb-1.5">
+      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-slate-400 mb-1.5">
         {label}
         {selected.length > 0 && (
           <span className="ml-2 text-amber-300 normal-case tracking-normal font-semibold">

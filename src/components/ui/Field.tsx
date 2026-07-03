@@ -1,5 +1,5 @@
 "use client";
-import { ReactNode, InputHTMLAttributes, TextareaHTMLAttributes, SelectHTMLAttributes, forwardRef } from "react";
+import { ReactNode, ReactElement, InputHTMLAttributes, TextareaHTMLAttributes, SelectHTMLAttributes, forwardRef, isValidElement, cloneElement, useId } from "react";
 import { cn } from "@/lib/utils";
 
 const inputClass =
@@ -16,15 +16,31 @@ interface FieldProps {
 }
 
 export function Field({ label, hint, error, required, children, className }: FieldProps) {
+  // Every <Field label="X"><Input/></Field> call site across the app gets a
+  // programmatically-associated label for free: generate a stable id here
+  // (useId is SSR-safe — no hydration mismatch) and clone it onto the single
+  // child control, unless the caller already gave it an explicit id (that
+  // wins). This was previously a purely visual label with no htmlFor/id
+  // link at all — the single biggest source of "missing form label" a11y
+  // violations in the app, since every consumer inherited the gap.
+  const generatedId = useId();
+  let control = children;
+  let controlId: string | undefined;
+  if (isValidElement(children)) {
+    const el = children as ReactElement<{ id?: string }>;
+    controlId = el.props.id ?? generatedId;
+    control = cloneElement(el, { id: controlId });
+  }
+
   return (
     <div className={cn("space-y-1.5", className)}>
       {label && (
-        <label className="block text-xs font-medium text-muted">
+        <label htmlFor={controlId} className="block text-xs font-medium text-muted">
           {label}
           {required && <span className="text-rose-500 ml-0.5">*</span>}
         </label>
       )}
-      {children}
+      {control}
       {hint && !error && <p className="text-xs text-subtle">{hint}</p>}
       {error && <p className="text-xs text-rose-500">{error}</p>}
     </div>

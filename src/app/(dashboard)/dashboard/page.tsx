@@ -1482,12 +1482,19 @@ function PrimaryNextCard({
  */
 function ExploreLinks({ credits }: { credits: number }) {
   return (
-    <p className="text-xs text-muted flex flex-wrap items-center gap-x-4 gap-y-1">
-      <Link href="/courses"      className="hover:text-fg hover:underline">Browse courses</Link>
-      <Link href="/pathways"     className="hover:text-fg hover:underline">Pathways</Link>
-      <Link href="/certificates" className="hover:text-fg hover:underline">Certificates</Link>
-      <Link href="/credits"      className="hover:text-fg hover:underline">{credits.toLocaleString()} credits</Link>
-      <Link href="/experience"   className="hover:text-fg hover:underline">How the program works</Link>
+    <p className="text-xs text-muted flex flex-wrap items-center gap-x-3 gap-y-2">
+      {/* Real (non-canceled) padding + a real row gap — a negative-margin
+          "invisible padding" trick was tried here first, but on narrow
+          mobile widths this row wraps to 2-3 lines and the expanded,
+          overlapping hit-boxes from adjacent wrapped rows triggered axe's
+          "partiallyObscured" target-size failure. Genuine padding + gap-y
+          avoids that: no overlap is possible because the boxes actually
+          occupy the space they claim. */}
+      <Link href="/courses"      className="hover:text-fg hover:underline inline-block px-1 py-2.5">Browse courses</Link>
+      <Link href="/pathways"     className="hover:text-fg hover:underline inline-block px-1 py-2.5">Pathways</Link>
+      <Link href="/certificates" className="hover:text-fg hover:underline inline-block px-1 py-2.5">Certificates</Link>
+      <Link href="/credits"      className="hover:text-fg hover:underline inline-block px-1 py-2.5">{credits.toLocaleString()} credits</Link>
+      <Link href="/experience"   className="hover:text-fg hover:underline inline-block px-1 py-2.5">How the program works</Link>
     </p>
   );
 }

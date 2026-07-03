@@ -34,6 +34,7 @@ export default async function ForTraineesPage() {
         </div>
       </nav>
 
+      <main>
       {/* Hero */}
       <section className="full-bleed relative overflow-hidden text-white -mt-2 hero-mesh-teal">
         <div className="absolute inset-0 pointer-events-none">
@@ -165,6 +166,7 @@ export default async function ForTraineesPage() {
           </div>
         </details>
       </section>
+      </main>
 
       <footer className="max-w-7xl mx-auto px-6 py-10 border-t border-line text-center text-xs text-subtle">
         © {new Date().getFullYear()} BioHubNet · <Link href="/privacy" className="hover:text-fg">Privacy</Link> · <Link href="/terms" className="hover:text-fg">Terms</Link> · <Link href="/security" className="hover:text-fg">Security</Link>

@@ -304,7 +304,7 @@ export default async function AdminDesignSystemPage() {
             <button className="inline-flex items-center gap-1.5 rounded-xl bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200 hover:bg-rose-100 px-3 py-2 text-xs font-bold">
               <XCircle size={12} /> Destructive
             </button>
-            <button className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 text-white admin-glow hover:bg-emerald-700 px-3 py-2 text-xs font-bold">
+            <button className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 text-white admin-glow hover:bg-emerald-800 px-3 py-2 text-xs font-bold">
               <Check size={12} /> Approval (admin)
             </button>
             <button className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 px-3 py-1.5 text-xs font-bold">
@@ -377,30 +377,33 @@ export default async function AdminDesignSystemPage() {
         <SubSection title="Form fields">
           <div className="space-y-3 max-w-md">
             <div>
-              <label className="block text-sm font-semibold text-fg mb-1.5">
+              <label htmlFor="ds-demo-email" className="block text-sm font-semibold text-fg mb-1.5">
                 Email
               </label>
               <input
+                id="ds-demo-email"
                 type="email"
                 placeholder="you@biohubnet.ca"
                 className="w-full bg-card border border-line rounded-lg px-3 py-2 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-fg mb-1.5">
+              <label htmlFor="ds-demo-notes" className="block text-sm font-semibold text-fg mb-1.5">
                 Notes
               </label>
               <textarea
+                id="ds-demo-notes"
                 rows={3}
                 placeholder="Anything else we should know?"
                 className="w-full bg-card border border-line rounded-lg px-3 py-2 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 resize-y"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-fg mb-1.5">
+              <label htmlFor="ds-demo-disabled" className="block text-sm font-semibold text-fg mb-1.5">
                 Disabled
               </label>
               <input
+                id="ds-demo-disabled"
                 type="text"
                 disabled
                 value="Can't edit this"
@@ -836,7 +839,7 @@ function NavRowDemo({ label, count }: { label: string; count: number }) {
   const badgeText = count === 0 ? null : count > 99 ? "99+" : String(count);
   const tone =
     count >= 6
-      ? "bg-rose-500 text-white"
+      ? "bg-rose-600 text-white"
       : "bg-brand-100 text-brand-800 ring-1 ring-inset ring-brand-200";
   return (
     <div className="inline-flex items-center gap-3 px-3 py-2 rounded-lg bg-card border border-line text-sm min-w-[200px]">
@@ -870,8 +873,10 @@ function Chip({ tone, children }: { tone: "emerald" | "violet" | "amber" | "rose
 function Pair({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex items-baseline gap-2">
-      <code className="font-mono text-fg bg-elevated px-1.5 py-0.5 rounded text-[11px]">{k}</code>
-      <span className="text-muted">{v}</span>
+      <dt className="shrink-0">
+        <code className="font-mono text-fg bg-elevated px-1.5 py-0.5 rounded text-[11px]">{k}</code>
+      </dt>
+      <dd className="text-muted">{v}</dd>
     </div>
   );
 }

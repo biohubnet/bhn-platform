@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Accessibility pass (WCAG 2.2 AA) — Jul 2026
+  {
+    title: "Accessibility pass across the app (WCAG 2.2 AA)",
+    body: "Ran an automated accessibility audit (axe-core, wired into the Playwright suite so it now gates every PR) across the public marketing pages, trainee dashboard, admin, and employer surfaces, and fixed everything it found: form fields that weren't announced to screen readers now are (the shared **Field** component associates every label automatically), the main navigation is a proper `<nav>` landmark, page content sits inside a `<main>` landmark, heading levels no longer skip, and several low-contrast text/badge colors were darkened to meet the 4.5:1 minimum. Nothing about how any page looks or works changed — this is entirely about screen-reader and keyboard users getting a correctly-structured page.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── 2026 Symposium communications plan — Jul 2026
   {
     title: "2026 Symposium & Training Week — communications plan",

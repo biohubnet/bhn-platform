@@ -240,7 +240,7 @@ export function CourseCard({ course }: CourseCardProps) {
             chip carries its own opaque container so the contrast
             inside the chip is unchanged; sitting them on a darker
             band actually crispens the chip silhouettes. */}
-        <aside
+        <div
           className={cn(
             "p-2.5 sm:p-3 flex flex-col gap-1",
             "bg-slate-800 text-white",
@@ -299,7 +299,7 @@ export function CourseCard({ course }: CourseCardProps) {
               )}
             </div>
           )}
-        </aside>
+        </div>
       </div>
 
       {/* ── CTA BAR — slim, full-width, theme-aware brand fill ── */}
