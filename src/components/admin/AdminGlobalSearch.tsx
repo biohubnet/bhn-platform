@@ -8,6 +8,9 @@ interface ResultItem {
   title: string;
   subtitle?: string;
   href: string;
+  indexName: string;
+  queryID: string;
+  position: number;
 }
 interface SearchResults {
   users: ResultItem[];
@@ -24,8 +27,9 @@ const SECTIONS: { key: keyof SearchResults; label: string; icon: React.ElementTy
 
 /**
  * One search box across users, courses, and internship postings —
- * plain Postgres `contains` under the hood (see api/admin/search).
- * Debounced client-side; the API itself no-ops under 2 characters.
+ * backed by Algolia (see api/admin/search + lib/algolia.ts). Debounced
+ * client-side; the API itself no-ops under 2 characters. Every result
+ * click reports an Insights event via /api/admin/search/click.
  */
 export function AdminGlobalSearch() {
   const [query, setQuery] = useState("");
@@ -69,6 +73,20 @@ export function AdminGlobalSearch() {
   const displayResults = query.trim().length >= 2 ? results : EMPTY;
   const totalCount = displayResults.users.length + displayResults.courses.length + displayResults.postings.length;
   const showDropdown = open && query.trim().length >= 2;
+
+  // Fire-and-forget Algolia Insights click event — never blocks navigation.
+  function reportClick(item: ResultItem) {
+    fetch("/api/admin/search/click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        indexName: item.indexName,
+        objectID: item.id,
+        position: item.position,
+        queryID: item.queryID,
+      }),
+    }).catch(() => {});
+  }
 
   return (
     <div ref={boxRef} className="relative w-full max-w-sm">
@@ -115,7 +133,7 @@ export function AdminGlobalSearch() {
                     <Link
                       key={item.id}
                       href={item.href}
-                      onClick={() => { setOpen(false); setQuery(""); }}
+                      onClick={() => { reportClick(item); setOpen(false); setQuery(""); }}
                       className="block px-3 py-1.5 hover:bg-elevated"
                     >
                       <p className="text-sm text-fg font-medium truncate">{item.title}</p>

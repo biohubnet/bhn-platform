@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Admin global search — Jul 2026
   {
     title: "Global search in the sidebar",
-    body: "A search box in the sidebar — reachable from any page, not just **Admin Dashboard** — looks up users, courses, and internship postings at once. Type a name, email, course title/code, or company, and jump straight to it. Clicking a user result opens **Users** already filtered to them; courses and postings open directly. Backed by Algolia for faster, more forgiving matching (typos, partial words) as the platform's catalog grows.",
+    body: "A search box in the sidebar — reachable from any page, not just **Admin Dashboard** — looks up users, courses, and internship postings at once. Type a name, email, course title/code, or company, and jump straight to it. Clicking a user result opens **Users** already filtered to them; courses and postings open directly. Backed by Algolia with tuned relevance (published courses and active postings rank first, common abbreviations like \"mAb\" and \"R&D\" resolve to their full terms) and click tracking to see which results actually get used.",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,

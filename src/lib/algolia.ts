@@ -27,3 +27,16 @@ export function getAlgoliaClient() {
   _client = algoliasearch(appId, apiKey);
   return _client;
 }
+
+let _insights: ReturnType<ReturnType<typeof algoliasearch>["initInsights"]> | null = null;
+
+/** Server-only Insights client for click/conversion events (see
+ *  /api/admin/search/click). Region is unconfirmed for this Algolia
+ *  app — "us" is Algolia's common default; the only two valid values
+ *  are "us" and "de", and using the "wrong" one still delivers events,
+ *  it just affects which regional endpoint receives the write. */
+export function getAlgoliaInsightsClient() {
+  if (_insights) return _insights;
+  _insights = getAlgoliaClient().initInsights({ region: "us" });
+  return _insights;
+}
