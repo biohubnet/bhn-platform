@@ -37,8 +37,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "admin.global-search",
     title: "Search everything from one box",
-    body: "The Admin Dashboard now has a search box that looks across users, courses, and internship postings at once. Type a name, email, course title/code, or company — click a result to jump straight there.",
-    path: "/admin",
+    body: "The sidebar now has a search box that looks across users, courses, and internship postings at once, available from any page. Type a name, email, course title/code, or company — click a result to jump straight there.",
     selector: "#admin-global-search",
     placement: "bottom",
     roles: ["admin", "superadmin"],

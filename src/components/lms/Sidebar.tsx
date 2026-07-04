@@ -69,6 +69,7 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationInbox";
+import { AdminGlobalSearch } from "@/components/admin/AdminGlobalSearch";
 
 interface NavItem {
   label: string;
@@ -1428,6 +1429,16 @@ export function Sidebar({
           </Link>
           <NotificationBell initialUnreadCount={initialUnreadCount} />
         </div>
+
+        {/* Global admin search — lives here (not on a single page) so
+            it's reachable from anywhere in the app, not just the Admin
+            Dashboard. Gated to admin/superadmin since the API route
+            itself requires that role. */}
+        {isAdmin && (
+          <div className="px-3 pt-3 pb-3 border-b border-line">
+            <AdminGlobalSearch />
+          </div>
+        )}
 
       <nav data-sidebar-nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {/* Dashboard is the standard learner home. Employers don't

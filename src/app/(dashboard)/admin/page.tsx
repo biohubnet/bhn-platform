@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { cn, statusColor } from "@/lib/utils";
 import { Users, BookOpen, TrendingUp, Award, Coins, ClipboardList } from "lucide-react";
 import Link from "next/link";
-import { AdminGlobalSearch } from "@/components/admin/AdminGlobalSearch";
 
 interface RecentEnrollment {
   id: string; status: string; enrolledAt: Date;
@@ -60,12 +59,9 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-fg">Admin Dashboard</h1>
-          <p className="text-muted text-sm mt-1">Platform overview and management</p>
-        </div>
-        <AdminGlobalSearch />
+      <div>
+        <h1 className="text-2xl font-bold text-fg">Admin Dashboard</h1>
+        <p className="text-muted text-sm mt-1">Platform overview and management</p>
       </div>
 
       {/* Stats */}

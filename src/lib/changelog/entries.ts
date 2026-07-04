@@ -24,8 +24,8 @@ export interface ChangelogEntry {
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Admin global search — Jul 2026
   {
-    title: "Search box on the Admin Dashboard",
-    body: "A single search box at the top of **Admin Dashboard** now looks up users, courses, and internship postings at once — type a name, email, course title/code, or company, and jump straight to it. Clicking a user result opens **Users** already filtered to them; courses and postings open directly. Now backed by Algolia for faster, more forgiving matching (typos, partial words) as the platform's catalog grows.",
+    title: "Global search in the sidebar",
+    body: "A search box in the sidebar — reachable from any page, not just **Admin Dashboard** — looks up users, courses, and internship postings at once. Type a name, email, course title/code, or company, and jump straight to it. Clicking a user result opens **Users** already filtered to them; courses and postings open directly. Backed by Algolia for faster, more forgiving matching (typos, partial words) as the platform's catalog grows.",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,
