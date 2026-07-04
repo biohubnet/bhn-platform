@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getAlgoliaClient, ALGOLIA_INDEX } from "@/lib/algolia";
 
 /**
- * Global admin search — one box, three entities. Not a search product:
- * plain Postgres `contains` (case-insensitive) across the handful of
- * fields an admin actually looks someone/something up by. At this
- * platform's scale (dozens to low thousands of rows per table) this is
- * as fast as it needs to be; if a table ever grows into the hundreds of
- * thousands, add a `pg_trgm` index before reaching for an external
- * search service — same database, no new vendor.
+ * Global admin search — one box, three entities, backed by Algolia
+ * (see scripts/algolia-sync.ts for the indexing job that keeps
+ * bhn_users / bhn_courses / bhn_postings in sync with Postgres).
  */
 const RESULTS_PER_TYPE = 5;
+
+interface UserHit { objectID: string; name: string | null; email: string; role: string }
+interface CourseHit { objectID: string; title: string; code: string | null }
+interface PostingHit { objectID: string; title: string; companyName: string }
 
 export async function GET(req: NextRequest) {
   await requireRole("admin");
@@ -21,58 +21,40 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ users: [], courses: [], postings: [] });
   }
 
-  const [users, courses, postings] = await Promise.all([
-    prisma.user.findMany({
-      where: {
-        accountKind: "real",
-        OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { email: { contains: q, mode: "insensitive" } },
-        ],
-      },
-      select: { id: true, name: true, email: true, role: true },
-      take: RESULTS_PER_TYPE,
-    }),
-    prisma.course.findMany({
-      where: {
-        OR: [
-          { title: { contains: q, mode: "insensitive" } },
-          { code: { contains: q, mode: "insensitive" } },
-        ],
-      },
-      select: { id: true, title: true, code: true },
-      take: RESULTS_PER_TYPE,
-    }),
-    prisma.internshipPosting.findMany({
-      where: {
-        OR: [
-          { title: { contains: q, mode: "insensitive" } },
-          { companyName: { contains: q, mode: "insensitive" } },
-        ],
-      },
-      select: { id: true, title: true, companyName: true },
-      take: RESULTS_PER_TYPE,
-    }),
-  ]);
+  const client = getAlgoliaClient();
+  const { results } = await client.search({
+    requests: [
+      { indexName: ALGOLIA_INDEX.users, query: q, hitsPerPage: RESULTS_PER_TYPE },
+      { indexName: ALGOLIA_INDEX.courses, query: q, hitsPerPage: RESULTS_PER_TYPE },
+      { indexName: ALGOLIA_INDEX.postings, query: q, hitsPerPage: RESULTS_PER_TYPE },
+    ],
+  });
+
+  const [userResult, courseResult, postingResult] = results as {
+    hits: unknown[];
+  }[];
+  const users = userResult.hits as UserHit[];
+  const courses = courseResult.hits as CourseHit[];
+  const postings = postingResult.hits as PostingHit[];
 
   return NextResponse.json({
     users: users.map((u) => ({
-      id: u.id,
+      id: u.objectID,
       title: u.name || u.email,
       subtitle: u.name ? `${u.email} · ${u.role}` : u.role,
       href: `/admin/users?kind=real&q=${encodeURIComponent(u.email)}`,
     })),
     courses: courses.map((c) => ({
-      id: c.id,
+      id: c.objectID,
       title: c.title,
       subtitle: c.code ?? undefined,
-      href: `/courses/${c.id}`,
+      href: `/courses/${c.objectID}`,
     })),
     postings: postings.map((p) => ({
-      id: p.id,
+      id: p.objectID,
       title: p.title,
       subtitle: p.companyName,
-      href: `/admin/internships/${p.id}/edit`,
+      href: `/admin/internships/${p.objectID}/edit`,
     })),
   });
 }
