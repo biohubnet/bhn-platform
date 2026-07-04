@@ -33,6 +33,9 @@ interface Props {
   groups: GroupOption[];
   /** Active account-kind tab. Batch delete is only offered for non-real test accounts. */
   kind: string;
+  /** Seeds the filter box — set when arriving via the admin global search
+   *  (/admin/users?q=...) so the deep link lands already filtered. */
+  initialQuery?: string;
 }
 
 const ROLES = ["trainee", "evaluating", "employer", "hr", "industrial_mentor", "instructor", "admin", "superadmin"];
@@ -59,10 +62,10 @@ const ROLE_GROUP_TABS: { key: RoleGroup; label: string }[] = [
   { key: "other", label: "Other" },
 ];
 
-export function UsersTableClient({ users, groups, kind }: Props) {
+export function UsersTableClient({ users, groups, kind, initialQuery }: Props) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = useState(initialQuery ?? "");
   const [roleGroup, setRoleGroup] = useState<RoleGroup>("all");
   const [modal, setModal] = useState<null | "role" | "credits" | "group" | "delete">(null);
   const [pendingRole, setPendingRole] = useState("trainee");

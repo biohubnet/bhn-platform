@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.02a";
+export const TOUR_VERSION = "2026.07.03a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Admin global search — Jul 2026
+  {
+    id: "admin.global-search",
+    title: "Search everything from one box",
+    body: "The Admin Dashboard now has a search box that looks across users, courses, and internship postings at once. Type a name, email, course title/code, or company — click a result to jump straight there.",
+    path: "/admin",
+    selector: "#admin-global-search",
+    placement: "bottom",
+    roles: ["admin", "superadmin"],
+    since: "2026.07.03a",
+  },
   // ─── 2026 Symposium communications plan — Jul 2026
   {
     id: "workspace.symposium-comms-plan",

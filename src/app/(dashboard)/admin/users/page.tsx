@@ -24,7 +24,7 @@ type Kind = (typeof VALID_KINDS)[number];
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string }>;
+  searchParams: Promise<{ kind?: string; q?: string }>;
 }) {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
@@ -92,7 +92,7 @@ export default async function AdminUsersPage({
         </div>
       )}
 
-      <UsersTableClient users={users} groups={groups} kind={kind} />
+      <UsersTableClient users={users} groups={groups} kind={kind} initialQuery={sp.q} />
     </div>
   );
 }

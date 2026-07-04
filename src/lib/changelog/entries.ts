@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Admin global search — Jul 2026
+  {
+    title: "Search box on the Admin Dashboard",
+    body: "A single search box at the top of **Admin Dashboard** now looks up users, courses, and internship postings at once — type a name, email, course title/code, or company, and jump straight to it. Clicking a user result opens **Users** already filtered to them; courses and postings open directly. Plain database search under the hood, no new service — fast at today's scale, easy to upgrade later if the platform grows into it.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Accessibility pass (WCAG 2.2 AA) — Jul 2026
   {
     title: "Accessibility pass across the app (WCAG 2.2 AA)",
