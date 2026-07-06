@@ -308,6 +308,21 @@ export function HtmlScriptEditor({
       const e = Number.isFinite(parts[1]) ? parts[1] : s + 1;
       return [s, e];
     };
+    // Keep any linked table row (via data-track) in sync with its bar: rewrite
+    // the row's `.date-cell` to the bar's span and its `.deadline-cell` to the
+    // finish date. One-way (Gantt → table), fires live while dragging.
+    const syncTrack = (bar: HTMLElement, ns: number, ne: number) => {
+      const key = bar.getAttribute("data-track");
+      if (!key) return;
+      const row = content.querySelector<HTMLElement>(`tr[data-track="${key}"]`);
+      if (!row) return;
+      const startLabel = WEEK_LABELS[ns - 1];
+      const endLabel = WEEK_LABELS[ne - 2];
+      const dateCell = row.querySelector<HTMLElement>(".date-cell");
+      if (dateCell && startLabel && endLabel) dateCell.textContent = `${startLabel} – ${endLabel}`;
+      const deadlineCell = row.querySelector<HTMLElement>(".deadline-cell");
+      if (deadlineCell && endLabel) deadlineCell.textContent = endLabel;
+    };
     let drag: { bar: HTMLElement; track: HTMLElement; mode: "move" | "l" | "r"; s0: number; e0: number; line0: number } | null = null;
     const onDragMove = (e: PointerEvent) => {
       if (!drag) return;
@@ -325,6 +340,7 @@ export function HtmlScriptEditor({
       }
       drag.bar.style.gridColumn = `${ns} / ${ne}`;
       drag.bar.title = `Wk ${ns}–${ne - 1} · ${WEEK_LABELS[ns - 1]} → ${WEEK_LABELS[ne - 2]}`;
+      syncTrack(drag.bar, ns, ne);
     };
     const onDragUp = () => {
       if (!drag) return;

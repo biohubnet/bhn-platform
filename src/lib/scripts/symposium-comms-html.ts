@@ -279,6 +279,8 @@ export const SYMPOSIUM_CSS = `:root {
       font-size: 0.82rem;
     }
     table.grid td .when { font-weight: 700; color: var(--green); }
+    table.grid td.deadline-cell { font-weight: 700; color: var(--rose); white-space: nowrap; }
+    .date-cell { color: var(--muted); }
 
     /* ── channel / phase cards ── */
     .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -368,13 +370,13 @@ export const SYMPOSIUM_CSS = `:root {
 // re-heal every seeded plan to this pristine HTML on next load — used to
 // push a corrected baseline. Docs already carrying the current marker are
 // left untouched, so real team edits are never overwritten.
-export const PLAN_VERSION = "4";
+export const PLAN_VERSION = "5";
 
 // Gridline cells for one 17-column Gantt row (Jul 13 → Nov 2). Built once
 // and reused per row to keep the markup readable.
 const GANTT_CELLS = Array.from({ length: 17 }, (_, i) => `<div class="cell" style="grid-column:${i + 1}"></div>`).join("");
 
-export const SYMPOSIUM_HTML = `<main data-plan-version="4">
+export const SYMPOSIUM_HTML = `<main data-plan-version="5">
   <header>
     <span class="label">BioHubNet · Marketing &amp; Communications</span>
     <h1>2026 Annual Symposium &amp; Training Week — Communications Plan</h1>
@@ -435,7 +437,7 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="4">
         <div class="gantt-row">
           <div class="gantt-label">Foundation &amp; Save-the-Date</div>
           <div class="gantt-track">${GANTT_CELLS}
-            <div class="bar g" style="grid-column:4 / 7">Save-the-Date</div>
+            <div class="bar g" data-track="save-the-date" style="grid-column:4 / 7">Save-the-Date</div>
             <div class="drag-hint" style="grid-column:8 / 15">&harr; Tip: drag a bar or its ends to change dates</div>
           </div>
         </div>
@@ -458,7 +460,7 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="4">
         <div class="gantt-row">
           <div class="gantt-label">Registration open (Luma)</div>
           <div class="gantt-track">${GANTT_CELLS}
-            <div class="bar g" style="grid-column:7 / 18">Open &rarr; close registration</div>
+            <div class="bar g" data-track="registration" style="grid-column:7 / 17">Open &rarr; close registration</div>
           </div>
         </div>
 
@@ -479,21 +481,21 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="4">
         <div class="gantt-row">
           <div class="gantt-label">Early engagement push (email/social)</div>
           <div class="gantt-track">${GANTT_CELLS}
-            <div class="bar gd" style="grid-column:10 / 16">Emails &middot; carousels &middot; reels</div>
+            <div class="bar gd" data-track="early-engagement" style="grid-column:10 / 16">Emails &middot; carousels &middot; reels</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Workshop &amp; tour teasers</div>
           <div class="gantt-track">${GANTT_CELLS}
-            <div class="bar pl" style="grid-column:12 / 16">CDMO tours &middot; CL3 &middot; bootcamp</div>
+            <div class="bar pl" data-track="teasers" style="grid-column:12 / 16">CDMO tours &middot; CL3 &middot; bootcamp</div>
           </div>
         </div>
 
         <div class="gantt-row">
           <div class="gantt-label">Final countdown campaign</div>
           <div class="gantt-track">${GANTT_CELLS}
-            <div class="bar rs" style="grid-column:14 / 17">Logistics &middot; reminders &middot; hype</div>
+            <div class="bar rs" data-track="final-countdown" style="grid-column:14 / 17">Logistics &middot; reminders &middot; hype</div>
           </div>
         </div>
 
@@ -543,34 +545,39 @@ export const SYMPOSIUM_HTML = `<main data-plan-version="4">
   <article class="box" data-sid="pre-event">
     <span class="eyebrow">Phase 1</span>
     <h2>Pre-event promotion plan</h2>
-    <p class="sub">A five-stage cadence mirroring the 2025 timeline. Each stage names its trigger, channels, and hero deliverable.</p>
+    <p class="sub">A five-stage cadence mirroring the 2025 timeline. <strong>The window &amp; deadline sync from the Gantt bars above</strong> — drag a bar (or its ends) and the matching row updates live.</p>
     <table class="grid">
       <thead>
-        <tr><th style="width:150px">Stage &amp; window</th><th>Milestone &amp; goal</th><th>Deliverables &amp; channels</th></tr>
+        <tr><th style="width:132px">Stage &amp; window</th><th style="width:78px">Deadline</th><th>Milestone &amp; goal</th><th>Deliverables &amp; channels</th></tr>
       </thead>
       <tbody>
-        <tr>
-          <td><span class="when">Save-the-Date</span><br>Aug 3–17 (Wk 1–3)</td>
+        <tr data-track="save-the-date">
+          <td><span class="when">Save-the-Date</span><br><span class="date-cell">Aug 3 – Aug 17</span></td>
+          <td class="deadline-cell">Aug 17</td>
           <td>Lock the date in calendars before summer ends; internal registration deadline set.</td>
           <td>Email blast #1 · LinkedIn "Save the Date" post · website bio-link update · microsite skeleton live with preliminary agenda.</td>
         </tr>
-        <tr>
-          <td><span class="when">Registration Open</span><br>Aug 24 – Sep 7 (Wk 4–6)</td>
-          <td>Landing page + Luma go live with preliminary agenda and tiered tickets; first promo post.</td>
+        <tr data-track="registration">
+          <td><span class="when">Registration Open</span><br><span class="date-cell">Aug 24 – Oct 26</span></td>
+          <td class="deadline-cell">Oct 26</td>
+          <td>Landing page + Luma live with preliminary agenda + tiered tickets (first promo push); registration stays open until close.</td>
           <td>Microsite live · Luma event page ($20/HQP; tiered eligible vs. ineligible HQP + industry) · poster/flyer distribution to 14 partner campuses · social carousel.</td>
         </tr>
-        <tr>
-          <td><span class="when">Early Engagement</span><br>Sep 7 – Oct 5 (Wk 6–10)</td>
+        <tr data-track="early-engagement">
+          <td><span class="when">Early Engagement</span><br><span class="date-cell">Sep 14 – Oct 19</span></td>
+          <td class="deadline-cell">Oct 19</td>
           <td>Build momentum on programming; start speaker/session reveals; open sponsorship visibility.</td>
           <td>Email #2 (program themes) · Speaker Spotlight series (keynote + Panels 1–3) · <strong>Sponsor Spotlight posts</strong> (welcome each sponsor as they close) · workshop &amp; agenda PDF · "Why attend" reel · sponsor logos added to microsite + email footer as they close.</td>
         </tr>
-        <tr>
-          <td><span class="when">Workshop &amp; Tour Teasers</span><br>Sep 28 – Oct 19 (Wk 9–12)</td>
+        <tr data-track="teasers">
+          <td><span class="when">Workshop &amp; Tour Teasers</span><br><span class="date-cell">Sep 28 – Oct 19</span></td>
+          <td class="deadline-cell">Oct 19</td>
           <td>Sell Training Week individually — each workshop / CDMO tour / CL3 tour gets its own spotlight.</td>
           <td>One post per session (OBIO bootcamp, CATTI cell manufacturing, BioZone bioreactor, CL3/THCF tour, OmniaBio &amp; Eurofins CDMO tours) · registration deadline reminders.</td>
         </tr>
-        <tr>
-          <td><span class="when">Final Countdown</span><br>Oct 15–26 (2 wks out)</td>
+        <tr data-track="final-countdown">
+          <td><span class="when">Final Countdown</span><br><span class="date-cell">Oct 12 – Oct 26</span></td>
+          <td class="deadline-cell">Oct 26</td>
           <td>Convert fence-sitters; equip confirmed attendees with logistics; registration closes ~Oct 22 for headcount.</td>
           <td>"2 weeks to go" + sponsor thank-you post · attendee info email (location, transit, agenda) · "Getting There" social · registration-closing notice (~Oct 22) · day-before hype post tagging speakers/partners &amp; sponsors.</td>
         </tr>
