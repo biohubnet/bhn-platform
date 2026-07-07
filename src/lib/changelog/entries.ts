@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Symposium comms plan: Gantt/table sync fix — Jul 2026
+  {
+    title: "Fix: removed Gantt rows no longer leave a stray table row",
+    body: "On the **26 Symposium Comms Plan**, removing a workstream from the Gantt now always removes its linked row from the Pre-event table below — including any duplicate. The table also self-heals on load: a row still linked to a bar that's gone (or a duplicate of another) is cleaned up automatically. Root cause was the old Tables-panel “add row” copying a row's hidden link; new plain rows are now unlinked.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Symposium comms plan: collapsible phases + Gantt rows — Jul 2026
   {
     title: "Collapse phases + edit the Gantt on the chart",

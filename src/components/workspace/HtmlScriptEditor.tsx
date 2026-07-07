@@ -276,6 +276,41 @@ export function HtmlScriptEditor({
     rows.forEach((r) => tbody.appendChild(r));
   }, []);
 
+  // Keep the Pre-event table's LINKED rows honest against the Gantt:
+  //   • orphan — a row whose data-track has no matching bar (its bar was
+  //     removed) → drop it, so "removed on the chart" never lingers here;
+  //   • duplicate — two rows sharing one data-track (e.g. a stray table-panel
+  //     clone) → keep the one with the most content, drop the rest.
+  // Runs on load and after every Gantt op. Rows without a data-track (plain,
+  // unlinked table rows) are never touched. Returns whether it changed anything.
+  const reconcileTable = useCallback((): boolean => {
+    const root = contentRef.current;
+    if (!root) return false;
+    const tbody = root.querySelector<HTMLTableSectionElement>('[data-sid="pre-event"] table tbody');
+    if (!tbody) return false;
+    const bars = new Set(
+      Array.from(root.querySelectorAll<HTMLElement>(".gantt .gantt-row .bar[data-track]"))
+        .map((b) => b.getAttribute("data-track")),
+    );
+    let changed = false;
+    const seen = new Map<string, HTMLTableRowElement>();
+    for (const tr of Array.from(tbody.querySelectorAll<HTMLTableRowElement>("tr[data-track]"))) {
+      const track = tr.getAttribute("data-track");
+      if (!track) continue;
+      if (!bars.has(track)) { tr.remove(); changed = true; continue; }
+      const prev = seen.get(track);
+      if (prev) {
+        const keepPrev = (prev.textContent ?? "").trim().length >= (tr.textContent ?? "").trim().length;
+        (keepPrev ? tr : prev).remove();
+        if (!keepPrev) seen.set(track, tr);
+        changed = true;
+      } else {
+        seen.set(track, tr);
+      }
+    }
+    return changed;
+  }, []);
+
   // Inject the on-chart Gantt controls: a reorder/remove cluster into every
   // workstream label, plus an "Add workstream row" button at the bottom of the
   // chart. Idempotent — safe to re-run after the document HTML is replaced.
@@ -363,6 +398,8 @@ export function HtmlScriptEditor({
     refreshTables();
     setupPhases();
     setupGanttControls();
+    // Self-heal any orphaned / duplicate linked table rows on load.
+    reconcileTable();
 
     const sidOf = (node: Node | null): string | null => {
       const el = node && node.nodeType === 1 ? (node as Element) : node?.parentElement ?? null;
@@ -540,7 +577,7 @@ export function HtmlScriptEditor({
     };
     content.addEventListener("pointerdown", onDragDown);
     content.addEventListener("pointermove", onDragHover);
-  }, [css, initialHtml, refreshSections, refreshTables, setupGanttControls, setupPhases, markDirty, readOnly]);
+  }, [css, initialHtml, refreshSections, refreshTables, setupGanttControls, setupPhases, reconcileTable, markDirty, readOnly]);
 
   // Keep the restore/source-apply paths able to re-inject the phase toggles
   // and the on-chart Gantt controls.
@@ -658,6 +695,7 @@ export function HtmlScriptEditor({
         setupPhasesRef.current();
         markGanttStaticRef.current();
         setupGanttControlsRef.current();
+        reconcileTable();
       }
       dirtyRef.current = false;
       secondsRef.current = AUTOSAVE_SECONDS;
@@ -682,7 +720,7 @@ export function HtmlScriptEditor({
       savingRef.current = false;
       setSaving(false);
     }
-  }, [base, css, showSource, sourceHtml, refreshSections, refreshTables, loadRevisions]);
+  }, [base, css, showSource, sourceHtml, refreshSections, refreshTables, reconcileTable, loadRevisions]);
 
   useEffect(() => { doSaveRef.current = doSave; }, [doSave]);
 
@@ -806,6 +844,11 @@ export function HtmlScriptEditor({
     if (last) {
       nr = last.cloneNode(true) as HTMLTableRowElement;
       nr.removeAttribute("data-week");
+      // A cloned row must NOT inherit the source row's data-track, or it
+      // becomes a phantom second row linked to the same Gantt bar (which the
+      // bar-drag / remove sync can't keep straight). Plain new rows are
+      // unlinked; link one to the chart via the Gantt's "Add workstream row".
+      nr.removeAttribute("data-track");
       Array.from(nr.querySelectorAll("td")).forEach((td, i) => {
         td.innerHTML = i === 0 ? '<span class="when">New</span><br>—' : "…";
       });
@@ -893,10 +936,11 @@ export function HtmlScriptEditor({
 
     markGanttStaticRef.current();
     setupGanttControlsRef.current(); // give the new row its controls + editable label
+    reconcileTable();
     markDirty();
     refreshTables();
     row.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [markDirty, refreshTables]);
+  }, [reconcileTable, markDirty, refreshTables]);
 
   const moveGanttRow = useCallback((row: HTMLElement, dir: -1 | 1) => {
     const sibling = adjacentGanttRow(row, dir);
@@ -912,10 +956,13 @@ export function HtmlScriptEditor({
     if (!confirm("Remove this timeline row (and its linked table row, if any)?")) return;
     const track = row.querySelector<HTMLElement>(".bar[data-track]")?.getAttribute("data-track");
     row.remove();
-    if (track) contentRef.current?.querySelector(`tr[data-track="${track}"]`)?.remove();
+    // Remove EVERY table row linked to this bar (not just the first), so a
+    // stray duplicate can never be left behind on the table.
+    if (track) contentRef.current?.querySelectorAll(`tr[data-track="${track}"]`).forEach((tr) => tr.remove());
+    reconcileTable();
     markDirty();
     refreshTables();
-  }, [markDirty, refreshTables]);
+  }, [reconcileTable, markDirty, refreshTables]);
 
   useEffect(() => {
     ganttOpsRef.current = { add: addGanttRow, move: moveGanttRow, remove: removeGanttRow };
@@ -963,6 +1010,7 @@ export function HtmlScriptEditor({
         setupPhasesRef.current();
         markGanttStaticRef.current();
         setupGanttControlsRef.current();
+        reconcileTable();
       }
       dirtyRef.current = false;
       setDirty(false);
