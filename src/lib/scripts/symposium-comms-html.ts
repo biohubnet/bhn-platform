@@ -122,6 +122,36 @@ export const SYMPOSIUM_CSS = `:root {
     }
     .box.accent { background: var(--green-soft); border-color: #c9ded4; }
 
+    /* ── collapsible phase boxes (toggle injected by the editor) ── */
+    .box.phase { position: relative; }
+    .box.phase > .phase-toggle {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--soft);
+      color: var(--green);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .box.phase > .phase-toggle:hover { background: var(--green-soft); }
+    .box.phase > .phase-toggle .chev {
+      font-size: 0.82rem;
+      line-height: 1;
+      transition: transform 0.18s ease;
+    }
+    .box.phase.collapsed > .phase-toggle .chev { transform: rotate(-90deg); }
+    /* When collapsed, keep the eyebrow + title + toggle; hide the body. */
+    .box.phase.collapsed > *:not(.phase-toggle):not(.eyebrow):not(h2) { display: none; }
+    .box.phase.collapsed > h2 { margin-bottom: 0; }
+
     .eyebrow {
       display: inline-block;
       font-size: 0.72rem;

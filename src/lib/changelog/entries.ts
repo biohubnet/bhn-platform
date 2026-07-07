@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Symposium comms plan: collapsible phases + Gantt rows — Jul 2026
+  {
+    title: "Collapse phases + add Gantt rows on the Symposium plan",
+    body: "On the **26 Symposium Comms Plan**, the three phase sections (Pre-event, During-event, Post-event) now collapse — click the chevron in a phase's top-right corner to fold it down to just its title, so you can focus on one phase at a time. And the **Tables** panel now has a **Timeline (Gantt)** block: **Add row** drops a fresh bar on the Gantt chart with a matching row in the Pre-event table below (drag the bar to set its dates and the table row follows), and you can reorder or remove timeline rows from there too. Gantt workstream labels are now editable as well.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Admin global search — Jul 2026
   {
     title: "Global search in the sidebar",

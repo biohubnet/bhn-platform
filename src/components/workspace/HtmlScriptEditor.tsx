@@ -59,6 +59,12 @@ const WEEK_LABELS = [
 ];
 const GANTT_COLS = 17;
 
+// One 17-column Gantt row's gridline cells, built once for new rows added
+// from the Timeline panel (mirrors GANTT_CELLS in symposium-comms-html.ts).
+const GANTT_CELLS_HTML = Array.from({ length: GANTT_COLS }, (_, i) => `<div class="cell" style="grid-column:${i + 1}"></div>`).join("");
+// Bar colours cycled for new timeline rows so successive adds don't all match.
+const BAR_CLASSES = ["g", "gd", "bl", "pl", "rs"];
+
 function adaptCss(css: string): string {
   return css
     .replace(/:root\b/g, ":host")
@@ -133,9 +139,13 @@ export function HtmlScriptEditor({
   const boxesRef = useRef<HTMLElement[]>([]);
   const intercutRef = useRef<HTMLElement[]>([]);
   const tablesRef = useRef<HTMLTableElement[]>([]);
+  const ganttRowsRef = useRef<HTMLElement[]>([]);
   // Re-marks the Gantt grid non-editable after the document HTML is replaced
   // (source-view apply / restore), so bars stay drag-only, not text-editable.
   const markGanttStaticRef = useRef<() => void>(() => {});
+  // Re-injects the collapse toggles into the Phase boxes after the document
+  // HTML is replaced (source-view apply / restore). Idempotent.
+  const setupPhasesRef = useRef<() => void>(() => {});
   const activeSidRef = useRef<string | null>(null);
   const recentRef = useRef<Map<string, number>>(new Map());
   const peersKeyRef = useRef<string>("");
@@ -161,6 +171,10 @@ export function HtmlScriptEditor({
   const [hasIntercut, setHasIntercut] = useState(false);
   // Tables panel: each table with its body rows (add / reorder / remove).
   const [tables, setTables] = useState<{ label: string; rows: { label: string }[] }[]>([]);
+  // Timeline panel (comms-plan Gantt): each workstream row + whether it's
+  // linked to a table row below via data-track.
+  const [ganttRows, setGanttRows] = useState<{ label: string; linked: boolean }[]>([]);
+  const [hasGantt, setHasGantt] = useState(false);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revLoading, setRevLoading] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -236,6 +250,46 @@ export function HtmlScriptEditor({
       : Array.from(t.querySelectorAll<HTMLTableRowElement>("tr")).filter((r) => !r.querySelector("th"));
   }, []);
 
+  // Scan the comms-plan Gantt for its workstream rows (for the Timeline
+  // panel). A row is "linked" when its bar has a data-track that matches a
+  // table row below — the Gantt→table date sync keys off that.
+  const refreshGantt = useCallback(() => {
+    const root = contentRef.current;
+    if (!root) return;
+    setHasGantt(!!root.querySelector(".gantt"));
+    const rows = Array.from(root.querySelectorAll<HTMLElement>(".gantt .gantt-row"));
+    ganttRowsRef.current = rows;
+    setGanttRows(rows.map((r) => {
+      const label = (r.querySelector(".gantt-label")?.textContent ?? "Row").trim().replace(/\s+/g, " ").slice(0, 42) || "Row";
+      const track = r.querySelector<HTMLElement>(".bar[data-track]")?.getAttribute("data-track") ?? null;
+      const linked = !!(track && root.querySelector(`tr[data-track="${track}"]`));
+      return { label, linked };
+    }));
+  }, []);
+
+  // Give each "Phase N" box a collapse toggle. Idempotent: adds the `phase`
+  // class and injects one `.phase-toggle` per box only if absent, so it's
+  // safe to re-run after the document HTML is replaced or reloaded (the
+  // toggle is part of the saved HTML the second time around).
+  const setupPhases = useCallback(() => {
+    const root = contentRef.current;
+    if (!root) return;
+    for (const box of Array.from(root.querySelectorAll<HTMLElement>(".box"))) {
+      const eyebrow = box.querySelector(".eyebrow")?.textContent?.trim() ?? "";
+      if (!/^phase\s*\d/i.test(eyebrow)) continue;
+      box.classList.add("phase");
+      if (box.querySelector(":scope > .phase-toggle")) continue;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "phase-toggle";
+      btn.setAttribute("contenteditable", "false");
+      btn.setAttribute("aria-label", "Collapse or expand this phase");
+      btn.setAttribute("aria-expanded", box.classList.contains("collapsed") ? "false" : "true");
+      btn.innerHTML = '<span class="chev">▾</span>';
+      box.insertBefore(btn, box.firstChild);
+    }
+  }, []);
+
   // Mount the styled, editable document into a shadow root once + wire caret
   // tracking for presence + dirty-marking for auto-save.
   useEffect(() => {
@@ -261,6 +315,8 @@ export function HtmlScriptEditor({
     findSections(content).forEach((b, i) => { if (!b.getAttribute("data-sid")) b.setAttribute("data-sid", `s${i}`); });
     refreshSections();
     refreshTables();
+    setupPhases();
+    refreshGantt();
 
     const sidOf = (node: Node | null): string | null => {
       const el = node && node.nodeType === 1 ? (node as Element) : node?.parentElement ?? null;
@@ -292,10 +348,31 @@ export function HtmlScriptEditor({
     // columns). The inline style is part of the saved HTML, so drags persist.
     const markGanttStatic = () => {
       const g = content.querySelector<HTMLElement>(".gantt");
-      if (g) g.contentEditable = "false";
+      if (!g) return;
+      // The grid (bars + cells) is drag-only, never text-editable…
+      g.contentEditable = "false";
+      // …but re-enable the workstream labels so they can be renamed (a child
+      // can opt back into editing inside a contenteditable="false" region).
+      g.querySelectorAll<HTMLElement>(".gantt-label").forEach((l) => { l.contentEditable = "true"; });
     };
     markGanttStaticRef.current = markGanttStatic;
     markGanttStatic();
+
+    // ── Collapse / expand a Phase box when its toggle is clicked ──
+    // Delegated so it also catches toggles injected after this mount. The
+    // toggle is contenteditable="false", so the click never lands a caret.
+    const onPhaseToggle = (e: MouseEvent) => {
+      const btn = (e.target as Element)?.closest?.(".phase-toggle") as HTMLElement | null;
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const box = btn.closest(".phase") as HTMLElement | null;
+      if (!box) return;
+      const collapsed = box.classList.toggle("collapsed");
+      btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      markDirty();
+    };
+    content.addEventListener("click", onPhaseToggle);
 
     const gLine = (track: HTMLElement, clientX: number) => {
       const r = track.getBoundingClientRect();
@@ -376,7 +453,10 @@ export function HtmlScriptEditor({
     };
     content.addEventListener("pointerdown", onDragDown);
     content.addEventListener("pointermove", onDragHover);
-  }, [css, initialHtml, refreshSections, refreshTables, markDirty, readOnly]);
+  }, [css, initialHtml, refreshSections, refreshTables, refreshGantt, setupPhases, markDirty, readOnly]);
+
+  // Keep the restore/source-apply paths able to re-inject the phase toggles.
+  useEffect(() => { setupPhasesRef.current = setupPhases; }, [setupPhases]);
 
   // ── Presence heartbeat (~2s) ──
   useEffect(() => {
@@ -486,7 +566,9 @@ export function HtmlScriptEditor({
         contentRef.current.innerHTML = sourceHtml;
         refreshSections();
         refreshTables();
+        setupPhasesRef.current();
         markGanttStaticRef.current();
+        refreshGantt();
       }
       dirtyRef.current = false;
       secondsRef.current = AUTOSAVE_SECONDS;
@@ -511,7 +593,7 @@ export function HtmlScriptEditor({
       savingRef.current = false;
       setSaving(false);
     }
-  }, [base, css, showSource, sourceHtml, refreshSections, refreshTables, loadRevisions]);
+  }, [base, css, showSource, sourceHtml, refreshSections, refreshTables, refreshGantt, loadRevisions]);
 
   useEffect(() => { doSaveRef.current = doSave; }, [doSave]);
 
@@ -673,6 +755,65 @@ export function HtmlScriptEditor({
     refreshTables();
   }
 
+  // ── Gantt / timeline rows (comms plan) ──
+  // Add a new workstream row to the Gantt AND a linked row in the Pre-event
+  // table below (matched by data-track), so dragging the bar keeps the
+  // table's window/deadline in sync — same wiring the seeded rows use.
+  function addGanttRow() {
+    const root = contentRef.current;
+    const gantt = root?.querySelector<HTMLElement>(".gantt");
+    if (!root || !gantt) return;
+    const uid = "t" + Math.random().toString(36).slice(2, 7);
+    const cls = BAR_CLASSES[gantt.querySelectorAll(".gantt-row").length % BAR_CLASSES.length];
+    const row = document.createElement("div");
+    row.className = "gantt-row";
+    row.innerHTML =
+      `<div class="gantt-label">New workstream</div>` +
+      `<div class="gantt-track">${GANTT_CELLS_HTML}` +
+      `<div class="bar ${cls}" data-track="${uid}" style="grid-column:4 / 7">New item</div>` +
+      `</div>`;
+    gantt.appendChild(row);
+
+    // Linked row in the Pre-event promotion table (the "table below").
+    const tbody = root.querySelector<HTMLTableSectionElement>('[data-sid="pre-event"] table tbody');
+    if (tbody) {
+      const tr = document.createElement("tr");
+      tr.setAttribute("data-track", uid);
+      tr.innerHTML =
+        `<td><span class="when">New workstream</span><br><span class="date-cell">Aug 3 – Aug 17</span></td>` +
+        `<td class="deadline-cell">Aug 17</td>` +
+        `<td>Describe the milestone &amp; goal…</td>` +
+        `<td>Deliverables &amp; channels…</td>`;
+      tbody.appendChild(tr);
+    }
+
+    markGanttStaticRef.current(); // new label editable, bars stay drag-only
+    markDirty();
+    refreshGantt();
+    refreshTables();
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  function moveGanttRow(i: number, dir: -1 | 1) {
+    const a = ganttRowsRef.current[i];
+    const b = ganttRowsRef.current[i + dir];
+    if (!a || !b || !b.parentNode) return;
+    if (dir === -1) b.parentNode.insertBefore(a, b);
+    else b.parentNode.insertBefore(a, b.nextSibling);
+    markDirty();
+    refreshGantt();
+  }
+  function removeGanttRow(i: number) {
+    const row = ganttRowsRef.current[i];
+    if (!row) return;
+    if (!confirm("Remove this timeline row (and its linked table row, if any)?")) return;
+    const track = row.querySelector<HTMLElement>(".bar[data-track]")?.getAttribute("data-track");
+    row.remove();
+    if (track) contentRef.current?.querySelector(`tr[data-track="${track}"]`)?.remove();
+    markDirty();
+    refreshGantt();
+    refreshTables();
+  }
+
   // Newest revision that was a deliberate act — a manual Save, a section
   // edit, or an earlier revert. Auto-saves tag themselves "Auto-saved".
   const lastManual = revisions.find((r) => r.summary !== "Auto-saved");
@@ -712,7 +853,9 @@ export function HtmlScriptEditor({
         setSourceHtml(html);
         refreshSections();
         refreshTables();
+        setupPhasesRef.current();
         markGanttStaticRef.current();
+        refreshGantt();
       }
       dirtyRef.current = false;
       setDirty(false);
@@ -786,7 +929,7 @@ export function HtmlScriptEditor({
             </button>
             <button
               type="button"
-              onClick={() => { setTab("tables"); refreshTables(); }}
+              onClick={() => { setTab("tables"); refreshTables(); refreshGantt(); }}
               className={cn("inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "tables" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
             >
               <Table2 size={13} /> Tables
@@ -871,6 +1014,38 @@ export function HtmlScriptEditor({
 
           {tab === "tables" && (
             <div className="space-y-2 rounded-xl border border-line bg-card-solid p-2">
+              {hasGantt && (
+                <div className="overflow-hidden rounded-lg border border-brand-200">
+                  <div className="flex items-center justify-between bg-brand-50 px-2 py-1.5">
+                    <span className="truncate text-xs font-semibold text-brand-900">Timeline (Gantt)</span>
+                    {!readOnly && (
+                      <button type="button" onClick={addGanttRow} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900">
+                        <Plus size={12} /> Add row
+                      </button>
+                    )}
+                  </div>
+                  <ul className="space-y-0.5 p-1">
+                    {ganttRows.map((r, i) => (
+                      <li key={i} className="rounded-md px-1.5 py-1 hover:bg-elevated">
+                        <div className="flex items-center gap-0.5">
+                          <span className="w-4 shrink-0 text-right font-mono text-[10px] text-subtle">{i + 1}</span>
+                          <span className="flex-1 truncate text-xs text-fg" title={r.label}>{r.label}</span>
+                          {r.linked && <span title="Linked to a table row below" className="shrink-0 rounded bg-brand-100 px-1 text-[9px] font-semibold uppercase tracking-wide text-brand-700">linked</span>}
+                          {!readOnly && (
+                            <>
+                              <button type="button" title="Move up" disabled={i === 0} onClick={() => moveGanttRow(i, -1)} className={miniBtn}><ChevronUp size={13} /></button>
+                              <button type="button" title="Move down" disabled={i === ganttRows.length - 1} onClick={() => moveGanttRow(i, 1)} className={miniBtn}><ChevronDown size={13} /></button>
+                              <button type="button" title="Remove row" onClick={() => removeGanttRow(i)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
+                            </>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                    {ganttRows.length === 0 && <li className="px-2 py-1.5 text-[11px] text-muted">No timeline rows.</li>}
+                  </ul>
+                  <p className="px-2 pb-1.5 text-[10px] leading-relaxed text-muted">Add a row to drop a new bar on the Gantt chart with a matching row in the Pre-event table below. Drag the bar to set its dates; the table row follows.</p>
+                </div>
+              )}
               <p className="px-1.5 pt-1 text-[11px] font-bold uppercase tracking-wider text-subtle">Tables</p>
               {tables.length === 0 && (
                 <p className="px-2 py-2 text-[11px] text-muted">No tables in this document.</p>
