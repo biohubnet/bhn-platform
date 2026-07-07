@@ -289,6 +289,60 @@ export const SYMPOSIUM_CSS = `:root {
     .gantt-legend span { display: inline-flex; align-items: center; gap: 6px; }
     .swatch { width: 13px; height: 13px; border-radius: 3px; display: inline-block; }
 
+    /* ── on-chart Gantt controls (injected by the editor: add / reorder / remove) ── */
+    .gantt-label { gap: 6px; }
+    .gantt-label-text { flex: 1 1 auto; min-width: 0; }
+    .gantt-row-ctrls {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      flex: 0 0 auto;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s ease;
+    }
+    .gantt-row:hover .gantt-row-ctrls,
+    .gantt-row:focus-within .gantt-row-ctrls { opacity: 1; pointer-events: auto; }
+    .gantt-ctrl {
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 0.56rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .gantt-ctrl:hover { background: var(--green-soft); color: var(--green); border-color: #c9ded4; }
+    .gantt-ctrl-del:hover { background: var(--rose-soft); color: var(--rose); border-color: #e6c9cd; }
+    .gantt-add {
+      border-top: 1px solid var(--line);
+      background: var(--soft);
+      padding: 8px 10px;
+    }
+    .gantt-add-btn {
+      position: sticky;
+      left: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px dashed var(--green);
+      border-radius: 6px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      cursor: pointer;
+    }
+    .gantt-add-btn:hover { background: #d9e8e0; }
+
     /* ── generic tables ── */
     table.grid {
       width: 100%;

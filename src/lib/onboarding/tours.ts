@@ -30,18 +30,18 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.07a";
+export const TOUR_VERSION = "2026.07.07b";
 
 export const TOUR_STEPS: TourStep[] = [
-  // ─── Symposium comms plan: collapse + Gantt rows — Jul 2026
+  // ─── Symposium comms plan: collapse + on-chart Gantt editing — Jul 2026
   {
     id: "workspace.symposium-collapse-gantt",
-    title: "Collapse phases + add Gantt rows",
-    body: "On the 26 Symposium Comms Plan, click the chevron in a phase's top-right corner to collapse it to just its title. And in the Tables panel, the new Timeline (Gantt) block lets you add a row — it drops a bar on the chart plus a matching row in the Pre-event table below.",
+    title: "Collapse phases + edit the Gantt on the chart",
+    body: "On the 26 Symposium Comms Plan, click the chevron in a phase's top-right corner to collapse it to just its title. And you can build the timeline right on the Gantt chart: hover any workstream for reorder (▲▼) and remove (✕) buttons, or hit “+ Add workstream row” at the bottom. Every change flows to the Pre-event table below.",
     path: "/admin/workspace/marketing/symposium",
     placement: "center",
     roles: ["admin", "superadmin"],
-    since: "2026.07.07a",
+    since: "2026.07.07b",
   },
   // ─── Admin global search — Jul 2026
   {

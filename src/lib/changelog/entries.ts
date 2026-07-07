@@ -24,8 +24,8 @@ export interface ChangelogEntry {
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Symposium comms plan: collapsible phases + Gantt rows — Jul 2026
   {
-    title: "Collapse phases + add Gantt rows on the Symposium plan",
-    body: "On the **26 Symposium Comms Plan**, the three phase sections (Pre-event, During-event, Post-event) now collapse — click the chevron in a phase's top-right corner to fold it down to just its title, so you can focus on one phase at a time. And the **Tables** panel now has a **Timeline (Gantt)** block: **Add row** drops a fresh bar on the Gantt chart with a matching row in the Pre-event table below (drag the bar to set its dates and the table row follows), and you can reorder or remove timeline rows from there too. Gantt workstream labels are now editable as well.",
+    title: "Collapse phases + edit the Gantt on the chart",
+    body: "On the **26 Symposium Comms Plan**, the three phase sections (Pre-event, During-event, Post-event) now collapse — click the chevron in a phase's top-right corner to fold it down to just its title. And you can build the timeline **right on the Gantt chart**: hover any workstream row for **reorder (▲▼)** and **remove (✕)** controls, or hit **“+ Add workstream row”** at the bottom to drop a new bar. Every change flows to the Pre-event table below — adding creates a linked row, removing deletes it, reordering re-sorts it, and dragging a bar still sets its dates. Workstream labels are editable too.",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,

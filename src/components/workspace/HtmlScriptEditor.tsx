@@ -139,13 +139,22 @@ export function HtmlScriptEditor({
   const boxesRef = useRef<HTMLElement[]>([]);
   const intercutRef = useRef<HTMLElement[]>([]);
   const tablesRef = useRef<HTMLTableElement[]>([]);
-  const ganttRowsRef = useRef<HTMLElement[]>([]);
   // Re-marks the Gantt grid non-editable after the document HTML is replaced
   // (source-view apply / restore), so bars stay drag-only, not text-editable.
   const markGanttStaticRef = useRef<() => void>(() => {});
   // Re-injects the collapse toggles into the Phase boxes after the document
   // HTML is replaced (source-view apply / restore). Idempotent.
   const setupPhasesRef = useRef<() => void>(() => {});
+  // Re-injects the on-chart Gantt row controls (add / reorder / remove)
+  // after the document HTML is replaced. Idempotent.
+  const setupGanttControlsRef = useRef<() => void>(() => {});
+  // Latest element-based Gantt ops, called by the delegated click handler on
+  // the on-chart control buttons.
+  const ganttOpsRef = useRef<{
+    add: () => void;
+    move: (row: HTMLElement, dir: -1 | 1) => void;
+    remove: (row: HTMLElement) => void;
+  }>({ add: () => {}, move: () => {}, remove: () => {} });
   const activeSidRef = useRef<string | null>(null);
   const recentRef = useRef<Map<string, number>>(new Map());
   const peersKeyRef = useRef<string>("");
@@ -171,10 +180,6 @@ export function HtmlScriptEditor({
   const [hasIntercut, setHasIntercut] = useState(false);
   // Tables panel: each table with its body rows (add / reorder / remove).
   const [tables, setTables] = useState<{ label: string; rows: { label: string }[] }[]>([]);
-  // Timeline panel (comms-plan Gantt): each workstream row + whether it's
-  // linked to a table row below via data-track.
-  const [ganttRows, setGanttRows] = useState<{ label: string; linked: boolean }[]>([]);
-  const [hasGantt, setHasGantt] = useState(false);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revLoading, setRevLoading] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -250,21 +255,57 @@ export function HtmlScriptEditor({
       : Array.from(t.querySelectorAll<HTMLTableRowElement>("tr")).filter((r) => !r.querySelector("th"));
   }, []);
 
-  // Scan the comms-plan Gantt for its workstream rows (for the Timeline
-  // panel). A row is "linked" when its bar has a data-track that matches a
-  // table row below — the Gantt→table date sync keys off that.
-  const refreshGantt = useCallback(() => {
+  // Reorder the Pre-event table's linked rows to match the Gantt's current
+  // row order, so reordering a workstream on the chart is reflected in the
+  // table below. Keyed by data-track; table rows without a matching bar keep
+  // their place at the front.
+  const syncTableOrderToGantt = useCallback(() => {
     const root = contentRef.current;
     if (!root) return;
-    setHasGantt(!!root.querySelector(".gantt"));
-    const rows = Array.from(root.querySelectorAll<HTMLElement>(".gantt .gantt-row"));
-    ganttRowsRef.current = rows;
-    setGanttRows(rows.map((r) => {
-      const label = (r.querySelector(".gantt-label")?.textContent ?? "Row").trim().replace(/\s+/g, " ").slice(0, 42) || "Row";
-      const track = r.querySelector<HTMLElement>(".bar[data-track]")?.getAttribute("data-track") ?? null;
-      const linked = !!(track && root.querySelector(`tr[data-track="${track}"]`));
-      return { label, linked };
-    }));
+    const tbody = root.querySelector<HTMLTableSectionElement>('[data-sid="pre-event"] table tbody');
+    if (!tbody) return;
+    const order = Array.from(root.querySelectorAll<HTMLElement>(".gantt .gantt-row .bar[data-track]"))
+      .map((b) => b.getAttribute("data-track"));
+    const rows = Array.from(tbody.querySelectorAll<HTMLTableRowElement>("tr[data-track]"));
+    rows.sort((a, b) => order.indexOf(a.getAttribute("data-track")) - order.indexOf(b.getAttribute("data-track")));
+    rows.forEach((r) => tbody.appendChild(r));
+  }, []);
+
+  // Inject the on-chart Gantt controls: a reorder/remove cluster into every
+  // workstream label, plus an "Add workstream row" button at the bottom of the
+  // chart. Idempotent — safe to re-run after the document HTML is replaced.
+  // The label's text is moved into an editable span so it stays renamable
+  // while the injected buttons (contenteditable=false) don't disturb editing.
+  const setupGanttControls = useCallback(() => {
+    const root = contentRef.current;
+    const gantt = root?.querySelector<HTMLElement>(".gantt");
+    if (!root || !gantt) return;
+    for (const label of Array.from(gantt.querySelectorAll<HTMLElement>(".gantt-row .gantt-label"))) {
+      if (!label.querySelector(":scope > .gantt-label-text")) {
+        const span = document.createElement("span");
+        span.className = "gantt-label-text";
+        span.setAttribute("contenteditable", "true");
+        while (label.firstChild) span.appendChild(label.firstChild);
+        label.appendChild(span);
+      }
+      if (!label.querySelector(":scope > .gantt-row-ctrls")) {
+        const ctrls = document.createElement("span");
+        ctrls.className = "gantt-row-ctrls";
+        ctrls.setAttribute("contenteditable", "false");
+        ctrls.innerHTML =
+          '<button type="button" class="gantt-ctrl gantt-ctrl-up" title="Move row up" aria-label="Move row up">▲</button>' +
+          '<button type="button" class="gantt-ctrl gantt-ctrl-down" title="Move row down" aria-label="Move row down">▼</button>' +
+          '<button type="button" class="gantt-ctrl gantt-ctrl-del" title="Remove row" aria-label="Remove row">✕</button>';
+        label.appendChild(ctrls);
+      }
+    }
+    if (!gantt.querySelector(":scope > .gantt-add")) {
+      const add = document.createElement("div");
+      add.className = "gantt-add";
+      add.setAttribute("contenteditable", "false");
+      add.innerHTML = '<button type="button" class="gantt-add-btn" aria-label="Add a workstream row">+ Add workstream row</button>';
+      gantt.appendChild(add);
+    }
   }, []);
 
   // Give each "Phase N" box a collapse toggle. Idempotent: adds the `phase`
@@ -316,7 +357,7 @@ export function HtmlScriptEditor({
     refreshSections();
     refreshTables();
     setupPhases();
-    refreshGantt();
+    setupGanttControls();
 
     const sidOf = (node: Node | null): string | null => {
       const el = node && node.nodeType === 1 ? (node as Element) : node?.parentElement ?? null;
@@ -347,32 +388,59 @@ export function HtmlScriptEditor({
     // each bar's `grid-column: start / end` (grid lines 1–15 over 14 week
     // columns). The inline style is part of the saved HTML, so drags persist.
     const markGanttStatic = () => {
+      // The grid (bars + cells + labels) is drag-only / non-editable; the
+      // per-label `.gantt-label-text` span opts back into editing on its own
+      // (see setupGanttControls), so nothing else here needs to.
       const g = content.querySelector<HTMLElement>(".gantt");
-      if (!g) return;
-      // The grid (bars + cells) is drag-only, never text-editable…
-      g.contentEditable = "false";
-      // …but re-enable the workstream labels so they can be renamed (a child
-      // can opt back into editing inside a contenteditable="false" region).
-      g.querySelectorAll<HTMLElement>(".gantt-label").forEach((l) => { l.contentEditable = "true"; });
+      if (g) g.contentEditable = "false";
     };
     markGanttStaticRef.current = markGanttStatic;
     markGanttStatic();
 
-    // ── Collapse / expand a Phase box when its toggle is clicked ──
-    // Delegated so it also catches toggles injected after this mount. The
-    // toggle is contenteditable="false", so the click never lands a caret.
-    const onPhaseToggle = (e: MouseEvent) => {
-      const btn = (e.target as Element)?.closest?.(".phase-toggle") as HTMLElement | null;
-      if (!btn) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const box = btn.closest(".phase") as HTMLElement | null;
-      if (!box) return;
-      const collapsed = box.classList.toggle("collapsed");
-      btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
-      markDirty();
+    // ── Delegated clicks for injected, contenteditable=false controls ──
+    // Covers both the Phase collapse toggles and the on-chart Gantt row
+    // controls (add / reorder / remove). Delegated so it also catches
+    // controls injected after this mount; the buttons are contenteditable=
+    // false, so a click never lands a caret.
+    const onDelegatedClick = (e: MouseEvent) => {
+      const target = e.target as Element | null;
+
+      // Phase collapse toggle.
+      const phaseBtn = target?.closest?.(".phase-toggle") as HTMLElement | null;
+      if (phaseBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const box = phaseBtn.closest(".phase") as HTMLElement | null;
+        if (box) {
+          const collapsed = box.classList.toggle("collapsed");
+          phaseBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+          markDirty();
+        }
+        return;
+      }
+
+      // On-chart "add workstream row".
+      if (target?.closest?.(".gantt-add-btn")) {
+        e.preventDefault();
+        e.stopPropagation();
+        ganttOpsRef.current.add();
+        return;
+      }
+
+      // On-chart per-row reorder / remove.
+      const ctrl = target?.closest?.(".gantt-ctrl") as HTMLElement | null;
+      if (ctrl) {
+        e.preventDefault();
+        e.stopPropagation();
+        const row = ctrl.closest(".gantt-row") as HTMLElement | null;
+        if (!row) return;
+        if (ctrl.classList.contains("gantt-ctrl-up")) ganttOpsRef.current.move(row, -1);
+        else if (ctrl.classList.contains("gantt-ctrl-down")) ganttOpsRef.current.move(row, 1);
+        else if (ctrl.classList.contains("gantt-ctrl-del")) ganttOpsRef.current.remove(row);
+        return;
+      }
     };
-    content.addEventListener("click", onPhaseToggle);
+    content.addEventListener("click", onDelegatedClick);
 
     const gLine = (track: HTMLElement, clientX: number) => {
       const r = track.getBoundingClientRect();
@@ -453,10 +521,12 @@ export function HtmlScriptEditor({
     };
     content.addEventListener("pointerdown", onDragDown);
     content.addEventListener("pointermove", onDragHover);
-  }, [css, initialHtml, refreshSections, refreshTables, refreshGantt, setupPhases, markDirty, readOnly]);
+  }, [css, initialHtml, refreshSections, refreshTables, setupGanttControls, setupPhases, markDirty, readOnly]);
 
-  // Keep the restore/source-apply paths able to re-inject the phase toggles.
+  // Keep the restore/source-apply paths able to re-inject the phase toggles
+  // and the on-chart Gantt controls.
   useEffect(() => { setupPhasesRef.current = setupPhases; }, [setupPhases]);
+  useEffect(() => { setupGanttControlsRef.current = setupGanttControls; }, [setupGanttControls]);
 
   // ── Presence heartbeat (~2s) ──
   useEffect(() => {
@@ -568,7 +638,7 @@ export function HtmlScriptEditor({
         refreshTables();
         setupPhasesRef.current();
         markGanttStaticRef.current();
-        refreshGantt();
+        setupGanttControlsRef.current();
       }
       dirtyRef.current = false;
       secondsRef.current = AUTOSAVE_SECONDS;
@@ -593,7 +663,7 @@ export function HtmlScriptEditor({
       savingRef.current = false;
       setSaving(false);
     }
-  }, [base, css, showSource, sourceHtml, refreshSections, refreshTables, refreshGantt, loadRevisions]);
+  }, [base, css, showSource, sourceHtml, refreshSections, refreshTables, loadRevisions]);
 
   useEffect(() => { doSaveRef.current = doSave; }, [doSave]);
 
@@ -755,11 +825,23 @@ export function HtmlScriptEditor({
     refreshTables();
   }
 
-  // ── Gantt / timeline rows (comms plan) ──
-  // Add a new workstream row to the Gantt AND a linked row in the Pre-event
-  // table below (matched by data-track), so dragging the bar keeps the
-  // table's window/deadline in sync — same wiring the seeded rows use.
-  function addGanttRow() {
+  // ── On-chart Gantt row ops (add / reorder / remove) ──
+  // Element-based (the delegated click handler passes the clicked row), so
+  // they stay correct no matter how the chart was re-rendered. Every op keeps
+  // the Pre-event table below in sync: add creates a linked row, remove drops
+  // it, reorder re-sorts the linked rows to match the new chart order.
+
+  // Previous / next sibling that is itself a `.gantt-row` (skips the header
+  // and the injected `.gantt-add` footer).
+  const adjacentGanttRow = (row: HTMLElement, dir: -1 | 1): HTMLElement | null => {
+    let el = (dir === -1 ? row.previousElementSibling : row.nextElementSibling) as HTMLElement | null;
+    while (el && !el.classList.contains("gantt-row")) {
+      el = (dir === -1 ? el.previousElementSibling : el.nextElementSibling) as HTMLElement | null;
+    }
+    return el;
+  };
+
+  const addGanttRow = useCallback(() => {
     const root = contentRef.current;
     const gantt = root?.querySelector<HTMLElement>(".gantt");
     if (!root || !gantt) return;
@@ -772,7 +854,8 @@ export function HtmlScriptEditor({
       `<div class="gantt-track">${GANTT_CELLS_HTML}` +
       `<div class="bar ${cls}" data-track="${uid}" style="grid-column:4 / 7">New item</div>` +
       `</div>`;
-    gantt.appendChild(row);
+    // Insert before the "add row" footer so it stays at the bottom.
+    gantt.insertBefore(row, gantt.querySelector(":scope > .gantt-add"));
 
     // Linked row in the Pre-event promotion table (the "table below").
     const tbody = root.querySelector<HTMLTableSectionElement>('[data-sid="pre-event"] table tbody');
@@ -787,32 +870,35 @@ export function HtmlScriptEditor({
       tbody.appendChild(tr);
     }
 
-    markGanttStaticRef.current(); // new label editable, bars stay drag-only
+    markGanttStaticRef.current();
+    setupGanttControlsRef.current(); // give the new row its controls + editable label
     markDirty();
-    refreshGantt();
     refreshTables();
     row.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-  function moveGanttRow(i: number, dir: -1 | 1) {
-    const a = ganttRowsRef.current[i];
-    const b = ganttRowsRef.current[i + dir];
-    if (!a || !b || !b.parentNode) return;
-    if (dir === -1) b.parentNode.insertBefore(a, b);
-    else b.parentNode.insertBefore(a, b.nextSibling);
+  }, [markDirty, refreshTables]);
+
+  const moveGanttRow = useCallback((row: HTMLElement, dir: -1 | 1) => {
+    const sibling = adjacentGanttRow(row, dir);
+    if (!sibling || !row.parentNode) return;
+    if (dir === -1) row.parentNode.insertBefore(row, sibling);
+    else row.parentNode.insertBefore(sibling, row);
+    syncTableOrderToGantt();
     markDirty();
-    refreshGantt();
-  }
-  function removeGanttRow(i: number) {
-    const row = ganttRowsRef.current[i];
-    if (!row) return;
+    refreshTables();
+  }, [syncTableOrderToGantt, markDirty, refreshTables]);
+
+  const removeGanttRow = useCallback((row: HTMLElement) => {
     if (!confirm("Remove this timeline row (and its linked table row, if any)?")) return;
     const track = row.querySelector<HTMLElement>(".bar[data-track]")?.getAttribute("data-track");
     row.remove();
     if (track) contentRef.current?.querySelector(`tr[data-track="${track}"]`)?.remove();
     markDirty();
-    refreshGantt();
     refreshTables();
-  }
+  }, [markDirty, refreshTables]);
+
+  useEffect(() => {
+    ganttOpsRef.current = { add: addGanttRow, move: moveGanttRow, remove: removeGanttRow };
+  }, [addGanttRow, moveGanttRow, removeGanttRow]);
 
   // Newest revision that was a deliberate act — a manual Save, a section
   // edit, or an earlier revert. Auto-saves tag themselves "Auto-saved".
@@ -855,7 +941,7 @@ export function HtmlScriptEditor({
         refreshTables();
         setupPhasesRef.current();
         markGanttStaticRef.current();
-        refreshGantt();
+        setupGanttControlsRef.current();
       }
       dirtyRef.current = false;
       setDirty(false);
@@ -929,7 +1015,7 @@ export function HtmlScriptEditor({
             </button>
             <button
               type="button"
-              onClick={() => { setTab("tables"); refreshTables(); refreshGantt(); }}
+              onClick={() => { setTab("tables"); refreshTables(); }}
               className={cn("inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "tables" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
             >
               <Table2 size={13} /> Tables
@@ -1014,38 +1100,6 @@ export function HtmlScriptEditor({
 
           {tab === "tables" && (
             <div className="space-y-2 rounded-xl border border-line bg-card-solid p-2">
-              {hasGantt && (
-                <div className="overflow-hidden rounded-lg border border-brand-200">
-                  <div className="flex items-center justify-between bg-brand-50 px-2 py-1.5">
-                    <span className="truncate text-xs font-semibold text-brand-900">Timeline (Gantt)</span>
-                    {!readOnly && (
-                      <button type="button" onClick={addGanttRow} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900">
-                        <Plus size={12} /> Add row
-                      </button>
-                    )}
-                  </div>
-                  <ul className="space-y-0.5 p-1">
-                    {ganttRows.map((r, i) => (
-                      <li key={i} className="rounded-md px-1.5 py-1 hover:bg-elevated">
-                        <div className="flex items-center gap-0.5">
-                          <span className="w-4 shrink-0 text-right font-mono text-[10px] text-subtle">{i + 1}</span>
-                          <span className="flex-1 truncate text-xs text-fg" title={r.label}>{r.label}</span>
-                          {r.linked && <span title="Linked to a table row below" className="shrink-0 rounded bg-brand-100 px-1 text-[9px] font-semibold uppercase tracking-wide text-brand-700">linked</span>}
-                          {!readOnly && (
-                            <>
-                              <button type="button" title="Move up" disabled={i === 0} onClick={() => moveGanttRow(i, -1)} className={miniBtn}><ChevronUp size={13} /></button>
-                              <button type="button" title="Move down" disabled={i === ganttRows.length - 1} onClick={() => moveGanttRow(i, 1)} className={miniBtn}><ChevronDown size={13} /></button>
-                              <button type="button" title="Remove row" onClick={() => removeGanttRow(i)} className={cn(miniBtn, "hover:text-rose-700")}><Trash2 size={12} /></button>
-                            </>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                    {ganttRows.length === 0 && <li className="px-2 py-1.5 text-[11px] text-muted">No timeline rows.</li>}
-                  </ul>
-                  <p className="px-2 pb-1.5 text-[10px] leading-relaxed text-muted">Add a row to drop a new bar on the Gantt chart with a matching row in the Pre-event table below. Drag the bar to set its dates; the table row follows.</p>
-                </div>
-              )}
               <p className="px-1.5 pt-1 text-[11px] font-bold uppercase tracking-wider text-subtle">Tables</p>
               {tables.length === 0 && (
                 <p className="px-2 py-2 text-[11px] text-muted">No tables in this document.</p>
