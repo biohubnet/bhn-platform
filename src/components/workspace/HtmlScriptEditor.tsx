@@ -64,6 +64,9 @@ const GANTT_COLS = 17;
 const GANTT_CELLS_HTML = Array.from({ length: GANTT_COLS }, (_, i) => `<div class="cell" style="grid-column:${i + 1}"></div>`).join("");
 // Bar colours cycled for new timeline rows so successive adds don't all match.
 const BAR_CLASSES = ["g", "gd", "bl", "pl", "rs"];
+// Section eyebrows that get a collapse toggle: the three Phase boxes plus
+// Revenue (sponsorship) and the Deliverable template (sample report).
+const COLLAPSIBLE_EYEBROW = /^(phase\s*\d|revenue|deliverable template)/i;
 
 function adaptCss(css: string): string {
   return css
@@ -348,23 +351,25 @@ export function HtmlScriptEditor({
     }
   }, []);
 
-  // Give each "Phase N" box a collapse toggle. Idempotent: adds the `phase`
-  // class and injects one `.phase-toggle` per box only if absent, so it's
-  // safe to re-run after the document HTML is replaced or reloaded (the
-  // toggle is part of the saved HTML the second time around).
+  // Give each collapsible section a collapse toggle: the three Phase boxes
+  // plus Revenue (sponsorship) and the Deliverable template (sample report),
+  // matched by their eyebrow label. Idempotent: adds the `phase` collapse-hook
+  // class and injects one `.phase-toggle` per box only if absent, so it's safe
+  // to re-run after the document HTML is replaced or reloaded (the toggle is
+  // part of the saved HTML the second time around).
   const setupPhases = useCallback(() => {
     const root = contentRef.current;
     if (!root) return;
     for (const box of Array.from(root.querySelectorAll<HTMLElement>(".box"))) {
       const eyebrow = box.querySelector(".eyebrow")?.textContent?.trim() ?? "";
-      if (!/^phase\s*\d/i.test(eyebrow)) continue;
+      if (!COLLAPSIBLE_EYEBROW.test(eyebrow)) continue;
       box.classList.add("phase");
       if (box.querySelector(":scope > .phase-toggle")) continue;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "phase-toggle";
       btn.setAttribute("contenteditable", "false");
-      btn.setAttribute("aria-label", "Collapse or expand this phase");
+      btn.setAttribute("aria-label", "Collapse or expand this section");
       btn.setAttribute("aria-expanded", box.classList.contains("collapsed") ? "false" : "true");
       btn.innerHTML = '<span class="chev">▾</span>';
       box.insertBefore(btn, box.firstChild);
