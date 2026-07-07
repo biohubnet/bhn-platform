@@ -65,8 +65,9 @@ const GANTT_CELLS_HTML = Array.from({ length: GANTT_COLS }, (_, i) => `<div clas
 // Bar colours cycled for new timeline rows so successive adds don't all match.
 const BAR_CLASSES = ["g", "gd", "bl", "pl", "rs"];
 // Section eyebrows that get a collapse toggle: the three Phase boxes plus
-// Revenue (sponsorship) and the Deliverable template (sample report).
-const COLLAPSIBLE_EYEBROW = /^(phase\s*\d|revenue|deliverable template)/i;
+// Revenue (sponsorship), the Deliverable template (sample report), and
+// Execution (full task breakdown).
+const COLLAPSIBLE_EYEBROW = /^(phase\s*\d|revenue|deliverable template|execution)/i;
 
 function adaptCss(css: string): string {
   return css
