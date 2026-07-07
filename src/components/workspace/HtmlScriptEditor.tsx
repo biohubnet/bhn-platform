@@ -111,6 +111,7 @@ export function HtmlScriptEditor({
   initialEditCount = 0,
   alreadyConverted = false,
   scriptUrl,
+  showStructureTabs = true,
 }: {
   scriptId: string;
   initialHtml: string;
@@ -129,6 +130,10 @@ export function HtmlScriptEditor({
   alreadyConverted?: boolean;
   /** P4: full URL of this page, emailed on account creation. */
   scriptUrl?: string;
+  /** Show the Sections + Tables sidebar tabs. Off for docs that don't need
+   *  structural editing (e.g. the Symposium plan, edited on-page + on-chart),
+   *  leaving just Comments + History. Defaults on (interview guide etc.). */
+  showStructureTabs?: boolean;
 }) {
   const myColor = useMemo(() => colorForKey(meId), [meId]);
   const base = apiBase ?? `/api/workspace/scripts/${scriptId}`;
@@ -173,7 +178,7 @@ export function HtmlScriptEditor({
   const [error, setError] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
   const [sourceHtml, setSourceHtml] = useState(initialHtml);
-  const [tab, setTab] = useState<"sections" | "tables" | "history" | "comments">("sections");
+  const [tab, setTab] = useState<"sections" | "tables" | "history" | "comments">(showStructureTabs ? "sections" : "comments");
   const [sections, setSections] = useState<{ heading: string }[]>([]);
   // Dialogue rows inside the "Draft Full Intercut Script" block (.intercut-row).
   const [intercut, setIntercut] = useState<{ label: string }[]>([]);
@@ -370,9 +375,23 @@ export function HtmlScriptEditor({
       if (node && content.contains(node)) activeSidRef.current = sidOf(node);
     };
     const onSel = () => { updateActive(); paintRef.current(); };
+    // Mirror a workstream's left-column label onto its Gantt bar as you type,
+    // but only for bars tagged data-mirror-label (the ones added from the
+    // chart) — seeded bars keep their own curated captions.
+    const syncMirrorBar = () => {
+      const s = shadow as unknown as { getSelection?: () => Selection | null };
+      const sel = typeof s.getSelection === "function" ? s.getSelection() : window.getSelection();
+      const node = sel?.anchorNode ?? null;
+      const el = node && node.nodeType === 1 ? (node as Element) : node?.parentElement ?? null;
+      const span = el?.closest?.(".gantt-label-text") as HTMLElement | null;
+      if (!span) return;
+      const bar = span.closest(".gantt-row")?.querySelector<HTMLElement>(".bar[data-mirror-label]");
+      if (bar) bar.textContent = span.textContent || "";
+    };
     const onInput = () => {
       markDirty();
       updateActive();
+      syncMirrorBar();
       const sid = activeSidRef.current;
       if (sid) recentRef.current.set(sid, Date.now());
       paintRef.current();
@@ -849,10 +868,12 @@ export function HtmlScriptEditor({
     const cls = BAR_CLASSES[gantt.querySelectorAll(".gantt-row").length % BAR_CLASSES.length];
     const row = document.createElement("div");
     row.className = "gantt-row";
+    // The bar starts with the same caption as the label and is tagged
+    // data-mirror-label, so renaming the left-column label updates the bar.
     row.innerHTML =
       `<div class="gantt-label">New workstream</div>` +
       `<div class="gantt-track">${GANTT_CELLS_HTML}` +
-      `<div class="bar ${cls}" data-track="${uid}" style="grid-column:4 / 7">New item</div>` +
+      `<div class="bar ${cls}" data-track="${uid}" data-mirror-label="1" style="grid-column:4 / 7">New workstream</div>` +
       `</div>`;
     // Insert before the "add row" footer so it stays at the bottom.
     gantt.insertBefore(row, gantt.querySelector(":scope > .gantt-add"));
@@ -1005,21 +1026,25 @@ export function HtmlScriptEditor({
         )}
 
         <aside className="self-start space-y-3 lg:sticky lg:top-16">
-          <div className="grid grid-cols-4 gap-1 rounded-lg bg-elevated/60 p-1">
-            <button
-              type="button"
-              onClick={() => setTab("sections")}
-              className={cn("inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "sections" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
-            >
-              <ListTree size={13} /> Sections
-            </button>
-            <button
-              type="button"
-              onClick={() => { setTab("tables"); refreshTables(); }}
-              className={cn("inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "tables" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
-            >
-              <Table2 size={13} /> Tables
-            </button>
+          <div className={cn("grid gap-1 rounded-lg bg-elevated/60 p-1", showStructureTabs ? "grid-cols-4" : "grid-cols-2")}>
+            {showStructureTabs && (
+              <button
+                type="button"
+                onClick={() => setTab("sections")}
+                className={cn("inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "sections" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
+              >
+                <ListTree size={13} /> Sections
+              </button>
+            )}
+            {showStructureTabs && (
+              <button
+                type="button"
+                onClick={() => { setTab("tables"); refreshTables(); }}
+                className={cn("inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-xs font-semibold transition-colors", tab === "tables" ? "bg-card-solid text-fg shadow-card-rest" : "text-muted hover:text-fg")}
+              >
+                <Table2 size={13} /> Tables
+              </button>
+            )}
             <button
               type="button"
               onClick={() => { setTab("comments"); loadComments(); }}

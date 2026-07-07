@@ -63,6 +63,9 @@ export default async function SymposiumCommsPlanPage() {
         css={rc?.css ?? ""}
         meId={meId ?? "anon"}
         meName={meName}
+        // This plan is edited on the page + on the Gantt chart itself, so the
+        // structural Sections/Tables tabs aren't needed — keep Comments + History.
+        showStructureTabs={false}
       />
     </div>
   );

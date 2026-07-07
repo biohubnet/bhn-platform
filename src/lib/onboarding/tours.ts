@@ -30,18 +30,18 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.07b";
+export const TOUR_VERSION = "2026.07.07c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Symposium comms plan: collapse + on-chart Gantt editing — Jul 2026
   {
     id: "workspace.symposium-collapse-gantt",
     title: "Collapse phases + edit the Gantt on the chart",
-    body: "On the 26 Symposium Comms Plan, click the chevron in a phase's top-right corner to collapse it to just its title. And you can build the timeline right on the Gantt chart: hover any workstream for reorder (▲▼) and remove (✕) buttons, or hit “+ Add workstream row” at the bottom. Every change flows to the Pre-event table below.",
+    body: "On the 26 Symposium Comms Plan, click the chevron in a phase's top-right corner to collapse it to just its title. And you can build the timeline right on the Gantt chart: hover any workstream for reorder (▲▼) and remove (✕) buttons, or hit “+ Add workstream row” at the bottom. Rename a workstream in the left column and its bar caption follows; every change flows to the Pre-event table below.",
     path: "/admin/workspace/marketing/symposium",
     placement: "center",
     roles: ["admin", "superadmin"],
-    since: "2026.07.07b",
+    since: "2026.07.07c",
   },
   // ─── Admin global search — Jul 2026
   {
