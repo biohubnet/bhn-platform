@@ -34,7 +34,7 @@ export default async function AdminShowcasePage() {
   // Showcase pathways (each with its cohorts) + legacy standalone groups,
   // with per-slug submission counts (submissions couple loosely by
   // programSlug == slug).
-  const [pathwayRows, standaloneRows, subCounts, realPathwayRows] = await Promise.all([
+  const [pathwayRows, standaloneRows, subCounts, realPathwayRows, workshopRows] = await Promise.all([
     prisma.showcasePathway.findMany({
       orderBy: { createdAt: "desc" },
       include: { cohorts: { orderBy: { cohortNumber: "asc" } } },
@@ -60,6 +60,12 @@ export default async function AdminShowcasePage() {
           select: { id: true, name: true, slug: true },
         },
       },
+    }),
+    // Real workshops / tours / bootcamps — attendees can be added to a
+    // showcase the same way pathway cohorts are (via an on-demand group).
+    prisma.workshop.findMany({
+      orderBy: { startDateTime: "asc" },
+      select: { id: true, slug: true, title: true, kind: true, partnerOrganization: true },
     }),
   ]);
   const countBySlug = new Map(
@@ -90,6 +96,25 @@ export default async function AdminShowcasePage() {
     active: g.active,
     submissionCount: countBySlug.get(g.slug) ?? 0,
   }));
+
+  // Workshops + any existing showcase group bound to them (slug wsh-<slug>).
+  const wshGroupRows = await prisma.showcaseGroup.findMany({
+    where: { slug: { in: workshopRows.map((w) => `wsh-${w.slug}`) } },
+    select: { id: true, slug: true, name: true, active: true },
+  });
+  const wshGroupBySlug = new Map(wshGroupRows.map((g) => [g.slug, g]));
+  const workshops = workshopRows.map((w) => {
+    const g = wshGroupBySlug.get(`wsh-${w.slug}`);
+    return {
+      id: w.id,
+      title: w.title,
+      kind: w.kind,
+      partner: w.partnerOrganization,
+      group: g
+        ? { id: g.id, slug: g.slug, name: g.name, active: g.active, submissionCount: countBySlug.get(g.slug) ?? 0 }
+        : null,
+    };
+  });
 
   const adminName =
     (session.user as { name?: string }).name ??
@@ -123,6 +148,7 @@ export default async function AdminShowcasePage() {
         initialPathways={pathways}
         initialStandalone={standalone}
         realPathways={realPathwayRows}
+        initialWorkshops={workshops}
       />
 
       <ShowcaseAdminClient initialSubmissions={serialised} adminName={adminName} />

@@ -6,7 +6,7 @@
  * under it, each with its own public /showcase/<slug> link. Legacy
  * standalone showcases (no pathway) are listed in their own section.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   Copy,
@@ -18,6 +18,8 @@ import {
   Layers,
   Pencil,
   UserPlus,
+  Users,
+  Wrench,
 } from "lucide-react";
 
 type Cohort = {
@@ -48,18 +50,26 @@ type Standalone = {
 };
 type RealCohort = { id: string; name: string; slug: string };
 type RealPathway = { id: string; title: string; cohorts: RealCohort[] };
+type WorkshopGroup = { id: string; slug: string; name: string; active: boolean; submissionCount: number };
+type WorkshopRow = { id: string; title: string; kind: string; partner: string | null; group: WorkshopGroup | null };
 
 export function ShowcasePathwaysManager({
   initialPathways,
   initialStandalone,
   realPathways,
+  initialWorkshops = [],
 }: {
   initialPathways: Pathway[];
   initialStandalone: Standalone[];
   realPathways: RealPathway[];
+  initialWorkshops?: WorkshopRow[];
 }) {
   const [pathways, setPathways] = useState(initialPathways);
   const [standalone, setStandalone] = useState(initialStandalone);
+  const [workshops, setWorkshops] = useState<WorkshopRow[]>(initialWorkshops);
+  const [busyWorkshop, setBusyWorkshop] = useState<string | null>(null);
+  // Which group's people roster is expanded (keyed by group SLUG).
+  const [rosterFor, setRosterFor] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", eyebrow: "", intro: "" });
   const [busy, setBusy] = useState(false);
@@ -77,18 +87,44 @@ export function ShowcasePathwaysManager({
    *  admin can add several people back-to-back without losing their
    *  place). The submissions grid below picks up the new row on the
    *  next real page load / its own "Refresh list" action. */
-  function bumpCount(slug: string) {
+  function adjustCount(slug: string, delta: number) {
     setPathways((ps) =>
       ps.map((p) => ({
         ...p,
         cohorts: p.cohorts.map((c) =>
-          c.slug === slug ? { ...c, submissionCount: c.submissionCount + 1 } : c,
+          c.slug === slug ? { ...c, submissionCount: Math.max(0, c.submissionCount + delta) } : c,
         ),
       })),
     );
     setStandalone((s) =>
-      s.map((g) => (g.slug === slug ? { ...g, submissionCount: g.submissionCount + 1 } : g)),
+      s.map((g) => (g.slug === slug ? { ...g, submissionCount: Math.max(0, g.submissionCount + delta) } : g)),
     );
+    setWorkshops((ws) =>
+      ws.map((w) =>
+        w.group && w.group.slug === slug ? { ...w, group: { ...w.group, submissionCount: Math.max(0, w.group.submissionCount + delta) } } : w,
+      ),
+    );
+  }
+  const bumpCount = (slug: string) => adjustCount(slug, 1);
+
+  /** Idempotently create (or fetch) the showcase group for a real workshop,
+   *  then open its Add-person panel so a roster can be entered immediately. */
+  async function setUpWorkshop(workshopId: string) {
+    setBusyWorkshop(workshopId);
+    try {
+      const res = await fetch("/api/admin/showcase/workshop-group", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workshopId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { group?: WorkshopGroup };
+      if (data.group) {
+        setWorkshops((ws) => ws.map((w) => (w.id === workshopId ? { ...w, group: data.group! } : w)));
+        setAddingPersonFor(data.group.slug);
+      }
+    } finally {
+      setBusyWorkshop(null);
+    }
   }
 
   const publicUrl = (slug: string) =>
@@ -281,7 +317,7 @@ export function ShowcasePathwaysManager({
     );
   }
 
-  const empty = pathways.length === 0 && standalone.length === 0;
+  const empty = pathways.length === 0 && standalone.length === 0 && workshops.length === 0;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-line/70 bg-card-solid">
@@ -438,6 +474,10 @@ export function ShowcasePathwaysManager({
                           setAddingPersonFor(addingPersonFor === c.slug ? null : c.slug)
                         }
                         addPersonOpen={addingPersonFor === c.slug}
+                        onToggleRoster={() =>
+                          setRosterFor(rosterFor === c.slug ? null : c.slug)
+                        }
+                        rosterOpen={rosterFor === c.slug}
                       />
                       {addingPersonFor === c.slug && (
                         <AddSubmissionForm
@@ -445,6 +485,9 @@ export function ShowcasePathwaysManager({
                           onAdded={() => bumpCount(c.slug)}
                           onClose={() => setAddingPersonFor(null)}
                         />
+                      )}
+                      {rosterFor === c.slug && (
+                        <RosterPanel slug={c.slug} onRemoved={() => adjustCount(c.slug, -1)} />
                       )}
                       <CohortBinding
                         pathwayLinked={!!p.linkedPathwayId}
@@ -492,6 +535,10 @@ export function ShowcasePathwaysManager({
                         setAddingPersonFor(addingPersonFor === g.slug ? null : g.slug)
                       }
                       addPersonOpen={addingPersonFor === g.slug}
+                      onToggleRoster={() =>
+                        setRosterFor(rosterFor === g.slug ? null : g.slug)
+                      }
+                      rosterOpen={rosterFor === g.slug}
                     />
                     {addingPersonFor === g.slug && (
                       <AddSubmissionForm
@@ -499,6 +546,76 @@ export function ShowcasePathwaysManager({
                         onAdded={() => bumpCount(g.slug)}
                         onClose={() => setAddingPersonFor(null)}
                       />
+                    )}
+                    {rosterFor === g.slug && (
+                      <RosterPanel slug={g.slug} onRemoved={() => adjustCount(g.slug, -1)} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Workshops, tours & bootcamps ── */}
+          {workshops.length > 0 && (
+            <div className="px-5 py-4">
+              <p className="mb-2 flex items-center gap-1.5 text-[11.5px] font-medium uppercase tracking-[0.14em] text-fg-subtle">
+                <Wrench className="h-3 w-3" /> Workshops, tours &amp; bootcamps
+              </p>
+              <div className="space-y-1.5">
+                {workshops.map((w) => (
+                  <div key={w.id} className="space-y-1">
+                    {w.group ? (
+                      <>
+                        <CohortRow
+                          label={w.title}
+                          slug={w.group.slug}
+                          active={w.group.active}
+                          count={w.group.submissionCount}
+                          url={publicUrl(w.group.slug)}
+                          copied={copied === w.group.slug}
+                          onCopy={() => copyLink(w.group!.slug)}
+                          onToggle={() => toggleCohort(null, w.group!.id, !w.group!.active)}
+                          onDelete={() =>
+                            deleteCohort(null, w.group!.id, w.group!.slug, w.group!.submissionCount)
+                          }
+                          onAddPerson={() =>
+                            setAddingPersonFor(addingPersonFor === w.group!.slug ? null : w.group!.slug)
+                          }
+                          addPersonOpen={addingPersonFor === w.group!.slug}
+                          onToggleRoster={() =>
+                            setRosterFor(rosterFor === w.group!.slug ? null : w.group!.slug)
+                          }
+                          rosterOpen={rosterFor === w.group!.slug}
+                        />
+                        {addingPersonFor === w.group.slug && (
+                          <AddSubmissionForm
+                            slug={w.group.slug}
+                            onAdded={() => bumpCount(w.group!.slug)}
+                            onClose={() => setAddingPersonFor(null)}
+                          />
+                        )}
+                        {rosterFor === w.group.slug && (
+                          <RosterPanel slug={w.group.slug} onRemoved={() => adjustCount(w.group!.slug, -1)} />
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-raised/20">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] font-medium text-fg">{w.title}</span>
+                          <span className="rounded-full bg-line/50 px-2 py-0.5 text-[10px] font-medium capitalize text-fg-subtle">{w.kind}</span>
+                          {w.partner && <span className="text-[11px] text-fg-subtle">{w.partner}</span>}
+                        </div>
+                        <button
+                          onClick={() => setUpWorkshop(w.id)}
+                          disabled={busyWorkshop === w.id}
+                          className="inline-flex items-center gap-1 rounded-md bg-brand-600 px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
+                          title="Create a showcase for this workshop, then add people"
+                        >
+                          {busyWorkshop === w.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserPlus className="h-3 w-3" />}
+                          Set up &amp; add people
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -633,6 +750,8 @@ function CohortRow({
   onDelete,
   onAddPerson,
   addPersonOpen,
+  onToggleRoster,
+  rosterOpen,
 }: {
   label: string;
   slug: string;
@@ -645,6 +764,8 @@ function CohortRow({
   onDelete: () => void;
   onAddPerson: () => void;
   addPersonOpen: boolean;
+  onToggleRoster: () => void;
+  rosterOpen: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-raised/20">
@@ -688,6 +809,19 @@ function CohortRow({
           title="Manually add a person to this showcase — bypasses the public form and any attendance gate"
         >
           <UserPlus className="h-3 w-3" /> Add person
+        </button>
+        <button
+          onClick={onToggleRoster}
+          disabled={count === 0}
+          className={[
+            "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition disabled:opacity-40",
+            rosterOpen
+              ? "border-brand-400 bg-brand-50 text-brand-700"
+              : "border-line bg-card-solid text-fg hover:border-brand-400 hover:text-brand-700",
+          ].join(" ")}
+          title={count === 0 ? "No people yet" : "View and remove people in this showcase"}
+        >
+          <Users className="h-3 w-3" /> People
         </button>
         <button
           onClick={onCopy}
@@ -853,6 +987,71 @@ function AddSubmissionForm({
         </button>
       </div>
     </form>
+  );
+}
+
+/** Expandable roster for one showcase group: lists the people in it and lets
+ *  an admin remove any of them (hard-delete of the ShowcaseSubmission + its
+ *  headshot, via the same endpoint the flat grid uses). */
+function RosterPanel({ slug, onRemoved }: { slug: string; onRemoved: () => void }) {
+  type Person = { id: string; name: string; linkedin: string; photoUrl: string };
+  const [people, setPeople] = useState<Person[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    fetch(`/api/admin/showcase/submissions?slug=${encodeURIComponent(slug)}`)
+      .then((r) => r.json())
+      .then((d: { people?: Person[] }) => { if (live) setPeople(d.people ?? []); })
+      .catch(() => { if (live) setError("Couldn't load the roster."); });
+    return () => { live = false; };
+  }, [slug]);
+
+  async function remove(p: Person) {
+    if (!confirm(`Remove ${p.name} from this showcase? This deletes their entry and headshot — it can't be undone.`)) return;
+    setRemoving(p.id);
+    try {
+      const res = await fetch(`/api/admin/showcase/${p.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setPeople((ps) => (ps ?? []).filter((x) => x.id !== p.id));
+      onRemoved();
+    } catch {
+      setError(`Couldn't remove ${p.name}.`);
+    } finally {
+      setRemoving(null);
+    }
+  }
+
+  return (
+    <div className="ml-2 space-y-1 rounded-md border border-line/70 bg-raised/15 p-2.5">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-fg-subtle">People in /{slug}</span>
+      {error && <p className="text-[11.5px] text-rose-600">{error}</p>}
+      {people === null ? (
+        <p className="flex items-center gap-1.5 py-1 text-[12px] text-fg-subtle"><Loader2 className="h-3 w-3 animate-spin" /> Loading…</p>
+      ) : people.length === 0 ? (
+        <p className="py-1 text-[12px] text-fg-subtle">No people in this showcase yet.</p>
+      ) : (
+        <ul className="space-y-0.5">
+          {people.map((p) => (
+            <li key={p.id} className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-raised/30">
+              {/* eslint-disable-next-line @next/next/no-img-element -- small admin thumbnail from R2 */}
+              <img src={p.photoUrl} alt="" className="h-6 w-6 shrink-0 rounded-full object-cover" />
+              <span className="flex-1 truncate text-[12.5px] text-fg">{p.name}</span>
+              <a href={p.linkedin} target="_blank" rel="noopener noreferrer" className="shrink-0 text-[11px] text-brand-700 hover:underline">LinkedIn</a>
+              <button
+                onClick={() => remove(p)}
+                disabled={removing === p.id}
+                className="shrink-0 rounded-md border border-line bg-card-solid p-1 text-fg-muted transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-50"
+                title={`Remove ${p.name}`}
+              >
+                {removing === p.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

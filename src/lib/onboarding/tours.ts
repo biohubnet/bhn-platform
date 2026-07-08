@@ -30,19 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.07e";
+export const TOUR_VERSION = "2026.07.07f";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Showcase · add a person directly — Jul 2026
   {
     id: "showcase.add-person",
-    title: "Add someone to a cohort without the public link",
-    body: "Every cohort row on Admin → Showcase now has an Add person button — a quick name + LinkedIn + headshot form that files an entry directly, bypassing the cohort's open/closed state and any attendance gate. Handy for a printed sign-in sheet or a walk-in who never used the public form.",
+    title: "Add & remove showcase people — workshops, pathways, cohorts",
+    body: "On Admin → Showcase you can build a roster for any program: cohorts, standalone showcases, and now Workshops (a “Set up & add people” click per workshop). Each Add person form takes name + LinkedIn + headshot, no public link needed. Every showcase has a People button to open its roster and remove anyone with one click.",
     path: "/admin/showcase",
     placement: "center",
     roles: ["admin", "superadmin"],
     cta: { label: "Open Showcase admin", href: "/admin/showcase" },
-    since: "2026.07.07e",
+    since: "2026.07.07f",
   },
   // ─── Role-based multi-level certifications — Jul 2026
   {

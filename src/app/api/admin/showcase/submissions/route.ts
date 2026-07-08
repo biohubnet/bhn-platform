@@ -24,6 +24,32 @@ import { MAX_PHOTO_BYTES, ALLOWED_PHOTO_TYPES, normaliseLinkedin, photoExtFor } 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
+/**
+ * GET /api/admin/showcase/submissions?slug=<groupSlug>
+ * Admin-only. Returns the people (submissions) in one showcase group, newest
+ * first — powers the in-context roster + per-person remove in the manager.
+ */
+export async function GET(req: NextRequest) {
+  const session = await requireRole("admin").catch(() => null);
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const slug = (req.nextUrl.searchParams.get("slug") ?? "").trim();
+  if (!slug) return NextResponse.json({ error: "slug required" }, { status: 400 });
+  const people = await prisma.showcaseSubmission.findMany({
+    where: { programSlug: slug },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true, linkedinUrl: true, linkedinHandle: true, photoUrl: true, createdAt: true },
+  });
+  return NextResponse.json({
+    people: people.map((p) => ({
+      id: p.id,
+      name: p.name,
+      linkedin: p.linkedinUrl ?? p.linkedinHandle,
+      photoUrl: p.photoUrl,
+      createdAt: p.createdAt.toISOString(),
+    })),
+  });
+}
+
 export async function POST(req: NextRequest) {
   const session = await requireRole("admin").catch(() => null);
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });

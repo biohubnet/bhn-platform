@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Showcase · workshops + remove people — Jul 2026
+  {
+    title: "Showcase · add & remove people across workshops, pathways, and cohorts",
+    body: "The **Admin → Showcase** manager now covers **workshops** too: a new **Workshops, tours & bootcamps** section lists every workshop, and a single **Set up & add people** click spins up its showcase so you can add attendees (name · LinkedIn · headshot, no public link needed) — exactly like pathway cohorts and standalone showcases. And every showcase now has a **People** button that opens its roster inline, so you can **remove** anyone with one click (deletes their entry and headshot). Add people to workshops, pathways, and cohorts — and take them out — all from one place.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Showcase · manually add a person to a cohort — Jul 2026
   {
     title: "Showcase · add a person to a pathway cohort directly",
