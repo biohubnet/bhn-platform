@@ -77,7 +77,15 @@ export async function checkCertificationProgress(userId: string, programId: stri
       courseIds.length === 0
         ? 0
         : await prisma.enrollment.count({
-            where: { userId, courseId: { in: courseIds }, status: "completed" },
+            where: {
+              userId,
+              courseId: { in: courseIds },
+              status: "completed",
+              // Enforce the tier's rigor: a scored course must clear this
+              // tier's passingScore (70/80/90). Content courses without a
+              // score pass on completion.
+              OR: [{ score: null }, { score: { gte: level.passingScore } }],
+            },
           });
     const allDone = courseIds.length > 0 && completedCount >= courseIds.length;
 
@@ -122,21 +130,27 @@ export async function getProgramProgress(userId: string | null, programId: strin
     : [];
   const credByLevel = new Map(credentials.map((c) => [c.levelId, c]));
 
-  // Completed course ids for this user across every course in the program.
+  // Completion + score for this user across every course in the program.
+  // Score matters because a course only counts toward a tier if it clears
+  // that tier's passingScore (see below) — the same threshold issuance uses.
   const allCourseIds = Array.from(new Set(program.levels.flatMap((l) => l.courseIds ?? [])));
   const completedRows =
     userId && allCourseIds.length
       ? await prisma.enrollment.findMany({
           where: { userId, courseId: { in: allCourseIds }, status: "completed" },
-          select: { courseId: true },
+          select: { courseId: true, score: true },
         })
       : [];
-  const completedSet = new Set(completedRows.map((r) => r.courseId));
+  const scoreByCourse = new Map(completedRows.map((r) => [r.courseId, r.score]));
 
   let priorEarned = true;
   const levels: LevelProgress[] = program.levels.map((level) => {
     const courseIds = level.courseIds ?? [];
-    const completedCourseIds = courseIds.filter((id) => completedSet.has(id));
+    const completedCourseIds = courseIds.filter((id) => {
+      if (!scoreByCourse.has(id)) return false;
+      const s = scoreByCourse.get(id);
+      return s == null || s >= level.passingScore; // meets the tier's bar
+    });
     const cred = credByLevel.get(level.id);
     const earned = !!cred;
     const percent = courseIds.length ? Math.round((completedCourseIds.length / courseIds.length) * 100) : 0;

@@ -33,7 +33,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Role-based multi-level certifications — Jul 2026
   {
     title: "Role-based certifications for every trainee track",
-    body: "The **Certifications** area (ENGAGE → Certifications) now runs as **role-specific tracks** — one per trainee sub-type: **Master's, PhD, Post-doctoral Fellow, Research Associate, and Lab Technician**. (Only trainees take training; employers, admins, and evaluators don't have a track.) Each track is its own three-tier ladder — **Foundation → Practitioner → Advanced** with rising pass marks (70 / 80 / 90%) — and the course mix is tailored to the role: research personas emphasise R&D and analytics, applied personas emphasise manufacturing and process. Pick your track with the persona filter, complete a tier's courses to earn a verifiable credential, and each tier unlocks the next.",
+    body: "The **Certifications** area (ENGAGE → Certifications) now runs as **role-specific tracks** — one per trainee sub-type: **Master's, PhD, Post-doctoral Fellow, Research Associate, and Lab Technician**. (Only trainees take training; employers, admins, and evaluators don't have a track.) Each track is its own three-tier ladder — **Foundation → Practitioner → Advanced** — with a distinct, role-curated course mix at every tier. The pass mark **rises with the tier (70 → 80 → 90%) and is enforced**: to earn a tier you must clear its threshold on that tier's assessed courses, so Advanced genuinely demands more than Foundation. Pick your track with the persona filter, complete a tier to earn its credential, and each tier unlocks the next.",
     kind: "feature",
     visibleTo: ALL,
     daysAgo: 0,

@@ -54,3 +54,38 @@ export function personaLabel(p: string): string {
 export function personaShort(p: string): string {
   return PERSONA_META[p as TraineePersona]?.short ?? p;
 }
+
+/**
+ * Per-persona, per-tier course themes — keyword profiles the seed matches
+ * against real course titles/codes/topics so each of the five tracks gets a
+ * genuinely distinct curriculum (not just a research-vs-applied split).
+ * Foundation differs per persona too. Keywords are matched case-insensitively
+ * against "title code topic"; the seed dedupes a course to one tier.
+ */
+export const PERSONA_TRACK: Record<TraineePersona, { foundation: string[]; practitioner: string[]; advanced: string[] }> = {
+  masters: {
+    foundation: ["aseptic technique", "basics", "resume", "introduction"],
+    practitioner: ["upstream", "bioprocess", "proteomic", "qa/qc (analyt"],
+    advanced: ["protein structure", "clinical", "graduate"],
+  },
+  phd: {
+    foundation: ["aseptic_cell", "cell culture", "basics"],
+    practitioner: ["upstream", "bioprocess", "proteomic", "protein"],
+    advanced: ["clinical", "advanced therap", "car_t", "car-t"],
+  },
+  postdoc: {
+    foundation: ["biologics", "manufactur", "basics"],
+    practitioner: ["upstream", "bioprocess", "qa/qc"],
+    advanced: ["entrepreneur", "regulatory", "customer relationship", "car_t"],
+  },
+  research_associate: {
+    foundation: ["aseptic technique", "cell culture", "basics"],
+    practitioner: ["qa/qc (analyt", "analyt", "upstream", "biologics"],
+    advanced: ["qa/qc (micro", "advanced therap", "mab", "manufactur"],
+  },
+  lab_technician: {
+    foundation: ["aseptic technique", "aseptic_cell", "cell culture"],
+    practitioner: ["mab", "manufactur", "qa/qc (micro", "biologics"],
+    advanced: ["closed systems", "car_t", "car-t", "regulatory"],
+  },
+};
