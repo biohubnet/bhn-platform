@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Multi-level certification framework — Jul 2026
+  {
+    title: "Multi-level certifications (Foundation → Practitioner → Advanced)",
+    body: "A new **Certifications** area (ENGAGE → Certifications) brings multi-level professional credentials to the platform. The flagship **Biomanufacturing Professional Certification** runs as three ordered tiers — **Foundation → Practitioner → Advanced** — each bundling a set of courses with its own rising pass mark (70 / 80 / 90%). Complete every course in a tier to earn a verifiable credential; each tier unlocks the next, so you progress in order rather than skipping ahead. A visual ladder shows every tier as earned, in progress, available, or locked, and credentials are issued automatically the moment you finish a tier's courses.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Symposium comms plan: Gantt/table sync fix — Jul 2026
   {
     title: "Fix: removed Gantt rows no longer leave a stray table row",

@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.07c";
+export const TOUR_VERSION = "2026.07.07d";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Multi-level certifications — Jul 2026
+  {
+    id: "learn.certifications",
+    title: "Earn a multi-level certification",
+    body: "The new Certifications area runs professional credentials as three tiers — Foundation → Practitioner → Advanced. Complete a tier's courses to earn its credential; each tier unlocks the next. The flagship is the Biomanufacturing Professional Certification.",
+    path: "/certifications",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    since: "2026.07.07d",
+  },
   // ─── Symposium comms plan: collapse + on-chart Gantt editing — Jul 2026
   {
     id: "workspace.symposium-collapse-gantt",

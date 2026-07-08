@@ -33,6 +33,7 @@ const en: Dict = {
   "nav.myCourses": "My Courses",
   "nav.gradebook": "Gradebook",
   "nav.certificates": "Certificates",
+  "nav.certifications": "Certifications",
   "nav.credits": "My Credits",
   "nav.rewards": "Rewards",
   "nav.events": "Events",

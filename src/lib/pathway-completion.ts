@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { checkCertificationProgress } from "@/lib/certifications/progress";
 
 /**
  * Check whether a user has finished every required course in a pathway.
@@ -65,5 +66,16 @@ export async function onCourseCompleted(userId: string, courseId: string) {
   });
   for (const m of memberships) {
     await checkPathwayCompletion(userId, m.pathwayId);
+  }
+
+  // Also sweep any certification tier that includes this course — completing
+  // it may have just earned the learner a Foundation/Practitioner/Advanced
+  // credential. checkCertificationProgress is idempotent + prerequisite-aware.
+  const levels = await prisma.certificationLevel.findMany({
+    where: { courseIds: { has: courseId } },
+    select: { programId: true },
+  });
+  for (const programId of new Set(levels.map((l) => l.programId))) {
+    await checkCertificationProgress(userId, programId);
   }
 }

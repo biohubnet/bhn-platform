@@ -212,6 +212,7 @@ model User {
   scormSessions        ScormSession[]
   xapiStatements       XapiStatement[]
   certificates         Certificate[]
+  certificationCredentials CertificationCredential[]
   instructedCourses    Course[]            @relation("Instructor")
   assessmentAttempts   AssessmentAttempt[]
   creditTransactions   CreditTransaction[]
@@ -1764,6 +1765,71 @@ model Certificate {
 
   @@unique([userId, courseId])
   @@unique([userId, pathwayId])
+}
+
+/// ── Certification framework ─────────────────────────────────────────────
+/// A named, multi-level professional certification (e.g. "Biomanufacturing
+/// Professional Certification") composed of three ordered tiers —
+/// Foundation → Practitioner → Advanced. Each tier bundles courses, has its
+/// own passing rigor, and issues a leveled credential; advancing to a tier
+/// requires holding the previous tier's credential. Designed from scratch to
+/// give the platform a genuine Foundation/Practitioner/Advanced structure
+/// (see src/lib/certifications/*).
+model CertificationProgram {
+  id          String                    @id @default(cuid())
+  slug        String                    @unique
+  title       String
+  summary     String?
+  /// Discipline / domain shown as an eyebrow, e.g. "Biomanufacturing".
+  discipline  String?
+  status      String                    @default("draft") // draft | published
+  createdById String?
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  levels      CertificationLevel[]
+  credentials CertificationCredential[]
+}
+
+/// One tier within a CertificationProgram. `tier` is the named level
+/// (foundation | practitioner | advanced); `order` (1/2/3) drives the
+/// prerequisite chain. `courseIds` are the courses a learner must complete
+/// (all of them) to earn the tier; `passingScore` escalates per tier.
+model CertificationLevel {
+  id           String                    @id @default(cuid())
+  programId    String
+  tier         String // foundation | practitioner | advanced
+  order        Int // 1 | 2 | 3
+  title        String
+  summary      String?
+  passingScore Float                     @default(80)
+  courseIds    String[]
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  program      CertificationProgram      @relation(fields: [programId], references: [id], onDelete: Cascade)
+  credentials  CertificationCredential[]
+
+  @@unique([programId, tier])
+  @@index([programId])
+}
+
+/// A leveled credential a learner has EARNED for one tier. Issuance is
+/// automatic (see lib/certifications/progress.ts) once every course in the
+/// tier is completed and the previous tier is already held.
+model CertificationCredential {
+  id               String    @id @default(cuid())
+  userId           String
+  programId        String
+  levelId          String
+  credentialNumber String    @unique
+  earnedAt         DateTime  @default(now())
+  revokedAt        DateTime?
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program          CertificationProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  level            CertificationLevel   @relation(fields: [levelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, levelId])
+  @@index([userId])
+  @@index([programId])
 }
 
 model Pathway {
