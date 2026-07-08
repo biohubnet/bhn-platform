@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Showcase · manually add a person to a cohort — Jul 2026
+  {
+    title: "Showcase · add a person to a pathway cohort directly",
+    body: "On Admin → Showcase, every cohort row (and every standalone showcase) now has an **Add person** button. It opens a small form — name, LinkedIn, headshot — that files a showcase entry for someone without them using the public link. It bypasses the cohort's open/closed state and the attendance gate, so it's the right tool when someone attended off-platform (a printed sign-in sheet, a walk-in) and you just need them on the roster. The panel stays open after each add so you can enter a whole list back-to-back.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Multi-level certification framework — Jul 2026
   {
     title: "Multi-level certifications (Foundation → Practitioner → Advanced)",

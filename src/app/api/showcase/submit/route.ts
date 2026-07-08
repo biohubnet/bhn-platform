@@ -23,37 +23,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { putR2Object, r2PublicUrl, R2_PUBLIC_URL } from "@/lib/r2";
+import { MAX_PHOTO_BYTES, ALLOWED_PHOTO_TYPES, normaliseLinkedin } from "@/lib/showcase/validation";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
-
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;  // 5 MB
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
-
-/** Normalise whatever the user typed into a canonical
- *  https://www.linkedin.com/in/<slug>/ URL. Handles:
- *   • "foo"                              → linkedin.com/in/foo
- *   • "linkedin.com/in/foo"              → https://linkedin.com/in/foo
- *   • "https://www.linkedin.com/in/foo/" → kept as-is
- *  Returns null when we can't extract a plausible slug. */
-function normaliseLinkedin(raw: string): string | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  // Already a URL with /in/ — keep it.
-  try {
-    const u = new URL(trimmed.match(/^https?:\/\//) ? trimmed : `https://${trimmed}`);
-    if (u.hostname.endsWith("linkedin.com")) {
-      // Make sure the path looks like /in/<something>
-      const m = u.pathname.match(/^\/in\/([^/?#]+)/i);
-      if (m) return `https://www.linkedin.com/in/${m[1]}/`;
-      return null;
-    }
-  } catch { /* not a URL — fall through */ }
-  // Bare slug — accept alphanumeric + dashes + dots.
-  const m = trimmed.match(/^[A-Za-z0-9\-._]{2,100}$/);
-  if (m) return `https://www.linkedin.com/in/${trimmed}/`;
-  return null;
-}
 
 export async function POST(req: NextRequest) {
   if (!R2_PUBLIC_URL) {
@@ -154,7 +127,7 @@ export async function POST(req: NextRequest) {
     if (photo.size > MAX_PHOTO_BYTES) {
       return NextResponse.json({ error: `Photo must be under 5 MB. Yours is ${(photo.size / 1024 / 1024).toFixed(1)} MB.` }, { status: 400 });
     }
-    if (!ALLOWED_TYPES.has(photo.type)) {
+    if (!ALLOWED_PHOTO_TYPES.has(photo.type)) {
       return NextResponse.json({ error: `Photo must be JPEG, PNG, or WebP. Yours is ${photo.type || "an unknown type"}.` }, { status: 400 });
     }
     buf = Buffer.from(await photo.arrayBuffer());

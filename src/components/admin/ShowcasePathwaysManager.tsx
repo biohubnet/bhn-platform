@@ -17,6 +17,7 @@ import {
   X,
   Layers,
   Pencil,
+  UserPlus,
 } from "lucide-react";
 
 type Cohort = {
@@ -66,6 +67,29 @@ export function ShowcasePathwaysManager({
   const [copied, setCopied] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
+  // Keyed by cohort/group SLUG (unique across both pathway cohorts and
+  // standalone groups) rather than id, since the "Add person" toggle is
+  // driven from CohortRow which only knows the slug.
+  const [addingPersonFor, setAddingPersonFor] = useState<string | null>(null);
+
+  /** Optimistic bump after a manual add succeeds — mirrors the pattern
+   *  used by toggleCohort/patchCohort above (no full page reload, so an
+   *  admin can add several people back-to-back without losing their
+   *  place). The submissions grid below picks up the new row on the
+   *  next real page load / its own "Refresh list" action. */
+  function bumpCount(slug: string) {
+    setPathways((ps) =>
+      ps.map((p) => ({
+        ...p,
+        cohorts: p.cohorts.map((c) =>
+          c.slug === slug ? { ...c, submissionCount: c.submissionCount + 1 } : c,
+        ),
+      })),
+    );
+    setStandalone((s) =>
+      s.map((g) => (g.slug === slug ? { ...g, submissionCount: g.submissionCount + 1 } : g)),
+    );
+  }
 
   const publicUrl = (slug: string) =>
     `${typeof window !== "undefined" ? window.location.origin : ""}/showcase/${slug}`;
@@ -410,7 +434,18 @@ export function ShowcasePathwaysManager({
                         onDelete={() =>
                           deleteCohort(p.id, c.id, c.slug, c.submissionCount)
                         }
+                        onAddPerson={() =>
+                          setAddingPersonFor(addingPersonFor === c.slug ? null : c.slug)
+                        }
+                        addPersonOpen={addingPersonFor === c.slug}
                       />
+                      {addingPersonFor === c.slug && (
+                        <AddSubmissionForm
+                          slug={c.slug}
+                          onAdded={() => bumpCount(c.slug)}
+                          onClose={() => setAddingPersonFor(null)}
+                        />
+                      )}
                       <CohortBinding
                         pathwayLinked={!!p.linkedPathwayId}
                         realCohorts={
@@ -440,20 +475,32 @@ export function ShowcasePathwaysManager({
               </p>
               <div className="space-y-1.5">
                 {standalone.map((g) => (
-                  <CohortRow
-                    key={g.id}
-                    label={g.name}
-                    slug={g.slug}
-                    active={g.active}
-                    count={g.submissionCount}
-                    url={publicUrl(g.slug)}
-                    copied={copied === g.slug}
-                    onCopy={() => copyLink(g.slug)}
-                    onToggle={() => toggleCohort(null, g.id, !g.active)}
-                    onDelete={() =>
-                      deleteCohort(null, g.id, g.slug, g.submissionCount)
-                    }
-                  />
+                  <div key={g.id} className="space-y-1">
+                    <CohortRow
+                      label={g.name}
+                      slug={g.slug}
+                      active={g.active}
+                      count={g.submissionCount}
+                      url={publicUrl(g.slug)}
+                      copied={copied === g.slug}
+                      onCopy={() => copyLink(g.slug)}
+                      onToggle={() => toggleCohort(null, g.id, !g.active)}
+                      onDelete={() =>
+                        deleteCohort(null, g.id, g.slug, g.submissionCount)
+                      }
+                      onAddPerson={() =>
+                        setAddingPersonFor(addingPersonFor === g.slug ? null : g.slug)
+                      }
+                      addPersonOpen={addingPersonFor === g.slug}
+                    />
+                    {addingPersonFor === g.slug && (
+                      <AddSubmissionForm
+                        slug={g.slug}
+                        onAdded={() => bumpCount(g.slug)}
+                        onClose={() => setAddingPersonFor(null)}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -584,6 +631,8 @@ function CohortRow({
   onCopy,
   onToggle,
   onDelete,
+  onAddPerson,
+  addPersonOpen,
 }: {
   label: string;
   slug: string;
@@ -594,6 +643,8 @@ function CohortRow({
   onCopy: () => void;
   onToggle: () => void;
   onDelete: () => void;
+  onAddPerson: () => void;
+  addPersonOpen: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-raised/20">
@@ -627,6 +678,18 @@ function CohortRow({
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
         <button
+          onClick={onAddPerson}
+          className={[
+            "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition",
+            addPersonOpen
+              ? "border-brand-400 bg-brand-50 text-brand-700"
+              : "border-line bg-card-solid text-fg hover:border-brand-400 hover:text-brand-700",
+          ].join(" ")}
+          title="Manually add a person to this showcase — bypasses the public form and any attendance gate"
+        >
+          <UserPlus className="h-3 w-3" /> Add person
+        </button>
+        <button
           onClick={onCopy}
           className="inline-flex items-center gap-1 rounded-md border border-line bg-card-solid px-2 py-1 text-[11px] font-medium text-fg transition hover:border-brand-400 hover:text-brand-700"
         >
@@ -655,6 +718,141 @@ function CohortRow({
         </button>
       </div>
     </div>
+  );
+}
+
+/** Manual "add a person" panel for one cohort/group. Hits the admin-only
+ *  submission route (bypasses the public form's `active` flag and
+ *  attendance gate). Stays open and clears its fields after a successful
+ *  add so an admin can enter a whole roster back-to-back — e.g. from a
+ *  printed sign-in sheet. */
+function AddSubmissionForm({
+  slug,
+  onAdded,
+  onClose,
+}: {
+  slug: string;
+  onAdded: () => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [note, setNote] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
+
+  function pickPhoto(file: File | null) {
+    setPhotoFile(file);
+    setPhotoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    if (!name.trim() || !linkedin.trim() || !photoFile) {
+      setError("Name, LinkedIn, and a photo are all required.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.set("programSlug", slug);
+      fd.set("name", name.trim());
+      fd.set("linkedin", linkedin.trim());
+      if (note.trim()) fd.set("note", note.trim());
+      fd.set("photo", photoFile);
+      const res = await fetch("/api/admin/showcase/submissions", { method: "POST", body: fd });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Couldn't add this person.");
+      setJustAdded(name.trim());
+      setName("");
+      setLinkedin("");
+      setNote("");
+      pickPhoto(null);
+      onAdded();
+      setTimeout(() => setJustAdded(null), 2500);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="ml-2 space-y-2 rounded-md border border-line/70 bg-raised/15 p-3"
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-fg-subtle">
+          Add a person to /{slug}
+        </span>
+        <button type="button" onClick={onClose} className="text-fg-subtle transition hover:text-fg">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Full name"
+          maxLength={120}
+          className="min-w-[10rem] flex-1 rounded-md border border-line bg-card-solid px-2.5 py-1.5 text-[12.5px] text-fg outline-none focus:border-brand-400"
+        />
+        <input
+          value={linkedin}
+          onChange={(e) => setLinkedin(e.target.value)}
+          placeholder="LinkedIn handle or URL"
+          maxLength={200}
+          className="min-w-[12rem] flex-1 rounded-md border border-line bg-card-solid px-2.5 py-1.5 text-[12.5px] text-fg outline-none focus:border-brand-400"
+        />
+      </div>
+      <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-line bg-card-solid px-2.5 py-1.5 text-[11.5px] text-fg-muted transition hover:border-brand-400">
+        {photoPreview ? (
+          // eslint-disable-next-line @next/next/no-img-element -- tiny local preview, matches ShowcaseSubmitForm's pattern
+          <img src={photoPreview} alt="" className="h-6 w-6 rounded-full object-cover" />
+        ) : (
+          <span>Headshot photo…</span>
+        )}
+        {photoFile && <span className="max-w-[10rem] truncate text-fg">{photoFile.name}</span>}
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => pickPhoto(e.target.files?.[0] ?? null)}
+        />
+      </label>
+      <input
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder='Note (optional) — e.g. "from the printed sign-in sheet"'
+        maxLength={200}
+        className="w-full rounded-md border border-line bg-card-solid px-2.5 py-1.5 text-[12px] text-fg outline-none focus:border-brand-400"
+      />
+      {error && <p className="text-[11.5px] text-rose-600">{error}</p>}
+      {justAdded && (
+        <p className="text-[11.5px] font-medium text-emerald-700">
+          Added {justAdded} ✓ — add the next person, or close.
+        </p>
+      )}
+      <div className="flex justify-end gap-2">
+        <button
+          type="submit"
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
+          Add person
+        </button>
+      </div>
+    </form>
   );
 }
 
