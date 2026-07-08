@@ -4,9 +4,10 @@ import { Award, Lock, Check, Circle, ArrowRight, GraduationCap } from "lucide-re
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
-import { ensureBiomanufacturingCertification } from "@/lib/certifications/seed";
+import { ensureCertificationPrograms } from "@/lib/certifications/seed";
 import { getProgramProgress, checkCertificationProgress, type LevelStatus } from "@/lib/certifications/progress";
 import { tierLabel } from "@/lib/certifications/tiers";
+import { personaLabel } from "@/lib/certifications/personas";
 
 export const dynamic = "force-dynamic";
 
@@ -28,14 +29,12 @@ export default async function CertificationLadderPage({
 
   const { slug } = await params;
 
-  // Lazily seed the flagship program so the framework is always present.
-  if (slug === "biomanufacturing-professional") {
-    await ensureBiomanufacturingCertification(userId);
-  }
+  // Lazily seed the role-based tracks so they're always present.
+  await ensureCertificationPrograms(userId);
 
   const program = await prisma.certificationProgram.findUnique({
     where: { slug },
-    select: { id: true, status: true },
+    select: { id: true, status: true, audience: true },
   });
   if (!program || program.status !== "published") notFound();
 
@@ -57,7 +56,7 @@ export default async function CertificationLadderPage({
   return (
     <div className="space-y-6">
       <PageHero
-        eyebrow={<><GraduationCap size={11} /> {progress.discipline ?? "Certification"}</>}
+        eyebrow={<><GraduationCap size={11} /> {progress.discipline ?? "Certification"}{program.audience.length > 0 && <> · {program.audience.map(personaLabel).join(" · ")} track</>}</>}
         title={progress.title}
         description={progress.summary ?? undefined}
         actions={

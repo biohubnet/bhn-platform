@@ -44,11 +44,11 @@ export const TOUR_STEPS: TourStep[] = [
     cta: { label: "Open Showcase admin", href: "/admin/showcase" },
     since: "2026.07.07e",
   },
-  // ─── Multi-level certifications — Jul 2026
+  // ─── Role-based multi-level certifications — Jul 2026
   {
     id: "learn.certifications",
-    title: "Earn a multi-level certification",
-    body: "The new Certifications area runs professional credentials as three tiers — Foundation → Practitioner → Advanced. Complete a tier's courses to earn its credential; each tier unlocks the next. The flagship is the Biomanufacturing Professional Certification.",
+    title: "Pick your certification track",
+    body: "Certifications are role-specific — one track per trainee type (Master's, PhD, Post-doc, Research Associate, Lab Technician). Filter to your track, then work up its three tiers — Foundation → Practitioner → Advanced — earning a verifiable credential at each.",
     path: "/certifications",
     placement: "center",
     roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],

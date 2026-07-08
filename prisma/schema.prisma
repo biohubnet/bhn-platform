@@ -1782,6 +1782,10 @@ model CertificationProgram {
   summary     String?
   /// Discipline / domain shown as an eyebrow, e.g. "Biomanufacturing".
   discipline  String?
+  /// Trainee sub-types this track is designed for (only trainees train):
+  /// masters | phd | postdoc | research_associate | lab_technician.
+  /// Empty = open to all trainees. See src/lib/certifications/personas.ts.
+  audience    String[]                  @default([])
   status      String                    @default("draft") // draft | published
   createdById String?
   createdAt   DateTime                  @default(now())

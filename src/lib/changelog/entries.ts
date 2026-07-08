@@ -30,10 +30,10 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     visibleTo: ADMINS,
     daysAgo: 0,
   },
-  // ── Multi-level certification framework — Jul 2026
+  // ── Role-based multi-level certifications — Jul 2026
   {
-    title: "Multi-level certifications (Foundation → Practitioner → Advanced)",
-    body: "A new **Certifications** area (ENGAGE → Certifications) brings multi-level professional credentials to the platform. The flagship **Biomanufacturing Professional Certification** runs as three ordered tiers — **Foundation → Practitioner → Advanced** — each bundling a set of courses with its own rising pass mark (70 / 80 / 90%). Complete every course in a tier to earn a verifiable credential; each tier unlocks the next, so you progress in order rather than skipping ahead. A visual ladder shows every tier as earned, in progress, available, or locked, and credentials are issued automatically the moment you finish a tier's courses.",
+    title: "Role-based certifications for every trainee track",
+    body: "The **Certifications** area (ENGAGE → Certifications) now runs as **role-specific tracks** — one per trainee sub-type: **Master's, PhD, Post-doctoral Fellow, Research Associate, and Lab Technician**. (Only trainees take training; employers, admins, and evaluators don't have a track.) Each track is its own three-tier ladder — **Foundation → Practitioner → Advanced** with rising pass marks (70 / 80 / 90%) — and the course mix is tailored to the role: research personas emphasise R&D and analytics, applied personas emphasise manufacturing and process. Pick your track with the persona filter, complete a tier's courses to earn a verifiable credential, and each tier unlocks the next.",
     kind: "feature",
     visibleTo: ALL,
     daysAgo: 0,
