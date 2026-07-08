@@ -22,10 +22,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
-  // ── Showcase · workshops + remove people — Jul 2026
+  // ── Showcase · membership pills on each person's card — Jul 2026
   {
-    title: "Showcase · add & remove people across workshops, pathways, and cohorts",
-    body: "The **Admin → Showcase** manager now covers **workshops** too: a new **Workshops, tours & bootcamps** section lists every workshop, and a single **Set up & add people** click spins up its showcase so you can add attendees (name · LinkedIn · headshot, no public link needed) — exactly like pathway cohorts and standalone showcases. And every showcase now has a **People** button that opens its roster inline, so you can **remove** anyone with one click (deletes their entry and headshot). Add people to workshops, pathways, and cohorts — and take them out — all from one place.",
+    title: "Showcase · tag each person with their workshops, pathways & cohorts",
+    body: "Every person's card on **Admin → Showcase** now carries **membership pills**. Hit **+ Tag** to add one — choose **Workshop**, **Pathway**, or **Cohort**, then type a value (Workshop and Pathway autocomplete from your real records; Cohort takes a number and shows as “Cohort 2”). **Click a pill to rename it**, or its **×** to remove it. A person can carry as many as they need, so you can record exactly which workshops, pathways, and cohort numbers each graduate came through — right on the card, colour-coded by type. (Every showcase group still has a **People** button to open its roster and remove anyone with one click.)",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,

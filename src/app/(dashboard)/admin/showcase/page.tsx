@@ -16,6 +16,8 @@ import { ShowcasePathwaysManager } from "@/components/admin/ShowcasePathwaysMana
 
 export const dynamic = "force-dynamic";
 
+type Pill = { kind: "workshop" | "pathway" | "cohort"; label: string };
+
 export default async function AdminShowcasePage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
@@ -29,6 +31,7 @@ export default async function AdminShowcasePage() {
     ...s,
     createdAt: s.createdAt.toISOString(),
     lastDownloadedAt: s.lastDownloadedAt?.toISOString() ?? null,
+    pills: (Array.isArray(s.pills) ? s.pills : []) as Pill[],
   }));
 
   // Showcase pathways (each with its cohorts) + legacy standalone groups,
@@ -61,11 +64,11 @@ export default async function AdminShowcasePage() {
         },
       },
     }),
-    // Real workshops / tours / bootcamps — attendees can be added to a
-    // showcase the same way pathway cohorts are (via an on-demand group).
+    // Real workshops / tours / bootcamps — titles feed the pill
+    // autocomplete on each submission card.
     prisma.workshop.findMany({
       orderBy: { startDateTime: "asc" },
-      select: { id: true, slug: true, title: true, kind: true, partnerOrganization: true },
+      select: { title: true },
     }),
   ]);
   const countBySlug = new Map(
@@ -97,24 +100,13 @@ export default async function AdminShowcasePage() {
     submissionCount: countBySlug.get(g.slug) ?? 0,
   }));
 
-  // Workshops + any existing showcase group bound to them (slug wsh-<slug>).
-  const wshGroupRows = await prisma.showcaseGroup.findMany({
-    where: { slug: { in: workshopRows.map((w) => `wsh-${w.slug}`) } },
-    select: { id: true, slug: true, name: true, active: true },
-  });
-  const wshGroupBySlug = new Map(wshGroupRows.map((g) => [g.slug, g]));
-  const workshops = workshopRows.map((w) => {
-    const g = wshGroupBySlug.get(`wsh-${w.slug}`);
-    return {
-      id: w.id,
-      title: w.title,
-      kind: w.kind,
-      partner: w.partnerOrganization,
-      group: g
-        ? { id: g.id, slug: g.slug, name: g.name, active: g.active, submissionCount: countBySlug.get(g.slug) ?? 0 }
-        : null,
-    };
-  });
+  // Autocomplete suggestions for the per-card membership pills.
+  const workshopOptions = Array.from(
+    new Set(workshopRows.map((w) => w.title).filter(Boolean)),
+  ).sort((a, b) => a.localeCompare(b));
+  const pathwayOptions = Array.from(
+    new Set(realPathwayRows.map((p) => p.title).filter(Boolean)),
+  ).sort((a, b) => a.localeCompare(b));
 
   const adminName =
     (session.user as { name?: string }).name ??
@@ -148,10 +140,14 @@ export default async function AdminShowcasePage() {
         initialPathways={pathways}
         initialStandalone={standalone}
         realPathways={realPathwayRows}
-        initialWorkshops={workshops}
       />
 
-      <ShowcaseAdminClient initialSubmissions={serialised} adminName={adminName} />
+      <ShowcaseAdminClient
+        initialSubmissions={serialised}
+        adminName={adminName}
+        workshopOptions={workshopOptions}
+        pathwayOptions={pathwayOptions}
+      />
     </div>
   );
 }

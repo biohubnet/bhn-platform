@@ -30,19 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.07f";
+export const TOUR_VERSION = "2026.07.08a";
 
 export const TOUR_STEPS: TourStep[] = [
-  // ─── Showcase · add a person directly — Jul 2026
+  // ─── Showcase · membership pills on each card — Jul 2026
   {
-    id: "showcase.add-person",
-    title: "Add & remove showcase people — workshops, pathways, cohorts",
-    body: "On Admin → Showcase you can build a roster for any program: cohorts, standalone showcases, and now Workshops (a “Set up & add people” click per workshop). Each Add person form takes name + LinkedIn + headshot, no public link needed. Every showcase has a People button to open its roster and remove anyone with one click.",
+    id: "showcase.card-pills",
+    title: "Tag each person with their workshops, pathways & cohorts",
+    body: "On Admin → Showcase, every person's card now carries membership pills. Hit “+ Tag” to add one — pick Workshop, Pathway, or Cohort, then type a value (Workshop and Pathway autocomplete from your real records; Cohort takes a number). Click any pill to rename it, or the × to remove it. Use it to record who came through which workshop, pathway, and cohort — all on the card.",
     path: "/admin/showcase",
     placement: "center",
     roles: ["admin", "superadmin"],
     cta: { label: "Open Showcase admin", href: "/admin/showcase" },
-    since: "2026.07.07f",
+    since: "2026.07.08a",
   },
   // ─── Role-based multi-level certifications — Jul 2026
   {

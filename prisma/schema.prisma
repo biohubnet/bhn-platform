@@ -4883,6 +4883,11 @@ model ShowcaseSubmission {
   /// Name / email of the admin who last downloaded.
   lastDownloadedBy String?
   adminNote        String?
+  /// Editable membership tags shown as pills on the admin card: an
+  /// array of { kind: "workshop" | "pathway" | "cohort", label }.
+  /// Admin-managed and free-form — independent of `programSlug`
+  /// (which records the single group this person submitted to).
+  pills            Json      @default("[]")
   /// Set when the submission came through a GATED (attendance-gated)
   /// cohort: the logged-in trainee's User id, stamped server-side from
   /// the session. Null for public/anonymous submissions.

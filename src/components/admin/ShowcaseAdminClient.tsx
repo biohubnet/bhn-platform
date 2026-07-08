@@ -16,10 +16,23 @@
  * Filtering: program tab + a "show only undownloaded" toggle.
  */
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Trash2, CheckCircle2, Circle, ExternalLink, Filter, AlertCircle } from "lucide-react";
+import {
+  Download, Trash2, CheckCircle2, Circle, ExternalLink, Filter, AlertCircle,
+  Plus, X, Check, Wrench, Layers, Hash,
+} from "lucide-react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+
+type PillKind = "workshop" | "pathway" | "cohort";
+interface Pill { kind: PillKind; label: string }
+
+const PILL_KINDS: PillKind[] = ["workshop", "pathway", "cohort"];
+const PILL_META: Record<PillKind, { label: string; cls: string; Icon: typeof Wrench }> = {
+  workshop: { label: "Workshop", cls: "bg-amber-50 text-amber-800 ring-amber-200", Icon: Wrench },
+  pathway:  { label: "Pathway",  cls: "bg-violet-50 text-violet-800 ring-violet-200", Icon: Layers },
+  cohort:   { label: "Cohort",   cls: "bg-emerald-50 text-emerald-800 ring-emerald-200", Icon: Hash },
+};
 
 interface Submission {
   id: string;
@@ -35,14 +48,17 @@ interface Submission {
   lastDownloadedAt: string | null;
   lastDownloadedBy: string | null;
   adminNote: string | null;
+  pills: Pill[];
 }
 
 interface Props {
   initialSubmissions: Submission[];
   adminName: string;
+  workshopOptions: string[];
+  pathwayOptions: string[];
 }
 
-export function ShowcaseAdminClient({ initialSubmissions, adminName }: Props) {
+export function ShowcaseAdminClient({ initialSubmissions, adminName, workshopOptions, pathwayOptions }: Props) {
   const router = useRouter();
   const { confirmDialog, node: confirmNode } = useConfirmDialog();
   const [submissions, setSubmissions] = useState(initialSubmissions);
@@ -114,6 +130,34 @@ export function ShowcaseAdminClient({ initialSubmissions, adminName }: Props) {
     startTransition(() => {
       void markDownloaded(s, true);
     });
+  }
+
+  /** Persist a card's membership pills (add / edit / remove). Optimistic:
+   *  updates local state first, reverts if the PATCH fails. */
+  async function savePills(s: Submission, pills: Pill[]) {
+    const prev = s.pills;
+    setError(null);
+    setSubmissions((cur) => cur.map((x) => (x.id === s.id ? { ...x, pills } : x)));
+    try {
+      const res = await fetch(`/api/admin/showcase/${s.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pills }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; pills?: Pill[]; error?: string };
+      if (!res.ok || !j.ok) {
+        setError(j.error ?? `Saving tags failed (HTTP ${res.status}).`);
+        setSubmissions((cur) => cur.map((x) => (x.id === s.id ? { ...x, pills: prev } : x)));
+        return;
+      }
+      // Trust the server-sanitised set (labels trimmed / capped).
+      if (Array.isArray(j.pills)) {
+        setSubmissions((cur) => cur.map((x) => (x.id === s.id ? { ...x, pills: j.pills! } : x)));
+      }
+    } catch {
+      setError("Saving tags failed — check your connection.");
+      setSubmissions((cur) => cur.map((x) => (x.id === s.id ? { ...x, pills: prev } : x)));
+    }
   }
 
   return (
@@ -194,6 +238,9 @@ export function ShowcaseAdminClient({ initialSubmissions, adminName }: Props) {
                 onDownload={() => downloadPhoto(s)}
                 onToggleMark={() => markDownloaded(s, !s.lastDownloadedAt)}
                 onDelete={() => deleteRow(s)}
+                onSavePills={(pills) => savePills(s, pills)}
+                workshopOptions={workshopOptions}
+                pathwayOptions={pathwayOptions}
               />
             </li>
           ))}
@@ -217,13 +264,16 @@ export function ShowcaseAdminClient({ initialSubmissions, adminName }: Props) {
 }
 
 function SubmissionCard({
-  submission, busy, onDownload, onToggleMark, onDelete,
+  submission, busy, onDownload, onToggleMark, onDelete, onSavePills, workshopOptions, pathwayOptions,
 }: {
   submission: Submission;
   busy: boolean;
   onDownload: () => void;
   onToggleMark: () => void;
   onDelete: () => void;
+  onSavePills: (pills: Pill[]) => void;
+  workshopOptions: string[];
+  pathwayOptions: string[];
 }) {
   const downloaded = !!submission.lastDownloadedAt;
   return (
@@ -284,6 +334,17 @@ function SubmissionCard({
         </div>
       </div>
 
+      {/* Membership pills — workshop / pathway / cohort tags */}
+      <div className="px-3.5 pb-3 -mt-0.5">
+        <CardPills
+          pills={submission.pills}
+          onChange={onSavePills}
+          workshopOptions={workshopOptions}
+          pathwayOptions={pathwayOptions}
+          disabled={busy}
+        />
+      </div>
+
       {/* Action row */}
       <div className="flex items-center gap-1 border-t border-line/60 px-3 py-2">
         <button
@@ -316,5 +377,174 @@ function SubmissionCard({
         </button>
       </div>
     </article>
+  );
+}
+
+/**
+ * CardPills — the editable membership tags on a submission card.
+ *
+ * Each pill is { kind: workshop | pathway | cohort, label }. Admins can
+ *   • add    — pick a kind, type/choose a value (workshop & pathway offer
+ *              autocomplete from real records; cohort takes a number),
+ *   • edit   — click a pill's label to rename it inline,
+ *   • remove — the × on each pill.
+ * Every change sends the full desired set up to `onChange`, which PATCHes
+ * it and reconciles state. The parent owns the data; this component only
+ * holds transient UI state (which form is open, what's being typed).
+ */
+function CardPills({
+  pills, onChange, workshopOptions, pathwayOptions, disabled,
+}: {
+  pills: Pill[];
+  onChange: (pills: Pill[]) => void;
+  workshopOptions: string[];
+  pathwayOptions: string[];
+  disabled: boolean;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [kind, setKind] = useState<PillKind>("workshop");
+  const [value, setValue] = useState("");
+  const [editIdx, setEditIdx] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const dlId = useId();
+
+  const options = kind === "workshop" ? workshopOptions : kind === "pathway" ? pathwayOptions : [];
+
+  function addPill() {
+    const raw = value.trim();
+    if (!raw) return;
+    // A bare cohort number reads better as "Cohort 2".
+    const label = kind === "cohort" && /^\d+$/.test(raw) ? `Cohort ${raw}` : raw;
+    onChange([...pills, { kind, label }]);
+    setValue("");
+  }
+  function removePill(i: number) {
+    onChange(pills.filter((_, idx) => idx !== i));
+  }
+  function commitEdit() {
+    if (editIdx === null) return;
+    const raw = editValue.trim();
+    if (raw && raw !== pills[editIdx]?.label) {
+      onChange(pills.map((p, idx) => (idx === editIdx ? { ...p, label: raw } : p)));
+    }
+    setEditIdx(null);
+    setEditValue("");
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {pills.map((p, i) => {
+        const meta = PILL_META[p.kind] ?? PILL_META.workshop;
+        const Icon = meta.Icon;
+        if (editIdx === i) {
+          return (
+            <span
+              key={i}
+              className={"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] ring-1 ring-inset " + meta.cls}
+            >
+              <Icon size={9} className="opacity-70" />
+              {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+              <input
+                autoFocus
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitEdit();
+                  if (e.key === "Escape") { setEditIdx(null); setEditValue(""); }
+                }}
+                onBlur={commitEdit}
+                className="w-24 bg-transparent font-medium outline-none"
+              />
+            </span>
+          );
+        }
+        return (
+          <span
+            key={i}
+            className={"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium ring-1 ring-inset " + meta.cls}
+          >
+            <Icon size={9} className="opacity-70" />
+            <button
+              type="button"
+              onClick={() => { setEditIdx(i); setEditValue(p.label); }}
+              disabled={disabled}
+              title="Click to rename"
+              className="max-w-[130px] truncate hover:underline disabled:no-underline"
+            >
+              {p.label}
+            </button>
+            <button
+              type="button"
+              onClick={() => removePill(i)}
+              disabled={disabled}
+              title="Remove tag"
+              className="-mr-0.5 opacity-50 transition hover:opacity-100"
+            >
+              <X size={9} />
+            </button>
+          </span>
+        );
+      })}
+
+      {adding ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-1.5 py-0.5 ring-1 ring-inset ring-line">
+          <select
+            value={kind}
+            onChange={(e) => setKind(e.target.value as PillKind)}
+            className="bg-transparent text-[10.5px] font-semibold text-fg outline-none"
+            aria-label="Tag type"
+          >
+            {PILL_KINDS.map((k) => (
+              <option key={k} value={k}>{PILL_META[k].label}</option>
+            ))}
+          </select>
+          {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+          <input
+            autoFocus
+            list={options.length ? dlId : undefined}
+            type={kind === "cohort" ? "number" : "text"}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); addPill(); }
+              if (e.key === "Escape") { setAdding(false); setValue(""); }
+            }}
+            placeholder={kind === "cohort" ? "e.g. 2" : `${PILL_META[kind].label} name`}
+            className="w-28 bg-transparent text-[11px] text-fg outline-none placeholder:text-fg-subtle"
+          />
+          {options.length > 0 && (
+            <datalist id={dlId}>
+              {options.map((o) => <option key={o} value={o} />)}
+            </datalist>
+          )}
+          <button
+            type="button"
+            onClick={addPill}
+            disabled={disabled || !value.trim()}
+            title="Add tag"
+            className="text-brand-700 transition hover:text-brand-800 disabled:opacity-40"
+          >
+            <Check size={12} />
+          </button>
+          <button
+            type="button"
+            onClick={() => { setAdding(false); setValue(""); }}
+            title="Done"
+            className="text-fg-subtle transition hover:text-fg"
+          >
+            <X size={12} />
+          </button>
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          disabled={disabled}
+          className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-line px-2 py-0.5 text-[10.5px] font-medium text-fg-subtle transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-50"
+        >
+          <Plus size={10} /> Tag
+        </button>
+      )}
+    </div>
   );
 }
