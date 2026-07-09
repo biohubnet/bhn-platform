@@ -16,8 +16,6 @@ import { ShowcasePathwaysManager } from "@/components/admin/ShowcasePathwaysMana
 
 export const dynamic = "force-dynamic";
 
-type Pill = { kind: "workshop" | "pathway" | "cohort"; label: string; sub?: string };
-
 export default async function AdminShowcasePage() {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
@@ -44,7 +42,6 @@ export default async function AdminShowcasePage() {
     ...s,
     createdAt: s.createdAt.toISOString(),
     lastDownloadedAt: s.lastDownloadedAt?.toISOString() ?? null,
-    pills: (Array.isArray(s.pills) ? s.pills : []) as Pill[],
     memberships: s.memberships.map((m) => ({
       membershipId: m.id,
       groupId: m.groupId,
@@ -57,7 +54,7 @@ export default async function AdminShowcasePage() {
   // Showcase pathways (each with its cohorts) + legacy standalone groups,
   // with per-group membership counts (ShowcaseMembership is the single
   // source of truth for who belongs to which group/cohort).
-  const [pathwayRows, standaloneRows, membershipCounts, realPathwayRows, workshopRows] = await Promise.all([
+  const [pathwayRows, standaloneRows, membershipCounts, realPathwayRows] = await Promise.all([
     prisma.showcasePathway.findMany({
       orderBy: { createdAt: "desc" },
       include: { cohorts: { orderBy: { cohortNumber: "asc" } } },
@@ -83,12 +80,6 @@ export default async function AdminShowcasePage() {
           select: { id: true, name: true, slug: true },
         },
       },
-    }),
-    // Real workshops / tours / bootcamps — titles feed the pill
-    // autocomplete on each submission card.
-    prisma.workshop.findMany({
-      orderBy: { startDateTime: "asc" },
-      select: { title: true },
     }),
   ]);
   const countByGroupId = new Map(
@@ -131,14 +122,6 @@ export default async function AdminShowcasePage() {
       : []),
   ];
 
-  // Autocomplete suggestions for the per-card membership pills.
-  const workshopOptions = Array.from(
-    new Set(workshopRows.map((w) => w.title).filter(Boolean)),
-  ).sort((a, b) => a.localeCompare(b));
-  const pathwayOptions = Array.from(
-    new Set(realPathwayRows.map((p) => p.title).filter(Boolean)),
-  ).sort((a, b) => a.localeCompare(b));
-
   const adminName =
     (session.user as { name?: string }).name ??
     (session.user as { email?: string }).email ??
@@ -176,8 +159,6 @@ export default async function AdminShowcasePage() {
       <ShowcaseAdminClient
         initialSubmissions={serialised}
         adminName={adminName}
-        workshopOptions={workshopOptions}
-        pathwayOptions={pathwayOptions}
         groupCatalog={groupCatalog}
       />
     </div>
