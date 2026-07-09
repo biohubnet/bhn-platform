@@ -54,7 +54,7 @@ export default async function AdminShowcasePage() {
   // Showcase pathways (each with its cohorts) + legacy standalone groups,
   // with per-group membership counts (ShowcaseMembership is the single
   // source of truth for who belongs to which group/cohort).
-  const [pathwayRows, standaloneRows, membershipCounts, realPathwayRows] = await Promise.all([
+  const [pathwayRows, standaloneRows, membershipCounts] = await Promise.all([
     prisma.showcasePathway.findMany({
       orderBy: { createdAt: "desc" },
       include: { cohorts: { orderBy: { cohortNumber: "asc" } } },
@@ -66,20 +66,6 @@ export default async function AdminShowcasePage() {
     prisma.showcaseMembership.groupBy({
       by: ["groupId"],
       _count: { _all: true },
-    }),
-    // Real learning pathways (registration source of truth) + their
-    // cohorts, to bind a showcase cohort to its registration cohort.
-    prisma.pathway.findMany({
-      where: { status: "published" },
-      orderBy: { title: "asc" },
-      select: {
-        id: true,
-        title: true,
-        cohorts: {
-          orderBy: { displayOrder: "asc" },
-          select: { id: true, name: true, slug: true },
-        },
-      },
     }),
   ]);
   const countByGroupId = new Map(
@@ -153,7 +139,6 @@ export default async function AdminShowcasePage() {
       <ShowcasePathwaysManager
         initialPathways={pathways}
         initialStandalone={standalone}
-        realPathways={realPathwayRows}
       />
 
       <ShowcaseAdminClient

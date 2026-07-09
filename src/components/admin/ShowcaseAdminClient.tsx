@@ -462,12 +462,12 @@ function MembershipChips({
             <select
               autoFocus
               defaultValue=""
-              aria-label="Add to group"
+              aria-label="Add to pathway / cohort"
               disabled={disabled}
               onChange={(e) => { const v = e.target.value; if (v) { onAdd(v); setAdding(false); } }}
-              className="max-w-[170px] bg-transparent text-[11px] font-medium text-fg outline-none"
+              className="max-w-[190px] bg-transparent text-[11px] font-medium text-fg outline-none"
             >
-              <option value="" disabled>Pick a group…</option>
+              <option value="" disabled>Pick a pathway / cohort…</option>
               {buckets.map((b, bi) => (
                 <optgroup key={bi} label={b.pathwayName ?? "Other showcases"}>
                   {b.groups.map((g) => (
@@ -487,10 +487,10 @@ function MembershipChips({
             type="button"
             onClick={() => setAdding(true)}
             disabled={disabled}
-            title="Add this person to another group / cohort"
+            title="Add this person to another pathway / cohort"
             className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-line px-2 py-0.5 text-[10.5px] font-medium text-fg-subtle transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-50"
           >
-            <Plus size={10} /> Group
+            <Plus size={10} /> Add additional pathway
           </button>
         ))}
     </div>

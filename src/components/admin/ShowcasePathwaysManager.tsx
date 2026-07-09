@@ -47,17 +47,13 @@ type Standalone = {
   active: boolean;
   submissionCount: number;
 };
-type RealCohort = { id: string; name: string; slug: string };
-type RealPathway = { id: string; title: string; cohorts: RealCohort[] };
 
 export function ShowcasePathwaysManager({
   initialPathways,
   initialStandalone,
-  realPathways,
 }: {
   initialPathways: Pathway[];
   initialStandalone: Standalone[];
-  realPathways: RealPathway[];
 }) {
   const [pathways, setPathways] = useState(initialPathways);
   const [standalone, setStandalone] = useState(initialStandalone);
@@ -143,41 +139,6 @@ export function ShowcasePathwaysManager({
   async function patchPathway(id: string, patch: Partial<Pathway>) {
     setPathways((ps) => ps.map((p) => (p.id === id ? { ...p, ...patch } : p)));
     await fetch(`/api/admin/showcase/pathways/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    }).catch(() => {});
-  }
-
-  async function patchPathwayLink(id: string, linkedPathwayId: string | null) {
-    setPathways((ps) =>
-      ps.map((p) => (p.id === id ? { ...p, linkedPathwayId } : p)),
-    );
-    await fetch(`/api/admin/showcase/pathways/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ linkedPathwayId }),
-    }).catch(() => {});
-  }
-
-  async function patchCohort(
-    pathwayId: string,
-    cohortId: string,
-    patch: { linkedCohortId?: string | null; gateOnAttendance?: boolean },
-  ) {
-    setPathways((ps) =>
-      ps.map((p) =>
-        p.id === pathwayId
-          ? {
-              ...p,
-              cohorts: p.cohorts.map((c) =>
-                c.id === cohortId ? { ...c, ...patch } : c,
-              ),
-            }
-          : p,
-      ),
-    );
-    await fetch(`/api/admin/showcase/groups/${cohortId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
@@ -369,13 +330,6 @@ export function ShowcasePathwaysManager({
                     </span>
                   </div>
                   <code className="ml-6 text-[11px] text-fg-subtle">/{p.slug}</code>
-                  <div className="ml-6 mt-1.5">
-                    <PathwayLink
-                      realPathways={realPathways}
-                      linkedPathwayId={p.linkedPathwayId}
-                      onLink={(rid) => patchPathwayLink(p.id, rid)}
-                    />
-                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   <button
@@ -457,21 +411,6 @@ export function ShowcasePathwaysManager({
                       {rosterFor === c.slug && (
                         <RosterPanel slug={c.slug} onRemoved={() => adjustCount(c.slug, -1)} />
                       )}
-                      <CohortBinding
-                        pathwayLinked={!!p.linkedPathwayId}
-                        realCohorts={
-                          realPathways.find((rp) => rp.id === p.linkedPathwayId)
-                            ?.cohorts ?? []
-                        }
-                        linkedCohortId={c.linkedCohortId}
-                        gateOnAttendance={c.gateOnAttendance}
-                        onLink={(rid) =>
-                          patchCohort(p.id, c.id, { linkedCohortId: rid })
-                        }
-                        onGate={(g) =>
-                          patchCohort(p.id, c.id, { gateOnAttendance: g })
-                        }
-                      />
                     </div>
                   ))
                 )}
@@ -526,116 +465,6 @@ export function ShowcasePathwaysManager({
         </div>
       )}
     </section>
-  );
-}
-
-/** Pathway-level binding: pick the REAL learning Pathway whose approved
- *  enrollments + attendance govern this showcase's cohorts. */
-function PathwayLink({
-  realPathways,
-  linkedPathwayId,
-  onLink,
-}: {
-  realPathways: RealPathway[];
-  linkedPathwayId: string | null;
-  onLink: (id: string | null) => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-fg-subtle">
-        Registration
-      </span>
-      <select
-        value={linkedPathwayId ?? ""}
-        onChange={(e) => onLink(e.target.value || null)}
-        className="rounded-md border border-line bg-card-solid px-2 py-1 text-[11.5px] text-fg outline-none focus:border-brand-400"
-      >
-        <option value="">Not linked (public)</option>
-        {realPathways.map((rp) => (
-          <option key={rp.id} value={rp.id}>
-            {rp.title}
-          </option>
-        ))}
-      </select>
-      {linkedPathwayId && (
-        <span className="text-[10.5px] font-medium text-emerald-700">
-          Bound to a learning pathway
-        </span>
-      )}
-    </div>
-  );
-}
-
-/** Per-cohort binding: link to a real PathwayCohort + toggle the
- *  attendance gate. Only meaningful once the parent pathway is linked. */
-function CohortBinding({
-  pathwayLinked,
-  realCohorts,
-  linkedCohortId,
-  gateOnAttendance,
-  onLink,
-  onGate,
-}: {
-  pathwayLinked: boolean;
-  realCohorts: RealCohort[];
-  linkedCohortId: string | null;
-  gateOnAttendance: boolean;
-  onLink: (id: string | null) => void;
-  onGate: (g: boolean) => void;
-}) {
-  if (!pathwayLinked) {
-    return (
-      <p className="pl-2 text-[10.5px] text-fg-subtle">
-        Link this pathway to a learning pathway (above) to gate this cohort on
-        attendance.
-      </p>
-    );
-  }
-  return (
-    <div className="flex flex-wrap items-center gap-2 rounded-md bg-raised/15 px-2 py-1.5">
-      <span className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-fg-subtle">
-        Cohort
-      </span>
-      <select
-        value={linkedCohortId ?? ""}
-        onChange={(e) => onLink(e.target.value || null)}
-        className="rounded-md border border-line bg-card-solid px-2 py-1 text-[11.5px] text-fg outline-none focus:border-brand-400"
-      >
-        <option value="">Not linked</option>
-        {realCohorts.map((rc) => (
-          <option key={rc.id} value={rc.id}>
-            {rc.name}
-          </option>
-        ))}
-      </select>
-      <label
-        className={[
-          "inline-flex select-none items-center gap-1.5",
-          linkedCohortId ? "cursor-pointer" : "opacity-40",
-        ].join(" ")}
-        title={
-          linkedCohortId
-            ? "When on, only approved-enrolled + attended trainees can submit (login required)."
-            : "Link a registration cohort first to enable the gate."
-        }
-      >
-        <input
-          type="checkbox"
-          disabled={!linkedCohortId}
-          checked={gateOnAttendance}
-          onChange={(e) => onGate(e.target.checked)}
-          className="h-3.5 w-3.5 rounded border-line accent-brand-600"
-        />
-        <span className="text-[11px] font-medium text-fg">
-          Gate: only attended can submit
-        </span>
-      </label>
-      {gateOnAttendance && linkedCohortId && (
-        <span className="text-[10.5px] font-medium text-amber-700">
-          Login required · attendance-gated
-        </span>
-      )}
-    </div>
   );
 }
 

@@ -30,19 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.09b";
+export const TOUR_VERSION = "2026.07.09c";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Showcase · membership pills on each card — Jul 2026
   {
     id: "showcase.card-pills",
     title: "Put each person in real groups & cohorts",
-    body: "On Admin → Showcase, every person's card shows structured group memberships — real pathway cohorts (a cohort reads “Pathway › Cohort”; the home group has a home icon). The two showcase pathways are Medical Affairs and Regulatory Affairs. Hit “+ Group” to add someone to another cohort without re-uploading a photo — one person can be in several at once. Remove a secondary one with its ×.",
+    body: "On Admin → Showcase, every person's card shows structured group memberships — real pathway cohorts (a cohort reads “Pathway › Cohort”; the home group has a home icon). Their pathway + cohort is auto-tagged when they upload via the public link. The two showcase pathways are Medical Affairs and Regulatory Affairs. Hit “Add additional pathway” to also add someone to another cohort without re-uploading a photo — one person can be in several at once. Remove a secondary one with its ×.",
     path: "/admin/showcase",
     placement: "center",
     roles: ["admin", "superadmin"],
     cta: { label: "Open Showcase admin", href: "/admin/showcase" },
-    since: "2026.07.09b",
+    since: "2026.07.09c",
   },
   // ─── Role-based multi-level certifications — Jul 2026
   {
