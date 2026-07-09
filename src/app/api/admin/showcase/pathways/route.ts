@@ -38,12 +38,12 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
       include: { cohorts: { orderBy: { cohortNumber: "asc" } } },
     }),
-    prisma.showcaseSubmission.groupBy({
-      by: ["programSlug"],
+    prisma.showcaseMembership.groupBy({
+      by: ["groupId"],
       _count: { _all: true },
     }),
   ]);
-  const bySlug = new Map(counts.map((c) => [c.programSlug, c._count._all]));
+  const byGroupId = new Map(counts.map((c) => [c.groupId, c._count._all]));
 
   return NextResponse.json({
     ok: true,
@@ -59,7 +59,7 @@ export async function GET() {
         name: c.name,
         cohortNumber: c.cohortNumber,
         active: c.active,
-        submissionCount: bySlug.get(c.slug) ?? 0,
+        submissionCount: byGroupId.get(c.id) ?? 0,
       })),
     })),
   });

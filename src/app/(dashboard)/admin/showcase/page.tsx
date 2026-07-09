@@ -35,9 +35,9 @@ export default async function AdminShowcasePage() {
   }));
 
   // Showcase pathways (each with its cohorts) + legacy standalone groups,
-  // with per-slug submission counts (submissions couple loosely by
-  // programSlug == slug).
-  const [pathwayRows, standaloneRows, subCounts, realPathwayRows, workshopRows] = await Promise.all([
+  // with per-group membership counts (ShowcaseMembership is the single
+  // source of truth for who belongs to which group/cohort).
+  const [pathwayRows, standaloneRows, membershipCounts, realPathwayRows, workshopRows] = await Promise.all([
     prisma.showcasePathway.findMany({
       orderBy: { createdAt: "desc" },
       include: { cohorts: { orderBy: { cohortNumber: "asc" } } },
@@ -46,8 +46,8 @@ export default async function AdminShowcasePage() {
       where: { pathwayId: null },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.showcaseSubmission.groupBy({
-      by: ["programSlug"],
+    prisma.showcaseMembership.groupBy({
+      by: ["groupId"],
       _count: { _all: true },
     }),
     // Real learning pathways (registration source of truth) + their
@@ -71,8 +71,8 @@ export default async function AdminShowcasePage() {
       select: { title: true },
     }),
   ]);
-  const countBySlug = new Map(
-    subCounts.map((c) => [c.programSlug, c._count._all]),
+  const countByGroupId = new Map(
+    membershipCounts.map((c) => [c.groupId, c._count._all]),
   );
   const pathways = pathwayRows.map((p) => ({
     id: p.id,
@@ -87,7 +87,7 @@ export default async function AdminShowcasePage() {
       name: c.name,
       cohortNumber: c.cohortNumber,
       active: c.active,
-      submissionCount: countBySlug.get(c.slug) ?? 0,
+      submissionCount: countByGroupId.get(c.id) ?? 0,
       linkedCohortId: c.linkedCohortId,
       gateOnAttendance: c.gateOnAttendance,
     })),
@@ -97,7 +97,7 @@ export default async function AdminShowcasePage() {
     slug: g.slug,
     name: g.name,
     active: g.active,
-    submissionCount: countBySlug.get(g.slug) ?? 0,
+    submissionCount: countByGroupId.get(g.id) ?? 0,
   }));
 
   // Autocomplete suggestions for the per-card membership pills.

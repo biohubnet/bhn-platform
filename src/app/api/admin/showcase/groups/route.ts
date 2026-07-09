@@ -37,11 +37,11 @@ export async function GET() {
   const groups = await prisma.showcaseGroup.findMany({
     orderBy: { createdAt: "desc" },
   });
-  const counts = await prisma.showcaseSubmission.groupBy({
-    by: ["programSlug"],
+  const counts = await prisma.showcaseMembership.groupBy({
+    by: ["groupId"],
     _count: { _all: true },
   });
-  const bySlug = new Map(counts.map((c) => [c.programSlug, c._count._all]));
+  const byGroupId = new Map(counts.map((c) => [c.groupId, c._count._all]));
 
   return NextResponse.json({
     ok: true,
@@ -52,7 +52,7 @@ export async function GET() {
       eyebrow: g.eyebrow,
       intro: g.intro,
       active: g.active,
-      submissionCount: bySlug.get(g.slug) ?? 0,
+      submissionCount: byGroupId.get(g.id) ?? 0,
     })),
   });
 }

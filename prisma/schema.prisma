@@ -4893,6 +4893,12 @@ model ShowcaseSubmission {
   /// the session. Null for public/anonymous submissions.
   userId           String?
 
+  /// Structured group/cohort memberships — the single source of truth
+  /// for "which showcases this person belongs to". One row is `isHome`
+  /// (mirrors `programSlug`, the public URL + R2 path anchor); the rest
+  /// are extra cohorts an admin added without re-uploading a photo.
+  memberships      ShowcaseMembership[]
+
   @@index([programSlug, createdAt])
   @@index([programSlug, userId])
 }
@@ -4938,9 +4944,38 @@ model ShowcaseGroup {
   /// open/public (the interim default; nothing breaks for unbound groups).
   gateOnAttendance Boolean          @default(false)
 
+  /// Structured membership rows for people in this group/cohort (the
+  /// single source of truth; supersedes the loose programSlug match).
+  memberships      ShowcaseMembership[]
+
   @@index([createdAt])
   @@index([pathwayId])
   @@index([linkedCohortId])
+}
+
+/// Join between a showcase person (ShowcaseSubmission) and a group/cohort
+/// (ShowcaseGroup) — the single source of truth for cohort/pathway
+/// membership, replacing the loose `programSlug` string match and the
+/// free-text pills. One `isHome` row mirrors the submission's programSlug
+/// (its public page + R2 path); additional rows let one person appear in
+/// multiple cohorts without re-uploading a photo. Both FKs cascade, so
+/// deleting a group cleanly removes its memberships (no dangling roster).
+model ShowcaseMembership {
+  id           String   @id @default(cuid())
+  submissionId String
+  groupId      String
+  /// True for the one membership that mirrors the submission's home
+  /// `programSlug` group (public URL + R2 path live under it).
+  isHome       Boolean  @default(false)
+  createdById  String?
+  createdAt    DateTime @default(now())
+
+  submission   ShowcaseSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  group        ShowcaseGroup      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, groupId])
+  @@index([groupId])
+  @@index([submissionId])
 }
 
 /// A learning pathway — the program a showcase belongs to, created ONCE

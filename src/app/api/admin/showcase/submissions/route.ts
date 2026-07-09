@@ -34,18 +34,29 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const slug = (req.nextUrl.searchParams.get("slug") ?? "").trim();
   if (!slug) return NextResponse.json({ error: "slug required" }, { status: 400 });
-  const people = await prisma.showcaseSubmission.findMany({
-    where: { programSlug: slug },
+  const group = await prisma.showcaseGroup.findUnique({ where: { slug }, select: { id: true } });
+  if (!group) return NextResponse.json({ people: [] });
+  // Roster = membership rows for this group (single source of truth), each
+  // joined to its person. membershipId lets the roster remove-from-group
+  // without hard-deleting the person; isHome flags the person's home group.
+  const rows = await prisma.showcaseMembership.findMany({
+    where: { groupId: group.id },
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, linkedinUrl: true, linkedinHandle: true, photoUrl: true, createdAt: true },
+    select: {
+      id: true,
+      isHome: true,
+      submission: { select: { id: true, name: true, linkedinUrl: true, linkedinHandle: true, photoUrl: true, createdAt: true } },
+    },
   });
   return NextResponse.json({
-    people: people.map((p) => ({
-      id: p.id,
-      name: p.name,
-      linkedin: p.linkedinUrl ?? p.linkedinHandle,
-      photoUrl: p.photoUrl,
-      createdAt: p.createdAt.toISOString(),
+    people: rows.map((m) => ({
+      id: m.submission.id,
+      membershipId: m.id,
+      isHome: m.isHome,
+      name: m.submission.name,
+      linkedin: m.submission.linkedinUrl ?? m.submission.linkedinHandle,
+      photoUrl: m.submission.photoUrl,
+      createdAt: m.submission.createdAt.toISOString(),
     })),
   });
 }
@@ -74,7 +85,7 @@ export async function POST(req: NextRequest) {
   const note = String(formData.get("note") ?? "").trim();
   const photo = formData.get("photo");
 
-  const group = await prisma.showcaseGroup.findUnique({ where: { slug: programSlug }, select: { slug: true } });
+  const group = await prisma.showcaseGroup.findUnique({ where: { slug: programSlug }, select: { id: true, slug: true } });
   if (!group) return NextResponse.json({ error: "Unknown showcase cohort." }, { status: 400 });
 
   if (name.length < 2 || name.length > 120) {
@@ -132,6 +143,9 @@ export async function POST(req: NextRequest) {
         photoUrl: r2PublicUrl(photoKey),
         photoKey,
         adminNote,
+        // Home membership — the single-source-of-truth row for this
+        // person's group. Written atomically with the submission.
+        memberships: { create: { groupId: group.id, isHome: true } },
       },
       select: { id: true },
     });

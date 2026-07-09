@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   // /admin/showcase).
   const group = await prisma.showcaseGroup.findUnique({
     where: { slug: programSlug },
-    select: { active: true, gateOnAttendance: true, linkedCohortId: true },
+    select: { id: true, active: true, gateOnAttendance: true, linkedCohortId: true },
   });
   if (!group) {
     return NextResponse.json({ error: "Unknown showcase." }, { status: 400 });
@@ -198,6 +198,8 @@ export async function POST(req: NextRequest) {
         submittedFromIp: ip,
         submittedFromUa: ua,
         userId: gatedUserId,
+        // Home membership — single source of truth for this person's group.
+        memberships: { create: { groupId: group.id, isHome: true } },
       },
     });
   } catch (err) {
