@@ -30,19 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.08a";
+export const TOUR_VERSION = "2026.07.08b";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Showcase · membership pills on each card — Jul 2026
   {
     id: "showcase.card-pills",
     title: "Tag each person with their workshops, pathways & cohorts",
-    body: "On Admin → Showcase, every person's card now carries membership pills. Hit “+ Tag” to add one — pick Workshop, Pathway, or Cohort, then type a value (Workshop and Pathway autocomplete from your real records; Cohort takes a number). Click any pill to rename it, or the × to remove it. Use it to record who came through which workshop, pathway, and cohort — all on the card.",
+    body: "On Admin → Showcase, every person's card now carries membership pills. Hit “+ Tag” to add one — pick Workshop, Pathway, or Cohort, then type a value (Workshop and Pathway autocomplete from your real records; Cohort takes a number). Pills can nest a sub-tag too — e.g. “Regulatory Affairs › Cohort 1” — via the small + on a pill or the “sub” field. Click any pill part to rename it, or the × to remove it. Regulatory Affairs graduates are already tagged for you.",
     path: "/admin/showcase",
     placement: "center",
     roles: ["admin", "superadmin"],
     cta: { label: "Open Showcase admin", href: "/admin/showcase" },
-    since: "2026.07.08a",
+    since: "2026.07.08b",
   },
   // ─── Role-based multi-level certifications — Jul 2026
   {

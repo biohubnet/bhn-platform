@@ -16,7 +16,7 @@ import { ShowcasePathwaysManager } from "@/components/admin/ShowcasePathwaysMana
 
 export const dynamic = "force-dynamic";
 
-type Pill = { kind: "workshop" | "pathway" | "cohort"; label: string };
+type Pill = { kind: "workshop" | "pathway" | "cohort"; label: string; sub?: string };
 
 export default async function AdminShowcasePage() {
   const session = await requireRole("admin").catch(() => null);

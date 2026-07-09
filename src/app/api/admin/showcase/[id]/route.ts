@@ -26,9 +26,11 @@ export const runtime = "nodejs";
 
 const PILL_KINDS = ["workshop", "pathway", "cohort"] as const;
 type PillKind = (typeof PILL_KINDS)[number];
-type Pill = { kind: PillKind; label: string };
+type Pill = { kind: PillKind; label: string; sub?: string };
 
-/** Coerce arbitrary client input into a clean, capped list of pills. */
+/** Coerce arbitrary client input into a clean, capped list of pills.
+ *  A pill may carry an optional `sub` — a nested sub-tag (e.g. a
+ *  "Regulatory Affairs" pathway pill with sub "Cohort 1"). */
 function sanitisePills(input: unknown): Pill[] {
   if (!Array.isArray(input)) return [];
   const out: Pill[] = [];
@@ -36,10 +38,16 @@ function sanitisePills(input: unknown): Pill[] {
     if (!raw || typeof raw !== "object") continue;
     const kind = (raw as { kind?: unknown }).kind;
     const label = (raw as { label?: unknown }).label;
+    const subRaw = (raw as { sub?: unknown }).sub;
     if (!PILL_KINDS.includes(kind as PillKind)) continue;
     const text = typeof label === "string" ? label.trim().slice(0, 80) : "";
     if (!text) continue;
-    out.push({ kind: kind as PillKind, label: text });
+    const sub = typeof subRaw === "string" ? subRaw.trim().slice(0, 80) : "";
+    const pill: Pill = { kind: kind as PillKind, label: text };
+    // Sub-tags only apply to workshop / pathway pills — a cohort is itself
+    // a leaf, so never carry a sub under one (matches the editor's UI).
+    if (sub && (kind as PillKind) !== "cohort") pill.sub = sub;
+    out.push(pill);
     if (out.length >= 24) break; // hard cap — a card can't carry more
   }
   return out;
@@ -62,7 +70,13 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const body = (await req.json().catch(() => ({}))) as { pills?: unknown };
+  const body = (await req.json().catch(() => null)) as { pills?: unknown } | null;
+  // Require a well-formed pills array. An unparseable/truncated body or a
+  // missing/non-array `pills` is rejected rather than silently treated as
+  // "clear all pills" (a legitimate clear sends an explicit empty array).
+  if (!body || !Array.isArray(body.pills)) {
+    return NextResponse.json({ error: "Body must include a pills array." }, { status: 400 });
+  }
   const pills = sanitisePills(body.pills);
 
   const existing = await prisma.showcaseSubmission.findUnique({

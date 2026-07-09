@@ -25,7 +25,7 @@ import {
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type PillKind = "workshop" | "pathway" | "cohort";
-interface Pill { kind: PillKind; label: string }
+interface Pill { kind: PillKind; label: string; sub?: string }
 
 const PILL_KINDS: PillKind[] = ["workshop", "pathway", "cohort"];
 const PILL_META: Record<PillKind, { label: string; cls: string; Icon: typeof Wrench }> = {
@@ -404,77 +404,157 @@ function CardPills({
   const [adding, setAdding] = useState(false);
   const [kind, setKind] = useState<PillKind>("workshop");
   const [value, setValue] = useState("");
+  const [subValue, setSubValue] = useState("");
   const [editIdx, setEditIdx] = useState<number | null>(null);
+  const [editPart, setEditPart] = useState<"label" | "sub">("label");
   const [editValue, setEditValue] = useState("");
+  // Identity of the pill captured when editing starts. If the pills array is
+  // replaced under us (e.g. an optimistic save reverts on failure), this lets
+  // commitEdit bail instead of relabelling whoever now sits at that index.
+  const [editSig, setEditSig] = useState<string | null>(null);
   const dlId = useId();
 
   const options = kind === "workshop" ? workshopOptions : kind === "pathway" ? pathwayOptions : [];
 
+  // A bare number reads better as "Cohort N" (applied to cohort labels + sub-tags).
+  const asCohort = (raw: string) => (/^\d+$/.test(raw) ? `Cohort ${raw}` : raw);
+  const sig = (p: Pill) => `${p.kind} ${p.label} ${p.sub ?? ""}`;
+
   function addPill() {
     const raw = value.trim();
     if (!raw) return;
-    // A bare cohort number reads better as "Cohort 2".
-    const label = kind === "cohort" && /^\d+$/.test(raw) ? `Cohort ${raw}` : raw;
-    onChange([...pills, { kind, label }]);
+    const label = kind === "cohort" ? asCohort(raw) : raw;
+    // Sub-tags only apply to workshop / pathway pills (a cohort is a leaf);
+    // gating here also drops any stale sub left after switching kind.
+    const sub = kind === "cohort" ? "" : asCohort(subValue.trim());
+    const pill: Pill = { kind, label };
+    if (sub) pill.sub = sub;
+    onChange([...pills, pill]);
     setValue("");
+    setSubValue("");
   }
   function removePill(i: number) {
     onChange(pills.filter((_, idx) => idx !== i));
   }
+  function startEdit(i: number, part: "label" | "sub") {
+    if (disabled) return;
+    setEditIdx(i);
+    setEditPart(part);
+    setEditSig(sig(pills[i]));
+    setEditValue(part === "label" ? pills[i].label : (pills[i].sub ?? ""));
+  }
+  function cancelEdit() {
+    setEditIdx(null);
+    setEditPart("label");
+    setEditValue("");
+    setEditSig(null);
+  }
   function commitEdit() {
     if (editIdx === null) return;
+    const cur = pills[editIdx];
+    // Bail if the pill at this index isn't the one we started editing — never
+    // relabel a different pill if the array changed under us.
+    if (!cur || sig(cur) !== editSig) { cancelEdit(); return; }
     const raw = editValue.trim();
-    if (raw && raw !== pills[editIdx]?.label) {
-      onChange(pills.map((p, idx) => (idx === editIdx ? { ...p, label: raw } : p)));
+    if (editPart === "label") {
+      if (raw && raw !== cur.label) {
+        onChange(pills.map((p, idx) => (idx === editIdx ? { ...p, label: raw } : p)));
+      }
+    } else {
+      const nextSub = raw ? asCohort(raw) : undefined;
+      if (nextSub !== cur.sub) {
+        onChange(pills.map((p, idx) => {
+          if (idx !== editIdx) return p;
+          const np: Pill = { kind: p.kind, label: p.label };
+          if (nextSub) np.sub = nextSub;
+          return np;
+        }));
+      }
     }
-    setEditIdx(null);
-    setEditValue("");
+    cancelEdit();
   }
+
+  // Shared inline edit input (label + sub edits). Sibling controls (×, sub)
+  // use onMouseDown preventDefault so this doesn't blur-and-reflow before the
+  // click lands on them.
+  const editInput = (widthCls: string, ariaLabel: string) => (
+    // eslint-disable-next-line jsx-a11y/no-autofocus
+    <input
+      autoFocus
+      aria-label={ariaLabel}
+      value={editValue}
+      onChange={(e) => setEditValue(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commitEdit();
+        if (e.key === "Escape") cancelEdit();
+      }}
+      onBlur={commitEdit}
+      className={widthCls + " bg-transparent font-medium outline-none"}
+    />
+  );
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {pills.map((p, i) => {
         const meta = PILL_META[p.kind] ?? PILL_META.workshop;
         const Icon = meta.Icon;
-        if (editIdx === i) {
-          return (
-            <span
-              key={i}
-              className={"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] ring-1 ring-inset " + meta.cls}
-            >
-              <Icon size={9} className="opacity-70" />
-              {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
-              <input
-                autoFocus
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitEdit();
-                  if (e.key === "Escape") { setEditIdx(null); setEditValue(""); }
-                }}
-                onBlur={commitEdit}
-                className="w-24 bg-transparent font-medium outline-none"
-              />
-            </span>
-          );
-        }
+        const editingLabel = editIdx === i && editPart === "label";
+        const editingSub = editIdx === i && editPart === "sub";
         return (
           <span
             key={i}
             className={"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium ring-1 ring-inset " + meta.cls}
           >
             <Icon size={9} className="opacity-70" />
+            {editingLabel ? (
+              editInput("w-24", "Edit tag name")
+            ) : (
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => startEdit(i, "label")}
+                disabled={disabled}
+                title="Click to rename"
+                className="max-w-[130px] truncate hover:underline disabled:no-underline"
+              >
+                {p.label}
+              </button>
+            )}
+
+            {editingSub || p.sub ? (
+              <>
+                <span className="-mx-0.5 opacity-45" aria-hidden>›</span>
+                {editingSub ? (
+                  editInput("w-20", "Edit sub-tag")
+                ) : (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => startEdit(i, "sub")}
+                    disabled={disabled}
+                    title="Click to edit sub-tag (clear it to remove)"
+                    className="max-w-[100px] truncate italic opacity-90 hover:underline disabled:no-underline"
+                  >
+                    {p.sub}
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => startEdit(i, "sub")}
+                disabled={disabled}
+                title="Add a sub-tag (e.g. Cohort 1)"
+                className="opacity-40 transition hover:opacity-90 disabled:opacity-30"
+              >
+                <Plus size={9} />
+              </button>
+            )}
+
             <button
               type="button"
-              onClick={() => { setEditIdx(i); setEditValue(p.label); }}
-              disabled={disabled}
-              title="Click to rename"
-              className="max-w-[130px] truncate hover:underline disabled:no-underline"
-            >
-              {p.label}
-            </button>
-            <button
-              type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => removePill(i)}
               disabled={disabled}
               title="Remove tag"
@@ -490,7 +570,13 @@ function CardPills({
         <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-1.5 py-0.5 ring-1 ring-inset ring-line">
           <select
             value={kind}
-            onChange={(e) => setKind(e.target.value as PillKind)}
+            onChange={(e) => {
+              const k = e.target.value as PillKind;
+              setKind(k);
+              // Cohort pills carry no sub-tag; clear any typed sub when switching
+              // to cohort so a hidden value can't ride along.
+              if (k === "cohort") setSubValue("");
+            }}
             className="bg-transparent text-[10.5px] font-semibold text-fg outline-none"
             aria-label="Tag type"
           >
@@ -507,7 +593,7 @@ function CardPills({
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") { e.preventDefault(); addPill(); }
-              if (e.key === "Escape") { setAdding(false); setValue(""); }
+              if (e.key === "Escape") { setAdding(false); setValue(""); setSubValue(""); }
             }}
             placeholder={kind === "cohort" ? "e.g. 2" : `${PILL_META[kind].label} name`}
             className="w-28 bg-transparent text-[11px] text-fg outline-none placeholder:text-fg-subtle"
@@ -516,6 +602,23 @@ function CardPills({
             <datalist id={dlId}>
               {options.map((o) => <option key={o} value={o} />)}
             </datalist>
+          )}
+          {kind !== "cohort" && (
+            <>
+              <span className="opacity-45" aria-hidden>›</span>
+              <input
+                type="text"
+                aria-label="Sub-tag"
+                value={subValue}
+                onChange={(e) => setSubValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { e.preventDefault(); addPill(); }
+                  if (e.key === "Escape") { setAdding(false); setValue(""); setSubValue(""); }
+                }}
+                placeholder="sub e.g. Cohort 1"
+                className="w-24 bg-transparent text-[11px] italic text-fg outline-none placeholder:text-fg-subtle"
+              />
+            </>
           )}
           <button
             type="button"
@@ -528,7 +631,7 @@ function CardPills({
           </button>
           <button
             type="button"
-            onClick={() => { setAdding(false); setValue(""); }}
+            onClick={() => { setAdding(false); setValue(""); setSubValue(""); }}
             title="Done"
             className="text-fg-subtle transition hover:text-fg"
           >
