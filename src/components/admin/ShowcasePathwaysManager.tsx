@@ -256,8 +256,10 @@ export function ShowcasePathwaysManager({
             Showcase pathways
           </h2>
           <p className="text-[12px] text-fg-subtle">
-            One pathway per program (no number); add cohorts under it — each
-            gets its own public submission link.
+            One pathway per program; add cohorts under it. Each cohort has its own{" "}
+            <strong className="font-semibold text-fg">public upload link</strong> —{" "}
+            <strong className="font-semibold text-fg">Copy upload link</strong> and send it to graduates;
+            they add their own name, LinkedIn &amp; headshot (no login needed) and are auto-tagged to that cohort.
           </p>
         </div>
         <button
@@ -329,7 +331,6 @@ export function ShowcasePathwaysManager({
                       {p.name}
                     </span>
                   </div>
-                  <code className="ml-6 text-[11px] text-fg-subtle">/{p.slug}</code>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   <button
@@ -555,6 +556,7 @@ function CohortRow({
         </button>
         <button
           onClick={onCopy}
+          title="Copy this cohort's public upload link — send it to graduates so they add their name, LinkedIn & headshot themselves (no login needed)"
           className="inline-flex items-center gap-1 rounded-md border border-line bg-card-solid px-2 py-1 text-[11px] font-medium text-fg transition hover:border-brand-400 hover:text-brand-700"
         >
           {copied ? (
@@ -563,7 +565,7 @@ function CohortRow({
             </>
           ) : (
             <>
-              <Copy className="h-3 w-3" /> Copy link
+              <Copy className="h-3 w-3" /> Copy upload link
             </>
           )}
         </button>
