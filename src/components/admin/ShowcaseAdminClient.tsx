@@ -62,10 +62,23 @@ export function ShowcaseAdminClient({ initialSubmissions, adminName, groupCatalo
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const programs = Array.from(new Set(submissions.map((s) => s.programSlug)));
+  // Filter tabs come from every membership (home + additional), keyed by
+  // group id with a friendly "Pathway › Cohort" label — so someone added to
+  // a second pathway shows up under that pathway's tab too.
+  const groupOptions = (() => {
+    const map = new Map<string, string>();
+    submissions.forEach((s) =>
+      s.memberships.forEach((m) => {
+        if (!map.has(m.groupId)) map.set(m.groupId, m.sub ? `${m.label} › ${m.sub}` : m.label);
+      }),
+    );
+    return Array.from(map, ([id, label]) => ({ id, label })).sort((a, b) =>
+      a.label.localeCompare(b.label),
+    );
+  })();
   const visible = submissions.filter((s) => {
     if (onlyUndownloaded && s.lastDownloadedAt) return false;
-    if (programFilter && s.programSlug !== programFilter) return false;
+    if (programFilter && !s.memberships.some((m) => m.groupId === programFilter)) return false;
     return true;
   });
 
@@ -198,21 +211,21 @@ export function ShowcaseAdminClient({ initialSubmissions, adminName, groupCatalo
         >
           All ({submissions.length})
         </button>
-        {programs.map((p) => {
-          const n = submissions.filter((s) => s.programSlug === p).length;
+        {groupOptions.map((g) => {
+          const n = submissions.filter((s) => s.memberships.some((m) => m.groupId === g.id)).length;
           return (
             <button
-              key={p}
+              key={g.id}
               type="button"
-              onClick={() => setProgramFilter(p)}
+              onClick={() => setProgramFilter(g.id)}
               className={
                 "text-[11.5px] px-2 py-1 rounded-md transition-colors " +
-                (programFilter === p
+                (programFilter === g.id
                   ? "bg-brand-600 text-white font-semibold"
                   : "text-fg-muted hover:text-fg hover:bg-elevated")
               }
             >
-              {p} ({n})
+              {g.label} ({n})
             </button>
           );
         })}
