@@ -24,7 +24,10 @@ import { deleteR2ObjectByUrl } from "@/lib/r2";
 
 export const runtime = "nodejs";
 
-const PILL_KINDS = ["workshop", "pathway", "cohort"] as const;
+// Only workshop / ad-hoc tags are pills now — pathway & cohort membership is
+// structured (ShowcaseMembership). Legacy pathway/cohort pills were migrated
+// out; this keeps new ones from being written.
+const PILL_KINDS = ["workshop"] as const;
 type PillKind = (typeof PILL_KINDS)[number];
 type Pill = { kind: PillKind; label: string; sub?: string };
 
@@ -44,9 +47,8 @@ function sanitisePills(input: unknown): Pill[] {
     if (!text) continue;
     const sub = typeof subRaw === "string" ? subRaw.trim().slice(0, 80) : "";
     const pill: Pill = { kind: kind as PillKind, label: text };
-    // Sub-tags only apply to workshop / pathway pills — a cohort is itself
-    // a leaf, so never carry a sub under one (matches the editor's UI).
-    if (sub && (kind as PillKind) !== "cohort") pill.sub = sub;
+    // Workshop pills may carry an optional sub-tag (e.g. a session label).
+    if (sub) pill.sub = sub;
     out.push(pill);
     if (out.length >= 24) break; // hard cap — a card can't carry more
   }
