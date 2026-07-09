@@ -24,14 +24,34 @@ export default async function AdminShowcasePage() {
 
   const submissions = await prisma.showcaseSubmission.findMany({
     orderBy: { createdAt: "desc" },
+    include: {
+      memberships: {
+        orderBy: [{ isHome: "desc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          groupId: true,
+          isHome: true,
+          group: { select: { name: true, pathway: { select: { name: true } } } },
+        },
+      },
+    },
   });
 
-  // Serialise Dates for the client boundary.
+  // Serialise Dates + structured memberships for the client boundary.
+  // A cohort group renders "Pathway › Cohort"; a standalone group renders
+  // just its name.
   const serialised = submissions.map((s) => ({
     ...s,
     createdAt: s.createdAt.toISOString(),
     lastDownloadedAt: s.lastDownloadedAt?.toISOString() ?? null,
     pills: (Array.isArray(s.pills) ? s.pills : []) as Pill[],
+    memberships: s.memberships.map((m) => ({
+      membershipId: m.id,
+      groupId: m.groupId,
+      isHome: m.isHome,
+      label: m.group.pathway ? m.group.pathway.name : m.group.name,
+      sub: m.group.pathway ? m.group.name : null,
+    })),
   }));
 
   // Showcase pathways (each with its cohorts) + legacy standalone groups,
@@ -100,6 +120,17 @@ export default async function AdminShowcasePage() {
     submissionCount: countByGroupId.get(g.id) ?? 0,
   }));
 
+  // Catalog for the card's "add to group" picker — real group ids, grouped
+  // by pathway (its cohorts) with standalone showcases in their own bucket.
+  const groupCatalog = [
+    ...pathways
+      .filter((p) => p.cohorts.length > 0)
+      .map((p) => ({ pathwayName: p.name, groups: p.cohorts.map((c) => ({ id: c.id, label: c.name })) })),
+    ...(standalone.length
+      ? [{ pathwayName: null as string | null, groups: standalone.map((g) => ({ id: g.id, label: g.name })) }]
+      : []),
+  ];
+
   // Autocomplete suggestions for the per-card membership pills.
   const workshopOptions = Array.from(
     new Set(workshopRows.map((w) => w.title).filter(Boolean)),
@@ -147,6 +178,7 @@ export default async function AdminShowcasePage() {
         adminName={adminName}
         workshopOptions={workshopOptions}
         pathwayOptions={pathwayOptions}
+        groupCatalog={groupCatalog}
       />
     </div>
   );

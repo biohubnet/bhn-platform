@@ -22,10 +22,18 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Showcase · structured group/cohort membership — Jul 2026
+  {
+    title: "Showcase · put each person in real groups & cohorts (multi-membership)",
+    body: "Each card on **Admin → Showcase** now shows **structured group memberships** — real references to your actual showcases and pathway cohorts, not free text. A cohort renders as **Pathway › Cohort**; a standalone showcase shows its name; the person's **home** group carries a small home icon. Hit **+ Group** to add someone to **another** cohort — no photo re-upload, since they already exist — so one person can belong to **several** cohorts at once. Remove a secondary membership with its **×** (the home group is protected — delete the person from their card instead). This replaces the old free-text pathway/cohort tags with a **single source of truth**, so a group's roster and its count always agree, and deleting a group cleanly removes its memberships. The **+ Tag** chips remain for **workshops / ad-hoc** labels.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Showcase · membership pills on each person's card — Jul 2026
   {
     title: "Showcase · tag each person with their workshops, pathways & cohorts",
-    body: "Every person's card on **Admin → Showcase** now carries **membership pills**. Hit **+ Tag** to add one — choose **Workshop**, **Pathway**, or **Cohort**, then type a value (Workshop and Pathway autocomplete from your real records; Cohort takes a number and shows as “Cohort 2”). **Click a pill to rename it**, or its **×** to remove it. Pills can also carry a **sub-tag** — e.g. a **Regulatory Affairs** pathway pill with **Cohort 1** nested under it (`Regulatory Affairs › Cohort 1`); click the small **+** on a pill to add a sub-tag, or fill the “sub” field when adding. A person can carry as many pills as they need, so you can record exactly which workshops, pathways, and cohorts each graduate came through — right on the card, colour-coded by type. Everyone currently in the Regulatory Affairs showcase is pre-tagged **Regulatory Affairs › Cohort 1**. (Every showcase group still has a **People** button to open its roster and remove anyone with one click.)",
+    body: "Every person's card on **Admin → Showcase** carries **tag pills**. Hit **+ Tag** to add a **workshop** or ad-hoc label; click a pill to rename it, its **×** to remove it, and the small **+** to add a nested **sub-tag** (e.g. a session or cohort number). Pathway and cohort membership has since moved to **structured group chips** (see the newer entry) so it references real records — the **+ Tag** pills now focus on workshops and free-form notes.",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,

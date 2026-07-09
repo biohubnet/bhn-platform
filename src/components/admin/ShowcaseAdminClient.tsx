@@ -20,19 +20,27 @@ import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Download, Trash2, CheckCircle2, Circle, ExternalLink, Filter, AlertCircle,
-  Plus, X, Check, Wrench, Layers, Hash,
+  Plus, X, Check, Wrench, Layers, Hash, Home,
 } from "lucide-react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type PillKind = "workshop" | "pathway" | "cohort";
 interface Pill { kind: PillKind; label: string; sub?: string }
 
-const PILL_KINDS: PillKind[] = ["workshop", "pathway", "cohort"];
+// Editor now only creates WORKSHOP tags — pathway/cohort membership is
+// structured (see MembershipChips). The renderer stays defensive so any
+// legacy pathway/cohort pill still displays.
+const PILL_KINDS: PillKind[] = ["workshop"];
 const PILL_META: Record<PillKind, { label: string; cls: string; Icon: typeof Wrench }> = {
   workshop: { label: "Workshop", cls: "bg-amber-50 text-amber-800 ring-amber-200", Icon: Wrench },
   pathway:  { label: "Pathway",  cls: "bg-violet-50 text-violet-800 ring-violet-200", Icon: Layers },
   cohort:   { label: "Cohort",   cls: "bg-emerald-50 text-emerald-800 ring-emerald-200", Icon: Hash },
 };
+
+/** A structured group/cohort membership (the single source of truth). */
+interface Membership { membershipId: string; groupId: string; isHome: boolean; label: string; sub: string | null }
+/** The "add to group" picker catalog: groups bucketed by pathway. */
+type GroupCatalog = { pathwayName: string | null; groups: { id: string; label: string }[] }[];
 
 interface Submission {
   id: string;
@@ -49,6 +57,7 @@ interface Submission {
   lastDownloadedBy: string | null;
   adminNote: string | null;
   pills: Pill[];
+  memberships: Membership[];
 }
 
 interface Props {
@@ -56,9 +65,10 @@ interface Props {
   adminName: string;
   workshopOptions: string[];
   pathwayOptions: string[];
+  groupCatalog: GroupCatalog;
 }
 
-export function ShowcaseAdminClient({ initialSubmissions, adminName, workshopOptions, pathwayOptions }: Props) {
+export function ShowcaseAdminClient({ initialSubmissions, adminName, workshopOptions, pathwayOptions, groupCatalog }: Props) {
   const router = useRouter();
   const { confirmDialog, node: confirmNode } = useConfirmDialog();
   const [submissions, setSubmissions] = useState(initialSubmissions);
@@ -160,6 +170,59 @@ export function ShowcaseAdminClient({ initialSubmissions, adminName, workshopOpt
     }
   }
 
+  /** Add this person to another group/cohort (a second membership — no photo). */
+  async function addMembership(s: Submission, groupId: string) {
+    if (!groupId || s.memberships.some((m) => m.groupId === groupId)) return;
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/showcase/submissions/${s.id}/memberships`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; membership?: Membership; error?: string };
+      if (!res.ok || !j.ok || !j.membership) {
+        setError(j.error ?? `Adding to group failed (HTTP ${res.status}).`);
+        return;
+      }
+      const m = j.membership;
+      setSubmissions((cur) =>
+        cur.map((x) =>
+          x.id === s.id && !x.memberships.some((e) => e.groupId === m.groupId)
+            ? { ...x, memberships: [...x.memberships, m] }
+            : x,
+        ),
+      );
+    } catch {
+      setError("Adding to group failed — check your connection.");
+    }
+  }
+
+  /** Remove this person from a group (delete the membership). Home is protected. */
+  async function removeMembership(s: Submission, m: Membership) {
+    if (m.isHome) { setError("That's the person's home group — delete the person instead."); return; }
+    setError(null);
+    const prev = s.memberships;
+    setSubmissions((cur) =>
+      cur.map((x) => (x.id === s.id ? { ...x, memberships: x.memberships.filter((e) => e.membershipId !== m.membershipId) } : x)),
+    );
+    try {
+      const res = await fetch(`/api/admin/showcase/submissions/${s.id}/memberships`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId: m.groupId }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !j.ok) {
+        setError(j.error ?? `Removing from group failed (HTTP ${res.status}).`);
+        setSubmissions((cur) => cur.map((x) => (x.id === s.id ? { ...x, memberships: prev } : x)));
+      }
+    } catch {
+      setError("Removing from group failed — check your connection.");
+      setSubmissions((cur) => cur.map((x) => (x.id === s.id ? { ...x, memberships: prev } : x)));
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Filter bar */}
@@ -239,8 +302,11 @@ export function ShowcaseAdminClient({ initialSubmissions, adminName, workshopOpt
                 onToggleMark={() => markDownloaded(s, !s.lastDownloadedAt)}
                 onDelete={() => deleteRow(s)}
                 onSavePills={(pills) => savePills(s, pills)}
+                onAddMembership={(groupId) => addMembership(s, groupId)}
+                onRemoveMembership={(m) => removeMembership(s, m)}
                 workshopOptions={workshopOptions}
                 pathwayOptions={pathwayOptions}
+                groupCatalog={groupCatalog}
               />
             </li>
           ))}
@@ -264,7 +330,7 @@ export function ShowcaseAdminClient({ initialSubmissions, adminName, workshopOpt
 }
 
 function SubmissionCard({
-  submission, busy, onDownload, onToggleMark, onDelete, onSavePills, workshopOptions, pathwayOptions,
+  submission, busy, onDownload, onToggleMark, onDelete, onSavePills, onAddMembership, onRemoveMembership, workshopOptions, pathwayOptions, groupCatalog,
 }: {
   submission: Submission;
   busy: boolean;
@@ -272,8 +338,11 @@ function SubmissionCard({
   onToggleMark: () => void;
   onDelete: () => void;
   onSavePills: (pills: Pill[]) => void;
+  onAddMembership: (groupId: string) => void;
+  onRemoveMembership: (m: Membership) => void;
   workshopOptions: string[];
   pathwayOptions: string[];
+  groupCatalog: GroupCatalog;
 }) {
   const downloaded = !!submission.lastDownloadedAt;
   return (
@@ -334,8 +403,19 @@ function SubmissionCard({
         </div>
       </div>
 
-      {/* Membership pills — workshop / pathway / cohort tags */}
-      <div className="px-3.5 pb-3 -mt-0.5">
+      {/* Structured group/cohort memberships (single source of truth) */}
+      <div className="px-3.5 pb-2 -mt-0.5">
+        <MembershipChips
+          memberships={submission.memberships}
+          groupCatalog={groupCatalog}
+          onAdd={onAddMembership}
+          onRemove={onRemoveMembership}
+          disabled={busy}
+        />
+      </div>
+
+      {/* Free-form workshop / ad-hoc tags */}
+      <div className="px-3.5 pb-3">
         <CardPills
           pills={submission.pills}
           onChange={onSavePills}
@@ -648,6 +728,104 @@ function CardPills({
           <Plus size={10} /> Tag
         </button>
       )}
+    </div>
+  );
+}
+
+/**
+ * MembershipChips — the structured group/cohort membership on a card, the
+ * single source of truth (backed by real ShowcaseGroup rows, not free text).
+ * A cohort group renders "Pathway › Cohort"; a standalone group renders its
+ * name. The home membership carries a home icon and can't be removed here
+ * (delete the person from their card instead). "+ Group" adds the person to
+ * another group/cohort — no photo needed since they already exist.
+ */
+function MembershipChips({
+  memberships, groupCatalog, onAdd, onRemove, disabled,
+}: {
+  memberships: Membership[];
+  groupCatalog: GroupCatalog;
+  onAdd: (groupId: string) => void;
+  onRemove: (m: Membership) => void;
+  disabled: boolean;
+}) {
+  const [adding, setAdding] = useState(false);
+  const memberGroupIds = new Set(memberships.map((m) => m.groupId));
+  const buckets = groupCatalog
+    .map((b) => ({ ...b, groups: b.groups.filter((g) => !memberGroupIds.has(g.id)) }))
+    .filter((b) => b.groups.length > 0);
+  const canAdd = buckets.length > 0;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {memberships.map((m) => (
+        <span
+          key={m.membershipId}
+          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium ring-1 ring-inset bg-brand-50 text-brand-800 ring-brand-200"
+        >
+          <Layers size={9} className="opacity-70" />
+          <span className="max-w-[130px] truncate">{m.label}</span>
+          {m.sub && (
+            <>
+              <span className="-mx-0.5 opacity-45" aria-hidden>›</span>
+              <span className="max-w-[90px] truncate italic opacity-90">{m.sub}</span>
+            </>
+          )}
+          {m.isHome ? (
+            <Home size={9} className="ml-0.5 opacity-45" aria-label="Home group" />
+          ) : (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => onRemove(m)}
+              disabled={disabled}
+              title="Remove from this group"
+              className="-mr-0.5 opacity-50 transition hover:opacity-100"
+            >
+              <X size={9} />
+            </button>
+          )}
+        </span>
+      ))}
+
+      {canAdd &&
+        (adding ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-1.5 py-0.5 ring-1 ring-inset ring-line">
+            {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+            <select
+              autoFocus
+              defaultValue=""
+              aria-label="Add to group"
+              disabled={disabled}
+              onChange={(e) => { const v = e.target.value; if (v) { onAdd(v); setAdding(false); } }}
+              className="max-w-[170px] bg-transparent text-[11px] font-medium text-fg outline-none"
+            >
+              <option value="" disabled>Pick a group…</option>
+              {buckets.map((b, bi) => (
+                <optgroup key={bi} label={b.pathwayName ?? "Other showcases"}>
+                  {b.groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {b.pathwayName ? `${b.pathwayName} › ${g.label}` : g.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <button type="button" onClick={() => setAdding(false)} title="Cancel" className="text-fg-subtle transition hover:text-fg">
+              <X size={12} />
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            disabled={disabled}
+            title="Add this person to another group / cohort"
+            className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-line px-2 py-0.5 text-[10.5px] font-medium text-fg-subtle transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-50"
+          >
+            <Plus size={10} /> Group
+          </button>
+        ))}
     </div>
   );
 }
