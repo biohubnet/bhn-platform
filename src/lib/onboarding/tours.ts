@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.09c";
+export const TOUR_VERSION = "2026.07.10a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── EQUIP tracker · simplified recipients + website feed — Jul 2026
+  {
+    id: "equip.tracker-recipients",
+    title: "A public recipients list for the website",
+    body: "Admin → EQUIP → Recipient tracker now has two tabs. “Recipients” is a simplified list (company, recipient, track, and VentureLift project) that's also published as a public JSON feed for BioHubNet's website — use “Copy JSON” or “Copy Codex prompt” to hand it to Codex. “Tracking report” is the full LinkedIn/web dossier you already had.",
+    path: "/admin/equip/tracker",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open the tracker", href: "/admin/equip/tracker" },
+    since: "2026.07.10a",
+  },
   // ─── Showcase · membership pills on each card — Jul 2026
   {
     id: "showcase.card-pills",

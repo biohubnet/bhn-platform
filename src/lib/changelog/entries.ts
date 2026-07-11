@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP tracker · simplified recipients + website feed — Jul 2026
+  {
+    title: "EQUIP recipient tracker · simplified public list + website feed",
+    body: "The **Admin → EQUIP → Recipient tracker** now has two tabs. **Recipients** is a clean, simplified list — **company · recipient · track**, plus the **project name for VentureLift** — with none of the LinkedIn/posts history. **Tracking report** is the full intelligence dossier you already had (now driven from the same single data source, so they never disagree). The simplified list is also published as a **public JSON feed** at `/api/public/equip/recipients` so BioHubNet's website can render a stylized “who we funded” section; two buttons hand it to Codex in one click (**Copy JSON** and **Copy Codex prompt**). Note: VentureLift project names aren't in the tracker data yet — add them in `recipients.ts`.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Showcase · structured group/cohort membership — Jul 2026
   {
     title: "Showcase · put each person in real groups & cohorts (multi-membership)",

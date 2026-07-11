@@ -1,49 +1,97 @@
 /**
  * /admin/equip/tracker — EQUIP Recipient Tracker.
  *
- * A post-award intelligence dossier: every company funded by a VentureConnect
- * or VentureLift grant, tracked across LinkedIn and the open web, with fresh
- * raises / awards / partnerships flagged and linked to source.
+ * Two tabs over one curated dataset (src/lib/equip/recipients.ts — the single
+ * source of truth):
+ *   • Recipients      — a simplified, public-facing list (company · recipient ·
+ *                       track · VL project). Also served verbatim as a JSON feed
+ *                       at /api/public/equip/recipients for the BioHubNet site.
+ *   • Tracking report — the full post-award intelligence dossier (LinkedIn/web
+ *                       tracking, fresh raises/awards, posts & recognition). It's
+ *                       a self-contained HTML artifact rendered inside an isolated
+ *                       <iframe srcDoc>; the curated data is injected into it at
+ *                       render (replacing the __EQUIP_DATA__ placeholder) so the
+ *                       dossier and the feed can never drift.
  *
- * The dossier is a fully self-contained HTML artifact (its own dark theme,
- * fonts, filtering + search JS). Rather than re-implement it in the platform's
- * design system — which would fight its styling — we render it verbatim inside
- * an isolated <iframe srcDoc>. The HTML is bundled as a JSON string (so the
- * file's own backticks/`${}` don't collide with a TS template literal) and
- * imported at build time, so nothing is served as a public static file: the
- * page is admin-gated and the markup ships inside the server component.
- *
- * To refresh the data: regenerate EQUIP_Tracker.html (the "copy rescan prompt"
- * button in the dossier has the exact prompt) and re-bundle it into
- * tracker.json.
+ * To refresh: regenerate the curated set (the dossier's "copy rescan prompt"
+ * button has the exact prompt) and paste the new companies into recipients.ts.
  */
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Radar } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { PageHero } from "@/components/ui/PageHero";
+import { EQUIP_RECIPIENTS, EQUIP_UPDATED, toPublicRecipients } from "@/lib/equip/recipients";
+import { EquipRecipientsSimple } from "@/components/admin/EquipRecipientsSimple";
 import tracker from "./tracker.json";
 
 export const dynamic = "force-dynamic";
 
-export default async function EquipRecipientTrackerPage() {
+const VIEWS = [
+  { id: "recipients", label: "Recipients" },
+  { id: "report", label: "Tracking report" },
+] as const;
+
+const FEED_PATH = "/api/public/equip/recipients";
+
+export default async function EquipRecipientTrackerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
   const session = await requireRole("admin").catch(() => null);
   if (!session) redirect("/dashboard");
+
+  const { view } = await searchParams;
+  const active = view === "report" ? "report" : "recipients";
 
   return (
     <div className="space-y-5">
       <PageHero
         eyebrow={<><Radar size={11} /> Admin · EQUIP</>}
         title="Recipient tracker"
-        description="Every company funded by a VentureConnect or VentureLift grant — tracked across LinkedIn and the open web. Flagged entries mark a fresh raise, award, partnership or milestone, each linked to its source."
+        description="Every company funded by a VentureConnect or VentureLift grant. Recipients is a simplified public list (also served as a JSON feed for the BioHubNet website); Tracking report is the full LinkedIn/web intelligence dossier."
       />
-      <div className="overflow-hidden rounded-2xl border border-line bg-[#0d1014] shadow-elevated">
-        <iframe
-          title="EQUIP Recipient Dossier"
-          srcDoc={tracker.html}
-          className="block w-full"
-          style={{ height: "calc(100dvh - 200px)", minHeight: 640, border: 0 }}
-        />
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        {VIEWS.map((v) => {
+          const isActive = v.id === active;
+          return (
+            <Link
+              key={v.id}
+              href={`/admin/equip/tracker?view=${v.id}`}
+              className={
+                "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ring-1 transition-colors " +
+                (isActive
+                  ? "bg-brand-600 text-white ring-brand-700"
+                  : "bg-card-solid text-fg ring-line hover:bg-elevated")
+              }
+            >
+              {v.label}
+            </Link>
+          );
+        })}
       </div>
+
+      {active === "report" ? (
+        <div className="overflow-hidden rounded-2xl border border-line bg-[#0d1014] shadow-elevated">
+          <iframe
+            title="EQUIP Recipient Dossier"
+            srcDoc={tracker.html.replace(
+              "__EQUIP_DATA__",
+              JSON.stringify({ updated: EQUIP_UPDATED, companies: EQUIP_RECIPIENTS }),
+            )}
+            className="block w-full"
+            style={{ height: "calc(100dvh - 240px)", minHeight: 640, border: 0 }}
+          />
+        </div>
+      ) : (
+        <EquipRecipientsSimple
+          recipients={toPublicRecipients()}
+          updated={EQUIP_UPDATED}
+          feedPath={FEED_PATH}
+        />
+      )}
     </div>
   );
 }
