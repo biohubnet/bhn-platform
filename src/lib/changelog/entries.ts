@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP · VentureConnect deadlines corrected — Jul 2026
+  {
+    title: "EQUIP · VentureConnect deadline dates corrected (Jul–Dec 2026)",
+    body: "The **VentureConnect** monthly deadlines now come from BHN's **published VC key-dates** (rounds 16–21) instead of a computed “last Monday of the month” rule, which was wrong for three months: **August (Aug 31 → Aug 27)**, **September (Sep 28 → Sep 24)**, and **November (Nov 30 → Nov 27)**. July, October and December were already correct; May and June are unchanged. The deadlines page (`/admin/equip/deadlines`) and the applicant submit-gate use the corrected dates. Source dates now live explicitly in `lib/equip/calendar.ts`.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── EQUIP tracker · simplified recipients + website feed — Jul 2026
   {
     title: "EQUIP recipient tracker · simplified public list + website feed",
