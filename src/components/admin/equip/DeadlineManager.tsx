@@ -784,7 +784,7 @@ function CombinedMonthRow({ group, today }: { group: MonthGroup; today: string }
         <td className={"px-5 py-3 align-top " + (vcPast && group.vc && group.vc.status !== "closed" ? "opacity-70" : "")}>
           {group.vc ? (
             <>
-              <p className="font-medium text-fg text-xs">{formatShort(group.vc.deadlineAt)}</p>
+              <p className="font-bold text-fg text-[15px] leading-tight tabular-nums tracking-tight">{formatShort(group.vc.deadlineAt)}</p>
               {group.vc.extendedAt && (
                 <p className="text-[10px] text-subtle">Was {formatShort(group.vc.originalDeadlineAt)}</p>
               )}
@@ -922,9 +922,9 @@ function CombinedMonthRow({ group, today }: { group: MonthGroup; today: string }
                                     </span>
                                   )}
                                   <span className={
-                                    "text-[10px] font-mono tabular-nums ml-auto " +
-                                    (isActive || isNext ? "font-bold " : "") +
-                                    (isActive ? "text-emerald-700" : isNext ? "text-amber-700" : "text-muted")
+                                    "text-[12.5px] font-mono tabular-nums ml-auto " +
+                                    (isActive || isNext ? "font-bold " : "font-semibold ") +
+                                    (isActive ? "text-emerald-700" : isNext ? "text-amber-700" : "text-fg")
                                   }>
                                     {fmtStageDate(s)}
                                   </span>
@@ -995,7 +995,7 @@ function CombinedMonthRow({ group, today }: { group: MonthGroup; today: string }
                 // No stage data for this month but an EquipDeadline row exists
                 // (e.g. admin-created one-off) — fall back to the old compact view.
                 <>
-                  <p className="font-medium text-fg text-xs">{formatShort(group.vl.deadlineAt)}</p>
+                  <p className="font-bold text-fg text-[15px] leading-tight tabular-nums tracking-tight">{formatShort(group.vl.deadlineAt)}</p>
                   {group.vl.cycleLabel && <p className="text-[10px] text-muted">{group.vl.cycleLabel}</p>}
                   <div className="mt-1">{getStatusBadge(group.vl.status)}</div>
                   <div className="flex items-center gap-1 flex-wrap mt-1.5">
@@ -1367,7 +1367,7 @@ function CalendarView({ deadlines, holidaysByDate }: { deadlines: Deadline[]; ho
               }
               title={holiday ? holiday.name : undefined}
             >
-              <span className={"text-[11px] font-bold " + (isToday ? "text-brand-700" : holiday ? (holiday.presidential ? "text-amber-800" : "text-rose-700") : "text-fg")}>
+              <span className={"text-[13px] font-black leading-none tabular-nums " + (isToday ? "text-brand-700" : holiday ? (holiday.presidential ? "text-amber-800" : "text-rose-700") : "text-fg")}>
                 {c.date.getDate()}
               </span>
               {holiday && (
