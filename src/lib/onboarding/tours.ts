@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.10a";
+export const TOUR_VERSION = "2026.07.14a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── EQUIP tracker · share the report externally — Jul 2026
+  {
+    id: "equip.tracker-share",
+    title: "Share the EQUIP report — no login needed",
+    body: "The “Tracking report” tab on Admin → EQUIP → Recipient tracker now has a “Share externally” panel. Hit “Create link” to mint a public URL anyone can open to read the full dossier — no account required. Label a link, copy or open it, and revoke it anytime (revoked links stop working at once). Shared pages are unlisted, so search engines won't index them.",
+    path: "/admin/equip/tracker?view=report",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open the tracking report", href: "/admin/equip/tracker?view=report" },
+    since: "2026.07.14a",
+  },
   // ─── EQUIP tracker · simplified recipients + website feed — Jul 2026
   {
     id: "equip.tracker-recipients",

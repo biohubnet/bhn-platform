@@ -5563,3 +5563,28 @@ model MockInterviewAnswer {
 
   @@index([interviewId, order])
 }
+
+/// Public, no-login share link for the EQUIP tracking report (the full
+/// recipient intelligence dossier at /admin/equip/tracker?view=report).
+/// Possession of the token URL grants read-only access to the dossier —
+/// there is no session check on /share/equip-report/[token]. Minting and
+/// revoking are admin-only; revoke = delete the row (the page then 404s).
+/// The dossier itself is not per-row data — every valid token renders the
+/// same current curated dossier — so there is no relation column.
+model EquipReportShareToken {
+  id          String    @id @default(cuid())
+  /// URL-safe random token (~22 chars, 128-bit). Unique + indexed for
+  /// fast lookups on the public share page.
+  token       String    @unique
+  /// Optional label the sharer gave the link ("For the DMZ partners").
+  label       String?
+  /// Who minted the link. Plain column (no FK) — audit/display only; the
+  /// link must outlive the sharer's account.
+  createdById String?
+  /// null = never expires; otherwise the public page shows an expired
+  /// state after this time.
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([createdAt])
+}

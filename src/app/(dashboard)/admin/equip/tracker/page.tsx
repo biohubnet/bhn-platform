@@ -20,10 +20,12 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Radar } from "lucide-react";
 import { requireRole } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
-import { EQUIP_RECIPIENTS, EQUIP_UPDATED, toPublicRecipients } from "@/lib/equip/recipients";
+import { EQUIP_UPDATED, toPublicRecipients } from "@/lib/equip/recipients";
+import { renderEquipDossierHtml } from "@/lib/equip/dossier";
 import { EquipRecipientsSimple } from "@/components/admin/EquipRecipientsSimple";
-import tracker from "./tracker.json";
+import { EquipReportShare } from "@/components/admin/equip/EquipReportShare";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +46,23 @@ export default async function EquipRecipientTrackerPage({
 
   const { view } = await searchParams;
   const active = view === "report" ? "report" : "recipients";
+
+  // Existing external-share links, fetched only for the report view.
+  const shareLinks =
+    active === "report"
+      ? (
+          await prisma.equipReportShareToken.findMany({
+            orderBy: { createdAt: "desc" },
+            select: { id: true, token: true, label: true, expiresAt: true, createdAt: true },
+          })
+        ).map((l) => ({
+          id: l.id,
+          token: l.token,
+          label: l.label,
+          expiresAt: l.expiresAt ? l.expiresAt.toISOString() : null,
+          createdAt: l.createdAt.toISOString(),
+        }))
+      : [];
 
   return (
     <div className="space-y-5">
@@ -74,17 +93,17 @@ export default async function EquipRecipientTrackerPage({
       </div>
 
       {active === "report" ? (
-        <div className="overflow-hidden rounded-2xl border border-line bg-[#0d1014] shadow-elevated">
-          <iframe
-            title="EQUIP Recipient Dossier"
-            srcDoc={tracker.html.replace(
-              "__EQUIP_DATA__",
-              JSON.stringify({ updated: EQUIP_UPDATED, companies: EQUIP_RECIPIENTS }),
-            )}
-            className="block w-full"
-            style={{ height: "calc(100dvh - 240px)", minHeight: 640, border: 0 }}
-          />
-        </div>
+        <>
+          <EquipReportShare initialLinks={shareLinks} />
+          <div className="overflow-hidden rounded-2xl border border-line bg-[#0d1014] shadow-elevated">
+            <iframe
+              title="EQUIP Recipient Dossier"
+              srcDoc={renderEquipDossierHtml()}
+              className="block w-full"
+              style={{ height: "calc(100dvh - 240px)", minHeight: 640, border: 0 }}
+            />
+          </div>
+        </>
       ) : (
         <EquipRecipientsSimple
           recipients={toPublicRecipients()}

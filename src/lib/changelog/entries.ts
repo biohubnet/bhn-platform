@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP tracker · share the report externally — Jul 2026
+  {
+    title: "EQUIP tracker · share the tracking report externally (no login)",
+    body: "The **Tracking report** tab on **Admin → EQUIP → Recipient tracker** now has a **Share externally** panel. Hit **Create link** to mint a public URL anyone can open to read the full dossier — **no login or sign-up**. Give each link an optional label (e.g. *DMZ partners*), **copy** it, **open** it in a new tab, or **revoke** it — a revoked link stops working immediately. The shared page shows the same live report you see, minus the admin chrome, and is **unlisted** (search engines are told not to index it). Only admins can create or revoke links.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── EQUIP · VentureConnect deadlines corrected — Jul 2026
   {
     title: "EQUIP · VentureConnect deadline dates corrected (Jul–Dec 2026)",
