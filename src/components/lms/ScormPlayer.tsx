@@ -130,6 +130,11 @@ export function ScormPlayer({
           break;
         case "Commit":
         case "LMSCommit":
+          // Cancel any SetValue debounce still in flight: Commit writes the same
+          // `data` right now, so letting the pending timer fire would persist an
+          // identical payload a second later — doubling the write rate for the
+          // usual SetValue-then-Commit sequence.
+          if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
           saveData({ ...data });
           break;
         case "Finish":
@@ -152,6 +157,10 @@ export function ScormPlayer({
           // flight — losing the trainee's last few seconds of
           // progress on slow networks.
           {
+            // Same reason as Commit: this writes `data` now, so drop any
+            // SetValue debounce still pending rather than let it re-write the
+            // identical payload a second later (or after we've navigated away).
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
             const finalSnapshot = { ...data };
             const status = finalSnapshot[isScorm12 ? "cmi.core.lesson_status" : "cmi.completion_status"];
             const shouldExit =

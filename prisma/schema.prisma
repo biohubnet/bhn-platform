@@ -1572,6 +1572,20 @@ model ScormSession {
 
   user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   package ScormPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  /// This table is on the critical path of every trainee page view, and until
+  /// Jul 2026 it carried no index but its primary key — so each of the queries
+  /// below sequential-scanned every row of every user. (`take: 3` gave no
+  /// protection: without an index Postgres must scan and sort the whole table
+  /// before discarding down to 3.) Postgres does not auto-index FK columns.
+  ///   [userId, updatedAt]                 → dashboard "continue learning"
+  ///                                         (where userId, order updatedAt desc, take 3)
+  ///   [userId, packageId, attemptNumber]  → SCORM player + /api/scorm/session
+  ///                                         (where userId+packageId, order attemptNumber desc)
+  ///                                         and gradebook (where userId,
+  ///                                         order packageId asc, attemptNumber asc)
+  @@index([userId, updatedAt])
+  @@index([userId, packageId, attemptNumber])
 }
 
 model Module {
