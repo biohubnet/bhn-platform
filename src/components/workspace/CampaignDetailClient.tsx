@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Megaphone, Users, BookUser, Pencil, Check, X, Copy, Mail,
-  Loader2, ChevronDown, Save, Trash2, MailCheck,
+  Loader2, ChevronDown, Save, Trash2, MailCheck, AlertTriangle,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
@@ -60,6 +60,16 @@ function fill(str: string, map: Record<string, string>): string {
   return str.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k: string) => map[k] ?? "");
 }
 
+// Which {{tokens}} in `text` have no value in `map` — these render as blanks in
+// the sent email (e.g. "closes ." / "Apply: "). Used to warn before a send.
+function unfilledTokens(text: string, map: Record<string, string>): string[] {
+  const out = new Set<string>();
+  for (const m of text.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g)) {
+    if (!(map[m[1]] ?? "").trim()) out.add(m[1]);
+  }
+  return [...out];
+}
+
 export function CampaignDetailClient({
   campaign,
   roster,
@@ -84,9 +94,21 @@ export function CampaignDetailClient({
   const [savingVars, setSavingVars] = useState(false);
   const [varsDirty, setVarsDirty] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const reached = useMemo(() => roster.filter((r) => sent.has(r.personId)).length, [roster, sent]);
   const pct = roster.length > 0 ? Math.round((reached / roster.length) * 100) : 0;
+
+  // Campaign-level {{vars}} that the chosen templates reference but are still
+  // blank — sending now would email real partners copy with visible gaps.
+  const missingVars = useMemo(() => {
+    const text = [
+      campaign.templateSubject, campaign.templateBody,
+      campaign.returningTemplateSubject ?? "", campaign.returningTemplateBody ?? "",
+    ].join(" ");
+    const referenced = new Set(unfilledTokens(text, {})); // all tokens (empty map ⇒ all "unfilled")
+    return VAR_FIELDS.filter((f) => referenced.has(f.key) && !(vars[f.key] ?? "").trim());
+  }, [campaign, vars]);
 
   const hasReturning = campaign.returningTemplateSubject != null;
   const newCount = useMemo(() => roster.filter((r) => r.needsIntro).length, [roster]);
@@ -112,13 +134,28 @@ export function CampaignDetailClient({
 
   async function saveVars() {
     setSavingVars(true);
-    await api(`/api/workspace/outreach/campaigns/${campaign.id}`, { vars }).catch(() => {});
-    setSavingVars(false);
-    setVarsDirty(false);
+    setError(null);
+    try {
+      const res = await api(`/api/workspace/outreach/campaigns/${campaign.id}`, { vars });
+      if (!res.ok) throw new Error();
+      setVarsDirty(false); // only clear dirty / show "Saved" once it actually persisted
+    } catch {
+      setError("Couldn't save the details — check your connection and try again.");
+    } finally {
+      setSavingVars(false);
+    }
   }
   async function changeStatus(s: string) {
+    const prev = status;
     setStatus(s);
-    await api(`/api/workspace/outreach/campaigns/${campaign.id}`, { status: s }).catch(() => {});
+    setError(null);
+    try {
+      const res = await api(`/api/workspace/outreach/campaigns/${campaign.id}`, { status: s });
+      if (!res.ok) throw new Error();
+    } catch {
+      setStatus(prev); // revert — don't leave the UI claiming a status that didn't save
+      setError("Couldn't update the status — reverted.");
+    }
   }
   async function saveName() {
     const trimmed = name.trim();
@@ -134,8 +171,21 @@ export function CampaignDetailClient({
       if (isSent) next.delete(r.personId); else next.add(r.personId);
       return next;
     });
-    await api(`/api/workspace/outreach/campaigns/${campaign.id}`,
-      isSent ? { unmarkSent: r.personId } : { markSent: r.personId }).catch(() => {});
+    setError(null);
+    try {
+      const res = await api(`/api/workspace/outreach/campaigns/${campaign.id}`,
+        isSent ? { unmarkSent: r.personId } : { markSent: r.personId });
+      if (!res.ok) throw new Error();
+    } catch {
+      // Revert the optimistic toggle — the tracker's whole value is an accurate
+      // record, so a silent divergence from the server is the worst outcome.
+      setSent((cur) => {
+        const next = new Set(cur);
+        if (isSent) next.add(r.personId); else next.delete(r.personId);
+        return next;
+      });
+      setError(`Couldn't ${isSent ? "unmark" : "mark"} ${r.name || "that contact"} — reverted.`);
+    }
   }
   async function remove() {
     if (!confirm(`Delete the campaign "${campaign.name}"? Contacts and their reach-out history are kept.`)) return;
@@ -174,6 +224,13 @@ export function CampaignDetailClient({
       <Link href="/admin/workspace/outreach/campaigns" className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-fg">
         <ArrowLeft size={14} /> All campaigns
       </Link>
+
+      {error && (
+        <div role="alert" className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[12.5px] text-rose-800">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Header */}
       <Card className="space-y-4 p-5">
@@ -259,6 +316,15 @@ export function CampaignDetailClient({
             {savingVars ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} {varsDirty ? "Save details" : "Saved"}
           </button>
         </div>
+        {missingVars.length > 0 && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+            <span>
+              Still blank — these will show as gaps in the sent email:{" "}
+              <span className="font-semibold">{missingVars.map((f) => f.label).join(", ")}</span>. Fill them before you Copy or Email anyone.
+            </span>
+          </div>
+        )}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {VAR_FIELDS.map((f) => (
             <label key={f.key} className="block">
@@ -335,8 +401,10 @@ export function CampaignDetailClient({
                       <button
                         type="button"
                         onClick={() => toggleSent(r)}
+                        disabled={!isSent && !r.email}
+                        title={!isSent && !r.email ? "No email on file — add one before marking this contact emailed" : undefined}
                         className={cn(
-                          "inline-flex h-7 items-center gap-1 rounded-md px-2.5 text-[11px] font-bold transition-colors",
+                          "inline-flex h-7 items-center gap-1 rounded-md px-2.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
                           isSent ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-brand-600 text-white hover:bg-brand-700",
                         )}
                       >

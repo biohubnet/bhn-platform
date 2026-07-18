@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Outreach · reliability fixes from a workflow audit — Jul 2026
+  {
+    title: "Outreach · merge no longer loses history, and “reached” is now trustworthy",
+    body: "A workflow audit of **Admin → Workspace → Outreach** turned up a few ways the campaign tracker could quietly lie, now fixed. **Merging two duplicate contacts** used to delete the dropped person's entire reach-out history and leave campaigns pointing at the dead record (so the survivor looked *un-reached* and you'd cold-email them again) — merge now moves the touches, rewrites every campaign's reached list, and keeps the earliest intro date, all in one transaction. **Marking / un-marking reached** is now atomic, so quickly marking two people can't drop one; **un-marking** a contact who isn't reached in any other campaign correctly resets them to the *intro* copy instead of leaving them stuck on *returning*. The campaign page now **warns when template fields are still blank** (so you don't email “closes .” / “Apply: ”), **won't let you mark an address-less contact “emailed,”** and **surfaces an error and reverts** if a save/mark doesn't go through (instead of silently showing success).",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── EQUIP tracker · share the report externally — Jul 2026
   {
     title: "EQUIP tracker · share the tracking report externally (no login)",

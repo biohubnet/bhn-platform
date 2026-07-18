@@ -27,8 +27,6 @@ function sanitizeVars(input: unknown): Record<string, string> | null {
   return out;
 }
 
-const asIds = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
-
 export async function PATCH(req: NextRequest, ctx: Ctx) {
   const session = await requireRole("admin").catch(() => null);
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -43,24 +41,27 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     markSent?: unknown; unmarkSent?: unknown;
   };
 
-  // ── Mark a recipient reached — adds to sentPersonIds + logs a touch, and
-  // stamps introSentAt if this was their first contact (the intro was sent). ──
+  // ── Mark a recipient reached — atomically append to sentPersonIds (a jsonb
+  // array), log a touch, and stamp introSentAt on the transition. The append is
+  // one row-locked UPDATE guarded by @>, so concurrent "mark A / mark B" clicks
+  // can't clobber each other (Postgres serializes writes to the same row) and a
+  // double-click is idempotent — no read-modify-write window. ──
   if (typeof body.markSent === "string") {
     const personId = body.markSent;
-    const sent = asIds(campaign.sentPersonIds);
-    if (!sent.includes(personId)) {
-      const person = await prisma.outreachPerson.findUnique({ where: { id: personId }, select: { id: true, introSentAt: true } });
-      if (!person) return NextResponse.json({ error: "Contact not found." }, { status: 404 });
+    const person = await prisma.outreachPerson.findUnique({ where: { id: personId }, select: { introSentAt: true } });
+    if (!person) return NextResponse.json({ error: "Contact not found." }, { status: 404 });
+    const appended = await prisma.$executeRaw`
+      UPDATE "OutreachCampaign"
+      SET "sentPersonIds" = ("sentPersonIds"::jsonb || to_jsonb(${personId}::text))
+      WHERE id = ${id} AND NOT ("sentPersonIds"::jsonb @> to_jsonb(${personId}::text))`;
+    // appended === 1 only on the real transition (0 on a repeat/concurrent
+    // click), so the touch + intro stamp fire exactly once.
+    if (appended > 0) {
       const ops: Prisma.PrismaPromise<unknown>[] = [
-        prisma.outreachCampaign.update({
-          where: { id },
-          data: { sentPersonIds: [...sent, personId] as unknown as Prisma.InputJsonValue },
-        }),
         prisma.outreachTouch.create({
           data: { personId, listId: campaign.listId, kind: "email", note: `Campaign: ${campaign.name}`, byId: uid, byName },
         }),
       ];
-      // Reaching a contact who had no intro on file = their intro was just sent.
       if (!person.introSentAt) {
         ops.push(prisma.outreachPerson.update({ where: { id: personId }, data: { introSentAt: new Date() } }));
       }
@@ -71,11 +72,22 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   if (typeof body.unmarkSent === "string") {
     const personId = body.unmarkSent;
-    const sent = asIds(campaign.sentPersonIds).filter((x) => x !== personId);
-    await prisma.outreachCampaign.update({
-      where: { id },
-      data: { sentPersonIds: sent as unknown as Prisma.InputJsonValue },
+    // Atomic filter-out (row-locked single UPDATE — no read-modify-write race).
+    await prisma.$executeRaw`
+      UPDATE "OutreachCampaign"
+      SET "sentPersonIds" = COALESCE(
+        (SELECT jsonb_agg(e) FROM jsonb_array_elements_text("sentPersonIds"::jsonb) e WHERE e <> ${personId}),
+        '[]'::jsonb)
+      WHERE id = ${id}`;
+    // If this person is no longer marked reached in ANY campaign, no intro was
+    // actually sent — clear introSentAt so they get the intro copy again instead
+    // of being permanently misclassified as a returning contact.
+    const stillReached = await prisma.outreachCampaign.count({
+      where: { sentPersonIds: { array_contains: personId } },
     });
+    if (stillReached === 0) {
+      await prisma.outreachPerson.update({ where: { id: personId }, data: { introSentAt: null } }).catch(() => {});
+    }
     return NextResponse.json({ ok: true });
   }
 
