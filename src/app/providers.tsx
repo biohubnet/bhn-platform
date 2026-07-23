@@ -10,6 +10,7 @@ import { CookieBanner } from "@/components/consent/CookieBanner";
 import { GreenwoodAtmosphere } from "@/components/themes/GreenwoodAtmosphere";
 import { SakuraAtmosphere } from "@/components/themes/SakuraAtmosphere";
 import { IceCreamAtmosphere } from "@/components/themes/IceCreamAtmosphere";
+import { CanadaAtmosphere } from "@/components/themes/CanadaAtmosphere";
 import { DemoTourProvider } from "@/lib/demo/tourContext";
 import type { DesignSystemId } from "@/lib/design-system/registry";
 
@@ -48,6 +49,11 @@ export function Providers({
                   atmospheres; returns null for every other
                   theme — free while inactive. */}
               <IceCreamAtmosphere />
+              {/* Falling red maple leaves + red mist when
+                  theme === "canada" (the O Canada July drop).
+                  Returns null for every other theme — free while
+                  inactive. */}
+              <CanadaAtmosphere />
               {/* DemoTourProvider — global state + navigation side-effects
                   for the guided platform demo (admin/demo). Wraps children
                   so both the DemoHub launcher and the DemoOverlay visual

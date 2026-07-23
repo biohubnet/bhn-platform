@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Limited-time July theme · O Canada — Jul 2026
+  {
+    title: "Limited-time theme · O Canada, a Canada Day drop for July",
+    body: "A new seasonal theme is live through July 31: **O Canada** — a Canada Day salute in **maple red on fresh white**. Crisp near-white surfaces, a full Canada-red brand ramp for buttons and accents, deep warm-charcoal text, and a bold red dashboard hero. Switch to it and **red maple leaves drift down the page** (with a soft red ground-wash and a rotating anthem caption in the bottom-right) — the same falling-decoration layer as Sakura's petals and Greenwood's leaves, and it fully respects *prefers-reduced-motion*. Pick it from the **theme switcher** (the red-and-white maple swatch under **“Limited time”**), or tap it from the **theme-of-the-day** card on your dashboard. Like every limited drop it retires after July 31, and anyone still on it falls back to their default theme.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Outreach · reliability fixes from a workflow audit — Jul 2026
   {
     title: "Outreach · merge no longer loses history, and “reached” is now trustworthy",

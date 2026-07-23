@@ -26,6 +26,8 @@ export const VALID_THEME_IDS = [
   "aurora",
   // Limited-time
   "sakura",
+  "artdeco",
+  "canada",
 ] as const;
 
 export type ThemeId = (typeof VALID_THEME_IDS)[number];

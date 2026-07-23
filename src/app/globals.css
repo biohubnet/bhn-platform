@@ -346,6 +346,68 @@
 [data-theme="artdeco"] .text-sky-800     { color: #243e43; }
 [data-theme="artdeco"] .text-teal-700    { color: #2e4e54; }
 
+/* ───── O Canada — limited-time Canada Day theme (July 2026).
+ *   Maple red on fresh white: crisp near-white surfaces with a faint
+ *   red mesh, a full Canada-red brand ramp for buttons + accents, deep
+ *   warm-charcoal text, and a bold red dashboard hero. The companion
+ *   <CanadaAtmosphere> layer drifts red maple leaves down the page.
+ *   Expires 2026-07-31 (endsOn). ───── */
+[data-theme="canada"] {
+  --popover-bg: #f7e7e8;
+  --bg:        #fbf5f5;        /* fresh warm white */
+  --bg-mesh:
+    radial-gradient(at 8% 12%, rgba(220, 31, 45, 0.07) 0px, transparent 55%),
+    radial-gradient(at 90% 14%, rgba(220, 31, 45, 0.05) 0px, transparent 48%),
+    radial-gradient(at 50% 100%, rgba(220, 31, 45, 0.05) 0px, transparent 55%);
+  --card:      rgba(255, 255, 255, 0.92);
+  --card-solid: #ffffff;        /* clean white card */
+  --elevated:  #f7eaea;
+  --raised:    #efdadb;
+  --fg:        #23161a;        /* deep warm charcoal */
+  --fg-muted:  #6a474b;
+  --fg-subtle: #79565a;        /* AA: min 4.78:1 on raised ✅ */
+  --line:      rgba(35, 22, 26, 0.10);
+  --line-strong: rgba(35, 22, 26, 0.20);
+  --backdrop:  rgba(35, 22, 26, 0.42);
+
+  /* Canada-red brand ramp. 600 (#c00f1c) + white text ≈ 6.3:1 (AAA-ish);
+   * 500 (#dc1f2d) + white ≈ 4.9:1 (AA). 50 stays maple-tinted so
+   * brand-50 cards blend with the near-white page. */
+  --brand-50:  #fde7e9;
+  --brand-100: #fbd0d3;
+  --brand-200: #f5a8ae;
+  --brand-300: #ee7d85;
+  --brand-400: #e6535f;
+  --brand-500: #dc1f2d;
+  --brand-600: #c00f1c;
+  --brand-700: #9c0c16;
+  --brand-800: #780a11;
+  --brand-900: #55070c;
+
+  --radius-sm: 10px;
+  --radius:    14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Dashboard hero — bold Canada-red field with a lighter red sweep. */
+  --hero-bg:     #a50f1a;
+  --hero-mesh-1: #dc1f2d;
+  --hero-mesh-2: #ff5b64;
+  --hero-mesh-3: #9c0c16;
+  --hero-mesh-4: #780a11;
+}
+
+/* Tone Tailwind's saturated tints so rose-* / amber-* surfaces
+ * harmonise with the maple palette instead of fighting it. */
+[data-theme="canada"] {
+  --color-rose-50:    rgba(220, 31, 45, 0.10);
+  --color-rose-100:   rgba(220, 31, 45, 0.16);
+  --color-rose-200:   rgba(220, 31, 45, 0.26);
+  --color-amber-50:   rgba(190, 130, 60, 0.10);
+  --color-amber-100:  rgba(190, 130, 60, 0.16);
+  --color-emerald-50: rgba(90, 130, 100, 0.10);
+}
+
 /* Tame Tailwind's saturated tint stack so cards using bg-rose-50 etc.
  * harmonise with the warm parchment instead of fighting it. The
  * mid-tones (500–700) stay untouched for CTAs. */
@@ -3059,6 +3121,123 @@ body {
   .sakura-atmosphere .sakura-mist,
   .sakura-atmosphere .sakura-petal,
   .sakura-atmosphere .sakura-caption-text { animation: none !important; }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+ *  O Canada — ATMOSPHERE LAYER
+ *
+ *  Companion CSS to <CanadaAtmosphere> in
+ *  src/components/themes/CanadaAtmosphere.tsx.
+ *
+ *    • canada-leaf-fall keyframe — one shared keyframe driven by
+ *      per-leaf CSS vars (--leaf-sway, --leaf-start-rot, --leaf-scale)
+ *      so no two maple leaves follow the same path.
+ *    • canada-mist — blurred red wash at the bottom of the viewport.
+ *    • canada-caption — anthem / Canada Day observations (bottom-right).
+ *
+ *  Mirrors the Sakura atmosphere architecture exactly; maple leaves are
+ *  a touch heavier than petals (less sway, a fuller tumble).
+ *  ═════════════════════════════════════════════════════════════════ */
+@keyframes canada-leaf-fall {
+  0% {
+    transform:
+      translate3d(0, -14vh, 0)
+      rotate(var(--leaf-start-rot, 0deg))
+      scale(var(--leaf-scale, 1));
+    opacity: 0;
+  }
+  6%  { opacity: 1; }
+  25% {
+    transform:
+      translate3d(calc(var(--leaf-sway, 80px) *  0.50), 25vh, 0)
+      rotate(calc(var(--leaf-start-rot, 0deg) + 130deg))
+      scale(var(--leaf-scale, 1));
+  }
+  50% {
+    transform:
+      translate3d(calc(var(--leaf-sway, 80px) * -0.60), 50vh, 0)
+      rotate(calc(var(--leaf-start-rot, 0deg) + 280deg))
+      scale(var(--leaf-scale, 1));
+  }
+  75% {
+    transform:
+      translate3d(calc(var(--leaf-sway, 80px) *  0.38), 75vh, 0)
+      rotate(calc(var(--leaf-start-rot, 0deg) + 430deg))
+      scale(var(--leaf-scale, 1));
+  }
+  94% { opacity: 1; }
+  100% {
+    transform:
+      translate3d(calc(var(--leaf-sway, 80px) * -0.22), 116vh, 0)
+      rotate(calc(var(--leaf-start-rot, 0deg) + 560deg))
+      scale(var(--leaf-scale, 1));
+    opacity: 0;
+  }
+}
+
+@keyframes canada-mist-drift {
+  0%, 100% { transform: translate3d(0, 0, 0);      opacity: 0.45; }
+  50%       { transform: translate3d(26px, -8px, 0); opacity: 0.62; }
+}
+
+.canada-atmosphere .canada-mist {
+  position: absolute;
+  inset: -10% -20% -10% -20%;
+  background:
+    radial-gradient(ellipse 60% 35% at 20% 88%, rgba(220, 31, 45, 0.16), transparent 68%),
+    radial-gradient(ellipse 55% 30% at 78% 94%, rgba(220, 31, 45, 0.12), transparent 70%),
+    radial-gradient(ellipse 40% 22% at 50% 78%, rgba(255, 91, 100, 0.10), transparent 72%);
+  filter: blur(32px);
+  animation: canada-mist-drift 56s ease-in-out infinite;
+}
+
+.canada-atmosphere .canada-leaf {
+  position: absolute;
+  top: 0;
+  display: inline-block;
+  line-height: 0;
+  filter: drop-shadow(0 1px 2px rgba(150, 20, 30, 0.16));
+  animation-name: canada-leaf-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* ── Canada scene caption (bottom-right). Same fade-in pattern as
+ *    Sakura / Greenwood. */
+@keyframes canada-caption-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.canada-atmosphere .canada-caption {
+  position: absolute;
+  bottom: 20px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.55;
+}
+.canada-atmosphere .canada-caption-marker {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #dc1f2d;
+  flex-shrink: 0;
+}
+.canada-atmosphere .canada-caption-text {
+  font-size: 11px;
+  font-style: italic;
+  color: #8a1420;
+  letter-spacing: 0.03em;
+  animation: canada-caption-fade-in 1.2s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canada-atmosphere .canada-mist,
+  .canada-atmosphere .canada-leaf,
+  .canada-atmosphere .canada-caption-text { animation: none !important; }
 }
 
 /* ╔══════════════════════════════════════════════════════════════════╗

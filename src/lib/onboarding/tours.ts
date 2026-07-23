@@ -30,9 +30,19 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.14a";
+export const TOUR_VERSION = "2026.07.22a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Limited-time July theme · O Canada — Jul 2026
+  {
+    id: "theme.canada-july",
+    title: "July's limited theme: O Canada",
+    body: "A Canada Day theme is live through July 31 — maple red on fresh white, with red maple leaves drifting down the page and a bold red dashboard hero. Open the theme switcher (the swatch in the top bar) and look under \"Limited time\" for the red-and-white maple swatch, or tap today's suggestion on your dashboard. It retires when July ends.",
+    path: "/dashboard",
+    placement: "center",
+    cta: { label: "Browse themes", href: "/themes" },
+    since: "2026.07.22a",
+  },
   // ─── EQUIP tracker · share the report externally — Jul 2026
   {
     id: "equip.tracker-share",

@@ -73,6 +73,14 @@ export const THEMES = [
     endsOn: "2026-06-30",
     limited: true,
   },
+  {
+    id: "canada",
+    name: "O Canada",
+    description: "Maple red on fresh white — a Canada Day salute, with maple leaves drifting past. From sea to sea. A limited July engagement.",
+    category: "limited",
+    endsOn: "2026-07-31",
+    limited: true,
+  },
 ] as const;
 
 /** Display labels for each category — surfaced as section headers
@@ -213,9 +221,9 @@ export function ThemeScript() {
  */
 export function suggestTodaysTheme(currentlySaved: ThemeId | null, now: Date = new Date()): ThemeId | null {
   const active = activeThemes(now);
-  // Limited-time preempt — promotes the seasonal theme (Art Deco · June 2026).
-  const featured = active.find((t) => t.id === "artdeco");
-  if (featured && currentlySaved !== "artdeco") return "artdeco";
+  // Limited-time preempt — promotes the seasonal theme (O Canada · July 2026).
+  const featured = active.find((t) => t.id === "canada");
+  if (featured && currentlySaved !== "canada") return "canada";
 
   const pool = active.map((t) => t.id).filter((id) => id !== currentlySaved);
   if (pool.length === 0) return null;
