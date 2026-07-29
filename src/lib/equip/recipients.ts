@@ -823,8 +823,8 @@ export const EQUIP_RECIPIENTS: EquipRecipient[] = [
     },
     {
       "name": "Sparked Inc.",
-      "track": "VL",
-      "rounds": "VL R2",
+      "track": "Both",
+      "rounds": "VC R15 · VL R2",
       "founder": "Stephanie Buryk-Iggers",
       "inst": "University of Toronto / UHN",
       "linkedin": {
@@ -838,6 +838,14 @@ export const EQUIP_RECIPIENTS: EquipRecipient[] = [
       "status": "web",
       "statusText": "LinkedIn page exists but no posts published",
       "posts": [
+        {
+          "when": "Jun 2026",
+          "text": "Awarded an EQUIP VentureConnect grant (Round 15), adding a second EQUIP award alongside its VentureLift Round 2 grant.",
+          "type": "Milestone",
+          "hl": true,
+          "src": "EQUIP Notice of Award",
+          "url": null
+        },
         {
           "when": "Dec 2025",
           "text": "Selected into UTM’s SpinUp wet-lab incubator for its at-home saliva-based cardiovascular screening device; founder Stephanie Buryk-Iggers completed her PhD and is now a postdoctoral researcher at Toronto General Hospital.",
@@ -1012,6 +1020,121 @@ export const EQUIP_RECIPIENTS: EquipRecipient[] = [
           "hl": true,
           "src": "EQUIP Notice of Award",
           "url": null
+        }
+      ]
+    },
+    {
+      "name": "Alpha Biosensing",
+      "track": "VL",
+      "rounds": "VL R5",
+      "founder": "Nicholas Kotoulas",
+      "inst": "University of Toronto",
+      "linkedin": null,
+      "website": {
+        "label": "alphabiosensing.com",
+        "url": "https://www.alphabiosensing.com"
+      },
+      "status": "web",
+      "statusText": "Website active — no LinkedIn company page found",
+      "posts": [
+        {
+          "when": "Jul 2026",
+          "text": "Awarded an EQUIP VentureLift grant (Round 5). Co-founded by CEO Nicholas Kotoulas and CSO Prof. M. Cynthia Goh (U of T Chemistry), building low-cost rapid bacterial biosensors: a “Surface Interaction Profile” that fingerprints the whole bacterial surface to identify pathogens, and a diffraction-based optical sensor that detects bacterial growth in under 20 minutes for rapid antibiotic-susceptibility testing.",
+          "type": "Milestone",
+          "hl": true,
+          "src": "EQUIP Notice of Award",
+          "url": null
+        },
+        {
+          "when": "Jun 2025",
+          "text": "Published the core pathogen-ID method in PLOS ONE — “Differentiating bacteria by their unique surface interactions” — with the Surface Interaction Profile distinguishing 12 test bacteria including MRSA, K. pneumoniae, A. baumannii and P. aeruginosa from a 10-minute interaction.",
+          "type": "Milestone",
+          "hl": true,
+          "src": "PLOS ONE",
+          "url": "https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0327489"
+        },
+        {
+          "when": "Jul 2024",
+          "text": "U of T Chemistry reported the Goh Lab launching BactiTrack, a low-cost diffraction-based device for detecting bacterial growth and antibiotic susceptibility built from a Raspberry Pi, Pi Camera and 3D-printed parts; a prototype was sent to Philippine General Hospital for testing.",
+          "type": "Product",
+          "hl": false,
+          "src": "U of T Department of Chemistry",
+          "url": "https://www.chemistry.utoronto.ca/news/goh-lab-launches-bactitrack-project"
+        },
+        {
+          "when": "2024",
+          "text": "Published the antibiotic-susceptibility technology in Analytical Methods — “Low-cost, real-time detection of bacterial growth via diffraction-based sensing.”",
+          "type": "Milestone",
+          "hl": false,
+          "src": "Analytical Methods (RSC)",
+          "url": "https://doi.org/10.1039/D4AY01489H"
+        }
+      ]
+    },
+    {
+      "name": "NorthMiRs Inc.",
+      "track": "VL",
+      "rounds": "VL R5",
+      "founder": "Samantha McWhirter",
+      "inst": "University of Toronto",
+      "linkedin": {
+        "label": "company/northmirs",
+        "url": "https://ca.linkedin.com/company/northmirs"
+      },
+      "website": {
+        "label": "northmirs.com",
+        "url": "https://www.northmirs.com"
+      },
+      "status": "live",
+      "statusText": "LinkedIn + website active",
+      "posts": [
+        {
+          "when": "Jul 2026",
+          "text": "Awarded an EQUIP VentureLift grant (Round 5). Developing synthetic microRNA therapeutics delivered by lipid nanoparticles for sepsis-induced organ failure; lead candidate NM-001 targets sepsis-induced cardiac dysfunction. Spun out of the Walker Lab (U of T Chemistry) and the dos Santos lab (Temerty Medicine / St. Michael’s Hospital).",
+          "type": "Milestone",
+          "hl": true,
+          "src": "EQUIP Notice of Award",
+          "url": null
+        },
+        {
+          "when": "Jul 2026",
+          "text": "Still listed by adMare BioInnovations as an Active Venture in its Therapeutics Accelerator — “an early-stage biotech company with expertise in formulation and preclinical research with a mission to develop therapies for sepsis.”",
+          "type": "Milestone",
+          "hl": false,
+          "src": "adMare BioInnovations",
+          "url": "https://www.admarebio.com/en/accelerator/northmirs-1"
+        },
+        {
+          "when": "Sep 2025",
+          "text": "Co-founder and CEO Samantha McWhirter completed her PhD at the University of Toronto (Walker Lab), on formulating lipid nanoparticles to deliver microRNAs against dysregulated immune responses.",
+          "type": "Milestone",
+          "hl": false,
+          "src": "The Walker Lab, U of T",
+          "url": "https://www.thewalkerlab.com/2025/09/26/congratulations-to-dr-samantha-mcwhirter/"
+        },
+        {
+          "when": "Apr 2025",
+          "text": "MaRS Discovery District profiled the company’s academia-to-startup jump: incorporated in 2022, into the MaRS/adMare Therapeutics Accelerator in 2023, running preclinical work while pursuing pre-seed funding.",
+          "type": "Recognition",
+          "hl": false,
+          "src": "MaRS Discovery District",
+          "url": "https://www.marsdd.com/research-and-insights/how-northmirs-made-the-jump-from-academia-to-entrepreneurship/"
+        },
+        {
+          "when": "Oct 2024",
+          "text": "Won $250,000 at the ECHO PITCH competition run by the Ted Rogers Centre for Heart Research to develop a heart-failure treatment for sepsis patients.",
+          "type": "Funding",
+          "hl": true,
+          "src": "U of T Faculty of Arts & Science",
+          "url": "https://www.artsci.utoronto.ca/news/chemistry-startup-northmirs-wins-250k-develop-heart-failure-treatment-sepsis-patients"
+        },
+        {
+          "when": "Oct 2023",
+          "text": "Named one of two inaugural Ontario ventures (with Quthero Canada) in the adMare BioInnovations / MaRS Discovery District Therapeutics Accelerator Program.",
+          "type": "Recognition",
+          "hl": false,
+          "src": "adMare BioInnovations",
+          "url": "https://www.admarebio.com/en/news-details/admare-bioinnovations-and-mars-discovery-district-welcome-inaugural-ontario-start-ups-to-therapeutics-accelerator-program"
         }
       ]
     }
