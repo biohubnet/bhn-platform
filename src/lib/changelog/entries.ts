@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP tracker · July rescan (VC R14 + funding sweep) — Jul 2026
+  {
+    title: "EQUIP tracker · July rescan — AlloWide added, Synakis' $2.6M round, 48 new milestones",
+    body: "The **EQUIP recipient dossier** (`/admin/equip/tracker`) has been rescanned against the programme's Notice-of-Award records and the open web. **New recipient: AlloWide Health Inc** (VentureConnect **Round 14**, May 2026) — Poorya Saeedloo, U of T — a patent-protected rehydration buffer for freeze-dried bone allografts. **Vrit Inc.** also took a VentureConnect R14 award, so it now shows on **both tracks** (VC R14 · VL R2). That brings the roster to **25 companies**. The biggest recipient news: **Synakis closed an oversubscribed CAD $2.6M pre-seed** co-led by TIAP and Chiefswood Private Capital (independently verified against the press release), plus new non-dilutive funding for **Neuropeutics** ($500K ALS Canada–Brain Canada), **Re:pair Genomics** ($105K Mitacs), **Laetech** (Mitacs), **Belaris Biotech** ($10K IBZ fellowship) and **ChASE Biotherapeutics** ($948.6K CIHR). **48 new sourced milestones** were added and **17 stale or duplicated entries removed**, every remaining item carrying a working source link. Contact details were corrected too — **Fibra** has moved to *myfibra.com*, **NewGen Health** to *newgenhealth.io*, and **Rayyan Therapeutics'** website is now offline (flagged on its card).",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Limited-time July theme · O Canada — Jul 2026
   {
     title: "Limited-time theme · O Canada, a Canada Day drop for July",
