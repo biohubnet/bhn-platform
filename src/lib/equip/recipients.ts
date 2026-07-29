@@ -207,7 +207,7 @@ export const EQUIP_RECIPIENTS: EquipRecipient[] = [
       "name": "Fibra Inc.",
       "track": "VC",
       "rounds": "VC R1",
-      "founder": "Milad (applicant) · fdr. Parnian Majd",
+      "founder": "Milad Ghalamboran · fdr. Parnian Majd",
       "inst": "University of Toronto / TMU",
       "linkedin": {
         "label": "company/myfibra",
@@ -950,7 +950,7 @@ export const EQUIP_RECIPIENTS: EquipRecipient[] = [
       "name": "ChASE Biotherapeutics",
       "track": "VL",
       "rounds": "VL R4",
-      "founder": "Quinton",
+      "founder": "Quinton Sirianni",
       "inst": "University",
       "linkedin": null,
       "website": null,
