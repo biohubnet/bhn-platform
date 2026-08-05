@@ -7,12 +7,18 @@
 import { prisma } from "@/lib/prisma";
 import { MOLLY_HTML, MOLLY_CSS } from "./molly-html";
 import { SYMPOSIUM_HTML, SYMPOSIUM_CSS, PLAN_VERSION } from "./symposium-comms-html";
+import { SPONSORSHIP_HTML, SPONSORSHIP_CSS, SPONSORSHIP_VERSION } from "./sponsorship-html";
 
 const PROJECT_TITLE = "BHN Promo Video Project";
 const SCRIPT_TITLE = "Molly Interview Conversation Guide";
 
 const SYMPOSIUM_PROJECT_TITLE = "2026 Annual Symposium & Training Week";
 const SYMPOSIUM_SCRIPT_TITLE = "2026 Symposium — Communications Plan";
+
+// Sponsorship lives under the same symposium project — it's the commercial
+// half of the same event, so it shares the project rather than spawning a
+// near-duplicate one.
+const SPONSORSHIP_SCRIPT_TITLE = "Sponsorship Package";
 
 export async function ensureBhnPromoProject(createdById: string | null): Promise<void> {
   let project = await prisma.videoProject.findFirst({
@@ -120,6 +126,62 @@ export async function ensureSymposiumCommsProject(createdById: string | null): P
       title: SYMPOSIUM_SCRIPT_TITLE,
       format: "html",
       richContent: { kind: "html", html: SYMPOSIUM_HTML, css: SYMPOSIUM_CSS },
+      createdById,
+    },
+  });
+}
+
+/**
+ * Sponsorship Package — Workspace → Marketing tab. Shares the symposium
+ * project (same event, commercial half) and follows the same version-marker
+ * heal rule as the comms plan: docs already carrying the current marker keep
+ * the team's edits; only pre-baseline docs are reset.
+ */
+export async function ensureSponsorshipPackageProject(createdById: string | null): Promise<void> {
+  let project = await prisma.videoProject.findFirst({
+    where: { title: SYMPOSIUM_PROJECT_TITLE },
+    select: { id: true },
+  });
+  if (!project) {
+    project = await prisma.videoProject.create({
+      data: {
+        title: SYMPOSIUM_PROJECT_TITLE,
+        summary:
+          "Communications & marketing plan for the 2026 Annual Symposium and Training Week — Gantt timeline, pre/during/post promotion, sponsorship, and task breakdown.",
+        category: "marketing",
+        createdById,
+      },
+      select: { id: true },
+    });
+  }
+
+  const existing = await prisma.script.findFirst({
+    where: { projectId: project.id, title: SPONSORSHIP_SCRIPT_TITLE },
+    select: { id: true, richContent: true },
+  });
+  if (existing) {
+    const rc = (existing.richContent as { html?: string; css?: string } | null) ?? null;
+    const marker = `data-sponsorship-version="${SPONSORSHIP_VERSION}"`;
+    if (!rc?.html?.includes(marker)) {
+      await prisma.script.update({
+        where: { id: existing.id },
+        data: { richContent: { kind: "html", html: SPONSORSHIP_HTML, css: SPONSORSHIP_CSS } },
+      });
+    } else if (rc.css !== SPONSORSHIP_CSS) {
+      await prisma.script.update({
+        where: { id: existing.id },
+        data: { richContent: { kind: "html", html: rc.html, css: SPONSORSHIP_CSS } },
+      });
+    }
+    return;
+  }
+
+  await prisma.script.create({
+    data: {
+      projectId: project.id,
+      title: SPONSORSHIP_SCRIPT_TITLE,
+      format: "html",
+      richContent: { kind: "html", html: SPONSORSHIP_HTML, css: SPONSORSHIP_CSS },
       createdById,
     },
   });

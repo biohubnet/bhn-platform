@@ -35,6 +35,7 @@ import {
   Coins as CoinsIcon,
   UserCog,
   HeartHandshake,
+  Handshake,
   Briefcase,
   Users2,
   Building2,
@@ -311,6 +312,18 @@ const workspaceSymposiumItem: NavItem = {
   minRole: "admin",
   description:
     "The full communications & marketing playbook for the 2026 Annual Symposium and Training Week — editable Gantt timeline, pre/during/post promotion, sponsorship, sample report, and task breakdown. Shareable for collaborative editing.",
+};
+
+// WORKSPACE → Marketing → Sponsorship Package. The commercial half of the
+// symposium, kept beside the Comms Plan: an editable offer doc with share
+// links, so prospects get a URL rather than a PDF attachment.
+const workspaceSponsorshipItem: NavItem = {
+  label: "Sponsorship Package",
+  href: "/admin/workspace/marketing/sponsorship",
+  icon: Handshake,
+  minRole: "admin",
+  description:
+    "The sponsorship offer for the Annual Symposium — why sponsor, event details, tier grid, and how to confirm. Editable in place, with shareable links for prospective sponsors.",
 };
 
 // WORKSPACE → Outreach. Sibling of Marketing and File Sharing. Two views:
@@ -1681,6 +1694,7 @@ export function Sidebar({
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Marketing">
               <NavLink item={workspaceVideoItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
               <NavLink item={workspaceSymposiumItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+              <NavLink item={workspaceSponsorshipItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
             </AdminSubgroup>
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Outreach">
               <NavLink item={workspaceOutreachContactsItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />

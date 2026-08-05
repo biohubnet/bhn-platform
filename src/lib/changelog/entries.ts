@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Workspace · Marketing → Sponsorship Package — Aug 2026
+  {
+    title: "Workspace · Marketing — a Sponsorship Package tab",
+    body: "**Admin → Workspace → Marketing** has a third tab: **Sponsorship Package**, sitting beside Video Production and the 26 Symposium Comms Plan. It opens the symposium's sponsorship offer straight into the same editable HTML editor — *why sponsor*, event-at-a-glance, the tier grid, custom partnerships, and a how-to-confirm sequence — with **share links**, so a prospective sponsor gets a URL instead of a PDF attachment, and edits are live rather than trapped in someone's Downloads folder. The document is seeded automatically on first visit and carries a version marker, so later baseline updates never overwrite the team's edits. **The tier names, prices and event details are intentionally left blank** — a highlighted panel at the top lists exactly what to fill in before the package goes out.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── EQUIP tracker · July rescan (VC R14 + funding sweep) — Jul 2026
   {
     title: "EQUIP tracker · July rescan — 3 new recipients, Synakis' $2.6M round, 48 new milestones",

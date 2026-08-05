@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.07.22a";
+export const TOUR_VERSION = "2026.08.05a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Workspace · Marketing → Sponsorship Package — Aug 2026
+  {
+    id: "workspace.sponsorship-package",
+    title: "Sponsorship Package now has its own tab",
+    body: "Workspace → Marketing → Sponsorship Package opens the symposium sponsorship offer in the same editable doc editor as the Comms Plan — why sponsor, event details, the tier grid, and how to confirm. Share a link with a prospect instead of emailing a PDF. Tier names and prices are blank on purpose; the panel at the top lists what to fill in first.",
+    path: "/admin/workspace/marketing/sponsorship",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open the package", href: "/admin/workspace/marketing/sponsorship" },
+    since: "2026.08.05a",
+  },
   // ─── Limited-time July theme · O Canada — Jul 2026
   {
     id: "theme.canada-july",
