@@ -4,6 +4,7 @@
  * threads as a Markdown brief for Claude Code / Codex.
  */
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { MessageSquareText, ExternalLink } from "lucide-react";
 import { requireRole } from "@/lib/auth";
@@ -32,7 +33,17 @@ export default async function WebsiteReviewPage({
   const meName = (session.user as { name?: string | null; email?: string | null }).name
     || (session.user as { email?: string | null }).email
     || "Team member";
-  const appOrigin = (process.env.NEXTAUTH_URL ?? "https://bhn-training-platform.vercel.app").replace(/\/$/, "");
+  const requestHeaders = await headers();
+  const requestHost = (requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "")
+    .split(",")[0]
+    .trim();
+  const requestProtocol = (requestHeaders.get("x-forwarded-proto") ?? "https").split(",")[0].trim();
+  const safeRequestOrigin = /^(https?)$/.test(requestProtocol)
+    && /^[A-Za-z0-9.-]+(?::\d+)?$/.test(requestHost)
+    ? `${requestProtocol}://${requestHost}`
+    : null;
+  const appOrigin = safeRequestOrigin
+    ?? (process.env.NEXTAUTH_URL ?? "https://bhn-training-platform.vercel.app").replace(/\/$/, "");
 
   const reviews = await prisma.pageReview.findMany({
     orderBy: { updatedAt: "desc" },
