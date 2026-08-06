@@ -5,7 +5,11 @@ import { loaderSource } from "../../src/app/api/public/page-review/loader.js/rou
 import { overlaySource } from "../../src/app/api/public/page-review/[token]/overlay.js/route";
 import { DELETE as deleteReview } from "../../src/app/api/workspace/page-review/[id]/route";
 import { snippetFor } from "../../src/components/workspace/BookmarkletPanel";
-import { PAGE_REVIEW_HASH_KEY, reviewLinkFor } from "../../src/lib/page-review/access";
+import {
+  normalizeReviewUrl,
+  PAGE_REVIEW_HASH_KEY,
+  reviewLinkFor,
+} from "../../src/lib/page-review/access";
 import { buildBrief, type BriefComment } from "../../src/lib/page-review/brief";
 
 const baseComment: BriefComment = {
@@ -105,6 +109,20 @@ test("direct review links keep the credential in a BioHubNet URL fragment", () =
   assert.equal(new URLSearchParams(parsed.hash.slice(1)).get(PAGE_REVIEW_HASH_KEY), "review-token-123456789012345");
   assert.equal(reviewLinkFor("https://example.com/page", "review-token-123456789012345"), null);
   assert.equal(reviewLinkFor("http://biohubnet.ca/page", "review-token-123456789012345"), null);
+});
+
+test("review URLs normalize duplicate BioHubNet page variants", () => {
+  const canonical = normalizeReviewUrl("https://biohubnet.ca/?b=2&a=1");
+
+  assert.equal(canonical, "https://biohubnet.ca/?a=1&b=2");
+  assert.equal(
+    normalizeReviewUrl("https://www.biohubnet.ca/#team"),
+    "https://biohubnet.ca/",
+  );
+  assert.equal(
+    normalizeReviewUrl("https://biohubnet.ca/engage///#courses"),
+    "https://biohubnet.ca/engage",
+  );
 });
 
 test("loader removes the token from the address and injects the matching overlay", () => {

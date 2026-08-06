@@ -12,6 +12,7 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeReviewUrl } from "@/lib/page-review/access";
 
 export const dynamic = "force-dynamic";
 
@@ -48,9 +49,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const url = normalizeReviewUrl(parsed.data.url);
+  const activeReviews = await prisma.pageReview.findMany({
+    where: { status: { not: "closed" } },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, url: true },
+  });
+  const existing = activeReviews.find((review) => normalizeReviewUrl(review.url) === url);
+  if (existing) {
+    await prisma.pageReview.update({
+      where: { id: existing.id },
+      data: { updatedAt: new Date() },
+    });
+    return NextResponse.json({ ok: true, id: existing.id, reused: true });
+  }
+
   const review = await prisma.pageReview.create({
     data: {
-      url: parsed.data.url,
+      url,
       title: parsed.data.title,
       // 128-bit URL-safe token — same shape as the EQUIP report share links.
       shareToken: randomBytes(16).toString("base64url"),
