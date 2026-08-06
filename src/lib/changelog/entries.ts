@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Tailor · gap analysis highlighting + example answers — Aug 2026
+  {
+    title: "Resume tailor · colour-coded gaps and example answers",
+    body: "**Profile → Tailor** now reads at a glance. Every requirement row is **highlighted by how well you cover it** — green when it's **met**, amber when it's **partial**, red when it's **missing** — with a coloured rail down the left edge so you can scan a long posting in seconds and see exactly where the gaps are. (The Met / Partial / Missing label stays on every row, so the status never depends on colour alone.)\n\nFor every gap, the coach now writes an **example answer** — one or two sentences showing how a strong response is structured, with `[bracketed placeholders]` where your details go. It never invents employers, dates or numbers for you; it models the phrasing and you supply the facts. Hit **Start from this** to drop the example straight into the answer box and edit from there, then re-score the round as before.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Workspace · Marketing → Sponsorship Package — Aug 2026
   {
     title: "Workspace · Marketing — a Sponsorship Package tab",

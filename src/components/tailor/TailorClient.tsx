@@ -26,8 +26,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2, Sparkles, Wand2, CheckCircle2, AlertTriangle, XCircle,
   RefreshCw, ArrowRight, MessageSquare, ListChecks, ChevronRight,
-  HelpCircle, FileText, Save,
-} from "lucide-react";
+  HelpCircle, FileText, Save, Lightbulb} from "lucide-react";
 import Link from "next/link";
 import type {
   TailorState, Assessment, Round, Classification, Verdict,
@@ -252,7 +251,7 @@ export function TailorClient({
             const draft = drafts[r.id] ?? "";
             const stillFocus = focusReqIds.has(r.id);
             return (
-              <li key={r.id} className="px-5 py-4">
+              <li key={r.id} className={`px-5 py-4 border-l-4 ${ROW_TONE[a?.classification ?? "none"]}`}>
                 <div className="flex items-start gap-3 flex-wrap">
                   <span className="shrink-0 w-9 h-9 rounded-lg bg-elevated text-subtle text-[10px] font-bold tabular-nums flex items-center justify-center font-mono">
                     {r.id}
@@ -291,6 +290,30 @@ export function TailorClient({
                           <HelpCircle size={12} className="mt-0.5 shrink-0" />
                           {a.question}
                         </p>
+                        {/* Worked example — models the shape of a strong
+                            answer so the user isn't facing a blank box.
+                            Placeholders only; the facts are theirs. */}
+                        {a.exampleSentence && (
+                          <div className="mt-2 rounded-lg bg-card/70 ring-1 ring-inset ring-brand-200/70 px-3 py-2">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-brand-700 inline-flex items-center gap-1">
+                              <Lightbulb size={10} /> Example answer
+                            </p>
+                            <p className="text-xs text-muted mt-1 leading-relaxed italic">
+                              {a.exampleSentence}
+                            </p>
+                            {!draft && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setDrafts((cur) => ({ ...cur, [r.id]: a.exampleSentence ?? "" }))
+                                }
+                                className="mt-1.5 text-[11px] font-semibold text-brand-700 hover:text-brand-900 underline underline-offset-2"
+                              >
+                                Start from this
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <textarea
                           value={draft}
                           onChange={(e) => setDrafts((cur) => ({ ...cur, [r.id]: e.target.value }))}
@@ -383,6 +406,16 @@ export function TailorClient({
 }
 
 // ─── Sub-components ─────────────────────────────────────────────
+
+/** Row background + left rail per classification. Colour is a second
+ *  channel only — every row still carries the AssessmentChip (icon +
+ *  label), so the state is never conveyed by colour alone. */
+const ROW_TONE: Record<Classification | "none", string> = {
+  met:     "border-emerald-400 bg-emerald-50/40",
+  partial: "border-amber-400   bg-amber-50/40",
+  missing: "border-rose-400    bg-rose-50/40",
+  none:    "border-transparent",
+};
 
 function AssessmentChip({ a }: { a: Assessment }) {
   const tone: Record<Classification, { label: string; cls: string; icon: React.ElementType }> = {

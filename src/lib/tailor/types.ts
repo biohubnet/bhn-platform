@@ -34,6 +34,13 @@ export interface Assessment {
   /** Targeted question to surface evidence the user hasn't volunteered
    *  yet — only set when classification is missing/partial. */
   question: string | null;
+  /** A worked example — one or two sentences showing the *shape* of a
+   *  strong answer, so the user isn't staring at an empty textarea.
+   *  Deliberately generic (no invented employers, numbers, or dates):
+   *  it models the phrasing, the user supplies the facts. Null when the
+   *  requirement is already met. Optional on read so sessions saved
+   *  before this field existed still load. */
+  exampleSentence?: string | null;
 }
 
 /** One full round: assessments for every requirement + the HM verdict

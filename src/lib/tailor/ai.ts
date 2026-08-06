@@ -127,6 +127,7 @@ const AssessSchema = z.object({
           reasoning: z.string().optional(),
           evidence: z.string().optional(),
           question: z.string().nullable().optional(),
+          exampleSentence: z.string().nullable().optional(),
         })
         .passthrough(),
     )
@@ -143,12 +144,17 @@ export async function assessRequirements(
       "You're a brutally honest but constructive resume coach.",
       "Given a list of requirements and an applicant's materials, classify each requirement as 'met', 'partial', or 'missing'.",
       "Output JSON only. Schema:",
-      '{ "assessments": [ { "requirementId": "r1", "classification": "met"|"partial"|"missing", "reasoning": "...", "evidence": "...", "question": "..."|null }, ... ] }',
+      '{ "assessments": [ { "requirementId": "r1", "classification": "met"|"partial"|"missing", "reasoning": "...", "evidence": "...", "question": "..."|null, "exampleSentence": "..."|null }, ... ] }',
       "",
       "Rules:",
       "- 'evidence' = a short sentence quoting/paraphrasing the part of the applicant's materials that addresses this requirement. Empty string when nothing addresses it.",
       "- 'reasoning' = one sentence explaining your classification.",
       "- 'question' = a targeted follow-up question for the user, ONLY when classification is 'missing' or 'partial'. Phrase it as a coach: 'Tell me about a time when...', 'What experience do you have with...', 'How did you handle...'. Null when classification is 'met'.",
+      "- 'exampleSentence' = ONE or TWO sentences modelling how a strong answer to that question reads, ONLY when classification is 'missing' or 'partial'. Null when 'met'.",
+      "    * Show the SHAPE of a good answer: situation, the action they took, the outcome.",
+      "    * Use bracketed placeholders for anything you don't know — e.g. 'During [project], I [did X], which [result].'",
+      "    * NEVER invent employers, dates, metrics, or achievements for this applicant. Placeholders only.",
+      "    * Write it in first person so the user can adapt it directly.",
       "- One assessment per requirement. Don't skip any.",
       "- Keep questions concrete and answerable in 2-4 sentences.",
     ].join("\n"),
@@ -189,6 +195,12 @@ export async function assessRequirements(
         a.classification === "met"
           ? null
           : (typeof a.question === "string" && a.question.length > 0 ? a.question : null),
+      exampleSentence:
+        a.classification === "met"
+          ? null
+          : (typeof a.exampleSentence === "string" && a.exampleSentence.length > 0
+              ? a.exampleSentence
+              : null),
     };
   });
 }
@@ -200,6 +212,8 @@ function fallbackAssessment(requirementId: string): Assessment {
     reasoning: "Couldn't reach the AI to assess this one — treating as missing for now. Add your context manually and re-run.",
     evidence: "",
     question: "What experience do you have here? Add a few specific examples.",
+    exampleSentence:
+      "During [project or role], I [what you did], which [result or what it enabled].",
   };
 }
 

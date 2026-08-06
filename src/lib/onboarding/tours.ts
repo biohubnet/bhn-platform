@@ -30,9 +30,18 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.08.05a";
+export const TOUR_VERSION = "2026.08.05b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Tailor · gap highlighting + example answers — Aug 2026
+  {
+    id: "tailor.gap-analysis",
+    title: "See your gaps at a glance",
+    body: "The resume tailor now colour-codes every requirement — green for met, amber for partial, red for missing — so you can scan a posting and spot the gaps immediately. Each gap comes with an example answer showing how a strong response is structured; tap \"Start from this\" to drop it into the box and make it yours.",
+    path: "/profile/tailor",
+    placement: "center",
+    since: "2026.08.05b",
+  },
   // ─── Workspace · Marketing → Sponsorship Package — Aug 2026
   {
     id: "workspace.sponsorship-package",
