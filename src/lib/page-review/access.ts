@@ -1,6 +1,7 @@
 const BIOHUBNET_REVIEW_HOSTS = new Set(["biohubnet.ca", "www.biohubnet.ca"]);
 
 export const PAGE_REVIEW_HASH_KEY = "bhn-review";
+export const PAGE_REVIEW_VIEWER_KEY = "bhn-reviewer";
 
 /** Canonical form used to avoid opening duplicate sessions for the same page. */
 export function normalizeReviewUrl(value: string): string {

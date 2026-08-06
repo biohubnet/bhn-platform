@@ -4,14 +4,20 @@ import { NextRequest } from "next/server";
 import { loaderSource } from "../../src/app/api/public/page-review/loader.js/route";
 import { overlaySource } from "../../src/app/api/public/page-review/[token]/overlay.js/route";
 import { DELETE as deleteReview } from "../../src/app/api/workspace/page-review/[id]/route";
+import { GET as launchReview } from "../../src/app/api/workspace/page-review/[id]/launch/route";
 import { snippetFor } from "../../src/components/workspace/BookmarkletPanel";
 import {
   normalizeReviewUrl,
   PAGE_REVIEW_HASH_KEY,
+  PAGE_REVIEW_VIEWER_KEY,
   pageNameFromReviewUrl,
   reviewLinkFor,
 } from "../../src/lib/page-review/access";
 import { buildBrief, type BriefComment } from "../../src/lib/page-review/brief";
+import {
+  createPageReviewViewerToken,
+  verifyPageReviewViewerToken,
+} from "../../src/lib/page-review/viewer";
 
 const baseComment: BriefComment = {
   id: "comment-1",
@@ -83,19 +89,45 @@ test("overlay writes review titles as text and handles SVG class lists", () => {
   );
 
   assert.doesNotMatch(source, /innerHTML/);
-  assert.match(source, /reviewTitle\.textContent/);
+  assert.doesNotMatch(source, /window\.prompt|window\.alert/);
+  assert.match(source, /bhn-review-marker/);
+  assert.match(source, /Reply to this thread/);
+  assert.match(source, /Authorization/);
   assert.match(source, /classList/);
   assert.doesNotMatch(source, /className/);
   assert.doesNotThrow(() => new Function(source));
 });
 
 test("bookmarklet code follows the current review token", () => {
-  const first = snippetFor("first-token", "https://app.biohubnet.ca/");
-  const second = snippetFor("second-token", "https://app.biohubnet.ca/");
+  const first = snippetFor("first-token", "https://app.biohubnet.ca/", "first-viewer");
+  const second = snippetFor("second-token", "https://app.biohubnet.ca/", "second-viewer");
 
   assert.match(first, /first-token\/overlay\.js/);
+  assert.match(first, /first-viewer/);
   assert.match(second, /second-token\/overlay\.js/);
+  assert.match(second, /second-viewer/);
   assert.doesNotMatch(second, /first-token/);
+});
+
+test("reviewer credentials are scoped to one review and preserve account identity", async () => {
+  const previousSecret = process.env.NEXTAUTH_SECRET;
+  process.env.NEXTAUTH_SECRET = "page-review-unit-test-secret-32-chars";
+  try {
+    const token = await createPageReviewViewerToken({
+      reviewId: "review-1",
+      userId: "user-1",
+      name: "  Alex\nReviewer  ",
+    });
+    assert.deepEqual(await verifyPageReviewViewerToken(token, "review-1"), {
+      reviewId: "review-1",
+      userId: "user-1",
+      name: "Alex Reviewer",
+    });
+    assert.equal(await verifyPageReviewViewerToken(token, "review-2"), null);
+  } finally {
+    if (previousSecret === undefined) delete process.env.NEXTAUTH_SECRET;
+    else process.env.NEXTAUTH_SECRET = previousSecret;
+  }
 });
 
 test("direct review links keep the credential in a BioHubNet URL fragment", () => {
@@ -161,7 +193,7 @@ test("loader removes the token from the address and injects the matching overlay
   let appended: Record<string, unknown> | null = null;
   const windowStub = {
     location: {
-      hash: "#bhn-review=review-token-123456789012345",
+      hash: "#bhn-review=review-token-123456789012345&bhn-reviewer=signed-viewer-token",
       pathname: "/engage/",
       search: "?view=full",
     },
@@ -172,7 +204,7 @@ test("loader removes the token from the address and injects the matching overlay
   };
   const documentStub = {
     getElementById() { return null; },
-    createElement() { return {} as Record<string, unknown>; },
+    createElement() { return { dataset: {} } as Record<string, unknown>; },
     head: { appendChild(node: Record<string, unknown>) { appended = node; } },
     body: null,
   };
@@ -182,8 +214,20 @@ test("loader removes the token from the address and injects the matching overlay
   assert.equal(cleanUrl, "/engage/?view=full");
   assert.ok(appended);
   assert.match(String(appended.src), /review-token-123456789012345\/overlay\.js\?t=/);
+  assert.equal((appended.dataset as Record<string, unknown>)["viewer"], "signed-viewer-token");
   assert.equal(appended.referrerPolicy, "no-referrer");
+  assert.doesNotMatch(cleanUrl, new RegExp(PAGE_REVIEW_VIEWER_KEY));
   assert.doesNotThrow(() => new Function(source));
+});
+
+test("review launch rejects requests without a staff session", async () => {
+  const response = await launchReview(
+    new NextRequest("https://bhn.test/api/workspace/page-review/review-1/launch"),
+    { params: Promise.resolve({ id: "review-1" }) },
+  );
+
+  assert.equal(response.status, 403);
+  assert.deepEqual(await response.json(), { error: "Forbidden" });
 });
 
 test("review session deletion rejects requests without an admin session", async () => {

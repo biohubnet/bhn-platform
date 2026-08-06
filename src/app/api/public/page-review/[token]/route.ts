@@ -1,17 +1,7 @@
 /**
- * Website review — public capture endpoint.
- *
- *   POST    /api/public/page-review/[token]   { body, anchor* , authorName }
- *   OPTIONS /api/public/page-review/[token]   CORS preflight
- *
- * Called by the review bookmarklet running on biohubnet.ca, so it is
- * cross-origin and cannot rely on the session cookie. Possession of the
- * review's shareToken is the credential — exactly like the EQUIP report
- * share links, except this one grants *append* rather than read.
- *
- * Deliberately narrow: a token can add a comment or a reply, and nothing
- * else. No edit, no delete, no export, no reading the existing thread —
- * so a leaked bookmarklet can add noise, never remove or exfiltrate work.
+ * Authenticated cross-origin collaboration for the live-page review overlay.
+ * A signed reviewer credential is scoped to one review and carries the
+ * colleague's platform identity; the share token alone grants no read/write.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -21,14 +11,16 @@ import {
   PAGE_REVIEW_RATE_MAX,
   PAGE_REVIEW_RATE_WINDOW_MS,
 } from "@/lib/page-review/limits";
+import { verifyPageReviewViewerToken } from "@/lib/page-review/viewer";
 
 export const dynamic = "force-dynamic";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type",
   "Access-Control-Max-Age": "86400",
+  "Cache-Control": "private, no-store",
 };
 
 const oneLine = (max: number) =>
@@ -43,42 +35,95 @@ const oneLine = (max: number) =>
         .trim(),
     );
 
-const Schema = z.object({
+const CommentSchema = z.object({
   body: z.string().trim().min(2, "Say a little more.").max(4000),
-  authorName: oneLine(80).optional(),
-  parentId: z.string().min(1).optional().nullable(),
+  parentId: z.string().min(1).max(64).optional().nullable(),
   anchorQuote: oneLine(600).optional().nullable(),
   anchorKey: oneLine(300).optional().nullable(),
   anchorPath: oneLine(600).optional().nullable(),
   anchorBlock: oneLine(200).optional().nullable(),
 });
 
+const COMMENT_SELECT = {
+  id: true,
+  parentId: true,
+  round: true,
+  anchorQuote: true,
+  anchorKey: true,
+  anchorPath: true,
+  anchorBlock: true,
+  anchorState: true,
+  authorName: true,
+  authorKind: true,
+  body: true,
+  status: true,
+  editedAt: true,
+  createdAt: true,
+} as const;
+
+function json(data: unknown, status = 200) {
+  return NextResponse.json(data, { status, headers: CORS });
+}
+
+async function viewerFor(req: NextRequest, reviewId: string) {
+  const authorization = req.headers.get("authorization") ?? "";
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  if (!match) return null;
+  return verifyPageReviewViewerToken(match[1], reviewId);
+}
+
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS });
 }
 
+export async function GET(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
+  const { token } = await ctx.params;
+  const review = await prisma.pageReview.findUnique({
+    where: { shareToken: token },
+    select: { id: true, title: true, round: true, status: true },
+  });
+  if (!review) return json({ error: "This review link is no longer active." }, 404);
+  if (review.status === "closed") return json({ error: "This review is closed." }, 409);
+
+  const viewer = await viewerFor(req, review.id);
+  if (!viewer) {
+    return json({ error: "Open this review from the training platform to join as yourself." }, 401);
+  }
+
+  const comments = await prisma.pageComment.findMany({
+    where: { reviewId: review.id, round: review.round },
+    orderBy: { createdAt: "asc" },
+    take: PAGE_REVIEW_COMMENT_LIMIT,
+    select: COMMENT_SELECT,
+  });
+
+  return json({
+    ok: true,
+    review: { title: review.title, round: review.round, status: review.status },
+    viewer: { id: viewer.userId, name: viewer.name },
+    comments,
+  });
+}
+
 export async function POST(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
-
   const review = await prisma.pageReview.findUnique({
     where: { shareToken: token },
     select: { id: true, round: true, status: true },
   });
-  if (!review) {
-    return NextResponse.json({ error: "This review link is no longer active." }, { status: 404, headers: CORS });
-  }
-  if (review.status === "closed") {
-    return NextResponse.json({ error: "This review is closed." }, { status: 409, headers: CORS });
+  if (!review) return json({ error: "This review link is no longer active." }, 404);
+  if (review.status === "closed") return json({ error: "This review is closed." }, 409);
+
+  const viewer = await viewerFor(req, review.id);
+  if (!viewer) {
+    return json({ error: "Open this review from the training platform to join as yourself." }, 401);
   }
 
-  const parsed = Schema.safeParse(await req.json().catch(() => ({})));
+  const parsed = CommentSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Check the comment." },
-      { status: 400, headers: CORS },
-    );
+    return json({ error: parsed.error.issues[0]?.message ?? "Check the comment." }, 400);
   }
-  const d = parsed.data;
+  const data = parsed.data;
 
   const [recentCount, totalCount] = await prisma.$transaction([
     prisma.pageComment.count({
@@ -96,42 +141,52 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
     );
   }
   if (totalCount >= PAGE_REVIEW_COMMENT_LIMIT) {
-    return NextResponse.json(
-      { error: "This review has reached its comment limit. Ask an admin to open a new review." },
-      { status: 409, headers: CORS },
-    );
+    return json({ error: "This review has reached its comment limit." }, 409);
   }
 
-  // A reply inherits its parent's anchor — a thread is about one element.
+  let parentId: string | null = null;
   let anchors = {
-    anchorQuote: d.anchorQuote ?? null,
-    anchorKey: d.anchorKey ?? null,
-    anchorPath: d.anchorPath ?? null,
-    anchorBlock: d.anchorBlock ?? null,
+    anchorQuote: data.anchorQuote ?? null,
+    anchorKey: data.anchorKey ?? null,
+    anchorPath: data.anchorPath ?? null,
+    anchorBlock: data.anchorBlock ?? null,
   };
-  if (d.parentId) {
+  if (data.parentId) {
     const parent = await prisma.pageComment.findFirst({
-      where: { id: d.parentId, reviewId: review.id },
-      select: { anchorQuote: true, anchorKey: true, anchorPath: true, anchorBlock: true },
+      where: { id: data.parentId, reviewId: review.id, round: review.round },
+      select: {
+        id: true,
+        parentId: true,
+        anchorQuote: true,
+        anchorKey: true,
+        anchorPath: true,
+        anchorBlock: true,
+      },
     });
-    if (!parent) {
-      return NextResponse.json({ error: "That thread is gone." }, { status: 404, headers: CORS });
-    }
-    anchors = parent;
+    if (!parent) return json({ error: "That thread is gone." }, 404);
+    parentId = parent.parentId ?? parent.id;
+    anchors = {
+      anchorQuote: parent.anchorQuote,
+      anchorKey: parent.anchorKey,
+      anchorPath: parent.anchorPath,
+      anchorBlock: parent.anchorBlock,
+    };
   }
 
-  await prisma.pageComment.create({
+  const comment = await prisma.pageComment.create({
     data: {
       reviewId: review.id,
-      parentId: d.parentId ?? null,
+      parentId,
       round: review.round,
       ...anchors,
-      authorName: d.authorName || "Someone",
-      authorKind: "anon",
-      body: d.body,
+      authorUserId: viewer.userId,
+      authorName: viewer.name,
+      authorKind: "user",
+      body: data.body,
     },
+    select: COMMENT_SELECT,
   });
   await prisma.pageReview.update({ where: { id: review.id }, data: { updatedAt: new Date() } });
 
-  return NextResponse.json({ ok: true }, { headers: CORS });
+  return json({ ok: true, comment });
 }

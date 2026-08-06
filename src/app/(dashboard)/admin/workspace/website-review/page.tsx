@@ -13,6 +13,7 @@ import { PageReviewClient } from "@/components/workspace/PageReviewClient";
 import { NewPageReviewForm } from "@/components/workspace/NewPageReviewForm";
 import { BookmarkletPanel } from "@/components/workspace/BookmarkletPanel";
 import { PAGE_REVIEW_COMMENT_LIMIT } from "@/lib/page-review/limits";
+import { createPageReviewViewerToken } from "@/lib/page-review/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,10 @@ export default async function WebsiteReviewPage({
   const role = (session.user as { role?: string }).role ?? "";
   const isAdmin = role === "admin" || role === "superadmin";
   const meId = (session.user as { id?: string }).id ?? null;
-  const appOrigin = (process.env.NEXTAUTH_URL ?? "https://app.biohubnet.ca").replace(/\/$/, "");
+  const meName = (session.user as { name?: string | null; email?: string | null }).name
+    || (session.user as { email?: string | null }).email
+    || "Team member";
+  const appOrigin = (process.env.NEXTAUTH_URL ?? "https://bhn-training-platform.vercel.app").replace(/\/$/, "");
 
   const reviews = await prisma.pageReview.findMany({
     orderBy: { updatedAt: "desc" },
@@ -50,6 +54,9 @@ export default async function WebsiteReviewPage({
           },
         },
       })
+    : null;
+  const viewerCredential = active && meId
+    ? await createPageReviewViewerToken({ reviewId: active.id, userId: meId, name: meName })
     : null;
 
   return (
@@ -83,8 +90,14 @@ export default async function WebsiteReviewPage({
       )}
 
       {/* shareToken is nullable in the schema; every review the app creates has one. */}
-      {active && active.status !== "closed" && active.shareToken && (
-        <BookmarkletPanel shareToken={active.shareToken} url={active.url} appOrigin={appOrigin} />
+      {active && active.status !== "closed" && active.shareToken && viewerCredential && (
+        <BookmarkletPanel
+          shareToken={active.shareToken}
+          reviewId={active.id}
+          url={active.url}
+          appOrigin={appOrigin}
+          viewerCredential={viewerCredential}
+        />
       )}
 
       {active ? (

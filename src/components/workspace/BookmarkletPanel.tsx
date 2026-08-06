@@ -2,30 +2,34 @@
 /** Direct review access for BioHubNet, with the bookmarklet as a fallback. */
 import { useEffect, useRef, useState } from "react";
 import { Bookmark, Check, ChevronDown, Copy, ExternalLink, Link2 } from "lucide-react";
-import { reviewLinkFor } from "@/lib/page-review/access";
 
-export function snippetFor(shareToken: string, appOrigin: string): string {
+export function snippetFor(shareToken: string, appOrigin: string, viewerCredential: string): string {
   const src = `${appOrigin.replace(/\/$/, "")}/api/public/page-review/${shareToken}/overlay.js`;
   // Cache-bust so an updated overlay reaches people who installed it weeks ago.
   return (
     `javascript:(function(){var s=document.createElement('script');` +
-    `s.src=${JSON.stringify(src)}+'?t='+Date.now();document.body.appendChild(s);})();`
+    `s.src=${JSON.stringify(src)}+'?t='+Date.now();` +
+    `s.dataset.viewer=${JSON.stringify(viewerCredential)};document.body.appendChild(s);})();`
   );
 }
 
 export function BookmarkletPanel({
   shareToken,
+  reviewId,
   url,
   appOrigin,
+  viewerCredential,
 }: {
   shareToken: string;
+  reviewId: string;
   url: string;
   appOrigin: string;
+  viewerCredential: string;
 }) {
   const linkRef = useRef<HTMLAnchorElement>(null);
-  const code = snippetFor(shareToken, appOrigin);
-  const reviewLink = reviewLinkFor(url, shareToken);
-  const [open, setOpen] = useState(!reviewLink);
+  const code = snippetFor(shareToken, appOrigin, viewerCredential);
+  const reviewLink = `${appOrigin}/api/workspace/page-review/${encodeURIComponent(reviewId)}/launch`;
+  const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState<"review" | "bookmarklet" | null>(null);
 
   useEffect(() => {
@@ -59,26 +63,24 @@ export function BookmarkletPanel({
           <p className="text-xs text-muted mt-1 truncate max-w-2xl" title={url}>{url}</p>
         </div>
 
-        {reviewLink && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <a
-              href={reviewLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-bold hover:bg-brand-700"
-            >
-              <ExternalLink size={13} /> Open review page
-            </a>
-            <button
-              type="button"
-              onClick={() => copy(reviewLink, "review")}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-elevated ring-1 ring-inset ring-line text-muted hover:text-fg"
-            >
-              {copied === "review" ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-              {copied === "review" ? "Copied" : "Copy review link"}
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <a
+            href={reviewLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-bold hover:bg-brand-700"
+          >
+            <ExternalLink size={13} /> Open review page
+          </a>
+          <button
+            type="button"
+            onClick={() => copy(reviewLink, "review")}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-elevated ring-1 ring-inset ring-line text-muted hover:text-fg"
+          >
+            {copied === "review" ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+            {copied === "review" ? "Copied" : "Copy review link"}
+          </button>
+        </div>
       </div>
 
       <button
@@ -87,12 +89,12 @@ export function BookmarkletPanel({
         className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-subtle hover:text-fg"
       >
         <ChevronDown size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
-        {reviewLink ? "Bookmarklet fallback" : "Use the bookmarklet on this site"}
+        Bookmarklet fallback
       </button>
       {open && (
         <div className="mt-3 border-t border-line pt-3 space-y-3">
           <p className="text-[11px] text-muted">
-            Drag this to the bookmarks bar for pages that do not have the BioHubNet review loader.
+            This personal bookmarklet is for pages without the BioHubNet review loader.
           </p>
           <div className="flex items-center gap-2 flex-wrap">
             {/* React blocks javascript: href props, so the effect writes this URL directly. */}
