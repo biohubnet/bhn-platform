@@ -7,10 +7,12 @@
  * Right: the export brief — Markdown for Claude Code / Codex.
  */
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Loader2, Plus, MessageSquarePlus, Check, Trash2, Pencil, Copy,
   FileDown, ExternalLink, AlertTriangle, CornerDownRight, X,
 } from "lucide-react";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface Comment {
   id: string; parentId: string | null; round: number;
@@ -27,6 +29,8 @@ interface Review {
 export function PageReviewClient({
   initialReview, meId, isAdmin,
 }: { initialReview: Review; meId: string | null; isAdmin: boolean }) {
+  const router = useRouter();
+  const { confirmDialog, node: confirmNode } = useConfirmDialog();
   const [review, setReview] = useState<Review>(initialReview);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +75,37 @@ export function PageReviewClient({
       await navigator.clipboard.writeText(brief);
       setCopied(true); window.setTimeout(() => setCopied(false), 2000);
     } catch { setError("Couldn't reach the clipboard — select the text and copy manually."); }
+  }
+
+  async function deleteReview() {
+    const commentCount = review.comments.length;
+    const ok = await confirmDialog({
+      title: `Delete “${review.title}”?`,
+      description: `This permanently deletes the review session and ${commentCount} comment${commentCount === 1 ? "" : "s"}. Its shared review link will stop working. This can't be undone.`,
+      confirmLabel: "Delete review",
+      cancelLabel: "Keep review",
+      tone: "destructive",
+    });
+    if (!ok) return;
+
+    setBusy("delete-review");
+    setError(null);
+    try {
+      const response = await fetch(`/api/workspace/page-review/${review.id}`, {
+        method: "DELETE",
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result?.ok) {
+        setError(result?.error ?? "Couldn't delete that review.");
+        return;
+      }
+      router.replace("/admin/workspace/website-review");
+      router.refresh();
+    } catch {
+      setError("Couldn't reach the platform. Try again.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
@@ -276,6 +311,15 @@ export function PageReviewClient({
                     {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />} {copied ? "Copied" : "Copy"}
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={deleteReview}
+                  disabled={busy !== null}
+                  className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl ring-1 ring-inset ring-rose-200 text-rose-700 font-semibold text-sm hover:bg-rose-50 disabled:opacity-60"
+                >
+                  {busy === "delete-review" ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                  Delete review
+                </button>
               </div>
             )}
             <p className="text-[11px] text-subtle mt-3 leading-relaxed">
@@ -293,6 +337,7 @@ export function PageReviewClient({
           )}
         </div>
       </div>
+      {confirmNode}
     </div>
   );
 }

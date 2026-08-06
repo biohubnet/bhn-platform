@@ -2,6 +2,7 @@
  * Website review — one review.
  *
  *   POST /api/workspace/page-review/[id]  { action, ... }
+ *   DELETE /api/workspace/page-review/[id]  (admin only)
  *
  *     addComment    (instructor+) — new thread, or a reply via parentId
  *     editComment   (author, or admin)
@@ -181,6 +182,47 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   }
 
   return NextResponse.json({ error: "Unknown action." }, { status: 400 });
+}
+
+export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const session = await requireRole("admin").catch(() => null);
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const actorId = (session.user as { id?: string }).id;
+  if (!actorId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { id } = await ctx.params;
+  const review = await prisma.pageReview.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      url: true,
+      _count: { select: { comments: true } },
+    },
+  });
+  if (!review) return NextResponse.json({ error: "No such review." }, { status: 404 });
+
+  await prisma.$transaction([
+    prisma.auditLog.create({
+      data: {
+        actorId,
+        action: "pageReview.delete",
+        targetType: "pageReview",
+        targetId: review.id,
+        detail: JSON.stringify({
+          title: review.title,
+          url: review.url,
+          commentCount: review._count.comments,
+        }),
+      },
+    }),
+    // PageComment.review uses onDelete: Cascade, so the session and every
+    // thread disappear atomically.
+    prisma.pageReview.delete({ where: { id: review.id } }),
+  ]);
+
+  return NextResponse.json({ ok: true });
 }
 
 function touch(id: string) {

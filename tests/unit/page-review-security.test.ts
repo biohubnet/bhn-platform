@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { NextRequest } from "next/server";
 import { loaderSource } from "../../src/app/api/public/page-review/loader.js/route";
 import { overlaySource } from "../../src/app/api/public/page-review/[token]/overlay.js/route";
+import { DELETE as deleteReview } from "../../src/app/api/workspace/page-review/[id]/route";
 import { snippetFor } from "../../src/components/workspace/BookmarkletPanel";
 import { PAGE_REVIEW_HASH_KEY, reviewLinkFor } from "../../src/lib/page-review/access";
 import { buildBrief, type BriefComment } from "../../src/lib/page-review/brief";
@@ -134,4 +136,14 @@ test("loader removes the token from the address and injects the matching overlay
   assert.match(String(appended.src), /review-token-123456789012345\/overlay\.js\?t=/);
   assert.equal(appended.referrerPolicy, "no-referrer");
   assert.doesNotThrow(() => new Function(source));
+});
+
+test("review session deletion rejects requests without an admin session", async () => {
+  const response = await deleteReview(
+    new NextRequest("https://bhn.test/api/workspace/page-review/review-1", { method: "DELETE" }),
+    { params: Promise.resolve({ id: "review-1" }) },
+  );
+
+  assert.equal(response.status, 403);
+  assert.deepEqual(await response.json(), { error: "Forbidden" });
 });
