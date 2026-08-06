@@ -75,6 +75,7 @@ export default async function WebsiteReviewPage({
               }`}
             >
               {rv.title}
+              <span className="font-mono tabular-nums opacity-70">R{rv.round}</span>
               <span className="font-mono tabular-nums opacity-70">{rv._count.comments}</span>
             </Link>
           ))}

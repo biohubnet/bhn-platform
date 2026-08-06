@@ -12,13 +12,12 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { normalizeReviewUrl } from "@/lib/page-review/access";
+import { normalizeReviewUrl, pageNameFromReviewUrl } from "@/lib/page-review/access";
 
 export const dynamic = "force-dynamic";
 
 const CreateSchema = z.object({
   url: z.string().trim().url("Give a full URL, including https://").max(500),
-  title: z.string().trim().min(2).max(160),
 });
 
 export async function GET() {
@@ -67,7 +66,7 @@ export async function POST(req: NextRequest) {
   const review = await prisma.pageReview.create({
     data: {
       url,
-      title: parsed.data.title,
+      title: pageNameFromReviewUrl(url),
       // 128-bit URL-safe token — same shape as the EQUIP report share links.
       shareToken: randomBytes(16).toString("base64url"),
       createdById: (session.user as { id?: string }).id ?? null,

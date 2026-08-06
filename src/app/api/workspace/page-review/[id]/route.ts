@@ -8,7 +8,8 @@
  *     editComment   (author, or admin)
  *     deleteComment (author, or admin) — cascades to its replies
  *     setStatus     (instructor+) — open | resolved | wontfix
- *     export        (admin)       — build the brief and bump the round
+ *     export        (admin)       — build the current round's brief
+ *     startNextRound (admin)      — resolve current items and advance
  *
  * Editing preserves an audit trail via editCount/editedAt rather than a
  * separate history table: reviewers care that a comment changed and when,
@@ -43,6 +44,7 @@ const StatusSchema = z.object({
   commentId: z.string().min(1),
   status: z.union([z.literal("open"), z.literal("resolved"), z.literal("wontfix")]),
 });
+const NextRoundSchema = z.object({ action: z.literal("startNextRound") });
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -162,6 +164,35 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     return NextResponse.json({ ok: true, ...(await load(id)) });
   }
 
+  // ── start the next revision round ────────────────────────────
+  if (action === "startNextRound") {
+    if (!isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const p = NextRoundSchema.safeParse(body);
+    if (!p.success) return NextResponse.json({ error: "Bad request." }, { status: 400 });
+
+    const currentCount = await prisma.pageComment.count({
+      where: { reviewId: id, round: review.round },
+    });
+    if (currentCount === 0) {
+      return NextResponse.json(
+        { error: `Round ${review.round} has no feedback yet.` },
+        { status: 409 },
+      );
+    }
+
+    await prisma.$transaction([
+      prisma.pageComment.updateMany({
+        where: { reviewId: id, round: review.round, status: "open" },
+        data: { status: "resolved" },
+      }),
+      prisma.pageReview.update({
+        where: { id },
+        data: { round: { increment: 1 }, status: "open" },
+      }),
+    ]);
+    return NextResponse.json({ ok: true, ...(await load(id)) });
+  }
+
   // ── export the brief ─────────────────────────────────────────
   if (action === "export") {
     if (!isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -173,10 +204,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     const brief = buildBrief({
       url: review.url, title: review.title, round: review.round, comments,
     });
-    // Bump the round so later comments are attributed to the next pass.
     await prisma.pageReview.update({
       where: { id },
-      data: { round: { increment: 1 }, status: "exported" },
+      data: { status: "exported" },
     });
     return NextResponse.json({ ok: true, brief, ...(await load(id)) });
   }

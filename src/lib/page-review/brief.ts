@@ -13,6 +13,7 @@
 export interface BriefComment {
   id: string;
   parentId: string | null;
+  round: number;
   body: string;
   authorName: string;
   authorKind: string;
@@ -78,7 +79,9 @@ function anchorLines(c: BriefComment): string[] {
 
 /** Render the Markdown brief. */
 export function buildBrief(input: BriefInput): string {
-  const open = input.comments.filter((c) => c.status === "open");
+  const open = input.comments.filter(
+    (c) => c.status === "open" && c.round === input.round,
+  );
   const tops = open.filter((c) => !c.parentId);
   const repliesOf = (id: string) =>
     open.filter((c) => c.parentId === id).sort((a, b) => +a.createdAt - +b.createdAt);

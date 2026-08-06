@@ -14,6 +14,31 @@ export function normalizeReviewUrl(value: string): string {
   return target.toString();
 }
 
+const UPPERCASE_PAGE_WORDS = new Set(["api", "faq", "gmp", "hqp", "ke"]);
+
+/** Derive a concise page label without making a server-side request to the URL. */
+export function pageNameFromReviewUrl(value: string): string {
+  const target = new URL(normalizeReviewUrl(value));
+  const parts = target.pathname.split("/").filter(Boolean);
+  if (parts.length === 0) {
+    return target.hostname === "biohubnet.ca" ? "Home Page" : target.hostname;
+  }
+
+  const slug = decodeURIComponent(parts.at(-1) ?? "");
+  const words = slug.split(/[-_]+/).filter(Boolean);
+  if (words.length === 0) return target.hostname;
+
+  return words
+    .map((word) => {
+      const lower = word.toLowerCase();
+      if (UPPERCASE_PAGE_WORDS.has(lower) || /^[a-z]{1,3}\d+$/i.test(word)) {
+        return lower.toUpperCase();
+      }
+      return `${lower.charAt(0).toUpperCase()}${lower.slice(1)}`;
+    })
+    .join(" ");
+}
+
 /** Build a direct review link only for sites where the review loader is installed. */
 export function reviewLinkFor(url: string, shareToken: string): string | null {
   try {

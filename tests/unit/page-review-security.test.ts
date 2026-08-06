@@ -8,6 +8,7 @@ import { snippetFor } from "../../src/components/workspace/BookmarkletPanel";
 import {
   normalizeReviewUrl,
   PAGE_REVIEW_HASH_KEY,
+  pageNameFromReviewUrl,
   reviewLinkFor,
 } from "../../src/lib/page-review/access";
 import { buildBrief, type BriefComment } from "../../src/lib/page-review/brief";
@@ -15,6 +16,7 @@ import { buildBrief, type BriefComment } from "../../src/lib/page-review/brief";
 const baseComment: BriefComment = {
   id: "comment-1",
   parentId: null,
+  round: 1,
   body: "Tighten the introduction.",
   authorName: "Reviewer",
   authorKind: "user",
@@ -123,6 +125,29 @@ test("review URLs normalize duplicate BioHubNet page variants", () => {
     normalizeReviewUrl("https://biohubnet.ca/engage///#courses"),
     "https://biohubnet.ca/engage",
   );
+});
+
+test("review page names are derived from the URL", () => {
+  assert.equal(pageNameFromReviewUrl("https://biohubnet.ca"), "Home Page");
+  assert.equal(
+    pageNameFromReviewUrl("https://biohubnet.ca/engage/regulatory-affairs/"),
+    "Regulatory Affairs",
+  );
+  assert.equal(pageNameFromReviewUrl("https://biohubnet.ca/ke5/"), "KE5");
+});
+
+test("brief exports only open comments from the current revision round", () => {
+  const roundOne = { ...baseComment, id: "round-1", round: 1, body: "Old request." };
+  const roundTwo = { ...baseComment, id: "round-2", round: 2, body: "Current request." };
+  const brief = buildBrief({
+    url: "https://biohubnet.ca/example",
+    title: "Example",
+    round: 2,
+    comments: [roundOne, roundTwo],
+  });
+
+  assert.match(brief, /Current request\./);
+  assert.doesNotMatch(brief, /Old request\./);
 });
 
 test("loader removes the token from the address and injects the matching overlay", () => {

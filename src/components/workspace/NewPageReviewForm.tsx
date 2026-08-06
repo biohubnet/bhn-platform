@@ -7,7 +7,6 @@ import { Loader2, Plus } from "lucide-react";
 export function NewPageReviewForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
-  const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,11 +15,11 @@ export function NewPageReviewForm() {
     try {
       const r = await fetch("/api/workspace/page-review", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), title: title.trim() }),
+        body: JSON.stringify({ url: url.trim() }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j?.ok) { setError(j?.error ?? "Couldn't open that review."); return; }
-      setUrl(""); setTitle("");
+      setUrl("");
       router.push(`/admin/workspace/website-review?r=${j.id}`);
       router.refresh();
     } finally { setBusy(false); }
@@ -32,18 +31,13 @@ export function NewPageReviewForm() {
         <input
           value={url} onChange={(e) => setUrl(e.target.value)}
           placeholder="https://biohubnet.ca/engage/regulatory-affairs/"
-          className="flex-[2] min-w-[240px] text-sm bg-card border border-line rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
-        />
-        <input
-          value={title} onChange={(e) => setTitle(e.target.value)}
-          placeholder="ENGAGE · Regulatory Affairs"
-          className="flex-1 min-w-[180px] text-sm bg-card border border-line rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+          className="flex-1 min-w-[240px] text-sm bg-card border border-line rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
         />
         <button
-          onClick={create} disabled={busy || !url.trim() || !title.trim()}
+          onClick={create} disabled={busy || !url.trim()}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 disabled:opacity-60"
         >
-          {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Open review
+          {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Start review
         </button>
       </div>
       {error && <p className="text-xs text-rose-700 mt-2">{error}</p>}

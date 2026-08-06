@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Loader2, Plus, MessageSquarePlus, Check, Trash2, Pencil, Copy,
-  FileDown, ExternalLink, AlertTriangle, CornerDownRight, X,
+  FileDown, ExternalLink, AlertTriangle, ArrowRight, CornerDownRight, X,
 } from "lucide-react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
@@ -58,7 +58,9 @@ export function PageReviewClient({
 
   const tops = review.comments.filter((c) => !c.parentId);
   const repliesOf = (id: string) => review.comments.filter((c) => c.parentId === id);
-  const openCount = tops.filter((c) => c.status === "open").length;
+  const currentTops = tops.filter((c) => c.round === review.round);
+  const currentOpenCount = currentTops.filter((c) => c.status === "open").length;
+  const currentRoundCommentCount = review.comments.filter((c) => c.round === review.round).length;
 
   async function addThread() {
     if (newC.body.trim().length < 2) { setError("Say a little more."); return; }
@@ -106,6 +108,23 @@ export function PageReviewClient({
     } finally {
       setBusy(null);
     }
+  }
+
+  async function startNextRound() {
+    const openLine = currentOpenCount > 0
+      ? `${currentOpenCount} open item${currentOpenCount === 1 ? "" : "s"} from Round ${review.round} will be marked resolved. `
+      : "";
+    const ok = await confirmDialog({
+      title: `Start Round ${review.round + 1}?`,
+      description: `${openLine}New feedback will be recorded under Round ${review.round + 1}. Existing comments remain in the session history.`,
+      confirmLabel: `Start Round ${review.round + 1}`,
+      cancelLabel: `Stay in Round ${review.round}`,
+      tone: "warning",
+    });
+    if (!ok) return;
+
+    const result = await post({ action: "startNextRound" }, "next-round");
+    if (result) setBrief(null);
   }
 
   return (
@@ -294,13 +313,13 @@ export function PageReviewClient({
               {review.url} <ExternalLink size={10} className="shrink-0" />
             </a>
             <p className="text-sm text-muted mt-2">
-              {openCount} open · {tops.length} total · round {review.round}
+              Round {review.round} · {currentOpenCount} open · {currentTops.length} total
             </p>
             {isAdmin && (
               <div className="flex gap-2 mt-4 flex-wrap">
                 <button
                   onClick={async () => { const j = await post({ action: "export" }, "exp"); if (j?.brief) setBrief(j.brief as string); }}
-                  disabled={busy === "exp" || openCount === 0}
+                  disabled={busy !== null || currentOpenCount === 0}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 text-white font-bold text-sm hover:bg-brand-700 disabled:opacity-60"
                 >
                   {busy === "exp" ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />} Export brief
@@ -313,6 +332,15 @@ export function PageReviewClient({
                 )}
                 <button
                   type="button"
+                  onClick={startNextRound}
+                  disabled={busy !== null || currentRoundCommentCount === 0}
+                  className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl bg-elevated ring-1 ring-inset ring-line text-fg font-semibold text-sm hover:bg-raised disabled:opacity-60"
+                >
+                  {busy === "next-round" ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
+                  Start Round {review.round + 1}
+                </button>
+                <button
+                  type="button"
                   onClick={deleteReview}
                   disabled={busy !== null}
                   className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl ring-1 ring-inset ring-rose-200 text-rose-700 font-semibold text-sm hover:bg-rose-50 disabled:opacity-60"
@@ -323,7 +351,7 @@ export function PageReviewClient({
               </div>
             )}
             <p className="text-[11px] text-subtle mt-3 leading-relaxed">
-              Exporting bumps the round, so later comments are attributed to the next revision.
+              Export the current round as often as needed. Start the next round after its revisions are applied.
             </p>
           </section>
 
