@@ -12,6 +12,7 @@
     "eval:ci": "tsx evals/run.ts --no-llm --check",
     "eval:baseline": "tsx evals/run.ts --no-llm --write-baseline",
     "test:e2e": "playwright test",
+    "test:page-review": "tsx --test tests/unit/page-review-security.test.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report"

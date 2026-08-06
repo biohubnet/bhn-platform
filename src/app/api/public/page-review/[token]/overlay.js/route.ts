@@ -51,7 +51,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ token: string 
   return new NextResponse(overlaySource(endpoint, review.title), { headers });
 }
 
-function overlaySource(endpoint: string, title: string): string {
+export function overlaySource(endpoint: string, title: string): string {
   // Single-quoted template below is emitted verbatim to the browser.
   return `(function(){
   var ID = "bhn-review-overlay";
@@ -76,13 +76,34 @@ function overlaySource(endpoint: string, title: string): string {
 
   var bar = document.createElement("div");
   bar.setAttribute("style", "background:#0b3558;color:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.3);max-width:320px;");
-  bar.innerHTML = '<div style="font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.75">BioHubNet review</div>'
-    + '<div style="margin-top:4px;font-size:13px">' + ${JSON.stringify(title)} + '</div>'
-    + '<div id="bhn-msg" style="margin-top:6px;font-size:12px;opacity:.85">Click any element to comment. Esc to exit.</div>';
+  var label = document.createElement("div");
+  label.setAttribute("style", "font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.75");
+  label.textContent = "BioHubNet review";
+  var reviewTitle = document.createElement("div");
+  reviewTitle.setAttribute("style", "margin-top:4px;font-size:13px");
+  reviewTitle.textContent = ${JSON.stringify(title)};
+  var msg = document.createElement("div");
+  msg.setAttribute("style", "margin-top:6px;font-size:12px;opacity:.85");
+  msg.textContent = "Click any element to comment. Esc to exit.";
+  bar.appendChild(label);
+  bar.appendChild(reviewTitle);
+  bar.appendChild(msg);
   root.appendChild(bar);
-  var msg = bar.querySelector("#bhn-msg");
 
   function inOverlay(el){ return root.contains(el) || el === hi; }
+
+  function classTokens(el){
+    return el && el.classList
+      ? Array.prototype.slice.call(el.classList).filter(Boolean)
+      : [];
+  }
+
+  function cssIdent(value){
+    var raw = String(value || "");
+    if (!raw) return "";
+    if (window.CSS && typeof window.CSS.escape === "function") return window.CSS.escape(raw);
+    return /^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/.test(raw) ? raw : "";
+  }
 
   // Depth 9, not 6: on a Salient/WPBakery page six levels only reaches the
   // generic .wpb_wrapper divs, and the path matches three elements. Nine
@@ -92,8 +113,9 @@ function overlaySource(endpoint: string, title: string): string {
     var parts = [], node = el, guard = 0;
     while (node && node.nodeType === 1 && node !== document.body && guard++ < 9) {
       var seg = node.tagName.toLowerCase();
-      if (node.id) { parts.unshift(seg + "#" + node.id); break; }
-      var cls = (node.className || "").toString().trim().split(/\\s+/).filter(Boolean).slice(0, 2);
+      var escapedId = cssIdent(node.id);
+      if (escapedId) { parts.unshift(seg + "#" + escapedId); break; }
+      var cls = classTokens(node).map(cssIdent).filter(Boolean).slice(0, 2);
       if (cls.length) seg += "." + cls.join(".");
       var sibs = node.parentNode ? Array.prototype.filter.call(node.parentNode.children, function(c){ return c.tagName === node.tagName; }) : [];
       if (sibs.length > 1) seg += ":nth-of-type(" + (sibs.indexOf(node) + 1) + ")";
@@ -104,8 +126,9 @@ function overlaySource(endpoint: string, title: string): string {
   }
 
   function keyOf(el){
-    if (el.id) return "#" + el.id;
-    var cls = (el.className || "").toString().trim().split(/\\s+/).filter(Boolean);
+    var escapedId = cssIdent(el.id);
+    if (escapedId) return "#" + escapedId;
+    var cls = classTokens(el).map(cssIdent).filter(Boolean);
     // Prefer a distinctive class over a utility one.
     var pick = cls.filter(function(c){ return c.length > 6; })[0] || cls[0];
     return pick ? el.tagName.toLowerCase() + "." + pick : el.tagName.toLowerCase();

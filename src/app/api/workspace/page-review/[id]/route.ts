@@ -18,6 +18,7 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildBrief } from "@/lib/page-review/brief";
+import { PAGE_REVIEW_COMMENT_LIMIT } from "@/lib/page-review/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,13 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     const p = AddSchema.safeParse(body);
     if (!p.success) {
       return NextResponse.json({ error: p.error.issues[0]?.message ?? "Check the comment." }, { status: 400 });
+    }
+    const commentCount = await prisma.pageComment.count({ where: { reviewId: id } });
+    if (commentCount >= PAGE_REVIEW_COMMENT_LIMIT) {
+      return NextResponse.json(
+        { error: "This review has reached its comment limit. Open a new review to continue." },
+        { status: 409 },
+      );
     }
     // A reply inherits its parent's anchor — the thread is about one element.
     let anchors = {
@@ -159,6 +167,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     const comments = await prisma.pageComment.findMany({
       where: { reviewId: id },
       orderBy: { createdAt: "asc" },
+      take: PAGE_REVIEW_COMMENT_LIMIT,
     });
     const brief = buildBrief({
       url: review.url, title: review.title, round: review.round, comments,
@@ -181,7 +190,12 @@ function touch(id: string) {
 async function load(id: string) {
   const review = await prisma.pageReview.findUnique({
     where: { id },
-    include: { comments: { orderBy: { createdAt: "asc" } } },
+    include: {
+      comments: {
+        orderBy: { createdAt: "asc" },
+        take: PAGE_REVIEW_COMMENT_LIMIT,
+      },
+    },
   });
   return { review };
 }

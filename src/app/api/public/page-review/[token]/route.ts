@@ -16,6 +16,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import {
+  PAGE_REVIEW_COMMENT_LIMIT,
+  PAGE_REVIEW_RATE_MAX,
+  PAGE_REVIEW_RATE_WINDOW_MS,
+} from "@/lib/page-review/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -26,14 +31,26 @@ const CORS = {
   "Access-Control-Max-Age": "86400",
 };
 
+const oneLine = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((value) =>
+      value
+        .replace(/[\u0000-\u001f\u007f]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim(),
+    );
+
 const Schema = z.object({
   body: z.string().trim().min(2, "Say a little more.").max(4000),
-  authorName: z.string().trim().min(1).max(80).optional(),
+  authorName: oneLine(80).optional(),
   parentId: z.string().min(1).optional().nullable(),
-  anchorQuote: z.string().trim().max(600).optional().nullable(),
-  anchorKey: z.string().trim().max(300).optional().nullable(),
-  anchorPath: z.string().trim().max(600).optional().nullable(),
-  anchorBlock: z.string().trim().max(200).optional().nullable(),
+  anchorQuote: oneLine(600).optional().nullable(),
+  anchorKey: oneLine(300).optional().nullable(),
+  anchorPath: oneLine(600).optional().nullable(),
+  anchorBlock: oneLine(200).optional().nullable(),
 });
 
 export async function OPTIONS() {
@@ -63,6 +80,28 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
   }
   const d = parsed.data;
 
+  const [recentCount, totalCount] = await prisma.$transaction([
+    prisma.pageComment.count({
+      where: {
+        reviewId: review.id,
+        createdAt: { gte: new Date(Date.now() - PAGE_REVIEW_RATE_WINDOW_MS) },
+      },
+    }),
+    prisma.pageComment.count({ where: { reviewId: review.id } }),
+  ]);
+  if (recentCount >= PAGE_REVIEW_RATE_MAX) {
+    return NextResponse.json(
+      { error: "This review is receiving comments too quickly. Try again in a minute." },
+      { status: 429, headers: { ...CORS, "Retry-After": "60" } },
+    );
+  }
+  if (totalCount >= PAGE_REVIEW_COMMENT_LIMIT) {
+    return NextResponse.json(
+      { error: "This review has reached its comment limit. Ask an admin to open a new review." },
+      { status: 409, headers: CORS },
+    );
+  }
+
   // A reply inherits its parent's anchor — a thread is about one element.
   let anchors = {
     anchorQuote: d.anchorQuote ?? null,
@@ -87,7 +126,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
       parentId: d.parentId ?? null,
       round: review.round,
       ...anchors,
-      authorName: d.authorName?.trim() || "Someone",
+      authorName: d.authorName || "Someone",
       authorKind: "anon",
       body: d.body,
     },

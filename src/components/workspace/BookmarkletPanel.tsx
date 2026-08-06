@@ -14,22 +14,26 @@
 import { useEffect, useRef, useState } from "react";
 import { Bookmark, Copy, Check, ChevronDown } from "lucide-react";
 
-function snippetFor(shareToken: string): string {
-  if (typeof window === "undefined") return "";
-  const src = `${window.location.origin}/api/public/page-review/${shareToken}/overlay.js`;
+export function snippetFor(shareToken: string, appOrigin: string): string {
+  const src = `${appOrigin.replace(/\/$/, "")}/api/public/page-review/${shareToken}/overlay.js`;
   // Cache-bust so an updated overlay reaches people who installed it weeks ago.
   return (
     `javascript:(function(){var s=document.createElement('script');` +
-    `s.src='${src}?t='+Date.now();document.body.appendChild(s);})();`
+    `s.src=${JSON.stringify(src)}+'?t='+Date.now();document.body.appendChild(s);})();`
   );
 }
 
-export function BookmarkletPanel({ shareToken, url }: { shareToken: string; url: string }) {
+export function BookmarkletPanel({
+  shareToken,
+  url,
+  appOrigin,
+}: {
+  shareToken: string;
+  url: string;
+  appOrigin: string;
+}) {
   const linkRef = useRef<HTMLAnchorElement>(null);
-  /** Computed once on mount — it needs window.location. Safe against
-   *  hydration mismatch because nothing renders it until the fallback
-   *  panel is opened, which is always a later render. */
-  const [code] = useState(() => snippetFor(shareToken));
+  const code = snippetFor(shareToken, appOrigin);
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 

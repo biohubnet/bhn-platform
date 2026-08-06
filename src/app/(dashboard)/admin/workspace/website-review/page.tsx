@@ -12,6 +12,7 @@ import { PageHero } from "@/components/ui/PageHero";
 import { PageReviewClient } from "@/components/workspace/PageReviewClient";
 import { NewPageReviewForm } from "@/components/workspace/NewPageReviewForm";
 import { BookmarkletPanel } from "@/components/workspace/BookmarkletPanel";
+import { PAGE_REVIEW_COMMENT_LIMIT } from "@/lib/page-review/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function WebsiteReviewPage({
   const role = (session.user as { role?: string }).role ?? "";
   const isAdmin = role === "admin" || role === "superadmin";
   const meId = (session.user as { id?: string }).id ?? null;
+  const appOrigin = (process.env.NEXTAUTH_URL ?? "https://app.biohubnet.ca").replace(/\/$/, "");
 
   const reviews = await prisma.pageReview.findMany({
     orderBy: { updatedAt: "desc" },
@@ -41,7 +43,12 @@ export default async function WebsiteReviewPage({
   const active = activeId
     ? await prisma.pageReview.findUnique({
         where: { id: activeId },
-        include: { comments: { orderBy: { createdAt: "asc" } } },
+        include: {
+          comments: {
+            orderBy: { createdAt: "asc" },
+            take: PAGE_REVIEW_COMMENT_LIMIT,
+          },
+        },
       })
     : null;
 
@@ -76,7 +83,7 @@ export default async function WebsiteReviewPage({
 
       {/* shareToken is nullable in the schema; every review the app creates has one. */}
       {active && active.status !== "closed" && active.shareToken && (
-        <BookmarkletPanel shareToken={active.shareToken} url={active.url} />
+        <BookmarkletPanel shareToken={active.shareToken} url={active.url} appOrigin={appOrigin} />
       )}
 
       {active ? (
@@ -89,7 +96,8 @@ export default async function WebsiteReviewPage({
               anchorQuote: c.anchorQuote, anchorKey: c.anchorKey,
               anchorPath: c.anchorPath, anchorBlock: c.anchorBlock,
               anchorState: c.anchorState, authorUserId: c.authorUserId,
-              authorName: c.authorName, body: c.body, status: c.status,
+              authorName: c.authorName, authorKind: c.authorKind,
+              body: c.body, status: c.status,
               editCount: c.editCount,
               editedAt: c.editedAt ? c.editedAt.toISOString() : null,
               createdAt: c.createdAt.toISOString(),

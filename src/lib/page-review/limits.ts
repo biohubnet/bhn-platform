@@ -1,0 +1,3 @@
+export const PAGE_REVIEW_COMMENT_LIMIT = 1_000;
+export const PAGE_REVIEW_RATE_MAX = 20;
+export const PAGE_REVIEW_RATE_WINDOW_MS = 60_000;

@@ -16,7 +16,7 @@ interface Comment {
   id: string; parentId: string | null; round: number;
   anchorQuote: string | null; anchorKey: string | null;
   anchorPath: string | null; anchorBlock: string | null; anchorState: string;
-  authorUserId: string | null; authorName: string; body: string;
+  authorUserId: string | null; authorName: string; authorKind: string; body: string;
   status: string; editCount: number; editedAt: string | null; createdAt: string;
 }
 interface Review {
@@ -137,6 +137,11 @@ export function PageReviewClient({
                 <div className="p-4">
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="text-[13px] font-semibold text-fg">{c.authorName}</span>
+                    {c.authorKind === "anon" && (
+                      <span className="rounded bg-elevated px-1 text-[9px] uppercase tracking-wide text-subtle">
+                        guest
+                      </span>
+                    )}
                     <span className="text-[10px] text-subtle">{new Date(c.createdAt).toLocaleDateString()}</span>
                     {c.editCount > 0 && <span className="text-[10px] text-subtle">· edited</span>}
                     {resolved && (
@@ -172,6 +177,11 @@ export function PageReviewClient({
                       <div className="flex items-baseline gap-2 flex-wrap">
                         <CornerDownRight size={10} className="text-subtle" />
                         <span className="text-[12px] font-semibold text-fg">{r.authorName}</span>
+                        {r.authorKind === "anon" && (
+                          <span className="rounded bg-elevated px-1 text-[9px] uppercase tracking-wide text-subtle">
+                            guest
+                          </span>
+                        )}
                         {r.editCount > 0 && <span className="text-[10px] text-subtle">· edited</span>}
                         {(isAdmin || r.authorUserId === meId) && (
                           <span className="ml-auto inline-flex gap-1">
