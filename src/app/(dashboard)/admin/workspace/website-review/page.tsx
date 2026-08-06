@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { PageReviewClient } from "@/components/workspace/PageReviewClient";
 import { NewPageReviewForm } from "@/components/workspace/NewPageReviewForm";
+import { BookmarkletPanel } from "@/components/workspace/BookmarkletPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,11 @@ export default async function WebsiteReviewPage({
             </Link>
           ))}
         </nav>
+      )}
+
+      {/* shareToken is nullable in the schema; every review the app creates has one. */}
+      {active && active.status !== "closed" && active.shareToken && (
+        <BookmarkletPanel shareToken={active.shareToken} url={active.url} />
       )}
 
       {active ? (

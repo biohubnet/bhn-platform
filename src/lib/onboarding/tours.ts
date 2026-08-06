@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.09.06a";
+export const TOUR_VERSION = "2026.09.07a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Workspace · Website Review → bookmarklet — Sep 2026
+  {
+    id: "workspace.website-review.bookmarklet",
+    title: "Comment without leaving the site",
+    body: "Drag \"Review this page\" onto your bookmarks bar. Open biohubnet.ca, click the bookmark, and every element highlights as you hover — click one and type your note. It records the exact text, element and WPBakery block for you, so nothing has to be copy-pasted back here. Share the bookmark with anyone reviewing; they don't need a login.",
+    path: "/admin/workspace/website-review",
+    placement: "center",
+    roles: ["instructor", "admin", "superadmin"],
+    cta: { label: "Get the bookmarklet", href: "/admin/workspace/website-review" },
+    since: "2026.09.07a",
+  },
   // ─── Workspace · Website Review — Sep 2026
   {
     id: "workspace.website-review",
